@@ -6,13 +6,23 @@ from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from apps.core.exceptions import DomainError
 from apps.members.api import IsCompanyMember, MemberBriefSerializer, requires
 from apps.members.models import Membership, Position
 from apps.members.permissions import Perm
-from apps.tasks import queries, rules, services
-from apps.tasks.models import ChecklistItem, Proof, Task, TaskComment, TaskTemplate, Weekday
+from apps.tasks import queries, rules, services, stats
+from apps.tasks.models import (
+    Activity,
+    ChecklistItem,
+    Proof,
+    Repeat,
+    Task,
+    TaskComment,
+    TaskTemplate,
+    Weekday,
+)
 
 MAX_PHOTO_BYTES = 10 * 1024 * 1024
 
@@ -27,6 +37,7 @@ class TaskSerializer(serializers.ModelSerializer):
     assignee = MemberBriefSerializer()
     created_by = MemberBriefSerializer(allow_null=True)
     checklist = ChecklistItemSerializer(many=True)
+    repeat_weekdays = serializers.SerializerMethodField()
     is_overdue = serializers.SerializerMethodField()
     actions = serializers.SerializerMethodField()
 
@@ -48,6 +59,7 @@ class TaskSerializer(serializers.ModelSerializer):
             "assignee",
             "created_by",
             "checklist",
+            "repeat_weekdays",
             "started_at",
             "completed_at",
             "confirmed_at",
@@ -56,6 +68,12 @@ class TaskSerializer(serializers.ModelSerializer):
             "created_at",
         )
         read_only_fields = fields
+
+    @extend_schema_field(serializers.ListField(child=serializers.IntegerField(), allow_null=True))
+    def get_repeat_weekdays(self, task: Task) -> list[int] | None:
+        """0 = Monday … 6 = Sunday, when the task repeats."""
+        template = task.template
+        return template.weekdays if template is not None and template.is_active else None
 
     def get_is_overdue(self, task: Task) -> bool:
         return task.is_overdue()
@@ -78,6 +96,9 @@ class TaskCreateSerializer(serializers.Serializer):
     needs_confirmation = serializers.BooleanField(default=False)
     checklist = serializers.ListField(
         child=serializers.CharField(max_length=200), default=list, max_length=50
+    )
+    repeat = serializers.ChoiceField(
+        Repeat.choices, default=Repeat.NONE, help_text="Personal tasks only; needs due_at."
     )
 
 
@@ -104,6 +125,10 @@ class CompleteSerializer(serializers.Serializer):
 
 class ReturnSerializer(serializers.Serializer):
     reason = serializers.CharField()
+
+
+class CancelSerializer(serializers.Serializer):
+    stop_repeating = serializers.BooleanField(default=False)
 
 
 class ChecklistToggleSerializer(serializers.Serializer):
@@ -205,10 +230,14 @@ class TaskViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
         task = services.return_task(self.get_object(), by=self.membership, reason=reason)
         return self._respond(task)
 
-    @extend_schema(request=None, responses=TaskSerializer)
+    @extend_schema(request=CancelSerializer, responses=TaskSerializer)
     @action(detail=True, methods=["post"])
     def cancel(self, request, company_id, pk):
-        return self._respond(services.cancel_task(self.get_object(), by=self.membership))
+        stop_repeating = self._validated(CancelSerializer)["stop_repeating"]
+        task = services.cancel_task(
+            self.get_object(), by=self.membership, stop_repeating=stop_repeating
+        )
+        return self._respond(task)
 
     @extend_schema(request=ChecklistToggleSerializer, responses=TaskSerializer)
     @action(detail=True, methods=["post"], url_path=r"checklist/(?P<item_id>\d+)")
@@ -310,8 +339,11 @@ class TaskTemplateViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return TaskTemplate.objects.none()
-        return TaskTemplate.objects.for_company(self.membership.company).prefetch_related(
-            "assignees", "positions"
+        # Employees' own repeating tasks are theirs, not part of the company's templates.
+        return (
+            TaskTemplate.objects.for_company(self.membership.company)
+            .filter(personal=False)
+            .prefetch_related("assignees", "positions")
         )
 
     def get_serializer_context(self):
@@ -322,3 +354,65 @@ class TaskTemplateViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(company=self.membership.company, created_by=self.membership)
+
+
+class SummarySerializer(serializers.Serializer):
+    today_total = serializers.IntegerField()
+    today_done = serializers.IntegerField()
+    late = serializers.IntegerField()
+    streak_days = serializers.IntegerField()
+    unread_activity = serializers.IntegerField()
+    awaiting_review = serializers.IntegerField()
+
+
+class SummaryView(APIView):
+    """Home screen numbers for the signed-in member."""
+
+    permission_classes = (IsAuthenticated, IsCompanyMember)
+
+    @extend_schema(responses=SummarySerializer)
+    def get(self, request, company_id):
+        return Response(stats.summary(self.membership, timezone.now()))
+
+
+class TaskBriefSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Task
+        fields = ("id", "title", "status")
+
+
+class ActivitySerializer(serializers.ModelSerializer):
+    actor = MemberBriefSerializer(allow_null=True)
+    task = TaskBriefSerializer()
+    is_read = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Activity
+        fields = ("id", "kind", "task", "actor", "text", "is_read", "created_at")
+
+    def get_is_read(self, activity: Activity) -> bool:
+        return activity.read_at is not None
+
+
+class MarkedSerializer(serializers.Serializer):
+    marked = serializers.IntegerField()
+
+
+class ActivityViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """The signed-in member's feed, newest first."""
+
+    permission_classes = (IsAuthenticated, IsCompanyMember)
+    serializer_class = ActivitySerializer
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Activity.objects.none()
+        return Activity.objects.filter(recipient=self.membership).select_related(
+            "task", "actor__user", "actor__position"
+        )
+
+    @extend_schema(request=None, responses=MarkedSerializer)
+    @action(detail=False, methods=["post"])
+    def read(self, request, company_id):
+        """Mark the whole feed as read."""
+        return Response({"marked": services.mark_feed_read(self.membership)})

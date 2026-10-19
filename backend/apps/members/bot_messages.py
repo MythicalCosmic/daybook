@@ -35,13 +35,19 @@ def main_menu() -> ReplyKeyboardMarkup:
 def join_request(membership: Membership) -> BotMessage:
     """What approvers see. Once decided, it shows the outcome instead of buttons."""
     user = membership.user
-    name = html.quote(user.get_full_name() or str(user))
+    name = html.quote(membership.full_name or user.get_full_name() or str(user))
     lines = [
         _("📝 <b>Join request</b> · %(company)s")
         % {"company": html.quote(membership.company.name)},
         "",
         _("Name: %(name)s") % {"name": f'<a href="tg://user?id={user.telegram_id}">{name}</a>'},
     ]
+    if membership.position:
+        lines.append(
+            _("Position: %(position)s") % {"position": html.quote(membership.position.name)}
+        )
+    if user.phone:
+        lines.append(_("Phone: %(phone)s") % {"phone": html.quote(user.phone)})
     if user.telegram_username:
         lines.append(
             _("Username: @%(username)s") % {"username": html.quote(user.telegram_username)}
@@ -74,10 +80,17 @@ def status(membership: Membership | None) -> BotMessage | None:
     if membership is None or membership.status == Membership.Status.LEFT:
         return _("👋 Hi! To join your company, open the invite link your manager sent you."), None
     if membership.status == Membership.Status.PENDING:
-        text = _(
-            "⏳ Your request to join <b>%(company)s</b> is waiting for approval. "
-            "I'll message you as soon as it's decided."
-        ) % {"company": html.quote(membership.company.name)}
+        company = {"company": html.quote(membership.company.name)}
+        if not membership.is_onboarded:
+            header = _("👋 Welcome! You're joining <b>%(company)s</b>.") % company
+            return _compose(header, _create_account_prompt())
+        text = (
+            _(
+                "⏳ Your request to join <b>%(company)s</b> is waiting for approval. "
+                "I'll message you as soon as it's decided."
+            )
+            % company
+        )
         return text, None
     if membership.status == Membership.Status.REJECTED:
         return _declined(membership), None
@@ -122,24 +135,26 @@ def onboarding_complete(membership: Membership) -> BotMessage:
 
 
 def _next_step(membership: Membership) -> BotMessage:
-    if membership.is_onboarded:
+    if not membership.is_onboarded:
+        return _create_account_prompt()
+    if membership.status == Membership.Status.APPROVED:
         return _menu_prompt()
-    if not membership.user.phone:
-        text = _("To finish registration, share your phone number with the button below.")
-        return text, _share_phone_keyboard()
-    return _app_prompt(_("Open the app to enter your name and position."))
+    return _(
+        "Your request is waiting for approval. I'll message you as soon as it's decided."
+    ), None
 
 
 def _menu_prompt() -> BotMessage:
     return _("Use the menu below to see your tasks or add one."), main_menu()
 
 
-def _app_prompt(text: str) -> BotMessage:
+def _create_account_prompt() -> BotMessage:
     if not settings.EMPLOYEE_MINIAPP_URL:
-        return text, None
+        return _("Accounts are created in the app, which isn't set up yet. Ask your manager."), None
     button = InlineKeyboardButton(
-        text=_("📱 Open app"), web_app=WebAppInfo(url=settings.EMPLOYEE_MINIAPP_URL)
+        text=_("📱 Create account"), web_app=WebAppInfo(url=settings.EMPLOYEE_MINIAPP_URL)
     )
+    text = _("Open the app to create your account: your name, phone and position.")
     return text, InlineKeyboardMarkup(inline_keyboard=[[button]])
 
 

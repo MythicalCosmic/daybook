@@ -12,6 +12,7 @@ from apps.tasks.models import Task
 # Everything a task card or serializer touches, so rendering never queries.
 TASK_RELATIONS = (
     "company",
+    "template",
     "assignee__user",
     "assignee__position",
     "created_by__user",
@@ -20,11 +21,17 @@ TASK_RELATIONS = (
 
 
 def visible_tasks(member: Membership) -> QuerySet[Task]:
-    """Tasks the member may see: their own, the ones they handed out, or all with tasks.view_all."""
+    """Tasks the member may see: their own, the ones they handed out, or all with tasks.view_all.
+
+    Anyone allowed to confirm also sees the work waiting for a check.
+    """
     tasks = Task.objects.for_company(member.company_id).select_related(*TASK_RELATIONS)
     if member.has_perm(Perm.TASKS_VIEW_ALL):
         return tasks
-    return tasks.filter(Q(assignee=member) | Q(created_by=member))
+    visible = Q(assignee=member) | Q(created_by=member)
+    if member.has_perm(Perm.TASKS_CONFIRM):
+        visible |= Q(status=Task.Status.REVIEW)
+    return tasks.filter(visible)
 
 
 def todays_tasks(member: Membership, now: datetime) -> QuerySet[Task]:

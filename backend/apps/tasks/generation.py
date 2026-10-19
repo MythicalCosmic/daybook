@@ -16,7 +16,7 @@ def generate_daily_tasks(company: Company, day: date) -> None:
     )
     new_tasks = []
     for template in templates:
-        if not template.is_due_on(day):
+        if not template.is_due_on(day) or (template.starts_on and day < template.starts_on):
             continue
         due_at = datetime.combine(day, template.due_time, tzinfo=tz)
         if due_at <= template.created_at:
@@ -27,7 +27,7 @@ def generate_daily_tasks(company: Company, day: date) -> None:
             new_tasks.append(
                 Task(
                     company=company,
-                    kind=Task.Kind.DAILY,
+                    kind=Task.Kind.PERSONAL if template.personal else Task.Kind.DAILY,
                     template=template,
                     for_date=day,
                     title=template.title,

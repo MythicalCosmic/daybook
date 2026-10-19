@@ -43,6 +43,8 @@ class MembershipSerializer(serializers.ModelSerializer):
             "role",
             "permissions",
             "is_onboarded",
+            "onboarded_at",
+            "decided_at",
         )
 
     @extend_schema_field(serializers.ListField(child=serializers.ChoiceField(Perm.choices)))
@@ -63,6 +65,8 @@ class OnboardingSerializer(serializers.Serializer):
 class IsCompanyMember(BasePermission):
     """Approved members of the URL's company get in; to anyone else the company doesn't exist."""
 
+    statuses = (Membership.Status.APPROVED,)
+
     def has_permission(self, request, view):
         membership = (
             Membership.objects.select_related("company", "user", "role", "position")
@@ -70,7 +74,7 @@ class IsCompanyMember(BasePermission):
                 company_id=view.kwargs["company_id"],
                 company__is_active=True,
                 user=request.user,
-                status=Membership.Status.APPROVED,
+                status__in=self.statuses,
             )
             .first()
         )
@@ -78,6 +82,12 @@ class IsCompanyMember(BasePermission):
             raise NotFound
         view.membership = membership
         return True
+
+
+class IsCompanyApplicant(IsCompanyMember):
+    """Also lets in people whose request is pending, so they can create their account."""
+
+    statuses = (Membership.Status.PENDING, Membership.Status.APPROVED)
 
 
 def requires(perm: Perm) -> type[BasePermission]:
@@ -123,9 +133,9 @@ class MemberListView(ListAPIView):
 
 
 class PositionListView(ListAPIView):
-    """Positions an employee can pick during onboarding."""
+    """Positions an employee can pick when creating their account."""
 
-    permission_classes = (IsAuthenticated, IsCompanyMember)
+    permission_classes = (IsAuthenticated, IsCompanyApplicant)
     serializer_class = PositionSerializer
     pagination_class = None
 
@@ -134,9 +144,12 @@ class PositionListView(ListAPIView):
 
 
 class OnboardingView(APIView):
-    """Finish registration: name and position. The phone comes from Telegram contact sharing."""
+    """Create the account: name and position. The phone comes from Telegram contact sharing.
 
-    permission_classes = (IsAuthenticated, IsCompanyMember)
+    For a pending request this is what sends it to the approvers.
+    """
+
+    permission_classes = (IsAuthenticated, IsCompanyApplicant)
 
     @extend_schema(request=OnboardingSerializer, responses=MembershipSerializer)
     def post(self, request, company_id):

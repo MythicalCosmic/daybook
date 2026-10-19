@@ -30,6 +30,13 @@ class Proof(models.TextChoices):
     ANY = "any", _("Photo or text report")
 
 
+class Repeat(models.TextChoices):
+    NONE = "none", _("Doesn't repeat")
+    DAILY = "daily", _("Every day")
+    WEEKDAYS = "weekdays", _("Weekdays")
+    WEEKLY = "weekly", _("Every week")
+
+
 def every_weekday() -> list[int]:
     return list(Weekday.values)
 
@@ -43,6 +50,9 @@ class TaskTemplate(TenantModel):
         models.PositiveSmallIntegerField(choices=Weekday.choices), default=every_weekday
     )
     due_time = models.TimeField(help_text=_("In the company's timezone."))
+    starts_on = models.DateField(
+        null=True, blank=True, help_text=_("No tasks are made for days before this.")
+    )
     assignees = models.ManyToManyField(Membership, blank=True, related_name="task_templates")
     positions = models.ManyToManyField(
         Position,
@@ -53,6 +63,10 @@ class TaskTemplate(TenantModel):
     proof = models.CharField(max_length=8, choices=Proof.choices, default=Proof.NONE)
     needs_confirmation = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    personal = models.BooleanField(
+        default=False,
+        help_text=_("Made by an employee for themselves; it repeats a personal task."),
+    )
     created_by = models.ForeignKey(
         Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )
@@ -176,3 +190,32 @@ class TaskComment(TimeStampedModel):
 
     def __str__(self):
         return self.text[:50]
+
+
+class Activity(TenantModel):
+    """An entry in someone's in-app feed ("New for you")."""
+
+    class Kind(models.TextChoices):
+        ASSIGNED = "assigned", _("Gave you a task")
+        REVIEW = "review", _("Asked you to check a task")
+        COMPLETED = "completed", _("Completed a task you gave")
+        CONFIRMED = "confirmed", _("Checked your task")
+        RETURNED = "returned", _("Sent a task back")
+        COMMENTED = "commented", _("Commented on a task")
+
+    recipient = models.ForeignKey(Membership, on_delete=models.CASCADE, related_name="activity")
+    actor = models.ForeignKey(
+        Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    kind = models.CharField(max_length=12, choices=Kind.choices)
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="activity")
+    text = models.CharField(max_length=300, blank=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name_plural = "activity"
+        ordering = ["-created_at", "-pk"]
+        indexes = [models.Index(fields=["recipient", "read_at"])]
+
+    def __str__(self):
+        return f"{self.get_kind_display()}: {self.task}"

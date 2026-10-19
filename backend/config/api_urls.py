@@ -4,7 +4,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from apps.accounts.api import MeView, TelegramAuthView
 from apps.members.api import MemberListView, OnboardingView, PositionListView
-from apps.tasks.api import TaskTemplateViewSet, TaskViewSet
+from apps.tasks.api import ActivityViewSet, SummaryView, TaskTemplateViewSet, TaskViewSet
 
 COMPANY = "companies/<int:company_id>"
 
@@ -13,6 +13,7 @@ router.register(r"companies/(?P<company_id>\d+)/tasks", TaskViewSet, basename="t
 router.register(
     r"companies/(?P<company_id>\d+)/task-templates", TaskTemplateViewSet, basename="task-template"
 )
+router.register(r"companies/(?P<company_id>\d+)/activity", ActivityViewSet, basename="activity")
 
 urlpatterns = [
     path("auth/telegram/", TelegramAuthView.as_view(), name="auth-telegram"),
@@ -21,5 +22,6 @@ urlpatterns = [
     path(f"{COMPANY}/members/", MemberListView.as_view(), name="members"),
     path(f"{COMPANY}/positions/", PositionListView.as_view(), name="positions"),
     path(f"{COMPANY}/onboarding/", OnboardingView.as_view(), name="onboarding"),
+    path(f"{COMPANY}/summary/", SummaryView.as_view(), name="summary"),
     *router.urls,
 ]

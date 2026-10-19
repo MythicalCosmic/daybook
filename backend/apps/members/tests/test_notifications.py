@@ -10,7 +10,7 @@ from apps.members.notifications import (
     send_onboarding_complete,
 )
 from apps.members.permissions import Perm
-from apps.members.tests.factories import AccessRoleFactory, MembershipFactory
+from apps.members.tests.factories import AccessRoleFactory, MembershipFactory, PositionFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -37,24 +37,44 @@ def test_custom_role_with_the_approve_permission_counts(company):
     assert hr.user.telegram_id in approver_chats(company)
 
 
-def test_join_request_reaches_approvers_with_buttons(company, member, sent_messages):
+def submitted_request(company, **kwargs):
+    """A pending request whose account details are filled in."""
+    kwargs.setdefault("first_name", "Ali")
+    kwargs.setdefault("last_name", "Valiyev")
+    return MembershipFactory(
+        company=company, onboarded_at=timezone.now(), user__phone="+998901234567", **kwargs
+    )
+
+
+def test_join_request_reaches_approvers_with_details_and_buttons(company, member, sent_messages):
     manager = member(company, "Manager")
-    request = MembershipFactory(company=company)
+    request = submitted_request(company, position=PositionFactory(company=company, name="Cashier"))
 
     send_join_request(request.pk)
 
     [message] = sent_messages
     assert message["chat_id"] == manager.user.telegram_id
-    assert request.user.get_full_name() in message["text"]
+    assert "Ali Valiyev" in message["text"]
+    assert "Position: Cashier" in message["text"]
+    assert "Phone: +998901234567" in message["text"]
     buttons = message["reply_markup"]["inline_keyboard"][0]
     decisions = [JoinDecision.unpack(button["callback_data"]) for button in buttons]
     assert [d.action for d in decisions] == [JoinAction.APPROVE, JoinAction.REJECT]
     assert {d.membership_id for d in decisions} == {request.pk}
 
 
+def test_request_without_details_is_not_sent_yet(company, member, sent_messages):
+    member(company, "Manager")
+    request = MembershipFactory(company=company)
+
+    send_join_request(request.pk)
+
+    assert sent_messages == []
+
+
 def test_join_request_text_escapes_html(company, member, sent_messages):
     member(company, "Manager")
-    request = MembershipFactory(company=company, user__first_name="<b>Eve</b>")
+    request = submitted_request(company, first_name="<b>Eve</b>")
 
     send_join_request(request.pk)
 
@@ -70,23 +90,22 @@ def test_already_decided_request_is_not_sent(company, member, sent_messages):
     assert sent_messages == []
 
 
-def test_approved_requester_is_asked_for_their_phone_first(company, sent_messages):
-    request = MembershipFactory(company=company, status=Membership.Status.APPROVED)
+def test_approved_requester_gets_the_main_menu(company, sent_messages):
+    request = submitted_request(company, status=Membership.Status.APPROVED)
 
     send_join_decision(request.pk)
 
     [message] = sent_messages
     assert message["chat_id"] == request.user.telegram_id
     assert "was approved" in message["text"]
-    button = message["reply_markup"]["keyboard"][0][0]
-    assert button["request_contact"] is True
+    assert message["reply_markup"]["keyboard"][0][0]["text"] == "📋 My tasks"
 
 
-def test_approved_requester_with_a_phone_gets_the_app_button(company, settings, sent_messages):
+def test_approved_before_registering_gets_the_create_account_button(
+    company, settings, sent_messages
+):
     settings.EMPLOYEE_MINIAPP_URL = "https://app.example.com"
-    request = MembershipFactory(
-        company=company, status=Membership.Status.APPROVED, user__phone="+998901234567"
-    )
+    request = MembershipFactory(company=company, status=Membership.Status.APPROVED)
 
     send_join_decision(request.pk)
 

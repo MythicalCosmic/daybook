@@ -1,4 +1,5 @@
 from functools import partial
+from zoneinfo import ZoneInfo
 
 from django.core.exceptions import PermissionDenied
 from django.core.files import File
@@ -9,9 +10,18 @@ from django.utils.translation import gettext as _
 from apps.core.exceptions import DomainError
 from apps.members.models import Membership
 from apps.members.permissions import Perm
-from apps.tasks import rules
+from apps.tasks import queries, rules
 from apps.tasks import tasks as jobs
-from apps.tasks.models import ChecklistItem, Proof, Task, TaskComment
+from apps.tasks.models import (
+    Activity,
+    ChecklistItem,
+    Proof,
+    Repeat,
+    Task,
+    TaskComment,
+    TaskTemplate,
+    Weekday,
+)
 from apps.tasks.queries import TASK_RELATIONS
 
 EDITABLE_FIELDS = frozenset({"title", "description", "due_at", "priority"})
@@ -29,6 +39,7 @@ def create_task(
     proof: str = Proof.NONE,
     needs_confirmation: bool = False,
     checklist: list[str] = (),
+    repeat: str = Repeat.NONE,
 ) -> Task:
     _ensure_registered(by)
     assignee = assignee or by
@@ -41,6 +52,11 @@ def create_task(
         if assignee.company_id != by.company_id or not _is_registered(assignee):
             raise DomainError(_("Tasks can only go to registered members of your company."))
         kind = Task.Kind.ASSIGNED
+    if repeat != Repeat.NONE:
+        if kind != Task.Kind.PERSONAL:
+            raise DomainError(_("Repeating tasks for others are set up as daily tasks."))
+        if due_at is None:
+            raise DomainError(_("Pick a time for a repeating task."))
 
     task = Task(
         company_id=by.company_id,
@@ -58,7 +74,10 @@ def create_task(
         for index, text in enumerate(checklist)
         if text.strip()
     )
+    if repeat != Repeat.NONE:
+        _repeat_personal_task(task, repeat)
     if kind == Task.Kind.ASSIGNED:
+        _add_to_feed(Activity.Kind.ASSIGNED, task, [assignee], by)
         transaction.on_commit(partial(jobs.notify_task_assigned.delay, task.pk))
     return task
 
@@ -107,6 +126,10 @@ def complete_task(
     task.completed_at = timezone.now()
     task.status = Task.Status.REVIEW if task.needs_confirmation else Task.Status.DONE
     task.save()
+    if task.status == Task.Status.REVIEW:
+        _add_to_feed(Activity.Kind.REVIEW, task, queries.reviewers(task), by)
+    elif task.kind == Task.Kind.ASSIGNED:
+        _add_to_feed(Activity.Kind.COMPLETED, task, [task.created_by], by)
     transaction.on_commit(partial(jobs.notify_task_completed.delay, task.pk))
     return task
 
@@ -119,6 +142,7 @@ def confirm_task(task: Task, *, by: Membership) -> Task:
     task.confirmed_by = by
     task.confirmed_at = timezone.now()
     task.save()
+    _add_to_feed(Activity.Kind.CONFIRMED, task, [task.assignee], by)
     transaction.on_commit(partial(jobs.notify_task_reviewed.delay, task.pk))
     return task
 
@@ -134,12 +158,13 @@ def return_task(task: Task, *, by: Membership, reason: str) -> Task:
     task.completed_at = None
     task.save()
     TaskComment.objects.create(task=task, author=by, text=reason)
+    _add_to_feed(Activity.Kind.RETURNED, task, [task.assignee], by, reason)
     transaction.on_commit(partial(jobs.notify_task_reviewed.delay, task.pk))
     return task
 
 
 @transaction.atomic
-def cancel_task(task: Task, *, by: Membership) -> Task:
+def cancel_task(task: Task, *, by: Membership, stop_repeating: bool = False) -> Task:
     task = _lock(task)
     if not rules.can_manage(task, by):
         raise PermissionDenied(_("You can't cancel this task."))
@@ -147,6 +172,9 @@ def cancel_task(task: Task, *, by: Membership) -> Task:
         raise DomainError(_already(task))
     task.status = Task.Status.CANCELLED
     task.save()
+    if stop_repeating and task.template is not None and task.template.personal:
+        task.template.is_active = False
+        task.template.save(update_fields=["is_active", "updated_at"])
     return task
 
 
@@ -161,11 +189,70 @@ def toggle_checklist_item(item: ChecklistItem, *, by: Membership, done: bool) ->
     return item
 
 
+@transaction.atomic
 def add_comment(task: Task, *, by: Membership, text: str) -> TaskComment:
     text = text.strip()
     if not text:
         raise DomainError(_("A comment can't be empty."))
-    return TaskComment.objects.create(task=task, author=by, text=text)
+    comment = TaskComment.objects.create(task=task, author=by, text=text)
+    _add_to_feed(Activity.Kind.COMMENTED, task, [task.assignee, task.created_by], by, text)
+    return comment
+
+
+@transaction.atomic
+def mark_feed_read(member: Membership) -> int:
+    return Activity.objects.filter(recipient=member, read_at__isnull=True).update(
+        read_at=timezone.now()
+    )
+
+
+def _add_to_feed(
+    kind: str, task: Task, recipients, actor: Membership | None, text: str = ""
+) -> None:
+    """Put an entry in each recipient's feed, never in the feed of whoever did it."""
+    unique = {r.pk: r for r in recipients if r is not None and (actor is None or r.pk != actor.pk)}
+    Activity.objects.bulk_create(
+        Activity(
+            company_id=task.company_id,
+            recipient=recipient,
+            actor=actor,
+            kind=kind,
+            task=task,
+            text=text[:300],
+        )
+        for recipient in unique.values()
+    )
+
+
+def _repeat_personal_task(task: Task, repeat: str) -> None:
+    """Make `task` the first of a series: a personal template generates the next ones."""
+    due = timezone.localtime(task.due_at, ZoneInfo(task.company.timezone))
+    weekdays = {
+        Repeat.DAILY: list(Weekday.values),
+        Repeat.WEEKDAYS: [
+            Weekday.MONDAY,
+            Weekday.TUESDAY,
+            Weekday.WEDNESDAY,
+            Weekday.THURSDAY,
+            Weekday.FRIDAY,
+        ],
+        Repeat.WEEKLY: [due.weekday()],
+    }[repeat]
+    template = TaskTemplate.objects.create(
+        company_id=task.company_id,
+        title=task.title,
+        description=task.description,
+        weekdays=weekdays,
+        due_time=due.time().replace(second=0, microsecond=0),
+        starts_on=due.date(),
+        proof=task.proof,
+        personal=True,
+        created_by=task.created_by,
+    )
+    template.assignees.add(task.assignee)
+    task.template = template
+    task.for_date = due.date()
+    task.save(update_fields=["template", "for_date", "updated_at"])
 
 
 def _apply_changes(task: Task, changes: dict) -> None:

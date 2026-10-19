@@ -13,7 +13,7 @@ from apps.members.tests.factories import MembershipFactory
 pytestmark = pytest.mark.django_db
 
 
-def test_first_request_is_pending_and_asks_approvers(company, django_capture_on_commit_callbacks):
+def test_first_request_waits_for_the_persons_details(company, django_capture_on_commit_callbacks):
     user = UserFactory()
 
     with django_capture_on_commit_callbacks() as callbacks:
@@ -21,6 +21,34 @@ def test_first_request_is_pending_and_asks_approvers(company, django_capture_on_
 
     assert requested
     assert membership.status == Membership.Status.PENDING
+    assert callbacks == []  # approvers are asked once the account is created
+
+
+def test_creating_the_account_sends_the_request_to_approvers(
+    company, django_capture_on_commit_callbacks
+):
+    user = UserFactory(phone="+998901234567")
+    membership, _ = services.request_access(user, company)
+
+    with django_capture_on_commit_callbacks() as callbacks:
+        services.complete_onboarding(
+            membership, first_name="Ali", last_name="Valiyev", position_id=None
+        )
+
+    membership.refresh_from_db()
+    assert membership.status == Membership.Status.PENDING
+    assert membership.is_onboarded
+    assert len(callbacks) == 1
+
+
+def test_returning_person_with_details_goes_straight_to_approvers(
+    company, member, django_capture_on_commit_callbacks
+):
+    former = member(company, status=Membership.Status.LEFT, onboarded_at=timezone.now())
+
+    with django_capture_on_commit_callbacks() as callbacks:
+        services.request_access(former.user, company)
+
     assert len(callbacks) == 1
 
 

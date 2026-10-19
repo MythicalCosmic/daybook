@@ -208,4 +208,4 @@ async def test_unregistered_member_gets_the_registration_prompt(dp, bot, company
 
     await dp.feed_update(bot, updates.message(updates.tg_user(newcomer.user.telegram_id), "/tasks"))
 
-    assert "share your phone number" in sent(bot)[-1].text
+    assert "Accounts are created in the app" in sent(bot)[-1].text

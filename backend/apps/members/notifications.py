@@ -30,6 +30,8 @@ def send_join_request(membership_id: int) -> None:
     membership = _load(membership_id)
     if membership is None or membership.status != Membership.Status.PENDING:
         return
+    if not membership.is_onboarded:
+        return  # nothing to decide on until they've filled in their details
     for chat_id, language in approver_chats(membership.company).items():
         with translation.override(language):
             text, markup = bot_messages.join_request(membership)
@@ -62,7 +64,7 @@ def send_onboarding_complete(membership_id: int) -> None:
 
 def _load(membership_id: int) -> Membership | None:
     return (
-        Membership.objects.select_related("company", "user", "decided_by")
+        Membership.objects.select_related("company", "user", "position", "decided_by")
         .filter(pk=membership_id)
         .first()
     )

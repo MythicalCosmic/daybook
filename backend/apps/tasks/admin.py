@@ -7,7 +7,7 @@ from apps.tasks.models import ChecklistItem, Task, TaskComment, TaskTemplate
 @admin.register(TaskTemplate)
 class TaskTemplateAdmin(ModelAdmin):
     list_display = ("title", "company", "due_time", "proof", "needs_confirmation", "is_active")
-    list_filter = ("company", "is_active", "proof")
+    list_filter = ("company", "is_active", "personal", "proof")
     search_fields = ("title", "company__name")
     list_select_related = ("company",)
     filter_horizontal = ("assignees", "positions")

@@ -1,7 +1,9 @@
 import pytest
 from aiogram.methods import AnswerCallbackQuery, EditMessageText
+from asgiref.sync import sync_to_async
 from django.utils import timezone
 
+from apps.members import services
 from apps.members.callbacks import JoinAction, JoinDecision
 from apps.members.models import Membership
 from tests import updates
@@ -14,25 +16,39 @@ async def get_membership(company, telegram_id) -> Membership:
     return await Membership.objects.aget(company=company, user__telegram_id=telegram_id)
 
 
-async def test_invite_link_creates_pending_request(dp, bot, company):
+async def test_invite_link_opens_a_request_and_points_to_account_creation(
+    dp, bot, company, settings
+):
+    settings.EMPLOYEE_MINIAPP_URL = "https://app.example.com"
     ali = updates.tg_user(501)
 
     await dp.feed_update(bot, updates.message(ali, f"/start {company.invite_start_param}"))
 
     membership = await get_membership(company, 501)
     assert membership.status == Membership.Status.PENDING
-    assert "waiting for approval" in bot.sent_texts()[-1]
+    reply = bot.requests[-1]
+    assert "You're joining" in reply.text
+    assert reply.reply_markup.inline_keyboard[0][0].web_app.url == "https://app.example.com"
 
 
-async def test_invite_link_notifies_approvers(dp, bot, company, member, sent_messages):
+async def test_approvers_hear_once_the_account_is_created(dp, bot, company, member, sent_messages):
     manager = await member.acreate(company, "Manager")
+    ali = updates.tg_user(502)
+    await dp.feed_update(bot, updates.message(ali, f"/start {company.invite_start_param}"))
+    assert sent_messages == []  # nothing to decide on yet
 
-    await dp.feed_update(
-        bot, updates.message(updates.tg_user(502), f"/start {company.invite_start_param}")
+    membership = await Membership.objects.select_related("user").aget(user__telegram_id=502)
+    membership.user.phone = "+998901234567"
+    await membership.user.asave()
+    await sync_to_async(services.complete_onboarding)(
+        membership, first_name="Ali", last_name="Valiyev", position_id=None
     )
 
-    assert [m["chat_id"] for m in sent_messages] == [manager.user.telegram_id]
-    buttons = sent_messages[0]["reply_markup"]["inline_keyboard"][0]
+    [message] = sent_messages
+    assert message["chat_id"] == manager.user.telegram_id
+    assert "Ali Valiyev" in message["text"]
+    assert "+998901234567" in message["text"]
+    buttons = message["reply_markup"]["inline_keyboard"][0]
     assert [b["text"] for b in buttons] == ["✅ Approve", "❌ Reject"]
 
 
@@ -48,11 +64,23 @@ async def test_plain_start_without_membership_asks_for_invite_link(dp, bot, db):
     assert "open the invite link" in bot.sent_texts()[-1]
 
 
-async def test_gate_blocks_pending_member(dp, bot, company):
+async def test_gate_sends_new_people_to_account_creation(dp, bot, company):
     ali = updates.tg_user(505)
     await dp.feed_update(bot, updates.message(ali, f"/start {company.invite_start_param}"))
 
     await dp.feed_update(bot, updates.message(ali, "show me my tasks"))
+
+    assert "You're joining" in bot.sent_texts()[-1]
+
+
+async def test_gate_blocks_people_waiting_for_approval(dp, bot, company, member):
+    waiting = await member.acreate(
+        company, status=Membership.Status.PENDING, onboarded_at=timezone.now()
+    )
+
+    await dp.feed_update(
+        bot, updates.message(updates.tg_user(waiting.user.telegram_id), "show me my tasks")
+    )
 
     assert "waiting for approval" in bot.sent_texts()[-1]
 

@@ -45,12 +45,32 @@ def test_other_companies_look_like_they_do_not_exist(other_company, newcomer):
     assert response.status_code == 404
 
 
-def test_pending_member_cannot_see_positions(company):
+def test_pending_person_sees_positions_to_create_their_account(company):
     pending = MembershipFactory(company=company)
 
     response = client_for(pending).get(f"/api/v1/companies/{company.pk}/positions/")
 
+    assert response.status_code == 200
+
+
+def test_rejected_person_cannot_see_positions(company):
+    rejected = MembershipFactory(company=company, status=Membership.Status.REJECTED)
+
+    response = client_for(rejected).get(f"/api/v1/companies/{company.pk}/positions/")
+
     assert response.status_code == 404
+
+
+def test_pending_person_creates_their_account(company, django_capture_on_commit_callbacks):
+    pending = MembershipFactory(company=company, user__phone="+998901234567")
+
+    with django_capture_on_commit_callbacks() as callbacks:
+        response = onboard(pending)
+
+    assert response.status_code == 200
+    assert response.data["status"] == "pending"
+    assert response.data["is_onboarded"] is True
+    assert len(callbacks) == 1  # the approvers are asked now
 
 
 def test_positions_require_authentication(company):

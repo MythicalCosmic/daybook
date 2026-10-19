@@ -74,7 +74,7 @@ def current_membership(user: User) -> Membership | None:
 
 def get_join_request(membership_id: int) -> Membership | None:
     return (
-        Membership.objects.select_related("company", "user", "decided_by")
+        Membership.objects.select_related("company", "user", "position", "decided_by")
         .filter(pk=membership_id)
         .first()
     )
@@ -82,26 +82,32 @@ def get_join_request(membership_id: int) -> Membership | None:
 
 @transaction.atomic
 def request_access(user: User, company: Company) -> tuple[Membership, bool]:
-    """Ask to join a company. Returns the membership and whether approvers were asked."""
+    """Ask to join a company. Returns the membership and whether a new request was opened.
+
+    Approvers hear about it once the person has filled in their details (complete_onboarding).
+    """
     membership, created = (
         Membership.objects.select_for_update(of=("self",))
         .select_related("company")
         .get_or_create(company=company, user=user)
     )
-    if not created:
-        if membership.status not in (Membership.Status.REJECTED, Membership.Status.LEFT):
-            return membership, False
-        available_at = membership.rejoin_available_at
-        if available_at is not None and timezone.now() < available_at:
-            return membership, False
-        membership.status = Membership.Status.PENDING
-        # Someone coming back starts over: they get the default role again on approval.
-        membership.role = None
-        membership.decided_by = None
-        membership.decided_at = None
-        membership.save()
+    if created:
+        return membership, True
+    if membership.status not in (Membership.Status.REJECTED, Membership.Status.LEFT):
+        return membership, False
+    available_at = membership.rejoin_available_at
+    if available_at is not None and timezone.now() < available_at:
+        return membership, False
 
-    transaction.on_commit(partial(tasks.notify_join_request.delay, membership.pk))
+    membership.status = Membership.Status.PENDING
+    # Someone coming back starts over: they get the default role again on approval.
+    membership.role = None
+    membership.decided_by = None
+    membership.decided_at = None
+    membership.save()
+    if membership.is_onboarded:
+        # Their details are on file, so the request goes straight back to the approvers.
+        transaction.on_commit(partial(tasks.notify_join_request.delay, membership.pk))
     return membership, True
 
 
@@ -148,8 +154,9 @@ def reject(membership: Membership, *, by: User) -> Membership:
 def complete_onboarding(
     membership: Membership, *, first_name: str, last_name: str, position_id: int | None
 ) -> Membership:
+    """Fill in name, phone and position: the join request (pending) or the profile (approved)."""
     membership = _lock(membership)
-    if membership.status != Membership.Status.APPROVED:
+    if membership.status not in (Membership.Status.PENDING, Membership.Status.APPROVED):
         raise PermissionDenied(_("You don't have permission to do this."))
     if membership.is_onboarded:
         raise DomainError(_("You've already completed registration."))
@@ -171,7 +178,11 @@ def complete_onboarding(
     membership.position = position
     membership.onboarded_at = timezone.now()
     membership.save()
-    transaction.on_commit(partial(tasks.notify_onboarding_complete.delay, membership.pk))
+    if membership.status == Membership.Status.PENDING:
+        notify = tasks.notify_join_request  # now approvers have something to decide on
+    else:
+        notify = tasks.notify_onboarding_complete
+    transaction.on_commit(partial(notify.delay, membership.pk))
     return membership
 
 

@@ -139,6 +139,13 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
+    # Several models have a "status"/"kind"; name the enums so generated clients read well.
+    "ENUM_NAME_OVERRIDES": {
+        "MembershipStatusEnum": "apps.members.models.Membership.Status",
+        "TaskStatusEnum": "apps.tasks.models.Task.Status",
+        "TaskKindEnum": "apps.tasks.models.Task.Kind",
+        "ActivityKindEnum": "apps.tasks.models.Activity.Kind",
+    },
 }
 
 UNFOLD = {
