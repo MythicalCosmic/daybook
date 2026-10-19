@@ -6,8 +6,11 @@ from aiogram import Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.base import BaseSession
 from aiogram.enums import ParseMode
-from aiogram.methods import SendMessage, TelegramMethod
-from aiogram.types import Chat, Message
+from aiogram.methods import GetFile, SendMessage, TelegramMethod
+from aiogram.types import Chat, File, Message
+
+# What every downloaded file contains, e.g. a proof photo.
+FILE_CONTENT = b"fake-jpeg"
 
 
 class MockedSession(BaseSession):
@@ -31,6 +34,12 @@ class MockedSession(BaseSession):
                 chat=Chat(id=int(method.chat_id), type="private"),
                 text=method.text,
             )
+        if isinstance(method, GetFile):
+            return File(
+                file_id=method.file_id,
+                file_unique_id=f"unique-{method.file_id}",
+                file_path=f"photos/{method.file_id}.jpg",
+            )
         return True
 
     async def close(self) -> None:
@@ -44,7 +53,7 @@ class MockedSession(BaseSession):
         chunk_size: int = 65536,
         raise_for_status: bool = True,
     ) -> AsyncGenerator[bytes]:
-        yield b""
+        yield FILE_CONTENT
 
 
 class MockedBot(Bot):

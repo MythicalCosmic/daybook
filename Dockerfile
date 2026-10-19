@@ -29,7 +29,7 @@ RUN DJANGO_SETTINGS_MODULE=config.settings.prod \
     CELERY_BROKER_URL=redis://localhost:6379/1 \
     python manage.py collectstatic --noinput
 
-RUN useradd --create-home --uid 10001 app
+RUN useradd --create-home --uid 10001 app && mkdir -p media && chown app media
 USER app
 
 EXPOSE 8000

@@ -11,11 +11,25 @@ from aiogram.types import (
 from django.conf import settings
 from django.utils import timezone
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_noop
 
 from apps.members.callbacks import JoinAction, JoinDecision
 from apps.members.models import Membership
 
 type BotMessage = tuple[str, InlineKeyboardMarkup | ReplyKeyboardMarkup | None]
+
+# Main menu labels. The bot matches incoming text against every translation of these.
+MENU_MY_TASKS = gettext_noop("📋 My tasks")
+MENU_NEW_TASK = gettext_noop("➕ New task")
+MENU_APP = gettext_noop("📱 Open app")
+
+
+def main_menu() -> ReplyKeyboardMarkup:
+    rows = [[KeyboardButton(text=_(MENU_MY_TASKS)), KeyboardButton(text=_(MENU_NEW_TASK))]]
+    if settings.EMPLOYEE_MINIAPP_URL:
+        app = WebAppInfo(url=settings.EMPLOYEE_MINIAPP_URL)
+        rows.append([KeyboardButton(text=_(MENU_APP), web_app=app)])
+    return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True, is_persistent=True)
 
 
 def join_request(membership: Membership) -> BotMessage:
@@ -104,16 +118,20 @@ def onboarding_complete(membership: Membership) -> BotMessage:
     header = _("🎉 Registration complete! Welcome aboard, %(name)s.") % {
         "name": html.quote(membership.first_name)
     }
-    return _compose(header, _app_prompt(_("Open the app to see your tasks.")))
+    return _compose(header, _menu_prompt())
 
 
 def _next_step(membership: Membership) -> BotMessage:
     if membership.is_onboarded:
-        return _app_prompt(_("Open the app to see your tasks."))
+        return _menu_prompt()
     if not membership.user.phone:
         text = _("To finish registration, share your phone number with the button below.")
         return text, _share_phone_keyboard()
     return _app_prompt(_("Open the app to enter your name and position."))
+
+
+def _menu_prompt() -> BotMessage:
+    return _("Use the menu below to see your tasks or add one."), main_menu()
 
 
 def _app_prompt(text: str) -> BotMessage:

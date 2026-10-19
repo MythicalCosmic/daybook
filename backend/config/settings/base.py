@@ -2,6 +2,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import environ
+from celery.schedules import crontab
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 ROOT_DIR = BASE_DIR.parent
@@ -28,6 +29,7 @@ INSTALLED_APPS = [
     "apps.companies",
     "apps.members",
     "apps.notifications",
+    "apps.tasks",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
@@ -84,6 +86,8 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+MEDIA_URL = "media/"
+MEDIA_ROOT = env.path("MEDIA_ROOT", default=BASE_DIR / "media")
 
 REDIS_URL = env("REDIS_URL")
 
@@ -98,7 +102,13 @@ CELERY_BROKER_URL = env("CELERY_BROKER_URL")
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_TASK_IGNORE_RESULT = True
 CELERY_TIMEZONE = TIME_ZONE
-CELERY_BEAT_SCHEDULE = {}
+CELERY_BEAT_SCHEDULE = {
+    # Idempotent, so running often just picks up new templates and members sooner.
+    "generate-daily-tasks": {
+        "task": "apps.tasks.tasks.generate_daily_tasks",
+        "schedule": crontab(minute="*/10"),
+    },
+}
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",

@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.db.models import Q
 from django.utils import translation
 
 from apps.accounts.models import User
@@ -7,6 +6,7 @@ from apps.companies.models import Company
 from apps.members import bot_messages
 from apps.members.models import Membership
 from apps.members.permissions import Perm
+from apps.members.queries import members_with_perm
 from apps.notifications.tasks import send_telegram_message
 from apps.notifications.telegram import BotName, serialize_markup
 
@@ -19,9 +19,8 @@ def approver_chats(company: Company) -> dict[int, str]:
         User.objects.filter(telegram_id__in=admin_ids).values_list("telegram_id", "language")
     )
     chats.update(
-        Membership.objects.for_company(company)
-        .filter(status=Membership.Status.APPROVED, user__telegram_id__isnull=False)
-        .filter(Q(role__is_owner=True) | Q(role__permissions__contains=[str(Perm.MEMBERS_APPROVE)]))
+        members_with_perm(company, Perm.MEMBERS_APPROVE)
+        .filter(user__telegram_id__isnull=False)
         .values_list("user__telegram_id", "user__language")
     )
     return chats

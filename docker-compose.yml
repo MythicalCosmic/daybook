@@ -18,6 +18,8 @@ x-app: &app
       condition: service_healthy
     redis:
       condition: service_healthy
+  volumes:
+    - media:/app/backend/media
   restart: unless-stopped
   profiles: ["app"]
 
@@ -74,3 +76,4 @@ services:
 volumes:
   pgdata:
   redisdata:
+  media:

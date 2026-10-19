@@ -19,9 +19,9 @@ logger = logging.getLogger(__name__)
     retry_backoff=True,
     max_retries=5,
 )
-def send_telegram_message(self, bot, chat_id, text, reply_markup=None):
+def send_telegram_message(self, bot, chat_id, text, reply_markup=None, photo=None):
     try:
-        telegram.send_message(bot, chat_id, text, reply_markup)
+        telegram.send_message(bot, chat_id, text, reply_markup, photo)
     except TelegramRetryAfter as exc:
         raise self.retry(countdown=exc.retry_after) from exc
     except TelegramForbiddenError:

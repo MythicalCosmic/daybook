@@ -1,5 +1,8 @@
+from datetime import timedelta
+
 import pytest
 from asgiref.sync import sync_to_async
+from django.utils import timezone
 
 from apps.companies.tests.factories import CompanyFactory
 from apps.members.models import AccessRole, Membership
@@ -27,10 +30,25 @@ class MemberMaker:
     async def acreate(self, company, role_name="Employee", **kwargs) -> Membership:
         return await sync_to_async(self)(company, role_name, **kwargs)
 
+    def registered(self, company, role_name="Employee", **kwargs) -> Membership:
+        """Approved and through onboarding: someone who can actually work on tasks."""
+        kwargs.setdefault("onboarded_at", timezone.now() - timedelta(days=30))
+        kwargs.setdefault("user__phone", "+998901234567")
+        return self(company, role_name, **kwargs)
+
+    async def aregistered(self, company, role_name="Employee", **kwargs) -> Membership:
+        return await sync_to_async(self.registered)(company, role_name, **kwargs)
+
 
 @pytest.fixture
 def member(db):
     return MemberMaker()
+
+
+@pytest.fixture(autouse=True)
+def media_root(settings, tmp_path):
+    """Uploaded files (task proof photos) land in a throwaway directory."""
+    settings.MEDIA_ROOT = tmp_path / "media"
 
 
 @pytest.fixture
@@ -38,8 +56,16 @@ def sent_messages(monkeypatch):
     """Telegram messages the backend tried to send, captured instead of sent."""
     sent = []
 
-    def record(bot, chat_id, text, reply_markup=None):
-        sent.append({"bot": bot, "chat_id": chat_id, "text": text, "reply_markup": reply_markup})
+    def record(bot, chat_id, text, reply_markup=None, photo=None):
+        sent.append(
+            {
+                "bot": bot,
+                "chat_id": chat_id,
+                "text": text,
+                "reply_markup": reply_markup,
+                "photo": photo,
+            }
+        )
 
     monkeypatch.setattr("apps.notifications.telegram.send_message", record)
     return sent

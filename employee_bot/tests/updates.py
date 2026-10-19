@@ -3,7 +3,7 @@
 from datetime import datetime
 from itertools import count
 
-from aiogram.types import CallbackQuery, Chat, Contact, Message, Update, User
+from aiogram.types import CallbackQuery, Chat, Contact, Message, PhotoSize, Update, User
 
 _ids = count(1)
 
@@ -42,6 +42,23 @@ def contact(from_user: User, phone_number: str, owner_id: int | None = None) -> 
                 first_name=from_user.first_name,
                 user_id=owner_id or from_user.id,
             ),
+        ),
+    )
+
+
+def photo(from_user: User, caption: str | None = None) -> Update:
+    return Update(
+        update_id=next(_ids),
+        message=Message(
+            message_id=next(_ids),
+            date=datetime.now(),
+            chat=Chat(id=from_user.id, type="private"),
+            from_user=from_user,
+            caption=caption,
+            photo=[
+                PhotoSize(file_id="small", file_unique_id="s", width=90, height=90),
+                PhotoSize(file_id="large", file_unique_id="l", width=1280, height=1280),
+            ],
         ),
     )
 

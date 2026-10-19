@@ -80,6 +80,48 @@ class IsCompanyMember(BasePermission):
         return True
 
 
+def requires(perm: Perm) -> type[BasePermission]:
+    """Permission class for an endpoint that needs `perm` in the URL's company."""
+
+    class RequiresPerm(BasePermission):
+        def has_permission(self, request, view):
+            return view.membership.has_perm(perm)
+
+    RequiresPerm.__name__ = f"Requires_{perm.name}"
+    return RequiresPerm
+
+
+class MemberBriefSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source="__str__")
+    position = serializers.CharField(source="position.name", allow_null=True)
+
+    class Meta:
+        model = Membership
+        fields = ("id", "name", "position")
+
+
+class CanSeeMembers(BasePermission):
+    def has_permission(self, request, view):
+        member = view.membership
+        return member.has_perm(Perm.MEMBERS_VIEW) or member.has_perm(Perm.TASKS_ASSIGN)
+
+
+class MemberListView(ListAPIView):
+    """Registered members of the company, e.g. to pick who a task is for."""
+
+    permission_classes = (IsAuthenticated, IsCompanyMember, CanSeeMembers)
+    serializer_class = MemberBriefSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return (
+            Membership.objects.for_company(self.membership.company)
+            .filter(status=Membership.Status.APPROVED, onboarded_at__isnull=False)
+            .select_related("user", "position")
+            .order_by("first_name", "last_name")
+        )
+
+
 class PositionListView(ListAPIView):
     """Positions an employee can pick during onboarding."""
 
