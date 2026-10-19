@@ -1,9 +1,11 @@
 import secrets
 import zoneinfo
+from datetime import datetime
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.models import Language, TimeStampedModel
@@ -28,7 +30,12 @@ class Company(TimeStampedModel):
     invite_code = models.CharField(
         max_length=32, unique=True, default=generate_invite_code, editable=False
     )
+    rejoin_cooldown_hours = models.PositiveIntegerField(
+        default=24, help_text=_("How long a rejected person waits before asking to join again.")
+    )
     is_active = models.BooleanField(default=True)
+
+    INVITE_PREFIX = "c_"
 
     class Meta:
         verbose_name_plural = "companies"
@@ -39,13 +46,19 @@ class Company(TimeStampedModel):
 
     @property
     def invite_start_param(self) -> str:
-        return f"c_{self.invite_code}"
+        return f"{self.INVITE_PREFIX}{self.invite_code}"
 
     @property
     def invite_link(self) -> str:
         if not settings.EMPLOYEE_BOT_USERNAME:
             return ""
         return f"https://t.me/{settings.EMPLOYEE_BOT_USERNAME}?start={self.invite_start_param}"
+
+    def format_datetime(self, value: datetime) -> str:
+        """Format a moment in the company's own timezone."""
+        return timezone.localtime(value, zoneinfo.ZoneInfo(self.timezone)).strftime(
+            "%d.%m.%Y %H:%M"
+        )
 
     def regenerate_invite_code(self) -> None:
         self.invite_code = generate_invite_code()

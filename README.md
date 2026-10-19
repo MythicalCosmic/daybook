@@ -29,6 +29,13 @@ make bot               # employee bot, separate terminal
 
 To run the whole stack in Docker (backend on :28000, worker, beat, bot), use `make stack`.
 
+## Try the join flow
+
+1. In `.env`, set `EMPLOYEE_BOT_TOKEN`, `EMPLOYEE_BOT_USERNAME` and your Telegram id in `PLATFORM_ADMIN_TG_IDS`.
+2. Run `make run`, `make worker` and `make bot`, then send `/start` to the bot once yourself so it's allowed to message you.
+3. Create a company in the admin and copy its invite link from the company page.
+4. Open the link from another Telegram account. You get the request with Approve and Reject buttons, and the other account hears the decision.
+
 `make check` runs ruff, the Django system checks and pytest. It needs `make up` first.
 
 The local ports (Postgres 25432, Redis 26379, Django 28000) avoid clashing with other projects' containers.

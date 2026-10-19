@@ -167,7 +167,7 @@ HR later extends `Membership` (or a 1-1 `EmployeeProfile`) — nothing here bloc
 |---|---|---|
 | M0 ✅ | Scaffolding (done 2026-10-19) | git, uv, Docker Compose (Postgres, Redis), Django settings split, ruff + pytest + CI, bot scaffolded with boundless-aiogram, whole stack starts with `make stack` |
 | M1 ✅ | Tenancy + members (done 2026-10-19) | Company, User, Membership, Position, AccessRole, permission registry; super-admin creates companies + invite links in admin (Unfold); approve/reject/block services; isolation tests pass |
-| M2 | Access flow | `/start` with deep link → pending → approver gets Approve/Reject → approved user unlocked; gate middleware blocks everything else |
+| M2 ✅ | Access flow (done 2026-10-19) | `/start` with deep link → pending → approver gets Approve/Reject → approved user unlocked; gate middleware blocks everything else; rejection cooldown per company; approvals from the admin notify people too |
 | M3 | Mini app auth + onboarding | `initData` validation, JWT, onboarding endpoints, Swagger published for you |
 | M4 | Tasks core | personal + assigned + daily templates and generation; bot menus (today / assigned / daily / new task); complete with proof |
 | M5 | Reminder engine | policies, repeat every N min, escalation, quiet hours, snooze, templates, logs, blocked-bot detection — all configurable in admin |

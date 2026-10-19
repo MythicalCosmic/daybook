@@ -10,7 +10,13 @@ pytestmark = pytest.mark.django_db
 def test_admin_creates_company_with_default_roles(admin_client):
     response = admin_client.post(
         "/admin/companies/company/add/",
-        {"name": "Acme", "slug": "acme", "timezone": "Asia/Tashkent", "default_language": "uz"},
+        {
+            "name": "Acme",
+            "slug": "acme",
+            "timezone": "Asia/Tashkent",
+            "default_language": "uz",
+            "rejoin_cooldown_hours": 24,
+        },
     )
 
     assert response.status_code == 302

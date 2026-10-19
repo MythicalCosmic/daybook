@@ -33,6 +33,7 @@ class CompanyAdmin(ModelAdmin):
         "slug",
         "timezone",
         "default_language",
+        "rejoin_cooldown_hours",
         "is_active",
         "invite_code",
         "invite_link_display",

@@ -13,3 +13,4 @@ class UserFactory(DjangoModelFactory):
     telegram_id = factory.Sequence(lambda n: 1_000_000 + n)
     first_name = factory.Sequence(lambda n: f"First{n}")
     last_name = factory.Sequence(lambda n: f"Last{n}")
+    language = "en"

@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
@@ -107,6 +109,12 @@ class Membership(TenantModel):
     @property
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}".strip()
+
+    @property
+    def rejoin_available_at(self) -> datetime | None:
+        if self.status != self.Status.REJECTED or self.decided_at is None:
+            return None
+        return self.decided_at + timedelta(hours=self.company.rejoin_cooldown_hours)
 
     def clean(self):
         # Tenant guard: a role or position from another company must never be attached.

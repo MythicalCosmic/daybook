@@ -1,3 +1,5 @@
+from functools import partial
+
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.utils import timezone
@@ -6,6 +8,8 @@ from django.utils.translation import gettext as _
 from apps.accounts.models import User
 from apps.companies.models import Company
 from apps.core.exceptions import DomainError
+from apps.members import tasks
+from apps.members.callbacks import JoinAction
 from apps.members.models import AccessRole, Membership
 from apps.members.permissions import Perm
 
@@ -57,6 +61,59 @@ def ensure_can(user: User, company: Company, perm: Perm) -> None:
         raise PermissionDenied(_("You don't have permission to do this."))
 
 
+def current_membership(user: User) -> Membership | None:
+    """The membership the bot acts on: the latest approved one, else the latest of any status."""
+    memberships = list(
+        Membership.objects.filter(user=user, company__is_active=True)
+        .select_related("company", "role", "position")
+        .order_by("-updated_at")
+    )
+    approved = [m for m in memberships if m.status == Membership.Status.APPROVED]
+    return (approved or memberships or [None])[0]
+
+
+def get_join_request(membership_id: int) -> Membership | None:
+    return (
+        Membership.objects.select_related("company", "user", "decided_by")
+        .filter(pk=membership_id)
+        .first()
+    )
+
+
+@transaction.atomic
+def request_access(user: User, company: Company) -> tuple[Membership, bool]:
+    """Ask to join a company. Returns the membership and whether approvers were asked."""
+    membership, created = (
+        Membership.objects.select_for_update(of=("self",))
+        .select_related("company")
+        .get_or_create(company=company, user=user)
+    )
+    if not created:
+        if membership.status not in (Membership.Status.REJECTED, Membership.Status.LEFT):
+            return membership, False
+        available_at = membership.rejoin_available_at
+        if available_at is not None and timezone.now() < available_at:
+            return membership, False
+        membership.status = Membership.Status.PENDING
+        # Someone coming back starts over: they get the default role again on approval.
+        membership.role = None
+        membership.decided_by = None
+        membership.decided_at = None
+        membership.save()
+
+    transaction.on_commit(partial(tasks.notify_join_request.delay, membership.pk))
+    return membership, True
+
+
+def decide(membership_id: int, action: JoinAction, *, by: User) -> Membership:
+    membership = Membership.objects.filter(pk=membership_id).first()
+    if membership is None:
+        raise DomainError(_("This request no longer exists."))
+    if action == JoinAction.APPROVE:
+        return approve(membership, by=by)
+    return reject(membership, by=by)
+
+
 @transaction.atomic
 def approve(membership: Membership, *, by: User) -> Membership:
     membership = _lock(membership)
@@ -70,6 +127,7 @@ def approve(membership: Membership, *, by: User) -> Membership:
         )
     _record_decision(membership, by)
     membership.save()
+    transaction.on_commit(partial(tasks.notify_join_decision.delay, membership.pk))
     return membership
 
 
@@ -82,6 +140,7 @@ def reject(membership: Membership, *, by: User) -> Membership:
     membership.status = Membership.Status.REJECTED
     _record_decision(membership, by)
     membership.save()
+    transaction.on_commit(partial(tasks.notify_join_decision.delay, membership.pk))
     return membership
 
 

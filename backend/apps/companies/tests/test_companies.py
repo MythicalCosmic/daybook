@@ -2,10 +2,34 @@ import pytest
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 
-from apps.companies.services import create_company
+from apps.companies.services import create_company, find_by_invite
+from apps.core.exceptions import DomainError
 from apps.members.models import AccessRole
 
 pytestmark = pytest.mark.django_db
+
+
+def test_find_by_invite_returns_the_company(company):
+    assert find_by_invite(company.invite_start_param) == company
+
+
+@pytest.mark.parametrize("start_param", ["", "nope", "c_unknown"])
+def test_find_by_invite_rejects_bad_links(company, start_param):
+    with pytest.raises(DomainError):
+        find_by_invite(start_param)
+
+
+def test_find_by_invite_rejects_the_bare_code(company):
+    with pytest.raises(DomainError):
+        find_by_invite(company.invite_code)
+
+
+def test_find_by_invite_rejects_inactive_companies(company):
+    company.is_active = False
+    company.save()
+
+    with pytest.raises(DomainError):
+        find_by_invite(company.invite_start_param)
 
 
 def test_create_company_adds_default_roles():

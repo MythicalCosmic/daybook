@@ -1,7 +1,4 @@
-from main import create_dispatcher
+def test_dispatcher_handles_messages_and_callbacks(dp):
+    used = dp.resolve_used_update_types()
 
-
-def test_dispatcher_handles_messages():
-    dp = create_dispatcher()
-
-    assert "message" in dp.resolve_used_update_types()
+    assert {"message", "callback_query"} <= set(used)
