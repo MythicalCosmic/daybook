@@ -18,10 +18,16 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.postgres",
     "rest_framework",
     "drf_spectacular",
     "apps.core",
+    "apps.accounts",
+    "apps.companies",
+    "apps.members",
 ]
+
+AUTH_USER_MODEL = "accounts.User"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -114,6 +120,7 @@ UNFOLD = {
 
 # Telegram
 EMPLOYEE_BOT_TOKEN = env("EMPLOYEE_BOT_TOKEN", default="")
+EMPLOYEE_BOT_USERNAME = env("EMPLOYEE_BOT_USERNAME", default="")
 OWNER_BOT_TOKEN = env("OWNER_BOT_TOKEN", default="")
 EMPLOYEE_MINIAPP_URL = env("EMPLOYEE_MINIAPP_URL", default="")
 BOT_FSM_REDIS_URL = env("BOT_FSM_REDIS_URL", default="")

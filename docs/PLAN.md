@@ -112,8 +112,8 @@ Edge cases handled: bot removed from group (`my_chat_member`), group → supergr
 | App | Models |
 |---|---|
 | `companies` | `Company` (name, slug, timezone, default_language, invite_code, is_active) |
-| `accounts` | `TelegramUser` (tg_id, username, tg names, language_code, phone, bot_blocked_at, last_seen_at); Django `User` for admin/dashboard login, optional 1-1 with `TelegramUser` |
-| `members` | `Position` (company, name, order, is_active); `AccessRole` (company, name, permissions[], is_default); `Membership` (company, tg_user, status pending/approved/rejected/blocked/left, first_name, last_name, phone, position, access_role, requested_at, decided_by, decided_at, onboarded_at) — unique (company, tg_user); permission registry in code |
+| `accounts` | `User` (custom `AbstractUser` + telegram_id, telegram_username, language). Every Telegram user is a `User`, so mini app auth, audit actors and the owner dashboard share one model |
+| `members` | `Position` (company, name, order, is_active); `AccessRole` (company, name, permissions[], is_owner, is_default); `Membership` (company, user, status pending/approved/rejected/blocked/left, first_name, last_name, phone, position, role, decided_by, decided_at, onboarded_at), unique (company, user); permission registry `Perm` in code |
 | `tasks` | `TaskTemplate` (company, title, description, rrule, due_time, assignee memberships/positions, requires_proof, reminder_policy, is_active); `Task` (company, kind, template, created_by, assignee, title, description, priority, due_at, status, requires_proof, needs_confirmation, completed_at, proof, reminder_policy, next_reminder_at, reminders_sent, escalated_at, snoozed_until, snooze_count); `ChecklistItem`, `TaskComment`, `TaskAttachment`, `TaskActivity` |
 | `reminders` | `ReminderPolicy` (fields from 3.4); `ReminderMessageTemplate` (policy, step, language, text); `ReminderLog` (task, step, chat_id, message_id, sent_at, error) |
 | `groups` | `TelegramGroup` (company, chat_id, title, bot, linked_by, is_active); `GroupSubscription` (group, event_type, positions filter); `GroupLinkCode` (company, code, expires_at, created_by) |
@@ -166,7 +166,7 @@ HR later extends `Membership` (or a 1-1 `EmployeeProfile`) — nothing here bloc
 | # | Milestone | Done when |
 |---|---|---|
 | M0 ✅ | Scaffolding (done 2026-10-19) | git, uv, Docker Compose (Postgres, Redis), Django settings split, ruff + pytest + CI, bot scaffolded with boundless-aiogram, whole stack starts with `make stack` |
-| M1 | Tenancy + members | Company, TelegramUser, Membership, Position, AccessRole, permission registry; super-admin creates companies + invite links in admin (Unfold); isolation tests pass |
+| M1 ✅ | Tenancy + members (done 2026-10-19) | Company, User, Membership, Position, AccessRole, permission registry; super-admin creates companies + invite links in admin (Unfold); approve/reject/block services; isolation tests pass |
 | M2 | Access flow | `/start` with deep link → pending → approver gets Approve/Reject → approved user unlocked; gate middleware blocks everything else |
 | M3 | Mini app auth + onboarding | `initData` validation, JWT, onboarding endpoints, Swagger published for you |
 | M4 | Tasks core | personal + assigned + daily templates and generation; bot menus (today / assigned / daily / new task); complete with proof |
