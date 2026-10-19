@@ -1,0 +1,6 @@
+project_name: employee_bot
+template: default
+server_mode: polling
+database: django
+use_migrations: false
+extras: [redis, i18n, admin]
