@@ -3,7 +3,12 @@ from django.utils import timezone
 
 from apps.members.callbacks import JoinAction, JoinDecision
 from apps.members.models import Membership
-from apps.members.notifications import approver_chats, send_join_decision, send_join_request
+from apps.members.notifications import (
+    approver_chats,
+    send_join_decision,
+    send_join_request,
+    send_onboarding_complete,
+)
 from apps.members.permissions import Perm
 from apps.members.tests.factories import AccessRoleFactory, MembershipFactory
 
@@ -65,8 +70,7 @@ def test_already_decided_request_is_not_sent(company, member, sent_messages):
     assert sent_messages == []
 
 
-def test_approved_requester_gets_the_app_button(company, settings, sent_messages):
-    settings.EMPLOYEE_MINIAPP_URL = "https://app.example.com"
+def test_approved_requester_is_asked_for_their_phone_first(company, sent_messages):
     request = MembershipFactory(company=company, status=Membership.Status.APPROVED)
 
     send_join_decision(request.pk)
@@ -74,8 +78,33 @@ def test_approved_requester_gets_the_app_button(company, settings, sent_messages
     [message] = sent_messages
     assert message["chat_id"] == request.user.telegram_id
     assert "was approved" in message["text"]
-    button = message["reply_markup"]["inline_keyboard"][0][0]
+    button = message["reply_markup"]["keyboard"][0][0]
+    assert button["request_contact"] is True
+
+
+def test_approved_requester_with_a_phone_gets_the_app_button(company, settings, sent_messages):
+    settings.EMPLOYEE_MINIAPP_URL = "https://app.example.com"
+    request = MembershipFactory(
+        company=company, status=Membership.Status.APPROVED, user__phone="+998901234567"
+    )
+
+    send_join_decision(request.pk)
+
+    button = sent_messages[0]["reply_markup"]["inline_keyboard"][0][0]
     assert button["web_app"]["url"] == "https://app.example.com"
+
+
+def test_onboarded_member_hears_registration_is_complete(company, sent_messages):
+    membership = MembershipFactory(
+        company=company,
+        status=Membership.Status.APPROVED,
+        first_name="Ali",
+        onboarded_at=timezone.now(),
+    )
+
+    send_onboarding_complete(membership.pk)
+
+    assert "Registration complete! Welcome aboard, Ali." in sent_messages[0]["text"]
 
 
 def test_rejected_requester_is_told_when_to_retry(company, sent_messages):

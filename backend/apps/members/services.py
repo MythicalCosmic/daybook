@@ -10,7 +10,7 @@ from apps.companies.models import Company
 from apps.core.exceptions import DomainError
 from apps.members import tasks
 from apps.members.callbacks import JoinAction
-from apps.members.models import AccessRole, Membership
+from apps.members.models import AccessRole, Membership, Position
 from apps.members.permissions import Perm
 
 DEFAULT_ROLES = (
@@ -65,7 +65,7 @@ def current_membership(user: User) -> Membership | None:
     """The membership the bot acts on: the latest approved one, else the latest of any status."""
     memberships = list(
         Membership.objects.filter(user=user, company__is_active=True)
-        .select_related("company", "role", "position")
+        .select_related("company", "user", "role", "position")
         .order_by("-updated_at")
     )
     approved = [m for m in memberships if m.status == Membership.Status.APPROVED]
@@ -141,6 +141,37 @@ def reject(membership: Membership, *, by: User) -> Membership:
     _record_decision(membership, by)
     membership.save()
     transaction.on_commit(partial(tasks.notify_join_decision.delay, membership.pk))
+    return membership
+
+
+@transaction.atomic
+def complete_onboarding(
+    membership: Membership, *, first_name: str, last_name: str, position_id: int | None
+) -> Membership:
+    membership = _lock(membership)
+    if membership.status != Membership.Status.APPROVED:
+        raise PermissionDenied(_("You don't have permission to do this."))
+    if membership.is_onboarded:
+        raise DomainError(_("You've already completed registration."))
+    if not membership.user.phone:
+        raise DomainError(_("Share your phone number in the bot first."))
+
+    positions = Position.objects.for_company(membership.company).filter(is_active=True)
+    if position_id is None:
+        if positions.exists():
+            raise DomainError(_("Choose your position."))
+        position = None
+    else:
+        position = positions.filter(pk=position_id).first()
+        if position is None:
+            raise DomainError(_("Choose a position from the list."))
+
+    membership.first_name = first_name
+    membership.last_name = last_name
+    membership.position = position
+    membership.onboarded_at = timezone.now()
+    membership.save()
+    transaction.on_commit(partial(tasks.notify_onboarding_complete.delay, membership.pk))
     return membership
 
 

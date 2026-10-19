@@ -1,7 +1,13 @@
 """Telegram texts and keyboards about memberships, used by the bot and by backend notifications."""
 
 from aiogram import html
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
+from aiogram.types import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    ReplyKeyboardMarkup,
+    WebAppInfo,
+)
 from django.conf import settings
 from django.utils import timezone
 from django.utils.translation import gettext as _
@@ -9,7 +15,7 @@ from django.utils.translation import gettext as _
 from apps.members.callbacks import JoinAction, JoinDecision
 from apps.members.models import Membership
 
-type BotMessage = tuple[str, InlineKeyboardMarkup | None]
+type BotMessage = tuple[str, InlineKeyboardMarkup | ReplyKeyboardMarkup | None]
 
 
 def join_request(membership: Membership) -> BotMessage:
@@ -71,27 +77,62 @@ def decision_for_requester(membership: Membership) -> BotMessage | None:
         header = _("🎉 Your request to join <b>%(company)s</b> was approved!") % {
             "company": html.quote(membership.company.name)
         }
-        return _with_app_button(header)
+        return _compose(header, _next_step(membership))
     if membership.status == Membership.Status.REJECTED:
         return _declined(membership), None
     return None
 
 
 def member_home(membership: Membership) -> BotMessage:
-    header = _("✅ You're a member of <b>%(company)s</b>.") % {
-        "company": html.quote(membership.company.name)
+    company = {"company": html.quote(membership.company.name)}
+    if membership.is_onboarded:
+        header = _("✅ You're a member of <b>%(company)s</b>.") % company
+    else:
+        header = _("👋 Welcome to <b>%(company)s</b>!") % company
+    return _compose(header, _next_step(membership))
+
+
+def phone_saved(membership: Membership) -> BotMessage:
+    return _compose(_("📱 Thanks, your phone number is saved."), _next_step(membership))
+
+
+def foreign_contact() -> BotMessage:
+    return _("Please share your own phone number with the button below."), _share_phone_keyboard()
+
+
+def onboarding_complete(membership: Membership) -> BotMessage:
+    header = _("🎉 Registration complete! Welcome aboard, %(name)s.") % {
+        "name": html.quote(membership.first_name)
     }
-    return _with_app_button(header)
+    return _compose(header, _app_prompt(_("Open the app to see your tasks.")))
 
 
-def _with_app_button(header: str) -> BotMessage:
+def _next_step(membership: Membership) -> BotMessage:
+    if membership.is_onboarded:
+        return _app_prompt(_("Open the app to see your tasks."))
+    if not membership.user.phone:
+        text = _("To finish registration, share your phone number with the button below.")
+        return text, _share_phone_keyboard()
+    return _app_prompt(_("Open the app to enter your name and position."))
+
+
+def _app_prompt(text: str) -> BotMessage:
     if not settings.EMPLOYEE_MINIAPP_URL:
-        return header, None
+        return text, None
     button = InlineKeyboardButton(
         text=_("📱 Open app"), web_app=WebAppInfo(url=settings.EMPLOYEE_MINIAPP_URL)
     )
-    text = f"{header}\n\n{_('Open the app to see your tasks.')}"
     return text, InlineKeyboardMarkup(inline_keyboard=[[button]])
+
+
+def _share_phone_keyboard() -> ReplyKeyboardMarkup:
+    button = KeyboardButton(text=_("📱 Share my phone number"), request_contact=True)
+    return ReplyKeyboardMarkup(keyboard=[[button]], resize_keyboard=True, one_time_keyboard=True)
+
+
+def _compose(header: str, step: BotMessage) -> BotMessage:
+    text, markup = step
+    return f"{header}\n\n{text}", markup
 
 
 def _declined(membership: Membership) -> str:

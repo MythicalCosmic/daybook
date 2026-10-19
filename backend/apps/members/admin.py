@@ -38,7 +38,7 @@ class MembershipAdmin(ModelAdmin):
     search_fields = (
         "first_name",
         "last_name",
-        "phone",
+        "user__phone",
         "user__first_name",
         "user__last_name",
         "user__telegram_username",
@@ -62,7 +62,7 @@ class MembershipAdmin(ModelAdmin):
     actions = ("approve_selected", "reject_selected", "block_selected")
 
     def get_readonly_fields(self, request, obj=None):
-        readonly = ["decided_by", "decided_at", "onboarded_at", "created_at", "updated_at"]
+        readonly = ["phone", "decided_by", "decided_at", "onboarded_at", "created_at", "updated_at"]
         if obj is not None:
             # Status only changes through the actions, which run the permission checks.
             readonly += ["company", "user", "status"]
@@ -76,6 +76,10 @@ class MembershipAdmin(ModelAdmin):
                 if field is not None:
                     field.queryset = field.queryset.filter(company=obj.company_id)
         return form
+
+    @admin.display(description=_("Phone"))
+    def phone(self, obj):
+        return obj.user.phone if obj.user_id else ""
 
     @admin.action(description=_("Approve selected requests"))
     def approve_selected(self, request, queryset):

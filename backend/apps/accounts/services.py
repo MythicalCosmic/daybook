@@ -43,6 +43,15 @@ def sync_telegram_user(
     return user
 
 
+def save_verified_phone(user: User, *, contact_user_id: int | None, phone_number: str) -> bool:
+    """Store the phone from a shared Telegram contact, but only if it's the person's own."""
+    if contact_user_id is None or contact_user_id != user.telegram_id:
+        return False
+    user.phone = "+" + "".join(char for char in phone_number if char.isdigit())
+    user.save(update_fields=["phone"])
+    return True
+
+
 def _language(language_code: str | None) -> str:
     code = (language_code or "")[:2].lower()
     return code if code in Language.values else Language.UZ

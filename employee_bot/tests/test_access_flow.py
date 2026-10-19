@@ -1,5 +1,6 @@
 import pytest
 from aiogram.methods import AnswerCallbackQuery, EditMessageText
+from django.utils import timezone
 
 from apps.members.callbacks import JoinAction, JoinDecision
 from apps.members.models import Membership
@@ -65,8 +66,8 @@ async def test_gate_stays_silent_for_blocked_member(dp, bot, company, member):
     assert len(bot.sent_texts()) == sent_before
 
 
-async def test_gate_lets_approved_member_through(dp, bot, company, member):
-    employee = await member.acreate(company)
+async def test_gate_lets_registered_member_through(dp, bot, company, member):
+    employee = await member.acreate(company, onboarded_at=timezone.now())
 
     await dp.feed_update(bot, updates.message(updates.tg_user(employee.user.telegram_id), "hi"))
 

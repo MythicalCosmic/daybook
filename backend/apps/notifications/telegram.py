@@ -7,7 +7,7 @@ from enum import StrEnum
 from aiogram import Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.types import InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardMarkup, ReplyKeyboardMarkup
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
@@ -18,7 +18,10 @@ class BotName(StrEnum):
     OWNER = "owner"
 
 
-def serialize_markup(markup: InlineKeyboardMarkup | None) -> dict | None:
+type Markup = InlineKeyboardMarkup | ReplyKeyboardMarkup
+
+
+def serialize_markup(markup: Markup | None) -> dict | None:
     """Celery arguments must be JSON, so keyboards travel as dicts."""
     return markup.model_dump(mode="json", exclude_none=True) if markup else None
 
@@ -38,6 +41,14 @@ def _token(bot: BotName) -> str:
 
 
 async def _send(token: str, chat_id: int, text: str, reply_markup: dict | None) -> None:
-    markup = InlineKeyboardMarkup.model_validate(reply_markup) if reply_markup else None
+    markup = _deserialize_markup(reply_markup)
     async with Bot(token, default=DefaultBotProperties(parse_mode=ParseMode.HTML)) as bot:
         await bot.send_message(chat_id, text, reply_markup=markup)
+
+
+def _deserialize_markup(data: dict | None) -> Markup | None:
+    if data is None:
+        return None
+    if "inline_keyboard" in data:
+        return InlineKeyboardMarkup.model_validate(data)
+    return ReplyKeyboardMarkup.model_validate(data)

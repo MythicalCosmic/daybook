@@ -1,3 +1,4 @@
+from datetime import timedelta
 from pathlib import Path
 
 import environ
@@ -19,6 +20,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.postgres",
+    "corsheaders",
     "rest_framework",
     "drf_spectacular",
     "apps.core",
@@ -33,6 +35,7 @@ AUTH_USER_MODEL = "accounts.User"
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -100,18 +103,32 @@ CELERY_BEAT_SCHEDULE = {}
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 50,
+    "EXCEPTION_HANDLER": "apps.core.api.exception_handler",
+    "DEFAULT_THROTTLE_RATES": {"telegram_auth": "30/min"},
 }
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
+# The mini app is served from its own origin.
+CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
+CORS_URLS_REGEX = r"^/api/.*$"
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "911 Trello API",
     "DESCRIPTION": "API for the employee mini app.",
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
 }
 
 UNFOLD = {
@@ -124,6 +141,8 @@ EMPLOYEE_BOT_TOKEN = env("EMPLOYEE_BOT_TOKEN", default="")
 EMPLOYEE_BOT_USERNAME = env("EMPLOYEE_BOT_USERNAME", default="")
 OWNER_BOT_TOKEN = env("OWNER_BOT_TOKEN", default="")
 EMPLOYEE_MINIAPP_URL = env("EMPLOYEE_MINIAPP_URL", default="")
+# How old mini app launch data may be before login is refused (seconds).
+MINIAPP_INIT_DATA_MAX_AGE = env.int("MINIAPP_INIT_DATA_MAX_AGE", default=24 * 60 * 60)
 BOT_FSM_REDIS_URL = env("BOT_FSM_REDIS_URL", default="")
 PLATFORM_ADMIN_TG_IDS = env.list("PLATFORM_ADMIN_TG_IDS", cast=int, default=[])
 

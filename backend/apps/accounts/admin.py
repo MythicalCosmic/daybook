@@ -18,7 +18,7 @@ class UserAdmin(BaseUserAdmin, ModelAdmin):
     change_password_form = AdminPasswordChangeForm
     fieldsets = (
         *BaseUserAdmin.fieldsets,
-        (_("Telegram"), {"fields": ("telegram_id", "telegram_username", "language")}),
+        (_("Telegram"), {"fields": ("telegram_id", "telegram_username", "phone", "language")}),
     )
     list_display = (
         "username",

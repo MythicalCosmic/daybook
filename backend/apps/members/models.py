@@ -78,7 +78,6 @@ class Membership(TenantModel):
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)
     first_name = models.CharField(max_length=100, blank=True)
     last_name = models.CharField(max_length=100, blank=True)
-    phone = models.CharField(max_length=20, blank=True)
     position = models.ForeignKey(
         Position, on_delete=models.PROTECT, null=True, blank=True, related_name="members"
     )
@@ -109,6 +108,10 @@ class Membership(TenantModel):
     @property
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}".strip()
+
+    @property
+    def is_onboarded(self) -> bool:
+        return self.onboarded_at is not None
 
     @property
     def rejoin_available_at(self) -> datetime | None:

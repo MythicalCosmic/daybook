@@ -3,7 +3,7 @@
 from datetime import datetime
 from itertools import count
 
-from aiogram.types import CallbackQuery, Chat, Message, Update, User
+from aiogram.types import CallbackQuery, Chat, Contact, Message, Update, User
 
 _ids = count(1)
 
@@ -24,6 +24,24 @@ def message(from_user: User, text: str, chat_type: str = "private") -> Update:
             chat=Chat(id=chat_id, type=chat_type),
             from_user=from_user,
             text=text,
+        ),
+    )
+
+
+def contact(from_user: User, phone_number: str, owner_id: int | None = None) -> Update:
+    """A shared contact; it belongs to the sender unless `owner_id` says otherwise."""
+    return Update(
+        update_id=next(_ids),
+        message=Message(
+            message_id=next(_ids),
+            date=datetime.now(),
+            chat=Chat(id=from_user.id, type="private"),
+            from_user=from_user,
+            contact=Contact(
+                phone_number=phone_number,
+                first_name=from_user.first_name,
+                user_id=owner_id or from_user.id,
+            ),
         ),
     )
 

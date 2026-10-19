@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from apps.core.models import Language
 
@@ -11,6 +12,11 @@ class User(AbstractUser):
     telegram_id = models.BigIntegerField(unique=True, null=True, blank=True)
     telegram_username = models.CharField(max_length=64, blank=True)
     language = models.CharField(max_length=2, choices=Language.choices, default=Language.UZ)
+    phone = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text=_("Only set from a contact the person shared in Telegram."),
+    )
 
     def __str__(self):
         if full_name := self.get_full_name():

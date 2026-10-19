@@ -29,6 +29,19 @@ make bot               # employee bot, separate terminal
 
 To run the whole stack in Docker (backend on :28000, worker, beat, bot), use `make stack`.
 
+## Mini app API
+
+Interactive docs are at `/api/docs/` and the raw OpenAPI schema is at `/api/schema/`. Put the mini app's origin in `CORS_ALLOWED_ORIGINS`.
+
+1. **Log in.** `POST /api/v1/auth/telegram/` with `{"init_data": Telegram.WebApp.initData}` returns `{access, refresh}`. Send `Authorization: Bearer <access>` on every other call. When the token expires, log in again with fresh init data or use `POST /api/v1/auth/refresh/`.
+2. **Pick the company.** `GET /api/v1/me/` returns the person and their memberships. Use an `approved` one, and if there are several, let the person choose.
+3. **Register** while `is_onboarded` is false:
+   1. If `me.phone` is empty, call `Telegram.WebApp.requestContact()`. Telegram sends the contact to the bot, which saves it as a verified number. Re-fetch `/me` until `phone` appears.
+   2. `GET /api/v1/companies/{id}/positions/` lists the positions to choose from.
+   3. `POST /api/v1/companies/{id}/onboarding/` with `{first_name, last_name, position_id}` finishes registration.
+
+When a business rule is broken, the API returns `400 {"detail": "<message safe to show>"}`. Field validation errors come back as `{"field": ["..."]}`. A company the person doesn't belong to returns 404.
+
 ## Try the join flow
 
 1. In `.env`, set `EMPLOYEE_BOT_TOKEN`, `EMPLOYEE_BOT_USERNAME` and your Telegram id in `PLATFORM_ADMIN_TG_IDS`.
