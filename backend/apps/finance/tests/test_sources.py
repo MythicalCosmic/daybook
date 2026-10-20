@@ -15,8 +15,9 @@ class TestRegistry:
 
     def test_the_ledgers_own_type_is_registered(self):
         assert sources.get("finance.transaction") is not None
+        # The dashboard opens a ledger entry in the transactions page's drawer.
         assert sources.url("finance.transaction", 5, company_id=1) == (
-            "/c/1/finance/transactions/5"
+            "/c/1/finance/transactions?txn=5"
         )
 
     def test_unknown_types_read_as_themselves(self):

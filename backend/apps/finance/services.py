@@ -27,26 +27,34 @@ claims post through; finance never imports them. The rules every write follows:
   their module audits (the rows keep `created_by` and the source either way).
 """
 
+import re
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from zoneinfo import ZoneInfo
 
 from django.db import IntegrityError, connection, transaction
-from django.db.models import F
+from django.db.models import F, Max, ProtectedError, RestrictedError
 from django.utils import timezone, translation
 from django.utils.translation import gettext as _
 
 from apps.audit import services as audit
 from apps.core.exceptions import DomainError
 from apps.core.money import Currency, format_money, quantize
+from apps.core.uploads import accept_document, make_thumb
 from apps.finance import conf, defaults, sources
 from apps.finance.audit_actions import FinanceAction
 from apps.finance.models import (
+    COLOR_PATTERN,
     LIVE_STATUSES,
     Category,
+    CompanyRate,
+    Counterparty,
     Debt,
+    DebtInstallment,
     FinanceSettings,
     MoneyAccount,
+    RateSource,
+    Receipt,
     Transaction,
     Transfer,
 )
@@ -61,18 +69,42 @@ __all__ = [
     "account_for_branch",
     "account_for_holder",
     "approve_transaction",
+    "archive_account",
+    "attach_receipts",
+    "bulk_transactions",
     "cancel_debt",
+    "copy_categories",
     "create_account",
+    "create_category",
+    "create_counterparty",
     "create_defaults",
+    "delete_category",
+    "delete_company_rate",
     "get_settings",
     "lock_debt",
+    "lock_period",
+    "merge_category",
+    "move_category",
+    "normalize_phone",
     "open_debt",
     "pay_debt",
     "rate_for",
+    "record_entry",
     "record_transaction",
     "reject_transaction",
+    "remove_receipt",
+    "reopen_account",
+    "set_company_rate",
+    "set_installments",
     "transfer",
     "unlock_debt",
+    "update_account",
+    "update_category",
+    "update_counterparty",
+    "update_debt",
+    "update_settings",
+    "update_transaction",
+    "upload_receipt",
     "void_transaction",
     "void_transfer",
     "write_off",
@@ -1094,6 +1126,1223 @@ def unlock_debt(debt: Debt, *, source: Source) -> Debt:
     locked_debt.locked_by_id = None
     locked_debt.save(update_fields=["locked_by_type", "locked_by_id", "updated_at"])
     return locked_debt
+
+
+# ─────────────────────────────────────────────────────────────────────────────────────────────
+# The bookkeeping services of the owner dashboard (Package D). Everything below is made by a
+# person (`by` is required) and audited here; the ledger rules above still apply underneath.
+# ─────────────────────────────────────────────────────────────────────────────────────────────
+
+ACCOUNT_FIELDS = (
+    "name",
+    "color",
+    "order",
+    "bank_name",
+    "number_last4",
+    "allow_negative",
+    "branch",
+    "operators",
+)
+CATEGORY_FIELDS = ("name", "color", "icon", "is_capex", "is_sensitive", "is_active")
+PARTY_FIELDS = (
+    "name",
+    "kind",
+    "phone",
+    "tin",
+    "contact_person",
+    "telegram_username",
+    "address",
+    "bank_details",
+    "notes",
+    "default_category",
+    "credit_limit",
+    "credit_blocked",
+    "birthday",
+    "tags",
+    "is_active",
+)
+TRANSACTION_FIELDS = (
+    "description",
+    "category",
+    "counterparty",
+    "membership",
+    "branch",
+    "project",
+    "occurred_on",
+    "amount",
+    "account",
+)
+MONEY_CHANGES = ("occurred_on", "amount", "account")
+SETTINGS_FIELDS = (
+    "rate_source",
+    "approval_threshold",
+    "receipt_required_over",
+    "large_expense_alert",
+    "reimburse_via",
+)
+DEBT_FIELDS = ("due_on", "description", "responsible", "branch")
+BULK_ACTIONS = ("categorize", "void")
+MAX_BULK = 200
+MAX_RECEIPTS = 10
+MAX_TAGS = 10
+MAX_INSTALLMENTS = 60
+PHONE_DIGITS = re.compile(r"\D+")
+
+
+# Accounts
+
+
+@transaction.atomic
+def update_account(account: MoneyAccount, *, by: Membership, **fields) -> MoneyAccount:
+    """Change an account's name, colour, order, bank details, overdraft rule, branch or the
+    people who operate it. Its kind, currency and holder never change (archive it and open
+    another instead), so its history keeps meaning what it meant."""
+    _need_actor(by)
+    _known(fields, ACCOUNT_FIELDS)
+    account = MoneyAccount.objects.select_for_update().select_related("company").get(pk=account.pk)
+    company = account.company
+    user = _actor(company, by)
+    before = _account_snapshot(account)
+    if "name" in fields:
+        name = (fields["name"] or "").strip()[:100]
+        if not name:
+            raise DomainError(_("Give the account a name."))
+        taken = MoneyAccount.objects.filter(company=company, name__iexact=name)
+        if taken.exclude(pk=account.pk).exists():
+            raise DomainError(_("There is already an account called %(name)s.") % {"name": name})
+        account.name = name
+    if "color" in fields:
+        account.color = _color(fields["color"])
+    if "order" in fields:
+        account.order = max(0, int(fields["order"] or 0))
+    if "bank_name" in fields:
+        account.bank_name = (fields["bank_name"] or "").strip()[:100]
+    if "number_last4" in fields:
+        last4 = (fields["number_last4"] or "").strip()
+        if last4 and not re.fullmatch(r"\d{4}", last4):
+            raise DomainError(_("Only the last 4 digits."))
+        account.number_last4 = last4
+    if "allow_negative" in fields:
+        account.allow_negative = bool(fields["allow_negative"])
+    if "branch" in fields:
+        branch = fields["branch"]
+        _same_company(company, branch)
+        if account.kind == MoneyAccount.Kind.SAFE and branch is not None:
+            clash = MoneyAccount.objects.filter(
+                company=company, branch=branch, kind=account.kind, currency=account.currency
+            ).exclude(pk=account.pk)
+            if clash.exists():
+                raise DomainError(
+                    _("%(branch)s already has a safe in %(currency)s.")
+                    % {"branch": branch, "currency": account.currency}
+                )
+        account.branch = branch
+    account.save()
+    if "operators" in fields:
+        operators = list(fields["operators"] or [])
+        _same_company(company, *operators)
+        account.operators.set(operators)
+    changes = _diff(before, _account_snapshot(account))
+    if changes:
+        _audit(FinanceAction.ACCOUNT_UPDATED, company, user, account, changes=changes)
+    return account
+
+
+@transaction.atomic
+def archive_account(account: MoneyAccount, *, by: Membership) -> MoneyAccount:
+    """Hide an account that is no longer used. Its balance must be zero: move the money first."""
+    _need_actor(by)
+    company = account.company
+    user = _actor(company, by)
+    locked = _lock_accounts(account.pk)[account.pk]
+    if not locked.is_active:
+        return locked
+    if locked.balance:
+        raise DomainError(
+            _("%(account)s still holds %(balance)s. Move the money to another account first.")
+            % {"account": locked, "balance": _format(locked.balance, locked.currency)}
+        )
+    if Transaction.objects.filter(account=locked, status=Status.PENDING).exists():
+        raise DomainError(_("Entries on this account wait for approval: decide them first."))
+    locked.is_active = False
+    locked.save(update_fields=["is_active", "updated_at"])
+    _audit(FinanceAction.ACCOUNT_ARCHIVED, company, user, locked)
+    return locked
+
+
+@transaction.atomic
+def reopen_account(account: MoneyAccount, *, by: Membership) -> MoneyAccount:
+    _need_actor(by)
+    company = account.company
+    user = _actor(company, by)
+    if account.is_active:
+        return account
+    account.is_active = True
+    account.save(update_fields=["is_active", "updated_at"])
+    _audit(FinanceAction.ACCOUNT_REOPENED, company, user, account)
+    return account
+
+
+def _account_snapshot(account: MoneyAccount) -> dict:
+    snapshot = {
+        "name": account.name,
+        "color": account.color,
+        "order": account.order,
+        "bank_name": account.bank_name,
+        "number_last4": account.number_last4,
+        "allow_negative": account.allow_negative,
+        "branch": str(account.branch) if account.branch_id else None,
+    }
+    if account.pk:
+        snapshot["operators"] = sorted(str(person) for person in account.operators.all())
+    return snapshot
+
+
+# Categories
+
+
+@transaction.atomic
+def create_category(
+    company,
+    *,
+    by: Membership,
+    name: str,
+    kind: str,
+    parent: Category | None = None,
+    color: str = "",
+    icon: str = "",
+    is_capex: bool = False,
+    is_sensitive: bool = False,
+) -> Category:
+    """A new income or expense category, at the top or under a top-level one of its kind."""
+    _need_actor(by)
+    user = _actor(company, by)
+    if kind not in Category.Kind.values:
+        raise ValueError(f"Unknown category kind {kind!r}.")
+    name = _category_name(name)
+    _check_parent(company, parent, kind)
+    _check_free_name(company, parent, name)
+    order = Category.objects.filter(company=company, parent=parent, kind=kind).aggregate(
+        top=Max("order")
+    )["top"]
+    try:
+        with transaction.atomic():
+            category = Category.objects.create(
+                company=company,
+                name=name,
+                kind=kind,
+                parent=parent,
+                color=_color(color),
+                icon=(icon or "").strip()[:40],
+                is_capex=bool(is_capex),
+                is_sensitive=bool(is_sensitive),
+                order=(order + 1) if order is not None else 0,
+            )
+    except IntegrityError:
+        raise DomainError(
+            _("There is already a category called %(name)s here.") % {"name": name}
+        ) from None
+    _audit(FinanceAction.CATEGORY_CREATED, company, user, category, name=name, kind=kind)
+    return category
+
+
+@transaction.atomic
+def update_category(category: Category, *, by: Membership, **fields) -> Category:
+    """Rename or recolour a category, flag it as equipment (capex) or salary-sensitive, or
+    archive it (with its subcategories). System categories can be renamed, never archived; the
+    salaries category always stays sensitive."""
+    _need_actor(by)
+    _known(fields, CATEGORY_FIELDS)
+    category = Category.objects.select_for_update().select_related("company").get(pk=category.pk)
+    company = category.company
+    user = _actor(company, by)
+    before = _category_snapshot(category)
+    if "name" in fields:
+        name = _category_name(fields["name"])
+        if name.lower() != category.name.lower():
+            _check_free_name(company, category.parent, name, exclude=category)
+        category.name = name
+    if "color" in fields:
+        category.color = _color(fields["color"])
+    if "icon" in fields:
+        category.icon = (fields["icon"] or "").strip()[:40]
+    if "is_capex" in fields:
+        category.is_capex = bool(fields["is_capex"])
+    if "is_sensitive" in fields:
+        sensitive = bool(fields["is_sensitive"])
+        if category.system_code == "salaries" and not sensitive:
+            raise DomainError(_("Salaries always stay hidden from people without payroll access."))
+        category.is_sensitive = sensitive
+    if "is_active" in fields:
+        active = bool(fields["is_active"])
+        if not active and category.system_code:
+            raise DomainError(_("System categories can be renamed, but not archived or deleted."))
+        if not active and category.children.filter(system_code__gt="").exists():
+            raise DomainError(_("A system category sits under this one: move it out first."))
+        category.is_active = active
+        if not active:
+            category.children.update(is_active=False, updated_at=timezone.now())
+    try:
+        with transaction.atomic():
+            category.save()
+    except IntegrityError:
+        raise DomainError(
+            _("There is already a category called %(name)s here.") % {"name": category.name}
+        ) from None
+    changes = _diff(before, _category_snapshot(category))
+    if changes:
+        _audit(FinanceAction.CATEGORY_UPDATED, company, user, category, changes=changes)
+    return category
+
+
+@transaction.atomic
+def move_category(
+    category: Category, *, by: Membership, parent: Category | None, index: int
+) -> Category:
+    """Drag a category in the tree: to another top-level parent of its kind (or to the top),
+    at `index` among its new siblings. Categories go two levels deep at most."""
+    _need_actor(by)
+    category = Category.objects.select_for_update().select_related("company").get(pk=category.pk)
+    company = category.company
+    user = _actor(company, by)
+    if parent is not None:
+        if parent.pk == category.pk:
+            raise DomainError(_("Categories go two levels deep at most."))
+        _check_parent(company, parent, category.kind)
+        if category.children.exists():
+            raise DomainError(_("A category with subcategories stays at the top."))
+    if (parent.pk if parent else None) != category.parent_id:
+        _check_free_name(company, parent, category.name, exclude=category)
+    old_parent = str(category.parent) if category.parent_id else None
+    siblings = list(
+        Category.objects.select_for_update()
+        .filter(company=company, parent=parent, kind=category.kind)
+        .exclude(pk=category.pk)
+        .order_by("order", "name", "pk")
+    )
+    index = max(0, min(int(index), len(siblings)))
+    siblings.insert(index, category)
+    category.parent = parent
+    category.save(update_fields=["parent", "updated_at"])
+    for position, sibling in enumerate(siblings):
+        if sibling.order != position:
+            Category.objects.filter(pk=sibling.pk).update(order=position)
+            sibling.order = position
+    _audit(
+        FinanceAction.CATEGORY_MOVED,
+        company,
+        user,
+        category,
+        changes={"parent": [old_parent, str(parent) if parent else None]},
+    )
+    return category
+
+
+@transaction.atomic
+def merge_category(source: Category, *, into: Category, by: Membership) -> Category:
+    """Fold `source` into `into`: its entries, subcategories and counterparty defaults move
+    over and `source` is deleted. Entries in a closed period keep their category, so a merge
+    that would change them is refused."""
+    _need_actor(by)
+    company = source.company
+    user = _actor(company, by)
+    _same_company(company, into)
+    locked_until = _hold_books(company)
+    source = Category.objects.select_for_update().get(pk=source.pk)
+    into = Category.objects.select_for_update().get(pk=into.pk)
+    if source.pk == into.pk:
+        raise DomainError(_("Pick another category to merge into."))
+    if source.kind != into.kind:
+        raise DomainError(
+            _("Merge an income category into an income one, an expense into an expense.")
+        )
+    if source.system_code:
+        raise DomainError(_("System categories can be renamed, but not merged away."))
+    if into.parent_id == source.pk:
+        raise DomainError(_("Pick a category outside this one."))
+    children = list(source.children.all())
+    if children and into.parent_id is not None:
+        raise DomainError(_("This category has subcategories: merge it into a top-level one."))
+    rows = Transaction.objects.filter(category=source)
+    if locked_until is not None and rows.filter(occurred_on__lte=locked_until).exists():
+        raise DomainError(
+            _("Entries up to %(date)s use this category and the books are closed for them.")
+            % {"date": locked_until.strftime("%d.%m.%Y")}
+        )
+    names = set(Category.objects.filter(parent=into).values_list("name", flat=True))
+    for child in children:
+        if child.name in names:
+            raise DomainError(
+                _("%(into)s already has a subcategory called %(name)s.")
+                % {"into": into, "name": child.name}
+            )
+    moved = rows.update(category=into, updated_at=timezone.now())
+    for child in children:
+        child.parent = into
+        child.save(update_fields=["parent", "updated_at"])
+    Counterparty.objects.filter(default_category=source).update(default_category=into)
+    name = source.name
+    _audit(
+        FinanceAction.CATEGORY_MERGED,
+        company,
+        user,
+        into,
+        merged=name,
+        entries=moved,
+        subcategories=len(children),
+    )
+    source.delete()
+    return into
+
+
+@transaction.atomic
+def delete_category(category: Category, *, by: Membership) -> None:
+    """Delete a category nothing uses. One with entries is merged or archived instead."""
+    _need_actor(by)
+    company = category.company
+    user = _actor(company, by)
+    category = Category.objects.select_for_update().get(pk=category.pk)
+    if category.system_code:
+        raise DomainError(_("System categories can be renamed, but not archived or deleted."))
+    if category.children.exists():
+        raise DomainError(_("Move or delete its subcategories first."))
+    if Transaction.objects.filter(category=category).exists():
+        raise DomainError(_("This category has entries: merge it into another or archive it."))
+    _audit(
+        FinanceAction.CATEGORY_DELETED,
+        company,
+        user,
+        category,
+        name=category.name,
+        kind=category.kind,
+    )
+    try:
+        with transaction.atomic():
+            Counterparty.objects.filter(default_category=category).update(default_category=None)
+            category.delete()
+    except ProtectedError, RestrictedError:
+        raise DomainError(_("This category is still in use: archive it instead.")) from None
+
+
+def copy_categories(source, target, by: Membership) -> int:
+    """ "Copy setup from another company": `source`'s own categories that `target` doesn't have
+    yet (matched by kind and name; under the matching parent). Returns how many were made."""
+    created = 0
+    with transaction.atomic():
+        defaults.ensure(target)
+        rows = Category.objects.filter(company=source, is_active=True, system_code="")
+        own = {
+            (c.kind, c.parent_id, c.name.lower()): c
+            for c in Category.objects.filter(company=target)
+        }
+
+        def target_parent(parent: Category | None) -> Category | None:
+            if parent is None:
+                return None
+            if parent.system_code:
+                return Category.objects.filter(
+                    company=target, system_code=parent.system_code
+                ).first()
+            return own.get((parent.kind, None, parent.name.lower()))
+
+        for category in rows.filter(parent=None).order_by("kind", "order", "name"):
+            if (category.kind, None, category.name.lower()) in own:
+                continue
+            made = Category.objects.create(
+                company=target,
+                name=category.name,
+                kind=category.kind,
+                color=category.color,
+                icon=category.icon,
+                is_capex=category.is_capex,
+                is_sensitive=category.is_sensitive,
+                order=category.order,
+            )
+            own[(made.kind, None, made.name.lower())] = made
+            created += 1
+        for category in (
+            rows.exclude(parent=None).select_related("parent").order_by("order", "name")
+        ):
+            parent = target_parent(category.parent)
+            if parent is None or (category.kind, parent.pk, category.name.lower()) in own:
+                continue
+            made = Category.objects.create(
+                company=target,
+                name=category.name,
+                kind=category.kind,
+                parent=parent,
+                color=category.color,
+                icon=category.icon,
+                is_capex=category.is_capex,
+                is_sensitive=category.is_sensitive,
+                order=category.order,
+            )
+            own[(made.kind, parent.pk, made.name.lower())] = made
+            created += 1
+        if created:
+            _audit(
+                FinanceAction.CATEGORY_CREATED,
+                target,
+                _actor(target, by),
+                target,
+                copied_from=source.pk,
+                categories=created,
+            )
+    return created
+
+
+def _category_name(name) -> str:
+    name = (name or "").strip()[:100]
+    if not name:
+        raise DomainError(_("Give the category a name."))
+    return name
+
+
+def _check_parent(company, parent: Category | None, kind: str) -> None:
+    if parent is None:
+        return
+    _same_company(company, parent)
+    if parent.parent_id is not None:
+        raise DomainError(_("Categories go two levels deep at most."))
+    if parent.kind != kind:
+        raise DomainError(_("A subcategory has its parent's kind."))
+
+
+def _check_free_name(company, parent, name: str, *, exclude: Category | None = None) -> None:
+    taken = Category.objects.filter(company=company, parent=parent, name__iexact=name)
+    if exclude is not None:
+        taken = taken.exclude(pk=exclude.pk)
+    if taken.exists():
+        raise DomainError(_("There is already a category called %(name)s here.") % {"name": name})
+
+
+def _category_snapshot(category: Category) -> dict:
+    return {
+        "name": category.name,
+        "color": category.color,
+        "icon": category.icon,
+        "is_capex": category.is_capex,
+        "is_sensitive": category.is_sensitive,
+        "is_active": category.is_active,
+    }
+
+
+# Counterparties
+
+
+def normalize_phone(value) -> str:
+    """An Uzbek number as +998XXXXXXXXX ("" stays ""); anything else is refused."""
+    digits = PHONE_DIGITS.sub("", str(value or ""))
+    if not digits:
+        return ""
+    if len(digits) == 9:
+        digits = f"998{digits}"
+    if len(digits) != 12 or not digits.startswith("998"):
+        raise DomainError(_("A number like +998 90 123 45 67."))
+    return f"+{digits}"
+
+
+@transaction.atomic
+def create_counterparty(company, *, by: Membership, name: str, **fields) -> Counterparty:
+    """A customer, supplier, landlord or state body in the one party directory."""
+    _need_actor(by)
+    _known(fields, PARTY_FIELDS)
+    user = _actor(company, by)
+    party = Counterparty(company=company)
+    _apply_party(party, {"name": name, **fields})
+    _save_party(party)
+    _audit(
+        FinanceAction.COUNTERPARTY_CREATED, company, user, party, name=party.name, kind=party.kind
+    )
+    return party
+
+
+@transaction.atomic
+def update_counterparty(party: Counterparty, *, by: Membership, **fields) -> Counterparty:
+    _need_actor(by)
+    _known(fields, PARTY_FIELDS)
+    party = Counterparty.objects.select_for_update().select_related("company").get(pk=party.pk)
+    company = party.company
+    user = _actor(company, by)
+    before = _party_snapshot(party)
+    _apply_party(party, fields)
+    _save_party(party)
+    changes = _diff(before, _party_snapshot(party))
+    if changes:
+        _audit(FinanceAction.COUNTERPARTY_UPDATED, company, user, party, changes=changes)
+    return party
+
+
+def _apply_party(party: Counterparty, fields: dict) -> None:
+    company = party.company
+    for key, value in fields.items():
+        match key:
+            case "name":
+                name = (value or "").strip()[:200]
+                if not name:
+                    raise DomainError(_("Give the counterparty a name."))
+                party.name = name
+            case "kind":
+                if value not in Counterparty.Kind.values:
+                    raise ValueError(f"Unknown counterparty kind {value!r}.")
+                party.kind = value
+            case "phone":
+                party.phone = normalize_phone(value)
+            case "tin":
+                tin = PHONE_DIGITS.sub("", str(value or ""))
+                if tin and len(tin) not in (9, 14):
+                    raise DomainError(_("A taxpayer number has 9 digits (a person's PINFL 14)."))
+                party.tin = tin
+            case "telegram_username":
+                party.telegram_username = (value or "").strip().lstrip("@")[:64]
+            case "contact_person":
+                party.contact_person = (value or "").strip()[:100]
+            case "address":
+                party.address = (value or "").strip()[:255]
+            case "bank_details" | "notes":
+                setattr(party, key, (value or "").strip()[:4000])
+            case "default_category":
+                if value is not None:
+                    _same_company(company, value)
+                party.default_category = value
+            case "credit_limit":
+                party.credit_limit = (
+                    _money(value, allow_zero=True) if value not in (None, "") else None
+                )
+            case "credit_blocked" | "is_active":
+                setattr(party, key, bool(value))
+            case "birthday":
+                party.birthday = value or None
+            case "tags":
+                tags = []
+                for tag in value or []:
+                    tag = str(tag).strip()[:32]
+                    if tag and tag.lower() not in {t.lower() for t in tags}:
+                        tags.append(tag)
+                party.tags = tags[:MAX_TAGS]
+
+
+def _save_party(party: Counterparty) -> None:
+    others = Counterparty.objects.filter(company=party.company).exclude(pk=party.pk)
+    if party.phone and others.filter(phone=party.phone).exists():
+        raise DomainError(_("Another counterparty already has this phone number."))
+    if party.tin and others.filter(tin=party.tin).exists():
+        raise DomainError(_("Another counterparty already has this taxpayer number."))
+    try:
+        with transaction.atomic():
+            party.save()
+    except IntegrityError:
+        raise DomainError(
+            _("Another counterparty already has this phone or taxpayer number.")
+        ) from None
+
+
+def _party_snapshot(party: Counterparty) -> dict:
+    return {
+        "name": party.name,
+        "kind": party.kind,
+        "phone": party.phone,
+        "tin": party.tin,
+        "contact_person": party.contact_person,
+        "telegram_username": party.telegram_username,
+        "address": party.address,
+        "default_category": str(party.default_category) if party.default_category_id else None,
+        "credit_limit": str(party.credit_limit) if party.credit_limit is not None else None,
+        "credit_blocked": party.credit_blocked,
+        "birthday": party.birthday.isoformat() if party.birthday else None,
+        "tags": list(party.tags),
+        "is_active": party.is_active,
+    }
+
+
+# Entries made by a person
+
+
+@transaction.atomic
+def record_entry(
+    company,
+    *,
+    by: Membership,
+    kind: str,
+    amount,
+    occurred_on: date,
+    account: MoneyAccount,
+    category: Category | None = None,
+    counterparty: Counterparty | None = None,
+    membership: Membership | None = None,
+    branch=None,
+    project=None,
+    description: str = "",
+    direction: str = "in",
+    receipts=(),
+    receipt_files=(),
+) -> Transaction:
+    """Record an income, an expense, an owner's contribution or draw, or an opening balance
+    from the dashboard, with its receipts.
+
+    `amount` is positive; for owner and opening entries `direction` ("in" or "out") says which
+    way the money went. `receipts` are receipts uploaded beforehand by the same person
+    (`upload_receipt`), `receipt_files` new uploads. An expense above the company's
+    `receipt_required_over` needs at least one receipt; one above `large_expense_alert` made by
+    someone who isn't an owner tells the owners.
+    """
+    _need_actor(by)
+    if kind not in RECORDABLE_KINDS:
+        raise ValueError(f"record_entry books {', '.join(RECORDABLE_KINDS)}, not {kind!r}.")
+    if direction not in ("in", "out"):
+        raise ValueError(f"direction is 'in' or 'out', not {direction!r}.")
+    value = _money(amount)
+    if kind in SIGNED_KINDS and direction == "out":
+        value = -value
+    receipts = list(receipts)
+    files = list(receipt_files)
+    if len(receipts) + len(files) > MAX_RECEIPTS:
+        raise DomainError(_("Attach at most %(n)s receipts.") % {"n": MAX_RECEIPTS})
+    row = record_transaction(
+        company,
+        by=by,
+        kind=kind,
+        amount=value,
+        occurred_on=occurred_on,
+        account=account,
+        category=category,
+        counterparty=counterparty,
+        membership=membership,
+        branch=branch,
+        project=project,
+        description=description,
+    )
+    settings_row = conf.get_settings(company)
+    threshold = settings_row.receipt_required_over
+    needs_receipt = threshold is not None and abs(row.base_amount) > threshold
+    if kind == Kind.EXPENSE and needs_receipt and not (receipts or files):
+        raise DomainError(
+            _("Expenses over %(limit)s need a receipt: attach a photo or a PDF.")
+            % {"limit": _format(threshold, company.base_currency)}
+        )
+    attach_receipts(row, receipts, by=by)
+    for file in files:
+        upload_receipt(company, by=by, file=file, txn=row)
+    _queue_large_expense(row, by, settings_row)
+    return row
+
+
+def _queue_large_expense(row: Transaction, by: Membership, settings_row: FinanceSettings) -> None:
+    limit = settings_row.large_expense_alert
+    if limit is None or row.kind != Kind.EXPENSE or row.status != Status.POSTED:
+        return
+    if abs(row.base_amount) < limit or (by.role is not None and by.role.is_owner):
+        return
+    from apps.finance import tasks  # tasks never import services; this side may import tasks
+
+    transaction.on_commit(lambda: tasks.alert_large_expense.delay(row.pk))
+
+
+@transaction.atomic
+def update_transaction(txn: Transaction, *, by: Membership, **changes) -> Transaction:
+    """Correct an entry, with every change in its audit history.
+
+    An entry made by hand (income, expense, owner, opening; not from another module, a
+    transfer or a debt) may change everything: amount, day, account, category, party, branch,
+    project, description. A changed amount, day or account moves the balances under the same
+    locks as a new entry, and a new day or currency takes the rate of that day. Entries made by
+    another module (a shift, a payslip), transfers and debt rows only take a new description:
+    they are corrected where they come from. Nothing in a closed period changes.
+    """
+    _need_actor(by)
+    _known(changes, TRANSACTION_FIELDS)
+    company = Transaction.objects.select_related("company").get(pk=txn.pk).company
+    user = _actor(company, by)
+    _hold_books(company)
+    row = _lock_row(txn)
+    if row.status not in LIVE_STATUSES:
+        raise DomainError(_("A void or rejected entry can't be changed."))
+    if not _is_manual(row) and set(changes) - {"description"}:
+        raise DomainError(_manual_only_message(row))
+    before = _row_snapshot(row)
+    new_day = changes.get("occurred_on", row.occurred_on)
+    _check_open(company, row.occurred_on, new_day)
+
+    if "description" in changes:
+        row.description = (changes["description"] or "").strip()[:300]
+    if "category" in changes:
+        if row.kind not in (Kind.INCOME, Kind.EXPENSE):
+            raise DomainError(_("Owner and opening entries have no category."))
+        row.category = _category(company, changes["category"], kind=row.kind, by=by)
+    for field in ("counterparty", "membership", "branch", "project"):
+        if field in changes:
+            _same_company(company, changes[field])
+            setattr(row, field, changes[field])
+
+    if any(field in changes for field in MONEY_CHANGES):
+        old_account_id, old_amount = row.account_id, row.amount
+        account = changes.get("account", row.account)
+        _same_company(company, account)
+        if account is None:
+            raise DomainError(_("Pick the account the money went to or came from."))
+        _check_active(account)
+        if "amount" in changes:
+            value = _money(changes["amount"])
+            if row.kind in SIGNED_KINDS:
+                new_amount = value if row.amount > 0 else -value
+            elif (row.kind == Kind.EXPENSE) != row.is_contra:
+                new_amount = -value
+            else:
+                new_amount = value
+        else:
+            new_amount = row.amount
+        if account.currency != row.currency or new_day != row.occurred_on:
+            quote = _quote(company, account.currency, new_day)
+        else:
+            quote = RateQuote(row.rate, row.rate_stale, "kept")
+        base_amount = convert(new_amount, account.currency, company.base_currency, quote.rate)
+        _check_size(new_amount, base_amount)
+        if row.status == Status.POSTED:
+            locked = _lock_accounts(old_account_id, account.pk)
+            _check_active(locked[account.pk])
+            deltas = {old_account_id: -old_amount}
+            deltas[account.pk] = deltas.get(account.pk, ZERO) + new_amount
+            _move(locked, deltas)
+        if "branch" not in changes and account.pk != old_account_id and account.branch_id:
+            row.branch = account.branch
+        row.account = account
+        row.amount = new_amount
+        row.currency = account.currency
+        row.rate = quote.rate
+        row.rate_stale = quote.stale
+        row.base_amount = base_amount
+        row.occurred_on = new_day
+    row.save()
+    changes_made = _diff(before, _row_snapshot(row))
+    if changes_made:
+        _audit(
+            FinanceAction.TRANSACTION_UPDATED,
+            company,
+            user,
+            row,
+            sensitive=_is_sensitive(row),
+            changes=changes_made,
+        )
+    return row
+
+
+def bulk_transactions(rows, *, by: Membership, action: str, payload: dict) -> list[dict]:
+    """Recategorize or void many entries at once. Each entry succeeds or fails on its own:
+    `[{"id": 12, "ok": True}, {"id": 13, "ok": False, "error": "…"}]`."""
+    _need_actor(by)
+    if action not in BULK_ACTIONS:
+        raise ValueError(f"Bulk action is one of {BULK_ACTIONS}, not {action!r}.")
+    rows = list(rows)[:MAX_BULK]
+    if action == "void":
+        reason = _reason(payload.get("reason", ""))
+    else:
+        category = payload.get("category")
+        if category is None:
+            raise DomainError(_("Pick a category."))
+    results = []
+    with transaction.atomic():
+        for row in rows:
+            try:
+                with transaction.atomic():
+                    if action == "void":
+                        void_transaction(row, by=by, reason=reason)
+                    else:
+                        update_transaction(row, by=by, category=category)
+            except DomainError as error:
+                results.append({"id": row.pk, "ok": False, "error": str(error)})
+            else:
+                results.append({"id": row.pk, "ok": True})
+    return results
+
+
+def _is_manual(row: Transaction) -> bool:
+    return (
+        row.kind in RECORDABLE_KINDS
+        and not row.source_type
+        and row.transfer_id is None
+        and row.debt_id is None
+    )
+
+
+def _manual_only_message(row: Transaction) -> str:
+    if row.transfer_id is not None:
+        return _("This entry is part of a transfer: only its description can change here.")
+    if row.debt_id is not None:
+        return _("This entry belongs to a debt: only its description can change here.")
+    if row.source_type:
+        return _("This entry comes from %(source)s: correct it there.") % {
+            "source": sources.label(row.source_type)
+        }
+    return _("Only the description of this entry can change.")
+
+
+def _row_snapshot(row: Transaction) -> dict:
+    return {
+        "occurred_on": row.occurred_on.isoformat(),
+        "account": str(row.account) if row.account_id else None,
+        "amount": str(row.amount),
+        "currency": row.currency,
+        "category": str(row.category) if row.category_id else None,
+        "counterparty": str(row.counterparty) if row.counterparty_id else None,
+        "membership": str(row.membership) if row.membership_id else None,
+        "branch": str(row.branch) if row.branch_id else None,
+        "project": str(row.project) if row.project_id else None,
+        "description": row.description,
+    }
+
+
+# Receipts
+
+
+@transaction.atomic
+def upload_receipt(company, *, by: Membership, file, txn: Transaction | None = None) -> Receipt:
+    """Store a receipt (a picture or a PDF) in private storage, for `txn` or on its own until
+    an entry is recorded with it. Pictures are re-encoded and get a small preview; anything
+    that isn't a picture or a PDF is refused."""
+    _need_actor(by)
+    user = _actor(company, by)
+    if txn is not None:
+        _same_company(company, txn)
+        if txn.status not in LIVE_STATUSES:
+            raise DomainError(_("A void or rejected entry takes no receipts."))
+        if txn.receipts.count() >= MAX_RECEIPTS:
+            raise DomainError(_("Attach at most %(n)s receipts.") % {"n": MAX_RECEIPTS})
+    clean = accept_document(file, allowed=("pdf", "image"))
+    is_pdf = clean.name.endswith(".pdf")
+    receipt = Receipt(
+        company=company,
+        transaction=txn,
+        content_type="application/pdf" if is_pdf else "image/jpeg",
+        size=clean.size,
+        uploaded_by=user,
+    )
+    receipt.file.save(clean.name, clean, save=False)
+    if not is_pdf:
+        thumb = make_thumb(clean)
+        receipt.thumb.save(thumb.name, thumb, save=False)
+    receipt.save()
+    if txn is not None:
+        _audit(
+            FinanceAction.RECEIPT_ADDED,
+            company,
+            user,
+            txn,
+            sensitive=_is_sensitive(txn),
+            receipt=receipt.pk,
+        )
+    return receipt
+
+
+@transaction.atomic
+def attach_receipts(txn: Transaction, receipts, *, by: Membership) -> int:
+    """Link receipts uploaded beforehand (by the same person, not linked yet) to `txn`."""
+    _need_actor(by)
+    receipts = list(receipts)
+    if not receipts:
+        return 0
+    company = txn.company
+    user = _actor(company, by)
+    ids = [receipt.pk for receipt in receipts]
+    free = Receipt.objects.select_for_update().filter(
+        pk__in=ids, company=company, transaction__isnull=True, uploaded_by=user
+    )
+    if free.count() != len(set(ids)):
+        raise DomainError(_("That receipt is gone or belongs to another entry. Upload it again."))
+    if txn.receipts.count() + len(set(ids)) > MAX_RECEIPTS:
+        raise DomainError(_("Attach at most %(n)s receipts.") % {"n": MAX_RECEIPTS})
+    linked = free.update(transaction=txn, updated_at=timezone.now())
+    _audit(
+        FinanceAction.RECEIPT_ADDED,
+        company,
+        user,
+        txn,
+        sensitive=_is_sensitive(txn),
+        receipts=sorted(ids),
+    )
+    return linked
+
+
+@transaction.atomic
+def remove_receipt(receipt: Receipt, *, by: Membership) -> None:
+    _need_actor(by)
+    receipt = Receipt.objects.select_for_update().select_related("transaction").get(pk=receipt.pk)
+    company = receipt.company
+    user = _actor(company, by)
+    txn = receipt.transaction
+    names = [name for name in (receipt.file.name, receipt.thumb.name) if name]
+    storage = receipt.file.storage
+    if txn is not None:
+        _audit(
+            FinanceAction.RECEIPT_REMOVED,
+            company,
+            user,
+            txn,
+            sensitive=_is_sensitive(txn),
+            receipt=receipt.pk,
+        )
+    receipt.delete()
+    transaction.on_commit(lambda: [storage.delete(name) for name in names])
+
+
+# Debts
+
+
+@transaction.atomic
+def update_debt(debt: Debt, *, by: Membership, **fields) -> Debt:
+    """Change a debt's due date, description, who chases it or its branch. Its amount never
+    changes: cancel it and record it again."""
+    _need_actor(by)
+    _known(fields, DEBT_FIELDS)
+    locked_debt = _lock_debt(debt.pk)
+    company = locked_debt.company
+    user = _actor(company, by)
+    if locked_debt.status == Debt.Status.CANCELLED:
+        raise DomainError(_("This debt was cancelled."))
+    before = _debt_snapshot(locked_debt)
+    if "due_on" in fields:
+        due_on = fields["due_on"]
+        if due_on is not None and due_on < locked_debt.issued_on:
+            raise DomainError(_("The due date can't be before the day it was issued."))
+        locked_debt.due_on = due_on
+    if "description" in fields:
+        locked_debt.description = (fields["description"] or "").strip()[:300]
+    if "responsible" in fields:
+        _same_company(company, fields["responsible"])
+        locked_debt.responsible = fields["responsible"]
+    if "branch" in fields:
+        _same_company(company, fields["branch"])
+        locked_debt.branch = fields["branch"]
+    locked_debt.save()
+    changes = _diff(before, _debt_snapshot(locked_debt))
+    if changes:
+        _audit(
+            FinanceAction.DEBT_UPDATED,
+            company,
+            user,
+            locked_debt,
+            sensitive=locked_debt.kind in Debt.SENSITIVE_KINDS,
+            changes=changes,
+        )
+    return locked_debt
+
+
+@transaction.atomic
+def set_installments(debt: Debt, *, by: Membership, rows) -> list[DebtInstallment]:
+    """Replace a debt's instalment plan: `rows` of (due day, amount in the debt's currency)
+    adding up to the whole debt. The debt is then due on the last instalment's day. An empty
+    list removes the plan."""
+    _need_actor(by)
+    locked_debt = _lock_debt(debt.pk)
+    company = locked_debt.company
+    user = _actor(company, by)
+    if locked_debt.status != Debt.Status.OPEN:
+        raise DomainError(_("This debt is already settled or cancelled."))
+    plan = sorted(((day, _money(amount)) for day, amount in rows), key=lambda item: item[0])
+    if len(plan) > MAX_INSTALLMENTS:
+        raise DomainError(_("A plan has at most %(n)s instalments.") % {"n": MAX_INSTALLMENTS})
+    if plan:
+        if any(day < locked_debt.issued_on for day, _amount in plan):
+            raise DomainError(_("An instalment can't be due before the day the debt was issued."))
+        total = sum((amount for _day, amount in plan), ZERO)
+        if total != locked_debt.amount:
+            raise DomainError(
+                _("The instalments add up to %(total)s; the debt is %(amount)s.")
+                % {
+                    "total": _format(total, locked_debt.currency),
+                    "amount": _format(locked_debt.amount, locked_debt.currency),
+                }
+            )
+    locked_debt.installments.all().delete()
+    made = DebtInstallment.objects.bulk_create(
+        DebtInstallment(debt=locked_debt, due_on=day, amount=amount, position=index)
+        for index, (day, amount) in enumerate(plan)
+    )
+    if plan:
+        locked_debt.due_on = plan[-1][0]
+        locked_debt.save(update_fields=["due_on", "updated_at"])
+    _audit(
+        FinanceAction.INSTALLMENTS_SET,
+        company,
+        user,
+        locked_debt,
+        sensitive=locked_debt.kind in Debt.SENSITIVE_KINDS,
+        installments=[[day.isoformat(), str(amount)] for day, amount in plan],
+    )
+    return made
+
+
+def _debt_snapshot(debt: Debt) -> dict:
+    return {
+        "due_on": debt.due_on.isoformat() if debt.due_on else None,
+        "description": debt.description,
+        "responsible": str(debt.responsible) if debt.responsible_id else None,
+        "branch": str(debt.branch) if debt.branch_id else None,
+    }
+
+
+# Exchange rates
+
+
+@transaction.atomic
+def set_company_rate(company, *, by: Membership, currency: str, day: date, rate) -> CompanyRate:
+    """The company's own rate for a day (UZS per 1 USD). It beats the Central Bank's rate for
+    entries dated that day from now on; entries already posted keep the rate they froze."""
+    _need_actor(by)
+    user = _actor(company, by)
+    if currency == Currency.UZS or currency not in Currency.values:
+        raise DomainError(_("Rates are set for foreign currencies, in so‘m per unit."))
+    value = _rate(rate)
+    row = (
+        CompanyRate.objects.select_for_update()
+        .filter(company=company, currency=currency, date=day)
+        .first()
+    )
+    old = str(row.rate) if row is not None else None
+    if row is None:
+        row = CompanyRate.objects.create(
+            company=company, currency=currency, date=day, rate=value, set_by=user
+        )
+    else:
+        row.rate = value
+        row.set_by = user
+        row.save(update_fields=["rate", "set_by", "updated_at"])
+    _audit(
+        FinanceAction.RATE_SET,
+        company,
+        user,
+        row,
+        currency=currency,
+        date=day.isoformat(),
+        changes={"rate": [old, str(value)]},
+    )
+    return row
+
+
+@transaction.atomic
+def delete_company_rate(row: CompanyRate, *, by: Membership) -> None:
+    _need_actor(by)
+    company = row.company
+    user = _actor(company, by)
+    _audit(
+        FinanceAction.RATE_DELETED,
+        company,
+        user,
+        row,
+        currency=row.currency,
+        date=row.date.isoformat(),
+        rate=str(row.rate),
+    )
+    row.delete()
+
+
+# Period lock and settings
+
+
+def lock_period(company, *, by: Membership, until: date | None) -> FinanceSettings:
+    """Close the books up to `until` (inclusive): nothing dated on or before it can be added,
+    changed or voided. Moving the date back (or clearing it) reopens a period, which only an
+    owner may do.
+
+    Runs in its own transaction and takes the settings row FOR UPDATE, so it waits for the
+    ledger writes already running (they hold it FOR SHARE) and every later write sees the new
+    date. Call it on its own, never inside a ledger write.
+    """
+    _need_actor(by)
+    user = _actor(company, by)
+    with transaction.atomic():
+        settings_row = FinanceSettings.objects.select_for_update().get(
+            pk=conf.get_settings(company).pk
+        )
+        current = settings_row.locked_until
+        if until is not None and until > _local_today(company):
+            raise DomainError(_("The books can be closed up to today at most."))
+        if until == current:
+            return settings_row
+        reopening = current is not None and (until is None or until < current)
+        if reopening and not (by.role is not None and by.role.is_owner):
+            raise DomainError(_("Only an owner can reopen a closed period."))
+        settings_row.locked_until = until
+        settings_row.save(update_fields=["locked_until"])
+        _audit(
+            FinanceAction.PERIOD_REOPENED if reopening else FinanceAction.PERIOD_LOCKED,
+            company,
+            user,
+            settings_row,
+            changes={
+                "locked_until": [
+                    current.isoformat() if current else None,
+                    until.isoformat() if until else None,
+                ]
+            },
+        )
+    return settings_row
+
+
+@transaction.atomic
+def update_settings(company, *, by: Membership, **fields) -> FinanceSettings:
+    """Where rates come from, the approval and receipt thresholds, the large-expense alert and
+    how reimbursements are paid. The period lock has its own service (`lock_period`)."""
+    _need_actor(by)
+    _known(fields, SETTINGS_FIELDS)
+    user = _actor(company, by)
+    settings_row = FinanceSettings.objects.select_for_update().get(pk=conf.get_settings(company).pk)
+    before = _settings_snapshot(settings_row)
+    for key, value in fields.items():
+        if key == "rate_source":
+            if value not in RateSource.values:
+                raise ValueError(f"Unknown rate source {value!r}.")
+            settings_row.rate_source = value
+        elif key == "reimburse_via":
+            if value not in FinanceSettings.ReimburseVia.values:
+                raise ValueError(f"Unknown reimbursement route {value!r}.")
+            settings_row.reimburse_via = value
+        else:
+            setattr(
+                settings_row,
+                key,
+                _money(value, allow_zero=True) if value not in (None, "") else None,
+            )
+    settings_row.save()
+    changes = _diff(before, _settings_snapshot(settings_row))
+    if changes:
+        _audit(FinanceAction.SETTINGS_UPDATED, company, user, settings_row, changes=changes)
+    return settings_row
+
+
+def _settings_snapshot(row: FinanceSettings) -> dict:
+    def money(value):
+        return str(value) if value is not None else None
+
+    return {
+        "rate_source": row.rate_source,
+        "approval_threshold": money(row.approval_threshold),
+        "receipt_required_over": money(row.receipt_required_over),
+        "large_expense_alert": money(row.large_expense_alert),
+        "reimburse_via": row.reimburse_via,
+    }
+
+
+# Shared helpers of the bookkeeping services
+
+
+def _known(fields: dict, allowed: tuple[str, ...]) -> None:
+    unknown = set(fields) - set(allowed)
+    if unknown:
+        raise ValueError(f"Unknown fields: {', '.join(sorted(unknown))}.")
+
+
+def _color(value) -> str:
+    color = (value or "").strip()
+    if color and not re.fullmatch(COLOR_PATTERN, color):
+        raise DomainError(_("A colour like #1f8a70."))
+    return color
+
+
+def _diff(before: dict, after: dict) -> dict:
+    """{field: [old, new]} for the fields that changed (the audit History tab's shape)."""
+    return {
+        key: [before.get(key), value] for key, value in after.items() if before.get(key) != value
+    }
 
 
 # Helpers
