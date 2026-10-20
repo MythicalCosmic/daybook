@@ -342,6 +342,38 @@ def person_overview(membership: Membership, start: date, end: date, now: datetim
     }
 
 
+def team_stats(viewer: Membership, now: datetime) -> dict:
+    """The numbers above the team directory, inside `viewer`'s branch scope."""
+    from apps.members import scope
+    from apps.timeoff.models import TimeOff
+
+    company = viewer.company
+    branch_ids = scope.branch_ids(viewer)
+    everyone = directory(company, branch_ids=branch_ids, status="current", include=viewer)
+    ids = list(everyone.values_list("pk", flat=True))
+    today = timezone.localtime(now, ZoneInfo(company.timezone)).date()
+    month_ago = now - timedelta(days=30)
+    former = directory(company, branch_ids=branch_ids, status="former")
+    return {
+        "current": len(ids),
+        "active": everyone.filter(status=Membership.Status.APPROVED).count(),
+        "suspended": everyone.filter(status=Membership.Status.SUSPENDED).count(),
+        "on_leave_today": TimeOff.objects.filter(
+            membership_id__in=ids,
+            status=TimeOff.Status.APPROVED,
+            first_day__lte=today,
+            last_day__gte=today,
+        )
+        .values("membership_id")
+        .distinct()
+        .count(),
+        "joined_30d": everyone.filter(decided_at__gte=month_ago).count(),
+        "left_30d": former.filter(decided_at__gte=month_ago).count(),
+        "pending_requests": pending_count(company) if viewer.has_perm(Perm.MEMBERS_APPROVE) else 0,
+        "bot_blocked": everyone.filter(user__employee_bot_blocked_at__isnull=False).count(),
+    }
+
+
 # Join requests, roles, positions ----------------------------------------------------------
 
 

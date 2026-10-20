@@ -522,6 +522,26 @@ class PeopleViewSet(
         self.bump(PEOPLE, "timeoff.time_off")
         return Response(self._detail(self.get_queryset().get(pk=person.pk)))
 
+    @extend_schema(
+        responses=inline_serializer(
+            "MembersStats",
+            {
+                "current": serializers.IntegerField(),
+                "active": serializers.IntegerField(),
+                "suspended": serializers.IntegerField(),
+                "on_leave_today": serializers.IntegerField(),
+                "joined_30d": serializers.IntegerField(),
+                "left_30d": serializers.IntegerField(),
+                "pending_requests": serializers.IntegerField(),
+                "bot_blocked": serializers.IntegerField(),
+            },
+        )
+    )
+    @action(detail=False, methods=["get"])
+    def stats(self, request, company_id):
+        """The numbers above the directory, inside the caller's branch scope."""
+        return Response(queries.team_stats(self.membership, timezone.now()))
+
     @extend_schema(responses=HistoryRecordSerializer(many=True))
     @action(detail=True, methods=["get"])
     def history(self, request, company_id, pk):
