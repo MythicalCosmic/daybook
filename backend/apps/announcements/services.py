@@ -183,6 +183,9 @@ def pin(announcement: Announcement, *, by: Membership, until: datetime) -> Annou
     now = timezone.now()
     if until <= now:
         raise DomainError(_("Pick a moment in the future."))
+    scheduled = announcement.status == Announcement.Status.SCHEDULED
+    if scheduled and announcement.scheduled_for and until <= announcement.scheduled_for:
+        raise DomainError(_("Keep it pinned until after it goes out."))
     if announcement.expires_at and until > announcement.expires_at:
         raise DomainError(_("It can't stay pinned after it expires."))
     announcement.pinned_until = until

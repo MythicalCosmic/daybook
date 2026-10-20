@@ -1,6 +1,6 @@
 """Read-only AI tool about time off and holidays (docs/PLAN-OWNER.md §8.3)."""
 
-from datetime import date
+from datetime import date, timedelta
 
 from django.utils.translation import gettext_lazy as _
 from pydantic import BaseModel, Field
@@ -8,6 +8,8 @@ from pydantic import BaseModel, Field
 from apps.ai.tools.registry import ToolContext, ToolResult, ai_tool
 from apps.members.permissions import Perm
 from apps.timeoff import queries
+
+MAX_DAYS = 366
 
 
 class OverviewInput(BaseModel):
@@ -24,6 +26,7 @@ class OverviewInput(BaseModel):
 )
 def timeoff_overview(ctx: ToolContext, args: OverviewInput) -> ToolResult:
     start, end = sorted((args.start, args.end))
+    end = min(end, start + timedelta(days=MAX_DAYS - 1))  # a year at most per question
     people = queries.calendar(ctx.company, start, end, branch_ids=ctx.branch_ids)
     rows = [
         {

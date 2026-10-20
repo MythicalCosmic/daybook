@@ -424,3 +424,19 @@ def test_lists_dont_grow_queries_with_rows(owner_api, company, member, setup, to
 
     for url in urls:
         assert count(url) <= few[url], url
+
+
+def test_the_ai_tool_looks_at_a_year_at_most(company, setup, today):
+    far_future = TimeOff.objects.create(
+        company=company,
+        membership=setup["near"],
+        first_day=today + timedelta(days=500),
+        last_day=today + timedelta(days=501),
+        status=TimeOff.Status.APPROVED,
+    )
+
+    result = call_tool(
+        "timeoff_overview", setup["owner"], start=str(today), end=str(today + timedelta(days=900))
+    )
+
+    assert far_future.pk not in [row["id"] for row in result["rows"]]

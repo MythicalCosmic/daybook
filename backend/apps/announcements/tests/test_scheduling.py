@@ -205,3 +205,13 @@ def test_publishing_sanitizes_the_bots_html_too(shop):
     assert announcement.text == "<b>Bold</b>  <tg-spoiler>s</tg-spoiler>"
     with pytest.raises(DomainError):
         services.publish(shop["owner"], "<p>   </p>")
+
+
+def test_a_scheduled_one_is_pinned_only_past_its_sending_time(shop):
+    later = timezone.now() + timedelta(days=2)
+    scheduled = services.publish(shop["owner"], "Inventory", scheduled_for=later)
+
+    with pytest.raises(DomainError):
+        services.pin(scheduled, by=shop["owner"], until=later - timedelta(hours=1))
+    pinned = services.pin(scheduled, by=shop["owner"], until=later + timedelta(days=1))
+    assert pinned.pinned_until == later + timedelta(days=1)
