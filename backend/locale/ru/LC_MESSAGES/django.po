@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-20 18:20+0500\n"
+"POT-Creation-Date: 2026-10-20 18:24+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -146,6 +146,10 @@ msgstr "Заявка отклонена"
 #: backend/apps/audit/models.py
 msgid "Blocked a member"
 msgstr "Сотрудник заблокирован"
+
+#: backend/apps/audit/models.py
+msgid "Offboarded a member"
+msgstr "Сотрудник уволен"
 
 #: backend/apps/audit/models.py
 msgid "Gave a task"
@@ -522,6 +526,15 @@ msgstr "Заблокировать выбранных сотрудников"
 msgid "Blocked: %(count)d"
 msgstr "Заблокировано: %(count)d"
 
+#: backend/apps/members/admin.py
+msgid "Offboard selected members (their work goes back to whoever gave it)"
+msgstr "Уволить выбранных сотрудников (их задачи вернутся тем, кто их дал)"
+
+#: backend/apps/members/admin.py
+#, python-format
+msgid "Offboarded: %(count)d"
+msgstr "Уволено: %(count)d"
+
 #: backend/apps/members/bot_messages.py
 msgid "📋 My tasks"
 msgstr "📋 Мои задачи"
@@ -602,6 +615,11 @@ msgstr "✅ Вы сотрудник компании <b>%(company)s</b>."
 #, python-format
 msgid "👋 Welcome to <b>%(company)s</b>!"
 msgstr "👋 Добро пожаловать в <b>%(company)s</b>!"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "👋 You're no longer on the team at <b>%(company)s</b>. Thank you for your work!"
+msgstr "👋 Вы больше не в команде <b>%(company)s</b>. Спасибо за вашу работу!"
 
 #: backend/apps/members/bot_messages.py
 msgid "📱 Thanks, your phone number is saved."
@@ -792,6 +810,18 @@ msgstr "Заблокировать владельца может только в
 #: backend/apps/members/services.py
 msgid "This member is already blocked."
 msgstr "Этот сотрудник уже заблокирован."
+
+#: backend/apps/members/services.py
+msgid "You can't offboard yourself."
+msgstr "Нельзя уволить самого себя."
+
+#: backend/apps/members/services.py
+msgid "Only owners can offboard an owner."
+msgstr "Уволить владельца может только владелец."
+
+#: backend/apps/members/services.py
+msgid "Only current members can be offboarded."
+msgstr "Уволить можно только действующего сотрудника."
 
 #: backend/apps/members/services.py backend/apps/timeoff/services.py
 #, python-format
@@ -1002,6 +1032,11 @@ msgstr "🎉 Сейчас список пуст."
 #: backend/apps/tasks/bot_messages.py
 msgid "📋 <b>Your tasks</b>"
 msgstr "📋 <b>Ваши задачи</b>"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "↩️ %(name)s has left the team. These tasks they had came back to you:"
+msgstr "↩️ %(name)s больше не в команде. Эти задачи вернулись к вам:"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format

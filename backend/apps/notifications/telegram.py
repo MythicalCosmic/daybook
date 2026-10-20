@@ -10,7 +10,12 @@ from aiogram import Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramBadRequest
-from aiogram.types import BufferedInputFile, InlineKeyboardMarkup, ReplyKeyboardMarkup
+from aiogram.types import (
+    BufferedInputFile,
+    InlineKeyboardMarkup,
+    ReplyKeyboardMarkup,
+    ReplyKeyboardRemove,
+)
 from django.conf import settings
 from django.core.files.storage import default_storage
 
@@ -24,7 +29,7 @@ class BotName(StrEnum):
     OWNER = "owner"
 
 
-type Markup = InlineKeyboardMarkup | ReplyKeyboardMarkup
+type Markup = InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove
 
 
 def serialize_markup(markup: Markup | None) -> dict | None:
@@ -96,4 +101,6 @@ def _deserialize_markup(data: dict | None) -> Markup | None:
         return None
     if "inline_keyboard" in data:
         return InlineKeyboardMarkup.model_validate(data)
+    if "remove_keyboard" in data:
+        return ReplyKeyboardRemove.model_validate(data)
     return ReplyKeyboardMarkup.model_validate(data)

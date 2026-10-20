@@ -200,6 +200,48 @@ def cancel_task(task: Task, *, by: Membership, stop_repeating: bool = False) -> 
 
 
 @transaction.atomic
+def hand_back_work(member: Membership) -> None:
+    """Someone has left: work they were given goes back to whoever gave it, as that person's
+    own task, and their daily and personal tasks are cancelled."""
+    handed_back: dict[int, list[int]] = {}
+    open_tasks = (
+        Task.objects.select_for_update(of=("self",))
+        .filter(assignee=member, status__in=Task.OPEN_STATUSES)
+        .select_related("created_by")
+    )
+    for task in open_tasks:
+        giver = task.created_by
+        if (
+            task.kind == Task.Kind.ASSIGNED
+            and giver is not None
+            and giver.pk != member.pk
+            and giver.status == Membership.Status.APPROVED
+        ):
+            task.assignee = giver
+            task.kind = Task.Kind.PERSONAL
+            task.status = Task.Status.TODO
+            task.needs_confirmation = False
+            task.started_at = None
+            task.escalate_to = None
+            task.snooze_count = 0
+            task.last_reminder_message_id = None
+            _restart_reminders(task)
+            task.save()
+            handed_back.setdefault(giver.pk, []).append(task.pk)
+        else:
+            task.status = Task.Status.CANCELLED
+            task.next_reminder_at = None
+            task.save(update_fields=["status", "next_reminder_at", "updated_at"])
+    for template in member.task_templates.all():
+        template.assignees.remove(member)
+    TaskTemplate.objects.filter(personal=True, created_by=member).update(is_active=False)
+    if handed_back:
+        transaction.on_commit(
+            partial(jobs.notify_work_handed_back.delay, member.pk, list(handed_back.items()))
+        )
+
+
+@transaction.atomic
 def snooze_task(task: Task, *, by: Membership) -> Task:
     """Hold off the reminders for a while, a limited number of times per task."""
     task = _lock(task)

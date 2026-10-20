@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-20 18:20+0500\n"
+"POT-Creation-Date: 2026-10-20 18:24+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -148,6 +148,10 @@ msgstr "Qo‘shilish so‘rovini rad etdi"
 #: backend/apps/audit/models.py
 msgid "Blocked a member"
 msgstr "Xodimni blokladi"
+
+#: backend/apps/audit/models.py
+msgid "Offboarded a member"
+msgstr "Xodimni ishdan bo‘shatdi"
 
 #: backend/apps/audit/models.py
 msgid "Gave a task"
@@ -523,6 +527,15 @@ msgstr "Tanlangan xodimlarni bloklash"
 msgid "Blocked: %(count)d"
 msgstr "Bloklandi: %(count)d"
 
+#: backend/apps/members/admin.py
+msgid "Offboard selected members (their work goes back to whoever gave it)"
+msgstr "Tanlangan xodimlarni ishdan bo‘shatish (vazifalari bergan odamga qaytadi)"
+
+#: backend/apps/members/admin.py
+#, python-format
+msgid "Offboarded: %(count)d"
+msgstr "Ishdan bo‘shatildi: %(count)d"
+
 #: backend/apps/members/bot_messages.py
 msgid "📋 My tasks"
 msgstr "📋 Vazifalarim"
@@ -605,6 +618,11 @@ msgstr "✅ Siz <b>%(company)s</b> xodimisiz."
 #, python-format
 msgid "👋 Welcome to <b>%(company)s</b>!"
 msgstr "👋 <b>%(company)s</b> jamoasiga xush kelibsiz!"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "👋 You're no longer on the team at <b>%(company)s</b>. Thank you for your work!"
+msgstr "👋 Siz endi <b>%(company)s</b> jamoasida emassiz. Mehnatingiz uchun rahmat!"
 
 #: backend/apps/members/bot_messages.py
 msgid "📱 Thanks, your phone number is saved."
@@ -795,6 +813,18 @@ msgstr "Egani faqat egalar bloklay oladi."
 #: backend/apps/members/services.py
 msgid "This member is already blocked."
 msgstr "Bu xodim allaqachon bloklangan."
+
+#: backend/apps/members/services.py
+msgid "You can't offboard yourself."
+msgstr "O‘zingizni ishdan bo‘shata olmaysiz."
+
+#: backend/apps/members/services.py
+msgid "Only owners can offboard an owner."
+msgstr "Egani faqat egalar ishdan bo‘shata oladi."
+
+#: backend/apps/members/services.py
+msgid "Only current members can be offboarded."
+msgstr "Faqat hozirgi xodimlarni ishdan bo‘shatish mumkin."
 
 #: backend/apps/members/services.py backend/apps/timeoff/services.py
 #, python-format
@@ -1005,6 +1035,11 @@ msgstr "🎉 Hozircha ro‘yxatingiz bo‘sh."
 #: backend/apps/tasks/bot_messages.py
 msgid "📋 <b>Your tasks</b>"
 msgstr "📋 <b>Vazifalaringiz</b>"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "↩️ %(name)s has left the team. These tasks they had came back to you:"
+msgstr "↩️ %(name)s jamoadan ketdi. Unda bo‘lgan bu vazifalar sizga qaytdi:"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format

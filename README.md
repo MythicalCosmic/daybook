@@ -71,6 +71,10 @@ When a business rule is broken, the API returns `400 {"detail": "<message safe t
 
 The bot keeps the link when a group becomes a supergroup, and switches the group off when it's removed. Posts to one group are spaced 3 seconds apart, under Telegram's limit of about 20 a minute.
 
+## When someone leaves
+
+Owners (anyone with "Edit and block members") use **Offboard** on the members page in the admin. The person's access ends at once and the bot says goodbye. Work they were given goes back to whoever gave it, as that person's own task, and the giver gets the list in the bot; their daily and personal tasks are cancelled, they come off daily-task lists, and time off they hadn't taken is cancelled. Finished work waiting for a check stays where it is. Blocking someone hands their work back the same way.
+
 ## Announcements
 
 Managers send `/announce` to the bot, write the message (formatting is kept), pick everyone or some positions, and send it. Each person gets it with an "I've read it" button, and the author can tap "Who has read it?" any time. Anyone who hasn't read it after 3 hours gets one reminder, and a day later the author hears who still hasn't. Announcements and their read receipts are listed in the admin.

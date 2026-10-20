@@ -6,6 +6,7 @@ from aiogram.types import (
     InlineKeyboardMarkup,
     KeyboardButton,
     ReplyKeyboardMarkup,
+    ReplyKeyboardRemove,
     WebAppInfo,
 )
 from django.conf import settings
@@ -16,7 +17,9 @@ from django.utils.translation import gettext_noop
 from apps.members.callbacks import JoinAction, JoinDecision
 from apps.members.models import Membership
 
-type BotMessage = tuple[str, InlineKeyboardMarkup | ReplyKeyboardMarkup | None]
+type BotMessage = tuple[
+    str, InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove | None
+]
 
 # Main menu labels. The bot matches incoming text against every translation of these.
 MENU_MY_TASKS = gettext_noop("📋 My tasks")
@@ -117,6 +120,13 @@ def member_home(membership: Membership) -> BotMessage:
     else:
         header = _("👋 Welcome to <b>%(company)s</b>!") % company
     return _compose(header, _next_step(membership))
+
+
+def offboarded(membership: Membership) -> BotMessage:
+    text = _("👋 You're no longer on the team at <b>%(company)s</b>. Thank you for your work!") % {
+        "company": html.quote(membership.company.name)
+    }
+    return text, ReplyKeyboardRemove()
 
 
 def phone_saved(membership: Membership) -> BotMessage:

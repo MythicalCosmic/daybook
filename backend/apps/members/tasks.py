@@ -16,3 +16,8 @@ def notify_join_decision(membership_id: int) -> None:
 @shared_task
 def notify_onboarding_complete(membership_id: int) -> None:
     notifications.send_onboarding_complete(membership_id)
+
+
+@shared_task
+def notify_offboarded(membership_id: int) -> None:
+    notifications.send_offboarded(membership_id)

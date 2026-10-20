@@ -62,6 +62,17 @@ def send_onboarding_complete(membership_id: int) -> None:
     )
 
 
+def send_offboarded(membership_id: int) -> None:
+    membership = _load(membership_id)
+    if membership is None or membership.user.telegram_id is None:
+        return
+    with translation.override(membership.user.language):
+        text, markup = bot_messages.offboarded(membership)
+    send_telegram_message.delay(
+        BotName.EMPLOYEE, membership.user.telegram_id, text, serialize_markup(markup)
+    )
+
+
 def _load(membership_id: int) -> Membership | None:
     return (
         Membership.objects.select_related("company", "user", "position", "decided_by")

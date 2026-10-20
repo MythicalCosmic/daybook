@@ -60,7 +60,7 @@ class MembershipAdmin(AuditedAdmin, ModelAdmin):
         "created_at",
         "updated_at",
     )
-    actions = ("approve_selected", "reject_selected", "block_selected")
+    actions = ("approve_selected", "reject_selected", "block_selected", "offboard_selected")
 
     def get_readonly_fields(self, request, obj=None):
         readonly = ["phone", "decided_by", "decided_at", "onboarded_at", "created_at", "updated_at"]
@@ -93,6 +93,12 @@ class MembershipAdmin(AuditedAdmin, ModelAdmin):
     @admin.action(description=_("Block selected members"))
     def block_selected(self, request, queryset):
         self._apply(request, queryset, services.block, _("Blocked: %(count)d"))
+
+    @admin.action(
+        description=_("Offboard selected members (their work goes back to whoever gave it)")
+    )
+    def offboard_selected(self, request, queryset):
+        self._apply(request, queryset, services.offboard, _("Offboarded: %(count)d"))
 
     def _apply(self, request, queryset, service, success_message):
         count = 0

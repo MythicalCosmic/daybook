@@ -27,3 +27,8 @@ def notify_task_completed(task_id: int) -> None:
 @shared_task
 def notify_task_reviewed(task_id: int) -> None:
     notifications.send_task_reviewed(task_id)
+
+
+@shared_task
+def notify_work_handed_back(member_id: int, handed_back: list) -> None:
+    notifications.send_work_handed_back(member_id, handed_back)

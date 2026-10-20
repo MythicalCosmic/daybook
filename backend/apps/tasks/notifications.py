@@ -47,6 +47,21 @@ def send_task_reviewed(task_id: int) -> None:
         _send(task.assignee, bot_messages.task_returned, task, reason or "", now)
 
 
+def send_work_handed_back(member_id: int, handed_back: list) -> None:
+    """Tell each giver which of the leaver's tasks came back to them."""
+    leaver = Membership.objects.filter(pk=member_id).first()
+    if leaver is None:
+        return
+    now = timezone.now()
+    for giver_id, task_ids in handed_back:
+        giver = Membership.objects.select_related("user").filter(pk=giver_id).first()
+        tasks = list(
+            Task.objects.select_related("company").filter(pk__in=task_ids).order_by("due_at")
+        )
+        if giver is not None and tasks:
+            _send(giver, bot_messages.work_came_back, str(leaver), tasks, now)
+
+
 def _send(
     member: Membership,
     build: Callable[..., BotMessage],

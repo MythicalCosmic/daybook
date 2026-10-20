@@ -27,6 +27,14 @@ def task_list(tasks: list[Task], now: datetime) -> BotMessage:
     return text, InlineKeyboardMarkup(inline_keyboard=rows)
 
 
+def work_came_back(name: str, tasks: list[Task], now: datetime) -> BotMessage:
+    text = _("↩️ %(name)s has left the team. These tasks they had came back to you:") % {
+        "name": html.quote(name)
+    }
+    rows = [[task_button(task, now)] for task in tasks[:LIST_LIMIT]]
+    return text, InlineKeyboardMarkup(inline_keyboard=rows)
+
+
 def task_button(task: Task, now: datetime) -> InlineKeyboardButton:
     """A list entry that opens the task's card."""
     return _button(_list_label(task, now), TaskAction.OPEN, task.pk)

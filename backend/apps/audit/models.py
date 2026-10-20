@@ -12,6 +12,7 @@ class AuditLog(TenantModel):
         MEMBER_APPROVED = "member.approved", _("Approved a join request")
         MEMBER_REJECTED = "member.rejected", _("Rejected a join request")
         MEMBER_BLOCKED = "member.blocked", _("Blocked a member")
+        MEMBER_LEFT = "member.left", _("Offboarded a member")
         TASK_ASSIGNED = "task.assigned", _("Gave a task")
         TASK_CHANGED = "task.changed", _("Changed a task")
         TASK_CONFIRMED = "task.confirmed", _("Accepted a task")

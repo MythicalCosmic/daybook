@@ -15,6 +15,8 @@ from apps.members import tasks
 from apps.members.callbacks import JoinAction
 from apps.members.models import AccessRole, Membership, Position
 from apps.members.permissions import Perm
+from apps.tasks import services as task_services
+from apps.timeoff.models import TimeOff
 
 DEFAULT_ROLES = (
     {"name": "Owner", "is_owner": True},
@@ -212,8 +214,44 @@ def block(membership: Membership, *, by: User) -> Membership:
     membership.status = Membership.Status.BLOCKED
     _record_decision(membership, by)
     membership.save()
+    _wind_down(membership)
     _audit(AuditLog.Action.MEMBER_BLOCKED, membership, by)
     return membership
+
+
+@transaction.atomic
+def offboard(membership: Membership, *, by: User) -> Membership:
+    """Someone leaves the company: access ends now and their open work is handed back."""
+    membership = _lock(membership)
+    ensure_can(by, membership.company, Perm.MEMBERS_MANAGE)
+    if membership.user_id == by.pk:
+        raise DomainError(_("You can't offboard yourself."))
+    if (
+        membership.role is not None
+        and membership.role.is_owner
+        and not _is_owner(by, membership.company)
+    ):
+        raise PermissionDenied(_("Only owners can offboard an owner."))
+    if membership.status != Membership.Status.APPROVED:
+        raise DomainError(_("Only current members can be offboarded."))
+
+    membership.status = Membership.Status.LEFT
+    _record_decision(membership, by)
+    membership.save()
+    _wind_down(membership)
+    _audit(AuditLog.Action.MEMBER_LEFT, membership, by)
+    transaction.on_commit(partial(tasks.notify_offboarded.delay, membership.pk))
+    return membership
+
+
+def _wind_down(membership: Membership) -> None:
+    """Hand their work back and drop time off they won't be taking."""
+    task_services.hand_back_work(membership)
+    TimeOff.objects.filter(
+        membership=membership,
+        status__in=(TimeOff.Status.PENDING, TimeOff.Status.APPROVED),
+        last_day__gte=timezone.localdate(),
+    ).update(status=TimeOff.Status.CANCELLED)
 
 
 def _lock(membership: Membership) -> Membership:
