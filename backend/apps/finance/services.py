@@ -2065,7 +2065,11 @@ def attach_receipts(txn: Transaction, receipts, *, by: Membership) -> int:
 @transaction.atomic
 def remove_receipt(receipt: Receipt, *, by: Membership) -> None:
     _need_actor(by)
-    receipt = Receipt.objects.select_for_update().select_related("transaction").get(pk=receipt.pk)
+    receipt = (
+        Receipt.objects.select_for_update(of=("self",))
+        .select_related("transaction")
+        .get(pk=receipt.pk)
+    )
     company = receipt.company
     user = _actor(company, by)
     txn = receipt.transaction

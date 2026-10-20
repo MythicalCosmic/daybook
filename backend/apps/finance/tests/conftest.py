@@ -60,3 +60,46 @@ def src():
     sources.register("finance.test", label="Test", url_template="/c/{company_id}/test/{id}")
     yield lambda id, key="": sources.Source("finance.test", id, key)
     sources.unregister("finance.test")
+
+
+@pytest.fixture
+def fin(books):
+    """The company with its finance module switched on (the owner endpoints need it)."""
+    books.features = ["finance"]
+    books.save(update_fields=["features"])
+    return books
+
+
+@pytest.fixture
+def role(db):
+    """`role(company, "Name", [perms])`: a custom role, for permission and scope tests."""
+    from apps.members.models import AccessRole
+    from apps.members.permissions import Perm
+
+    def make(company, name, perms):
+        return AccessRole.objects.create(
+            company=company, name=name, permissions=[Perm.DASHBOARD_ACCESS, *perms]
+        )
+
+    return make
+
+
+@pytest.fixture
+def person(db):
+    """`person(company, role, branches=())`: an approved member with that role and branches."""
+    from apps.members.models import Membership
+    from apps.members.tests.factories import MembershipFactory
+
+    def make(company, role, branches=(), **kwargs):
+        member = MembershipFactory(
+            company=company,
+            role=role,
+            status=Membership.Status.APPROVED,
+            home_branch=branches[0] if branches else None,
+            **kwargs,
+        )
+        if branches:
+            member.branches.set(branches)
+        return member
+
+    return make
