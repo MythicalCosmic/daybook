@@ -16,6 +16,13 @@ from django.core.exceptions import SuspiciousFileOperation
 from django.core.files.storage import FileSystemStorage
 from django.utils.deconstruct import deconstructible
 
+# Headers on every stored file a browser opens (public /media and private downloads): never
+# sniffed as another type, never run as a page, even if a crafted file got through.
+SANDBOX_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "Content-Security-Policy": "sandbox; default-src 'none'",
+}
+
 # Extensions the upload helpers produce. Anything else means a file skipped them.
 SAFE_EXTENSIONS = {
     ".jpg": ".jpg",

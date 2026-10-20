@@ -1,11 +1,23 @@
+import re
+
 from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path, re_path
+from django.views.static import serve
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from apps.core.spa import dashboard_index
+from apps.core.storage import SANDBOX_HEADERS
 from apps.core.views import health
+
+
+def media(request, path):
+    """Development only: MEDIA_ROOT with the headers Caddy adds in production."""
+    response = serve(request, path, document_root=settings.MEDIA_ROOT)
+    for header, value in SANDBOX_HEADERS.items():
+        response[header] = value
+    return response
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -20,4 +32,6 @@ urlpatterns = [
 ]
 
 # Development only; in production the reverse proxy serves MEDIA_ROOT.
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+if settings.DEBUG:
+    prefix = re.escape(settings.MEDIA_URL.strip("/"))
+    urlpatterns.append(re_path(rf"^{prefix}/(?P<path>.*)$", media))

@@ -11,7 +11,7 @@ from asgiref.sync import sync_to_async
 
 from apps.accounts.models import User as Account
 from apps.groups.callbacks import GroupAction, GroupCallback
-from apps.groups.models import DEFAULT_EVENTS, GroupEvent, TelegramGroup
+from apps.groups.models import DEFAULT_EVENTS, GroupEvent, TelegramGroup, available_events
 from apps.groups.tests.factories import TelegramGroupFactory
 from apps.members.tests.factories import PositionFactory
 from bot.commands import set_commands
@@ -69,7 +69,8 @@ async def test_a_manager_adding_the_bot_links_the_group(dp, bot, company, manage
     assert reply.chat_id == updates.GROUP_ID
     assert company.name in reply.text
     labels = toggles(reply.reply_markup)
-    assert len(labels) == len(GroupEvent) + 2  # every event, whose news, then Done
+    # every event the company can use, whose news, then Done
+    assert len(labels) == len(available_events(company)) + 2
     assert labels[0].startswith("✅")  # daily tasks done is on by default
     assert labels[1].startswith("▫️")  # assigned tasks done is not
 
@@ -132,7 +133,7 @@ async def test_a_manager_chooses_what_the_group_gets(dp, bot, company, manager):
     await make_group(company=company, chat_id=updates.GROUP_ID, events=[GroupEvent.LATE])
 
     await dp.feed_update(bot, updates.group_message(tg(manager), "/settings"))
-    assert len(toggles(sent(bot)[-1].reply_markup)) == len(GroupEvent) + 2
+    assert len(toggles(sent(bot)[-1].reply_markup)) == len(available_events(company)) + 2
 
     await dp.feed_update(
         bot, updates.group_callback(tg(manager), press(GroupAction.TOGGLE, GroupEvent.MORNING))
@@ -176,7 +177,7 @@ async def test_a_manager_narrows_the_group_to_some_positions(dp, bot, company, m
     await dp.feed_update(bot, updates.group_callback(tg(manager), press(GroupAction.BACK)))
 
     back = [r for r in bot.requests if isinstance(r, EditMessageText)][-1]
-    assert "Cashier" in toggles(back.reply_markup)[len(GroupEvent)]
+    assert "Cashier" in toggles(back.reply_markup)[len(available_events(company))]
 
 
 async def test_a_position_from_another_company_is_refused(dp, bot, company, other_company, manager):

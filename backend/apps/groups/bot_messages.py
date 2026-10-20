@@ -11,7 +11,7 @@ from django.utils.translation import gettext as _
 
 from apps.companies.models import Company
 from apps.groups.callbacks import GroupAction, GroupCallback
-from apps.groups.models import GroupEvent, TelegramGroup
+from apps.groups.models import GroupEvent, TelegramGroup, available_events
 from apps.groups.reports import DayStats, PlanRow
 from apps.members.bot_messages import BotMessage
 from apps.members.models import Membership, Position
@@ -111,7 +111,7 @@ def settings(group: TelegramGroup) -> BotMessage:
                 event=event,
             )
         ]
-        for event in GroupEvent
+        for event in available_events(group.company, group.events)
     ]
     rows.append([_button(_("👥 Whose news: %(who)s") % {"who": _who(group)}, GroupAction.WHO)])
     rows.append([_button(_("✔️ Done"), GroupAction.CLOSE)])

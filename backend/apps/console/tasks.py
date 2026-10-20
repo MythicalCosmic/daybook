@@ -1,1 +1,5 @@
-"""Celery tasks of the owner console: thin wrappers queued with `transaction.on_commit`."""
+"""Celery tasks of the owner console, queued with `transaction.on_commit`.
+
+Thin wrappers: services import this module to queue jobs, so it never imports
+`services`; the work itself lives in plain modules both can import.
+"""

@@ -7,7 +7,14 @@ from django.core.files.base import ContentFile
 from django.db import models
 from django.db.migrations.writer import MigrationWriter
 
-from apps.core.storage import PrivateStorage, PrivateUploadTo, private_storage, private_upload_to
+from apps.core.storage import (
+    SANDBOX_HEADERS,
+    PrivateStorage,
+    PrivateUploadTo,
+    private_storage,
+    private_upload_to,
+)
+from config.urls import media
 
 
 @pytest.fixture
@@ -97,3 +104,18 @@ def test_fields_using_them_serialize_into_migrations():
     assert "import apps.core.storage" in imports
     assert PrivateUploadTo("receipts") == private_upload_to("receipts")
     assert PrivateStorage() is not private_storage
+
+
+def test_public_media_in_development_is_sandboxed(settings, rf):
+    (settings.MEDIA_ROOT / "proofs").mkdir(parents=True)
+    (settings.MEDIA_ROOT / "proofs" / "a.jpg").write_bytes(b"\xff\xd8\xff")
+
+    response = media(rf.get("/media/proofs/a.jpg"), "proofs/a.jpg")
+
+    assert response.status_code == 200
+    assert response["X-Content-Type-Options"] == "nosniff"
+    assert response["Content-Security-Policy"] == "sandbox; default-src 'none'"
+    assert SANDBOX_HEADERS == {
+        "X-Content-Type-Options": "nosniff",
+        "Content-Security-Policy": "sandbox; default-src 'none'",
+    }

@@ -109,7 +109,7 @@ def test_every_project_app_imports_its_hooks():
 
 def test_hooks_are_imported_when_present():
     assert appconfig.import_hooks("apps.sales") is True  # scaffolded hooks.py
-    assert appconfig.import_hooks("apps.notifications") is False  # none yet
+    assert appconfig.import_hooks("apps.core.tests") is False  # a package without one
 
 
 def mounted() -> dict[str, set[str]]:
