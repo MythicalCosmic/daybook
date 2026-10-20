@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import date, timedelta
 from functools import partial
 from zoneinfo import ZoneInfo
 
@@ -10,6 +10,7 @@ from django.utils.translation import gettext as _
 
 from apps.audit import services as audit
 from apps.audit.models import AuditLog
+from apps.core import uploads
 from apps.core.exceptions import DomainError
 from apps.groups import tasks as group_jobs
 from apps.members.models import Membership
@@ -72,6 +73,8 @@ def create_task(
         priority=priority,
         proof=proof,
         needs_confirmation=needs_confirmation,
+        # Where the work happens: the assignee's branch today, kept even if they move later.
+        branch_id=assignee.home_branch_id,
     )
     _apply_changes(task, {"title": title, "description": description, "due_at": due_at})
     _restart_reminders(task)
@@ -136,7 +139,9 @@ def complete_task(
 
     task.proof_text = proof_text
     if proof_photo is not None:
-        task.proof_photo.save(proof_photo.name or "proof.jpg", proof_photo, save=False)
+        if not uploads.is_sanitized(proof_photo):
+            proof_photo = uploads.sanitize_image(proof_photo)  # every caller, the bot included
+        task.proof_photo.save(proof_photo.name, proof_photo, save=False)
     task.completed_at = timezone.now()
     task.status = Task.Status.REVIEW if task.needs_confirmation else Task.Status.DONE
     task.next_reminder_at = None
@@ -239,6 +244,18 @@ def hand_back_work(member: Membership) -> None:
         transaction.on_commit(
             partial(jobs.notify_work_handed_back.delay, member.pk, list(handed_back.items()))
         )
+
+
+def cancel_routine_tasks(member: Membership, *, since: date) -> int:
+    """Cancel the member's open daily tasks for `since` and later, e.g. when a suspension
+    starts after today's were made. Their own repeating personal tasks stay. Returns how
+    many were cancelled."""
+    return Task.objects.filter(
+        assignee=member,
+        kind=Task.Kind.DAILY,
+        status__in=Task.OPEN_STATUSES,
+        for_date__gte=since,
+    ).update(status=Task.Status.CANCELLED, next_reminder_at=None, updated_at=timezone.now())
 
 
 @transaction.atomic

@@ -8,6 +8,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.companies.tests.factories import BranchFactory
 from apps.members.models import Membership
 from apps.members.permissions import Perm
 from apps.members.tests.factories import AccessRoleFactory, MembershipFactory
@@ -293,7 +294,7 @@ def test_api_shows_the_repeat_days(company, worker):
 # Visibility
 
 
-def test_confirmers_see_work_waiting_for_a_check(company, worker):
+def test_confirmers_see_work_waiting_for_a_check_in_their_branches(company, worker):
     checker_role = AccessRoleFactory(company=company, permissions=[Perm.TASKS_CONFIRM])
     checker = MembershipFactory(
         company=company,
@@ -301,7 +302,13 @@ def test_confirmers_see_work_waiting_for_a_check(company, worker):
         status=Membership.Status.APPROVED,
         onboarded_at=timezone.now(),
     )
-    waiting = TaskFactory(assignee=worker, kind=Task.Kind.DAILY, status=Task.Status.REVIEW)
-    TaskFactory(assignee=worker)
+    here = company.branches.get()
+    elsewhere = BranchFactory(company=company)
+    checker.branches.set([here])
+    review = Task.Status.REVIEW
+    waiting = TaskFactory(assignee=worker, kind=Task.Kind.DAILY, status=review, branch=here)
+    TaskFactory(assignee=worker, kind=Task.Kind.DAILY, status=review, branch=elsewhere)
+    TaskFactory(assignee=worker, kind=Task.Kind.DAILY, status=review)  # no branch
+    TaskFactory(assignee=worker, branch=here)
 
     assert list(queries.visible_tasks(checker)) == [waiting]

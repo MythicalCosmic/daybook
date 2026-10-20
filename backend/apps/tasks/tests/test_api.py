@@ -1,3 +1,4 @@
+import re
 from datetime import timedelta
 
 import pytest
@@ -8,7 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.members.models import Membership
 from apps.tasks.models import Proof, Task, TaskTemplate
-from apps.tasks.tests.factories import TaskFactory
+from apps.tasks.tests.factories import TaskFactory, jpeg_bytes
 
 pytestmark = pytest.mark.django_db
 
@@ -44,13 +45,41 @@ def test_member_sees_their_own_tasks_only(company, member, worker):
     assert [task["id"] for task in response.data["results"]] == [mine.pk]
 
 
-def test_view_all_permission_sees_everything(company, member, manager, worker):
-    TaskFactory(assignee=worker)
-    TaskFactory(assignee=member.registered(company))
+def test_view_all_permission_sees_everything_but_others_personal_tasks(
+    company, member, manager, worker
+):
+    owner = member.registered(company, "Owner")
+    given = TaskFactory(assignee=worker, created_by=owner)
+    daily = TaskFactory(assignee=member.registered(company), kind=Task.Kind.DAILY)
+    TaskFactory(assignee=worker)  # the worker's personal task
 
     response = client_for(manager).get(tasks_url(company))
 
-    assert response.data["count"] == 2
+    assert {task["id"] for task in response.data["results"]} == {given.pk, daily.pk}
+
+
+def test_a_manager_never_sees_another_persons_personal_task(company, manager, worker):
+    personal = TaskFactory(assignee=worker, title="Dentist at 5")
+
+    listed = client_for(manager).get(tasks_url(company))
+    opened = client_for(manager).get(tasks_url(company, personal.pk))
+
+    assert personal.kind == Task.Kind.PERSONAL
+    assert listed.data["count"] == 0
+    assert opened.status_code == 404
+
+
+def test_owners_see_personal_tasks_while_the_company_allows_it(company, member, worker):
+    owner = member.registered(company, "Owner")
+    personal = TaskFactory(assignee=worker)
+
+    assert client_for(owner).get(tasks_url(company, personal.pk)).status_code == 200
+
+    company.owner_sees_personal_tasks = False
+    company.save()
+
+    assert client_for(owner).get(tasks_url(company, personal.pk)).status_code == 404
+    assert client_for(worker).get(tasks_url(company, personal.pk)).status_code == 200
 
 
 def test_today_scope(company, worker):
@@ -126,7 +155,9 @@ def test_complete_with_a_photo_and_confirm(company, manager, worker):
     task = TaskFactory(
         assignee=worker, created_by=manager, proof=Proof.PHOTO, needs_confirmation=True
     )
-    upload = SimpleUploadedFile("shelf.jpg", b"jpeg-bytes", content_type="image/jpeg")
+    upload = SimpleUploadedFile(
+        "shelf.png", jpeg_bytes(exif_maker="Phone maker"), content_type="image/png"
+    )
 
     response = client_for(worker).post(
         tasks_url(company, task.pk, "complete"), {"proof_photo": upload}, format="multipart"
@@ -134,7 +165,10 @@ def test_complete_with_a_photo_and_confirm(company, manager, worker):
 
     assert response.status_code == 200
     assert response.data["status"] == "review"
-    assert response.data["proof_photo"].endswith(".jpg")
+    task.refresh_from_db()
+    assert re.fullmatch(rf"proofs/{company.pk}/[0-9a-f]{{32}}\.jpg", task.proof_photo.name)
+    assert b"Phone maker" not in task.proof_photo.read()
+    assert response.data["proof_photo"].endswith(task.proof_photo.name)
 
     response = client_for(manager).post(tasks_url(company, task.pk, "confirm"))
     assert response.data["status"] == "done"
@@ -159,6 +193,29 @@ def test_proof_must_be_an_image(company, worker):
 
     assert response.status_code == 400
     assert "proof_photo" in response.data
+
+
+@pytest.mark.parametrize(
+    ("name", "data"),
+    [
+        ("proof.svg", b'<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"/>'),
+        ("proof.jpg", b'<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"/>'),
+        ("proof.jpg", b"<!doctype html><script>alert(1)</script>"),
+    ],
+)
+def test_a_crafted_svg_or_html_proof_is_refused(company, worker, name, data):
+    task = TaskFactory(assignee=worker, proof=Proof.PHOTO)
+    upload = SimpleUploadedFile(name, data, content_type="image/jpeg")
+
+    response = client_for(worker).post(
+        tasks_url(company, task.pk, "complete"), {"proof_photo": upload}, format="multipart"
+    )
+
+    assert response.status_code == 400
+    assert "proof_photo" in response.data
+    task.refresh_from_db()
+    assert task.status == Task.Status.TODO
+    assert not task.proof_photo
 
 
 def test_send_back_and_comments(company, manager, worker):

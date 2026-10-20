@@ -7,6 +7,7 @@ from apps.companies.models import Company
 from apps.members.models import Membership
 from apps.reminders.policies import policy_for
 from apps.reminders.schedule import first_reminder_at
+from apps.tasks import offdays
 from apps.tasks.models import Task, TaskTemplate
 from apps.timeoff.queries import is_holiday, members_off
 
@@ -15,7 +16,8 @@ def generate_daily_tasks(company: Company, day: date) -> None:
     """Create the day's tasks from the company's active templates. Safe to run repeatedly."""
     if is_holiday(company, day):
         return  # nobody works on a company holiday
-    off = members_off(company, day)
+    # Approved time off, plus whoever other apps say is off (suspended, not on a shift…).
+    off = members_off(company, day) | offdays.people_off(company, day)
     tz = ZoneInfo(company.timezone)
     now = timezone.now()
     templates = (
@@ -36,7 +38,7 @@ def generate_daily_tasks(company: Company, day: date) -> None:
             if member.onboarded_at >= due_at:
                 continue  # they registered after the deadline
             if member.pk in off:
-                continue  # approved time off
+                continue  # time off, or another app's day off
             new_tasks.append(
                 Task(
                     company=company,
@@ -53,6 +55,7 @@ def generate_daily_tasks(company: Company, day: date) -> None:
                     reminder_policy=template.reminder_policy,
                     escalate_to=template.escalate_to,
                     next_reminder_at=first_reminder,
+                    branch_id=member.home_branch_id,
                 )
             )
     # The unique (template, assignee, for_date) constraint makes reruns no-ops.

@@ -109,6 +109,11 @@ class Membership(TenantModel):
         related_name="home_members",
         help_text=_("Where they work. New tasks belong to this branch."),
     )
+    suspended_until = models.DateField(
+        null=True,
+        blank=True,
+        help_text=_("While suspended: the last day of the suspension. Empty: until reinstated."),
+    )
 
     class Meta:
         constraints = [

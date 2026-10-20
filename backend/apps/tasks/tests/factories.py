@@ -1,5 +1,9 @@
+import io
+
 import factory
+from django.core.files.base import ContentFile
 from factory.django import DjangoModelFactory
+from PIL import Image
 
 from apps.tasks.models import Task, TaskTemplate
 
@@ -39,3 +43,17 @@ class TaskTemplateFactory(DjangoModelFactory):
     def positions(self, create, positions, **kwargs):
         if create and positions:
             self.positions.set(positions)
+
+
+def jpeg_bytes(size=(40, 30), *, exif_maker: str | None = None) -> bytes:
+    """A real little JPEG (proof photos are decoded, so fake bytes are refused)."""
+    out = io.BytesIO()
+    exif = Image.Exif()
+    if exif_maker:
+        exif[0x010F] = exif_maker
+    Image.new("RGB", size, (90, 140, 60)).save(out, "JPEG", exif=exif)
+    return out.getvalue()
+
+
+def jpeg(name: str = "shelf.jpg") -> ContentFile:
+    return ContentFile(jpeg_bytes(), name=name)

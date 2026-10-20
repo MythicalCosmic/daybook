@@ -73,6 +73,30 @@ def send_offboarded(membership_id: int) -> None:
     )
 
 
+def send_suspended(membership_id: int) -> None:
+    membership = _load(membership_id)
+    if membership is None or membership.status != Membership.Status.SUSPENDED:
+        return
+    _send_to_member(membership, bot_messages.paused)
+
+
+def send_reinstated(membership_id: int) -> None:
+    membership = _load(membership_id)
+    if membership is None or membership.status != Membership.Status.APPROVED:
+        return
+    _send_to_member(membership, bot_messages.reinstated)
+
+
+def _send_to_member(membership: Membership, build) -> None:
+    if membership.user.telegram_id is None:
+        return
+    with translation.override(membership.user.language):
+        text, markup = build(membership)
+    send_telegram_message.delay(
+        BotName.EMPLOYEE, membership.user.telegram_id, text, serialize_markup(markup)
+    )
+
+
 def _load(membership_id: int) -> Membership | None:
     return (
         Membership.objects.select_related("company", "user", "position", "decided_by")

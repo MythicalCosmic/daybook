@@ -41,8 +41,14 @@ class TaskAdmin(ModelAdmin):
         "completed_at",
         "confirmed_at",
         "confirmed_by",
+        "branch",
         "created_at",
         "updated_at",
     )
     raw_id_fields = ("assignee",)
     inlines = (ChecklistInline, CommentInline)
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.branch_id = obj.assignee.home_branch_id  # set once, like every other path
+        super().save_model(request, obj, form, change)

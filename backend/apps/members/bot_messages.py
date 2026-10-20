@@ -1,5 +1,7 @@
 """Telegram texts and keyboards about memberships, used by the bot and by backend notifications."""
 
+from urllib.parse import urlencode, urlsplit
+
 from aiogram import html
 from aiogram.types import (
     InlineKeyboardButton,
@@ -14,6 +16,7 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_noop
 
+from apps.members import bot_menu
 from apps.members.callbacks import JoinAction, JoinDecision
 from apps.members.models import Membership
 
@@ -27,12 +30,34 @@ MENU_NEW_TASK = gettext_noop("➕ New task")
 MENU_APP = gettext_noop("📱 Open app")
 
 
-def main_menu() -> ReplyKeyboardMarkup:
+def main_menu(membership: Membership | None = None) -> ReplyKeyboardMarkup:
+    """The persistent menu: tasks first, then the buttons modules registered for this person
+    (apps.members.bot_menu), then the app."""
     rows = [[KeyboardButton(text=_(MENU_MY_TASKS)), KeyboardButton(text=_(MENU_NEW_TASK))]]
+    extra = []
+    if membership is not None:
+        extra = [_menu_button(button) for button in bot_menu.buttons_for(membership)]
+    rows += [extra[index : index + 2] for index in range(0, len(extra), 2)]
     if settings.EMPLOYEE_MINIAPP_URL:
         app = WebAppInfo(url=settings.EMPLOYEE_MINIAPP_URL)
         rows.append([KeyboardButton(text=_(MENU_APP), web_app=app)])
     return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True, is_persistent=True)
+
+
+def miniapp_url(screen: str | None = None) -> str:
+    """The mini app's address, opening `screen` (e.g. "payslip:12") when given."""
+    url = settings.EMPLOYEE_MINIAPP_URL
+    if not url or not screen:
+        return url
+    separator = "&" if urlsplit(url).query else "?"
+    return f"{url}{separator}{urlencode({'screen': screen})}"
+
+
+def _menu_button(button: bot_menu.MenuButton) -> KeyboardButton:
+    if button.web_app_screen and settings.EMPLOYEE_MINIAPP_URL:
+        app = WebAppInfo(url=miniapp_url(button.web_app_screen))
+        return KeyboardButton(text=_(button.msgid), web_app=app)
+    return KeyboardButton(text=_(button.msgid))
 
 
 def join_request(membership: Membership) -> BotMessage:
@@ -99,7 +124,33 @@ def status(membership: Membership | None) -> BotMessage | None:
         return _declined(membership), None
     if membership.status == Membership.Status.APPROVED:
         return member_home(membership)
+    if membership.status == Membership.Status.SUSPENDED:
+        return paused(membership)
     return None
+
+
+def paused(membership: Membership) -> BotMessage:
+    """What a suspended person hears, whatever they send."""
+    text = paused_text(membership, company=f"<b>{html.quote(membership.company.name)}</b>")
+    return f"⏸ {text}", ReplyKeyboardRemove()
+
+
+def paused_text(membership: Membership, *, company: str | None = None) -> str:
+    """The same in plain text (for alerts), or with `company` already formatted."""
+    names = {"company": company if company is not None else membership.company.name}
+    if membership.suspended_until is None:
+        return _("Your access to %(company)s is paused until further notice.") % names
+    return _("Your access to %(company)s is paused until %(date)s.") % {
+        **names,
+        "date": membership.suspended_until.strftime("%d.%m.%Y"),
+    }
+
+
+def reinstated(membership: Membership) -> BotMessage:
+    header = _("▶️ Your access to <b>%(company)s</b> is back.") % {
+        "company": html.quote(membership.company.name)
+    }
+    return _compose(header, _next_step(membership))
 
 
 def decision_for_requester(membership: Membership) -> BotMessage | None:
@@ -141,21 +192,21 @@ def onboarding_complete(membership: Membership) -> BotMessage:
     header = _("🎉 Registration complete! Welcome aboard, %(name)s.") % {
         "name": html.quote(membership.first_name)
     }
-    return _compose(header, _menu_prompt())
+    return _compose(header, _menu_prompt(membership))
 
 
 def _next_step(membership: Membership) -> BotMessage:
     if not membership.is_onboarded:
         return _create_account_prompt()
     if membership.status == Membership.Status.APPROVED:
-        return _menu_prompt()
+        return _menu_prompt(membership)
     return _(
         "Your request is waiting for approval. I'll message you as soon as it's decided."
     ), None
 
 
-def _menu_prompt() -> BotMessage:
-    return _("Use the menu below to see your tasks or add one."), main_menu()
+def _menu_prompt(membership: Membership | None = None) -> BotMessage:
+    return _("Use the menu below to see your tasks or add one."), main_menu(membership)
 
 
 def _create_account_prompt() -> BotMessage:

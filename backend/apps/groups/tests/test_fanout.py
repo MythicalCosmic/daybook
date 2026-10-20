@@ -8,7 +8,6 @@ from aiogram.exceptions import (
     TelegramRetryAfter,
 )
 from aiogram.methods import SendMessage
-from django.core.files.base import ContentFile
 from django.utils import timezone
 
 from apps.companies.tests.factories import CompanyFactory
@@ -23,7 +22,7 @@ from apps.reminders.engine import send_due_reminders
 from apps.reminders.policies import default_policy
 from apps.tasks import services as task_services
 from apps.tasks.models import Proof, Task
-from apps.tasks.tests.factories import TaskFactory
+from apps.tasks.tests.factories import TaskFactory, jpeg
 
 pytestmark = pytest.mark.django_db
 
@@ -77,7 +76,7 @@ def test_finished_daily_work_is_posted_with_its_proof(
 
     with django_capture_on_commit_callbacks(execute=True):
         task_services.complete_task(
-            task, by=worker, proof_text="Shelves done", proof_photo=ContentFile(b"jpg", "a.jpg")
+            task, by=worker, proof_text="Shelves done", proof_photo=jpeg("a.jpg")
         )
 
     [post] = posts(sent_messages, wants)

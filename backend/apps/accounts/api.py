@@ -6,7 +6,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import AccessToken
 
 from apps.accounts.models import User
 from apps.accounts.services import sync_telegram_user
@@ -19,9 +19,10 @@ class TelegramAuthSerializer(serializers.Serializer):
     init_data = serializers.CharField(help_text="Telegram.WebApp.initData, exactly as received.")
 
 
-class TokenPairSerializer(serializers.Serializer):
-    access = serializers.CharField()
-    refresh = serializers.CharField()
+class AccessTokenSerializer(serializers.Serializer):
+    access = serializers.CharField(
+        help_text="Bearer token for the API. When it expires, sign in with initData again."
+    )
 
 
 class MeSerializer(serializers.ModelSerializer):
@@ -50,21 +51,27 @@ class MeSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(MembershipSerializer(many=True))
     def get_memberships(self, user: User) -> list[dict]:
-        memberships = Membership.objects.filter(user=user, company__is_active=True).select_related(
-            "company", "role", "position"
+        memberships = (
+            Membership.objects.filter(user=user, company__is_active=True)
+            .select_related("company", "role", "position", "home_branch")
+            .prefetch_related("branches")
         )
         return MembershipSerializer(memberships, many=True).data
 
 
 class TelegramAuthView(APIView):
-    """Exchange the mini app's Telegram init data for a JWT pair."""
+    """Exchange the mini app's Telegram init data for an access token.
+
+    Only an access token: the mini app signs in again with fresh init data when it expires,
+    so no refresh token (and no blacklist row) is made every time the app opens.
+    """
 
     authentication_classes = ()
     permission_classes = (AllowAny,)
     throttle_classes = (ScopedRateThrottle,)
     throttle_scope = "telegram_auth"
 
-    @extend_schema(request=TelegramAuthSerializer, responses=TokenPairSerializer)
+    @extend_schema(request=TelegramAuthSerializer, responses=AccessTokenSerializer)
     def post(self, request):
         serializer = TelegramAuthSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -80,8 +87,7 @@ class TelegramAuthView(APIView):
             last_name=tg_user.last_name,
             language_code=tg_user.language_code,
         )
-        refresh = RefreshToken.for_user(user)
-        return Response({"access": str(refresh.access_token), "refresh": str(refresh)})
+        return Response({"access": str(AccessToken.for_user(user))})
 
     def get_authenticate_header(self, request):
         # Makes failed logins a 401 rather than a 403.

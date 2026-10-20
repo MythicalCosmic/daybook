@@ -33,8 +33,8 @@ def _record(action, request, obj, **details) -> None:
 
 @admin.register(AuditLog)
 class AuditLogAdmin(ModelAdmin):
-    list_display = ("created_at", "company", "actor", "action", "target")
-    list_filter = ("company", "action")
+    list_display = ("created_at", "company", "actor", "action_label", "target", "required_perm")
+    list_filter = ("company", "action", "required_perm")
     search_fields = ("target", "actor__first_name", "actor__last_name", "actor__username")
     list_select_related = ("company", "actor")
     date_hierarchy = "created_at"
@@ -47,6 +47,7 @@ class AuditLogAdmin(ModelAdmin):
         "target_id",
         "target",
         "details",
+        "required_perm",
     )
     fields = readonly_fields
 

@@ -43,7 +43,8 @@ class AuditLog(TenantModel):
         related_name="+",
         help_text=_("Empty when the system did it."),
     )
-    # Codes are registered per app (apps.audit.registry); Action holds the original ones.
+    # Codes and labels are registered per app (apps.audit.registry); Action holds the original
+    # ones, registered by apps/audit/hooks.py.
     action = models.CharField(max_length=48)
     target_type = models.CharField(max_length=32)
     target_id = models.PositiveBigIntegerField(null=True, blank=True)
@@ -64,4 +65,6 @@ class AuditLog(TenantModel):
 
     @property
     def action_label(self) -> str:
-        return str(dict(self.Action.choices).get(self.action, self.action))
+        from apps.audit import registry
+
+        return registry.label(self.action)

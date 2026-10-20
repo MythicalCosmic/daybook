@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 
 from apps.audit import services as audit
 from apps.audit.models import AuditLog
+from apps.core import uploads
 from apps.core.exceptions import DomainError
 from apps.members.api import IsCompanyMember, MemberBriefSerializer, requires
 from apps.members.models import Membership, Position
@@ -157,13 +158,14 @@ class CompleteSerializer(serializers.Serializer):
     proof_photo = serializers.FileField(required=False, allow_null=True)
 
     def validate_proof_photo(self, photo):
+        """Decoded and re-encoded as a JPEG with a server-chosen name; anything that isn't a
+        picture (an SVG, an HTML page) is refused, whatever its name or content type says."""
         if photo is None:
             return photo
-        if photo.size > MAX_PHOTO_BYTES:
-            raise serializers.ValidationError(_("The photo is too large (10 MB at most)."))
-        if not (photo.content_type or "").startswith("image/"):
-            raise serializers.ValidationError(_("The proof must be an image."))
-        return photo
+        try:
+            return uploads.sanitize_image(photo, max_bytes=MAX_PHOTO_BYTES)
+        except uploads.InvalidUpload as exc:
+            raise serializers.ValidationError(str(exc)) from exc
 
 
 class ReturnSerializer(serializers.Serializer):

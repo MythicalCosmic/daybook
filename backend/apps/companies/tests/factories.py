@@ -16,8 +16,20 @@ class CompanyFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
-        # Go through the service so every test company gets its default roles.
-        return create_company(**kwargs)
+        # Go through the service so every test company is set up like a real one: default
+        # roles, reminder policy and its first branch. Other fields are set afterwards.
+        company = create_company(
+            name=kwargs.pop("name"),
+            slug=kwargs.pop("slug"),
+            timezone=kwargs.pop("timezone", "Asia/Tashkent"),
+            language=kwargs.pop("default_language"),
+            base_currency=kwargs.pop("base_currency", "UZS"),
+        )
+        if kwargs:
+            for field, value in kwargs.items():
+                setattr(company, field, value)
+            company.save()
+        return company
 
 
 class BranchFactory(DjangoModelFactory):
