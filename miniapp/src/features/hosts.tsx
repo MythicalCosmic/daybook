@@ -1,3 +1,4 @@
+import { ArrowLeft, SearchX, TriangleAlert } from "lucide-react";
 import { Component, Suspense, type ErrorInfo, type ReactNode } from "react";
 
 import { useSummary } from "../api/hooks";
@@ -78,20 +79,32 @@ export function openTarget(navigation: Navigation, feature: Feature, open: Open<
 
 function NotFound({ onBack }: { onBack: () => void }) {
   const { t } = useI18n();
-  return <EmptyState title={t("ui.notFound.title")} body={t("ui.notFound.body")} action={{ label: t("ui.notFound.back"), onClick: onBack }} />;
+  return (
+    <div className="ui-page-center">
+      <EmptyState
+        icon={SearchX}
+        tone="sage"
+        title={t("ui.notFound.title")}
+        body={t("ui.notFound.body")}
+        action={{ label: t("ui.notFound.back"), onClick: onBack, icon: ArrowLeft }}
+      />
+    </div>
+  );
 }
 
 /** What a feature's page or sheet shows when its code crashed ("not found" would mislead). */
 function Failed({ onBack }: { onBack?: () => void }) {
   const { t } = useI18n();
-  return (
+  const state = (
     <EmptyState
+      icon={TriangleAlert}
       compact={!onBack}
       title={t("ui.failed.title")}
       body={t("ui.failed.body")}
-      action={onBack ? { label: t("ui.notFound.back"), onClick: onBack } : undefined}
+      action={onBack ? { label: t("ui.notFound.back"), onClick: onBack, icon: ArrowLeft } : undefined}
     />
   );
+  return onBack ? <div className="ui-page-center">{state}</div> : state;
 }
 
 type Access = "open" | "hidden" | "checking";
@@ -154,7 +167,7 @@ export function FeatureSheet({ feature, sheet, params }: { feature: string; shee
   const access = useFeatureAccess(feature);
   const Body = findSheet(features, feature, sheet);
   if (access === "checking") return <ScreenSkeleton variant="detail" delay={150} />;
-  if (!Body || access === "hidden") return <EmptyState compact title={t("ui.notFound.title")} body={t("ui.notFound.body")} />;
+  if (!Body || access === "hidden") return <EmptyState compact icon={SearchX} tone="sage" title={t("ui.notFound.title")} body={t("ui.notFound.body")} />;
   return (
     <FeatureBoundary name={`${feature}.${sheet}`} fallback={<Failed />}>
       <Suspense fallback={<ScreenSkeleton variant="detail" delay={150} />}>
