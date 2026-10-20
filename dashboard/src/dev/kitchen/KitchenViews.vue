@@ -123,7 +123,12 @@ const notify = (text: string) => toast.info(text);
       <MarkdownView :source="markdown" :labels="{ 'member:14': 'Madina', 'member:31': 'Aziz', 'task:345': 'Stock count', 'shift:1042': 'CHL-1042' }" />
     </KitchenSpecimen>
     <KitchenSpecimen name="AuditTrail.vue" :note="k('auditNote')">
-      <AuditTrail target-type="finance.transaction" :target-id="7002" />
+      <AuditTrail
+        target-type="transaction"
+        :target-id="7002"
+        :field-labels="{ category: k('audit.category'), amount: k('audit.amount'), counterparty: k('audit.counterparty'), card_number: k('audit.card') }"
+        :format-value="(field: string, value: unknown) => (field === 'amount' && typeof value === 'string' ? fmt.money(value) : null)"
+      />
     </KitchenSpecimen>
     <KitchenSpecimen name="TreeList.vue" :note="k('treeNote')">
       <div class="grid gap-4 sm:grid-cols-[minmax(0,260px)_1fr]">

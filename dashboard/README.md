@@ -65,7 +65,7 @@ src/modules/<id>/
 | `nav` | Sidebar sub-items `{ key, title, to, perm?, badge? }`; default one item; `[]` hides the module |
 | `hotkey` | `g` + this key opens the module |
 | `badge` | `counter("finance.claims")` — a pulse counter on the sidebar row |
-| `invalidates` | Pulse version keys; when one changes, every query under `[companyId, "<id>"]` refetches |
+| `invalidates` | Pulse keys; when one moves (its version or its counter), every query under `[companyId, "<id>"]` refetches. An entry may name a whole app: `"sales"` covers `"sales.shifts"` |
 | `commands` | Palette actions `(ctx) => Command[]` (built with `ctx.t`, `ctx.go`, `ctx.can`) |
 | `searchResults` | Renderers for your search hit types (prop `hit`) |
 | `widgets` | Overview widgets `{ id: "<id>.x", span, order, kind, component }` (props `companyId`, `range`, `compare`) |
@@ -77,6 +77,24 @@ src/modules/<id>/
 | `rootRoutes` | Signed-in pages outside a company (the portfolio) |
 | `publicRoutes` | The auth module only |
 | `messages` | `() => import` of the three JSON dictionaries |
+
+### W0 modules and the API they read
+
+- **inbox** (reference): `queue/counts/` + `queue/` (fetched together as `fetchQueue` from
+  `@/api/shell`: `{ total, kinds, items }`), `inbox/`, `inbox/unread-count/`, `inbox/read/`,
+  `inbox/{id}/archive/`, `inbox/{id}/actions/{key}/` (answers `{ message, notification }`).
+- **overview** (placeholder until N): serves `/c/:id`, renders every registered widget in
+  `order`, hosts `overview.hero`, and has two widgets of its own over `branches/today/` and
+  `stream/`.
+- **exports**: `exports/`, `exports/kinds/`, `POST exports/` (202 `{ id }`), `exports/{id}/`.
+  Tables start exports with `ExportButton` (`kind` = the backend exporter key).
+- **auth** (placeholder until A): `/login` and, in development, `/dev/login`.
+
+Pulse keys the W0 backend registers: `console.queue` (Needs you total), `inbox.unread`,
+`exports.exports`, `console.saved_views` (constants in `@/core/pulse`). Module keys are
+app-prefixed (`"sales.shifts"`), like every backend registry key. Server links (`url` on
+notifications, queue items, search hits and stream rows) go through `companyUrl()` from
+`@/lib/links`, which accepts `"/c/12/x"` and relative paths and never leaves the app.
 
 ### Extension points
 
@@ -127,12 +145,20 @@ Money is a decimal string end to end (`lib/money.ts`, `lib/decimal.ts`); dates a
 
 `VITE_MOCK=1` answers the API from `src/dev/mock.ts` and `src/dev/mockData.ts` (dev server only,
 never in a build) and shows a placeholder for every catalog module that hasn't landed; your real
-module replaces its placeholder automatically. The mock covers the shell's endpoints, the inbox,
-exports, audit history, people, positions and saved views. For your own endpoints, work against
+module replaces its placeholder automatically. The mock answers in the W0 serializers' shapes and
+covers the shell's endpoints, the inbox, branches today, the stream, exports, audit history,
+people, positions and saved views. For your own endpoints, work against
 the real backend (`API_PORT`) or ask W0 for mock data.
 
 ### Budgets (plan §6.5)
 
 Initial JS (shell + Overview) ≤ 180 KB gzipped, each module chunk ≤ 80 KB. Heavy libraries load
 lazily on their own: charts (ECharts), `MarkdownView` (markdown-it + DOMPurify), `QrCode`, Tiptap,
-Leaflet. Keep `index.ts` light.
+Leaflet, the drag library behind `WidgetGrid`'s Customize. Keep `index.ts` light; an Overview
+widget is part of the first load, so keep widgets lean too (shell + Overview was 176 KB at the end
+of W0).
+
+vue-i18n runs without its message compiler (`__INTLIFY_DROP_MESSAGE_COMPILER__`);
+`src/i18n/compile.ts` compiles messages instead. It supports `{name}`, `{0}`, `{'literal'}` and
+plural forms separated by ` | ` (`t(key, { n }, n)`); linked messages (`@:key`) are not
+supported, and `@` or `$` are plain text.
