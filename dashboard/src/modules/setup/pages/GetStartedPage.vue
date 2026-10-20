@@ -17,6 +17,7 @@ import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UiButton from "@/components/UiButton.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
+import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useCompanyStore } from "@/stores/company";
 
@@ -24,6 +25,7 @@ import { useSetup, useSetupVisibility } from "../api";
 import { stepBody, stepIcon, stepTitle } from "../steps";
 
 const i18n = useI18n();
+const { isPhone } = useBreakpoints();
 const { t } = i18n;
 const company = useCompanyStore();
 const setup = useSetup();
@@ -49,7 +51,7 @@ async function dismiss(): Promise<void> {
   <div class="mx-auto max-w-[920px]">
     <PageHeader :title="t('setup.title')" :description="t('setup.description', { company: company.current?.name ?? '' })">
       <template v-if="data?.can_dismiss" #actions>
-        <UiButton v-if="!data.dismissed" variant="ghost" :icon="EyeOff" :loading="visibility.dismiss.isPending.value" @click="dismiss">{{ t("setup.dismiss") }}</UiButton>
+        <UiButton v-if="!data.dismissed && !allDone" variant="ghost" :icon="EyeOff" :loading="visibility.dismiss.isPending.value" @click="dismiss">{{ t("setup.dismiss") }}</UiButton>
         <UiButton v-else variant="ghost" :icon="RotateCcw" :loading="visibility.resume.isPending.value" @click="visibility.resume.mutate()">{{ t("setup.resume") }}</UiButton>
       </template>
     </PageHeader>
@@ -67,17 +69,25 @@ async function dismiss(): Promise<void> {
       <!-- Progress -->
       <section :class="['ui-card relative flex flex-wrap items-center gap-5 overflow-hidden p-5 md:p-6', allDone && 'border-[color-mix(in_srgb,var(--c-success)_40%,var(--c-border))]']">
         <div class="setup-glow pointer-events-none absolute inset-0 -z-0" aria-hidden="true" />
-        <div class="relative">
-          <ProgressRing :value="data.done" :max="data.total" :size="88" :stroke="8" :tone="allDone ? 'success' : 'primary'" />
+        <div class="relative shrink-0">
+          <ProgressRing :value="data.done" :max="data.total" :size="isPhone ? 64 : 88" :stroke="isPhone ? 6 : 8" :tone="allDone ? 'success' : 'primary'" />
           <span class="absolute inset-0 grid place-items-center">
             <PartyPopper v-if="allDone" :size="28" class="text-success" />
             <span v-else class="text-lg font-bold tabular-nums text-fg">{{ percent }}%</span>
           </span>
         </div>
-        <div class="relative min-w-0 flex-1 basis-[240px]">
+        <div class="relative min-w-0 flex-1 basis-[180px]">
           <p class="text-lg font-semibold text-fg">{{ allDone ? t("setup.allDoneTitle") : t("setup.progressTitle", { done: data.done, total: data.total }) }}</p>
           <p class="mt-1 text-base text-muted">{{ allDone ? t("setup.allDoneBody") : t("setup.progressBody") }}</p>
         </div>
+        <UiButton
+          v-if="allDone && data.can_dismiss && !data.dismissed"
+          class="relative"
+          variant="primary"
+          :icon="EyeOff"
+          :loading="visibility.dismiss.isPending.value"
+          @click="dismiss"
+        >{{ t("setup.hide") }}</UiButton>
       </section>
 
       <!-- Steps -->
@@ -101,10 +111,11 @@ async function dismiss(): Promise<void> {
             <component :is="stepIcon(step)" v-else :size="20" />
           </span>
           <div class="min-w-0 flex-1 basis-[220px]">
-            <p :class="['flex flex-wrap items-center gap-2 text-base font-semibold', step.done ? 'text-muted line-through decoration-[1.5px]' : 'text-fg']">
-              <span class="text-xs font-semibold tabular-nums text-subtle no-underline">{{ index + 1 }}.</span>
+            <p :class="['flex flex-wrap items-center gap-2 text-base font-semibold', step.done ? 'text-muted' : 'text-fg']">
+              <span v-if="!step.done" class="text-xs font-semibold tabular-nums text-subtle">{{ index + 1 }}.</span>
               {{ stepTitle(step, i18n) }}
-              <span v-if="step.key === nextKey" class="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent-fg no-underline">{{ t("setup.next") }}</span>
+              <span v-if="step.key === nextKey" class="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-semibold text-accent-fg">{{ t("setup.next") }}</span>
+              <span v-else-if="step.done" class="rounded-full bg-success-soft px-2 py-0.5 text-xs font-semibold text-success">{{ t("setup.doneLabel") }}</span>
             </p>
             <p class="mt-0.5 text-sm text-muted">{{ stepBody(step, i18n) }}</p>
           </div>

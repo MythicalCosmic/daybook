@@ -7,6 +7,8 @@
   "setup.allDoneTitle": "Всё готово",
   "setup.allDoneBody": "Всё на месте. Скройте этот список, когда захотите.",
   "setup.next": "Следующий",
+  "setup.doneLabel": "Готово",
+  "setup.hide": "Скрыть список",
   "setup.doIt": "Сделать",
   "setup.review": "Открыть",
   "setup.allSteps": "Все шаги",

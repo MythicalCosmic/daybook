@@ -7,6 +7,8 @@
   "setup.allDoneTitle": "You’re all set",
   "setup.allDoneBody": "Everything is in place. Dismiss this checklist whenever you like.",
   "setup.next": "Next",
+  "setup.doneLabel": "Done",
+  "setup.hide": "Hide the checklist",
   "setup.doIt": "Do it",
   "setup.review": "Review",
   "setup.allSteps": "All steps",

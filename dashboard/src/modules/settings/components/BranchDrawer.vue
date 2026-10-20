@@ -152,7 +152,7 @@ const company_ = computed(() => company.current);
 <template>
   <UiDrawer query-key="branch" :title="title" :description="isNew ? t('settings.branch.newHint') : (branch?.address || undefined)" size="lg">
     <form v-if="isNew || branch" id="branch-form" class="flex flex-col gap-6 p-5" novalidate @submit="form.submit">
-      <div class="grid gap-4 sm:grid-cols-[1fr_140px]">
+      <div class="grid gap-4 sm:grid-cols-[1fr_170px]">
         <FormField :label="t('settings.branch.name')" :error="form.errors.name" required>
           <TextInput v-model="form.values.name" :maxlength="100" :disabled="!canEdit" :autofocus="isNew" :placeholder="t('settings.branch.namePlaceholder')" @blur="form.touch('name')" />
         </FormField>

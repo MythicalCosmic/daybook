@@ -14,6 +14,7 @@ import PageHeader from "@/components/PageHeader.vue";
 import PageSection from "@/components/PageSection.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UiButton from "@/components/UiButton.vue";
+import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 
 import { useGroups } from "../api";
@@ -21,6 +22,7 @@ import GroupCard from "../components/GroupCard.vue";
 
 const { t } = useI18n();
 const groups = useGroups();
+const { isPhone } = useBreakpoints();
 const showSkeleton = useDelayedPending(() => groups.isPending.value);
 
 const active = computed(() => (groups.data.value?.results ?? []).filter((g) => g.is_active));
@@ -61,7 +63,14 @@ const link = computed(() => groups.data.value?.connect_link ?? "");
     </div>
 
     <div v-else class="flex flex-col gap-5">
-      <GroupCard v-for="group in active" :key="group.id" :group="group" :options="groups.data.value.options" :person-events="groups.data.value.person_events" />
+      <GroupCard
+        v-for="(group, index) in active"
+        :key="group.id"
+        :group="group"
+        :options="groups.data.value.options"
+        :person-events="groups.data.value.person_events"
+        :default-open="index === 0 && !isPhone"
+      />
       <p class="flex items-center gap-2 text-sm text-muted"><Bot :size="15" class="text-primary" />{{ t("groups.footer") }}</p>
     </div>
 

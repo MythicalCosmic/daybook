@@ -7,6 +7,8 @@
   "setup.allDoneTitle": "Hammasi tayyor",
   "setup.allDoneBody": "Hammasi joyida. Bu ro‘yxatni xohlagan paytda yashirishingiz mumkin.",
   "setup.next": "Navbatdagi",
+  "setup.doneLabel": "Bajarildi",
+  "setup.hide": "Ro‘yxatni yashirish",
   "setup.doIt": "Bajarish",
   "setup.review": "Ko‘rish",
   "setup.allSteps": "Barcha qadamlar",

@@ -200,6 +200,23 @@ def test_demo_groups(company, demo_people):
     assert [p.name for p in kassa.positions.all()] == ["Cashier"]
 
 
+def test_managers_hear_when_the_bot_is_removed(company, owner, member, group):
+    from apps.inbox.models import Notification
+
+    manager = member(company, "Manager")
+    worker = member(company, "Employee")
+
+    services.bot_removed(group.chat_id, by=worker.user)
+
+    notes = Notification.objects.filter(kind="groups.removed")
+    assert {n.recipient_id for n in notes} == {owner.pk, manager.pk}
+    note = notes.get(recipient=owner)
+    assert "Chilonzor jamoasi" in note.title
+    assert str(worker) in note.body
+    assert note.url == f"/c/{company.pk}/groups"
+    assert note.severity == "warning"
+
+
 def test_the_list_offers_the_companys_positions_and_branches(company, owner, owner_api, group):
     cashier = PositionFactory(company=company, name="Cashier")
     PositionFactory(company=company, name="Old job", is_active=False)

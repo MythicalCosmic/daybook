@@ -116,7 +116,16 @@ const steps = computed(() => [
             {{ feature.text }}
           </li>
         </ul>
-        <p class="mt-10 inline-flex items-center gap-2 text-sm text-muted">
+        <div class="mt-9 max-w-[440px] border-t border-line pt-6">
+          <p class="text-xs font-semibold uppercase tracking-[0.06em] text-subtle">{{ t("auth.login.steps.title") }}</p>
+          <ol class="mt-3 flex flex-col gap-2.5">
+            <li v-for="(step, index) in steps" :key="index" class="flex items-center gap-3 text-sm text-muted">
+              <span class="grid size-6 shrink-0 place-items-center rounded-full bg-accent-soft text-xs font-semibold tabular-nums text-accent-fg">{{ index + 1 }}</span>
+              <span>{{ step.text }}</span>
+            </li>
+          </ol>
+        </div>
+        <p class="mt-8 inline-flex items-center gap-2 text-sm text-muted">
           <ShieldCheck :size="16" class="text-success" />
           {{ t("auth.login.secure") }}
         </p>
@@ -127,7 +136,7 @@ const steps = computed(() => [
         <div class="mb-6 flex justify-center md:hidden"><BrandMark compact /></div>
         <div class="rounded-[20px] border border-line bg-surface p-6 shadow-[0_1px_2px_rgb(32_30_29/0.04),0_32px_64px_-32px_rgb(32_30_29/0.28)] md:p-8">
           <h2 class="text-lg font-semibold tracking-[-0.01em] text-fg">{{ t("auth.login.title") }}</h2>
-          <p class="mt-1 text-base text-muted">{{ t("auth.login.lead") }}</p>
+          <p v-if="login.phase.value === 'starting' || login.phase.value === 'waiting'" class="mt-1 text-base text-muted">{{ t("auth.login.lead") }}</p>
 
           <Transition name="swap" mode="out-in">
             <!-- Waiting for Telegram (or getting the code) -->
@@ -157,7 +166,7 @@ const steps = computed(() => [
                     <SkeletonBlock width="52px" height="64px" radius="14px" />
                   </template>
                 </div>
-                <p class="mt-3 max-w-[300px] text-center text-xs text-muted">{{ t("auth.login.tapHint") }}</p>
+                <p class="mt-3 max-w-[300px] text-balance text-center text-xs text-muted">{{ t("auth.login.tapHint") }}</p>
               </div>
 
               <div class="mt-6 flex w-full items-center justify-between gap-3 rounded-[12px] bg-surface-2 px-3.5 py-2.5 text-sm">
@@ -203,12 +212,12 @@ const steps = computed(() => [
                 <component :is="outcome.icon" :size="26" />
               </span>
               <p class="mt-5 text-md font-semibold text-fg">{{ outcome.title }}</p>
-              <p class="mt-1.5 max-w-[320px] text-sm text-muted">{{ outcome.body }}</p>
+              <p class="mt-1.5 max-w-[320px] text-balance text-sm text-muted">{{ outcome.body }}</p>
               <UiButton class="mt-6" variant="primary" size="lg" :icon="RefreshCw" @click="login.start()">{{ outcome.action }}</UiButton>
             </div>
           </Transition>
 
-          <div v-if="login.phase.value === 'waiting' || login.phase.value === 'starting'" class="mt-7 border-t border-line pt-5">
+          <div v-if="login.phase.value === 'waiting' || login.phase.value === 'starting'" class="mt-7 border-t border-line pt-5 md:hidden">
             <p class="text-xs font-semibold uppercase tracking-[0.06em] text-subtle">{{ t("auth.login.steps.title") }}</p>
             <ol class="mt-3 flex flex-col gap-2.5">
               <li v-for="(step, index) in steps" :key="index" class="flex items-start gap-3 text-sm text-muted">

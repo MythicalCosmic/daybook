@@ -12,6 +12,7 @@
   "groups.step3.body": "Выполненные и просроченные задачи, утренний план, итоги дня и другое.",
   "groups.theBot": "бот",
   "groups.untitled": "Группа без названия",
+  "groups.nothingOn": "Пока ничего не публикуется",
   "groups.connected": "Подключена",
   "groups.connectedBy": "Подключил(а) {name}, {date}",
   "groups.connectedOn": "Подключена {date}",

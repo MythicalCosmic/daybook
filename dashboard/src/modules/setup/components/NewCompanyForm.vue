@@ -49,7 +49,7 @@ const form = useForm(
   {
     name: "",
     timezone: "Asia/Tashkent",
-    language: (locale.value === "ru" || locale.value === "en" ? locale.value : "uz") as "uz" | "ru" | "en",
+    language: (locale.value === "ru" ? "ru" : "uz") as "uz" | "ru" | "en",
     base_currency: "UZS" as "UZS" | "USD",
     signup_code: "",
     copy_from: null as number | null,
@@ -127,7 +127,7 @@ async function submit(event?: Event): Promise<void> {
     <InlineAlert tone="neutral" :icon="Lock" :title="t('setup.new.notAllowed')" :description="info.data.value.reason" />
     <div class="flex justify-end"><UiButton @click="props.context.close?.()">{{ t("common.close") }}</UiButton></div>
   </div>
-  <form v-else class="flex flex-col gap-4" novalidate @submit="submit">
+  <form v-else class="flex flex-col gap-4 pt-1" novalidate @submit="submit">
     <FormField :label="t('setup.new.name')" :error="form.errors.name" required>
       <TextInput v-model="form.values.name" :icon="Building2" :maxlength="200" autofocus :placeholder="t('setup.new.namePlaceholder')" @blur="form.touch('name')" />
     </FormField>

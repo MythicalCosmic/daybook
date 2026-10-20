@@ -3,8 +3,8 @@
  * One Telegram group: what the bot posts there (task events, then each module's), and whose news
  * it gets (positions, branches; empty means everyone). Every switch saves at once.
  */
-import { EllipsisVertical, Link2Off, MessagesSquare, Users } from "@lucide/vue";
-import { computed } from "vue";
+import { ChevronDown, EllipsisVertical, Link2Off, MapPin, MessagesSquare, Users } from "@lucide/vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import CompanyLogo from "@/components/CompanyLogo.vue";
@@ -21,9 +21,14 @@ import { useFormat } from "@/lib/useFormat";
 import { useGroupMutations } from "../api";
 import type { GroupEvent, GroupEventKey, GroupsList, TelegramGroup } from "../types";
 
-const props = defineProps<{ group: TelegramGroup; options: GroupsList["options"]; personEvents: GroupEventKey[] }>();
+const props = withDefaults(defineProps<{ group: TelegramGroup; options: GroupsList["options"]; personEvents: GroupEventKey[]; defaultOpen?: boolean }>(), {
+  defaultOpen: false,
+});
 
 const { t, te } = useI18n();
+const open = ref(props.defaultOpen);
+const onEvents = computed(() => props.group.events.filter((e) => e.on));
+const SUMMARY_CHIPS = 4;
 const fmt = useFormat();
 const confirm = useConfirm();
 const mutations = useGroupMutations();
@@ -72,25 +77,43 @@ const menu = computed(() => [{ label: t("groups.disconnect"), icon: Link2Off, da
 </script>
 
 <template>
-  <article class="ui-card overflow-hidden">
-    <header class="flex items-center gap-3 border-b border-line px-4 py-3.5 md:px-5">
-      <CompanyLogo :name="group.title || String(group.chat_id)" :size="40" />
-      <div class="min-w-0 flex-1">
-        <h3 class="flex items-center gap-2 truncate text-md font-semibold text-fg">
-          {{ group.title || t("groups.untitled") }}
-        </h3>
-        <p class="truncate text-sm text-muted">
-          <template v-if="group.linked_by">{{ t("groups.connectedBy", { name: group.linked_by.name, date: fmt.instant(group.connected_at, "date") }) }}</template>
-          <template v-else>{{ t("groups.connectedOn", { date: fmt.instant(group.connected_at, "date") }) }}</template>
-        </p>
-      </div>
+  <article :class="['ui-card overflow-hidden transition-shadow duration-200', open && 'shadow-[var(--sh-raised)]']">
+    <header :class="['flex items-center gap-3 px-4 py-3.5 md:px-5', open && 'border-b border-line']">
+      <button
+        type="button"
+        class="pressable -my-1 -ml-1 flex min-w-0 flex-1 items-center gap-3 rounded-[10px] p-1 text-left"
+        :aria-expanded="open"
+        :aria-controls="`group-${group.id}-body`"
+        @click="open = !open"
+      >
+        <CompanyLogo :name="group.title || String(group.chat_id)" :size="40" />
+        <span class="min-w-0 flex-1">
+          <span class="block truncate text-md font-semibold text-fg">{{ group.title || t("groups.untitled") }}</span>
+          <span class="block truncate text-sm text-muted">
+            <template v-if="group.linked_by">{{ t("groups.connectedBy", { name: group.linked_by.name, date: fmt.instant(group.connected_at, "date") }) }}</template>
+            <template v-else>{{ t("groups.connectedOn", { date: fmt.instant(group.connected_at, "date") }) }}</template>
+          </span>
+        </span>
+        <ChevronDown :size="18" :class="['shrink-0 text-subtle transition-transform duration-200', open && 'rotate-180']" />
+      </button>
       <StatusPill tone="success" size="sm" :label="t('groups.connected')" class="max-sm:hidden" />
       <DropdownMenu :items="menu">
         <template #trigger><IconButton :icon="EllipsisVertical" :label="t('groups.actions')" size="sm" /></template>
       </DropdownMenu>
     </header>
 
-    <div class="grid gap-6 p-4 md:p-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <!-- Collapsed: what it gets, at a glance -->
+    <div v-if="!open" class="flex flex-wrap items-center gap-1.5 px-4 pb-4 md:px-5">
+      <span v-for="event in onEvents.slice(0, SUMMARY_CHIPS)" :key="event.key" class="rounded-full bg-accent-soft px-2.5 py-1 text-xs font-medium text-accent-fg">{{ eventTitle(event) }}</span>
+      <span v-if="onEvents.length > SUMMARY_CHIPS" class="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-medium text-muted">+{{ onEvents.length - SUMMARY_CHIPS }}</span>
+      <span v-if="!onEvents.length" class="text-sm text-muted">{{ t("groups.nothingOn") }}</span>
+      <span class="ml-auto flex items-center gap-3 text-xs text-muted">
+        <span class="inline-flex items-center gap-1"><Users :size="13" />{{ group.positions.length ? group.positions.map((p) => p.name).join(", ") : t("groups.everyone") }}</span>
+        <span class="inline-flex items-center gap-1"><MapPin :size="13" />{{ group.branches.length ? group.branches.map((b) => b.name).join(", ") : t("groups.everyBranch") }}</span>
+      </span>
+    </div>
+
+    <div v-else :id="`group-${group.id}-body`" class="grid gap-6 p-4 md:p-5 lg:grid-cols-[minmax(0,1fr)_300px]">
       <div class="flex flex-col gap-5">
         <section>
           <p class="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.06em] text-subtle"><MessagesSquare :size="13" />{{ t("groups.taskEvents") }}</p>

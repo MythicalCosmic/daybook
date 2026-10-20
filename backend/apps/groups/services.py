@@ -173,6 +173,41 @@ def bot_removed(chat_id: int, by: User | None = None) -> None:
         return
     TelegramGroup.objects.filter(pk=group.pk).update(is_active=False)
     _audit(AuditLog.Action.GROUP_REMOVED, group, by)
+    _tell_managers_removed(group, by)
+
+
+def _tell_managers_removed(group: TelegramGroup, by: User | None) -> None:
+    """Whoever manages groups hears that the bot was taken out of one (a "Kassa" group that
+    goes quiet is worth knowing about)."""
+    from apps.inbox.services import notify
+
+    managers = [
+        member
+        for member in Membership.objects.filter(
+            company_id=group.company_id, status=Membership.Status.APPROVED
+        ).select_related("role", "company", "user")
+        if member.has_perm(Perm.GROUPS_MANAGE)
+    ]
+    if not managers:
+        return
+    remover = str(by) if by is not None else ""
+    title = group.title or str(group.chat_id)
+    notify(
+        managers,
+        "groups.removed",
+        title=lambda member: _("The bot was removed from %(group)s") % {"group": title},
+        body=(
+            lambda member: (
+                _("Removed by %(name)s. Add the bot again to keep the group posted.")
+                % {"name": remover}
+                if remover
+                else _("Add the bot again to keep the group posted.")
+            )
+        ),
+        url=f"/c/{group.company_id}/groups",
+        target=group,
+        dedupe_key=f"groups.removed:{group.pk}:{group.updated_at:%Y%m%d%H%M}",
+    )
 
 
 def _audit(action: AuditLog.Action, group: TelegramGroup, by: User | None, **details) -> None:
