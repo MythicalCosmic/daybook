@@ -47,6 +47,8 @@ services:
       - sh
       - -c
       - |
+        # Only root on the server may read them: they hold contracts, ID scans and salaries.
+        umask 077
         while true; do
           pg_dump --no-owner | gzip > /backups/trello-$$(date +%F).sql.gz
           tar czf /backups/private-media-$$(date +%F).tgz -C /private_media .

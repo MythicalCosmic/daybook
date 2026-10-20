@@ -11,7 +11,8 @@ x-env: &env
   BOT_FSM_REDIS_URL: redis://redis:6379/2
 
 # Health checks ask with the site's own host name: Django refuses any host that isn't in
-# DJANGO_ALLOWED_HOSTS, and in production that is only the domain.
+# DJANGO_ALLOWED_HOSTS, and in production that is only the domain. They say HTTPS, as Caddy
+# does, so DJANGO_SECURE_SSL_REDIRECT can't answer them with a redirect.
 x-healthcheck: &healthcheck
   interval: 10s
   timeout: 5s
@@ -73,10 +74,11 @@ services:
   backend:
     <<: *app
     # Defaults every module needs (payment methods, categories…) are filled in for companies
-    # that existed before the module did; it's idempotent.
+    # that existed before the module did; it's idempotent. A company whose defaults fail is
+    # logged and retried on the next start, but never keeps the site down for everyone else.
     command: >-
       sh -c "python manage.py migrate --noinput
-      && python manage.py ensure_company_defaults
+      && { python manage.py ensure_company_defaults || echo 'Company defaults failed (see the log above); starting anyway.' >&2; }
       && exec gunicorn config.wsgi --bind 0.0.0.0:8000 --workers 3 --access-logfile -"
     ports:
       - "127.0.0.1:28000:8000"
@@ -89,9 +91,8 @@ services:
         - |
           import os, urllib.request
           host = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")[0].strip().lstrip(".")
-          request = urllib.request.Request(
-              "http://127.0.0.1:8000/health/", headers={"Host": host.strip("*") or "localhost"}
-          )
+          headers = {"Host": host.strip("*") or "localhost", "X-Forwarded-Proto": "https"}
+          request = urllib.request.Request("http://127.0.0.1:8000/health/", headers=headers)
           urllib.request.urlopen(request, timeout=4)
 
   # Notifications, group posts, exports and everything else except AI calls.
@@ -129,9 +130,8 @@ services:
         - |
           import os, urllib.request
           host = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")[0].strip().lstrip(".")
-          request = urllib.request.Request(
-              "http://127.0.0.1:8001/health/", headers={"Host": host.strip("*") or "localhost"}
-          )
+          headers = {"Host": host.strip("*") or "localhost", "X-Forwarded-Proto": "https"}
+          request = urllib.request.Request("http://127.0.0.1:8001/health/", headers=headers)
           urllib.request.urlopen(request, timeout=4)
 
   employee_bot:

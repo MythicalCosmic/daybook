@@ -8,7 +8,7 @@ from django.utils import timezone
 from apps.accounts.models import User
 from apps.companies.models import Company, Feature
 from apps.core.management.commands import seed_demo
-from apps.members.models import Membership
+from apps.members.models import AccessRole, Membership
 from apps.reports import kpis
 from apps.tasks.models import Task
 
@@ -209,4 +209,40 @@ def test_unknown_demo_apps_are_refused(debug, monkeypatch):
     monkeypatch.setenv("DEMO_APPS", "nope")
     with pytest.raises(CommandError, match="nope"):
         seed()
+    assert not Company.objects.filter(slug="demo-shop").exists()
+
+
+def test_a_failing_rebuild_keeps_the_previous_demo(debug, monkeypatch):
+    seed()
+    shop = Company.objects.get(slug="demo-shop")
+
+    def broken(company, people, now):
+        raise RuntimeError("half-finished demo.py")
+
+    monkeypatch.setattr("apps.sales.demo.seed", broken)
+    with pytest.raises(RuntimeError):
+        seed(reset=True)
+
+    assert Company.objects.get(slug="demo-shop").pk == shop.pk
+    assert Company.objects.filter(slug="demo-cafe").exists()
+    assert User.objects.filter(telegram_id=seed_demo.WORKER).exists()
+
+
+def test_owner_tg_finds_the_owner_role_even_renamed(debug):
+    seed()
+    AccessRole.objects.filter(company__slug="demo-shop", is_owner=True).update(name="Boss")
+
+    seed(owner_tg=REAL_OWNER)
+
+    shop_membership = Membership.objects.get(
+        user__telegram_id=REAL_OWNER, company__slug="demo-shop"
+    )
+    assert shop_membership.role.name == "Boss"
+    assert shop_membership.role.is_owner
+
+
+@pytest.mark.parametrize("telegram_id", [0, -1_001_555])
+def test_owner_tg_must_be_a_user_id(debug, telegram_id):
+    with pytest.raises(CommandError, match="Telegram user id"):
+        seed(owner_tg=telegram_id)
     assert not Company.objects.filter(slug="demo-shop").exists()

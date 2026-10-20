@@ -129,25 +129,29 @@ class Command(BaseCommand):
         if not settings.DEBUG and not force:
             raise CommandError("Refusing to seed demo data with DEBUG off (use --force).")
         demo_apps = self._demo_apps(os.environ.get("DEMO_APPS", "") if only is None else only)
+        if owner_tg is not None and owner_tg <= 0:
+            raise CommandError(f"{owner_tg} isn't a Telegram user id.")
         if owner_tg is not None and owner_tg in EVERYONE:
             raise CommandError(f"{owner_tg} is one of the demo people; pick another account.")
 
-        if Company.objects.filter(slug__in=(SLUG, CAFE_SLUG)).exists():
-            if not reset:
-                if owner_tg is None:
-                    raise CommandError(
-                        "The demo already exists. Use --reset to rebuild it "
-                        "(or --owner-tg to add an owner to it)."
-                    )
-                with transaction.atomic():
-                    names = self._add_owner(owner_tg, timezone.now())
-                self.stdout.write(
-                    self.style.SUCCESS(f"{owner_tg} is now an Owner of {', '.join(names)}.")
+        exists = Company.objects.filter(slug__in=(SLUG, CAFE_SLUG)).exists()
+        if exists and not reset:
+            if owner_tg is None:
+                raise CommandError(
+                    "The demo already exists. Use --reset to rebuild it "
+                    "(or --owner-tg to add an owner to it)."
                 )
-                return
-            self._remove()
+            with transaction.atomic():
+                names = self._add_owner(owner_tg, timezone.now())
+            self.stdout.write(
+                self.style.SUCCESS(f"{owner_tg} is now an Owner of {', '.join(names)}.")
+            )
+            return
 
+        # One transaction: if a module's demo fails, the previous demo is still there.
         with transaction.atomic():
+            if exists:
+                self._remove()
             seeded = self._build(demo_apps, owner_tg)
         self.stdout.write(self.style.SUCCESS("Demo Shop and Demo Café are ready."))
         self.stdout.write(
@@ -172,11 +176,10 @@ class Command(BaseCommand):
     # Removing ---------------------------------------------------------------------------------
 
     def _remove(self):
-        with transaction.atomic():
-            for company in Company.objects.filter(slug__in=(SLUG, CAFE_SLUG)):
-                self._remove_company(company)
-            # Only the demo people: an --owner-tg account is a real person and stays.
-            User.objects.filter(telegram_id__in=EVERYONE).delete()
+        for company in Company.objects.filter(slug__in=(SLUG, CAFE_SLUG)):
+            self._remove_company(company)
+        # Only the demo people: an --owner-tg account is a real person and stays.
+        User.objects.filter(telegram_id__in=EVERYONE).delete()
 
     def _remove_company(self, company: Company):
         # Every per-company model, in whatever order their protected links allow.
@@ -235,12 +238,16 @@ class Command(BaseCommand):
         names = []
         for company in Company.objects.filter(slug__in=(SLUG, CAFE_SLUG)).order_by("name"):
             branches = list(company.branches.order_by("order", "pk"))
+            # By what it is, not its name: an owner may have renamed the role.
+            role = AccessRole.objects.filter(company=company, is_owner=True).order_by("pk").first()
+            if role is None:
+                raise CommandError(f"{company.name} has no owner role.")
             membership, _ = Membership.objects.update_or_create(
                 company=company,
                 user=user,
                 defaults={
                     "status": Membership.Status.APPROVED,
-                    "role": AccessRole.objects.get(company=company, is_owner=True, name="Owner"),
+                    "role": role,
                     "first_name": user.first_name or "Owner",
                     "last_name": user.last_name,
                     "onboarded_at": now,
