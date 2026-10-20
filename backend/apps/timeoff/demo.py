@@ -31,7 +31,8 @@ def seed(company, people, now) -> None:
     today = timezone.localdate()
     for year in (today.year, today.year + 1):
         for month, day, _name in PUBLIC_HOLIDAYS:
-            Holiday.objects.get_or_create(
+            # update_or_create: the core demo may have named one in English already.
+            Holiday.objects.update_or_create(
                 company=company,
                 date=date(year, month, day),
                 defaults={"name": UZ_NAMES[(month, day)]},

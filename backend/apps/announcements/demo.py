@@ -6,6 +6,7 @@ from datetime import timedelta
 
 from django.utils import timezone
 
+from apps.announcements.audit_actions import AnnouncementAction
 from apps.announcements.models import Announcement, Receipt
 from apps.announcements.services import audience
 from apps.audit import services as audit
@@ -121,7 +122,7 @@ def seed(company, people, now) -> None:
 
     # Tomorrow morning's reminder, written today and sent by the scheduler.
     tomorrow = timezone.localtime(now).replace(hour=9, minute=0, second=0, microsecond=0)
-    Announcement.objects.create(
+    scheduled = Announcement.objects.create(
         company=company,
         author=people["manager"],
         text=(
@@ -130,12 +131,25 @@ def seed(company, people, now) -> None:
         ),
         status=Announcement.Status.SCHEDULED,
         scheduled_for=tomorrow + timedelta(days=1),
-    ).branches.set([branches[name] for name in ("Chilonzor",) if name in branches])
+    )
+    chilonzor = [branches[name] for name in ("Chilonzor",) if name in branches]
+    scheduled.branches.set(chilonzor)
+    audit.record(
+        AnnouncementAction.SCHEDULED,
+        company_id=company.pk,
+        actor=people["manager"].user,
+        target=scheduled,
+        scheduled_for=scheduled.scheduled_for.isoformat(),
+        positions=[],
+        branches=[branch.name for branch in chilonzor],
+    )
     # A notice the owner called off.
-    Announcement.objects.create(
+    called_off = Announcement.objects.create(
         company=company,
         author=people["owner"],
         text="Juma kuni korporativ kechki ovqat — tafsilotlar keyinroq.",
         status=Announcement.Status.CANCELLED,
         scheduled_for=now + timedelta(days=2),
     )
+    for action in (AnnouncementAction.SCHEDULED, AnnouncementAction.CANCELLED):
+        audit.record(action, company_id=company.pk, actor=people["owner"].user, target=called_off)

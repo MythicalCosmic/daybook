@@ -8,7 +8,7 @@ from datetime import date, datetime, timedelta
 
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from django.utils.translation import gettext_lazy
+from django.utils.translation import gettext_lazy, ngettext
 
 from apps.audit.models import AuditLog
 from apps.companies.models import Branch, Company
@@ -219,13 +219,32 @@ def offboard_step(membership: Membership) -> OffboardStep:
     cancelled = open_tasks.count() - returned
     if returned:
         lines.append(
-            _("%(count)d open tasks go back to the people who gave them.") % {"count": returned}
+            ngettext(
+                "%(count)d open task goes back to the person who gave it.",
+                "%(count)d open tasks go back to the people who gave them.",
+                returned,
+            )
+            % {"count": returned}
         )
     if cancelled:
-        lines.append(_("%(count)d daily and personal tasks are cancelled.") % {"count": cancelled})
+        lines.append(
+            ngettext(
+                "%(count)d daily or personal task is cancelled.",
+                "%(count)d daily and personal tasks are cancelled.",
+                cancelled,
+            )
+            % {"count": cancelled}
+        )
     routines = membership.task_templates.filter(is_active=True, personal=False).count()
     if routines:
-        lines.append(_("They are taken off %(count)d routines.") % {"count": routines})
+        lines.append(
+            ngettext(
+                "They are taken off %(count)d routine.",
+                "They are taken off %(count)d routines.",
+                routines,
+            )
+            % {"count": routines}
+        )
     blockers = []
     if membership.role is not None and membership.role.is_owner:
         owners = Membership.objects.filter(

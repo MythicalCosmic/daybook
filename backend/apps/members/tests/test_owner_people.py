@@ -339,3 +339,39 @@ def test_registrations_have_app_prefixed_keys():
     assert "members.positions" in registry.SETUP_STEPS
     assert {"members.positions", "members.roles"} <= set(registry.COPY_PARTS.keys())
     assert isinstance(registry.PERSON_FIELDS.get("timeoff").perm, AnyOf)
+
+
+def test_stats_count_the_team_inside_the_callers_branches(
+    owner_api, owner, company, member, branches
+):
+    from apps.timeoff.models import TimeOff
+
+    chilonzor, yunusobod = branches
+    away = placed(member, company, chilonzor, first_name="Away")
+    placed(member, company, chilonzor, first_name="Here")
+    paused = placed(member, company, yunusobod, first_name="Paused")
+    Membership.objects.filter(pk=paused.pk).update(status=Membership.Status.SUSPENDED)
+    today = timezone.localdate()
+    TimeOff.objects.create(
+        company=company,
+        membership=away,
+        first_day=today,
+        last_day=today + timedelta(days=1),
+        status=TimeOff.Status.APPROVED,
+    )
+
+    data = owner_api(owner).get(url(company, "stats/")).data
+    assert data["suspended"] == 1
+    assert data["on_leave_today"] == 1
+    assert data["current"] == data["active"] + 1
+
+    role = AccessRoleFactory(
+        company=company, permissions=[Perm.DASHBOARD_ACCESS, Perm.MEMBERS_VIEW]
+    )
+    boss = member.registered(company, role.name, first_name="Boss", home_branch=chilonzor)
+    boss.branches.set([chilonzor])
+    scoped = owner_api(boss).get(url(company, "stats/")).data
+    # Yunusobod's suspended person is outside the scope; join requests need members.approve.
+    assert scoped["suspended"] == 0
+    assert scoped["on_leave_today"] == 1
+    assert scoped["pending_requests"] == 0
