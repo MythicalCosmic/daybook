@@ -4,7 +4,7 @@
  * shell renders ForbiddenPage in place, so the URL stays shareable). Module messages are loaded
  * before a module's page renders.
  */
-import type { Router } from "vue-router";
+import type { RouteLocationNormalized, Router } from "vue-router";
 
 import { findModule, modules } from "@/core/modules";
 import { buildNav } from "@/core/nav";
@@ -18,6 +18,17 @@ import { pathInCompany } from "./navigation";
 
 export { safeNext };
 
+/** The owning module's messages, before its page renders (public pages included). */
+async function loadMessages(to: RouteLocationNormalized): Promise<void> {
+  const module = findModule(to.matched.map((record) => record.meta.module).find(Boolean));
+  if (!module) return;
+  try {
+    await ensureModuleMessages(module);
+  } catch {
+    // Missing translations must never block the page; keys show until the retry succeeds.
+  }
+}
+
 export function installGuards(router: Router): void {
   router.beforeEach(async (to) => {
     const session = useSessionStore();
@@ -25,6 +36,7 @@ export function installGuards(router: Router): void {
 
     if (to.meta.public) {
       if ((to.name === "login" || to.name === "dev-login") && session.signedIn) return safeNext(to.query.next);
+      await loadMessages(to);
       return true;
     }
     if (!session.signedIn) {
@@ -52,14 +64,7 @@ export function installGuards(router: Router): void {
       return id === null ? { name: "welcome", replace: true } : { path: `/c/${id}`, replace: true };
     }
 
-    const module = findModule(to.matched.map((record) => record.meta.module).find(Boolean));
-    if (module) {
-      try {
-        await ensureModuleMessages(module);
-      } catch {
-        // Missing translations must never block the page; keys show until the retry succeeds.
-      }
-    }
+    await loadMessages(to);
     return true;
   });
 }

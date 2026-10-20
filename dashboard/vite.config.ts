@@ -42,7 +42,13 @@ export default defineConfig({
     host: "127.0.0.1",
     port,
     strictPort: true,
-    proxy: { "/api": backend, "/media": backend },
+    // The Host header stays the dev server's own: the cookie endpoints (refresh, logout, dev login)
+    // accept only a same-origin `Origin` (apps.signin.auth.FromDashboard), and Vite's string
+    // shorthand would rewrite Host to the backend's and make every one of them answer 403.
+    proxy: {
+      "/api": { target: backend, changeOrigin: false },
+      "/media": { target: backend, changeOrigin: false },
+    },
   },
   preview: { host: "127.0.0.1", port, strictPort: true },
   build: {

@@ -8,19 +8,7 @@
 import { keepPreviousData, useQuery } from "@tanstack/vue-query";
 import {
   ArrowRight,
-  Banknote,
-  BookOpen,
   Building2,
-  Contact,
-  FolderKanban,
-  Handshake,
-  ListTodo,
-  Megaphone,
-  Package,
-  Receipt,
-  ScrollText,
-  Store,
-  Users,
   Clock3,
   CornerDownLeft,
   FileText,
@@ -69,6 +57,7 @@ import { keys } from "@/api/keys";
 import { shellApi } from "@/api/shell";
 import { LANGUAGES, type SearchHit } from "@/api/types";
 import CompanyLogo from "@/components/CompanyLogo.vue";
+import { iconForKind } from "@/components/kindIcons";
 import KbdKey from "@/components/KbdKey.vue";
 import UiSpinner from "@/components/UiSpinner.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
@@ -310,14 +299,17 @@ const resultItems = computed<Item[]>(() => {
     section: "results" as const,
     title: hit.title,
     subtitle: hit.subtitle,
-    icon: TYPE_ICONS[hit.type] ?? FileText,
-    person: hit.type === "people" ? hit.title : undefined,
+    icon: iconForKind(hit.type, FileText),
+    // People hits ("members.people", "people") show the person's initials.
+    person: isPersonHit(hit.type) ? hit.title : undefined,
     keywords: [],
     hit,
     renderer: rendererFor(hit.type),
     run: () => go(hit.url),
   }));
 });
+
+const isPersonHit = (type: string) => type === "people" || type.endsWith(".people") || type === "members";
 
 const typeLabel = (type: string) => {
   const [prefix] = type.split(".");
@@ -345,23 +337,6 @@ function rankByPrefix(items: Item[], q: string): Item[] {
   return items.map((item, index) => ({ item, index, rank: bucket(item) })).sort((a, b) => a.rank - b.rank || a.index - b.index).map((x) => x.item);
 }
 
-const TYPE_ICONS: Record<string, Component> = {
-  people: Users,
-  tasks: ListTodo,
-  shifts: Store,
-  transactions: Banknote,
-  counterparties: Building2,
-  customers: Contact,
-  projects: FolderKanban,
-  products: Package,
-  documents: FileText,
-  policies: ScrollText,
-  announcements: Megaphone,
-  payroll_runs: Banknote,
-  pages: BookOpen,
-  deals: Handshake,
-  invoices: Receipt,
-};
 
 interface SectionView {
   id: string;
