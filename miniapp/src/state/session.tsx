@@ -1,5 +1,6 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 
+import { isSuspended } from "../api/membership";
 import type { Me, Membership } from "../api/types";
 
 const STORAGE_KEY = "daybook.company";
@@ -21,8 +22,8 @@ function pickMembership(me: Me, preferred: number | null): Membership | null {
   return (
     approved.find((m) => m.company.id === preferred) ??
     approved[0] ??
-    // "suspended" arrives with the lifecycle work; the gate shows the "Access paused" screen.
-    memberships.find((m) => (m.status as string) === "suspended") ??
+    // A suspended person (§13.4) sees the "Access paused" screen, ahead of older states.
+    memberships.find(isSuspended) ??
     memberships.find((m) => m.status === "pending") ??
     memberships.find((m) => m.status === "rejected") ??
     memberships.find((m) => m.status === "blocked") ??

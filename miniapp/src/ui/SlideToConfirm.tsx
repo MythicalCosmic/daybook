@@ -1,5 +1,5 @@
 import { Check, ChevronsRight } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 
 import { haptic } from "../telegram";
 import { Spinner } from "./Button";
@@ -36,6 +36,7 @@ export function SlideToConfirm({
   icon?: IconLike;
   disabled?: boolean;
 }) {
+  const labelId = useId();
   const track = useRef<HTMLDivElement>(null);
   const [offset, setOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
@@ -107,15 +108,17 @@ export function SlideToConfirm({
       className={cx("ui-slide", `ui-slide--${tone}`, dragging && "is-dragging", state !== "idle" && `is-${state}`, disabled && "is-disabled")}
     >
       <span className="ui-slide-fill" style={{ width: offset + KNOB + INSET * 2 }} />
-      <span className="ui-slide-label" style={{ opacity: state === "idle" ? 1 - Math.min(1, progress * 1.6) : 1 }} aria-hidden>
+      {/* Hidden from the reading order (the knob reads it out instead), but still its name. */}
+      <span id={labelId} className="ui-slide-label" style={{ opacity: state === "idle" ? 1 - Math.min(1, progress * 1.6) : 1 }} aria-hidden>
         {state === "done" && doneLabel ? doneLabel : label}
       </span>
       <button
         type="button"
         className="ui-slide-knob"
         style={{ transform: `translateX(${offset}px)` }}
-        aria-label={typeof label === "string" ? label : undefined}
+        aria-labelledby={labelId}
         aria-disabled={locked || undefined}
+        aria-busy={state === "loading" || undefined}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerEnd}

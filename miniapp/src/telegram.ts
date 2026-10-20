@@ -13,9 +13,17 @@ type WebApp = Window["Telegram"]["WebApp"];
 
 const webApp: WebApp | undefined = window.Telegram?.WebApp;
 
+/**
+ * Whether a Telegram client hosts the page. telegram-web-app.js also runs in a plain browser,
+ * where it reports platform "unknown" and version "6.0": nothing draws its buttons there.
+ */
+export function insideTelegram(): boolean {
+  return Boolean(webApp) && webApp?.platform !== undefined && webApp.platform !== "unknown";
+}
+
 /** Whether this Telegram client supports a Bot API version ("6.1", "7.10", "8.0" …). */
 export function supports(version: string): boolean {
-  return Boolean(webApp?.isVersionAtLeast?.(version));
+  return insideTelegram() && Boolean(webApp?.isVersionAtLeast?.(version));
 }
 
 export function initData(): string {
@@ -270,16 +278,41 @@ export function confirm(message: string): Promise<boolean> {
   });
 }
 
-/** Open an external link (Telegram's in-app browser when available). */
-export function openLink(url: string): void {
-  if (webApp && supports("6.1")) webApp.openLink(url);
-  else window.open(url, "_blank", "noopener");
+/** The absolute http(s) form of `url` (relative ones resolve against the app), or null for anything else. */
+export function webUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url, window.location.href);
+    return parsed.protocol === "https:" || parsed.protocol === "http:" ? parsed.href : null;
+  } catch {
+    return null;
+  }
 }
 
-/** Open a t.me link inside Telegram (a chat, a bot, a profile). */
-export function openTelegramLink(url: string): void {
-  if (webApp && supports("6.1")) webApp.openTelegramLink(url);
-  else window.open(url, "_blank", "noopener");
+/**
+ * Open an external link (Telegram's in-app browser when available). Only http(s) links open:
+ * a `javascript:` or `data:` URL from a server field is dropped, never run. Returns whether it opened.
+ */
+export function openLink(url: string): boolean {
+  const safe = webUrl(url);
+  if (!safe) {
+    console.error("Refusing to open a non-web link", url);
+    return false;
+  }
+  if (webApp && supports("6.1")) webApp.openLink(safe);
+  else window.open(safe, "_blank", "noopener");
+  return true;
+}
+
+/** Open a t.me link inside Telegram (a chat, a bot, a profile). Returns whether it opened. */
+export function openTelegramLink(url: string): boolean {
+  const safe = webUrl(url);
+  if (!safe || !/^(www\.)?t\.me$/i.test(new URL(safe).hostname)) {
+    console.error("Refusing to open a non-t.me link", url);
+    return false;
+  }
+  if (webApp && supports("6.1")) webApp.openTelegramLink(safe);
+  else window.open(safe, "_blank", "noopener");
+  return true;
 }
 
 // — cloud storage —

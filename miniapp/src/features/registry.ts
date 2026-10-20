@@ -152,7 +152,12 @@ export type Feature = {
    */
   gates?: { suspended?: ComponentType<GateProps> };
   messages: { en: Dictionary; ru: Dictionary; uz: Dictionary };
-  /** Hide everything the feature shows (slots, rows, actions, replacements) for this person. */
+  /**
+   * Hide everything the feature shows for this person: slots, rows, actions, replacements, and
+   * its pages and sheets (a deep link to them shows "not found"). `summary` is undefined while
+   * it loads. A feature a suspended person keeps (pay, documents: §13.4) must also say yes when
+   * `isSuspended(member)` (api/membership). Module switches: `hasModule(member, "payroll")`.
+   */
   visible?: Visible;
 };
 
@@ -244,8 +249,13 @@ function allowed(visible: Visible | undefined, context: FeatureContext, where: s
   }
 }
 
+/** Whether the feature is on for this person: its slots, rows, actions, pages and sheets. */
+export function featureVisible(feature: Feature, context: FeatureContext): boolean {
+  return allowed(feature.visible, context, feature.id);
+}
+
 export function visibleFeatures(list: readonly Feature[], context: FeatureContext): Feature[] {
-  return list.filter((feature) => allowed(feature.visible, context, feature.id));
+  return list.filter((feature) => featureVisible(feature, context));
 }
 
 function place<T extends { id: string; order?: number; visible?: Visible }>(
@@ -330,12 +340,12 @@ export function routeTarget(list: readonly Feature[], name: string, arg: string 
     if (typeof route === "function") return route(arg);
     const spec = typeof route === "string" ? { page: route } : route;
     const params: Params = arg !== null ? { [spec.param ?? "id"]: paramValue(arg) } : {};
+    // A route naming a page or sheet the folder doesn't have leaves the name to the next feature.
     if ("page" in spec) {
-      if (!feature.pages?.[spec.page]) return null;
-      return { tab: spec.tab ?? "home", stack: [{ feature: feature.id, page: spec.page, params }] };
+      if (feature.pages?.[spec.page]) return { tab: spec.tab ?? "home", stack: [{ feature: feature.id, page: spec.page, params }] };
+    } else if (feature.sheets?.[spec.sheet]) {
+      return { tab: spec.tab ?? "home", sheet: { kind: "feature", feature: feature.id, sheet: spec.sheet, params } };
     }
-    if (!feature.sheets?.[spec.sheet]) return null;
-    return { tab: spec.tab ?? "home", sheet: { kind: "feature", feature: feature.id, sheet: spec.sheet, params } };
   }
   const dot = name.indexOf(".");
   if (dot > 0) {

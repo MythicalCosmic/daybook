@@ -347,6 +347,8 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
   "ui.notFound.title": "Такой страницы нет",
   "ui.notFound.body": "Возможно, она переехала или недоступна вам.",
   "ui.notFound.back": "Назад",
+  "ui.failed.title": "Этот раздел не открылся",
+  "ui.failed.body": "Что-то сломалось на нашей стороне. Вернитесь и попробуйте чуть позже.",
   "me.group.money": "Деньги",
   "me.group.work": "Работа",
   "me.group.documents": "Документы",

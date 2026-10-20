@@ -1,8 +1,12 @@
-import type { ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, type ReactNode } from "react";
 
 /**
  * The bottom sheet: a dimmed backdrop (tap to close), a handle, and the content. Telegram's back
- * button closes navigation sheets through `useNavigation().closeSheet`.
+ * button closes navigation sheets through `useNavigation().closeSheet`; Escape closes it too.
+ *
+ * For keyboards and screen readers it is a named dialog: it takes focus when it opens (unless a
+ * field inside already did, through `autoFocus`), gives it back to the button that opened it when
+ * it closes, and is named by `title`, `label`, or else the first heading inside it.
  */
 export function Sheet({
   onClose,
@@ -17,16 +21,79 @@ export function Sheet({
   /** Name for screen readers when there is no visible title. */
   label?: string;
 }) {
+  const dialog = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const close = useRef(onClose);
+  close.current = onClose;
+
+  // Name the dialog after the heading its content brings (the content changes while it stays open).
+  useLayoutEffect(() => {
+    const element = dialog.current;
+    if (!element || title !== undefined || label) return;
+    const heading = element.querySelector<HTMLElement>(".heading");
+    if (!heading) {
+      element.removeAttribute("aria-labelledby");
+      return;
+    }
+    heading.id ||= `${titleId}-heading`;
+    element.setAttribute("aria-labelledby", heading.id);
+  });
+
+  useEffect(() => {
+    const element = dialog.current;
+    if (!element) return;
+    // Only a keyboard user (whose opener shows a focus ring) gets focus handed back: on a phone,
+    // moving focus to the + button after typing would light its ring up for no reason.
+    const active = document.activeElement;
+    const opener = active instanceof HTMLElement && active !== document.body && matchesFocusVisible(active) ? active : null;
+    if (!element.contains(document.activeElement)) element.focus({ preventScroll: true });
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !event.defaultPrevented) {
+        event.preventDefault();
+        close.current();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      // Back to the button that opened the sheet; never to a field, which would pop the keyboard up.
+      const isField = opener instanceof HTMLInputElement || opener instanceof HTMLTextAreaElement || opener instanceof HTMLSelectElement;
+      const focusLost = document.activeElement === null || document.activeElement === document.body || element.contains(document.activeElement);
+      if (opener?.isConnected && !isField && focusLost) opener.focus({ preventScroll: true });
+    };
+  }, []);
+
   return (
     <div className="sheet-layer">
       <div className="sheet-backdrop" onClick={onClose} />
-      <div className="sheet" role="dialog" aria-modal="true" aria-label={label}>
+      <div
+        ref={dialog}
+        className="sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={label}
+        aria-labelledby={title !== undefined && !label ? titleId : undefined}
+        tabIndex={-1}
+      >
         <div className="sheet-handle" />
-        {title !== undefined && <div className="heading title-sm">{title}</div>}
+        {title !== undefined && (
+          <div className="heading title-sm" id={titleId}>
+            {title}
+          </div>
+        )}
         {children}
       </div>
     </div>
   );
+}
+
+function matchesFocusVisible(element: Element): boolean {
+  try {
+    return element.matches(":focus-visible");
+  } catch {
+    // An engine without :focus-visible: hand focus back, as a dialog should.
+    return true;
+  }
 }
 
 /** A sheet heading, optionally with a small terracotta line above ("Finish task"). */

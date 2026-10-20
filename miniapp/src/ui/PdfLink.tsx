@@ -1,5 +1,5 @@
 import { ExternalLink, FileText } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 
 import { errorText } from "../lib/actions";
 import { useI18n } from "../i18n";
@@ -31,6 +31,17 @@ export function PdfLink({
   const { t } = useI18n();
   const toast = useToast();
   const [opening, setOpening] = useState(false);
+  // The signed URL is asked for as the finger lands, so it is usually back by the time the tap
+  // ends: Telegram opens links most reliably straight from the tap.
+  const early = useRef<{ url: Promise<string>; at: number } | null>(null);
+  const prefetch = () => {
+    if (typeof href !== "function") return;
+    // A press that turned into a scroll leaves one behind: signed URLs expire, so only reuse a fresh one.
+    if (early.current && Date.now() - early.current.at < 60_000) return;
+    const url = href();
+    url.catch(() => undefined); // a failure is reported by the tap that uses it
+    early.current = { url, at: Date.now() };
+  };
 
   const open = async () => {
     if (opening) return;
@@ -41,10 +52,13 @@ export function PdfLink({
     }
     setOpening(true);
     try {
-      openLink(await href());
+      const fresh = early.current && Date.now() - early.current.at < 60_000 ? early.current.url : null;
+      const url = await (fresh ?? href());
+      if (!openLink(url)) toast(t("error.generic"), { tone: "error" });
     } catch (error) {
       toast(errorText(error, t), { tone: "error" });
     } finally {
+      early.current = null;
       setOpening(false);
     }
   };
@@ -52,7 +66,7 @@ export function PdfLink({
   const trailing = opening ? <Spinner size={18} /> : <ExternalLink size={18} strokeWidth={2.4} aria-hidden />;
   if (variant === "inset") {
     return (
-      <button type="button" className={cx("list-item", subtitle && "list-item--two-line", className)} onClick={open} aria-busy={opening || undefined}>
+      <button type="button" className={cx("list-item", subtitle && "list-item--two-line", className)} onPointerDown={prefetch} onClick={open} aria-busy={opening || undefined}>
         <span className="list-item-label">
           <FileText size={20} strokeWidth={2.4} aria-hidden />
           {subtitle ? (
@@ -69,7 +83,7 @@ export function PdfLink({
     );
   }
   return (
-    <button type="button" className={cx("row ui-pdf", className)} onClick={open} aria-busy={opening || undefined}>
+    <button type="button" className={cx("row ui-pdf", className)} onPointerDown={prefetch} onClick={open} aria-busy={opening || undefined}>
       <span className="circle ui-row-icon ui-row-icon--accent">
         <FileText size={19} strokeWidth={2.4} aria-hidden />
         <span className="ui-pdf-tag">PDF</span>

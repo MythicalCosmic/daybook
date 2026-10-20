@@ -121,6 +121,12 @@ const DEMO = {
     toastSuccess: "You're checked in. Have a good shift!",
     toastError: "No connection. Your draft is saved.",
     toastUndo: "Task done",
+    approved: "Approved",
+    lateBy: "Late 25 min",
+    waiting: "Waiting",
+    onTrack: "On track",
+    paidPages: "Paid 5 Oct · 2 pages",
+    pullDown: "Pull down",
   },
   ru: {
     shift: "Смена 09:00–18:00 · Чиланзар",
@@ -176,6 +182,12 @@ const DEMO = {
     toastSuccess: "Вы отметились. Хорошей смены!",
     toastError: "Нет связи. Черновик сохранён.",
     toastUndo: "Задача выполнена",
+    approved: "Одобрено",
+    lateBy: "Опоздание 25 мин",
+    waiting: "Ждёт ответа",
+    onTrack: "По плану",
+    paidPages: "Выплачено 5 окт · 2 стр.",
+    pullDown: "Потяните вниз",
   },
   uz: {
     shift: "Smena 09:00–18:00 · Chilonzor",
@@ -231,6 +243,12 @@ const DEMO = {
     toastSuccess: "Belgilandingiz. Smenangiz xayrli o‘tsin!",
     toastError: "Aloqa yo‘q. Qoralama saqlandi.",
     toastUndo: "Vazifa bajarildi",
+    approved: "Tasdiqlandi",
+    lateBy: "25 daqiqa kechikdi",
+    waiting: "Javob kutilmoqda",
+    onTrack: "Reja bo‘yicha",
+    paidPages: "5-okt to‘landi · 2 bet",
+    pullDown: "Pastga torting",
   },
 } satisfies Record<Lang, Record<string, string>>;
 
@@ -313,13 +331,13 @@ export function Kitchen({ section }: { section: string | null }) {
           <IconButton icon={PenLine} label={d.later} size={40} />
         </div>
         <div className="kitchen-row">
-          <Badge tone="sage">Approved</Badge>
+          <Badge tone="sage">{d.approved}</Badge>
           <Badge tone="accent" icon={Clock3}>
-            Late 25 min
+            {d.lateBy}
           </Badge>
-          <Badge>Waiting</Badge>
+          <Badge>{d.waiting}</Badge>
           <Badge size="small" tone="sage">
-            ON TRACK
+            {d.onTrack}
           </Badge>
           <CountBadge count={3} />
           <CountBadge count={128} />
@@ -388,12 +406,12 @@ export function Kitchen({ section }: { section: string | null }) {
           <ListRow icon={FileSignature} title={d.documents} subtitle={d.signBody} badge={2} onClick={() => undefined} />
           <ListRow icon={Receipt} title={d.expenses} onClick={() => undefined} />
         </ListCard>
-        <PdfLink title={d.late} subtitle="Paid 5 Oct · 2 pages" href={() => new Promise((resolve) => window.setTimeout(() => resolve("about:blank"), 600))} />
+        <PdfLink title={d.late} subtitle={d.paidPages} href={() => new Promise((resolve) => window.setTimeout(() => resolve("/app/favicon.svg"), 600))} />
         <ListCard>
           <PdfLink variant="inset" title={d.documents} subtitle={d.signBody} href="about:blank" />
         </ListCard>
         <ListRow variant="card" icon={HandCoins} tone="sage" title={d.handover} subtitle={d.handoverBody} onClick={() => undefined} />
-        <ListRow variant="card" icon={Clock3} tone="accent" title={d.late} subtitle="Late 25 min" alert value="09:25" />
+        <ListRow variant="card" icon={Clock3} tone="accent" title={d.late} subtitle={d.lateBy} alert value="09:25" />
         <div className="kitchen-row">
           <Avatar name="Alisher Valiyev" size="xs" />
           <Avatar name="Dilnoza Karimova" size="sm" tone="accent" />
@@ -469,7 +487,7 @@ export function Kitchen({ section }: { section: string | null }) {
         </div>
         <div className="kitchen-stage kitchen-stage--tall">
           <PullToRefresh className="kitchen-ptr" onRefresh={() => new Promise((resolve) => window.setTimeout(() => resolve(setRefreshed((n) => n + 1)), 800))}>
-            <ListRow variant="card" icon={Clock3} title={`Pull down · ${refreshed}`} subtitle={d.emptyBody} />
+            <ListRow variant="card" icon={Clock3} title={`${d.pullDown} · ${refreshed}`} subtitle={d.emptyBody} />
             <ListRow variant="card" icon={Receipt} title={d.expenses} />
             <ListRow variant="card" icon={Wallet} title={d.pay} />
           </PullToRefresh>

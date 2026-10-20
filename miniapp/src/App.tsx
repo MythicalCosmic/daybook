@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { ApiError } from "./api/client";
 import { useMe, useSummary } from "./api/hooks";
+import { isSuspended } from "./api/membership";
 import type { Membership } from "./api/types";
 import { TabBar } from "./components/TabBar";
 import { FeatureBoundary, FeaturePage } from "./features/hosts";
@@ -92,8 +93,7 @@ function Gatekeeper() {
   if (!membership || status === "left") return <NoAccess />;
   if (status === "rejected") return <Declined membership={membership} />;
   if (status === "blocked") return <Blocked />;
-  // Not in the generated schema yet: the lead adds "suspended" with the lifecycle work (§13).
-  if ((status as string) === "suspended") return <PausedApp membership={membership} />;
+  if (isSuspended(membership)) return <PausedApp membership={membership} />;
   if (!membership.is_onboarded) return <CreateAccount membership={membership} />;
   if (status === "pending" || celebrating) {
     return <Waiting membership={membership} onOpen={() => setCelebrating(false)} />;
@@ -167,10 +167,12 @@ function pageKey({ feature, page, params }: PageRef, index: number): string {
 
 /** One page of the navigation stack: the app's own (a task, team results) or a feature's. */
 function StackPage({ page }: { page: PageRef }) {
+  const { membership } = useSession();
   if (page.feature === CORE) {
     if (page.page === "task") return <TaskDetail taskId={Number(page.params?.id)} />;
-    if (page.page === "team") return <Team />;
-    return null;
+    // Me shows team results only with reports.view; a deep link must not get around that.
+    if (page.page === "team" && membership?.permissions.includes("reports.view")) return <Team />;
+    return <FeaturePage feature={page.feature} page={page.page} params={page.params ?? {}} />;
   }
   return <FeaturePage feature={page.feature} page={page.page} params={page.params ?? {}} />;
 }

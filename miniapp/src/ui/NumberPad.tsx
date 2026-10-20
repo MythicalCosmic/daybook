@@ -1,5 +1,5 @@
 import { Delete } from "lucide-react";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, type KeyboardEvent, type ReactNode } from "react";
 
 import { useI18n } from "../i18n";
 import { currencyLabel, decimalPoint, formatTyping, type Currency } from "../lib/money";
@@ -32,9 +32,18 @@ export function pressKey(value: string, key: PadKey, options: { decimals?: boole
   return whole.length < maxDigits ? `${whole}${key}` : value;
 }
 
+/** The pad key a physical keyboard key stands for (desktop Telegram), or null. */
+export function keyFromKeyboard(key: string, decimals: boolean): PadKey | null {
+  if (/^[0-9]$/.test(key)) return key as PadKey;
+  if (key === "Backspace" || key === "Delete") return "back";
+  if (decimals && (key === "." || key === ",")) return ".";
+  return null;
+}
+
 /**
  * The big on-screen keypad for amounts (closing the till, an expense, an advance): the grouped
- * amount on top and a 000 key, because UZS amounts end in zeros. Holding ⌫ clears.
+ * amount on top and a 000 key, because UZS amounts end in zeros. Holding ⌫ clears. On desktop,
+ * the number keys and Backspace type into it once one of its keys has focus.
  */
 export function NumberPad({
   value,
@@ -75,12 +84,21 @@ export function NumberPad({
     onChange(next);
   };
 
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    const key = keyFromKeyboard(event.key, allowDecimals);
+    if (!key) return;
+    event.preventDefault();
+    if (key === "back" && !latest.current) return;
+    press(key);
+  };
+
   const keys: PadKey[] = ["1", "2", "3", "4", "5", "6", "7", "8", "9", allowDecimals ? "." : "000", "0", "back"];
   const unit = currencyLabel(currency, lang);
   const empty = !value;
 
   return (
-    <div className="ui-numpad">
+    <div className="ui-numpad" onKeyDown={onKeyDown}>
       <div className="ui-numpad-display">
         {label && <div className="ui-numpad-label">{label}</div>}
         <div className={cx("ui-numpad-amount", empty && "ui-numpad-amount--empty")} aria-live="polite">
@@ -115,6 +133,7 @@ export function NumberPad({
               }}
               onPointerUp={() => window.clearTimeout(clearTimer.current)}
               onPointerLeave={() => window.clearTimeout(clearTimer.current)}
+              onPointerCancel={() => window.clearTimeout(clearTimer.current)}
             >
               <Delete size={24} strokeWidth={2.2} aria-hidden />
             </button>

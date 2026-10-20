@@ -30,8 +30,9 @@ export function ProgressRing({
   const share = total ? Math.min(1, Math.max(0, value / total)) : 0;
   const text = label ?? `${value}/${total}`;
   const length = typeof text === "string" ? text.length : 4;
-  // Longer counts, like a month of team work, get smaller so they stay inside the ring.
-  const fontSize = ((length <= 4 ? 16 : length === 5 ? 13.5 : 11.5) * size) / 66;
+  // Longer counts, like a month of team work, get smaller so they stay inside the ring
+  // ("186/240" needs the last step; up to six characters the sizes are the original ones).
+  const fontSize = ((length <= 4 ? 16 : length === 5 ? 13.5 : length === 6 ? 11.5 : 9.75) * size) / 66;
   const center = size / 2;
   return (
     <span className="ui-ring" style={{ width: size, height: size }} role={ariaLabel ? "img" : undefined} aria-label={ariaLabel}>

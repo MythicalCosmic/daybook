@@ -17,11 +17,16 @@ function fakeButton() {
   };
 }
 
-async function setup(version = "7.10") {
+async function setup(version = "7.10", platform = "ios") {
   vi.resetModules();
   const main = fakeButton();
   const secondary = fakeButton();
-  const webApp = { isVersionAtLeast: (v: string) => Number(v.replace(".", "")) <= Number(version.replace(".", "")), MainButton: main, SecondaryButton: secondary };
+  const at = (wanted: string) => {
+    const [a, b] = version.split(".").map(Number);
+    const [c, d] = wanted.split(".").map(Number);
+    return a > c || (a === c && b >= d);
+  };
+  const webApp = { platform, isVersionAtLeast: at, MainButton: main, SecondaryButton: secondary };
   vi.stubGlobal("Telegram", { WebApp: webApp as unknown as WebApp });
   const { BottomBar } = await import("./BottomBar");
   return { BottomBar, main, secondary };
@@ -79,6 +84,16 @@ describe("bottom bar", () => {
     const { BottomBar, main } = await setup("7.7");
     const { container } = render(<BottomBar primary={{ text: "Send", onClick: () => undefined }} secondary={{ text: "Later", onClick: () => undefined }} />);
     expect([...container.querySelectorAll(".action-bar button")].map((button) => button.textContent)).toEqual(["Later", "Send"]);
+    expect(main.show).not.toHaveBeenCalled();
+  });
+
+  it("draws its buttons in the page in a plain browser, where telegram-web-app.js has nobody to draw them", async () => {
+    const { BottomBar, main } = await setup("6.0", "unknown");
+    const send = vi.fn();
+    const { container, getByRole } = render(<BottomBar primary={{ text: "Send", onClick: send }} />);
+    expect(container.querySelector(".action-bar")).not.toBeNull();
+    getByRole("button", { name: "Send" }).click();
+    expect(send).toHaveBeenCalledOnce();
     expect(main.show).not.toHaveBeenCalled();
   });
 });

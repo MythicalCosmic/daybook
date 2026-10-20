@@ -20,6 +20,7 @@ function fakeWebApp(version: string) {
   });
   const store = new Map<string, string>();
   return {
+    platform: "android",
     isVersionAtLeast: at,
     initDataUnsafe: { start_param: "payslip-12" },
     HapticFeedback: { impactOccurred: vi.fn(), notificationOccurred: vi.fn(), selectionChanged: vi.fn() },
@@ -84,6 +85,31 @@ describe("telegram helpers", () => {
     expect(telegram.hasNativeBackButton()).toBe(false);
     expect(await telegram.scanQr()).toBeNull();
     expect(telegram.startParam()).toBeNull();
+  });
+
+  it("treat telegram-web-app.js in a plain browser as outside Telegram", async () => {
+    // Outside a client the script reports platform "unknown" and version 6.0: no one draws buttons.
+    const browser = { ...fakeWebApp("6.0"), platform: "unknown" };
+    const telegram = await load(browser);
+    expect(telegram.insideTelegram()).toBe(false);
+    expect(telegram.hasNativeButton("main")).toBe(false);
+    expect(telegram.bottomButton({ text: "Send", onClick: () => undefined })).toBeNull();
+    expect(browser.MainButton.show).not.toHaveBeenCalled();
+    expect((await load(fakeWebApp("6.0"))).insideTelegram()).toBe(true);
+  });
+
+  it("open only web links", async () => {
+    const webApp = { ...fakeWebApp("8.0"), openLink: vi.fn(), openTelegramLink: vi.fn() };
+    const telegram = await load(webApp);
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    expect(telegram.openLink("/api/v1/files/abc/")).toBe(true);
+    expect(webApp.openLink).toHaveBeenCalledWith(`${window.location.origin}/api/v1/files/abc/`);
+    expect(telegram.openLink("javascript:alert(1)")).toBe(false);
+    expect(telegram.openLink("data:text/html,<b>x</b>")).toBe(false);
+    expect(webApp.openLink).toHaveBeenCalledOnce();
+    expect(telegram.openTelegramLink("https://t.me/aziz")).toBe(true);
+    expect(telegram.openTelegramLink("https://evil.example/t.me")).toBe(false);
+    expect(webApp.openTelegramLink).toHaveBeenCalledOnce();
   });
 
   it("drive the main and secondary buttons and clean up after them", async () => {

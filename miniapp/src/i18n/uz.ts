@@ -330,6 +330,8 @@ const uz: Partial<Record<Key, string>> = {
   "ui.notFound.title": "Bu sahifa topilmadi",
   "ui.notFound.body": "U ko‘chirilgan yoki sizga ochiq emas.",
   "ui.notFound.back": "Orqaga",
+  "ui.failed.title": "Bu bo‘lim ochilmadi",
+  "ui.failed.body": "Biz tomonda nimadir buzildi. Orqaga qayting va birozdan keyin qayta urinib ko‘ring.",
   "me.group.money": "Pul",
   "me.group.work": "Ish",
   "me.group.documents": "Hujjatlar",

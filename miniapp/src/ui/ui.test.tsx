@@ -12,6 +12,7 @@ import { MoneyInput } from "./MoneyInput";
 import { NumberPad, pressKey } from "./NumberPad";
 import { ProgressRing } from "./Progress";
 import { Segmented } from "./Segmented";
+import { Sheet } from "./Sheet";
 import { SkeletonList } from "./Skeleton";
 import { SlideToConfirm } from "./SlideToConfirm";
 import { Stepper } from "./Stepper";
@@ -22,6 +23,7 @@ const inLang = (lang: Lang, node: React.ReactNode) => render(<I18nProvider lang=
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 describe("number pad", () => {
@@ -49,6 +51,23 @@ describe("number pad", () => {
     expect(container.querySelector(".ui-numpad-amount")?.textContent).toBe(`125${NB}000so‘m`);
     fireEvent.click(screen.getByRole("button", { name: "O‘chirish" }));
     expect(container.querySelector(".ui-numpad-amount .heading")?.textContent).toBe(`12${NB}500`);
+  });
+
+  it("types from a desktop keyboard once one of its keys has focus", () => {
+    function Pad() {
+      const [value, setValue] = useState("");
+      return <NumberPad value={value} onChange={setValue} />;
+    }
+    const { container } = inLang("ru", <Pad />);
+    const key = screen.getByRole("button", { name: "7" });
+    fireEvent.keyDown(key, { key: "4" });
+    fireEvent.keyDown(key, { key: "5" });
+    fireEvent.keyDown(key, { key: "0" });
+    fireEvent.keyDown(key, { key: "0" });
+    fireEvent.keyDown(key, { key: "Backspace" });
+    fireEvent.keyDown(key, { key: "s" });
+    fireEvent.keyDown(key, { key: "1", ctrlKey: true });
+    expect(container.querySelector(".ui-numpad-amount .heading")?.textContent).toBe("450");
   });
 });
 
@@ -130,6 +149,104 @@ describe("segmented control", () => {
     fireEvent.click(tabs[1]);
     expect(onChange).toHaveBeenCalledWith("month");
   });
+
+  it("moves the choice with the arrow keys and keeps one Tab stop, like native radios", () => {
+    function Period() {
+      const [value, setValue] = useState<"week" | "month" | "year">("week");
+      return (
+        <Segmented
+          label="Period"
+          value={value}
+          onChange={setValue}
+          options={[
+            { value: "week", label: "Week" },
+            { value: "month", label: "Month", disabled: true },
+            { value: "year", label: "Year" },
+          ]}
+        />
+      );
+    }
+    inLang("en", <Period />);
+    const radios = () => screen.getAllByRole("radio");
+    expect(radios().map((radio) => radio.tabIndex)).toEqual([0, -1, -1]);
+    act(() => radios()[0].focus());
+    fireEvent.keyDown(radios()[0], { key: "ArrowRight" });
+    // The disabled option is skipped; focus follows the choice.
+    expect(radios().map((radio) => radio.getAttribute("aria-checked"))).toEqual(["false", "false", "true"]);
+    expect(document.activeElement).toBe(radios()[2]);
+    expect(radios().map((radio) => radio.tabIndex)).toEqual([-1, -1, 0]);
+    fireEvent.keyDown(radios()[2], { key: "ArrowRight" });
+    expect(radios()[0].getAttribute("aria-checked")).toBe("true");
+    fireEvent.keyDown(radios()[0], { key: "End" });
+    expect(radios()[2].getAttribute("aria-checked")).toBe("true");
+  });
+});
+
+describe("sheet", () => {
+  it("is a named dialog that takes focus, closes on Escape and hands focus back", () => {
+    function Host() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <button type="button" onClick={() => setOpen(true)}>
+            Open
+          </button>
+          {open && (
+            <Sheet onClose={() => setOpen(false)}>
+              <div className="heading title-sm">New expense</div>
+              <button type="button">Send</button>
+            </Sheet>
+          )}
+        </>
+      );
+    }
+    // jsdom has no keyboard modality: treat the focused element as showing its ring, as after Tab.
+    const matches = Element.prototype.matches;
+    vi.spyOn(Element.prototype, "matches").mockImplementation(function (this: Element, selector: string) {
+      return selector === ":focus-visible" ? this === document.activeElement : matches.call(this, selector);
+    });
+    inLang("en", <Host />);
+    const opener = screen.getByRole("button", { name: "Open" });
+    act(() => opener.focus());
+    fireEvent.click(opener);
+    const dialog = screen.getByRole("dialog", { name: "New expense" });
+    expect(document.activeElement).toBe(dialog);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(document.activeElement).toBe(opener);
+  });
+
+  it("doesn't move focus back after a tap, so no ring lights up on the + button", () => {
+    function Host() {
+      const [open, setOpen] = useState(true);
+      return open ? (
+        <Sheet onClose={() => setOpen(false)} label="Add">
+          <button type="button">Send</button>
+        </Sheet>
+      ) : (
+        <p>closed</p>
+      );
+    }
+    const plus = document.createElement("button");
+    document.body.append(plus);
+    plus.focus();
+    inLang("en", <Host />);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.getByText("closed")).toBeTruthy();
+    expect(document.activeElement).not.toBe(plus);
+    plus.remove();
+  });
+
+  it("leaves focus on a field that asked for it", () => {
+    inLang(
+      "en",
+      <Sheet onClose={() => undefined} title="Return the task">
+        <textarea aria-label="Why?" autoFocus />
+      </Sheet>,
+    );
+    expect(screen.getByRole("dialog", { name: "Return the task" })).toBeTruthy();
+    expect(document.activeElement).toBe(screen.getByRole("textbox", { name: "Why?" }));
+  });
 });
 
 describe("counting cash", () => {
@@ -160,6 +277,41 @@ describe("counting cash", () => {
     fireEvent.click(screen.getByRole("button", { name: "More" }));
     expect(onChange).toHaveBeenCalledWith(1);
   });
+
+  it("stops a held + at the limit, so it can't undo a later −", () => {
+    vi.useFakeTimers();
+    const seen: number[] = [];
+    function Counted() {
+      const [value, setValue] = useState(0);
+      return (
+        <Stepper
+          value={value}
+          max={3}
+          onChange={(next) => {
+            seen.push(next);
+            setValue(next);
+          }}
+        />
+      );
+    }
+    inLang("en", <Counted />);
+    const more = screen.getByRole("button", { name: "More" });
+    // Held down: repeats climb to the limit, where the button turns disabled and the release is lost.
+    fireEvent.pointerDown(more, { button: 0 });
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+    expect(seen).toEqual([1, 2, 3]);
+    expect((more as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Less" }));
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+    expect(seen).toEqual([1, 2, 3, 2]);
+    // The next keyboard press on + counts once, with no stale "that was a hold" flag.
+    fireEvent.click(more);
+    expect(seen).toEqual([1, 2, 3, 2, 3]);
+  });
 });
 
 describe("slide to confirm", () => {
@@ -176,6 +328,21 @@ describe("slide to confirm", () => {
     );
     fireEvent.keyDown(knob, { key: "Enter" });
     expect(onConfirm).toHaveBeenCalledOnce();
+  });
+
+  it("names the knob after its label even when the label is markup", () => {
+    inLang(
+      "en",
+      <SlideToConfirm
+        label={
+          <>
+            Slide to <b>close the till</b>
+          </>
+        }
+        onConfirm={() => undefined}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Slide to close the till" })).toBeTruthy();
   });
 });
 
@@ -225,6 +392,16 @@ describe("extracted building blocks", () => {
     expect(circles[1].getAttribute("stroke-dasharray")).toBe(String(2 * Math.PI * 27));
     expect(container.querySelector(".ui-ring-label")?.textContent).toBe("3/8");
     expect((container.querySelector(".ui-ring-label") as HTMLElement).style.fontSize).toBe("16px");
+  });
+
+  it("keep the ring's original label sizes and shrink a month of team work to fit", () => {
+    const size = (value: number, total: number) => {
+      const { container } = render(<ProgressRing value={value} total={total} />);
+      const label = (container.querySelector(".ui-ring-label") as HTMLElement).style.fontSize;
+      cleanup();
+      return label;
+    };
+    expect([size(45, 60), size(45, 160), size(186, 240)]).toEqual(["13.5px", "11.5px", "9.75px"]);
   });
 
   it("render task row placeholders like RowSkeleton did", () => {

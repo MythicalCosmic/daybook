@@ -6,28 +6,47 @@ import { haptic } from "../telegram";
 import { cx } from "./cx";
 
 /**
- * Press-and-hold repeat for +/− buttons: one step on press, then faster steps while held.
- * Returns pointer handlers; a click from the keyboard still does exactly one step.
+ * Press-and-hold repeat for +/− buttons: steps start after a short hold and speed up while held.
+ * `step` returns false when it changed nothing (a limit was reached), which ends the repeat:
+ * the button turns disabled at the limit, so its pointerup may never arrive. A release anywhere
+ * on the page ends it too. Returns pointer handlers; a click (or the keyboard) does one step.
  */
-function useRepeat(step: () => void) {
+function useRepeat(step: () => boolean) {
   const latest = useRef(step);
   latest.current = step;
   const timer = useRef<number | undefined>(undefined);
   const repeated = useRef(false);
-  const stop = () => window.clearTimeout(timer.current);
+  const release = useRef<(() => void) | null>(null);
+  const stop = () => {
+    window.clearTimeout(timer.current);
+    release.current?.();
+    release.current = null;
+  };
   useEffect(() => stop, []);
   return {
     onPointerDown: (event: PointerEvent<HTMLButtonElement>) => {
       if (event.button !== 0) return;
+      stop();
       repeated.current = false;
       const tick = (delay: number) => {
         timer.current = window.setTimeout(() => {
-          repeated.current = true;
-          latest.current();
-          tick(Math.max(60, delay * 0.8));
+          if (latest.current()) {
+            repeated.current = true;
+            tick(Math.max(60, delay * 0.8));
+          } else {
+            // At the limit the button is disabled and no click follows to clear the flag.
+            repeated.current = false;
+            stop();
+          }
         }, delay);
       };
       tick(420);
+      window.addEventListener("pointerup", stop);
+      window.addEventListener("pointercancel", stop);
+      release.current = () => {
+        window.removeEventListener("pointerup", stop);
+        window.removeEventListener("pointercancel", stop);
+      };
     },
     onPointerUp: stop,
     onPointerLeave: stop,
@@ -66,12 +85,14 @@ export function Stepper({
   const clamp = (next: number) => Math.min(max, Math.max(min, next));
   const current = useRef(value);
   current.current = value;
-  const set = (next: number) => {
+  /** Change the value; false when it was already there (at a limit). */
+  const set = (next: number): boolean => {
     const clamped = clamp(next);
-    if (clamped === current.current) return;
+    if (clamped === current.current) return false;
     haptic.select();
     current.current = clamped;
     onChange(clamped);
+    return true;
   };
   const less = useRepeat(() => set(current.current - step));
   const more = useRepeat(() => set(current.current + step));

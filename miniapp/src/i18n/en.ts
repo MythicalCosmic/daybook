@@ -329,6 +329,8 @@ const en = {
   "ui.notFound.title": "This page isn't here",
   "ui.notFound.body": "It may have moved, or it isn't open to you.",
   "ui.notFound.back": "Go back",
+  "ui.failed.title": "This part didn't open",
+  "ui.failed.body": "Something broke on our side. Go back and try again in a moment.",
   "me.group.money": "Money",
   "me.group.work": "Work",
   "me.group.documents": "Documents",

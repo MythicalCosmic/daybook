@@ -5,7 +5,8 @@
  * - a web app button or menu button URL: `/app/?screen=payslip:12` (`<name>:<arg>`, the form
  *   `inbox.Notification.app_screen` and `bot_menu.register_menu_button(web_app_screen=…)` store);
  * - a `t.me/<bot>/<app>?startapp=payslip-12` link: Telegram only allows A–Z, a–z, 0–9, `_` and
- *   `-` there, so the argument follows the first `-` instead of a colon.
+ *   `-` there, so the argument follows the first `-` instead of a colon, and `__` stands for the
+ *   dot of `<feature>.<page>` (`startapp=wallet__payslip-12`).
  *
  * Built-in names: `home`, `tasks` (`tasks:review` picks a tab), `task:<id>`, `activity`,
  * `profile`, `team`, `add`, `timeOff`, `language`. Feature folders add theirs through `routes`,
@@ -26,7 +27,9 @@ export function parseScreen(raw: string, form: "screen" | "startapp" = "screen")
   if (!text) return null;
   const separator = form === "screen" && text.includes(":") ? ":" : form === "startapp" ? "-" : null;
   const at = separator ? text.indexOf(separator) : -1;
-  const name = at >= 0 ? text.slice(0, at) : text;
+  const head = at >= 0 ? text.slice(0, at) : text;
+  // Telegram allows no "." in startapp either: "wallet__payslip-12" means "wallet.payslip:12".
+  const name = form === "startapp" ? head.replaceAll("__", ".") : head;
   const arg = at >= 0 ? safeDecode(text.slice(at + 1)) : null;
   if (!/^[A-Za-z][\w.]*$/.test(name)) return null;
   return { name, arg: arg === "" ? null : arg };

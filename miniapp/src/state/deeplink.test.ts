@@ -35,6 +35,9 @@ describe("screen links", () => {
     expect(parseScreen("payslip-12", "startapp")).toEqual({ name: "payslip", arg: "12" });
     expect(parseScreen("calendar-2026-10-20", "startapp")).toEqual({ name: "calendar", arg: "2026-10-20" });
     expect(parseScreen("tasks", "startapp")).toEqual({ name: "tasks", arg: null });
+    // No "." allowed there either: "__" stands for it.
+    expect(parseScreen("wallet__payslip-12", "startapp")).toEqual({ name: "wallet.payslip", arg: "12" });
+    expect(parseScreen("time_off", "startapp")).toEqual({ name: "time_off", arg: null });
   });
 
   it("ignore anything that isn't a name", () => {
@@ -80,6 +83,20 @@ describe("resolving screen links", () => {
   it("reach any feature page as <feature>.<page>", () => {
     expect(resolve("wallet.payslip:7")).toEqual({ tab: "home", stack: [{ feature: "wallet", page: "payslip", params: { id: 7 } }] });
     expect(resolve("wallet.nope:7")).toBeNull();
+  });
+
+  it("let the next feature answer when a route points at a page its folder lacks", () => {
+    const stale: Feature = defineFeature({
+      id: "aaa",
+      messages: { en: { t: "Old" }, ru: { t: "Старое" }, uz: { t: "Eski" } },
+      pages: { home: Page },
+      routes: { payslip: "home" },
+    });
+    const withoutPage: Feature = { ...stale, pages: {} };
+    expect(resolve("payslip:12", [withoutPage, wallet])).toEqual({
+      tab: "profile",
+      stack: [{ feature: "wallet", page: "payslip", params: { id: 12 } }],
+    });
   });
 
   it("let a feature that takes over time off answer the timeOff link", () => {
