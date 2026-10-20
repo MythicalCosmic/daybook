@@ -396,6 +396,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/team-stats/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description How everyone's shared work went: on time, late, missed. Needs reports.view. */
+        get: operations["v1_companies_team_stats_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/": {
         parameters: {
             query?: never;
@@ -658,6 +675,14 @@ export interface components {
             priority?: components["schemas"]["PriorityEnum"];
         };
         /**
+         * @description * `week` - This week
+         *     * `last_week` - Last week
+         *     * `month` - This month
+         *     * `last_month` - Last month
+         * @enum {string}
+         */
+        PeriodEnum: "week" | "last_week" | "month" | "last_month";
+        /**
          * @description * `members.view` - View members
          *     * `members.approve` - Approve or reject join requests
          *     * `members.manage` - Edit and block members, change their roles
@@ -779,6 +804,22 @@ export interface components {
         RepeatEnum: "none" | "daily" | "weekdays" | "weekly";
         ReturnRequest: {
             reason: string;
+        };
+        Score: {
+            /** @description Shared tasks whose deadline passed in the period. */
+            total: number;
+            on_time: number;
+            /** @description Finished after the deadline. */
+            late: number;
+            /** @description Still not finished. */
+            missed: number;
+            on_time_percent: number | null;
+            /** @description How late the late ones were, on average. */
+            avg_delay_minutes: number | null;
+            /** @description Open and overdue right now. */
+            late_now: number;
+            /** @description Reminders the bot had to send. */
+            reminders: number;
         };
         /**
          * @description * `done` - done
@@ -926,6 +967,36 @@ export interface components {
             proof?: components["schemas"]["ProofEnum"];
             needs_confirmation?: boolean;
             is_active?: boolean;
+        };
+        TeamRow: {
+            /** @description Shared tasks whose deadline passed in the period. */
+            total: number;
+            on_time: number;
+            /** @description Finished after the deadline. */
+            late: number;
+            /** @description Still not finished. */
+            missed: number;
+            on_time_percent: number | null;
+            /** @description How late the late ones were, on average. */
+            avg_delay_minutes: number | null;
+            /** @description Open and overdue right now. */
+            late_now: number;
+            /** @description Reminders the bot had to send. */
+            reminders: number;
+            member: components["schemas"]["MemberBrief"];
+        };
+        TeamStats: {
+            period: components["schemas"]["PeriodEnum"];
+            /** Format: date */
+            start: string;
+            /**
+             * Format: date
+             * @description The period's last day.
+             */
+            end: string;
+            totals: components["schemas"]["Score"];
+            /** @description Everyone registered, best first. */
+            members: components["schemas"]["TeamRow"][];
         };
         TelegramAuthRequest: {
             /** @description Telegram.WebApp.initData, exactly as received. */
@@ -1799,6 +1870,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Task"];
+                };
+            };
+        };
+    };
+    v1_companies_team_stats_retrieve: {
+        parameters: {
+            query?: {
+                period?: "last_month" | "last_week" | "month" | "week";
+            };
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamStats"];
                 };
             };
         };

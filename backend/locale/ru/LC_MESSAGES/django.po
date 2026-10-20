@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-20 17:36+0500\n"
+"POT-Creation-Date: 2026-10-20 17:42+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -223,7 +223,7 @@ msgstr "⏰ С опозданием: %(count)d"
 msgid "❌ Not done: %(count)d"
 msgstr "❌ Не выполнено: %(count)d"
 
-#: backend/apps/groups/bot_messages.py
+#: backend/apps/groups/bot_messages.py backend/apps/reports/bot_messages.py
 #, python-format
 msgid "…and %(count)d more"
 msgstr "…и ещё %(count)d"
@@ -791,6 +791,47 @@ msgstr "Эскалация"
 #: backend/apps/reminders/models.py
 msgid "Blocked the bot"
 msgstr "Бот заблокирован"
+
+#: backend/apps/reports/bot_messages.py
+#, python-format
+msgid "📊 <b>Last week</b> · %(start)s–%(end)s"
+msgstr "📊 <b>Прошлая неделя</b> · %(start)s–%(end)s"
+
+#: backend/apps/reports/bot_messages.py
+#, python-format
+msgid "On time: <b>%(percent)s</b>, %(on_time)d of %(total)d tasks."
+msgstr "Вовремя: <b>%(percent)s</b> (%(on_time)d из %(total)d)."
+
+#: backend/apps/reports/bot_messages.py
+#, python-format
+msgid "Late: %(late)d · not done: %(missed)d · reminders sent: %(reminders)d"
+msgstr "С опозданием: %(late)d · не выполнено: %(missed)d · напоминаний: %(reminders)d"
+
+#: backend/apps/reports/bot_messages.py
+#, python-format
+msgid "%(count)d late"
+msgstr "с опозданием: %(count)d"
+
+#: backend/apps/reports/bot_messages.py
+#, python-format
+msgid "%(count)d not done"
+msgstr "не выполнено: %(count)d"
+
+#: backend/apps/reports/periods.py
+msgid "This week"
+msgstr "Эта неделя"
+
+#: backend/apps/reports/periods.py
+msgid "Last week"
+msgstr "Прошлая неделя"
+
+#: backend/apps/reports/periods.py
+msgid "This month"
+msgstr "Этот месяц"
+
+#: backend/apps/reports/periods.py
+msgid "Last month"
+msgstr "Прошлый месяц"
 
 #: backend/apps/tasks/api.py
 msgid "The photo is too large (10 MB at most)."

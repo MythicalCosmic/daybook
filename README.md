@@ -71,6 +71,10 @@ When a business rule is broken, the API returns `400 {"detail": "<message safe t
 
 The bot keeps the link when a group becomes a supergroup, and switches the group off when it's removed. Posts to one group are spaced 3 seconds apart, under Telegram's limit of about 20 a minute.
 
+## Team results
+
+People who may see reports (owners and managers, by default) find **Team results** in the app's profile: each person's on-time rate, late and unfinished work for this week, last week or this month, and who is late right now. Personal tasks don't count. On Monday mornings, at the company's morning report time, the bot also sends them last week's numbers.
+
 ## Translations
 
 The bots, their notifications and the API's messages come in Uzbek, Russian and English. Each person gets their own language (taken from Telegram at first, then whatever they pick in the app), and groups get the company's default language. The mini app has its own texts in `miniapp/src/i18n/`.

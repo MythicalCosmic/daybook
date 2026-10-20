@@ -4,6 +4,9 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 /** The home screen's "3/10" progress ring. */
 export function Ring({ done, total }: { done: number; total: number }) {
   const share = total ? done / total : 0;
+  const label = `${done}/${total}`;
+  // Longer counts, like a month of team work, get smaller so they stay inside the ring.
+  const fontSize = label.length <= 4 ? 16 : label.length === 5 ? 13.5 : 11.5;
   return (
     <span style={{ position: "relative", width: 66, height: 66, flex: "none" }}>
       <svg viewBox="0 0 66 66" style={{ width: 66, height: 66, transform: "rotate(-90deg)" }} aria-hidden>
@@ -35,11 +38,11 @@ export function Ring({ done, total }: { done: number; total: number }) {
           inset: 0,
           display: "grid",
           placeItems: "center",
-          fontSize: 16,
+          fontSize,
           fontWeight: 700,
         }}
       >
-        {done}/{total}
+        {label}
       </span>
     </span>
   );

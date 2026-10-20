@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "apps.reminders",
     "apps.groups",
     "apps.audit",
+    "apps.reports",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
@@ -124,6 +125,11 @@ CELERY_BEAT_SCHEDULE = {
     "send-group-reports": {
         "task": "apps.groups.tasks.send_daily_reports",
         "schedule": crontab(minute="*/5"),
+    },
+    # Monday mornings only; once per person per week.
+    "send-weekly-reports": {
+        "task": "apps.reports.tasks.send_weekly_reports",
+        "schedule": crontab(minute="*/15", day_of_week="mon"),
     },
 }
 

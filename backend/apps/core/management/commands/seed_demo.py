@@ -8,9 +8,12 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.accounts.models import User
+from apps.audit.models import AuditLog
 from apps.companies.models import Company
 from apps.companies.services import create_company
+from apps.groups.models import TelegramGroup
 from apps.members.models import AccessRole, Membership, Position
+from apps.reminders.models import ReminderLog, ReminderPolicy
 from apps.tasks.models import Activity, ChecklistItem, Proof, Task, TaskComment, TaskTemplate
 
 SLUG = "demo-shop"
@@ -18,7 +21,21 @@ POSITIONS = ["Sales floor", "Cashier", "Stock & warehouse", "Shift lead", "Deliv
 
 # Telegram ids of the demo people. Sign in as one of them with dev init data.
 OWNER, MANAGER, WORKER, COLLEAGUE = 1001, 1002, 4242, 1004
+STOCKER, COURIER = 1005, 1006
 APPLICANT, WAITING, OUTSIDER = 5001, 5002, 5003
+EVERYONE = (OWNER, MANAGER, WORKER, COLLEAGUE, STOCKER, COURIER, APPLICANT, WAITING, OUTSIDER)
+# Deleted in this order, so nothing still points at what goes next.
+TENANT_MODELS = (
+    AuditLog,
+    TelegramGroup,
+    Activity,
+    Task,
+    TaskTemplate,
+    ReminderPolicy,
+    Membership,
+    Position,
+    AccessRole,
+)
 
 
 class Command(BaseCommand):
@@ -46,15 +63,10 @@ class Command(BaseCommand):
     def _remove(self):
         company = Company.objects.get(slug=SLUG)
         with transaction.atomic():
-            Activity.objects.filter(company=company).delete()
-            Task.objects.filter(company=company).delete()
-            TaskTemplate.objects.filter(company=company).delete()
-            Membership.objects.filter(company=company).delete()
-            Position.objects.filter(company=company).delete()
-            AccessRole.objects.filter(company=company).delete()
+            for model in TENANT_MODELS:
+                model.objects.filter(company=company).delete()
             company.delete()
-            ids = [OWNER, MANAGER, WORKER, COLLEAGUE, APPLICANT, WAITING, OUTSIDER]
-            User.objects.filter(telegram_id__in=ids).delete()
+            User.objects.filter(telegram_id__in=EVERYONE).delete()
 
     def _build(self):
         now = timezone.now()
@@ -119,13 +131,31 @@ class Command(BaseCommand):
             phone="+998901234567",
             **registered,
         )
-        person(
+        madina = person(
             COLLEAGUE,
             "Madina",
             "Saidova",
             role="Employee",
             position="Cashier",
             phone="+998901110004",
+            **registered,
+        )
+        jasur = person(
+            STOCKER,
+            "Jasur",
+            "Tursunov",
+            role="Employee",
+            position="Stock & warehouse",
+            phone="+998901110005",
+            **registered,
+        )
+        nigora = person(
+            COURIER,
+            "Nigora",
+            "Azimova",
+            role="Employee",
+            position="Delivery",
+            phone="+998901110006",
             **registered,
         )
         person(APPLICANT, "Javohir", "Rasulov", status=Membership.Status.PENDING)
@@ -352,6 +382,42 @@ class Command(BaseCommand):
                 status=Task.Status.DONE,
                 completed_at=due - timedelta(minutes=20),
             )
+
+        # Two weeks of the others' daily work, so the team results have something to show.
+        def history(who, title, *, late=(), missed=(), delay=timedelta(minutes=40)):
+            template = TaskTemplate.objects.create(
+                company=company, title=title, due_time="10:00", created_by=owner
+            )
+            template.assignees.add(who)
+            for days_ago in range(1, 15):
+                due = now - timedelta(days=days_ago)
+                done_at = None if days_ago in missed else due - timedelta(minutes=15)
+                if days_ago in late:
+                    done_at = due + delay
+                work = Task.objects.create(
+                    company=company,
+                    kind=Task.Kind.DAILY,
+                    template=template,
+                    for_date=timezone.localtime(due).date(),
+                    title=title,
+                    assignee=who,
+                    created_by=owner,
+                    due_at=due,
+                    status=Task.Status.TODO if done_at is None else Task.Status.DONE,
+                    completed_at=done_at,
+                )
+                if days_ago in late or days_ago in missed:
+                    for step in (1, 2):
+                        log = ReminderLog.objects.create(
+                            task=work, kind=ReminderLog.Kind.REMINDER, step=step, recipient=who
+                        )
+                        ReminderLog.objects.filter(pk=log.pk).update(
+                            sent_at=due + timedelta(minutes=20 * step)
+                        )
+
+        history(madina, "Count the till", late={3, 9})
+        history(jasur, "Receive the morning delivery", late={1, 2, 5, 8, 12}, missed={4, 10})
+        history(nigora, "Deliver online orders")
 
         def feed(kind, about, actor, text="", minutes_ago=0, read=False):
             entry = Activity.objects.create(

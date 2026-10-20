@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-20 17:36+0500\n"
+"POT-Creation-Date: 2026-10-20 17:42+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -223,7 +223,7 @@ msgstr "⏰ Kechikib bajarildi: %(count)d"
 msgid "❌ Not done: %(count)d"
 msgstr "❌ Bajarilmadi: %(count)d"
 
-#: backend/apps/groups/bot_messages.py
+#: backend/apps/groups/bot_messages.py backend/apps/reports/bot_messages.py
 #, python-format
 msgid "…and %(count)d more"
 msgstr "…va yana %(count)d ta"
@@ -792,6 +792,47 @@ msgstr "Rahbarga xabar"
 #: backend/apps/reminders/models.py
 msgid "Blocked the bot"
 msgstr "Botni bloklagan"
+
+#: backend/apps/reports/bot_messages.py
+#, python-format
+msgid "📊 <b>Last week</b> · %(start)s–%(end)s"
+msgstr "📊 <b>O‘tgan hafta</b> · %(start)s–%(end)s"
+
+#: backend/apps/reports/bot_messages.py
+#, python-format
+msgid "On time: <b>%(percent)s</b>, %(on_time)d of %(total)d tasks."
+msgstr "O‘z vaqtida: <b>%(percent)s</b>, %(total)d ta vazifadan %(on_time)d tasi."
+
+#: backend/apps/reports/bot_messages.py
+#, python-format
+msgid "Late: %(late)d · not done: %(missed)d · reminders sent: %(reminders)d"
+msgstr "Kechikkan: %(late)d · bajarilmagan: %(missed)d · yuborilgan eslatmalar: %(reminders)d"
+
+#: backend/apps/reports/bot_messages.py
+#, python-format
+msgid "%(count)d late"
+msgstr "%(count)d ta kechikkan"
+
+#: backend/apps/reports/bot_messages.py
+#, python-format
+msgid "%(count)d not done"
+msgstr "%(count)d ta bajarilmagan"
+
+#: backend/apps/reports/periods.py
+msgid "This week"
+msgstr "Shu hafta"
+
+#: backend/apps/reports/periods.py
+msgid "Last week"
+msgstr "O‘tgan hafta"
+
+#: backend/apps/reports/periods.py
+msgid "This month"
+msgstr "Shu oy"
+
+#: backend/apps/reports/periods.py
+msgid "Last month"
+msgstr "O‘tgan oy"
 
 #: backend/apps/tasks/api.py
 msgid "The photo is too large (10 MB at most)."

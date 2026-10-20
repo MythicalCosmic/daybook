@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, time, timedelta
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from aiogram.exceptions import (
@@ -22,13 +22,12 @@ from apps.members.bot_messages import BotMessage
 from apps.members.models import Membership, Position
 from apps.notifications import telegram
 from apps.notifications.telegram import BotName, serialize_markup
+from apps.reports.periods import in_window
 from apps.tasks.models import Task
 from apps.tasks.queries import TASK_RELATIONS
 
 logger = logging.getLogger(__name__)
 
-# A daily report only goes out within this long after its time, not hours late.
-REPORT_WINDOW = timedelta(hours=2)
 # Telegram lets a bot post about 20 messages a minute to one group.
 POST_GAP = timedelta(seconds=3)
 
@@ -144,16 +143,11 @@ def post_daily_reports(now: datetime) -> int:
     posted = 0
     for company in Company.objects.filter(is_active=True):
         local = timezone.localtime(now, ZoneInfo(company.timezone))
-        if _in_window(local, company.morning_report_at):
+        if in_window(local, company.morning_report_at):
             posted += _post_report(company, GroupEvent.MORNING, local)
-        if _in_window(local, company.evening_report_at):
+        if in_window(local, company.evening_report_at):
             posted += _post_report(company, GroupEvent.EVENING, local)
     return posted
-
-
-def _in_window(local: datetime, at: time) -> bool:
-    start = local.replace(hour=at.hour, minute=at.minute, second=0, microsecond=0)
-    return start <= local < start + REPORT_WINDOW
 
 
 def _post_report(company: Company, kind: GroupEvent, local: datetime) -> int:

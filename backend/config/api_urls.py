@@ -5,6 +5,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from apps.accounts.api import MeView, TelegramAuthView
 from apps.members.api import MemberListView, OnboardingView, PositionListView
 from apps.reminders.api import ReminderPolicyViewSet
+from apps.reports.api import TeamStatsView
 from apps.tasks.api import ActivityViewSet, SummaryView, TaskTemplateViewSet, TaskViewSet
 
 COMPANY = "companies/<int:company_id>"
@@ -29,5 +30,6 @@ urlpatterns = [
     path(f"{COMPANY}/positions/", PositionListView.as_view(), name="positions"),
     path(f"{COMPANY}/onboarding/", OnboardingView.as_view(), name="onboarding"),
     path(f"{COMPANY}/summary/", SummaryView.as_view(), name="summary"),
+    path(f"{COMPANY}/team-stats/", TeamStatsView.as_view(), name="team-stats"),
     *router.urls,
 ]

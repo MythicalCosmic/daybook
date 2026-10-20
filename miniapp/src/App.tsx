@@ -12,6 +12,7 @@ import { Profile } from "./screens/Profile";
 import { Splash } from "./screens/Splash";
 import { TaskDetail } from "./screens/TaskDetail";
 import { Tasks } from "./screens/Tasks";
+import { Team } from "./screens/Team";
 import { Waiting } from "./screens/Waiting";
 import { Sheets } from "./sheets/Sheets";
 import { NavigationProvider, useNavigation } from "./state/navigation";
@@ -96,10 +97,11 @@ function MainApp() {
   const navigation = useNavigation();
   const member = useMember();
   const summary = useSummary(member.companyId);
-  const { sheet, taskId, closeSheet, closeTask } = navigation;
+  const { sheet, taskId, page, closeSheet, closeTask, closePage } = navigation;
 
-  // Telegram's back button closes a sheet first, then an open task.
-  useEffect(() => useBackButton(sheet ? closeSheet : taskId !== null ? closeTask : null), [sheet, taskId, closeSheet, closeTask]);
+  // Telegram's back button closes a sheet first, then an open task, then a page.
+  const back = sheet ? closeSheet : taskId !== null ? closeTask : page ? closePage : null;
+  useEffect(() => useBackButton(back), [back]);
 
   return (
     <>
@@ -107,11 +109,12 @@ function MainApp() {
       {navigation.tab === "tasks" && <Tasks />}
       {navigation.tab === "activity" && <ActivityScreen />}
       {navigation.tab === "profile" && <Profile />}
+      {page === "team" && <Team />}
       {/* An open task covers the tabs and brings its own action bar, as in the design. */}
-      {taskId === null ? (
-        <TabBar unread={summary.data?.unread_activity ?? 0} />
-      ) : (
+      {taskId !== null ? (
         <TaskDetail key={taskId} taskId={taskId} />
+      ) : (
+        !page && <TabBar unread={summary.data?.unread_activity ?? 0} />
       )}
       <Sheets />
     </>

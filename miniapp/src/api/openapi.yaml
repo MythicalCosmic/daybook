@@ -1101,6 +1101,39 @@ paths:
               schema:
                 $ref: '#/components/schemas/Task'
           description: ''
+  /api/v1/companies/{company_id}/team-stats/:
+    get:
+      operationId: v1_companies_team_stats_retrieve
+      description: 'How everyone''s shared work went: on time, late, missed. Needs
+        reports.view.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: period
+        schema:
+          type: string
+          enum:
+          - last_month
+          - last_week
+          - month
+          - week
+          default: week
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamStats'
+          description: ''
   /api/v1/me/:
     get:
       operationId: v1_me_retrieve
@@ -1667,6 +1700,18 @@ components:
           nullable: true
         priority:
           $ref: '#/components/schemas/PriorityEnum'
+    PeriodEnum:
+      enum:
+      - week
+      - last_week
+      - month
+      - last_month
+      type: string
+      description: |-
+        * `week` - This week
+        * `last_week` - Last week
+        * `month` - This month
+        * `last_month` - Last month
     PermissionsEnum:
       enum:
       - members.view
@@ -1913,6 +1958,42 @@ components:
           minLength: 1
       required:
       - reason
+    Score:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Shared tasks whose deadline passed in the period.
+        on_time:
+          type: integer
+        late:
+          type: integer
+          description: Finished after the deadline.
+        missed:
+          type: integer
+          description: Still not finished.
+        on_time_percent:
+          type: integer
+          nullable: true
+        avg_delay_minutes:
+          type: integer
+          nullable: true
+          description: How late the late ones were, on average.
+        late_now:
+          type: integer
+          description: Open and overdue right now.
+        reminders:
+          type: integer
+          description: Reminders the bot had to send.
+      required:
+      - avg_delay_minutes
+      - late
+      - late_now
+      - missed
+      - on_time
+      - on_time_percent
+      - reminders
+      - total
     StateEnum:
       enum:
       - done
@@ -2264,6 +2345,70 @@ components:
       required:
       - due_time
       - title
+    TeamRow:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Shared tasks whose deadline passed in the period.
+        on_time:
+          type: integer
+        late:
+          type: integer
+          description: Finished after the deadline.
+        missed:
+          type: integer
+          description: Still not finished.
+        on_time_percent:
+          type: integer
+          nullable: true
+        avg_delay_minutes:
+          type: integer
+          nullable: true
+          description: How late the late ones were, on average.
+        late_now:
+          type: integer
+          description: Open and overdue right now.
+        reminders:
+          type: integer
+          description: Reminders the bot had to send.
+        member:
+          $ref: '#/components/schemas/MemberBrief'
+      required:
+      - avg_delay_minutes
+      - late
+      - late_now
+      - member
+      - missed
+      - on_time
+      - on_time_percent
+      - reminders
+      - total
+    TeamStats:
+      type: object
+      properties:
+        period:
+          $ref: '#/components/schemas/PeriodEnum'
+        start:
+          type: string
+          format: date
+        end:
+          type: string
+          format: date
+          description: The period's last day.
+        totals:
+          $ref: '#/components/schemas/Score'
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamRow'
+          description: Everyone registered, best first.
+      required:
+      - end
+      - members
+      - period
+      - start
+      - totals
     TelegramAuthRequest:
       type: object
       properties:

@@ -8,10 +8,12 @@ import type {
   Me,
   Membership,
   Page,
+  Period,
   Position,
   Repeat,
   Summary,
   Task,
+  TeamStats,
 } from "./types";
 
 export const keys = {
@@ -24,6 +26,7 @@ export const keys = {
   comments: (company: number, id: number) => ["tasks", company, "comments", id] as const,
   activity: (company: number) => ["activity", company] as const,
   positions: (company: number) => ["positions", company] as const,
+  team: (company: number, period: Period) => ["team", company, period] as const,
 };
 
 const tasksPath = (company: number) => `/companies/${company}/tasks`;
@@ -84,6 +87,14 @@ export function useActivity(company: number) {
       api<Page<Activity>>(`/companies/${company}/activity/?page_size=100`).then(
         (page) => page.results,
       ),
+  });
+}
+
+export function useTeamStats(company: number, period: Period) {
+  return useQuery({
+    queryKey: keys.team(company, period),
+    queryFn: () => api<TeamStats>(`/companies/${company}/team-stats/?period=${period}`),
+    staleTime: 60_000,
   });
 }
 

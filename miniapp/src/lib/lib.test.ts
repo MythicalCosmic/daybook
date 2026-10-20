@@ -6,7 +6,17 @@ import { translate } from "../i18n";
 import ru from "../i18n/ru";
 import uz from "../i18n/uz";
 import { glyph, groupTasks, repeatLabel, rowMeta, rowRight, type ViewContext } from "./taskView";
-import { addDays, clock, dayKey, daysFromToday, zonedInstant } from "./time";
+import { nameInitials, tone } from "./team";
+import {
+  addDays,
+  clock,
+  dayKey,
+  dayMonth,
+  daysFromToday,
+  longDate,
+  weekdayShort,
+  zonedInstant,
+} from "./time";
 
 const TASHKENT = "Asia/Tashkent";
 // 19 Oct 2026, 09:41 in Tashkent (UTC+5).
@@ -140,5 +150,38 @@ describe("translations", () => {
 
   it("fall back to English for anything missing", () => {
     expect(translate("uz", "app.name")).toBe("Daybook");
+  });
+});
+
+describe("team scores", () => {
+  it("reads an on-time rate at a glance", () => {
+    expect(tone({ on_time_percent: 100 })).toBe("good");
+    expect(tone({ on_time_percent: 90 })).toBe("good");
+    expect(tone({ on_time_percent: 89 })).toBe("fair");
+    expect(tone({ on_time_percent: 70 })).toBe("fair");
+    expect(tone({ on_time_percent: 69 })).toBe("poor");
+    expect(tone({ on_time_percent: null })).toBe("none");
+  });
+
+  it("makes avatar initials from a name", () => {
+    expect(nameInitials("Ali Valiyev")).toBe("AV");
+    expect(nameInitials("  dilnoza  ")).toBe("D");
+    expect(nameInitials("")).toBe("?");
+  });
+});
+
+describe("Uzbek dates", () => {
+  // 20 Oct 2026 23:30 UTC is already Wednesday the 21st in Tashkent.
+  const moment = "2026-10-20T23:30:00Z";
+
+  it("are spelled out whatever the browser knows", () => {
+    expect(dayMonth(moment, "Asia/Tashkent", "uz-Latn-UZ")).toBe("21-okt");
+    expect(longDate(new Date(moment), "Asia/Tashkent", "uz-Latn-UZ")).toBe("chorshanba, 21-oktabr");
+    expect(weekdayShort(moment, "Asia/Tashkent", "uz-Latn-UZ")).toBe("Chor");
+    expect(dayMonth(moment, "UTC", "uz-Latn-UZ")).toBe("20-okt");
+  });
+
+  it("leave other languages to the browser", () => {
+    expect(dayMonth(moment, "Asia/Tashkent", "en-GB")).toBe("21 Oct");
   });
 });

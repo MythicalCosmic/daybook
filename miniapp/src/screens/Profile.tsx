@@ -1,4 +1,4 @@
-import { Check, ChevronRight, Flame } from "lucide-react";
+import { BarChart3, Check, ChevronRight, Flame } from "lucide-react";
 import { useState } from "react";
 
 import { useSummary } from "../api/hooks";
@@ -89,6 +89,23 @@ export function Profile() {
             </div>
           </div>
           <div className="muted" style={{ fontSize: 14, padding: "0 4px" }}>{t("profile.quietNote")}</div>
+        </>
+      )}
+
+      {member.permissions.includes("reports.view") && (
+        <>
+          <div className="section-head section-head--small">{t("profile.teamSection")}</div>
+          <div className="card list-card">
+            <button className="list-item" onClick={() => navigation.openPage("team")}>
+              <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <BarChart3 size={20} strokeWidth={2.4} />
+                {t("profile.team")}
+              </span>
+              <span className="list-item-value">
+                <ChevronRight size={18} strokeWidth={2.5} />
+              </span>
+            </button>
+          </div>
         </>
       )}
 

@@ -17,5 +17,9 @@ export type MemberBrief = Schemas["MemberBrief"];
 export type Language = Schemas["LanguageEnum"];
 export type Repeat = Schemas["RepeatEnum"];
 export type Proof = Schemas["ProofEnum"];
+export type Period = Schemas["PeriodEnum"];
+export type Score = Schemas["Score"];
+export type TeamRow = Schemas["TeamRow"];
+export type TeamStats = Schemas["TeamStats"];
 
 export type Page<T> = { count: number; next: string | null; previous: string | null; results: T[] };

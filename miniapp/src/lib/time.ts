@@ -14,6 +14,28 @@ function formatter(locale: string, options: Intl.DateTimeFormatOptions): Intl.Da
   return format;
 }
 
+// Some browsers ship without Uzbek calendar names (Chromium prints "M10 20, Tue"), so Uzbek
+// month and weekday names are spelled out here, in the forms ICU would use.
+const UZ_MONTHS = ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr"];
+const UZ_MONTHS_SHORT = ["yan", "fev", "mar", "apr", "may", "iyn", "iyl", "avg", "sen", "okt", "noy", "dek"];
+const UZ_WEEKDAYS = ["yakshanba", "dushanba", "seshanba", "chorshanba", "payshanba", "juma", "shanba"];
+const UZ_WEEKDAYS_SHORT = ["Yak", "Dush", "Sesh", "Chor", "Pay", "Jum", "Shan"];
+const EN_WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const isUzbek = (locale: string) => locale.startsWith("uz");
+
+/** Day, month (0–11) and weekday (0 = Sunday) of a moment in `timeZone`. */
+function calendar(moment: string | Date, timeZone: string) {
+  const parts = formatter("en-US", { timeZone, day: "numeric", month: "numeric", weekday: "short" })
+    .formatToParts(new Date(moment));
+  const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
+  return {
+    day: Number(part("day")),
+    month: Number(part("month")) - 1,
+    weekday: EN_WEEKDAYS.indexOf(part("weekday")),
+  };
+}
+
 export function dayKey(moment: Date | string, timeZone: string): DayKey {
   return formatter("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(
     new Date(moment),
@@ -43,18 +65,28 @@ export function hourIn(now: Date, timeZone: string): number {
 }
 
 export function weekdayShort(moment: string | Date, timeZone: string, locale: string): string {
+  if (isUzbek(locale)) return UZ_WEEKDAYS_SHORT[calendar(moment, timeZone).weekday];
   return formatter(locale, { timeZone, weekday: "short" }).format(new Date(moment));
 }
 
 export function weekdayLong(moment: string | Date, timeZone: string, locale: string): string {
+  if (isUzbek(locale)) return UZ_WEEKDAYS[calendar(moment, timeZone).weekday];
   return formatter(locale, { timeZone, weekday: "long" }).format(new Date(moment));
 }
 
 export function dayMonth(moment: string | Date, timeZone: string, locale: string): string {
+  if (isUzbek(locale)) {
+    const { day, month } = calendar(moment, timeZone);
+    return `${day}-${UZ_MONTHS_SHORT[month]}`;
+  }
   return formatter(locale, { timeZone, day: "numeric", month: "short" }).format(new Date(moment));
 }
 
 export function longDate(moment: Date, timeZone: string, locale: string): string {
+  if (isUzbek(locale)) {
+    const { day, month, weekday } = calendar(moment, timeZone);
+    return `${UZ_WEEKDAYS[weekday]}, ${day}-${UZ_MONTHS[month]}`;
+  }
   return formatter(locale, { timeZone, weekday: "long", day: "numeric", month: "long" }).format(
     moment,
   );
