@@ -1,7 +1,9 @@
 from datetime import timedelta
 from decimal import Decimal
+from zoneinfo import ZoneInfo
 
 import pytest
+from django.utils import timezone
 
 from apps.audit.models import AuditLog
 from apps.core.exceptions import DomainError
@@ -194,6 +196,7 @@ class TestOpening:
                 "opening debt",
             ),
             (lambda o: {"category": None, "account": o["dollars"]}, "holds USD"),
+            (lambda o: {"category": None}, "record it as an opening debt"),
             (lambda o: {"amount": 0}, "zero"),
         ],
     )
@@ -245,6 +248,27 @@ class TestOpening:
         )
         assert rows(first)[0].source_type == "finance.test"
         assert Debt.objects.count() == 2
+
+    def test_a_repeat_must_be_the_same_debt(self, books, customer, member, day, src):
+        invoice(books, None, customer, 5, day, source=src(43, "issue"))
+        with pytest.raises(ValueError, match="counterparty_id"):
+            invoice(
+                books, None, CounterpartyFactory(company=books), 5, day, source=src(43, "issue")
+            )
+        with pytest.raises(ValueError, match="direction"):
+            services.open_debt(
+                books,
+                by=None,
+                direction="payable",
+                kind="trade",
+                amount=5,
+                currency="UZS",
+                issued_on=day,
+                counterparty=customer,
+                category="goods",
+                source=src(43, "issue"),
+            )
+        assert Debt.objects.count() == 1
 
 
 class TestPaying:
@@ -363,6 +387,105 @@ class TestPaying:
         debt.refresh_from_db()
         assert again == first
         assert debt.paid == D("10.00")
+
+    def test_one_source_pays_one_debt(self, books, owner, member, cash, day, src):
+        """A payslip pays the salary and each reimbursement: one key each, never one for all."""
+        worker = member(books)
+        fund(books, owner, cash, 1000, day)
+        salary, reimbursement = (
+            services.open_debt(
+                books,
+                by=owner,
+                direction="payable",
+                kind=kind,
+                amount=amount,
+                currency="UZS",
+                issued_on=day,
+                membership=worker,
+                category=category,
+            )
+            for kind, amount, category in (
+                ("salary", 500, "salaries"),
+                ("reimbursement", 80, "rent"),
+            )
+        )
+        services.pay_debt(
+            salary, by=None, amount=500, paid_on=day, account=cash, source=src(4, "paid")
+        )
+
+        with pytest.raises(ValueError, match="debt_id"):
+            services.pay_debt(
+                reimbursement, by=None, amount=80, paid_on=day, account=cash, source=src(4, "paid")
+            )
+        services.pay_debt(
+            reimbursement, by=None, amount=80, paid_on=day, account=cash, source=src(4, "paid:r")
+        )
+        reimbursement.refresh_from_db()
+        assert reimbursement.status == Debt.Status.PAID
+        assert queries.balance(cash) == D("420.00")
+
+    def test_a_source_that_opened_a_debt_doesnt_pay_it(self, books, customer, cash, day, src):
+        debt = invoice(books, None, customer, 100, day, source=src(6, "issue"))
+        with pytest.raises(ValueError, match="kind"):
+            services.pay_debt(
+                debt, by=None, amount=100, paid_on=day, account=cash, source=src(6, "issue")
+            )
+        debt.refresh_from_db()
+        assert debt.paid == 0
+
+
+class TestRounding:
+    """Each settlement takes the difference of the debt's running totals off it, so a debt split
+    any way adds up to the tiyin: its income or expense equals the cash it brought."""
+
+    @pytest.fixture
+    def odd_rate(self, day):
+        return ExchangeRateFactory(date=day, rate=D("12345.678901"))
+
+    def totals(self, company):
+        posted = Transaction.objects.filter(company=company, status="posted")
+        pnl = sum(r.base_amount for r in posted if r.kind in Transaction.PNL_KINDS)
+        cash = sum(r.base_amount for r in posted if r.account_id is not None)
+        return pnl, cash
+
+    def test_three_cent_payments_on_a_three_cent_debt(
+        self, books, owner, customer, dollars, odd_rate, day
+    ):
+        debt = invoice(books, owner, customer, D("0.03"), day, currency="USD")
+        for _ in range(3):
+            services.pay_debt(debt, by=owner, amount=D("0.01"), paid_on=day, account=dollars)
+
+        [accrual] = rows(debt, kind=K.INCOME)
+        assert accrual.base_amount == D("370.37")
+        pnl, cash = self.totals(books)
+        assert pnl == cash == D("370.38")  # 3 x 123.46 came in; one tiyin is an fx gain
+        assert sum(r.base_amount for r in rows(debt, kind=K.FX)) == D("0.01")
+
+    def test_offsets_and_write_offs_take_exactly_the_rest(
+        self, books, owner, member, odd_rate, day
+    ):
+        worker = member(books)
+        debt = services.open_debt(
+            books,
+            by=owner,
+            direction="payable",
+            kind="salary",
+            amount=D("0.03"),
+            currency="USD",
+            issued_on=day,
+            membership=worker,
+            category="salaries",
+        )
+        offsets = [services.pay_debt(debt, by=owner, amount=D("0.01"), paid_on=day) for _ in "ab"]
+        services.write_off(debt, by=owner, reason="Forgiven")
+
+        assert [o.base_amount for o in offsets] == [D("-123.46"), D("-123.45")]
+        [accrual] = rows(debt, kind=K.EXPENSE)
+        [written_off] = rows(debt, kind=K.WRITE_OFF)
+        assert written_off.base_amount == D("123.46")
+        assert accrual.base_amount + written_off.base_amount == D("-246.91")
+        assert sum(o.base_amount for o in offsets) == D("-246.91")
+        assert rows(debt, kind=K.FX) == []
 
 
 class TestExchangeDifferences:
@@ -571,6 +694,10 @@ class TestWriteOff:
             services.write_off(debt, by=owner, reason="")
         with pytest.raises(ValueError):
             services.write_off(debt, by=None, reason="x")
+        tomorrow = timezone.localdate(timezone=ZoneInfo(books.timezone)) + timedelta(days=1)
+        future = invoice(books, owner, customer, 100, tomorrow)
+        with pytest.raises(DomainError, match="before the day it was issued"):
+            services.write_off(future, by=owner, reason="x")
 
     def test_voiding_a_write_off_reopens_the_debt(self, books, owner, customer, day):
         debt = invoice(books, owner, customer, 100, day)
@@ -674,4 +801,4 @@ class TestOpenDebts:
             category="salaries",
         )
         log = AuditLog.objects.get(action="finance.debt_opened")
-        assert (log.required_perm or log.details.get("required_perm")) == "payroll.view"
+        assert log.required_perm == "payroll.view"

@@ -80,12 +80,13 @@ class TestTransactionRules:
         assert row(kind="fx", account=None, amount=0, base_amount=5, category=rent).pk
 
     def test_income_is_positive_and_expense_negative(self, row, rent):
-        refused(lambda: row(amount=-10))
+        out = {"amount": -10, "base_amount": -10}
+        refused(lambda: row(**out))
         refused(lambda: row(kind="expense", amount=10, category=rent))
-        assert row(amount=-10, is_contra=True).pk
+        assert row(**out, is_contra=True).pk
         assert row(kind="expense", amount=10, category=rent, is_contra=True).pk
         original = row()
-        assert row(amount=-10, reverses=original).pk
+        assert row(**out, reverses=original).pk
 
     def test_some_kinds_need_an_account(self, row, debt):
         for kind in ("transfer", "opening", "owner", "debt_open"):
@@ -115,6 +116,17 @@ class TestTransactionRules:
 
     def test_the_rate_is_positive(self, row):
         refused(lambda: row(rate=0))
+
+    def test_a_settled_amount_is_positive_and_needs_its_debt(self, row, debt):
+        refused(lambda: row(debt_amount=5))
+        refused(lambda: row(debt=debt, debt_amount=0))
+        refused(lambda: row(debt=debt, debt_amount=-5))
+        assert row(debt=debt, debt_amount=5).pk
+
+    def test_the_base_amount_points_the_way_the_amount_does(self, row, rent):
+        refused(lambda: row(base_amount=-10))
+        refused(lambda: row(kind="expense", category=rent, amount=-10, base_amount=10))
+        assert row(amount=D("0.01"), base_amount=0).pk  # a tiyin of som in a dollar company
 
     def test_a_source_is_complete_and_live_rows_hold_it_once(self, row):
         refused(lambda: row(source_type="finance.test"))
@@ -182,6 +194,11 @@ class TestTransferRules:
         refused(
             lambda: Transfer.objects.create(
                 **base, to_account=bank, amount_out=1, amount_in=1, fee=-1
+            )
+        )
+        refused(
+            lambda: Transfer.objects.create(
+                **base, to_account=bank, amount_out=1, amount_in=1, exchange_rate=0
             )
         )
 

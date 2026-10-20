@@ -5,8 +5,11 @@ both currencies, payments, write-offs, voids and cancellations. Refused writes (
 money, more than is owed…) are part of the walk. After every step:
 
 - each account's balance = Σ amount of its posted rows (and `balance(on=day)` agrees day by day);
-- each row's `base_amount` = its amount converted at its frozen rate;
+- each row's `base_amount` = its amount converted at its frozen rate (a settlement that moves no
+  money, valued by its debt's running totals, within a tiyin of it);
 - each debt's `paid` = Σ debt_amount of its posted payments and write-offs, and its status fits;
+- what the settlements of a debt took off it, in the base currency, adds up exactly to `paid` at
+  the debt's rate;
 - each posted transfer's account rows differ in the base currency by exactly its `fx` row.
 """
 
@@ -133,7 +136,7 @@ class Walk:
             kind="trade",
             amount=self.amount(matching[0]),
             currency=currency,
-            issued_on=self.days[0],
+            issued_on=self.pick(self.days[:2]),
             counterparty=self.party,
             account=self.pick(matching) if how == "account" else None,
             category=self.pick(["other_income" if direction == "receivable" else "other_expense"])
@@ -203,10 +206,39 @@ class Walk:
             for day in self.days:
                 expected = sum((r.amount for r in posted if r.occurred_on <= day), D(0))
                 assert queries.balance(account, on=day) == expected
+        base = company.base_currency
         for row in rows:
-            assert row.base_amount == convert(
-                row.amount, row.currency, company.base_currency, row.rate
-            )
+            converted = convert(row.amount, row.currency, base, row.rate)
+            if row.account_id is None and row.kind in (K.DEBT_PAYMENT, K.WRITE_OFF):
+                # Valued by the running totals of its debt: within a tiyin of amount x rate.
+                assert abs(row.base_amount - converted) <= D("0.01"), row
+            else:
+                assert row.base_amount == converted, row
+        exchange = {
+            r.source_id: r.base_amount
+            for r in rows
+            if r.kind == K.FX and r.source_type == services.ROW_SOURCE and r.status == POSTED
+        }
+        for debt in Debt.objects.filter(company=company):
+            settlements = [
+                r for r in rows if r.debt_id == debt.pk and r.kind in (K.DEBT_PAYMENT, K.WRITE_OFF)
+            ]
+            if debt.status != Debt.Status.CANCELLED and all(
+                r.status == POSTED for r in settlements
+            ):
+                # Never voided: what the settlements took off the debt adds up to `paid` at the
+                # debt's rate exactly, so its income or expense equals the cash it brought.
+                sign = 1 if debt.direction == Debt.Direction.RECEIVABLE else -1
+                book = sum(
+                    (
+                        abs(r.base_amount)
+                        if r.kind == K.WRITE_OFF
+                        else sign * (r.base_amount - exchange.get(r.pk, D(0)))
+                        for r in settlements
+                    ),
+                    D(0),
+                )
+                assert book == convert(debt.paid, debt.currency, base, debt.rate), debt
         for debt in Debt.objects.filter(company=company):
             settled = sum(
                 (
@@ -231,9 +263,10 @@ class Walk:
             assert sides == fx
 
 
-@pytest.mark.parametrize("seed", [1, 2, 3, 4])
+@pytest.mark.parametrize("seed", [1, 2, 5, 10])  # 5 and 10 split foreign debts unevenly
 def test_balances_always_equal_their_rows(books, owner, cash, bank, dollars, day, seed):
     ExchangeRateFactory(date=day, rate=D("12800"))
+    ExchangeRateFactory(date=day + timedelta(days=1), rate=D("12345.678901"))
     ExchangeRateFactory(date=day + timedelta(days=3), rate=D("12950.5"))
     walk = Walk(seed, books, owner, [cash, bank, dollars], day)
     for account in walk.accounts:

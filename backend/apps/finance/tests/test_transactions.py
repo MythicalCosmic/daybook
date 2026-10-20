@@ -79,6 +79,16 @@ class TestSigns:
             income(books, owner, cash, amount, day)
         assert not Transaction.objects.exists()
 
+    def test_an_amount_too_large_in_the_base_currency_is_refused(
+        self, books, owner, cash, dollars, usd, day
+    ):
+        with pytest.raises(DomainError, match="too large"):  # fits in dollars, not in som
+            income(books, owner, dollars, D("9999999999999999"), day)
+        income(books, owner, cash, D("9999999999999999.99"), day)
+        with pytest.raises(DomainError, match="too large"):  # the balance can't hold more
+            income(books, owner, cash, 1, day)
+        assert balance(cash) == D("9999999999999999.99")
+
     def test_owner_and_opening_entries_need_an_account_and_no_category(
         self, books, owner, cash, day
     ):
@@ -181,10 +191,13 @@ class TestLinks:
 
         loan.refresh_from_db()
         assert (interest.debt, loan.paid) == (loan, 0)
+        assert interest.debt_amount is None
         services.void_transaction(interest, by=owner, reason="Waived")
         assert balance(cash) == D("1000.00")
         with pytest.raises(ValueError):
             expense(books, owner, cash, 50, day, debt_amount=5)
+        with pytest.raises(ValueError, match="pay_debt"):  # it would settle nothing
+            expense(books, owner, cash, 50, day, category="bank_fees", debt=loan, debt_amount=50)
 
     def test_a_project_can_be_charged(self, books, owner, cash, day):
         project = Project.objects.create(company=books, name="Opening", key="OPEN")
@@ -418,6 +431,14 @@ class TestSources:
 
         assert mine != theirs
 
+    def test_a_repeat_must_be_the_same_booking(self, books, cash, bank, day, src):
+        first = income(books, None, cash, 100, day, source=src(8, "m1"))
+        with pytest.raises(ValueError, match="account_id"):
+            income(books, None, bank, 100, day, source=src(8, "m1"))
+        with pytest.raises(ValueError, match="kind"):
+            expense(books, None, cash, 100, day, source=src(8, "m1"))
+        assert list(Transaction.objects.all()) == [first]
+
 
 class TestAudit:
     def test_a_person_made_entry_is_audited(self, books, owner, cash, day):
@@ -433,10 +454,8 @@ class TestAudit:
         expense(books, owner, cash, 100, day, category="salaries")
 
         rows = AuditLog.objects.filter(action="finance.transaction_recorded").order_by("pk")
-        perms = [
-            row.required_perm or row.details.get("required_perm") for row in rows
-        ]  # a field once the audit redaction lands
-        assert perms == [Perm.FINANCE_VIEW, Perm.PAYROLL_VIEW]
+        # The field the audit views filter on, whether or not audit.record() sets it itself.
+        assert [row.required_perm for row in rows] == [Perm.FINANCE_VIEW, Perm.PAYROLL_VIEW]
 
     def test_sourced_writes_are_audited_by_their_module(self, books, cash, day, src):
         income(books, None, cash, 100, day, source=src(1))

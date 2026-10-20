@@ -53,6 +53,9 @@ class RowInline(ReadOnlyInline):
     fields = ("occurred_on", "kind", "status", "account", "amount", "currency", "base_amount")
     ordering = ("pk",)
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("account")
+
 
 @admin.register(FinanceSettings)
 class FinanceSettingsAdmin(ReadOnlyAdmin):

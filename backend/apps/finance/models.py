@@ -579,6 +579,10 @@ class Transfer(Voidable, TenantModel):
                 name="finance_transfer_amounts_positive",
             ),
             models.CheckConstraint(
+                condition=Q(exchange_rate__isnull=True) | Q(exchange_rate__gt=0),
+                name="finance_transfer_rate_positive",
+            ),
+            models.CheckConstraint(
                 condition=Q(source_type="", source_id__isnull=True, source_key="")
                 | (~Q(source_type="") & Q(source_id__isnull=False)),
                 name="finance_transfer_source_complete",
@@ -784,6 +788,19 @@ class Transaction(Voidable, TenantModel):
             models.CheckConstraint(
                 condition=~Q(kind="transfer") | Q(transfer__isnull=False),
                 name="finance_transfer_row_has_transfer",
+            ),
+            # What a row settles or opens of a debt is a positive amount of that debt: voiding
+            # takes it back off `Debt.paid`.
+            models.CheckConstraint(
+                condition=Q(debt_amount__isnull=True)
+                | (Q(debt_amount__gt=0) & Q(debt__isnull=False)),
+                name="finance_settled_amount_positive",
+            ),
+            # The base amount points the same way as the amount (it may round to zero).
+            models.CheckConstraint(
+                condition=Q(amount__gte=0, base_amount__gte=0)
+                | Q(amount__lte=0, base_amount__lte=0),
+                name="finance_base_amount_same_sign",
             ),
         ]
 

@@ -10,13 +10,18 @@ claims post through; finance never imports them. The rules every write follows:
   the direction.
 - A repeated `source` returns what the first call made. Voiding or rejecting frees the source,
   so a module can void a booking and book it again.
+- One source (type, id, key) books one thing: a repeat that doesn't match what the source
+  booked (another debt, account or kind) raises `ValueError` instead of returning it.
 - Every write is atomic, checks that everything it links belongs to the company, refuses dates
-  on or before `FinanceSettings.locked_until`, locks rows in one global order (debt, transfer,
-  transaction, then accounts by id) and moves balances with `F()` under those locks.
+  on or before `FinanceSettings.locked_until`, locks rows in one global order (the company's
+  finance settings row FOR SHARE, then debt, transfer, transaction, then accounts by id) and
+  moves balances with `F()` under those locks. The share lock on the settings row makes closing
+  a period wait for the writes already running, so nothing lands in a period being closed.
 - Each row freezes its rate and `base_amount`. Settling a debt at another value than it was
   opened at (another currency, or the same foreign currency at another rate) books the
   difference as an `fx` row, and so does a cross-currency transfer whose two sides differ in
-  the base currency.
+  the base currency. What a settlement takes off a debt is valued as the difference of the
+  running totals at the debt's rate, so the parts of a debt add up to its whole to the tiyin.
 - Services don't check permissions: the API, the bots and the calling module do.
 - Person-made changes without a source are audited here; sourced writes are part of an action
   their module audits (the rows keep `created_by` and the source either way).
@@ -26,7 +31,7 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 from zoneinfo import ZoneInfo
 
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, connection, transaction
 from django.db.models import F
 from django.utils import timezone, translation
 from django.utils.translation import gettext as _
@@ -40,6 +45,7 @@ from apps.finance.models import (
     LIVE_STATUSES,
     Category,
     Debt,
+    FinanceSettings,
     MoneyAccount,
     Transaction,
     Transfer,
@@ -81,7 +87,9 @@ ROW_SOURCE = "finance.transaction"
 
 RECORDABLE_KINDS = (Kind.INCOME, Kind.EXPENSE, Kind.OWNER, Kind.OPENING)
 SIGNED_KINDS = (Kind.OWNER, Kind.OPENING)
-MAX_AMOUNT = Decimal("9999999999999999.99")
+MAX_AMOUNT = Decimal("9999999999999999.99")  # what Decimal(18, 2) holds
+MAX_RATE = Decimal("999999999999.999999")  # what Decimal(18, 6) holds
+RATE_STEP = Decimal("0.000001")
 ZERO = Decimal(0)
 ONE = Decimal(1)
 
@@ -260,14 +268,16 @@ def record_transaction(
     Income and expense amounts are positive (the sign is set here; `is_contra` flips it: a
     refund reduces income). For `owner` and `opening` the sign says the direction. The money is
     on `account`, in its currency. `debt` only links the row to a debt it concerns (interest or
-    a fee on a loan): payments go through `pay_debt`, and earning or spending on credit through
-    `open_debt`. `status="pending"` books an income or expense that moves no balance until
-    `approve_transaction`. Without `rate` the company's rate for the day is used.
+    a fee on a loan) and never settles it, so `debt_amount` is refused: payments go through
+    `pay_debt`, and earning or spending on credit through `open_debt`. `status="pending"` books
+    an income or expense that moves no balance until `approve_transaction`. Without `rate` the
+    company's rate for the day is used.
     """
     _need_actor_or_source(by, source)
     source = sources.check(source)
+    booked = {"kind": kind, "account_id": account.pk if account is not None else None}
     if source is not None and (found := _live_row(company, source)) is not None:
-        return found
+        return _same_booking(found, source, booked)
     user = _actor(company, by)
     if kind not in RECORDABLE_KINDS:
         raise ValueError(
@@ -297,12 +307,13 @@ def record_transaction(
             % {"account": account, "currency": account.currency}
         )
     currency = account.currency
-    if debt is not None:
-        if debt.status == Debt.Status.CANCELLED:
-            raise DomainError(_("This debt was cancelled."))
-        debt_amount = _money(debt_amount) if debt_amount is not None else None
-    elif debt_amount is not None:
-        raise ValueError("debt_amount needs a debt.")
+    if debt_amount is not None:
+        raise ValueError(
+            "record_transaction never settles a debt (debt only links the row): pay it with "
+            "pay_debt, which takes debt_amount."
+        )
+    if debt is not None and debt.status == Debt.Status.CANCELLED:
+        raise DomainError(_("This debt was cancelled."))
     if kind in (Kind.INCOME, Kind.EXPENSE):
         category = _category(company, category, kind=kind, by=by)
     elif category is not None:
@@ -315,6 +326,8 @@ def record_transaction(
     def write() -> Transaction:
         posted = status == Status.POSTED
         locked = _lock_accounts(account.pk if posted else None)
+        if posted:
+            _check_active(locked[account.pk])
         row = _row(
             company,
             user=user,
@@ -331,7 +344,6 @@ def record_transaction(
             branch=branch,
             project=project,
             debt=debt,
-            debt_amount=debt_amount,
             is_contra=is_contra,
             description=description,
             source=source,
@@ -349,16 +361,19 @@ def record_transaction(
             )
         return row
 
-    return _write_once(write, lambda: _live_row(company, source), source)
+    return _write_once(
+        write, lambda: _same_booking(_live_row(company, source), source, booked), source
+    )
 
 
 @transaction.atomic
 def approve_transaction(txn: Transaction, *, by: Membership) -> Transaction:
     """Post a pending entry: it now moves its account's balance."""
     _need_actor(by)
-    txn = _lock_row(txn)
     company = txn.company
     user = _actor(company, by)
+    _hold_books(company)
+    txn = _lock_row(txn)
     if txn.status != Status.PENDING:
         raise DomainError(_("This entry isn't waiting for approval."))
     _check_open(company, txn.occurred_on)
@@ -415,6 +430,7 @@ def void_transaction(txn: Transaction, *, by: Membership, reason: str) -> Transa
     current = Transaction.objects.select_related("company").get(pk=txn.pk)
     company = current.company
     user = _actor(company, by)
+    _hold_books(company)
     if current.transfer_id is not None:
         raise DomainError(_("This entry is part of a transfer: void the transfer instead."))
     if current.kind == Kind.DEBT_OPEN or (
@@ -480,8 +496,9 @@ def transfer(
     """
     _need_actor_or_source(by, source)
     source = sources.check(source)
+    booked = {"from_account_id": from_account.pk, "to_account_id": to_account.pk}
     if source is not None and (found := _posted_transfer(company, source)) is not None:
-        return found
+        return _same_booking(found, source, booked)
     user = _actor(company, by)
     _same_company(company, from_account, to_account)
     if from_account.pk == to_account.pk:
@@ -514,6 +531,7 @@ def transfer(
         amount_in = convert(amount_out, from_account.currency, to_account.currency, exchange_rate)
         if amount_in <= 0:
             raise DomainError(_("That's too little to exchange."))
+        _check_size(amount_in)
     _check_open(company, occurred_on)
     quote_out = _side_quote(company, from_account.currency, occurred_on, exchange_rate)
     quote_in = _side_quote(company, to_account.currency, occurred_on, exchange_rate)
@@ -522,6 +540,8 @@ def transfer(
 
     def write() -> Transfer:
         locked = _lock_accounts(from_account.pk, to_account.pk)
+        _check_active(locked[from_account.pk])
+        _check_active(locked[to_account.pk])
         moved = Transfer.objects.create(
             company=company,
             occurred_on=occurred_on,
@@ -603,7 +623,9 @@ def transfer(
             )
         return moved
 
-    return _write_once(write, lambda: _posted_transfer(company, source), source)
+    return _write_once(
+        write, lambda: _same_booking(_posted_transfer(company, source), source, booked), source
+    )
 
 
 @transaction.atomic
@@ -611,13 +633,14 @@ def void_transfer(transfer: Transfer, *, by: Membership, reason: str) -> Transfe
     """Void a transfer and every row it made, putting both balances back."""
     _need_actor(by)
     reason = _reason(reason)
+    company = transfer.company
+    user = _actor(company, by)
+    _hold_books(company)
     moved = (
         Transfer.objects.select_for_update(of=("self",))
         .select_related("company")
         .get(pk=transfer.pk)
     )
-    company = moved.company
-    user = _actor(company, by)
     if moved.status != Transfer.Status.POSTED:
         raise DomainError(_("This transfer is already void."))
     _check_open(company, moved.occurred_on)
@@ -667,13 +690,22 @@ def open_debt(
     now: a loan given or an advance paid leaves the account, a loan taken arrives on it (a
     `debt_open` row). With `category`, something was earned or spent on credit: the income or
     expense is booked now as an accrual tied to the debt, with no account (an invoice, a salary,
-    a reimbursement). With neither, only the debt is recorded (an opening debt from before the
-    books moved here). The rate of the day is frozen on the debt.
+    a reimbursement). With neither, only the debt is recorded: that is an opening debt from
+    before the books moved here, so it needs `is_opening=True` (a debt that is neither would
+    later bring in or pay out money that no income or expense ever accounted for). The rate of
+    the day is frozen on the debt.
     """
     _need_actor_or_source(by, source)
     source = sources.check(source)
+    booked = {
+        "direction": direction,
+        "kind": kind,
+        "currency": currency,
+        "counterparty_id": counterparty.pk if counterparty is not None else None,
+        "membership_id": membership.pk if membership is not None else None,
+    }
     if source is not None and (found := _live_debt(company, source)) is not None:
-        return found
+        return _same_booking(found, source, booked)
     user = _actor(company, by)
     if direction not in Debt.Direction.values:
         raise ValueError(f"Unknown debt direction {direction!r}.")
@@ -692,6 +724,13 @@ def open_debt(
         )
     if is_opening and (account is not None or category is not None):
         raise DomainError(_("An opening debt moves no money and books no income or expense."))
+    if not is_opening and account is None and category is None:
+        raise DomainError(
+            _(
+                "Pick an account (money moved now) or a category (earned or spent on credit), "
+                "or record it as an opening debt."
+            )
+        )
     receivable = direction == Debt.Direction.RECEIVABLE
     if account is not None:
         _check_active(account)
@@ -715,6 +754,8 @@ def open_debt(
 
     def write() -> Debt:
         locked = _lock_accounts(account.pk if account is not None else None)
+        if account is not None:
+            _check_active(locked[account.pk])
         debt = Debt.objects.create(
             company=company,
             direction=direction,
@@ -772,7 +813,9 @@ def open_debt(
             )
         return debt
 
-    return _write_once(write, lambda: _live_debt(company, source), source)
+    return _write_once(
+        write, lambda: _same_booking(_live_debt(company, source), source, booked), source
+    )
 
 
 @transaction.atomic
@@ -794,12 +837,15 @@ def pay_debt(
     moves no money and is in the debt's currency. The settled part is valued at the debt's
     frozen rate; a payment worth more or less in the base currency books the difference as an
     `fx` row. A debt reserved with `lock_debt` takes payments only from that source.
+
+    One source pays one debt once: give each debt a payslip pays its own key.
     """
     _need_actor_or_source(by, source)
     source = sources.check(source)
     company = Debt.objects.select_related("company").get(pk=debt.pk).company
+    booked = {"kind": Kind.DEBT_PAYMENT, "debt_id": debt.pk}
     if source is not None and (found := _live_row(company, source)) is not None:
-        return found
+        return _same_booking(found, source, booked)
     user = _actor(company, by)
     _same_company(company, account)
     if account is not None:
@@ -807,9 +853,14 @@ def pay_debt(
     amount = _money(amount)
     debt_amount = _money(debt_amount) if debt_amount is not None else None
     base = company.base_currency
+    _check_open(company, paid_on)
 
     def write() -> Transaction:
         locked_debt = _lock_debt(debt.pk)
+        # A retry racing the first call waited for the debt's lock: what it booked is visible now
+        # (a full payment would otherwise read as "already settled").
+        if source is not None and (found := _live_row(company, source)) is not None:
+            return _same_booking(found, source, booked)
         if locked_debt.status != Debt.Status.OPEN:
             raise DomainError(_("This debt is already settled or cancelled."))
         if locked_debt.is_locked and (
@@ -819,7 +870,6 @@ def pay_debt(
             raise DomainError(_reserved_message(locked_debt))
         if paid_on < locked_debt.issued_on:
             raise DomainError(_("A debt can't be paid before the day it was issued."))
-        _check_open(company, paid_on)
         if account is None:
             if debt_amount is not None and debt_amount != amount:
                 raise DomainError(_("An offset is in the debt's currency: the amounts must match."))
@@ -849,6 +899,9 @@ def pay_debt(
             )
         sign = 1 if locked_debt.direction == Debt.Direction.RECEIVABLE else -1
         locked = _lock_accounts(account.pk if account is not None else None)
+        if account is not None:
+            _check_active(locked[account.pk])
+        book_value = _book_value(locked_debt, settled)
         branch = account.branch if account is not None and account.branch_id else locked_debt.branch
         common = {
             "user": user,
@@ -867,12 +920,13 @@ def pay_debt(
             amount=sign * amount,
             currency=currency,
             quote=quote,
+            # An offset moves no money: it takes exactly its book value off the debt.
+            base_amount=sign * book_value if account is None else None,
             debt_amount=settled,
             source=source,
         )
         if account is not None:
             _move(locked, {account.pk: sign * amount})
-        book_value = convert(settled, locked_debt.currency, base, locked_debt.rate)
         difference = row.base_amount - sign * book_value
         if difference:
             _row(
@@ -903,7 +957,9 @@ def pay_debt(
             )
         return row
 
-    return _write_once(write, lambda: _live_row(company, source), source)
+    return _write_once(
+        write, lambda: _same_booking(_live_row(company, source), source, booked), source
+    )
 
 
 @transaction.atomic
@@ -912,13 +968,17 @@ def write_off(debt: Debt, *, by: Membership, reason: str, amount=None) -> Transa
     expense, a payable nobody will collect becomes other income."""
     _need_actor(by)
     reason = _reason(reason)
-    locked_debt = _lock_debt(debt.pk)
-    company = locked_debt.company
+    company = debt.company
     user = _actor(company, by)
+    today = _local_today(company)
+    _check_open(company, today)
+    locked_debt = _lock_debt(debt.pk)
     if locked_debt.status != Debt.Status.OPEN:
         raise DomainError(_("This debt is already settled or cancelled."))
     if locked_debt.is_locked:
         raise DomainError(_reserved_message(locked_debt))
+    if today < locked_debt.issued_on:
+        raise DomainError(_("A debt can't be written off before the day it was issued."))
     left = locked_debt.amount - locked_debt.paid
     settled = _money(amount) if amount is not None else left
     if settled > left:
@@ -926,9 +986,8 @@ def write_off(debt: Debt, *, by: Membership, reason: str, amount=None) -> Transa
             _("That's more than the %(left)s still owed.")
             % {"left": _format(left, locked_debt.currency)}
         )
-    today = _local_today(company)
-    _check_open(company, today)
     receivable = locked_debt.direction == Debt.Direction.RECEIVABLE
+    book_value = _book_value(locked_debt, settled)
     row = _row(
         company,
         user=user,
@@ -937,6 +996,7 @@ def write_off(debt: Debt, *, by: Membership, reason: str, amount=None) -> Transa
         amount=-settled if receivable else settled,
         currency=locked_debt.currency,
         quote=RateQuote(locked_debt.rate, False, "debt"),
+        base_amount=-book_value if receivable else book_value,
         category=_category(company, "bad_debts" if receivable else "other_income"),
         counterparty=locked_debt.counterparty,
         membership=locked_debt.membership,
@@ -969,9 +1029,10 @@ def cancel_debt(debt: Debt, *, by: Membership, reason: str) -> Debt:
     back. A reserved debt is released by its source first."""
     _need_actor(by)
     reason = _reason(reason)
-    locked_debt = _lock_debt(debt.pk)
-    company = locked_debt.company
+    company = debt.company
     user = _actor(company, by)
+    _hold_books(company)
+    locked_debt = _lock_debt(debt.pk)
     if locked_debt.status == Debt.Status.CANCELLED:
         raise DomainError(_("This debt is already cancelled."))
     if locked_debt.is_locked:
@@ -1095,13 +1156,20 @@ def _money(value, *, signed: bool = False, allow_zero: bool = False) -> Decimal:
 
 
 def _rate(value) -> Decimal:
+    """A rate from the caller (or implied by two amounts), as the 6 decimals it's stored with."""
     try:
-        rate = Decimal(str(value) if isinstance(value, float) else value)
+        rate = Decimal(str(value) if isinstance(value, float) else value).quantize(RATE_STEP)
     except InvalidOperation, TypeError, ValueError:
         raise DomainError(_("Enter an exchange rate.")) from None
-    if not rate.is_finite() or rate <= 0:
-        raise DomainError(_("An exchange rate is more than zero."))
-    return rate.quantize(Decimal("0.000001"))
+    if not rate.is_finite() or rate <= 0 or rate > MAX_RATE:
+        raise DomainError(_("That exchange rate can't be right."))
+    return rate
+
+
+def _check_size(*amounts: Decimal) -> None:
+    """Refuse amounts a money column can't hold (a huge dollar amount in som, a balance)."""
+    if any(abs(amount) > MAX_AMOUNT for amount in amounts):
+        raise DomainError(_("This amount is too large."))
 
 
 def _implied_rate(from_currency: str, amount_out: Decimal, amount_in: Decimal) -> Decimal:
@@ -1123,9 +1191,28 @@ def _local_today(company) -> date:
     return timezone.localdate(timezone=ZoneInfo(company.timezone))
 
 
+def _hold_books(company) -> date | None:
+    """`FinanceSettings.locked_until`, read under a share lock on the settings row that is held
+    until the write commits.
+
+    Every ledger write takes this lock first (it heads the lock order), so closing a period, an
+    UPDATE of that row, waits for the writes already running, and a write that starts later
+    reads the new date. Nothing can land in a period while it is being closed. Writers don't
+    block each other: share locks are compatible.
+    """
+    settings_row = conf.get_settings(company)
+    table = connection.ops.quote_name(FinanceSettings._meta.db_table)
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f"SELECT locked_until FROM {table} WHERE id = %s FOR SHARE",
+            [settings_row.pk],
+        )
+        return cursor.fetchone()[0]
+
+
 def _check_open(company, *days: date) -> None:
-    """Refuse dates on or before the period lock."""
-    locked_until = conf.get_settings(company).locked_until
+    """Refuse dates on or before the period lock (taking the share lock of `_hold_books`)."""
+    locked_until = _hold_books(company)
     if locked_until is not None and any(day <= locked_until for day in days):
         raise DomainError(
             _("The books are closed up to %(date)s. Pick a later date or reopen the period.")
@@ -1206,6 +1293,7 @@ def _move(locked: dict[int, MoneyAccount], deltas: dict[int, Decimal], *, check=
                 _("Not enough money on %(account)s: %(balance)s left.")
                 % {"account": account, "balance": _format(account.balance, account.currency)}
             )
+        _check_size(new_balance)
         MoneyAccount.objects.filter(pk=pk).update(balance=F("balance") + delta, updated_at=now)
         account.balance = new_balance
 
@@ -1251,6 +1339,19 @@ def _lock_debt(pk: int) -> Debt:
     return Debt.objects.select_for_update(of=("self",)).select_related("company").get(pk=pk)
 
 
+def _book_value(debt: Debt, settled: Decimal) -> Decimal:
+    """What settling `settled` more of `debt` (locked) takes off it in the base currency, at the
+    debt's frozen rate.
+
+    It is the difference of the running totals, not `settled` converted on its own, so the parts
+    add up to exactly what the debt was booked at however it's split: three payments of $0.01 on
+    a $0.03 debt never leave a tiyin of exchange difference behind.
+    """
+    base = debt.company.base_currency
+    before = convert(debt.paid, debt.currency, base, debt.rate)
+    return convert(debt.paid + settled, debt.currency, base, debt.rate) - before
+
+
 def _row(
     company,
     *,
@@ -1273,7 +1374,13 @@ def _row(
     is_contra: bool = False,
     description: str = "",
     source: Source | None = None,
+    base_amount: Decimal | None = None,
 ) -> Transaction:
+    """Insert a ledger row. `base_amount` is `amount` at the quote's rate unless given (a debt
+    settlement without money, valued by `_book_value`, may differ from it by a tiyin)."""
+    if base_amount is None:
+        base_amount = convert(amount, currency, company.base_currency, quote.rate)
+    _check_size(amount, base_amount)
     return Transaction.objects.create(
         company=company,
         kind=kind,
@@ -1284,7 +1391,7 @@ def _row(
         currency=currency,
         rate=quote.rate,
         rate_stale=quote.stale,
-        base_amount=convert(amount, currency, company.base_currency, quote.rate),
+        base_amount=base_amount,
         category=category,
         counterparty=counterparty,
         membership=membership,
@@ -1315,6 +1422,24 @@ def _write_once(write, find, source: Source | None):
         if found is None:
             raise
         return found
+
+
+def _same_booking(found, source: Source, booked: dict):
+    """`found`, what `source` booked earlier (or None), after checking it is the same booking.
+
+    One source (type, id, key) books one thing. A module that reuses a source for another debt,
+    account or kind would otherwise get the other booking back and book nothing, silently: it
+    gets a ValueError and gives each booking its own key ("paid:r12").
+    """
+    if found is None:
+        return None
+    wrong = sorted(name for name, value in booked.items() if getattr(found, name) != value)
+    if wrong:
+        raise ValueError(
+            f"Source {tuple(source)!r} already booked {found._meta.model_name} #{found.pk}, "
+            f"which differs in {', '.join(wrong)}. Give each booking its own source key."
+        )
+    return found
 
 
 def _source_filter(source: Source) -> dict:
@@ -1379,11 +1504,14 @@ def _row_details(row: Transaction) -> dict:
 
 
 def _audit(action, company, user, target, *, sensitive: bool = False, **details) -> None:
-    audit.record(
-        action,
-        company_id=company.pk,
-        actor=user,
-        target=target,
-        required_perm=Perm.PAYROLL_VIEW if sensitive else Perm.FINANCE_VIEW,
-        **details,
+    """Audit a change. Only people with `finance.view` see the row, and only people with
+    `payroll.view` see one with per-person salary detail (§5)."""
+    perm = Perm.PAYROLL_VIEW if sensitive else Perm.FINANCE_VIEW
+    log = audit.record(
+        action, company_id=company.pk, actor=user, target=target, required_perm=perm, **details
     )
+    if not log.required_perm:
+        # Until audit.record() sets the field from `required_perm` itself (W0-L2), the value
+        # only lands in `details`; the audit views filter on the field, so set it here.
+        log.required_perm = perm
+        log.save(update_fields=["required_perm"])

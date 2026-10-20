@@ -215,6 +215,14 @@ class TestSourcesAndCompany:
 
         assert move(books, owner, cash, bank, 20, day, source=src(4)) != first
 
+    def test_a_repeat_must_move_between_the_same_accounts(self, books, owner, cash, bank, day, src):
+        fund(books, owner, cash, 100, day)
+        fund(books, owner, bank, 100, day)
+        first = move(books, None, cash, bank, 10, day, source=src(5))
+        with pytest.raises(ValueError, match="from_account_id, to_account_id"):
+            move(books, None, bank, cash, 10, day, source=src(5))
+        assert list(Transfer.objects.all()) == [first]
+
     def test_accounts_and_actor_must_be_of_the_company(
         self, books, owner, cash, day, other_company
     ):
@@ -239,3 +247,45 @@ class TestLockOrder:
         assert len(account_locks) == 1
         assert 'ORDER BY "finance_moneyaccount"."id" ASC' in account_locks[0]
         assert f"IN ({cash.pk}, {bank.pk})" in account_locks[0]
+
+    def test_the_books_are_share_locked_before_anything_else(self, books, owner, cash, bank, day):
+        fund(books, owner, cash, 100, day)
+        payment = services.record_transaction(
+            books,
+            by=owner,
+            kind="expense",
+            amount=5,
+            occurred_on=day,
+            account=cash,
+            category="rent",
+        )
+        for write in (
+            lambda: move(books, owner, cash, bank, 10, day),
+            lambda: services.void_transaction(payment, by=owner, reason="x"),
+        ):
+            with CaptureQueriesContext(connection) as queries_run:
+                write()
+            locks = [q["sql"] for q in queries_run if " FOR " in q["sql"]]
+            assert "finance_financesettings" in locks[0]
+            assert locks[0].rstrip().endswith("FOR SHARE")
+
+
+class TestBadRates:
+    def test_an_implied_rate_too_small_to_store_is_refused(self, books, owner, cash, dollars, day):
+        fund(books, owner, cash, 100, day)
+        with pytest.raises(DomainError, match="exchange rate"):  # 0.01 so'm for a million dollars
+            move(books, owner, cash, dollars, D("0.01"), day, amount_in=1_000_000)
+        assert not Transfer.objects.exists()
+
+    @pytest.mark.parametrize("rate", [0, "-1", D("0.0000001"), D("1e13"), "x", D("NaN")])
+    def test_a_given_rate_must_be_storable(self, books, owner, cash, dollars, day, rate):
+        fund(books, owner, cash, 100, day)
+        with pytest.raises(DomainError, match="exchange rate"):
+            move(books, owner, cash, dollars, 50, day, rate=rate)
+
+    def test_a_conversion_too_large_to_store_is_refused(self, books, owner, cash, dollars, day):
+        dollars.allow_negative = True
+        dollars.save()
+        with pytest.raises(DomainError, match="too large"):
+            move(books, owner, dollars, cash, D("9999999999999"), day, rate=D("12800"))
+        assert not Transfer.objects.exists()

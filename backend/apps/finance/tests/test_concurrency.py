@@ -5,10 +5,11 @@ import threading
 from decimal import Decimal
 
 import pytest
-from django.db import connection
+from django.db import OperationalError, connection, transaction
 
+from apps.core.exceptions import DomainError
 from apps.finance import queries, services
-from apps.finance.models import Debt, MoneyAccount
+from apps.finance.models import Debt, FinanceSettings, MoneyAccount
 from apps.finance.tests.factories import CounterpartyFactory
 
 pytestmark = pytest.mark.django_db(transaction=True)
@@ -134,3 +135,105 @@ def test_a_source_booked_twice_at_once_is_booked_once(books, day, src):
 
     assert len(set(made)) == 1
     assert Debt.objects.count() == 1
+
+
+def test_two_payments_on_one_debt_never_pay_more_than_is_owed(books, owner, cash, day):
+    debt = services.open_debt(
+        books,
+        by=owner,
+        direction="receivable",
+        kind="trade",
+        amount=100,
+        currency="UZS",
+        issued_on=day,
+        counterparty=CounterpartyFactory(company=books),
+        category="sales",
+    )
+    refused = []
+
+    def job():
+        try:
+            services.pay_debt(debt, by=owner, amount=60, paid_on=day, account=cash)
+        except DomainError as exc:
+            refused.append(exc)
+
+    run_together(job, job, job)
+
+    debt.refresh_from_db()
+    assert (debt.paid, debt.status, len(refused)) == (D("60.00"), Debt.Status.OPEN, 2)
+    assert queries.balance(cash) == D("60.00") == queries.ledger_balance(cash)
+
+
+def test_a_full_payment_retried_at_once_is_booked_once(books, owner, cash, day, src):
+    debt = services.open_debt(
+        books,
+        by=owner,
+        direction="receivable",
+        kind="trade",
+        amount=100,
+        currency="UZS",
+        issued_on=day,
+        counterparty=CounterpartyFactory(company=books),
+        category="sales",
+    )
+    paid = []
+
+    def job():
+        row = services.pay_debt(debt, by=None, amount=100, paid_on=day, account=cash, source=src(3))
+        paid.append(row.pk)
+
+    run_together(*[job] * 3)
+
+    assert len(set(paid)) == 1
+    assert queries.balance(cash) == D("100.00")
+
+
+def test_closing_a_period_waits_for_the_writes_already_running(books, owner, cash, day):
+    """A write holds the books' share lock until it commits: the UPDATE that closes the period
+    can't slip in between its check and its insert."""
+    services.get_settings(books)  # the settings row exists before either starts
+    written, release = threading.Event(), threading.Event()
+    outcome = {}
+
+    def writer():
+        try:
+            with transaction.atomic():
+                services.record_transaction(
+                    books, by=owner, kind="opening", amount=5, occurred_on=day, account=cash
+                )
+                written.set()
+                release.wait(timeout=30)
+        finally:
+            connection.close()
+
+    def closer():
+        try:
+            written.wait(timeout=30)
+            with transaction.atomic():
+                with connection.cursor() as cursor:
+                    cursor.execute("SET LOCAL lock_timeout = '300ms'")
+                try:
+                    with transaction.atomic():
+                        FinanceSettings.objects.filter(company=books).update(locked_until=day)
+                    outcome["while_writing"] = "closed"
+                except OperationalError:
+                    outcome["while_writing"] = "waited"
+            release.set()
+            FinanceSettings.objects.filter(company=books).update(locked_until=day)
+        finally:
+            release.set()
+            connection.close()
+
+    threads = [threading.Thread(target=writer), threading.Thread(target=closer)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=60)
+
+    assert outcome == {"while_writing": "waited"}
+    assert FinanceSettings.objects.get(company=books).locked_until == day
+    assert queries.balance(cash) == D("5.00")  # committed before the period closed
+    with pytest.raises(DomainError, match="closed"):
+        services.record_transaction(
+            books, by=owner, kind="opening", amount=5, occurred_on=day, account=cash
+        )
