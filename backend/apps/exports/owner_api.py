@@ -8,8 +8,8 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 
-from apps.console import compat
 from apps.console.base import OwnerViewSet
+from apps.core import files
 from apps.exports import build, housekeeping, services
 from apps.exports.models import Export
 from apps.exports.registry import COLUMN_KINDS, get_exporter
@@ -56,7 +56,7 @@ class ExportSerializer(serializers.ModelSerializer):
         """A signed link valid for 10 minutes, checked again when used."""
         if export.status != Export.Status.READY or not export.file:
             return None
-        return compat.signed_url(
+        return files.signed_url(
             export.file,
             user=self.context["request"].user,
             company_id=export.company_id,

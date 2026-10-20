@@ -39,9 +39,8 @@ jobs:
           sudo apt-get install -y --no-install-recommends gettext \
             libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core
       - run: uv sync --frozen
-      # docs/ holds the plans: ruff would reformat the Python sketches inside their Markdown.
-      - run: uv run ruff check --extend-exclude docs .
-      - run: uv run ruff format --check --extend-exclude docs .
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
       - run: uv run backend/manage.py check
       - run: uv run backend/manage.py makemigrations --check --dry-run
       - name: Dashboard permission list matches the backend

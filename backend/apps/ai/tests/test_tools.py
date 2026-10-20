@@ -259,7 +259,7 @@ def test_every_installed_tool_follows_the_rules(monkeypatch):
         ("call 901234567 now", f"call {HIDDEN} now"),
         ("card 8600 1234 5678 9012", f"card {HIDDEN}"),
         ("card 8600123456789012", f"card {HIDDEN}"),
-        ("tg id 6589960007", f"tg id {HIDDEN}"),
+        ("tg id 4242424242", f"tg id {HIDDEN}"),
         ("ask @dilnoza_k please", f"ask {HIDDEN} please"),
         ("mail ali@example.com", "mail ali@example.com"),
         ("https://t.me/joinchat/abc and t.me/aziz", f"{HIDDEN} and {HIDDEN}"),

@@ -149,16 +149,13 @@ ifneq ($(HAS_DASHBOARD),)
 	cd dashboard && npm test
 endif
 
-# docs/ holds the plans: ruff would reformat the Python sketches inside their Markdown.
-RUFF_SKIP := --extend-exclude docs
-
 lint: ## Lint and check formatting
-	uv run ruff check $(RUFF_SKIP) .
-	uv run ruff format --check $(RUFF_SKIP) .
+	uv run ruff check .
+	uv run ruff format --check .
 
 fmt: ## Auto-fix lint and format
-	uv run ruff check --fix $(RUFF_SKIP) .
-	uv run ruff format $(RUFF_SKIP) .
+	uv run ruff check --fix .
+	uv run ruff format .
 
 check: lint test ## Lint, Django checks, migrations, type checks, tests [PKG]
 	$(PKG_ENV) $(MANAGE) check

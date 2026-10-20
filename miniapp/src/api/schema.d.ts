@@ -4,26 +4,6 @@
  */
 
 export interface paths {
-    "/api/v1/auth/refresh/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * @description Takes a refresh type JSON web token and returns an access type JSON web
-         *     token if the refresh token is valid.
-         */
-        post: operations["v1_auth_refresh_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/auth/telegram/": {
         parameters: {
             query?: never;
@@ -33,7 +13,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Exchange the mini app's Telegram init data for a JWT pair. */
+        /**
+         * @description Exchange the mini app's Telegram init data for an access token.
+         *
+         *     Only an access token: the mini app signs in again with fresh init data when it expires,
+         *     so no refresh token (and no blacklist row) is made every time the app opens.
+         */
         post: operations["v1_auth_telegram_create"];
         delete?: never;
         options?: never;
@@ -92,6 +77,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/inbox/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description My notifications in this company, newest first (employee kinds: approvals and alerts
+         *     for owners and managers live in the dashboard).
+         */
+        get: operations["v1_companies_inbox_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/inbox/read/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Mark some (`ids`) or all (`all: true`) of my notifications read. */
+        post: operations["v1_companies_inbox_read_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/members/": {
         parameters: {
             query?: never;
@@ -99,7 +121,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Registered members of the company, e.g. to pick who a task is for. */
+        /**
+         * @description Registered members of the company, e.g. to pick who a task is for: everyone with
+         *     branches.all, otherwise the people sharing one of the caller's branches (§2.6).
+         */
         get: operations["v1_companies_members_list"];
         put?: never;
         post?: never;
@@ -487,6 +512,10 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AccessToken: {
+            /** @description Bearer token for the API. When it expires, sign in with initData again. */
+            access: string;
+        };
         /**
          * @description * `start` - start
          *     * `complete` - complete
@@ -517,6 +546,16 @@ export interface components {
          * @enum {string}
          */
         ActivityKindEnum: "assigned" | "review" | "completed" | "confirmed" | "returned" | "commented";
+        /**
+         * @description * `UZS` - Uzbek som
+         *     * `USD` - US dollar
+         * @enum {string}
+         */
+        BaseCurrencyEnum: "UZS" | "USD";
+        BranchBrief: {
+            readonly id: number;
+            readonly name: string;
+        };
         CancelRequest: {
             /** @default false */
             stop_repeating: boolean;
@@ -543,6 +582,19 @@ export interface components {
             readonly id: number;
             readonly name: string;
             readonly timezone: string;
+            /** @description Modules switched on. */
+            features: components["schemas"]["FeaturesEnum"][];
+            /** @description Owners see the personal tasks employees make for themselves. */
+            readonly owner_sees_personal_tasks: boolean;
+            /**
+             * @description The currency reports and the ledger add up in. Locked once money is booked.
+             *
+             *     * `UZS` - Uzbek som
+             *     * `USD` - US dollar
+             */
+            readonly base_currency: components["schemas"]["BaseCurrencyEnum"];
+            /** @description Colleagues see each other's phone numbers in the app. */
+            readonly team_directory_phones: boolean;
         };
         CompleteRequest: {
             /** @default  */
@@ -550,6 +602,13 @@ export interface components {
             /** Format: binary */
             proof_photo?: string | null;
         };
+        /**
+         * @description * `primary` - primary
+         *     * `danger` - danger
+         *     * `default` - default
+         * @enum {string}
+         */
+        ConsoleActionStyleEnum: "primary" | "danger" | "default";
         Day: {
             /** Format: date */
             date: string;
@@ -563,12 +622,35 @@ export interface components {
              */
             state: components["schemas"]["StateEnum"];
         };
+        /**
+         * @description * `finance` - Finance
+         *     * `sales` - Sales and cash
+         *     * `stock` - Stock
+         *     * `attendance` - Attendance
+         *     * `hr` - HR
+         *     * `payroll` - Payroll
+         *     * `ai` - AI assistant
+         *     * `recognition` - Recognition
+         * @enum {string}
+         */
+        FeaturesEnum: "finance" | "sales" | "stock" | "attendance" | "hr" | "payroll" | "ai" | "recognition";
         Holiday: {
             readonly id: number;
             /** Format: date */
             readonly date: string;
             readonly name: string;
         };
+        InboxPerson: {
+            id: number;
+            name: string;
+        };
+        /**
+         * @description * `info` - Info
+         *     * `warning` - Warning
+         *     * `critical` - Critical
+         * @enum {string}
+         */
+        InboxSeverityEnum: "info" | "warning" | "critical";
         /**
          * @description * `uz` - O'zbekcha
          *     * `ru` - Русский
@@ -576,6 +658,11 @@ export interface components {
          * @enum {string}
          */
         LanguageEnum: "uz" | "ru" | "en";
+        MarkReadRequest: {
+            ids?: number[];
+            /** @default false */
+            all: boolean;
+        };
         Marked: {
             marked: number;
         };
@@ -618,6 +705,14 @@ export interface components {
              * @description When a rejected person can ask again.
              */
             rejoin_available_at: string | null;
+            /** @description Where they work. */
+            home_branch: components["schemas"]["BranchBrief"] | null;
+            readonly branch_ids: number[];
+            /**
+             * Format: date
+             * @description While suspended: the last day of it; null: until reinstated.
+             */
+            suspended_until: string | null;
         };
         /**
          * @description * `pending` - Pending
@@ -625,9 +720,40 @@ export interface components {
          *     * `rejected` - Rejected
          *     * `blocked` - Blocked
          *     * `left` - Left
+         *     * `suspended` - Suspended
          * @enum {string}
          */
-        MembershipStatusEnum: "pending" | "approved" | "rejected" | "blocked" | "left";
+        MembershipStatusEnum: "pending" | "approved" | "rejected" | "blocked" | "left" | "suspended";
+        Notification: {
+            readonly id: number;
+            /** @description Registered kind, e.g. sales.cash_difference. */
+            readonly kind: string;
+            readonly severity: components["schemas"]["InboxSeverityEnum"];
+            readonly title: string;
+            readonly body: string;
+            /** @description Dashboard route. */
+            readonly url: string;
+            /** @description Mini app deep link. */
+            readonly app_screen: string;
+            readonly target_type: string;
+            readonly target_id: number | null;
+            readonly actor: components["schemas"]["InboxPerson"] | null;
+            readonly actions: components["schemas"]["NotificationAction"][];
+            readonly data: unknown;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly read_at: string | null;
+            /** Format: date-time */
+            readonly acted_at: string | null;
+            readonly acted_by: string | null;
+        };
+        NotificationAction: {
+            key: string;
+            label: string;
+            style: components["schemas"]["ConsoleActionStyleEnum"];
+            needs_reason: boolean;
+        };
         OffToday: {
             kind: components["schemas"]["OffTodayKindEnum"];
             /** @description The holiday's name; empty for time off. */
@@ -679,6 +805,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Comment"][];
+        };
+        PaginatedNotificationList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["Notification"][];
         };
         PaginatedTaskList: {
             /** @example 123 */
@@ -759,7 +900,7 @@ export interface components {
         /**
          * @description * `members.view` - View members
          *     * `members.approve` - Approve or reject join requests
-         *     * `members.manage` - Edit and block members, change their roles
+         *     * `members.manage` - Edit, block and offboard members
          *     * `roles.manage` - Manage access roles
          *     * `positions.manage` - Manage positions
          *     * `tasks.view_all` - View everyone's tasks
@@ -770,9 +911,51 @@ export interface components {
          *     * `groups.manage` - Connect and configure groups
          *     * `reports.view` - View reports and statistics
          *     * `time_off.approve` - Approve or reject time off
+         *     * `announcements.send` - Send announcements
+         *     * `dashboard.access` - Open the owner dashboard
+         *     * `company.settings` - Change company settings, branches and modules
+         *     * `audit.view` - View the audit log
+         *     * `data.export` - Export data to Excel/CSV
+         *     * `branches.all` - See every branch (otherwise only their own)
+         *     * `sales.view` - See sales, shifts, cash and stock
+         *     * `sales.operate` - Run their own till: open and close shifts, record sales, payouts and handovers
+         *     * `sales.manage` - Verify, correct and void shifts; registers, payment methods, targets, customers
+         *     * `sales.invoices` - Create, issue and void invoices
+         *     * `stock.manage` - Manage products, goods receipts, stock counts and write-offs (includes reading stock)
+         *     * `finance.view` - See accounts, transactions, debts, profit and cost prices
+         *     * `finance.record` - Record income, expenses, transfers and payments on accounts they operate
+         *     * `finance.manage` - Manage accounts, categories, budgets and rates; fix or void entries; lock periods
+         *     * `finance.approve` - Approve expense claims
+         *     * `finance.claim` - Submit their own expenses with receipts
+         *     * `hr.view` - See profiles, documents and contracts (IDs and ID scans hidden)
+         *     * `hr.manage` - Edit profiles, documents, contracts, policies and equipment
+         *     * `hr.sensitive` - See passport, PINFL and card numbers and ID scans (every view is audited)
+         *     * `hr.hiring` - Manage vacancies and applicants
+         *     * `attendance.view` - See everyone's attendance and the roster
+         *     * `attendance.manage` - Manage schedules and the roster; correct attendance; approve overtime and swaps
+         *     * `time_off.manage` - Manage leave types and adjust balances
+         *     * `payroll.view` - See salaries, payslips and payroll reports
+         *     * `payroll.propose` - Propose bonuses and fines for others
+         *     * `payroll.manage` - Set pay, rules, approve adjustments and advances, calculate runs
+         *     * `payroll.finalize` - Finalize and publish payroll runs
+         *     * `payroll.pay` - Mark payslips and advances paid
+         *     * `ai.use` - Use the AI assistant, task drafts and writing help
+         *     * `ai.configure` - Configure AI, its budget and what data it may see
+         *     * `projects.view_all` - See every project and its tasks
+         *     * `projects.manage` - Create and manage projects
+         *     * `projects.time_view` - See everyone's time entries
+         *     * `hr.discipline` - Issue warnings and reprimands
+         *     * `hr.suspend` - Suspend and reinstate employees
+         *     * `hr.terminate` - Terminate employment
+         *     * `assets.manage` - Manage equipment and who holds it
+         *     * `reviews.manage` - Run performance reviews and set goals
+         *     * `knowledge.manage` - Write and publish knowledge base pages
+         *     * `agenda.manage` - Add company events to the calendar
+         *     * `crm.view` - See CRM deals
+         *     * `crm.manage` - Manage CRM deals and pipelines
          * @enum {string}
          */
-        PermissionsEnum: "members.view" | "members.approve" | "members.manage" | "roles.manage" | "positions.manage" | "tasks.view_all" | "tasks.assign" | "tasks.templates" | "tasks.confirm" | "reminders.configure" | "groups.manage" | "reports.view" | "time_off.approve";
+        PermissionsEnum: "members.view" | "members.approve" | "members.manage" | "roles.manage" | "positions.manage" | "tasks.view_all" | "tasks.assign" | "tasks.templates" | "tasks.confirm" | "reminders.configure" | "groups.manage" | "reports.view" | "time_off.approve" | "announcements.send" | "dashboard.access" | "company.settings" | "audit.view" | "data.export" | "branches.all" | "sales.view" | "sales.operate" | "sales.manage" | "sales.invoices" | "stock.manage" | "finance.view" | "finance.record" | "finance.manage" | "finance.approve" | "finance.claim" | "hr.view" | "hr.manage" | "hr.sensitive" | "hr.hiring" | "attendance.view" | "attendance.manage" | "time_off.manage" | "payroll.view" | "payroll.propose" | "payroll.manage" | "payroll.finalize" | "payroll.pay" | "ai.use" | "ai.configure" | "projects.view_all" | "projects.manage" | "projects.time_view" | "hr.discipline" | "hr.suspend" | "hr.terminate" | "assets.manage" | "reviews.manage" | "knowledge.manage" | "agenda.manage" | "crm.view" | "crm.manage";
         Position: {
             readonly id: number;
             readonly name: string;
@@ -1107,15 +1290,8 @@ export interface components {
          * @enum {string}
          */
         TimeOffStatusEnum: "pending" | "approved" | "rejected" | "cancelled";
-        TokenPair: {
-            access: string;
-            refresh: string;
-        };
-        TokenRefresh: {
-            readonly access: string;
-        };
-        TokenRefreshRequest: {
-            refresh: string;
+        Updated: {
+            updated: number;
         };
         /**
          * @description * `0` - Monday
@@ -1137,31 +1313,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    v1_auth_refresh_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TokenRefreshRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["TokenRefreshRequest"];
-                "multipart/form-data": components["schemas"]["TokenRefreshRequest"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TokenRefresh"];
-                };
-            };
-        };
-    };
     v1_auth_telegram_create: {
         parameters: {
             query?: never;
@@ -1182,7 +1333,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TokenPair"];
+                    "application/json": components["schemas"]["AccessToken"];
                 };
             };
         };
@@ -1251,6 +1402,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Holiday"][];
+                };
+            };
+        };
+    };
+    v1_companies_inbox_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedNotificationList"];
+                };
+            };
+        };
+    };
+    v1_companies_inbox_read_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MarkReadRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["MarkReadRequest"];
+                "multipart/form-data": components["schemas"]["MarkReadRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Updated"];
                 };
             };
         };

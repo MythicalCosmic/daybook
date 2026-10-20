@@ -2,39 +2,16 @@ openapi: 3.0.3
 info:
   title: 911 Trello API
   version: 0.1.0
-  description: API for the employee mini app.
+  description: API for the employee mini app and the owner dashboard.
 paths:
-  /api/v1/auth/refresh/:
-    post:
-      operationId: v1_auth_refresh_create
-      description: |-
-        Takes a refresh type JSON web token and returns an access type JSON web
-        token if the refresh token is valid.
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TokenRefreshRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TokenRefreshRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/TokenRefreshRequest'
-        required: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TokenRefresh'
-          description: ''
   /api/v1/auth/telegram/:
     post:
       operationId: v1_auth_telegram_create
-      description: Exchange the mini app's Telegram init data for a JWT pair.
+      description: |-
+        Exchange the mini app's Telegram init data for an access token.
+
+        Only an access token: the mini app signs in again with fresh init data when it expires,
+        so no refresh token (and no blacklist row) is made every time the app opens.
       tags:
       - v1
       requestBody:
@@ -56,7 +33,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TokenPair'
+                $ref: '#/components/schemas/AccessToken'
           description: ''
   /api/v1/companies/{company_id}/activity/:
     get:
@@ -141,10 +118,81 @@ paths:
                 items:
                   $ref: '#/components/schemas/Holiday'
           description: ''
+  /api/v1/companies/{company_id}/inbox/:
+    get:
+      operationId: v1_companies_inbox_list
+      description: |-
+        My notifications in this company, newest first (employee kinds: approvals and alerts
+        for owners and managers live in the dashboard).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNotificationList'
+          description: ''
+  /api/v1/companies/{company_id}/inbox/read/:
+    post:
+      operationId: v1_companies_inbox_read_create
+      description: 'Mark some (`ids`) or all (`all: true`) of my notifications read.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarkReadRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MarkReadRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MarkReadRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Updated'
+          description: ''
   /api/v1/companies/{company_id}/members/:
     get:
       operationId: v1_companies_members_list
-      description: Registered members of the company, e.g. to pick who a task is for.
+      description: |-
+        Registered members of the company, e.g. to pick who a task is for: everyone with
+        branches.all, otherwise the people sharing one of the caller's branches (§2.6).
       parameters:
       - in: path
         name: company_id
@@ -1308,6 +1356,15 @@ paths:
           description: ''
 components:
   schemas:
+    AccessToken:
+      type: object
+      properties:
+        access:
+          type: string
+          description: Bearer token for the API. When it expires, sign in with initData
+            again.
+      required:
+      - access
     ActionsEnum:
       enum:
       - start
@@ -1374,6 +1431,26 @@ components:
         * `confirmed` - Checked your task
         * `returned` - Sent a task back
         * `commented` - Commented on a task
+    BaseCurrencyEnum:
+      enum:
+      - UZS
+      - USD
+      type: string
+      description: |-
+        * `UZS` - Uzbek som
+        * `USD` - US dollar
+    BranchBrief:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - name
     CancelRequest:
       type: object
       properties:
@@ -1445,9 +1522,35 @@ components:
         timezone:
           type: string
           readOnly: true
+        features:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeaturesEnum'
+          description: Modules switched on.
+        owner_sees_personal_tasks:
+          type: boolean
+          readOnly: true
+          description: Owners see the personal tasks employees make for themselves.
+        base_currency:
+          allOf:
+          - $ref: '#/components/schemas/BaseCurrencyEnum'
+          readOnly: true
+          description: |-
+            The currency reports and the ledger add up in. Locked once money is booked.
+
+            * `UZS` - Uzbek som
+            * `USD` - US dollar
+        team_directory_phones:
+          type: boolean
+          readOnly: true
+          description: Colleagues see each other's phone numbers in the app.
       required:
+      - base_currency
+      - features
       - id
       - name
+      - owner_sees_personal_tasks
+      - team_directory_phones
       - timezone
     CompleteRequest:
       type: object
@@ -1459,6 +1562,16 @@ components:
           type: string
           format: binary
           nullable: true
+    ConsoleActionStyleEnum:
+      enum:
+      - primary
+      - danger
+      - default
+      type: string
+      description: |-
+        * `primary` - primary
+        * `danger` - danger
+        * `default` - default
     Day:
       type: object
       properties:
@@ -1478,6 +1591,26 @@ components:
       required:
       - date
       - state
+    FeaturesEnum:
+      enum:
+      - finance
+      - sales
+      - stock
+      - attendance
+      - hr
+      - payroll
+      - ai
+      - recognition
+      type: string
+      description: |-
+        * `finance` - Finance
+        * `sales` - Sales and cash
+        * `stock` - Stock
+        * `attendance` - Attendance
+        * `hr` - HR
+        * `payroll` - Payroll
+        * `ai` - AI assistant
+        * `recognition` - Recognition
     Holiday:
       type: object
       properties:
@@ -1495,6 +1628,26 @@ components:
       - date
       - id
       - name
+    InboxPerson:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    InboxSeverityEnum:
+      enum:
+      - info
+      - warning
+      - critical
+      type: string
+      description: |-
+        * `info` - Info
+        * `warning` - Warning
+        * `critical` - Critical
     LanguageEnum:
       enum:
       - uz
@@ -1505,6 +1658,17 @@ components:
         * `uz` - O'zbekcha
         * `ru` - Русский
         * `en` - English
+    MarkReadRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+          maxItems: 500
+        all:
+          type: boolean
+          default: false
     Marked:
       type: object
       properties:
@@ -1625,10 +1789,27 @@ components:
           format: date-time
           nullable: true
           description: When a rejected person can ask again.
+        home_branch:
+          allOf:
+          - $ref: '#/components/schemas/BranchBrief'
+          nullable: true
+          description: Where they work.
+        branch_ids:
+          type: array
+          items:
+            type: integer
+          readOnly: true
+        suspended_until:
+          type: string
+          format: date
+          nullable: true
+          description: 'While suspended: the last day of it; null: until reinstated.'
       required:
+      - branch_ids
       - company
       - decided_at
       - first_name
+      - home_branch
       - id
       - is_onboarded
       - last_name
@@ -1638,6 +1819,7 @@ components:
       - rejoin_available_at
       - role
       - status
+      - suspended_until
     MembershipStatusEnum:
       enum:
       - pending
@@ -1645,6 +1827,7 @@ components:
       - rejected
       - blocked
       - left
+      - suspended
       type: string
       description: |-
         * `pending` - Pending
@@ -1652,6 +1835,105 @@ components:
         * `rejected` - Rejected
         * `blocked` - Blocked
         * `left` - Left
+        * `suspended` - Suspended
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        kind:
+          type: string
+          readOnly: true
+          description: Registered kind, e.g. sales.cash_difference.
+        severity:
+          allOf:
+          - $ref: '#/components/schemas/InboxSeverityEnum'
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        body:
+          type: string
+          readOnly: true
+        url:
+          type: string
+          readOnly: true
+          description: Dashboard route.
+        app_screen:
+          type: string
+          readOnly: true
+          description: Mini app deep link.
+        target_type:
+          type: string
+          readOnly: true
+        target_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        actor:
+          allOf:
+          - $ref: '#/components/schemas/InboxPerson'
+          nullable: true
+          readOnly: true
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationAction'
+          readOnly: true
+        data:
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        read_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        acted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        acted_by:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - acted_at
+      - acted_by
+      - actions
+      - actor
+      - app_screen
+      - body
+      - created_at
+      - data
+      - id
+      - kind
+      - read_at
+      - severity
+      - target_id
+      - target_type
+      - title
+      - url
+    NotificationAction:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        style:
+          $ref: '#/components/schemas/ConsoleActionStyleEnum'
+        needs_reason:
+          type: boolean
+      required:
+      - key
+      - label
+      - needs_reason
+      - style
     OffToday:
       type: object
       properties:
@@ -1740,6 +2022,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Comment'
+    PaginatedNotificationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
     PaginatedTaskList:
       type: object
       required:
@@ -1896,11 +2201,53 @@ components:
       - groups.manage
       - reports.view
       - time_off.approve
+      - announcements.send
+      - dashboard.access
+      - company.settings
+      - audit.view
+      - data.export
+      - branches.all
+      - sales.view
+      - sales.operate
+      - sales.manage
+      - sales.invoices
+      - stock.manage
+      - finance.view
+      - finance.record
+      - finance.manage
+      - finance.approve
+      - finance.claim
+      - hr.view
+      - hr.manage
+      - hr.sensitive
+      - hr.hiring
+      - attendance.view
+      - attendance.manage
+      - time_off.manage
+      - payroll.view
+      - payroll.propose
+      - payroll.manage
+      - payroll.finalize
+      - payroll.pay
+      - ai.use
+      - ai.configure
+      - projects.view_all
+      - projects.manage
+      - projects.time_view
+      - hr.discipline
+      - hr.suspend
+      - hr.terminate
+      - assets.manage
+      - reviews.manage
+      - knowledge.manage
+      - agenda.manage
+      - crm.view
+      - crm.manage
       type: string
       description: |-
         * `members.view` - View members
         * `members.approve` - Approve or reject join requests
-        * `members.manage` - Edit and block members, change their roles
+        * `members.manage` - Edit, block and offboard members
         * `roles.manage` - Manage access roles
         * `positions.manage` - Manage positions
         * `tasks.view_all` - View everyone's tasks
@@ -1911,6 +2258,48 @@ components:
         * `groups.manage` - Connect and configure groups
         * `reports.view` - View reports and statistics
         * `time_off.approve` - Approve or reject time off
+        * `announcements.send` - Send announcements
+        * `dashboard.access` - Open the owner dashboard
+        * `company.settings` - Change company settings, branches and modules
+        * `audit.view` - View the audit log
+        * `data.export` - Export data to Excel/CSV
+        * `branches.all` - See every branch (otherwise only their own)
+        * `sales.view` - See sales, shifts, cash and stock
+        * `sales.operate` - Run their own till: open and close shifts, record sales, payouts and handovers
+        * `sales.manage` - Verify, correct and void shifts; registers, payment methods, targets, customers
+        * `sales.invoices` - Create, issue and void invoices
+        * `stock.manage` - Manage products, goods receipts, stock counts and write-offs (includes reading stock)
+        * `finance.view` - See accounts, transactions, debts, profit and cost prices
+        * `finance.record` - Record income, expenses, transfers and payments on accounts they operate
+        * `finance.manage` - Manage accounts, categories, budgets and rates; fix or void entries; lock periods
+        * `finance.approve` - Approve expense claims
+        * `finance.claim` - Submit their own expenses with receipts
+        * `hr.view` - See profiles, documents and contracts (IDs and ID scans hidden)
+        * `hr.manage` - Edit profiles, documents, contracts, policies and equipment
+        * `hr.sensitive` - See passport, PINFL and card numbers and ID scans (every view is audited)
+        * `hr.hiring` - Manage vacancies and applicants
+        * `attendance.view` - See everyone's attendance and the roster
+        * `attendance.manage` - Manage schedules and the roster; correct attendance; approve overtime and swaps
+        * `time_off.manage` - Manage leave types and adjust balances
+        * `payroll.view` - See salaries, payslips and payroll reports
+        * `payroll.propose` - Propose bonuses and fines for others
+        * `payroll.manage` - Set pay, rules, approve adjustments and advances, calculate runs
+        * `payroll.finalize` - Finalize and publish payroll runs
+        * `payroll.pay` - Mark payslips and advances paid
+        * `ai.use` - Use the AI assistant, task drafts and writing help
+        * `ai.configure` - Configure AI, its budget and what data it may see
+        * `projects.view_all` - See every project and its tasks
+        * `projects.manage` - Create and manage projects
+        * `projects.time_view` - See everyone's time entries
+        * `hr.discipline` - Issue warnings and reprimands
+        * `hr.suspend` - Suspend and reinstate employees
+        * `hr.terminate` - Terminate employment
+        * `assets.manage` - Manage equipment and who holds it
+        * `reviews.manage` - Run performance reviews and set goals
+        * `knowledge.manage` - Write and publish knowledge base pages
+        * `agenda.manage` - Add company events to the calendar
+        * `crm.view` - See CRM deals
+        * `crm.manage` - Manage CRM deals and pipelines
     Position:
       type: object
       properties:
@@ -2660,33 +3049,13 @@ components:
         * `approved` - Approved
         * `rejected` - Rejected
         * `cancelled` - Cancelled
-    TokenPair:
+    Updated:
       type: object
       properties:
-        access:
-          type: string
-        refresh:
-          type: string
+        updated:
+          type: integer
       required:
-      - access
-      - refresh
-    TokenRefresh:
-      type: object
-      properties:
-        access:
-          type: string
-          readOnly: true
-      required:
-      - access
-    TokenRefreshRequest:
-      type: object
-      properties:
-        refresh:
-          type: string
-          writeOnly: true
-          minLength: 1
-      required:
-      - refresh
+      - updated
     WeekdayEnum:
       enum:
       - 0

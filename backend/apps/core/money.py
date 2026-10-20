@@ -84,13 +84,13 @@ def to_base(amount: Decimal, rate: Decimal) -> Decimal:
 
 
 # How each language names the som. USD reads the same in every language.
-SOM = {"uz": "so'm", "ru": "сум", "en": "UZS"}
+SOM = {"uz": "so‘m", "ru": "сум", "en": "UZS"}
 
 
 def format_money(amount: Decimal, currency: str, language: str) -> str:
     """The amount as people read it in `language`.
 
-    `12 500 000 so'm` (uz), `12 500 000 сум` (ru), `12 500 000 UZS` (en), `$1,250.00` (USD in
+    `12 500 000 so‘m` (uz), `12 500 000 сум` (ru), `12 500 000 UZS` (en), `$1,250.00` (USD in
     every language). Som amounts drop the tiyin when there are none; dollars always show cents.
     """
     value = quantize(amount)

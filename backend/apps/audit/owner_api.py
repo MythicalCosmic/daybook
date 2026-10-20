@@ -2,71 +2,21 @@
 
     GET audit/records/?target_type=task&target_id=12   the History tab of any record
 
-Owner endpoints accept only dashboard tokens (`aud="dashboard"`), checked by
-`apps.signin.auth.OwnerJWTAuthentication`; `OwnerTokenAuthentication` below hands every request
-to it and refuses everything while it isn't installed, so this endpoint can never fall back to
-a mini app token.
+Like every owner endpoint it accepts only dashboard tokens and needs an approved membership
+with dashboard.access in the URL's company (`apps.console.base.OwnerMixin`).
 """
 
-from django.utils.module_loading import import_string
 from django.utils.translation import gettext as _
-from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_field
 from rest_framework import serializers
-from rest_framework.authentication import BaseAuthentication
-from rest_framework.exceptions import AuthenticationFailed, NotFound, ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView
-from rest_framework.permissions import BasePermission, IsAuthenticated
 
 from apps.audit import queries, registry
 from apps.audit.models import AuditLog
+from apps.console.base import OwnerMixin
 from apps.members.models import Membership
 from apps.members.permissions import Perm
-
-OWNER_AUTHENTICATION = "apps.signin.auth.OwnerJWTAuthentication"
-
-
-class OwnerTokenAuthentication(BaseAuthentication):
-    """Dashboard tokens only, through the sign-in app's authentication."""
-
-    def authenticate(self, request):
-        try:
-            authentication = import_string(OWNER_AUTHENTICATION)
-        except ImportError as exc:
-            raise AuthenticationFailed(_("Owner sign-in isn't available.")) from exc
-        return authentication().authenticate(request)
-
-    def authenticate_header(self, request):
-        return 'Bearer realm="dashboard"'
-
-
-class OwnerTokenScheme(OpenApiAuthenticationExtension):
-    target_class = "apps.audit.owner_api.OwnerTokenAuthentication"
-    name = "dashboardJWT"
-
-    def get_security_definition(self, auto_schema):
-        return {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"}
-
-
-class IsDashboardMember(BasePermission):
-    """An approved member of the URL's company holding dashboard.access. To anyone else the
-    company doesn't exist (404), and a member without the permission gets 403."""
-
-    def has_permission(self, request, view):
-        membership = (
-            Membership.objects.select_related("company", "role", "user")
-            .filter(
-                company_id=view.kwargs["company_id"],
-                company__is_active=True,
-                user=request.user,
-                status=Membership.Status.APPROVED,
-            )
-            .first()
-        )
-        if membership is None:
-            raise NotFound
-        view.membership = membership
-        return membership.has_perm(Perm.DASHBOARD_ACCESS)
 
 
 class ActorSerializer(serializers.Serializer):
@@ -105,7 +55,7 @@ class AuditRecordSerializer(serializers.ModelSerializer):
         return {"id": member.pk if member else None, "name": name}
 
 
-class RecordHistoryView(ListAPIView):
+class RecordHistoryView(OwnerMixin, ListAPIView):
     """The History tab of one record: its audit rows the caller may see, newest first.
 
     Needs audit.view, or the permission the record's app registered for its history (for
@@ -113,8 +63,6 @@ class RecordHistoryView(ListAPIView):
     caller holds the permission they need.
     """
 
-    authentication_classes = (OwnerTokenAuthentication,)
-    permission_classes = (IsAuthenticated, IsDashboardMember)
     serializer_class = AuditRecordSerializer
 
     def get_queryset(self):

@@ -8,7 +8,9 @@ from aiogram.enums import ChatType
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, TelegramObject
 
+from apps.members.bot_menu import registered
 from bot.commands import private_commands
+from bot.filters.menu import translations
 
 # How Telegram writes a command: "/name", optionally "@bot", then a space or the end.
 COMMAND = re.compile(r"/(?P<command>[A-Za-z0-9_]{1,32})(?:@[A-Za-z0-9_]+)?(?:\s|$)")
@@ -30,11 +32,18 @@ def is_menu_command(message: Message) -> bool:
     return command_of(message) in menu_commands()
 
 
+def is_menu_button(message: Message) -> bool:
+    """A main-menu button a module registered (apps.members.bot_menu), in any language."""
+    text = message.text
+    return bool(text) and any(text in translations(button.msgid) for button in registered())
+
+
 def interrupts(message: Message) -> bool:
-    """A menu command other than /start: the start router decides about /start itself (a deep
-    link's handler may keep the conversation, plain /start ends it)."""
+    """A menu command other than /start, or a module's menu button: the start router decides
+    about /start itself (a deep link's handler may keep the conversation, plain /start ends
+    it)."""
     command = command_of(message)
-    return command in menu_commands() and command != "start"
+    return (command in menu_commands() and command != "start") or is_menu_button(message)
 
 
 class MenuCommandMiddleware(BaseMiddleware):
@@ -45,7 +54,8 @@ class MenuCommandMiddleware(BaseMiddleware):
     or an answer always reaches the conversation waiting for it. Without this, "/checkin" typed
     while the bot waits for a task title would become the title. A menu command ends the
     conversation instead and is routed as if there had been none; other text, photos and
-    commands outside the menu (a feature's own "/cancel") still reach the conversation.
+    commands outside the menu (a feature's own "/cancel") still reach the conversation. A menu
+    button a module registered ("📍 Keldim") counts as a menu command.
     """
 
     async def __call__(

@@ -11,8 +11,8 @@
 year (1-20 October against 1-20 September); a custom range, `last_30`, today and yesterday with
 the same number of days just before. `year` compares with the same days a year earlier.
 
-docs/PLAN-OWNER.md §3.1 names `apps.reports.periods` as the home of `Range`/`parse_range`;
-they live here until the integration pass moves them (owner endpoints use `RangeMixin`).
+Packages import `Range` and `parse_range` from `apps.reports.periods` (PLAN-OWNER §3.1), which
+re-exports them; owner endpoints use `RangeMixin`.
 """
 
 import calendar

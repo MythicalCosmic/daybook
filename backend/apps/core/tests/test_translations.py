@@ -42,7 +42,7 @@ def test_no_message_is_missing_from_the_catalogues(settings, tmp_path, monkeypat
     # makemessages writes into every locale directory it finds, so it reads a copy of the code.
     root = settings.BASE_DIR.parent
     skip = shutil.ignore_patterns("locale", "tests", "migrations", "__pycache__")
-    for source in ("backend/apps", "backend/config", "employee_bot"):
+    for source in ("backend/apps", "backend/config", "employee_bot", "owner_bot"):
         shutil.copytree(root / source, tmp_path / "code" / source, ignore=skip)
     monkeypatch.chdir(tmp_path / "code")
     settings.LOCALE_PATHS = [tmp_path / "locale"]

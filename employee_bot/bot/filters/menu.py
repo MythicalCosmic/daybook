@@ -8,7 +8,8 @@ from django.utils.translation import gettext
 
 
 @cache
-def _translations(msgid: str) -> frozenset[str]:
+def translations(msgid: str) -> frozenset[str]:
+    """`msgid` in every language the bot speaks."""
     texts = set()
     for code, _name in settings.LANGUAGES:
         with translation.override(code):
@@ -23,4 +24,4 @@ class MenuButton(Filter):
         self.msgid = msgid
 
     async def __call__(self, message: Message) -> bool:
-        return message.text in _translations(self.msgid)
+        return message.text in translations(self.msgid)

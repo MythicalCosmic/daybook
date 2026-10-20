@@ -7,11 +7,17 @@ from aiogram.filters import Command
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Chat, Message, User
 
+from apps.members import bot_menu
 from apps.tasks.models import Task
 from bot.commands import private_commands
 from bot.deeplinks import register_start_param, unregister_start_param
 from bot.handlers.features import applicants, attendance, finance
-from bot.middlewares.menu_commands import interrupts, is_menu_command, menu_commands
+from bot.middlewares.menu_commands import (
+    interrupts,
+    is_menu_button,
+    is_menu_command,
+    menu_commands,
+)
 from tests import updates
 
 ASKS_FOR_DUE = "When is it due?"
@@ -70,6 +76,17 @@ def test_start_is_left_to_the_start_router():
     assert is_menu_command(text_message("/start login_abc"))
     assert not interrupts(text_message("/start login_abc"))
     assert not interrupts(text_message("/start"))
+
+
+def test_a_modules_menu_button_interrupts_in_any_language(monkeypatch):
+    monkeypatch.setattr(bot_menu, "_buttons", {})
+    bot_menu.register_menu_button("Members", order=10, visible=lambda member: True)
+
+    assert is_menu_button(text_message("Members"))
+    assert interrupts(text_message("Members"))
+    assert interrupts(text_message("Xodimlar"))  # the same button for an Uzbek speaker
+    assert not interrupts(text_message("Members of staff"))
+    assert not is_menu_button(text_message(None))
 
 
 pytestmark_db = pytest.mark.django_db(transaction=True)

@@ -113,7 +113,15 @@ const throwsInVisible: Feature = defineFeature({
 function membership(permissions: string[]): Membership {
   return {
     id: 7,
-    company: { id: 1, name: "Demo Shop", timezone: "Asia/Tashkent" },
+    company: {
+      id: 1,
+      name: "Demo Shop",
+      timezone: "Asia/Tashkent",
+      features: [],
+      owner_sees_personal_tasks: false,
+      base_currency: "UZS",
+      team_directory_phones: false,
+    },
     status: "approved",
     first_name: "Alisher",
     last_name: "Valiyev",
@@ -124,6 +132,9 @@ function membership(permissions: string[]): Membership {
     onboarded_at: null,
     decided_at: null,
     rejoin_available_at: null,
+    home_branch: null,
+    branch_ids: [],
+    suspended_until: null,
   };
 }
 

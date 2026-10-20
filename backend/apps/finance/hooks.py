@@ -5,8 +5,12 @@ Imported by `AppConfig.ready()`; register a function only once it exists.
 
 from django.utils.translation import gettext_lazy as _
 
+from apps.audit import registry as audit_registry
 from apps.companies.signals import company_created
 from apps.finance import defaults, sources
+from apps.finance.audit_actions import FinanceAction
+
+audit_registry.register(FinanceAction)
 
 # The exchange difference of a debt payment points back at the payment (services.ROW_SOURCE).
 sources.register(

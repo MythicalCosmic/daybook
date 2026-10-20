@@ -5,6 +5,11 @@ from datetime import date, datetime, time, timedelta
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+# The owner dashboard's analytics ranges (PLAN-OWNER §3.1); packages import them from here.
+from apps.console.ranges import Range as Range
+from apps.console.ranges import RangeError as RangeError
+from apps.console.ranges import parse_range as parse_range
+
 # A report goes out within this long after its time, not hours late.
 REPORT_WINDOW = timedelta(hours=2)
 

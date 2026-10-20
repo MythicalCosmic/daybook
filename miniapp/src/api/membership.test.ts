@@ -28,7 +28,7 @@ function membership(company: Record<string, unknown> = {}, extra: Record<string,
     decided_at: null,
     rejoin_available_at: null,
     ...extra,
-  } as Membership;
+  } as unknown as Membership;
 }
 
 describe("membership facts", () => {

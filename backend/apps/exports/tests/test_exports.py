@@ -4,7 +4,6 @@ import csv
 import io
 from datetime import datetime, timedelta
 from decimal import Decimal
-from types import ModuleType
 
 import pytest
 from django.core.cache import cache
@@ -14,8 +13,8 @@ from openpyxl import load_workbook
 from rest_framework.exceptions import ValidationError
 
 from apps.audit.models import AuditLog
-from apps.console import compat
 from apps.console.registry import BadKey, DuplicateKey, RegistryError
+from apps.core import files as core_files
 from apps.core.exceptions import DomainError
 from apps.core.storage import private_storage
 from apps.exports import build, files, housekeeping, services
@@ -370,11 +369,13 @@ def test_list_and_detail_show_only_my_exports(company, member, owner, owner_api)
 
 @pytest.mark.usefixtures("exporters")
 def test_the_detail_carries_a_signed_link(company, owner, owner_api, monkeypatch):
-    fake = ModuleType("apps.core.files")
-    fake.signed_url = lambda file, *, user, company_id, check, ttl: (
-        f"/api/v1/files/{check}:{user.pk}:{ttl}/"
+    monkeypatch.setattr(
+        core_files,
+        "signed_url",
+        lambda file, *, user, company_id, check, ttl=600, filename=None: (
+            f"/api/v1/files/{check}:{user.pk}:{ttl}/"
+        ),
     )
-    monkeypatch.setattr(compat, "files", lambda: fake)
     export = built(owner, format="csv")
 
     detail = owner_api(owner).get(exports_url(company, f"{export.pk}/")).data
@@ -386,13 +387,11 @@ def test_the_detail_carries_a_signed_link(company, owner, owner_api, monkeypatch
 def test_the_link_names_the_file_for_people(company, owner, owner_api, monkeypatch):
     seen = {}
 
-    def signed_url(file, *, user, company_id, check, ttl, filename=None):
+    def signed_url(file, *, user, company_id, check, ttl=600, filename=None):
         seen["filename"] = filename
         return "/api/v1/files/x/"
 
-    fake = ModuleType("apps.core.files")
-    fake.signed_url = signed_url
-    monkeypatch.setattr(compat, "files", lambda: fake)
+    monkeypatch.setattr(core_files, "signed_url", signed_url)
     export = built(owner, format="csv")
 
     owner_api(owner).get(exports_url(company, f"{export.pk}/"))
