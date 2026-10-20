@@ -1,25 +1,39 @@
 name: trello911
 
-# `docker compose up -d db redis` for local development (Django and the bot run via uv),
+# `docker compose up -d db redis` for local development (Django and the bots run via uv),
 # `docker compose --profile app up -d --build` for the whole stack in containers.
+
+x-env: &env
+  DJANGO_SETTINGS_MODULE: config.settings.prod
+  DATABASE_URL: postgres://trello:${POSTGRES_PASSWORD:-trello}@db:5432/trello
+  REDIS_URL: redis://redis:6379/0
+  CELERY_BROKER_URL: redis://redis:6379/1
+  BOT_FSM_REDIS_URL: redis://redis:6379/2
+
+# Health checks ask with the site's own host name: Django refuses any host that isn't in
+# DJANGO_ALLOWED_HOSTS, and in production that is only the domain. They say HTTPS, as Caddy
+# does, so DJANGO_SECURE_SSL_REDIRECT can't answer them with a redirect.
+x-healthcheck: &healthcheck
+  interval: 10s
+  timeout: 5s
+  retries: 12
+  start_period: 20s
 
 x-app: &app
   build: .
   image: trello911:latest
   env_file: .env
-  environment:
-    DJANGO_SETTINGS_MODULE: config.settings.prod
-    DATABASE_URL: postgres://trello:${POSTGRES_PASSWORD:-trello}@db:5432/trello
-    REDIS_URL: redis://redis:6379/0
-    CELERY_BROKER_URL: redis://redis:6379/1
-    BOT_FSM_REDIS_URL: redis://redis:6379/2
+  environment: *env
   depends_on:
     db:
       condition: service_healthy
     redis:
       condition: service_healthy
+  # Every service sees both upload folders: public proof photos and logos, and the private
+  # files (receipts, documents, exports, PDFs) that only signed links serve.
   volumes:
     - media:/app/backend/media
+    - private_media:/app/backend/private_media
   restart: unless-stopped
   profiles: ["app"]
 
@@ -43,6 +57,9 @@ services:
 
   redis:
     image: redis:8-alpine
+    # More than the default 16 databases: in development every package has its own
+    # (deploy/dev-packages.mk).
+    command: ["redis-server", "--databases", "32"]
     ports:
       - "127.0.0.1:26379:6379"
     volumes:
@@ -56,30 +73,88 @@ services:
 
   backend:
     <<: *app
-    command: sh -c "python manage.py migrate --noinput && gunicorn config.wsgi --bind 0.0.0.0:8000 --workers 3 --access-logfile -"
+    # Defaults every module needs (payment methods, categories…) are filled in for companies
+    # that existed before the module did; it's idempotent. A company whose defaults fail is
+    # logged and retried on the next start, but never keeps the site down for everyone else.
+    command: >-
+      sh -c "python manage.py migrate --noinput
+      && { python manage.py ensure_company_defaults || echo 'Company defaults failed (see the log above); starting anyway.' >&2; }
+      && exec gunicorn config.wsgi --bind 0.0.0.0:8000 --workers 3 --access-logfile -"
     ports:
       - "127.0.0.1:28000:8000"
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/')"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-      start_period: 20s
+      <<: *healthcheck
+      test:
+        - CMD
+        - python
+        - -c
+        - |
+          import os, urllib.request
+          host = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")[0].strip().lstrip(".")
+          headers = {"Host": host.strip("*") or "localhost", "X-Forwarded-Proto": "https"}
+          request = urllib.request.Request("http://127.0.0.1:8000/health/", headers=headers)
+          urllib.request.urlopen(request, timeout=4)
 
+  # Notifications, group posts, exports and everything else except AI calls.
   worker:
     <<: *app
-    command: celery -A config worker -l info
+    command: celery -A config worker -Q celery,default -l info
+
+  # AI calls take seconds each; they get their own queue and worker so reminders never wait.
+  ai-worker:
+    <<: *app
+    command: celery -A config worker -Q ai -c 4 -l info
 
   beat:
     <<: *app
     command: celery -A config beat -l info --schedule /tmp/celerybeat-schedule
+
+  # Server-sent events for AI answers (ASGI). Each open stream holds a connection for minutes,
+  # so it never keeps a database connection between queries.
+  stream:
+    <<: *app
+    environment:
+      <<: *env
+      DB_CONN_MAX_AGE: "0"
+    command: >-
+      uvicorn config.asgi:application --host 0.0.0.0 --port 8001
+      --proxy-headers --forwarded-allow-ips "*" --no-access-log
+    ports:
+      - "127.0.0.1:28001:8001"
+    healthcheck:
+      <<: *healthcheck
+      test:
+        - CMD
+        - python
+        - -c
+        - |
+          import os, urllib.request
+          host = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",")[0].strip().lstrip(".")
+          headers = {"Host": host.strip("*") or "localhost", "X-Forwarded-Proto": "https"}
+          request = urllib.request.Request("http://127.0.0.1:8001/health/", headers=headers)
+          urllib.request.urlopen(request, timeout=4)
 
   employee_bot:
     <<: *app
     working_dir: /app/employee_bot
     command: python main.py
 
+  # Optional: without OWNER_BOT_TOKEN the employee bot confirms dashboard logins and delivers
+  # owner notifications, and this service just waits.
+  owner_bot:
+    <<: *app
+    working_dir: /app/owner_bot
+    command:
+      - sh
+      - -c
+      - |
+        if [ -n "$$OWNER_BOT_TOKEN" ]; then exec python -m ownerbot; fi
+        echo "OWNER_BOT_TOKEN is empty: the owner bot stays off."
+        trap 'exit 0' TERM INT
+        sleep infinity & wait
+
 volumes:
   pgdata:
   redisdata:
   media:
+  private_media:

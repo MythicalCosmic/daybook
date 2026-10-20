@@ -11,22 +11,28 @@ services:
       - "${HTTP_PORT:-80}:80"
       - "${HTTPS_PORT:-443}:443"
       - "${HTTPS_PORT:-443}:443/udp"
+    # Public uploads only. Private files never reach Caddy: Django serves them behind signed links.
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - media:/srv/media:ro
       - caddy_data:/data
       - caddy_config:/config
+    # Not on stream: without it the site still works and the dashboard polls for AI answers.
     depends_on:
       backend:
         condition: service_healthy
     restart: unless-stopped
     profiles: ["app"]
 
+  # Only Caddy talks to these.
   backend:
-    # Only Caddy talks to it.
     ports: !reset []
 
-  # A compressed database dump every night, keeping the last 14 days in ./backups.
+  stream:
+    ports: !reset []
+
+  # Every night: a compressed database dump and an archive of the private files (receipts,
+  # documents, contracts, payslips), keeping the last 14 days of each in ./backups.
   backup:
     image: postgres:18-alpine
     environment:
@@ -36,13 +42,17 @@ services:
       PGPASSWORD: ${POSTGRES_PASSWORD:-trello}
     volumes:
       - ./backups:/backups
+      - private_media:/private_media:ro
     entrypoint:
       - sh
       - -c
       - |
+        # Only root on the server may read them: they hold contracts, ID scans and salaries.
+        umask 077
         while true; do
           pg_dump --no-owner | gzip > /backups/trello-$$(date +%F).sql.gz
-          find /backups -name 'trello-*.sql.gz' -mtime +14 -delete
+          tar czf /backups/private-media-$$(date +%F).tgz -C /private_media .
+          find /backups \( -name 'trello-*.sql.gz' -o -name 'private-media-*.tgz' \) -mtime +14 -delete
           sleep 86400
         done
     depends_on:

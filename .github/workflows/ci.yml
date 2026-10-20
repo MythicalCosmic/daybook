@@ -33,13 +33,24 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v6
-      - run: sudo apt-get install -y --no-install-recommends gettext  # the translations test
+      # gettext for the translations test; Pango and HarfBuzz for WeasyPrint's PDFs.
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gettext \
+            libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core
       - run: uv sync --frozen
-      - run: uv run ruff check .
-      - run: uv run ruff format --check .
+      # docs/ holds the plans: ruff would reformat the Python sketches inside their Markdown.
+      - run: uv run ruff check --extend-exclude docs .
+      - run: uv run ruff format --check --extend-exclude docs .
       - run: uv run backend/manage.py check
       - run: uv run backend/manage.py makemigrations --check --dry-run
-      - run: uv run pytest
+      - name: Dashboard permission list matches the backend
+        if: hashFiles('dashboard/package.json') != ''
+        run: uv run backend/manage.py perms_ts --check
+      # One run over every testpath (backend, employee_bot/tests, owner_bot/ownerbot/tests), as
+      # locally: two bots' test modules clashing ("import file mismatch") only shows up together.
+      - name: Backend, employee bot and owner bot tests
+        run: uv run pytest
 
   miniapp:
     runs-on: ubuntu-latest
@@ -57,3 +68,34 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+
+  dashboard:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dashboard
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  # The compose files and the Caddyfile parse, so a deploy never fails on a typo.
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: cp .env.example .env
+      - run: >-
+          DOMAIN=ci.example.com
+          docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile app config --quiet
+      - run: >-
+          docker run --rm -e DOMAIN=ci.example.com
+          -v "$GITHUB_WORKSPACE/deploy/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2.11-alpine
+          caddy adapt --config /etc/caddy/Caddyfile --adapter caddyfile --validate

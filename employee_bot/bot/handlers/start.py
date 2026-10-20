@@ -1,6 +1,7 @@
 from aiogram import F, Router
 from aiogram.enums import ChatType
 from aiogram.filters import CommandObject, CommandStart
+from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from asgiref.sync import sync_to_async
 
@@ -8,12 +9,20 @@ from apps.accounts.models import User
 from apps.companies.services import find_by_invite
 from apps.core.exceptions import DomainError
 from apps.members import bot_messages, services
+from bot import deeplinks
 
 router = Router(name="start")
 
 
 @router.message(CommandStart(), F.chat.type == ChatType.PRIVATE)
-async def cmd_start(message: Message, command: CommandObject, user: User) -> None:
+async def cmd_start(
+    message: Message, command: CommandObject, user: User, state: FSMContext
+) -> None:
+    # Deep links features registered (login_…, job_…) first; their handlers decide what happens
+    # to a conversation in progress. Anything else is an invite or "home", which ends it.
+    if await deeplinks.dispatch(message, command.args, user=user, state=state):
+        return
+    await state.clear()
     reply = await _handle_start(user, command.args)
     if reply is not None:
         text, markup = reply

@@ -1,5 +1,6 @@
 .git
 .github
+.claude
 .venv
 .env
 **/__pycache__
@@ -8,7 +9,11 @@
 .ruff_cache
 backend/staticfiles
 backend/media
+backend/private_media
+backups
 **/logs/*.log
 docs
 miniapp/node_modules
 miniapp/dist
+dashboard/node_modules
+dashboard/dist
