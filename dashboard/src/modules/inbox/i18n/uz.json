@@ -31,6 +31,7 @@
   "inbox.severity.critical": "Shoshilinch",
   "inbox.from": "Kimdan",
   "inbox.acted": "Hal qilindi: {time}",
+  "inbox.actedBy": "{name} hal qildi: {time}",
   "inbox.pickTitle": "Bildirishnomani tanlang",
   "inbox.pickBody": "U shu yerda tafsilotlari va amallari bilan ochiladi.",
   "inbox.widget.title": "Sizni kutmoqda",

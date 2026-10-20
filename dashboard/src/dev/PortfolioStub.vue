@@ -28,7 +28,7 @@ const company = useCompanyStore();
           <CompanyLogo :name="item.name" :src="item.logo" :size="36" :alert="(item.alerts ?? 0) > 0" style="--logo-ring: var(--c-surface)" />
           <div class="min-w-0 flex-1">
             <p class="truncate text-base font-semibold text-fg">{{ item.name }}</p>
-            <p class="text-xs text-muted">{{ item.role.name }}</p>
+            <p class="text-xs text-muted">{{ item.role?.name }}</p>
           </div>
           <UiBadge v-if="item.pending" :count="item.pending" tone="primary" />
         </div>

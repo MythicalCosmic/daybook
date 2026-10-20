@@ -9,7 +9,7 @@ import { defineAsyncComponent } from "vue";
 
 import { toast } from "@/components/useToast";
 import { defineModule } from "@/core/modules";
-import { counter } from "@/core/pulse";
+import { counter, PULSE_INBOX_UNREAD, PULSE_QUEUE } from "@/core/pulse";
 
 import { routes } from "./routes";
 
@@ -21,10 +21,11 @@ export default defineModule({
   title: "inbox.title",
   hotkey: "i",
   // "Needs you" waiting for the person (the sidebar badge); unread notifications ring the bell.
-  badge: counter("queue.total"),
+  badge: counter(PULSE_QUEUE),
   routes,
-  // Pulse version keys (apps.inbox and the console queue): a change refetches every inbox query.
-  invalidates: ["inbox", "queue"],
+  // Pulse keys (apps.inbox's "inbox.unread", apps.console's "console.queue"): when either moves,
+  // every inbox query refetches.
+  invalidates: [PULSE_INBOX_UNREAD, PULSE_QUEUE],
   commands: (ctx) => [
     {
       id: "inbox.read-all",

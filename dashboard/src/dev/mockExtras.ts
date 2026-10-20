@@ -26,47 +26,35 @@ export const POSITIONS = [
   { id: 5, name: "Delivery", color: "#3f8a83" },
 ];
 
+/** `GET audit/records/`: rows as apps.audit.owner_api sends them (`details.changes` is {field: [old, new]}). */
 export function auditRecords(language: Language) {
   const text = (l: Localized) => l[language];
+  const row = (id: number, minutes: number, actor: { id: number | null; name: string } | null, action: string, label: Localized, details: Record<string, unknown>) => ({
+    id,
+    created_at: minutesAgo(minutes),
+    action,
+    action_label: text(label),
+    actor,
+    target_type: "transaction",
+    target_id: 7002,
+    target: "Korzinka · supplies",
+    details,
+  });
   return [
-    {
-      id: 5,
-      created_at: minutesAgo(8),
-      actor: { id: 11, name: "Dilnoza Karimova", photo_url: null },
-      action: "finance.transaction.updated",
-      action_label: text(L("changed the transaction", "изменила операцию", "operatsiyani o‘zgartirdi")),
-      changes: [
-        { field: "category", label: text(L("Category", "Категория", "Toifa")), old: "Other", new: "Supplies" },
-        { field: "amount", label: text(L("Amount", "Сумма", "Summa")), old: "400 000", new: "450 000" },
-      ],
-    },
-    {
-      id: 4,
-      created_at: minutesAgo(60 * 3),
-      actor: { id: 12, name: "Bekzod Mirzayev", photo_url: null },
-      action: "finance.transaction.receipt",
-      action_label: text(L("attached a receipt", "приложил чек", "chek biriktirdi")),
-      summary: "korzinka-14-10.jpg",
-    },
-    {
-      id: 3,
-      created_at: minutesAgo(60 * 27),
-      actor: { id: 12, name: "Bekzod Mirzayev", photo_url: null },
-      action: "finance.transaction.updated",
-      action_label: text(L("changed the counterparty", "изменил контрагента", "kontragentni o‘zgartirdi")),
-      changes: [
-        { field: "counterparty", label: text(L("Counterparty", "Контрагент", "Kontragent")), old: null, new: "Korzinka" },
-        { field: "card", label: text(L("Card number", "Номер карты", "Karta raqami")), old: "•••", new: "•••" },
-      ],
-    },
-    {
-      id: 2,
-      created_at: minutesAgo(60 * 28),
-      actor: null,
-      action: "finance.transaction.created",
-      action_label: text(L("Recorded from the bot", "Записано из бота", "Botdan kiritildi")),
-      summary: text(L("Expense · Cash desk · Chilonzor", "Расход · Касса · Чиланзар", "Xarajat · Kassa · Chilonzor")),
-    },
+    row(5, 8, { id: 11, name: "Dilnoza Karimova" }, "finance.transaction_changed", L("Changed a transaction", "Изменила операцию", "Operatsiyani o‘zgartirdi"), {
+      changes: { category: ["Other", "Supplies"], amount: ["400000.00", "450000.00"] },
+    }),
+    row(4, 60 * 3, { id: 12, name: "Bekzod Mirzayev" }, "finance.receipt_attached", L("Attached a receipt", "Приложил чек", "Chek biriktirdi"), {
+      file: "korzinka-14-10.jpg",
+    }),
+    row(3, 60 * 27, { id: 12, name: "Bekzod Mirzayev" }, "finance.transaction_changed", L("Changed a transaction", "Изменил операцию", "Operatsiyani o‘zgartirdi"), {
+      changes: { counterparty: [null, "Korzinka"], card_number: ["•••", "•••"] },
+      reason: text(L("The shop was missing on the receipt", "На чеке не было магазина", "Chekda do‘kon nomi yo‘q edi")),
+    }),
+    row(2, 60 * 28, null, "finance.transaction_recorded", L("Recorded from the bot", "Записано из бота", "Botdan kiritildi"), {
+      branch: "Chilonzor",
+      account: text(L("Cash desk", "Касса", "Kassa")),
+    }),
   ];
 }
 
@@ -94,28 +82,87 @@ export const MORE_NOTIFICATIONS: ExtraNotification[] = [
   title: title as Localized,
   body: body as Localized,
   url: "",
+  app_screen: "",
+  target_type: "",
+  target_id: null,
   created_at: minutesAgo(minutes as number),
   read_at: index % 3 === 0 ? null : minutesAgo((minutes as number) - 30),
   acted_at: null,
+  acted_by: null,
   actor: null,
   actions: [],
   data: {},
 }));
 
-// Exports: ready on the second poll, with a small CSV made in the browser.
-const exportsState = new Map<number, number>();
+// Exports (`exports/`, `exports/{id}/`, `exports/kinds/`): a new one is building for two polls, then ready
+// with a small CSV made in the browser.
+export const EXPORTERS = [
+  { kind: "tasks.tasks", label: L("Tasks", "Задачи", "Vazifalar"), sensitive: false },
+  { kind: "members.people", label: L("Team", "Команда", "Jamoa"), sensitive: false },
+  { kind: "finance.transactions", label: L("Transactions", "Операции", "Operatsiyalar"), sensitive: false },
+  { kind: "payroll.payslips", label: L("Payslips", "Расчётные листы", "Hisob varaqalari"), sensitive: true },
+];
+
+interface MockExport {
+  id: number;
+  kind: string;
+  format: "xlsx" | "csv";
+  params: Record<string, unknown>;
+  deliver_telegram: boolean;
+  created: number;
+  polls: number;
+  failed?: boolean;
+}
+
+const jobs: MockExport[] = [
+  { id: 38, kind: "finance.transactions", format: "xlsx", params: { from: "2026-10-01", to: "2026-10-20" }, deliver_telegram: true, created: Date.now() - 26 * 3600_000, polls: 9 },
+  { id: 39, kind: "payroll.payslips", format: "xlsx", params: { run: 3 }, deliver_telegram: false, created: Date.now() - 50 * 3600_000, polls: 9, failed: true },
+  { id: 40, kind: "tasks.tasks", format: "csv", params: { status: "late" }, deliver_telegram: false, created: Date.now() - 3 * 3600_000, polls: 9 },
+];
 let exportId = 40;
 
-export function createExport(): { id: number } {
+export function exportersFor(language: Language) {
+  return EXPORTERS.map((e) => ({ kind: e.kind, label: e.label[language], sensitive: e.sensitive, formats: ["xlsx", "csv"], columns: [] }));
+}
+
+export function createExport(body: Record<string, unknown> | undefined): { id: number } {
   exportId += 1;
-  exportsState.set(exportId, 0);
+  const format = body?.format === "csv" ? "csv" : "xlsx";
+  jobs.unshift({ id: exportId, kind: String(body?.kind ?? "tasks.tasks"), format, params: (body?.params as Record<string, unknown>) ?? {}, deliver_telegram: body?.deliver_telegram === true, created: Date.now(), polls: 0 });
   return { id: exportId };
 }
 
-export function exportStatus(id: number): Record<string, unknown> {
-  const polls = (exportsState.get(id) ?? 0) + 1;
-  exportsState.set(id, polls);
-  if (polls < 2) return { id, kind: "mock", format: "xlsx", status: "running", rows: null, file_url: null };
-  const url = URL.createObjectURL(new Blob(["date,amount\n2026-10-20,450000.00\n"], { type: "text/csv" }));
-  return { id, kind: "mock", format: "csv", status: "ready", rows: 1, file_url: url };
+function serialize(job: MockExport, language: Language, poll: boolean): Record<string, unknown> {
+  if (poll) job.polls += 1;
+  const exporter = EXPORTERS.find((e) => e.kind === job.kind);
+  const status = job.failed ? "failed" : job.polls < 3 ? (job.polls < 1 ? "pending" : "running") : "ready";
+  const day = new Date(job.created).toISOString().slice(0, 10);
+  const name = `${job.kind.replace(".", "-")}-${day}.${job.format}`;
+  return {
+    id: job.id,
+    kind: job.kind,
+    label: exporter?.label[language] ?? job.kind,
+    format: job.format,
+    params: job.params,
+    status,
+    rows: status === "ready" ? 120 + job.id : null,
+    error: status === "failed" ? L("The run has no payslips yet.", "В расчёте ещё нет листов.", "Hisobda hali varaqalar yo‘q.")[language] : "",
+    deliver_telegram: job.deliver_telegram,
+    sensitive: exporter?.sensitive ?? false,
+    created_at: new Date(job.created).toISOString(),
+    finished_at: status === "ready" || status === "failed" ? new Date(job.created + 40_000).toISOString() : null,
+    expires_at: new Date(job.created + 7 * 86400_000).toISOString(),
+    file_name: status === "ready" ? name : null,
+    file_url: status === "ready" ? URL.createObjectURL(new Blob(["date,amount\n2026-10-20,450000.00\n"], { type: "text/csv" })) : null,
+  };
+}
+
+export function exportList(language: Language) {
+  // The list is a read too: building exports move on when someone looks.
+  return jobs.map((job) => serialize(job, language, job.polls < 3));
+}
+
+export function exportStatus(id: number, language: Language): Record<string, unknown> | null {
+  const job = jobs.find((item) => item.id === id);
+  return job ? serialize(job, language, true) : null;
 }

@@ -1,8 +1,9 @@
 /**
  * Live data without websockets (plan §6.5): `GET pulse/` every 15 s while the tab is visible and on
- * focus. Counters feed the sidebar badges; when a version key changes, the queries of every module
- * that lists that key in `invalidates` are refetched. The shell runs the one poller; everything
- * else reads `pulse` and `connection`.
+ * focus. Counters feed the sidebar badges; when a key moves (its version, or its counter), the
+ * queries of every module that lists that key in `invalidates` are refetched. An `invalidates`
+ * entry may name a whole app ("sales" matches "sales" and "sales.shifts"). The shell runs the one
+ * poller; everything else reads `pulse` and `connection`.
  */
 import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import { computed, getCurrentScope, onScopeDispose, shallowRef, watch, type ComputedRef, type Ref } from "vue";
@@ -13,10 +14,12 @@ import type { Pulse } from "@/api/types";
 import { modules as registry, type DashboardModule } from "@/core/modules";
 
 export const PULSE_INTERVAL = 15_000;
-/** Pulse counter for the inbox bell (unread notifications) and the "Needs you" count. */
+/** Pulse keys of the W0 apps (registered in apps/inbox, apps/console and apps/exports hooks.py). */
 export const PULSE_INBOX_UNREAD = "inbox.unread";
-export const PULSE_INBOX_CRITICAL = "inbox.critical";
-export const PULSE_QUEUE = "queue.total";
+/** The "Needs you" total across modules; its counter moves whenever an approval arrives or is settled. */
+export const PULSE_QUEUE = "console.queue";
+export const PULSE_EXPORTS = "exports.exports";
+export const PULSE_SAVED_VIEWS = "console.saved_views";
 
 const EMPTY: Pulse = { counters: {}, versions: {} };
 
@@ -47,10 +50,29 @@ export function changedVersions(previous: Pulse["versions"] | null, next: Pulse[
   return Object.keys(next).filter((key) => previous[key] !== next[key]);
 }
 
+/**
+ * Keys that moved between two pulses: a new version, or a different counter (a queue item that
+ * arrived bumps no version of its own, but the `console.queue` counter changes). The first pulse
+ * only sets the baseline.
+ */
+export function changedKeys(previous: Pulse | null, next: Pulse): string[] {
+  if (!previous) return [];
+  const moved = new Set(changedVersions(previous.versions, next.versions));
+  for (const key of new Set([...Object.keys(previous.counters), ...Object.keys(next.counters)])) {
+    if ((previous.counters[key] ?? 0) !== (next.counters[key] ?? 0)) moved.add(key);
+  }
+  return [...moved];
+}
+
+/** Whether an `invalidates` entry covers a pulse key: the same key, or the app it belongs to ("sales" ⊃ "sales.shifts"). */
+export function keyMatches(entry: string, key: string): boolean {
+  return key === entry || key.startsWith(`${entry}.`);
+}
+
 /** Ids of modules that asked to be refreshed when any of `changed` moves. */
 export function modulesToRefresh(changed: readonly string[], list: readonly DashboardModule[] = registry): string[] {
   if (changed.length === 0) return [];
-  return list.filter((m) => m.invalidates?.some((key) => changed.includes(key))).map((m) => m.id);
+  return list.filter((m) => m.invalidates?.some((entry) => changed.some((key) => keyMatches(entry, key)))).map((m) => m.id);
 }
 
 /** The browser believes it has a network. */
@@ -65,7 +87,7 @@ function onlineNow(): boolean {
 export function usePulsePolling(companyId: Ref<number | null>, onChange?: (changed: string[], next: Pulse) => void) {
   const client = useQueryClient();
   const enabled = computed(() => companyId.value !== null);
-  const lastVersions = new Map<number, Pulse["versions"]>();
+  const last = new Map<number, Pulse>();
 
   const query = useQuery({
     queryKey: computed(() => keys.pulse(companyId.value ?? 0)),
@@ -82,8 +104,8 @@ export function usePulsePolling(companyId: Ref<number | null>, onChange?: (chang
     const id = companyId.value;
     if (!next || id === null) return;
     pulse.value = next;
-    const changed = changedVersions(lastVersions.get(id) ?? null, next.versions);
-    lastVersions.set(id, next.versions);
+    const changed = changedKeys(last.get(id) ?? null, next);
+    last.set(id, next);
     for (const moduleId of modulesToRefresh(changed)) void client.invalidateQueries({ queryKey: moduleKey(id, moduleId) });
     if (changed.length) onChange?.(changed, next);
   });

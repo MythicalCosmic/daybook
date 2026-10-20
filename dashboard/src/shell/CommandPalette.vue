@@ -263,7 +263,7 @@ const companyItems = computed<Item[]>(() =>
       id: `company:${c.id}`,
       section: "companies" as const,
       title: t("shell.palette.switchTo", { name: c.name }),
-      subtitle: c.role.name,
+      subtitle: c.role?.name,
       logo: { name: c.name, src: c.logo },
       icon: Building2,
       keywords: [c.name],

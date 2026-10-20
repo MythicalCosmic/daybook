@@ -3,7 +3,7 @@
  * Telegram 1001, as seed_demo creates her), with queue items, notifications and search hits.
  * Text the backend would send already translated comes in uz, ru and en.
  */
-import type { Company, Language, Me, Notification, QueueItem, QueueKind, SearchHit } from "@/api/types";
+import type { Company, Language, Me, Notification, QueueCounts, QueueItem, QueueKind, SearchHit } from "@/api/types";
 import { PERMS } from "@/core/perms";
 
 export type Localized = Record<Language, string>;
@@ -30,7 +30,7 @@ export const companies: MockCompany[] = [
     is_owner: true,
     permissions: [...PERMS],
     branch_scope: null,
-    home_branch: 1,
+    home_branch: { id: 1, name: "Chilonzor" },
     setup_completed: true,
     branches: [
       { id: 1, name: "Chilonzor", code: "CHL" },
@@ -52,7 +52,7 @@ export const companies: MockCompany[] = [
     is_owner: true,
     permissions: [...PERMS],
     branch_scope: null,
-    home_branch: 4,
+    home_branch: { id: 4, name: "Mirobod" },
     setup_completed: false,
     branches: [
       { id: 4, name: "Mirobod", code: "MRB" },
@@ -84,9 +84,8 @@ export function meFor(language: Language): Me {
 
 export const pulseCounters: Record<number, Record<string, number>> = {
   1: {
-    "queue.total": 7,
+    "console.queue": 7,
     "inbox.unread": 4,
-    "inbox.critical": 1,
     "tasks.review": 2,
     "tasks.late_now": 3,
     "members.pending": 1,
@@ -102,9 +101,8 @@ export const pulseCounters: Record<number, Record<string, number>> = {
     "lifecycle.requested": 1,
   },
   2: {
-    "queue.total": 2,
+    "console.queue": 2,
     "inbox.unread": 1,
-    "inbox.critical": 0,
     "tasks.review": 1,
     "members.pending": 1,
     "attendance.not_in": 1,
@@ -119,8 +117,8 @@ interface MockQueueItem extends Omit<QueueItem, "title" | "subtitle" | "actions"
   actions: Array<Omit<QueueItem["actions"][number], "label"> & { label: Localized }>;
 }
 
-const approve = (endpoint: string) => ({ key: "approve", label: L("Approve", "Одобрить", "Tasdiqlash"), style: "primary" as const, method: "POST" as const, endpoint, needs_reason: false });
-const reject = (endpoint: string) => ({ key: "reject", label: L("Reject", "Отклонить", "Rad etish"), style: "danger" as const, method: "POST" as const, endpoint, needs_reason: true });
+const approve = (endpoint: string) => ({ key: "approve", label: L("Approve", "Одобрить", "Tasdiqlash"), style: "primary" as const, method: "POST" as const, endpoint, body: {}, needs_reason: false });
+const reject = (endpoint: string) => ({ key: "reject", label: L("Reject", "Отклонить", "Rad etish"), style: "danger" as const, method: "POST" as const, endpoint, body: {}, needs_reason: true });
 
 export const queueKinds: Record<string, Localized> = {
   "members.join": L("Join requests", "Заявки на вступление", "Qo‘shilish so‘rovlari"),
@@ -140,10 +138,9 @@ export const queueItems: Record<number, MockQueueItem[]> = {
       subtitle: L("Chilonzor · closed by Aziz Karimov at 22:07", "Чиланзар · закрыл Азиз Каримов в 22:07", "Chilonzor · Aziz Karimov 22:07 da yopdi"),
       created_at: minutesAgo(14),
       url: "sales/shifts/1042",
-      actor: { id: 31, name: "Aziz Karimov", photo_url: null },
       actions: [
-        { key: "verify", label: L("Verify", "Подтвердить", "Tasdiqlash"), style: "primary", method: "POST", endpoint: "sales/shifts/1042/verify/", needs_reason: false },
-        { key: "dispute", label: L("Dispute", "Оспорить", "E’tiroz bildirish"), style: "danger", method: "POST", endpoint: "sales/shifts/1042/dispute/", needs_reason: true },
+        { key: "verify", label: L("Verify", "Подтвердить", "Tasdiqlash"), style: "primary", method: "POST", endpoint: "sales/shifts/1042/verify/", body: {}, needs_reason: false },
+        { key: "dispute", label: L("Dispute", "Оспорить", "E’tiroz bildirish"), style: "danger", method: "POST", endpoint: "sales/shifts/1042/dispute/", body: {}, needs_reason: true },
       ],
     },
     {
@@ -153,7 +150,6 @@ export const queueItems: Record<number, MockQueueItem[]> = {
       subtitle: L("Cashier · +998 90 412 33 21", "Кассир · +998 90 412 33 21", "Kassir · +998 90 412 33 21"),
       created_at: minutesAgo(38),
       url: "people/requests",
-      actor: { id: 41, name: "Sardor Rahimov", photo_url: null },
       actions: [approve("join-requests/41/approve/"), reject("join-requests/41/reject/")],
     },
     {
@@ -163,10 +159,9 @@ export const queueItems: Record<number, MockQueueItem[]> = {
       subtitle: L("Alisher Valiyev sent a photo · due 18:00", "Алишер Валиев прислал фото · срок 18:00", "Alisher Valiyev rasm yubordi · muddat 18:00"),
       created_at: minutesAgo(52),
       url: "tasks?task=345",
-      actor: { id: 13, name: "Alisher Valiyev", photo_url: null },
       actions: [
-        { key: "confirm", label: L("Accept", "Принять", "Qabul qilish"), style: "primary", method: "POST", endpoint: "tasks/345/confirm/", needs_reason: false },
-        { key: "return", label: L("Send back", "Вернуть", "Qaytarish"), style: "danger", method: "POST", endpoint: "tasks/345/return/", needs_reason: true },
+        { key: "confirm", label: L("Accept", "Принять", "Qabul qilish"), style: "primary", method: "POST", endpoint: "tasks/345/confirm/", body: {}, needs_reason: false },
+        { key: "return", label: L("Send back", "Вернуть", "Qaytarish"), style: "danger", method: "POST", endpoint: "tasks/345/return/", body: {}, needs_reason: true },
       ],
     },
     {
@@ -176,10 +171,9 @@ export const queueItems: Record<number, MockQueueItem[]> = {
       subtitle: L("Madina Saidova · +4 °C, photo attached", "Мадина Саидова · +4 °C, фото приложено", "Madina Saidova · +4 °C, rasm ilova qilingan"),
       created_at: minutesAgo(75),
       url: "tasks?task=351",
-      actor: { id: 14, name: "Madina Saidova", photo_url: null },
       actions: [
-        { key: "confirm", label: L("Accept", "Принять", "Qabul qilish"), style: "primary", method: "POST", endpoint: "tasks/351/confirm/", needs_reason: false },
-        { key: "return", label: L("Send back", "Вернуть", "Qaytarish"), style: "danger", method: "POST", endpoint: "tasks/351/return/", needs_reason: true },
+        { key: "confirm", label: L("Accept", "Принять", "Qabul qilish"), style: "primary", method: "POST", endpoint: "tasks/351/confirm/", body: {}, needs_reason: false },
+        { key: "return", label: L("Send back", "Вернуть", "Qaytarish"), style: "danger", method: "POST", endpoint: "tasks/351/return/", body: {}, needs_reason: true },
       ],
     },
     {
@@ -189,7 +183,6 @@ export const queueItems: Record<number, MockQueueItem[]> = {
       subtitle: L("Korzinka receipt, paid from his own money", "Чек Korzinka, оплачено из своих", "Korzinka cheki, o‘z pulidan to‘langan"),
       created_at: minutesAgo(130),
       url: "finance/claims?claim=88",
-      actor: { id: 12, name: "Bekzod Mirzayev", photo_url: null },
       actions: [approve("finance/claims/88/approve/"), reject("finance/claims/88/reject/")],
     },
     {
@@ -199,7 +192,6 @@ export const queueItems: Record<number, MockQueueItem[]> = {
       subtitle: L("Family wedding in Samarkand", "Свадьба в семье, Самарканд", "Samarqandda oilaviy to‘y"),
       created_at: minutesAgo(190),
       url: "time-off",
-      actor: { id: 14, name: "Madina Saidova", photo_url: null },
       actions: [approve("time-off/19/approve/"), reject("time-off/19/reject/")],
     },
     {
@@ -209,7 +201,6 @@ export const queueItems: Record<number, MockQueueItem[]> = {
       subtitle: L("Advance · cap 1 400 000 so‘m", "Аванс · лимит 1 400 000 сум", "Avans · chegara 1 400 000 so‘m"),
       created_at: minutesAgo(260),
       url: "payroll/advances",
-      actor: { id: 16, name: "Nigora Tursunova", photo_url: null },
       actions: [approve("payroll/advances/7/approve/"), reject("payroll/advances/7/reject/")],
     },
   ],
@@ -221,7 +212,6 @@ export const queueItems: Record<number, MockQueueItem[]> = {
       subtitle: L("Barista · +998 93 220 14 09", "Бариста · +998 93 220 14 09", "Barista · +998 93 220 14 09"),
       created_at: minutesAgo(22),
       url: "people/requests",
-      actor: { id: 61, name: "Shahzoda Yusupova", photo_url: null },
       actions: [approve("join-requests/61/approve/"), reject("join-requests/61/reject/")],
     },
     {
@@ -231,30 +221,34 @@ export const queueItems: Record<number, MockQueueItem[]> = {
       subtitle: L("Javohir Nazarov sent a photo", "Жавохир Назаров прислал фото", "Javohir Nazarov rasm yubordi"),
       created_at: minutesAgo(64),
       url: "tasks?task=512",
-      actor: { id: 62, name: "Javohir Nazarov", photo_url: null },
       actions: [
-        { key: "confirm", label: L("Accept", "Принять", "Qabul qilish"), style: "primary", method: "POST", endpoint: "tasks/512/confirm/", needs_reason: false },
-        { key: "return", label: L("Send back", "Вернуть", "Qaytarish"), style: "danger", method: "POST", endpoint: "tasks/512/return/", needs_reason: true },
+        { key: "confirm", label: L("Accept", "Принять", "Qabul qilish"), style: "primary", method: "POST", endpoint: "tasks/512/confirm/", body: {}, needs_reason: false },
+        { key: "return", label: L("Send back", "Вернуть", "Qaytarish"), style: "danger", method: "POST", endpoint: "tasks/512/return/", body: {}, needs_reason: true },
       ],
     },
   ],
 };
 
-export function queueFor(companyId: number, language: Language, kind?: string | null): { total: number; kinds: QueueKind[]; results: QueueItem[] } {
+/** `GET queue/?kind=`: items in the caller's language, oldest first (apps.console.registry.queue_items). */
+export function queueFor(companyId: number, language: Language, kind?: string | null): { items: QueueItem[] } {
   const items = (queueItems[companyId] ?? []).filter((item) => !kind || item.kind === kind);
-  const results: QueueItem[] = items.map((item) => ({
-    ...item,
-    title: item.title[language],
-    subtitle: item.subtitle[language],
-    actions: item.actions.map((action) => ({ ...action, label: action.label[language] })),
-  }));
-  const kinds: QueueKind[] = [];
-  for (const item of results) {
-    const found = kinds.find((k) => k.kind === item.kind);
-    if (found) found.count += 1;
-    else kinds.push({ kind: item.kind, label: queueKinds[item.kind]?.[language] ?? item.kind, count: 1 });
-  }
-  return { total: results.length, kinds, results };
+  return {
+    items: items
+      .map((item) => ({
+        ...item,
+        title: item.title[language],
+        subtitle: item.subtitle[language],
+        actions: item.actions.map((action) => ({ ...action, label: action.label[language] })),
+      }))
+      .sort((a, b) => ((a.created_at ?? "") < (b.created_at ?? "") ? -1 : 1)),
+  };
+}
+
+/** `GET queue/counts/`: every registered kind the caller may act on, zero counts included. */
+export function queueCountsFor(companyId: number, language: Language): QueueCounts {
+  const list = queueItems[companyId] ?? [];
+  const kinds: QueueKind[] = Object.entries(queueKinds).map(([kind, label]) => ({ kind, label: label[language], count: list.filter((item) => item.kind === kind).length }));
+  return { total: list.length, kinds };
 }
 
 interface MockNotification extends Omit<Notification, "title" | "body" | "actions"> {
@@ -271,13 +265,17 @@ export const notifications: Record<number, MockNotification[]> = {
       severity: "critical",
       title: L("Cash difference at Chilonzor: −15 000 so‘m", "Расхождение в кассе, Чиланзар: −15 000 сум", "Chilonzorda kassa farqi: −15 000 so‘m"),
       body: L("Shift CHL-1042 closed by Aziz Karimov. The tolerance is 10 000 so‘m.", "Смену CHL-1042 закрыл Азиз Каримов. Допуск — 10 000 сум.", "CHL-1042 smenani Aziz Karimov yopdi. Ruxsat etilgan farq 10 000 so‘m."),
-      url: "sales/shifts/1042",
+      url: "/c/1/sales/shifts/1042",
+      actor: { id: 31, name: "Aziz Karimov" },
       created_at: minutesAgo(12),
       read_at: null,
       acted_at: null,
-      actor: { id: 31, name: "Aziz Karimov", photo_url: null },
       actions: [],
       data: {},
+      app_screen: "",
+      target_type: "",
+      target_id: null,
+      acted_by: null,
     },
     {
       id: 902,
@@ -292,6 +290,10 @@ export const notifications: Record<number, MockNotification[]> = {
       actor: null,
       actions: [],
       data: {},
+      app_screen: "",
+      target_type: "",
+      target_id: null,
+      acted_by: null,
     },
     {
       id: 903,
@@ -300,15 +302,19 @@ export const notifications: Record<number, MockNotification[]> = {
       title: L("Expense claim: 450 000 so‘m", "Авансовый отчёт: 450 000 сум", "Xarajat so‘rovi: 450 000 so‘m"),
       body: L("Bekzod Mirzayev · Supplies · Korzinka", "Бекзод Мирзаев · Хозтовары · Korzinka", "Bekzod Mirzayev · Xo‘jalik mollari · Korzinka"),
       url: "finance/claims?claim=88",
+      actor: { id: 12, name: "Bekzod Mirzayev" },
       created_at: minutesAgo(130),
       read_at: null,
       acted_at: null,
-      actor: { id: 12, name: "Bekzod Mirzayev", photo_url: null },
       actions: [
-        { key: "approve", label: L("Approve", "Одобрить", "Tasdiqlash"), style: "primary" },
+        { key: "approve", label: L("Approve", "Одобрить", "Tasdiqlash"), style: "primary", needs_reason: false },
         { key: "reject", label: L("Reject", "Отклонить", "Rad etish"), style: "danger", needs_reason: true },
       ],
       data: {},
+      app_screen: "",
+      target_type: "claim",
+      target_id: 88,
+      acted_by: null,
     },
     {
       id: 904,
@@ -323,6 +329,10 @@ export const notifications: Record<number, MockNotification[]> = {
       actor: null,
       actions: [],
       data: {},
+      app_screen: "",
+      target_type: "",
+      target_id: null,
+      acted_by: null,
     },
     {
       id: 905,
@@ -337,6 +347,10 @@ export const notifications: Record<number, MockNotification[]> = {
       actor: null,
       actions: [],
       data: {},
+      app_screen: "",
+      target_type: "",
+      target_id: null,
+      acted_by: null,
     },
     {
       id: 906,
@@ -351,6 +365,10 @@ export const notifications: Record<number, MockNotification[]> = {
       actor: null,
       actions: [],
       data: {},
+      app_screen: "",
+      target_type: "",
+      target_id: null,
+      acted_by: null,
     },
   ],
   2: [
@@ -367,12 +385,17 @@ export const notifications: Record<number, MockNotification[]> = {
       actor: null,
       actions: [],
       data: {},
+      app_screen: "",
+      target_type: "",
+      target_id: null,
+      acted_by: null,
     },
   ],
 };
 
-export function notificationsFor(companyId: number, language: Language, tab: string): Notification[] {
-  return (notifications[companyId] ?? [])
+/** `GET inbox/?tab=`, in the caller's language; `rows` translates given rows instead of the company's list. */
+export function notificationsFor(companyId: number, language: Language, tab: string, rows?: MockNotification[]): Notification[] {
+  return (rows ?? notifications[companyId] ?? [])
     .filter((n) => tab !== "unread" || n.read_at === null)
     .map((n) => ({ ...n, title: n.title[language], body: n.body[language], actions: n.actions.map((a) => ({ ...a, label: a.label[language] })) }));
 }
@@ -382,29 +405,29 @@ interface MockHit extends Omit<SearchHit, "subtitle"> {
 }
 
 export const searchIndex: MockHit[] = [
-  { type: "people", id: 11, title: "Dilnoza Karimova", subtitle: L("Owner · Office", "Владелец · Офис", "Egasi · Ofis"), url: "people/11" },
-  { type: "people", id: 12, title: "Bekzod Mirzayev", subtitle: L("Manager · Shift lead", "Менеджер · Старший смены", "Menejer · Smena boshlig‘i"), url: "people/12" },
-  { type: "people", id: 13, title: "Alisher Valiyev", subtitle: L("Sales floor · Chilonzor", "Торговый зал · Чиланзар", "Savdo zali · Chilonzor"), url: "people/13" },
-  { type: "people", id: 14, title: "Madina Saidova", subtitle: L("Cashier · Chilonzor", "Кассир · Чиланзар", "Kassir · Chilonzor"), url: "people/14" },
-  { type: "people", id: 15, title: "Jasur Ergashev", subtitle: L("Stock & warehouse", "Склад", "Ombor"), url: "people/15" },
-  { type: "people", id: 16, title: "Nigora Tursunova", subtitle: L("Delivery · Yunusobod", "Доставка · Юнусабад", "Yetkazib berish · Yunusobod"), url: "people/16" },
-  { type: "people", id: 31, title: "Aziz Karimov", subtitle: L("Cashier · Chilonzor", "Кассир · Чиланзар", "Kassir · Chilonzor"), url: "people/31" },
-  { type: "tasks", id: 345, title: "Stock count: front shelves", subtitle: L("Alisher Valiyev · waiting for check", "Алишер Валиев · на проверке", "Alisher Valiyev · tekshiruvda"), url: "tasks?task=345" },
-  { type: "tasks", id: 351, title: "Fridge temperature check", subtitle: L("Madina Saidova · daily", "Мадина Саидова · ежедневно", "Madina Saidova · har kuni"), url: "tasks?task=351" },
-  { type: "tasks", id: 360, title: "Prepare the window display", subtitle: L("Alisher Valiyev · due Friday", "Алишер Валиев · срок в пятницу", "Alisher Valiyev · muddat juma"), url: "tasks?task=360" },
-  { type: "shifts", id: 1042, title: "CHL-1042", subtitle: L("Chilonzor · difference −15 000 so‘m", "Чиланзар · разница −15 000 сум", "Chilonzor · farq −15 000 so‘m"), url: "sales/shifts/1042" },
-  { type: "shifts", id: 388, title: "YUN-388", subtitle: L("Yunusobod · verified", "Юнусабад · подтверждена", "Yunusobod · tasdiqlangan"), url: "sales/shifts/388" },
-  { type: "transactions", id: 7001, title: "Rent · October", subtitle: L("12 000 000 so‘m · Bank", "12 000 000 сум · Банк", "12 000 000 so‘m · Bank"), url: "finance/transactions?txn=7001" },
-  { type: "transactions", id: 7002, title: "Korzinka · supplies", subtitle: L("450 000 so‘m · Cash desk", "450 000 сум · Касса", "450 000 so‘m · Kassa"), url: "finance/transactions?txn=7002" },
-  { type: "projects", id: 1, title: "Chilonzor branch opening", subtitle: L("At risk · 64% done", "Под угрозой · 64% готово", "Xavf ostida · 64% bajarildi"), url: "projects/1" },
-  { type: "projects", id: 2, title: "Website relaunch", subtitle: L("On track · 41% done", "По плану · 41% готово", "Reja bo‘yicha · 41% bajarildi"), url: "projects/2" },
-  { type: "customers", id: 501, title: "Rustam Qodirov", subtitle: L("Nasiya · owes 2 400 000 so‘m", "Насия · долг 2 400 000 сум", "Nasiya · qarzi 2 400 000 so‘m"), url: "sales/customers/501" },
+  { type: "members.people", id: 11, title: "Dilnoza Karimova", subtitle: L("Owner · Office", "Владелец · Офис", "Egasi · Ofis"), url: "people/11" },
+  { type: "members.people", id: 12, title: "Bekzod Mirzayev", subtitle: L("Manager · Shift lead", "Менеджер · Старший смены", "Menejer · Smena boshlig‘i"), url: "people/12" },
+  { type: "members.people", id: 13, title: "Alisher Valiyev", subtitle: L("Sales floor · Chilonzor", "Торговый зал · Чиланзар", "Savdo zali · Chilonzor"), url: "people/13" },
+  { type: "members.people", id: 14, title: "Madina Saidova", subtitle: L("Cashier · Chilonzor", "Кассир · Чиланзар", "Kassir · Chilonzor"), url: "people/14" },
+  { type: "members.people", id: 15, title: "Jasur Ergashev", subtitle: L("Stock & warehouse", "Склад", "Ombor"), url: "people/15" },
+  { type: "members.people", id: 16, title: "Nigora Tursunova", subtitle: L("Delivery · Yunusobod", "Доставка · Юнусабад", "Yetkazib berish · Yunusobod"), url: "people/16" },
+  { type: "members.people", id: 31, title: "Aziz Karimov", subtitle: L("Cashier · Chilonzor", "Кассир · Чиланзар", "Kassir · Chilonzor"), url: "people/31" },
+  { type: "tasks.tasks", id: 345, title: "Stock count: front shelves", subtitle: L("Alisher Valiyev · waiting for check", "Алишер Валиев · на проверке", "Alisher Valiyev · tekshiruvda"), url: "tasks?task=345" },
+  { type: "tasks.tasks", id: 351, title: "Fridge temperature check", subtitle: L("Madina Saidova · daily", "Мадина Саидова · ежедневно", "Madina Saidova · har kuni"), url: "tasks?task=351" },
+  { type: "tasks.tasks", id: 360, title: "Prepare the window display", subtitle: L("Alisher Valiyev · due Friday", "Алишер Валиев · срок в пятницу", "Alisher Valiyev · muddat juma"), url: "tasks?task=360" },
+  { type: "sales.shifts", id: 1042, title: "CHL-1042", subtitle: L("Chilonzor · difference −15 000 so‘m", "Чиланзар · разница −15 000 сум", "Chilonzor · farq −15 000 so‘m"), url: "sales/shifts/1042" },
+  { type: "sales.shifts", id: 388, title: "YUN-388", subtitle: L("Yunusobod · verified", "Юнусабад · подтверждена", "Yunusobod · tasdiqlangan"), url: "sales/shifts/388" },
+  { type: "finance.transactions", id: 7001, title: "Rent · October", subtitle: L("12 000 000 so‘m · Bank", "12 000 000 сум · Банк", "12 000 000 so‘m · Bank"), url: "finance/transactions?txn=7001" },
+  { type: "finance.transactions", id: 7002, title: "Korzinka · supplies", subtitle: L("450 000 so‘m · Cash desk", "450 000 сум · Касса", "450 000 so‘m · Kassa"), url: "finance/transactions?txn=7002" },
+  { type: "projects.projects", id: 1, title: "Chilonzor branch opening", subtitle: L("At risk · 64% done", "Под угрозой · 64% готово", "Xavf ostida · 64% bajarildi"), url: "projects/1" },
+  { type: "projects.projects", id: 2, title: "Website relaunch", subtitle: L("On track · 41% done", "По плану · 41% готово", "Reja bo‘yicha · 41% bajarildi"), url: "projects/2" },
+  { type: "sales.customers", id: 501, title: "Rustam Qodirov", subtitle: L("Nasiya · owes 2 400 000 so‘m", "Насия · долг 2 400 000 сум", "Nasiya · qarzi 2 400 000 so‘m"), url: "sales/customers/501" },
 ];
 
 export function search(companyId: number, language: Language, q: string): SearchHit[] {
   const needle = q.toLocaleLowerCase();
   const perType = new Map<string, number>();
-  const allowedTypes = companyId === 2 ? new Set(["people", "tasks", "shifts"]) : null;
+  const allowedTypes = companyId === 2 ? new Set(["members.people", "tasks.tasks", "sales.shifts"]) : null;
   return searchIndex
     .filter((hit) => !allowedTypes || allowedTypes.has(hit.type))
     .filter((hit) => `${hit.title} ${hit.subtitle[language]} ${hit.subtitle.en}`.toLocaleLowerCase().includes(needle))

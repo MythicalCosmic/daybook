@@ -15,15 +15,16 @@ export function company(overrides: Partial<Company> = {}): Company {
     permissions: [],
     branch_scope: null,
     branches: [{ id: 1, name: "Chilonzor", code: "CHL" }],
-    home_branch: 1,
+    home_branch: { id: 1, name: "Chilonzor" },
     pending: 0,
     setup_completed: true,
+    membership_id: 11,
     ...overrides,
   };
 }
 
 export function manager(permissions: Perm[], overrides: Partial<Company> = {}): Company {
-  return company({ id: 2, name: "Demo Café", role: { id: 2, name: "Manager" }, is_owner: false, permissions, ...overrides });
+  return company({ id: 2, name: "Demo Café", role: { id: 2, name: "Manager" }, is_owner: false, permissions, membership_id: 21, ...overrides });
 }
 
 export function me(companies: Company[] = [company()]): Me {

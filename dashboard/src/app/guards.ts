@@ -9,18 +9,14 @@ import type { Router } from "vue-router";
 import { findModule, modules } from "@/core/modules";
 import { buildNav } from "@/core/nav";
 import { ensureModuleMessages } from "@/i18n";
+import { safeNext } from "@/lib/links";
 import { telegram } from "@/shell/TelegramBridge";
 import { useCompanyStore } from "@/stores/company";
 import { useSessionStore } from "@/stores/session";
 
 import { pathInCompany } from "./navigation";
 
-/** Only same-app paths are accepted after login (no open redirects). */
-export function safeNext(value: unknown): string {
-  const next = Array.isArray(value) ? value[0] : value;
-  if (typeof next !== "string" || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return "/";
-  return next;
-}
+export { safeNext };
 
 export function installGuards(router: Router): void {
   router.beforeEach(async (to) => {

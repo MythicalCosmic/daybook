@@ -16,7 +16,6 @@ import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import IconButton from "@/components/IconButton.vue";
 import PersonCell from "@/components/PersonCell.vue";
-import ProofThumb from "@/components/ProofThumb.vue";
 import RelativeTime from "@/components/RelativeTime.vue";
 import SegmentedControl from "@/components/SegmentedControl.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
@@ -29,6 +28,7 @@ import { isModuleVisible } from "@/core/access";
 import { useHotkey } from "@/core/hotkeys";
 import { modules } from "@/core/modules";
 import { useBreakpoints } from "@/lib/useBreakpoints";
+import { companyUrl } from "@/lib/links";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
@@ -109,16 +109,16 @@ async function runAction(note: Notification, key: string): Promise<void> {
     reason = answer.reason;
   }
   try {
-    await act.mutateAsync({ note, key, reason });
-    toast.success(t("inbox.done", { action: action.label }));
+    const result = await act.mutateAsync({ note, key, reason });
+    // The open notification may have left the list (unread tab): show its new state anyway.
+    if (result?.notification && kept.value?.id === result.notification.id) kept.value = result.notification;
+    toast.success(result?.message || t("inbox.done", { action: action.label }));
   } catch {
     // Toasted by the HTTP layer.
   }
 }
 
-function link(url: string): string {
-  return url.startsWith("/c/") ? url : `/c/${company.currentId}/${url.replace(/^\/+/, "")}`;
-}
+const link = (url: string) => companyUrl(company.currentId, url);
 
 // Renderers other modules registered for their notification kinds.
 const renderers = computed(() => {
@@ -229,7 +229,6 @@ const unreadInView = computed(() => notes.value.filter((note) => !note.read_at).
           <template v-else>
             <h2 class="mt-3 text-lg font-semibold leading-7 tracking-[-0.01em] text-fg">{{ selected.title }}</h2>
             <p v-if="selected.body" class="mt-2 max-w-[640px] text-base leading-6 text-muted">{{ selected.body }}</p>
-            <ProofThumb v-if="selected.photo_url" :src="selected.photo_url" size="lg" class="mt-4" />
           </template>
           <div v-if="selected.actor" class="mt-6 border-t border-line pt-4">
             <p class="mb-2 text-xs font-medium text-muted">{{ t("inbox.from") }}</p>
@@ -247,7 +246,7 @@ const unreadInView = computed(() => notes.value.filter((note) => !note.read_at).
                 >{{ action.label }}</UiButton
               >
             </template>
-            <StatusPill v-else tone="success" :label="t('inbox.acted', { time: fmt.relative(selected.acted_at) })" />
+            <StatusPill v-else tone="success" :label="selected.acted_by ? t('inbox.actedBy', { name: selected.acted_by, time: fmt.relative(selected.acted_at) }) : t('inbox.acted', { time: fmt.relative(selected.acted_at) })" />
           </div>
         </div>
         <footer class="flex shrink-0 items-center gap-2 border-t border-line px-1 py-3 md:px-7">

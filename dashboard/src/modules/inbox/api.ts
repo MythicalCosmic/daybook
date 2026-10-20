@@ -11,52 +11,44 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import { computed, toValue, type MaybeRefOrGetter } from "vue";
 
-import { http, ownerPath, request } from "@/api/http";
+import { http, ownerPath } from "@/api/http";
 import { keys as shellKeys, moduleKey, qk } from "@/api/keys";
+import { fetchQueue, runQueueAction as runAction, withoutQueueItem } from "@/api/shell";
 import type { Page } from "@/api/types";
 import { useCompanyStore } from "@/stores/company";
 
-import { queueKey, type Notification, type NotificationParams, type QueueAction, type QueueCounts, type QueueItem, type QueueResponse, type UnreadCount } from "./types";
+import type { Notification, NotificationActionResult, NotificationParams, QueueAction, QueueItem, QueueView } from "./types";
 
 export const MODULE = "inbox";
 export const PAGE_SIZE = 30;
 
 // ─── Endpoints ──────────────────────────────────────────────────────────────
 
-export function listQueue(companyId: number, params: { kind?: string | null } = {}, signal?: AbortSignal): Promise<QueueResponse> {
-  return http.get<QueueResponse>(ownerPath(companyId, "queue/"), { kind: params.kind ?? undefined }, { signal });
-}
-
-export function queueCounts(companyId: number): Promise<QueueCounts> {
-  return http.get<QueueCounts>(ownerPath(companyId, "queue/counts/"));
+/** "Needs you": `queue/counts/` and `queue/?kind=` together (labels and totals come from the counts). */
+export function listQueue(companyId: number, params: { kind?: string | null } = {}, signal?: AbortSignal): Promise<QueueView> {
+  return fetchQueue(companyId, params.kind ?? null, signal);
 }
 
 /** Runs a "Needs you" action: `method` on `endpoint` (relative to the company) with `body` + `reason`. */
 export function runQueueAction(companyId: number, action: QueueAction, reason?: string): Promise<unknown> {
-  return request<unknown>(ownerPath(companyId, action.endpoint), {
-    method: action.method,
-    json: { ...(action.body ?? {}), ...(reason ? { reason } : {}) },
-  });
+  return runAction(companyId, action, reason);
 }
 
 export function listNotifications(companyId: number, params: NotificationParams & { page?: number }, signal?: AbortSignal): Promise<Page<Notification>> {
   return http.get<Page<Notification>>(ownerPath(companyId, "inbox/"), { tab: params.tab, page: params.page ?? 1, page_size: params.page_size ?? PAGE_SIZE }, { signal });
 }
 
-export function unreadCount(companyId: number): Promise<UnreadCount> {
-  return http.get<UnreadCount>(ownerPath(companyId, "inbox/unread-count/"));
+export function markRead(companyId: number, ids: number[] | "all"): Promise<{ updated: number }> {
+  return http.post<{ updated: number }>(ownerPath(companyId, "inbox/read/"), ids === "all" ? { all: true } : { ids }, { toast: false });
 }
 
-export function markRead(companyId: number, ids: number[] | "all"): Promise<void> {
-  return http.post<void>(ownerPath(companyId, "inbox/read/"), ids === "all" ? { all: true } : { ids }, { toast: false });
+export function archiveNotification(companyId: number, id: number): Promise<Notification> {
+  return http.post<Notification>(ownerPath(companyId, `inbox/${id}/archive/`));
 }
 
-export function archiveNotification(companyId: number, id: number): Promise<void> {
-  return http.post<void>(ownerPath(companyId, `inbox/${id}/archive/`));
-}
-
-export function runNotificationAction(companyId: number, id: number, key: string, reason?: string): Promise<unknown> {
-  return http.post<unknown>(ownerPath(companyId, `inbox/${id}/actions/${key}/`), reason ? { reason } : {});
+/** Presses a notification's button; the owning module's handler answers with a sentence. */
+export function runNotificationAction(companyId: number, id: number, key: string, reason?: string): Promise<NotificationActionResult> {
+  return http.post<NotificationActionResult>(ownerPath(companyId, `inbox/${id}/actions/${key}/`), reason ? { reason } : {});
 }
 
 // ─── Keys ───────────────────────────────────────────────────────────────────
@@ -110,7 +102,9 @@ function useRefresh() {
   const companyId = useCompanyId();
   return () => {
     void client.invalidateQueries({ queryKey: inboxKeys.all(companyId.value) });
-    void client.invalidateQueries({ queryKey: [companyId.value, "shell"] });
+    void client.invalidateQueries({ queryKey: [companyId.value, "shell", "queue"] });
+    void client.invalidateQueries({ queryKey: [companyId.value, "shell", "inbox"] });
+    void client.invalidateQueries({ queryKey: shellKeys.unread(companyId.value) });
     void client.invalidateQueries({ queryKey: shellKeys.pulse(companyId.value) });
   };
 }
@@ -125,15 +119,11 @@ export function useQueueDecision() {
     onMutate: async ({ item }) => {
       const prefix = inboxKeys.queueAll(companyId.value);
       await client.cancelQueries({ queryKey: prefix });
-      const snapshot = client.getQueriesData<QueueResponse>({ queryKey: prefix });
+      const snapshot = client.getQueriesData<QueueView>({ queryKey: prefix });
       for (const [key, data] of snapshot) {
         if (!data) continue;
-        client.setQueryData<QueueResponse>(key, {
-          ...data,
-          total: Math.max(0, data.total - 1),
-          kinds: data.kinds.map((kind) => (kind.kind === item.kind ? { ...kind, count: Math.max(0, kind.count - 1) } : kind)).filter((kind) => kind.count > 0),
-          results: data.results.filter((row) => queueKey(row) !== queueKey(item)),
-        });
+        const next = withoutQueueItem(data, item);
+        client.setQueryData<QueueView>(key, { ...next, kinds: next.kinds.filter((kind) => kind.count > 0) });
       }
       return { snapshot };
     },
@@ -195,11 +185,21 @@ export function useArchive() {
   });
 }
 
+/** Presses a notification's button; the answer replaces the row (its buttons go, `acted_at` is set). */
 export function useNotificationAction() {
+  const client = useQueryClient();
   const companyId = useCompanyId();
   const refresh = useRefresh();
   return useMutation({
     mutationFn: ({ note, key, reason }: { note: Notification; key: string; reason?: string }) => runNotificationAction(companyId.value, note.id, key, reason),
+    onSuccess: (result) => {
+      const updated = result?.notification;
+      if (!updated) return;
+      void patchNotifications(client, companyId.value, (data) => ({
+        ...data,
+        pages: data.pages.map((page) => ({ ...page, results: page.results.map((row) => (row.id === updated.id ? updated : row)) })),
+      }));
+    },
     onSettled: refresh,
   });
 }

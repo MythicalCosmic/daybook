@@ -79,7 +79,7 @@ const itemClass =
         <template v-if="variant !== 'rail'">
           <span class="min-w-0 flex-1">
             <span class="block truncate text-base font-semibold leading-5 text-fg">{{ label }}</span>
-            <span v-if="current && variant === 'sidebar'" class="block truncate text-xs text-muted">{{ current.role.name }}</span>
+            <span v-if="current && variant === 'sidebar'" class="block truncate text-xs text-muted">{{ current.role?.name }}</span>
           </span>
           <UiBadge v-if="current && current.pending > 0 && variant === 'sidebar'" :count="current.pending" tone="primary" />
           <ChevronsUpDown :size="15" class="shrink-0 text-subtle transition-colors group-hover:text-muted" />
@@ -113,7 +113,7 @@ const itemClass =
           <span class="min-w-0 flex-1">
             <span class="block truncate text-base font-semibold">{{ item.name }}</span>
             <span class="block truncate text-xs text-muted">
-              {{ item.role.name }}<template v-if="item.alerts"> · <span class="text-danger">{{ t("shell.company.alerts", { n: item.alerts }) }}</span></template>
+              {{ item.role?.name }}<template v-if="item.alerts"> · <span class="text-danger">{{ t("shell.company.alerts", { n: item.alerts }) }}</span></template>
             </span>
           </span>
           <UiBadge v-if="item.pending > 0" :count="item.pending" tone="primary" :title="t('shell.company.waiting', { n: item.pending })" />

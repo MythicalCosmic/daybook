@@ -5,14 +5,16 @@
  * count. When the filters differ from the active view (`dirty`), "Save view" offers to save them
  * (and "Save changes" on one's own view). Own views have a menu: rename, share, delete.
  *
- *   <SavedViewsTabs v-model="viewId" :views="[...builtins, ...(views.list.data.value ?? [])]" :dirty="changed"
- *     @save="(input) => views.create.mutate({ ...input, params })" @update="(view) => views.update.mutate({ id: view.id, params })" … />
+ *   const views = useSavedViews("tasks");
+ *   <SavedViewsTabs v-model="viewId" :views="[...builtins, ...views.tabs.value]" :dirty="changed"
+ *     @save="(input) => views.create.mutate({ name: input.name, is_shared: input.shared, state })"
+ *     @update="(view) => views.update.mutate({ id: Number(view.id), state })" … />
  */
 import { Ellipsis, Pencil, Plus, Share2, Trash2, Users } from "@lucide/vue";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
-import type { SavedView } from "@/lib/useSavedViews";
+import type { SavedViewTab } from "@/lib/useSavedViews";
 
 import CheckBox from "./CheckBox.vue";
 import DropdownMenu, { type MenuEntry } from "./DropdownMenu.vue";
@@ -22,12 +24,8 @@ import UiButton from "./UiButton.vue";
 import UiPopover from "./UiPopover.vue";
 import { useConfirm } from "./useConfirm";
 
-export interface ViewTab extends Pick<SavedView, "id" | "name"> {
-  shared?: boolean;
-  mine?: boolean;
-  builtin?: boolean;
-  count?: number;
-}
+/** A tab: a built-in view (`builtin`) or a saved one (`savedViewTab(view)` from useSavedViews). */
+export type ViewTab = SavedViewTab;
 
 const active = defineModel<ViewTab["id"]>({ required: true });
 

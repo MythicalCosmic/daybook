@@ -43,7 +43,7 @@ export interface CatalogEntry {
 export const CATALOG: readonly CatalogEntry[] = [
   // Overview
   { id: "overview", group: "overview", order: 10, pkg: "W0 → N", hotkey: "o", pages: [{ id: "today", to: "" }] },
-  { id: "inbox", group: "overview", order: 20, pkg: "W0", hotkey: "i", badge: "queue.total", pages: [{ id: "inbox", to: "inbox" }] },
+  { id: "inbox", group: "overview", order: 20, pkg: "W0", hotkey: "i", badge: "console.queue", pages: [{ id: "inbox", to: "inbox" }] },
 
   // Work
   {

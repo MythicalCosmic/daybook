@@ -12,18 +12,20 @@ import { useI18n } from "vue-i18n";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
 import { keys } from "@/api/keys";
-import { shellApi } from "@/api/shell";
-import type { Notification, QueueAction, QueueItem, QueueResponse, Severity } from "@/api/types";
+import { shellApi, withoutQueueItem } from "@/api/shell";
+import type { Notification, QueueAction, QueueItem, QueueView, Severity } from "@/api/types";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
+import { iconForKind } from "@/components/kindIcons";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UiBadge from "@/components/UiBadge.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDrawer from "@/components/UiDrawer.vue";
-import UserAvatar from "@/components/UserAvatar.vue";
+import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { isModuleVisible } from "@/core/access";
 import { modules } from "@/core/modules";
+import { companyUrl as linkInCompany } from "@/lib/links";
 import { applyQueryPatch, closeQueryKey } from "@/lib/useRouteState";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
@@ -35,6 +37,7 @@ const router = useRouter();
 const client = useQueryClient();
 const company = useCompanyStore();
 const fmt = useFormat();
+const confirm = useConfirm();
 
 const companyId = computed(() => company.currentId ?? 0);
 const isOpen = computed(() => route.query.inbox !== undefined);
@@ -51,14 +54,14 @@ function close(): void {
 
 const queue = useQuery({
   queryKey: computed(() => keys.queue(companyId.value)),
-  queryFn: () => shellApi.queue(companyId.value),
+  queryFn: ({ signal }) => shellApi.queue(companyId.value, null, signal),
   enabled: computed(() => isOpen.value && companyId.value > 0),
   staleTime: 10_000,
 });
 
 const notes = useQuery({
   queryKey: computed(() => keys.inbox(companyId.value, notesFilter.value)),
-  queryFn: () => shellApi.inbox(companyId.value, notesFilter.value),
+  queryFn: ({ signal }) => shellApi.inbox(companyId.value, notesFilter.value, 1, signal),
   enabled: computed(() => isOpen.value && tab.value === "notifications" && companyId.value > 0),
   staleTime: 10_000,
 });
@@ -70,7 +73,7 @@ const groups = computed(() => {
   const data = queue.data.value;
   if (!data) return [];
   return data.kinds
-    .map((kind) => ({ ...kind, items: data.results.filter((item) => item.kind === kind.kind) }))
+    .map((kind) => ({ ...kind, items: data.items.filter((item) => item.kind === kind.kind) }))
     .filter((group) => group.items.length > 0);
 });
 
@@ -79,29 +82,30 @@ const reasonFor = ref<{ itemKey: string; action: QueueAction } | null>(null);
 const reason = ref("");
 const itemKey = (item: QueueItem) => `${item.kind}:${item.id}`;
 
+/** Everything the bell, the drawer and the inbox page show, after a decision. */
+function refreshInbox(): void {
+  const id = companyId.value;
+  void client.invalidateQueries({ queryKey: [id, "shell", "queue"] });
+  void client.invalidateQueries({ queryKey: [id, "shell", "inbox"] });
+  void client.invalidateQueries({ queryKey: keys.unread(id) });
+  void client.invalidateQueries({ queryKey: keys.pulse(id) });
+  void client.invalidateQueries({ queryKey: [id, "inbox"] });
+}
+
 const decide = useMutation({
   mutationFn: ({ action, text }: { item: QueueItem; action: QueueAction; text?: string }) => shellApi.runQueueAction(companyId.value, action, text),
   onMutate: async ({ item }) => {
     const key = keys.queue(companyId.value);
     await client.cancelQueries({ queryKey: key });
-    const previous = client.getQueryData<QueueResponse>(key);
-    if (previous) {
-      client.setQueryData<QueueResponse>(key, {
-        ...previous,
-        total: Math.max(0, previous.total - 1),
-        kinds: previous.kinds.map((k) => (k.kind === item.kind ? { ...k, count: Math.max(0, k.count - 1) } : k)),
-        results: previous.results.filter((r) => itemKey(r) !== itemKey(item)),
-      });
-    }
+    const previous = client.getQueryData<QueueView>(key);
+    if (previous) client.setQueryData<QueueView>(key, withoutQueueItem(previous, item));
     return { previous };
   },
   onSuccess: (_data, { action }) => toast.success(t("shell.inbox.actionDone", { action: action.label })),
   onError: (_error, _vars, context) => {
     if (context?.previous) client.setQueryData(keys.queue(companyId.value), context.previous);
   },
-  onSettled: () => {
-    void client.invalidateQueries({ queryKey: [companyId.value, "shell"] });
-  },
+  onSettled: refreshInbox,
 });
 
 function run(item: QueueItem, action: QueueAction): void {
@@ -119,14 +123,11 @@ function confirmReason(item: QueueItem): void {
   reasonFor.value = null;
 }
 
-function companyUrl(url: string): string {
-  if (!url) return `/c/${companyId.value}`;
-  return url.startsWith("/c/") ? url : `/c/${companyId.value}/${url.replace(/^\/+/, "")}`;
-}
+const companyUrl = (url: string) => linkInCompany(companyId.value, url);
 
 const markRead = useMutation({
   mutationFn: (ids: number[] | "all") => shellApi.markRead(companyId.value, ids),
-  onSettled: () => void client.invalidateQueries({ queryKey: [companyId.value, "shell"] }),
+  onSettled: refreshInbox,
 });
 
 function openNote(note: Notification): void {
@@ -135,10 +136,24 @@ function openNote(note: Notification): void {
 }
 
 const noteAction = useMutation({
-  mutationFn: ({ note, key }: { note: Notification; key: string }) => shellApi.runInboxAction(companyId.value, note.id, key),
-  onSuccess: (_d, { note, key }) => toast.success(t("shell.inbox.actionDone", { action: note.actions.find((a) => a.key === key)?.label ?? key })),
-  onSettled: () => void client.invalidateQueries({ queryKey: [companyId.value, "shell"] }),
+  mutationFn: ({ note, key, reason: text }: { note: Notification; key: string; reason?: string }) => shellApi.runInboxAction(companyId.value, note.id, key, text),
+  // The module's handler says what happened ("Approved."); the button's label is the fallback.
+  onSuccess: (result, { note, key }) =>
+    toast.success(result?.message || t("shell.inbox.actionDone", { action: note.actions.find((a) => a.key === key)?.label ?? key })),
+  onSettled: refreshInbox,
 });
+
+async function runNoteAction(note: Notification, key: string): Promise<void> {
+  const action = note.actions.find((item) => item.key === key);
+  if (!action) return;
+  let text: string | undefined;
+  if (action.needs_reason) {
+    const answer = await confirm({ title: action.label, message: note.title, reason: "required", tone: action.style === "danger" ? "danger" : "primary", confirmLabel: action.label });
+    if (!answer) return;
+    text = answer.reason;
+  }
+  noteAction.mutate({ note, key, reason: text });
+}
 
 /** Module renderers for notification kinds ("sales.cash_difference" → the sales module's component). */
 const renderers = computed(() => {
@@ -228,15 +243,15 @@ const unreadCount = computed(() => (notesFilter.value === "unread" ? (notes.data
             <TransitionGroup name="list" tag="ul" class="relative flex flex-col gap-1.5">
               <li v-for="item in group.items" :key="itemKey(item)" class="rounded-card border border-line bg-surface p-3 transition-colors hover:border-line-strong">
                 <div class="flex items-start gap-3">
-                  <UserAvatar v-if="item.actor" :name="item.actor.name" :src="item.actor.photo_url" :size="32" />
-                  <span v-else class="grid size-8 shrink-0 place-items-center rounded-full bg-accent-soft text-accent-fg"><BellRing :size="15" /></span>
+                  <span class="grid size-8 shrink-0 place-items-center rounded-[9px] bg-accent-soft text-accent-fg" aria-hidden="true">
+                    <component :is="iconForKind(item.kind)" :size="15" />
+                  </span>
                   <div class="min-w-0 flex-1">
                     <div class="flex items-baseline gap-2">
                       <p class="line-clamp-2 min-w-0 flex-1 text-base font-semibold text-fg md:line-clamp-1">{{ item.title }}</p>
-                      <span class="shrink-0 text-xs text-subtle">{{ fmt.relative(item.created_at) }}</span>
+                      <span v-if="item.created_at" class="shrink-0 text-xs text-subtle">{{ fmt.relative(item.created_at) }}</span>
                     </div>
                     <p v-if="item.subtitle" class="mt-0.5 line-clamp-2 text-sm text-muted">{{ item.subtitle }}</p>
-                    <img v-if="item.photo_url" :src="item.photo_url" alt="" loading="lazy" class="mt-2 h-24 w-36 rounded-[8px] border border-line object-cover" />
 
                     <form
                       v-if="reasonFor?.itemKey === itemKey(item)"
@@ -324,9 +339,10 @@ const unreadCount = computed(() => (notesFilter.value === "unread" ? (notes.data
               v-else
               role="button"
               tabindex="0"
-              class="group relative flex gap-3 rounded-[10px] px-2 py-2.5 transition-colors hover:bg-highlight"
+              class="group relative flex gap-3 rounded-[10px] px-2 py-2.5 outline-offset-[-2px] transition-colors hover:bg-highlight"
               @click="openNote(note)"
-              @keydown.enter="openNote(note)"
+              @keydown.enter.self="openNote(note)"
+              @keydown.space.self.prevent="openNote(note)"
             >
               <span :class="['grid size-7 shrink-0 place-items-center rounded-[8px]', severityTone[note.severity]]">
                 <component :is="severityIcon[note.severity]" :size="15" />
@@ -344,7 +360,7 @@ const unreadCount = computed(() => (notesFilter.value === "unread" ? (notes.data
                     size="sm"
                     :variant="action.style === 'primary' ? 'primary' : 'secondary'"
                     :loading="noteAction.isPending.value && noteAction.variables.value?.note.id === note.id && noteAction.variables.value?.key === action.key"
-                    @click="noteAction.mutate({ note, key: action.key })"
+                    @click="runNoteAction(note, action.key)"
                     >{{ action.label }}</UiButton
                   >
                 </div>

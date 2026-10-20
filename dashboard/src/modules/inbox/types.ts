@@ -5,9 +5,19 @@
  * The queue and notification rows are shared with the shell's inbox drawer, so they live in
  * @/api/types; this file adds what only the inbox page needs.
  */
-import type { Notification, QueueAction, QueueItem, QueueKind, QueueResponse, Severity, UnreadCount } from "@/api/types";
+import type {
+  Notification,
+  NotificationActionResult,
+  QueueAction,
+  QueueCounts,
+  QueueItem,
+  QueueKind,
+  QueueView,
+  Severity,
+  UnreadCount,
+} from "@/api/types";
 
-export type { Notification, QueueAction, QueueItem, QueueKind, QueueResponse, Severity, UnreadCount };
+export type { Notification, NotificationActionResult, QueueAction, QueueCounts, QueueItem, QueueKind, QueueView, Severity, UnreadCount };
 
 export type InboxTab = "needs" | "notifications";
 export type NotificationTab = "unread" | "all";
@@ -16,12 +26,6 @@ export type NotificationTab = "unread" | "all";
 export interface NotificationParams {
   tab: NotificationTab;
   page_size?: number;
-}
-
-/** `GET O queue/counts/` */
-export interface QueueCounts {
-  total: number;
-  kinds: QueueKind[];
 }
 
 /** A queue item's stable identity across kinds (ids repeat between kinds). */

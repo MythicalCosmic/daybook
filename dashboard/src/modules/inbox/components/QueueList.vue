@@ -4,22 +4,22 @@
  * that need a reason ask for it first; a decided item leaves at once (and returns if the server
  * refuses). J/K move between items, Enter opens the record.
  */
-import { ArrowUpRight, BellRing, ListFilter } from "@lucide/vue";
+import { ArrowUpRight, ListFilter } from "@lucide/vue";
 import { computed, nextTick, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, useRouter } from "vue-router";
 
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
-import ProofThumb from "@/components/ProofThumb.vue";
+import { iconForKind } from "@/components/kindIcons";
 import RelativeTime from "@/components/RelativeTime.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UiBadge from "@/components/UiBadge.vue";
 import UiButton from "@/components/UiButton.vue";
-import UserAvatar from "@/components/UserAvatar.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { useHotkey } from "@/core/hotkeys";
+import { companyUrl } from "@/lib/links";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { rs, useRouteState } from "@/lib/useRouteState";
 import { useCompanyStore } from "@/stores/company";
@@ -36,7 +36,7 @@ const kind = useRouteState("kind", rs.string(""));
 // All kinds come from the unfiltered queue; the list shows the chosen one.
 const all = useQueue(null);
 const kinds = computed(() => all.data.value?.kinds ?? []);
-const items = computed(() => (all.data.value?.results ?? []).filter((item) => !kind.value || item.kind === kind.value));
+const items = computed(() => (all.data.value?.items ?? []).filter((item) => !kind.value || item.kind === kind.value));
 const groups = computed(() =>
   kinds.value
     .filter((entry) => !kind.value || entry.kind === kind.value)
@@ -72,10 +72,7 @@ async function run(item: QueueItem, action: QueueAction): Promise<void> {
   }
 }
 
-function link(url: string): string {
-  if (!url) return `/c/${company.currentId}`;
-  return url.startsWith("/c/") ? url : `/c/${company.currentId}/${url.replace(/^\/+/, "")}`;
-}
+const link = (url: string) => companyUrl(company.currentId, url);
 
 // Keyboard: J/K between items, Enter opens.
 const list = ref<HTMLElement | null>(null);
@@ -156,17 +153,17 @@ async function pickKind(next: string): Promise<void> {
               class="ui-card group/item flex gap-3.5 p-4 outline-offset-2 transition-colors hover:border-line-strong focus-visible:border-primary"
               @keydown="onKeydown($event, item)"
             >
-              <UserAvatar v-if="item.actor" :name="item.actor.name" :src="item.actor.photo_url" :size="36" />
-              <span v-else class="grid size-9 shrink-0 place-items-center rounded-full bg-accent-soft text-accent-fg"><BellRing :size="16" /></span>
+              <span class="grid size-9 shrink-0 place-items-center rounded-[10px] bg-accent-soft text-accent-fg" aria-hidden="true">
+                <component :is="iconForKind(item.kind)" :size="17" />
+              </span>
               <div class="min-w-0 flex-1">
                 <div class="flex items-start gap-3">
                   <div class="min-w-0 flex-1">
                     <p class="text-base font-semibold leading-5 text-fg">{{ item.title }}</p>
                     <p v-if="item.subtitle" class="mt-0.5 text-sm text-muted">{{ item.subtitle }}</p>
                   </div>
-                  <RelativeTime :value="item.created_at" class="shrink-0 pt-0.5 text-xs text-subtle" />
+                  <RelativeTime v-if="item.created_at" :value="item.created_at" class="shrink-0 pt-0.5 text-xs text-subtle" />
                 </div>
-                <ProofThumb v-if="item.photo_url" :src="item.photo_url" size="lg" class="mt-3" />
                 <div class="mt-3 flex flex-wrap items-center gap-1.5">
                   <UiButton
                     v-for="action in item.actions"

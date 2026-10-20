@@ -31,6 +31,7 @@
   "inbox.severity.critical": "Срочно",
   "inbox.from": "От кого",
   "inbox.acted": "Решено {time}",
+  "inbox.actedBy": "{name} решил(а) {time}",
   "inbox.pickTitle": "Выберите уведомление",
   "inbox.pickBody": "Оно откроется здесь, с подробностями и действиями.",
   "inbox.widget.title": "Ждут вас",

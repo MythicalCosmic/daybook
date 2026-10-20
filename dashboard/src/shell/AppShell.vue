@@ -4,12 +4,14 @@
  * and the shell's overlays (palette, inbox, shortcuts, new company, AI panel slot). It runs the one
  * pulse poller, the global shortcuts and the document title.
  */
-import { useQueryClient } from "@tanstack/vue-query";
+import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import { useTitle } from "@vueuse/core";
 import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterView, useRoute, useRouter } from "vue-router";
 
+import { keys } from "@/api/keys";
+import { shellApi } from "@/api/shell";
 import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import { toast } from "@/components/useToast";
 import { canAccessRoute, visibleModules } from "@/core/access";
@@ -17,7 +19,7 @@ import { hasExtension } from "@/core/extensions";
 import { registerHotkey } from "@/core/hotkeys";
 import { findModule, modules } from "@/core/modules";
 import { buildNav } from "@/core/nav";
-import { PULSE_INBOX_CRITICAL, PULSE_INBOX_UNREAD, PULSE_QUEUE, pulse, usePulseCount, usePulsePolling } from "@/core/pulse";
+import { PULSE_INBOX_UNREAD, PULSE_QUEUE, PULSE_SAVED_VIEWS, keyMatches, pulse, usePulseCount, usePulsePolling } from "@/core/pulse";
 import { ensureAllModuleMessages } from "@/i18n";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { applyQueryPatch } from "@/lib/useRouteState";
@@ -68,19 +70,34 @@ watch(
 const nav = computed(() => buildNav(modules, company.current, pulse.value));
 const forbidden = computed(() => !companyless.value && !!company.current && !canAccessRoute(route, company.current));
 
-// Live data.
+// Live data. When the inbox or the queue moves, the drawer's lists and the unread count refetch
+// (never the pulse query itself, which shares the "shell" prefix).
 const pulseQuery = usePulsePolling(
   computed(() => (companyless.value ? null : company.currentId)),
   (changed) => {
-    if (changed.some((key) => key.startsWith("inbox") || key.startsWith("queue"))) {
-      void client.invalidateQueries({ queryKey: [company.currentId, "shell"] });
+    const id = company.currentId;
+    if (id === null) return;
+    if (changed.some((key) => keyMatches(PULSE_INBOX_UNREAD, key))) {
+      void client.invalidateQueries({ queryKey: [id, "shell", "inbox"] });
+      void client.invalidateQueries({ queryKey: keys.unread(id) });
     }
+    if (changed.some((key) => keyMatches(PULSE_QUEUE, key))) void client.invalidateQueries({ queryKey: [id, "shell", "queue"] });
+    if (changed.includes(PULSE_SAVED_VIEWS)) void client.invalidateQueries({ queryKey: [id, "shell", "saved-views"] });
   },
 );
 const queueCount = usePulseCount(PULSE_QUEUE);
 const unreadCount = usePulseCount(PULSE_INBOX_UNREAD);
-const criticalCount = usePulseCount(PULSE_INBOX_CRITICAL);
 const inboxCount = computed(() => queueCount.value + unreadCount.value);
+
+// How many unread notifications are critical (`inbox/unread-count/`): the favicon badge, "(n)" in
+// the title and the arrival toast.
+const unread = useQuery({
+  queryKey: computed(() => keys.unread(company.currentId ?? 0)),
+  queryFn: ({ signal }) => shellApi.unreadCount(company.currentId ?? 0, signal),
+  enabled: computed(() => !companyless.value && company.currentId !== null),
+  staleTime: 60_000,
+});
+const criticalCount = computed(() => unread.data.value?.critical ?? 0);
 
 const aiAvailable = computed(
   () => !!company.current && company.can("ai.use") && company.enabled("ai") && hasExtension("shell.panel", company.current),
@@ -94,25 +111,27 @@ function openInbox(tab?: "needs" | "notifications"): void {
 async function signOut(): Promise<void> {
   await session.logout();
   client.clear();
-  await router.replace("/login");
+  // Inside Telegram there is no login page: initData was the session, so the way back is the bot.
+  await router.replace(telegram().inside ? { name: "session-ended" } : "/login");
 }
 
-// Critical arrivals: a soft toast, a badge on the favicon and "(n)" in the title. The first pulse
+// Critical arrivals: a soft toast, a badge on the favicon and "(n)" in the title. The first count
 // of each company only sets the baseline, so opening the console never greets you with a toast.
 const criticalSeen = new Map<number, number>();
-watch(pulse, (next) => {
-  const id = company.currentId;
-  if (id === null || next.versions === undefined || Object.keys(next.counters).length === 0) return;
-  const count = next.counters[PULSE_INBOX_CRITICAL] ?? 0;
-  const previous = criticalSeen.get(id);
-  criticalSeen.set(id, count);
-  if (previous !== undefined && count > previous) {
-    toast.warning(t("shell.inbox.urgent"), {
-      description: t("shell.inbox.unreadCount", { n: count }),
-      action: { label: t("common.open"), onClick: () => openInbox("notifications") },
-    });
-  }
-});
+watch(
+  () => [company.currentId, unread.data.value] as const,
+  ([id, data]) => {
+    if (id === null || !data) return;
+    const previous = criticalSeen.get(id);
+    criticalSeen.set(id, data.critical);
+    if (previous !== undefined && data.critical > previous) {
+      toast.warning(t("shell.inbox.urgent"), {
+        description: t("shell.inbox.unreadCount", { n: data.count }),
+        action: { label: t("common.open"), onClick: () => openInbox("notifications") },
+      });
+    }
+  },
+);
 
 const FAVICON = "/dashboard/favicon.svg";
 const BADGED =

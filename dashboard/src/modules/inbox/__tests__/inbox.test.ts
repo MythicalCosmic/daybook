@@ -14,7 +14,7 @@ import { archiveNotification, inboxKeys, listNotifications, listQueue, markRead,
 import en from "../i18n/en.json";
 import module from "../index";
 import InboxPage from "../pages/InboxPage.vue";
-import type { Notification, QueueItem, QueueResponse } from "../types";
+import type { Notification, QueueItem, QueueView } from "../types";
 
 const item = (id: number, kind: string, needsReason = false): QueueItem => ({
   kind,
@@ -23,10 +23,9 @@ const item = (id: number, kind: string, needsReason = false): QueueItem => ({
   subtitle: "Subtitle",
   created_at: "2026-10-20T09:00:00Z",
   url: `tasks?task=${id}`,
-  actor: { id: 1, name: "Madina Saidova", photo_url: null },
   actions: [
-    { key: "approve", label: "Approve", style: "primary", method: "POST", endpoint: `${kind}/${id}/approve/`, needs_reason: false },
-    { key: "reject", label: "Reject", style: "danger", method: "POST", endpoint: `${kind}/${id}/reject/`, needs_reason: needsReason },
+    { key: "approve", label: "Approve", style: "primary", method: "POST", endpoint: `${kind}/${id}/approve/`, body: {}, needs_reason: false },
+    { key: "reject", label: "Reject", style: "danger", method: "POST", endpoint: `${kind}/${id}/reject/`, body: {}, needs_reason: needsReason },
   ],
 });
 
@@ -36,14 +35,29 @@ const note = (id: number, read = false): Notification => ({
   severity: "critical",
   title: `Note ${id}`,
   body: "Body",
-  url: "sales/shifts/1042",
+  url: "/c/1/sales/shifts/1042",
+  app_screen: "",
+  target_type: "shift",
+  target_id: 1042,
   created_at: "2026-10-20T09:00:00Z",
   read_at: read ? "2026-10-20T10:00:00Z" : null,
   acted_at: null,
+  acted_by: null,
   actor: null,
   actions: [],
   data: {},
 });
+
+/** The two calls behind "Needs you" (`queue/counts/` and `queue/`), answered from one view. */
+function queueRoutes(view: QueueView): Record<string, (call: Call) => Response> {
+  return {
+    "GET queue/counts/": () => json({ total: view.total, kinds: view.kinds }),
+    "GET queue/": (call) => {
+      const kind = new URL(call.url, "http://x").searchParams.get("kind");
+      return json({ items: view.items.filter((row) => !kind || row.kind === kind) });
+    },
+  };
+}
 
 interface Call {
   method: string;
@@ -80,14 +94,15 @@ afterEach(() => {
 describe("api", () => {
   it("calls the plan's endpoints with the right params and bodies", async () => {
     const calls = stubApi({
-      "GET queue/": () => json({ total: 0, kinds: [], results: [] }),
+      ...queueRoutes({ total: 0, kinds: [], items: [] }),
       "GET inbox/": () => json({ count: 0, next: null, previous: null, results: [] }),
-      "POST inbox/read/": () => json(null, 204),
-      "POST inbox/9/archive/": () => json(null, 204),
-      "POST inbox/9/actions/approve/": () => json({}),
+      "POST inbox/read/": () => json({ updated: 2 }),
+      "POST inbox/9/archive/": () => json(note(9)),
+      "POST inbox/9/actions/approve/": () => json({ message: "Approved.", notification: note(9) }),
       "POST time-off/42/reject/": () => json({}),
     });
-    await listQueue(1, { kind: "timeoff.request" });
+    const view = await listQueue(1, { kind: "timeoff.request" });
+    expect(view).toEqual({ total: 0, kinds: [], items: [] });
     await listNotifications(1, { tab: "unread", page: 2 });
     await markRead(1, [3, 4]);
     await markRead(1, "all");
@@ -95,6 +110,7 @@ describe("api", () => {
     await runNotificationAction(1, 9, "approve", "ok");
     await runQueueAction(1, { key: "reject", label: "Reject", style: "danger", method: "POST", endpoint: "time-off/42/reject/", body: { notify: true }, needs_reason: true }, "Busy week");
     expect(calls.map((c) => `${c.method} ${c.url}`)).toEqual([
+      "GET /api/v1/owner/companies/1/queue/counts/",
       "GET /api/v1/owner/companies/1/queue/?kind=timeoff.request",
       "GET /api/v1/owner/companies/1/inbox/?tab=unread&page=2&page_size=30",
       "POST /api/v1/owner/companies/1/inbox/read/",
@@ -103,10 +119,10 @@ describe("api", () => {
       "POST /api/v1/owner/companies/1/inbox/9/actions/approve/",
       "POST /api/v1/owner/companies/1/time-off/42/reject/",
     ]);
-    expect(calls[2]!.body).toEqual({ ids: [3, 4] });
-    expect(calls[3]!.body).toEqual({ all: true });
-    expect(calls[5]!.body).toEqual({ reason: "ok" });
-    expect(calls[6]!.body).toEqual({ notify: true, reason: "Busy week" });
+    expect(calls[3]!.body).toEqual({ ids: [3, 4] });
+    expect(calls[4]!.body).toEqual({ all: true });
+    expect(calls[6]!.body).toEqual({ reason: "ok" });
+    expect(calls[7]!.body).toEqual({ notify: true, reason: "Busy week" });
   });
 
   it("keys every query under the company and the module", () => {
@@ -116,9 +132,10 @@ describe("api", () => {
   });
 
   it("registers as the catalog says, with a widget, a command and pulse keys", () => {
-    expect(module).toMatchObject({ id: "inbox", group: "overview", order: 20, hotkey: "i", invalidates: ["inbox", "queue"] });
+    expect(module).toMatchObject({ id: "inbox", group: "overview", order: 20, hotkey: "i", invalidates: ["inbox.unread", "console.queue"] });
     expect(module.widgets?.map((w) => w.id)).toEqual(["inbox.needs"]);
-    expect(module.badge?.({ counters: { "queue.total": 5 }, versions: {} })).toBe(5);
+    // The backend's pulse key for Needs you (apps/console/hooks.py).
+    expect(module.badge?.({ counters: { "console.queue": 5, "inbox.unread": 2 }, versions: {} })).toBe(5);
     expect(module.deepLinks?.inbox?.("notifications")).toBe("inbox?tab=notifications");
   });
 });
@@ -133,17 +150,17 @@ describe("InboxPage", () => {
     return { wrapper, calls, app };
   }
 
-  const queue = (): QueueResponse => ({
+  const queue = (): QueueView => ({
     total: 3,
     kinds: [
       { kind: "tasks.review", label: "Waiting for your check", count: 2 },
       { kind: "timeoff.request", label: "Time off", count: 1 },
     ],
-    results: [item(1, "tasks.review"), item(2, "tasks.review"), item(3, "timeoff.request", true)],
+    items: [item(1, "tasks.review"), item(2, "tasks.review"), item(3, "timeoff.request", true)],
   });
 
   it("groups Needs you by kind and filters by kind from the URL", async () => {
-    const { wrapper } = await page("/c/1/inbox?kind=timeoff.request", { "GET queue/": () => json(queue()) });
+    const { wrapper } = await page("/c/1/inbox?kind=timeoff.request", queueRoutes(queue()));
     expect(wrapper.text()).toContain("Waiting for your check");
     const cards = wrapper.findAll("[data-queue-item]");
     expect(cards.map((c) => c.text())).toEqual([expect.stringContaining("Item 3")]);
@@ -152,7 +169,7 @@ describe("InboxPage", () => {
   it("decides an item in place: it leaves at once and the server is told", async () => {
     let release!: () => void;
     const { wrapper, calls } = await page("/c/1/inbox", {
-      "GET queue/": () => json(queue()),
+      ...queueRoutes(queue()),
       "POST tasks.review/1/approve/": () => new Promise<Response>((resolve) => (release = () => resolve(json({ detail: "ok" })))),
     });
     expect(wrapper.findAll("[data-queue-item]")).toHaveLength(3);
@@ -168,7 +185,7 @@ describe("InboxPage", () => {
 
   it("puts an item back when the server refuses", async () => {
     const { wrapper } = await page("/c/1/inbox", {
-      "GET queue/": () => json(queue()),
+      ...queueRoutes(queue()),
       "POST tasks.review/2/approve/": () => json({ detail: "Already decided." }, 409),
     });
     await wrapper.findAll("[data-queue-item]")[1]!.findAll("button").find((b) => b.text() === "Approve")!.trigger("click");
@@ -179,7 +196,7 @@ describe("InboxPage", () => {
 
   it("asks for a reason before an action that needs one", async () => {
     const { wrapper, calls } = await page("/c/1/inbox?kind=timeoff.request", {
-      "GET queue/": () => json(queue()),
+      ...queueRoutes(queue()),
       "POST timeoff.request/3/reject/": () => json({ detail: "ok" }),
     });
     await wrapper.findAll("button").find((b) => b.text() === "Reject")!.trigger("click");
@@ -195,12 +212,12 @@ describe("InboxPage", () => {
   it("opens a notification from the URL, marks it read and archives it", async () => {
     let server = [note(7), note(8, true)];
     const { wrapper, calls, app } = await page("/c/1/inbox?tab=notifications&show=all&note=7", {
-      "GET queue/": () => json(queue()),
+      ...queueRoutes(queue()),
       "GET inbox/": () => json({ count: server.length, next: null, previous: null, results: server }),
-      "POST inbox/read/": () => json(null, 204),
+      "POST inbox/read/": () => json({ updated: 1 }),
       "POST inbox/7/archive/": () => {
         server = server.filter((n) => n.id !== 7);
-        return json(null, 204);
+        return json(note(7, true));
       },
     });
     expect(wrapper.text()).toContain("Urgent");
@@ -213,7 +230,7 @@ describe("InboxPage", () => {
   });
 
   it("says when everything is handled", async () => {
-    const { wrapper } = await page("/c/1/inbox", { "GET queue/": () => json({ total: 0, kinds: [], results: [] }) });
+    const { wrapper } = await page("/c/1/inbox", queueRoutes({ total: 0, kinds: [], items: [] }));
     expect(wrapper.text()).toContain("All caught up");
   });
 });

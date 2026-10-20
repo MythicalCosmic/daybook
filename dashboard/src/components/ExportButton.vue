@@ -11,7 +11,7 @@ import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { downloadFile, safeFilename, toCsv, type CsvColumn } from "@/lib/csv";
-import { useExport, type ExportFormat } from "@/lib/useExport";
+import { useExport } from "@/lib/useExport";
 import { useCompanyStore } from "@/stores/company";
 
 import CheckBox from "./CheckBox.vue";
@@ -46,7 +46,7 @@ const telegram = ref(false);
 
 const canServer = computed(() => !!props.kind && company.can("data.export"));
 
-async function server(format: ExportFormat): Promise<void> {
+async function server(format: "xlsx" | "csv"): Promise<void> {
   if (!props.kind) return;
   open.value = false;
   await exporter.start({ kind: props.kind, format, params: props.params, deliverTelegram: telegram.value });

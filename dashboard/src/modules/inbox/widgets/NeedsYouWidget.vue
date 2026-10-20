@@ -11,10 +11,10 @@ import { RouterLink } from "vue-router";
 import type { Range } from "@/api/types";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
+import { iconForKind } from "@/components/kindIcons";
 import RelativeTime from "@/components/RelativeTime.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UiBadge from "@/components/UiBadge.vue";
-import UserAvatar from "@/components/UserAvatar.vue";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 
 import { useQueue } from "../api";
@@ -25,7 +25,8 @@ const props = defineProps<{ companyId: number; range?: Range; compare?: Range | 
 const { t } = useI18n();
 const queue = useQueue(null);
 const skeleton = useDelayedPending(computed(() => queue.isPending.value));
-const items = computed(() => [...(queue.data.value?.results ?? [])].sort((a, b) => (a.created_at < b.created_at ? -1 : 1)).slice(0, 4));
+// The queue comes oldest first: the four that have waited longest.
+const items = computed(() => (queue.data.value?.items ?? []).slice(0, 4));
 const rest = computed(() => Math.max(0, (queue.data.value?.total ?? 0) - items.value.length));
 const labelOf = (kind: string) => queue.data.value?.kinds.find((k) => k.kind === kind)?.label ?? kind;
 const inbox = computed(() => `/c/${props.companyId}/inbox`);
@@ -51,12 +52,12 @@ const inbox = computed(() => `/c/${props.companyId}/inbox`);
       <ul v-else class="flex flex-col">
         <li v-for="item in items" :key="queueKey(item)">
           <RouterLink :to="{ path: inbox, query: { kind: item.kind } }" class="flex items-center gap-3 rounded-[10px] px-2 py-2 transition-colors hover:bg-highlight">
-            <UserAvatar :name="item.actor?.name ?? item.title" :src="item.actor?.photo_url" :size="30" />
+            <span class="grid size-[30px] shrink-0 place-items-center rounded-[9px] bg-accent-soft text-accent-fg" aria-hidden="true"><component :is="iconForKind(item.kind)" :size="15" /></span>
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-semibold text-fg">{{ item.title }}</p>
               <p class="truncate text-xs text-muted">{{ labelOf(item.kind) }}</p>
             </div>
-            <RelativeTime :value="item.created_at" class="shrink-0 text-xs text-subtle" />
+            <RelativeTime v-if="item.created_at" :value="item.created_at" class="shrink-0 text-xs text-subtle" />
           </RouterLink>
         </li>
       </ul>

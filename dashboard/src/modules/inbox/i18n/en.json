@@ -31,6 +31,7 @@
   "inbox.severity.critical": "Urgent",
   "inbox.from": "From",
   "inbox.acted": "Handled {time}",
+  "inbox.actedBy": "{name} handled it {time}",
   "inbox.pickTitle": "Pick a notification",
   "inbox.pickBody": "It opens here, with its details and actions.",
   "inbox.widget.title": "Needs you",
