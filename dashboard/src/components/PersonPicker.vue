@@ -47,6 +47,8 @@ const props = withDefaults(
 );
 
 const { t } = useI18n();
+// Generic props have no Boolean runtime type, so a bare `multiple` attribute arrives as "".
+const isMultiple = computed(() => props.multiple === true || (props.multiple as unknown) === "");
 const query = useCompanyPeople(
   computed(() => !props.people),
   computed(() => props.filters),
@@ -54,12 +56,12 @@ const query = useCompanyPeople(
 const options = computed(() =>
   (props.people ?? query.data.value ?? []).filter((person) => !props.exclude.includes(person.id)).map(personToOption),
 );
-const placeholderText = computed(() => props.placeholder ?? t(props.multiple ? "common.picker.people" : "common.picker.person"));
+const placeholderText = computed(() => props.placeholder ?? t(isMultiple.value ? "common.picker.people" : "common.picker.person"));
 </script>
 
 <template>
   <MultiSelect
-    v-if="multiple"
+    v-if="isMultiple"
     :model-value="(model as number[])"
     :options="options"
     :placeholder="placeholderText"

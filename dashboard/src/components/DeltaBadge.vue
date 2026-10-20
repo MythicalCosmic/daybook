@@ -59,7 +59,7 @@ const label = computed(() => t(`common.delta.${direction.value > 0 ? "up" : dire
       ]"
       aria-hidden="true"
     >
-      <component :is="icon" :size="size === 'sm' ? 12 : 14" :stroke-width="2.25" class="-ml-0.5" />
+      <component :is="icon" v-if="value !== null && value !== undefined" :size="size === 'sm' ? 12 : 14" :stroke-width="2.25" class="-ml-0.5" />
       {{ text }}
     </span>
     <span v-if="suffix" class="text-xs text-muted" aria-hidden="true">{{ suffix }}</span>

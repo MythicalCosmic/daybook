@@ -20,7 +20,7 @@ import ProgressRing from "@/components/ProgressRing.vue";
 import SegmentedControl from "@/components/SegmentedControl.vue";
 import TextInput from "@/components/TextInput.vue";
 import TimelineList, { type TimelineEvent } from "@/components/TimelineList.vue";
-import { moveNode, type TreeMove } from "@/components/tree";
+import { locate, moveNode, type TreeMove } from "@/components/tree";
 import TreeList from "@/components/TreeList.vue";
 import UiButton from "@/components/UiButton.vue";
 import { toast } from "@/components/useToast";
@@ -133,7 +133,7 @@ const notify = (text: string) => toast.info(text);
           </template>
         </TreeList>
         <div class="rounded-[10px] border border-dashed border-line-strong p-4 text-sm text-muted">
-          <p class="flex items-center gap-2 font-semibold text-fg"><BookOpen :size="15" />{{ String(page ?? "—") }}</p>
+          <p class="flex items-center gap-2 font-semibold text-fg"><BookOpen :size="15" />{{ (page !== null && locate(tree, page)?.node.label) || "—" }}</p>
           <p class="mt-1">{{ k("treeHelp") }}</p>
         </div>
       </div>
@@ -158,6 +158,7 @@ const notify = (text: string) => toast.info(text);
         :columns="heatDays"
         :value="(row, column) => hours.get(`${row.key}:${heatDays.findIndex((d) => d.key === column.key)}`) ?? null"
         :format="(v) => fmt.duration(v * 60)"
+        :cell-format="(v) => fmt.number(v, 1)"
         show-values
         clickable
         :cell-size="34"

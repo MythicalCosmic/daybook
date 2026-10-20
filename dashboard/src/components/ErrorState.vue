@@ -50,7 +50,7 @@ const message = computed(() => {
     class="flex items-center gap-3 rounded-card border border-line bg-surface px-3 py-2.5 text-sm"
   >
     <component :is="icon" :size="16" class="text-danger" aria-hidden="true" />
-    <span class="min-w-0 flex-1 truncate text-muted">{{ title ?? message }}</span>
+    <span class="line-clamp-2 min-w-0 flex-1 text-muted">{{ title ?? message }}</span>
     <UiButton v-if="retry" size="sm" variant="ghost" :loading="retrying" @click="retry()">{{ t("common.retry") }}</UiButton>
   </div>
   <div v-else role="alert" class="flex flex-col items-center gap-3 px-6 py-12 text-center">

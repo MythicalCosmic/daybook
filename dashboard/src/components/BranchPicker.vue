@@ -36,14 +36,16 @@ const props = withDefaults(
 );
 
 const { t } = useI18n();
+// Generic props have no Boolean runtime type, so a bare `multiple` attribute arrives as "".
+const isMultiple = computed(() => props.multiple === true || (props.multiple as unknown) === "");
 const scoped = useScopedBranches();
 const options = computed(() => (props.branches ?? scoped.value).map(branchToOption));
-const placeholderText = computed(() => props.placeholder ?? t(props.multiple ? "common.picker.branches" : "common.picker.branch"));
+const placeholderText = computed(() => props.placeholder ?? t(isMultiple.value ? "common.picker.branches" : "common.picker.branch"));
 </script>
 
 <template>
   <MultiSelect
-    v-if="multiple"
+    v-if="isMultiple"
     :model-value="(model as number[])"
     :options="options"
     :placeholder="placeholderText"

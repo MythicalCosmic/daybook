@@ -56,7 +56,7 @@ export interface DemoTransaction {
   status: "posted" | "pending" | "void";
 }
 
-const CATEGORIES = ["Rent", "Supplies", "Salaries", "Utilities", "Sales", "Delivery", "Marketing", "Repairs"];
+const CATEGORIES = ["Rent", "Supplies", "Salaries", "Utilities", "Delivery", "Marketing", "Repairs"];
 const DESCRIPTIONS = ["Korzinka · supplies", "Electricity · October", "Shift CHL-1042 cash", "Packaging from Makro", "Fuel for delivery", "Instagram ads", "Fridge repair", "Card terminal payout", "Water and coffee", "Advance · Nigora"];
 
 export function transactions(count: number, today: string): DemoTransaction[] {

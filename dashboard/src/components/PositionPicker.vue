@@ -32,14 +32,16 @@ const props = withDefaults(
 );
 
 const { t } = useI18n();
+// Generic props have no Boolean runtime type, so a bare `multiple` attribute arrives as "".
+const isMultiple = computed(() => props.multiple === true || (props.multiple as unknown) === "");
 const query = useCompanyPositions(computed(() => !props.positions));
 const options = computed(() => (props.positions ?? query.data.value ?? []).map(positionToOption));
-const placeholderText = computed(() => props.placeholder ?? t(props.multiple ? "common.picker.positions" : "common.picker.position"));
+const placeholderText = computed(() => props.placeholder ?? t(isMultiple.value ? "common.picker.positions" : "common.picker.position"));
 </script>
 
 <template>
   <MultiSelect
-    v-if="multiple"
+    v-if="isMultiple"
     :model-value="(model as number[])"
     :options="options"
     :placeholder="placeholderText"

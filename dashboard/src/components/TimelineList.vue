@@ -91,7 +91,7 @@ const tones = {
             <slot name="event" :event="event">
               <div class="flex items-baseline gap-3">
                 <p class="min-w-0 flex-1 text-base text-fg">
-                  <span v-if="event.actor && event.icon" class="font-semibold">{{ event.actor.name }} </span>
+                  <template v-if="event.actor && event.icon"><span class="font-semibold">{{ event.actor.name }}</span>{{ " " }}</template>
                   <span>{{ event.title }}</span>
                 </p>
                 <time :datetime="event.at" class="shrink-0 text-xs tabular-nums text-subtle" :title="fmt.instant(event.at)">{{ fmt.instant(event.at, "time") }}</time>

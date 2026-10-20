@@ -195,6 +195,12 @@ const found = import.meta.glob<{ default: DashboardModule }>("../modules/*/index
 /** Every module, sorted for the sidebar. Built once at startup; never mutate it outside dev tooling. */
 export const modules: DashboardModule[] = Object.values(found)
   .map((m) => m.default)
+  .filter((m): m is DashboardModule => {
+    // Only possible when a module's index.ts was imported before this file (a test importing the
+    // module directly): that module is still mid-evaluation. Import @/core/modules first.
+    if (!m && import.meta.env.DEV) console.warn("[modules] a module was imported before @/core/modules; import the registry first");
+    return !!m;
+  })
   .sort(byGroupThenOrder);
 
 /**

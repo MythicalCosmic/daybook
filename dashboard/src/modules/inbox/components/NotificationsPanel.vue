@@ -28,6 +28,7 @@ import { toast } from "@/components/useToast";
 import { isModuleVisible } from "@/core/access";
 import { useHotkey } from "@/core/hotkeys";
 import { modules } from "@/core/modules";
+import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
@@ -41,6 +42,7 @@ const fmt = useFormat();
 const router = useRouter();
 const company = useCompanyStore();
 const confirm = useConfirm();
+const { isPhone } = useBreakpoints();
 
 const tab = useRouteState<NotificationTab>("show", rs.enum(["unread", "all"] as const, "unread"));
 const openId = useRouteState("note", rs.optionalNumber(), { push: true });
@@ -60,12 +62,24 @@ const act = useNotificationAction();
 function open(note: Notification): void {
   kept.value = note;
   openId.value = note.id;
-  if (!note.read_at) markRead.mutate([note.id]);
 }
 
 watch(tab, () => {
   checked.value = [];
 });
+
+// A notification opened from a link (?note=) counts as read too; once per visit, so a server that
+// still reports it unread can't start a loop of refetch and mark-read.
+const markedHere = new Set<number>();
+watch(
+  selected,
+  (note) => {
+    if (!note || note.read_at || markedHere.has(note.id)) return;
+    markedHere.add(note.id);
+    markRead.mutate([note.id]);
+  },
+  { immediate: true },
+);
 
 // Bulk selection.
 const checked = ref<number[]>([]);
@@ -206,7 +220,7 @@ const unreadInView = computed(() => notes.value.filter((note) => !note.read_at).
 
     <template #detail>
       <article v-if="selected" class="flex min-h-0 flex-1 flex-col">
-        <div class="min-h-0 flex-1 overflow-y-auto px-5 py-5 md:px-7 md:py-6">
+        <div class="min-h-0 flex-1 overflow-y-auto px-1 py-2 md:px-7 md:py-6">
           <div class="flex flex-wrap items-center gap-2">
             <StatusPill :tone="severityTone[selected.severity]" :label="t(`inbox.severity.${selected.severity}`)" size="sm" :live="selected.severity === 'critical' && !selected.acted_at" />
             <span class="text-xs text-subtle">{{ fmt.instant(selected.created_at) }}</span>
@@ -236,10 +250,16 @@ const unreadInView = computed(() => notes.value.filter((note) => !note.read_at).
             <StatusPill v-else tone="success" :label="t('inbox.acted', { time: fmt.relative(selected.acted_at) })" />
           </div>
         </div>
-        <footer class="flex shrink-0 items-center gap-2 border-t border-line px-5 py-3 md:px-7">
-          <UiButton v-if="selected.url" :to="link(selected.url)" variant="primary" :icon-right="ArrowUpRight">{{ t("common.open") }}</UiButton>
+        <footer class="flex shrink-0 items-center gap-2 border-t border-line px-1 py-3 md:px-7">
+          <UiButton
+            v-if="selected.url"
+            :to="link(selected.url)"
+            :variant="selected.actions.length && !selected.acted_at ? 'secondary' : 'primary'"
+            :icon-right="ArrowUpRight"
+            >{{ t("common.open") }}</UiButton
+          >
           <span class="flex-1" />
-          <UiButton variant="ghost" :icon="Archive" kbd="e" @click="archiveMany([selected.id])">{{ t("inbox.archive") }}</UiButton>
+          <UiButton variant="ghost" :icon="Archive" :kbd="isPhone ? undefined : 'e'" @click="archiveMany([selected.id])">{{ t("inbox.archive") }}</UiButton>
         </footer>
       </article>
     </template>

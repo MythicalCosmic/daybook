@@ -35,7 +35,7 @@ const props = withDefaults(
 );
 
 const control = useControl(props);
-const grid = { 1: "", 2: "sm:grid-cols-2", 3: "sm:grid-cols-3", 4: "sm:grid-cols-2 lg:grid-cols-4" } as const;
+const grid = { 1: "", 2: "@sm:grid-cols-2", 3: "@sm:grid-cols-2 @2xl:grid-cols-3", 4: "@sm:grid-cols-2 @4xl:grid-cols-4" } as const;
 
 function onUpdate(value: unknown): void {
   model.value = value as V;
@@ -43,6 +43,7 @@ function onUpdate(value: unknown): void {
 </script>
 
 <template>
+  <div class="@container min-w-0">
   <RadioGroupRoot
     :id="control.id.value"
     :model-value="model ?? undefined"
@@ -73,11 +74,9 @@ function onUpdate(value: unknown): void {
         <component :is="option.icon" :size="16" aria-hidden="true" />
       </span>
       <span class="min-w-0 flex-1">
-        <span class="flex items-center gap-2">
-          <span class="min-w-0 flex-1 truncate text-base font-semibold text-fg">{{ option.label }}</span>
-          <span v-if="option.badge" class="shrink-0 text-xs font-medium text-muted">{{ option.badge }}</span>
-        </span>
+        <span class="block text-base font-semibold leading-5 text-fg">{{ option.label }}</span>
         <span v-if="option.description" class="mt-0.5 block text-sm text-muted">{{ option.description }}</span>
+        <span v-if="option.badge" class="mt-2 inline-flex whitespace-nowrap rounded-full bg-surface-2 px-2 py-0.5 text-xs font-semibold tabular-nums text-muted group-data-[state=checked]:bg-surface dark:bg-surface-3">{{ option.badge }}</span>
       </span>
       <span
         class="mt-0.5 grid size-4 shrink-0 place-items-center rounded-full border border-line-strong bg-surface transition-colors group-data-[state=checked]:border-primary"
@@ -87,4 +86,5 @@ function onUpdate(value: unknown): void {
       </span>
     </RadioGroupItem>
   </RadioGroupRoot>
+  </div>
 </template>

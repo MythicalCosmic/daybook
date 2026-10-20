@@ -22,7 +22,7 @@ const props = withDefaults(defineProps<{ people: StackPerson[]; max?: number; si
 
 const shown = computed(() => props.people.slice(0, props.max));
 const rest = computed(() => props.people.slice(props.max));
-const overlap = computed(() => Math.round(props.size * 0.28));
+const overlap = computed(() => Math.round(props.size * 0.22));
 </script>
 
 <template>

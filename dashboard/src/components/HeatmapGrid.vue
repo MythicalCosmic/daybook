@@ -25,6 +25,8 @@ const props = withDefaults(
     columns: HeatmapAxis[];
     value: (row: HeatmapAxis, column: HeatmapAxis) => number | null | undefined;
     format?: (value: number) => string;
+    /** Short text inside cells with `show-values` (default `format`). */
+    cellFormat?: (value: number) => string;
     color?: string;
     max?: number;
     min?: number;
@@ -37,6 +39,7 @@ const props = withDefaults(
   }>(),
   {
     format: undefined,
+    cellFormat: undefined,
     color: "var(--c-primary)",
     max: undefined,
     min: undefined,
@@ -119,7 +122,7 @@ const dark = (value: number | null) => value !== null && high.value - low.value 
                 :tabindex="clickable ? undefined : 0"
                 :aria-label="`${row.label}, ${column.label}: ${text(matrix[r]![c]!)}`"
                 :class="[
-                  'heat-cell grid place-items-center rounded-[5px] text-[10px] font-semibold tabular-nums outline-offset-1 transition-transform duration-100 hover:scale-110 focus-visible:scale-110',
+                  'heat-cell grid place-items-center overflow-hidden whitespace-nowrap rounded-[5px] text-[10px] font-semibold tabular-nums outline-offset-1 transition-transform duration-100 hover:scale-110 focus-visible:scale-110',
                   matrix[r]![c] === null && 'heat-empty',
                   clickable && 'cursor-pointer',
                   dark(matrix[r]![c]!) ? 'text-white dark:text-[#1e130b]' : 'text-fg/70',
@@ -131,7 +134,7 @@ const dark = (value: number | null) => value !== null && high.value - low.value 
                 @blur="hover = null"
                 @click="clickable && emit('cell-click', { row, column, value: matrix[r]![c]! })"
               >
-                <template v-if="showValues && matrix[r]![c] !== null">{{ text(matrix[r]![c]!) }}</template>
+                <template v-if="showValues && matrix[r]![c] !== null">{{ cellFormat ? cellFormat(matrix[r]![c]!) : text(matrix[r]![c]!) }}</template>
               </component>
             </td>
           </tr>
