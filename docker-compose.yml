@@ -9,7 +9,7 @@ x-app: &app
   env_file: .env
   environment:
     DJANGO_SETTINGS_MODULE: config.settings.prod
-    DATABASE_URL: postgres://trello:trello@db:5432/trello
+    DATABASE_URL: postgres://trello:${POSTGRES_PASSWORD:-trello}@db:5432/trello
     REDIS_URL: redis://redis:6379/0
     CELERY_BROKER_URL: redis://redis:6379/1
     BOT_FSM_REDIS_URL: redis://redis:6379/2
@@ -29,7 +29,7 @@ services:
     environment:
       POSTGRES_DB: trello
       POSTGRES_USER: trello
-      POSTGRES_PASSWORD: trello
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-trello}
     ports:
       - "127.0.0.1:25432:5432"
     volumes:
@@ -56,9 +56,15 @@ services:
 
   backend:
     <<: *app
-    command: sh -c "python manage.py migrate --noinput && gunicorn config.wsgi --bind 0.0.0.0:8000 --workers 3"
+    command: sh -c "python manage.py migrate --noinput && gunicorn config.wsgi --bind 0.0.0.0:8000 --workers 3 --access-logfile -"
     ports:
       - "127.0.0.1:28000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/')"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
 
   worker:
     <<: *app

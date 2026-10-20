@@ -5,7 +5,7 @@ MAKEMESSAGES := PYTHONPATH=backend DJANGO_SETTINGS_MODULE=config.settings.dev uv
 	makemessages -l uz -l ru -i miniapp -i node_modules -i tests -i staticfiles -i media \
 	--add-location=file --no-obsolete
 
-.PHONY: help up down install migrate makemigrations superuser shell demo run worker beat bot app app-build api-types messages stack stack-down test lint fmt check
+.PHONY: help up down install migrate makemigrations superuser shell demo run worker beat bot app app-build api-types messages stack stack-down test lint fmt check prod-up prod-logs prod-manage prod-backup
 
 help: ## Show this help
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -60,6 +60,20 @@ app-build: ## Build the mini app into miniapp/dist
 api-types: ## Regenerate the mini app's API types from the backend schema
 	$(MANAGE) spectacular --file miniapp/src/api/openapi.yaml
 	cd miniapp && npm run api:types
+
+PROD := docker compose -f docker-compose.yml -f docker-compose.prod.yml --profile app
+
+prod-up: ## Production: build and start everything behind HTTPS (needs DOMAIN in .env)
+	$(PROD) up -d --build
+
+prod-logs: ## Production: follow the logs
+	$(PROD) logs -f --tail=100
+
+prod-manage: ## Production: run a manage.py command, e.g. make prod-manage cmd=createsuperuser
+	$(PROD) exec backend python manage.py $(cmd)
+
+prod-backup: ## Production: dump the database to ./backups now
+	$(PROD) exec backup sh -c 'pg_dump --no-owner | gzip > /backups/trello-$$(date +%F-%H%M).sql.gz'
 
 stack: ## Whole stack in Docker (backend, worker, beat, bot)
 	docker compose --profile app up -d --build

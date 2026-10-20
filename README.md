@@ -12,7 +12,8 @@ Python 3.14 · Django 6.1 + DRF · PostgreSQL 18 · Redis 8 · Celery · aiogram
 backend/        Django project: config/ (settings, urls, celery) and apps/
 employee_bot/   Employee bot (boundless-aiogram structure); uses the backend's Django models directly
 miniapp/        Employee mini app: React + TypeScript, served by Django at /app/ in production
-docs/           Plan
+deploy/         Caddyfile for production (HTTPS and uploads)
+docs/           Plan and deployment guide
 ```
 
 ## Quick start
@@ -32,7 +33,7 @@ make app               # mini app at http://127.0.0.1:28173/app/, separate termi
 
 `make demo` builds a Demo Shop company with people and tasks in every state, so the bot and the app have something to show.
 
-To run the whole stack in Docker (backend and mini app on :28000, worker, beat, bot), use `make stack`.
+To run the whole stack in Docker (backend and mini app on :28000, worker, beat, bot), use `make stack`. To put it on a server behind HTTPS, follow [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## The mini app
 
