@@ -38,12 +38,13 @@ POST_GAP = timedelta(seconds=3)
     retry_backoff=True,
     max_retries=5,
 )
-def post_to_group(self, group_id, text, reply_markup=None, photo=None):
+def post_to_group(self, group_id, text, reply_markup=None, photo=None, photo_storage="default"):
     group = TelegramGroup.objects.filter(pk=group_id, is_active=True).first()
     if group is None:
         return
+    extra = {"photo_storage": photo_storage} if photo_storage != "default" else {}
     try:
-        telegram.send_message(BotName.EMPLOYEE, group.chat_id, text, reply_markup, photo)
+        telegram.send_message(BotName.EMPLOYEE, group.chat_id, text, reply_markup, photo, **extra)
     except TelegramRetryAfter as exc:
         raise self.retry(countdown=exc.retry_after) from exc
     except TelegramMigrateToChat as exc:
@@ -56,8 +57,11 @@ def post_to_group(self, group_id, text, reply_markup=None, photo=None):
         logger.warning("Post to group %s refused: %s", group.chat_id, exc)
 
 
-def queue_post(group_id: int, message: BotMessage, photo: str | None = None) -> None:
-    """Queue a post, spaced after the group's earlier ones so a burst doesn't hit the limit."""
+def queue_post(
+    group_id: int, message: BotMessage, photo: str | None = None, photo_storage: str = "default"
+) -> None:
+    """Queue a post, spaced after the group's earlier ones so a burst doesn't hit the limit.
+    `photo` is a path in `photo_storage` ("default" public media, or "private")."""
     text, markup = message
     now = timezone.now()
     with transaction.atomic():
@@ -71,10 +75,10 @@ def queue_post(group_id: int, message: BotMessage, photo: str | None = None) -> 
             return
         slot = max(now, group.next_post_at or now)
         TelegramGroup.objects.filter(pk=group_id).update(next_post_at=slot + POST_GAP)
-    post_to_group.apply_async(
-        (group_id, text, serialize_markup(markup), photo),
-        countdown=(slot - now).total_seconds(),
-    )
+    args = (group_id, text, serialize_markup(markup), photo)
+    if photo_storage != "default":
+        args = (*args, photo_storage)
+    post_to_group.apply_async(args, countdown=(slot - now).total_seconds())
 
 
 def _post(

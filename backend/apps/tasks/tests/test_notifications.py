@@ -1,11 +1,10 @@
 import pytest
-from django.core.files.base import ContentFile
 
 from apps.tasks import services
 from apps.tasks.callbacks import TaskAction, TaskCallback
 from apps.tasks.models import Proof, Task
 from apps.tasks.notifications import send_task_assigned, send_task_completed, send_task_reviewed
-from apps.tasks.tests.factories import TaskFactory
+from apps.tasks.tests.factories import TaskFactory, jpeg
 
 pytestmark = pytest.mark.django_db
 
@@ -41,9 +40,7 @@ def test_finished_work_goes_to_the_reviewer_with_the_photo(manager, worker, sent
     task = TaskFactory(
         assignee=worker, created_by=manager, proof=Proof.PHOTO, needs_confirmation=True
     )
-    task = services.complete_task(
-        task, by=worker, proof_photo=ContentFile(b"jpeg", name="proof.jpg")
-    )
+    task = services.complete_task(task, by=worker, proof_photo=jpeg("proof.jpg"))
 
     send_task_completed(task.pk)
 

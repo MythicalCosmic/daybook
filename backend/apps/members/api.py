@@ -1,21 +1,40 @@
 from drf_spectacular.utils import extend_schema, extend_schema_field
 from rest_framework import serializers
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.generics import ListAPIView
-from rest_framework.permissions import BasePermission, IsAuthenticated
+from rest_framework.permissions import SAFE_METHODS, BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.companies.models import Company
-from apps.members import services
+from apps.companies.models import Branch, Company, Feature
+from apps.members import bot_messages, scope, services
 from apps.members.models import Membership, Position
 from apps.members.permissions import Perm
 
 
 class CompanySerializer(serializers.ModelSerializer):
+    features = serializers.ListField(
+        child=serializers.ChoiceField(Feature.choices), help_text="Modules switched on."
+    )
+
     class Meta:
         model = Company
-        fields = ("id", "name", "timezone")
+        fields = (
+            "id",
+            "name",
+            "timezone",
+            "features",
+            "owner_sees_personal_tasks",
+            "base_currency",
+            "team_directory_phones",
+        )
+        read_only_fields = fields
+
+
+class BranchBriefSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Branch
+        fields = ("id", "name")
         read_only_fields = fields
 
 
@@ -35,6 +54,11 @@ class MembershipSerializer(serializers.ModelSerializer):
     rejoin_available_at = serializers.DateTimeField(
         allow_null=True, help_text="When a rejected person can ask again."
     )
+    home_branch = BranchBriefSerializer(allow_null=True, help_text="Where they work.")
+    branch_ids = serializers.SerializerMethodField()
+    suspended_until = serializers.DateField(
+        allow_null=True, help_text="While suspended: the last day of it; null: until reinstated."
+    )
 
     class Meta:
         model = Membership
@@ -51,12 +75,20 @@ class MembershipSerializer(serializers.ModelSerializer):
             "onboarded_at",
             "decided_at",
             "rejoin_available_at",
+            "home_branch",
+            "branch_ids",
+            "suspended_until",
         )
         read_only_fields = fields
 
     @extend_schema_field(serializers.ListField(child=serializers.ChoiceField(Perm.choices)))
     def get_permissions(self, membership: Membership) -> list[str]:
         return [perm.value for perm in Perm if membership.has_perm(perm)]
+
+    @extend_schema_field(serializers.ListField(child=serializers.IntegerField()))
+    def get_branch_ids(self, membership: Membership) -> list[int]:
+        """The branches they work in (what they may see is decided by their role too)."""
+        return sorted(branch.pk for branch in membership.branches.all())
 
 
 class OnboardingSerializer(serializers.Serializer):
@@ -69,8 +101,30 @@ class OnboardingSerializer(serializers.Serializer):
     )
 
 
+class MemberSuspended(PermissionDenied):
+    """403 {"code": "suspended", "detail": …, "until": "2026-10-31" | null}: the mini app shows
+    its "Access paused" screen."""
+
+    default_code = "suspended"
+
+    def __init__(self, membership: Membership):
+        until = membership.suspended_until
+        text = bot_messages.paused_text(membership)
+        super().__init__(text)
+        # The body as is: DRF would turn a missing date into the string "None".
+        self.detail = {
+            "code": "suspended",
+            "detail": text,
+            "until": until.isoformat() if until else None,
+        }
+
+
 class IsCompanyMember(BasePermission):
-    """Approved members of the URL's company get in; to anyone else the company doesn't exist."""
+    """Approved members of the URL's company get in; to anyone else the company doesn't exist.
+
+    A suspended member gets 403 {"code": "suspended"} instead, except on views that set
+    `allow_suspended = True` (their own profile, wallet and documents), and there only to read.
+    """
 
     statuses = (Membership.Status.APPROVED,)
 
@@ -81,12 +135,16 @@ class IsCompanyMember(BasePermission):
                 company_id=view.kwargs["company_id"],
                 company__is_active=True,
                 user=request.user,
-                status__in=self.statuses,
+                status__in=(*self.statuses, Membership.Status.SUSPENDED),
             )
             .first()
         )
         if membership is None:
             raise NotFound
+        if membership.status == Membership.Status.SUSPENDED:
+            allowed = getattr(view, "allow_suspended", False) and request.method in SAFE_METHODS
+            if not allowed:
+                raise MemberSuspended(membership)
         view.membership = membership
         return True
 
@@ -125,19 +183,19 @@ class CanSeeMembers(BasePermission):
 
 
 class MemberListView(ListAPIView):
-    """Registered members of the company, e.g. to pick who a task is for."""
+    """Registered members of the company, e.g. to pick who a task is for: everyone with
+    branches.all, otherwise the people sharing one of the caller's branches (§2.6)."""
 
     permission_classes = (IsAuthenticated, IsCompanyMember, CanSeeMembers)
     serializer_class = MemberBriefSerializer
     pagination_class = None
 
     def get_queryset(self):
-        return (
-            Membership.objects.for_company(self.membership.company)
-            .filter(status=Membership.Status.APPROVED, onboarded_at__isnull=False)
-            .select_related("user", "position")
-            .order_by("first_name", "last_name")
+        people = Membership.objects.for_company(self.membership.company).filter(
+            status=Membership.Status.APPROVED, onboarded_at__isnull=False
         )
+        people = scope.restrict(people, scope.branch_ids(self.membership), field="branches")
+        return people.select_related("user", "position").order_by("first_name", "last_name")
 
 
 class PositionListView(ListAPIView):

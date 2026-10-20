@@ -1,8 +1,7 @@
 from apps.members.models import Membership
-from apps.members.permissions import Perm
-from apps.members.queries import members_with_perm
 from apps.reminders.models import ReminderPolicy
 from apps.tasks.models import Task, TaskTemplate
+from apps.tasks.queries import confirmers
 
 
 def default_policy(company_id: int) -> ReminderPolicy:
@@ -24,7 +23,7 @@ def policy_for(task: Task | TaskTemplate) -> ReminderPolicy:
 
 def escalation_recipients(task: Task) -> list[Membership]:
     """Who hears that a task is late: the named contact, else whoever assigned it, else
-    everyone allowed to confirm tasks."""
+    everyone allowed to confirm tasks who may see it."""
     approved = Membership.Status.APPROVED
     if task.escalate_to_id and task.escalate_to.status == approved:
         return [task.escalate_to]
@@ -36,8 +35,5 @@ def escalation_recipients(task: Task) -> list[Membership]:
         and creator.status == approved
     ):
         return [creator]
-    return list(
-        members_with_perm(task.company, Perm.TASKS_CONFIRM)
-        .exclude(pk=task.assignee_id)
-        .select_related("user")
-    )
+    # Only confirmers whose branch scope covers the task (docs/PLAN-OWNER.md §2.6).
+    return confirmers(task)

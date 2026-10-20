@@ -1,5 +1,6 @@
 import pytest
 from rest_framework.test import APIClient
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.accounts.models import User
@@ -21,7 +22,7 @@ def authenticate(api: APIClient, user: User) -> APIClient:
     return api
 
 
-def test_init_data_is_exchanged_for_tokens(api, settings):
+def test_init_data_is_exchanged_for_an_access_token_only(api, settings):
     settings.EMPLOYEE_BOT_TOKEN = BOT_TOKEN
 
     response = api.post(
@@ -29,13 +30,33 @@ def test_init_data_is_exchanged_for_tokens(api, settings):
     )
 
     assert response.status_code == 200
-    assert {"access", "refresh"} <= response.data.keys()
+    assert set(response.data) == {"access"}
+    assert not OutstandingToken.objects.exists()  # no blacklist row per app launch
     user = User.objects.get(telegram_id=42)
     assert user.telegram_username == "ali"
 
-    me = authenticate(APIClient(), user).get("/api/v1/me/")
-    assert me.status_code == 200
-    assert me.data["telegram_id"] == 42
+    me = APIClient()
+    me.credentials(HTTP_AUTHORIZATION=f"Bearer {response.data['access']}")
+    response = me.get("/api/v1/me/")
+    assert response.status_code == 200
+    assert response.data["telegram_id"] == 42
+
+
+def test_the_refresh_route_is_gone(api):
+    assert api.post("/api/v1/auth/refresh/", {"refresh": "x"}, format="json").status_code == 404
+
+
+def test_init_data_from_the_owner_bot_does_not_open_the_mini_app(api, settings):
+    settings.EMPLOYEE_BOT_TOKEN = BOT_TOKEN
+    settings.OWNER_BOT_TOKEN = "777:OWNER-BOT"
+
+    response = api.post(
+        "/api/v1/auth/telegram/",
+        {"init_data": signed_init_data(token="777:OWNER-BOT")},
+        format="json",
+    )
+
+    assert response.status_code == 401
 
 
 def test_bad_init_data_gets_401(api, settings):

@@ -1,6 +1,5 @@
 import uuid
 from datetime import date, datetime
-from pathlib import Path
 
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
@@ -99,8 +98,9 @@ class TaskTemplate(TenantModel):
 
 
 def proof_upload_to(task: Task, filename: str) -> str:
-    # Unguessable names: proof photos are company-internal.
-    return f"proofs/{task.company_id}/{uuid.uuid4().hex}{Path(filename).suffix.lower()}"
+    """Unguessable names, because proof photos are company-internal. The client's file name is
+    never used: every proof is re-encoded as a JPEG (apps.core.uploads.sanitize_image)."""
+    return f"proofs/{task.company_id}/{uuid.uuid4().hex}.jpg"
 
 
 class Task(TenantModel):

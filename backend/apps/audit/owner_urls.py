@@ -4,4 +4,10 @@ An optional `root_urlpatterns` list is mounted at `/api/v1/owner/` instead, for 
 owner endpoints outside a company.
 """
 
-urlpatterns = []
+from django.urls import path
+
+from apps.audit.owner_api import RecordHistoryView
+
+urlpatterns = [
+    path("audit/records/", RecordHistoryView.as_view(), name="audit-records"),
+]

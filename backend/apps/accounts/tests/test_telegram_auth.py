@@ -48,3 +48,43 @@ def test_login_is_refused_without_a_bot_token(settings):
 
     with pytest.raises(InvalidInitData, match="configured"):
         validate_init_data(signed_init_data())
+
+
+def test_owner_init_data_is_checked_against_the_owner_bot(settings):
+    settings.OWNER_BOT_TOKEN = "777:OWNER-BOT"
+    owner_data = signed_init_data(user_id=7, token="777:OWNER-BOT")
+
+    assert validate_init_data(owner_data, bot="owner").id == 7
+    with pytest.raises(InvalidInitData):
+        validate_init_data(owner_data)  # the employee bot didn't sign it
+    with pytest.raises(InvalidInitData):
+        validate_init_data(signed_init_data(), bot="owner")
+
+
+def test_owner_sign_in_allows_an_hour_by_default(settings):
+    settings.OWNER_BOT_TOKEN = BOT_TOKEN
+    two_hours_ago = int(time.time()) - 2 * 60 * 60
+
+    with pytest.raises(InvalidInitData, match="expired"):
+        validate_init_data(signed_init_data(auth_date=two_hours_ago), bot="owner")
+    assert validate_init_data(signed_init_data(auth_date=two_hours_ago)).id == 42  # employee: a day
+
+
+def test_max_age_can_be_given(settings):
+    ten_minutes_ago = int(time.time()) - 10 * 60
+
+    with pytest.raises(InvalidInitData, match="expired"):
+        validate_init_data(signed_init_data(auth_date=ten_minutes_ago), max_age=60)
+    assert validate_init_data(signed_init_data(auth_date=ten_minutes_ago), max_age=3600)
+
+
+def test_init_data_from_the_future_is_rejected():
+    tomorrow = int(time.time()) + 24 * 60 * 60
+
+    with pytest.raises(InvalidInitData, match="future"):
+        validate_init_data(signed_init_data(auth_date=tomorrow))
+
+
+def test_unknown_bots_are_a_programming_error():
+    with pytest.raises(ValueError):
+        validate_init_data(signed_init_data(), bot="other")

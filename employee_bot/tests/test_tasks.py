@@ -7,9 +7,8 @@ from django.utils import timezone
 
 from apps.tasks.callbacks import DueCallback, DuePreset, TaskAction, TaskCallback
 from apps.tasks.models import Proof, Task
-from apps.tasks.tests.factories import TaskFactory
-from tests import updates
-from tests.mocked_bot import FILE_CONTENT
+from apps.tasks.tests.factories import TaskFactory, jpeg_bytes
+from tests import mocked_bot, updates
 
 pytestmark = pytest.mark.django_db(transaction=True)
 
@@ -70,7 +69,9 @@ async def test_open_start_and_finish_a_task(dp, bot, company, member):
     assert "Status: Done" in edits(bot)[-1].text
 
 
-async def test_photo_proof_is_collected_before_completing(dp, bot, company, member):
+async def test_photo_proof_is_collected_before_completing(dp, bot, company, member, monkeypatch):
+    # Proof photos are decoded and re-encoded, so the download must be a real picture.
+    monkeypatch.setattr(mocked_bot, "FILE_CONTENT", jpeg_bytes(exif_maker="Phone maker"))
     worker = await member.aregistered(company)
     task = await make_task(assignee=worker, title="Front shelf", proof=Proof.PHOTO)
     tg = updates.tg_user(worker.user.telegram_id)
@@ -86,7 +87,10 @@ async def test_photo_proof_is_collected_before_completing(dp, bot, company, memb
     task = await reload(task)
     assert task.status == Task.Status.DONE
     assert task.proof_text == "Shelf after restock"
-    assert await sync_to_async(task.proof_photo.read)() == FILE_CONTENT
+    stored = await sync_to_async(task.proof_photo.read)()
+    assert stored.startswith(b"\xff\xd8")  # a JPEG, re-encoded
+    assert b"Phone maker" not in stored
+    assert task.proof_photo.name.endswith(".jpg")
 
 
 async def test_text_report_completes_a_report_task(dp, bot, company, member):

@@ -43,7 +43,7 @@ def test_a_branch_is_open_every_day_until_told_otherwise(company):
     assert branch.open_weekdays == [0, 1, 2, 3, 4, 5, 6]
     assert branch.geofence_m == 150
     assert branch.is_active
-    assert list(company.branches.all()) == [branch]
+    assert set(company.branches.all()) == {company.branches.get(name=company.name), branch}
     assert str(branch) == "Chilonzor"
 
 

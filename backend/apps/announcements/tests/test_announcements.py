@@ -129,6 +129,23 @@ def test_people_who_havent_read_it_are_reminded_then_the_author_hears(
     assert "Vali" in summary["text"]
 
 
+def test_suspended_people_get_no_reminder_and_a_suspended_author_no_summary(
+    company, member, manager, sent_messages, django_capture_on_commit_callbacks
+):
+    vali = member.registered(company, first_name="Vali")
+    announcement = publish(manager, capture=django_capture_on_commit_callbacks)
+    Membership.objects.filter(pk__in=[vali.pk, manager.pk]).update(
+        status=Membership.Status.SUSPENDED
+    )
+    sent_messages.clear()
+    sent_at = announcement.created_at
+
+    follow_up(sent_at + timedelta(hours=3, minutes=5))
+    follow_up(sent_at + timedelta(days=1, minutes=5))
+
+    assert sent_messages == []
+
+
 def test_old_or_fully_read_announcements_are_left_alone(
     company, member, manager, sent_messages, django_capture_on_commit_callbacks
 ):

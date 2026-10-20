@@ -13,7 +13,12 @@ from apps.members.models import Membership
 
 
 class MemberAccessMiddleware(BaseMiddleware):
-    """Hard gate: only approved members of an active company get past this point."""
+    """Hard gate: only approved members of an active company get past this point.
+
+    Everyone else gets the answer for their status: how to join, "waiting for approval",
+    "declined", and for a suspended member "Your access is paused until …" on every message
+    and every button. Blocked people get silence.
+    """
 
     async def __call__(
         self,
@@ -36,7 +41,7 @@ class MemberAccessMiddleware(BaseMiddleware):
                 text, markup = reply
                 await event.answer(text, reply_markup=markup)
             elif isinstance(event, CallbackQuery):
-                await event.answer(_("You don't have access to this."), show_alert=True)
+                await event.answer(await _alert(membership), show_alert=True)
         return None
 
 
@@ -44,3 +49,10 @@ class MemberAccessMiddleware(BaseMiddleware):
 def _resolve(user: User) -> tuple[Membership | None, bot_messages.BotMessage | None]:
     membership = services.current_membership(user)
     return membership, bot_messages.status(membership)
+
+
+@sync_to_async
+def _alert(membership: Membership | None) -> str:
+    if membership is not None and membership.status == Membership.Status.SUSPENDED:
+        return bot_messages.paused_text(membership)
+    return _("You don't have access to this.")

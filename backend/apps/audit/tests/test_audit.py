@@ -1,4 +1,5 @@
 from datetime import timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
 from django.core.exceptions import PermissionDenied
@@ -60,11 +61,14 @@ def test_join_decisions_are_logged(company, manager, owner):
     members.approve(approved, by=manager.user)
     members.reject(rejected, by=manager.user)
     members.block(approved, by=owner.user)  # blocking takes members.manage
+    members.block(rejected, by=owner.user)  # never a member: no last day
 
+    last_day = timezone.localdate(timezone=ZoneInfo(company.timezone)).isoformat()
     assert entries() == [
         (Action.MEMBER_APPROVED, manager.user_id, "Aziz", {}),
         (Action.MEMBER_REJECTED, manager.user_id, "Bekzod", {}),
-        (Action.MEMBER_BLOCKED, owner.user_id, "Aziz", {}),
+        (Action.MEMBER_BLOCKED, owner.user_id, "Aziz", {"terminated_on": last_day}),
+        (Action.MEMBER_BLOCKED, owner.user_id, "Bekzod", {}),
     ]
     assert {entry.company_id for entry in AuditLog.objects.all()} == {company.pk}
 

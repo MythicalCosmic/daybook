@@ -1,16 +1,18 @@
+import re
 from datetime import timedelta
 
 import pytest
 from django.core.exceptions import PermissionDenied
 from django.core.files.base import ContentFile
 from django.utils import timezone
+from PIL import Image
 
 from apps.core.exceptions import DomainError
 from apps.members.models import Membership
 from apps.tasks import rules, services
 from apps.tasks.models import Proof, Task
 from apps.tasks.rules import Action
-from apps.tasks.tests.factories import TaskFactory
+from apps.tasks.tests.factories import TaskFactory, jpeg
 
 pytestmark = pytest.mark.django_db
 
@@ -20,7 +22,7 @@ def in_hours(hours: int):
 
 
 def photo() -> ContentFile:
-    return ContentFile(b"jpeg-bytes", name="shelf.jpg")
+    return jpeg("shelf.png")
 
 
 @pytest.fixture
@@ -147,10 +149,20 @@ def test_proof_photo_is_stored_under_an_unguessable_name(worker):
 
     task = services.complete_task(task, by=worker, proof_photo=photo())
 
-    assert task.proof_photo.name.startswith(f"proofs/{worker.company_id}/")
-    assert task.proof_photo.name.endswith(".jpg")
-    assert "shelf" not in task.proof_photo.name
-    assert task.proof_photo.read() == b"jpeg-bytes"
+    assert re.fullmatch(rf"proofs/{worker.company_id}/[0-9a-f]{{32}}\.jpg", task.proof_photo.name)
+    assert Image.open(task.proof_photo).format == "JPEG"
+
+
+def test_a_proof_that_is_not_a_picture_is_refused_by_the_service(worker):
+    task = TaskFactory(assignee=worker, proof=Proof.PHOTO)
+    svg = ContentFile(b'<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"/>', "a.jpg")
+
+    with pytest.raises(DomainError, match="picture"):
+        services.complete_task(task, by=worker, proof_photo=svg)
+
+    task.refresh_from_db()
+    assert task.status == Task.Status.TODO
+    assert not task.proof_photo
 
 
 def test_finished_task_cannot_be_completed_again(worker):

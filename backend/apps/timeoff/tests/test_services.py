@@ -142,6 +142,18 @@ def test_rejecting_tells_the_person(
     assert "declined" in message["text"]
 
 
+def test_a_suspended_person_is_not_messaged_about_the_decision(
+    worker, manager, today, sent_messages, django_capture_on_commit_callbacks
+):
+    time_off = services.request_time_off(worker, first_day=today, last_day=today)
+    Membership.objects.filter(pk=worker.pk).update(status=Membership.Status.SUSPENDED)
+
+    with django_capture_on_commit_callbacks(execute=True):
+        services.decide(time_off.pk, True, by=manager.user)
+
+    assert to(sent_messages, worker) == []
+
+
 def test_only_approvers_decide_and_only_once(company, member, worker, manager, today):
     time_off = services.request_time_off(worker, first_day=today, last_day=today)
 
