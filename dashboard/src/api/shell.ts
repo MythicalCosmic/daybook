@@ -27,8 +27,11 @@ export const shellApi = {
   search: (companyId: number, q: string, signal?: AbortSignal) =>
     http.get<SearchResponse>(ownerPath(companyId, "search/"), { q }, { signal }),
   queue: (companyId: number, kind?: string) => http.get<QueueResponse>(ownerPath(companyId, "queue/"), { kind }),
-  runQueueAction: (action: QueueAction, reason?: string) =>
-    request<unknown>(action.endpoint, { method: action.method, json: reason ? { reason } : {} }),
+  runQueueAction: (companyId: number, action: QueueAction, reason?: string) =>
+    request<unknown>(ownerPath(companyId, action.endpoint), {
+      method: action.method,
+      json: { ...(action.body ?? {}), ...(reason ? { reason } : {}) },
+    }),
 
   inbox: (companyId: number, tab: "unread" | "all", page = 1) =>
     http.get<Page<Notification>>(ownerPath(companyId, "inbox/"), { tab, page }),

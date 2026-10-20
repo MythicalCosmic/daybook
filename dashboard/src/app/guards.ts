@@ -6,7 +6,8 @@
  */
 import type { Router } from "vue-router";
 
-import { findModule } from "@/core/modules";
+import { findModule, modules } from "@/core/modules";
+import { buildNav } from "@/core/nav";
 import { ensureModuleMessages } from "@/i18n";
 import { telegram } from "@/shell/TelegramBridge";
 import { useCompanyStore } from "@/stores/company";
@@ -24,13 +25,15 @@ export function safeNext(value: unknown): string {
 export function installGuards(router: Router): void {
   router.beforeEach(async (to) => {
     const session = useSessionStore();
-    if (session.status !== "ready") await session.boot(telegram().initData);
+    if (session.status !== "ready") await session.boot();
 
     if (to.meta.public) {
       if ((to.name === "login" || to.name === "dev-login") && session.signedIn) return safeNext(to.query.next);
       return true;
     }
     if (!session.signedIn) {
+      // Inside Telegram there is no login page: initData is the only way in (plan §6.5).
+      if (telegram().inside) return { name: "session-ended" };
       return { path: "/login", query: to.fullPath === "/" ? {} : { next: to.fullPath } };
     }
 
@@ -44,6 +47,10 @@ export function installGuards(router: Router): void {
         return { path: pathInCompany(router, to, fallback), replace: true };
       }
       company.setCurrent(id);
+      if (to.name === "company-home") {
+        const first = buildNav(modules, company.current)[0]?.modules[0];
+        if (first && first.path !== to.path) return { path: first.path, replace: true };
+      }
     } else if (to.name === "root") {
       const id = company.defaultCompanyId();
       return id === null ? { name: "welcome", replace: true } : { path: `/c/${id}`, replace: true };

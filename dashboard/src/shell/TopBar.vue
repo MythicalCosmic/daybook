@@ -16,7 +16,6 @@ import DropdownMenu, { type MenuEntry } from "@/components/DropdownMenu.vue";
 import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import IconButton from "@/components/IconButton.vue";
 import KbdKey from "@/components/KbdKey.vue";
-import UiBadge from "@/components/UiBadge.vue";
 import UiTooltip from "@/components/UiTooltip.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { LANGUAGES } from "@/api/types";
@@ -245,7 +244,6 @@ const languageMenu = computed<MenuEntry[]>(() => [
             <p class="truncate text-base font-semibold text-fg">{{ user.full_name }}</p>
             <p class="truncate text-xs text-muted">{{ user.username ? `@${user.username}` : `#${user.telegram_id}` }}</p>
           </div>
-          <UiBadge v-if="session.me?.is_platform_admin" tone="info">{{ t("shell.user.platformAdmin") }}</UiBadge>
         </div>
         <div class="-mx-1 mb-1 h-px bg-line" />
       </template>

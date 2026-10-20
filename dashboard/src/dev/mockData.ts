@@ -15,6 +15,8 @@ export interface MockCompany extends Omit<Company, "role"> {
   roleName: Localized;
 }
 
+const DEMO_FEATURES: Company["features"] = ["finance", "sales", "stock", "attendance", "hr", "payroll", "ai", "projects", "knowledge", "calendar", "crm"];
+
 export const companies: MockCompany[] = [
   {
     id: 1,
@@ -22,12 +24,14 @@ export const companies: MockCompany[] = [
     logo: null,
     timezone: "Asia/Tashkent",
     base_currency: "UZS",
-    language: "uz",
-    features: ["finance", "sales", "stock", "attendance", "hr", "payroll", "ai", "projects", "knowledge", "calendar", "crm"],
+    features: DEMO_FEATURES,
     membership_id: 11,
     roleName: OWNER_ROLE,
+    is_owner: true,
     permissions: [...PERMS],
     branch_scope: null,
+    home_branch: 1,
+    setup_completed: true,
     branches: [
       { id: 1, name: "Chilonzor", code: "CHL" },
       { id: 2, name: "Yunusobod", code: "YUN" },
@@ -38,16 +42,18 @@ export const companies: MockCompany[] = [
   },
   {
     id: 2,
-    name: "Bahor Café",
+    name: "Demo Café",
     logo: null,
     timezone: "Asia/Tashkent",
     base_currency: "UZS",
-    language: "uz",
     features: ["sales", "attendance", "hr"],
     membership_id: 21,
     roleName: OWNER_ROLE,
+    is_owner: true,
     permissions: [...PERMS],
     branch_scope: null,
+    home_branch: 4,
+    setup_completed: false,
     branches: [
       { id: 4, name: "Mirobod", code: "MRB" },
       { id: 5, name: "Shayxontohur", code: "SHX" },
@@ -69,10 +75,9 @@ export function meFor(language: Language): Me {
       photo_url: null,
     },
     language,
-    is_platform_admin: false,
     companies: companies.map(({ roleName, ...company }) => ({
       ...company,
-      role: { id: company.id * 10, name: roleName[language], is_owner: true },
+      role: { id: company.id * 10, name: roleName[language] },
     })),
   };
 }
@@ -137,8 +142,8 @@ export const queueItems: Record<number, MockQueueItem[]> = {
       url: "sales/shifts/1042",
       actor: { id: 31, name: "Aziz Karimov", photo_url: null },
       actions: [
-        { key: "verify", label: L("Verify", "Подтвердить", "Tasdiqlash"), style: "primary", method: "POST", endpoint: "/api/v1/owner/companies/1/sales/shifts/1042/verify/", needs_reason: false },
-        { key: "dispute", label: L("Dispute", "Оспорить", "E’tiroz bildirish"), style: "danger", method: "POST", endpoint: "/api/v1/owner/companies/1/sales/shifts/1042/dispute/", needs_reason: true },
+        { key: "verify", label: L("Verify", "Подтвердить", "Tasdiqlash"), style: "primary", method: "POST", endpoint: "sales/shifts/1042/verify/", needs_reason: false },
+        { key: "dispute", label: L("Dispute", "Оспорить", "E’tiroz bildirish"), style: "danger", method: "POST", endpoint: "sales/shifts/1042/dispute/", needs_reason: true },
       ],
     },
     {
@@ -149,7 +154,7 @@ export const queueItems: Record<number, MockQueueItem[]> = {
       created_at: minutesAgo(38),
       url: "people/requests",
       actor: { id: 41, name: "Sardor Rahimov", photo_url: null },
-      actions: [approve("/api/v1/owner/companies/1/join-requests/41/approve/"), reject("/api/v1/owner/companies/1/join-requests/41/reject/")],
+      actions: [approve("join-requests/41/approve/"), reject("join-requests/41/reject/")],
     },
     {
       kind: "tasks.review",
@@ -160,8 +165,8 @@ export const queueItems: Record<number, MockQueueItem[]> = {
       url: "tasks?task=345",
       actor: { id: 13, name: "Alisher Valiyev", photo_url: null },
       actions: [
-        { key: "confirm", label: L("Accept", "Принять", "Qabul qilish"), style: "primary", method: "POST", endpoint: "/api/v1/owner/companies/1/tasks/345/confirm/", needs_reason: false },
-        { key: "return", label: L("Send back", "Вернуть", "Qaytarish"), style: "danger", method: "POST", endpoint: "/api/v1/owner/companies/1/tasks/345/return/", needs_reason: true },
+        { key: "confirm", label: L("Accept", "Принять", "Qabul qilish"), style: "primary", method: "POST", endpoint: "tasks/345/confirm/", needs_reason: false },
+        { key: "return", label: L("Send back", "Вернуть", "Qaytarish"), style: "danger", method: "POST", endpoint: "tasks/345/return/", needs_reason: true },
       ],
     },
     {
@@ -173,8 +178,8 @@ export const queueItems: Record<number, MockQueueItem[]> = {
       url: "tasks?task=351",
       actor: { id: 14, name: "Madina Saidova", photo_url: null },
       actions: [
-        { key: "confirm", label: L("Accept", "Принять", "Qabul qilish"), style: "primary", method: "POST", endpoint: "/api/v1/owner/companies/1/tasks/351/confirm/", needs_reason: false },
-        { key: "return", label: L("Send back", "Вернуть", "Qaytarish"), style: "danger", method: "POST", endpoint: "/api/v1/owner/companies/1/tasks/351/return/", needs_reason: true },
+        { key: "confirm", label: L("Accept", "Принять", "Qabul qilish"), style: "primary", method: "POST", endpoint: "tasks/351/confirm/", needs_reason: false },
+        { key: "return", label: L("Send back", "Вернуть", "Qaytarish"), style: "danger", method: "POST", endpoint: "tasks/351/return/", needs_reason: true },
       ],
     },
     {
@@ -185,7 +190,7 @@ export const queueItems: Record<number, MockQueueItem[]> = {
       created_at: minutesAgo(130),
       url: "finance/claims?claim=88",
       actor: { id: 12, name: "Bekzod Mirzayev", photo_url: null },
-      actions: [approve("/api/v1/owner/companies/1/finance/claims/88/approve/"), reject("/api/v1/owner/companies/1/finance/claims/88/reject/")],
+      actions: [approve("finance/claims/88/approve/"), reject("finance/claims/88/reject/")],
     },
     {
       kind: "timeoff.request",
@@ -195,7 +200,7 @@ export const queueItems: Record<number, MockQueueItem[]> = {
       created_at: minutesAgo(190),
       url: "time-off",
       actor: { id: 14, name: "Madina Saidova", photo_url: null },
-      actions: [approve("/api/v1/owner/companies/1/time-off/19/approve/"), reject("/api/v1/owner/companies/1/time-off/19/reject/")],
+      actions: [approve("time-off/19/approve/"), reject("time-off/19/reject/")],
     },
     {
       kind: "payroll.advances",
@@ -205,7 +210,7 @@ export const queueItems: Record<number, MockQueueItem[]> = {
       created_at: minutesAgo(260),
       url: "payroll/advances",
       actor: { id: 16, name: "Nigora Tursunova", photo_url: null },
-      actions: [approve("/api/v1/owner/companies/1/payroll/advances/7/approve/"), reject("/api/v1/owner/companies/1/payroll/advances/7/reject/")],
+      actions: [approve("payroll/advances/7/approve/"), reject("payroll/advances/7/reject/")],
     },
   ],
   2: [
@@ -217,7 +222,7 @@ export const queueItems: Record<number, MockQueueItem[]> = {
       created_at: minutesAgo(22),
       url: "people/requests",
       actor: { id: 61, name: "Shahzoda Yusupova", photo_url: null },
-      actions: [approve("/api/v1/owner/companies/2/join-requests/61/approve/"), reject("/api/v1/owner/companies/2/join-requests/61/reject/")],
+      actions: [approve("join-requests/61/approve/"), reject("join-requests/61/reject/")],
     },
     {
       kind: "tasks.review",
@@ -228,8 +233,8 @@ export const queueItems: Record<number, MockQueueItem[]> = {
       url: "tasks?task=512",
       actor: { id: 62, name: "Javohir Nazarov", photo_url: null },
       actions: [
-        { key: "confirm", label: L("Accept", "Принять", "Qabul qilish"), style: "primary", method: "POST", endpoint: "/api/v1/owner/companies/2/tasks/512/confirm/", needs_reason: false },
-        { key: "return", label: L("Send back", "Вернуть", "Qaytarish"), style: "danger", method: "POST", endpoint: "/api/v1/owner/companies/2/tasks/512/return/", needs_reason: true },
+        { key: "confirm", label: L("Accept", "Принять", "Qabul qilish"), style: "primary", method: "POST", endpoint: "tasks/512/confirm/", needs_reason: false },
+        { key: "return", label: L("Send back", "Вернуть", "Qaytarish"), style: "danger", method: "POST", endpoint: "tasks/512/return/", needs_reason: true },
       ],
     },
   ],

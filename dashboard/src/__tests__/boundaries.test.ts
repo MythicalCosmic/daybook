@@ -14,6 +14,7 @@ const SRC = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 const MODULE_ALLOWED = ["@/components", "@/lib", "@/api", "@/core", "@/stores", "@/i18n"];
 const COMPONENTS_ALLOWED = ["@/components", "@/lib", "@/api", "@/core", "@/stores", "@/i18n"];
+// Tests anywhere may use the shared fixtures in src/test/.
 
 function walk(dir: string): string[] {
   let out: string[] = [];
@@ -106,14 +107,20 @@ describe("boundaries", () => {
     }
     for (const folder of folders) {
       const root = join(modulesDir, folder);
-      for (const file of walk(root)) problems.push(...violations(file, readFileSync(file, "utf8"), root, MODULE_ALLOWED));
+      // Module tests may also use the shared test fixtures.
+      for (const file of walk(root)) {
+        const allowed = file.includes("__tests__") ? [...MODULE_ALLOWED, "@/test"] : MODULE_ALLOWED;
+        problems.push(...violations(file, readFileSync(file, "utf8"), root, allowed));
+      }
     }
     expect(problems).toEqual([]);
   });
 
   it("the design system doesn't depend on the shell, the app, modules or dev tooling", () => {
     const root = join(SRC, "components");
-    const problems = walk(root).flatMap((file) => violations(file, readFileSync(file, "utf8"), root, COMPONENTS_ALLOWED));
+    const problems = walk(root)
+      .filter((file) => !file.includes("__tests__"))
+      .flatMap((file) => violations(file, readFileSync(file, "utf8"), root, COMPONENTS_ALLOWED));
     expect(problems).toEqual([]);
   });
 

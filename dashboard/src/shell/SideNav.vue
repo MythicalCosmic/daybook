@@ -11,6 +11,7 @@ import { RouterLink, useRoute, useRouter } from "vue-router";
 
 import { prefetchPath } from "@/app/navigation";
 import ConnectionPill from "@/components/ConnectionPill.vue";
+import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import KbdKey from "@/components/KbdKey.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UiBadge from "@/components/UiBadge.vue";
@@ -85,6 +86,8 @@ function prefetch(path: string): void {
     <div :class="['flex h-[var(--topbar-h)] shrink-0 items-center', rail ? 'justify-center px-0 pt-2' : 'px-3 pt-2']">
       <CompanySwitcher :variant="rail ? 'rail' : 'sidebar'" />
     </div>
+
+    <ExtensionSlot name="shell.nav.top" :context="{ rail }" :class="rail ? 'flex justify-center px-2 pt-2' : 'px-3 pt-2'" />
 
     <div ref="scroller" class="scroll-fade-y no-scrollbar min-h-0 flex-1 overflow-y-auto px-3 pb-3 pt-2">
       <div v-if="!ready" class="flex flex-col gap-2.5 px-2 pt-2">

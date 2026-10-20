@@ -25,7 +25,7 @@ const company = useCompanyStore();
         class="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 transition-colors hover:border-line-strong"
       >
         <div class="flex items-center gap-3">
-          <CompanyLogo :name="item.name" :src="item.logo" :size="36" :alert="item.alerts > 0" style="--logo-ring: var(--c-surface)" />
+          <CompanyLogo :name="item.name" :src="item.logo" :size="36" :alert="(item.alerts ?? 0) > 0" style="--logo-ring: var(--c-surface)" />
           <div class="min-w-0 flex-1">
             <p class="truncate text-base font-semibold text-fg">{{ item.name }}</p>
             <p class="text-xs text-muted">{{ item.role.name }}</p>

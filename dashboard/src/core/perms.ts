@@ -1,72 +1,11 @@
 /**
- * Every permission codename a role can grant, mirroring `apps/members/permissions.py` (plan §5 and §13).
- * The backend's registry is the source of truth; `GET /owner/permissions/` returns the same codes with
- * their labels. A test in src/__tests__/registry.test.ts keeps this list free of duplicates and typos.
+ * Permission checks. The codenames themselves live in perms.generated.ts, generated from
+ * `apps/members/permissions.py` (plan §5, §13) by `make perms-ts`; everything else imports them
+ * from here.
  */
-export const PERMS = [
-  // Existing (M0–M7)
-  "members.view",
-  "members.approve",
-  "members.manage",
-  "roles.manage",
-  "positions.manage",
-  "tasks.view_all",
-  "tasks.assign",
-  "tasks.templates",
-  "tasks.confirm",
-  "reminders.configure",
-  "groups.manage",
-  "reports.view",
-  "time_off.approve",
-  "announcements.send",
+import { PERMS, type Perm } from "@/core/perms.generated";
 
-  // Owner console (§5)
-  "dashboard.access",
-  "company.settings",
-  "audit.view",
-  "data.export",
-  "branches.all",
-  "sales.view",
-  "sales.operate",
-  "sales.manage",
-  "stock.manage",
-  "finance.view",
-  "finance.record",
-  "finance.manage",
-  "finance.approve",
-  "finance.claim",
-  "hr.view",
-  "hr.manage",
-  "hr.sensitive",
-  "attendance.view",
-  "attendance.manage",
-  "time_off.manage",
-  "payroll.view",
-  "payroll.propose",
-  "payroll.manage",
-  "payroll.finalize",
-  "payroll.pay",
-  "ai.use",
-  "ai.configure",
-
-  // Owner's additions (§13): projects, people lifecycle, knowledge, CRM
-  "projects.view_all",
-  "projects.manage",
-  "projects.time_view",
-  "hr.discipline",
-  "hr.suspend",
-  "hr.terminate",
-  "org.manage",
-  "assets.manage",
-  "hiring.manage",
-  "reviews.manage",
-  "knowledge.manage",
-  "crm.view",
-  "crm.manage",
-  "invoices.manage",
-] as const;
-
-export type Perm = (typeof PERMS)[number];
+export { PERMS, type Perm };
 
 /** A requirement on a nav item, route or widget: one permission, or any of several. */
 export type PermRequirement = Perm | readonly Perm[];
@@ -82,10 +21,10 @@ export function permArea(perm: Perm): string {
   return perm.slice(0, perm.indexOf("."));
 }
 
-/** What `hasPerm` needs to know about the caller in one company. */
+/** What `hasPerm` needs to know about the caller in one company (a `me.companies` row). */
 export interface PermSubject {
   permissions: readonly string[];
-  role: { is_owner: boolean };
+  is_owner: boolean;
 }
 
 /**
@@ -95,7 +34,7 @@ export interface PermSubject {
 export function hasPerm(subject: PermSubject | null | undefined, required?: PermRequirement): boolean {
   if (!subject) return false;
   if (required === undefined) return true;
-  if (subject.role.is_owner) return true;
+  if (subject.is_owner) return true;
   const list: readonly Perm[] = typeof required === "string" ? [required] : required;
   if (list.length === 0) return true;
   return list.some((perm) => subject.permissions.includes(perm));

@@ -11,6 +11,7 @@ import { ApiError, configureHttp, isApiError } from "@/api/http";
 import { shellApi } from "@/api/shell";
 import { toast } from "@/components/useToast";
 import { currentLanguage, i18n, isLanguage, setLanguage, t } from "@/i18n";
+import { telegram, telegramRelogin } from "@/shell/TelegramBridge";
 import { useSessionStore } from "@/stores/session";
 
 import { installTheme } from "./theme";
@@ -27,6 +28,8 @@ export function errorMessage(error: unknown): string {
   if (error.status >= 500) return t("common.error.server");
   return t("common.error.generic");
 }
+
+let activeClient: QueryClient | null = null;
 
 export function createQueryClient(): QueryClient {
   return new QueryClient({
@@ -48,6 +51,7 @@ export function installProviders(app: App, router: Router): QueryClient {
   app.use(pinia);
   app.use(i18n);
   const queryClient = createQueryClient();
+  activeClient = queryClient;
   app.use(VueQueryPlugin, { queryClient });
 
   const session = useSessionStore();
@@ -55,11 +59,14 @@ export function installProviders(app: App, router: Router): QueryClient {
     getToken: () => session.accessToken,
     setToken: (token) => session.setAccess(token),
     getLanguage: () => currentLanguage(),
+    relogin: telegram().inside ? telegramRelogin : undefined,
     onSessionEnded: () => {
       session.endSession();
       queryClient.clear();
       const current = router.currentRoute.value;
-      if (!current.meta.public) void router.replace({ path: "/login", query: { next: current.fullPath } });
+      if (current.meta.public) return;
+      if (telegram().inside) void router.replace({ name: "session-ended" });
+      else void router.replace({ path: "/login", query: { next: current.fullPath } });
     },
     onError: (error) => {
       toast.error(errorMessage(error), { id: `api-${error.status}-${error.detail ?? ""}` });
@@ -86,6 +93,7 @@ export async function changeLanguage(language: string): Promise<void> {
   setLanguage(language);
   const session = useSessionStore();
   session.setLanguage(language);
+  void activeClient?.invalidateQueries();
   try {
     await shellApi.setLanguage(language);
   } catch {

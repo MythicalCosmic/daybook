@@ -4,8 +4,10 @@ import tailwindcss from "@tailwindcss/vite";
 import vue from "@vitejs/plugin-vue";
 import { defineConfig } from "vitest/config";
 
-const backend = process.env.BACKEND_URL ?? "http://127.0.0.1:28000";
-const port = Number(process.env.DASHBOARD_PORT ?? process.env.PORT ?? 28174);
+// Ports per package come from the environment (plan §2.4, §6.5): DEV_PORT for this server,
+// API_PORT for the Django it proxies to.
+const port = Number(process.env.DEV_PORT ?? 28174);
+const backend = `http://127.0.0.1:${Number(process.env.API_PORT ?? 28000)}`;
 
 /** Libraries that only a few pages need get their own chunks, so the shell never pays for them. */
 const isolated: Array<[name: string, test: RegExp]> = [

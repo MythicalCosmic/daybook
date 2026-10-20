@@ -127,6 +127,18 @@ export function patchQuery(router: Router, patch: Record<string, SerializedValue
   });
 }
 
+/**
+ * Removes a query key (closing a URL-synced drawer). When the open state was pushed onto history
+ * from this same page, going back is the natural close; otherwise the URL is replaced.
+ */
+export function closeQueryKey(router: Router, key: string): void {
+  const current = router.currentRoute.value;
+  const target = { path: current.path, query: applyQueryPatch(current.query, { [key]: undefined }), hash: current.hash };
+  const back = typeof window !== "undefined" ? (window.history.state as { back?: string | null } | null)?.back : null;
+  if (back && back === router.resolve(target).fullPath) router.back();
+  else void router.replace(target);
+}
+
 export interface RouteStateOptions {
   /** Add a history entry (drawers, so Back closes them). Default: replace. */
   push?: boolean;

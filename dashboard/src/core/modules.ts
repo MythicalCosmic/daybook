@@ -30,7 +30,8 @@ export type Messages = Record<string, string>;
 export type ModuleMessages = Record<"uz" | "ru" | "en", Messages>;
 
 export interface NavItem {
-  id: string;
+  /** Unique within the module (registry.test.ts). */
+  key: string;
   /** i18n key. */
   title: string;
   /** Path relative to `/c/:companyId` ("" is the company index). */
@@ -111,6 +112,9 @@ export interface PersonTab {
 export const EXTENSION_POINTS = [
   "shell.panel",
   "shell.topbar.end",
+  /** Top of the sidebar: package A's "Get started" progress pill (§6.1). */
+  "shell.nav.top",
+  /** Body of the "New company" dialog the company switcher opens (package A, §13.2). */
   "shell.company.create",
   "overview.hero",
   "tasks.toolbar",
@@ -140,13 +144,15 @@ export interface DashboardModule {
   perm?: PermRequirement;
   /** `Company.features` switch. */
   feature?: CompanyFeature;
-  /** Children of `/c/:companyId`, lazy components, `meta: { perm, title }`. */
+  /** Serves `/c/:companyId` itself with a route whose path is "" (only the overview module). */
+  index?: boolean;
+  /** Children of `/c/:companyId`, lazy components, `meta: { perm, feature, title }`. */
   routes: RouteRecordRaw[];
   /** Only the auth module: routes outside the shell that need no session (`/login`). */
   publicRoutes?: RouteRecordRaw[];
   /** Signed-in routes outside any company, rendered in the shell without the sidebar (`/portfolio`). */
   rootRoutes?: RouteRecordRaw[];
-  /** Default: one item to the first route. */
+  /** Default: one item to the first route. `[]` keeps the module out of the sidebar (e.g. "Get started"). */
   nav?: NavItem[];
   /** Key after "g" that jumps to this module ("t" → g t). */
   hotkey?: string;

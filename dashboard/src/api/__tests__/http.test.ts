@@ -59,6 +59,19 @@ describe("request", () => {
     expect(token).toBe("new");
   });
 
+  it("signs in again with initData inside Telegram instead of the cookie", async () => {
+    const relogin = vi.fn(async () => "fresh");
+    configureHttp({ relogin });
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) =>
+      headerOf(init, "Authorization") === "Bearer fresh" ? json({ ok: true }) : json({ detail: "expired" }, 401),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(http.get("/owner/me/")).resolves.toEqual({ ok: true });
+    expect(relogin).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith("/refresh/"))).toBe(false);
+    configureHttp({ relogin: undefined });
+  });
+
   it("ends the session when the refresh is refused", async () => {
     vi.stubGlobal(
       "fetch",

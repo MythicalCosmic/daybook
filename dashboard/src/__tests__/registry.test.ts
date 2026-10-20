@@ -59,10 +59,15 @@ export function moduleProblems(module: DashboardModule, folder?: string): string
     }
   }
   const paths = new Set(routes.map((r) => r.path.replace(/\/:.*$/, "")));
+  const navKeys = new Set<string>();
   for (const item of moduleNavItems(module)) {
-    if (!paths.has(item.to)) say(`nav item "${item.id}" points to "${item.to}", which no route of the module serves`);
-    for (const perm of permsOf(item.perm)) if (!isPerm(perm)) say(`nav item "${item.id}" has unknown permission "${perm}"`);
+    if (navKeys.has(item.key)) say(`nav key "${item.key}" is used twice`);
+    navKeys.add(item.key);
+    if (!paths.has(item.to)) say(`nav item "${item.key}" points to "${item.to}", which no route of the module serves`);
+    for (const perm of permsOf(item.perm)) if (!isPerm(perm)) say(`nav item "${item.key}" has unknown permission "${perm}"`);
   }
+  if (routes.some((r) => r.path === "") && !module.index) say('serves the company index (path "") without `index: true`');
+  if (module.index && !routes.some((r) => r.path === "")) say('has `index: true` but no route with path ""');
   if (module.hotkey && !/^[a-z,.]$/.test(module.hotkey)) say(`hotkey "${module.hotkey}" must be one key`);
   for (const point of Object.keys(module.extensions ?? {})) {
     if (!(EXTENSION_POINTS as readonly string[]).includes(point)) say(`unknown extension point "${point}"`);
@@ -93,6 +98,10 @@ function registryProblems(list: readonly DashboardModule[]): string[] {
   for (const id of new Set(ids)) if (ids.filter((x) => x === id).length > 1) problems.push(`duplicate module id "${id}"`);
   const hotkeys = list.filter((m) => m.hotkey).map((m) => m.hotkey!);
   for (const key of new Set(hotkeys)) if (hotkeys.filter((x) => x === key).length > 1) problems.push(`hotkey "g ${key}" is used twice`);
+  const indexModules = list.filter((m) => m.index).map((m) => m.id);
+  if (indexModules.length > 1) problems.push(`only one module may serve the index, found ${indexModules.join(", ")}`);
+  const widgetIds = list.flatMap((m) => (m.widgets ?? []).map((w) => w.id));
+  for (const id of new Set(widgetIds)) if (widgetIds.filter((x) => x === id).length > 1) problems.push(`widget id "${id}" is used twice`);
   try {
     const router = createRouter({ history: createMemoryHistory(), routes: buildRoutes(list) });
     const names = router.getRoutes().map((r) => r.name).filter((n) => n !== undefined);
@@ -115,8 +124,9 @@ describe("permissions", () => {
   it("are unique codenames covering the plan's §5 and §13 additions", () => {
     expect(new Set(PERMS).size).toBe(PERMS.length);
     for (const perm of PERMS) expect(perm).toMatch(/^[a-z_]+\.[a-z_]+$/);
-    expect(PERMS).toHaveLength(14 + 27 + 14);
-    for (const perm of ["dashboard.access", "payroll.finalize", "hr.sensitive", "projects.view_all", "hr.terminate", "invoices.manage"]) {
+    // 14 existing + 29 from §5 + 12 from §13.
+    expect(PERMS).toHaveLength(14 + 29 + 12);
+    for (const perm of ["dashboard.access", "sales.invoices", "hr.hiring", "payroll.finalize", "projects.view_all", "hr.terminate", "agenda.manage", "crm.manage"]) {
       expect(PERMS).toContain(perm);
     }
   });
@@ -149,7 +159,9 @@ describe("catalog", () => {
     expect(catalogEntry("agenda")?.group).toBe("comms");
     expect(catalogEntry("knowledge")?.group).toBe("comms");
     expect(catalogEntry("crm")?.group).toBe("money");
-    for (const id of ["lifecycle", "hiring", "assets", "reviews"]) expect(catalogEntry(id)?.group).toBe("people");
+    expect(catalogEntry("lifecycle")?.group).toBe("people");
+    expect(catalogEntry("groups")?.group).toBe("comms");
+    expect(catalogEntry("exports")?.group).toBe("company");
   });
 });
 

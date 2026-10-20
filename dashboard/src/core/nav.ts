@@ -48,8 +48,8 @@ function firstRoutePath(routes: readonly RouteRecordRaw[]): string {
 }
 
 export function moduleNavItems(module: DashboardModule): NavItem[] {
-  if (module.nav?.length) return module.nav;
-  return [{ id: module.id, title: module.title, to: firstRoutePath(module.routes) }];
+  if (module.nav) return module.nav;
+  return [{ key: module.id, title: module.title, to: firstRoutePath(module.routes) }];
 }
 
 function badgeOf(fn: ((pulse: Pulse) => number | undefined) | undefined, pulse: Pulse): number {
@@ -65,7 +65,7 @@ export function buildNav(list: readonly DashboardModule[], company: Company | nu
     const items = moduleNavItems(module).filter((item) => allowed(company, item));
     if (items.length === 0) continue;
     const children: NavEntry[] = items.map((item) => ({
-      key: `${module.id}:${item.id}`,
+      key: `${module.id}:${item.key}`,
       moduleId: module.id,
       title: item.title,
       to: item.to,

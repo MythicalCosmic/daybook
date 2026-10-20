@@ -17,6 +17,7 @@ export const useCompanyStore = defineStore("company", () => {
 
   const companies = computed<Company[]>(() => session.me?.companies ?? []);
   const current = computed<Company | null>(() => companies.value.find((c) => c.id === currentId.value) ?? null);
+  const isOwner = computed(() => current.value?.is_owner ?? false);
   const timezone = computed(() => current.value?.timezone ?? DEFAULT_TIMEZONE);
   const currency = computed(() => current.value?.base_currency ?? "UZS");
 
@@ -62,5 +63,5 @@ export const useCompanyStore = defineStore("company", () => {
     branchFilter.value = scope ? saved.filter((b) => scope.includes(b)) : saved;
   });
 
-  return { currentId, current, companies, timezone, currency, branchFilter, setCurrent, defaultCompanyId, has, can, enabled, setBranchFilter };
+  return { currentId, current, isOwner, companies, timezone, currency, branchFilter, setCurrent, defaultCompanyId, has, can, enabled, setBranchFilter };
 });

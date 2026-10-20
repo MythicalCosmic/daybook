@@ -78,6 +78,7 @@ import { hasExtension } from "@/core/extensions";
 import { modules, type Command, type CommandCtx } from "@/core/modules";
 import type { NavGroup } from "@/core/nav";
 import { allLanguages } from "@/i18n";
+import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useCompanyStore } from "@/stores/company";
 import { usePaletteStore } from "@/stores/palette";
 import { useUiStore } from "@/stores/ui";
@@ -85,7 +86,8 @@ import { useUiStore } from "@/stores/ui";
 const props = defineProps<{ groups: NavGroup[]; aiAvailable: boolean }>();
 const emit = defineEmits<{ openInbox: []; signOut: [] }>();
 
-const { t, locale } = useI18n();
+const { t, te, locale } = useI18n();
+const { isPhone } = useBreakpoints();
 const route = useRoute();
 const router = useRouter();
 const palette = usePaletteStore();
@@ -221,9 +223,13 @@ const shellCommands = computed<Item[]>(() => {
       keywords: [...words("shell.topbar.language"), t(`shell.language.${l}`), l],
       run: () => changeLanguage(l),
     })),
-    { id: "shell:sidebar", section: "actions", title: t("shell.cmd.toggleSidebar"), icon: PanelLeft, keywords: words("shell.cmd.toggleSidebar"), shortcut: "[", run: () => ui.toggleSidebar() },
+    ...(isPhone.value
+      ? []
+      : [{ id: "shell:sidebar", section: "actions" as const, title: t("shell.cmd.toggleSidebar"), icon: PanelLeft, keywords: words("shell.cmd.toggleSidebar"), shortcut: "[", run: () => ui.toggleSidebar() }]),
     { id: "shell:density", section: "actions", title: t("shell.cmd.density"), icon: Rows3, keywords: words("shell.cmd.density"), run: () => ui.toggleDensity() },
-    { id: "shell:shortcuts", section: "actions", title: t("shell.cmd.shortcuts"), icon: Keyboard, keywords: words("shell.cmd.shortcuts"), shortcut: "?", run: () => (ui.shortcutsOpen = true) },
+    ...(isPhone.value
+      ? []
+      : [{ id: "shell:shortcuts", section: "actions" as const, title: t("shell.cmd.shortcuts"), icon: Keyboard, keywords: words("shell.cmd.shortcuts"), shortcut: "?", run: () => (ui.shortcutsOpen = true) }]),
     {
       id: "shell:copy",
       section: "actions",
@@ -273,7 +279,7 @@ const fuse = computed(
         { name: "title", weight: 2 },
         { name: "keywords", weight: 1 },
       ],
-      threshold: 0.36,
+      threshold: 0.3,
       ignoreLocation: true,
       minMatchCharLength: 1,
     }),
@@ -314,9 +320,14 @@ const resultItems = computed<Item[]>(() => {
 });
 
 const typeLabel = (type: string) => {
-  const key = `shell.searchType.${type}`;
-  const label = t(key);
-  return label === key ? t("shell.searchType.other") : label;
+  const [prefix] = type.split(".");
+  const candidates = [type, type.split(".").pop() ?? type, prefix ?? type];
+  for (const candidate of candidates) {
+    const key = `shell.searchType.${candidate}`;
+    if (te(key)) return t(key);
+  }
+  const module = modules.find((m) => m.id === prefix);
+  return module ? t(module.title) : t("shell.searchType.other");
 };
 
 /**
@@ -439,7 +450,7 @@ function onOpenChange(open: boolean): void {
                 :placeholder="t('shell.palette.placeholder')"
               />
               <UiSpinner v-if="searching" :size="16" class="text-muted" :label="t('shell.palette.searching')" />
-              <KbdKey keys="esc" class="hidden md:inline-flex" />
+              <KbdKey v-if="!isPhone" keys="esc" />
             </ComboboxAnchor>
             <ComboboxContent position="inline" class="min-h-0 flex-1 overflow-y-auto overscroll-contain">
               <ComboboxViewport class="p-2">
@@ -474,7 +485,7 @@ function onOpenChange(open: boolean): void {
                         <span class="text-base font-medium text-fg">{{ item.title }}</span>
                         <span v-if="item.subtitle" class="ml-2 text-sm text-muted">{{ item.subtitle }}</span>
                       </span>
-                      <KbdKey v-if="item.shortcut" :keys="item.shortcut.includes(' ') ? item.shortcut.split(' ') : item.shortcut" class="opacity-80" />
+                      <KbdKey v-if="item.shortcut && !isPhone" :keys="item.shortcut.includes(' ') ? item.shortcut.split(' ') : item.shortcut" class="opacity-80" />
                       <CornerDownLeft :size="15" class="hidden shrink-0 text-subtle group-data-[highlighted]:block" aria-hidden="true" />
                     </template>
                   </ComboboxItem>

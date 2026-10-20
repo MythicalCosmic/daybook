@@ -74,7 +74,7 @@ const itemClass =
           :name="current.name"
           :src="current.logo"
           :size="variant === 'compact' ? 28 : 30"
-          :alert="current.alerts > 0"
+          :alert="(current.alerts ?? 0) > 0"
         />
         <template v-if="variant !== 'rail'">
           <span class="min-w-0 flex-1">
@@ -109,11 +109,11 @@ const itemClass =
         </template>
         <DropdownMenuLabel class="px-2 pb-1 pt-1.5 text-xs font-medium text-muted">{{ t("shell.company.yours") }}</DropdownMenuLabel>
         <DropdownMenuItem v-for="item in company.companies" :key="item.id" :class="itemClass" @select="open(item.id)">
-          <CompanyLogo :name="item.name" :src="item.logo" :size="32" :alert="item.alerts > 0" style="--logo-ring: var(--c-surface)" />
+          <CompanyLogo :name="item.name" :src="item.logo" :size="32" :alert="(item.alerts ?? 0) > 0" style="--logo-ring: var(--c-surface)" />
           <span class="min-w-0 flex-1">
             <span class="block truncate text-base font-semibold">{{ item.name }}</span>
             <span class="block truncate text-xs text-muted">
-              {{ item.role.name }}<template v-if="item.alerts > 0"> · <span class="text-danger">{{ t("shell.company.alerts", { n: item.alerts }) }}</span></template>
+              {{ item.role.name }}<template v-if="item.alerts"> · <span class="text-danger">{{ t("shell.company.alerts", { n: item.alerts }) }}</span></template>
             </span>
           </span>
           <UiBadge v-if="item.pending > 0" :count="item.pending" tone="primary" :title="t('shell.company.waiting', { n: item.pending })" />

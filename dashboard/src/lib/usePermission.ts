@@ -13,7 +13,7 @@ export function usePermission() {
     /** Holds every listed permission. */
     canAll: (perms: PermRequirement) => (typeof perms === "string" ? [perms] : perms).every((p) => company.can(p)),
     enabled: (feature?: CompanyFeature) => company.enabled(feature),
-    isOwner: computed(() => company.current?.role.is_owner ?? false),
+    isOwner: computed(() => company.current?.is_owner ?? false),
   };
 }
 

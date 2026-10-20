@@ -25,15 +25,19 @@ export function buildRoutes(list: readonly DashboardModule[] = registry): RouteR
   const publicRoutes = list.flatMap((m) => (m.publicRoutes ?? []).map((r) => stampModule({ ...r, meta: { ...r.meta, public: true } }, m.id)));
   const rootRoutes = list.flatMap((m) => (m.rootRoutes ?? []).map((r) => stampModule({ ...r, meta: { ...r.meta, companyless: true } }, m.id)));
   const companyRoutes = list.flatMap((m) => m.routes.map((r) => stampModule(r, m.id)));
+  if (!companyRoutes.some((r) => r.path === "")) {
+    companyRoutes.unshift({ path: "", name: "company-home", component: Redirecting });
+  }
 
   const hasLogin = publicRoutes.some((r) => r.path === "/login");
   const routes: RouteRecordRaw[] = [...publicRoutes];
   if (!hasLogin) {
     routes.push({ path: "/login", name: "login", component: () => import("@/shell/LoginPlaceholder.vue"), meta: { public: true } });
   }
-  if (import.meta.env.DEV) {
+  if (import.meta.env.DEV && !publicRoutes.some((r) => r.path === "/dev/login")) {
     routes.push({ path: "/dev/login", name: "dev-login", component: () => import("@/shell/DevLoginPage.vue"), meta: { public: true } });
   }
+  routes.push({ path: "/session-ended", name: "session-ended", component: () => import("@/shell/SessionEndedPage.vue"), meta: { public: true } });
   routes.push(
     {
       path: "/",

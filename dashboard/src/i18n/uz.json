@@ -111,7 +111,6 @@
   "shell.user.sessions": "Qurilmalar va sessiyalar",
   "shell.user.shortcuts": "Tezkor tugmalar",
   "shell.user.signOut": "Chiqish",
-  "shell.user.platformAdmin": "Platforma administratori",
   "shell.user.appearance": "Ko‘rinish",
 
   "shell.company.switch": "Kompaniyani almashtirish",
@@ -231,7 +230,15 @@
   "shell.searchType.vacancies": "Vakansiyalar",
   "shell.searchType.applicants": "Nomzodlar",
   "shell.searchType.assets": "Jihozlar",
+  "shell.searchType.members": "Xodimlar",
+  "shell.searchType.crm": "Bitimlar",
+  "shell.searchType.inventory": "Mahsulotlar",
+  "shell.searchType.knowledge": "Bilimlar bazasi sahifalari",
   "shell.searchType.other": "Boshqa",
+
+  "shell.telegram.endedTitle": "Sessiya tugadi",
+  "shell.telegram.endedBody": "Davom etish uchun panelni botdan qaytadan oching.",
+  "shell.telegram.close": "Yopish",
 
   "shell.overlay.close": "Yopish"
 }

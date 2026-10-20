@@ -31,23 +31,14 @@ export const useSessionStore = defineStore("session", () => {
   }
 
   /**
-   * Runs once per page load: Telegram initData when opened inside Telegram, otherwise the refresh
-   * cookie. Either way, a failure just leaves the person signed out.
+   * Runs once per page load. `refreshAccess` uses the refresh cookie on the desktop and posts
+   * Telegram's initData inside Telegram (http's `relogin`). A failure leaves the person signed out.
    */
-  function boot(telegramInitData?: string | null): Promise<void> {
+  function boot(): Promise<void> {
     booting ??= (async () => {
       status.value = "booting";
       try {
-        let token: string | null = null;
-        if (telegramInitData) {
-          try {
-            token = (await shellApi.telegramLogin(telegramInitData)).access;
-            setAccess(token);
-          } catch {
-            token = null;
-          }
-        }
-        token ??= await refreshAccess();
+        const token = await refreshAccess();
         if (token) await loadMe();
       } catch {
         accessToken.value = null;

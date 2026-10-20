@@ -26,8 +26,8 @@ const tasks = defineModule({
     { path: "tasks/reviews", name: "tasks.reviews", component: Page, meta: { perm: "tasks.confirm" } },
   ],
   nav: [
-    { id: "all", title: "tasks.nav.all", to: "tasks" },
-    { id: "reviews", title: "tasks.nav.reviews", to: "tasks/reviews", perm: "tasks.confirm", badge: counter("tasks.review") },
+    { key: "all", title: "tasks.nav.all", to: "tasks" },
+    { key: "reviews", title: "tasks.nav.reviews", to: "tasks/reviews", perm: "tasks.confirm", badge: counter("tasks.review") },
   ],
   invalidates: ["tasks"],
   extensions: { "tasks.toolbar": [Slot] },
@@ -53,6 +53,7 @@ const overview = defineModule({
   order: 10,
   icon: Icon,
   title: "overview.title",
+  index: true,
   routes: [{ path: "", name: "overview", component: Page }],
   messages,
 });
@@ -107,7 +108,8 @@ describe("buildNav", () => {
     expect(activeEntryKey(nav, "/c/12/finance")).toBe("finance");
     expect(isActivePath({ path: "/c/12", exact: true }, "/c/12/tasks")).toBe(false);
     expect(companyPath(3, "/people/")).toBe("/c/3/people/");
-    expect(moduleNavItems(finance)).toEqual([{ id: "finance", title: "finance.title", to: "finance" }]);
+    expect(moduleNavItems(finance)).toEqual([{ key: "finance", title: "finance.title", to: "finance" }]);
+    expect(moduleNavItems({ ...finance, nav: [] })).toEqual([]);
   });
 });
 

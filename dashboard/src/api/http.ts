@@ -122,6 +122,12 @@ export interface HttpConfig {
   getToken: () => string | null;
   setToken: (token: string | null) => void;
   getLanguage: () => string;
+  /**
+   * Gets a new access token another way than the refresh cookie. Inside Telegram there is no
+   * cookie path (Telegram Web runs the console in a cross-site iframe), so TelegramBridge posts
+   * initData again (plan §6.5).
+   */
+  relogin?: () => Promise<string | null>;
   /** Refresh failed: the session is over. */
   onSessionEnded: () => void;
   /** Show an error toast. */
@@ -146,6 +152,11 @@ let refreshing: Promise<string | null> | null = null;
 export function refreshAccess(): Promise<string | null> {
   refreshing ??= (async () => {
     try {
+      if (config.relogin) {
+        const token = await config.relogin();
+        if (token) config.setToken(token);
+        return token;
+      }
       const response = await fetch(apiUrl("/owner/auth/refresh/"), {
         method: "POST",
         credentials: "same-origin",

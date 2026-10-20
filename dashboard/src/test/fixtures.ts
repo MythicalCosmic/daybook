@@ -9,28 +9,27 @@ export function company(overrides: Partial<Company> = {}): Company {
     logo: null,
     timezone: "Asia/Tashkent",
     base_currency: "UZS",
-    language: "uz",
     features: ["finance", "sales", "attendance", "hr", "payroll", "ai"],
-    membership_id: 11,
-    role: { id: 1, name: "Owner", is_owner: true },
+    role: { id: 1, name: "Owner" },
+    is_owner: true,
     permissions: [],
     branch_scope: null,
     branches: [{ id: 1, name: "Chilonzor", code: "CHL" }],
+    home_branch: 1,
     pending: 0,
-    alerts: 0,
+    setup_completed: true,
     ...overrides,
   };
 }
 
 export function manager(permissions: Perm[], overrides: Partial<Company> = {}): Company {
-  return company({ id: 2, name: "Bahor Café", role: { id: 2, name: "Manager", is_owner: false }, permissions, ...overrides });
+  return company({ id: 2, name: "Demo Café", role: { id: 2, name: "Manager" }, is_owner: false, permissions, ...overrides });
 }
 
 export function me(companies: Company[] = [company()]): Me {
   return {
     user: { id: 7, telegram_id: 1001, first_name: "Dilnoza", last_name: "Karimova", full_name: "Dilnoza Karimova", username: "dilnoza_k", photo_url: null },
     language: "en",
-    is_platform_admin: false,
     companies,
   };
 }

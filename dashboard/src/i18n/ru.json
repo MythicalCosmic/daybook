@@ -111,7 +111,6 @@
   "shell.user.sessions": "Устройства и сессии",
   "shell.user.shortcuts": "Горячие клавиши",
   "shell.user.signOut": "Выйти",
-  "shell.user.platformAdmin": "Администратор платформы",
   "shell.user.appearance": "Внешний вид",
 
   "shell.company.switch": "Сменить компанию",
@@ -231,7 +230,15 @@
   "shell.searchType.vacancies": "Вакансии",
   "shell.searchType.applicants": "Кандидаты",
   "shell.searchType.assets": "Оборудование",
+  "shell.searchType.members": "Люди",
+  "shell.searchType.crm": "Сделки",
+  "shell.searchType.inventory": "Товары",
+  "shell.searchType.knowledge": "Страницы базы знаний",
   "shell.searchType.other": "Другое",
+
+  "shell.telegram.endedTitle": "Сессия закончилась",
+  "shell.telegram.endedBody": "Откройте панель снова из бота, чтобы продолжить.",
+  "shell.telegram.close": "Закрыть",
 
   "shell.overlay.close": "Закрыть"
 }

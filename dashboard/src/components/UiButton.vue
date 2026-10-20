@@ -45,6 +45,12 @@ const props = withDefaults(
 );
 
 const tag = computed(() => (props.to ? RouterLink : props.href ? "a" : "button"));
+/** Only the attributes the rendered element understands (an explicit href would override RouterLink's). */
+const linkAttrs = computed(() => {
+  if (props.to) return { to: props.to, target: props.target };
+  if (props.href) return { href: props.href, target: props.target };
+  return { type: props.type };
+});
 const inactive = computed(() => props.disabled || props.loading);
 
 const sizes: Record<ButtonSize, string> = {
@@ -69,10 +75,7 @@ const iconSize = computed(() => (props.size === "lg" ? 18 : 16));
 <template>
   <component
     :is="tag"
-    :to="to"
-    :href="to ? undefined : href"
-    :target="target"
-    :type="to || href ? undefined : type"
+    v-bind="linkAttrs"
     :disabled="tag === 'button' ? inactive : undefined"
     :aria-disabled="inactive ? 'true' : undefined"
     :aria-busy="loading ? 'true' : undefined"

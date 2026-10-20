@@ -13,7 +13,7 @@ import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
 import { useBreakpoints } from "@/lib/useBreakpoints";
-import { applyQueryPatch } from "@/lib/useRouteState";
+import { closeQueryKey } from "@/lib/useRouteState";
 
 import BottomSheet from "./BottomSheet.vue";
 
@@ -55,13 +55,7 @@ const open = computed({
       return;
     }
     if (next) return; // opening is done by whoever sets the query value
-    const key = props.queryKey;
-    const target = { path: route.path, query: applyQueryPatch(route.query, { [key]: undefined }), hash: route.hash };
-    // When the drawer was pushed onto history from this same page, going back is the natural close.
-    const back = (window.history.state as { back?: string } | null)?.back;
-    const targetHref = router.resolve(target).fullPath;
-    if (back && back === targetHref) router.back();
-    else void router.replace(target);
+    closeQueryKey(router, props.queryKey);
   },
 });
 

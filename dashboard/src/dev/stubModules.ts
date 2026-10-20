@@ -6,6 +6,9 @@
 import {
   Award,
   Banknote,
+  Download,
+  Lightbulb,
+  MessagesSquare,
   BellRing,
   BookOpen,
   Boxes,
@@ -16,7 +19,6 @@ import {
   IdCard,
   Inbox,
   Landmark,
-  Laptop,
   LayoutDashboard,
   ListTodo,
   MapPinCheck,
@@ -28,7 +30,6 @@ import {
   Sparkles,
   Store,
   TreePalm,
-  UserPlus,
   Users,
 } from "@lucide/vue";
 import { defineAsyncComponent, type Component } from "vue";
@@ -53,20 +54,21 @@ const ICONS: Record<string, Component> = {
   attendance: MapPinCheck,
   timeoff: TreePalm,
   hr: IdCard,
-  hiring: UserPlus,
-  assets: Laptop,
-  reviews: Award,
+  recognition: Award,
   sales: Store,
   stock: Boxes,
   finance: Landmark,
   payroll: Banknote,
   crm: Handshake,
   comms: Megaphone,
+  groups: MessagesSquare,
   agenda: CalendarDays,
   knowledge: BookOpen,
   reports: ChartColumn,
+  insights: Lightbulb,
   ai: Sparkles,
   settings: Settings,
+  exports: Download,
   audit: ScrollText,
 };
 
@@ -88,6 +90,7 @@ export function devStubModules(): DashboardModule[] {
       perm: entry.perm,
       feature: entry.feature,
       hotkey: entry.hotkey,
+      index: entry.pages.some((page) => page.to === "") || undefined,
       badge: entry.badge ? counter(entry.badge) : undefined,
       routes: entry.pages.map((page) => ({
         path: page.to,
@@ -99,7 +102,7 @@ export function devStubModules(): DashboardModule[] {
       nav:
         entry.pages.length > 1
           ? entry.pages.map((page) => ({
-              id: page.id,
+              key: page.id,
               title: `${entry.id}.nav.${page.id}`,
               to: page.to,
               perm: page.perm,

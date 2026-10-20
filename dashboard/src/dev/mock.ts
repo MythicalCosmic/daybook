@@ -130,10 +130,10 @@ function route(method: string, path: string, query: URLSearchParams, body: Recor
     return { status: 200, body: { detail: "ok" } };
   }
 
-  // Any queue action endpoint: the decision succeeds and the item leaves the queue.
+  // Any queue action endpoint (relative to the company): the decision succeeds and the item leaves the queue.
   if (method !== "GET") {
     const list = queueItems[id] ?? [];
-    const index = list.findIndex((item) => item.actions.some((action) => action.endpoint.endsWith(`/api/v1${path}`) || action.endpoint === path));
+    const index = list.findIndex((item) => item.actions.some((action) => action.endpoint === rest));
     if (index >= 0) {
       list.splice(index, 1);
       return { status: 200, body: { detail: "ok" } };

@@ -24,7 +24,7 @@ import UserAvatar from "@/components/UserAvatar.vue";
 import { toast } from "@/components/useToast";
 import { isModuleVisible } from "@/core/access";
 import { modules } from "@/core/modules";
-import { applyQueryPatch } from "@/lib/useRouteState";
+import { applyQueryPatch, closeQueryKey } from "@/lib/useRouteState";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
@@ -46,7 +46,7 @@ function setTab(next: "needs" | "notifications"): void {
 }
 
 function close(): void {
-  void router.replace({ path: route.path, query: applyQueryPatch(route.query, { inbox: undefined }), hash: route.hash });
+  closeQueryKey(router, "inbox");
 }
 
 const queue = useQuery({
@@ -80,7 +80,7 @@ const reason = ref("");
 const itemKey = (item: QueueItem) => `${item.kind}:${item.id}`;
 
 const decide = useMutation({
-  mutationFn: ({ action, text }: { item: QueueItem; action: QueueAction; text?: string }) => shellApi.runQueueAction(action, text),
+  mutationFn: ({ action, text }: { item: QueueItem; action: QueueAction; text?: string }) => shellApi.runQueueAction(companyId.value, action, text),
   onMutate: async ({ item }) => {
     const key = keys.queue(companyId.value);
     await client.cancelQueries({ queryKey: key });

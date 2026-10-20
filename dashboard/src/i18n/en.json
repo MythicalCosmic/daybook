@@ -111,7 +111,6 @@
   "shell.user.sessions": "Devices and sessions",
   "shell.user.shortcuts": "Keyboard shortcuts",
   "shell.user.signOut": "Log out",
-  "shell.user.platformAdmin": "Platform admin",
   "shell.user.appearance": "Appearance",
 
   "shell.company.switch": "Switch company",
@@ -231,7 +230,15 @@
   "shell.searchType.vacancies": "Vacancies",
   "shell.searchType.applicants": "Applicants",
   "shell.searchType.assets": "Equipment",
+  "shell.searchType.members": "People",
+  "shell.searchType.crm": "Deals",
+  "shell.searchType.inventory": "Products",
+  "shell.searchType.knowledge": "Knowledge pages",
   "shell.searchType.other": "Other",
+
+  "shell.telegram.endedTitle": "Session ended",
+  "shell.telegram.endedBody": "Reopen the dashboard from the bot to continue.",
+  "shell.telegram.close": "Close",
 
   "shell.overlay.close": "Close"
 }

@@ -59,29 +59,34 @@ export interface BranchRef {
 export interface RoleRef {
   id: number;
   name: string;
-  is_owner: boolean;
 }
 
-/** One company in `me.companies`: every company where the caller has `dashboard.access`. */
+/**
+ * One company in `me.companies` (plan §4.2): every company where the caller has `dashboard.access`.
+ * `membership_id` and `alerts` are W0-D's requests to W0-L (the caller's own membership, and the
+ * open red alerts behind the switcher's status dot, §13.2); both are optional until the endpoint sends them.
+ */
 export interface Company {
   id: number;
   name: string;
   logo: string | null;
   timezone: string;
   base_currency: Currency;
-  language: Language;
   features: CompanyFeature[];
-  /** The caller's own membership in this company. */
-  membership_id: number;
   role: RoleRef;
+  /** Owners hold every permission. */
+  is_owner: boolean;
   permissions: Perm[];
-  /** Branch ids the caller is limited to; null means every branch (owners and `branches.all`). */
+  /** Branch ids the caller is limited to; null means every branch (owners and `branches.all`); [] means none (§2.6). */
   branch_scope: number[] | null;
   branches: BranchRef[];
+  home_branch: number | null;
   /** "Needs you" items waiting for the caller here (company switcher count). */
   pending: number;
-  /** Open red alerts (company switcher status dot, §13.1). */
-  alerts: number;
+  /** "Get started" is finished or dismissed. */
+  setup_completed: boolean;
+  membership_id?: number;
+  alerts?: number;
 }
 
 export interface MeUser {
@@ -94,11 +99,10 @@ export interface MeUser {
   photo_url: string | null;
 }
 
-/** `GET /owner/me/` */
+/** `GET /owner/me/` (no platform-admin flag: platform admins work in the Django admin, plan appendix #2). */
 export interface Me {
   user: MeUser;
   language: Language;
-  is_platform_admin: boolean;
   companies: Company[];
 }
 
@@ -123,13 +127,18 @@ export interface SearchResponse {
 
 export type ActionStyle = "primary" | "danger" | "default";
 
-/** A button on a "Needs you" item; the shell calls `endpoint` with `method` (plan §2.4). */
+/**
+ * A button on a "Needs you" item (plan §2.5): the shell sends `method` to `endpoint`, which is
+ * relative to `/api/v1/owner/companies/{cid}/` (e.g. "time-off/42/approve/"), with `body` plus
+ * `reason` when `needs_reason`.
+ */
 export interface QueueAction {
   key: string;
   label: string;
   style: ActionStyle;
   method: "POST" | "PATCH" | "DELETE";
   endpoint: string;
+  body?: Record<string, unknown>;
   needs_reason: boolean;
 }
 

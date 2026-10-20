@@ -7,6 +7,11 @@
  * here, so the sidebar stays in the order the plan designed. Paths are relative to /c/:companyId.
  * The dev mock (src/dev/stubModules.ts) builds placeholder modules from this table so the whole
  * shell can be seen before the packages land.
+ *
+ * Packages (§11, §13.7): W0 lead, A identity and setup, B tasks, C people and announcements,
+ * D/I finance, E/J sales and stock, F attendance, G HR and hiring, H payroll, K AI, L leave,
+ * N overview, insights, audit, exports, R recognition, T projects, Q knowledge and calendar,
+ * S people lifecycle, U CRM.
  */
 import type { CompanyFeature } from "@/core/features";
 import type { ModuleGroup } from "@/core/modules";
@@ -25,7 +30,7 @@ export interface CatalogEntry {
   id: string;
   group: ModuleGroup;
   order: number;
-  /** Work package that owns the module (§11, §13.6). */
+  /** Work package that owns the module. */
   pkg: string;
   perm?: PermRequirement;
   feature?: CompanyFeature;
@@ -37,7 +42,7 @@ export interface CatalogEntry {
 
 export const CATALOG: readonly CatalogEntry[] = [
   // Overview
-  { id: "overview", group: "overview", order: 10, pkg: "A", hotkey: "o", pages: [{ id: "today", to: "" }] },
+  { id: "overview", group: "overview", order: 10, pkg: "W0 → N", hotkey: "o", pages: [{ id: "today", to: "" }] },
   { id: "inbox", group: "overview", order: 20, pkg: "W0", hotkey: "i", badge: "queue.total", pages: [{ id: "inbox", to: "inbox" }] },
 
   // Work
@@ -57,12 +62,11 @@ export const CATALOG: readonly CatalogEntry[] = [
     id: "projects",
     group: "work",
     order: 20,
-    pkg: "M",
+    pkg: "T",
     hotkey: "j",
     pages: [
       { id: "all", to: "projects" },
       { id: "roadmap", to: "projects/roadmap" },
-      { id: "time", to: "projects/time" },
     ],
   },
   { id: "routines", group: "work", order: 30, pkg: "B", perm: "tasks.templates", hotkey: "r", pages: [{ id: "all", to: "routines" }] },
@@ -84,24 +88,9 @@ export const CATALOG: readonly CatalogEntry[] = [
     ],
   },
   {
-    id: "lifecycle",
-    group: "people",
-    order: 20,
-    pkg: "N1",
-    perm: ["hr.view", "hr.discipline", "hr.suspend", "hr.terminate", "org.manage"],
-    feature: "hr",
-    pages: [
-      { id: "org", to: "org" },
-      { id: "discipline", to: "lifecycle/discipline", perm: ["hr.discipline", "hr.view"] },
-      { id: "suspensions", to: "lifecycle/suspensions", perm: ["hr.suspend", "hr.view"] },
-      { id: "terminations", to: "lifecycle/terminations", perm: ["hr.terminate", "hr.view"], badge: "lifecycle.requested" },
-      { id: "changes", to: "lifecycle/changes", perm: ["hr.manage", "org.manage"] },
-    ],
-  },
-  {
     id: "attendance",
     group: "people",
-    order: 30,
+    order: 20,
     pkg: "F",
     perm: "attendance.view",
     feature: "attendance",
@@ -112,82 +101,78 @@ export const CATALOG: readonly CatalogEntry[] = [
       { id: "timesheet", to: "attendance/timesheet" },
       { id: "roster", to: "attendance/roster" },
       { id: "schedules", to: "attendance/schedules", perm: "attendance.manage" },
+      { id: "swaps", to: "attendance/swaps", perm: "attendance.manage", badge: "attendance.swaps" },
       { id: "corrections", to: "attendance/corrections", perm: "attendance.manage", badge: "attendance.corrections" },
     ],
   },
   {
     id: "timeoff",
     group: "people",
-    order: 40,
-    pkg: "C+G",
+    order: 30,
+    pkg: "C + L",
     perm: ["time_off.approve", "time_off.manage"],
     badge: "timeoff.pending",
     pages: [
       { id: "calendar", to: "time-off" },
+      { id: "holidays", to: "time-off/holidays" },
       { id: "balances", to: "time-off/balances", perm: "time_off.manage" },
       { id: "types", to: "time-off/types", perm: "time_off.manage" },
-      { id: "holidays", to: "time-off/holidays" },
     ],
   },
   {
     id: "hr",
     group: "people",
-    order: 50,
+    order: 40,
     pkg: "G",
-    perm: "hr.view",
+    perm: ["hr.view", "hr.hiring"],
     feature: "hr",
     hotkey: "h",
     badge: "hr.expiring",
     pages: [
-      { id: "documents", to: "hr/documents" },
-      { id: "contracts", to: "hr/contracts" },
-      { id: "policies", to: "hr/policies" },
-      { id: "celebrations", to: "hr/celebrations" },
+      { id: "documents", to: "hr/documents", perm: "hr.view" },
+      { id: "contracts", to: "hr/contracts", perm: "hr.view" },
+      { id: "templates", to: "hr/contract-templates", perm: "hr.manage" },
+      { id: "policies", to: "hr/policies", perm: "hr.view" },
+      { id: "celebrations", to: "hr/celebrations", perm: "hr.view" },
+      { id: "hiring", to: "hr/hiring", perm: "hr.hiring" },
     ],
   },
   {
-    id: "hiring",
+    id: "lifecycle",
     group: "people",
-    order: 60,
-    pkg: "N2",
-    perm: "hiring.manage",
+    order: 50,
+    pkg: "S",
+    perm: ["hr.view", "hr.discipline", "hr.suspend", "hr.terminate", "assets.manage", "reviews.manage"],
     feature: "hr",
     pages: [
-      { id: "vacancies", to: "hiring" },
-      { id: "onboarding", to: "hiring/onboarding" },
+      { id: "org", to: "lifecycle/org", perm: "hr.view" },
+      { id: "discipline", to: "lifecycle/discipline", perm: ["hr.discipline", "hr.view"] },
+      { id: "suspensions", to: "lifecycle/suspensions", perm: ["hr.suspend", "hr.view"] },
+      { id: "terminations", to: "lifecycle/terminations", perm: ["hr.terminate", "hr.view"], badge: "lifecycle.resignations" },
+      { id: "changes", to: "lifecycle/job-changes", perm: ["hr.manage", "hr.view"], badge: "lifecycle.job_changes" },
+      { id: "equipment", to: "lifecycle/equipment", perm: ["assets.manage", "hr.manage"] },
+      { id: "reviews", to: "lifecycle/reviews", perm: "reviews.manage" },
     ],
   },
-  { id: "assets", group: "people", order: 70, pkg: "N2", perm: "assets.manage", feature: "hr", pages: [{ id: "all", to: "assets" }] },
-  {
-    id: "reviews",
-    group: "people",
-    order: 80,
-    pkg: "N2",
-    perm: "reviews.manage",
-    feature: "hr",
-    pages: [
-      { id: "cycles", to: "reviews" },
-      { id: "goals", to: "reviews/goals" },
-      { id: "kudos", to: "reviews/kudos" },
-    ],
-  },
+  { id: "recognition", group: "people", order: 60, pkg: "R", pages: [{ id: "kudos", to: "recognition" }] },
 
   // Money
   {
     id: "sales",
     group: "money",
     order: 10,
-    pkg: "E+J",
-    perm: "sales.view",
+    pkg: "E + J",
+    perm: ["sales.view", "sales.invoices"],
     feature: "sales",
     hotkey: "s",
     pages: [
-      { id: "overview", to: "sales" },
-      { id: "shifts", to: "sales/shifts", badge: "sales.to_verify" },
-      { id: "cash", to: "sales/cash" },
-      { id: "entries", to: "sales/entries" },
-      { id: "targets", to: "sales/targets" },
-      { id: "customers", to: "sales/customers" },
+      { id: "overview", to: "sales", perm: "sales.view" },
+      { id: "shifts", to: "sales/shifts", perm: "sales.view", badge: "sales.to_verify" },
+      { id: "cash", to: "sales/cash", perm: "sales.view" },
+      { id: "entries", to: "sales/entries", perm: "sales.view" },
+      { id: "targets", to: "sales/targets", perm: "sales.view" },
+      { id: "invoices", to: "sales/invoices", perm: ["sales.invoices", "finance.view"], badge: "sales.invoices_overdue" },
+      { id: "customers", to: "sales/customers", perm: "sales.view" },
     ],
   },
   {
@@ -195,20 +180,20 @@ export const CATALOG: readonly CatalogEntry[] = [
     group: "money",
     order: 20,
     pkg: "J",
-    perm: "stock.manage",
+    perm: ["sales.view", "stock.manage"],
     feature: "stock",
     pages: [
       { id: "products", to: "stock/products" },
       { id: "levels", to: "stock/levels", badge: "stock.low" },
-      { id: "receipts", to: "stock/receipts" },
-      { id: "counts", to: "stock/counts" },
+      { id: "receipts", to: "stock/receipts", perm: "stock.manage" },
+      { id: "counts", to: "stock/counts", perm: "stock.manage" },
     ],
   },
   {
     id: "finance",
     group: "money",
     order: 30,
-    pkg: "D+I",
+    pkg: "D + I",
     perm: ["finance.view", "finance.record", "finance.approve"],
     feature: "finance",
     hotkey: "f",
@@ -241,17 +226,7 @@ export const CATALOG: readonly CatalogEntry[] = [
       { id: "advances", to: "payroll/advances", perm: ["payroll.manage", "payroll.pay"] },
     ],
   },
-  {
-    id: "crm",
-    group: "money",
-    order: 50,
-    pkg: "R",
-    perm: ["crm.view", "crm.manage", "invoices.manage", "finance.view"],
-    pages: [
-      { id: "deals", to: "crm", perm: ["crm.view", "crm.manage"] },
-      { id: "invoices", to: "crm/invoices", perm: ["invoices.manage", "finance.view"] },
-    ],
-  },
+  { id: "crm", group: "money", order: 50, pkg: "U", perm: ["crm.view", "crm.manage"], pages: [{ id: "deals", to: "crm" }] },
 
   // Communication
   {
@@ -259,15 +234,13 @@ export const CATALOG: readonly CatalogEntry[] = [
     group: "comms",
     order: 10,
     pkg: "C",
-    perm: ["announcements.send", "groups.manage"],
+    perm: "announcements.send",
     hotkey: "m",
-    pages: [
-      { id: "announcements", to: "announcements", perm: "announcements.send" },
-      { id: "groups", to: "groups", perm: "groups.manage" },
-    ],
+    pages: [{ id: "announcements", to: "announcements" }],
   },
-  { id: "agenda", group: "comms", order: 20, pkg: "Q", hotkey: "c", pages: [{ id: "calendar", to: "calendar" }] },
-  { id: "knowledge", group: "comms", order: 30, pkg: "Q", hotkey: "k", pages: [{ id: "spaces", to: "knowledge" }] },
+  { id: "groups", group: "comms", order: 20, pkg: "A", perm: "groups.manage", pages: [{ id: "groups", to: "groups" }] },
+  { id: "agenda", group: "comms", order: 30, pkg: "Q", hotkey: "c", pages: [{ id: "calendar", to: "calendar" }] },
+  { id: "knowledge", group: "comms", order: 40, pkg: "Q", hotkey: "k", pages: [{ id: "spaces", to: "knowledge" }] },
 
   // Insights
   {
@@ -282,25 +255,30 @@ export const CATALOG: readonly CatalogEntry[] = [
     ],
   },
   {
-    id: "ai",
+    id: "insights",
     group: "insights",
     order: 20,
-    pkg: "K",
-    perm: ["ai.use", "reports.view"],
+    pkg: "N",
+    perm: "reports.view",
+    badge: "insights.open",
     pages: [
-      { id: "assistant", to: "ai", perm: "ai.use", feature: "ai" },
-      { id: "insights", to: "ai/insights", perm: "reports.view", badge: "insights.open" },
-      { id: "briefings", to: "ai/briefings", perm: "reports.view" },
+      { id: "insights", to: "insights" },
+      { id: "briefings", to: "briefings" },
     ],
   },
+  { id: "ai", group: "insights", order: 30, pkg: "K", perm: "ai.use", feature: "ai", pages: [{ id: "assistant", to: "ai" }] },
 
   // Company
   { id: "settings", group: "company", order: 10, pkg: "A", hotkey: ",", pages: [{ id: "panels", to: "settings" }] },
-  { id: "audit", group: "company", order: 20, pkg: "A", perm: "audit.view", pages: [{ id: "log", to: "audit" }] },
+  { id: "exports", group: "company", order: 20, pkg: "W0 → N", perm: "data.export", pages: [{ id: "list", to: "exports" }] },
+  { id: "audit", group: "company", order: 30, pkg: "N", perm: "audit.view", pages: [{ id: "log", to: "audit" }] },
 ];
 
-/** Modules with no sidebar presence: the auth module only brings public routes. */
-export const CATALOG_HEADLESS: readonly string[] = ["auth"];
+/**
+ * Modules with no sidebar row: `auth` brings only public routes (A); `setup` is "Get started",
+ * reached from the progress pill in the `shell.nav.top` slot (A).
+ */
+export const CATALOG_HEADLESS: readonly string[] = ["auth", "setup"];
 
 export function catalogEntry(id: string): CatalogEntry | undefined {
   return CATALOG.find((entry) => entry.id === id);

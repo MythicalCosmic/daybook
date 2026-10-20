@@ -19,7 +19,7 @@ interface Insets {
 /** The parts of Telegram.WebApp the console uses (Bot API 8.0). */
 export interface TelegramWebApp {
   initData: string;
-  initDataUnsafe: { start_param?: string };
+  initDataUnsafe: { start_param?: string; auth_date?: number };
   version: string;
   platform: string;
   colorScheme: "light" | "dark";
@@ -27,6 +27,7 @@ export interface TelegramWebApp {
   safeAreaInset?: Insets;
   contentSafeAreaInset?: Insets;
   isVersionAtLeast: (version: string) => boolean;
+  close: () => void;
   ready: () => void;
   expand: () => void;
   setHeaderColor: (color: string) => void;
@@ -96,6 +97,36 @@ export async function detectTelegram(): Promise<TelegramContext> {
 
 export function telegram(): TelegramContext {
   return context;
+}
+
+/** The backend refuses initData older than this (`OWNER_INIT_DATA_MAX_AGE`, plan §11.1). */
+export const INIT_DATA_MAX_AGE_S = 3600;
+
+/** Whether Telegram's launch data is too old to sign in with (then only reopening from the bot helps). */
+export function initDataExpired(now = Date.now()): boolean {
+  const authDate = context.webApp?.initDataUnsafe.auth_date;
+  return typeof authDate === "number" && now / 1000 - authDate > INIT_DATA_MAX_AGE_S;
+}
+
+/** Signs in again with the same initData (http's `relogin` inside Telegram). */
+export async function telegramRelogin(): Promise<string | null> {
+  if (!context.initData || initDataExpired()) return null;
+  try {
+    const response = await fetch("/api/v1/owner/auth/telegram/", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json", Accept: "application/json", "X-Requested-With": "dashboard" },
+      body: JSON.stringify({ init_data: context.initData }),
+    });
+    if (!response.ok) return null;
+    return ((await response.json()) as { access?: string }).access ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export function closeTelegram(): void {
+  context.webApp?.close();
 }
 
 function applyInsets(webApp: TelegramWebApp): void {
