@@ -5,7 +5,7 @@
  * permission and module switch: this module's own first, then the modules', in sidebar order.
  * On a phone the list is a page of its own and a panel opens over it with a back link.
  */
-import { ChevronLeft, ChevronRight, Settings2 } from "@lucide/vue";
+import { Bell, Building2, ChevronLeft, ChevronRight, LayoutGrid, MapPin, MonitorSmartphone, Settings2, UserPlus, type LucideIcon } from "@lucide/vue";
 import { computed, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
@@ -29,12 +29,23 @@ const router = useRouter();
 const company = useCompanyStore();
 const { isPhone } = useBreakpoints();
 
+/** Icons of this module's own panels (kept out of the registry entry, which is in the first bundle). */
+const OWN_ICONS: Record<string, LucideIcon> = {
+  company: Building2,
+  features: LayoutGrid,
+  branches: MapPin,
+  invite: UserPlus,
+  notifications: Bell,
+  sessions: MonitorSmartphone,
+};
+
 const panels = computed<PanelEntry[]>(() => {
   const list: PanelEntry[] = [];
   for (const module of modules) {
     if (!module.settings?.length || !isModuleVisible(module, company.current)) continue;
     for (const panel of module.settings) {
-      if (allowed(company.current, panel)) list.push({ ...panel, moduleId: module.id, own: module.id === "settings" });
+      const own = module.id === "settings";
+      if (allowed(company.current, panel)) list.push({ ...panel, icon: panel.icon ?? (own ? OWN_ICONS[panel.id] : undefined), moduleId: module.id, own });
     }
   }
   const ownFirst = (p: PanelEntry) => (p.own ? 0 : 1);
@@ -75,7 +86,7 @@ onMounted(() => {
       :title="t('settings.title')"
       :description="t('settings.description')"
     />
-    <div class="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-8">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-8">
       <!-- The panel list (a page of its own on a phone) -->
       <nav v-if="!isPhone || !shown" :aria-label="t('settings.title')" class="lg:sticky lg:top-[calc(var(--topbar-h)+20px)] lg:self-start">
         <ul :class="isPhone ? 'overflow-hidden rounded-[14px] border border-line bg-surface' : 'flex flex-col gap-0.5'">

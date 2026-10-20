@@ -67,8 +67,9 @@ class GroupSerializer(serializers.ModelSerializer):
                 "label": str(event.label),
                 "feature": EVENT_FEATURES.get(event),
                 "on": event.value in group.events,
-                "available": event.value in offered
-                and (event not in EVENT_FEATURES or company.has_feature(EVENT_FEATURES[event])),
+                # Listed but unavailable: chosen earlier, its module switched off since.
+                "available": event not in EVENT_FEATURES
+                or company.has_feature(EVENT_FEATURES[event]),
             }
             for event in GroupEvent
             if event.value in offered

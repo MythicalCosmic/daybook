@@ -120,11 +120,13 @@ describe("GroupsPage", () => {
     await wrapper.find('button[aria-label="Group actions"]').trigger("click");
     await flushPromises();
     const item = [...document.querySelectorAll('[role="menuitem"]')].find((el) => el.textContent?.includes("Disconnect")) as HTMLElement | undefined;
-    item?.click();
+    expect(item).toBeTruthy();
+    item!.click();
     await flushPromises();
-    if (confirmQueue.value[0]) settleConfirm(confirmQueue.value[0].id, { reason: "" }, 0);
+    expect(confirmQueue.value).toHaveLength(1);
+    settleConfirm(confirmQueue.value[0]!.id, { reason: "" }, 0);
     await flushPromises();
-    if (item) expect(calls.some((c) => c.url.endsWith("groups/5/disconnect/"))).toBe(true);
+    expect(calls.some((c) => c.url.endsWith("groups/5/disconnect/"))).toBe(true);
   });
 
   it("explains how to connect the first group", async () => {

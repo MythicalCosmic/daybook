@@ -41,7 +41,7 @@ export default defineModule({
   ],
   // "New company" is the shell's own palette action (it opens this module's dialog body).
   commands: (ctx) => [
-    { id: "setup.open", title: ctx.t("setup.cmd.open"), icon: Rocket, keywords: ["setup", "boshlash", "начало", "checklist"], run: () => ctx.go("get-started") },
+    { id: "setup.open", title: ctx.t("setup.cmd.open"), keywords: ["boshlash", "начало"], run: () => ctx.go("get-started") },
   ],
   deepLinks: {
     setup: () => "get-started",

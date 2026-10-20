@@ -113,7 +113,7 @@ const menu = computed(() => [{ label: t("groups.disconnect"), icon: Link2Off, da
       </span>
     </div>
 
-    <div v-else :id="`group-${group.id}-body`" class="grid gap-6 p-4 md:p-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <div v-else :id="`group-${group.id}-body`" class="grid grid-cols-1 gap-6 p-4 md:p-5 lg:grid-cols-[minmax(0,1fr)_300px]">
       <div class="flex flex-col gap-5">
         <section>
           <p class="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.06em] text-subtle"><MessagesSquare :size="13" />{{ t("groups.taskEvents") }}</p>

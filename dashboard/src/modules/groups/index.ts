@@ -2,7 +2,7 @@
  * Telegram groups (plan §6.1 Communication › Groups, package A): connected groups, the events the
  * bot posts in each, positions and branches filters, disconnect.
  */
-import { MessagesSquare, Send } from "@lucide/vue";
+import { MessagesSquare } from "@lucide/vue";
 
 import { defineModule } from "@/core/modules";
 
@@ -23,12 +23,10 @@ export default defineModule({
   ],
   invalidates: ["groups"],
   commands: (ctx) => [
-    { id: "groups.open", title: ctx.t("groups.cmd.open"), icon: MessagesSquare, keywords: ["group", "guruh", "группа", "telegram"], run: () => ctx.go("groups") },
     {
       id: "groups.add",
       title: ctx.t("groups.cmd.add"),
-      icon: Send,
-      keywords: ["connect", "ulash", "подключить"],
+      keywords: ["guruh", "группа", "telegram"],
       run: async () => {
         const { listGroups } = await import("./api");
         const { connect_link } = await listGroups(ctx.companyId);

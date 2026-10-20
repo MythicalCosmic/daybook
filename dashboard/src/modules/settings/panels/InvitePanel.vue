@@ -96,14 +96,14 @@ async function print(): Promise<void> {
 
     <ErrorState v-if="invite.isError.value" :error="invite.error.value" :retry="() => invite.refetch()" :retrying="invite.isFetching.value" />
 
-    <div v-else-if="showSkeleton || !invite.data.value" class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]" aria-busy="true">
+    <div v-else-if="showSkeleton || !invite.data.value" class="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_300px]" aria-busy="true">
       <div class="ui-card flex flex-col items-center gap-4 p-6"><SkeletonBlock width="224px" height="224px" radius="14px" /><SkeletonBlock width="70%" height="36px" /></div>
       <div class="ui-card flex flex-col gap-3 p-5"><SkeletonBlock :lines="5" /></div>
     </div>
 
     <EmptyState v-else-if="!invite.data.value.link" :title="t('settings.invite.noBotTitle')" :description="t('settings.invite.noBotBody')" :icon="Link2" tone="neutral" />
 
-    <div v-else class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+    <div v-else class="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
       <!-- The link -->
       <section class="ui-card flex flex-col items-center p-6 text-center md:p-8">
         <QrCode :value="invite.data.value.link" :size="208" level="Q" downloadable :filename="`invite-${invite.data.value.company.name}`" />
