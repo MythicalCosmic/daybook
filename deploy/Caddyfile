@@ -1,16 +1,29 @@
 # HTTPS for the whole site; Caddy gets and renews the certificate for {$DOMAIN} by itself.
 {$DOMAIN} {
-	encode zstd gzip
+	# AI answers as server-sent events, from the stream service. Matched before the catch-all,
+	# flushed as they arrive, and never compressed (`encode` would hold events back).
+	handle /api/v1/owner/ai/turns/* {
+		reverse_proxy stream:8001 {
+			flush_interval -1
+		}
+	}
 
-	# Proof photos and other uploads. Their names are random, so links can't be guessed.
+	# Proof photos, logos and avatars. Their names are random, so links can't be guessed, and
+	# whatever a file contains, a browser never runs it: no sniffing, a sandbox, nothing loads.
 	handle_path /media/* {
 		root * /srv/media
-		header Cache-Control "private, max-age=86400"
+		header {
+			Cache-Control "private, max-age=86400"
+			X-Content-Type-Options "nosniff"
+			Content-Security-Policy "sandbox; default-src 'none'"
+		}
 		file_server
 	}
 
-	# Everything else: the API, the admin and the mini app at /app/.
+	# Everything else: the API, the admin, the mini app at /app/ and the dashboard at /dashboard/.
+	# Private files go through Django too (/api/v1/files/…), behind signed links.
 	handle {
+		encode zstd gzip
 		reverse_proxy backend:8000
 	}
 }

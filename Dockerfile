@@ -7,6 +7,16 @@ COPY miniapp ./
 RUN npm run build
 
 
+# The owner dashboard (Vue), served at /dashboard/.
+FROM node:22-alpine AS dashboard
+
+WORKDIR /dashboard
+COPY dashboard/package.json dashboard/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY dashboard ./
+RUN npm run build
+
+
 FROM python:3.14-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -15,6 +25,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     UV_LINK_MODE=copy \
     UV_PROJECT_ENVIRONMENT=/opt/venv \
     PATH="/opt/venv/bin:$PATH"
+
+# WeasyPrint renders payslips, contracts and invoices through Pango and HarfBuzz. The PDFs embed
+# their own Noto Sans; DejaVu (Latin and Cyrillic) is only the fallback.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=ghcr.io/astral-sh/uv:0.12.1 /uv /uvx /bin/
 
@@ -26,9 +43,12 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 COPY backend ./backend
 COPY employee_bot ./employee_bot
+COPY owner_bot ./owner_bot
 COPY --from=miniapp /miniapp/dist ./miniapp/dist
+COPY --from=dashboard /dashboard/dist ./dashboard/dist
 # Pre-compressed copies next to each file; WhiteNoise serves them to browsers that accept them.
-RUN python -m whitenoise.compress miniapp/dist
+RUN python -m whitenoise.compress miniapp/dist \
+    && python -m whitenoise.compress dashboard/dist
 
 WORKDIR /app/backend
 
@@ -41,7 +61,11 @@ RUN DJANGO_SETTINGS_MODULE=config.settings.prod \
     CELERY_BROKER_URL=redis://localhost:6379/1 \
     python manage.py collectstatic --noinput
 
-RUN useradd --create-home --uid 10001 app && mkdir -p media && chown app media
+# media: public uploads (proof photos, logos). private_media: receipts, documents, exports and
+# PDFs, only ever served through signed links. Both are volumes in docker-compose.yml.
+RUN useradd --create-home --uid 10001 app \
+    && mkdir -p media private_media \
+    && chown app media private_media
 USER app
 
 EXPOSE 8000
