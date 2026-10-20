@@ -13,8 +13,8 @@ import { ArrowLeft } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { useBreakpoints } from "@/lib/useBreakpoints";
 import { isNumber, readStored, writeStored } from "@/lib/storage";
+import { useBreakpoints } from "@/lib/useBreakpoints";
 
 const props = withDefaults(
   defineProps<{

@@ -4,13 +4,14 @@
  * available), the inbox bell, theme, language and the account menu. On phones: the company
  * switcher, search, bell and account.
  */
-import { Bell, ChevronRight, Keyboard, Languages, LogOut, Monitor, Moon, MonitorSmartphone, Rows3, Search, Sparkles, Sun } from "@lucide/vue";
+import { Bell, Keyboard, Languages, LogOut, Monitor, Moon, MonitorSmartphone, Rows3, Search, Sparkles, Sun } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { RouterLink, useRoute, useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 import { changeLanguage } from "@/app/providers";
 import { switchTheme, toggleTheme } from "@/app/theme";
+import Breadcrumbs, { type Crumb } from "@/components/Breadcrumbs.vue";
 import ConnectionPill from "@/components/ConnectionPill.vue";
 import DropdownMenu, { type MenuEntry } from "@/components/DropdownMenu.vue";
 import ExtensionSlot from "@/components/ExtensionSlot.vue";
@@ -43,11 +44,6 @@ const router = useRouter();
 const session = useSessionStore();
 const ui = useUiStore();
 const palette = usePaletteStore();
-
-interface Crumb {
-  label: string;
-  to?: string;
-}
 
 const crumbs = computed<Crumb[]>(() => {
   const module = findModule(route.matched.map((r) => r.meta.module).find(Boolean));
@@ -148,23 +144,7 @@ const languageMenu = computed<MenuEntry[]>(() => [
   >
     <CompanySwitcher v-if="phone || companyless" variant="compact" />
 
-    <nav v-if="!phone && !companyless && crumbs.length" :aria-label="t('shell.topbar.breadcrumb')" class="flex min-w-0 items-center gap-1 text-base">
-      <template v-for="(crumb, index) in crumbs" :key="index">
-        <ChevronRight v-if="index > 0" :size="14" class="shrink-0 text-subtle" aria-hidden="true" />
-        <RouterLink
-          v-if="crumb.to && index < crumbs.length - 1"
-          :to="crumb.to"
-          class="truncate rounded-[6px] px-1.5 py-0.5 font-medium text-muted transition-colors hover:bg-highlight hover:text-fg"
-          >{{ crumb.label }}</RouterLink
-        >
-        <span
-          v-else
-          :class="['truncate px-1.5', index === crumbs.length - 1 ? 'font-semibold text-fg' : 'font-medium text-muted']"
-          :aria-current="index === crumbs.length - 1 ? 'page' : undefined"
-          >{{ crumb.label }}</span
-        >
-      </template>
-    </nav>
+    <Breadcrumbs v-if="!phone && !companyless && crumbs.length" :items="crumbs" />
 
     <span class="min-w-0 flex-1" />
 

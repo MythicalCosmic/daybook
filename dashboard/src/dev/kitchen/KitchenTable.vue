@@ -20,8 +20,9 @@ import UiButton from "@/components/UiButton.vue";
 import { useDataTable } from "@/components/useDataTable";
 import { toast } from "@/components/useToast";
 import { todayIn } from "@/lib/dates";
-import { useFormat } from "@/lib/useFormat";
+import { compare, dec } from "@/lib/decimal";
 import { moneySign } from "@/lib/money";
+import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
 import KitchenSection from "./KitchenSection.vue";
@@ -89,7 +90,7 @@ const filtered = computed(() => {
       if (range.from && row.date < range.from) return false;
       if (range.to && row.date > range.to) return false;
     }
-    if (view.value === "big") return Math.abs(Number(row.amount)) >= 2_000_000;
+    if (view.value === "big") return dec(row.amount).abs().gte(2_000_000);
     return true;
   });
 });
@@ -99,8 +100,9 @@ const page = computed(() => {
   const desc = ordering.startsWith("-");
   const field = ordering.replace(/^-/, "") as keyof DemoTransaction | "amount";
   const sorted = [...filtered.value].sort((a, b) => {
-    const left = field === "amount" ? Number(a.amount) : String(a[field as keyof DemoTransaction]);
-    const right = field === "amount" ? Number(b.amount) : String(b[field as keyof DemoTransaction]);
+    if (field === "amount") return compare(a.amount, b.amount) * (desc ? -1 : 1);
+    const left = String(a[field as keyof DemoTransaction]);
+    const right = String(b[field as keyof DemoTransaction]);
     return (left < right ? -1 : left > right ? 1 : 0) * (desc ? -1 : 1);
   });
   const start = (table.page.value - 1) * table.pageSize.value;

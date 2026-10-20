@@ -10,8 +10,8 @@ import { computed, ref, watch, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
-import CheckBox from "@/components/CheckBox.vue";
 import BulkActionBar from "@/components/BulkActionBar.vue";
+import CheckBox from "@/components/CheckBox.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import IconButton from "@/components/IconButton.vue";

@@ -47,10 +47,10 @@ const label = computed(() => t(`common.delta.${direction.value > 0 ? "up" : dire
 </script>
 
 <template>
-  <span class="inline-flex items-center gap-1.5 whitespace-nowrap" :aria-label="suffix ? `${label} ${suffix}` : label">
+  <span class="inline-flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5" :aria-label="suffix ? `${label} ${suffix}` : label">
     <span
       :class="[
-        'inline-flex items-center gap-0.5 font-semibold tabular-nums leading-none',
+        'inline-flex shrink-0 items-center gap-0.5 whitespace-nowrap font-semibold tabular-nums leading-none',
         variant === 'badge' && (size === 'sm' ? 'h-5 rounded-full px-1.5 text-[11px]' : 'h-6 rounded-full px-2 text-xs'),
         variant === 'text' && (size === 'sm' ? 'text-xs' : 'text-sm'),
         tone === 'good' && (variant === 'badge' ? 'bg-success-soft text-success' : 'text-success'),

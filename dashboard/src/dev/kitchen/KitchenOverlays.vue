@@ -4,6 +4,7 @@ import { Archive, CalendarPlus, Copy, Ellipsis, Pencil, Sparkles, Trash2 } from 
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 
+import { ApiError } from "@/api/http";
 import ApproveRejectButtons from "@/components/ApproveRejectButtons.vue";
 import BottomSheet from "@/components/BottomSheet.vue";
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
@@ -30,7 +31,6 @@ import UiPopover from "@/components/UiPopover.vue";
 import UiTooltip from "@/components/UiTooltip.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
-import { ApiError } from "@/api/http";
 
 import KitchenSection from "./KitchenSection.vue";
 import KitchenSpecimen from "./KitchenSpecimen.vue";

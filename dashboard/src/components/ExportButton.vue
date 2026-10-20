@@ -67,14 +67,14 @@ function page(): void {
     </template>
     <div class="flex flex-col p-1.5">
       <template v-if="canServer">
-        <button type="button" class="ui-option hover:bg-highlight" @click="server('xlsx')">
+        <button type="button" class="ui-option w-full text-left hover:bg-highlight" @click="server('xlsx')">
           <FileSpreadsheet :size="16" class="text-success" />
           <span class="min-w-0 flex-1">
             <span class="block font-medium">{{ t("common.export.excel") }}</span>
             <span class="block text-xs text-muted">{{ t("common.export.allRows") }}</span>
           </span>
         </button>
-        <button type="button" class="ui-option hover:bg-highlight" @click="server('csv')">
+        <button type="button" class="ui-option w-full text-left hover:bg-highlight" @click="server('csv')">
           <FileText :size="16" class="text-muted" />
           <span class="min-w-0 flex-1">
             <span class="block font-medium">{{ t("common.export.csv") }}</span>
@@ -82,7 +82,7 @@ function page(): void {
           </span>
         </button>
       </template>
-      <button v-if="pageCsv" type="button" class="ui-option hover:bg-highlight" @click="page">
+      <button v-if="pageCsv" type="button" class="ui-option w-full text-left hover:bg-highlight" @click="page">
         <Rows3 :size="16" class="text-muted" />
         <span class="min-w-0 flex-1">
           <span class="block font-medium">{{ t("common.export.page") }}</span>

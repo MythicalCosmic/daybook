@@ -87,14 +87,14 @@ const menu = computed<MenuEntry[]>(() => {
 
 <template>
   <section ref="root" class="ui-card flex min-w-0 flex-col" :aria-label="title" :aria-busy="loading || undefined">
-    <header class="flex items-start gap-3 px-4 pb-2 pt-4 md:px-5">
-      <div class="min-w-0 flex-1">
+    <header class="flex flex-wrap items-start gap-x-3 gap-y-2 px-4 pb-2 pt-4 md:px-5">
+      <div class="min-w-[min(100%,180px)] flex-1">
         <h3 class="truncate text-sm font-semibold text-fg">{{ title }}</h3>
         <p v-if="value && !loading" class="mt-1 truncate text-xl font-semibold tracking-[-0.015em] tabular-nums text-fg">{{ value }}</p>
         <SkeletonBlock v-else-if="value !== undefined && skeleton" class="mt-1.5" width="140px" height="24px" />
         <p v-if="subtitle" class="mt-0.5 truncate text-xs text-muted">{{ subtitle }}</p>
       </div>
-      <div class="flex shrink-0 items-center gap-1">
+      <div class="flex min-w-0 max-w-full items-center gap-1">
         <slot name="actions" />
         <DropdownMenu v-if="exportable" :items="menu" width="190px">
           <template #trigger>

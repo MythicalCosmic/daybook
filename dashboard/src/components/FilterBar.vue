@@ -157,7 +157,7 @@ const chipHeight = computed(() => (props.size === "sm" ? "h-7" : "h-8"));
             type="button"
             role="radio"
             :aria-checked="values[def.key] === choice"
-            :class="['ui-option hover:bg-highlight', values[def.key] === choice && 'bg-accent-soft font-semibold text-accent-fg']"
+            :class="['ui-option w-full text-left hover:bg-highlight', values[def.key] === choice && 'bg-accent-soft font-semibold text-accent-fg']"
             @click="
               set(def.key, choice);
               openKey = null;

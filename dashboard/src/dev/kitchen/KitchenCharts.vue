@@ -8,6 +8,7 @@ import AreaChart from "@/components/AreaChart.vue";
 import BarChart from "@/components/BarChart.vue";
 import BulletBar from "@/components/BulletBar.vue";
 import ChartCard from "@/components/ChartCard.vue";
+import DateRangePicker from "@/components/DateRangePicker.vue";
 import DonutChart from "@/components/DonutChart.vue";
 import HeatmapChart from "@/components/HeatmapChart.vue";
 import KpiCard from "@/components/KpiCard.vue";
@@ -15,7 +16,6 @@ import KpiStrip from "@/components/KpiStrip.vue";
 import LineChart from "@/components/LineChart.vue";
 import SparkLine from "@/components/SparkLine.vue";
 import UiButton from "@/components/UiButton.vue";
-import DateRangePicker from "@/components/DateRangePicker.vue";
 import { rangeValue } from "@/lib/dateRange";
 import { todayIn } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
@@ -105,7 +105,7 @@ const weekdays = computed(() => Array.from({ length: 7 }, (_, i) => t(`common.we
         <BulletBar :label="k('target.sales')" value="48120000" target="60000000" :expected="0.65" value-format="compact" />
         <BulletBar :label="k('target.budget')" value="9800000" target="9000000" :expected="0.65" inverse value-format="compact" />
         <BulletBar :label="k('target.project')" value="21500000" target="40000000" :expected="0.4" inverse value-format="compact" size="sm" />
-        <div class="flex items-center gap-6 pt-1">
+        <div class="flex flex-wrap items-center gap-6 pt-1">
           <SparkLine :data="net.values" />
           <SparkLine :data="cash.values" color="var(--c-chart-3)" :area="false" />
           <SparkLine :data="[3, 5, 4, null, 6, 8, 7]" color="var(--c-chart-6)" :width="80" />
