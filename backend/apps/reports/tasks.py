@@ -9,9 +9,14 @@ from apps.members.permissions import Perm
 from apps.members.queries import members_with_perm
 from apps.notifications.tasks import send_telegram_message
 from apps.notifications.telegram import BotName, serialize_markup
-from apps.reports import bot_messages, kpis
+from apps.reports import bot_messages, digest, kpis
 from apps.reports.models import WeeklyReport
 from apps.reports.periods import Period, bounds, in_window
+
+
+@shared_task
+def send_morning_digests() -> None:
+    digest.post_morning_digests(timezone.now())
 
 
 @shared_task

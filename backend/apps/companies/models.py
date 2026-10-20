@@ -39,6 +39,12 @@ class Company(TimeStampedModel):
     evening_report_at = models.TimeField(
         default=time(20, 0), help_text=_("When groups get the end-of-day summary.")
     )
+    morning_digest = models.BooleanField(
+        default=True,
+        help_text=_(
+            "At the morning report time, everyone gets their tasks for the day from the bot."
+        ),
+    )
     is_active = models.BooleanField(default=True)
 
     INVITE_PREFIX = "c_"

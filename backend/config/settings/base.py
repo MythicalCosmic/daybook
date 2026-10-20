@@ -127,6 +127,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.groups.tasks.send_daily_reports",
         "schedule": crontab(minute="*/5"),
     },
+    # Once per person per day, in the first run after the company's morning report time.
+    "send-morning-digests": {
+        "task": "apps.reports.tasks.send_morning_digests",
+        "schedule": crontab(minute="*/5"),
+    },
     # Monday mornings only; once per person per week.
     "send-weekly-reports": {
         "task": "apps.reports.tasks.send_weekly_reports",

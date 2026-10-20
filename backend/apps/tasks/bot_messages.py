@@ -22,11 +22,19 @@ LIST_LIMIT = 30
 def task_list(tasks: list[Task], now: datetime) -> BotMessage:
     if not tasks:
         return _("🎉 Nothing on your list right now."), None
-    rows = [
-        [_button(_list_label(task, now), TaskAction.OPEN, task.pk)] for task in tasks[:LIST_LIMIT]
-    ]
+    rows = [[task_button(task, now)] for task in tasks[:LIST_LIMIT]]
     text = "\n".join([_("📋 <b>Your tasks</b>"), _("Tap a task to open it.")])
     return text, InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def task_button(task: Task, now: datetime) -> InlineKeyboardButton:
+    """A list entry that opens the task's card."""
+    return _button(_list_label(task, now), TaskAction.OPEN, task.pk)
+
+
+def list_button(label: str) -> InlineKeyboardButton:
+    """Shows the person's task list."""
+    return _button(label, TaskAction.LIST)
 
 
 def task_card(task: Task, member: Membership, now: datetime, header: str = "") -> BotMessage:

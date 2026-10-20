@@ -71,6 +71,10 @@ When a business rule is broken, the API returns `400 {"detail": "<message safe t
 
 The bot keeps the link when a group becomes a supergroup, and switches the group off when it's removed. Posts to one group are spaced 3 seconds apart, under Telegram's limit of about 20 a minute.
 
+## Morning digest
+
+At the company's morning report time, everyone working that day gets their open tasks from the bot, overdue ones first, one tap from each task's card. Nobody gets one on a holiday or a day off, or with nothing open. It can be switched off on the company page in the admin.
+
 ## Time off
 
 People ask for days off in the app (Profile → Time off). Everyone who can approve time off (owners and managers, by default) gets the request in the bot with Approve and Reject buttons, and the person hears the answer. Owners and managers who ask just take the days. Company holidays are set on the company page in the admin.

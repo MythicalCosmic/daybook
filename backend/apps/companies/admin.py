@@ -39,6 +39,7 @@ class CompanyAdmin(AuditedAdmin, ModelAdmin):
         "rejoin_cooldown_hours",
         "morning_report_at",
         "evening_report_at",
+        "morning_digest",
         "is_active",
         "invite_code",
         "invite_link_display",

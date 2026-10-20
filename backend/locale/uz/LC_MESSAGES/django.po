@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-20 18:01+0500\n"
+"POT-Creation-Date: 2026-10-20 18:12+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -162,6 +162,10 @@ msgstr "Guruhlar bugungi rejani qachon oladi (kompaniya vaqt mintaqasida)."
 #: backend/apps/companies/models.py
 msgid "When groups get the end-of-day summary."
 msgstr "Guruhlar kun yakunini qachon oladi."
+
+#: backend/apps/companies/models.py
+msgid "At the morning report time, everyone gets their tasks for the day from the bot."
+msgstr "Ertalabki hisobot vaqtida har kim botdan o‘sha kungi vazifalarini oladi."
 
 #: backend/apps/companies/services.py
 msgid "This invite link is invalid or has expired. Ask your manager for a new one."
@@ -830,6 +834,24 @@ msgstr "%(count)d ta kechikkan"
 msgid "%(count)d not done"
 msgstr "%(count)d ta bajarilmagan"
 
+#: backend/apps/reports/digest.py
+#, python-format
+msgid "🌅 Good morning, %(name)s! Tasks for today: %(count)d."
+msgstr "🌅 Xayrli tong, %(name)s! Bugungi vazifalar: %(count)d ta."
+
+#: backend/apps/reports/digest.py
+#, python-format
+msgid "⚠️ Still open from earlier days: %(count)d."
+msgstr "⚠️ Oldingi kunlardan qolgan: %(count)d ta."
+
+#: backend/apps/reports/digest.py backend/apps/tasks/bot_messages.py
+msgid "Tap a task to open it."
+msgstr "Ochish uchun vazifani bosing."
+
+#: backend/apps/reports/digest.py
+msgid "📋 All my tasks"
+msgstr "📋 Barcha vazifalarim"
+
 #: backend/apps/reports/periods.py
 msgid "This week"
 msgstr "Shu hafta"
@@ -869,10 +891,6 @@ msgstr "🎉 Hozircha ro‘yxatingiz bo‘sh."
 #: backend/apps/tasks/bot_messages.py
 msgid "📋 <b>Your tasks</b>"
 msgstr "📋 <b>Vazifalaringiz</b>"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "Tap a task to open it."
-msgstr "Ochish uchun vazifani bosing."
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
