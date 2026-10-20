@@ -65,6 +65,12 @@ const items = computed<CalendarItem[]>(() =>
   })),
 );
 
+const legend = computed(() => [
+  ...(["todo", "in_progress", "review", "done"] as const).map((id) => ({ id, label: t(`tasks.column.${id}`), color: COLUMN_COLOR[id] })),
+  // Sent back and late share the danger color.
+  { id: "late", label: `${t("tasks.column.returned")} · ${t("tasks.status.late")}`, color: "var(--c-danger)" },
+]);
+
 const day = computed(() => (query.data.value?.days ?? []).find((entry) => entry.date === selected.value) ?? null);
 
 function openItem(item: CalendarItem): void {
@@ -105,7 +111,12 @@ function openItem(item: CalendarItem): void {
         </template>
       </CalendarMonth>
       <div v-else class="flex flex-col gap-3">
-        <div class="flex justify-end">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <ul class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+            <li v-for="entry in legend" :key="entry.id" class="inline-flex items-center gap-1.5">
+              <span class="size-2 rounded-full" :style="{ background: entry.color }" />{{ entry.label }}
+            </li>
+          </ul>
           <SegmentedControl
             v-model="mode"
             size="sm"

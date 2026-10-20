@@ -13,6 +13,7 @@ import BarChart from "@/components/BarChart.vue";
 import ChartCard from "@/components/ChartCard.vue";
 import DateRangePicker from "@/components/DateRangePicker.vue";
 import ErrorState from "@/components/ErrorState.vue";
+import KpiCard from "@/components/KpiCard.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import PageSection from "@/components/PageSection.vue";
@@ -20,7 +21,9 @@ import ProgressBar from "@/components/ProgressBar.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UiButton from "@/components/UiButton.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
+import { useChartTheme } from "@/components/useChartTheme";
 import { toast } from "@/components/useToast";
+import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useFormat } from "@/lib/useFormat";
 import { useRangeState } from "@/lib/useRangeState";
 
@@ -30,6 +33,8 @@ import RoutinePreview from "../components/RoutinePreview.vue";
 import WeekdayDots from "../components/WeekdayDots.vue";
 
 const { t } = useI18n();
+const { isPhone } = useBreakpoints();
+const chart = useChartTheme();
 const fmt = useFormat();
 const route = useRoute();
 const router = useRouter();
@@ -53,9 +58,9 @@ const kpis = computed(() => [
 
 const series = computed(() => compliance.data.value?.series ?? []);
 const chartSeries = computed(() => [
-  { name: t("routines.detail.onTimeShort"), data: series.value.map((d) => d.on_time), color: "var(--c-success)", stack: "done" },
-  { name: t("routines.detail.late"), data: series.value.map((d) => d.late), color: "var(--c-warning)", stack: "done" },
-  { name: t("routines.detail.missed"), data: series.value.map((d) => d.missed), color: "var(--c-danger)", stack: "done" },
+  { name: t("routines.detail.onTimeShort"), data: series.value.map((d) => d.on_time), color: chart.value.success, stack: "done" },
+  { name: t("routines.detail.late"), data: series.value.map((d) => d.late), color: chart.value.warning, stack: "done" },
+  { name: t("routines.detail.missed"), data: series.value.map((d) => d.missed), color: chart.value.danger, stack: "done" },
 ]);
 
 async function setActive(active: boolean): Promise<void> {
@@ -100,7 +105,10 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
         <DateRangePicker v-model="period" align="end" />
       </div>
 
-      <KpiStrip :items="kpis" :loading="compliance.isPending.value" :columns="4" />
+      <div v-if="isPhone" class="grid grid-cols-2 gap-2">
+        <KpiCard v-for="(item, index) in kpis" :key="index" v-bind="{ ...item, spark: undefined, hint: undefined }" :loading="compliance.isPending.value" />
+      </div>
+      <KpiStrip v-else :items="kpis" :loading="compliance.isPending.value" :columns="4" />
 
       <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
         <ChartCard

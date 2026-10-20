@@ -22,7 +22,9 @@ const picked = computed({
 <template>
   <div class="flex flex-wrap items-center gap-2">
     <DateRangePicker v-model="period" compare />
-    <BranchPicker v-if="scoped.length > 1" v-model="picked" multiple :placeholder="t('reports.allBranches')" class="w-full sm:w-[220px]" />
+    <div v-if="scoped.length > 1" class="w-full sm:w-[240px]">
+      <BranchPicker v-model="picked" multiple :placeholder="t('reports.allBranches')" />
+    </div>
     <span class="flex-1" />
     <slot />
   </div>

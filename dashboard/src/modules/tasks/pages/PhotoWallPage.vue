@@ -97,7 +97,7 @@ function open(task: TaskRow): void {
         </h2>
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
           <figure v-for="task in section.items" :key="task.id" class="ui-card group/photo flex min-w-0 flex-col overflow-hidden">
-            <div class="aspect-[4/3] w-full bg-surface-2">
+            <div class="aspect-[4/3] w-full overflow-hidden bg-surface-2">
               <ProofThumb
                 :src="task.proof_thumb ?? task.proof_photo"
                 :images="[{ src: task.proof_photo ?? task.proof_thumb ?? '', thumb: task.proof_thumb ?? undefined, caption: `${task.title} · ${task.assignee.name}` }]"

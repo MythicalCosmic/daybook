@@ -57,7 +57,7 @@ const columns = computed<TableColumn<TaskRow>[]>(() => [
   { id: "title", header: t("tasks.col.task"), sortable: true, minWidth: 260, hideable: false, sticky: true, csv: (row) => row.title },
   { id: "assignee", header: t("tasks.col.assignee"), sortable: true, width: 210, value: (row) => row.assignee.name },
   { id: "status", header: t("tasks.col.status"), sortable: true, width: 150, value: (row) => t(`tasks.status.${row.status}`) },
-  { id: "due_at", header: t("tasks.col.due"), sortable: true, width: 200, value: (row) => row.due_at, csv: (row) => (row.due_at ? fmt.instant(row.due_at) : "") },
+  { id: "due_at", header: t("tasks.col.due"), sortable: true, width: 240, value: (row) => row.due_at, csv: (row) => (row.due_at ? fmt.instant(row.due_at) : "") },
   { id: "priority", header: t("tasks.col.priority"), sortable: true, width: 120, value: (row) => t(`tasks.priority.${row.priority}`) },
   { id: "branch", header: t("tasks.col.branch"), width: 130, value: (row) => row.branch?.name ?? "" },
   { id: "routine", header: t("tasks.col.routine"), width: 190, value: (row) => row.routine?.title ?? "" },

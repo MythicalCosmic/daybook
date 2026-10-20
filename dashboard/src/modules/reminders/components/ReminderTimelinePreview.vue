@@ -5,7 +5,7 @@
  * (`../schedule.ts`); long quiet nights are squeezed so the reminders stay readable.
  */
 import { BellRing, Flag, Moon, Siren, Square } from "@lucide/vue";
-import { computed } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { clock, dayOffset, planReminders, trackScale, type PolicyShape } from "../schedule";
@@ -21,16 +21,34 @@ const plan = computed(() => planReminders(props.policy, props.due, props.weekday
 const scale = computed(() => trackScale(plan.value.start, plan.value.end, plan.value.quiet));
 const pct = (minutes: number) => `${(scale.value(minutes) * 100).toFixed(2)}%`;
 
+// The track's width in pixels, so time labels (about 44 px each) never run into each other.
+const track = ref<HTMLElement | null>(null);
+const width = ref(0);
+let observer: ResizeObserver | null = null;
+onMounted(() => {
+  if (!track.value || typeof ResizeObserver === "undefined") return;
+  observer = new ResizeObserver(([entry]) => (width.value = entry?.contentRect.width ?? 0));
+  observer.observe(track.value);
+});
+onBeforeUnmount(() => observer?.disconnect());
+
 const labelled = computed(() => {
-  // Label the heads-up, the first, the escalation and the last; others when there's room.
+  // Label the heads-up, the first, the escalation and the last; others when there's room. When
+  // two labels would touch, the more important one (or the last) wins.
+  const gap = Math.max(props.compact ? 0.16 : 0.085, width.value ? 48 / width.value : 0);
   const keep = new Set<number>();
-  let lastX = -1;
+  let previous: { index: number; x: number; important: boolean } | null = null;
   plan.value.events.forEach((event, index) => {
     const x = scale.value(event.at);
     const important = event.kind === "heads_up" || event.step === 1 || event.escalate || event.last;
-    if (important || x - lastX > (props.compact ? 0.16 : 0.085)) {
+    const current = { index, x, important };
+    if (!previous || x - previous.x >= gap) {
       keep.add(index);
-      lastX = x;
+      previous = current;
+    } else if ((important && !previous.important) || event.last) {
+      keep.delete(previous.index);
+      keep.add(index);
+      previous = current;
     }
   });
   return keep;
@@ -44,7 +62,7 @@ function when(minutes: number): string {
 
 <template>
   <div class="min-w-0" :aria-label="t('reminders.timeline.label')" role="img">
-    <div :class="['relative mx-3', compact ? 'h-[54px]' : 'h-[104px]']">
+    <div ref="track" :class="['relative mx-3', compact ? 'h-[54px]' : 'h-[104px]']">
       <!-- Quiet hours and quiet days -->
       <div
         v-for="band in plan.quiet"

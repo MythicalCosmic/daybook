@@ -46,7 +46,7 @@ const late = computed(() => {
 <template>
   <span :class="['inline-flex min-w-0 items-center gap-1 tabular-nums', late ? 'font-semibold text-danger' : due ? 'text-fg' : 'text-subtle']" :title="due ? fmt.instant(due, 'datetime') : undefined">
     <component :is="late ? AlarmClock : CalendarClock" v-if="icon" :size="13" class="shrink-0" aria-hidden="true" />
-    <span class="truncate">{{ text }}</span>
+    <span :class="late && !compact ? 'shrink-0' : 'truncate'">{{ text }}</span>
     <span v-if="late && !compact" class="truncate text-xs font-medium">· {{ late }}</span>
   </span>
 </template>

@@ -11,11 +11,14 @@ import { RouterLink } from "vue-router";
 import BarChart from "@/components/BarChart.vue";
 import ChartCard from "@/components/ChartCard.vue";
 import DataTable from "@/components/DataTable.vue";
+import KpiCard from "@/components/KpiCard.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import ProgressBar from "@/components/ProgressBar.vue";
 import type { TableColumn } from "@/components/table";
+import { useChartTheme } from "@/components/useChartTheme";
 import { useDataTable } from "@/components/useDataTable";
+import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useFormat } from "@/lib/useFormat";
 import { usePermission } from "@/lib/usePermission";
 import { useRangeState } from "@/lib/useRangeState";
@@ -27,6 +30,8 @@ import ReportToolbar from "../components/ReportToolbar.vue";
 import type { RoutineRow } from "../types";
 
 const { t } = useI18n();
+const { isPhone } = useBreakpoints();
+const chart = useChartTheme();
 const fmt = useFormat();
 const company = useCompanyStore();
 const { can } = usePermission();
@@ -55,9 +60,9 @@ const kpis = computed(() => {
 
 const worst = computed(() => [...(data.value?.breakdown ?? [])].filter((row) => row.made > 0).sort((a, b) => (a.on_time_percent ?? 0) - (b.on_time_percent ?? 0)).slice(0, 10));
 const chartSeries = computed(() => [
-  { name: t("reports.kpi.onTimeShort"), data: worst.value.map((r) => r.on_time), color: "var(--c-success)", stack: "all" },
-  { name: t("reports.kpi.late"), data: worst.value.map((r) => r.late), color: "var(--c-warning)", stack: "all" },
-  { name: t("reports.kpi.missed"), data: worst.value.map((r) => r.missed), color: "var(--c-danger)", stack: "all" },
+  { name: t("reports.kpi.onTimeShort"), data: worst.value.map((r) => r.on_time), color: chart.value.success, stack: "all" },
+  { name: t("reports.kpi.late"), data: worst.value.map((r) => r.late), color: chart.value.warning, stack: "all" },
+  { name: t("reports.kpi.missed"), data: worst.value.map((r) => r.missed), color: chart.value.danger, stack: "all" },
 ]);
 
 const table = useDataTable({ id: "reports.routines", ordering: "on_time_percent", url: true, pageSize: 200 });
@@ -91,7 +96,10 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
   <div class="flex min-w-0 flex-col gap-5">
     <PageHeader :title="t('reports.title')" :description="t('reports.routinesDescription')" :tabs="tabs" />
     <ReportToolbar v-model:period="period" v-model:branches="branches" />
-    <KpiStrip :items="kpis" :loading="query.isPending.value" :columns="5" />
+    <div v-if="isPhone" class="grid grid-cols-2 gap-2">
+      <KpiCard v-for="(item, index) in kpis" :key="index" v-bind="{ ...item, spark: undefined, hint: undefined }" :loading="query.isPending.value" />
+    </div>
+    <KpiStrip v-else :items="kpis" :loading="query.isPending.value" :columns="5" />
 
     <ChartCard
       :title="t('reports.chart.worstRoutines')"

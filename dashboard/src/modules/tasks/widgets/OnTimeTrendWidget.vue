@@ -16,9 +16,12 @@ const fmt = useFormat();
 const query = useSummary();
 const series = computed(() => query.data.value?.series ?? []);
 const categories = computed(() => series.value.map((point) => point.date));
+// The headline covers the same 14 days as the line (the KPI tile shows the last 7).
 const value = computed(() => {
-  const percent = query.data.value?.on_time_percent;
-  return percent === null || percent === undefined ? undefined : fmt.percent(percent, 1);
+  const due = series.value.reduce((sum, point) => sum + point.total, 0);
+  if (!due) return undefined;
+  const onTime = series.value.reduce((sum, point) => sum + point.on_time, 0);
+  return fmt.percent(Math.round((1000 * onTime) / due) / 10, 1);
 });
 const csv = computed(() => ({
   filename: "on-time",

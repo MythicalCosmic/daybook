@@ -188,7 +188,7 @@ function open(task: TaskDetail): void {
         class="ui-card group/card flex min-w-0 flex-col overflow-hidden outline-offset-2 transition-[border-color,box-shadow] hover:border-line-strong focus-visible:border-primary focus-visible:shadow-raised"
         @focus="focusedId = task.id"
       >
-        <div class="relative aspect-[4/3] w-full bg-surface-2">
+        <div class="relative aspect-[4/3] w-full overflow-hidden bg-surface-2">
           <ProofThumb v-if="task.proof_photo" :src="task.proof_photo" :images="[{ src: task.proof_photo, caption: task.title }]" size="fill" class="!rounded-none" />
           <div v-else class="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
             <FileText :size="22" class="text-subtle" />

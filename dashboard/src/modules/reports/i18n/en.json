@@ -22,7 +22,7 @@
   "reports.kpi.completion": "Done at all",
   "reports.kpi.made": "Tasks made",
   "reports.kpi.idle": "Nobody does",
-  "reports.kpi.idleHint": "Active routines that made no tasks in this period",
+  "reports.kpi.idleHint": "Active, but no tasks made",
   "reports.col.due": "Due",
   "reports.col.lateNow": "Late now",
   "reports.col.reminders": "Reminders",

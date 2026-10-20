@@ -11,7 +11,7 @@ import { useI18n } from "vue-i18n";
 import BarChart from "@/components/BarChart.vue";
 import ChartCard from "@/components/ChartCard.vue";
 import DataTable from "@/components/DataTable.vue";
-import ExportButton from "@/components/ExportButton.vue";
+import KpiCard from "@/components/KpiCard.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
 import LineChart from "@/components/LineChart.vue";
 import PageHeader from "@/components/PageHeader.vue";
@@ -19,6 +19,7 @@ import PersonCell from "@/components/PersonCell.vue";
 import ProgressBar from "@/components/ProgressBar.vue";
 import SegmentedControl from "@/components/SegmentedControl.vue";
 import type { TableColumn } from "@/components/table";
+import { useChartTheme } from "@/components/useChartTheme";
 import { useDataTable } from "@/components/useDataTable";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useFormat } from "@/lib/useFormat";
@@ -30,6 +31,7 @@ import ReportToolbar from "../components/ReportToolbar.vue";
 import type { GroupBy, TeamRow } from "../types";
 
 const { t } = useI18n();
+const chart = useChartTheme();
 const fmt = useFormat();
 const { isPhone } = useBreakpoints();
 
@@ -48,7 +50,7 @@ const kpis = computed(() => {
   const totals = data.value?.totals;
   const previous = data.value?.previous;
   return [
-    { id: "on_time", label: t("reports.kpi.onTime"), value: totals?.on_time_percent ?? null, previous: previous?.on_time_percent ?? null, format: "percent" as const, points: true, spark: data.value?.series.map((p) => p.on_time_percent) ?? [], hint: t("reports.kpi.onTimeHint") },
+    { id: "on_time", label: t("reports.kpi.onTime"), value: totals?.on_time_percent ?? null, previous: previous?.on_time_percent ?? null, format: "percent" as const, points: true, spark: data.value?.series.map((p) => p.on_time_percent) ?? [] },
     { id: "done", label: t("reports.kpi.done"), value: totals?.done ?? null, previous: previous?.done ?? null },
     { id: "late", label: t("reports.kpi.late"), value: totals?.late ?? null, previous: previous?.late ?? null, inverse: true },
     { id: "missed", label: t("reports.kpi.missed"), value: totals?.missed ?? null, previous: previous?.missed ?? null, inverse: true },
@@ -64,9 +66,9 @@ const trendCategories = computed(() => series.value.map((p) => p.date));
 const spread = computed(() => [...(data.value?.breakdown ?? [])].filter((row) => row.total > 0).sort((a, b) => (groupBy.value === "day" ? a.key.localeCompare(b.key) : b.total - a.total)).slice(0, groupBy.value === "day" ? 62 : 12));
 const label = (row: TeamRow) => (groupBy.value === "day" ? row.key : row.label || t("reports.none"));
 const spreadSeries = computed(() => [
-  { name: t("reports.kpi.onTimeShort"), data: spread.value.map((r) => r.on_time), color: "var(--c-success)", stack: "all" },
-  { name: t("reports.kpi.late"), data: spread.value.map((r) => r.late), color: "var(--c-warning)", stack: "all" },
-  { name: t("reports.kpi.missed"), data: spread.value.map((r) => r.missed), color: "var(--c-danger)", stack: "all" },
+  { name: t("reports.kpi.onTimeShort"), data: spread.value.map((r) => r.on_time), color: chart.value.success, stack: "all" },
+  { name: t("reports.kpi.late"), data: spread.value.map((r) => r.late), color: chart.value.warning, stack: "all" },
+  { name: t("reports.kpi.missed"), data: spread.value.map((r) => r.missed), color: chart.value.danger, stack: "all" },
 ]);
 
 // Table (sorted here: every row is on the page)
@@ -109,22 +111,21 @@ const groupOptions = computed(() => [
 
 <template>
   <div class="flex min-w-0 flex-col gap-5">
-    <PageHeader :title="t('reports.title')" :description="t('reports.teamDescription')" :tabs="tabs">
-      <template #actions>
-        <ExportButton kind="reports.team" :params="exportParams" />
-      </template>
-    </PageHeader>
+    <PageHeader :title="t('reports.title')" :description="t('reports.teamDescription')" :tabs="tabs" />
 
     <ReportToolbar v-model:period="period" v-model:branches="branches">
       <SegmentedControl v-model="groupBy" size="sm" :options="groupOptions" :aria-label="t('reports.groupBy')" />
     </ReportToolbar>
 
-    <KpiStrip :items="kpis" :loading="query.isPending.value" :columns="5" />
+    <div v-if="isPhone" class="grid grid-cols-2 gap-2">
+      <KpiCard v-for="(item, index) in kpis" :key="index" v-bind="{ ...item, spark: undefined, hint: undefined }" :loading="query.isPending.value" />
+    </div>
+    <KpiStrip v-else :items="kpis" :loading="query.isPending.value" :columns="5" />
 
     <div class="grid gap-4 xl:grid-cols-2">
       <ChartCard
         :title="t('reports.chart.trend')"
-        :subtitle="data ? fmt.range(data.range) : undefined"
+        :subtitle="data ? `${fmt.range(data.range)} · ${t('reports.kpi.onTimeHint')}` : undefined"
         :loading="query.isPending.value"
         :error="query.error.value"
         :retry="() => query.refetch()"
@@ -159,6 +160,8 @@ const groupOptions = computed(() => [
       :empty-title="t('reports.emptyTitle')"
       :empty-description="t('reports.emptyBody')"
       :csv-name="t('reports.title')"
+      export-kind="reports.team"
+      :export-params="exportParams"
       hide-pagination
       virtual="auto"
     >

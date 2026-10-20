@@ -12,6 +12,7 @@ import { useRoute, useRouter } from "vue-router";
 import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import FilterBar from "@/components/FilterBar.vue";
 import { useUrlFilters } from "@/components/filters";
+import KpiCard from "@/components/KpiCard.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import SavedViewsTabs from "@/components/SavedViewsTabs.vue";
@@ -179,7 +180,10 @@ const viewOptions = computed(() => [
       </template>
     </PageHeader>
 
-    <KpiStrip :items="kpis" :loading="summary.isPending.value" :columns="4" />
+    <div v-if="isPhone" class="grid grid-cols-2 gap-2">
+      <KpiCard v-for="(item, index) in kpis" :key="index" v-bind="{ ...item, spark: undefined, hint: undefined }" :loading="summary.isPending.value" />
+    </div>
+    <KpiStrip v-else :items="kpis" :loading="summary.isPending.value" :columns="4" />
 
     <div class="flex min-w-0 flex-col gap-3">
       <SavedViewsTabs

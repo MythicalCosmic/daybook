@@ -22,7 +22,7 @@
   "reports.kpi.completion": "Выполнено вообще",
   "reports.kpi.made": "Создано задач",
   "reports.kpi.idle": "Никто не делает",
-  "reports.kpi.idleHint": "Активные задачи, не создавшие ни одной задачи за период",
+  "reports.kpi.idleHint": "Активны, но задач не было",
   "reports.col.due": "Со сроком",
   "reports.col.lateNow": "Просрочено сейчас",
   "reports.col.reminders": "Напоминания",

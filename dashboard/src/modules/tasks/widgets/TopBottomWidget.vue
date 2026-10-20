@@ -44,7 +44,8 @@ const ranked = computed(() =>
     .sort((a, b) => (b.on_time_percent ?? 0) - (a.on_time_percent ?? 0)),
 );
 const top = computed(() => ranked.value.slice(0, 5));
-const bottom = computed(() => (ranked.value.length > 5 ? ranked.value.slice(-5).reverse() : []));
+// Never the same person in both lists.
+const bottom = computed(() => (ranked.value.length > 5 ? ranked.value.slice(Math.max(5, ranked.value.length - 5)).reverse() : []));
 const tone = (value: number | null) => (value === null ? "primary" : value >= 90 ? "success" : value >= 75 ? "warning" : "danger");
 </script>
 
@@ -60,7 +61,7 @@ const tone = (value: number | null) => (value === null ? "primary" : value >= 90
       <div v-if="skeleton" class="flex flex-col gap-3 pt-2"><SkeletonBlock v-for="n in 5" :key="n" height="22px" /></div>
       <ErrorState v-else-if="query.isError.value" compact :error="query.error.value" :retry="() => query.refetch()" />
       <EmptyState v-else-if="query.data.value && !ranked.length" size="sm" tone="neutral" :icon="Trophy" :title="t('tasks.widget.noResults')" />
-      <div v-else class="grid gap-4 sm:grid-cols-2">
+      <div v-else :class="['grid gap-4', bottom.length ? 'sm:grid-cols-2' : '']">
         <div v-for="block in [{ id: 'top', rows: top }, { id: 'bottom', rows: bottom }].filter((b) => b.rows.length)" :key="block.id" class="flex min-w-0 flex-col gap-2">
           <p class="text-xs font-semibold uppercase tracking-[0.05em] text-subtle">{{ block.id === "top" ? t("tasks.widget.best") : t("tasks.widget.needsHelp") }}</p>
           <div v-for="row in block.rows" :key="row.key" class="flex min-w-0 items-center gap-2">

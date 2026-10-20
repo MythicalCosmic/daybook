@@ -26,7 +26,6 @@ const data = computed(() => query.data.value);
     :value="data?.done_today ?? null"
     :format="(value: number) => (data ? t('tasks.widget.ofTotal', { done: value, total: data.total_today }) : String(value))"
     :hint="t('tasks.kpi.doneTodayHint')"
-    :spark="data?.series.map((point) => point.done) ?? []"
     :loading="query.isPending.value"
     :to="`/c/${props.companyId}/tasks?sv=today`"
   />

@@ -22,7 +22,7 @@
   "reports.kpi.completion": "Umuman bajarilgan",
   "reports.kpi.made": "Berilgan vazifalar",
   "reports.kpi.idle": "Hech kim bajarmaydi",
-  "reports.kpi.idleHint": "Bu davrda vazifa bermagan faol kundalik ishlar",
+  "reports.kpi.idleHint": "Faol, lekin vazifa berilmagan",
   "reports.col.due": "Muddatli",
   "reports.col.lateNow": "Hozir kechikkan",
   "reports.col.reminders": "Eslatmalar",
