@@ -2,7 +2,7 @@
  * Reminders (plan §6.1, package B): policies with a visual timeline and texts per step, the
  * reminder log, the blocked-bot list, and the "Reminder defaults" settings panel.
  */
-import { BellRing, ScrollText } from "@lucide/vue";
+import { BellRing, Plus, ScrollText } from "@lucide/vue";
 import { defineAsyncComponent } from "vue";
 
 import { defineModule } from "@/core/modules";
@@ -21,6 +21,13 @@ export default defineModule({
   // apps.reminders' "reminders.policies"; the log and blocked list move with tasks.
   invalidates: ["reminders", "tasks.tasks"],
   commands: (ctx) => [
+    {
+      id: "reminders.new",
+      title: ctx.t("reminders.cmd.new"),
+      icon: Plus,
+      keywords: ["reminder", "policy", "eslatma", "напоминание", "new", "yangi"],
+      run: () => ctx.go("reminders?tab=policies&new=1"),
+    },
     {
       id: "reminders.policies",
       title: ctx.t("reminders.cmd.policies"),

@@ -19,6 +19,7 @@
   "reports.kpi.late": "Kechikkan",
   "reports.kpi.missed": "Bajarilmagan",
   "reports.kpi.delay": "O‘rtacha kechikish",
+  "reports.col.delay": "O‘rt. kechikish",
   "reports.kpi.completion": "Umuman bajarilgan",
   "reports.kpi.made": "Berilgan vazifalar",
   "reports.kpi.idle": "Hech kim bajarmaydi",

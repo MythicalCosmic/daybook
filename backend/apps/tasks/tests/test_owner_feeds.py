@@ -59,18 +59,22 @@ def test_pulse_counts_late_work_and_checks(shop, owner_api):
 
 
 def test_a_saved_task_moves_its_pulse_version(shop, owner_api):
-    before = (
-        owner_api(shop.owner)
-        .get(owner_path(shop.company, "pulse/"))
-        .json()["versions"]["tasks.tasks"]
-    )
-    shared(shop, shop.worker)
-    after = (
-        owner_api(shop.owner)
-        .get(owner_path(shop.company, "pulse/"))
-        .json()["versions"]["tasks.tasks"]
-    )
-    assert int(after) > int(before)
+    def version() -> int:
+        body = owner_api(shop.owner).get(owner_path(shop.company, "pulse/")).json()
+        return int(body["versions"]["tasks.tasks"])
+
+    before = version()
+    task = shared(shop, shop.worker)
+    assert version() > before
+
+    # The reminder engine's bookkeeping alone moves nothing (it runs every minute).
+    moved = version()
+    task.reminders_sent = 1
+    task.save(update_fields=["reminders_sent", "next_reminder_at", "updated_at"])
+    assert version() == moved
+    task.title = "Recount the till"
+    task.save(update_fields=["title", "updated_at"])
+    assert version() > moved
 
 
 def test_the_stream_shows_finished_work_with_its_photo(shop, owner_api):

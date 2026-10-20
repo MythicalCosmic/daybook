@@ -19,6 +19,7 @@
   "reports.kpi.late": "Late",
   "reports.kpi.missed": "Missed",
   "reports.kpi.delay": "Average delay",
+  "reports.col.delay": "Avg. delay",
   "reports.kpi.completion": "Done at all",
   "reports.kpi.made": "Tasks made",
   "reports.kpi.idle": "Nobody does",

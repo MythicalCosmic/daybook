@@ -144,6 +144,12 @@ def test_the_exporter_and_ai_tools(shop, history):
     # work at both branches; never the colleague from the other branch.
     expected = {str(person) for person in (shop.owner, shop.manager, shop.lead, shop.worker)}
     assert {row["label"] for row in rows} == expected
+    # The page's branch filter goes into the file too, and never widens the requester's scope.
+    there = {"preset": "last_30", "group_by": "branch", "branch": [str(shop.there.pk)]}
+    assert [row["label"] for row in get_exporter("reports.team").rows(shop.owner, there)] == [
+        shop.there.name
+    ]
+    assert list(get_exporter("reports.team").rows(shop.lead, there)) == []
     today = timezone.localdate(timezone=ZoneInfo(shop.company.timezone))
     start, end = (today - timedelta(days=10)).isoformat(), today.isoformat()
     performance = call_tool("reports_team_performance", shop.owner, start=start, end=end)

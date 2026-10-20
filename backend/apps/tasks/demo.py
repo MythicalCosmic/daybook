@@ -21,7 +21,7 @@ from apps.members.models import Membership, Position
 from apps.reminders.models import ReminderLog, ReminderPolicy, ReminderText
 from apps.tasks.models import Activity, ChecklistItem, Proof, Task, TaskComment, TaskTemplate
 
-HISTORY_DAYS = 30
+HISTORY_DAYS = 60  # two months: the reports compare a month with the one before
 PALETTES = [
     ((242, 236, 224), [(198, 113, 57), (122, 138, 94), (74, 106, 138), (209, 160, 64)]),
     ((232, 238, 242), [(63, 138, 131), (166, 106, 79), (138, 90, 122), (122, 138, 94)]),
@@ -56,12 +56,30 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         )
         template.assignees.set(who)
         template.positions.set([p for name in roles for p in position(name)])
-        TaskTemplate.objects.filter(pk=template.pk).update(created_at=now - timedelta(days=60))
+        TaskTemplate.objects.filter(pk=template.pk).update(created_at=now - timedelta(days=90))
         return template
 
-    opening = routine(
+    def adopt(core_title, fallback, due, *, who=(), english=None, **fields):
+        """The core demo's routine of the same work, made richer (branch, checklist, proof,
+        policy), so the Routines page never lists the same work twice for one person. The core
+        demo writes English, so its routines get the `english` description and checklist.
+        Without the core demo (the `demo_people` fixture) the routine is made as `fallback`."""
+        template = TaskTemplate.objects.filter(
+            company=company, title=core_title, personal=False, onboarding=False
+        ).first()
+        if template is None:
+            return routine(fallback, due, who=who, **fields)
+        for name, value in (fields | (english or {})).items():
+            setattr(template, name, value)
+        template.save()
+        template.assignees.add(*who)
+        TaskTemplate.objects.filter(pk=template.pk).update(created_at=now - timedelta(days=90))
+        return template
+
+    opening = adopt(
+        "Opening checklist",
         "Do‘konni ochish: tekshiruv ro‘yxati",
-        time(8, 45),
+        time(8, 30),
         who=[people["worker"]],
         branch=chilonzor,
         proof=Proof.PHOTO,
@@ -77,6 +95,18 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
             "Vitrina va eshikni tekshirish",
             "Pol tozaligini ko‘zdan kechirish",
         ],
+        english={
+            "description": (
+                "Lights, till float, shop window and door. One photo from inside the shop at "
+                "the end."
+            ),
+            "checklist": [
+                "Lights and music on",
+                "Count the till float",
+                "Check the window and the door",
+                "Floor is clean",
+            ],
+        },
     )
     closing = routine(
         "Kassani yopish va Z-hisobot",
@@ -97,7 +127,8 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         proof=Proof.TEXT,
         description="Ichimliklar muzlatgichi: +2…+6 °C bo‘lishi kerak. Raqamni yozing.",
     )
-    delivery = routine(
+    delivery = adopt(
+        "Receive the morning delivery",
         "Ertalabki yukni qabul qilish",
         time(10, 0),
         who=[people["jasur"]],
@@ -106,8 +137,13 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         description="Nakladnaya bo‘yicha sanab oling, kamchilik bo‘lsa Bekzodga yozing.",
         checklist=["Qutilar soni", "Muddatini tekshirish", "Nakladnayaga imzo"],
         escalate_to=manager,
+        english={
+            "description": "Count it against the waybill; tell Bekzod if anything is short.",
+            "checklist": ["Number of boxes", "Expiry dates", "Sign the waybill"],
+        },
     )
-    orders = routine(
+    orders = adopt(
+        "Deliver online orders",
         "Onlayn buyurtmalarni yetkazish",
         time(13, 0),
         who=[people["nigora"]],
@@ -115,6 +151,9 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         weekdays=[0, 1, 2, 3, 4, 5],
         reminder_policy=gentle,
         description="Payme va Click orqali kelgan buyurtmalar. Mijozga yetkazilgach belgilang.",
+        english={
+            "description": "Orders paid through Payme and Click. Tick it once they're delivered."
+        },
     )
     shelves = routine(
         "Javonlarni to‘ldirish va narx yorliqlari",
@@ -140,13 +179,17 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         branch=chilonzor,
         is_active=False,
     )
-    routine(
-        "Mijozlar fikrlarini javoblash (Instagram)",
-        time(12, 0),
+    evening_report = routine(
+        "Kechki savdo hisobotini tekshirish",
+        time(21, 30),
         who=[people["manager"]],
         reminder_policy=gentle,
-        weekdays=[0, 1, 2, 3, 4],
+        weekdays=[0, 1, 2, 3, 4, 5],
+        description="Ikkala filialning kunlik savdosi va kassa farqini ko‘rib chiqing.",
     )
+    replies = TaskTemplate.objects.filter(
+        company=company, title="Reply to customer messages", personal=False
+    ).first()
 
     # Onboarding: what every new person (or a new cashier) gets on the first days.
     for title, days, due, roles, extra in [
@@ -194,16 +237,45 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         (shelves, people["jasur"], 0.7, 0.0),
         (shelves, people["nigora"], 1.0, 0.0),
         (inventory, people["worker"], 0.75, 0.0),
+        (evening_report, manager, 0.88, 0.0),
     ]
+    if replies is not None:  # the core demo's routine: give it a history too
+        history.append((replies, people["worker"], 0.82, 0.0))
+    # Days somebody already has the routine's task (the core demo's own history, some of it
+    # without `for_date`): never a second task for the same person on the same day.
+    taken = {
+        (template_id, assignee_id, for_date or timezone.localtime(due_at, tz).date())
+        for template_id, assignee_id, for_date, due_at in Task.objects.filter(
+            company=company, template__isnull=False
+        ).values_list("template_id", "assignee_id", "for_date", "due_at")
+        if for_date or due_at
+    }
     for template, person, on_time, missed in history:
         for days_ago in range(HISTORY_DAYS, 0, -1):
             day = today - timedelta(days=days_ago)
-            if not template.is_due_on(day):
+            if not template.is_due_on(day) or (template.pk, person.pk, day) in taken:
                 continue
             _history_task(company, template, person, day, tz, rng, on_time, missed)
 
-    # Today: routine tasks in every state.
+    # Today: routine tasks in every state, made at midnight like daily generation. The core
+    # demo may already have given someone today's task of a routine: theirs stays.
+    start_of_day = datetime.combine(today, time(0, 5), tzinfo=tz)
+
+    def earlier_today(**delta) -> datetime:
+        """A deadline that has passed, but today: late work stays today's (yesterday's numbers
+        are history, and the core demo's 14-day story counts only its own misses)."""
+        return max(now - timedelta(**delta), min(start_of_day, now))
+
     def today_task(template, person, **fields):
+        already = Task.objects.filter(
+            company=company,
+            template=template,
+            assignee=person,
+            due_at__gte=start_of_day - timedelta(minutes=5),
+            due_at__lt=start_of_day + timedelta(days=1),
+        ).first()
+        if already is not None:
+            return already
         due = datetime.combine(today, template.due_time, tzinfo=tz)
         task = Task.objects.create(
             company=company,
@@ -226,6 +298,7 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
             ChecklistItem.objects.create(
                 task=task, text=text, is_done=task.status != Task.Status.TODO, order=index
             )
+        Task.objects.filter(pk=task.pk).update(created_at=min(start_of_day, now))
         return task
 
     morning = datetime.combine(today, time(8, 45), tzinfo=tz)
@@ -236,7 +309,8 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         status=Task.Status.REVIEW,
         completed_at=min(now, morning - timedelta(minutes=6)),
     )
-    _photo(opened, "store", rng)
+    if opened.status == Task.Status.REVIEW and not opened.proof_photo:
+        _photo(opened, "store", rng)
     received = today_task(
         delivery,
         people["jasur"],
@@ -254,7 +328,7 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
     late_shelf = today_task(
         shelves, people["jasur"], reminders_sent=3, escalated_at=now - timedelta(minutes=20)
     )
-    Task.objects.filter(pk=late_shelf.pk).update(due_at=now - timedelta(hours=1, minutes=10))
+    Task.objects.filter(pk=late_shelf.pk).update(due_at=earlier_today(hours=1, minutes=10))
     fridge_task = today_task(
         fridge,
         people["madina"],
@@ -264,7 +338,7 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
     )
     today_task(fridge, people["worker"], reminders_sent=2)
     Task.objects.filter(template=fridge, for_date=today, assignee=people["worker"]).update(
-        due_at=now - timedelta(minutes=50)
+        due_at=earlier_today(minutes=50)
     )
     today_task(closing, people["madina"])
     Task.objects.filter(template=closing, for_date=today).update(due_at=now + timedelta(hours=5))
@@ -297,6 +371,10 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         Activity.objects.create(
             company=company, recipient=person, actor=by, kind=Activity.Kind.ASSIGNED, task=task
         )
+        # Given the day before its deadline (or earlier, for work already finished).
+        given_at = min(due, fields.get("completed_at") or due, now) - timedelta(hours=20)
+        Task.objects.filter(pk=task.pk).update(created_at=given_at)
+        Activity.objects.filter(task=task).update(created_at=given_at)
         return task
 
     window = given(
@@ -320,18 +398,17 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
             ("Ko‘chadan rasm", False),
         ],
     )
-    TaskComment.objects.create(
-        task=window, author=owner, text="Manekenlar omborda, yuqori javonda."
-    )
-    TaskComment.objects.create(
-        task=window,
-        author=people["worker"],
-        text="Soat 15:00 gacha tugataman, chiroqlarni ham almashtiraman.",
+    _comment(window, owner, "Manekenlar omborda, yuqori javonda.", now - timedelta(hours=3))
+    _comment(
+        window,
+        people["worker"],
+        "Soat 15:00 gacha tugataman, chiroqlarni ham almashtiraman.",
+        now - timedelta(hours=2, minutes=40),
     )
     supplier = given(
         "Yetkazib beruvchiga qo‘ng‘iroq: kechikkan buyurtma №4471",
         people["jasur"],
-        now - timedelta(hours=3),
+        earlier_today(hours=3),
         by=manager,
         proof=Proof.TEXT,
         priority=Task.Priority.URGENT,
@@ -339,9 +416,7 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         escalated_at=now - timedelta(hours=1, minutes=40),
         description="Juma kuni kelishi kerak edi. Yangi sanani so‘rab, izohga yozing.",
     )
-    TaskComment.objects.create(
-        task=supplier, author=manager, text="Telefon: Sharq Savdo, Akmal aka."
-    )
+    _comment(supplier, manager, "Telefon: Sharq Savdo, Akmal aka.", now - timedelta(hours=4))
     tags = given(
         "Qishki kolleksiya uchun narx yorliqlari",
         people["madina"],
@@ -363,8 +438,11 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         needs_confirmation=True,
         description="Instagram uchun 12 ta mahsulot, oq fonda, har biridan bittadan.",
     )
-    TaskComment.objects.create(
-        task=photos, author=owner, text="Kunduzgi yorug‘likda qayta oling, ranglar xira chiqqan."
+    _comment(
+        photos,
+        owner,
+        "Kunduzgi yorug‘likda qayta oling, ranglar xira chiqqan.",
+        now - timedelta(hours=1, minutes=15),
     )
     given(
         "Chilonzor: konditsionerni ta’mirlash ustasini chaqirish",
@@ -417,7 +495,7 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
     )
 
     # The manager's own to-do list: personal, so only owners (with the setting on) see it.
-    Task.objects.create(
+    own = Task.objects.create(
         company=company,
         kind=Task.Kind.PERSONAL,
         title="Bankdagi to‘lovlarni tekshirish",
@@ -426,6 +504,7 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         due_at=now + timedelta(hours=5),
         branch=manager.home_branch,
     )
+    Task.objects.filter(pk=own.pk).update(created_at=now - timedelta(hours=6))
 
     # Reminders: today's late work, an escalation and a blocked bot.
     for step in (1, 2, 3, 4):
@@ -434,9 +513,9 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
             ReminderLog.Kind.REMINDER,
             step,
             people["jasur"],
-            now - timedelta(hours=3) + timedelta(minutes=20 * step),
+            supplier.due_at + timedelta(minutes=20 * step),
         )
-    _log(supplier, ReminderLog.Kind.ESCALATION, 3, manager, now - timedelta(hours=1, minutes=40))
+    _log(supplier, ReminderLog.Kind.ESCALATION, 3, manager, supplier.due_at + timedelta(hours=1))
     for step in (1, 2, 3):
         _log(
             late_shelf,
@@ -560,11 +639,18 @@ def _history_task(
 
 
 PHOTO_SCENES = {
+    "Opening checklist": "store",
+    "Receive the morning delivery": "boxes",
     "Do‘konni ochish: tekshiruv ro‘yxati": "store",
     "Kassani yopish va Z-hisobot": "tags",
     "Ertalabki yukni qabul qilish": "boxes",
     "Javonlarni to‘ldirish va narx yorliqlari": "shelf",
 }
+
+
+def _comment(task, author, text, at):
+    comment = TaskComment.objects.create(task=task, author=author, text=text)
+    TaskComment.objects.filter(pk=comment.pk).update(created_at=at)
 
 
 def _log(task, kind, step, recipient, at, error=""):

@@ -26,7 +26,7 @@ export default defineModule({
       title: ctx.t("routines.cmd.new"),
       icon: Plus,
       keywords: ["routine", "daily", "kundalik", "ежедневн"],
-      run: () => ctx.go("routines"),
+      run: () => ctx.go("routines?new=1"),
     },
     {
       id: "routines.onboarding",

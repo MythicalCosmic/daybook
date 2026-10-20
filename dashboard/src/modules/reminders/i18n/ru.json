@@ -118,6 +118,7 @@
   "reminders.defaults.title": "Напоминания по умолчанию",
   "reminders.defaults.description": "Им следуют все задачи без собственного правила.",
   "reminders.defaults.allPolicies": "Все правила",
+  "reminders.cmd.new": "Новое правило напоминаний",
   "reminders.cmd.policies": "Правила напоминаний",
   "reminders.cmd.log": "Журнал напоминаний",
   "reminders.keys.new": "Новое правило"

@@ -2,6 +2,7 @@
 ISO 8601, days company-local `YYYY-MM-DD`; people are `{id, name, photo_url}` (their membership)."""
 
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -156,6 +157,15 @@ class TaskRowSerializer(serializers.ModelSerializer):
         return rules.board_moves(task, member) if member is not None else []
 
 
+class TaskReviewSerializer(TaskRowSerializer):
+    """A card of the reviews queue: the row plus what was written and reported. No comments or
+    reminder plan, so the queue answers in a fixed number of queries."""
+
+    class Meta(TaskRowSerializer.Meta):
+        fields = (*TaskRowSerializer.Meta.fields, "description", "proof_text")
+        read_only_fields = fields
+
+
 class ChecklistRowSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChecklistItem
@@ -275,7 +285,7 @@ class TaskCreateSerializer(serializers.Serializer):
     def validate(self, attrs):
         if not (attrs["assignee_ids"] or attrs["position_ids"] or attrs["branch_ids"]):
             raise serializers.ValidationError(
-                {"assignee_ids": ["Pick people, positions or branches."]}
+                {"assignee_ids": [_("Pick people, positions or branches.")]}
             )
         return attrs
 
@@ -327,9 +337,11 @@ class BulkSerializer(serializers.Serializer):
         }.get(action, ())
         for name in needs:
             if name not in payload:
-                raise serializers.ValidationError({"payload": [f"{name} is required."]})
+                raise serializers.ValidationError(
+                    {"payload": [_("%(name)s is required.") % {"name": name}]}
+                )
         if action == "reschedule" and "due_at" not in payload and "shift_days" not in payload:
-            raise serializers.ValidationError({"payload": ["Give due_at or shift_days."]})
+            raise serializers.ValidationError({"payload": [_("Give due_at or shift_days.")]})
         return attrs
 
 

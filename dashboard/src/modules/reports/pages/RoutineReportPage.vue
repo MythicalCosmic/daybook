@@ -8,7 +8,6 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
 
-import BarChart from "@/components/BarChart.vue";
 import ChartCard from "@/components/ChartCard.vue";
 import DataTable from "@/components/DataTable.vue";
 import KpiCard from "@/components/KpiCard.vue";
@@ -27,6 +26,7 @@ import { useCompanyStore } from "@/stores/company";
 
 import { useRoutineReport } from "../api";
 import ReportToolbar from "../components/ReportToolbar.vue";
+import ScaledChart from "../components/ScaledChart.vue";
 import type { RoutineRow } from "../types";
 
 const { t } = useI18n();
@@ -110,7 +110,7 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
       :empty="!worst.length"
       :empty-text="t('reports.chart.empty')"
     >
-      <BarChart :categories="worst.map((r) => r.title)" :series="chartSeries" stacked horizontal :height="`${Math.max(200, worst.length * 30 + 40)}px`" />
+      <ScaledChart type="bar" :categories="worst.map((r) => r.title)" :series="chartSeries" stacked horizontal integer :height="`${Math.max(200, worst.length * 30 + 40)}px`" />
     </ChartCard>
 
     <DataTable

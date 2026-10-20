@@ -118,6 +118,7 @@
   "reminders.defaults.title": "Reminder defaults",
   "reminders.defaults.description": "Every routine and task without its own policy follows these.",
   "reminders.defaults.allPolicies": "All policies",
+  "reminders.cmd.new": "New reminder policy",
   "reminders.cmd.policies": "Reminder policies",
   "reminders.cmd.log": "Reminder log",
   "reminders.keys.new": "New policy"

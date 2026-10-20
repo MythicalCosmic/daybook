@@ -25,7 +25,7 @@ const data = computed(() => query.data.value);
     :label="t('tasks.kpi.doneToday')"
     :value="data?.done_today ?? null"
     :format="(value: number) => (data ? t('tasks.widget.ofTotal', { done: value, total: data.total_today }) : String(value))"
-    :hint="t('tasks.kpi.doneTodayHint')"
+    :hint="t('tasks.widget.doneHint')"
     :loading="query.isPending.value"
     :to="`/c/${props.companyId}/tasks?sv=today`"
   />

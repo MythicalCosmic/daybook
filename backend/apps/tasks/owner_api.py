@@ -37,6 +37,7 @@ from apps.tasks.owner_serializers import (
     RoutineWriteSerializer,
     TaskCreateSerializer,
     TaskDetailSerializer,
+    TaskReviewSerializer,
     TaskRowSerializer,
     TaskUpdateSerializer,
     person,
@@ -170,6 +171,11 @@ class TaskOwnerViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerVi
         "bulk": AnyOf(Perm.TASKS_ASSIGN, Perm.TASKS_CONFIRM),
         "reassign": AnyOf(Perm.TASKS_ASSIGN, Perm.TASKS_TEMPLATES),
         "cancel": AnyOf(Perm.TASKS_ASSIGN, Perm.TASKS_TEMPLATES),
+        # The pickers list people, positions and policies: for whoever works with tasks, not
+        # for every dashboard user (an accountant has no business with the staff list here).
+        "options": AnyOf(
+            Perm.TASKS_VIEW_ALL, Perm.TASKS_ASSIGN, Perm.TASKS_TEMPLATES, Perm.TASKS_CONFIRM
+        ),
     }
 
     def get_queryset(self):
@@ -301,10 +307,11 @@ class TaskOwnerViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerVi
     @extend_schema(request=ReassignSerializer, responses=TaskDetailSerializer)
     @action(detail=True, methods=["post"])
     def reassign(self, request, company_id, pk):
+        task = self.get_object()  # a task they can't see is not found, whatever the payload
         data = ReassignSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         assignee = self._member(data.validated_data["assignee_id"])
-        task = services.reassign_task(self.get_object(), by=self.membership, assignee=assignee)
+        task = services.reassign_task(task, by=self.membership, assignee=assignee)
         return Response(self._detail(task))
 
     @extend_schema(
@@ -491,7 +498,7 @@ class TaskOwnerViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerVi
         )
         return Response(data)
 
-    @extend_schema(responses=TaskDetailSerializer(many=True))
+    @extend_schema(responses=TaskReviewSerializer(many=True))
     @action(detail=False, methods=["get"])
     def reviews(self, request, company_id):
         """Work waiting for the caller's check, oldest first, with proof photos."""
@@ -500,7 +507,7 @@ class TaskOwnerViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerVi
         )
         page = self.paginate_queryset(tasks)
         return self.get_paginated_response(
-            TaskDetailSerializer(page, many=True, context=self.get_serializer_context()).data
+            TaskReviewSerializer(page, many=True, context=self.get_serializer_context()).data
         )
 
     @extend_schema(

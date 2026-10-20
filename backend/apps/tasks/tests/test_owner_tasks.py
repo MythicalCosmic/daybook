@@ -480,12 +480,15 @@ def test_reviews_are_the_callers_checks(shop, owner_api):
     assert ids(owner_api(shop.owner).get(url(shop.company, "reviews/"))) == {here.pk, there.pk}
 
 
-def test_options_offer_people_in_scope(shop, owner_api):
+def test_options_offer_people_in_scope(shop, owner_api, member):
     people = {
         row["id"]
         for row in owner_api(shop.lead).get(url(shop.company, "options/")).json()["people"]
     }
     assert shop.worker.pk in people and shop.colleague.pk not in people
+    # The staff list is for whoever works with tasks, not every dashboard user.
+    accountant = member.registered(shop.company, "Accountant")
+    assert owner_api(accountant).get(url(shop.company, "options/")).status_code == 403
 
 
 def test_photo_wall_shows_todays_proofs(shop, owner_api):

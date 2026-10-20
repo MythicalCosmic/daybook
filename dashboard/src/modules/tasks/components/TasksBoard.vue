@@ -4,7 +4,8 @@
  * goes where its rules allow (the server's `moves`): finishing your own work, accepting it or
  * sending it back (which asks why). Other columns dim while dragging. Click a card to open it.
  */
-import { computed } from "vue";
+import { useElementSize } from "@vueuse/core";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import ErrorState from "@/components/ErrorState.vue";
@@ -28,6 +29,16 @@ const emit = defineEmits<{ open: [task: TaskRow] }>();
 const { t } = useI18n();
 const confirm = useConfirm();
 const { isPhone } = useBreakpoints();
+
+// All five columns fit a laptop screen when they can (gap-3 between them); narrower screens
+// scroll sideways with columns no thinner than a readable card.
+const host = ref<HTMLElement | null>(null);
+const { width } = useElementSize(host);
+const columnWidth = computed(() => {
+  if (isPhone.value) return 300;
+  const fit = Math.floor((width.value - 4 * 12) / BOARD_COLUMNS.length);
+  return Math.max(208, Math.min(296, fit || 296));
+});
 
 // The board shows every status itself, so the status filter doesn't apply here.
 const boardParams = computed(() => {
@@ -81,7 +92,7 @@ async function onMove(change: KanbanMove<TaskRow>): Promise<void> {
 </script>
 
 <template>
-  <div class="min-w-0">
+  <div ref="host" class="min-w-0">
     <div v-if="skeleton" class="flex gap-3 overflow-hidden">
       <div v-for="n in 5" :key="n" class="flex w-[288px] shrink-0 flex-col gap-2 rounded-[12px] bg-surface-2/60 p-3">
         <SkeletonBlock width="40%" height="14px" />
@@ -98,7 +109,7 @@ async function onMove(change: KanbanMove<TaskRow>): Promise<void> {
       :column-of="(task) => task.status"
       :can-drop="(task, _from, to) => task.moves.includes(to as BoardColumnId)"
       :sortable="false"
-      :column-width="isPhone ? 300 : 296"
+      :column-width="columnWidth"
       height="max(460px, calc(100dvh - 480px))"
       @move="onMove"
     >

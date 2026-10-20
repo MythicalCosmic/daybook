@@ -54,3 +54,29 @@ def test_the_employee_api_lists_the_preview(member, company, api_as):
     thumbs.make_proof_thumb(task.pk)
     row = api_as(worker).get(f"/api/v1/companies/{company.pk}/tasks/").json()["results"][0]
     assert row["proof_thumb"].endswith(".webp")
+
+
+def test_a_repeated_job_writes_no_second_file(member, company):
+    worker = member.registered(company)
+    task = TaskFactory(assignee=worker, status=Task.Status.DONE)
+    task.proof_photo.save("old.jpg", big_photo(), save=True)
+    assert thumbs.make_proof_thumb(task.pk) is True
+    task.refresh_from_db()
+    first = task.proof_thumb.name
+    # A retried (or duplicated) job finds the preview there and leaves it alone.
+    assert thumbs.make_proof_thumb(task.pk) is False
+    task.refresh_from_db()
+    assert task.proof_thumb.name == first
+
+
+def test_a_new_photo_gets_a_new_preview(member, company, django_capture_on_commit_callbacks):
+    worker = member.registered(company)
+    task = TaskFactory(assignee=worker, proof=Proof.PHOTO, created_by=member.registered(company))
+    task.proof_photo.save("old.jpg", big_photo(), save=True)
+    thumbs.make_proof_thumb(task.pk)
+    task.refresh_from_db()
+    old = task.proof_thumb.name
+    with django_capture_on_commit_callbacks(execute=True):
+        services.complete_task(task, by=worker, proof_photo=big_photo())
+    task.refresh_from_db()
+    assert task.proof_thumb and task.proof_thumb.name != old

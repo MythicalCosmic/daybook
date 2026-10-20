@@ -11,6 +11,7 @@ import { mountWithProviders, testApp } from "@/test/plugins";
 
 import { filterParams, moveInColumns, taskKeys, tasksApi } from "../api";
 import TaskDrawer from "../components/TaskDrawer.vue";
+import TaskTimeline from "../components/TaskTimeline.vue";
 import { builtinTabs, builtinViews, filterDefs, viewParams } from "../filters";
 import en from "../i18n/en.json";
 import module from "../index";
@@ -235,5 +236,39 @@ describe("TaskDrawer", () => {
     expect(labels).not.toContain("Accept");
     expect(labels).not.toContain("Send back");
     wrapper.unmount();
+  });
+});
+
+describe("TaskTimeline", () => {
+  it("names each person once, in the sentence of their language", async () => {
+    stub({
+      "GET tasks/7/timeline/": () =>
+        json([
+          { at: "2026-10-21T08:00:00Z", kind: "created", action: "created", actor: person(1, "Dilnoza Karimova"), text: "", meta: {} },
+          { at: "2026-10-21T09:00:00Z", kind: "comment", action: "comment", actor: person(2, "Bekzod Mirzayev"), text: "Phone: Sharq Savdo", meta: {} },
+          { at: "2026-10-21T10:00:00Z", kind: "reminder", action: "reminder", actor: person(11, "Madina Saidova"), text: "", meta: { step: 2, delivered: true } },
+        ]),
+    });
+    const app = await testApp("/c/1/tasks?task=7");
+    const { wrapper } = mountWithProviders(TaskTimeline, { props: { taskId: 7 }, plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    const text = wrapper.text();
+    expect(text).toContain("Bekzod Mirzayev commented");
+    expect(text.match(/Bekzod Mirzayev/g)).toHaveLength(1);
+    expect(text).toContain("Phone: Sharq Savdo");
+    expect(text).toContain("Reminder 2 sent to Madina Saidova");
+    wrapper.unmount();
+  });
+});
+
+describe("reviews", () => {
+  it("reads the queue as review cards (no comments or reminder plan per card)", async () => {
+    const calls = stub({
+      "GET tasks/reviews/": () => json({ count: 1, next: null, previous: null, results: [{ ...row(), description: "", proof_text: "+4 °C" }] }),
+    });
+    const page = await tasksApi.reviews(1, { page_size: 100 });
+    expect(page.results[0]!.proof_text).toBe("+4 °C");
+    expect(calls[0]!.url).toContain("/tasks/reviews/?page_size=100");
   });
 });

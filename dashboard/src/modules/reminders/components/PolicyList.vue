@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /** Reminder policies as cards: what each does (a small timeline and one line), where it's used. */
 import { BellRing, Ellipsis, Moon, Pencil, Plus, Star, Trash2 } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import DropdownMenu, { type MenuEntry } from "@/components/DropdownMenu.vue";
@@ -13,7 +13,9 @@ import UiButton from "@/components/UiButton.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { useHotkey } from "@/core/hotkeys";
+import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
+import { rs, useRouteState } from "@/lib/useRouteState";
 
 import { useDeletePolicy, useMakeDefault, usePolicies } from "../api";
 import { summary } from "../draft";
@@ -24,6 +26,7 @@ import ReminderTimelinePreview from "./ReminderTimelinePreview.vue";
 
 const { t } = useI18n();
 const confirm = useConfirm();
+const { isPhone } = useBreakpoints();
 const query = usePolicies();
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const makeDefault = useMakeDefault();
@@ -40,6 +43,17 @@ function edit(policy: Policy): void {
   editorOpen.value = true;
 }
 useHotkey("n", create, { description: "reminders.keys.new", group: "page" });
+// The palette's "New reminder policy" lands here with `?new=1`.
+const newParam = useRouteState("new", rs.boolean(false));
+watch(
+  newParam,
+  (value) => {
+    if (!value) return;
+    create();
+    newParam.value = false;
+  },
+  { immediate: true },
+);
 
 async function setDefault(policy: Policy): Promise<void> {
   try {
@@ -83,7 +97,7 @@ defineExpose({ create });
   <div class="flex flex-col gap-3">
     <div class="flex items-center justify-between gap-3">
       <p class="text-sm text-muted">{{ t("reminders.policies.hint") }}</p>
-      <UiButton variant="primary" :icon="Plus" kbd="N" @click="create">{{ t("reminders.new") }}</UiButton>
+      <UiButton variant="primary" :icon="Plus" :kbd="isPhone ? undefined : 'N'" @click="create">{{ t("reminders.new") }}</UiButton>
     </div>
     <div v-if="skeleton" class="grid gap-3 lg:grid-cols-2"><SkeletonBlock v-for="n in 4" :key="n" height="190px" radius="12px" /></div>
     <ErrorState v-else-if="query.isError.value" class="ui-card" :error="query.error.value" :retry="() => query.refetch()" />

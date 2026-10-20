@@ -84,6 +84,12 @@ export interface ReminderPlan {
   snoozes_left: number;
 }
 
+/** A card of the reviews queue (`tasks/reviews/`): the row plus what was written and reported. */
+export interface TaskReview extends TaskRow {
+  description: string;
+  proof_text: string;
+}
+
 export interface TaskDetail extends TaskRow {
   description: string;
   proof_text: string;

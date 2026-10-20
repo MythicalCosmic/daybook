@@ -85,7 +85,9 @@ const events = computed<TimelineEvent[]>(() =>
     body: body(entry),
     icon: ICONS[entry.kind],
     tone: TONES[entry.kind] ?? "neutral",
-    actor: entry.kind === "comment" ? entry.actor : null,
+    // The title already names the person, in each language's word order (TimelineList would
+    // print the name a second time in front of it).
+    actor: null,
   })),
 );
 </script>

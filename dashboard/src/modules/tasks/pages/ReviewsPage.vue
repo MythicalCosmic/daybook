@@ -27,7 +27,7 @@ import { useCompanyStore } from "@/stores/company";
 
 import { tasksApi, useRefreshTasks, useReviews } from "../api";
 import TaskDrawer from "../components/TaskDrawer.vue";
-import type { TaskDetail } from "../types";
+import type { TaskReview } from "../types";
 
 const UNDO_MS = 5000;
 
@@ -52,7 +52,7 @@ function hide(id: number, value: boolean): void {
   hidden.value = next;
 }
 
-async function send(task: TaskDetail): Promise<void> {
+async function send(task: TaskReview): Promise<void> {
   pending.delete(task.id);
   try {
     await tasksApi.confirm(company.currentId!, task.id);
@@ -63,7 +63,7 @@ async function send(task: TaskDetail): Promise<void> {
   }
 }
 
-function accept(task: TaskDetail): void {
+function accept(task: TaskReview): void {
   const index = cards.value.findIndex((card) => card.id === task.id);
   hide(task.id, true);
   const toastId = `tasks.review.${task.id}`;
@@ -86,7 +86,7 @@ function accept(task: TaskDetail): void {
   void focusIndex(index);
 }
 
-async function sendBack(task: TaskDetail): Promise<void> {
+async function sendBack(task: TaskReview): Promise<void> {
   const answer = await confirm({
     title: t("tasks.sendBack.title"),
     message: task.title,
@@ -131,7 +131,7 @@ async function focusIndex(index: number): Promise<void> {
   const elements = cardElements();
   elements[Math.min(Math.max(0, index), elements.length - 1)]?.focus();
 }
-function focused(): TaskDetail | null {
+function focused(): TaskReview | null {
   const id = focusedId.value ?? cards.value[0]?.id;
   return cards.value.find((card) => card.id === id) ?? null;
 }
@@ -150,7 +150,7 @@ useHotkey("r", () => {
 useHotkey("j", () => step(1), { description: "tasks.keys.next", group: "page" });
 useHotkey("k", () => step(-1), { description: "tasks.keys.previous", group: "page" });
 
-function open(task: TaskDetail): void {
+function open(task: TaskReview): void {
   patchQuery(router, { task: String(task.id) }, true);
 }
 </script>
@@ -188,7 +188,7 @@ function open(task: TaskDetail): void {
         class="ui-card group/card flex min-w-0 flex-col overflow-hidden outline-offset-2 transition-[border-color,box-shadow] hover:border-line-strong focus-visible:border-primary focus-visible:shadow-raised"
         @focus="focusedId = task.id"
       >
-        <div class="relative aspect-[4/3] w-full overflow-hidden bg-surface-2">
+        <div :class="['relative w-full overflow-hidden bg-surface-2', task.proof_photo ? 'aspect-[4/3]' : 'h-32 sm:h-auto sm:aspect-[4/3]']">
           <ProofThumb v-if="task.proof_photo" :src="task.proof_photo" :images="[{ src: task.proof_photo, caption: task.title }]" size="fill" class="!rounded-none" />
           <div v-else class="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
             <FileText :size="22" class="text-subtle" />

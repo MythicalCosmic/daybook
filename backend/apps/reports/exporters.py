@@ -20,6 +20,18 @@ COLUMNS = (
 )
 
 
+def _scope(member: Membership, params: dict) -> list[int] | None:
+    """The requester's branch scope, narrowed by the page's `branch` filter (never widened),
+    so the file holds what the report on screen showed."""
+    mine = branch_ids(member)
+    value = (params or {}).get("branch")
+    values = value if isinstance(value, list) else [value] if value not in (None, "") else []
+    chosen = [int(part) for item in values for part in str(item).split(",") if part.isdigit()]
+    if not chosen:
+        return mine
+    return [pk for pk in chosen if mine is None or pk in mine]
+
+
 def team_rows(member: Membership, params: dict):
     company = member.company
     now = timezone.now()
@@ -35,7 +47,7 @@ def team_rows(member: Membership, params: dict):
     if group_by not in kpis.GROUPS:
         group_by = "member"
     rows = kpis.team_grouped(
-        company, period.start, period.end, now, group_by, branch_ids=branch_ids(member)
+        company, period.start, period.end, now, group_by, branch_ids=_scope(member, params)
     )
     for row in rows:
         data = row.score.as_dict()

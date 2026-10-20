@@ -104,6 +104,31 @@ describe("api", () => {
     expect(module).toMatchObject({ id: "routines", group: "work", order: 30, perm: "tasks.templates" });
     expect(routineKeys.preview(1, 32, "2026-10-22")).toEqual([1, "routines", "preview", { id: 32, day: "2026-10-22" }]);
   });
+
+  it("the palette's New routine opens the editor, not just the list", () => {
+    const go = vi.fn();
+    const commands = module.commands!({ t: (key: string) => key, go, can: () => true } as never);
+    commands.find((command) => command.id === "routines.new")!.run();
+    expect(go).toHaveBeenCalledWith("routines?new=1");
+  });
+});
+
+describe("RoutinesPage", () => {
+  it("opens a new routine from ?new=1 and drops the flag from the URL", async () => {
+    stub({ "GET routines/": () => json([routine()]), "GET tasks/options/": () => json(options) });
+    const app = await testApp("/c/1/routines?new=1");
+    // The page links to its tabs and to a routine by route name.
+    for (const name of ["routines.list", "routines.onboarding", "routines.detail"]) {
+      app.router.addRoute({ path: `/named/${name}/:id?`, name, component: { render: () => null } });
+    }
+    const { default: RoutinesPage } = await import("../pages/RoutinesPage.vue");
+    const { wrapper } = mountWithProviders(RoutinesPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(document.body.querySelector("[role=dialog]")?.textContent).toContain("New routine");
+    expect(app.router.currentRoute.value.query.new).toBeUndefined();
+    wrapper.unmount();
+  });
 });
 
 describe("RoutineEditor", () => {

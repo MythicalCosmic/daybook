@@ -9,7 +9,6 @@ import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
 import AuditTrail from "@/components/AuditTrail.vue";
-import BarChart from "@/components/BarChart.vue";
 import ChartCard from "@/components/ChartCard.vue";
 import DateRangePicker from "@/components/DateRangePicker.vue";
 import ErrorState from "@/components/ErrorState.vue";
@@ -30,6 +29,7 @@ import { useRangeState } from "@/lib/useRangeState";
 import { useCompliance, useRoutine, useSaveRoutine } from "../api";
 import RoutineEditor from "../components/RoutineEditor.vue";
 import RoutinePreview from "../components/RoutinePreview.vue";
+import ScaledChart from "../components/ScaledChart.vue";
 import WeekdayDots from "../components/WeekdayDots.vue";
 
 const { t } = useI18n();
@@ -51,12 +51,17 @@ const data = computed(() => routine.data.value ?? null);
 const totals = computed(() => compliance.data.value?.totals);
 const kpis = computed(() => [
   { id: "made", label: t("routines.detail.made"), value: totals.value?.made ?? null },
-  { id: "on_time", label: t("routines.detail.onTime"), value: totals.value?.on_time_percent ?? null, format: "percent" as const, spark: compliance.data.value?.series.map((d) => d.on_time_percent) ?? [] },
+  { id: "on_time", label: t("routines.detail.onTime"), value: totals.value?.on_time_percent ?? null, format: "percent" as const, spark: spark.value },
   { id: "late", label: t("routines.detail.late"), value: totals.value?.late ?? null },
   { id: "missed", label: t("routines.detail.missed"), value: totals.value?.missed ?? null },
 ]);
 
 const series = computed(() => compliance.data.value?.series ?? []);
+// A sparkline needs a few points to say anything; a week-old routine shows the number alone.
+const spark = computed(() => {
+  const points = series.value.map((d) => d.on_time_percent);
+  return points.filter((value) => value !== null).length >= 5 ? points : [];
+});
 const chartSeries = computed(() => [
   { name: t("routines.detail.onTimeShort"), data: series.value.map((d) => d.on_time), color: chart.value.success, stack: "done" },
   { name: t("routines.detail.late"), data: series.value.map((d) => d.late), color: chart.value.warning, stack: "done" },
@@ -73,11 +78,6 @@ async function setActive(active: boolean): Promise<void> {
   }
 }
 
-const subtitle = computed(() => {
-  const routineValue = data.value;
-  if (!routineValue) return undefined;
-  return [routineValue.due_time.slice(0, 5), routineValue.branch?.name].filter(Boolean).join(" · ");
-});
 const tone = (value: number | null) => (value === null ? "neutral" : value >= 90 ? "success" : value >= 70 ? "warning" : "danger");
 </script>
 
@@ -86,7 +86,7 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
     <div v-if="routine.isPending.value" class="flex flex-col gap-4"><SkeletonBlock width="30%" height="28px" /><SkeletonBlock height="120px" radius="12px" /></div>
     <ErrorState v-else-if="routine.isError.value" class="ui-card" :error="routine.error.value" :retry="() => routine.refetch()" />
     <template v-else-if="data">
-      <PageHeader :title="data.title" :description="data.description || subtitle" :back="{ name: 'routines.list' }" :back-label="t('routines.title')">
+      <PageHeader :title="data.title" :description="data.description || undefined" :back="{ name: 'routines.list' }" :back-label="t('routines.title')">
         <template #actions>
           <UiButton :icon="data.is_active ? Pause : Play" :loading="save.isPending.value" @click="setActive(!data.is_active)">{{ data.is_active ? t("routines.pause") : t("routines.resume") }}</UiButton>
           <UiButton variant="primary" :icon="Pencil" @click="editorOpen = true">{{ t("common.edit") }}</UiButton>
@@ -121,7 +121,7 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
           :empty-text="t('routines.detail.chartEmpty')"
           height="260px"
         >
-          <BarChart :categories="series.map((d) => d.date)" :series="chartSeries" stacked x-format="day" height="260px" />
+          <ScaledChart type="bar" :categories="series.map((d) => d.date)" :series="chartSeries" stacked integer x-format="day" height="260px" />
         </ChartCard>
         <section class="ui-card flex flex-col gap-3 p-4">
           <h2 class="text-sm font-semibold text-fg">{{ t("routines.preview.title") }}</h2>

@@ -239,6 +239,7 @@
   "tasks.chart.done": "Выполнено",
   "tasks.chart.empty": "За последние две недели задач со сроком не было",
   "tasks.widget.ofTotal": "{done} из {total}",
+  "tasks.widget.doneHint": "Общие задачи на сегодня",
   "tasks.widget.waiting": "на проверке: {n}",
   "tasks.widget.topBottom": "Кто успевает вовремя",
   "tasks.widget.allResults": "Итоги команды",

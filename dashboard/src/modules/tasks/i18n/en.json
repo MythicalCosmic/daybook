@@ -239,6 +239,7 @@
   "tasks.chart.done": "Done",
   "tasks.chart.empty": "Nothing was due in the last two weeks",
   "tasks.widget.ofTotal": "{done} of {total}",
+  "tasks.widget.doneHint": "Shared tasks due today",
   "tasks.widget.waiting": "{n} waiting for a check",
   "tasks.widget.topBottom": "Who's on time",
   "tasks.widget.allResults": "Team results",

@@ -118,6 +118,7 @@
   "reminders.defaults.title": "Eslatmalar sozlamasi",
   "reminders.defaults.description": "O‘z qoidasi bo‘lmagan har bir ish shu sozlamaga amal qiladi.",
   "reminders.defaults.allPolicies": "Barcha qoidalar",
+  "reminders.cmd.new": "Yangi eslatma qoidasi",
   "reminders.cmd.policies": "Eslatma qoidalari",
   "reminders.cmd.log": "Eslatmalar jurnali",
   "reminders.keys.new": "Yangi qoida"

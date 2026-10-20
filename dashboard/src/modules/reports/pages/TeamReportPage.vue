@@ -8,12 +8,10 @@ import { CalendarDays, Repeat, Store, UserRound, Users } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
-import BarChart from "@/components/BarChart.vue";
 import ChartCard from "@/components/ChartCard.vue";
 import DataTable from "@/components/DataTable.vue";
 import KpiCard from "@/components/KpiCard.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
-import LineChart from "@/components/LineChart.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import PersonCell from "@/components/PersonCell.vue";
 import ProgressBar from "@/components/ProgressBar.vue";
@@ -28,6 +26,7 @@ import { rs, useRouteState } from "@/lib/useRouteState";
 
 import { periodParams, useTeamReport } from "../api";
 import ReportToolbar from "../components/ReportToolbar.vue";
+import ScaledChart from "../components/ScaledChart.vue";
 import type { GroupBy, TeamRow } from "../types";
 
 const { t } = useI18n();
@@ -92,7 +91,7 @@ const columns = computed<TableColumn<TeamRow>[]>(() => [
   { id: "missed", header: t("reports.kpi.missed"), sortable: true, numeric: true, width: 100 },
   { id: "on_time_percent", header: t("reports.kpi.onTime"), sortable: true, width: 240, value: (row) => row.on_time_percent },
   { id: "late_now", header: t("reports.col.lateNow"), sortable: true, numeric: true, width: 110 },
-  { id: "avg_delay_minutes", header: t("reports.kpi.delay"), sortable: true, numeric: true, width: 130, value: (row) => row.avg_delay_minutes },
+  { id: "avg_delay_minutes", header: t("reports.col.delay"), sortable: true, numeric: true, width: 130, value: (row) => row.avg_delay_minutes },
   { id: "reminders", header: t("reports.col.reminders"), sortable: true, numeric: true, width: 120 },
 ]);
 const tone = (value: number | null) => (value === null ? "neutral" : value >= 90 ? "success" : value >= 75 ? "warning" : "danger");
@@ -132,7 +131,7 @@ const groupOptions = computed(() => [
         :empty="!series.some((p) => p.total > 0)"
         :empty-text="t('reports.chart.empty')"
       >
-        <LineChart :categories="trendCategories" :series="[{ name: t('reports.kpi.onTime'), data: series.map((p) => p.on_time_percent) }]" value-format="percent" :x-format="series.length > 62 ? 'month' : 'day'" smooth />
+        <ScaledChart :categories="trendCategories" :series="[{ name: t('reports.kpi.onTime'), data: series.map((p) => p.on_time_percent) }]" value-format="percent" :x-format="series.length > 62 ? 'month' : 'day'" :y-max="100" smooth />
       </ChartCard>
       <ChartCard
         :title="t('reports.chart.spread')"
@@ -143,7 +142,7 @@ const groupOptions = computed(() => [
         :empty="!spread.length"
         :empty-text="t('reports.chart.empty')"
       >
-        <BarChart :categories="spread.map(label)" :series="spreadSeries" stacked :horizontal="groupBy !== 'day'" :x-format="groupBy === 'day' ? 'day' : 'none'" :height="groupBy === 'day' ? '240px' : `${Math.max(200, spread.length * 30 + 40)}px`" />
+        <ScaledChart type="bar" :categories="spread.map(label)" :series="spreadSeries" stacked integer :horizontal="groupBy !== 'day'" :x-format="groupBy === 'day' ? 'day' : 'none'" :height="groupBy === 'day' ? '240px' : `${Math.max(200, spread.length * 30 + 40)}px`" />
       </ChartCard>
     </div>
 

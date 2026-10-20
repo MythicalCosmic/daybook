@@ -1,11 +1,16 @@
 // The registry first, as in the app: it is what loads every module's index.ts (see core/modules.ts).
 import "@/core/modules";
 
+import { flushPromises } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { mergeModuleMessages } from "@/i18n";
 import { json } from "@/test/fixtures";
+import { mountWithProviders, testApp } from "@/test/plugins";
 
 import { reminderKeys, remindersApi } from "../api";
+import PolicyList from "../components/PolicyList.vue";
+import en from "../i18n/en.json";
 import { emptyDraft, summary, toDraft, toInput } from "../draft";
 import module from "../index";
 import { clock, parseClock, planReminders, quietBands, quietUntil, trackScale, type PolicyShape } from "../schedule";
@@ -216,5 +221,27 @@ describe("api", () => {
     expect(module).toMatchObject({ id: "reminders", group: "work", order: 40, perm: "reminders.configure" });
     expect(module.settings?.map((panel) => panel.id)).toEqual(["reminders.defaults"]);
     expect(reminderKeys.log(1, { page: 1 })).toEqual([1, "reminders", "log", { page: 1 }]);
+  });
+
+  it("offers a New reminder policy command that opens the editor", () => {
+    const go = vi.fn();
+    const commands = module.commands!({ t: (key: string) => key, go, can: () => true } as never);
+    commands.find((command) => command.id === "reminders.new")!.run();
+    expect(go).toHaveBeenCalledWith("reminders?tab=policies&new=1");
+  });
+});
+
+describe("PolicyList", () => {
+  it("opens a new policy from ?new=1 and drops the flag from the URL", async () => {
+    mergeModuleMessages("reminders", { en, ru: en, uz: en });
+    stub({ "GET reminder-policies/": () => json([]) });
+    const app = await testApp("/c/1/reminders?new=1");
+    const { wrapper } = mountWithProviders(PolicyList, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(document.body.querySelector("[role=dialog]")?.textContent).toContain(en["reminders.editor.newTitle"]);
+    expect(app.router.currentRoute.value.query.new).toBeUndefined();
+    wrapper.unmount();
+    document.body.innerHTML = "";
   });
 });

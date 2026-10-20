@@ -19,6 +19,7 @@
   "reports.kpi.late": "С опозданием",
   "reports.kpi.missed": "Не выполнено",
   "reports.kpi.delay": "Среднее опоздание",
+  "reports.col.delay": "Ср. опоздание",
   "reports.kpi.completion": "Выполнено вообще",
   "reports.kpi.made": "Создано задач",
   "reports.kpi.idle": "Никто не делает",

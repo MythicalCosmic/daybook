@@ -99,13 +99,32 @@ def _on_member_approved(sender, membership, **kwargs):
 member_approved.connect(_on_member_approved, dispatch_uid="tasks.assign_onboarding")
 
 
-# Pulse: every saved or removed task or routine moves its version key. At once rather than on
-# commit: a bump for a change that rolls back only costs open dashboards one refetch.
+# Pulse: every saved or removed task or routine moves its version key, so open dashboards
+# refetch. At once rather than on commit: the services queue their own messages on commit and
+# their tests count those callbacks; a bump a few milliseconds early only costs a dashboard that
+# polls in that instant one extra refetch, and the next change moves the key again. The reminder
+# engine's own bookkeeping (next reminder, count, message id) changes nothing a dashboard lists,
+# so it doesn't make every open dashboard refetch every task each minute.
+REMINDER_BOOKKEEPING = frozenset(
+    {
+        "next_reminder_at",
+        "reminders_sent",
+        "escalated_at",
+        "last_reminder_message_id",
+        "snoozed_until",
+        "snooze_count",
+        "updated_at",
+    }
+)
+
+
 def _bump(key: str, company_id: int) -> None:
     pulse.bump(company_id, key)
 
 
-def _task_saved(sender, instance, **kwargs):
+def _task_saved(sender, instance, update_fields=None, **kwargs):
+    if update_fields and set(update_fields) <= REMINDER_BOOKKEEPING:
+        return
     _bump("tasks.tasks", instance.company_id)
 
 

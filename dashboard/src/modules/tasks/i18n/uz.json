@@ -239,6 +239,7 @@
   "tasks.chart.done": "Bajarildi",
   "tasks.chart.empty": "Oxirgi ikki haftada muddatli vazifa bo‘lmagan",
   "tasks.widget.ofTotal": "{total} tadan {done}",
+  "tasks.widget.doneHint": "Bugungi umumiy vazifalar",
   "tasks.widget.waiting": "{n} tasi tekshiruvda",
   "tasks.widget.topBottom": "Kim o‘z vaqtida",
   "tasks.widget.allResults": "Jamoa natijalari",

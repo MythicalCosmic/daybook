@@ -5,7 +5,7 @@
  * nobody does stand out. The Onboarding tab lists the first-days tasks new people get.
  */
 import { CalendarClock, ChevronRight, Clock, Ellipsis, GraduationCap, ListChecks, Pencil, Plus, Repeat, Store, Trash2, UsersRound } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
@@ -24,6 +24,7 @@ import UiButton from "@/components/UiButton.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { useHotkey } from "@/core/hotkeys";
+import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
@@ -38,6 +39,7 @@ const fmt = useFormat();
 const route = useRoute();
 const router = useRouter();
 const confirm = useConfirm();
+const { isPhone } = useBreakpoints();
 
 const onboarding = computed(() => route.name === "routines.onboarding");
 const search = useRouteState("q", rs.string(""));
@@ -78,6 +80,17 @@ function edit(routine: Routine): void {
   editorOpen.value = true;
 }
 useHotkey("n", create, { description: "routines.keys.new", group: "page" });
+// The palette's "New routine" lands here with `?new=1`.
+const newParam = useRouteState("new", rs.boolean(false));
+watch(
+  newParam,
+  (value) => {
+    if (!value) return;
+    create();
+    newParam.value = false;
+  },
+  { immediate: true },
+);
 
 async function setActive(routine: Routine, active: boolean): Promise<void> {
   try {
@@ -113,6 +126,12 @@ function open(routine: Routine): void {
   else void router.push({ name: "routines.detail", params: { id: routine.id } });
 }
 
+// A line through two points says nothing: new routines show only their percentage.
+function sparkOf(routine: Routine): Array<number | null> {
+  const points = routine.stats?.spark ?? [];
+  return points.filter((value) => value !== null).length >= 4 ? points : [];
+}
+
 function completionTone(value: number | null): string {
   if (value === null) return "text-subtle";
   if (value >= 90) return "text-success";
@@ -131,7 +150,7 @@ function who(routine: Routine): string {
   <div class="flex min-w-0 flex-col gap-5">
     <PageHeader :title="t('routines.title')" :description="onboarding ? t('routines.onboardingDescription') : t('routines.description')" :tabs="tabs">
       <template #actions>
-        <UiButton variant="primary" :icon="Plus" kbd="N" @click="create">{{ onboarding ? t("routines.newOnboarding") : t("routines.new") }}</UiButton>
+        <UiButton variant="primary" :icon="Plus" :kbd="isPhone ? undefined : 'N'" @click="create">{{ onboarding ? t("routines.newOnboarding") : t("routines.new") }}</UiButton>
       </template>
     </PageHeader>
 
@@ -187,7 +206,7 @@ function who(routine: Routine): string {
         <div class="flex shrink-0 items-center gap-4">
           <AvatarStack v-if="routine.assignees.length" :people="routine.assignees" :max="3" :size="24" class="max-md:hidden" />
           <div v-if="!onboarding" class="flex items-center gap-3">
-            <SparkLine :data="routine.stats?.spark ?? []" :width="96" :height="28" color="var(--c-chart-2)" :label="t('routines.sparkLabel')" />
+            <SparkLine :data="sparkOf(routine)" :width="96" :height="28" color="var(--c-chart-2)" :label="t('routines.sparkLabel')" />
             <div class="w-[68px] text-right">
               <p :class="['text-md font-semibold tabular-nums', completionTone(routine.stats?.completion_30d ?? null)]">{{ routine.stats?.completion_30d === null || !routine.stats ? "—" : fmt.percent(routine.stats.completion_30d, 0) }}</p>
               <p class="text-xs text-subtle">{{ t("routines.done30") }}</p>
