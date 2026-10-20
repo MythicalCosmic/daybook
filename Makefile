@@ -24,11 +24,12 @@ up: ## Start Postgres and Redis
 down: ## Stop all containers
 	docker compose --profile app down
 
+# Exactly what the lockfiles say: they change only at integration (docs/PLAN-OWNER.md §2.3).
 install: ## Install backend, mini app and dashboard dependencies
-	uv sync
-	cd miniapp && npm install
+	uv sync --frozen
+	cd miniapp && npm ci
 ifneq ($(HAS_DASHBOARD),)
-	cd dashboard && npm install
+	cd dashboard && npm ci
 endif
 
 migrate: ## Apply migrations [PKG]
