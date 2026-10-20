@@ -425,20 +425,8 @@
   "shell.notFound.body": "The link may be old, or the page has moved.",
   "shell.notFound.home": "Go to the overview",
 
-  "shell.login.title": "Sign in with Telegram",
-  "shell.login.body": "Open the console from the owner bot’s menu button, or use the sign-in link the bot sends you.",
   "shell.login.tagline": "Your whole business in one place.",
-  "shell.login.dev": "Developer sign-in",
 
-  "shell.dev.title": "Developer sign-in",
-  "shell.dev.body": "Sign in as any Telegram account in the development database. Works only on a DEBUG backend with DASHBOARD_DEV_LOGIN on.",
-  "shell.dev.telegramId": "Telegram id",
-  "shell.dev.submit": "Sign in",
-  "shell.dev.presets": "Demo people",
-  "shell.dev.owner": "Owner",
-  "shell.dev.manager": "Manager",
-  "shell.dev.you": "You",
-  "shell.dev.invalidId": "Enter a Telegram id: digits only",
 
   "shell.connection.offline": "Offline",
   "shell.connection.reconnecting": "Reconnecting…",

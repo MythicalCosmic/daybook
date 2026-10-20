@@ -73,7 +73,6 @@ const ICONS: Record<string, Component> = {
 };
 
 const StubPage = () => import("./StubPage.vue");
-const OverviewPreview = () => import("./OverviewPreview.vue");
 const PortfolioStub = () => import("./PortfolioStub.vue");
 const NewCompanyStub = defineAsyncComponent(() => import("./NewCompanyStub.vue"));
 
@@ -95,7 +94,7 @@ export function devStubModules(): DashboardModule[] {
       routes: entry.pages.map((page) => ({
         path: page.to,
         name: `${entry.id}.${page.id}`,
-        component: entry.id === "overview" ? OverviewPreview : StubPage,
+        component: StubPage,
         meta: { title: `${entry.id}.nav.${page.id}`, perm: page.perm, feature: page.feature },
         props: { pkg: entry.pkg },
       })),
@@ -110,7 +109,8 @@ export function devStubModules(): DashboardModule[] {
               badge: page.badge ? counter(page.badge) : undefined,
             }))
           : undefined,
-      rootRoutes: entry.id === "overview" ? [{ path: "portfolio", name: "portfolio", component: PortfolioStub, meta: { title: "dev.portfolio.title" } }] : undefined,
+      // The portfolio is package N's (§13.2); its stand-in rides on N's insights placeholder.
+      rootRoutes: entry.id === "insights" ? [{ path: "portfolio", name: "portfolio", component: PortfolioStub, meta: { title: "dev.portfolio.title" } }] : undefined,
       extensions: entry.id === "settings" ? { "shell.company.create": [NewCompanyStub] } : undefined,
       deepLinks: entry.id === "sales" ? { shift: (id) => `sales/shifts?shift=${id}` } : undefined,
       messages: () => Promise.resolve(stubMessages(entry.id)),

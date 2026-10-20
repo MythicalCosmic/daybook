@@ -29,14 +29,8 @@ export function buildRoutes(list: readonly DashboardModule[] = registry): RouteR
     companyRoutes.unshift({ path: "", name: "company-home", component: Redirecting });
   }
 
-  const hasLogin = publicRoutes.some((r) => r.path === "/login");
+  // `/login` (and `/dev/login` in development) come from the auth module (W0 placeholder, then A).
   const routes: RouteRecordRaw[] = [...publicRoutes];
-  if (!hasLogin) {
-    routes.push({ path: "/login", name: "login", component: () => import("@/shell/LoginPlaceholder.vue"), meta: { public: true } });
-  }
-  if (import.meta.env.DEV && !publicRoutes.some((r) => r.path === "/dev/login")) {
-    routes.push({ path: "/dev/login", name: "dev-login", component: () => import("@/shell/DevLoginPage.vue"), meta: { public: true } });
-  }
   routes.push({ path: "/session-ended", name: "session-ended", component: () => import("@/shell/SessionEndedPage.vue"), meta: { public: true } });
   routes.push(
     {

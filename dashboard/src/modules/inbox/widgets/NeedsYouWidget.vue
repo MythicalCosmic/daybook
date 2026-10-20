@@ -11,7 +11,6 @@ import { RouterLink } from "vue-router";
 import type { Range } from "@/api/types";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
-import { iconForKind } from "@/components/kindIcons";
 import RelativeTime from "@/components/RelativeTime.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UiBadge from "@/components/UiBadge.vue";
@@ -52,7 +51,7 @@ const inbox = computed(() => `/c/${props.companyId}/inbox`);
       <ul v-else class="flex flex-col">
         <li v-for="item in items" :key="queueKey(item)">
           <RouterLink :to="{ path: inbox, query: { kind: item.kind } }" class="flex items-center gap-3 rounded-[10px] px-2 py-2 transition-colors hover:bg-highlight">
-            <span class="grid size-[30px] shrink-0 place-items-center rounded-[9px] bg-accent-soft text-accent-fg" aria-hidden="true"><component :is="iconForKind(item.kind)" :size="15" /></span>
+            <span class="grid size-[30px] shrink-0 place-items-center rounded-[9px] bg-accent-soft text-accent-fg" aria-hidden="true"><Inbox :size="15" /></span>
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-semibold text-fg">{{ item.title }}</p>
               <p class="truncate text-xs text-muted">{{ labelOf(item.kind) }}</p>

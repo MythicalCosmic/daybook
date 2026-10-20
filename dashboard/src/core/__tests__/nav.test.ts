@@ -7,7 +7,7 @@ import { extensionsFor, hasExtension } from "@/core/extensions";
 import { byGroupThenOrder, defineModule, type DashboardModule } from "@/core/modules";
 import { activeEntryKey, buildNav, companyPath, isActivePath, moduleNavItems } from "@/core/nav";
 import { hasPerm, isPerm, permArea } from "@/core/perms";
-import { changedVersions, counter, modulesToRefresh, pulseCount } from "@/core/pulse";
+import { changedKeys, changedVersions, counter, keyMatches, modulesToRefresh, pulseCount } from "@/core/pulse";
 import { company, manager } from "@/test/fixtures";
 
 const Icon = defineComponent({ render: () => h("svg") });
@@ -145,5 +145,19 @@ describe("pulse", () => {
     expect(modulesToRefresh(["sales"], all)).toEqual(["finance"]);
     expect(modulesToRefresh(["tasks", "finance"], all)).toEqual(["tasks", "finance"]);
     expect(modulesToRefresh([], all)).toEqual([]);
+  });
+
+  it("treats a moved counter as a change and lets an entry name a whole app", () => {
+    const before = { counters: { "console.queue": 3, "inbox.unread": 1 }, versions: { "inbox.unread": "4", "tasks.tasks": "1" } };
+    expect(changedKeys(null, before)).toEqual([]);
+    // A new approval bumps no version of its own; only the queue counter moves.
+    expect(changedKeys(before, { ...before, counters: { ...before.counters, "console.queue": 4 } })).toEqual(["console.queue"]);
+    expect(changedKeys(before, { counters: { "inbox.unread": 1 }, versions: { ...before.versions, "tasks.tasks": "2" } }).sort()).toEqual(["console.queue", "tasks.tasks"]);
+    expect(keyMatches("sales", "sales.shifts")).toBe(true);
+    expect(keyMatches("sales", "salesforce")).toBe(false);
+    expect(keyMatches("inbox.unread", "inbox.unread")).toBe(true);
+    // "tasks" (an app) covers the backend's "tasks.review" key; "finance" covers "finance.transactions".
+    expect(modulesToRefresh(["tasks.review"], all)).toEqual(["tasks"]);
+    expect(modulesToRefresh(["finance.transactions"], all)).toEqual(["finance"]);
   });
 });

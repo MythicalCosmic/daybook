@@ -175,14 +175,13 @@ export function refreshAccess(): Promise<string | null> {
   return refreshing;
 }
 
-function send(url: string, options: RequestOptions): Promise<Response> {
+function send(url: string, options: RequestOptions, token: string | null): Promise<Response> {
   const headers: Record<string, string> = {
     Accept: "application/json",
     "Accept-Language": config.getLanguage(),
     "X-Requested-With": "dashboard",
     ...options.headers,
   };
-  const token = options.anonymous ? null : config.getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
   let body: BodyInit | undefined;
   if (options.form) body = options.form;
@@ -215,15 +214,27 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   const wantsToast = options.toast ?? method !== "GET";
   let response: Response;
   try {
-    response = await send(url, { ...options, method });
+    // A refresh already under way: wait for its token instead of sending one about to be refused.
+    if (refreshing && !options.anonymous) await refreshing;
+    const sentWith = options.anonymous ? null : config.getToken();
+    response = await send(url, { ...options, method }, sentWith);
     if (response.status === 401 && !options.anonymous) {
-      const token = await refreshAccess();
+      // Another request may have refreshed while this one was in flight: retry with its token
+      // rather than rotating the refresh cookie a second time.
+      const current = config.getToken();
+      const token = current && current !== sentWith ? current : await refreshAccess();
       if (!token) {
         config.setToken(null);
         config.onSessionEnded();
         throw new ApiError(401, await readBody(response));
       }
-      response = await send(url, { ...options, method });
+      response = await send(url, { ...options, method }, token);
+      if (response.status === 401) {
+        // Refused even with a brand-new token: the session is over (revoked, or access removed).
+        config.setToken(null);
+        config.onSessionEnded();
+        throw new ApiError(401, await readBody(response));
+      }
     }
   } catch (error) {
     if (error instanceof ApiError) throw error;

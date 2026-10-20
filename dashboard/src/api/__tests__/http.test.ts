@@ -59,6 +59,67 @@ describe("request", () => {
     expect(token).toBe("new");
   });
 
+  it("retries a late 401 with the token another request already got, without a second refresh", async () => {
+    let refreshes = 0;
+    let releaseSlow!: () => void;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url === "/api/v1/owner/auth/refresh/") {
+          refreshes += 1;
+          return json({ access: `new${refreshes}` });
+        }
+        const auth = headerOf(init, "Authorization");
+        // The slow request was sent with the old token and only answers after the refresh is done.
+        if (url.endsWith("/slow/") && auth === "Bearer old") {
+          await new Promise<void>((resolve) => (releaseSlow = resolve));
+          return json({ detail: "expired" }, 401);
+        }
+        return auth === "Bearer old" ? json({ detail: "expired" }, 401) : json({ url, auth });
+      }),
+    );
+    const slow = http.get<{ auth: string }>("/slow/");
+    await http.get("/fast/");
+    expect(token).toBe("new1");
+    releaseSlow();
+    await expect(slow).resolves.toMatchObject({ auth: "Bearer new1" });
+    expect(refreshes).toBe(1);
+  });
+
+  it("waits for a refresh in progress before sending a new request", async () => {
+    const seen: string[] = [];
+    let releaseRefresh!: () => void;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url === "/api/v1/owner/auth/refresh/") {
+          await new Promise<void>((resolve) => (releaseRefresh = resolve));
+          return json({ access: "new" });
+        }
+        seen.push(`${url} ${headerOf(init, "Authorization")}`);
+        return headerOf(init, "Authorization") === "Bearer new" ? json({}) : json({ detail: "expired" }, 401);
+      }),
+    );
+    const first = http.get("/a/");
+    await vi.waitFor(() => expect(seen).toHaveLength(1));
+    const second = http.get("/b/");
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    releaseRefresh();
+    await Promise.all([first, second]);
+    // /b/ never went out with the token that was being replaced.
+    expect(seen).toEqual(["/api/v1/a/ Bearer old", "/api/v1/a/ Bearer new", "/api/v1/b/ Bearer new"]);
+  });
+
+  it("ends the session when even a fresh token is refused", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => (url.endsWith("/refresh/") ? json({ access: "new" }) : json({ detail: "revoked" }, 401))),
+    );
+    await expect(http.get("/owner/me/")).rejects.toMatchObject({ status: 401 });
+    expect(ended).toHaveBeenCalledTimes(1);
+    expect(token).toBeNull();
+  });
+
   it("signs in again with initData inside Telegram instead of the cookie", async () => {
     const relogin = vi.fn(async () => "fresh");
     configureHttp({ relogin });

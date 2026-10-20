@@ -425,20 +425,8 @@
   "shell.notFound.body": "Havola eskirgan yoki sahifa boshqa joyga ko‘chgan.",
   "shell.notFound.home": "Umumiy ko‘rinishga",
 
-  "shell.login.title": "Telegram orqali kirish",
-  "shell.login.body": "Konsolni egalar botidagi menyu tugmasi orqali yoki bot yuboradigan kirish havolasi bilan oching.",
   "shell.login.tagline": "Butun biznesingiz bir joyda.",
-  "shell.login.dev": "Dasturchilar uchun kirish",
 
-  "shell.dev.title": "Dasturchilar uchun kirish",
-  "shell.dev.body": "Ishlab chiqish bazasidagi istalgan Telegram hisobi nomidan kiring. Faqat DEBUG backend va yoqilgan DASHBOARD_DEV_LOGIN bilan ishlaydi.",
-  "shell.dev.telegramId": "Telegram id",
-  "shell.dev.submit": "Kirish",
-  "shell.dev.presets": "Demo xodimlar",
-  "shell.dev.owner": "Egasi",
-  "shell.dev.manager": "Menejer",
-  "shell.dev.you": "Siz",
-  "shell.dev.invalidId": "Telegram id kiriting: faqat raqamlar",
 
   "shell.connection.offline": "Internet yo‘q",
   "shell.connection.reconnecting": "Qayta ulanmoqda…",

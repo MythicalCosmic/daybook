@@ -40,9 +40,19 @@ export function exportsApi(companyId: number) {
   };
 }
 
-/** Opens a ready export's signed link (valid 10 minutes; the server checks access again). */
-export function downloadExport(job: Pick<ExportJob, "file_url">): void {
-  if (job.file_url) window.open(job.file_url, "_blank", "noopener");
+/**
+ * Downloads a ready export through its signed link (valid 10 minutes; the server checks access
+ * again). The link is same-origin and served as an attachment, so the page stays where it is.
+ */
+export function downloadExport(job: Pick<ExportJob, "file_url" | "file_name">): void {
+  if (!job.file_url) return;
+  const link = document.createElement("a");
+  link.href = job.file_url;
+  link.download = job.file_name ?? "";
+  link.rel = "noopener";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
 
 export function useExport() {

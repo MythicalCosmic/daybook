@@ -34,6 +34,9 @@ export default defineConfig({
     __VUE_I18N_FULL_INSTALL__: "true",
     __VUE_I18N_LEGACY_API__: "false",
     __INTLIFY_PROD_DEVTOOLS__: "false",
+    // vue-i18n without its message compiler (~10 KB gzipped): src/i18n/compile.ts compiles the
+    // console's messages instead (`messageCompiler` in src/i18n/index.ts).
+    __INTLIFY_DROP_MESSAGE_COMPILER__: "true",
   },
   server: {
     host: "127.0.0.1",

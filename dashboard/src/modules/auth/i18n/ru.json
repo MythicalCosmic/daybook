@@ -1,0 +1,16 @@
+{
+  "auth.title": "Вход",
+  "auth.dev.cafeManager": "Менеджер Demo Café",
+  "auth.login.title": "Вход через Telegram",
+  "auth.login.body": "Откройте консоль кнопкой меню в боте владельца или по ссылке для входа, которую пришлёт бот.",
+  "auth.login.dev": "Вход для разработчиков",
+  "auth.dev.title": "Вход для разработчиков",
+  "auth.dev.body": "Войдите под любым Telegram-аккаунтом из базы разработки. Работает только с DEBUG-бэкендом и включённым DASHBOARD_DEV_LOGIN.",
+  "auth.dev.telegramId": "Telegram id",
+  "auth.dev.submit": "Войти",
+  "auth.dev.presets": "Демо-люди",
+  "auth.dev.owner": "Владелец",
+  "auth.dev.manager": "Менеджер",
+  "auth.dev.you": "Вы",
+  "auth.dev.invalidId": "Введите Telegram id: только цифры"
+}

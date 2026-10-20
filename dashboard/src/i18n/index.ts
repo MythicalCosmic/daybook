@@ -9,6 +9,7 @@ import { LANGUAGES, type Language } from "@/api/types";
 import type { DashboardModule, Messages } from "@/core/modules";
 import { readStored, writeStored } from "@/lib/storage";
 
+import { compileMessage } from "./compile";
 import en from "./en.json";
 import ru from "./ru.json";
 import uz from "./uz.json";
@@ -55,6 +56,9 @@ export const i18n = createI18n({
     const value = (messages as Record<string, unknown>)[path];
     return typeof value === "string" ? value : null;
   },
+  // The runtime build has no message compiler (vite.config.ts aliases it); this small one covers
+  // the syntax the console uses: {named}, {0}, {'literal'} and "one | other" plurals.
+  messageCompiler: compileMessage,
   pluralRules: { ru: russianPlural, uz: twoFormPlural, en: twoFormPlural },
   missingWarn: import.meta.env.DEV,
   fallbackWarn: false,

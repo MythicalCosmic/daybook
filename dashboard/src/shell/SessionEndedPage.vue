@@ -8,7 +8,7 @@ import { useI18n } from "vue-i18n";
 
 import UiButton from "@/components/UiButton.vue";
 
-import AuthLayout from "./AuthLayout.vue";
+import AuthLayout from "@/components/AuthLayout.vue";
 import { closeTelegram, telegram } from "./TelegramBridge";
 
 const { t } = useI18n();

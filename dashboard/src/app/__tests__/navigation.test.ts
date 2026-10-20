@@ -3,6 +3,7 @@ import { defineComponent, h } from "vue";
 import { createMemoryHistory, createRouter } from "vue-router";
 
 import { safeNext } from "@/app/guards";
+import { companyUrl } from "@/lib/links";
 import { pathInCompany } from "@/app/navigation";
 import { buildRoutes, stampModule } from "@/app/router";
 import { defineModule } from "@/core/modules";
@@ -52,9 +53,13 @@ describe("buildRoutes", () => {
     expect(r.resolve("/c/abc").name).toBe("not-found");
   });
 
-  it("falls back to the login placeholder without an auth module", () => {
-    const r = createRouter({ history: createMemoryHistory(), routes: buildRoutes([people]) });
-    expect(r.resolve("/login").name).toBe("login");
+  it("gets /login and, in development, /dev/login from the real auth module", async () => {
+    const { modules } = await import("@/core/modules");
+    const r = createRouter({ history: createMemoryHistory(), routes: buildRoutes(modules) });
+    expect(r.resolve("/login").matched.at(-1)!.meta).toMatchObject({ public: true, module: "auth" });
+    expect(r.resolve("/dev/login").name).toBe("dev-login");
+    // The overview serves the company index, so no redirect stand-in is added.
+    expect(r.resolve("/c/1").name).toBe("overview.today");
   });
 
   it("stamps nested children too", () => {
@@ -84,6 +89,21 @@ describe("safeNext", () => {
     expect(safeNext("/\\evil")).toBe("/");
     expect(safeNext(["/c/2"])).toBe("/c/2");
     expect(safeNext(undefined)).toBe("/");
+  });
+});
+
+describe("companyUrl", () => {
+  it("turns server links into in-app paths and never leaves the app", () => {
+    expect(companyUrl(3, "/c/3/sales/shifts/4")).toBe("/c/3/sales/shifts/4");
+    expect(companyUrl(3, "/dashboard/c/3/tasks?task=9")).toBe("/c/3/tasks?task=9");
+    expect(companyUrl(3, "tasks?task=9")).toBe("/c/3/tasks?task=9");
+    expect(companyUrl(3, "/people/17")).toBe("/c/3/people/17");
+    expect(companyUrl(3, "")).toBe("/c/3");
+    expect(companyUrl(3, null)).toBe("/c/3");
+    expect(companyUrl(3, "https://evil.example/x")).toBe("/c/3");
+    expect(companyUrl(3, "javascript:alert(1)")).toBe("/c/3");
+    expect(companyUrl(3, "//evil.example")).toBe("/c/3");
+    expect(companyUrl(null, "people")).toBe("/people");
   });
 });
 

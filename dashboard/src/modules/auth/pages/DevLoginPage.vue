@@ -1,35 +1,36 @@
 <script setup lang="ts">
 /**
  * Development sign-in (plan §4.3, §7.3): `POST /owner/auth/dev-login/ {telegram_id}` against a DEBUG
- * backend with DASHBOARD_DEV_LOGIN on. Only routed when `import.meta.env.DEV`.
+ * backend with DASHBOARD_DEV_LOGIN on. The auth module routes it only when `import.meta.env.DEV`,
+ * so a production build doesn't contain it.
  */
 import { ArrowRight } from "@lucide/vue";
 import { z } from "zod";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
-import { safeNext } from "@/app/guards";
+import AuthLayout from "@/components/AuthLayout.vue";
 import UiButton from "@/components/UiButton.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
+import { safeNext } from "@/lib/links";
 import { useForm } from "@/lib/useForm";
 import { useSessionStore } from "@/stores/session";
-
-import AuthLayout from "./AuthLayout.vue";
 
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const session = useSessionStore();
 
-/** The demo company's people (backend seed_demo) and the owner's own account (plan §13). */
+/** People `seed_demo` creates (backend/apps/core/management/commands/seed_demo.py) and the owner's own account (plan §13.0). */
 const presets = [
-  { id: 1001, name: "Dilnoza Karimova", role: "shell.dev.owner" },
-  { id: 1002, name: "Bekzod Mirzayev", role: "shell.dev.manager" },
-  { id: 6589960007, name: "6589960007", role: "shell.dev.you" },
+  { id: 1001, name: "Dilnoza Karimova", role: "auth.dev.owner" },
+  { id: 1002, name: "Bekzod Mirzayev", role: "auth.dev.manager" },
+  { id: 2001, name: "Sardor Qodirov", role: "auth.dev.cafeManager" },
+  { id: 6589960007, name: "6589960007", role: "auth.dev.you" },
 ];
 
 const schema = z.object({
-  telegramId: z.string().trim().regex(/^\d{3,15}$/, "shell.dev.invalidId"),
+  telegramId: z.string().trim().regex(/^\d{3,15}$/, "auth.dev.invalidId"),
 });
 
 const form = useForm(schema, { telegramId: "1001" }, {
@@ -48,10 +49,10 @@ function pick(id: number): void {
 <template>
   <AuthLayout>
     <form class="flex flex-col" novalidate @submit="form.submit">
-      <h1 class="text-lg font-semibold text-fg">{{ t("shell.dev.title") }}</h1>
-      <p class="mt-1.5 text-sm text-muted">{{ t("shell.dev.body") }}</p>
+      <h1 class="text-lg font-semibold text-fg">{{ t("auth.dev.title") }}</h1>
+      <p class="mt-1.5 text-sm text-muted">{{ t("auth.dev.body") }}</p>
 
-      <p class="mb-2 mt-6 text-xs font-medium text-muted">{{ t("shell.dev.presets") }}</p>
+      <p class="mb-2 mt-6 text-xs font-medium text-muted">{{ t("auth.dev.presets") }}</p>
       <div class="flex flex-col gap-1.5">
         <button
           v-for="preset in presets"
@@ -70,7 +71,7 @@ function pick(id: number): void {
         </button>
       </div>
 
-      <label for="dev-telegram-id" class="mb-1.5 mt-6 text-sm font-medium text-fg">{{ t("shell.dev.telegramId") }}</label>
+      <label for="dev-telegram-id" class="mb-1.5 mt-6 text-sm font-medium text-fg">{{ t("auth.dev.telegramId") }}</label>
       <input
         id="dev-telegram-id"
         v-model="form.values.telegramId"
@@ -86,7 +87,7 @@ function pick(id: number): void {
       <p v-if="form.errors.telegramId" class="mt-1.5 text-sm text-danger">{{ form.errors.telegramId }}</p>
       <p v-if="form.formError.value" class="mt-3 rounded-[8px] bg-danger-soft px-3 py-2 text-sm text-danger">{{ form.formError.value }}</p>
 
-      <UiButton class="mt-5" variant="primary" size="lg" type="submit" block :loading="form.submitting.value">{{ t("shell.dev.submit") }}</UiButton>
+      <UiButton class="mt-5" variant="primary" size="lg" type="submit" block :loading="form.submitting.value">{{ t("auth.dev.submit") }}</UiButton>
     </form>
   </AuthLayout>
 </template>
