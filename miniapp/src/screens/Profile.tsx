@@ -3,6 +3,8 @@ import { useState } from "react";
 
 import { useCancelTimeOff, useHolidays, useSummary, useTimeOff } from "../api/hooks";
 import type { Day } from "../api/types";
+import { FeatureSlot } from "../features/FeatureSlot";
+import { useReplacedEntries } from "../features/hosts";
 import { LANGUAGES, useI18n } from "../i18n";
 import { errorText } from "../lib/actions";
 import { cancellable, current, STATUS_TAG } from "../lib/timeOff";
@@ -24,6 +26,8 @@ export function Profile() {
   const cancelTimeOff = useCancelTimeOff(member.companyId);
   const toast = useToast();
   const [theme, setTheme] = useState<ThemeMode>(savedThemeMode);
+  // Feature folders can take over built-in entries (the leave feature replaces time off).
+  const replaced = useReplacedEntries();
   const numbers = summary.data;
   const today = dayKey(new Date(), member.timeZone);
   // Dates without a time: read them at noon UTC so no timezone moves the day.
@@ -103,58 +107,63 @@ export function Profile() {
         </>
       )}
 
-      <div className="section-head section-head--small">{t("timeOff.section")}</div>
-      <div className="card list-card">
-        {current(timeOff.data ?? [], today).map((item) => (
-          <div key={item.id} className="list-item" style={{ minHeight: 58 }}>
-            <span style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
-              <span className="num" style={{ fontWeight: 600 }}>{span(item.first_day, item.last_day)}</span>
-              {item.reason && <span className="muted" style={{ fontSize: 13.5 }}>{item.reason}</span>}
-            </span>
-            <span style={{ display: "flex", alignItems: "center", gap: 6, flex: "none" }}>
-              <span className={`tag tag-small ${STATUS_TAG[item.status]}`}>{t(`timeOff.status.${item.status}`)}</span>
-              {cancellable(item, today) && (
-                <button
-                  className="btn btn-ghost"
-                  style={{ padding: "6px 8px", minHeight: 0, fontSize: 14 }}
-                  disabled={cancelTimeOff.isPending}
-                  onClick={() =>
-                    cancelTimeOff.mutate(item.id, {
-                      onSuccess: () => toast(t("timeOff.toastCancelled")),
-                      onError: (error) => toast(errorText(error, t)),
-                    })
-                  }
-                >
-                  {t("timeOff.cancel")}
-                </button>
-              )}
-            </span>
-          </div>
-        ))}
-        {(holidays.data ?? []).slice(0, 3).map((holiday) => (
-          <div key={`holiday-${holiday.id}`} className="list-item">
-            <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <PartyPopper size={18} strokeWidth={2.4} />
-              {holiday.name}
-            </span>
-            <span className="list-item-value num">{day(holiday.date)}</span>
-          </div>
-        ))}
-        <button className="list-item" onClick={() => navigation.openSheet({ kind: "timeOff" })}>
-          <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <TreePalm size={20} strokeWidth={2.4} />
-            {t("timeOff.request")}
-          </span>
-          <span className="list-item-value">
-            <ChevronRight size={18} strokeWidth={2.5} />
-          </span>
-        </button>
-      </div>
-
-      {member.permissions.includes("reports.view") && (
+      {!replaced.has("timeOff") && (
         <>
-          <div className="section-head section-head--small">{t("profile.teamSection")}</div>
+          <div className="section-head section-head--small">{t("timeOff.section")}</div>
           <div className="card list-card">
+            {current(timeOff.data ?? [], today).map((item) => (
+              <div key={item.id} className="list-item" style={{ minHeight: 58 }}>
+                <span style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+                  <span className="num" style={{ fontWeight: 600 }}>{span(item.first_day, item.last_day)}</span>
+                  {item.reason && <span className="muted" style={{ fontSize: 13.5 }}>{item.reason}</span>}
+                </span>
+                <span style={{ display: "flex", alignItems: "center", gap: 6, flex: "none" }}>
+                  <span className={`tag tag-small ${STATUS_TAG[item.status]}`}>{t(`timeOff.status.${item.status}`)}</span>
+                  {cancellable(item, today) && (
+                    <button
+                      className="btn btn-ghost"
+                      style={{ padding: "6px 8px", minHeight: 0, fontSize: 14 }}
+                      disabled={cancelTimeOff.isPending}
+                      onClick={() =>
+                        cancelTimeOff.mutate(item.id, {
+                          onSuccess: () => toast(t("timeOff.toastCancelled")),
+                          onError: (error) => toast(errorText(error, t)),
+                        })
+                      }
+                    >
+                      {t("timeOff.cancel")}
+                    </button>
+                  )}
+                </span>
+              </div>
+            ))}
+            {(holidays.data ?? []).slice(0, 3).map((holiday) => (
+              <div key={`holiday-${holiday.id}`} className="list-item">
+                <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <PartyPopper size={18} strokeWidth={2.4} />
+                  {holiday.name}
+                </span>
+                <span className="list-item-value num">{day(holiday.date)}</span>
+              </div>
+            ))}
+            <button className="list-item" onClick={() => navigation.openSheet({ kind: "timeOff" })}>
+              <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <TreePalm size={20} strokeWidth={2.4} />
+                {t("timeOff.request")}
+              </span>
+              <span className="list-item-value">
+                <ChevronRight size={18} strokeWidth={2.5} />
+              </span>
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* Feature rows on Me, grouped; the built-in Team results row leads the team group. */}
+      <FeatureSlot
+        name="me.items"
+        builtIns={{
+          team: member.permissions.includes("reports.view") && !replaced.has("teamResults") && (
             <button className="list-item" onClick={() => navigation.openPage("team")}>
               <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <BarChart3 size={20} strokeWidth={2.4} />
@@ -164,9 +173,9 @@ export function Profile() {
                 <ChevronRight size={18} strokeWidth={2.5} />
               </span>
             </button>
-          </div>
-        </>
-      )}
+          ),
+        }}
+      />
 
       <div className="section-head section-head--small">{t("profile.settings")}</div>
       <div className="card list-card">

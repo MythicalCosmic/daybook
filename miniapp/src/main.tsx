@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 
 import "./styles/tokens.css";
 import "./styles/app.css";
+import "./ui/ui.css";
 
 import { ApiError } from "./api/client";
 import { App } from "./App";

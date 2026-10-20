@@ -1,6 +1,7 @@
-import { Ban, Clock3, KeyRound, Send, WifiOff } from "lucide-react";
+import { Ban, CirclePause, Clock3, KeyRound, Send, WifiOff } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { suspendedUntil } from "../api/membership";
 import type { Membership } from "../api/types";
 import { Mark } from "../components/Mark";
 import { useI18n } from "../i18n";
@@ -51,6 +52,18 @@ export function Declined({ membership }: { membership: Membership }) {
 export function Blocked() {
   const { t } = useI18n();
   return <Message icon={<Ban size={32} strokeWidth={2.4} />} title={t("gate.blocked.title")} body={t("gate.blocked.body")} />;
+}
+
+/**
+ * Shown to a suspended person when no feature brings its own "Access paused" screen: until when,
+ * as the bot says it ("until 12 Nov", or until further notice).
+ */
+export function Suspended({ membership }: { membership: Membership }) {
+  const { t, locale } = useI18n();
+  const until = suspendedUntil(membership);
+  // A date without a time: read it at noon UTC so no timezone moves the day.
+  const body = until ? t("gate.suspended.until", { date: dayMonth(`${until}T12:00:00Z`, "UTC", locale) }) : t("gate.suspended.body");
+  return <Message icon={<CirclePause size={32} strokeWidth={2.4} />} title={t("gate.suspended.title")} body={body} />;
 }
 
 const FAILURES = {

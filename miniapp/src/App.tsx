@@ -1,12 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { ApiError } from "./api/client";
 import { useMe, useSummary } from "./api/hooks";
+import { isSuspended } from "./api/membership";
+import type { Membership } from "./api/types";
 import { TabBar } from "./components/TabBar";
+import { FeatureBoundary, FeaturePage } from "./features/hosts";
+import { features, suspendedGate, visibleFeatures } from "./features/registry";
 import { asLang, I18nProvider, useI18n } from "./i18n";
 import { ActivityScreen } from "./screens/Activity";
 import { CreateAccount } from "./screens/CreateAccount";
-import { Blocked, Declined, Failure, NoAccess } from "./screens/Gate";
+import { Blocked, Declined, Failure, NoAccess, Suspended } from "./screens/Gate";
 import { Home } from "./screens/Home";
 import { Profile } from "./screens/Profile";
 import { Splash } from "./screens/Splash";
@@ -15,7 +19,8 @@ import { Tasks } from "./screens/Tasks";
 import { Team } from "./screens/Team";
 import { Waiting } from "./screens/Waiting";
 import { Sheets } from "./sheets/Sheets";
-import { NavigationProvider, useNavigation } from "./state/navigation";
+import { readScreenLink, resolveScreen, type ScreenLink } from "./state/deeplink";
+import { CORE, NavigationProvider, useNavigation, type NavigationInit, type PageRef } from "./state/navigation";
 import { SessionProvider, useMember, useSession } from "./state/session";
 import { ToastProvider } from "./state/toast";
 import { initData, onThemeChange, useBackButton } from "./telegram";
@@ -26,6 +31,8 @@ const SPLASH_MS = 900;
 export function App() {
   const insideTelegram = Boolean(initData());
   const me = useMe({ enabled: insideTelegram });
+  // Read once at launch: `?screen=payslip:12` or a startapp parameter picks the first screen.
+  const [launch] = useState<ScreenLink | null>(() => readScreenLink());
   const [splashOver, setSplashOver] = useState(false);
   useEffect(() => {
     const timer = window.setTimeout(() => setSplashOver(true), SPLASH_MS);
@@ -50,15 +57,29 @@ export function App() {
             <SplashScreen />
           ) : (
             <SessionProvider me={me.data}>
-              <NavigationProvider>
+              <LaunchNavigation link={launch}>
                 <Gatekeeper />
-              </NavigationProvider>
+              </LaunchNavigation>
             </SessionProvider>
           )}
         </ToastProvider>
       </div>
     </I18nProvider>
   );
+}
+
+/**
+ * The navigation, started where the launch link points. It resolves once the membership is
+ * known, so only features this person sees can take a built-in link over (§9.1 `replaces`).
+ */
+function LaunchNavigation({ link, children }: { link: ScreenLink | null; children: ReactNode }) {
+  const { membership } = useSession();
+  const [initial] = useState<NavigationInit | null>(() => {
+    if (!link) return null;
+    const member = membership && { ...membership, timeZone: membership.company.timezone, companyId: membership.company.id };
+    return resolveScreen(link, features, member ? visibleFeatures(features, { member, summary: undefined }) : features);
+  });
+  return <NavigationProvider initial={initial}>{children}</NavigationProvider>;
 }
 
 function SplashScreen() {
@@ -86,6 +107,7 @@ function Gatekeeper() {
   if (!membership || status === "left") return <NoAccess />;
   if (status === "rejected") return <Declined membership={membership} />;
   if (status === "blocked") return <Blocked />;
+  if (isSuspended(membership)) return <PausedApp membership={membership} />;
   if (!membership.is_onboarded) return <CreateAccount membership={membership} />;
   if (status === "pending" || celebrating) {
     return <Waiting membership={membership} onOpen={() => setCelebrating(false)} />;
@@ -93,15 +115,18 @@ function Gatekeeper() {
   return <MainApp />;
 }
 
+/** Telegram's back button closes a sheet first, then the page on top (an open task, a page). */
+function useStackBackButton() {
+  const { sheet, stack, closeSheet, pop } = useNavigation();
+  const back = sheet ? closeSheet : stack.length ? pop : null;
+  useEffect(() => useBackButton(back), [back]);
+}
+
 function MainApp() {
   const navigation = useNavigation();
   const member = useMember();
   const summary = useSummary(member.companyId);
-  const { sheet, taskId, page, closeSheet, closeTask, closePage } = navigation;
-
-  // Telegram's back button closes a sheet first, then an open task, then a page.
-  const back = sheet ? closeSheet : taskId !== null ? closeTask : page ? closePage : null;
-  useEffect(() => useBackButton(back), [back]);
+  useStackBackButton();
 
   return (
     <>
@@ -109,14 +134,59 @@ function MainApp() {
       {navigation.tab === "tasks" && <Tasks />}
       {navigation.tab === "activity" && <ActivityScreen />}
       {navigation.tab === "profile" && <Profile />}
-      {page === "team" && <Team />}
-      {/* An open task covers the tabs and brings its own action bar, as in the design. */}
-      {taskId !== null ? (
-        <TaskDetail key={taskId} taskId={taskId} />
-      ) : (
-        !page && <TabBar unread={summary.data?.unread_activity ?? 0} />
-      )}
+      {/* Pages cover the tabs, each over the last; an open task brings its own action bar. */}
+      <StackPages />
+      {navigation.stack.length === 0 && <TabBar unread={summary.data?.unread_activity ?? 0} />}
       <Sheets />
     </>
   );
+}
+
+/**
+ * A suspended person: the lifecycle feature's "Access paused" screen when it exists (it may open
+ * the pages they keep, such as pay and documents), otherwise a calm built-in message.
+ */
+function PausedApp({ membership }: { membership: Membership }) {
+  const Gate = suspendedGate(features);
+  useStackBackButton();
+  return (
+    <>
+      {Gate ? (
+        <FeatureBoundary name="gates.suspended" fallback={<Suspended membership={membership} />}>
+          <Gate membership={membership} />
+        </FeatureBoundary>
+      ) : (
+        <Suspended membership={membership} />
+      )}
+      <StackPages />
+      <Sheets />
+    </>
+  );
+}
+
+function StackPages() {
+  const { stack } = useNavigation();
+  return (
+    <>
+      {stack.map((page, index) => (
+        <StackPage key={pageKey(page, index)} page={page} />
+      ))}
+    </>
+  );
+}
+
+function pageKey({ feature, page, params }: PageRef, index: number): string {
+  return `${index}:${feature}:${page}:${params ? JSON.stringify(params) : ""}`;
+}
+
+/** One page of the navigation stack: the app's own (a task, team results) or a feature's. */
+function StackPage({ page }: { page: PageRef }) {
+  const { membership } = useSession();
+  if (page.feature === CORE) {
+    if (page.page === "task") return <TaskDetail taskId={Number(page.params?.id)} />;
+    // Me shows team results only with reports.view; a deep link must not get around that.
+    if (page.page === "team" && membership?.permissions.includes("reports.view")) return <Team />;
+    return <FeaturePage feature={page.feature} page={page.page} params={page.params ?? {}} />;
+  }
+  return <FeaturePage feature={page.feature} page={page.page} params={page.params ?? {}} />;
 }

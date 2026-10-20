@@ -29,3 +29,14 @@ export function applyTheme(mode: ThemeMode): void {
   document.documentElement.dataset.theme = theme;
   paintChrome(GROUND[theme]);
 }
+
+// Telegram's native buttons take plain hex too: the accent and surface of each theme.
+const ACCENT = "#c67139";
+const SURFACE = { light: "#ebddc5", dark: "#2e2b25" };
+const TEXT = { light: "#201e1d", dark: "#f5ead8" };
+
+/** Colors for Telegram's main and secondary buttons, matching the in-page primary and secondary ones. */
+export function nativeButtonColors(kind: "main" | "secondary"): { color: string; textColor: string } {
+  const theme = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+  return kind === "main" ? { color: ACCENT, textColor: GROUND[theme] } : { color: SURFACE[theme], textColor: TEXT[theme] };
+}
