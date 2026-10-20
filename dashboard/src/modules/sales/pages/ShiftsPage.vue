@@ -5,12 +5,11 @@
  * shift drawer (`?shift=`). On phones the table becomes cards.
  */
 import { AlertTriangle, Building2, CircleDot, ClipboardList, Sparkles, UserRound } from "@lucide/vue";
-import { computed, watch } from "vue";
+import { computed, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
 import DataTable from "@/components/DataTable.vue";
-import ExportButton from "@/components/ExportButton.vue";
 import FilterBar from "@/components/FilterBar.vue";
 import { useUrlFilters, type FilterDef } from "@/components/filters";
 import MoneyText from "@/components/MoneyText.vue";
@@ -61,7 +60,7 @@ const defs = computed<FilterDef[]>(() => [
 ]);
 const filters = useUrlFilters(defs);
 const search = useRouteState<string>("q", rs.string(""));
-const table = useDataTable({ id: "sales.shifts", ordering: "-opened_at", url: true, hidden: ["receipts", "verified_by"] });
+const table = useDataTable({ id: "sales.shifts", ordering: "-opened_at", url: true, hidden: ["receipts", "verified_by", "branch"] });
 watch([() => filters.params.value, search], () => table.resetPage(), { deep: true });
 
 // Views: built-in ones set the filters; saved ones store them.
@@ -107,7 +106,7 @@ const rows = computed(() => query.data.value?.results);
 
 const columns = computed<TableColumn<ShiftRow>[]>(() => [
   { id: "code", header: t("sales.col.shift"), sortable: "number", width: 150, hideable: false, sticky: true },
-  { id: "business_day", header: t("sales.col.day"), sortable: true, width: 120, format: (v) => fmt.day(String(v), "short") },
+  { id: "business_day", header: t("sales.col.day"), sortable: true, width: 132, format: (v) => fmt.day(String(v), "short") },
   { id: "cashier", header: t("sales.col.cashier"), minWidth: 190, value: (row) => row.cashier.name },
   { id: "branch", header: t("sales.col.branch"), width: 130, value: (row) => row.branch.name },
   { id: "status", header: t("sales.col.status"), width: 130 },
@@ -127,15 +126,18 @@ function openShift(row: ShiftRow): void {
   void router.push({ query: { ...route.query, shift: String(row.id) } });
 }
 const filtered = computed(() => filters.active.value > 0 || !!search.value);
+
+// A link to a built-in view without its filters (?view=verify from the palette or a
+// notification) gets them, so the list matches the tab.
+onMounted(() => {
+  const builtinView = BUILTIN.value.find((v) => v.id === view.value);
+  if (builtinView && view.value !== "all" && !filters.active.value) activeView.value = builtinView.id;
+});
 </script>
 
 <template>
   <div>
-    <PageHeader :title="t('sales.shifts.title')" :description="t('sales.shifts.description')">
-      <template #actions>
-        <ExportButton kind="sales.shifts" :params="current" />
-      </template>
-    </PageHeader>
+    <PageHeader :title="t('sales.shifts.title')" :description="t('sales.shifts.description')" />
     <div class="flex flex-col gap-3">
       <SavedViewsTabs
         v-model="activeView"
@@ -163,7 +165,8 @@ const filtered = computed(() => filters.active.value > 0 || !!search.value);
         :empty-title="t('sales.shifts.emptyTitle')"
         :empty-description="t('sales.shifts.emptyBody')"
         :empty-icon="ClipboardList"
-        csv-name="shifts"
+        export-kind="sales.shifts"
+        :export-params="current"
         :row-class="(row) => (row.status === 'disputed' ? 'bg-danger-soft/25' : undefined)"
         @row-click="openShift"
         @clear-filters="(filters.clear(), (search = ''))"
@@ -177,7 +180,7 @@ const filtered = computed(() => filters.active.value > 0 || !!search.value);
               {{ row.code }}
               <Sparkles v-if="row.ai_mismatch" :size="13" class="text-warning" :aria-label="t('sales.filter.mismatch')" />
             </span>
-            <span class="truncate text-xs text-muted">{{ row.register.name }}</span>
+            <span class="truncate text-xs text-muted">{{ row.branch.name }} · {{ row.register.name }}</span>
           </span>
         </template>
         <template #cell-cashier="{ row }">

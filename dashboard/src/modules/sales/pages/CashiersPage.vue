@@ -43,7 +43,7 @@ const query = useCashiers(params);
 const rows = computed(() => query.data.value?.results ?? []);
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 
-const table = useDataTable({ id: "sales.cashiers", ordering: "-net", url: true });
+const table = useDataTable({ id: "sales.cashiers", ordering: "-net", url: true, hidden: ["avg_per_shift", "surpluses", "avg_hours"] });
 const sorted = computed(() => {
   const ordering = table.ordering.value || "-net";
   const field = ordering.replace(/^-/, "") as keyof CashierScore;
@@ -66,8 +66,8 @@ const highlights = computed(() => {
   const accurate = [...list].filter((row) => row.accuracy !== null && row.shifts >= 3).sort((a, b) => Number(b.accuracy) - Number(a.accuracy) || b.shifts - a.shifts)[0];
   const attention = [...list].filter((row) => row.shortages > 0 || row.disputed > 0).sort((a, b) => compare(a.shortage_total, b.shortage_total))[0];
   return [
-    { key: "top", icon: Award, tone: "primary", label: t("sales.cashiers.topSeller"), member: top.member, value: fmt.money(top.net, undefined, { compact: true }), detail: t("sales.cashiers.shiftsN", { n: top.shifts }) },
-    accurate && { key: "accurate", icon: ShieldCheck, tone: "success", label: t("sales.cashiers.mostAccurate"), member: accurate.member, value: `${accurate.accuracy}%`, detail: t("sales.cashiers.withinTolerance") },
+    { key: "top", icon: Award, tone: "primary", label: t("sales.cashiers.topSeller"), member: top.member, value: fmt.money(top.net, undefined, { compact: true }), detail: t("sales.cashiers.shiftsN", { n: top.shifts }, top.shifts) },
+    accurate && { key: "accurate", icon: ShieldCheck, tone: "success", label: t("sales.cashiers.mostAccurate"), member: accurate.member, value: fmt.percent(Number(accurate.accuracy), 0), detail: t("sales.cashiers.withinTolerance") },
     attention && {
       key: "attention",
       icon: TriangleAlert,
@@ -75,18 +75,18 @@ const highlights = computed(() => {
       label: t("sales.cashiers.attention"),
       member: attention.member,
       value: fmt.money(attention.shortage_total, undefined, { compact: true }),
-      detail: t("sales.cashiers.shortagesN", { n: attention.shortages }),
+      detail: t("sales.cashiers.shortagesN", { n: attention.shortages }, attention.shortages),
     },
   ].filter(Boolean) as Array<{ key: string; icon: typeof Award; tone: string; label: string; member: { id: number; name: string }; value: string; detail: string }>;
 });
 
 const columns = computed<TableColumn<CashierScore>[]>(() => [
   { id: "member", header: t("sales.col.cashier"), minWidth: 220, hideable: false, sticky: true, value: (row) => row.member.name },
-  { id: "shifts", header: t("sales.col.shifts"), sortable: true, numeric: true, width: 90 },
+  { id: "shifts", header: t("sales.col.shifts"), sortable: true, numeric: true, width: 84 },
   { id: "net", header: t("sales.col.net"), sortable: true, numeric: true, width: 150, csv: (row) => row.net },
   { id: "avg_per_shift", header: t("sales.col.perShift"), sortable: true, numeric: true, width: 140, csv: (row) => row.avg_per_shift },
-  { id: "avg_check", header: t("sales.col.avgCheck"), sortable: true, numeric: true, width: 130, csv: (row) => row.avg_check },
-  { id: "accuracy", header: t("sales.col.accuracy"), sortable: true, width: 160, hint: t("sales.cashiers.accuracyHint") },
+  { id: "avg_check", header: t("sales.col.avgCheck"), sortable: true, numeric: true, width: 124, csv: (row) => row.avg_check },
+  { id: "accuracy", header: t("sales.col.accuracy"), sortable: true, width: 150, hint: t("sales.cashiers.accuracyHint") },
   { id: "shortages", header: t("sales.col.shortages"), sortable: "shortage_total", numeric: true, width: 150, csv: (row) => row.shortage_total },
   { id: "surpluses", header: t("sales.col.surpluses"), numeric: true, width: 110 },
   { id: "late_opens", header: t("sales.col.lateOpens"), sortable: true, numeric: true, width: 110 },
@@ -103,7 +103,7 @@ function open(row: CashierScore): void {
   <div class="flex flex-col gap-5">
     <PageHeader :title="t('sales.cashiers.title')" :description="t('sales.cashiers.description')" class="!mb-0">
       <template #actions>
-        <BranchPicker v-model="branches" multiple :placeholder="t('sales.filter.allBranches')" class="w-[200px] max-sm:w-full" />
+        <div class="w-[210px] max-sm:w-full"><BranchPicker v-model="branches" multiple :placeholder="t('sales.filter.allBranches')" /></div>
         <DateRangePicker v-model="period" :compare="false" align="end" />
       </template>
     </PageHeader>
@@ -152,10 +152,10 @@ function open(row: CashierScore): void {
       </template>
       <template #cell-net="{ row }"><MoneyText :value="row.net" class="font-semibold" /></template>
       <template #cell-avg_per_shift="{ row }"><MoneyText :value="row.avg_per_shift" compact /></template>
-      <template #cell-avg_check="{ row }"><MoneyText :value="row.avg_check" /></template>
+      <template #cell-avg_check="{ row }"><MoneyText :value="row.avg_check" decimals="never" /></template>
       <template #cell-accuracy="{ row }">
         <div v-if="row.accuracy !== null" class="flex items-center gap-2">
-          <ProgressBar class="w-16" size="xs" :value="Number(row.accuracy)" :tone="Number(row.accuracy) >= 90 ? 'success' : Number(row.accuracy) >= 70 ? 'warning' : 'danger'" :label="t('sales.col.accuracy')" />
+          <ProgressBar class="w-16" size="xs" :value="Number(row.accuracy)" :tone="Number(row.accuracy) >= 90 ? 'success' : Number(row.accuracy) >= 70 ? 'warning' : 'danger'" />
           <span class="text-sm font-semibold tabular-nums text-fg">{{ fmt.percent(Number(row.accuracy), 0) }}</span>
         </div>
         <span v-else class="text-subtle">—</span>
@@ -163,7 +163,7 @@ function open(row: CashierScore): void {
       <template #cell-shortages="{ row }">
         <span v-if="row.shortages" class="flex flex-col items-end">
           <span class="font-semibold tabular-nums text-danger"><MoneyText :value="row.shortage_total" compact /></span>
-          <span class="text-xs text-muted">{{ t("sales.cashiers.timesN", { n: row.shortages }) }}</span>
+          <span class="text-xs text-muted">{{ t("sales.cashiers.timesN", { n: row.shortages }, row.shortages) }}</span>
         </span>
         <span v-else-if="isZero(row.shortage_total)" class="text-subtle">—</span>
         <MoneyText v-else :value="row.shortage_total" compact class="text-muted" />
@@ -177,7 +177,7 @@ function open(row: CashierScore): void {
       </template>
       <template #card="{ row }">
         <div class="flex items-center gap-3">
-          <PersonCell :person="row.member" size="sm" :subtitle="t('sales.cashiers.shiftsN', { n: row.shifts })" class="min-w-0 flex-1" />
+          <PersonCell :person="row.member" size="sm" :subtitle="t('sales.cashiers.shiftsN', { n: row.shifts }, row.shifts)" class="min-w-0 flex-1" />
           <div class="text-right">
             <MoneyText :value="row.net" compact class="block text-sm font-semibold text-fg" />
             <span class="text-xs text-muted">{{ row.accuracy !== null ? `${row.accuracy}%` : "—" }}</span>

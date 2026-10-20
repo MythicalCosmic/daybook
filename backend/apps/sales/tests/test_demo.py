@@ -1,6 +1,8 @@
 """The demo seeds believable sales without breaking any rule of the ledger."""
 
+from datetime import datetime
 from decimal import Decimal
+from zoneinfo import ZoneInfo
 
 from django.db.models import Sum
 from django.utils import timezone
@@ -16,7 +18,13 @@ def test_demo_seeds_shifts_and_keeps_the_ledger_in_step(company, demo_people):
     company.save(update_fields=["features"])
     Branch.objects.create(company=company, name="Yunusobod", code="YNS", order=1)
     people = demo_people(company)
-    demo.seed(company, people, timezone.now())
+    # In shop hours, so today's tills are open too.
+    day = timezone.localdate(timezone=ZoneInfo(company.timezone))
+    demo.seed(
+        company,
+        people,
+        datetime(day.year, day.month, day.day, 14, 0, tzinfo=ZoneInfo(company.timezone)),
+    )
 
     shifts = CashShift.objects.filter(company=company)
     assert shifts.filter(status=CashShift.Status.OPEN).count() >= 1

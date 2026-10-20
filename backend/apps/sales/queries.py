@@ -363,8 +363,13 @@ def summary(
     by_period: dict[date, Totals] = defaultdict(Totals)
     for row in rows:
         by_period[_period_key(row.day, group)].add(_row_totals(row))
+    # Days still to come (today included, until something closed) have no number yet: null, so
+    # a chart's line stops at the last known day instead of dropping to zero.
+    pending_from = business_day(company) if group == "day" else None
     result["series"] = [
         {"date": key.isoformat(), **_series_point(by_period.get(key, Totals()))}
+        if key in by_period or pending_from is None or key < pending_from
+        else {"date": key.isoformat(), **dict.fromkeys(_EMPTY_POINT)}
         for key in _periods(start, end, group)
     ]
     if compare is not None:
@@ -383,6 +388,9 @@ def summary(
     else:
         result["breakdown"] = _by_cashier(company, start, end, compare, branch_ids, found.net)
     return result
+
+
+_EMPTY_POINT = ("net", "sales", "refunds", "receipts", "avg_check")
 
 
 def _series_point(t: Totals) -> dict:

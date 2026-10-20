@@ -204,6 +204,8 @@ def _moment(company, day, clock: time) -> datetime:
 
 def _story(back: int, chilonzor: bool, cashier, people) -> str:
     """Fixed events on fixed days back, so the demo always tells the same story."""
+    if not chilonzor and back == 1:
+        return "pending"
     if not chilonzor and back == 9:
         return "dispute"
     if chilonzor and back == 16:
@@ -304,6 +306,18 @@ def _history_shift(
                 by=manager, register=register, kind="from_safe", amount=200_000, reason="Mayda pul"
             )
         moves += 200_000
+    if day.weekday() == 5 and cash_net > 4_000_000:
+        # Saturday cash collection straight from the till.
+        with at(opened + timedelta(hours=8)):
+            services.record_movement(
+                by=manager,
+                register=register,
+                kind="to_bank",
+                amount=3_000_000,
+                to_account=bank,
+                reason="Inkassatsiya",
+            )
+        moves -= 3_000_000
     closed_at = _moment(company, day, time(closes.hour, rng.randint(5, 35)))
     before_handover = shift.opening_float + cash_net + moves
     handover_amount = ((before_handover - 200_000) // 100_000) * 100_000
@@ -321,7 +335,7 @@ def _history_shift(
         with at(closed_at + timedelta(minutes=rng.randint(20, 90))):
             if story == "declined":
                 services.decline_handover(handover, by=receiver, reason="Pul menga yetib kelmadi")
-            else:
+            elif story != "pending":  # yesterday's last handover still waits for the owner
                 services.confirm_handover(handover, by=receiver)
         moves -= handover_amount
     expected = shift.opening_float + cash_net + moves
@@ -442,29 +456,32 @@ def _ai_mismatch(shifts, company) -> None:
 
 
 def _today(company, rng, now, first, second, tills, people, methods) -> None:
-    """Today's open tills: Madina since the morning in Chilonzor (one payout), Jasur in
-    Yunusobod; a handover from yesterday still waits for the owner."""
-    opened = now - timedelta(hours=2, minutes=14)
+    """Today's open tills, during shop hours only (a demo seeded at night shows closed shops):
+    Madina in Chilonzor with one payout, Jasur in Yunusobod."""
+    at_local = local(company, now)
+    if not 8 <= at_local.hour < 23:
+        return
+    earliest = at_local.replace(hour=8, minute=40, second=0, microsecond=0)
+    opened = min(max(now - timedelta(hours=2, minutes=14), earliest), now - timedelta(minutes=10))
     with at(opened):
         count, amount = _opening(tills[first.pk])
-        shift = services.open_shift(
+        services.open_shift(
             by=people["madina"],
             register=tills[first.pk],
             opening_count=count,
             opening_float=str(amount),
             now=opened,
         )
-    with at(now - timedelta(minutes=48)):
+    with at(max(opened + timedelta(minutes=5), now - timedelta(minutes=48))):
         services.record_movement(
             by=people["madina"],
             register=tills[first.pk],
             kind="payout",
-            amount=240_000,
+            amount=120_000,
             reason="Non uyi: non va somsa",
             category=_category(company, "goods"),
-            photo=_receipt_photo("Non uyi", 240_000),
+            photo=_receipt_photo("Non uyi", 120_000),
         )
-    del shift
     if second is not None:
         opened = now - timedelta(hours=1, minutes=31)
         with at(opened):
@@ -475,15 +492,6 @@ def _today(company, rng, now, first, second, tills, people, methods) -> None:
                 opening_count=count,
                 opening_float=str(amount),
                 now=opened,
-            )
-        with at(now - timedelta(minutes=20)):
-            services.record_movement(
-                by=people["jasur"],
-                register=tills[second.pk],
-                kind="handover",
-                amount=3_500_000,
-                receiver=people["owner"],
-                reason="Kunduzgi tushum",
             )
 
 
@@ -503,7 +511,8 @@ def _extras(company, rng, now, first, second, people, methods) -> None:
         (25, second or first, [("payme", 380_000)], "Yetkazib berish buyurtmasi"),
     ]
     for back, branch, pays, note in entries:
-        moment = now - timedelta(days=back, hours=rng.randint(1, 5))
+        day = local(company, now).date() - timedelta(days=back)
+        moment = _moment(company, day, time(rng.randint(11, 17), rng.randint(0, 59)))
         with at(moment):
             services.record_sale(
                 by=people["manager"],

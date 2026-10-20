@@ -128,8 +128,10 @@ def till_physical(register: Register) -> Decimal:
 
 
 def till_now(register: Register, open_shift: CashShift | None = None) -> Decimal:
+    """What a till holds now. An open till never reads below zero: in shift-totals mode its
+    sales arrive only at close, so float minus payouts and handovers is a floor, not a count."""
     if open_shift is not None:
-        return expected_cash(open_shift)
+        return max(expected_cash(open_shift), ZERO)
     return till_physical(register)
 
 

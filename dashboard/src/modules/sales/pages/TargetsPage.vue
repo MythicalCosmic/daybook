@@ -122,6 +122,7 @@ const expected = (target: SalesTarget) => (target.days ? target.elapsed / target
             <div class="flex flex-wrap items-center gap-2">
               <h2 class="text-sm font-semibold text-fg">{{ t("sales.targets.company") }}</h2>
               <StatusPill size="sm" :tone="companyTarget.ahead ? 'success' : 'warning'" :label="companyTarget.ahead ? t('sales.targets.ahead') : t('sales.targets.behind')" />
+              <IconButton v-if="canManage" :icon="Pencil" :label="t('common.edit')" size="sm" @click="edit(companyTarget)" />
             </div>
             <p class="text-2xl font-semibold tabular-nums text-fg"><MoneyText :value="companyTarget.actual" compact /> <span class="text-lg font-normal text-subtle">/ <MoneyText :value="companyTarget.amount" compact /></span></p>
             <BulletBar :value="companyTarget.actual" :target="companyTarget.amount" :expected="expected(companyTarget)" value-format="compact" />

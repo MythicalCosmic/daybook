@@ -63,7 +63,7 @@ const kpis = computed(() => {
     { id: "receipts", label: t("sales.kpi.receipts"), value: now?.receipts, previous: before?.receipts, icon: Receipt, spark: summary.value?.series.map((p) => p.receipts) ?? [], sparkColor: "var(--c-chart-3)" },
     { id: "avg", label: t("sales.kpi.avgCheck"), value: now?.avg_check, previous: before?.avg_check, format: "money" as const, icon: ShoppingBag, sparkColor: "var(--c-chart-4)", spark: summary.value?.series.map((p) => p.avg_check ?? null) ?? [] },
     { id: "cash", label: t("sales.kpi.cashShare"), value: now ? Number(now.cash_share) : null, previous: before ? Number(before.cash_share) : null, format: "percent" as const, points: true, icon: Percent, hint: t("sales.kpi.cashShareHint") },
-    { id: "diff", label: t("sales.kpi.difference"), value: now?.cash_difference, format: "money" as const, icon: Scale, hint: t("sales.kpi.differenceHint", { n: now?.shifts ?? 0 }) },
+    { id: "diff", label: t("sales.kpi.difference"), value: now?.cash_difference, format: "money" as const, icon: Scale, hint: t("sales.kpi.differenceHint", { n: now?.shifts ?? 0 }, now?.shifts ?? 0) },
   ];
 });
 
@@ -115,7 +115,7 @@ const weekdays = computed(() => Array.from({ length: 7 }, (_, i) => t(`common.we
 const heat = computed<Array<[number, number, string]>>(() =>
   (hours.data.value?.series ?? [])
     .filter((cell) => (cell.hour ?? 0) >= 7)
-    .map((cell) => [(cell.hour ?? 0) - 7, cell.weekday ?? 0, cell.net]),
+    .map((cell) => [(cell.hour ?? 0) - 7, cell.weekday ?? 0, cell.net ?? "0"]),
 );
 const topCashiers = computed(() => (cashiers.data.value?.results ?? []).slice(0, 5));
 const base = computed(() => `/c/${company.currentId}/sales`);
@@ -125,7 +125,7 @@ const base = computed(() => `/c/${company.currentId}/sales`);
   <div class="flex flex-col gap-5">
     <PageHeader :title="t('sales.title')" :description="t('sales.overview.description')" class="!mb-0">
       <template #actions>
-        <BranchPicker v-model="branches" multiple :placeholder="t('sales.filter.allBranches')" class="w-[200px] max-sm:w-full" />
+        <div class="w-[210px] max-sm:w-full"><BranchPicker v-model="branches" multiple :placeholder="t('sales.filter.allBranches')" /></div>
         <DateRangePicker v-model="period" align="end" />
         <ExportButton kind="sales.daily" :params="params" variant="ghost" />
       </template>
@@ -208,7 +208,7 @@ const base = computed(() => `/c/${company.currentId}/sales`);
               <UserAvatar :name="row.member.name" :size="30" />
               <span class="min-w-0 flex-1">
                 <span class="block truncate text-sm font-semibold text-fg">{{ row.member.name }}</span>
-                <span class="block truncate text-xs text-muted">{{ t("sales.cashiers.line", { shifts: row.shifts, accuracy: row.accuracy ?? "—" }) }}</span>
+                <span class="block truncate text-xs text-muted">{{ t("sales.cashiers.line", { shifts: row.shifts, accuracy: row.accuracy ?? "—" }, row.shifts) }}</span>
               </span>
               <MoneyText :value="row.net" compact class="text-sm font-semibold text-fg" />
             </li>

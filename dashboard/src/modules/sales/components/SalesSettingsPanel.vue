@@ -110,11 +110,13 @@ async function submit(): Promise<void> {
           </FormField>
         </div>
       </PageSection>
-      <div v-if="canEdit" class="sticky bottom-3 z-[2] flex items-center justify-end gap-3 rounded-card border border-line bg-surface/95 px-4 py-3 shadow-raised backdrop-blur">
-        <span v-if="dirty" class="mr-auto text-sm text-muted">{{ t("common.unsaved") }}</span>
-        <UiButton v-if="dirty" variant="ghost" @click="Object.assign(form, JSON.parse(loaded))">{{ t("common.reset") }}</UiButton>
-        <UiButton type="submit" variant="primary" :icon="Save" :loading="save.isPending.value" :disabled="!dirty">{{ t("common.save") }}</UiButton>
-      </div>
+      <Transition name="fade">
+        <div v-if="canEdit && dirty" class="sticky bottom-3 z-[2] flex items-center justify-end gap-3 rounded-card border border-line bg-surface/95 px-4 py-3 shadow-raised backdrop-blur">
+          <span class="mr-auto text-sm text-muted">{{ t("common.unsaved") }}</span>
+          <UiButton variant="ghost" @click="Object.assign(form, JSON.parse(loaded))">{{ t("common.reset") }}</UiButton>
+          <UiButton type="submit" variant="primary" :icon="Save" :loading="save.isPending.value">{{ t("common.save") }}</UiButton>
+        </div>
+      </Transition>
     </form>
   </div>
 </template>

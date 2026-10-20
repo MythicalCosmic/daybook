@@ -211,11 +211,12 @@ export interface SummaryPoint {
   date?: string;
   hour?: number;
   weekday?: number;
-  net: Money;
-  sales?: Money;
-  refunds?: Money;
-  receipts: number;
-  avg_check?: Money;
+  /** null for days still to come (today until something closed). */
+  net: Money | null;
+  sales?: Money | null;
+  refunds?: Money | null;
+  receipts: number | null;
+  avg_check?: Money | null;
   previous_net?: Money;
 }
 

@@ -161,7 +161,7 @@ const timeline = computed<TimelineEvent[]>(() =>
         <div class="bg-surface p-3">
           <dt class="text-xs text-muted">{{ t("sales.shift.net") }}</dt>
           <dd class="mt-1 text-md font-semibold text-fg"><MoneyText :value="shift.net" compact /></dd>
-          <dd class="mt-0.5 text-[11px] text-subtle">{{ t("sales.shift.receipts", { n: shift.receipts }) }}</dd>
+          <dd class="mt-0.5 text-[11px] text-subtle">{{ t("sales.shift.receipts", { n: shift.receipts }, shift.receipts) }}</dd>
         </div>
         <div class="bg-surface p-3">
           <dt class="text-xs text-muted">{{ t("sales.shift.expected") }}</dt>

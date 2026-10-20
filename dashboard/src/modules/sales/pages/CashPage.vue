@@ -57,11 +57,12 @@ const me = computed(() => session.me?.companies.find((c) => c.id === company.cur
 const flow = computed(() => {
   const totals = data.value?.totals;
   if (!totals) return [];
+  const tills = data.value?.branches.reduce((n, b) => n + b.tills.length, 0) ?? 0;
   return [
-    { key: "tills", label: t("sales.cash.tills"), amount: totals.tills, icon: Wallet, hint: t("sales.cash.tillsHint", { n: data.value?.branches.reduce((n, b) => n + b.tills.length, 0) ?? 0 }) },
+    { key: "tills", label: t("sales.cash.tills"), amount: totals.tills, icon: Wallet, hint: t("sales.cash.tillsHint", { n: tills }, tills) },
     { key: "safes", label: t("sales.cash.safes"), amount: totals.safes, icon: Vault, hint: t("sales.cash.safesHint") },
-    { key: "in_transit", label: t("sales.cash.transit"), amount: totals.in_transit, icon: HandCoins, hint: t("sales.cash.transitHint", { n: data.value?.in_transit.length ?? 0 }) },
-    { key: "people", label: t("sales.cash.people"), amount: totals.people, icon: Users, hint: t("sales.cash.peopleHint", { n: data.value?.people.length ?? 0 }) },
+    { key: "in_transit", label: t("sales.cash.transit"), amount: totals.in_transit, icon: HandCoins, hint: t("sales.cash.transitHint", { n: data.value?.in_transit.length ?? 0 }, data.value?.in_transit.length ?? 0) },
+    { key: "people", label: t("sales.cash.people"), amount: totals.people, icon: Users, hint: t("sales.cash.peopleHint", { n: data.value?.people.length ?? 0 }, data.value?.people.length ?? 0) },
     { key: "to_bank", label: t("sales.cash.bank"), amount: totals.to_bank, icon: Landmark, hint: t("sales.cash.bankHint") },
   ];
 });
@@ -175,7 +176,7 @@ const limitUse = (total: string, limit: string | null) => (limit ? percent(total
       </section>
 
       <InlineAlert
-        v-if="data.oldest_pending && data.oldest_pending.hours >= 1"
+        v-if="data.oldest_pending && data.oldest_pending.hours >= 1 && data.oldest_pending.to.id !== me"
         tone="warning"
         :icon="Clock"
         :title="t('sales.cash.oldest', { from: data.oldest_pending.from.name, to: data.oldest_pending.to.name, amount: fmt.money(data.oldest_pending.amount) })"
@@ -236,6 +237,7 @@ const limitUse = (total: string, limit: string | null) => (limit ? percent(total
         </section>
       </div>
 
+      <p class="-mt-2 text-xs text-subtle">{{ t("sales.cash.openHint") }}</p>
       <div class="grid gap-4 lg:grid-cols-2">
         <section class="ui-card flex min-w-0 flex-col">
           <h3 class="px-4 pb-2 pt-4 text-sm font-semibold text-fg">{{ t("sales.cash.transitList") }}</h3>

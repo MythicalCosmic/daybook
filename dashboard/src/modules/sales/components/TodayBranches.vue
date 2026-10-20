@@ -79,7 +79,7 @@ const link = (branch: BranchTodaySales) => ({ path: `/c/${company.currentId}/sal
           <div class="text-right">
             <p class="text-[11px] font-medium uppercase tracking-wide text-subtle">{{ t("sales.today.soFar") }}</p>
             <p class="text-lg font-semibold tabular-nums text-fg"><MoneyText :value="branch.net" compact /></p>
-            <p class="text-xs text-muted">{{ t("sales.today.receipts", { n: branch.receipts }) }}</p>
+            <p class="text-xs text-muted">{{ t("sales.today.receipts", { n: branch.receipts }, branch.receipts) }}</p>
           </div>
         </div>
 
@@ -121,7 +121,7 @@ const link = (branch: BranchTodaySales) => ({ path: `/c/${company.currentId}/sal
             <component :is="alert.kind === 'in_transit' ? HandCoins : AlertTriangle" :size="13" :class="alert.severity === 'critical' ? 'text-danger' : 'text-warning'" aria-hidden="true" />
             <span class="text-muted">
               <template v-if="alert.kind === 'difference'">{{ t("sales.today.alert.difference", { code: alert.shift?.code ?? "", amount: fmt.money(alert.amount) }) }}</template>
-              <template v-else-if="alert.kind === 'in_transit'">{{ t("sales.today.alert.transit", { n: alert.count ?? 0, amount: fmt.money(alert.amount) }) }}</template>
+              <template v-else-if="alert.kind === 'in_transit'">{{ t("sales.today.alert.transit", { n: alert.count ?? 0, amount: fmt.money(alert.amount) }, alert.count ?? 0) }}</template>
               <template v-else>{{ t("sales.today.alert.limit") }}</template>
             </span>
           </li>
