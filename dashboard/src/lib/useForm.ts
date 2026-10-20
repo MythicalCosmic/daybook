@@ -10,7 +10,7 @@
  * translated when shown. A 400 from the server lands on the same fields; `{detail}` becomes
  * `formError` (the HTTP layer already toasts it for writes unless the call passed `toast: false`).
  */
-import { computed, reactive, ref, shallowRef, toRaw, type ComputedRef, type Ref } from "vue";
+import { computed, reactive, ref, shallowRef, toRaw, watch, type ComputedRef, type Ref } from "vue";
 import type { z } from "zod";
 
 import { isApiError, type FieldErrors } from "@/api/http";
@@ -44,8 +44,18 @@ function translate(message: string): string {
   return looksLikeKey && i18n.global.te(message) ? i18n.global.t(message) : message;
 }
 
+/** Plain copies of reactive values at any depth (structuredClone refuses Vue proxies). */
+function deepRaw<T>(value: T): T {
+  const raw = toRaw(value);
+  if (Array.isArray(raw)) return raw.map((item) => deepRaw(item)) as T;
+  if (raw && typeof raw === "object" && Object.getPrototypeOf(raw) === Object.prototype) {
+    return Object.fromEntries(Object.entries(raw).map(([key, item]) => [key, deepRaw(item)])) as T;
+  }
+  return raw;
+}
+
 function clone<T>(value: T): T {
-  return structuredClone(toRaw(value));
+  return structuredClone(deepRaw(value));
 }
 
 /** A comparable fingerprint of form values; files and dates compare by identity-ish fields. */
@@ -55,6 +65,11 @@ function snapshot(value: unknown): string {
     if (item instanceof Date) return `date:${item.toISOString()}`;
     return item;
   });
+}
+
+/** One fingerprint per top-level field, to tell which fields an edit touched. */
+function snapshotFields(values: Record<string, unknown>): Record<string, string> {
+  return Object.fromEntries(Object.keys(values).map((key) => [key, snapshot(values[key])]));
 }
 
 /** First message per dotted path from a zod error. */
@@ -113,6 +128,25 @@ export function useForm<S extends z.ZodType, In extends Record<string, unknown> 
     const fieldErrors = result.success ? {} : zodErrors(result.error);
     errors[field] = fieldErrors[field];
   }
+
+  // After a field's first blur (or after a submit attempt), its message follows what is typed: it
+  // goes away as soon as the value is valid, and a server message goes away when the field changes.
+  let previous = snapshotFields(values);
+  watch(
+    values,
+    () => {
+      const next = snapshotFields(values);
+      const changed = Object.keys(next).filter((key) => next[key] !== previous[key]);
+      previous = next;
+      if (options.validateOnChange === false || changed.length === 0) return;
+      const result = schema.safeParse(toRaw(values));
+      const fieldErrors = result.success ? {} : zodErrors(result.error);
+      for (const key of changed) {
+        if (touched[key] || submitCount.value > 0) errors[key] = fieldErrors[key];
+      }
+    },
+    { deep: true },
+  );
 
   async function submit(event?: Event): Promise<boolean> {
     event?.preventDefault();

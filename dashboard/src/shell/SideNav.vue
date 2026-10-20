@@ -67,7 +67,14 @@ watch(
   () => [route.path, props.ready] as const,
   async () => {
     await nextTick();
-    scroller.value?.querySelector<HTMLElement>('[aria-current="page"]')?.scrollIntoView({ block: "nearest" });
+    // Scrolls the list by hand: scrollIntoView would also move the browser's Tab starting point to
+    // the current item, so the first Tab after loading would skip the skip link and the switcher.
+    const box = scroller.value;
+    const current = box?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!box || !current) return;
+    const top = current.offsetTop - box.offsetTop;
+    if (top < box.scrollTop) box.scrollTop = top - 8;
+    else if (top + current.offsetHeight > box.scrollTop + box.clientHeight) box.scrollTop = top + current.offsetHeight - box.clientHeight + 8;
   },
   { immediate: true },
 );

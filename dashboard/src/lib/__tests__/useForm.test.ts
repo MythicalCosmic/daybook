@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { nextTick, reactive } from "vue";
 import { z } from "zod";
 
 import { ApiError } from "@/api/http";
@@ -60,6 +61,40 @@ describe("useForm", () => {
     expect(form.errors.name).toBe("Обязательное поле");
     expect(form.errors.amount).toBeUndefined();
     i18n.global.locale.value = "en";
+  });
+
+  it("re-checks a field as it is typed once it was blurred or submitted", async () => {
+    i18n.global.locale.value = "en";
+    const form = useForm(schema, { name: "", amount: "1" });
+    form.touch("name");
+    expect(form.errors.name).toBe("Required");
+    form.values.name = "Rent";
+    await nextTick();
+    expect(form.errors.name).toBeUndefined();
+    // An untouched field stays quiet until blurred or submitted…
+    form.values.amount = "abc";
+    await nextTick();
+    expect(form.errors.amount).toBeUndefined();
+    await form.submit();
+    expect(form.errors.amount).toBe("Enter an amount like 1250000.00");
+    // …then follows the typing too, and a server message leaves when the field changes.
+    form.values.amount = "100";
+    await nextTick();
+    expect(form.errors.amount).toBeUndefined();
+    form.setErrors({ amount: ["The period is locked."] });
+    form.values.amount = "101";
+    await nextTick();
+    expect(form.errors.amount).toBeUndefined();
+  });
+
+  it("copies values that hold reactive arrays (a list built elsewhere)", async () => {
+    const lines = z.object({ items: z.array(z.string()) });
+    const onSubmit = vi.fn();
+    const form = useForm(lines, { items: [] as string[] }, { onSubmit });
+    form.values.items = reactive(["a", "b"]);
+    await expect(form.submit()).resolves.toBe(true);
+    expect(onSubmit).toHaveBeenCalledWith({ items: ["a", "b"] });
+    expect(form.dirty.value).toBe(false);
   });
 
   it("rethrows errors that aren't API errors", async () => {
