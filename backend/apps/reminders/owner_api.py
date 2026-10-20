@@ -16,7 +16,7 @@ from rest_framework import exceptions, mixins, serializers, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from apps.console.base import OwnerAPIView, OwnerViewSet
+from apps.console.base import AnyOf, OwnerAPIView, OwnerViewSet
 from apps.core.api import Pagination
 from apps.members.models import Membership
 from apps.members.permissions import Perm
@@ -195,7 +195,8 @@ def _usage(company) -> dict[int, dict]:
 class ReminderLogView(OwnerAPIView):
     """Every reminder, escalation and blocked notice the bot sent, newest first."""
 
-    perm = Perm.REMINDERS_CONFIGURE
+    # Whoever tunes reminders, or sees every task they are about.
+    perm = AnyOf(Perm.REMINDERS_CONFIGURE, Perm.TASKS_VIEW_ALL)
 
     @extend_schema(
         parameters=[

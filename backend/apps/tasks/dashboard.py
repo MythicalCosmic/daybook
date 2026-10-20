@@ -60,8 +60,8 @@ def board(tasks: QuerySet[Task], now: datetime, company) -> list[dict]:
 def calendar(tasks: QuerySet[Task], company, start: date, end: date, now: datetime) -> dict:
     """Due tasks per company-local day from `start` to `end` (both inclusive): counts per day
     and the tasks themselves (capped)."""
-    first, _ = queries.day_bounds(company, start)
-    _, last = queries.day_bounds(company, end)
+    first, _unused = queries.day_bounds(company, start)
+    _unused, last = queries.day_bounds(company, end)
     due = tasks.filter(due_at__gte=first, due_at__lt=last).exclude(status=Task.Status.CANCELLED)
     rows = list(due.values_list("due_at", "status"))
     days: dict[date, dict] = {}
@@ -133,8 +133,8 @@ def daily_series(
 ) -> list[dict]:
     """Per day: tasks due that day whose deadline passed, on time, late, missed, on-time %."""
     tz = ZoneInfo(company.timezone)
-    start, _ = queries.day_bounds(company, first)
-    _, end = queries.day_bounds(company, last)
+    start, _unused = queries.day_bounds(company, first)
+    _unused, end = queries.day_bounds(company, last)
     rows = (
         tasks.filter(due_at__gte=start, due_at__lt=min(end, now))
         .exclude(status=Task.Status.CANCELLED)
@@ -283,7 +283,7 @@ def routine_stats(
         return {}
     tz = ZoneInfo(company.timezone)
     today = queries.company_today(company, now)
-    start, _ = queries.day_bounds(company, today - timedelta(days=days - 1))
+    start, _unused = queries.day_bounds(company, today - timedelta(days=days - 1))
     rows = (
         Task.objects.filter(
             template_id__in=[t.pk for t in templates], due_at__gte=start, due_at__lt=now
@@ -328,8 +328,8 @@ def routine_compliance(template: TaskTemplate, start: date, end: date, now: date
     """One routine over a range: per day and per person, made / on time / late / missed."""
     company = template.company
     tz = ZoneInfo(company.timezone)
-    first, _ = queries.day_bounds(company, start)
-    _, last = queries.day_bounds(company, end)
+    first, _unused = queries.day_bounds(company, start)
+    _unused, last = queries.day_bounds(company, end)
     rows = (
         Task.objects.filter(template=template, due_at__gte=first, due_at__lt=min(last, now))
         .exclude(status=Task.Status.CANCELLED)

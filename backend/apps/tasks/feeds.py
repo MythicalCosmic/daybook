@@ -8,6 +8,7 @@ from datetime import date, datetime, timedelta
 from django.db.models import Count, Q
 from django.utils import timezone
 from django.utils.translation import gettext as _
+from django.utils.translation import ngettext
 
 from apps.audit import services as audit
 from apps.audit.models import AuditLog
@@ -213,8 +214,8 @@ def company_facts(company, period, member: Membership) -> dict:
 
 def calendar_events(company, start: date, end: date, member: Membership) -> list[CalendarItem]:
     """One all-day entry per day with shared tasks due: "12 tasks due" (§13.5 `tasks.due`)."""
-    first, _ = queries.day_bounds(company, start)
-    _, last = queries.day_bounds(company, end)
+    first, _unused = queries.day_bounds(company, start)
+    _unused, last = queries.day_bounds(company, end)
     tasks = (
         queries.visible_tasks(member)
         .filter(kind__in=SHARED, due_at__gte=first, due_at__lt=last)
@@ -225,9 +226,8 @@ def calendar_events(company, start: date, end: date, member: Membership) -> list
         CalendarItem(
             id=f"tasks.due:{day['date'].isoformat()}",
             kind="tasks.due",
-            title=_("%(count)d tasks due") % {"count": day["total"]}
-            if day["total"] != 1
-            else _("1 task due"),
+            title=ngettext("%(count)d task due", "%(count)d tasks due", day["total"])
+            % {"count": day["total"]},
             start=day["date"],
             end=None,
             all_day=True,

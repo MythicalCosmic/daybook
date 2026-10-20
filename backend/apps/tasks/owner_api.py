@@ -188,7 +188,11 @@ class TaskOwnerViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerVi
         return dashboard.with_rows(tasks)
 
     def _detail(self, task: Task) -> dict:
-        task = self.get_queryset().get(pk=task.pk)
+        """The task after an action. A checker without tasks.view_all stops seeing work once
+        it's checked; they still get the result of what they just did."""
+        task = self.get_queryset().filter(pk=task.pk).first() or dashboard.with_rows(
+            Task.objects.select_related(*queries.TASK_RELATIONS)
+        ).get(pk=task.pk)
         return TaskDetailSerializer(task, context=self.get_serializer_context()).data
 
     @extend_schema(
