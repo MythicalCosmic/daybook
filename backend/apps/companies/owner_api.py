@@ -17,7 +17,12 @@ Outside a company (`root_urlpatterns`, `/api/v1/owner/`):
 """
 
 from django.utils.translation import gettext as _
-from drf_spectacular.utils import OpenApiResponse, extend_schema, inline_serializer
+from drf_spectacular.utils import (
+    OpenApiResponse,
+    extend_schema,
+    extend_schema_field,
+    inline_serializer,
+)
 from rest_framework import mixins, serializers, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -43,6 +48,15 @@ def _clock_field(**kwargs) -> serializers.TimeField:
     return serializers.TimeField(format="%H:%M", input_formats=TIME_FORMATS, **kwargs)
 
 
+@extend_schema_field({"type": "string", "enum": list(Language.values)})
+class DefaultLanguageField(serializers.ChoiceField):
+    """The company's language. Described inline: a second component for the same choices as
+    `me.language` (LanguageEnum) would make the schema warn about two names for one set."""
+
+    def __init__(self, **kwargs):
+        super().__init__(Language.choices, **kwargs)
+
+
 # Settings ---------------------------------------------------------------------------------
 
 
@@ -52,7 +66,7 @@ class CompanySettingsSerializer(serializers.Serializer):
     slug = serializers.CharField(read_only=True)
     logo = serializers.SerializerMethodField()
     timezone = serializers.CharField(max_length=64)
-    default_language = serializers.ChoiceField(Language.choices)
+    default_language = DefaultLanguageField()
     base_currency = serializers.ChoiceField(Currency.choices)
     base_currency_locked = serializers.SerializerMethodField(
         help_text="True once the finance ledger has rows: the base currency can't change."
