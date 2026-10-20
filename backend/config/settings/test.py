@@ -9,6 +9,11 @@ PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 # Per-process cache, so throttling counters never leak between runs.
 CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 
+# Several test runs at once (one per engineer or agent) each get their own database:
+# PYTEST_DB=finance uv run pytest backend/apps/finance
+if suffix := env("PYTEST_DB", default=""):
+    DATABASES["default"]["TEST"] = {"NAME": f"test_trello_{suffix}"}
+
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
 

@@ -1,20 +1,20 @@
 """A demo company that looks like the mini app design: for trying the app and for screenshots."""
 
+import importlib
 from datetime import timedelta
 
+from django.apps import apps as django_apps
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from django.db.models import ProtectedError
 from django.utils import timezone
 
 from apps.accounts.models import User
-from apps.announcements.models import Announcement
-from apps.audit.models import AuditLog
-from apps.companies.models import Company
+from apps.companies.models import Company, TenantModel
 from apps.companies.services import create_company
-from apps.groups.models import TelegramGroup
 from apps.members.models import AccessRole, Membership, Position
-from apps.reminders.models import ReminderLog, ReminderPolicy
+from apps.reminders.models import ReminderLog
 from apps.tasks.models import Activity, ChecklistItem, Proof, Task, TaskComment, TaskTemplate
 from apps.timeoff.models import Holiday, TimeOff
 
@@ -26,21 +26,6 @@ OWNER, MANAGER, WORKER, COLLEAGUE = 1001, 1002, 4242, 1004
 STOCKER, COURIER = 1005, 1006
 APPLICANT, WAITING, OUTSIDER = 5001, 5002, 5003
 EVERYONE = (OWNER, MANAGER, WORKER, COLLEAGUE, STOCKER, COURIER, APPLICANT, WAITING, OUTSIDER)
-# Deleted in this order, so nothing still points at what goes next.
-TENANT_MODELS = (
-    AuditLog,
-    Announcement,
-    TelegramGroup,
-    Holiday,
-    TimeOff,
-    Activity,
-    Task,
-    TaskTemplate,
-    ReminderPolicy,
-    Membership,
-    Position,
-    AccessRole,
-)
 
 
 class Command(BaseCommand):
@@ -68,8 +53,19 @@ class Command(BaseCommand):
     def _remove(self):
         company = Company.objects.get(slug=SLUG)
         with transaction.atomic():
-            for model in TENANT_MODELS:
-                model.objects.filter(company=company).delete()
+            # Every per-company model, in whatever order their protected links allow.
+            remaining = [m for m in django_apps.get_models() if issubclass(m, TenantModel)]
+            while remaining:
+                blocked = []
+                for model in remaining:
+                    try:
+                        with transaction.atomic():
+                            model.objects.filter(company=company).delete()
+                    except ProtectedError:
+                        blocked.append(model)
+                if len(blocked) == len(remaining):
+                    raise CommandError(f"Can't remove the demo: {blocked} keep pointing at it.")
+                remaining = blocked
             company.delete()
             User.objects.filter(telegram_id__in=EVERYONE).delete()
 
@@ -479,3 +475,22 @@ class Command(BaseCommand):
             minutes_ago=200,
             read=True,
         )
+
+        people = {
+            "owner": owner,
+            "manager": manager,
+            "worker": me,
+            "madina": madina,
+            "jasur": jasur,
+            "nigora": nigora,
+        }
+        for config in django_apps.get_app_configs():
+            if not config.name.startswith("apps."):
+                continue
+            try:
+                demo = importlib.import_module(f"{config.name}.demo")
+            except ModuleNotFoundError as error:
+                if error.name != f"{config.name}.demo":
+                    raise
+                continue
+            demo.seed(company, people, now)
