@@ -175,11 +175,9 @@ function menu(role: Role): MenuEntry[] {
                 <template #trigger><IconButton :icon="Ellipsis" :label="t('people.roles.options', { name: role.name })" size="sm" /></template>
               </DropdownMenu>
             </div>
-            <span class="flex items-center gap-1 text-xs font-normal text-muted">
-              {{ t("people.roles.members", { n: role.members_count }, role.members_count) }}
-              <UiBadge v-if="role.is_default" tone="info">{{ t("people.roles.default") }}</UiBadge>
-              <UiBadge v-if="role.is_owner" tone="primary">{{ t("people.roles.everything") }}</UiBadge>
-            </span>
+            <span class="whitespace-nowrap text-xs font-normal text-muted">{{ t("people.roles.members", { n: role.members_count }, role.members_count) }}</span>
+            <UiBadge v-if="role.is_default" tone="info">{{ t("people.roles.default") }}</UiBadge>
+            <UiBadge v-if="role.is_owner" tone="primary">{{ t("people.roles.everything") }}</UiBadge>
           </div>
         </template>
       </PermissionMatrix>

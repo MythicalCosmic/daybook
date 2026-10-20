@@ -307,6 +307,14 @@ def test_history_shows_audit_rows_about_the_person_and_their_time_off(
     actions = [row["action"] for row in response.data["results"]]
     assert "members.changed" in actions and "timeoff.recorded" in actions
     assert response.data["results"][0]["actor"]["name"] == "Dilnoza Karimova"
+    # Someone who may see the team but not time off doesn't get its rows (reasons included).
+    viewer_role = AccessRoleFactory(
+        company=company,
+        permissions=[Perm.DASHBOARD_ACCESS, Perm.MEMBERS_VIEW, Perm.BRANCHES_ALL],
+    )
+    viewer = member.registered(company, viewer_role.name)
+    seen = owner_api(viewer).get(url(company, f"{worker.pk}/history/"))
+    assert [row["action"] for row in seen.data["results"]] == ["members.changed"]
 
 
 def test_pickers_can_load_the_whole_team(owner_api, owner, company, member, branches):

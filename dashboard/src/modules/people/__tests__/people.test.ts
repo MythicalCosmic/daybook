@@ -1,8 +1,10 @@
 // The registry first, as in the app: it is what loads every module's index.ts (see core/modules.ts).
 import "@/core/modules";
 
+import { VueQueryPlugin } from "@tanstack/vue-query";
 import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createMemoryHistory, createRouter } from "vue-router";
 
 import type { PermissionInfo } from "@/api/types";
 import { i18n, mergeModuleMessages, setLanguage } from "@/i18n";
@@ -172,5 +174,74 @@ describe("PermissionMatrix", () => {
     const empty = mountWithProviders(PermissionMatrix, { plugins: app.plugins, props: { roles: [role({ id: 2 })], permissions, grantable: () => true, draft: {}, area: "finance", query: "approve" } });
     await flushPromises();
     expect(empty.wrapper.text()).toContain("No permission matches.");
+  });
+});
+
+describe("OffboardPage", () => {
+  const person = {
+    id: 7,
+    name: "Madina Saidova",
+    full_name: "Madina Saidova",
+    first_name: "Madina",
+    last_name: "Saidova",
+    photo_url: null,
+    phone: "+998901112233",
+    username: "",
+    position: { id: 3, name: "Cashier" },
+    role: { id: 1, name: "Employee", is_owner: false },
+    home_branch: { id: 1, name: "Chilonzor", code: "CHL" },
+    branches: [{ id: 1, name: "Chilonzor", code: "CHL" }],
+    status: "approved",
+    suspended_until: null,
+    joined_on: "2025-09-06",
+    left_on: null,
+    onboarded: true,
+    bot_blocked: false,
+    work: { on_time_30d: null, done_30d: 0, late_now: 0, open_now: 0 },
+    fields: {},
+    language: "uz",
+    overview: {},
+    can: {},
+  };
+  const preview = {
+    today: "2026-10-21",
+    reasons: ["resignation", "other"],
+    can_override: false,
+    blockers: 1,
+    steps: [
+      { key: "members", label: "Access and work", order: 10, lines: ["Their access ends at once."], blockers: [], fields: [], defaults: {} },
+      { key: "sales", label: "Cash", order: 30, lines: [], blockers: ["Open till CHL-1042 must be closed first."], fields: [], defaults: {}, restricted: true },
+    ],
+  };
+
+  it("shows a step the viewer can't open with its blocker, and only an owner may go ahead", async () => {
+    const OffboardPage = (await import("../pages/OffboardPage.vue")).default;
+    stub((call) => (call.url.endsWith("offboard-preview/") ? json(preview) : json(person)));
+    const app = await testApp("/c/1/people/7/offboard");
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: "/c/:companyId/people/:memberId/offboard", component: OffboardPage },
+        { path: "/:any(.*)*", component: { render: () => null } },
+      ],
+    });
+    await router.push("/c/1/people/7/offboard");
+    const { wrapper } = mountWithProviders(OffboardPage, { plugins: [app.pinia, router, i18n, [VueQueryPlugin, { queryClient: app.client }]] });
+    await flushPromises();
+    await flushPromises();
+
+    await wrapper.find('[role="radio"]').trigger("click");
+    await wrapper.findAll("button").find((b) => b.text() === "Continue")!.trigger("click");
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Cash");
+    expect(wrapper.text()).toContain("No access");
+    expect(wrapper.text()).toContain("Open till CHL-1042 must be closed first.");
+    expect(wrapper.text()).toContain("what blocks it still counts");
+    await wrapper.findAll("button").find((b) => b.text() === "Continue")!.trigger("click");
+    await flushPromises();
+    const submit = wrapper.findAll("button").find((b) => b.text().startsWith("Offboard"))!;
+    expect(submit.attributes("disabled")).toBeDefined();
+    expect(wrapper.text()).toContain(en["people.offboard.onlyOwner"]);
   });
 });

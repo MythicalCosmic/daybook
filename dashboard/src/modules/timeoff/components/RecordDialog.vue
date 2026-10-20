@@ -5,7 +5,7 @@
  * approved at once and the person is told in the bot. A sick note can be attached (photo or PDF).
  */
 import { CalendarPlus } from "@lucide/vue";
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import DatePicker from "@/components/DatePicker.vue";
@@ -40,6 +40,13 @@ const files = ref<File[]>([]);
 const errors = ref<Record<string, string>>({});
 const formError = ref<string | null>(null);
 
+// Nobody picked yet: start in the person picker (the dialog itself focuses the first text box).
+const personField = ref<HTMLElement | null>(null);
+onMounted(() => {
+  if (member.value) return;
+  requestAnimationFrame(() => requestAnimationFrame(() => personField.value?.querySelector<HTMLElement>("[role=combobox]")?.focus({ preventScroll: true })));
+});
+
 watch(first, (value) => {
   if (value && (!last.value || last.value < value)) last.value = value;
 });
@@ -72,9 +79,11 @@ async function submit(): Promise<void> {
   <UiDialog v-model:open="open" :title="t('timeoff.record.title')" :description="t('timeoff.record.description')" size="md">
     <div class="flex flex-col gap-4">
       <InlineAlert v-if="formError" tone="danger" :description="formError" />
-      <FormField :label="t('timeoff.record.person')" :error="errors.member" required>
-        <PersonPicker v-model="member" :placeholder="t('timeoff.record.personPlaceholder')" />
-      </FormField>
+      <div ref="personField">
+        <FormField :label="t('timeoff.record.person')" :error="errors.member" required>
+          <PersonPicker v-model="member" :placeholder="t('timeoff.record.personPlaceholder')" />
+        </FormField>
+      </div>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField :label="t('timeoff.record.first')" :error="errors.first" required>
           <DatePicker v-model="first" :min="addDays(today, -366)" />

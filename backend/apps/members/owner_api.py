@@ -564,13 +564,14 @@ class PeopleViewSet(
     @action(detail=True, methods=["get"])
     def history(self, request, company_id, pk):
         person = self.get_object()
-        from apps.timeoff.models import TimeOff
+        about = Q(target_type="membership", target_id=person.pk)
+        # Their time off too, for those who may open time off (its history needs that).
+        if self.membership.has_perm(Perm.TIME_OFF_APPROVE):
+            from apps.timeoff.models import TimeOff
 
-        time_off_ids = list(TimeOff.objects.filter(membership=person).values_list("pk", flat=True))
-        rows = audit_queries.events(self.membership).filter(
-            Q(target_type="membership", target_id=person.pk)
-            | Q(target_type="timeoff", target_id__in=time_off_ids)
-        )
+            time_off = TimeOff.objects.filter(membership=person).values("pk")
+            about |= Q(target_type="timeoff", target_id__in=time_off)
+        rows = audit_queries.events(self.membership).filter(about)
         page = self.paginate_queryset(rows)
         actor_ids = {row.actor_id for row in page if row.actor_id}
         members = Membership.objects.filter(company=self.company, user_id__in=actor_ids)

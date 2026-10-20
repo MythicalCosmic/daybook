@@ -153,7 +153,9 @@ async function saveView(input: { name: string; shared: boolean }): Promise<void>
   toast.success(t("people.view.saved", { name: input.name }));
 }
 
-// Columns: salary and attendance appear only when their module sent them.
+// Columns: salary and attendance appear only when their module sent them; the last day only
+// for people who left.
+const formerView = computed(() => ["former", "left", "blocked"].includes(status.value));
 const hasSalary = computed(() => rows.value.some((row) => row.fields?.salary !== undefined));
 const hasAttendance = computed(() => rows.value.some((row) => row.fields?.attendance_30d !== undefined));
 const columns = computed<TableColumn<Person>[]>(() => {
@@ -167,10 +169,9 @@ const columns = computed<TableColumn<Person>[]>(() => {
   ];
   if (hasAttendance.value) list.push({ id: "attendance", header: t("people.col.attendance"), width: 120, numeric: true, value: (row) => row.fields.attendance_30d ?? "" });
   if (hasSalary.value) list.push({ id: "salary", header: t("people.col.salary"), width: 150, numeric: true, value: (row) => row.fields.salary?.amount ?? "" });
-  list.push(
-    { id: "joined", header: t("people.col.joined"), width: 140, sortable: "joined", value: (row) => row.joined_on ?? "", format: (v) => (v ? fmt.day(String(v), "medium") : "—") },
-    { id: "phone", header: t("people.col.phone"), width: 150, value: (row) => formatPhone(row.phone) },
-  );
+  list.push({ id: "joined", header: t("people.col.joined"), width: 140, sortable: "joined", value: (row) => row.joined_on ?? "", format: (v) => (v ? fmt.day(String(v), "medium") : "—") });
+  if (formerView.value) list.push({ id: "left", header: t("people.col.left"), width: 140, value: (row) => row.left_on ?? "", format: (v) => (v ? fmt.day(String(v), "medium") : "—") });
+  list.push({ id: "phone", header: t("people.col.phone"), width: 150, value: (row) => formatPhone(row.phone) });
   return list;
 });
 
@@ -197,7 +198,7 @@ function clearAll(): void {
       </template>
     </PageHeader>
 
-    <KpiStrip :items="kpis" :loading="stats.isPending.value" :columns="4" />
+    <KpiStrip class="team-kpis" :items="kpis" :loading="stats.isPending.value" :columns="4" />
 
     <div class="flex flex-col gap-3">
       <SavedViewsTabs
@@ -315,3 +316,18 @@ function clearAll(): void {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Phones: the four numbers as a 2 × 2 grid without hints, so the list starts on the first screen. */
+@media (max-width: 639px) {
+  .team-kpis :deep(.kpi-strip) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .team-kpis :deep(.kpi-strip > *) {
+    padding: 0.75rem 1rem;
+  }
+  .team-kpis :deep(.kpi-strip > * > .mt-auto) {
+    display: none;
+  }
+}
+</style>

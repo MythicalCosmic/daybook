@@ -49,7 +49,10 @@ export interface Person {
   branches: BranchRef[];
   status: MemberStatus;
   suspended_until: string | null;
+  /** Their first day (when they asked, for a request). */
   joined_on: string | null;
+  /** Their last day, for someone who left or was blocked. */
+  left_on: string | null;
   onboarded: boolean;
   bot_blocked: boolean;
   work: WorkNumbers;
@@ -84,6 +87,7 @@ export interface PersonOverview {
   streak: number;
   trend: TrendPoint[];
   joined_on: string | null;
+  left_on: string | null;
   tenure_days: number | null;
   days_off_this_year: number;
   upcoming_time_off: UpcomingTimeOff[];
@@ -102,7 +106,6 @@ export interface PersonActions {
 
 /** `GET people/{id}/`: Person 360. */
 export interface PersonDetail extends Person {
-  telegram_id: number | null;
   language: "uz" | "ru" | "en";
   overview: PersonOverview;
   can: PersonActions;
@@ -161,6 +164,8 @@ export interface OffboardStep {
   blockers: string[];
   fields: OffboardField[];
   defaults: Record<string, unknown>;
+  /** A step the viewer can't open: only its label and blockers come (they still apply). */
+  restricted?: boolean;
 }
 
 export type OffboardReason = "resignation" | "mutual_agreement" | "contract_end" | "dismissal" | "probation_failed" | "redundancy" | "other";
@@ -191,7 +196,6 @@ export interface JoinRequest {
   photo_url: string | null;
   phone: string;
   username: string;
-  telegram_id: number | null;
   position: Named | null;
   onboarded: boolean;
   requested_at: string;

@@ -82,7 +82,8 @@ const calendarEmpty = computed(() => !!calendar.data.value && calendar.data.valu
 
 // Waiting for a decision -------------------------------------------------------------------
 const waiting = useTimeOffList(computed(() => ({ status: ["pending"] as TimeOffStatus[], ordering: "created_at", page_size: 30, branch: branchIds.value.length ? branchIds.value : undefined })));
-const waitingRows = computed(() => (waiting.data.value?.results ?? []).filter((row) => row.status === "pending"));
+// Requests the viewer may decide (never their own).
+const waitingRows = computed(() => (waiting.data.value?.results ?? []).filter((row) => row.status === "pending" && row.can_decide));
 const decide = useDecide();
 const deciding = ref<string | null>(null);
 async function decideRow(row: TimeOffRow, approve: boolean): Promise<void> {
@@ -144,14 +145,14 @@ function openPerson(id: number): void {
   void router.push(`/c/${company.currentId}/people/${id}`);
 }
 
-// Record dialog (`?record=1` or `?record=<member id>` from Person 360) ----------------------
+// Record dialog (`?record=new`, or `?record=<member id>` from Person 360) -------------------
 const recording = computed({
   get: () => recordParam.value !== "",
   set: (value: boolean) => {
     if (!value) patchQuery(router, { record: undefined });
   },
 });
-const recordFor = computed(() => (/^\d+$/.test(recordParam.value) && recordParam.value !== "1" ? Number(recordParam.value) : null));
+const recordFor = computed(() => (/^\d+$/.test(recordParam.value) ? Number(recordParam.value) : null));
 
 const nextHoliday = computed(() => stats.data.value?.next_holiday ?? null);
 </script>
@@ -161,14 +162,14 @@ const nextHoliday = computed(() => stats.data.value?.next_holiday ?? null);
     <PageHeader class="!mb-0" :title="t('timeoff.page.title')" :description="t('timeoff.page.description')">
       <template #actions>
         <UiButton :to="`/c/${company.currentId}/time-off/holidays`" :icon="PartyPopper">{{ t("timeoff.nav.holidays") }}</UiButton>
-        <UiButton variant="primary" :icon="CalendarPlus" @click="recordParam = '1'">{{ t("timeoff.cmd.record") }}</UiButton>
+        <UiButton variant="primary" :icon="CalendarPlus" @click="recordParam = 'new'">{{ t("timeoff.cmd.record") }}</UiButton>
       </template>
       <template v-if="nextHoliday" #meta>
         <StatusPill :icon="PartyPopper" tone="primary" :label="t('timeoff.page.nextHoliday', { name: nextHoliday.name, date: fmt.day(nextHoliday.date, 'medium') })" />
       </template>
     </PageHeader>
 
-    <KpiStrip :items="kpis" :loading="stats.isPending.value" :columns="4" />
+    <KpiStrip class="page-kpis" :items="kpis" :loading="stats.isPending.value" :columns="4" />
 
     <div class="flex flex-wrap items-center gap-2">
       <SegmentedControl
@@ -210,7 +211,7 @@ const nextHoliday = computed(() => stats.data.value?.next_holiday ?? null);
         <ErrorState v-else-if="calendar.isError.value" class="ui-card" :error="calendar.error.value" :retry="() => calendar.refetch()" />
         <div v-else-if="calendarEmpty" class="ui-card">
           <EmptyState :icon="TreePalm" :title="t('timeoff.calendar.emptyTitle')" :description="t('timeoff.calendar.emptyBody')">
-            <UiButton variant="primary" :icon="CalendarPlus" @click="recordParam = '1'">{{ t("timeoff.cmd.record") }}</UiButton>
+            <UiButton variant="primary" :icon="CalendarPlus" @click="recordParam = 'new'">{{ t("timeoff.cmd.record") }}</UiButton>
             <UiButton @click="everyone = true">{{ t("timeoff.calendar.showEveryone") }}</UiButton>
           </EmptyState>
         </div>
@@ -340,5 +341,17 @@ const nextHoliday = computed(() => stats.data.value?.next_holiday ?? null);
 .legend.is-off {
   background: color-mix(in srgb, var(--c-text) 6%, transparent);
   border-color: var(--c-border);
+}
+/* Phones: the four numbers as a 2 × 2 grid without hints, so the page starts on the first screen. */
+@media (max-width: 639px) {
+  .page-kpis :deep(.kpi-strip) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .page-kpis :deep(.kpi-strip > *) {
+    padding: 0.75rem 1rem;
+  }
+  .page-kpis :deep(.kpi-strip > * > .mt-auto) {
+    display: none;
+  }
 }
 </style>

@@ -32,7 +32,7 @@ export default defineModule({
       icon: CalendarPlus,
       perm: "time_off.approve",
       keywords: ["sick", "leave", "kasal", "больничный", "отпуск", "ta’til"],
-      run: () => ctx.go("time-off?record=1"),
+      run: () => ctx.go("time-off?record=new"),
     },
     {
       id: "timeoff.holiday",

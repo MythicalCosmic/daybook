@@ -154,6 +154,12 @@ async function run(task: () => Promise<unknown>, done: string): Promise<void> {
   }
 }
 
+function goneText(p: PersonDetail): string {
+  const day = p.left_on ? fmt.day(p.left_on, "long") : null;
+  if (p.status === "blocked") return day ? t("people.blockedBannerOn", { date: day }) : t("people.blockedBanner");
+  return day ? t("people.leftBannerOn", { date: day }) : t("people.leftBanner");
+}
+
 function recordTimeOff(p: PersonDetail): void {
   void router.push({ path: `/c/${company.currentId}/time-off`, query: { record: String(p.id) } });
 }
@@ -164,8 +170,7 @@ const menu = computed<MenuEntry[]>(() => {
   const entries: MenuEntry[] = [];
   if (p.can.change_role) entries.push({ label: t("people.action.changeRole"), icon: ShieldCheck, onSelect: () => (editing.value = true) });
   if (p.can.suspend && !lifecycleInstalled.value) entries.push({ label: t("people.action.suspend"), icon: Pause, onSelect: () => (suspending.value = true) });
-  if (p.can.reinstate) entries.push({ label: t("people.action.reinstate"), icon: Play, onSelect: () => void reinstate(p) });
-  if (p.can.unblock) entries.push({ label: t("people.action.unblock"), icon: Undo2, onSelect: () => void unblock(p) });
+  // Reinstate and unblock sit in the status banner, where the person's state is explained.
   if (entries.length && (p.can.block || p.can.offboard)) entries.push({ type: "separator" });
   if (p.can.offboard) entries.push({ label: t("people.action.offboard"), icon: LogOut, danger: true, onSelect: () => void router.push(`${base.value}/offboard`) });
   if (p.can.block) entries.push({ label: t("people.action.block"), icon: Ban, danger: true, onSelect: () => void block(p) });
@@ -217,7 +222,11 @@ const hasProfileActions = computed(() => hasExtension("people.profile.actions", 
               </span>
               <a v-if="person.phone" :href="`tel:${person.phone}`" class="inline-flex items-center gap-1.5 tabular-nums hover:text-fg"><Phone :size="14" aria-hidden="true" />{{ formatPhone(person.phone) }}</a>
               <a v-if="person.username" :href="`https://t.me/${person.username}`" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 hover:text-fg"><AtSign :size="14" aria-hidden="true" />{{ person.username }}</a>
-              <span v-if="person.overview.joined_on">{{ t("people.joinedOn", { date: fmt.day(person.overview.joined_on, "medium") }) }}<template v-if="tenure"> · {{ tenure }}</template></span>
+              <span v-if="person.overview.joined_on"
+                >{{ t("people.joinedOn", { date: fmt.day(person.overview.joined_on, "medium") }) }}<template v-if="person.overview.left_on">
+                  · {{ t("people.lastDay", { date: fmt.day(person.overview.left_on, "medium") }) }}</template
+                ><template v-if="tenure"> · {{ tenure }}</template></span
+              >
               <span v-if="person.bot_blocked" class="inline-flex items-center gap-1.5 text-danger"><UserRoundX :size="14" aria-hidden="true" />{{ t("people.botBlocked") }}</span>
             </div>
           </div>
@@ -230,14 +239,18 @@ const hasProfileActions = computed(() => hasExtension("people.profile.actions", 
             </DropdownMenu>
           </div>
         </div>
-        <div v-if="person.status === 'suspended'" class="border-t border-line bg-warning-soft/60 px-5 py-2.5 text-sm text-warning">
-          {{ person.suspended_until ? t("people.suspendedBanner", { date: fmt.day(person.suspended_until, "long") }) : t("people.suspendedBannerOpen") }}
+        <div v-if="person.status === 'suspended'" class="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line bg-warning-soft/60 px-5 py-2.5">
+          <p class="min-w-0 flex-1 text-sm text-warning">
+            {{ person.suspended_until ? t("people.suspendedBanner", { date: fmt.day(person.suspended_until, "long") }) : t("people.suspendedBannerOpen") }}
+          </p>
+          <UiButton v-if="person.can.reinstate" size="sm" :icon="Play" :loading="act.isPending.value" @click="reinstate(person)">{{ t("people.action.reinstate") }}</UiButton>
         </div>
-        <div v-else-if="person.status === 'left' || person.status === 'blocked'" class="border-t border-line bg-surface-2/60 px-5 py-2.5 text-sm text-muted">
-          {{ person.status === "left" ? t("people.leftBanner") : t("people.blockedBanner") }}
+        <div v-else-if="person.status === 'left' || person.status === 'blocked'" class="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line bg-surface-2/60 px-5 py-2.5">
+          <p class="min-w-0 flex-1 text-sm text-muted">{{ goneText(person) }}</p>
+          <UiButton v-if="person.can.unblock" size="sm" :icon="Undo2" :loading="act.isPending.value" @click="unblock(person)">{{ t("people.action.unblock") }}</UiButton>
         </div>
         <div class="border-t border-line">
-          <KpiStrip :items="kpis" :columns="5" class="!rounded-none !border-0 !shadow-none" />
+          <KpiStrip :items="kpis" :columns="5" class="person-kpis !rounded-none !border-0 !shadow-none" />
         </div>
       </section>
 
@@ -254,3 +267,21 @@ const hasProfileActions = computed(() => hasExtension("people.profile.actions", 
     </template>
   </div>
 </template>
+
+<style scoped>
+/* Phones: the five numbers as a 2-up grid without hints, so the tabs are on the first screen. */
+@media (max-width: 639px) {
+  .person-kpis :deep(.kpi-strip) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .person-kpis :deep(.kpi-strip > *) {
+    padding: 0.75rem 1rem;
+  }
+  .person-kpis :deep(.kpi-strip > * > .mt-auto) {
+    display: none;
+  }
+  .person-kpis :deep(.kpi-strip > *:last-child:nth-child(odd)) {
+    grid-column: 1 / -1;
+  }
+}
+</style>

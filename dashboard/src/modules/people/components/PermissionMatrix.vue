@@ -114,7 +114,7 @@ function countIn(role: Role, group: PermissionGroup): number {
             v-for="role in roles"
             :key="role.id"
             scope="col"
-            class="sticky top-0 z-20 min-w-[104px] border-b sm:min-w-[132px] border-line bg-surface px-3 py-3 text-center align-bottom font-semibold"
+            class="sticky top-0 z-20 min-w-[104px] border-b sm:min-w-[132px] border-line bg-surface px-3 py-3 text-center align-top font-semibold"
           >
             <slot name="header" :role="role">
               <span class="inline-flex items-center gap-1 text-fg"><Crown v-if="role.is_owner" :size="13" class="text-primary" />{{ role.name }}</span>

@@ -344,5 +344,11 @@
   "people.widget.onLeave": "В отпуске сегодня",
   "people.widget.joined": "Пришли за 30 дней",
   "people.widget.suspended": "Приостановлены",
-  "people.widget.requests": "{n} заявка ждёт | {n} заявки ждут | {n} заявок ждут"
+  "people.widget.requests": "{n} заявка ждёт | {n} заявки ждут | {n} заявок ждут",
+  "people.leftBannerOn": "Последний рабочий день: {date}. История остаётся здесь.",
+  "people.blockedBannerOn": "Заблокирован с {date}: не может пользоваться ботом и снова подать заявку.",
+  "people.lastDay": "последний день {date}",
+  "people.col.left": "Последний день",
+  "people.offboard.restricted": "У вас нет доступа к этому разделу, но его препятствия всё равно учитываются. Попросите того, у кого есть доступ, всё уладить, или владельца — продолжить несмотря ни на что.",
+  "people.offboard.noAccess": "Нет доступа"
 }

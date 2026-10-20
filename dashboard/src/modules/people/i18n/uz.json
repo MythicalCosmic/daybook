@@ -344,5 +344,11 @@
   "people.widget.onLeave": "Bugun ta’tilda",
   "people.widget.joined": "30 kunda qo‘shildi",
   "people.widget.suspended": "To‘xtatilgan",
-  "people.widget.requests": "{n} ta qo‘shilish so‘rovi kutmoqda | {n} ta qo‘shilish so‘rovi kutmoqda | {n} ta qo‘shilish so‘rovi kutmoqda"
+  "people.widget.requests": "{n} ta qo‘shilish so‘rovi kutmoqda | {n} ta qo‘shilish so‘rovi kutmoqda | {n} ta qo‘shilish so‘rovi kutmoqda",
+  "people.leftBannerOn": "Oxirgi ish kuni: {date}. Tarixi shu yerda saqlanadi.",
+  "people.blockedBannerOn": "{date} dan beri bloklangan: botdan foydalana olmaydi va qayta qo‘shilish so‘rovini yubora olmaydi.",
+  "people.lastDay": "oxirgi kun {date}",
+  "people.col.left": "Oxirgi kun",
+  "people.offboard.restricted": "Bu qismni ochish huquqingiz yo‘q, lekin undagi to‘siqlar baribir hisobga olinadi. Uni ocha oladigan kishidan hal qilishni yoki egadan baribir davom ettirishni so‘rang.",
+  "people.offboard.noAccess": "Ruxsat yo‘q"
 }

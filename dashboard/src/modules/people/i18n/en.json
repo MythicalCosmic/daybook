@@ -344,5 +344,11 @@
   "people.widget.onLeave": "On leave today",
   "people.widget.joined": "Joined in 30 days",
   "people.widget.suspended": "Suspended",
-  "people.widget.requests": "{n} join requests waiting | {n} join request waiting | {n} join requests waiting"
+  "people.widget.requests": "{n} join requests waiting | {n} join request waiting | {n} join requests waiting",
+  "people.leftBannerOn": "Last working day {date}. Their history stays here.",
+  "people.blockedBannerOn": "Blocked since {date}: they can’t use the bot or ask to join again.",
+  "people.lastDay": "last day {date}",
+  "people.col.left": "Last day",
+  "people.offboard.restricted": "You can’t open this part, but what blocks it still counts. Ask someone who can open it to settle it, or an owner to go ahead anyway.",
+  "people.offboard.noAccess": "No access"
 }

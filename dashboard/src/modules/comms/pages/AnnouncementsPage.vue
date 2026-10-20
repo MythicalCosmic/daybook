@@ -97,7 +97,7 @@ function open(row: Announcement): void {
       </template>
     </PageHeader>
 
-    <KpiStrip :items="kpis" :loading="stats.isPending.value" :columns="4" />
+    <KpiStrip class="page-kpis" :items="kpis" :loading="stats.isPending.value" :columns="4" />
 
     <DataTable
       :state="table"
@@ -127,9 +127,9 @@ function open(row: Announcement): void {
       <template #cell-title="{ row }">
         <div class="flex min-w-0 items-start gap-2.5 py-0.5">
           <UserAvatar :name="row.author?.name ?? '—'" :src="row.author?.photo_url" :size="28" class="mt-0.5" />
-          <div class="min-w-0">
-            <p class="flex items-center gap-1.5 truncate text-base font-medium text-fg">
-              <Pin v-if="row.is_pinned" :size="13" class="shrink-0 text-primary" :aria-label="t('comms.pinned')" />{{ row.title }}
+          <div class="min-w-0 flex-1">
+            <p class="flex min-w-0 items-center gap-1.5 text-base font-medium text-fg" :title="row.title">
+              <Pin v-if="row.is_pinned" :size="13" class="shrink-0 text-primary" :aria-label="t('comms.pinned')" /><span class="truncate">{{ row.title }}</span>
             </p>
             <p class="truncate text-xs text-muted">{{ row.author?.name ?? "—" }}</p>
           </div>
@@ -165,3 +165,18 @@ function open(row: Announcement): void {
     </DataTable>
   </div>
 </template>
+
+<style scoped>
+/* Phones: the four numbers as a 2 × 2 grid without hints, so the page starts on the first screen. */
+@media (max-width: 639px) {
+  .page-kpis :deep(.kpi-strip) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .page-kpis :deep(.kpi-strip > *) {
+    padding: 0.75rem 1rem;
+  }
+  .page-kpis :deep(.kpi-strip > * > .mt-auto) {
+    display: none;
+  }
+}
+</style>

@@ -5,7 +5,7 @@
  * what blocks it and the questions it asks, 3) confirm. Blockers stop it unless an owner goes
  * ahead anyway; the answers reach every module in `member_left`.
  */
-import { AlertTriangle, ArrowLeft, ArrowRight, CircleCheck, LogOut } from "@lucide/vue";
+import { AlertTriangle, ArrowLeft, ArrowRight, CircleCheck, Lock, LogOut } from "@lucide/vue";
 import { useQuery } from "@tanstack/vue-query";
 import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -172,12 +172,14 @@ const personUrl = computed(() => `/c/${company.currentId}/people/${memberId.valu
         <section v-for="step in steps" :key="step.key" class="ui-card overflow-hidden">
           <header class="flex items-center gap-2 border-b border-line px-5 py-3">
             <h2 class="text-md font-semibold text-fg">{{ step.label }}</h2>
+            <span v-if="step.restricted" class="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-xs font-medium text-muted"><Lock :size="12" aria-hidden="true" />{{ t("people.offboard.noAccess") }}</span>
             <span class="flex-1" />
             <span v-if="step.blockers.length" class="inline-flex items-center gap-1 text-xs font-semibold text-danger"><AlertTriangle :size="13" />{{ t("people.offboard.blocked") }}</span>
             <span v-else class="inline-flex items-center gap-1 text-xs font-semibold text-success"><CircleCheck :size="13" />{{ t("people.offboard.ready") }}</span>
           </header>
           <div class="flex flex-col gap-4 px-5 py-4">
-            <ul class="flex flex-col gap-1.5">
+            <p v-if="step.restricted" class="text-sm text-muted">{{ t("people.offboard.restricted") }}</p>
+            <ul v-if="step.lines.length" class="flex flex-col gap-1.5">
               <li v-for="line in step.lines" :key="line" class="flex gap-2 text-base text-fg"><span class="mt-[7px] size-1.5 shrink-0 rounded-full bg-subtle" aria-hidden="true" />{{ line }}</li>
             </ul>
             <InlineAlert v-for="blocker in step.blockers" :key="blocker" tone="danger" size="sm" :description="blocker" />
