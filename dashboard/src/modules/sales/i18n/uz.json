@@ -510,6 +510,7 @@
   "sales.settings.saved": "Savdo qoidalari saqlandi",
 
   "sales.widget.today": "Bugungi savdo",
+  "sales.widget.soFar": "Hozirgacha yopilgan smenalar bo‘yicha",
   "sales.widget.yesterday": "Kechagi savdo",
   "sales.widget.vsWeekday": "o‘tgan haftaning shu kuniga nisbatan",
   "sales.widget.error": "Savdoni yuklab bo‘lmadi"

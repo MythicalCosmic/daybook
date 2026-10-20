@@ -510,6 +510,7 @@
   "sales.settings.saved": "Правила продаж сохранены",
 
   "sales.widget.today": "Продажи сегодня",
+  "sales.widget.soFar": "По сменам, закрытым на сейчас",
   "sales.widget.yesterday": "Продажи вчера",
   "sales.widget.vsWeekday": "к тому же дню прошлой недели",
   "sales.widget.error": "Не удалось загрузить продажи"

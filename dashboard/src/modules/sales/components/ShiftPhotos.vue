@@ -57,7 +57,7 @@ const differs = (typed: string, read: string | null) => read !== null && read !=
           :aria-label="t('sales.photos.open', { name: photo.label })"
           @click="show(photo.src)"
         >
-          <img :src="photo.src" :alt="photo.label" class="size-full object-cover object-top transition-transform duration-200 group-hover:scale-[1.02]" loading="lazy" />
+          <img :src="photo.src" :alt="photo.label" class="size-full object-contain object-top transition-transform duration-200 group-hover:scale-[1.02]" loading="lazy" />
           <span class="absolute inset-x-2 bottom-2 rounded-[8px] bg-surface/90 px-2 py-1 text-left text-xs font-semibold text-fg shadow-xs backdrop-blur">
             {{ photo.label }}<span v-if="photo.hint" class="font-normal text-muted"> · {{ photo.hint }}</span>
           </span>

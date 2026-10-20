@@ -125,9 +125,12 @@ const base = computed(() => `/c/${company.currentId}/sales`);
   <div class="flex flex-col gap-5">
     <PageHeader :title="t('sales.title')" :description="t('sales.overview.description')" class="!mb-0">
       <template #actions>
-        <div class="w-[210px] max-sm:w-full"><BranchPicker v-model="branches" multiple :placeholder="t('sales.filter.allBranches')" /></div>
-        <DateRangePicker v-model="period" align="end" />
-        <ExportButton kind="sales.daily" :params="params" variant="ghost" />
+        <!-- A definite width on phones, so the filters wrap inside the screen instead of past it. -->
+        <div class="flex flex-wrap items-center gap-2 max-sm:w-[calc(100vw-2rem)]">
+          <div class="w-[210px] max-sm:w-full"><BranchPicker v-model="branches" multiple :placeholder="t('sales.filter.allBranches')" /></div>
+          <DateRangePicker v-model="period" align="end" />
+          <ExportButton kind="sales.daily" :params="params" variant="ghost" />
+        </div>
       </template>
     </PageHeader>
 

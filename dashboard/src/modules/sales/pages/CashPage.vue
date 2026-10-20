@@ -143,14 +143,14 @@ const limitUse = (total: string, limit: string | null) => (limit ? percent(total
       </template>
     </PageHeader>
 
-    <div v-if="skeleton" class="grid gap-3 sm:grid-cols-3 xl:grid-cols-5">
+    <div v-if="skeleton" class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
       <SkeletonBlock v-for="n in 5" :key="n" height="96px" radius="12px" />
     </div>
     <ErrorState v-else-if="positions.isError.value" :error="positions.error.value" :retry="() => positions.refetch()" />
     <template v-else-if="data">
       <!-- The flow -->
-      <ol class="grid gap-3 sm:grid-cols-3 xl:grid-cols-5">
-        <li v-for="(step, index) in flow" :key="step.key" class="ui-card relative flex min-w-0 flex-col gap-1 p-4">
+      <ol class="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
+        <li v-for="(step, index) in flow" :key="step.key" class="ui-card relative flex min-w-0 flex-col gap-1 p-4 max-sm:last:col-span-2">
           <div class="flex items-center gap-2 text-xs font-medium text-muted">
             <component :is="step.icon" :size="15" class="text-subtle" aria-hidden="true" />{{ step.label }}
           </div>

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
- * Overview widget `sales.kpi.today` (plan §1.2): today's net sales so far against the same
- * weekday last week, with the last two weeks as a sparkline. Kept lean: it is part of the
+ * Overview widget `sales.kpi.today` (plan §1.2): today's net sales from the shifts closed so far,
+ * or yesterday's against the same weekday the week before (a day still running isn't compared
+ * with a whole one), with the last two weeks as a sparkline. Kept lean: it is part of the
  * Overview's first load, and fetches and fails on its own.
  */
 import { Store } from "@lucide/vue";
@@ -37,14 +38,14 @@ const link = computed(() => `/c/${props.companyId}/sales`);
   <KpiCard
     :label="yesterday ? t('sales.widget.yesterday') : t('sales.widget.today')"
     :value="query.isError.value ? null : value"
-    :previous="weekAgo"
+    :previous="yesterday ? weekAgo : undefined"
     format="money"
     compact
-    :delta-label="t('sales.widget.vsWeekday')"
+    :delta-label="yesterday ? t('sales.widget.vsWeekday') : undefined"
     :spark="series.map((point) => point.net)"
     :icon="Store"
     :to="link"
     :loading="query.isPending.value"
-    :hint="query.isError.value ? t('sales.widget.error') : undefined"
+    :hint="query.isError.value ? t('sales.widget.error') : yesterday ? undefined : t('sales.widget.soFar')"
   />
 </template>
