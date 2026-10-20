@@ -111,9 +111,38 @@ def test_summary_endpoint(company, worker):
         "today_done",
         "late",
         "streak_days",
+        "week",
+        "month_done",
+        "month_on_time_percent",
         "unread_activity",
         "awaiting_review",
     }
+    assert len(response.data["week"]) == 7
+
+
+def test_week_shows_each_of_the_last_seven_days(worker):
+    now = timezone.now()
+    finished(worker, at(-1, 9, now), at(-1, 10, now))
+    TaskFactory(assignee=worker, due_at=at(-2, 9, now))  # missed
+
+    week = stats.summary(worker, now)["week"]
+
+    assert [day["state"] for day in week[-3:]] == ["missed", "done", "today"]
+    assert week[0]["state"] == "free"
+
+
+def test_month_numbers(worker):
+    now = timezone.now()
+    today_early = at(0, 0, now) + timedelta(minutes=1)
+    if today_early > now:
+        pytest.skip("too close to midnight")
+    finished(worker, today_early, today_early - timedelta(minutes=1))  # in time
+    finished(worker, today_early, today_early + timedelta(minutes=1))  # late
+
+    numbers = stats.summary(worker, now)
+
+    assert numbers["month_done"] == 2
+    assert numbers["month_on_time_percent"] == 50
 
 
 # Activity feed

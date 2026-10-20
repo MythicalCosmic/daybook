@@ -17,6 +17,7 @@ TASK_RELATIONS = (
     "assignee__position",
     "created_by__user",
     "created_by__position",
+    "confirmed_by__user",
 )
 
 
@@ -44,6 +45,21 @@ def todays_tasks(member: Membership, now: datetime) -> QuerySet[Task]:
         .select_related(*TASK_RELATIONS)
         .filter(assignee=member, status__in=Task.OPEN_STATUSES)
         .filter(Q(due_at__lt=end_of_today) | Q(due_at__isnull=True))
+    )
+
+
+def board_tasks(member: Membership, now: datetime) -> QuerySet[Task]:
+    """The member's own board: everything still open or being checked, plus today's finished."""
+    tz = ZoneInfo(member.company.timezone)
+    start_of_today = datetime.combine(timezone.localtime(now, tz).date(), time.min, tzinfo=tz)
+    return (
+        Task.objects.for_company(member.company_id)
+        .select_related(*TASK_RELATIONS)
+        .filter(assignee=member)
+        .filter(
+            Q(status__in=(*Task.OPEN_STATUSES, Task.Status.REVIEW))
+            | Q(status=Task.Status.DONE, completed_at__gte=start_of_today)
+        )
     )
 
 

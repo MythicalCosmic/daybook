@@ -1,0 +1,1876 @@
+openapi: 3.0.3
+info:
+  title: 911 Trello API
+  version: 0.1.0
+  description: API for the employee mini app.
+paths:
+  /api/v1/auth/refresh/:
+    post:
+      operationId: v1_auth_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/auth/telegram/:
+    post:
+      operationId: v1_auth_telegram_create
+      description: Exchange the mini app's Telegram init data for a JWT pair.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TelegramAuthRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TelegramAuthRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TelegramAuthRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+          description: ''
+  /api/v1/companies/{company_id}/activity/:
+    get:
+      operationId: v1_companies_activity_list
+      description: The signed-in member's feed, newest first.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedActivityList'
+          description: ''
+  /api/v1/companies/{company_id}/activity/read/:
+    post:
+      operationId: v1_companies_activity_read_create
+      description: Mark the whole feed as read.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Marked'
+          description: ''
+  /api/v1/companies/{company_id}/members/:
+    get:
+      operationId: v1_companies_members_list
+      description: Registered members of the company, e.g. to pick who a task is for.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MemberBrief'
+          description: ''
+  /api/v1/companies/{company_id}/onboarding/:
+    post:
+      operationId: v1_companies_onboarding_create
+      description: |-
+        Create the account: name and position. The phone comes from Telegram contact sharing.
+
+        For a pending request this is what sends it to the approvers.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnboardingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OnboardingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OnboardingRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membership'
+          description: ''
+  /api/v1/companies/{company_id}/positions/:
+    get:
+      operationId: v1_companies_positions_list
+      description: Positions an employee can pick when creating their account.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Position'
+          description: ''
+  /api/v1/companies/{company_id}/summary/:
+    get:
+      operationId: v1_companies_summary_retrieve
+      description: Home screen numbers for the signed-in member.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Summary'
+          description: ''
+  /api/v1/companies/{company_id}/task-templates/:
+    get:
+      operationId: v1_companies_task_templates_list
+      description: Recurring tasks. Needs tasks.templates.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskTemplate'
+          description: ''
+    post:
+      operationId: v1_companies_task_templates_create
+      description: Recurring tasks. Needs tasks.templates.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TaskTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TaskTemplateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskTemplate'
+          description: ''
+  /api/v1/companies/{company_id}/task-templates/{id}/:
+    get:
+      operationId: v1_companies_task_templates_retrieve
+      description: Recurring tasks. Needs tasks.templates.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task template.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskTemplate'
+          description: ''
+    put:
+      operationId: v1_companies_task_templates_update
+      description: Recurring tasks. Needs tasks.templates.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task template.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TaskTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TaskTemplateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskTemplate'
+          description: ''
+    patch:
+      operationId: v1_companies_task_templates_partial_update
+      description: Recurring tasks. Needs tasks.templates.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task template.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTaskTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTaskTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTaskTemplateRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskTemplate'
+          description: ''
+    delete:
+      operationId: v1_companies_task_templates_destroy
+      description: Recurring tasks. Needs tasks.templates.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task template.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/companies/{company_id}/tasks/:
+    get:
+      operationId: v1_companies_tasks_list
+      description: Tasks of one company, as the signed-in member may see them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: query
+        name: kind
+        schema:
+          type: string
+          enum:
+          - assigned
+          - daily
+          - personal
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: scope
+        schema:
+          type: string
+          enum:
+          - board
+          - created
+          - mine
+          - review
+          - today
+        description: 'today: open tasks due today or late; board: your open tasks
+          plus today''s finished; review: waiting for you to check.'
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: Comma-separated statuses.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTaskList'
+          description: ''
+    post:
+      operationId: v1_companies_tasks_create
+      description: Tasks of one company, as the signed-in member may see them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TaskCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TaskCreateRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+          description: ''
+  /api/v1/companies/{company_id}/tasks/{id}/:
+    get:
+      operationId: v1_companies_tasks_retrieve
+      description: Tasks of one company, as the signed-in member may see them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+          description: ''
+    patch:
+      operationId: v1_companies_tasks_partial_update
+      description: Tasks of one company, as the signed-in member may see them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTaskUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTaskUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTaskUpdateRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+          description: ''
+  /api/v1/companies/{company_id}/tasks/{id}/cancel/:
+    post:
+      operationId: v1_companies_tasks_cancel_create
+      description: Tasks of one company, as the signed-in member may see them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CancelRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CancelRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+          description: ''
+  /api/v1/companies/{company_id}/tasks/{id}/checklist/{item_id}/:
+    post:
+      operationId: v1_companies_tasks_checklist_create
+      description: Tasks of one company, as the signed-in member may see them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      - in: path
+        name: item_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChecklistToggleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChecklistToggleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChecklistToggleRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+          description: ''
+  /api/v1/companies/{company_id}/tasks/{id}/comments/:
+    get:
+      operationId: v1_companies_tasks_comments_list
+      description: Tasks of one company, as the signed-in member may see them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCommentList'
+          description: ''
+    post:
+      operationId: v1_companies_tasks_comments_create
+      description: Tasks of one company, as the signed-in member may see them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CommentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CommentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+          description: ''
+  /api/v1/companies/{company_id}/tasks/{id}/complete/:
+    post:
+      operationId: v1_companies_tasks_complete_create
+      description: Tasks of one company, as the signed-in member may see them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CompleteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CompleteRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+          description: ''
+  /api/v1/companies/{company_id}/tasks/{id}/confirm/:
+    post:
+      operationId: v1_companies_tasks_confirm_create
+      description: Tasks of one company, as the signed-in member may see them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+          description: ''
+  /api/v1/companies/{company_id}/tasks/{id}/return/:
+    post:
+      operationId: v1_companies_tasks_return_create
+      description: Tasks of one company, as the signed-in member may see them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReturnRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReturnRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReturnRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+          description: ''
+  /api/v1/companies/{company_id}/tasks/{id}/start/:
+    post:
+      operationId: v1_companies_tasks_start_create
+      description: Tasks of one company, as the signed-in member may see them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+          description: ''
+  /api/v1/me/:
+    get:
+      operationId: v1_me_retrieve
+      description: The signed-in person, with every membership. Only `language` can
+        be changed.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+          description: ''
+    patch:
+      operationId: v1_me_partial_update
+      description: The signed-in person, with every membership. Only `language` can
+        be changed.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMeRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Me'
+          description: ''
+components:
+  schemas:
+    ActionsEnum:
+      enum:
+      - start
+      - complete
+      - confirm
+      - return
+      - edit
+      - cancel
+      type: string
+      description: |-
+        * `start` - start
+        * `complete` - complete
+        * `confirm` - confirm
+        * `return` - return
+        * `edit` - edit
+        * `cancel` - cancel
+    Activity:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/ActivityKindEnum'
+          readOnly: true
+        task:
+          $ref: '#/components/schemas/TaskBrief'
+        actor:
+          allOf:
+          - $ref: '#/components/schemas/MemberBrief'
+          nullable: true
+        text:
+          type: string
+          readOnly: true
+        is_read:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - actor
+      - created_at
+      - id
+      - is_read
+      - kind
+      - task
+      - text
+    ActivityKindEnum:
+      enum:
+      - assigned
+      - review
+      - completed
+      - confirmed
+      - returned
+      - commented
+      type: string
+      description: |-
+        * `assigned` - Gave you a task
+        * `review` - Asked you to check a task
+        * `completed` - Completed a task you gave
+        * `confirmed` - Checked your task
+        * `returned` - Sent a task back
+        * `commented` - Commented on a task
+    CancelRequest:
+      type: object
+      properties:
+        stop_repeating:
+          type: boolean
+          default: false
+    ChecklistItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        text:
+          type: string
+          readOnly: true
+        is_done:
+          type: boolean
+          readOnly: true
+      required:
+      - id
+      - is_done
+      - text
+    ChecklistToggleRequest:
+      type: object
+      properties:
+        is_done:
+          type: boolean
+      required:
+      - is_done
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        author:
+          allOf:
+          - $ref: '#/components/schemas/MemberBrief'
+          readOnly: true
+          nullable: true
+        text:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - author
+      - created_at
+      - id
+      - text
+    CommentRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+      required:
+      - text
+    Company:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        timezone:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - name
+      - timezone
+    CompleteRequest:
+      type: object
+      properties:
+        proof_text:
+          type: string
+          default: ''
+        proof_photo:
+          type: string
+          format: binary
+          nullable: true
+    Day:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        state:
+          allOf:
+          - $ref: '#/components/schemas/StateEnum'
+          description: |-
+            done: all finished that day; missed: something wasn't; free: nothing was due.
+
+            * `done` - done
+            * `missed` - missed
+            * `free` - free
+            * `today` - today
+      required:
+      - date
+      - state
+    LanguageEnum:
+      enum:
+      - uz
+      - ru
+      - en
+      type: string
+      description: |-
+        * `uz` - O'zbekcha
+        * `ru` - Русский
+        * `en` - English
+    Marked:
+      type: object
+      properties:
+        marked:
+          type: integer
+      required:
+      - marked
+    Me:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        telegram_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        telegram_username:
+          type: string
+          readOnly: true
+        first_name:
+          type: string
+          readOnly: true
+        last_name:
+          type: string
+          readOnly: true
+        phone:
+          type: string
+          readOnly: true
+          description: Only set from a contact the person shared in Telegram.
+        language:
+          $ref: '#/components/schemas/LanguageEnum'
+        memberships:
+          type: array
+          items:
+            $ref: '#/components/schemas/Membership'
+          readOnly: true
+      required:
+      - first_name
+      - id
+      - last_name
+      - memberships
+      - phone
+      - telegram_id
+      - telegram_username
+    MemberBrief:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+        position:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+      - position
+    MemberBriefRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        position:
+          type: string
+          nullable: true
+          minLength: 1
+      required:
+      - name
+      - position
+    Membership:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        company:
+          $ref: '#/components/schemas/Company'
+        status:
+          allOf:
+          - $ref: '#/components/schemas/MembershipStatusEnum'
+          readOnly: true
+        first_name:
+          type: string
+          readOnly: true
+        last_name:
+          type: string
+          readOnly: true
+        position:
+          allOf:
+          - $ref: '#/components/schemas/Position'
+          nullable: true
+        role:
+          type: string
+          nullable: true
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/PermissionsEnum'
+          readOnly: true
+        is_onboarded:
+          type: boolean
+        onboarded_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        decided_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        rejoin_available_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When a rejected person can ask again.
+      required:
+      - company
+      - decided_at
+      - first_name
+      - id
+      - is_onboarded
+      - last_name
+      - onboarded_at
+      - permissions
+      - position
+      - rejoin_available_at
+      - role
+      - status
+    MembershipStatusEnum:
+      enum:
+      - pending
+      - approved
+      - rejected
+      - blocked
+      - left
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `approved` - Approved
+        * `rejected` - Rejected
+        * `blocked` - Blocked
+        * `left` - Left
+    OnboardingRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        position_id:
+          type: integer
+          nullable: true
+          description: Required when the company has positions.
+      required:
+      - first_name
+      - last_name
+    PaginatedActivityList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Activity'
+    PaginatedCommentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+    PaginatedTaskList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+    PatchedMeRequest:
+      type: object
+      properties:
+        language:
+          $ref: '#/components/schemas/LanguageEnum'
+    PatchedTaskTemplateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        weekdays:
+          type: array
+          items:
+            $ref: '#/components/schemas/WeekdaysEnum'
+        due_time:
+          type: string
+          format: time
+          description: In the company's timezone.
+        assignee_ids:
+          type: array
+          items:
+            type: integer
+        position_ids:
+          type: array
+          items:
+            type: integer
+        proof:
+          $ref: '#/components/schemas/ProofEnum'
+        needs_confirmation:
+          type: boolean
+        is_active:
+          type: boolean
+    PatchedTaskUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        due_at:
+          type: string
+          format: date-time
+          nullable: true
+        priority:
+          $ref: '#/components/schemas/PriorityEnum'
+    PermissionsEnum:
+      enum:
+      - members.view
+      - members.approve
+      - members.manage
+      - roles.manage
+      - positions.manage
+      - tasks.view_all
+      - tasks.assign
+      - tasks.templates
+      - tasks.confirm
+      - reminders.configure
+      - groups.manage
+      - reports.view
+      type: string
+      description: |-
+        * `members.view` - View members
+        * `members.approve` - Approve or reject join requests
+        * `members.manage` - Edit and block members, change their roles
+        * `roles.manage` - Manage access roles
+        * `positions.manage` - Manage positions
+        * `tasks.view_all` - View everyone's tasks
+        * `tasks.assign` - Assign tasks to others
+        * `tasks.templates` - Manage daily task templates
+        * `tasks.confirm` - Confirm completed tasks
+        * `reminders.configure` - Configure reminders
+        * `groups.manage` - Connect and configure groups
+        * `reports.view` - View reports and statistics
+    Position:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+      required:
+      - id
+      - name
+    PriorityEnum:
+      enum:
+      - low
+      - normal
+      - high
+      - urgent
+      type: string
+      description: |-
+        * `low` - Low
+        * `normal` - Normal
+        * `high` - High
+        * `urgent` - Urgent
+    ProofEnum:
+      enum:
+      - none
+      - photo
+      - text
+      - any
+      type: string
+      description: |-
+        * `none` - Not needed
+        * `photo` - Photo
+        * `text` - Text report
+        * `any` - Photo or text report
+    RepeatEnum:
+      enum:
+      - none
+      - daily
+      - weekdays
+      - weekly
+      type: string
+      description: |-
+        * `none` - Doesn't repeat
+        * `daily` - Every day
+        * `weekdays` - Weekdays
+        * `weekly` - Every week
+    ReturnRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+      required:
+      - reason
+    StateEnum:
+      enum:
+      - done
+      - missed
+      - free
+      - today
+      type: string
+      description: |-
+        * `done` - done
+        * `missed` - missed
+        * `free` - free
+        * `today` - today
+    Summary:
+      type: object
+      properties:
+        today_total:
+          type: integer
+        today_done:
+          type: integer
+        late:
+          type: integer
+        streak_days:
+          type: integer
+        week:
+          type: array
+          items:
+            $ref: '#/components/schemas/Day'
+          description: The last seven days, oldest first.
+        month_done:
+          type: integer
+          description: Tasks finished this calendar month.
+        month_on_time_percent:
+          type: integer
+          nullable: true
+          description: Of this month's tasks with a deadline, finished in time.
+        unread_activity:
+          type: integer
+        awaiting_review:
+          type: integer
+      required:
+      - awaiting_review
+      - late
+      - month_done
+      - month_on_time_percent
+      - streak_days
+      - today_done
+      - today_total
+      - unread_activity
+      - week
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/TaskKindEnum'
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/TaskStatusEnum'
+          readOnly: true
+        priority:
+          allOf:
+          - $ref: '#/components/schemas/PriorityEnum'
+          readOnly: true
+        due_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        for_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+          description: 'For daily tasks: the local day it belongs to.'
+        proof:
+          allOf:
+          - $ref: '#/components/schemas/ProofEnum'
+          readOnly: true
+        needs_confirmation:
+          type: boolean
+          readOnly: true
+        proof_text:
+          type: string
+          readOnly: true
+        proof_photo:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+        assignee:
+          $ref: '#/components/schemas/MemberBrief'
+        created_by:
+          allOf:
+          - $ref: '#/components/schemas/MemberBrief'
+          nullable: true
+        checklist:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChecklistItem'
+        repeat_weekdays:
+          type: array
+          items:
+            type: integer
+          nullable: true
+          readOnly: true
+        started_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        confirmed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        confirmed_by:
+          allOf:
+          - $ref: '#/components/schemas/MemberBrief'
+          nullable: true
+        is_overdue:
+          type: boolean
+          readOnly: true
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActionsEnum'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - actions
+      - assignee
+      - checklist
+      - completed_at
+      - confirmed_at
+      - confirmed_by
+      - created_at
+      - created_by
+      - description
+      - due_at
+      - for_date
+      - id
+      - is_overdue
+      - kind
+      - needs_confirmation
+      - priority
+      - proof
+      - proof_photo
+      - proof_text
+      - repeat_weekdays
+      - started_at
+      - status
+      - title
+    TaskBrief:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/TaskStatusEnum'
+          readOnly: true
+      required:
+      - id
+      - status
+      - title
+    TaskCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          default: ''
+        assignee_id:
+          type: integer
+          nullable: true
+          description: Leave empty for a personal task.
+        due_at:
+          type: string
+          format: date-time
+          nullable: true
+        priority:
+          allOf:
+          - $ref: '#/components/schemas/PriorityEnum'
+          default: normal
+        proof:
+          allOf:
+          - $ref: '#/components/schemas/ProofEnum'
+          default: none
+        needs_confirmation:
+          type: boolean
+          default: false
+        checklist:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 200
+          maxItems: 50
+        repeat:
+          allOf:
+          - $ref: '#/components/schemas/RepeatEnum'
+          default: none
+          description: |-
+            Personal tasks only; needs due_at.
+
+            * `none` - Doesn't repeat
+            * `daily` - Every day
+            * `weekdays` - Weekdays
+            * `weekly` - Every week
+      required:
+      - title
+    TaskKindEnum:
+      enum:
+      - daily
+      - assigned
+      - personal
+      type: string
+      description: |-
+        * `daily` - Daily
+        * `assigned` - Assigned
+        * `personal` - Personal
+    TaskStatusEnum:
+      enum:
+      - todo
+      - in_progress
+      - review
+      - returned
+      - done
+      - cancelled
+      type: string
+      description: |-
+        * `todo` - To do
+        * `in_progress` - In progress
+        * `review` - Waiting for confirmation
+        * `returned` - Sent back
+        * `done` - Done
+        * `cancelled` - Cancelled
+    TaskTemplate:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        weekdays:
+          type: array
+          items:
+            $ref: '#/components/schemas/WeekdaysEnum'
+        due_time:
+          type: string
+          format: time
+          description: In the company's timezone.
+        assignee_ids:
+          type: array
+          items:
+            type: integer
+        position_ids:
+          type: array
+          items:
+            type: integer
+        proof:
+          $ref: '#/components/schemas/ProofEnum'
+        needs_confirmation:
+          type: boolean
+        is_active:
+          type: boolean
+      required:
+      - due_time
+      - id
+      - title
+    TaskTemplateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+        weekdays:
+          type: array
+          items:
+            $ref: '#/components/schemas/WeekdaysEnum'
+        due_time:
+          type: string
+          format: time
+          description: In the company's timezone.
+        assignee_ids:
+          type: array
+          items:
+            type: integer
+        position_ids:
+          type: array
+          items:
+            type: integer
+        proof:
+          $ref: '#/components/schemas/ProofEnum'
+        needs_confirmation:
+          type: boolean
+        is_active:
+          type: boolean
+      required:
+      - due_time
+      - title
+    TelegramAuthRequest:
+      type: object
+      properties:
+        init_data:
+          type: string
+          minLength: 1
+          description: Telegram.WebApp.initData, exactly as received.
+      required:
+      - init_data
+    TokenPair:
+      type: object
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+      required:
+      - access
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - refresh
+    WeekdaysEnum:
+      enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      type: integer
+      description: |-
+        * `0` - Monday
+        * `1` - Tuesday
+        * `2` - Wednesday
+        * `3` - Thursday
+        * `4` - Friday
+        * `5` - Saturday
+        * `6` - Sunday
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

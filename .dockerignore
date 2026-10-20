@@ -10,3 +10,5 @@ backend/staticfiles
 backend/media
 **/logs/*.log
 docs
+miniapp/node_modules
+miniapp/dist

@@ -4,11 +4,13 @@ SECRET_KEY = env("DJANGO_SECRET_KEY")
 DEBUG = False
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS")
 
-# WhiteNoise serves the collected static files (admin, Swagger UI) right after SecurityMiddleware.
+# WhiteNoise serves the collected static files (admin, Swagger UI) and the built mini app
+# at /app/, right after SecurityMiddleware.
 MIDDLEWARE.insert(
     MIDDLEWARE.index("django.middleware.security.SecurityMiddleware") + 1,
-    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "apps.core.miniapp.MiniAppWhiteNoiseMiddleware",
 )
+WHITENOISE_INDEX_FILE = True
 
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},

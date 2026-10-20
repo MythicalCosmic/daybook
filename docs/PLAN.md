@@ -38,18 +38,18 @@ Employees choose their role during onboarding. If that choice also grants permis
 
 ## 3. Core flows
 
-### 3.1 Joining
+### 3.1 Joining (follows the mini app design)
 
-1. Each company has an invite deep link `t.me/<employee_bot>?start=c_<code>` (+ QR). Without a code, the bot asks for the company code.
-2. `/start` → backend creates `Membership(status=pending)` → bot: "Request sent, please wait."
-3. Approvers get the user's info with **Approve / Reject** buttons. For now approvers = platform super-admins (you) + members with `members.approve`, notified through the employee bot. Later: through the owner bot.
-4. Approved → bot sends an **Open app** WebApp button. Rejected → polite message, can retry after a configurable cooldown. Blocked → ignored.
-5. A gate middleware drops every other update until the member is approved **and** onboarded.
+1. Each company has an invite deep link `t.me/<employee_bot>?start=c_<code>`. A bad or expired link is explained.
+2. `/start` with the link → backend creates `Membership(status=pending)` → bot: "You're joining <company>" with a **Create account** button that opens the mini app.
+3. In the app: name → phone shared from Telegram (verified, belongs to that account) → position. Submitting sends the request.
+4. Approvers (platform super-admins and members with `members.approve`) get the name, position and phone with **Approve / Reject** buttons, through the employee bot for now and the owner bot later. The app shows "Waiting for approval" and unlocks the moment it's approved.
+5. Rejected → told when they can ask again (cooldown per company). Blocked → ignored. Someone returning with details on file goes straight back to the approvers.
+6. A gate middleware drops every other update until the member is approved **and** registered.
 
-### 3.2 Onboarding (mini app)
+### 3.2 Sign-in
 
-- Phone via Telegram contact sharing (verified, belongs to that account), first name, last name, position.
-- `Membership.onboarded_at` is set → bot shows the main menu.
+No passwords: Telegram signs the mini app's launch data, the backend verifies it and issues a JWT.
 
 ### 3.3 Tasks
 
@@ -170,6 +170,7 @@ HR later extends `Membership` (or a 1-1 `EmployeeProfile`) — nothing here bloc
 | M2 ✅ | Access flow (done 2026-10-19) | `/start` with deep link → pending → approver gets Approve/Reject → approved user unlocked; gate middleware blocks everything else; rejection cooldown per company; approvals from the admin notify people too |
 | M3 ✅ | Mini app auth + onboarding (done 2026-10-19) | `initData` validation, JWT, `/me`, positions and onboarding endpoints, verified phone from Telegram contact sharing, Swagger published for you |
 | M4 ✅ | Tasks core (done 2026-10-19) | personal + assigned + daily templates (generated every 10 min, idempotent); checklists, comments, sent back with a reason; proof photo/text; confirmation flow; bot: My tasks, task cards, proof collection, New task with deadline presets, confirm/send back; task API for the mini app with per-task allowed actions; notifications (with the proof photo) |
+| MA ✅ | Employee mini app (done 2026-10-20) | React + TypeScript app from the Daybook design: create account, waiting room, home (progress, streak, late, up next, feed), tasks (daily/assigned/mine/to check), task detail (checklist, comments, proof photo/note, confirm/send back), activity, profile (streak week, month stats, language, theme), dark mode, uz/ru/en; served by Django at /app/ |
 | M5 | Reminder engine | policies, repeat every N min, escalation, quiet hours, snooze, templates, logs, blocked-bot detection — all configurable in admin |
 | M6 | Groups | `/connect` flow, subscriptions, event fan-out, morning/evening summaries, throttled outbox |
 | M7 | Polish | KPIs/stats, i18n (uz/ru/en), audit log, chosen extras from §4, deploy |

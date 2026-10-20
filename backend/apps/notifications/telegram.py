@@ -38,6 +38,9 @@ def send_message(
     photo: str | None = None,
 ) -> None:
     """Send `text`, as the caption of `photo` (a storage path) when there is one."""
+    if settings.TELEGRAM_DRY_RUN:
+        logger.info("Dry run, not sent to %s via the %s bot: %s", chat_id, bot, text)
+        return
     token = _token(BotName(bot))
     if not token:
         logger.warning("No token for the %s bot; dropping a message to %s", bot, chat_id)

@@ -86,8 +86,10 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+# The built mini app (miniapp/dist), served at /app/ in production.
+MINIAPP_DIST = Path(env("MINIAPP_DIST", default=str(ROOT_DIR / "miniapp" / "dist")))
 MEDIA_URL = "media/"
-MEDIA_ROOT = env.path("MEDIA_ROOT", default=BASE_DIR / "media")
+MEDIA_ROOT = Path(env("MEDIA_ROOT", default=str(BASE_DIR / "media")))
 
 REDIS_URL = env("REDIS_URL")
 
@@ -117,8 +119,7 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 50,
+    "DEFAULT_PAGINATION_CLASS": "apps.core.api.Pagination",
     "EXCEPTION_HANDLER": "apps.core.api.exception_handler",
     "DEFAULT_THROTTLE_RATES": {"telegram_auth": "30/min"},
 }
@@ -161,6 +162,8 @@ EMPLOYEE_MINIAPP_URL = env("EMPLOYEE_MINIAPP_URL", default="")
 # How old mini app launch data may be before login is refused (seconds).
 MINIAPP_INIT_DATA_MAX_AGE = env.int("MINIAPP_INIT_DATA_MAX_AGE", default=24 * 60 * 60)
 BOT_FSM_REDIS_URL = env("BOT_FSM_REDIS_URL", default="")
+# Log outgoing bot messages instead of sending them (local runs with a fake token).
+TELEGRAM_DRY_RUN = env.bool("TELEGRAM_DRY_RUN", default=False)
 PLATFORM_ADMIN_TG_IDS = env.list("PLATFORM_ADMIN_TG_IDS", cast=int, default=[])
 
 LOGGING = {

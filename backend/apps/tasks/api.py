@@ -31,11 +31,13 @@ class ChecklistItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChecklistItem
         fields = ("id", "text", "is_done")
+        read_only_fields = fields
 
 
 class TaskSerializer(serializers.ModelSerializer):
     assignee = MemberBriefSerializer()
     created_by = MemberBriefSerializer(allow_null=True)
+    confirmed_by = MemberBriefSerializer(allow_null=True)
     checklist = ChecklistItemSerializer(many=True)
     repeat_weekdays = serializers.SerializerMethodField()
     is_overdue = serializers.SerializerMethodField()
@@ -63,6 +65,7 @@ class TaskSerializer(serializers.ModelSerializer):
             "started_at",
             "completed_at",
             "confirmed_at",
+            "confirmed_by",
             "is_overdue",
             "actions",
             "created_at",
@@ -157,6 +160,8 @@ class TaskViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
         scope = self.request.query_params.get("scope")
         if scope == "today":
             tasks = queries.todays_tasks(member, timezone.now())
+        elif scope == "board":
+            tasks = queries.board_tasks(member, timezone.now())
         elif scope == "review":
             tasks = queries.awaiting_review_by(member)
         else:
@@ -178,8 +183,11 @@ class TaskViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
         parameters=[
             OpenApiParameter(
                 "scope",
-                enum=["today", "mine", "created", "review"],
-                description="today: open tasks due today or late; review: waiting for you.",
+                enum=["today", "board", "mine", "created", "review"],
+                description=(
+                    "today: open tasks due today or late; board: your open tasks plus "
+                    "today's finished; review: waiting for you to check."
+                ),
             ),
             OpenApiParameter("status", description="Comma-separated statuses."),
             OpenApiParameter("kind", enum=list(Task.Kind.values)),
@@ -356,11 +364,24 @@ class TaskTemplateViewSet(viewsets.ModelViewSet):
         serializer.save(company=self.membership.company, created_by=self.membership)
 
 
+class DaySerializer(serializers.Serializer):
+    date = serializers.DateField()
+    state = serializers.ChoiceField(
+        ["done", "missed", "free", "today"],
+        help_text="done: all finished that day; missed: something wasn't; free: nothing was due.",
+    )
+
+
 class SummarySerializer(serializers.Serializer):
     today_total = serializers.IntegerField()
     today_done = serializers.IntegerField()
     late = serializers.IntegerField()
     streak_days = serializers.IntegerField()
+    week = DaySerializer(many=True, help_text="The last seven days, oldest first.")
+    month_done = serializers.IntegerField(help_text="Tasks finished this calendar month.")
+    month_on_time_percent = serializers.IntegerField(
+        allow_null=True, help_text="Of this month's tasks with a deadline, finished in time."
+    )
     unread_activity = serializers.IntegerField()
     awaiting_review = serializers.IntegerField()
 
@@ -379,6 +400,7 @@ class TaskBriefSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
         fields = ("id", "title", "status")
+        read_only_fields = fields
 
 
 class ActivitySerializer(serializers.ModelSerializer):
@@ -389,6 +411,7 @@ class ActivitySerializer(serializers.ModelSerializer):
     class Meta:
         model = Activity
         fields = ("id", "kind", "task", "actor", "text", "is_read", "created_at")
+        read_only_fields = fields
 
     def get_is_read(self, activity: Activity) -> bool:
         return activity.read_at is not None

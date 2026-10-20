@@ -1,3 +1,12 @@
+FROM node:22-alpine AS miniapp
+
+WORKDIR /miniapp
+COPY miniapp/package.json miniapp/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY miniapp ./
+RUN npm run build
+
+
 FROM python:3.14-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -17,6 +26,9 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 COPY backend ./backend
 COPY employee_bot ./employee_bot
+COPY --from=miniapp /miniapp/dist ./miniapp/dist
+# Pre-compressed copies next to each file; WhiteNoise serves them to browsers that accept them.
+RUN python -m whitenoise.compress miniapp/dist
 
 WORKDIR /app/backend
 

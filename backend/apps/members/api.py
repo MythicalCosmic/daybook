@@ -16,12 +16,14 @@ class CompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = Company
         fields = ("id", "name", "timezone")
+        read_only_fields = fields
 
 
 class PositionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Position
         fields = ("id", "name")
+        read_only_fields = fields
 
 
 class MembershipSerializer(serializers.ModelSerializer):
@@ -30,6 +32,9 @@ class MembershipSerializer(serializers.ModelSerializer):
     role = serializers.CharField(source="role.name", allow_null=True)
     permissions = serializers.SerializerMethodField()
     is_onboarded = serializers.BooleanField()
+    rejoin_available_at = serializers.DateTimeField(
+        allow_null=True, help_text="When a rejected person can ask again."
+    )
 
     class Meta:
         model = Membership
@@ -45,7 +50,9 @@ class MembershipSerializer(serializers.ModelSerializer):
             "is_onboarded",
             "onboarded_at",
             "decided_at",
+            "rejoin_available_at",
         )
+        read_only_fields = fields
 
     @extend_schema_field(serializers.ListField(child=serializers.ChoiceField(Perm.choices)))
     def get_permissions(self, membership: Membership) -> list[str]:
@@ -108,6 +115,7 @@ class MemberBriefSerializer(serializers.ModelSerializer):
     class Meta:
         model = Membership
         fields = ("id", "name", "position")
+        read_only_fields = fields
 
 
 class CanSeeMembers(BasePermission):
