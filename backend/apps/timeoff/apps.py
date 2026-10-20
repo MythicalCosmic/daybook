@@ -1,5 +1,5 @@
-from django.apps import AppConfig
+from apps.core import appconfig
 
 
-class TimeOffConfig(AppConfig):
+class TimeOffConfig(appconfig.AppConfig):
     name = "apps.timeoff"

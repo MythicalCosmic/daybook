@@ -22,6 +22,18 @@ class User(AbstractUser):
         blank=True,
         help_text=_("When Telegram said this person blocked the employee bot."),
     )
+    owner_bot_started_at = models.DateTimeField(
+        null=True, blank=True, help_text=_("When this person first started the owner bot.")
+    )
+    owner_bot_blocked_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("When Telegram said this person blocked the owner bot."),
+    )
+    photo = models.ImageField(upload_to="avatars/", blank=True)
+    photo_checked_at = models.DateTimeField(
+        null=True, blank=True, help_text=_("When the Telegram profile photo was last fetched.")
+    )
 
     def __str__(self):
         if full_name := self.get_full_name():

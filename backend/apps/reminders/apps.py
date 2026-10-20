@@ -1,5 +1,5 @@
-from django.apps import AppConfig
+from apps.core import appconfig
 
 
-class RemindersConfig(AppConfig):
+class RemindersConfig(appconfig.AppConfig):
     name = "apps.reminders"

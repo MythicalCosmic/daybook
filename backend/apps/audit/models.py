@@ -43,15 +43,25 @@ class AuditLog(TenantModel):
         related_name="+",
         help_text=_("Empty when the system did it."),
     )
-    action = models.CharField(max_length=32, choices=Action.choices)
+    # Codes are registered per app (apps.audit.registry); Action holds the original ones.
+    action = models.CharField(max_length=48)
     target_type = models.CharField(max_length=32)
     target_id = models.PositiveBigIntegerField(null=True, blank=True)
     target = models.CharField(max_length=255, help_text=_("Its name at the time."))
     details = models.JSONField(default=dict, blank=True)
+    required_perm = models.CharField(
+        max_length=32,
+        blank=True,
+        help_text=_("Only people holding this permission see the row (it touched secret fields)."),
+    )
 
     class Meta:
         ordering = ["-created_at"]
         indexes = [models.Index(fields=["company", "-created_at"])]
 
     def __str__(self):
-        return f"{self.get_action_display()}: {self.target}"
+        return f"{self.action_label}: {self.target}"
+
+    @property
+    def action_label(self) -> str:
+        return str(dict(self.Action.choices).get(self.action, self.action))

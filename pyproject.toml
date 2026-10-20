@@ -6,23 +6,32 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "aiogram>=3.31.0",
+    "anthropic==1.11.0",
     "celery[redis]>=5.6.3",
+    "cryptography==50.0.2",
     "django>=6.1.2",
     "django-cors-headers>=4.9.0",
     "django-environ>=0.14.0",
+    "django-filter==26.2",
     "django-unfold>=0.110.0",
     "djangorestframework>=3.18.3",
     "djangorestframework-simplejwt>=5.5.1",
     "drf-spectacular>=0.30.0",
     "gunicorn>=23.0.0",
+    "openpyxl==3.1.5",
+    "pillow==12.3.0",
+    "pillow-heif==1.8.0",
     "psycopg[binary]>=3.3.6",
     "redis>=8.1.0",
+    "uvicorn==0.54.0",
+    "weasyprint==70.0",
     "whitenoise>=6.9.0",
 ]
 
 [dependency-groups]
 dev = [
     "factory-boy>=3.3.3",
+    "fakeredis==2.39.0",
     "polib>=1.2.0",
     "pytest>=8.4.0",
     "pytest-asyncio>=1.2.0",
@@ -50,12 +59,12 @@ ignore = [
 "employee_bot/main.py" = ["E402"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["apps", "bot", "config", "core", "main", "utils"]
+known-first-party = ["apps", "bot", "config", "core", "main", "ownerbot", "utils"]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings.test"
-pythonpath = ["backend", "employee_bot"]
-testpaths = ["backend", "employee_bot/tests"]
+pythonpath = ["backend", "employee_bot", "owner_bot"]
+testpaths = ["backend", "employee_bot/tests", "owner_bot/ownerbot/tests"]
 python_files = ["test_*.py"]
 addopts = "-ra --strict-markers"
 asyncio_mode = "auto"

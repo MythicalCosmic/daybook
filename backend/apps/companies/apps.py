@@ -1,5 +1,5 @@
-from django.apps import AppConfig
+from apps.core import appconfig
 
 
-class CompaniesConfig(AppConfig):
+class CompaniesConfig(appconfig.AppConfig):
     name = "apps.companies"

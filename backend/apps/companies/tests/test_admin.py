@@ -24,7 +24,7 @@ def test_admin_creates_company_with_default_roles(admin_client):
 
     assert response.status_code == 302
     company = Company.objects.get(slug="acme")
-    assert company.accessroles.count() == 3
+    assert company.accessroles.count() == 5
 
 
 @pytest.mark.parametrize(

@@ -14,29 +14,9 @@ from apps.groups import tasks as group_jobs
 from apps.members import tasks
 from apps.members.callbacks import JoinAction
 from apps.members.models import AccessRole, Membership, Position
-from apps.members.permissions import Perm
+from apps.members.permissions import DEFAULT_ROLES, Perm
 from apps.tasks import services as task_services
 from apps.timeoff.models import TimeOff
-
-DEFAULT_ROLES = (
-    {"name": "Owner", "is_owner": True},
-    {
-        "name": "Manager",
-        "permissions": [
-            Perm.MEMBERS_VIEW,
-            Perm.MEMBERS_APPROVE,
-            Perm.TASKS_VIEW_ALL,
-            Perm.TASKS_ASSIGN,
-            Perm.TASKS_TEMPLATES,
-            Perm.TASKS_CONFIRM,
-            Perm.GROUPS_MANAGE,
-            Perm.REPORTS_VIEW,
-            Perm.TIME_OFF_APPROVE,
-            Perm.ANNOUNCE,
-        ],
-    },
-    {"name": "Employee", "is_default": True},
-)
 
 
 def create_default_roles(company: Company) -> None:

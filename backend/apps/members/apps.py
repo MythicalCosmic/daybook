@@ -1,5 +1,5 @@
-from django.apps import AppConfig
+from apps.core import appconfig
 
 
-class MembersConfig(AppConfig):
+class MembersConfig(appconfig.AppConfig):
     name = "apps.members"

@@ -1,5 +1,5 @@
-from django.apps import AppConfig
+from apps.core import appconfig
 
 
-class NotificationsConfig(AppConfig):
+class NotificationsConfig(appconfig.AppConfig):
     name = "apps.notifications"

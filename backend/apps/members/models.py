@@ -7,7 +7,7 @@ from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
-from apps.companies.models import TenantModel
+from apps.companies.models import Branch, TenantModel
 from apps.members.permissions import Perm
 
 
@@ -71,6 +71,8 @@ class Membership(TenantModel):
         REJECTED = "rejected", _("Rejected")
         BLOCKED = "blocked", _("Blocked")
         LEFT = "left", _("Left")
+        # Access paused (discipline, investigation); the record and history stay.
+        SUSPENDED = "suspended", _("Suspended")
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="memberships"
@@ -93,6 +95,20 @@ class Membership(TenantModel):
     )
     decided_at = models.DateTimeField(null=True, blank=True)
     onboarded_at = models.DateTimeField(null=True, blank=True)
+    branches = models.ManyToManyField(
+        Branch,
+        blank=True,
+        related_name="members",
+        help_text=_("Branches whose data they see (unless their role sees every branch)."),
+    )
+    home_branch = models.ForeignKey(
+        Branch,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="home_members",
+        help_text=_("Where they work. New tasks belong to this branch."),
+    )
 
     class Meta:
         constraints = [
@@ -120,11 +136,21 @@ class Membership(TenantModel):
         return self.decided_at + timedelta(hours=self.company.rejoin_cooldown_hours)
 
     def clean(self):
-        # Tenant guard: a role or position from another company must never be attached.
-        for field in ("role", "position"):
+        # Tenant guard: a role, position or branch from another company must never be attached.
+        for field in ("role", "position", "home_branch"):
             related = getattr(self, field)
             if related is not None and related.company_id != self.company_id:
                 raise ValidationError({field: _("Must belong to the same company.")})
+        if self.pk is not None:
+            self.clean_branches(list(self.branches.all()))
+
+    def clean_branches(self, branches: list[Branch]) -> None:
+        """Check a new set of branches (before it's saved) against the company and home branch."""
+        if any(branch.company_id != self.company_id for branch in branches):
+            raise ValidationError({"branches": _("Must belong to the same company.")})
+        ids = {branch.pk for branch in branches}
+        if ids and self.home_branch_id is not None and self.home_branch_id not in ids:
+            raise ValidationError({"home_branch": _("Must be one of the branches they work in.")})
 
     def has_perm(self, perm: Perm) -> bool:
         return (

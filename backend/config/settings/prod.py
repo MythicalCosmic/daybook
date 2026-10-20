@@ -4,11 +4,11 @@ SECRET_KEY = env("DJANGO_SECRET_KEY")
 DEBUG = False
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS")
 
-# WhiteNoise serves the collected static files (admin, Swagger UI) and the built mini app
-# at /app/, right after SecurityMiddleware.
+# WhiteNoise serves the collected static files (admin, Swagger UI), the built mini app
+# at /app/ and the dashboard's assets at /dashboard/assets/, right after SecurityMiddleware.
 MIDDLEWARE.insert(
     MIDDLEWARE.index("django.middleware.security.SecurityMiddleware") + 1,
-    "apps.core.miniapp.MiniAppWhiteNoiseMiddleware",
+    "apps.core.spa.SpaWhiteNoiseMiddleware",
 )
 WHITENOISE_INDEX_FILE = True
 
