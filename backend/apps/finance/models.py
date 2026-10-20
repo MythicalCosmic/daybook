@@ -267,8 +267,10 @@ class Category(TenantModel):
     )
     name = models.CharField(max_length=100)
     kind = models.CharField(max_length=8, choices=Kind.choices)
+    # RESTRICT, not PROTECT: a parent with children can't be deleted alone, but a company's
+    # whole tree can go in one delete (seed_demo --reset).
     parent = models.ForeignKey(
-        "self", on_delete=models.PROTECT, null=True, blank=True, related_name="children"
+        "self", on_delete=models.RESTRICT, null=True, blank=True, related_name="children"
     )
     system_code = models.CharField(
         max_length=32,
@@ -684,8 +686,9 @@ class Transaction(Voidable, TenantModel):
     transfer = models.ForeignKey(
         Transfer, on_delete=models.PROTECT, null=True, blank=True, related_name="transactions"
     )
+    # RESTRICT for the same reason as Category.parent.
     reverses = models.OneToOneField(
-        "self", on_delete=models.PROTECT, null=True, blank=True, related_name="reversed_by"
+        "self", on_delete=models.RESTRICT, null=True, blank=True, related_name="reversed_by"
     )
     is_contra = models.BooleanField(
         default=False, help_text=_("Reduces its own kind: a refund reduces income.")

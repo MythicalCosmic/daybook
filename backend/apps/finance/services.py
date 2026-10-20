@@ -607,12 +607,14 @@ def transfer(
 
 
 @transaction.atomic
-def void_transfer(moved: Transfer, *, by: Membership, reason: str) -> Transfer:
+def void_transfer(transfer: Transfer, *, by: Membership, reason: str) -> Transfer:
     """Void a transfer and every row it made, putting both balances back."""
     _need_actor(by)
     reason = _reason(reason)
     moved = (
-        Transfer.objects.select_for_update(of=("self",)).select_related("company").get(pk=moved.pk)
+        Transfer.objects.select_for_update(of=("self",))
+        .select_related("company")
+        .get(pk=transfer.pk)
     )
     company = moved.company
     user = _actor(company, by)
