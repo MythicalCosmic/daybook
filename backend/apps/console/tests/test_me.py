@@ -21,9 +21,17 @@ def test_me_lists_only_companies_with_dashboard_access(company, other_company, m
 
     assert response.status_code == 200
     assert [c["id"] for c in response.data["companies"]] == [company.pk]
-    assert response.data["id"] == owner.user_id
+    assert response.data["user"] == {
+        "id": owner.user_id,
+        "telegram_id": owner.user.telegram_id,
+        "first_name": owner.user.first_name,
+        "last_name": owner.user.last_name,
+        "full_name": str(owner.user),
+        "username": owner.user.telegram_username or "",
+        "photo_url": None,
+    }
     assert response.data["language"] == "en"
-    assert "is_platform_admin" not in response.data
+    assert set(response.data) == {"user", "language", "companies"}  # no platform-admin flag
 
 
 def test_a_company_entry_has_everything_the_shell_needs(company, member, owner_api):
@@ -43,7 +51,7 @@ def test_a_company_entry_has_everything_the_shell_needs(company, member, owner_a
         "timezone": "Asia/Tashkent",
         "base_currency": "UZS",
         "features": ["sales", "finance"],
-        "role": "Owner",
+        "role": {"id": owner.role_id, "name": "Owner"},
         "is_owner": True,
         "permissions": [perm.value for perm in Perm],
         "branch_scope": None,

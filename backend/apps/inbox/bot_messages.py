@@ -50,6 +50,9 @@ def notification(
 
 
 def outcome_line(label: str, actor_name: str) -> str:
+    """ "✅ Approved · Dilnoza", or just "✅ Approved" when the system decided."""
+    if not actor_name:
+        return _("✅ %(action)s") % {"action": label}
     return _("✅ %(action)s · %(name)s") % {"action": label, "name": actor_name}
 
 

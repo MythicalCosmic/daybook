@@ -193,6 +193,53 @@ def run_action(notification_id: int, key: str, *, by: Membership, reason: str = 
     return message
 
 
+def settle(
+    target: models.Model,
+    *,
+    outcome: Text,
+    by: Membership | None = None,
+    kind: str | None = None,
+) -> int:
+    """Close every open notification about `target` once it was decided outside `run_action`:
+    from a Needs you item, by another approver on the module's own endpoint, or by a job.
+
+    Their buttons go, in the dashboard and in Telegram, where each copy now shows `outcome`
+    (lazy text or `(Membership) -> str`, in the recipient's language) and who decided (`by`;
+    None for the system). Call it inside the deciding transaction, from the module's service,
+    so the decision and the closed notifications commit together. `kind` narrows it to one
+    notification kind. Returns how many notifications it closed."""
+    now = timezone.now()
+    with transaction.atomic():
+        rows = Notification.objects.filter(
+            target_type=target._meta.model_name[:32], target_id=target.pk, acted_at__isnull=True
+        )
+        company_id = getattr(target, "company_id", None)
+        if company_id is not None:
+            rows = rows.filter(company_id=company_id)
+        if kind is not None:
+            rows = rows.filter(kind=kind)
+        # Locked in id order, like run_action, so the two never deadlock.
+        locked = list(
+            rows.select_for_update().order_by("pk").values_list("pk", "company_id", "in_app")
+        )
+        if not locked:
+            return 0
+        handled = [pk for pk, _company, _in_app in locked]
+        Notification.objects.filter(pk__in=handled).update(
+            acted_at=now, acted_by=by.user if by is not None else None, updated_at=now
+        )
+    companies = {company for _pk, company, in_app in locked if in_app}
+    actor_name = str(by) if by is not None else ""
+    transaction.on_commit(
+        lambda: delivery.edit_after_action(
+            handled, key="", actor_name=actor_name, messages={}, outcome=outcome
+        )
+    )
+    for company in companies:
+        transaction.on_commit(lambda cid=company: pulse.bump(cid, UNREAD_PULSE))
+    return len(handled)
+
+
 def _lock_copies(notification_id: int) -> Notification:
     """Lock the notification and every copy of it (same kind and target), in id order, so two
     approvers pressing at the same moment run the handler once; return it, freshly read."""

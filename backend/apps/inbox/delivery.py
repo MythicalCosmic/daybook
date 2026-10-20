@@ -12,6 +12,7 @@ import logging
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from django.conf import settings
 from django.utils import timezone, translation
+from django.utils.functional import Promise
 
 from apps.accounts.models import User
 from apps.inbox import bot_messages, registry
@@ -87,12 +88,18 @@ def deliver(notification_id: int, *, photo: str | None = None, photo_storage: st
 
 
 def edit_after_action(
-    notification_ids: list[int], *, key: str, actor_name: str, messages: dict[int, str]
+    notification_ids: list[int],
+    *,
+    key: str,
+    actor_name: str,
+    messages: dict[int, str],
+    outcome=None,
 ) -> None:
     """Replace the buttons of the Telegram copies with who did what.
 
-    `messages` maps a notification id to its outcome text; the others show the label of action
-    `key` in their own recipient's language."""
+    `messages` maps a notification id to its finished outcome text. The others show `outcome`
+    when given (lazy text or `(Membership) -> str`, as `inbox.services.settle` passes it),
+    else the label of action `key`, in their own recipient's language."""
     items = Notification.objects.select_related("recipient__user").filter(
         pk__in=notification_ids, telegram_message_id__isnull=False
     )
@@ -101,10 +108,9 @@ def edit_after_action(
         kind = registry.KINDS.get(item.kind)
         audience = kind.audience if kind else "employee"
         with translation.override(user.language):
-            outcome = messages.get(item.pk) or bot_messages.outcome_line(
-                _label(item, key), actor_name
-            )
-            text, markup = bot_messages.notification(item, audience=audience, outcome=outcome)
+            label = _label(item, key) if outcome is None else _render(outcome, item.recipient)
+            line = messages.get(item.pk) or bot_messages.outcome_line(label, actor_name)
+            text, markup = bot_messages.notification(item, audience=audience, outcome=line)
         edit_telegram_message.delay(
             item.telegram_bot or BotName.EMPLOYEE,
             item.telegram_chat_id,
@@ -112,6 +118,12 @@ def edit_after_action(
             text,
             serialize_markup(markup),
         )
+
+
+def _render(text, person: Membership) -> str:
+    if callable(text) and not isinstance(text, Promise):
+        return str(text(person))
+    return str(text)
 
 
 def _label(item: Notification, key: str) -> str:

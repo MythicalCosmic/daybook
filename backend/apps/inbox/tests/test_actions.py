@@ -150,3 +150,69 @@ def test_from_the_bot_a_reason_is_asked_for_in_the_dashboard(approvers, claim, h
     result = services.act_from_bot(mine.pk, "reject", user=approvers[0].user)
 
     assert result.ok is False and "reason" in result.message
+
+
+# settle: decided somewhere else ---------------------------------------------------------
+
+
+def test_settle_closes_every_open_copy_and_edits_telegram(
+    company, member, approvers, claim, handlers, telegram, django_capture_on_commit_callbacks
+):
+    first, second = sent(approvers, claim, telegram)
+    other_claim = member(company)
+    [untouched] = notify(approvers[:1], "inbox.claim", title="Other", target=other_claim)
+    decider = member(company, "Manager")
+
+    with django_capture_on_commit_callbacks(execute=True):
+        closed = services.settle(claim, outcome=_("Approve"), by=decider)
+
+    assert closed == 2
+    for item in (first, second):
+        item.refresh_from_db()
+        assert item.acted_at is not None and item.acted_by == decider.user
+    untouched.refresh_from_db()
+    assert untouched.acted_at is None
+    edits = {edit["message_id"]: edit for edit in telegram.edited}
+    assert edits[first.telegram_message_id]["text"].endswith(f"✅ Approve · {decider}")
+    assert edits[second.telegram_message_id]["markup"] is None  # the buttons are gone
+    assert services.settle(claim, outcome="Approved", by=decider) == 0  # nothing left open
+    with pytest.raises(DomainError, match="already been handled"):
+        run_action(first.pk, "approve", by=approvers[0])
+    assert handlers.calls == []
+
+
+def test_settle_by_the_system_names_nobody_and_renders_per_recipient(
+    approvers, claim, handlers, telegram, django_capture_on_commit_callbacks
+):
+    first, second = sent(approvers, claim, telegram)
+
+    with django_capture_on_commit_callbacks(execute=True):
+        services.settle(claim, outcome=lambda person: f"Expired for {person.pk}")
+
+    first.refresh_from_db()
+    second.refresh_from_db()
+    edits = {edit["message_id"]: edit["text"] for edit in telegram.edited}
+    assert edits[first.telegram_message_id].endswith(f"✅ Expired for {approvers[0].pk}")
+    assert edits[second.telegram_message_id].endswith(f"✅ Expired for {approvers[1].pk}")
+    # nobody decided: no actor
+    assert first.acted_by is None
+
+
+def test_settle_can_be_narrowed_to_one_kind(approvers, claim, handlers, telegram):
+    [claim_note] = notify(approvers[:1], "inbox.claim", title="Claim", target=claim)
+    [digest] = notify(approvers[:1], "inbox.digest", title="Digest", target=claim)
+
+    assert services.settle(claim, outcome="Done", kind="inbox.claim") == 1
+
+    claim_note.refresh_from_db()
+    digest.refresh_from_db()
+    assert claim_note.acted_at is not None and digest.acted_at is None
+
+
+def test_a_settled_notification_is_never_sent_to_telegram(approvers, claim, handlers, telegram):
+    [item] = notify(approvers[:1], "inbox.claim", title="Claim", target=claim)
+    services.settle(claim, outcome="Done")
+
+    delivery.deliver(item.pk)
+
+    assert telegram.sent == []

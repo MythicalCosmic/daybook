@@ -88,7 +88,7 @@ def me_companies(user: User) -> list[dict]:
                 "timezone": company.timezone,
                 "base_currency": company.base_currency,
                 "features": list(company.features),
-                "role": member.role.name if member.role else None,
+                "role": {"id": member.role_id, "name": member.role.name} if member.role else None,
                 "is_owner": bool(member.role and member.role.is_owner),
                 "permissions": [perm.value for perm in Perm if member.has_perm(perm)],
                 "branch_scope": branch_scope,

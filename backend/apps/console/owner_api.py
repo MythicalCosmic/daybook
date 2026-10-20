@@ -48,6 +48,11 @@ class HomeBranchSerializer(serializers.Serializer):
     name = serializers.CharField()
 
 
+class RoleBriefSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+
+
 class OwnerMeCompanySerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
@@ -55,7 +60,7 @@ class OwnerMeCompanySerializer(serializers.Serializer):
     timezone = serializers.CharField()
     base_currency = serializers.CharField()
     features = serializers.ListField(child=serializers.CharField())
-    role = serializers.CharField(allow_null=True)
+    role = RoleBriefSerializer(allow_null=True)
     is_owner = serializers.BooleanField()
     permissions = serializers.ListField(child=serializers.ChoiceField(Perm.choices))
     branch_scope = serializers.ListField(
@@ -70,13 +75,18 @@ class OwnerMeCompanySerializer(serializers.Serializer):
     membership_id = serializers.IntegerField()
 
 
+class OwnerMeUserSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    telegram_id = serializers.IntegerField(allow_null=True)
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    full_name = serializers.CharField()
+    username = serializers.CharField(help_text="Telegram username, without @; may be empty.")
+    photo_url = serializers.CharField(allow_null=True)
+
+
 class OwnerMeSerializer(serializers.Serializer):
-    id = serializers.IntegerField(read_only=True)
-    telegram_id = serializers.IntegerField(read_only=True, allow_null=True)
-    telegram_username = serializers.CharField(read_only=True)
-    first_name = serializers.CharField(read_only=True)
-    last_name = serializers.CharField(read_only=True)
-    photo = serializers.CharField(read_only=True, allow_null=True)
+    user = OwnerMeUserSerializer(read_only=True)
     language = serializers.ChoiceField(Language.choices)
     companies = OwnerMeCompanySerializer(many=True, read_only=True)
 
@@ -103,12 +113,15 @@ class MeView(OwnerUserAPIView):
 
     def _me(self, user) -> dict:
         return {
-            "id": user.pk,
-            "telegram_id": user.telegram_id,
-            "telegram_username": user.telegram_username,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "photo": user.photo.url if user.photo else None,
+            "user": {
+                "id": user.pk,
+                "telegram_id": user.telegram_id,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "full_name": str(user),
+                "username": user.telegram_username or "",
+                "photo_url": user.photo.url if user.photo else None,
+            },
             "language": user.language,
             "companies": queries.me_companies(user),
         }
