@@ -14,6 +14,10 @@ const isolated: Array<[name: string, test: RegExp]> = [
   ["echarts", /node_modules[\\/](echarts|zrender|vue-echarts)[\\/]/],
   ["tiptap", /node_modules[\\/](@tiptap|prosemirror-[a-z-]+|orderedmap|rope-sequence|w3c-keyname|linkifyjs)[\\/]/],
   ["leaflet", /node_modules[\\/]leaflet[\\/]/],
+  // MarkdownView's renderer, shared by every page that shows Markdown.
+  ["markdown", /node_modules[\\/](markdown-it|mdurl|uc\.micro|linkify-it|punycode\.js|entities|dompurify)[\\/]/],
+  // The framework every page needs, in one chunk: split across shared chunks it compresses worse.
+  ["vendor", /node_modules[\\/](@vue|vue|vue-router|pinia|@tanstack[\\/](vue-query|query-core)|vue-i18n|@intlify)[\\/]/],
 ];
 
 export default defineConfig({

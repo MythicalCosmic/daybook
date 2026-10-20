@@ -4,13 +4,17 @@
  * off, sanitized with DOMPurify (lib/markdown.ts). Record references become chips that open the
  * record in the console: `member:17` → "Person #17", `[Dilnoza](member:17)` → "Dilnoza". `kinds`
  * adds record types; `labels` names bare references you already know ("member:17" → "Dilnoza").
+ * The renderer (markdown-it + DOMPurify, ~55 KB) loads on first use, so a page that shows Markdown
+ * doesn't carry it in its own chunk; until then the source shows as plain text.
  */
-import { computed } from "vue";
+import { computed, onMounted, shallowRef } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
-import { renderMarkdown } from "@/lib/markdown";
+import type { MarkdownOptions } from "@/lib/markdown";
 import { useCompanyStore } from "@/stores/company";
+
+type Renderer = (source: string, options: MarkdownOptions) => string;
 
 const props = withDefaults(
   defineProps<{
@@ -28,14 +32,20 @@ const { t, te } = useI18n();
 const router = useRouter();
 const company = useCompanyStore();
 
+const render = shallowRef<Renderer | null>(null);
+onMounted(async () => {
+  // The bundler caches the import, so every MarkdownView on the page shares one download.
+  render.value = (await import("@/lib/markdown")).renderMarkdown;
+});
+
 const html = computed(() =>
-  renderMarkdown(props.source ?? "", {
+  render.value?.(props.source ?? "", {
     base: company.currentId ? `/dashboard/c/${company.currentId}` : null,
     kinds: props.kinds,
     allowImages: props.allowImages,
     breaks: props.breaks,
     label: (kind, id) => props.labels?.[`${kind}:${id}`] ?? (te(`common.record.${kind}`) ? t(`common.record.${kind}`, { id }) : `${kind} #${id}`),
-  }),
+  }) ?? null,
 );
 
 /** Chips and internal links navigate inside the app instead of reloading the page. */
@@ -51,7 +61,8 @@ function onClick(event: MouseEvent): void {
 
 <template>
   <!-- v-html is safe here: renderMarkdown disables raw HTML and sanitizes the result with DOMPurify. -->
-  <div :class="['md-body', size === 'sm' && 'md-sm']" @click="onClick" v-html="html" />
+  <div v-if="html !== null" :class="['md-body', size === 'sm' && 'md-sm']" @click="onClick" v-html="html" />
+  <div v-else :class="['md-body whitespace-pre-line', size === 'sm' && 'md-sm']">{{ source }}</div>
 </template>
 
 <style scoped>

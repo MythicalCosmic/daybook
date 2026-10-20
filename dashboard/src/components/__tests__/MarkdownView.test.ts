@@ -1,5 +1,5 @@
 import { flushPromises, mount } from "@vue/test-utils";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import MarkdownView from "@/components/MarkdownView.vue";
 import { renderMarkdown } from "@/lib/markdown";
@@ -88,6 +88,10 @@ describe("MarkdownView", () => {
   it("navigates inside the app when a chip is clicked", async () => {
     const app = await testApp("/c/1/ai");
     const wrapper = mount(MarkdownView, { props: { source: "Late: task:345", labels: { "task:345": "Fridge check" } }, global: { plugins: app.plugins } });
+    // Plain text until the renderer chunk arrives.
+    expect(wrapper.text()).toBe("Late: task:345");
+    await vi.dynamicImportSettled();
+    await flushPromises();
     const chip = wrapper.get("a.md-chip");
     expect(chip.text()).toBe("Fridge check");
     await chip.trigger("click", { button: 0 });
