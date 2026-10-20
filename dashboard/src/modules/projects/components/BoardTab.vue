@@ -230,6 +230,7 @@ useHotkey("m", () => (mine.value = !mine.value), { description: "projects.keys.m
         :can-drop="canDrop"
         :disabled="!caps.edit_cards && !board.data.value.cards.some((c) => c.can_move)"
         height="calc(100dvh - 300px)"
+        :column-width="268"
         @move="onMove"
       >
         <template #card="{ item }">

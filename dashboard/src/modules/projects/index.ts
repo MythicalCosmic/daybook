@@ -2,9 +2,9 @@
  * Projects (plan §13.3, package T): the Trello part. Boards per project with lists, WIP limits and
  * drag and drop, a timeline, milestones, people and their load, time, money, updates and files;
  * a roadmap across projects. Entry from core/catalog.ts (work group, order 20, hotkey j).
- * Everything heavy loads lazily: this file is in the first bundle.
+ * Everything heavy loads lazily: this file is in the first bundle (two icons only).
  */
-import { FolderKanban, FolderPlus, GanttChart, Timer } from "@lucide/vue";
+import { FolderKanban, FolderPlus } from "@lucide/vue";
 import { defineAsyncComponent } from "vue";
 
 import { defineModule } from "@/core/modules";
@@ -37,14 +37,14 @@ export default defineModule({
     {
       id: "projects.roadmap",
       title: ctx.t("projects.cmd.roadmap"),
-      icon: GanttChart,
+      icon: FolderKanban,
       keywords: ["roadmap", "timeline", "gantt", "yo‘l xaritasi", "дорожная карта"],
       run: () => ctx.go("projects/roadmap"),
     },
     {
-      id: "projects.time",
+      id: "projects.mine",
       title: ctx.t("projects.cmd.mine"),
-      icon: Timer,
+      icon: FolderKanban,
       keywords: ["my projects", "mening loyihalarim", "мои проекты"],
       run: () => ctx.go("projects?mine=1"),
     },

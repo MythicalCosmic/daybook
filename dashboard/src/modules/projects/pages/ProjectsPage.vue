@@ -26,6 +26,7 @@ import type { TableColumn } from "@/components/table";
 import UiButton from "@/components/UiButton.vue";
 import { useDataTable } from "@/components/useDataTable";
 import { useHotkey } from "@/core/hotkeys";
+import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
@@ -44,6 +45,7 @@ const fmt = useFormat();
 const route = useRoute();
 const router = useRouter();
 const company = useCompanyStore();
+const { isPhone } = useBreakpoints();
 
 const view = useRouteState("view", rs.enum(["cards", "table"] as const, "cards"));
 const search = useRouteState("q", rs.string());
@@ -149,11 +151,17 @@ function open(row: ProjectItem): void {
       <template #actions>
         <SegmentedControl v-model="view" :options="viewOptions" size="sm" :aria-label="t('projects.view.label')" />
         <UiButton variant="ghost" :icon="GanttChart" :to="`/c/${company.currentId}/projects/roadmap`">{{ t("projects.nav.roadmap") }}</UiButton>
-        <UiButton v-if="canCreate" variant="primary" :icon="FolderPlus" kbd="N" @click="creating = true">{{ t("projects.new") }}</UiButton>
+        <UiButton v-if="canCreate" variant="primary" :icon="FolderPlus" :kbd="isPhone ? undefined : 'N'" @click="creating = true">{{ t("projects.new") }}</UiButton>
       </template>
     </PageHeader>
 
-    <KpiStrip :items="kpis" :loading="summary.isPending.value" class="mb-5" />
+    <KpiStrip :items="kpis" :loading="summary.isPending.value" class="mb-5 max-md:hidden" />
+    <div v-if="summary.data.value" class="no-scrollbar -mx-4 mb-4 flex gap-2 overflow-x-auto px-4 md:hidden" role="list" :aria-label="t('projects.title')">
+      <span v-for="item in kpis" :key="item.id" role="listitem" class="flex shrink-0 flex-col rounded-[12px] border border-line bg-surface px-3 py-2">
+        <span class="text-[11px] font-medium text-muted">{{ item.label }}</span>
+        <span class="text-md font-semibold tabular-nums text-fg">{{ item.format === "money" ? fmt.money(String(item.value ?? "0"), item.currency, { compact: true }) : item.value }}</span>
+      </span>
+    </div>
 
     <FilterBar v-model="filters.values.value" v-model:search="search" :defs="filterDefs" searchable :search-placeholder="t('projects.filter.search')" class="mb-4" />
 
