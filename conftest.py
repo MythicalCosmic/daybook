@@ -3,10 +3,15 @@ from datetime import timedelta
 import pytest
 from asgiref.sync import sync_to_async
 from django.utils import timezone
+from rest_framework.test import APIClient
+from rest_framework_simplejwt.tokens import AccessToken
 
+from apps.companies.models import Branch
 from apps.companies.tests.factories import CompanyFactory
-from apps.members.models import AccessRole, Membership
+from apps.core import redis as core_redis
+from apps.members.models import AccessRole, Membership, Position
 from apps.members.tests.factories import MembershipFactory
+from apps.signin.tokens import OwnerAccessToken
 
 
 @pytest.fixture
@@ -51,12 +56,100 @@ def media_root(settings, tmp_path):
     settings.MEDIA_ROOT = tmp_path / "media"
 
 
+@pytest.fixture(autouse=True)
+def private_media(settings, tmp_path):
+    """Private files (receipts, documents, exports) land in a throwaway directory too."""
+    settings.PRIVATE_MEDIA_ROOT = tmp_path / "private_media"
+    return settings.PRIVATE_MEDIA_ROOT
+
+
+@pytest.fixture
+def api_as(db):
+    """`api_as(member)`: a DRF client signed in to the mini app API as that member's user."""
+
+    def make(membership: Membership) -> APIClient:
+        client = APIClient()
+        token = AccessToken.for_user(membership.user)
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        return client
+
+    return make
+
+
+@pytest.fixture
+def owner_api(db):
+    """`owner_api(member)`: a DRF client with an owner dashboard token (`aud="dashboard"`)."""
+
+    def make(membership: Membership) -> APIClient:
+        client = APIClient()
+        token = OwnerAccessToken.for_user(membership.user)
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        return client
+
+    return make
+
+
+# The people every module's demo.py gets (docs/PLAN-OWNER.md §2.3 rule 22), as seed_demo makes
+# them: key -> (first name, last name, role, position).
+DEMO_PEOPLE = {
+    "owner": ("Dilnoza", "Karimova", "Owner", "Office"),
+    "manager": ("Bekzod", "Mirzayev", "Manager", "Shift lead"),
+    "worker": ("Alisher", "Valiyev", "Employee", "Sales floor"),
+    "madina": ("Madina", "Saidova", "Employee", "Cashier"),
+    "jasur": ("Jasur", "Tursunov", "Employee", "Stock & warehouse"),
+    "nigora": ("Nigora", "Azimova", "Employee", "Delivery"),
+}
+
+
+@pytest.fixture
+def demo_people(db):
+    """`demo_people(company)`: the six demo memberships, approved and onboarded, working in the
+    company's first branch, to test `demo.seed(company, people, now)` without seed_demo."""
+
+    def make(company) -> dict[str, Membership]:
+        branch = company.branches.order_by("order", "pk").first()
+        if branch is None:
+            branch = Branch.objects.create(company=company, name=company.name)
+        roles = {role.name: role for role in AccessRole.objects.filter(company=company)}
+        people = {}
+        for index, (key, (first, last, role, position)) in enumerate(DEMO_PEOPLE.items()):
+            position_row, _ = Position.objects.get_or_create(
+                company=company, name=position, defaults={"order": index}
+            )
+            membership = MembershipFactory(
+                company=company,
+                role=roles[role],
+                position=position_row,
+                status=Membership.Status.APPROVED,
+                first_name=first,
+                last_name=last,
+                onboarded_at=timezone.now() - timedelta(days=60),
+                home_branch=branch,
+                user__first_name=first,
+                user__last_name=last,
+                user__phone=f"+99890111000{index + 1}",
+            )
+            membership.branches.add(branch)
+            people[key] = membership
+        return people
+
+    return make
+
+
+@pytest.fixture
+def fake_redis():
+    """Every `apps.core.redis` client talks to an in-memory server for this test."""
+    server = core_redis.use_fake()
+    yield server
+    core_redis.reset()
+
+
 @pytest.fixture
 def sent_messages(monkeypatch):
     """Telegram messages the backend tried to send, captured instead of sent."""
     sent = []
 
-    def record(bot, chat_id, text, reply_markup=None, photo=None):
+    def record(bot, chat_id, text, reply_markup=None, photo=None, photo_storage="default"):
         sent.append(
             {
                 "bot": bot,
@@ -64,6 +157,7 @@ def sent_messages(monkeypatch):
                 "text": text,
                 "reply_markup": reply_markup,
                 "photo": photo,
+                "photo_storage": photo_storage,
             }
         )
 

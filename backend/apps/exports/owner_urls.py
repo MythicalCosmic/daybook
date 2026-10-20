@@ -1,7 +1,10 @@
-"""Owner endpoints, mounted at `/api/v1/owner/companies/<int:company_id>/`.
+"""Export endpoints, mounted at `/api/v1/owner/companies/<int:company_id>/`."""
 
-An optional `root_urlpatterns` list is mounted at `/api/v1/owner/` instead, for the few
-owner endpoints outside a company.
-"""
+from rest_framework.routers import SimpleRouter
 
-urlpatterns = []
+from apps.exports.owner_api import ExportViewSet
+
+router = SimpleRouter()
+router.register("exports", ExportViewSet, basename="exports-export")
+
+urlpatterns = [*router.urls]
