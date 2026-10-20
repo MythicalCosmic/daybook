@@ -838,7 +838,7 @@ def pay_debt(
     frozen rate; a payment worth more or less in the base currency books the difference as an
     `fx` row. A debt reserved with `lock_debt` takes payments only from that source.
 
-    One source pays one debt once: give each debt a payslip pays its own key.
+    One source pays one debt once, so a payslip that pays several debts gives each its own key.
     """
     _need_actor_or_source(by, source)
     source = sources.check(source)
@@ -1138,6 +1138,8 @@ def _check_active(account: MoneyAccount) -> None:
 
 def _money(value, *, signed: bool = False, allow_zero: bool = False) -> Decimal:
     """An amount from the caller: a positive Decimal of cents (any sign when `signed`)."""
+    if isinstance(value, bool):  # Decimal(True) is 1
+        raise DomainError(_("Enter an amount of money."))
     if isinstance(value, float):
         value = str(value)
     try:
@@ -1157,6 +1159,8 @@ def _money(value, *, signed: bool = False, allow_zero: bool = False) -> Decimal:
 
 def _rate(value) -> Decimal:
     """A rate from the caller (or implied by two amounts), as the 6 decimals it's stored with."""
+    if isinstance(value, bool):
+        raise DomainError(_("Enter an exchange rate."))
     try:
         rate = Decimal(str(value) if isinstance(value, float) else value).quantize(RATE_STEP)
     except InvalidOperation, TypeError, ValueError:

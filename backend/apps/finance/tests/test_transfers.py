@@ -277,7 +277,7 @@ class TestBadRates:
             move(books, owner, cash, dollars, D("0.01"), day, amount_in=1_000_000)
         assert not Transfer.objects.exists()
 
-    @pytest.mark.parametrize("rate", [0, "-1", D("0.0000001"), D("1e13"), "x", D("NaN")])
+    @pytest.mark.parametrize("rate", [0, "-1", D("0.0000001"), D("1e13"), "x", D("NaN"), True])
     def test_a_given_rate_must_be_storable(self, books, owner, cash, dollars, day, rate):
         fund(books, owner, cash, 100, day)
         with pytest.raises(DomainError, match="exchange rate"):

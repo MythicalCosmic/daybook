@@ -73,7 +73,7 @@ class TestSigns:
         assert draw.amount == D("-300.00")
         assert balance(cash) == D("1200.00")
 
-    @pytest.mark.parametrize("amount", [0, -5, "abc", None, "0.001", D("1e20")])
+    @pytest.mark.parametrize("amount", [0, -5, "abc", None, "0.001", D("1e20"), True, D("NaN")])
     def test_bad_amounts_are_refused(self, books, owner, cash, day, amount):
         with pytest.raises(DomainError):
             income(books, owner, cash, amount, day)
