@@ -45,6 +45,7 @@ import {
   NumberPad,
   PageHeader,
   PdfLink,
+  PullToRefresh,
   PhotoInput,
   ProgressBar,
   ProgressRing,
@@ -261,6 +262,7 @@ export function Kitchen({ section }: { section: string | null }) {
   const [slide, setSlide] = useState<SlideState>("idle");
   const [sheet, setSheet] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [refreshed, setRefreshed] = useState(0);
   const tooBig = compareMoney(amountFromTyping(bigAmount) ?? "0", "5000000") > 0;
 
   return (
@@ -464,6 +466,13 @@ export function Kitchen({ section }: { section: string | null }) {
           <Button variant="primary" onClick={() => setSheet(true)}>
             Sheet
           </Button>
+        </div>
+        <div className="kitchen-stage kitchen-stage--tall">
+          <PullToRefresh className="kitchen-ptr" onRefresh={() => new Promise((resolve) => window.setTimeout(() => resolve(setRefreshed((n) => n + 1)), 800))}>
+            <ListRow variant="card" icon={Clock3} title={`Pull down · ${refreshed}`} subtitle={d.emptyBody} />
+            <ListRow variant="card" icon={Receipt} title={d.expenses} />
+            <ListRow variant="card" icon={Wallet} title={d.pay} />
+          </PullToRefresh>
         </div>
         <div className="kitchen-stage">
           <BottomBar primary={{ text: d.send, onClick: () => undefined, icon: SendHorizontal }} secondary={{ text: d.later, onClick: () => undefined }} />

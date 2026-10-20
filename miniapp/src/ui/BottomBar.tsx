@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
-import { attachNativeButton, hasNativeButton, updateNativeButton, type NativeButtonKind } from "../telegram";
+import { attachNativeButton, hasNativeButton, updateNativeButton, type NativeButtonKind, type NativeButtonLook } from "../telegram";
 import { nativeButtonColors } from "../theme";
 import { Button } from "./Button";
 import { cx } from "./cx";
@@ -18,32 +18,66 @@ export type BottomAction = {
 };
 
 /**
- * Drive Telegram's main or secondary button from React state while `action` is set. The press
- * handler always calls the latest `onClick`, and changing text or state never hides the button.
+ * Telegram has one main and one secondary button, but a page and a sheet over it may both want
+ * them. The newest owner drives the button; when it goes away the one below gets it back.
+ */
+type Owner = { look: () => NativeButtonLook | null; press: () => void };
+
+const owners: Record<NativeButtonKind, Owner[]> = { main: [], secondary: [] };
+const detachers: Partial<Record<NativeButtonKind, () => void>> = {};
+
+function lookOf(kind: NativeButtonKind, action: BottomAction | null): NativeButtonLook | null {
+  if (!action) return null;
+  return { text: action.text, disabled: action.disabled, loading: action.loading, shine: action.shine, position: "left", ...nativeButtonColors(kind) };
+}
+
+function refreshNative(kind: NativeButtonKind): void {
+  const top = owners[kind].at(-1);
+  const look = top?.look();
+  if (!top || !look) {
+    detachers[kind]?.();
+    delete detachers[kind];
+    return;
+  }
+  // Settings before showing, so the button never flashes Telegram's default text.
+  updateNativeButton(kind, look);
+  detachers[kind] ??= attachNativeButton(kind, () => owners[kind].at(-1)?.press()) ?? undefined;
+}
+
+/**
+ * Drive Telegram's main or secondary button from React state while `action` is set. Presses
+ * reach the latest `onClick`; changing text or state never hides the button.
  */
 export function useNativeButton(kind: NativeButtonKind, action: BottomAction | null): void {
   const latest = useRef(action);
   latest.current = action;
-  const press = useCallback(() => {
-    const current = latest.current;
-    if (current && !current.disabled && !current.loading) current.onClick();
-  }, []);
+  const owner = useRef<Owner>({
+    look: () => lookOf(kind, latest.current),
+    press: () => {
+      const current = latest.current;
+      if (current && !current.disabled && !current.loading) current.onClick();
+    },
+  });
   const active = action !== null;
+
+  useEffect(() => {
+    if (!active) return;
+    const me = owner.current;
+    owners[kind].push(me);
+    refreshNative(kind);
+    return () => {
+      owners[kind] = owners[kind].filter((other) => other !== me);
+      refreshNative(kind);
+    };
+  }, [kind, active]);
 
   const text = action?.text;
   const disabled = action?.disabled;
   const loading = action?.loading;
   const shine = action?.shine;
-  // Settings first, so the button never flashes Telegram's default text when it appears.
   useEffect(() => {
-    if (!active || text === undefined) return;
-    updateNativeButton(kind, { text, disabled, loading, shine, position: "left", ...nativeButtonColors(kind) });
+    if (active && owners[kind].at(-1) === owner.current) refreshNative(kind);
   }, [kind, active, text, disabled, loading, shine]);
-
-  useEffect(() => {
-    if (!active) return;
-    return attachNativeButton(kind, press) ?? undefined;
-  }, [kind, active, press]);
 }
 
 /**
