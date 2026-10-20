@@ -7,7 +7,7 @@ from django.utils import timezone
 from apps.members.models import Membership
 from apps.members.permissions import Perm
 from apps.members.queries import members_with_perm
-from apps.members.scope import branch_ids
+from apps.members.scope import allows, branch_ids
 from apps.tasks import visibility
 from apps.tasks.models import Task
 
@@ -101,8 +101,17 @@ def reviewers(task: Task) -> list[Membership]:
         and creator.status == Membership.Status.APPROVED
     ):
         return [creator]
-    return list(
+    return confirmers(task)
+
+
+def confirmers(task: Task) -> list[Membership]:
+    """Everyone who may confirm `task`: approved holders of tasks.confirm, the assignee left
+    out, whose branch scope covers the task's branch (docs/PLAN-OWNER.md §2.6), so nobody is
+    sent work, or its proof photo, they can't open."""
+    candidates = (
         members_with_perm(task.company, Perm.TASKS_CONFIRM)
         .exclude(pk=task.assignee_id)
         .select_related("user", "role", "company")
+        .prefetch_related("branches")
     )
+    return [member for member in candidates if allows(branch_ids(member), task.branch_id)]

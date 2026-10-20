@@ -93,23 +93,25 @@ def redact(model, field: str, value):
 
 
 def scrub(model, details: dict) -> dict:
-    """`details` with every secret field's value replaced by "•••": top-level keys named after
-    a secret field and the entries of a `changes` dict ({field: [old, new]})."""
+    """`details` with the value of every key named after a secret field of `model` replaced by
+    "•••", at any depth: top-level keys, the entries of a `changes` dict ({field: [old, new]})
+    and nested dicts or lists (before/after snapshots, rows of a bulk change)."""
     fields = _registry.get(_label(model), {})
-    if not fields:
+    secrets = {name for name, sensitivity in fields.items() if isinstance(sensitivity, _Secret)}
+    if not secrets:
         return details
-    clean = {}
-    for key, value in details.items():
-        if isinstance(fields.get(key), _Secret):
-            clean[key] = _mask(value)
-        elif key == "changes" and isinstance(value, dict):
-            clean[key] = {
-                name: _mask(change) if isinstance(fields.get(name), _Secret) else change
-                for name, change in value.items()
-            }
-        else:
-            clean[key] = value
-    return clean
+    return _scrub_value(details, secrets)
+
+
+def _scrub_value(value, secrets: set[str]):
+    if isinstance(value, dict):
+        return {
+            key: _mask(item) if key in secrets else _scrub_value(item, secrets)
+            for key, item in value.items()
+        }
+    if isinstance(value, list | tuple):
+        return [_scrub_value(item, secrets) for item in value]
+    return value
 
 
 def touched_fields(details: dict) -> set[str]:

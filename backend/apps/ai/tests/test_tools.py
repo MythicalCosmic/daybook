@@ -269,6 +269,11 @@ def test_every_installed_tool_follows_the_rules(monkeypatch):
             "Sold 12 500 000 so'm on 2026-10-20 at 10:20",
         ),
         ("Fridge check #345", "Fridge check #345"),
+        # Amounts a tool already wrote as money strings stay whole.
+        ("350000000.00", "350000000.00"),
+        ("-5200000000.50", "-5200000000.50"),
+        ("total 350000000.00", f"total {HIDDEN}.00"),
+        ("901234567", HIDDEN),
     ],
 )
 def test_scrubbing(text, expected):

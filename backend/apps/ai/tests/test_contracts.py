@@ -9,6 +9,7 @@ import pytest
 from django.utils import timezone
 
 from apps.ai import availability, receipts, writer
+from apps.audit.models import AuditLog
 from apps.hr.queries import employment_dates
 from apps.lifecycle.contracts import unpaid_days
 from apps.members import services as members
@@ -124,6 +125,23 @@ def test_blocked_people_end_the_day_they_were_blocked(company, member):
     [(_start, end)] = employment_dates(company, [blocked.pk]).values()
 
     assert end == local(blocked.decided_at, company)
+
+
+def test_someone_who_came_back_and_was_blocked_ends_on_the_block(company, member):
+    owner = member.registered(company, "Owner")
+    person = member.registered(company)
+    today = timezone.localdate(timezone=ZoneInfo(company.timezone))
+    members.offboard(person, by=owner.user, terminated_on=today - timedelta(days=200))
+    Membership.objects.filter(pk=person.pk).update(status=Membership.Status.PENDING)
+    members.approve(person, by=owner.user)  # rejoined
+    members.block(person, by=owner.user)
+
+    [(start, end)] = employment_dates(company, [person.pk]).values()
+
+    assert end == today  # not the last day of the first stint
+    assert start <= end
+    blocked = AuditLog.objects.get(action=AuditLog.Action.MEMBER_BLOCKED, target_id=person.pk)
+    assert blocked.details == {"terminated_on": today.isoformat()}
 
 
 def test_people_who_never_joined_or_belong_elsewhere_are_left_out(company, other_company, member):

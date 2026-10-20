@@ -10,6 +10,7 @@ from django.utils import timezone
 from apps.companies.tests.factories import BranchFactory
 from apps.members.models import AccessRole
 from apps.members.permissions import Perm
+from apps.reminders.policies import escalation_recipients
 from apps.tasks import offdays, queries, services, visibility
 from apps.tasks.generation import generate_daily_tasks
 from apps.tasks.models import Task
@@ -114,6 +115,8 @@ def test_filter_registration_rules(monkeypatch):
         visibility.register_task_visibility_filter("projects.members", lambda tasks, m: tasks)
     with pytest.raises(ValueError):
         visibility.register_task_visibility_filter("nodot", lambda tasks, m: tasks)
+    with pytest.raises(ValueError, match="installed app"):
+        visibility.register_task_visibility_filter("nosuchapp.x", lambda tasks, m: tasks)
     assert visibility.registered_keys() == ["projects.members"]
 
 
@@ -204,3 +207,33 @@ def test_cancel_routine_tasks_leaves_other_work(company, member):
         done.pk: Task.Status.DONE,
         personal.pk: Task.Status.TODO,
     }
+
+
+def test_review_requests_and_late_alerts_reach_only_confirmers_who_see_the_task(
+    company, member, branches
+):
+    here, there = branches
+    scoped_role(company, "Checker", [Perm.TASKS_CONFIRM])
+    checker_here = member.registered(company, "Checker")
+    checker_here.branches.set([here])
+    checker_there = member.registered(company, "Checker")
+    checker_there.branches.set([there])
+    nowhere = member.registered(company, "Checker")  # no branches: no branch-bound work
+    manager = member.registered(company, "Manager")  # tasks.confirm and branches.all
+    worker = member.registered(company)
+    routine = TaskFactory(
+        assignee=worker, kind=Task.Kind.DAILY, branch=here, status=Task.Status.REVIEW
+    )
+    company_wide = TaskFactory(assignee=worker, kind=Task.Kind.DAILY)
+
+    def pks(people):
+        return {person.pk for person in people}
+
+    assert pks(queries.reviewers(routine)) == {checker_here.pk, manager.pk}
+    assert pks(escalation_recipients(routine)) == {checker_here.pk, manager.pk}
+    assert pks(queries.reviewers(company_wide)) == {manager.pk}
+    assert checker_there.pk not in pks(queries.confirmers(routine))
+    assert nowhere.pk not in pks(queries.confirmers(routine))
+    # Whoever the reviewers are, each can open the task they're asked about.
+    for reviewer in queries.reviewers(routine):
+        assert routine.pk in visible(reviewer)

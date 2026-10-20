@@ -63,6 +63,8 @@ SERVED_TYPES = {
 STORAGES: dict[str, Storage] = {"private": private_storage, "default": default_storage}
 
 _checks: dict[str, FileCheck] = {}
+# Kinds a suspended member may still open (their own payslips and documents, §13.4).
+_open_while_suspended: set[str] = set()
 # What _verify returns for a genuine link whose time is up.
 EXPIRED = object()
 
@@ -71,11 +73,14 @@ class DuplicateFileCheck(ValueError):
     pass
 
 
-def register_file_check(kind: str, check: FileCheck) -> None:
+def register_file_check(kind: str, check: FileCheck, *, allow_suspended: bool = False) -> None:
     """Register who may open files of `kind` ("<app label>.<thing>", e.g. "hr.document").
 
     `check(user, company_id, object_id)` runs at download time and returns whether `user`
     may still open the file of that object; it is also the place to audit sensitive views.
+    Only approved members get as far as the check, unless `allow_suspended`: then suspended
+    members do too, and the check must limit them to their own files (their `has_perm` is
+    False for everything while suspended).
     """
     app_label, dot, rest = kind.partition(".")
     if not dot or not rest:
@@ -87,6 +92,8 @@ def register_file_check(kind: str, check: FileCheck) -> None:
     if kind in _checks:
         raise DuplicateFileCheck(f"A file check named {kind!r} is already registered.")
     _checks[kind] = check
+    if allow_suspended:
+        _open_while_suspended.add(kind)
 
 
 def registered_kinds() -> list[str]:
@@ -269,11 +276,14 @@ def _may_open(grant: _Grant) -> bool:
     user = User.objects.filter(pk=grant.user_id, is_active=True).first()
     if user is None:
         return False
+    statuses = [Membership.Status.APPROVED]
+    if grant.kind in _open_while_suspended:
+        statuses.append(Membership.Status.SUSPENDED)
     still_member = Membership.objects.filter(
         user=user,
         company_id=grant.company_id,
         company__is_active=True,
-        status=Membership.Status.APPROVED,
+        status__in=statuses,
     ).exists()
     if not still_member:
         return False

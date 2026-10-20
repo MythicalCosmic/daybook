@@ -69,8 +69,8 @@ def _send(
     photo: str | None = None,
 ) -> None:
     user = member.user
-    if user.telegram_id is None:
-        return
+    if member.status != Membership.Status.APPROVED or user.telegram_id is None:
+        return  # suspended or gone: the bot leaves them alone
     with translation.override(user.language):
         text, markup = build(*args)
     send_telegram_message.delay(

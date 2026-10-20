@@ -259,6 +259,32 @@ def cancel_routine_tasks(member: Membership, *, since: date) -> int:
 
 
 @transaction.atomic
+def resume_reminders(member: Membership) -> int:
+    """Pick the reminders of the member's open tasks up again, e.g. after a suspension (the
+    reminder engine stops them while someone isn't an approved member). A task whose
+    reminders had all been sent stays quiet. Returns how many tasks will be reminded."""
+    now = timezone.now()
+    tasks = (
+        Task.objects.select_for_update(of=("self",))
+        .select_related("company", "reminder_policy", "template__reminder_policy")
+        .filter(
+            assignee=member,
+            status__in=Task.OPEN_STATUSES,
+            due_at__isnull=False,
+            next_reminder_at__isnull=True,
+        )
+    )
+    resumed = 0
+    for task in tasks:
+        if task.due_at <= now and not _reminders_left(task):
+            continue
+        task.next_reminder_at = _resume_reminders_at(task)
+        task.save(update_fields=["next_reminder_at", "updated_at"])
+        resumed += 1
+    return resumed
+
+
+@transaction.atomic
 def snooze_task(task: Task, *, by: Membership) -> Task:
     """Hold off the reminders for a while, a limited number of times per task."""
     task = _lock(task)
@@ -393,6 +419,14 @@ def _resume_reminders_at(task: Task):
     if task.due_at > now:
         return first_reminder_at(task.due_at, policy, now)
     return now + timedelta(minutes=policy.repeat_every_minutes)
+
+
+def _reminders_left(task: Task) -> bool:
+    """Whether a late task still has reminders to come (personal tasks get one)."""
+    if task.kind == Task.Kind.PERSONAL:
+        return task.reminders_sent == 0
+    policy = policy_for(task)
+    return policy.max_reminders == 0 or task.reminders_sent < policy.max_reminders
 
 
 def _missing_proof(proof: str, text: str, photo: File | None) -> str | None:

@@ -21,7 +21,7 @@ from django.core.management.base import BaseCommand
 from PIL import Image
 
 from apps.core.storage import private_storage
-from apps.core.uploads import InvalidUpload, sanitize_image
+from apps.core.uploads import MAX_UPLOAD_BYTES, InvalidUpload, sanitize_image
 
 # (model, field, longest side)
 TARGETS = (
@@ -70,7 +70,11 @@ class Command(BaseCommand):
                 yield "clean"
                 continue
             try:
-                picture = sanitize_image(data, max_side=max_side)
+                # No upload size cap for files already stored: a big but real photo is
+                # re-encoded, not mistaken for junk. The pixel limit still applies.
+                picture = sanitize_image(
+                    data, max_side=max_side, max_bytes=max(len(data), MAX_UPLOAD_BYTES)
+                )
             except InvalidUpload:
                 self.stdout.write(f"Not a picture, moving aside: {name}")
                 if not dry_run:

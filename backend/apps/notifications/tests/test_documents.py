@@ -8,7 +8,13 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.base import BaseSession
 from aiogram.enums import ParseMode
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
-from aiogram.methods import EditMessageText, SendDocument, SendMessage, SendPhoto
+from aiogram.methods import (
+    EditMessageCaption,
+    EditMessageText,
+    SendDocument,
+    SendMessage,
+    SendPhoto,
+)
 from aiogram.types import Chat, InlineKeyboardButton, InlineKeyboardMarkup, Message
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -27,10 +33,13 @@ class RecordingSession(BaseSession):
         super().__init__()
         self.requests = []
         self.fail_with = fail_with
+        self.fail_only = None  # a method type: only those requests fail
 
     async def make_request(self, bot, method, timeout=None):  # noqa: ASYNC109
         self.requests.append(method)
-        if self.fail_with is not None:
+        if self.fail_with is not None and (
+            self.fail_only is None or isinstance(method, self.fail_only)
+        ):
             raise self.fail_with
         if isinstance(method, SendMessage | SendPhoto | SendDocument):
             return Message(
@@ -138,6 +147,22 @@ def test_editing_replaces_text_and_keyboard(session):
     [request] = session.requests
     assert isinstance(request, EditMessageText)
     assert (request.chat_id, request.message_id, request.text) == (5, 321, "✅ Approved by Olim")
+
+
+def test_editing_a_photo_message_edits_its_caption(session):
+    session.fail_with = TelegramBadRequest(
+        EditMessageText(chat_id=5, message_id=1, text="x"),
+        "Bad Request: there is no text in the message to edit",
+    )
+    session.fail_only = EditMessageText
+
+    telegram.edit_message(telegram.BotName.EMPLOYEE, 5, 321, "✅ Approved", MARKUP)
+
+    first, second = session.requests
+    assert isinstance(first, EditMessageText)
+    assert isinstance(second, EditMessageCaption)
+    assert (second.chat_id, second.message_id, second.caption) == (5, 321, "✅ Approved")
+    assert second.reply_markup.inline_keyboard[0][0].text == "Approve"
 
 
 def test_editing_a_message_that_is_gone_is_fine(session):

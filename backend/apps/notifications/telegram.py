@@ -36,6 +36,8 @@ from apps.core.storage import private_storage
 logger = logging.getLogger(__name__)
 
 CAPTION_LIMIT = 1024
+# What Telegram answers when edit_message_text is used on a message that only has a caption.
+NO_TEXT_TO_EDIT = "there is no text in the message to edit"
 STORAGES: dict[str, Storage] = {"default": default_storage, "private": private_storage}
 
 
@@ -177,9 +179,20 @@ async def _edit(
 ) -> None:
     async with _bot(token) as bot:
         try:
-            await bot.edit_message_text(
-                text=text, chat_id=chat_id, message_id=message_id, reply_markup=markup
-            )
+            try:
+                await bot.edit_message_text(
+                    text=text, chat_id=chat_id, message_id=message_id, reply_markup=markup
+                )
+            except TelegramBadRequest as exc:
+                if NO_TEXT_TO_EDIT not in str(exc).lower():
+                    raise
+                # A photo or document with a caption (send_message with a photo): edit that.
+                await bot.edit_message_caption(
+                    caption=text[:CAPTION_LIMIT],
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    reply_markup=markup,
+                )
         except TelegramBadRequest as exc:
             # Already says this, or gone (deleted, too old): nothing left to do.
             logger.info("Message %s in %s not edited: %s", message_id, chat_id, exc)

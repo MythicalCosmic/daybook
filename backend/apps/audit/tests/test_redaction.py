@@ -58,6 +58,26 @@ def test_secret_values_never_reach_a_snapshot_or_a_diff(sensitive, worker):
     assert "Karimov" not in json.dumps(before) and "Toshmatov" not in json.dumps(changes)
 
 
+def test_nested_secrets_are_masked_too(sensitive, worker):
+    row = audit.record(
+        "member.changed",
+        company_id=worker.company_id,
+        actor=None,
+        target=worker,
+        before={"last_name": "Karimov", "status": "approved"},
+        rows=[{"id": 1, "last_name": "Karimov"}, {"id": 2, "last_name": ""}],
+        fields=["last_name"],
+    )
+
+    row.refresh_from_db()
+    assert row.details == {
+        "before": {"last_name": "•••", "status": "approved"},
+        "rows": [{"id": 1, "last_name": "•••"}, {"id": 2, "last_name": ""}],
+        "fields": ["last_name"],
+    }
+    assert "Karimov" not in json.dumps(row.details)
+
+
 def test_an_unchanged_secret_is_not_reported_as_changed(sensitive, worker):
     assert audit.diff(audit.snapshot(worker), audit.snapshot(worker)) == {}
 

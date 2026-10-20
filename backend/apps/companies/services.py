@@ -65,15 +65,6 @@ def create_company(
         raise DomainError(_("Pick one of the languages offered."))
     if base_currency not in Currency.values:
         raise DomainError(_("Pick one of the currencies offered."))
-    if owner is not None and not owner.is_platform_admin:
-        owned = Membership.objects.filter(
-            user=owner, status=Membership.Status.APPROVED, role__is_owner=True
-        ).count()
-        if owned >= settings.MAX_COMPANIES_PER_USER:
-            raise DomainError(
-                _("You already own %(count)d companies, the most one person can.")
-                % {"count": owned}
-            )
     fields = {
         "name": name[:200],
         "timezone": timezone,
@@ -81,9 +72,24 @@ def create_company(
         "base_currency": base_currency,
     }
     with transaction.atomic():
+        if owner is not None and not owner.is_platform_admin:
+            _ensure_may_own_another(owner)
         company = _create_with_slug(fields, slug)
         setup_company(company, by, owner=owner)
     return company
+
+
+def _ensure_may_own_another(owner: User) -> None:
+    """MAX_COMPANIES_PER_USER. The owner's row is locked, so two companies created at the
+    same moment can't both slip under the limit."""
+    User.objects.select_for_update().filter(pk=owner.pk).first()
+    owned = Membership.objects.filter(
+        user=owner, status=Membership.Status.APPROVED, role__is_owner=True
+    ).count()
+    if owned >= settings.MAX_COMPANIES_PER_USER:
+        raise DomainError(
+            _("You already own %(count)d companies, the most one person can.") % {"count": owned}
+        )
 
 
 @transaction.atomic

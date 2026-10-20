@@ -19,8 +19,8 @@ def employment_dates(company, member_ids: Iterable[int]) -> dict[int, tuple[date
     Payroll prorates pay with it. People who never joined (pending, rejected) are left out.
 
     This version reads the membership itself: the start is their latest approval (from the
-    audit log, else the approval on the record), the end the last day given when they were
-    offboarded (else the day they left or were blocked). Package G replaces it with the
+    audit log, else the approval on the record), the end the last day recorded when they were
+    last offboarded or blocked (else the day that happened). Package G replaces it with the
     profile's hire_date and terminated_on.
     """
     tz = ZoneInfo(company.timezone)
@@ -30,8 +30,11 @@ def employment_dates(company, member_ids: Iterable[int]) -> dict[int, tuple[date
         .exclude(status__in=(Membership.Status.PENDING, Membership.Status.REJECTED))
     )
     ids = [member.pk for member in members]
-    approved_at = _latest(company, ids, AuditLog.Action.MEMBER_APPROVED)
-    left_rows = _latest_rows(company, ids, AuditLog.Action.MEMBER_LEFT)
+    approved_at = _latest(company, ids, (AuditLog.Action.MEMBER_APPROVED,))
+    # The latest departure only: someone who left, came back and was blocked ended on the block.
+    departures = _latest_rows(
+        company, ids, (AuditLog.Action.MEMBER_LEFT, AuditLog.Action.MEMBER_BLOCKED)
+    )
     gone = (Membership.Status.LEFT, Membership.Status.BLOCKED)
     dates = {}
     for member in members:
@@ -41,20 +44,21 @@ def employment_dates(company, member_ids: Iterable[int]) -> dict[int, tuple[date
         started = started or member.onboarded_at or member.created_at
         end = None
         if member.status in gone:
-            end = _terminated_on(left_rows.get(member.pk)) or _local(
-                member.decided_at or member.updated_at, tz
+            departure = departures.get(member.pk)
+            end = _terminated_on(departure) or _local(
+                departure.created_at if departure else member.decided_at or member.updated_at, tz
             )
         dates[member.pk] = (_local(started, tz), end)
     return dates
 
 
-def _latest(company, ids: list[int], action: str) -> dict[int, datetime]:
-    return {pk: row.created_at for pk, row in _latest_rows(company, ids, action).items()}
+def _latest(company, ids: list[int], actions: tuple[str, ...]) -> dict[int, datetime]:
+    return {pk: row.created_at for pk, row in _latest_rows(company, ids, actions).items()}
 
 
-def _latest_rows(company, ids: list[int], action: str) -> dict[int, AuditLog]:
+def _latest_rows(company, ids: list[int], actions: tuple[str, ...]) -> dict[int, AuditLog]:
     rows = AuditLog.objects.filter(
-        company=company, action=action, target_type="membership", target_id__in=ids
+        company=company, action__in=actions, target_type="membership", target_id__in=ids
     ).order_by("target_id", "-created_at", "-pk")
     latest: dict[int, AuditLog] = {}
     for row in rows:

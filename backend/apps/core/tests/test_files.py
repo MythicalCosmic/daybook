@@ -131,6 +131,19 @@ def test_only_approved_members_can_open_files(client, worker, allowed, status):
     assert client.get(url).status_code == 404
 
 
+def test_a_kind_may_let_suspended_people_open_their_files(client, worker, allowed, monkeypatch):
+    monkeypatch.setattr(files, "_open_while_suspended", {KIND})
+    url = link(worker, stored("r/1/a.pdf"))
+
+    Membership.objects.filter(pk=worker.pk).update(status=Membership.Status.SUSPENDED)
+    assert client.get(url).status_code == 200
+    allowed.ids = set()  # the check still decides
+    assert client.get(url).status_code == 404
+    allowed.ids = {1}
+    Membership.objects.filter(pk=worker.pk).update(status=Membership.Status.LEFT)
+    assert client.get(url).status_code == 404
+
+
 def test_a_deactivated_company_closes_every_link(client, worker, allowed):
     url = link(worker, stored("r/1/a.pdf"))
     type(worker.company).objects.filter(pk=worker.company_id).update(is_active=False)
@@ -219,15 +232,18 @@ def test_default_storage_files_can_be_signed_too(client, worker, allowed, settin
 
 def test_registration_rules(monkeypatch):
     monkeypatch.setattr(files, "_checks", {})
+    monkeypatch.setattr(files, "_open_while_suspended", set())
 
     register_file_check("core.one", lambda *args: True)
+    register_file_check("core.own", lambda *args: True, allow_suspended=True)
+    assert files._open_while_suspended == {"core.own"}
     with pytest.raises(DuplicateFileCheck):
         register_file_check("core.one", lambda *args: True)
     with pytest.raises(ValueError, match=r"'<app>\.<thing>'"):
         register_file_check("nodot", lambda *args: True)
     with pytest.raises(ValueError, match="installed app"):
         register_file_check("nosuchapp.thing", lambda *args: True)
-    assert files.registered_kinds() == ["core.one"]
+    assert files.registered_kinds() == ["core.one", "core.own"]
 
 
 def test_every_registered_kind_starts_with_an_app_label():

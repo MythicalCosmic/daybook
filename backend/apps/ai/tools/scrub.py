@@ -4,8 +4,9 @@
 run of nine or more digits (which covers Telegram ids), @usernames, t.me links and tg:// links
 with "[hidden]". `scrub_data(value)` does it to every string in a tool result, drops keys that
 name such data outright (phone, telegram_id…), and turns Decimals, dates and times into
-strings. Numbers that are numbers (ints, Decimals) are never scrubbed, so a total of
-5 200 000 000 so'm survives while the same digits typed into a comment don't.
+strings. Numbers that are numbers (ints, Decimals) and amounts written as money strings
+("5200000000.00") are never scrubbed, so a total of 5 200 000 000 so'm survives while the same
+digits typed into a comment don't.
 """
 
 import re
@@ -46,7 +47,14 @@ _PATTERNS = [
 ]
 
 
+# An amount as the API writes money ("5200000000.00", "-125000.50"): never a phone number or
+# an id, so it is kept even when its digits would look like one.
+_MONEY = re.compile(r"-?\d{1,16}\.\d{2}")
+
+
 def scrub(text: str) -> str:
+    if _MONEY.fullmatch(text):
+        return text
     for pattern in _PATTERNS:
         text = pattern.sub(HIDDEN, text)
     return text

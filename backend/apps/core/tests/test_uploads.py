@@ -210,8 +210,25 @@ def test_documents_get_their_type_from_the_content_not_the_name():
     assert pdf.read() == b"%PDF-1.7\n%%EOF"
 
 
+def macro_workbook_bytes() -> bytes:
+    out = io.BytesIO()
+    with zipfile.ZipFile(io.BytesIO(xlsx_bytes())) as source, zipfile.ZipFile(out, "w") as copy:
+        for entry in source.infolist():
+            copy.writestr(entry, source.read(entry))
+        copy.writestr("xl/vbaProject.bin", b"\xd0\xcf\x11\xe0 macros")
+    return out.getvalue()
+
+
 @pytest.mark.parametrize(
-    "data", [SVG, HTML, docx_like_bytes(), b"\x00\x01\x02binary", b'{"json": true}']
+    "data",
+    [
+        SVG,
+        HTML,
+        docx_like_bytes(),
+        macro_workbook_bytes(),
+        b"\x00\x01\x02binary",
+        b'{"json": true}',
+    ],
 )
 def test_documents_of_other_kinds_are_refused(data):
     with pytest.raises(InvalidUpload, match="isn't accepted"):

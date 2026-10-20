@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from datetime import date
+from datetime import date, timedelta
 from functools import partial
 from zoneinfo import ZoneInfo
 
@@ -259,8 +259,9 @@ def block(membership: Membership, *, by: User) -> Membership:
     _record_decision(membership, by)
     membership.save()
     _wind_down(membership, by=actor)
-    _audit(AuditLog.Action.MEMBER_BLOCKED, membership, by)
+    today = _today(membership.company)
     if was_member:
+        _audit(AuditLog.Action.MEMBER_BLOCKED, membership, by, terminated_on=today.isoformat())
         send_on_commit(
             signals.member_left,
             sender=Membership,
@@ -268,8 +269,10 @@ def block(membership: Membership, *, by: User) -> Membership:
             reason="blocked",
             by=actor,
             details={},
-            terminated_on=_today(membership.company),
+            terminated_on=today,
         )
+    else:
+        _audit(AuditLog.Action.MEMBER_BLOCKED, membership, by)
     return membership
 
 
@@ -375,6 +378,7 @@ def reinstate(membership: Membership, *, by: Membership | None) -> Membership:
     membership.status = Membership.Status.APPROVED
     membership.suspended_until = None
     membership.save(update_fields=["status", "suspended_until", "updated_at"])
+    task_services.resume_reminders(membership)
     audit.record(
         MemberAction.REINSTATED,
         company_id=membership.company_id,
@@ -385,6 +389,39 @@ def reinstate(membership: Membership, *, by: Membership | None) -> Membership:
     transaction.on_commit(partial(tasks.notify_reinstated.delay, membership.pk))
     send_on_commit(signals.member_reinstated, sender=Membership, membership=membership, by=by)
     return membership
+
+
+def reinstate_finished_suspensions(now=None) -> int:
+    """Reinstate everyone whose suspension is over: its last day (`suspended_until`) is before
+    today in their company's timezone. Celery beat runs it (apps.members.schedule); returns
+    how many came back."""
+    now = now or timezone.now()
+    candidates = list(
+        Membership.objects.filter(
+            status=Membership.Status.SUSPENDED,
+            suspended_until__isnull=False,
+            suspended_until__lt=timezone.localtime(now).date() + timedelta(days=1),
+            company__is_active=True,
+        )
+        .order_by("pk")
+        .values_list("pk", flat=True)
+    )
+    reinstated = 0
+    for membership_id in candidates:
+        with transaction.atomic():
+            membership = (
+                Membership.objects.select_for_update(of=("self",))
+                .select_related("company")
+                .filter(pk=membership_id, status=Membership.Status.SUSPENDED)
+                .first()
+            )
+            if membership is None or membership.suspended_until is None:
+                continue  # reinstated or dismissed a moment ago
+            if membership.suspended_until >= _local_date(membership.company, now):
+                continue  # still their last suspended day where they are
+            reinstate(membership, by=None)
+            reinstated += 1
+    return reinstated
 
 
 def _wind_down(membership: Membership, *, by: Membership | None) -> None:
@@ -494,3 +531,7 @@ def _record_decision(membership: Membership, by: User) -> None:
 
 def _today(company: Company) -> date:
     return timezone.localdate(timezone=ZoneInfo(company.timezone))
+
+
+def _local_date(company: Company, moment) -> date:
+    return timezone.localtime(moment, ZoneInfo(company.timezone)).date()

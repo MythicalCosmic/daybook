@@ -103,3 +103,17 @@ def test_logos_and_missing_files(company, other_company):
     assert re.fullmatch(r"logos/[0-9a-f]{32}\.jpg", company.logo.name)
     assert other_company.logo.name == "logos/gone.png"
     assert "re-encoded 1, already clean 0, moved aside 0, missing 1" in output
+
+
+def test_a_big_real_photo_is_reencoded_not_moved_aside(company, member, monkeypatch):
+    """The upload size cap is for new uploads; a stored photo above it is still a photo."""
+    worker = member.registered(company)
+    data = jpeg_with_exif()
+    monkeypatch.setitem(sanitize_image.__kwdefaults__, "max_bytes", len(data) - 1)
+    task = with_proof(worker, f"proofs/{company.pk}/huge.jpg", data)
+
+    output = run()
+
+    task.refresh_from_db()
+    assert "re-encoded 1" in output and "moved aside 0" in output
+    assert re.fullmatch(rf"proofs/{company.pk}/[0-9a-f]{{32}}\.jpg", task.proof_photo.name)

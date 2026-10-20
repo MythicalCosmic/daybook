@@ -1,9 +1,10 @@
 """Suspension (docs/PLAN-OWNER.md §13.4): suspend, reinstate, and what stops meanwhile."""
 
-from datetime import date, time, timedelta
+from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
+from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 from rest_framework.response import Response
@@ -15,6 +16,7 @@ from apps.announcements import services as announcements
 from apps.audit.models import AuditLog
 from apps.core.exceptions import DomainError
 from apps.members import services
+from apps.members import tasks as member_tasks
 from apps.members.api import IsCompanyMember
 from apps.members.audit_actions import MemberAction
 from apps.members.models import Membership
@@ -22,6 +24,7 @@ from apps.members.permissions import Perm
 from apps.members.signals import member_reinstated, member_suspended
 from apps.reminders.engine import send_due_reminders
 from apps.tasks import offdays
+from apps.tasks import services as task_services
 from apps.tasks.generation import generate_daily_tasks
 from apps.tasks.models import Task
 from apps.tasks.tests.factories import TaskFactory, TaskTemplateFactory
@@ -300,3 +303,83 @@ def test_suspended_people_still_count_as_members_for_offboarding(company, owner,
     worker.refresh_from_db()
     assert worker.status == Membership.Status.LEFT
     assert worker.suspended_until is None
+
+
+def test_reinstating_picks_the_reminders_up_again(company, owner, worker):
+    now = timezone.now()
+    late = TaskFactory(
+        assignee=worker,
+        created_by=owner,
+        due_at=now - timedelta(minutes=5),
+        next_reminder_at=now - timedelta(minutes=1),
+    )
+    upcoming = TaskFactory(
+        assignee=worker,
+        created_by=owner,
+        due_at=now + timedelta(hours=3),
+        next_reminder_at=now - timedelta(minutes=1),
+    )
+    reminded = TaskFactory(assignee=worker, due_at=now - timedelta(hours=1), reminders_sent=1)
+    services.suspend(worker, by=owner, until=None, reason="x")
+    send_due_reminders(now)  # stops them while the person is suspended
+    assert Task.objects.get(pk=late.pk).next_reminder_at is None
+
+    services.reinstate(worker, by=owner)
+
+    late.refresh_from_db()
+    upcoming.refresh_from_db()
+    reminded.refresh_from_db()
+    assert late.next_reminder_at > now
+    assert now < upcoming.next_reminder_at <= upcoming.due_at
+    assert reminded.next_reminder_at is None  # a personal task's one reminder was sent
+
+
+def test_a_suspension_ends_on_its_own_after_its_last_day(
+    company, member, owner, worker, heard, django_capture_on_commit_callbacks
+):
+    day = today(company)
+    tz = ZoneInfo(company.timezone)
+    services.suspend(worker, by=owner, until=day, reason="One day")
+    open_ended = member.registered(company)
+    services.suspend(open_ended, by=owner, until=None, reason="Investigation")
+
+    late_on_the_last_day = datetime.combine(day, time(23, 50), tzinfo=tz)
+    assert services.reinstate_finished_suspensions(late_on_the_last_day) == 0
+
+    next_morning = datetime.combine(day + timedelta(days=1), time(0, 10), tzinfo=tz)
+    with django_capture_on_commit_callbacks(execute=True):
+        assert services.reinstate_finished_suspensions(next_morning) == 1
+
+    worker.refresh_from_db()
+    open_ended.refresh_from_db()
+    assert worker.status == Membership.Status.APPROVED
+    assert open_ended.status == Membership.Status.SUSPENDED
+    assert heard[-1] == ("reinstated", worker.pk, None)
+    assert AuditLog.objects.get(action=MemberAction.REINSTATED).actor is None
+
+
+def test_celery_beat_reinstates_finished_suspensions(company, owner, worker):
+    services.suspend(worker, by=owner, until=today(company), reason="x")
+    Membership.objects.filter(pk=worker.pk).update(
+        suspended_until=today(company) - timedelta(days=1)
+    )
+
+    member_tasks.reinstate_finished_suspensions.delay()
+
+    worker.refresh_from_db()
+    assert worker.status == Membership.Status.APPROVED
+    assert "members-reinstate-finished-suspensions" in settings.CELERY_BEAT_SCHEDULE
+
+
+def test_task_news_does_not_reach_suspended_people(
+    company, member, owner, worker, sent_messages, django_capture_on_commit_callbacks
+):
+    manager = member.registered(company, "Manager")
+    given = TaskFactory(assignee=worker, created_by=manager)
+    services.suspend(manager, by=owner, until=None, reason="x")
+    sent_messages.clear()
+
+    with django_capture_on_commit_callbacks(execute=True):
+        task_services.complete_task(given, by=worker, proof_text="Done")
+
+    assert sent_messages == []  # the giver is suspended: no "task completed" for them

@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from functools import partial
 
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
@@ -35,6 +36,7 @@ def broadcast(
     filter and groups of that branch. News about nobody in particular (no positions, no
     branch) reaches every group that wants the event. An event whose module is off goes
     nowhere. `photo` is a path in `photo_storage` ("default" public media or "private").
+    Posts are queued once the caller's transaction commits (at once outside one).
     """
     if photo_storage not in ("default", "private"):
         raise ValueError(f"Unknown storage {photo_storage!r}.")
@@ -54,7 +56,11 @@ def broadcast(
         groups = groups.filter(Q(branches=None) | Q(branches=branch_id))
     group_ids = list(groups.values_list("pk", flat=True).distinct())
     for group_id in group_ids:
-        group_jobs.queue_post(group_id, (text, None), photo, photo_storage)
+        # After the caller's transaction commits, like every other job: a change that is
+        # rolled back never reaches a group.
+        transaction.on_commit(
+            partial(group_jobs.queue_post, group_id, (text, None), photo, photo_storage)
+        )
     return len(group_ids)
 
 

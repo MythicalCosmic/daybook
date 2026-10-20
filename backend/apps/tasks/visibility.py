@@ -12,6 +12,7 @@ the registering app's label; registering a key twice raises.
 
 from collections.abc import Callable
 
+from django.apps import apps as django_apps
 from django.db.models import QuerySet
 
 TaskFilter = Callable[[QuerySet, object], QuerySet]
@@ -27,6 +28,10 @@ def register_task_visibility_filter(key: str, fn: TaskFilter) -> None:
     app_label, dot, rest = key.partition(".")
     if not dot or not app_label or not rest:
         raise ValueError(f"Filter keys look like '<app>.<name>', not {key!r}.")
+    if django_apps.ready and not any(
+        config.label == app_label for config in django_apps.get_app_configs()
+    ):
+        raise ValueError(f"Filter key {key!r} must start with an installed app's label.")
     if key in _filters:
         raise DuplicateTaskFilter(f"A task visibility filter {key!r} is already registered.")
     _filters[key] = fn

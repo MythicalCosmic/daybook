@@ -221,6 +221,8 @@ def _zip_kind(data: bytes) -> str | None:
     except zipfile.BadZipFile, OSError, ValueError:
         return None
     if "[Content_Types].xml" in names and "xl/workbook.xml" in names:
+        if any(name.lower().endswith("vbaproject.bin") for name in names):
+            return None  # a macro workbook (xlsm) dressed as xlsx
         return "xlsx"
     if "[Content_Types].xml" in names:
         return None  # another Office file (docx, pptx), which we don't take
