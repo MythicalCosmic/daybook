@@ -18,6 +18,9 @@ TASK_RELATIONS = (
     "created_by__user",
     "created_by__position",
     "confirmed_by__user",
+    "escalate_to__user",
+    "reminder_policy",
+    "template__reminder_policy",
 )
 
 

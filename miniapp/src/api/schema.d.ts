@@ -130,6 +130,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/reminder-policies/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description How hard the bot chases late work. Needs reminders.configure. */
+        get: operations["v1_companies_reminder_policies_list"];
+        put?: never;
+        /** @description How hard the bot chases late work. Needs reminders.configure. */
+        post: operations["v1_companies_reminder_policies_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/reminder-policies/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description How hard the bot chases late work. Needs reminders.configure. */
+        get: operations["v1_companies_reminder_policies_retrieve"];
+        /** @description How hard the bot chases late work. Needs reminders.configure. */
+        put: operations["v1_companies_reminder_policies_update"];
+        post?: never;
+        /** @description How hard the bot chases late work. Needs reminders.configure. */
+        delete: operations["v1_companies_reminder_policies_destroy"];
+        options?: never;
+        head?: never;
+        /** @description How hard the bot chases late work. Needs reminders.configure. */
+        patch: operations["v1_companies_reminder_policies_partial_update"];
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/summary/": {
         parameters: {
             query?: never;
@@ -318,6 +356,23 @@ export interface paths {
         put?: never;
         /** @description Tasks of one company, as the signed-in member may see them. */
         post: operations["v1_companies_tasks_return_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/tasks/{id}/snooze/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Tasks of one company, as the signed-in member may see them. */
+        post: operations["v1_companies_tasks_snooze_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -552,10 +607,38 @@ export interface components {
         PatchedMeRequest: {
             language?: components["schemas"]["LanguageEnum"];
         };
+        PatchedReminderPolicyRequest: {
+            name?: string;
+            /** @description A nudge this many minutes before the deadline. 0 = none. */
+            heads_up_minutes?: number;
+            /** @description After the deadline, remind again this often until it's done. */
+            repeat_every_minutes?: number;
+            /** @description Stop after this many reminders. 0 = until it's done. */
+            max_reminders?: number;
+            /** @description Tell the manager after this many reminders. 0 = never. */
+            escalate_after?: number;
+            /**
+             * Format: time
+             * @description No reminders from…
+             */
+            quiet_from?: string | null;
+            /**
+             * Format: time
+             * @description …until.
+             */
+            quiet_until?: string | null;
+            /** @description 0 = Monday. */
+            quiet_days?: components["schemas"]["WeekdayEnum"][];
+            snooze_minutes?: number;
+            /** @description Snoozes allowed per task. 0 = none. */
+            max_snoozes?: number;
+            /** @description Delete the last reminder when sending the next, instead of stacking them. */
+            replace_previous?: boolean;
+        };
         PatchedTaskTemplateRequest: {
             title?: string;
             description?: string;
-            weekdays?: components["schemas"]["WeekdaysEnum"][];
+            weekdays?: components["schemas"]["WeekdayEnum"][];
             /**
              * Format: time
              * @description In the company's timezone.
@@ -610,6 +693,82 @@ export interface components {
          * @enum {string}
          */
         ProofEnum: "none" | "photo" | "text" | "any";
+        ReminderInfo: {
+            every_minutes: number;
+            sent: number;
+            /** @description 0 = until it's done. */
+            max_reminders: number;
+            /** @description 0 = the manager is never told. */
+            escalate_after: number;
+            /** Format: date-time */
+            next_at: string | null;
+            /** Format: date-time */
+            escalated_at: string | null;
+            /** @description Name, when it's one person. */
+            escalate_to: string | null;
+            snooze_minutes: number;
+            snoozes_left: number;
+            /** Format: date-time */
+            snoozed_until: string | null;
+        };
+        ReminderPolicy: {
+            readonly id: number;
+            name?: string;
+            readonly is_default: boolean;
+            /** @description A nudge this many minutes before the deadline. 0 = none. */
+            heads_up_minutes?: number;
+            /** @description After the deadline, remind again this often until it's done. */
+            repeat_every_minutes?: number;
+            /** @description Stop after this many reminders. 0 = until it's done. */
+            max_reminders?: number;
+            /** @description Tell the manager after this many reminders. 0 = never. */
+            escalate_after?: number;
+            /**
+             * Format: time
+             * @description No reminders from…
+             */
+            quiet_from?: string | null;
+            /**
+             * Format: time
+             * @description …until.
+             */
+            quiet_until?: string | null;
+            /** @description 0 = Monday. */
+            quiet_days?: components["schemas"]["WeekdayEnum"][];
+            snooze_minutes?: number;
+            /** @description Snoozes allowed per task. 0 = none. */
+            max_snoozes?: number;
+            /** @description Delete the last reminder when sending the next, instead of stacking them. */
+            replace_previous?: boolean;
+        };
+        ReminderPolicyRequest: {
+            name?: string;
+            /** @description A nudge this many minutes before the deadline. 0 = none. */
+            heads_up_minutes?: number;
+            /** @description After the deadline, remind again this often until it's done. */
+            repeat_every_minutes?: number;
+            /** @description Stop after this many reminders. 0 = until it's done. */
+            max_reminders?: number;
+            /** @description Tell the manager after this many reminders. 0 = never. */
+            escalate_after?: number;
+            /**
+             * Format: time
+             * @description No reminders from…
+             */
+            quiet_from?: string | null;
+            /**
+             * Format: time
+             * @description …until.
+             */
+            quiet_until?: string | null;
+            /** @description 0 = Monday. */
+            quiet_days?: components["schemas"]["WeekdayEnum"][];
+            snooze_minutes?: number;
+            /** @description Snoozes allowed per task. 0 = none. */
+            max_snoozes?: number;
+            /** @description Delete the last reminder when sending the next, instead of stacking them. */
+            replace_previous?: boolean;
+        };
         /**
          * @description * `none` - Doesn't repeat
          *     * `daily` - Every day
@@ -640,6 +799,16 @@ export interface components {
             month_done: number;
             /** @description Of this month's tasks with a deadline, finished in time. */
             month_on_time_percent: number | null;
+            /**
+             * Format: time
+             * @description No reminders from…
+             */
+            quiet_from: string | null;
+            /**
+             * Format: time
+             * @description …until.
+             */
+            quiet_until: string | null;
             unread_activity: number;
             awaiting_review: number;
         };
@@ -665,6 +834,7 @@ export interface components {
             assignee: components["schemas"]["MemberBrief"];
             created_by: components["schemas"]["MemberBrief"] | null;
             checklist: components["schemas"]["ChecklistItem"][];
+            readonly reminder: components["schemas"]["ReminderInfo"] | null;
             readonly repeat_weekdays: number[] | null;
             /** Format: date-time */
             readonly started_at: string | null;
@@ -730,7 +900,7 @@ export interface components {
             readonly id: number;
             title: string;
             description?: string;
-            weekdays?: components["schemas"]["WeekdaysEnum"][];
+            weekdays?: components["schemas"]["WeekdayEnum"][];
             /**
              * Format: time
              * @description In the company's timezone.
@@ -745,7 +915,7 @@ export interface components {
         TaskTemplateRequest: {
             title: string;
             description?: string;
-            weekdays?: components["schemas"]["WeekdaysEnum"][];
+            weekdays?: components["schemas"]["WeekdayEnum"][];
             /**
              * Format: time
              * @description In the company's timezone.
@@ -781,7 +951,7 @@ export interface components {
          *     * `6` - Sunday
          * @enum {integer}
          */
-        WeekdaysEnum: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+        WeekdayEnum: 0 | 1 | 2 | 3 | 4 | 5 | 6;
     };
     responses: never;
     parameters: never;
@@ -953,6 +1123,157 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Position"][];
+                };
+            };
+        };
+    };
+    v1_companies_reminder_policies_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReminderPolicy"][];
+                };
+            };
+        };
+    };
+    v1_companies_reminder_policies_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ReminderPolicyRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ReminderPolicyRequest"];
+                "multipart/form-data": components["schemas"]["ReminderPolicyRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReminderPolicy"];
+                };
+            };
+        };
+    };
+    v1_companies_reminder_policies_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: string;
+                /** @description A unique integer value identifying this reminder policy. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReminderPolicy"];
+                };
+            };
+        };
+    };
+    v1_companies_reminder_policies_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: string;
+                /** @description A unique integer value identifying this reminder policy. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ReminderPolicyRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ReminderPolicyRequest"];
+                "multipart/form-data": components["schemas"]["ReminderPolicyRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReminderPolicy"];
+                };
+            };
+        };
+    };
+    v1_companies_reminder_policies_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: string;
+                /** @description A unique integer value identifying this reminder policy. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_companies_reminder_policies_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: string;
+                /** @description A unique integer value identifying this reminder policy. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedReminderPolicyRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedReminderPolicyRequest"];
+                "multipart/form-data": components["schemas"]["PatchedReminderPolicyRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReminderPolicy"];
                 };
             };
         };
@@ -1425,6 +1746,29 @@ export interface operations {
                 "multipart/form-data": components["schemas"]["ReturnRequest"];
             };
         };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"];
+                };
+            };
+        };
+    };
+    v1_companies_tasks_snooze_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: string;
+                /** @description A unique integer value identifying this task. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             200: {
                 headers: {

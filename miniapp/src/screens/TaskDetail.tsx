@@ -1,10 +1,18 @@
-import { AlarmClock, Check, Hourglass, SendHorizontal, Undo2, X } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { Check, Hourglass, SendHorizontal, Undo2, X } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
-import { useAddComment, useComments, useTask, useTaskAction, useToggleChecklist } from "../api/hooks";
+import {
+  useAddComment,
+  useComments,
+  useSummary,
+  useTask,
+  useTaskAction,
+  useToggleChecklist,
+} from "../api/hooks";
 import type { Comment, Task } from "../api/types";
+import { LateCard, ReminderNote } from "../components/Reminders";
 import { errorText, useCompleteTask } from "../lib/actions";
-import { duration, isLate, lateBy, repeatLabel, type ViewContext } from "../lib/taskView";
+import { isLate, repeatLabel, type ViewContext } from "../lib/taskView";
 import { clock, dayMonth, daysFromToday, weekdayShort } from "../lib/time";
 import { useViewContext } from "../lib/useNow";
 import { useNavigation } from "../state/navigation";
@@ -40,8 +48,33 @@ function Detail({ task, comments, ctx }: { task: Task; comments: Comment[]; ctx:
   const isMine = task.assignee.id === member.id;
   const repeat = repeatLabel(task.repeat_weekdays, ctx);
   const toggle = useToggleChecklist(member.companyId);
+  const action = useTaskAction(member.companyId);
+  const summary = useSummary(member.companyId);
   const toast = useToast();
   const lastComment = comments.at(-1);
+  const [draftSeed, setDraftSeed] = useState<{ text: string } | null>(null);
+  const quiet = summary.data?.quiet_from && summary.data.quiet_until ? summary.data : null;
+
+  const snooze = () => {
+    haptic();
+    action.mutate(
+      { taskId: task.id, action: "snooze" },
+      {
+        onSuccess: (snoozed) =>
+          toast(
+            t("toast.snoozed", {
+              time: snoozed.reminder?.snoozed_until ? clock(snoozed.reminder.snoozed_until, ctx.timeZone, ctx.locale) : "",
+            }),
+          ),
+        onError: (error) => toast(errorText(error, t)),
+      },
+    );
+  };
+  // Mention whoever hears about it being late, so they get the comment as a nudge.
+  const askForHelp = () => {
+    const name = task.reminder?.escalate_to ?? task.created_by?.name ?? "";
+    setDraftSeed({ text: name ? `@${name.split(" ")[0]} ` : "" });
+  };
 
   const status = late
     ? { label: t("status.late"), tone: "accent" }
@@ -98,18 +131,14 @@ function Detail({ task, comments, ctx }: { task: Task; comments: Comment[]; ctx:
         <StatusBanner task={task} lastComment={lastComment} ctx={ctx} />
 
         {late && task.due_at && (
-          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: 18, borderRadius: "var(--radius-lg)", background: "var(--color-accent-100)", color: "var(--color-accent-900)" }}>
-            <span className="circle" style={{ width: 42, height: 42, background: "var(--color-accent)", color: "var(--color-bg)" }}>
-              <AlarmClock size={21} strokeWidth={2.4} />
-            </span>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              <span className="num" style={{ fontSize: 18, fontWeight: 700 }}>
-                {t("detail.late.title", { duration: duration(lateBy(task, ctx.now), t) })}
-              </span>
-              <span className="num" style={{ fontSize: 14 }}>
-                {t("detail.late.body", { time: clock(task.due_at, ctx.timeZone, ctx.locale) })}
-              </span>
-            </div>
+          <LateCard task={task} reminder={task.reminder} ctx={ctx} onSnooze={snooze} snoozing={action.isPending} onAskHelp={askForHelp} />
+        )}
+        {!late && task.reminder && task.due_at && isMine && (
+          <ReminderNote task={task} reminder={task.reminder} when={dueLabel(task, ctx)} ctx={ctx} />
+        )}
+        {late && quiet && (
+          <div className="muted num" style={{ fontSize: 13.5, padding: "0 4px", marginTop: -6 }}>
+            {t("detail.quiet", { from: quiet.quiet_from!.slice(0, 5), until: quiet.quiet_until!.slice(0, 5) })}
           </div>
         )}
 
@@ -171,7 +200,7 @@ function Detail({ task, comments, ctx }: { task: Task; comments: Comment[]; ctx:
           ))}
         </div>
 
-        <Comments task={task} comments={comments} ctx={ctx} />
+        <Comments task={task} comments={comments} ctx={ctx} seed={draftSeed} />
       </div>
       <ActionBar task={task} isMine={isMine} />
     </>
@@ -214,12 +243,24 @@ function StatusBanner({ task, lastComment, ctx }: { task: Task; lastComment?: Co
   );
 }
 
-function Comments({ task, comments, ctx }: { task: Task; comments: Comment[]; ctx: ViewContext }) {
+function Comments({ task, comments, ctx, seed }: {
+  task: Task;
+  comments: Comment[];
+  ctx: ViewContext;
+  seed: { text: string } | null;
+}) {
   const { t } = ctx;
   const member = useMember();
   const add = useAddComment(member.companyId, task.id);
   const toast = useToast();
   const [draft, setDraft] = useState("");
+  const input = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (!seed) return;
+    setDraft(seed.text);
+    input.current?.focus();
+    input.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [seed]);
   const send = () => {
     const text = draft.trim();
     if (!text || add.isPending) return;
@@ -263,6 +304,7 @@ function Comments({ task, comments, ctx }: { task: Task; comments: Comment[]; ct
       {comments.length === 0 && <div className="muted" style={{ padding: "0 4px", fontSize: 15 }}>{t("detail.noComments")}</div>}
       <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "center" }}>
         <input
+          ref={input}
           className="input"
           placeholder={t("detail.commentPlaceholder")}
           value={draft}
@@ -314,8 +356,9 @@ function ActionBar({ task, isMine }: { task: Task; isMine: boolean }) {
     );
 
   const buttons: ReactNode[] = [];
-  // A sent-back task is redone and sent again; the design shows no Start for it.
-  if (task.actions.includes("start") && task.status !== "returned") {
+  // As in the design, Start is for assigned work (so whoever gave it sees it's underway);
+  // daily and personal tasks, and anything sent back, just get done.
+  if (task.actions.includes("start") && task.kind === "assigned" && task.status !== "returned") {
     buttons.push(
       <button key="start" className="btn btn-secondary btn-lg" style={{ flex: 1, fontSize: 17 }} disabled={action.isPending} onClick={() => run("start", t("toast.started"))}>
         {t("detail.start")}

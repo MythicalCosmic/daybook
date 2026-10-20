@@ -1,17 +1,23 @@
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
+from django.utils import timezone
+
 from apps.companies.models import Company
 from apps.members.models import Membership
+from apps.reminders.policies import policy_for
+from apps.reminders.schedule import first_reminder_at
 from apps.tasks.models import Task, TaskTemplate
 
 
 def generate_daily_tasks(company: Company, day: date) -> None:
     """Create the day's tasks from the company's active templates. Safe to run repeatedly."""
     tz = ZoneInfo(company.timezone)
+    now = timezone.now()
     templates = (
         TaskTemplate.objects.for_company(company)
         .filter(is_active=True)
+        .select_related("reminder_policy")
         .prefetch_related("assignees", "positions")
     )
     new_tasks = []
@@ -21,6 +27,7 @@ def generate_daily_tasks(company: Company, day: date) -> None:
         due_at = datetime.combine(day, template.due_time, tzinfo=tz)
         if due_at <= template.created_at:
             continue  # the template appeared after today's deadline
+        first_reminder = first_reminder_at(due_at, policy_for(template), now)
         for member in _people_for(template):
             if member.onboarded_at >= due_at:
                 continue  # they registered after the deadline
@@ -37,6 +44,9 @@ def generate_daily_tasks(company: Company, day: date) -> None:
                     due_at=due_at,
                     proof=template.proof,
                     needs_confirmation=template.needs_confirmation,
+                    reminder_policy=template.reminder_policy,
+                    escalate_to=template.escalate_to,
+                    next_reminder_at=first_reminder,
                 )
             )
     # The unique (template, assignee, for_date) constraint makes reruns no-ops.

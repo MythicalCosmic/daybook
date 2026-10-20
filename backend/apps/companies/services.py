@@ -4,12 +4,14 @@ from django.utils.translation import gettext as _
 from apps.companies.models import Company
 from apps.core.exceptions import DomainError
 from apps.members.services import create_default_roles
+from apps.reminders.policies import default_policy
 
 
 @transaction.atomic
 def create_company(*, name: str, slug: str, **fields) -> Company:
     company = Company.objects.create(name=name, slug=slug, **fields)
     create_default_roles(company)
+    default_policy(company.pk)
     return company
 
 

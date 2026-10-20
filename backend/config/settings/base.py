@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "apps.members",
     "apps.notifications",
     "apps.tasks",
+    "apps.reminders",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
@@ -110,6 +111,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.tasks.tasks.generate_daily_tasks",
         "schedule": crontab(minute="*/10"),
     },
+    "send-due-reminders": {
+        "task": "apps.reminders.tasks.send_due_reminders",
+        "schedule": crontab(),  # every minute
+    },
 }
 
 REST_FRAMEWORK = {
@@ -146,6 +151,7 @@ SPECTACULAR_SETTINGS = {
         "TaskStatusEnum": "apps.tasks.models.Task.Status",
         "TaskKindEnum": "apps.tasks.models.Task.Kind",
         "ActivityKindEnum": "apps.tasks.models.Activity.Kind",
+        "WeekdayEnum": "apps.tasks.models.Weekday",
     },
 }
 

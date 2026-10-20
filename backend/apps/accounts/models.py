@@ -17,6 +17,11 @@ class User(AbstractUser):
         blank=True,
         help_text=_("Only set from a contact the person shared in Telegram."),
     )
+    employee_bot_blocked_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("When Telegram said this person blocked the employee bot."),
+    )
 
     def __str__(self):
         if full_name := self.get_full_name():

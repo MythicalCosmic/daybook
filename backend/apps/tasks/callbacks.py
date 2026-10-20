@@ -10,6 +10,7 @@ class TaskAction(StrEnum):
     DONE = "done"
     CONFIRM = "confirm"
     RETURN = "return"
+    SNOOZE = "snooze"
     STOP = "stop"  # abandon whatever the bot is asking for
 
 

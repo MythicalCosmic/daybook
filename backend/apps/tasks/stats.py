@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 from django.utils import timezone
 
 from apps.members.models import Membership
+from apps.reminders.policies import default_policy
 from apps.tasks.models import Activity, Task
 from apps.tasks.queries import awaiting_review_by
 
@@ -29,6 +30,7 @@ def summary(member: Membership, now: datetime) -> dict:
         )
     )
     finished_dated = [row for row in dated if row[0] in FINISHED]
+    policy = default_policy(member.company_id)
     return {
         "today_total": len(todays),
         "today_done": sum(status in FINISHED for status in todays),
@@ -41,6 +43,8 @@ def summary(member: Membership, now: datetime) -> dict:
             if dated
             else None
         ),
+        "quiet_from": policy.quiet_from,
+        "quiet_until": policy.quiet_until,
         "unread_activity": Activity.objects.filter(recipient=member, read_at__isnull=True).count(),
         "awaiting_review": awaiting_review_by(member).count(),
     }

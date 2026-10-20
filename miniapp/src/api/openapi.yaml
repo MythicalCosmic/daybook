@@ -201,6 +201,195 @@ paths:
                 items:
                   $ref: '#/components/schemas/Position'
           description: ''
+  /api/v1/companies/{company_id}/reminder-policies/:
+    get:
+      operationId: v1_companies_reminder_policies_list
+      description: How hard the bot chases late work. Needs reminders.configure.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReminderPolicy'
+          description: ''
+    post:
+      operationId: v1_companies_reminder_policies_create
+      description: How hard the bot chases late work. Needs reminders.configure.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReminderPolicyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReminderPolicyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReminderPolicyRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReminderPolicy'
+          description: ''
+  /api/v1/companies/{company_id}/reminder-policies/{id}/:
+    get:
+      operationId: v1_companies_reminder_policies_retrieve
+      description: How hard the bot chases late work. Needs reminders.configure.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this reminder policy.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReminderPolicy'
+          description: ''
+    put:
+      operationId: v1_companies_reminder_policies_update
+      description: How hard the bot chases late work. Needs reminders.configure.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this reminder policy.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReminderPolicyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReminderPolicyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReminderPolicyRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReminderPolicy'
+          description: ''
+    patch:
+      operationId: v1_companies_reminder_policies_partial_update
+      description: How hard the bot chases late work. Needs reminders.configure.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this reminder policy.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedReminderPolicyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedReminderPolicyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedReminderPolicyRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReminderPolicy'
+          description: ''
+    delete:
+      operationId: v1_companies_reminder_policies_destroy
+      description: How hard the bot chases late work. Needs reminders.configure.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this reminder policy.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/companies/{company_id}/summary/:
     get:
       operationId: v1_companies_summary_retrieve
@@ -854,6 +1043,35 @@ paths:
               schema:
                 $ref: '#/components/schemas/Task'
           description: ''
+  /api/v1/companies/{company_id}/tasks/{id}/snooze/:
+    post:
+      operationId: v1_companies_tasks_snooze_create
+      description: Tasks of one company, as the signed-in member may see them.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+          description: ''
   /api/v1/companies/{company_id}/tasks/{id}/start/:
     post:
       operationId: v1_companies_tasks_start_create
@@ -1348,6 +1566,61 @@ components:
       properties:
         language:
           $ref: '#/components/schemas/LanguageEnum'
+    PatchedReminderPolicyRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        heads_up_minutes:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          description: A nudge this many minutes before the deadline. 0 = none.
+        repeat_every_minutes:
+          type: integer
+          maximum: 32767
+          minimum: 5
+          description: After the deadline, remind again this often until it's done.
+        max_reminders:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          description: Stop after this many reminders. 0 = until it's done.
+        escalate_after:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          description: Tell the manager after this many reminders. 0 = never.
+        quiet_from:
+          type: string
+          format: time
+          nullable: true
+          description: No reminders from…
+        quiet_until:
+          type: string
+          format: time
+          nullable: true
+          description: …until.
+        quiet_days:
+          type: array
+          items:
+            $ref: '#/components/schemas/WeekdayEnum'
+          description: 0 = Monday.
+        snooze_minutes:
+          type: integer
+          maximum: 32767
+          minimum: 5
+        max_snoozes:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          description: Snoozes allowed per task. 0 = none.
+        replace_previous:
+          type: boolean
+          description: Delete the last reminder when sending the next, instead of
+            stacking them.
     PatchedTaskTemplateRequest:
       type: object
       properties:
@@ -1360,7 +1633,7 @@ components:
         weekdays:
           type: array
           items:
-            $ref: '#/components/schemas/WeekdaysEnum'
+            $ref: '#/components/schemas/WeekdayEnum'
         due_time:
           type: string
           format: time
@@ -1458,6 +1731,168 @@ components:
         * `photo` - Photo
         * `text` - Text report
         * `any` - Photo or text report
+    ReminderInfo:
+      type: object
+      properties:
+        every_minutes:
+          type: integer
+        sent:
+          type: integer
+        max_reminders:
+          type: integer
+          description: 0 = until it's done.
+        escalate_after:
+          type: integer
+          description: 0 = the manager is never told.
+        next_at:
+          type: string
+          format: date-time
+          nullable: true
+        escalated_at:
+          type: string
+          format: date-time
+          nullable: true
+        escalate_to:
+          type: string
+          nullable: true
+          description: Name, when it's one person.
+        snooze_minutes:
+          type: integer
+        snoozes_left:
+          type: integer
+        snoozed_until:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - escalate_after
+      - escalate_to
+      - escalated_at
+      - every_minutes
+      - max_reminders
+      - next_at
+      - sent
+      - snooze_minutes
+      - snoozed_until
+      - snoozes_left
+    ReminderPolicy:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        is_default:
+          type: boolean
+          readOnly: true
+        heads_up_minutes:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          description: A nudge this many minutes before the deadline. 0 = none.
+        repeat_every_minutes:
+          type: integer
+          maximum: 32767
+          minimum: 5
+          description: After the deadline, remind again this often until it's done.
+        max_reminders:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          description: Stop after this many reminders. 0 = until it's done.
+        escalate_after:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          description: Tell the manager after this many reminders. 0 = never.
+        quiet_from:
+          type: string
+          format: time
+          nullable: true
+          description: No reminders from…
+        quiet_until:
+          type: string
+          format: time
+          nullable: true
+          description: …until.
+        quiet_days:
+          type: array
+          items:
+            $ref: '#/components/schemas/WeekdayEnum'
+          description: 0 = Monday.
+        snooze_minutes:
+          type: integer
+          maximum: 32767
+          minimum: 5
+        max_snoozes:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          description: Snoozes allowed per task. 0 = none.
+        replace_previous:
+          type: boolean
+          description: Delete the last reminder when sending the next, instead of
+            stacking them.
+      required:
+      - id
+      - is_default
+    ReminderPolicyRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        heads_up_minutes:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          description: A nudge this many minutes before the deadline. 0 = none.
+        repeat_every_minutes:
+          type: integer
+          maximum: 32767
+          minimum: 5
+          description: After the deadline, remind again this often until it's done.
+        max_reminders:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          description: Stop after this many reminders. 0 = until it's done.
+        escalate_after:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          description: Tell the manager after this many reminders. 0 = never.
+        quiet_from:
+          type: string
+          format: time
+          nullable: true
+          description: No reminders from…
+        quiet_until:
+          type: string
+          format: time
+          nullable: true
+          description: …until.
+        quiet_days:
+          type: array
+          items:
+            $ref: '#/components/schemas/WeekdayEnum'
+          description: 0 = Monday.
+        snooze_minutes:
+          type: integer
+          maximum: 32767
+          minimum: 5
+        max_snoozes:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          description: Snoozes allowed per task. 0 = none.
+        replace_previous:
+          type: boolean
+          description: Delete the last reminder when sending the next, instead of
+            stacking them.
     RepeatEnum:
       enum:
       - none
@@ -1513,6 +1948,16 @@ components:
           type: integer
           nullable: true
           description: Of this month's tasks with a deadline, finished in time.
+        quiet_from:
+          type: string
+          format: time
+          nullable: true
+          description: No reminders from…
+        quiet_until:
+          type: string
+          format: time
+          nullable: true
+          description: …until.
         unread_activity:
           type: integer
         awaiting_review:
@@ -1522,6 +1967,8 @@ components:
       - late
       - month_done
       - month_on_time_percent
+      - quiet_from
+      - quiet_until
       - streak_days
       - today_done
       - today_total
@@ -1587,6 +2034,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ChecklistItem'
+        reminder:
+          allOf:
+          - $ref: '#/components/schemas/ReminderInfo'
+          nullable: true
+          readOnly: true
         repeat_weekdays:
           type: array
           items:
@@ -1644,6 +2096,7 @@ components:
       - proof
       - proof_photo
       - proof_text
+      - reminder
       - repeat_weekdays
       - started_at
       - status
@@ -1754,7 +2207,7 @@ components:
         weekdays:
           type: array
           items:
-            $ref: '#/components/schemas/WeekdaysEnum'
+            $ref: '#/components/schemas/WeekdayEnum'
         due_time:
           type: string
           format: time
@@ -1789,7 +2242,7 @@ components:
         weekdays:
           type: array
           items:
-            $ref: '#/components/schemas/WeekdaysEnum'
+            $ref: '#/components/schemas/WeekdayEnum'
         due_time:
           type: string
           format: time
@@ -1847,7 +2300,7 @@ components:
           minLength: 1
       required:
       - refresh
-    WeekdaysEnum:
+    WeekdayEnum:
       enum:
       - 0
       - 1

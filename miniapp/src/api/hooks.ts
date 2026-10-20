@@ -106,7 +106,7 @@ function useRefreshAfterTaskChange(company: number) {
 }
 
 type ActionInput =
-  | { taskId: number; action: "start" | "confirm" }
+  | { taskId: number; action: "start" | "confirm" | "snooze" }
   | { taskId: number; action: "complete"; proofText: string; photo: File | null }
   | { taskId: number; action: "return"; reason: string }
   | { taskId: number; action: "cancel"; stopRepeating?: boolean };

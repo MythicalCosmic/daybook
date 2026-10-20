@@ -201,6 +201,9 @@ class Command(BaseCommand):
             by=owner,
             proof=Proof.PHOTO,
             needs_confirmation=True,
+            reminders_sent=1,
+            next_reminder_at=now + timedelta(minutes=15),
+            escalate_to=manager,
             description=(
                 "Count the front shelves against the stock sheet and note anything below the "
                 "minimum. Take one photo of the finished shelf."

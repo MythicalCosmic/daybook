@@ -209,3 +209,26 @@ async def test_unregistered_member_gets_the_registration_prompt(dp, bot, company
     await dp.feed_update(bot, updates.message(updates.tg_user(newcomer.user.telegram_id), "/tasks"))
 
     assert "Accounts are created in the app" in sent(bot)[-1].text
+
+
+async def test_snooze_from_a_reminder(dp, bot, company, member):
+    worker = await member.aregistered(company)
+    manager = await member.aregistered(company, "Manager")
+    task = await make_task(
+        assignee=worker,
+        created_by=manager,
+        due_at=timezone.now() - timedelta(minutes=5),
+        next_reminder_at=timezone.now(),
+    )
+    tg = updates.tg_user(worker.user.telegram_id)
+
+    await dp.feed_update(bot, updates.callback(tg, press(TaskAction.SNOOZE, task.pk)))
+
+    task = await reload(task)
+    assert task.snooze_count == 1
+    answer = [r for r in bot.requests if isinstance(r, AnswerCallbackQuery)][-1]
+    assert answer.text.startswith("Snoozed until")
+
+    await dp.feed_update(bot, updates.callback(tg, press(TaskAction.SNOOZE, task.pk)))
+
+    assert alerts(bot)[-1] == "No snoozes left for this task."

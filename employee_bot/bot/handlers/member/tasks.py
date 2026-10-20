@@ -127,6 +127,20 @@ async def proof_text(message: Message, membership: Membership, state: FSMContext
     await _finish_proof(message, state, outcome)
 
 
+@router.callback_query(TaskCallback.filter(F.action == TaskAction.SNOOZE))
+async def snooze_task(
+    callback: CallbackQuery, callback_data: TaskCallback, membership: Membership
+) -> None:
+    outcome = await _act(membership, callback_data.task_id, services.snooze_task)
+    success = None
+    if outcome.task is not None and outcome.task.snoozed_until is not None:
+        until = timezone.localtime(
+            outcome.task.snoozed_until, ZoneInfo(membership.company.timezone)
+        )
+        success = _("Snoozed until %(time)s.") % {"time": until.strftime("%H:%M")}
+    await _show(callback, outcome, success=success)
+
+
 @router.callback_query(TaskCallback.filter(F.action == TaskAction.CONFIRM))
 async def confirm_task(
     callback: CallbackQuery, callback_data: TaskCallback, membership: Membership

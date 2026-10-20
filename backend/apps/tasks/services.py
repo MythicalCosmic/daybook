@@ -1,3 +1,4 @@
+from datetime import timedelta
 from functools import partial
 from zoneinfo import ZoneInfo
 
@@ -10,6 +11,8 @@ from django.utils.translation import gettext as _
 from apps.core.exceptions import DomainError
 from apps.members.models import Membership
 from apps.members.permissions import Perm
+from apps.reminders.policies import policy_for
+from apps.reminders.schedule import first_reminder_at
 from apps.tasks import queries, rules
 from apps.tasks import tasks as jobs
 from apps.tasks.models import (
@@ -68,6 +71,7 @@ def create_task(
         needs_confirmation=needs_confirmation,
     )
     _apply_changes(task, {"title": title, "description": description, "due_at": due_at})
+    _restart_reminders(task)
     task.save()
     ChecklistItem.objects.bulk_create(
         ChecklistItem(task=task, text=text.strip()[:200], order=index)
@@ -92,6 +96,8 @@ def update_task(task: Task, *, by: Membership, **changes) -> Task:
     if not task.is_open:
         raise DomainError(_("Only open tasks can be changed."))
     _apply_changes(task, changes)
+    if "due_at" in changes:
+        _restart_reminders(task)
     task.save()
     return task
 
@@ -125,6 +131,7 @@ def complete_task(
         task.proof_photo.save(proof_photo.name or "proof.jpg", proof_photo, save=False)
     task.completed_at = timezone.now()
     task.status = Task.Status.REVIEW if task.needs_confirmation else Task.Status.DONE
+    task.next_reminder_at = None
     task.save()
     if task.status == Task.Status.REVIEW:
         _add_to_feed(Activity.Kind.REVIEW, task, queries.reviewers(task), by)
@@ -156,6 +163,7 @@ def return_task(task: Task, *, by: Membership, reason: str) -> Task:
         raise DomainError(_("Say what needs to be fixed."))
     task.status = Task.Status.RETURNED
     task.completed_at = None
+    task.next_reminder_at = _resume_reminders_at(task)
     task.save()
     TaskComment.objects.create(task=task, author=by, text=reason)
     _add_to_feed(Activity.Kind.RETURNED, task, [task.assignee], by, reason)
@@ -171,10 +179,29 @@ def cancel_task(task: Task, *, by: Membership, stop_repeating: bool = False) -> 
     if task.status in (Task.Status.DONE, Task.Status.CANCELLED):
         raise DomainError(_already(task))
     task.status = Task.Status.CANCELLED
+    task.next_reminder_at = None
     task.save()
     if stop_repeating and task.template is not None and task.template.personal:
         task.template.is_active = False
         task.template.save(update_fields=["is_active", "updated_at"])
+    return task
+
+
+@transaction.atomic
+def snooze_task(task: Task, *, by: Membership) -> Task:
+    """Hold off the reminders for a while, a limited number of times per task."""
+    task = _lock(task)
+    _ensure_assignee(task, by)
+    if not task.is_open or task.due_at is None:
+        raise DomainError(_("Only open tasks with a deadline can be snoozed."))
+    policy = policy_for(task)
+    if task.snooze_count >= policy.max_snoozes:
+        raise DomainError(_("No snoozes left for this task."))
+    now = timezone.now()
+    task.snoozed_until = now + timedelta(minutes=policy.snooze_minutes)
+    task.next_reminder_at = task.snoozed_until
+    task.snooze_count += 1
+    task.save()
     return task
 
 
@@ -270,6 +297,25 @@ def _apply_changes(task: Task, changes: dict) -> None:
         task.due_at = due_at
     if "priority" in changes:
         task.priority = changes["priority"]
+
+
+def _restart_reminders(task: Task) -> None:
+    """Count reminders from scratch against the (new) deadline."""
+    task.reminders_sent = 0
+    task.escalated_at = None
+    task.snoozed_until = None
+    task.next_reminder_at = first_reminder_at(task.due_at, policy_for(task), timezone.now())
+
+
+def _resume_reminders_at(task: Task):
+    """A task sent back is open again: past its deadline the reminders pick up where they were."""
+    now = timezone.now()
+    policy = policy_for(task)
+    if task.due_at is None:
+        return None
+    if task.due_at > now:
+        return first_reminder_at(task.due_at, policy, now)
+    return now + timedelta(minutes=policy.repeat_every_minutes)
 
 
 def _missing_proof(proof: str, text: str, photo: File | None) -> str | None:

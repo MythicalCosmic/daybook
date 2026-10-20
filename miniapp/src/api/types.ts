@@ -11,6 +11,7 @@ export type TaskAction = Schemas["ActionsEnum"];
 export type Comment = Schemas["Comment"];
 export type Activity = Schemas["Activity"];
 export type Summary = Schemas["Summary"];
+export type ReminderInfo = Schemas["ReminderInfo"];
 export type Day = Schemas["Day"];
 export type MemberBrief = Schemas["MemberBrief"];
 export type Language = Schemas["LanguageEnum"];

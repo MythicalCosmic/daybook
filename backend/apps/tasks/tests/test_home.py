@@ -114,6 +114,8 @@ def test_summary_endpoint(company, worker):
         "week",
         "month_done",
         "month_on_time_percent",
+        "quiet_from",
+        "quiet_until",
         "unread_activity",
         "awaiting_review",
     }

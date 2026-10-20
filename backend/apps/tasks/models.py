@@ -70,6 +70,22 @@ class TaskTemplate(TenantModel):
     created_by = models.ForeignKey(
         Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )
+    reminder_policy = models.ForeignKey(
+        "reminders.ReminderPolicy",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        help_text=_("Leave empty for the company's default."),
+    )
+    escalate_to = models.ForeignKey(
+        Membership,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        help_text=_("Who hears when it's late. Empty: everyone who can confirm tasks."),
+    )
 
     class Meta:
         ordering = ["due_time", "title"]
@@ -139,6 +155,24 @@ class Task(TenantModel):
     confirmed_by = models.ForeignKey(
         Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
     )
+
+    # Reminders (see apps.reminders).
+    reminder_policy = models.ForeignKey(
+        "reminders.ReminderPolicy",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    escalate_to = models.ForeignKey(
+        Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    next_reminder_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    reminders_sent = models.PositiveSmallIntegerField(default=0)
+    escalated_at = models.DateTimeField(null=True, blank=True)
+    snoozed_until = models.DateTimeField(null=True, blank=True)
+    snooze_count = models.PositiveSmallIntegerField(default=0)
+    last_reminder_message_id = models.BigIntegerField(null=True, blank=True)
 
     class Meta:
         ordering = [F("due_at").asc(nulls_last=True), "pk"]

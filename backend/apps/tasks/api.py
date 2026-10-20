@@ -12,6 +12,7 @@ from apps.core.exceptions import DomainError
 from apps.members.api import IsCompanyMember, MemberBriefSerializer, requires
 from apps.members.models import Membership, Position
 from apps.members.permissions import Perm
+from apps.reminders.policies import escalation_recipients, policy_for
 from apps.tasks import queries, rules, services, stats
 from apps.tasks.models import (
     Activity,
@@ -34,11 +35,25 @@ class ChecklistItemSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class ReminderInfoSerializer(serializers.Serializer):
+    every_minutes = serializers.IntegerField()
+    sent = serializers.IntegerField()
+    max_reminders = serializers.IntegerField(help_text="0 = until it's done.")
+    escalate_after = serializers.IntegerField(help_text="0 = the manager is never told.")
+    next_at = serializers.DateTimeField(allow_null=True)
+    escalated_at = serializers.DateTimeField(allow_null=True)
+    escalate_to = serializers.CharField(allow_null=True, help_text="Name, when it's one person.")
+    snooze_minutes = serializers.IntegerField()
+    snoozes_left = serializers.IntegerField()
+    snoozed_until = serializers.DateTimeField(allow_null=True)
+
+
 class TaskSerializer(serializers.ModelSerializer):
     assignee = MemberBriefSerializer()
     created_by = MemberBriefSerializer(allow_null=True)
     confirmed_by = MemberBriefSerializer(allow_null=True)
     checklist = ChecklistItemSerializer(many=True)
+    reminder = serializers.SerializerMethodField()
     repeat_weekdays = serializers.SerializerMethodField()
     is_overdue = serializers.SerializerMethodField()
     actions = serializers.SerializerMethodField()
@@ -61,6 +76,7 @@ class TaskSerializer(serializers.ModelSerializer):
             "assignee",
             "created_by",
             "checklist",
+            "reminder",
             "repeat_weekdays",
             "started_at",
             "completed_at",
@@ -71,6 +87,27 @@ class TaskSerializer(serializers.ModelSerializer):
             "created_at",
         )
         read_only_fields = fields
+
+    @extend_schema_field(ReminderInfoSerializer(allow_null=True))
+    def get_reminder(self, task: Task) -> dict | None:
+        """How the bot chases this task. Only on single-task responses, to keep lists cheap."""
+        if not self.context.get("detail") or not task.is_open or task.due_at is None:
+            return None
+        policy = policy_for(task)
+        personal = task.kind == Task.Kind.PERSONAL
+        recipients = [] if personal else escalation_recipients(task)
+        return {
+            "every_minutes": policy.repeat_every_minutes,
+            "sent": task.reminders_sent,
+            "max_reminders": policy.max_reminders,
+            "escalate_after": 0 if personal else policy.escalate_after,
+            "next_at": task.next_reminder_at,
+            "escalated_at": task.escalated_at,
+            "escalate_to": str(recipients[0]) if len(recipients) == 1 else None,
+            "snooze_minutes": policy.snooze_minutes,
+            "snoozes_left": max(0, policy.max_snoozes - task.snooze_count),
+            "snoozed_until": task.snoozed_until,
+        }
 
     @extend_schema_field(serializers.ListField(child=serializers.IntegerField(), allow_null=True))
     def get_repeat_weekdays(self, task: Task) -> list[int] | None:
@@ -177,7 +214,10 @@ class TaskViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
         return tasks.prefetch_related("checklist")
 
     def get_serializer_context(self):
-        return super().get_serializer_context() | {"membership": getattr(self, "membership", None)}
+        return super().get_serializer_context() | {
+            "membership": getattr(self, "membership", None),
+            "detail": self.action != "list",
+        }
 
     @extend_schema(
         parameters=[
@@ -225,6 +265,11 @@ class TaskViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
             proof_photo=data.get("proof_photo"),
         )
         return self._respond(task)
+
+    @extend_schema(request=None, responses=TaskSerializer)
+    @action(detail=True, methods=["post"])
+    def snooze(self, request, company_id, pk):
+        return self._respond(services.snooze_task(self.get_object(), by=self.membership))
 
     @extend_schema(request=None, responses=TaskSerializer)
     @action(detail=True, methods=["post"])
@@ -382,6 +427,8 @@ class SummarySerializer(serializers.Serializer):
     month_on_time_percent = serializers.IntegerField(
         allow_null=True, help_text="Of this month's tasks with a deadline, finished in time."
     )
+    quiet_from = serializers.TimeField(allow_null=True, help_text="No reminders from…")
+    quiet_until = serializers.TimeField(allow_null=True, help_text="…until.")
     unread_activity = serializers.IntegerField()
     awaiting_review = serializers.IntegerField()
 
@@ -393,7 +440,7 @@ class SummaryView(APIView):
 
     @extend_schema(responses=SummarySerializer)
     def get(self, request, company_id):
-        return Response(stats.summary(self.membership, timezone.now()))
+        return Response(SummarySerializer(stats.summary(self.membership, timezone.now())).data)
 
 
 class TaskBriefSerializer(serializers.ModelSerializer):
