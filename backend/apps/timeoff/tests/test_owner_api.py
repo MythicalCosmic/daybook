@@ -9,12 +9,12 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
 from PIL import Image
 
-from apps.ai.tools.testing import call_tool
 from apps.companies.tests.factories import BranchFactory
 from apps.console import registry
 from apps.inbox.models import Notification
 from apps.inbox.services import run_action
 from apps.members.permissions import Perm
+from apps.members.tests.ai import call_tool
 from apps.members.tests.factories import AccessRoleFactory
 from apps.timeoff import demo, services
 from apps.timeoff.models import Holiday, TimeOff

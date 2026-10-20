@@ -14,7 +14,7 @@ from apps.members.queries import suspended_ids
 from apps.tasks import offdays
 
 audit_registry.register(MemberAction)
-audit_registry.register_target("membership", Perm.MEMBERS_VIEW, check=providers.history_check)
+# A person's history is Person 360's own endpoint (people/{id}/history/), scoped to branches.
 audit_registry.register_target("accessrole", Perm.ROLES_MANAGE, check=providers.role_history_check)
 audit_registry.register_target(
     "position", Perm.POSITIONS_MANAGE, check=providers.position_history_check
@@ -84,7 +84,7 @@ registry.register_copy_part(
 
 register_exporter(
     "members.people",
-    perm=Perm.MEMBERS_VIEW,
+    perm=Perm.MEMBERS_MANAGE,  # every phone number in one file
     label=_("Team"),
     columns=providers.EXPORT_COLUMNS,
     rows=providers.export_rows,

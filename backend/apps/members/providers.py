@@ -344,11 +344,6 @@ def copy_roles(source: Company, target: Company, by: Membership) -> int:
 # Audit history -----------------------------------------------------------------------
 
 
-def history_check(member: Membership, target_id: int) -> bool:
-    person = Membership.objects.filter(company_id=member.company_id, pk=target_id).first()
-    return person is not None and queries.in_scope(member, person)
-
-
 def role_history_check(member: Membership, target_id: int) -> bool:
     return AccessRole.objects.filter(company_id=member.company_id, pk=target_id).exists()
 

@@ -174,7 +174,8 @@ def person_fields(company, member_ids: list[int], now: datetime) -> dict[int, di
     off = queries.off_on(
         company, timezone.localtime(now, ZoneInfo(company.timezone)).date(), member_ids
     )
-    return {member_id: {"time_off_today": off.get(member_id)} for member_id in member_ids}
+    # Only people away today get the field; everyone else has nothing to add.
+    return {member_id: {"time_off_today": leave} for member_id, leave in off.items()}
 
 
 # Export ---------------------------------------------------------------------------------

@@ -213,13 +213,13 @@ def approve(
     membership.save()
     if chosen is not None:
         membership.branches.set(chosen[0])
-    _audit(
-        AuditLog.Action.MEMBER_APPROVED,
-        membership,
-        by,
-        role=membership.role.name if membership.role else None,
-        branches=[branch.name for branch in chosen[0]] if chosen else [],
-    )
+    # What the approver chose is recorded; defaults (the request's role, the only branch) aren't.
+    chose = {}
+    if role is not None:
+        chose["role"] = membership.role.name
+    if branches is not None and chosen is not None:
+        chose["branches"] = [branch.name for branch in chosen[0]]
+    _audit(AuditLog.Action.MEMBER_APPROVED, membership, by, **chose)
     inbox.settle(membership, outcome=APPROVED, by=actor, kind=JOIN_KIND)
     transaction.on_commit(partial(tasks.notify_join_decision.delay, membership.pk))
     transaction.on_commit(partial(group_jobs.announce_member.delay, membership.pk))
