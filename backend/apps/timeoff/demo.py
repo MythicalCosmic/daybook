@@ -70,7 +70,7 @@ def seed(company, people, now) -> None:
             first_day__lte=end,
             last_day__gte=start,
         )
-        if clash.exists():
+        if status in (TimeOff.Status.PENDING, TimeOff.Status.APPROVED) and clash.exists():
             return None
         row = TimeOff.objects.create(
             company=company,

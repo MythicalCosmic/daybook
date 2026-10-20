@@ -163,3 +163,123 @@ async def test_second_approver_sees_who_decided_first(dp, bot, company, member):
     assert request.status == Membership.Status.APPROVED
     answer = [r for r in bot.requests if isinstance(r, AnswerCallbackQuery)][-1]
     assert "already approved" in answer.text
+
+
+# Approving through the inbox copy, with branches -----------------------------------------
+
+
+@sync_to_async
+def notified_request(company, telegram_id=601):
+    """A filled-in join request, announced to the approvers (inbox notifications)."""
+    from apps.members.notifications import send_join_request
+    from apps.members.tests.factories import MembershipFactory
+
+    request = MembershipFactory(
+        company=company,
+        first_name="Akmal",
+        last_name="Jorayev",
+        onboarded_at=timezone.now(),
+        user__telegram_id=telegram_id,
+        user__phone="+998901239988",
+    )
+    send_join_request(request.pk)
+    return request
+
+
+@sync_to_async
+def copy_for(member):
+    from apps.inbox.models import Notification
+
+    return Notification.objects.get(kind="members.join", recipient=member)
+
+
+@sync_to_async
+def add_branch(company, name):
+    from apps.companies.tests.factories import BranchFactory
+
+    return BranchFactory(company=company, name=name, order=1)
+
+
+@sync_to_async
+def state_of(request):
+    request.refresh_from_db()
+    return (
+        request.status,
+        sorted(request.branches.values_list("name", flat=True)),
+        request.home_branch.name if request.home_branch else None,
+    )
+
+
+def last_markup(bot):
+    edit = [r for r in bot.requests if isinstance(r, EditMessageText)][-1]
+    return edit, [button for row in edit.reply_markup.inline_keyboard for button in row]
+
+
+async def test_one_branch_approves_at_once_from_the_inbox_copy(dp, bot, company, member):
+    from apps.inbox.callbacks import InboxAction
+
+    manager = await member.acreate(company, "Manager")
+    request = await notified_request(company)
+    copy = await copy_for(manager)
+
+    await dp.feed_update(
+        bot,
+        updates.callback(
+            updates.tg_user(manager.user.telegram_id),
+            InboxAction(notification_id=copy.pk, key="approve").pack(),
+        ),
+    )
+
+    status, branches, home = await state_of(request)
+    assert status == Membership.Status.APPROVED
+    assert len(branches) == 1 and home == branches[0]
+
+
+async def test_several_branches_ask_for_branches_then_the_home_branch(dp, bot, company, member):
+    from apps.inbox.callbacks import InboxAction
+    from apps.members.callbacks import JoinSetup
+
+    first_branch = await sync_to_async(lambda: company.branches.order_by("pk").first().name)()
+    await add_branch(company, "Yunusobod")
+    owner = await member.acreate(company, "Owner")
+    request = await notified_request(company, telegram_id=602)
+    copy = await copy_for(owner)
+    presser = updates.tg_user(owner.user.telegram_id)
+
+    await dp.feed_update(
+        bot, updates.callback(presser, InboxAction(notification_id=copy.pk, key="approve").pack())
+    )
+    edit, buttons = last_markup(bot)
+    assert "Where will Akmal work?" in edit.text
+    toggles = [b for b in buttons if JoinSetup.unpack(b.callback_data).step == "b"]
+    assert len(toggles) == 2
+    approve = next(b for b in buttons if JoinSetup.unpack(b.callback_data).step == "ok")
+    # Nothing chosen yet: Approve asks for a branch first.
+    await dp.feed_update(bot, updates.callback(presser, approve.callback_data))
+    assert (await state_of(request))[0] == Membership.Status.PENDING
+
+    def unchosen(buttons):
+        return [
+            b
+            for b in buttons
+            if JoinSetup.unpack(b.callback_data).step == "b" and b.text.startswith("▫️")
+        ]
+
+    for _ in range(2):  # choose both branches, one tap each
+        await dp.feed_update(bot, updates.callback(presser, unchosen(buttons)[0].callback_data))
+        _edit, buttons = last_markup(bot)
+    assert unchosen(buttons) == []
+    approve = next(b for b in buttons if JoinSetup.unpack(b.callback_data).step == "ok")
+    assert len(JoinSetup.unpack(approve.callback_data).branches.split(".")) == 2
+    await dp.feed_update(bot, updates.callback(presser, approve.callback_data))
+    edit, buttons = last_markup(bot)
+    assert "home branch" in edit.text
+    yunusobod = next(b for b in buttons if "Yunusobod" in b.text)
+    await dp.feed_update(bot, updates.callback(presser, yunusobod.callback_data))
+
+    status, branches, home = await state_of(request)
+    assert status == Membership.Status.APPROVED
+    assert branches == sorted([first_branch, "Yunusobod"])
+    assert home == "Yunusobod"
+    final = [r for r in bot.requests if isinstance(r, EditMessageText)][-1]
+    assert "Approved" in final.text and final.reply_markup is None
