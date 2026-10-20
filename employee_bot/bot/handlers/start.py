@@ -18,9 +18,11 @@ router = Router(name="start")
 async def cmd_start(
     message: Message, command: CommandObject, user: User, state: FSMContext
 ) -> None:
-    # Deep links features registered (login_…, job_…) first; anything else is an invite.
+    # Deep links features registered (login_…, job_…) first; their handlers decide what happens
+    # to a conversation in progress. Anything else is an invite or "home", which ends it.
     if await deeplinks.dispatch(message, command.args, user=user, state=state):
         return
+    await state.clear()
     reply = await _handle_start(user, command.args)
     if reply is not None:
         text, markup = reply
