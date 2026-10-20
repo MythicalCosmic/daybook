@@ -1,0 +1,1 @@
+"""Models of HR records."""

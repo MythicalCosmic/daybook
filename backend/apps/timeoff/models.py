@@ -45,6 +45,23 @@ class TimeOff(TenantModel):
         related_name="+",
     )
     decided_at = models.DateTimeField(null=True, blank=True)
+    recorded_by = models.ForeignKey(
+        Membership,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        help_text=_("Someone who recorded it on the person's behalf."),
+    )
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    revoked_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    revoke_reason = models.CharField(max_length=300, blank=True)
 
     class Meta:
         verbose_name_plural = "time off"

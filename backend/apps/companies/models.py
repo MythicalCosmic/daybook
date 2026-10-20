@@ -3,12 +3,15 @@ import zoneinfo
 from datetime import datetime, time
 
 from django.conf import settings
+from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.models import Language, TimeStampedModel
+from apps.core.money import CurrencyField, MoneyField
 
 
 def generate_invite_code() -> str:
@@ -18,6 +21,32 @@ def generate_invite_code() -> str:
 def validate_timezone(value: str) -> None:
     if value not in zoneinfo.available_timezones():
         raise ValidationError(_("Unknown timezone: %(value)s"), params={"value": value})
+
+
+class Feature(models.TextChoices):
+    """Modules an owner switches on per company. `Company.features` is the only module switch."""
+
+    FINANCE = "finance", _("Finance")
+    SALES = "sales", _("Sales and cash")
+    STOCK = "stock", _("Stock")
+    ATTENDANCE = "attendance", _("Attendance")
+    HR = "hr", _("HR")
+    PAYROLL = "payroll", _("Payroll")
+    AI = "ai", _("AI assistant")
+    RECOGNITION = "recognition", _("Recognition")
+
+
+def default_workdays() -> list[int]:
+    return [0, 1, 2, 3, 4, 5]  # Monday to Saturday
+
+
+def every_weekday() -> list[int]:
+    return [0, 1, 2, 3, 4, 5, 6]
+
+
+def weekday_field() -> models.PositiveSmallIntegerField:
+    """A weekday as Python numbers it: 0 = Monday … 6 = Sunday."""
+    return models.PositiveSmallIntegerField(validators=[MaxValueValidator(6)])
 
 
 class Company(TimeStampedModel):
@@ -46,6 +75,31 @@ class Company(TimeStampedModel):
         ),
     )
     is_active = models.BooleanField(default=True)
+    base_currency = CurrencyField(
+        help_text=_("The currency reports and the ledger add up in. Locked once money is booked.")
+    )
+    logo = models.ImageField(upload_to="logos/", blank=True)
+    workdays = ArrayField(
+        weekday_field(),
+        default=default_workdays,
+        blank=True,
+        help_text=_("Days people work unless their shifts say otherwise (0 = Monday)."),
+    )
+    owner_sees_personal_tasks = models.BooleanField(
+        default=True, help_text=_("Owners see the personal tasks employees make for themselves.")
+    )
+    features = ArrayField(
+        models.CharField(max_length=16, choices=Feature.choices),
+        default=list,
+        blank=True,
+        help_text=_("Modules switched on for this company."),
+    )
+    setup_completed_at = models.DateTimeField(
+        null=True, blank=True, help_text=_("When the owner finished or dismissed Get started.")
+    )
+    team_directory_phones = models.BooleanField(
+        default=True, help_text=_("Colleagues see each other's phone numbers in the app.")
+    )
 
     INVITE_PREFIX = "c_"
 
@@ -76,6 +130,9 @@ class Company(TimeStampedModel):
         self.invite_code = generate_invite_code()
         self.save(update_fields=["invite_code", "updated_at"])
 
+    def has_feature(self, feature: str) -> bool:
+        return feature in self.features
+
 
 class TenantQuerySet(models.QuerySet):
     def for_company(self, company):
@@ -91,3 +148,52 @@ class TenantModel(TimeStampedModel):
 
     class Meta:
         abstract = True
+
+
+class Branch(TenantModel):
+    """A shop, office or kitchen of the company. Data that happens somewhere carries one."""
+
+    company = models.ForeignKey(Company, on_delete=models.PROTECT, related_name="branches")
+    name = models.CharField(max_length=100)
+    code = models.CharField(
+        max_length=8, blank=True, help_text=_("Short code printed on shift and invoice numbers.")
+    )
+    address = models.CharField(max_length=255, blank=True)
+    phone = models.CharField(max_length=20, blank=True)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    geofence_m = models.PositiveSmallIntegerField(
+        default=150, help_text=_("How far from the branch a check-in may be, in metres.")
+    )
+    opens_at = models.TimeField(null=True, blank=True)
+    closes_at = models.TimeField(null=True, blank=True)
+    open_weekdays = ArrayField(weekday_field(), default=every_weekday, blank=True)
+    manager = models.ForeignKey(
+        "members.Membership",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="managed_branches",
+    )
+    cash_limit = MoneyField(
+        null=True, blank=True, help_text=_("Cash above this in the branch raises an alert.")
+    )
+    is_active = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name_plural = "branches"
+        ordering = ["order", "name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["company", "name"], name="unique_branch_name_per_company"
+            ),
+        ]
+
+    def __str__(self):
+        return self.name
+
+    def clean(self):
+        manager = self.manager
+        if manager is not None and manager.company_id != self.company_id:
+            raise ValidationError({"manager": _("Must belong to the same company.")})

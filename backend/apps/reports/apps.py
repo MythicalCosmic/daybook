@@ -1,5 +1,5 @@
-from django.apps import AppConfig
+from apps.core import appconfig
 
 
-class ReportsConfig(AppConfig):
+class ReportsConfig(appconfig.AppConfig):
     name = "apps.reports"

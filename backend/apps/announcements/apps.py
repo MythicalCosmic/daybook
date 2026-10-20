@@ -1,5 +1,5 @@
-from django.apps import AppConfig
+from apps.core import appconfig
 
 
-class AnnouncementsConfig(AppConfig):
+class AnnouncementsConfig(appconfig.AppConfig):
     name = "apps.announcements"

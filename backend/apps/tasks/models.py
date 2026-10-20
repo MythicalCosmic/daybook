@@ -8,8 +8,9 @@ from django.db.models import F
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from apps.companies.models import TenantModel
+from apps.companies.models import Branch, TenantModel
 from apps.core.models import TimeStampedModel
+from apps.core.money import MoneyField
 from apps.members.models import Membership, Position
 
 
@@ -174,6 +175,36 @@ class Task(TenantModel):
     snooze_count = models.PositiveSmallIntegerField(default=0)
     last_reminder_message_id = models.BigIntegerField(null=True, blank=True)
 
+    reward = MoneyField(null=True, blank=True)
+    branch = models.ForeignKey(
+        Branch,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="tasks",
+        help_text=_("The assignee's home branch when the task was made; never moves after."),
+    )
+
+    # Projects (see apps.projects): the card of a task on its project's board.
+    project = models.ForeignKey(
+        "projects.Project", on_delete=models.PROTECT, null=True, blank=True, related_name="tasks"
+    )
+    project_list = models.ForeignKey(
+        "projects.ProjectList",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="tasks",
+    )
+    milestone = models.ForeignKey(
+        "projects.Milestone",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="tasks",
+    )
+    list_position = models.FloatField(default=0)
+
     class Meta:
         ordering = [F("due_at").asc(nulls_last=True), "pk"]
         constraints = [
@@ -186,6 +217,7 @@ class Task(TenantModel):
         indexes = [
             models.Index(fields=["company", "assignee", "status"]),
             models.Index(fields=["company", "due_at"]),
+            models.Index(fields=["project", "project_list", "list_position"]),
         ]
 
     def __str__(self):

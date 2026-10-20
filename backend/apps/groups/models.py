@@ -2,7 +2,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 
-from apps.companies.models import TenantModel, TenantQuerySet
+from apps.companies.models import Branch, TenantModel, TenantQuerySet
 from apps.members.models import Membership, Position
 
 
@@ -13,10 +13,38 @@ class GroupEvent(models.TextChoices):
     MEMBERS = "members", _("New people")
     MORNING = "morning", _("Morning plan")
     EVENING = "evening", _("End-of-day summary")
+    ATTENDANCE = "attendance", _("Check-ins and lateness")
+    SHIFTS = "shifts", _("Shift changes")
+    CASH = "cash", _("Cash and handovers")
+    SALES = "sales", _("Sales")
+    CELEBRATIONS = "celebrations", _("Birthdays and work anniversaries")
+    KUDOS = "kudos", _("Kudos")
 
 
 # What a freshly connected group gets until someone changes it.
 DEFAULT_EVENTS = [GroupEvent.DAILY_DONE, GroupEvent.LATE, GroupEvent.EVENING]
+
+# Events that only exist once their module is switched on (Company.features).
+EVENT_FEATURES = {
+    GroupEvent.ATTENDANCE: "attendance",
+    GroupEvent.SHIFTS: "attendance",
+    GroupEvent.CASH: "sales",
+    GroupEvent.SALES: "sales",
+    GroupEvent.CELEBRATIONS: "hr",
+    GroupEvent.KUDOS: "recognition",
+}
+
+
+def available_events(company, chosen=()) -> list[GroupEvent]:
+    """The events a group of `company` can post: the task events, plus each module's once it's
+    on. Events already `chosen` stay listed, so they can still be turned off."""
+    return [
+        event
+        for event in GroupEvent
+        if event in chosen
+        or event not in EVENT_FEATURES
+        or company.has_feature(EVENT_FEATURES[event])
+    ]
 
 
 class TelegramGroupQuerySet(TenantQuerySet):
@@ -45,6 +73,12 @@ class TelegramGroup(TenantModel):
         blank=True,
         related_name="+",
         help_text=_("Only news about people in these positions. None = everyone."),
+    )
+    branches = models.ManyToManyField(
+        Branch,
+        blank=True,
+        related_name="telegram_groups",
+        help_text=_("Only news from these branches. None = every branch."),
     )
     linked_by = models.ForeignKey(
         Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"

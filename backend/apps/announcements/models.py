@@ -2,12 +2,18 @@ from django.db import models
 from django.utils.html import strip_tags
 from django.utils.translation import gettext_lazy as _
 
-from apps.companies.models import TenantModel
+from apps.companies.models import Branch, TenantModel
 from apps.members.models import Membership, Position
 
 
 class Announcement(TenantModel):
     """A message from a manager to everyone, or to some positions, with read receipts."""
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", _("Draft")
+        SCHEDULED = "scheduled", _("Scheduled")
+        SENT = "sent", _("Sent")
+        CANCELLED = "cancelled", _("Cancelled")
 
     author = models.ForeignKey(
         Membership, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
@@ -16,9 +22,20 @@ class Announcement(TenantModel):
     positions = models.ManyToManyField(
         Position, blank=True, related_name="+", help_text=_("Who gets it. None = everyone.")
     )
+    branches = models.ManyToManyField(
+        Branch,
+        blank=True,
+        related_name="announcements",
+        help_text=_("Only people in these branches get it. None = every branch."),
+    )
     summary_sent_at = models.DateTimeField(
         null=True, blank=True, help_text=_("When the author heard who still hadn't read it.")
     )
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.SENT)
+    scheduled_for = models.DateTimeField(null=True, blank=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    pinned_until = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at"]

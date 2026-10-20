@@ -1,0 +1,1 @@
+"""Django admin for payroll."""

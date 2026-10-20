@@ -1,5 +1,5 @@
-from django.apps import AppConfig
+from apps.core import appconfig
 
 
-class AuditConfig(AppConfig):
+class AuditConfig(appconfig.AppConfig):
     name = "apps.audit"
