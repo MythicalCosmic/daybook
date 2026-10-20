@@ -3,6 +3,8 @@
 Imported by `AppConfig.ready()`; register a function only once it exists.
 """
 
+import importlib
+
 from django.db.models.signals import post_save
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import gettext_noop
@@ -24,6 +26,10 @@ from apps.sales.audit_actions import SalesAction
 from apps.sales.models import CashMovement, CashShift
 
 FEATURE = Feature.SALES
+
+# The AI tools register at startup (autodiscover would import them later): a test that swaps the
+# AI registry for an empty one must never be the first to import them, or they land in it.
+importlib.import_module("apps.sales.ai_tools")
 
 # Audit labels, and who may open a shift's or a movement's History tab.
 audit_registry.register(SalesAction)
@@ -307,7 +313,8 @@ def make_defaults(sender, company, by=None, **kwargs) -> None:
 
 
 def branch_saved(sender, instance: Branch, created: bool = False, raw: bool = False, **kwargs):
-    if raw or not instance.is_active:
+    # A company without sales gets its tills when the module is switched on (`defaults.ensure`).
+    if raw or not instance.is_active or not instance.company.has_feature(FEATURE):
         return
     from django.db import transaction
 
