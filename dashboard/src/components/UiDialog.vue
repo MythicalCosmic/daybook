@@ -73,6 +73,7 @@ function guard(event: Event): void {
           @pointer-down-outside="guard"
           @escape-key-down="guard"
           tabindex="-1"
+          v-bind="description ? {} : { 'aria-describedby': undefined }"
           @open-auto-focus="focusFirstField"
           @close-auto-focus="emit('closed')"
         >

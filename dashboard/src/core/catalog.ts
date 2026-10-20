@@ -154,7 +154,7 @@ export const CATALOG: readonly CatalogEntry[] = [
       { id: "reviews", to: "lifecycle/reviews", perm: "reviews.manage" },
     ],
   },
-  { id: "recognition", group: "people", order: 60, pkg: "R", pages: [{ id: "kudos", to: "recognition" }] },
+  { id: "recognition", group: "people", order: 60, pkg: "R", feature: "recognition", pages: [{ id: "kudos", to: "recognition" }] },
 
   // Money
   {

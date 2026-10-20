@@ -82,6 +82,7 @@ const widths = { sm: "w-[400px]", md: "w-[480px]", lg: "w-[640px]", xl: "w-[820p
           widths[size],
         ]"
         tabindex="-1"
+        v-bind="description ? {} : { 'aria-describedby': undefined }"
         @open-auto-focus="focusPanel"
         @close-auto-focus="emit('closed')"
       >

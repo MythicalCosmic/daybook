@@ -84,6 +84,7 @@ function onOutside(event: Event): void {
         ]"
         :style="sheetStyle"
         tabindex="-1"
+        v-bind="description ? {} : { 'aria-describedby': undefined }"
         @open-auto-focus="focusPanel"
         @pointer-down-outside="onOutside"
         @escape-key-down="onOutside"

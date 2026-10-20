@@ -5,7 +5,7 @@
  * else reads `pulse` and `connection`.
  */
 import { useQuery, useQueryClient } from "@tanstack/vue-query";
-import { computed, shallowRef, watch, type ComputedRef, type Ref } from "vue";
+import { computed, getCurrentScope, onScopeDispose, shallowRef, watch, type ComputedRef, type Ref } from "vue";
 
 import { shellApi } from "@/api/shell";
 import { keys, moduleKey } from "@/api/keys";
@@ -53,7 +53,7 @@ export function modulesToRefresh(changed: readonly string[], list: readonly Dash
   return list.filter((m) => m.invalidates?.some((key) => changed.includes(key))).map((m) => m.id);
 }
 
-/** True while the browser tab is visible (vue-query pauses intervals in the background). */
+/** The browser believes it has a network. */
 function onlineNow(): boolean {
   return typeof navigator === "undefined" || navigator.onLine !== false;
 }
@@ -101,11 +101,19 @@ export function usePulsePolling(companyId: Ref<number | null>, onChange?: (chang
   );
 
   if (typeof window !== "undefined") {
-    window.addEventListener("offline", () => (connection.value = "offline"));
-    window.addEventListener("online", () => {
+    const offline = () => (connection.value = "offline");
+    const online = () => {
       connection.value = "online";
       void query.refetch();
-    });
+    };
+    window.addEventListener("offline", offline);
+    window.addEventListener("online", online);
+    if (getCurrentScope()) {
+      onScopeDispose(() => {
+        window.removeEventListener("offline", offline);
+        window.removeEventListener("online", online);
+      });
+    }
   }
 
   return query;

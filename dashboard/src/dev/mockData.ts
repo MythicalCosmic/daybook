@@ -15,7 +15,7 @@ export interface MockCompany extends Omit<Company, "role"> {
   roleName: Localized;
 }
 
-const DEMO_FEATURES: Company["features"] = ["finance", "sales", "stock", "attendance", "hr", "payroll", "ai", "projects", "knowledge", "calendar", "crm"];
+const DEMO_FEATURES: Company["features"] = ["finance", "sales", "stock", "attendance", "hr", "payroll", "ai", "recognition"];
 
 export const companies: MockCompany[] = [
   {
