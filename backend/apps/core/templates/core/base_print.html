@@ -1,0 +1,33 @@
+{% load i18n %}<!doctype html>
+{% get_current_language as LANGUAGE_CODE %}
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}{{ title }}{% endblock %}</title>
+  <style>{% block style %}{% endblock %}</style>
+</head>
+<body>
+  {# A running element: repeated in the bottom-left corner of every page. #}
+  <div class="print-footer">{% block footer %}{% if company %}{{ company.name }}{% if title %} · {{ title }}{% endif %}{% endif %}{% endblock %}</div>
+
+  {% block header %}
+  {% if company %}
+  <header class="print-header">
+    <div>
+      {% if logo_src %}<img src="{{ logo_src }}" alt="">{% endif %}
+      <div class="print-header__company">{{ company.name }}</div>
+      {% block header_details %}{% endblock %}
+    </div>
+    <div class="print-header__meta">
+      {% block header_meta %}{% if title %}<div>{{ title }}</div>{% endif %}{% if printed_on %}<div>{{ printed_on }}</div>{% endif %}{% endblock %}
+    </div>
+  </header>
+  {% endif %}
+  {% endblock %}
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+</body>
+</html>
