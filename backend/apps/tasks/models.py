@@ -86,6 +86,30 @@ class TaskTemplate(TenantModel):
         related_name="+",
         help_text=_("Who hears when it's late. Empty: everyone who can confirm tasks."),
     )
+    branch = models.ForeignKey(
+        Branch,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="task_templates",
+        help_text=_("Only people whose home branch this is get it. Empty: everyone it names."),
+    )
+    checklist = ArrayField(
+        models.CharField(max_length=200),
+        default=list,
+        blank=True,
+        help_text=_("Steps copied into every task it makes."),
+    )
+    onboarding = models.BooleanField(
+        default=False,
+        help_text=_(
+            "An onboarding task: given once to each new person it names when they are approved, "
+            "instead of every day."
+        ),
+    )
+    due_after_days = models.PositiveSmallIntegerField(
+        default=1, help_text=_("Onboarding tasks: due this many days after the approval.")
+    )
 
     class Meta:
         ordering = ["due_time", "title"]
@@ -101,6 +125,11 @@ def proof_upload_to(task: Task, filename: str) -> str:
     """Unguessable names, because proof photos are company-internal. The client's file name is
     never used: every proof is re-encoded as a JPEG (apps.core.uploads.sanitize_image)."""
     return f"proofs/{task.company_id}/{uuid.uuid4().hex}.jpg"
+
+
+def proof_thumb_upload_to(task: Task, filename: str) -> str:
+    """The 400 px WebP preview of a proof photo, at an unguessable name (PLAN-OWNER §2.8)."""
+    return f"proofs/thumbs/{task.company_id}/{uuid.uuid4().hex}.webp"
 
 
 class Task(TenantModel):
@@ -150,6 +179,11 @@ class Task(TenantModel):
     needs_confirmation = models.BooleanField(default=False)
     proof_text = models.TextField(blank=True)
     proof_photo = models.FileField(upload_to=proof_upload_to, blank=True)
+    proof_thumb = models.FileField(
+        upload_to=proof_thumb_upload_to,
+        blank=True,
+        help_text=_("A small preview of the proof photo, made after it's uploaded."),
+    )
     started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     confirmed_at = models.DateTimeField(null=True, blank=True)
@@ -174,6 +208,9 @@ class Task(TenantModel):
     snoozed_until = models.DateTimeField(null=True, blank=True)
     snooze_count = models.PositiveSmallIntegerField(default=0)
     last_reminder_message_id = models.BigIntegerField(null=True, blank=True)
+    last_nudged_at = models.DateTimeField(
+        null=True, blank=True, help_text=_('When a manager last pressed "Nudge now".')
+    )
 
     reward = MoneyField(null=True, blank=True)
     branch = models.ForeignKey(

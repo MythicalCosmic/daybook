@@ -73,7 +73,7 @@ def test_each_persons_shared_work_is_scored(company, member):
         ReminderLog.objects.create(task=missed, kind=kind, recipient=ali, delivered=delivered)
     ReminderLog.objects.update(sent_at=at(WEDNESDAY, 9, 30))  # sent_at is set on create
 
-    report = kpis.team(company, monday, monday + timedelta(days=7), now)
+    report = kpis.team(company, monday, monday + timedelta(days=7), now, branch_ids=None)
 
     assert [str(person) for person, _ in report.rows] == ["Vali", "Ali", "Bek", "Mona"]
     scores = {str(person): score for person, score in report.rows}

@@ -1,4 +1,7 @@
+from datetime import date
+
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_field
@@ -13,11 +16,12 @@ from apps.audit import services as audit
 from apps.audit.models import AuditLog
 from apps.core import uploads
 from apps.core.exceptions import DomainError
+from apps.core.money import MoneySerializerField
 from apps.members.api import IsCompanyMember, MemberBriefSerializer, requires
 from apps.members.models import Membership, Position
 from apps.members.permissions import Perm
 from apps.reminders.policies import escalation_recipients, policy_for
-from apps.tasks import queries, rules, services, stats
+from apps.tasks import dashboard, queries, rules, services, stats
 from apps.tasks.models import (
     Activity,
     ChecklistItem,
@@ -61,6 +65,8 @@ class TaskSerializer(serializers.ModelSerializer):
     repeat_weekdays = serializers.SerializerMethodField()
     is_overdue = serializers.SerializerMethodField()
     actions = serializers.SerializerMethodField()
+    reward = MoneySerializerField(allow_null=True, read_only=True)
+    proof_thumb = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -77,6 +83,8 @@ class TaskSerializer(serializers.ModelSerializer):
             "needs_confirmation",
             "proof_text",
             "proof_photo",
+            "proof_thumb",
+            "reward",
             "assignee",
             "created_by",
             "checklist",
@@ -122,10 +130,51 @@ class TaskSerializer(serializers.ModelSerializer):
     def get_is_overdue(self, task: Task) -> bool:
         return task.is_overdue()
 
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_proof_thumb(self, task: Task) -> str | None:
+        """A 400 px preview of the proof photo for lists (the photo itself until it's made)."""
+        file = task.proof_thumb or task.proof_photo
+        if not file:
+            return None
+        request = self.context.get("request")
+        return request.build_absolute_uri(file.url) if request else file.url
+
     @extend_schema_field(serializers.ListField(child=serializers.ChoiceField(list(rules.Action))))
     def get_actions(self, task: Task) -> list[str]:
         """What the signed-in member may do with this task right now."""
         return [str(a) for a in rules.allowed_actions(task, self.context["membership"])]
+
+
+class CalendarDaySerializer(serializers.Serializer):
+    date = serializers.DateField()
+    total = serializers.IntegerField()
+    done = serializers.IntegerField()
+    review = serializers.IntegerField()
+    open = serializers.IntegerField()
+    late = serializers.IntegerField()
+
+
+class CalendarSerializer(serializers.Serializer):
+    days = CalendarDaySerializer(many=True, help_text="Only days with something due.")
+    tasks = TaskSerializer(many=True)
+
+
+CALENDAR_LIMIT = 200
+
+
+def _calendar_range(params) -> tuple[date, date]:
+    try:
+        start = date.fromisoformat(params.get("from", ""))
+        end = date.fromisoformat(params.get("to", ""))
+    except ValueError:
+        raise serializers.ValidationError(
+            {"from": [_("Give from and to as YYYY-MM-DD.")]}
+        ) from None
+    if end < start or (end - start).days > 41:
+        raise serializers.ValidationError(
+            {"to": [_("Pick up to 42 days, the last after the first.")]}
+        )
+    return start, end
 
 
 class TaskCreateSerializer(serializers.Serializer):
@@ -216,6 +265,8 @@ class TaskViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
             tasks = tasks.filter(status__in=statuses.split(","))
         if kind := self.request.query_params.get("kind"):
             tasks = tasks.filter(kind=kind)
+        if q := self.request.query_params.get("q", "").strip()[:100]:
+            tasks = tasks.filter(Q(title__icontains=q) | Q(description__icontains=q))
         return tasks.prefetch_related("checklist")
 
     def get_serializer_context(self):
@@ -236,10 +287,35 @@ class TaskViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
             ),
             OpenApiParameter("status", description="Comma-separated statuses."),
             OpenApiParameter("kind", enum=list(Task.Kind.values)),
+            OpenApiParameter("q", description="Words in the title or description."),
         ]
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("from", required=True, description="First day, YYYY-MM-DD."),
+            OpenApiParameter("to", required=True, description="Last day, YYYY-MM-DD (≤ 42 days)."),
+        ],
+        responses=CalendarSerializer,
+    )
+    @action(detail=False, methods=["get"])
+    def calendar(self, request, company_id):
+        """The signed-in member's own tasks due between two days, with counts per day (the
+        mini app's week calendar)."""
+        start, end = _calendar_range(request.query_params)
+        mine = queries.visible_tasks(self.membership).filter(assignee=self.membership)
+        data = dashboard.calendar(mine, self.membership.company, start, end, timezone.now())
+        tasks = data["items"][:CALENDAR_LIMIT]
+        return Response(
+            {
+                "days": data["days"],
+                "tasks": TaskSerializer(
+                    tasks, many=True, context=self.get_serializer_context() | {"detail": False}
+                ).data,
+            }
+        )
 
     @extend_schema(request=TaskCreateSerializer, responses={201: TaskSerializer})
     def create(self, request, company_id):
@@ -400,7 +476,7 @@ class TaskTemplateViewSet(viewsets.ModelViewSet):
         # Employees' own repeating tasks are theirs, not part of the company's templates.
         return (
             TaskTemplate.objects.for_company(self.membership.company)
-            .filter(personal=False)
+            .filter(personal=False, onboarding=False)
             .prefetch_related("assignees", "positions")
         )
 

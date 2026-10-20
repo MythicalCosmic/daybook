@@ -1,7 +1,16 @@
-"""Owner endpoints, mounted at `/api/v1/owner/companies/<int:company_id>/`.
+"""Owner endpoints of tasks, mounted at `/api/v1/owner/companies/<int:company_id>/`
+(docs/PLAN-OWNER.md §4.1: `tasks/`, `proofs/`, `routines/`)."""
 
-An optional `root_urlpatterns` list is mounted at `/api/v1/owner/` instead, for the few
-owner endpoints outside a company.
-"""
+from django.urls import path
+from rest_framework.routers import SimpleRouter
 
-urlpatterns = []
+from apps.tasks.owner_api import ProofWallView, RoutineViewSet, TaskOwnerViewSet
+
+router = SimpleRouter()
+router.register("tasks", TaskOwnerViewSet, basename="owner-task")
+router.register("routines", RoutineViewSet, basename="owner-routine")
+
+urlpatterns = [
+    path("proofs/", ProofWallView.as_view(), name="owner-task-proofs"),
+    *router.urls,
+]

@@ -1,4 +1,5 @@
-from datetime import datetime, time, timedelta
+from dataclasses import dataclass, field
+from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from django.db.models import Q, QuerySet
@@ -23,6 +24,8 @@ TASK_RELATIONS = (
     "escalate_to__user",
     "reminder_policy",
     "template__reminder_policy",
+    "project",
+    "branch",
 )
 
 
@@ -102,6 +105,146 @@ def reviewers(task: Task) -> list[Membership]:
     ):
         return [creator]
     return confirmers(task)
+
+
+def search(
+    company,
+    *,
+    viewer: Membership,
+    branch_ids: list[int] | None,
+    status=None,
+    kind=None,
+    assignee_id: int | None = None,
+    position_id: int | None = None,
+    due_from: date | None = None,
+    due_to: date | None = None,
+    overdue: bool | None = None,
+    q: str | None = None,
+    limit: int = 50,
+) -> tuple[list[Task], int]:
+    """Tasks `viewer` may see, filtered; (up to `limit` tasks, how many match). `branch_ids`
+    narrows to those branches (None: no narrowing beyond the viewer's own scope); `status` and
+    `kind` take one value or several; days are the company's own."""
+    filters = TaskFilters(
+        status=_as_list(status),
+        kind=_as_list(kind),
+        assignee=[assignee_id] if assignee_id else [],
+        position=[position_id] if position_id else [],
+        due_from=due_from,
+        due_to=due_to,
+        overdue=overdue,
+        q=q or "",
+    )
+    tasks = filtered(company, viewer=viewer, filters=filters, branch_ids=branch_ids)
+    return list(tasks[:limit]), tasks.count()
+
+
+def detail(task_id: int, *, viewer: Membership) -> Task | None:
+    """One task `viewer` may see, with its checklist, comments and reminder log; else None."""
+    return visible_tasks(viewer).prefetch_related("checklist").filter(pk=task_id).first()
+
+
+def _as_list(value) -> list:
+    if value is None or value == "":
+        return []
+    return list(value) if isinstance(value, list | tuple | set) else [value]
+
+
+@dataclass
+class TaskFilters:
+    """The owner list's filters (docs/PLAN-OWNER.md §4.5)."""
+
+    status: list[str] = field(default_factory=list)
+    kind: list[str] = field(default_factory=list)
+    assignee: list[int] = field(default_factory=list)
+    position: list[int] = field(default_factory=list)
+    branch: list[int] = field(default_factory=list)
+    created_by: list[int] = field(default_factory=list)
+    priority: list[str] = field(default_factory=list)
+    routine: list[int] = field(default_factory=list)
+    due_from: date | None = None
+    due_to: date | None = None
+    overdue: bool | None = None
+    has_proof: bool | None = None
+    needs_confirmation: bool | None = None
+    q: str = ""
+
+
+def filtered(
+    company, *, viewer: Membership, filters: TaskFilters, branch_ids: list[int] | None
+) -> QuerySet[Task]:
+    """`visible_tasks(viewer)` with the owner list's filters applied."""
+    tasks = visible_tasks(viewer)
+    if branch_ids is not None:
+        tasks = tasks.filter(
+            Q(branch_id__in=branch_ids) | Q(assignee=viewer) | Q(created_by=viewer)
+        )
+    if filters.status:
+        tasks = tasks.filter(status__in=filters.status)
+    if filters.kind:
+        tasks = tasks.filter(kind__in=filters.kind)
+    if filters.assignee:
+        tasks = tasks.filter(assignee_id__in=filters.assignee)
+    if filters.position:
+        tasks = tasks.filter(assignee__position_id__in=filters.position)
+    if filters.branch:
+        tasks = tasks.filter(branch_id__in=filters.branch)
+    if filters.created_by:
+        tasks = tasks.filter(created_by_id__in=filters.created_by)
+    if filters.priority:
+        tasks = tasks.filter(priority__in=filters.priority)
+    if filters.routine:
+        tasks = tasks.filter(template_id__in=filters.routine)
+    tz = ZoneInfo(company.timezone)
+    if filters.due_from:
+        tasks = tasks.filter(due_at__gte=datetime.combine(filters.due_from, time.min, tzinfo=tz))
+    if filters.due_to:
+        end = datetime.combine(filters.due_to + timedelta(days=1), time.min, tzinfo=tz)
+        tasks = tasks.filter(due_at__lt=end)
+    if filters.overdue is not None:
+        late = Q(status__in=Task.OPEN_STATUSES, due_at__lt=timezone.now())
+        tasks = tasks.filter(late) if filters.overdue else tasks.exclude(late)
+    if filters.has_proof is not None:
+        proof = ~Q(proof_photo="") | ~Q(proof_text="")
+        tasks = tasks.filter(proof) if filters.has_proof else tasks.exclude(proof)
+    if filters.needs_confirmation is not None:
+        tasks = tasks.filter(needs_confirmation=filters.needs_confirmation)
+    if q := filters.q.strip():
+        tasks = tasks.filter(
+            Q(title__icontains=q)
+            | Q(description__icontains=q)
+            | Q(assignee__first_name__icontains=q)
+            | Q(assignee__last_name__icontains=q)
+        )
+    return tasks
+
+
+def late_now(member: Membership) -> QuerySet[Task]:
+    """Open shared work past its deadline that `member` may see (personal tasks never count)."""
+    return (
+        visible_tasks(member)
+        .exclude(kind=Task.Kind.PERSONAL)
+        .filter(status__in=Task.OPEN_STATUSES, due_at__lt=timezone.now())
+    )
+
+
+def late_now_count(member: Membership) -> int:
+    return late_now(member).count()
+
+
+def review_count(member: Membership) -> int:
+    return awaiting_review_by(member).count()
+
+
+def day_bounds(company, day: date) -> tuple[datetime, datetime]:
+    """The company-local day as two moments, [start, end)."""
+    tz = ZoneInfo(company.timezone)
+    start = datetime.combine(day, time.min, tzinfo=tz)
+    return start, start + timedelta(days=1)
+
+
+def company_today(company, now: datetime | None = None) -> date:
+    return timezone.localtime(now or timezone.now(), ZoneInfo(company.timezone)).date()
 
 
 def confirmers(task: Task) -> list[Membership]:

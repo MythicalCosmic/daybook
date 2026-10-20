@@ -4,7 +4,7 @@ from enum import StrEnum
 
 from apps.members.models import Membership
 from apps.members.permissions import Perm
-from apps.tasks.models import Task
+from apps.tasks.models import Proof, Task
 
 
 class Action(StrEnum):
@@ -54,3 +54,68 @@ def allowed_actions(task: Task, member: Membership) -> list[Action]:
     if task.is_open and can_manage(task, member):
         actions += [Action.EDIT, Action.CANCEL]
     return actions
+
+
+# The owner console's extra actions (docs/PLAN-OWNER.md §4.5). Kept apart from `Action`, which
+# the mini app's schema lists.
+class OwnerAction(StrEnum):
+    REASSIGN = "reassign"
+    NUDGE = "nudge"
+    COMMENT = "comment"
+
+
+def can_reassign(task: Task, member: Membership) -> bool:
+    """Give the work to someone else: whoever may manage it, never someone's personal task."""
+    return task.kind != Task.Kind.PERSONAL and task.is_open and can_manage(task, member)
+
+
+def can_nudge(task: Task, member: Membership) -> bool:
+    """Send the assignee a reminder now: shared, open work of someone else, by whoever gave it
+    or anyone who hands out, checks or plans work."""
+    if task.company_id != member.company_id or is_assignee(task, member):
+        return False
+    if task.kind == Task.Kind.PERSONAL or not task.is_open:
+        return False
+    if task.created_by_id == member.pk:
+        return True
+    return any(
+        member.has_perm(perm)
+        for perm in (Perm.TASKS_ASSIGN, Perm.TASKS_CONFIRM, Perm.TASKS_TEMPLATES)
+    )
+
+
+def owner_actions(task: Task, member: Membership) -> list[str]:
+    """What the member may do with the task in the dashboard, as plain strings."""
+    actions = [str(action) for action in allowed_actions(task, member)]
+    if can_reassign(task, member):
+        actions.append(OwnerAction.REASSIGN)
+    if can_nudge(task, member):
+        actions.append(OwnerAction.NUDGE)
+    if task.company_id == member.company_id:
+        actions.append(OwnerAction.COMMENT)
+    return actions
+
+
+# Board columns (docs/PLAN-OWNER.md §1.3: To do, In progress, Waiting, Sent back, Done).
+class Column(StrEnum):
+    TODO = "todo"
+    IN_PROGRESS = "in_progress"
+    REVIEW = "review"
+    RETURNED = "returned"
+    DONE = "done"
+
+
+def board_moves(task: Task, member: Membership) -> list[str]:
+    """Columns the member may drag the card to, each meaning one allowed transition: start it,
+    finish it (only work that needs no proof), confirm it or send it back."""
+    actions = allowed_actions(task, member)
+    moves = []
+    if Action.START in actions:
+        moves.append(Column.IN_PROGRESS)
+    if Action.COMPLETE in actions and task.proof == Proof.NONE:
+        moves.append(Column.REVIEW if task.needs_confirmation else Column.DONE)
+    if Action.CONFIRM in actions:
+        moves.append(Column.DONE)
+    if Action.RETURN in actions:
+        moves.append(Column.RETURNED)
+    return [str(move) for move in dict.fromkeys(moves)]

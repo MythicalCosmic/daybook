@@ -7,6 +7,7 @@ from django.utils import timezone, translation
 from apps.companies.models import Company
 from apps.members.permissions import Perm
 from apps.members.queries import members_with_perm
+from apps.members.scope import branch_ids
 from apps.notifications.tasks import send_telegram_message
 from apps.notifications.telegram import BotName, serialize_markup
 from apps.reports import bot_messages, digest, kpis
@@ -32,16 +33,20 @@ def post_weekly_reports(now: datetime) -> int:
         if local.weekday() != 0 or not in_window(local, company.morning_report_at):
             continue
         start, end = bounds(Period.LAST_WEEK, local.date())
-        report = None
+        reports = {}  # one report per branch scope: a branch manager sees their branches only
         readers = (
             members_with_perm(company, Perm.REPORTS_VIEW)
             .filter(onboarded_at__isnull=False, user__telegram_id__isnull=False)
-            .select_related("user")
+            .select_related("user", "role", "company")
         )
         for reader in readers:
-            report = report or kpis.team(company, start, end, now)
+            scope = branch_ids(reader)
+            key = None if scope is None else tuple(scope)
+            if key not in reports:
+                reports[key] = kpis.team(company, start, end, now, branch_ids=scope)
+            report = reports[key]
             if report.totals.total == 0:
-                break  # a quiet week: nothing to report
+                continue  # a quiet week for them: nothing to report
             # The unique row is the claim: a second run that gets here skips it.
             _, claimed = WeeklyReport.objects.get_or_create(membership=reader, week_start=start)
             if not claimed:
