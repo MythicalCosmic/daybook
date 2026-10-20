@@ -94,7 +94,9 @@ def search_branches(member, q: str, limit: int) -> list[registry.SearchHit]:
     ]
 
 
-registry.register_search("companies.branches", perm=Perm.COMPANY_SETTINGS, search=search_branches)
+# Like the branch list: everyone with dashboard access finds the branches in their scope (the
+# branch opens read-only without company.settings).
+registry.register_search("companies.branches", perm=None, search=search_branches)
 
 # "Copy setup from another company" (§13.2): people, money and history never travel.
 registry.register_copy_part(

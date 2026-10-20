@@ -145,6 +145,58 @@ def test_closing_and_reopening(company, owner, owner_api):
     assert owner_api(owner).delete(url(company, f"{second.pk}/")).status_code == 405
 
 
+@pytest.mark.django_db(transaction=True)
+def test_closing_the_last_two_branches_at_once_keeps_one_open(company, owner):
+    """Two people close the two open branches at the same moment: one wins, one is told the
+    company needs an open branch (the company row serialises them)."""
+    import threading
+
+    from django.db import connection
+
+    from apps.companies import services
+    from apps.core.exceptions import DomainError
+
+    branches = [company.branches.get(), BranchFactory(company=company, name="Yunusobod")]
+    start = threading.Barrier(2)
+    outcomes = []
+
+    def close(branch):
+        try:
+            start.wait()
+            services.deactivate_branch(branch, by=owner)
+            outcomes.append("closed")
+        except DomainError:
+            outcomes.append("refused")
+        finally:
+            connection.close()
+
+    threads = [threading.Thread(target=close, args=(branch,)) for branch in branches]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=20)
+
+    assert sorted(outcomes) == ["closed", "refused"]
+    assert Branch.objects.filter(company=company, is_active=True).count() == 1
+
+
+def test_a_rename_that_loses_a_race_is_a_clear_error(company, owner, monkeypatch):
+    """The database's unique name is the last guard; it answers like the check before it."""
+    from django.db import IntegrityError
+
+    from apps.companies import services
+    from apps.core.exceptions import DomainError
+
+    branch = company.branches.get()
+
+    def collide(*args, **kwargs):
+        raise IntegrityError("unique_branch_name_per_company")
+
+    monkeypatch.setattr(Branch, "save", collide)
+    with pytest.raises(DomainError, match="already called"):
+        services.update_branch(branch, by=owner, name="Sergeli")
+
+
 def test_reordering(company, owner, owner_api):
     first = company.branches.get()
     second = BranchFactory(company=company, name="Yunusobod", order=5)
@@ -191,6 +243,32 @@ def test_branch_scope_limits_what_a_scoped_member_sees(company, member, owner_ap
 
     assert [row["id"] for row in rows] == [second.pk]
     assert owner_api(scoped).get(url(company, f"{first.pk}/")).status_code == 404
+
+
+def test_the_palette_finds_branches_in_the_callers_scope(company, other_company, member):
+    from apps.console import registry
+
+    first = company.branches.get()
+    first.name, first.address = "Chilonzor", "Bunyodkor 12"
+    first.save()
+    second = BranchFactory(company=company, name="Chilonzor-2", code="CH2")
+    BranchFactory(company=other_company, name="Chilonzor bozori")
+    role = company.accessroles.get(name="Accountant")
+    role.permissions = [p for p in role.permissions if p != "branches.all"]
+    role.save()
+    scoped = member(company, "Accountant")
+    scoped.branches.add(second)
+    manager = member(company, "Manager")
+
+    everything = registry.run_search(manager, "chilon", types=["companies.branches"])
+    mine = registry.run_search(scoped, "chilon", types=["companies.branches"])
+
+    assert [(hit.id, hit.subtitle) for hit in everything] == [
+        (first.pk, "Bunyodkor 12"),
+        (second.pk, "CH2"),
+    ]
+    assert everything[0].url == f"settings/branches?branch={first.pk}"
+    assert [hit.id for hit in mine] == [second.pk]
 
 
 def test_another_companys_branch_is_not_found(company, other_company, owner, owner_api):

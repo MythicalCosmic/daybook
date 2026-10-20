@@ -215,9 +215,17 @@ def revoke_others(user: User, *, keep: int | None) -> int:
     return count
 
 
-def active_sessions(user: User) -> list[DeviceSession]:
-    """The person's signed-in browsers, most recently used first."""
-    return list(DeviceSession.objects.filter(user=user, revoked_at__isnull=True))
+def active_sessions(user: User, now=None) -> list[DeviceSession]:
+    """The person's signed-in browsers, most recently used first. A browser idle for longer
+    than a refresh token lives can never refresh again, so it isn't signed in any more."""
+    now = now or timezone.now()
+    return list(
+        DeviceSession.objects.filter(
+            user=user,
+            revoked_at__isnull=True,
+            last_seen_at__gt=now - jwt_settings.REFRESH_TOKEN_LIFETIME,
+        )
+    )
 
 
 class InitDataRefused(Exception):

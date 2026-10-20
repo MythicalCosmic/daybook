@@ -207,6 +207,12 @@ def decide(link_id, user: User, pick: str | None) -> str:
                 link.save(update_fields=["status"])
             return "expired"
         if status != Status.PENDING:
+            # A second tap from the same person (a double tap before the buttons went away)
+            # repeats the first answer instead of claiming the link was used by someone.
+            if link.user_id == user.pk and link.status in (Status.APPROVED, Status.CONSUMED):
+                return "approved"
+            if link.user_id == user.pk and link.status == Status.DENIED:
+                return "denied"
             return "used"
         outcome = "approved"
         if pick is None:

@@ -169,3 +169,16 @@ async def test_owners_add_companies_without_a_code(dp, bot, settings, company, m
     await dp.feed_update(bot, updates.message(updates.tg_user(7408), "/new"))
 
     assert "What is your company called?" in last_text(bot)
+
+
+async def test_someone_at_the_company_limit_hears_it_before_typing(
+    dp, bot, settings, company, member
+):
+    settings.COMPANY_SIGNUP = "code"
+    settings.MAX_COMPANIES_PER_USER = 1
+    await sync_to_async(member)(company, "Owner", user__telegram_id=7409)
+
+    await dp.feed_update(bot, updates.message(updates.tg_user(7409), "/new"))
+
+    assert "the most one person can" in last_text(bot)
+    assert len(bot.sent()) == 1

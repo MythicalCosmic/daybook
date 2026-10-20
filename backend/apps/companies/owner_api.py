@@ -505,7 +505,7 @@ class NewCompanyInfoView(OwnerUserAPIView):
 
         user = request.user
         rules = signup.policy(user)
-        owned = len(queries.owned_companies(user))
+        owned = queries.owned_count(user)
         limit = None if user.is_platform_admin else settings.MAX_COMPANIES_PER_USER
         allowed = rules.allowed and (limit is None or owned < limit)
         reason = rules.reason

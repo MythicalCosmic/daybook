@@ -98,10 +98,10 @@ def create_company(
 def _ensure_may_own_another(owner: User) -> None:
     """MAX_COMPANIES_PER_USER. The owner's row is locked, so two companies created at the
     same moment can't both slip under the limit."""
+    from apps.companies.queries import owned_count
+
     User.objects.select_for_update().filter(pk=owner.pk).first()
-    owned = Membership.objects.filter(
-        user=owner, status=Membership.Status.APPROVED, role__is_owner=True
-    ).count()
+    owned = owned_count(owner)
     if owned >= settings.MAX_COMPANIES_PER_USER:
         raise DomainError(
             _("You already own %(count)d companies, the most one person can.") % {"count": owned}
@@ -431,7 +431,7 @@ CODE_PATTERN = re.compile(r"^[A-Z0-9]{1,8}$")
 def create_branch(company: Company, *, by: Membership, **fields) -> Branch:
     """A new branch at the end of the list."""
     with transaction.atomic():
-        Company.objects.select_for_update().filter(pk=company.pk).first()
+        _lock_company(company.pk)
         branch = Branch(company=company)
         _apply_branch(branch, fields)
         last = (
@@ -441,7 +441,7 @@ def create_branch(company: Company, *, by: Membership, **fields) -> Branch:
             .first()
         )
         branch.order = (last or 0) + 1
-        branch.save()
+        _save_branch(branch)
         audit.record(
             CompanyAction.BRANCH_CREATED,
             company_id=company.pk,
@@ -454,10 +454,13 @@ def create_branch(company: Company, *, by: Membership, **fields) -> Branch:
 
 def update_branch(branch: Branch, *, by: Membership, **fields) -> Branch:
     with transaction.atomic():
+        # The company row first, as create and close do: names and codes stay unique even
+        # when two people rename branches at the same moment.
+        _lock_company(branch.company_id)
         branch = Branch.objects.select_for_update().get(pk=branch.pk)
         before = audit.snapshot(branch)
         _apply_branch(branch, fields)
-        branch.save()
+        _save_branch(branch)
         if changes := audit.diff(before, audit.snapshot(branch)):
             audit.record(
                 CompanyAction.BRANCH_CHANGED,
@@ -473,6 +476,9 @@ def deactivate_branch(branch: Branch, *, by: Membership) -> Branch:
     """Close a branch: it leaves pickers and new work, its history stays. The last open
     branch can't be closed."""
     with transaction.atomic():
+        # Two people closing the last two open branches at once must not both succeed: the
+        # company row makes the second one wait and then see the first one's change.
+        _lock_company(branch.company_id)
         branch = Branch.objects.select_for_update().get(pk=branch.pk)
         if not branch.is_active:
             return branch
@@ -513,6 +519,7 @@ def activate_branch(branch: Branch, *, by: Membership) -> Branch:
 def reorder_branches(company: Company, *, by: Membership, ids: list[int]) -> list[Branch]:
     """Put branches in this order (every branch id of the company, each once)."""
     with transaction.atomic():
+        _lock_company(company.pk)
         branches = {b.pk: b for b in Branch.objects.select_for_update().for_company(company)}
         if sorted(ids) != sorted(branches) or len(set(ids)) != len(ids):
             raise DomainError(_("List every branch once to reorder them."))
@@ -532,6 +539,22 @@ def reorder_branches(company: Company, *, by: Membership, ids: list[int]) -> lis
                 order=ids,
             )
     return [branches[pk] for pk in ids]
+
+
+def _lock_company(company_id: int) -> None:
+    """Every branch write takes the company row first, so they queue up in one order."""
+    Company.objects.select_for_update().filter(pk=company_id).values_list("pk", flat=True).first()
+
+
+def _save_branch(branch: Branch) -> None:
+    """Save, turning the database's unique-name guard into the message people understand."""
+    try:
+        with transaction.atomic():
+            branch.save()
+    except IntegrityError as exc:
+        raise DomainError(
+            _("Another branch is already called %(name)s.") % {"name": branch.name}
+        ) from exc
 
 
 def _apply_branch(branch: Branch, fields: dict) -> None:

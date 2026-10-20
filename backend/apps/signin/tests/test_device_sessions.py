@@ -1,7 +1,12 @@
 """The sessions page: list, sign one browser out, log out everywhere (§4.3, §7.3)."""
 
+from datetime import timedelta
+
 import pytest
+from django.db import connection
 from django.test import RequestFactory
+from django.test.utils import CaptureQueriesContext
+from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 
@@ -134,3 +139,29 @@ def test_inside_telegram_keep_current_still_logs_out_everywhere(owner):
 def test_sessions_need_an_owner_token(owner, api_as, client):
     assert client.get(SESSIONS).status_code == 401
     assert api_as(owner).get(SESSIONS).status_code == 401
+
+
+def test_a_browser_idle_longer_than_a_refresh_token_lives_is_not_listed(owner):
+    laptop, _issued = signed_in(owner.user)
+    stale = DeviceSessionFactory(user=owner.user)
+    DeviceSession.objects.filter(pk=stale.pk).update(
+        last_seen_at=timezone.now() - timedelta(days=8)
+    )
+
+    rows = laptop.get(SESSIONS).json()
+
+    assert [row["id"] for row in rows] == [_issued.session.pk]
+
+
+def test_the_list_makes_no_query_per_session(owner):
+    laptop, _issued = signed_in(owner.user)
+    signed_in(owner.user, IPHONE)
+    with CaptureQueriesContext(connection) as few:
+        laptop.get(SESSIONS)
+    for _ in range(4):
+        signed_in(owner.user, IPHONE)
+
+    with CaptureQueriesContext(connection) as many:
+        assert len(laptop.get(SESSIONS).json()) == 6
+
+    assert len(many) == len(few)

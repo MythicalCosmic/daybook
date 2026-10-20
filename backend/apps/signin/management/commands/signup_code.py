@@ -31,6 +31,6 @@ class Command(BaseCommand):
         except DomainError as exc:
             raise CommandError(str(exc)) from exc
         self.stdout.write(raw)
-        username = settings.OWNER_BOT_USERNAME or settings.EMPLOYEE_BOT_USERNAME
-        if username:
+        # Only the owner bot runs /new: an employee bot link would just greet the person.
+        if username := settings.OWNER_BOT_USERNAME:
             self.stdout.write(f"https://t.me/{username}?start=new_{signup.normalize(raw)}")

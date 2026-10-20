@@ -108,6 +108,17 @@ def test_the_command_prints_the_code_and_the_bot_link(settings):
     assert link == f"https://t.me/owner_test_bot?start=new_{signup.normalize(raw)}"
 
 
+def test_without_the_owner_bot_the_command_prints_no_link(settings):
+    """Only the owner bot runs /new; an employee bot link would just greet the person."""
+    settings.OWNER_BOT_USERNAME = ""
+    settings.EMPLOYEE_BOT_USERNAME = "staff_test_bot"
+    out = StringIO()
+
+    call_command("signup_code", stdout=out)
+
+    assert len(out.getvalue().split()) == 1
+
+
 def test_the_admin_shows_a_new_code_once(admin_client):
     response = admin_client.post(
         "/admin/signin/signupcode/add/", {"note": "Yunusobod café", "uses_left": 1}, follow=True

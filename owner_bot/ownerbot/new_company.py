@@ -26,7 +26,23 @@ ALIASES = {
 
 
 def policy(user: User) -> signup.Policy:
-    return signup.policy(user)
+    """`COMPANY_SIGNUP`, plus `MAX_COMPANIES_PER_USER` checked up front: someone at the limit
+    hears it before typing a code and a name, not after."""
+    from django.conf import settings
+    from django.utils.translation import gettext as _
+
+    from apps.companies.queries import owned_count
+
+    rules = signup.policy(user)
+    if not rules.allowed or user.is_platform_admin:
+        return rules
+    owned = owned_count(user)
+    if owned >= settings.MAX_COMPANIES_PER_USER:
+        reason = _("You already own %(count)d companies, the most one person can.") % {
+            "count": owned
+        }
+        return signup.Policy(rules.mode, False, False, reason)
+    return rules
 
 
 def code_ok(raw: str) -> str | None:

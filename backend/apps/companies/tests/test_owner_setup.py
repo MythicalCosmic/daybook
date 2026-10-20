@@ -91,6 +91,30 @@ def test_dismiss_and_resume(company, owner, owner_api):
     assert resumed.json()["dismissed"] is False
 
 
+def test_the_today_brief_shows_get_started_until_it_is_done_or_dismissed(company, owner):
+    """The owner bot's /today (and briefings) get a "Get started" line from the section."""
+    from django.utils import timezone
+
+    from apps.console import registry
+
+    def brief():
+        now = timezone.now()
+        return dict(registry.collect_brief_sections(owner, now.date(), now, branch_ids=None))
+
+    section = brief()["companies.setup"]
+    total = int(section["lines"][0].split(" of ")[1].split()[0])
+    assert section["title"] == "Get started" and section["lines"][0].startswith("0 of")
+
+    branch = company.branches.get()
+    branch.address = "Bunyodkor 12"
+    branch.save()
+    assert brief()["companies.setup"]["lines"][0] == f"1 of {total} steps done"
+
+    services.dismiss_setup(company, by=owner)
+    owner.company.refresh_from_db()
+    assert "companies.setup" not in brief()
+
+
 def test_only_company_settings_may_dismiss(company, member, owner_api, other_company):
     manager = member(company, "Manager")
 

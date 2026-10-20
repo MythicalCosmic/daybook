@@ -83,12 +83,40 @@ def test_no_photo_on_telegram_clears_the_avatar(company, member, telegram, downl
     assert not User.objects.get(pk=person.user_id).photo
 
 
-def test_refusals_are_tried_again_next_time(company, member, telegram, downloads):
+def test_refusals_keep_the_old_avatar_and_wait_a_week(company, member, telegram, downloads):
     person = member(company, "Employee", user__telegram_id=9301)
+    answers, _asked = downloads
+    answers[9301] = picture()
+    photos.refresh()
+    before = User.objects.get(pk=person.user_id)
+    User.objects.filter(pk=person.user_id).update(
+        photo_checked_at=timezone.now() - timedelta(days=8)
+    )
+    del answers[9301]  # Telegram refuses this time
 
-    photos.refresh()  # Telegram refused: nothing stored, not marked as checked
+    photos.refresh()
 
-    assert User.objects.get(pk=person.user_id).photo_checked_at is None
+    user = User.objects.get(pk=person.user_id)
+    assert user.photo.name == before.photo.name  # the old avatar stays
+    assert user.photo_checked_at > timezone.now() - timedelta(minutes=1)
+    assert person.user_id not in {u.pk for u in photos.due(timezone.now())}
+    assert person.user_id in {u.pk for u in photos.due(timezone.now() + timedelta(days=7))}
+
+
+def test_people_never_checked_come_first(company, member, monkeypatch):
+    monkeypatch.setattr(photos, "BATCH", 2)
+    stale = []
+    for index in range(3):
+        person = member(company, "Employee", user__telegram_id=9310 + index)
+        User.objects.filter(pk=person.user_id).update(
+            photo_checked_at=timezone.now() - timedelta(days=30 - index)
+        )
+        stale.append(person)
+    newcomer = member(company, "Employee", user__telegram_id=9320)
+
+    due = [user.pk for user in photos.due(timezone.now())]
+
+    assert due == [newcomer.user_id, stale[0].user_id]
 
 
 def test_something_that_is_not_a_picture_is_ignored(company, member, telegram, downloads):

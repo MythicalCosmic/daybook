@@ -3,7 +3,8 @@
 Everyone who works in an active company gets their current Telegram photo cached on
 `User.photo`, re-encoded on the server like every other picture (`sanitize_image`), at a small
 size. Someone without a photo (or who hides it) loses the old one. People who blocked the bot,
-and any Telegram error, are skipped and tried again next week.
+and any Telegram error, keep their old avatar and are tried again next week. People never
+checked come first, so newcomers get their avatar on the next run.
 """
 
 import asyncio
@@ -14,7 +15,7 @@ from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import F, Q
 from django.utils import timezone
 
 from apps.accounts.models import User
@@ -43,7 +44,8 @@ def due(now) -> list[User]:
         )
         .filter(Q(photo_checked_at__isnull=True) | Q(photo_checked_at__lt=now - STALE_AFTER))
         .distinct()
-        .order_by("photo_checked_at", "pk")[:BATCH]
+        # Never checked first (PostgreSQL puts NULLs last by default), then the longest ago.
+        .order_by(F("photo_checked_at").asc(nulls_first=True), "pk")[:BATCH]
     )
 
 
@@ -103,7 +105,13 @@ def refresh(now=None) -> int:
     if not users:
         return 0
     pictures = asyncio.run(download_all(token, [user.telegram_id for user in users]))
+    refused = []
     for user in users:
         if user.telegram_id in pictures:
             save(user, pictures[user.telegram_id], now)
+        else:
+            refused.append(user.pk)
+    # Refused (blocked the bot, privacy, a network hiccup): keep the old avatar and look again
+    # next week, behind everyone not yet checked, so a pile of refusals never starves them.
+    User.objects.filter(pk__in=refused).update(photo_checked_at=now)
     return len(users)

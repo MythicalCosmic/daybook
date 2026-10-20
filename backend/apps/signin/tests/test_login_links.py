@@ -126,6 +126,20 @@ def test_right_number_then_one_claim_end_to_end(
     assert browser.poll().json() == {"status": "consumed"}
 
 
+def test_a_double_tap_on_the_right_number_still_reads_confirmed(browser, owner, member, company):
+    browser.start()
+    _text, signed_in = tap_right(owner.user, browser)
+    link = LoginLink.objects.get(pk=browser.link["id"])
+
+    again = links.decide(link.pk, owner.user, browser.link["match_code"])
+
+    assert signed_in and again == "approved"
+    assert browser.claim().status_code == 200  # the claim works once, as before
+    assert links.decide(link.pk, owner.user, browser.link["match_code"]) == "approved"
+    stranger = member(company, "Owner")
+    assert links.decide(link.pk, stranger.user, browser.link["match_code"]) == "used"
+
+
 def test_log_out_everywhere_from_the_bot_ends_every_session(browser, owner, client):
     browser.start()
     tap_right(owner.user, browser)
@@ -158,7 +172,10 @@ def test_a_wrong_number_cancels_the_link(browser, owner):
     assert browser.poll().json() == {"status": "denied"}
     assert browser.claim().json()["code"] == "denied"
     # Tapping the right number afterwards changes nothing: the link is spent.
-    assert links.decide(wrong.link, owner.user, browser.link["match_code"]) == "used"
+    assert links.decide(wrong.link, owner.user, browser.link["match_code"]) == "denied"
+    assert browser.poll().json() == {"status": "denied"}
+    # Anyone else who gets hold of the buttons only hears that it's used.
+    assert links.decide(wrong.link, UserFactory(), browser.link["match_code"]) == "used"
     # And opening it again tells the person why.
     assert "cancelled" in bot_flow.start(owner.user, browser.code)[0]
 

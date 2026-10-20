@@ -78,6 +78,14 @@ def invite(company: Company) -> dict:
     }
 
 
+def owned_count(user) -> int:
+    """How many companies count against `MAX_COMPANIES_PER_USER` for `user`: every approved
+    owner membership, switched-off companies included (the same count `create_company` uses)."""
+    return Membership.objects.filter(
+        user=user, status=Membership.Status.APPROVED, role__is_owner=True
+    ).count()
+
+
 def owned_companies(user) -> list[Company]:
     """Active companies where `user` is an approved owner, by name."""
     return list(

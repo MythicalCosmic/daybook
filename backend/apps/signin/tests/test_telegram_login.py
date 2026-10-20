@@ -103,3 +103,28 @@ def test_the_access_token_opens_the_owner_api(client, tokens, owner, company):
 def test_bad_input(client, tokens):
     assert client.post(URL, {}, content_type="application/json").status_code == 400
     assert login(client, "not init data").status_code == 401
+
+
+def test_it_is_throttled_per_client_ip(client, tokens, owner):
+    """30 a minute per IP (§7.1); behind the proxy the client is the last forwarded hop."""
+    for _ in range(30):
+        assert (
+            client.post(
+                URL, {"init_data": "x"}, content_type="application/json", REMOTE_ADDR="10.0.0.9"
+            ).status_code
+            == 401
+        )
+
+    blocked = client.post(
+        URL, {"init_data": "x"}, content_type="application/json", REMOTE_ADDR="10.0.0.9"
+    )
+    elsewhere = client.post(
+        URL,
+        {"init_data": signed_init_data(7710001, token=OWNER_TOKEN)},
+        content_type="application/json",
+        REMOTE_ADDR="10.0.0.9",
+        HTTP_X_FORWARDED_FOR="84.54.70.2",
+    )
+
+    assert blocked.status_code == 429
+    assert elsewhere.status_code == 200
