@@ -222,7 +222,7 @@ class MyTimeDetailView(EmployeeView):
 
 
 class MyTimerView(EmployeeView):
-    """My running timer (null when none), starting it on a task or project, and stopping it."""
+    """My running timer (`{"timer": null}` when none), and starting it on a task or project."""
 
     def current(self):
         timer = (
@@ -232,9 +232,13 @@ class MyTimerView(EmployeeView):
         )
         return s.timer_row(timer) if timer else None
 
-    @extend_schema(responses=s.ProjectsTimerSerializer(allow_null=True))
+    @extend_schema(
+        responses=inline_serializer(
+            "ProjectsMyTimer", {"timer": s.ProjectsTimerSerializer(allow_null=True)}
+        )
+    )
     def get(self, request, company_id):
-        return Response(self.current())
+        return Response({"timer": self.current()})
 
     @extend_schema(
         request=s.ProjectsTimerStartSerializer, responses={201: s.ProjectsTimerSerializer}
@@ -252,7 +256,7 @@ class MyTimerView(EmployeeView):
                 pk=data["task"], company_id=company_id
             )
         services.start_timer(self.membership, task=task, project=project, note=data.get("note", ""))
-        return Response(self.current(), status=status.HTTP_201_CREATED)
+        return Response({"timer": self.current()}, status=status.HTTP_201_CREATED)
 
 
 class MyTimerStopView(EmployeeView):
