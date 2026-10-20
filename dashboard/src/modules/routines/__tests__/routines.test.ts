@@ -10,6 +10,7 @@ import { json } from "@/test/fixtures";
 import { mountWithProviders, testApp } from "@/test/plugins";
 
 import { routineKeys, routinesApi } from "../api";
+import { formatRoutineAudit, routineFieldLabels } from "../audit";
 import RoutineEditor from "../components/RoutineEditor.vue";
 import en from "../i18n/en.json";
 import module from "../index";
@@ -110,6 +111,24 @@ describe("api", () => {
     const commands = module.commands!({ t: (key: string) => key, go, can: () => true } as never);
     commands.find((command) => command.id === "routines.new")!.run();
     expect(go).toHaveBeenCalledWith("routines?new=1");
+  });
+});
+
+describe("history", () => {
+  it("reads raw audit values back as names and words", () => {
+    const t = (key: string) => (en as Record<string, string>)[key] ?? key;
+    const format = formatRoutineAudit(t, { options: { ...options, positions: [{ id: 3, name: "Cashier" }], policies: [{ id: 24, name: "Strict", is_default: false }] }, branches: [{ id: 18, name: "Chilonzor" }] });
+    expect(format("branch", 18)).toBe("Chilonzor");
+    expect(format("escalate_to", 11)).toBe("Alisher Valiyev");
+    expect(format("reminder_policy", 24)).toBe("Strict");
+    expect(format("assignees", [11, 99])).toBe("Alisher Valiyev, #99");
+    expect(format("positions", [3])).toBe("Cashier");
+    expect(format("weekdays", [0, 5])).toBe("Mon, Sat");
+    expect(format("proof", "photo")).toBe("Photo");
+    expect(format("due_time", "08:30:00")).toBe("08:30");
+    expect(format("branch", null)).toBeNull();
+    expect(format("title", "Count the till")).toBeNull(); // AuditTrail shows plain text itself
+    expect(routineFieldLabels(t).escalate_to).toBe("Who hears when it's late");
   });
 });
 

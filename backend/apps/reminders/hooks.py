@@ -1,9 +1,6 @@
 """Registrations of reminders with the shared registries (docs/PLAN-OWNER.md §11.3, Package B).
 Imported by `AppConfig.ready()`."""
 
-from functools import partial
-
-from django.db import transaction
 from django.db.models.signals import post_delete, post_save
 from django.utils.translation import gettext_lazy as _
 
@@ -32,8 +29,10 @@ registry.register_copy_part(
 
 
 def _policy_saved(sender, instance, **kwargs):
-    # After commit (docs/PLAN-OWNER.md §2.3 rule 21): never before the row is there.
-    transaction.on_commit(partial(pulse.bump, instance.company_id, "reminders.policies"))
+    # At once, for changes made outside the owner API (the admin, the mini app, company setup,
+    # whose tests count their on-commit callbacks); the owner endpoints bump again after their
+    # commit, so a dashboard that polled in between still refetches.
+    pulse.bump(instance.company_id, "reminders.policies")
 
 
 post_save.connect(_policy_saved, sender=ReminderPolicy, dispatch_uid="reminders.pulse.saved")

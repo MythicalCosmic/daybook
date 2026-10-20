@@ -25,8 +25,10 @@ import { toast } from "@/components/useToast";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useFormat } from "@/lib/useFormat";
 import { useRangeState } from "@/lib/useRangeState";
+import { useCompanyStore } from "@/stores/company";
 
-import { useCompliance, useRoutine, useSaveRoutine } from "../api";
+import { useCompliance, usePlanOptions, useRoutine, useSaveRoutine } from "../api";
+import { formatRoutineAudit, routineFieldLabels } from "../audit";
 import RoutineEditor from "../components/RoutineEditor.vue";
 import RoutinePreview from "../components/RoutinePreview.vue";
 import ScaledChart from "../components/ScaledChart.vue";
@@ -46,6 +48,11 @@ const range = computed(() => ({ from: period.value.range.from, to: period.value.
 const compliance = useCompliance(id, range);
 const save = useSaveRoutine();
 const editorOpen = ref(false);
+const company = useCompanyStore();
+const planOptions = usePlanOptions();
+// The History tab names branches, people, positions and policies instead of their ids.
+const auditLabels = computed(() => routineFieldLabels(t));
+const auditFormat = computed(() => formatRoutineAudit(t, { options: planOptions.data.value, branches: company.current?.branches ?? [] }));
 
 const data = computed(() => routine.data.value ?? null);
 const totals = computed(() => compliance.data.value?.totals);
@@ -163,7 +170,7 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
       </PageSection>
 
       <PageSection :title="t('routines.detail.history')" variant="card">
-        <AuditTrail target-type="tasktemplate" :target-id="data.id" />
+        <AuditTrail target-type="tasktemplate" :target-id="data.id" :field-labels="auditLabels" :format-value="auditFormat" />
       </PageSection>
 
       <RoutineEditor v-model:open="editorOpen" :routine="data" @deleted="router.push({ name: 'routines.list' })" />

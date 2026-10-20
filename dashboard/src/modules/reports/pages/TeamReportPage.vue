@@ -63,7 +63,7 @@ const trendCategories = computed(() => series.value.map((p) => p.date));
 
 // Spread per group (top 12 by volume)
 const spread = computed(() => [...(data.value?.breakdown ?? [])].filter((row) => row.total > 0).sort((a, b) => (groupBy.value === "day" ? a.key.localeCompare(b.key) : b.total - a.total)).slice(0, groupBy.value === "day" ? 62 : 12));
-const label = (row: TeamRow) => (groupBy.value === "day" ? row.key : row.label || t("reports.none"));
+const label = (row: TeamRow) => (groupBy.value === "day" ? row.key : row.label || (groupBy.value === "member" ? t("reports.none") : t(`reports.noneBy.${groupBy.value}`)));
 const spreadSeries = computed(() => [
   { name: t("reports.kpi.onTimeShort"), data: spread.value.map((r) => r.on_time), color: chart.value.success, stack: "all" },
   { name: t("reports.kpi.late"), data: spread.value.map((r) => r.late), color: chart.value.warning, stack: "all" },
@@ -167,7 +167,7 @@ const groupOptions = computed(() => [
       <template #cell-label="{ row }">
         <PersonCell v-if="row.member" :person="row.member" :subtitle="row.position" size="sm" link />
         <span v-else-if="groupBy === 'day'" class="font-medium text-fg">{{ fmt.day(row.key, "weekday") }}</span>
-        <span v-else class="truncate font-medium text-fg">{{ row.label || t("reports.none") }}</span>
+        <span v-else class="truncate font-medium text-fg">{{ label(row) }}</span>
       </template>
       <template #cell-on_time="{ row }"><span class="tabular-nums text-success">{{ row.on_time }}</span></template>
       <template #cell-late="{ row }"><span :class="['tabular-nums', row.late ? 'text-warning' : 'text-subtle']">{{ row.late }}</span></template>
@@ -185,7 +185,7 @@ const groupOptions = computed(() => [
         <div class="flex min-w-0 items-center gap-3">
           <div class="min-w-0 flex-1">
             <PersonCell v-if="row.member" :person="row.member" :subtitle="row.position" size="sm" />
-            <p v-else class="truncate text-sm font-semibold text-fg">{{ groupBy === "day" ? fmt.day(row.key, "weekday") : row.label || t("reports.none") }}</p>
+            <p v-else class="truncate text-sm font-semibold text-fg">{{ groupBy === "day" ? fmt.day(row.key, "weekday") : label(row) }}</p>
             <p class="mt-1 text-xs text-muted">{{ t("reports.card", { total: row.total, late: row.late, missed: row.missed }) }}</p>
           </div>
           <span :class="['text-md font-semibold tabular-nums', TONE_TEXT[tone(row.on_time_percent)]]">{{ fmt.percent(row.on_time_percent, 0) }}</span>

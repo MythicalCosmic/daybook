@@ -16,6 +16,8 @@ from django.core.files.base import ContentFile
 from django.utils import timezone
 from PIL import Image, ImageDraw, ImageFilter
 
+from apps.audit import services as audit
+from apps.audit.models import AuditLog
 from apps.core import uploads
 from apps.members.models import Membership, Position
 from apps.reminders.models import ReminderLog, ReminderPolicy, ReminderText
@@ -57,6 +59,7 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         template.assignees.set(who)
         template.positions.set([p for name in roles for p in position(name)])
         TaskTemplate.objects.filter(pk=template.pk).update(created_at=now - timedelta(days=90))
+        _history(AuditLog.Action.TEMPLATE_CREATED, template, owner, now - timedelta(days=90))
         return template
 
     def adopt(core_title, fallback, due, *, who=(), english=None, **fields):
@@ -69,11 +72,20 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         ).first()
         if template is None:
             return routine(fallback, due, who=who, **fields)
+        before = audit.snapshot(template)
         for name, value in (fields | (english or {})).items():
             setattr(template, name, value)
         template.save()
         template.assignees.add(*who)
         TaskTemplate.objects.filter(pk=template.pk).update(created_at=now - timedelta(days=90))
+        if changes := audit.diff(before, audit.snapshot(template)):
+            _history(
+                AuditLog.Action.TEMPLATE_CHANGED,
+                template,
+                manager,
+                now - timedelta(days=12, hours=3),
+                changes=changes,
+            )
         return template
 
     opening = adopt(
@@ -255,7 +267,10 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
             day = today - timedelta(days=days_ago)
             if not template.is_due_on(day) or (template.pk, person.pk, day) in taken:
                 continue
-            _history_task(company, template, person, day, tz, rng, on_time, missed)
+            # Misses only in the last three weeks: older open routine work would read as a
+            # neglected list rather than a team's recent slips.
+            chance = missed if days_ago <= 21 else 0.0
+            _history_task(company, template, person, day, tz, rng, on_time, chance)
 
     # Today: routine tasks in every state, made at midnight like daily generation. The core
     # demo may already have given someone today's task of a routine: theirs stays.
@@ -375,6 +390,9 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         given_at = min(due, fields.get("completed_at") or due, now) - timedelta(hours=20)
         Task.objects.filter(pk=task.pk).update(created_at=given_at)
         Activity.objects.filter(task=task).update(created_at=given_at)
+        _history(AuditLog.Action.TASK_ASSIGNED, task, by, given_at, assignee=str(person))
+        if task.confirmed_at:
+            _history(AuditLog.Action.TASK_CONFIRMED, task, task.confirmed_by, task.confirmed_at)
         return task
 
     window = given(
@@ -417,6 +435,13 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         description="Juma kuni kelishi kerak edi. Yangi sanani so‘rab, izohga yozing.",
     )
     _comment(supplier, manager, "Telefon: Sharq Savdo, Akmal aka.", now - timedelta(hours=4))
+    _history(
+        AuditLog.Action.TASK_CHANGED,
+        supplier,
+        manager,
+        now - timedelta(hours=3, minutes=50),
+        changes={"priority": ["high", "urgent"]},
+    )
     tags = given(
         "Qishki kolleksiya uchun narx yorliqlari",
         people["madina"],
@@ -443,6 +468,13 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         owner,
         "Kunduzgi yorug‘likda qayta oling, ranglar xira chiqqan.",
         now - timedelta(hours=1, minutes=15),
+    )
+    _history(
+        AuditLog.Action.TASK_RETURNED,
+        photos,
+        owner,
+        now - timedelta(hours=1, minutes=15),
+        reason="Kunduzgi yorug‘likda qayta oling, ranglar xira chiqqan.",
     )
     given(
         "Chilonzor: konditsionerni ta’mirlash ustasini chaqirish",
@@ -646,6 +678,14 @@ PHOTO_SCENES = {
     "Ertalabki yukni qabul qilish": "boxes",
     "Javonlarni to‘ldirish va narx yorliqlari": "shelf",
 }
+
+
+def _history(action, target, by: Membership, at: datetime, **details) -> None:
+    """An audit row as if `by` had done it at `at`, so History tabs tell a story."""
+    row = audit.record(
+        action, company_id=target.company_id, actor=by.user, target=target, **details
+    )
+    AuditLog.objects.filter(pk=row.pk).update(created_at=at)
 
 
 def _comment(task, author, text, at):
