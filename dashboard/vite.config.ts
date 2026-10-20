@@ -5,9 +5,10 @@ import vue from "@vitejs/plugin-vue";
 import { defineConfig } from "vitest/config";
 
 // Ports per package come from the environment (plan §2.4, §6.5): DEV_PORT for this server,
-// API_PORT for the Django it proxies to.
+// API_PORT for the Django it proxies to, STREAM_PORT for the stream service.
 const port = Number(process.env.DEV_PORT ?? 28174);
 const backend = `http://127.0.0.1:${Number(process.env.API_PORT ?? 28000)}`;
+const stream = `http://127.0.0.1:${Number(process.env.STREAM_PORT ?? 28001)}`;
 
 /** Libraries that only a few pages need get their own chunks, so the shell never pays for them. */
 const isolated: Array<[name: string, test: RegExp]> = [
@@ -45,7 +46,10 @@ export default defineConfig({
     // The Host header stays the dev server's own: the cookie endpoints (refresh, logout, dev login)
     // accept only a same-origin `Origin` (apps.signin.auth.FromDashboard), and Vite's string
     // shorthand would rewrite Host to the backend's and make every one of them answer 403.
+    // AI answer streams go to the stream service, as deploy/Caddyfile routes them; listed first
+    // because the first matching prefix wins.
     proxy: {
+      "/api/v1/owner/ai/turns": { target: stream, changeOrigin: false },
       "/api": { target: backend, changeOrigin: false },
       "/media": { target: backend, changeOrigin: false },
     },

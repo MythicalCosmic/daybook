@@ -1,0 +1,2054 @@
+openapi: 3.0.3
+info:
+  title: 911 Trello API
+  version: 0.1.0
+  description: API for the employee mini app and the owner dashboard.
+paths:
+  /api/v1/owner/auth/dev-login/:
+    post:
+      operationId: auth_dev_login_create
+      description: 'Development only (`DEBUG` and `DASHBOARD_DEV_LOGIN`): sign in
+        as a Telegram id.'
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DevLoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DevLoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DevLoginRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Access'
+          description: ''
+  /api/v1/owner/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      description: End this browser's session and clear the refresh cookie.
+      tags:
+      - auth
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/auth/refresh/:
+    post:
+      operationId: auth_refresh_create
+      description: 'Needs the `owner_refresh` cookie, `X-Requested-With: dashboard`
+        and a same-origin `Origin`. A refresh token used twice ends its session.'
+      tags:
+      - auth
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Access'
+          description: ''
+        '401':
+          description: Sign in again.
+  /api/v1/owner/companies/{company_id}/audit/records/:
+    get:
+      operationId: companies_audit_records_list
+      description: |-
+        The History tab of one record: its audit rows the caller may see, newest first.
+
+        Needs audit.view, or the permission the record's app registered for its history (for
+        example tasks.view_all for a task). Rows touching salaries or IDs are left out unless the
+        caller holds the permission they need.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: target_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: target_type
+        schema:
+          type: string
+        description: e.g. task, membership
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAuditRecordList'
+          description: ''
+  /api/v1/owner/companies/{company_id}/branches/today/:
+    get:
+      operationId: companies_branches_today_list
+      description: 'Branch cards: status plus the facts of every module you may see.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BranchToday'
+          description: ''
+  /api/v1/owner/companies/{company_id}/exports/:
+    get:
+      operationId: companies_exports_list
+      description: |-
+        Your exports in this company (kept 7 days). Creating one needs `data.export` and the
+        exporter's own permission; the file is built in the background (poll the detail).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedExportList'
+          description: ''
+    post:
+      operationId: companies_exports_create
+      description: |-
+        Your exports in this company (kept 7 days). Creating one needs `data.export` and the
+        exporter's own permission; the file is built in the background (poll the detail).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ExportRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ExportRequestRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportCreated'
+          description: ''
+  /api/v1/owner/companies/{company_id}/exports/{id}/:
+    get:
+      operationId: companies_exports_retrieve
+      description: |-
+        Your exports in this company (kept 7 days). Creating one needs `data.export` and the
+        exporter's own permission; the file is built in the background (poll the detail).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Export'
+          description: ''
+  /api/v1/owner/companies/{company_id}/exports/kinds/:
+    get:
+      operationId: companies_exports_kinds_list
+      description: What you may export here.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedExporterList'
+          description: ''
+  /api/v1/owner/companies/{company_id}/inbox/:
+    get:
+      operationId: companies_inbox_list
+      description: Your in-app notifications in this company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: tab
+        schema:
+          type: string
+          enum:
+          - all
+          - unread
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNotificationList'
+          description: ''
+  /api/v1/owner/companies/{company_id}/inbox/{id}/actions/{key}/:
+    post:
+      operationId: companies_inbox_actions_create
+      description: |-
+        Press a notification's button: the module's handler decides (and checks its own
+        permission).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: key
+        schema:
+          type: string
+          pattern: ^[a-z][a-z0-9_]*$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ActionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ActionRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InboxActionResult'
+          description: ''
+  /api/v1/owner/companies/{company_id}/inbox/{id}/archive/:
+    post:
+      operationId: companies_inbox_archive_create
+      description: Your in-app notifications in this company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/v1/owner/companies/{company_id}/inbox/read/:
+    post:
+      operationId: companies_inbox_read_create
+      description: Your in-app notifications in this company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarkReadRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MarkReadRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MarkReadRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Updated'
+          description: ''
+  /api/v1/owner/companies/{company_id}/inbox/unread-count/:
+    get:
+      operationId: companies_inbox_unread_count_retrieve
+      description: Your in-app notifications in this company.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Count'
+          description: ''
+  /api/v1/owner/companies/{company_id}/notification-preferences/:
+    get:
+      operationId: companies_notification_preferences_list
+      description: 'Per kind: show in the dashboard and/or send to Telegram.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Preference'
+          description: ''
+    put:
+      operationId: companies_notification_preferences_update
+      description: 'Per kind: show in the dashboard and/or send to Telegram.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/PreferenceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/PreferenceRequest'
+          multipart/form-data:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/PreferenceRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Preference'
+          description: ''
+  /api/v1/owner/companies/{company_id}/pulse/:
+    get:
+      operationId: companies_pulse_retrieve
+      description: Badge counters and version keys; poll every 15 s and refetch what
+        moved.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pulse'
+          description: ''
+  /api/v1/owner/companies/{company_id}/queue/:
+    get:
+      operationId: companies_queue_retrieve
+      description: 'Needs you: approvals from every module, with the buttons that
+        settle them.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: kind
+        schema:
+          type: string
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: Per kind, at most 200.
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsoleQueue'
+          description: ''
+  /api/v1/owner/companies/{company_id}/queue/counts/:
+    get:
+      operationId: companies_queue_counts_retrieve
+      description: How many items wait, per kind.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsoleQueueCounts'
+          description: ''
+  /api/v1/owner/companies/{company_id}/saved-views/:
+    get:
+      operationId: companies_saved_views_list
+      description: |-
+        Your saved views and the ones colleagues shared (`?module=` narrows them). Only your
+        own can be changed or deleted.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: module
+        schema:
+          type: string
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SavedView'
+          description: ''
+    post:
+      operationId: companies_saved_views_create
+      description: |-
+        Your saved views and the ones colleagues shared (`?module=` narrows them). Only your
+        own can be changed or deleted.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SavedViewRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SavedViewRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SavedViewRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedView'
+          description: ''
+  /api/v1/owner/companies/{company_id}/saved-views/{id}/:
+    get:
+      operationId: companies_saved_views_retrieve
+      description: |-
+        Your saved views and the ones colleagues shared (`?module=` narrows them). Only your
+        own can be changed or deleted.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this saved view.
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedView'
+          description: ''
+    put:
+      operationId: companies_saved_views_update
+      description: |-
+        Your saved views and the ones colleagues shared (`?module=` narrows them). Only your
+        own can be changed or deleted.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this saved view.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SavedViewRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SavedViewRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SavedViewRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedView'
+          description: ''
+    patch:
+      operationId: companies_saved_views_partial_update
+      description: |-
+        Your saved views and the ones colleagues shared (`?module=` narrows them). Only your
+        own can be changed or deleted.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this saved view.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSavedViewRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSavedViewRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSavedViewRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedView'
+          description: ''
+    delete:
+      operationId: companies_saved_views_destroy
+      description: |-
+        Your saved views and the ones colleagues shared (`?module=` narrows them). Only your
+        own can be changed or deleted.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this saved view.
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/search/:
+    get:
+      operationId: companies_search_retrieve
+      description: 'Command palette results: up to 5 per type from every provider
+        you may use.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: q
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: types
+        schema:
+          type: string
+        description: Comma-separated hit types.
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsoleSearchResults'
+          description: ''
+  /api/v1/owner/companies/{company_id}/stream/:
+    get:
+      operationId: companies_stream_retrieve
+      description: The live activity stream, newest first.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: limit
+        schema:
+          type: integer
+      - in: query
+        name: since
+        schema:
+          type: string
+          format: date-time
+        description: Only newer items.
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsoleStream'
+          description: ''
+  /api/v1/owner/me/:
+    get:
+      operationId: me_retrieve
+      description: The signed-in person and every company where they may open the
+        dashboard.
+      tags:
+      - me
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnerMe'
+          description: ''
+    patch:
+      operationId: me_partial_update
+      description: The signed-in person and every company where they may open the
+        dashboard.
+      tags:
+      - me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedOwnerMeUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedOwnerMeUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedOwnerMeUpdateRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnerMe'
+          description: ''
+  /api/v1/owner/permissions/:
+    get:
+      operationId: permissions_list
+      description: Every permission a role can grant, for the roles matrix.
+      tags:
+      - permissions
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Permission'
+          description: ''
+components:
+  schemas:
+    Access:
+      type: object
+      properties:
+        access:
+          type: string
+          description: Owner access token (aud=dashboard), 15 minutes.
+      required:
+      - access
+    ActionRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          default: ''
+          maxLength: 500
+    Actor:
+      type: object
+      properties:
+        id:
+          type: integer
+          nullable: true
+          description: Their membership, when they have one.
+        name:
+          type: string
+      required:
+      - id
+      - name
+    AuditRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        action:
+          type: string
+          readOnly: true
+        action_label:
+          type: string
+        actor:
+          allOf:
+          - $ref: '#/components/schemas/Actor'
+          nullable: true
+          readOnly: true
+        target_type:
+          type: string
+          readOnly: true
+        target_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        target:
+          type: string
+          readOnly: true
+          description: Its name at the time.
+        details:
+          description: Secret values are always shown as •••.
+      required:
+      - action
+      - action_label
+      - actor
+      - created_at
+      - details
+      - id
+      - target
+      - target_id
+      - target_type
+    BranchBrief:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+      required:
+      - code
+      - id
+      - name
+    BranchToday:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        opens_at:
+          type: string
+          nullable: true
+          description: HH:MM, company time.
+        closes_at:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/ConsoleBranchStatusEnum'
+        sales:
+          type: object
+          additionalProperties: {}
+          description: contracts.SalesFacts
+        attendance:
+          type: object
+          additionalProperties: {}
+          description: contracts.AttendanceFacts
+        tasks:
+          type: object
+          additionalProperties: {}
+          description: contracts.TasksFacts
+        finance:
+          type: object
+          additionalProperties: {}
+          description: contracts.FinanceFacts
+      required:
+      - closes_at
+      - code
+      - id
+      - name
+      - opens_at
+      - status
+    Column:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        kind:
+          $ref: '#/components/schemas/ExportsColumnKindEnum'
+      required:
+      - key
+      - kind
+      - label
+    ConsoleActionMethodEnum:
+      enum:
+      - POST
+      - PATCH
+      - PUT
+      - DELETE
+      type: string
+      description: |-
+        * `POST` - POST
+        * `PATCH` - PATCH
+        * `PUT` - PUT
+        * `DELETE` - DELETE
+    ConsoleActionStyleEnum:
+      enum:
+      - primary
+      - danger
+      - default
+      type: string
+      description: |-
+        * `primary` - primary
+        * `danger` - danger
+        * `default` - default
+    ConsoleBranchStatusEnum:
+      enum:
+      - open
+      - not_opened
+      - closed
+      - day_off
+      type: string
+      description: |-
+        * `open` - open
+        * `not_opened` - not_opened
+        * `closed` - closed
+        * `day_off` - day_off
+    ConsolePerson:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    ConsoleQueue:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueueItem'
+      required:
+      - items
+    ConsoleQueueCounts:
+      type: object
+      properties:
+        total:
+          type: integer
+        kinds:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueueKind'
+      required:
+      - kinds
+      - total
+    ConsoleSearchResults:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchHit'
+      required:
+      - results
+    ConsoleStream:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/StreamItem'
+      required:
+      - items
+    Count:
+      type: object
+      properties:
+        count:
+          type: integer
+        critical:
+          type: integer
+          description: How many of the unread ones are critical.
+      required:
+      - count
+      - critical
+    DevLoginRequest:
+      type: object
+      properties:
+        telegram_id:
+          type: integer
+      required:
+      - telegram_id
+    Export:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        kind:
+          type: string
+          readOnly: true
+          description: Registered exporter, e.g. tasks.tasks.
+        label:
+          type: string
+          readOnly: true
+        format:
+          allOf:
+          - $ref: '#/components/schemas/ExportsFormatEnum'
+          readOnly: true
+        params:
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ExportsStatusEnum'
+          readOnly: true
+        rows:
+          type: integer
+          readOnly: true
+          nullable: true
+        error:
+          type: string
+          readOnly: true
+        deliver_telegram:
+          type: boolean
+          readOnly: true
+          description: Also send the file to the requester in Telegram.
+        sensitive:
+          type: boolean
+          readOnly: true
+          description: 'Salaries, IDs or per-person money: copied from the exporter.'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        finished_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+        file_name:
+          type: string
+          nullable: true
+          readOnly: true
+        file_url:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - created_at
+      - deliver_telegram
+      - error
+      - expires_at
+      - file_name
+      - file_url
+      - finished_at
+      - format
+      - id
+      - kind
+      - label
+      - params
+      - rows
+      - sensitive
+      - status
+    ExportCreated:
+      type: object
+      properties:
+        id:
+          type: integer
+      required:
+      - id
+    ExportRequestRequest:
+      type: object
+      properties:
+        kind:
+          type: string
+          minLength: 1
+          maxLength: 48
+        format:
+          $ref: '#/components/schemas/ExportsFormatEnum'
+        params:
+          type: object
+          additionalProperties: {}
+        deliver_telegram:
+          type: boolean
+          default: false
+      required:
+      - format
+      - kind
+    Exporter:
+      type: object
+      properties:
+        kind:
+          type: string
+        label:
+          type: string
+        sensitive:
+          type: boolean
+        formats:
+          type: array
+          items:
+            type: string
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/Column'
+      required:
+      - columns
+      - formats
+      - kind
+      - label
+      - sensitive
+    ExportsColumnKindEnum:
+      enum:
+      - text
+      - number
+      - money
+      - date
+      - datetime
+      - bool
+      type: string
+      description: |-
+        * `text` - text
+        * `number` - number
+        * `money` - money
+        * `date` - date
+        * `datetime` - datetime
+        * `bool` - bool
+    ExportsFormatEnum:
+      enum:
+      - xlsx
+      - csv
+      - zip
+      type: string
+      description: |-
+        * `xlsx` - Excel (xlsx)
+        * `csv` - CSV
+        * `zip` - ZIP
+    ExportsStatusEnum:
+      enum:
+      - pending
+      - running
+      - ready
+      - failed
+      type: string
+      description: |-
+        * `pending` - Waiting
+        * `running` - Building
+        * `ready` - Ready
+        * `failed` - Failed
+    HomeBranch:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    InboxActionResult:
+      type: object
+      properties:
+        message:
+          type: string
+        notification:
+          $ref: '#/components/schemas/Notification'
+      required:
+      - message
+      - notification
+    InboxPerson:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    InboxSeverityEnum:
+      enum:
+      - info
+      - warning
+      - critical
+      type: string
+      description: |-
+        * `info` - Info
+        * `warning` - Warning
+        * `critical` - Critical
+    LanguageEnum:
+      enum:
+      - uz
+      - ru
+      - en
+      type: string
+      description: |-
+        * `uz` - O'zbekcha
+        * `ru` - Русский
+        * `en` - English
+    MarkReadRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+          maxItems: 500
+        all:
+          type: boolean
+          default: false
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        kind:
+          type: string
+          readOnly: true
+          description: Registered kind, e.g. sales.cash_difference.
+        severity:
+          allOf:
+          - $ref: '#/components/schemas/InboxSeverityEnum'
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        body:
+          type: string
+          readOnly: true
+        url:
+          type: string
+          readOnly: true
+          description: Dashboard route.
+        app_screen:
+          type: string
+          readOnly: true
+          description: Mini app deep link.
+        target_type:
+          type: string
+          readOnly: true
+        target_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        actor:
+          allOf:
+          - $ref: '#/components/schemas/InboxPerson'
+          nullable: true
+          readOnly: true
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationAction'
+          readOnly: true
+        data:
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        read_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        acted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        acted_by:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - acted_at
+      - acted_by
+      - actions
+      - actor
+      - app_screen
+      - body
+      - created_at
+      - data
+      - id
+      - kind
+      - read_at
+      - severity
+      - target_id
+      - target_type
+      - title
+      - url
+    NotificationAction:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        style:
+          $ref: '#/components/schemas/ConsoleActionStyleEnum'
+        needs_reason:
+          type: boolean
+      required:
+      - key
+      - label
+      - needs_reason
+      - style
+    OwnerMe:
+      type: object
+      properties:
+        user:
+          allOf:
+          - $ref: '#/components/schemas/OwnerMeUser'
+          readOnly: true
+        language:
+          $ref: '#/components/schemas/LanguageEnum'
+        companies:
+          type: array
+          items:
+            $ref: '#/components/schemas/OwnerMeCompany'
+          readOnly: true
+      required:
+      - companies
+      - language
+      - user
+    OwnerMeCompany:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        logo:
+          type: string
+          nullable: true
+        timezone:
+          type: string
+        base_currency:
+          type: string
+        features:
+          type: array
+          items:
+            type: string
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleBrief'
+          nullable: true
+        is_owner:
+          type: boolean
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/PermissionsEnum'
+        branch_scope:
+          type: array
+          items:
+            type: integer
+          nullable: true
+          description: 'null: every branch; otherwise the branch ids they see (may
+            be empty).'
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/BranchBrief'
+        home_branch:
+          allOf:
+          - $ref: '#/components/schemas/HomeBranch'
+          nullable: true
+        pending:
+          type: integer
+          description: Items waiting in Needs you.
+        setup_completed:
+          type: boolean
+        membership_id:
+          type: integer
+      required:
+      - base_currency
+      - branch_scope
+      - branches
+      - features
+      - home_branch
+      - id
+      - is_owner
+      - logo
+      - membership_id
+      - name
+      - pending
+      - permissions
+      - role
+      - setup_completed
+      - timezone
+    OwnerMeUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        telegram_id:
+          type: integer
+          nullable: true
+        first_name:
+          type: string
+        last_name:
+          type: string
+        full_name:
+          type: string
+        username:
+          type: string
+          description: Telegram username, without @; may be empty.
+        photo_url:
+          type: string
+          nullable: true
+      required:
+      - first_name
+      - full_name
+      - id
+      - last_name
+      - photo_url
+      - telegram_id
+      - username
+    PaginatedAuditRecordList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditRecord'
+    PaginatedExportList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Export'
+    PaginatedExporterList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Exporter'
+    PaginatedNotificationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+    PatchedOwnerMeUpdateRequest:
+      type: object
+      properties:
+        language:
+          $ref: '#/components/schemas/LanguageEnum'
+    PatchedSavedViewRequest:
+      type: object
+      properties:
+        module:
+          type: string
+          minLength: 1
+          description: Dashboard module id, e.g. tasks.
+          maxLength: 32
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        state: {}
+        is_shared:
+          type: boolean
+          description: Everyone with dashboard access in the company can use it.
+        order:
+          type: integer
+          maximum: 32767
+          minimum: 0
+    Permission:
+      type: object
+      properties:
+        code:
+          type: string
+          description: A permission code (PermissionsEnum).
+        label:
+          type: string
+        group:
+          type: string
+          description: The code's prefix, e.g. sales.
+      required:
+      - code
+      - group
+      - label
+    PermissionsEnum:
+      enum:
+      - members.view
+      - members.approve
+      - members.manage
+      - roles.manage
+      - positions.manage
+      - tasks.view_all
+      - tasks.assign
+      - tasks.templates
+      - tasks.confirm
+      - reminders.configure
+      - groups.manage
+      - reports.view
+      - time_off.approve
+      - announcements.send
+      - dashboard.access
+      - company.settings
+      - audit.view
+      - data.export
+      - branches.all
+      - sales.view
+      - sales.operate
+      - sales.manage
+      - sales.invoices
+      - stock.manage
+      - finance.view
+      - finance.record
+      - finance.manage
+      - finance.approve
+      - finance.claim
+      - hr.view
+      - hr.manage
+      - hr.sensitive
+      - hr.hiring
+      - attendance.view
+      - attendance.manage
+      - time_off.manage
+      - payroll.view
+      - payroll.propose
+      - payroll.manage
+      - payroll.finalize
+      - payroll.pay
+      - ai.use
+      - ai.configure
+      - projects.view_all
+      - projects.manage
+      - projects.time_view
+      - hr.discipline
+      - hr.suspend
+      - hr.terminate
+      - assets.manage
+      - reviews.manage
+      - knowledge.manage
+      - agenda.manage
+      - crm.view
+      - crm.manage
+      type: string
+      description: |-
+        * `members.view` - View members
+        * `members.approve` - Approve or reject join requests
+        * `members.manage` - Edit, block and offboard members
+        * `roles.manage` - Manage access roles
+        * `positions.manage` - Manage positions
+        * `tasks.view_all` - View everyone's tasks
+        * `tasks.assign` - Assign tasks to others
+        * `tasks.templates` - Manage daily task templates
+        * `tasks.confirm` - Confirm completed tasks
+        * `reminders.configure` - Configure reminders
+        * `groups.manage` - Connect and configure groups
+        * `reports.view` - View reports and statistics
+        * `time_off.approve` - Approve or reject time off
+        * `announcements.send` - Send announcements
+        * `dashboard.access` - Open the owner dashboard
+        * `company.settings` - Change company settings, branches and modules
+        * `audit.view` - View the audit log
+        * `data.export` - Export data to Excel/CSV
+        * `branches.all` - See every branch (otherwise only their own)
+        * `sales.view` - See sales, shifts, cash and stock
+        * `sales.operate` - Run their own till: open and close shifts, record sales, payouts and handovers
+        * `sales.manage` - Verify, correct and void shifts; registers, payment methods, targets, customers
+        * `sales.invoices` - Create, issue and void invoices
+        * `stock.manage` - Manage products, goods receipts, stock counts and write-offs (includes reading stock)
+        * `finance.view` - See accounts, transactions, debts, profit and cost prices
+        * `finance.record` - Record income, expenses, transfers and payments on accounts they operate
+        * `finance.manage` - Manage accounts, categories, budgets and rates; fix or void entries; lock periods
+        * `finance.approve` - Approve expense claims
+        * `finance.claim` - Submit their own expenses with receipts
+        * `hr.view` - See profiles, documents and contracts (IDs and ID scans hidden)
+        * `hr.manage` - Edit profiles, documents, contracts, policies and equipment
+        * `hr.sensitive` - See passport, PINFL and card numbers and ID scans (every view is audited)
+        * `hr.hiring` - Manage vacancies and applicants
+        * `attendance.view` - See everyone's attendance and the roster
+        * `attendance.manage` - Manage schedules and the roster; correct attendance; approve overtime and swaps
+        * `time_off.manage` - Manage leave types and adjust balances
+        * `payroll.view` - See salaries, payslips and payroll reports
+        * `payroll.propose` - Propose bonuses and fines for others
+        * `payroll.manage` - Set pay, rules, approve adjustments and advances, calculate runs
+        * `payroll.finalize` - Finalize and publish payroll runs
+        * `payroll.pay` - Mark payslips and advances paid
+        * `ai.use` - Use the AI assistant, task drafts and writing help
+        * `ai.configure` - Configure AI, its budget and what data it may see
+        * `projects.view_all` - See every project and its tasks
+        * `projects.manage` - Create and manage projects
+        * `projects.time_view` - See everyone's time entries
+        * `hr.discipline` - Issue warnings and reprimands
+        * `hr.suspend` - Suspend and reinstate employees
+        * `hr.terminate` - Terminate employment
+        * `assets.manage` - Manage equipment and who holds it
+        * `reviews.manage` - Run performance reviews and set goals
+        * `knowledge.manage` - Write and publish knowledge base pages
+        * `agenda.manage` - Add company events to the calendar
+        * `crm.view` - See CRM deals
+        * `crm.manage` - Manage CRM deals and pipelines
+    Preference:
+      type: object
+      properties:
+        kind:
+          type: string
+        label:
+          type: string
+          readOnly: true
+        audience:
+          type: string
+          readOnly: true
+        severity:
+          type: string
+          readOnly: true
+        in_app_available:
+          type: boolean
+          readOnly: true
+        in_app:
+          type: boolean
+        telegram:
+          type: boolean
+      required:
+      - audience
+      - in_app
+      - in_app_available
+      - kind
+      - label
+      - severity
+      - telegram
+    PreferenceRequest:
+      type: object
+      properties:
+        kind:
+          type: string
+          minLength: 1
+        in_app:
+          type: boolean
+        telegram:
+          type: boolean
+      required:
+      - in_app
+      - kind
+      - telegram
+    Pulse:
+      type: object
+      properties:
+        counters:
+          type: object
+          additionalProperties:
+            type: integer
+        versions:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+      - counters
+      - versions
+    QueueAction:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        style:
+          $ref: '#/components/schemas/ConsoleActionStyleEnum'
+        method:
+          $ref: '#/components/schemas/ConsoleActionMethodEnum'
+        endpoint:
+          type: string
+          description: Relative to /api/v1/owner/companies/{cid}/.
+        body:
+          type: object
+          additionalProperties: {}
+        needs_reason:
+          type: boolean
+      required:
+      - body
+      - endpoint
+      - key
+      - label
+      - method
+      - needs_reason
+      - style
+    QueueItem:
+      type: object
+      properties:
+        kind:
+          type: string
+        id:
+          type: string
+        title:
+          type: string
+        subtitle:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+        url:
+          type: string
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueueAction'
+      required:
+      - actions
+      - created_at
+      - id
+      - kind
+      - subtitle
+      - title
+      - url
+    QueueKind:
+      type: object
+      properties:
+        kind:
+          type: string
+        label:
+          type: string
+        count:
+          type: integer
+      required:
+      - count
+      - kind
+      - label
+    RoleBrief:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    SavedView:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        module:
+          type: string
+          description: Dashboard module id, e.g. tasks.
+          maxLength: 32
+        name:
+          type: string
+          maxLength: 80
+        state: {}
+        is_shared:
+          type: boolean
+          description: Everyone with dashboard access in the company can use it.
+        order:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        owner:
+          allOf:
+          - $ref: '#/components/schemas/ConsolePerson'
+          readOnly: true
+        is_mine:
+          type: boolean
+          readOnly: true
+      required:
+      - id
+      - is_mine
+      - module
+      - name
+      - owner
+    SavedViewRequest:
+      type: object
+      properties:
+        module:
+          type: string
+          minLength: 1
+          description: Dashboard module id, e.g. tasks.
+          maxLength: 32
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        state: {}
+        is_shared:
+          type: boolean
+          description: Everyone with dashboard access in the company can use it.
+        order:
+          type: integer
+          maximum: 32767
+          minimum: 0
+      required:
+      - module
+      - name
+    SearchHit:
+      type: object
+      properties:
+        type:
+          type: string
+        id:
+          type: string
+        title:
+          type: string
+        subtitle:
+          type: string
+        url:
+          type: string
+      required:
+      - id
+      - subtitle
+      - title
+      - type
+      - url
+    StreamItem:
+      type: object
+      properties:
+        at:
+          type: string
+          format: date-time
+        kind:
+          type: string
+        actor:
+          allOf:
+          - $ref: '#/components/schemas/ConsolePerson'
+          nullable: true
+        title:
+          type: string
+        url:
+          type: string
+        photo_url:
+          type: string
+          nullable: true
+      required:
+      - actor
+      - at
+      - kind
+      - photo_url
+      - title
+      - url
+    Updated:
+      type: object
+      properties:
+        updated:
+          type: integer
+      required:
+      - updated
+  securitySchemes:
+    ownerJwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
