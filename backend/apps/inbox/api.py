@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.inbox import queries, services
+from apps.inbox.models import Notification
 from apps.inbox.serializers import MarkReadSerializer, NotificationSerializer, UpdatedSerializer
 from apps.members.api import IsCompanyMember
 
@@ -18,6 +19,8 @@ class EmployeeInboxView(ListAPIView):
     serializer_class = NotificationSerializer
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):  # schema generation has no member
+            return Notification.objects.none()
         return queries.inbox(self.membership)
 
 

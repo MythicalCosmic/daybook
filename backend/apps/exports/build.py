@@ -9,6 +9,7 @@ import csv
 import io
 import logging
 import zoneinfo
+from contextlib import suppress
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -133,12 +134,23 @@ def _xlsx(exporter: Exporter, rows, tz) -> tuple[bytes, int]:
         header.append(cell)
     sheet.append(header)
     count = 0
-    for row in rows:
-        count = _count(count)
-        sheet.append([_xlsx_cell(sheet, col, row.get(col.key), tz) for col in exporter.columns])
+    try:
+        for row in rows:
+            count = _count(count)
+            sheet.append([_xlsx_cell(sheet, col, row.get(col.key), tz) for col in exporter.columns])
+    except BaseException:
+        _discard(sheet)
+        raise
     buffer = io.BytesIO()
     book.save(buffer)
     return buffer.getvalue(), count
+
+
+def _discard(sheet) -> None:
+    """Finish and delete a half-written sheet (write-only sheets stream to a temporary file)."""
+    with suppress(Exception):
+        sheet.close()
+        sheet._writer.cleanup()
 
 
 def _xlsx_cell(sheet, column: Column, value, tz) -> WriteOnlyCell:

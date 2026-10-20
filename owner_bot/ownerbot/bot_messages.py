@@ -24,7 +24,7 @@ def welcome(user: User) -> BotMessage:
 
 
 def dashboard_keyboard() -> InlineKeyboardMarkup | None:
-    """"Open dashboard" as a Mini App (Telegram only accepts https links)."""
+    """The "Open dashboard" button, a Mini App (Telegram only accepts https links)."""
     if not settings.DASHBOARD_URL.startswith("https://"):
         return None
     button = InlineKeyboardButton(

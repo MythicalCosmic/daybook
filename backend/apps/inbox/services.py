@@ -23,6 +23,7 @@ from django.utils.translation import gettext as _
 
 from apps.accounts.models import User
 from apps.console import pulse
+from apps.console.registry import QUEUE_STYLES
 from apps.core.exceptions import DomainError
 from apps.inbox import bot_messages, delivery, registry, tasks
 from apps.inbox.models import Notification, NotificationPreference
@@ -31,7 +32,7 @@ from apps.members.models import Membership
 logger = logging.getLogger(__name__)
 
 UNREAD_PULSE = "inbox.unread"
-STYLES = ("primary", "danger", "default")
+STYLES = QUEUE_STYLES  # the same buttons as Needs you items
 
 type Text = str | Promise | Callable[[Membership], str]
 

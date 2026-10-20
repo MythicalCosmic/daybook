@@ -4,10 +4,11 @@ from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.console.registry import QUEUE_STYLES
 from apps.inbox.models import Notification
 
 
-class PersonSerializer(serializers.Serializer):
+class InboxPersonSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
 
@@ -15,7 +16,7 @@ class PersonSerializer(serializers.Serializer):
 class NotificationActionSerializer(serializers.Serializer):
     key = serializers.CharField()
     label = serializers.CharField()
-    style = serializers.ChoiceField(["primary", "danger", "default"])
+    style = serializers.ChoiceField(QUEUE_STYLES)
     needs_reason = serializers.BooleanField()
 
 
@@ -46,7 +47,7 @@ class NotificationSerializer(serializers.ModelSerializer):
         )
         read_only_fields = fields
 
-    @extend_schema_field(PersonSerializer(allow_null=True))
+    @extend_schema_field(InboxPersonSerializer(allow_null=True))
     def get_actor(self, item: Notification) -> dict | None:
         if item.actor is None:
             return None

@@ -40,7 +40,8 @@ def serialize_markup(markup: Markup | None) -> dict | None:
 
 
 def storage_named(name: str) -> Storage:
-    """ "default" (public media: proof photos) or "private" (receipts, documents, exports)."""
+    """The storage named "default" (public media: proof photos) or "private" (receipts,
+    documents, exports)."""
     if name == "default":
         return default_storage
     if name == "private":

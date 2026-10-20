@@ -388,7 +388,7 @@ def register_queue(
     items: Callable[[Membership, int], list[QueueItem]],
     feature: str | None = None,
 ) -> None:
-    """ "Needs you" items. An approval is either here or an actionable notification, never
+    """Items for "Needs you". An approval is either here or an actionable notification, never
     both: give its inbox kind `queue_kind=kind` (§2.5)."""
     QUEUE.add(QueueSource(kind, calling_app(), perm, feature, label, count, items))
 
@@ -504,7 +504,7 @@ def register_copy_part(
     copy: Callable[[Company, Company, Membership], int],
     feature: str | None = None,
 ) -> None:
-    """ "Copy setup from another company": `copy(source, target, by)` returns rows created.
+    """For "Copy setup from another company": `copy(source, target, by)` returns rows created.
     People, money and history are never copied."""
     COPY_PARTS.add(CopyPart(key, calling_app(), perm, feature, label, copy))
 

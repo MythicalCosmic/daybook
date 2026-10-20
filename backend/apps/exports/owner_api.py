@@ -104,6 +104,8 @@ class ExportViewSet(
     lookup_value_regex = r"\d+"
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):  # schema generation has no member
+            return Export.objects.none()
         return Export.objects.filter(requested_by=self.membership).order_by("-created_at", "-pk")
 
     def get_throttles(self):

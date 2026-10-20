@@ -14,9 +14,7 @@ from ownerbot.middlewares import register_all_middlewares
 
 def create_bot(settings: Settings | None = None) -> Bot:
     settings = settings or load_settings()
-    return Bot(
-        token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML)
-    )
+    return Bot(token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
 
 def create_storage(settings: Settings | None = None) -> BaseStorage:

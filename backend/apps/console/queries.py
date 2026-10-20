@@ -31,6 +31,14 @@ class BranchStatus:
     DAY_OFF = "day_off"
 
 
+BRANCH_STATUSES = (
+    BranchStatus.OPEN,
+    BranchStatus.NOT_OPENED,
+    BranchStatus.CLOSED,
+    BranchStatus.DAY_OFF,
+)
+
+
 def owner_memberships(user: User) -> list[Membership]:
     """Every membership through which `user` may open the dashboard, by company name."""
     memberships = (

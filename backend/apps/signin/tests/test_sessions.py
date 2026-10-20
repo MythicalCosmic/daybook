@@ -25,7 +25,9 @@ def owner(company, member):
 
 
 def sign_in(client, user) -> services.IssuedSession:
-    request = RequestFactory().post("/", HTTP_USER_AGENT="Chrome on Windows", REMOTE_ADDR="10.0.0.9")
+    request = RequestFactory().post(
+        "/", HTTP_USER_AGENT="Chrome on Windows", REMOTE_ADDR="10.0.0.9"
+    )
     issued = services.issue_session(user, request)
     client.cookies[services.REFRESH_COOKIE] = issued.refresh
     return issued

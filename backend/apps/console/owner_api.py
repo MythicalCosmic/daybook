@@ -48,7 +48,7 @@ class HomeBranchSerializer(serializers.Serializer):
     name = serializers.CharField()
 
 
-class MeCompanySerializer(serializers.Serializer):
+class OwnerMeCompanySerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     logo = serializers.CharField(allow_null=True)
@@ -70,7 +70,7 @@ class MeCompanySerializer(serializers.Serializer):
     membership_id = serializers.IntegerField()
 
 
-class MeSerializer(serializers.Serializer):
+class OwnerMeSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     telegram_id = serializers.IntegerField(read_only=True, allow_null=True)
     telegram_username = serializers.CharField(read_only=True)
@@ -78,23 +78,23 @@ class MeSerializer(serializers.Serializer):
     last_name = serializers.CharField(read_only=True)
     photo = serializers.CharField(read_only=True, allow_null=True)
     language = serializers.ChoiceField(Language.choices)
-    companies = MeCompanySerializer(many=True, read_only=True)
+    companies = OwnerMeCompanySerializer(many=True, read_only=True)
 
 
-class MeUpdateSerializer(serializers.Serializer):
+class OwnerMeUpdateSerializer(serializers.Serializer):
     language = serializers.ChoiceField(Language.choices)
 
 
 class MeView(OwnerUserAPIView):
     """The signed-in person and every company where they may open the dashboard."""
 
-    @extend_schema(responses=MeSerializer)
+    @extend_schema(responses=OwnerMeSerializer)
     def get(self, request):
         return Response(self._me(request.user))
 
-    @extend_schema(request=MeUpdateSerializer, responses=MeSerializer)
+    @extend_schema(request=OwnerMeUpdateSerializer, responses=OwnerMeSerializer)
     def patch(self, request):
-        serializer = MeUpdateSerializer(data=request.data)
+        serializer = OwnerMeUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = request.user
         user.language = serializer.validated_data["language"]
@@ -115,7 +115,7 @@ class MeView(OwnerUserAPIView):
 
 
 class PermissionSerializer(serializers.Serializer):
-    code = serializers.ChoiceField(Perm.choices)
+    code = serializers.CharField(help_text="A permission code (PermissionsEnum).")
     label = serializers.CharField()
     group = serializers.CharField(help_text="The code's prefix, e.g. sales.")
 
@@ -255,7 +255,7 @@ class QueueCountsView(OwnerAPIView):
 # stream/ --------------------------------------------------------------------------------
 
 
-class PersonSerializer(serializers.Serializer):
+class ConsolePersonSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
 
@@ -263,7 +263,7 @@ class PersonSerializer(serializers.Serializer):
 class StreamItemSerializer(serializers.Serializer):
     at = serializers.DateTimeField()
     kind = serializers.CharField()
-    actor = PersonSerializer(allow_null=True)
+    actor = ConsolePersonSerializer(allow_null=True)
     title = serializers.CharField()
     url = serializers.CharField()
     photo_url = serializers.CharField(allow_null=True)
@@ -296,7 +296,7 @@ class BranchTodaySerializer(serializers.Serializer):
     code = serializers.CharField()
     opens_at = serializers.CharField(allow_null=True, help_text="HH:MM, company time.")
     closes_at = serializers.CharField(allow_null=True)
-    status = serializers.ChoiceField(["open", "not_opened", "closed", "day_off"])
+    status = serializers.ChoiceField(queries.BRANCH_STATUSES)
     sales = serializers.DictField(required=False, help_text="contracts.SalesFacts")
     attendance = serializers.DictField(required=False, help_text="contracts.AttendanceFacts")
     tasks = serializers.DictField(required=False, help_text="contracts.TasksFacts")
@@ -323,7 +323,7 @@ class SavedViewSerializer(serializers.ModelSerializer):
         fields = ("id", "module", "name", "state", "is_shared", "order", "owner", "is_mine")
         read_only_fields = ("id", "owner", "is_mine")
 
-    @extend_schema_field(PersonSerializer)
+    @extend_schema_field(ConsolePersonSerializer)
     def get_owner(self, view: SavedView) -> dict:
         return {"id": view.membership_id, "name": str(view.membership)}
 
@@ -351,6 +351,8 @@ class SavedViewViewSet(
     pagination_class = None
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):  # schema generation has no member
+            return SavedView.objects.none()
         views = queries.saved_views(
             self.membership, module=self.request.query_params.get("module") or None
         )

@@ -197,7 +197,7 @@ def revoke_session(session: DeviceSession) -> None:
 
 @transaction.atomic
 def revoke_all(user: User) -> int:
-    """ "Log out everywhere": every session ends and every outstanding token of the user is
+    """Log out everywhere: every session ends and every outstanding token of the user is
     blacklisted. Returns how many sessions were still active."""
     now = timezone.now()
     count = DeviceSession.objects.filter(user=user, revoked_at__isnull=True).update(revoked_at=now)

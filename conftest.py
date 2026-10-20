@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 from datetime import timedelta
 
 import pytest
@@ -8,6 +9,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from apps.companies.models import Branch
 from apps.companies.tests.factories import CompanyFactory
+from apps.console import registry
 from apps.core import redis as core_redis
 from apps.members.models import AccessRole, Membership, Position
 from apps.members.tests.factories import MembershipFactory
@@ -134,6 +136,16 @@ def demo_people(db):
         return people
 
     return make
+
+
+@pytest.fixture
+def isolated_registries():
+    """Register test providers freely; every console, inbox and exports registry is back to
+    what the apps' hooks registered when the test ends."""
+    with ExitStack() as stack:
+        for each in registry.REGISTRIES:
+            stack.enter_context(each.isolated())
+        yield registry
 
 
 @pytest.fixture

@@ -30,6 +30,8 @@ class InboxViewSet(mixins.ListModelMixin, OwnerViewSet):
     lookup_value_regex = r"\d+"
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):  # schema generation has no member
+            return Notification.objects.none()
         tab = self.request.query_params.get("tab", "all")
         if tab not in queries.TABS:
             raise ValidationError({"tab": [_("Use unread or all.")]})
