@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.companies.models import Branch, Company, Feature
-from apps.members import bot_messages, services
+from apps.members import bot_messages, scope, services
 from apps.members.models import Membership, Position
 from apps.members.permissions import Perm
 
@@ -183,19 +183,19 @@ class CanSeeMembers(BasePermission):
 
 
 class MemberListView(ListAPIView):
-    """Registered members of the company, e.g. to pick who a task is for."""
+    """Registered members of the company, e.g. to pick who a task is for: everyone with
+    branches.all, otherwise the people sharing one of the caller's branches (§2.6)."""
 
     permission_classes = (IsAuthenticated, IsCompanyMember, CanSeeMembers)
     serializer_class = MemberBriefSerializer
     pagination_class = None
 
     def get_queryset(self):
-        return (
-            Membership.objects.for_company(self.membership.company)
-            .filter(status=Membership.Status.APPROVED, onboarded_at__isnull=False)
-            .select_related("user", "position")
-            .order_by("first_name", "last_name")
+        people = Membership.objects.for_company(self.membership.company).filter(
+            status=Membership.Status.APPROVED, onboarded_at__isnull=False
         )
+        people = scope.restrict(people, scope.branch_ids(self.membership), field="branches")
+        return people.select_related("user", "position").order_by("first_name", "last_name")
 
 
 class PositionListView(ListAPIView):

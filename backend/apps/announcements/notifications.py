@@ -5,6 +5,7 @@ from django.utils import translation
 
 from apps.announcements import bot_messages
 from apps.announcements.models import Announcement, Receipt
+from apps.members.models import Membership
 from apps.notifications.tasks import send_telegram_message
 from apps.notifications.telegram import BotName, serialize_markup
 
@@ -48,7 +49,7 @@ def follow_up(now: datetime) -> None:
     ):
         Announcement.objects.filter(pk=announcement.pk).update(summary_sent_at=now)
         author = announcement.author
-        if author is None or author.user.telegram_id is None:
+        if author is None or not _reachable(author):
             continue
         receipts = list(_receipts(announcement))
         missing = [receipt.membership for receipt in receipts if receipt.read_at is None]
@@ -65,10 +66,15 @@ def _receipts(announcement: Announcement):
     )
 
 
+def _reachable(member: Membership) -> bool:
+    """Approved and on Telegram: suspended people hear no announcements (§13.4)."""
+    return member.status == Membership.Status.APPROVED and member.user.telegram_id is not None
+
+
 def _send(receipt: Receipt, build, announcement: Announcement) -> None:
-    user = receipt.membership.user
-    if user.telegram_id is None:
+    if not _reachable(receipt.membership):
         return
+    user = receipt.membership.user
     with translation.override(user.language):
         text, markup = build(announcement)
     send_telegram_message.delay(BotName.EMPLOYEE, user.telegram_id, text, serialize_markup(markup))

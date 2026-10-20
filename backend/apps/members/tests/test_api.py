@@ -2,7 +2,9 @@ import pytest
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.members.models import Membership
+from apps.companies.tests.factories import BranchFactory
+from apps.members.models import AccessRole, Membership
+from apps.members.permissions import Perm
 from apps.members.tests.factories import MembershipFactory, PositionFactory
 
 pytestmark = pytest.mark.django_db
@@ -154,3 +156,30 @@ def test_schema_documents_the_mini_app_api(client):
     assert response.status_code == 200
     for path in (b"/api/v1/auth/telegram/", b"/api/v1/me/", b"onboarding"):
         assert path in response.content
+
+
+def test_the_member_list_follows_branch_scope(company, member):
+    here = company.branches.get()
+    there = BranchFactory(company=company)
+    AccessRole.objects.create(company=company, name="Lead", permissions=[Perm.TASKS_ASSIGN])
+    lead = member.registered(company, "Lead", first_name="Lola")
+    lead.branches.set([here])
+    colleague = member.registered(company, first_name="Kamol")
+    colleague.branches.set([here, there])
+    elsewhere = member.registered(company, first_name="Vali")
+    elsewhere.branches.set([there])
+    nowhere = member.registered(company, first_name="Zafar")
+    manager = member.registered(company, "Manager", first_name="Anvar")  # branches.all
+    url = f"/api/v1/companies/{company.pk}/members/"
+
+    scoped = client_for(lead).get(url)
+    everyone = client_for(manager).get(url)
+
+    assert [m["id"] for m in scoped.data] == [colleague.pk, lead.pk]
+    assert {m["id"] for m in everyone.data} == {
+        lead.pk,
+        colleague.pk,
+        elsewhere.pk,
+        nowhere.pk,
+        manager.pk,
+    }

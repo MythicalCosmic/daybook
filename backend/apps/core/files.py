@@ -77,7 +77,8 @@ def register_file_check(kind: str, check: FileCheck, *, allow_suspended: bool = 
     """Register who may open files of `kind` ("<app label>.<thing>", e.g. "hr.document").
 
     `check(user, company_id, object_id)` runs at download time and returns whether `user`
-    may still open the file of that object; it is also the place to audit sensitive views.
+    may still open the file of that object, which must belong to `company_id` (look it up
+    with `.for_company(company_id)`); it is also the place to audit sensitive views.
     Only approved members get as far as the check, unless `allow_suspended`: then suspended
     members do too, and the check must limit them to their own files (their `has_perm` is
     False for everything while suspended).

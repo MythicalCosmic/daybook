@@ -1,5 +1,6 @@
 from django.utils import translation
 
+from apps.members.models import Membership
 from apps.members.permissions import Perm
 from apps.members.queries import members_with_perm
 from apps.notifications.tasks import send_telegram_message
@@ -29,8 +30,8 @@ def send_decision(time_off_id: int) -> None:
     if time_off is None:
         return
     user = time_off.membership.user
-    if user.telegram_id is None:
-        return
+    if time_off.membership.status != Membership.Status.APPROVED or user.telegram_id is None:
+        return  # suspended or gone: the bot leaves them alone
     with translation.override(user.language):
         message = bot_messages.decision(time_off)
     if message is not None:

@@ -8,7 +8,8 @@ forms) through `plain_max_length`, never by the column, because ciphertext is mu
 
 Ciphertext can't be searched, so a column that must be looked up or kept unique gets a digest
 next to it: an HMAC-SHA256 with `FIELD_HASH_KEY` over the value with spaces removed and case
-folded. `DigestField(of="pinfl")` fills it on every save.
+folded. `DigestField(of="pinfl")` fills it on every save (a `save(update_fields=[...])` that
+names the value must name its digest too; `QuerySet.update()` never touches it).
 
     pinfl = EncryptedTextField(plain_max_length=14, blank=True)
     pinfl_digest = DigestField(of="pinfl")
