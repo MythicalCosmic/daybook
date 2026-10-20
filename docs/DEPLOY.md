@@ -115,7 +115,7 @@ Migrations and company defaults run when the backend starts.
 
 ## Backups
 
-- **Database and private files.** The `backup` service writes `backups/trello-<date>.sql.gz` and `backups/private-media-<date>.tgz` every night and keeps 14 days of each. `make prod-backup` dumps the database right away. Copy the `backups` folder off the server regularly: the private files include contracts and ID scans, so store the copies encrypted.
+- **Database and private files.** The `backup` service writes `backups/trello-<date>.sql.gz` and `backups/private-media-<date>.tgz` every night and keeps 14 days of each. `make prod-backup` dumps the database right away. Only root can read these files (they include contracts, ID scans and salaries), so use `sudo` to copy them. Copy the `backups` folder off the server regularly and store the copies encrypted.
 - **Uploaded photos.** They live in the `trello911_media` volume:
 
   ```bash
@@ -130,7 +130,7 @@ Migrations and company defaults run when the backend starts.
   $P down
   docker volume rm trello911_pgdata
   $P up -d db
-  gunzip -c backups/trello-<date>.sql.gz | $P exec -T db psql -U trello trello
+  sudo gunzip -c backups/trello-<date>.sql.gz | $P exec -T db psql -U trello trello
   make prod-up
   ```
 

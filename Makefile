@@ -134,7 +134,7 @@ prod-manage: ## Production: run a manage.py command, e.g. make prod-manage cmd=c
 	$(PROD) exec backend python manage.py $(cmd)
 
 prod-backup: ## Production: dump the database to ./backups now
-	$(PROD) exec backup sh -c 'pg_dump --no-owner | gzip > /backups/trello-$$(date +%F-%H%M).sql.gz'
+	$(PROD) exec backup sh -c 'umask 077 && pg_dump --no-owner | gzip > /backups/trello-$$(date +%F-%H%M).sql.gz'
 
 stack: ## Whole stack in Docker (backend, workers, beat, stream, both bots)
 	docker compose --profile app up -d --build
