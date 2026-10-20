@@ -3,6 +3,7 @@ import type { MouseEvent } from "react";
 
 import type { Task } from "../api/types";
 import { glyph, needsAttention, rowMeta, rowRight, type ViewContext } from "../lib/taskView";
+import { SkeletonList } from "../ui/Skeleton";
 
 type Props = {
   task: Task;
@@ -35,12 +36,7 @@ export function TaskRow({ task, ctx, onOpen, onTick, meta }: Props) {
   );
 }
 
+/** Placeholders for task rows while the board loads. */
 export function RowSkeleton({ count = 3 }: { count?: number }) {
-  return (
-    <>
-      {Array.from({ length: count }, (_, index) => (
-        <div key={index} className="skeleton" style={{ height: 68 }} />
-      ))}
-    </>
-  );
+  return <SkeletonList count={count} height={68} />;
 }

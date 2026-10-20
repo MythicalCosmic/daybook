@@ -12,30 +12,43 @@ export const LANGUAGES: { code: Lang; name: string }[] = [
   { code: "en", name: "English" },
 ];
 
-const DICTIONARIES: Record<Lang, Partial<Record<string, string>>> = { en, ru, uz };
+export type Dictionary = Partial<Record<string, string>>;
+
+export const DICTIONARIES: Record<Lang, Dictionary> = { en, ru, uz };
 
 /** Locale for Intl formatting: 24-hour time and day-before-month everywhere. */
-const LOCALES: Record<Lang, string> = { en: "en-GB", ru: "ru-RU", uz: "uz-Latn-UZ" };
+export const LOCALES: Record<Lang, string> = { en: "en-GB", ru: "ru-RU", uz: "uz-Latn-UZ" };
 
-type Vars = Record<string, string | number>;
-type PluralBase<K> = K extends `${infer Base}_other` ? Base : never;
-type PluralKey = PluralBase<Key>;
+export type Vars = Record<string, string | number>;
+export type PluralBase<K> = K extends `${infer Base}_other` ? Base : never;
+export type PluralKey = PluralBase<Key>;
+export type { Key };
 export type Translate = (key: Key | PluralKey, vars?: Vars) => string;
 
-export function translate(lang: Lang, key: string, vars?: Vars): string {
-  const dictionary = DICTIONARIES[lang];
-  const fallback = DICTIONARIES.en;
+/**
+ * Look `key` up through `chain` (most specific dictionary first). With a numeric `count`, the
+ * plural form for the language wins over the plain key in every dictionary of the chain.
+ */
+export function translateFrom(chain: readonly Dictionary[], lang: Lang, key: string, vars?: Vars): string {
   let template: string | undefined;
   if (typeof vars?.count === "number") {
     const rule = new Intl.PluralRules(LOCALES[lang]).select(vars.count);
-    template =
-      dictionary[`${key}_${rule}`] ??
-      dictionary[`${key}_other`] ??
-      fallback[`${key}_${rule}`] ??
-      fallback[`${key}_other`];
+    for (const dictionary of chain) {
+      template = dictionary[`${key}_${rule}`] ?? dictionary[`${key}_other`];
+      if (template !== undefined) break;
+    }
   }
-  template ??= dictionary[key] ?? fallback[key] ?? key;
-  return template.replace(/\{(\w+)\}/g, (_, name: string) => String(vars?.[name] ?? ""));
+  if (template === undefined) {
+    for (const dictionary of chain) {
+      template = dictionary[key];
+      if (template !== undefined) break;
+    }
+  }
+  return (template ?? key).replace(/\{(\w+)\}/g, (_, name: string) => String(vars?.[name] ?? ""));
+}
+
+export function translate(lang: Lang, key: string, vars?: Vars): string {
+  return translateFrom([DICTIONARIES[lang], DICTIONARIES.en], lang, key, vars);
 }
 
 type I18n = { lang: Lang; locale: string; t: Translate };

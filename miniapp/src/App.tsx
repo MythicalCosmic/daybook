@@ -14,8 +14,11 @@ import { TaskDetail } from "./screens/TaskDetail";
 import { Tasks } from "./screens/Tasks";
 import { Team } from "./screens/Team";
 import { Waiting } from "./screens/Waiting";
+import { FeaturePage } from "./features/hosts";
+import { features } from "./features/registry";
 import { Sheets } from "./sheets/Sheets";
-import { NavigationProvider, useNavigation } from "./state/navigation";
+import { initialFromLaunch } from "./state/deeplink";
+import { CORE, NavigationProvider, useNavigation, type NavigationInit, type PageRef } from "./state/navigation";
 import { SessionProvider, useMember, useSession } from "./state/session";
 import { ToastProvider } from "./state/toast";
 import { initData, onThemeChange, useBackButton } from "./telegram";
@@ -26,6 +29,8 @@ const SPLASH_MS = 900;
 export function App() {
   const insideTelegram = Boolean(initData());
   const me = useMe({ enabled: insideTelegram });
+  // Read once at launch: `?screen=payslip:12` or a startapp parameter picks the first screen.
+  const [launch] = useState<NavigationInit | null>(() => initialFromLaunch(features));
   const [splashOver, setSplashOver] = useState(false);
   useEffect(() => {
     const timer = window.setTimeout(() => setSplashOver(true), SPLASH_MS);
@@ -50,7 +55,7 @@ export function App() {
             <SplashScreen />
           ) : (
             <SessionProvider me={me.data}>
-              <NavigationProvider>
+              <NavigationProvider initial={launch}>
                 <Gatekeeper />
               </NavigationProvider>
             </SessionProvider>
@@ -97,10 +102,10 @@ function MainApp() {
   const navigation = useNavigation();
   const member = useMember();
   const summary = useSummary(member.companyId);
-  const { sheet, taskId, page, closeSheet, closeTask, closePage } = navigation;
+  const { sheet, stack, closeSheet, pop } = navigation;
 
-  // Telegram's back button closes a sheet first, then an open task, then a page.
-  const back = sheet ? closeSheet : taskId !== null ? closeTask : page ? closePage : null;
+  // Telegram's back button closes a sheet first, then the page on top (an open task, a page).
+  const back = sheet ? closeSheet : stack.length ? pop : null;
   useEffect(() => useBackButton(back), [back]);
 
   return (
@@ -109,14 +114,26 @@ function MainApp() {
       {navigation.tab === "tasks" && <Tasks />}
       {navigation.tab === "activity" && <ActivityScreen />}
       {navigation.tab === "profile" && <Profile />}
-      {page === "team" && <Team />}
-      {/* An open task covers the tabs and brings its own action bar, as in the design. */}
-      {taskId !== null ? (
-        <TaskDetail key={taskId} taskId={taskId} />
-      ) : (
-        !page && <TabBar unread={summary.data?.unread_activity ?? 0} />
-      )}
+      {/* Pages cover the tabs, each over the last; an open task brings its own action bar. */}
+      {stack.map((page, index) => (
+        <StackPage key={pageKey(page, index)} page={page} />
+      ))}
+      {stack.length === 0 && <TabBar unread={summary.data?.unread_activity ?? 0} />}
       <Sheets />
     </>
   );
+}
+
+function pageKey({ feature, page, params }: PageRef, index: number): string {
+  return `${index}:${feature}:${page}:${params ? JSON.stringify(params) : ""}`;
+}
+
+/** One page of the navigation stack: the app's own (a task, team results) or a feature's. */
+function StackPage({ page }: { page: PageRef }) {
+  if (page.feature === CORE) {
+    if (page.page === "task") return <TaskDetail taskId={Number(page.params?.id)} />;
+    if (page.page === "team") return <Team />;
+    return null;
+  }
+  return <FeaturePage feature={page.feature} page={page.page} params={page.params ?? {}} />;
 }

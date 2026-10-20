@@ -64,8 +64,11 @@ export function useSession(): Session {
   return session;
 }
 
+/** The active, approved membership plus the two things every screen needs from it. */
+export type Member = Membership & { timeZone: string; companyId: number };
+
 /** The active, approved membership. Only for screens behind the membership gate. */
-export function useMember(): Membership & { timeZone: string; companyId: number } {
+export function useMember(): Member {
   const { membership } = useSession();
   if (!membership) throw new Error("useMember without a membership");
   return { ...membership, timeZone: membership.company.timezone, companyId: membership.company.id };

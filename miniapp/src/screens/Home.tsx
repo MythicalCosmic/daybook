@@ -2,6 +2,7 @@ import { AlarmClock, ChevronRight, Eye, Flame, TreePalm } from "lucide-react";
 
 import { useActivity, useBoard, useSummary } from "../api/hooks";
 import { ActivityRow } from "../components/ActivityRow";
+import { FeatureSlot } from "../features/FeatureSlot";
 import { Ring } from "../components/Ring";
 import { RowSkeleton, TaskRow } from "../components/TaskRow";
 import { useCompleteTask } from "../lib/actions";
@@ -40,6 +41,8 @@ export function Home() {
           {longDate(ctx.now, ctx.timeZone, ctx.locale)} · {member.company.name}
         </div>
       </div>
+
+      <FeatureSlot name="home.hero" />
 
       <button className="card" style={{ flexDirection: "row", alignItems: "center", gap: 16, padding: "16px 18px", border: 0, textAlign: "left" }} onClick={() => navigation.goTo("tasks")}>
         <Ring done={numbers?.today_done ?? 0} total={numbers?.today_total ?? 0} />
@@ -101,6 +104,8 @@ export function Home() {
           <ChevronRight size={20} strokeWidth={2.5} />
         </button>
       )}
+
+      <FeatureSlot name="home.cards" />
 
       <div className="section-head">
         <span>{t("home.upNext")}</span>

@@ -3,7 +3,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useCreateTask, useRequestTimeOff, useSetLanguage, useTask, useTaskAction } from "../api/hooks";
 import type { Repeat, Task } from "../api/types";
-import { Sheet } from "../components/Sheet";
+import { FeatureSlot } from "../features/FeatureSlot";
+import { FeatureSheet } from "../features/hosts";
 import { LANGUAGES, useI18n } from "../i18n";
 import { errorText } from "../lib/actions";
 import { addDays, dayKey, hourIn, zonedInstant } from "../lib/time";
@@ -11,6 +12,7 @@ import { useNavigation } from "../state/navigation";
 import { useMember, useSession } from "../state/session";
 import { useToast } from "../state/toast";
 import { haptic } from "../telegram";
+import { Sheet } from "../ui/Sheet";
 
 export function Sheets() {
   const navigation = useNavigation();
@@ -24,6 +26,7 @@ export function Sheets() {
       {sheet.kind === "language" && <LanguageSheet />}
       {sheet.kind === "company" && <CompanySheet />}
       {sheet.kind === "timeOff" && <TimeOffSheet />}
+      {sheet.kind === "feature" && <FeatureSheet feature={sheet.feature} sheet={sheet.sheet} params={sheet.params ?? {}} />}
     </Sheet>
   );
 }
@@ -190,6 +193,7 @@ function AddSheet() {
 
   return (
     <>
+      <FeatureSlot name="plus.actions" />
       <div className="heading title-sm">{t("add.title")}</div>
       <div className="field">
         <label htmlFor="add-title">{t("add.what")}</label>

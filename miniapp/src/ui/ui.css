@@ -1,0 +1,1472 @@
+/* Shared building blocks (src/ui). Only new class names live here, so the screens written
+   before them look exactly as they did; everything reads the tokens in tokens.css. */
+
+/* — spinner — */
+
+.ui-spinner {
+  display: inline-block;
+  flex: none;
+  border-radius: 50%;
+  border: 2.5px solid currentColor;
+  border-right-color: transparent;
+  animation: ui-spin 0.7s linear infinite;
+}
+
+@keyframes ui-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* — cards — */
+
+.card--accent {
+  background: var(--color-accent-100);
+  color: var(--color-accent-900);
+}
+
+.card--sage {
+  background: var(--color-accent-2-100);
+  color: var(--color-accent-2-800);
+}
+
+.card--outline {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--color-divider);
+}
+
+.card--row {
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+}
+
+.card--sm {
+  padding: 16px;
+  gap: 4px;
+}
+
+.card--lg {
+  padding: 22px 22px 24px;
+  gap: var(--space-3);
+}
+
+.card--flush {
+  padding: 0;
+  overflow: hidden;
+}
+
+.card--tap {
+  border: 0;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  transition: transform 0.12s ease, background 0.15s ease;
+}
+
+.card--tap:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.card--tap.card:not(.card--accent):not(.card--sage):hover {
+  background: color-mix(in srgb, var(--color-surface) 94%, var(--color-text));
+}
+
+.ui-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* — list rows — */
+
+.list-item-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.list-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.list-item-sub {
+  font-size: 13.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list-item--two-line {
+  min-height: 62px;
+  padding: 9px 0;
+}
+
+.list-item:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ui-row-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.ui-row-icon--accent {
+  background: var(--color-accent-200);
+  color: var(--color-accent-800);
+}
+
+.ui-row-icon--sage {
+  background: var(--color-accent-2-200);
+  color: var(--color-accent-2-800);
+}
+
+.ui-row-value {
+  flex: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--color-text) 66%, transparent);
+}
+
+.ui-row-chevron {
+  flex: none;
+  color: color-mix(in srgb, var(--color-text) 50%, transparent);
+}
+
+/* — badges — */
+
+.ui-count {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  min-width: 21px;
+  height: 21px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.ui-dot {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+.ui-dot--sage {
+  background: var(--color-accent-2);
+}
+
+.ui-dot--pulse::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: inherit;
+  animation: pulse 1.7s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+}
+
+/* — chips — */
+
+.ui-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ui-chips--scroll {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-inline: -20px;
+  padding-inline: 20px;
+  scroll-padding-inline: 20px;
+}
+
+.ui-chips--scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.ui-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid var(--color-divider);
+  border-radius: 999px;
+  background: transparent;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.ui-chip:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.ui-chip[aria-pressed="true"] {
+  border-color: transparent;
+  background: var(--color-accent-100);
+  color: var(--color-accent-900);
+  box-shadow: inset 0 0 0 2px var(--color-accent);
+}
+
+.ui-chip:disabled {
+  opacity: 0.45;
+}
+
+/* — segmented control with radio/tab roles — */
+
+.seg-opt[aria-checked="true"],
+.seg-opt[aria-selected="true"] {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.seg-opt:disabled {
+  opacity: 0.4;
+}
+
+/* — fields — */
+
+.ui-field-optional {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.ui-field-hint,
+.ui-field-error {
+  margin-top: 7px;
+  padding: 0 8px;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.ui-field-error {
+  color: var(--color-accent-700);
+  font-weight: 600;
+}
+
+.ui-select {
+  position: relative;
+}
+
+.ui-select .input {
+  padding-right: 48px;
+}
+
+.ui-select-chevron {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.input[aria-invalid="true"] {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 18%, transparent);
+}
+
+/* — money — */
+
+.ui-money {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-money--lg {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.ui-money--hero {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.28em;
+  font-size: 40px;
+  line-height: 1;
+}
+
+.ui-money--hero .heading {
+  letter-spacing: -0.02em;
+}
+
+.ui-money-unit {
+  font-family: var(--font-body);
+  font-size: 0.42em;
+  font-weight: 700;
+  opacity: 0.66;
+}
+
+.ui-money--gain {
+  color: var(--color-accent-2-700);
+}
+
+.ui-money--loss {
+  color: var(--color-accent-700);
+}
+
+.ui-money-input {
+  position: relative;
+}
+
+.ui-money-input .input {
+  padding-right: 76px;
+  font-weight: 600;
+}
+
+.ui-money-input--lg .input {
+  min-height: 64px;
+  font-size: 24px;
+}
+
+.ui-money-suffix {
+  position: absolute;
+  right: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+/* — number pad — */
+
+.ui-numpad {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.ui-numpad-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: var(--space-2) 0;
+  text-align: center;
+}
+
+.ui-numpad-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-accent-700);
+}
+
+.ui-numpad-amount {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 56px;
+}
+
+.ui-numpad-amount .heading {
+  font-size: 48px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.ui-numpad-amount--empty .heading {
+  color: color-mix(in srgb, var(--color-text) 28%, transparent);
+}
+
+.ui-numpad-unit {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.ui-numpad-hint {
+  font-size: 14px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-numpad-keys {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ui-key {
+  min-height: 60px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-size: 26px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  display: grid;
+  place-items: center;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  transition: background 0.12s ease, transform 0.08s ease;
+}
+
+.ui-key:active:not(:disabled) {
+  transform: scale(0.96);
+  background: color-mix(in srgb, var(--color-surface) 84%, var(--color-text));
+}
+
+.ui-key--small {
+  font-size: 20px;
+}
+
+.ui-key--action {
+  background: transparent;
+}
+
+.ui-key:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* — stepper — */
+
+.ui-stepper {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--color-bg);
+  transition: box-shadow 0.15s ease;
+}
+
+.ui-stepper--active {
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--color-accent) 55%, transparent);
+}
+
+.ui-stepper-btn {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-surface);
+  display: grid;
+  place-items: center;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.08s ease, background 0.12s ease;
+}
+
+.ui-stepper-btn:active:not(:disabled) {
+  transform: scale(0.92);
+  background: var(--color-accent-100);
+  color: var(--color-accent-800);
+}
+
+.ui-stepper-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.ui-stepper-value,
+.ui-stepper-input {
+  min-width: 44px;
+  width: 52px;
+  height: 40px;
+  text-align: center;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.ui-stepper-value {
+  display: grid;
+  place-items: center;
+}
+
+.ui-stepper-input {
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+}
+
+.ui-stepper-input:focus-visible {
+  outline-offset: -2px;
+}
+
+.ui-stepper--sm .ui-stepper-btn {
+  width: 36px;
+  height: 36px;
+}
+
+.ui-stepper--sm .ui-stepper-value,
+.ui-stepper--sm .ui-stepper-input {
+  width: 44px;
+  height: 36px;
+  font-size: 16px;
+}
+
+/* — denomination counter — */
+
+.ui-denoms {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ui-denom {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 96px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 8px 8px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  transition: background 0.15s ease;
+}
+
+.ui-denom--counted {
+  background: color-mix(in srgb, var(--color-surface) 70%, var(--color-accent-100));
+}
+
+.ui-note {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px 7px 10px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ui-note--sage {
+  background: var(--color-accent-2-200);
+  color: var(--color-accent-2-800);
+}
+
+.ui-note--sand {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.ui-denom-sum {
+  text-align: right;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.ui-denom--counted .ui-denom-sum {
+  color: var(--color-text);
+}
+
+.ui-denoms-total {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+  padding: 16px 18px;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-100);
+  color: var(--color-accent-900);
+}
+
+/* On a long counting screen the total stays in view at the bottom of the scroller. */
+.ui-denoms--sticky .ui-denoms-total {
+  position: sticky;
+  bottom: 0;
+  box-shadow: 0 -8px 18px -12px color-mix(in srgb, var(--color-text) 30%, transparent);
+}
+
+.card .ui-key {
+  background: var(--color-bg);
+}
+
+.card .ui-key--action {
+  background: transparent;
+}
+
+.ui-denoms-total-label {
+  display: flex;
+  flex-direction: column;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ui-denoms-total-label .muted {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ui-denoms-total .ui-money--hero {
+  font-size: 30px;
+}
+
+/* — avatars — */
+
+.avatar--xs {
+  width: 28px;
+  height: 28px;
+  font-size: 11px;
+}
+
+.avatar--sm {
+  width: 34px;
+  height: 34px;
+  font-size: 13px;
+}
+
+.avatar--md {
+  width: 40px;
+  height: 40px;
+  font-size: 14px;
+}
+
+.avatar--lg {
+  width: 64px;
+  height: 64px;
+  font-size: 22px;
+}
+
+.avatar--xl {
+  width: 88px;
+  height: 88px;
+  font-size: 30px;
+}
+
+.avatar--accent {
+  background: var(--color-accent-200);
+  color: var(--color-accent-800);
+}
+
+.avatar--neutral {
+  background: var(--color-neutral-200);
+  color: var(--color-neutral-800);
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.ui-avatars {
+  display: inline-flex;
+  align-items: center;
+}
+
+.ui-avatars .avatar {
+  box-shadow: 0 0 0 2px var(--avatar-ring, var(--color-surface));
+}
+
+.card .ui-avatars {
+  --avatar-ring: var(--color-surface);
+}
+
+.ui-avatars {
+  --avatar-ring: var(--color-bg);
+}
+
+.ui-avatars .avatar + .avatar {
+  margin-left: -6px;
+}
+
+.ui-avatars-more {
+  font-size: 12px;
+}
+
+/* — empty state — */
+
+.ui-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: var(--space-8) 24px;
+  text-align: center;
+}
+
+.ui-empty--compact {
+  padding: var(--space-4) 16px;
+  gap: 6px;
+}
+
+.ui-empty-art {
+  position: relative;
+  width: 92px;
+  height: 84px;
+  margin-bottom: 6px;
+}
+
+.ui-empty-sun {
+  position: absolute;
+  left: 6px;
+  top: 0;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  animation: pop 0.55s cubic-bezier(0.34, 1.45, 0.55, 1) both;
+}
+
+.ui-empty-pebble {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--color-accent-2);
+  box-shadow: 0 0 0 4px var(--color-bg);
+  animation: pop 0.5s 0.12s cubic-bezier(0.34, 1.45, 0.55, 1) both;
+}
+
+.card .ui-empty-pebble {
+  box-shadow: 0 0 0 4px var(--color-surface);
+}
+
+.ui-empty--sage .ui-empty-sun {
+  background: var(--color-accent-2);
+}
+
+.ui-empty--sage .ui-empty-pebble {
+  background: var(--color-accent-300);
+}
+
+.ui-empty-check {
+  width: 34px;
+  height: 34px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ui-empty--compact .ui-empty-art {
+  width: 64px;
+  height: 58px;
+}
+
+.ui-empty--compact .ui-empty-sun {
+  left: 4px;
+  width: 50px;
+  height: 50px;
+}
+
+.ui-empty--compact .ui-empty-pebble {
+  width: 24px;
+  height: 24px;
+  box-shadow: 0 0 0 3px var(--color-bg);
+}
+
+.ui-empty-title {
+  font-size: 24px;
+  line-height: 1.12;
+  text-wrap: balance;
+}
+
+.ui-empty--compact .ui-empty-title {
+  font-size: 19px;
+}
+
+.ui-empty-body {
+  margin: 0;
+  max-width: 300px;
+  font-size: 15.5px;
+  line-height: 1.5;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.ui-empty-action {
+  margin-top: 8px;
+  min-height: 46px;
+  padding: 0 20px;
+  font-size: 15px;
+}
+
+/* — skeletons — */
+
+.ui-skeleton-text {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.ui-skeleton-lines {
+  gap: 14px;
+}
+
+/* On a sand card the shimmer runs on the ground color instead, so it stays visible. */
+.card .skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg) 0%,
+    color-mix(in srgb, var(--color-bg) 55%, var(--color-surface)) 50%,
+    var(--color-bg) 100%
+  );
+  background-size: 200% 100%;
+}
+
+.ui-skeleton-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* — progress — */
+
+.ui-ring {
+  position: relative;
+  display: inline-block;
+  flex: none;
+}
+
+.ui-ring svg {
+  transform: rotate(-90deg);
+}
+
+.ui-ring-value {
+  transition: stroke-dashoffset 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.ui-ring-label {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+.ui-bar-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ui-bar-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.ui-bar-head .num {
+  font-weight: 700;
+}
+
+.ui-bar {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+}
+
+.ui-bar--sm {
+  height: 6px;
+}
+
+.ui-bar-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  min-width: 0;
+  border-radius: inherit;
+  background: var(--color-accent);
+  transition: width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.ui-bar--sage .ui-bar-fill {
+  background: var(--color-accent-2);
+}
+
+.ui-bar--over .ui-bar-fill {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--color-accent-600) 0 6px,
+    var(--color-accent) 6px 12px
+  );
+}
+
+.ui-bar-target {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 3px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: var(--color-text);
+  box-shadow: 0 0 0 2px var(--color-surface);
+}
+
+.ui-bar-caption {
+  font-size: 13.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* — stats — */
+
+.ui-stat {
+  padding: 16px;
+  gap: 4px;
+}
+
+.ui-stat-icon {
+  width: 34px;
+  height: 34px;
+  margin-bottom: 6px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--color-bg);
+}
+
+.ui-stat-value {
+  font-size: 32px;
+  line-height: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* An amount as a stat: Caprasimo number, small currency. */
+.ui-stat-value .ui-money--hero {
+  font-size: inherit;
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+
+.ui-stat-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ui-stat-hint {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.ui-trend {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 3px 9px 3px 7px;
+  border-radius: 11px;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+
+.ui-trend svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+.ui-trend--good {
+  background: var(--color-accent-2-200);
+  color: var(--color-accent-2-800);
+}
+
+.ui-trend--bad {
+  background: var(--color-accent-200);
+  color: var(--color-accent-800);
+}
+
+.ui-trend--flat {
+  background: var(--color-neutral-200);
+  color: var(--color-neutral-800);
+}
+
+.ui-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ui-stat-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* — layout: page header, section head, banners — */
+
+.ui-page-head {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 4px;
+}
+
+.ui-page-head-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ui-page-head-text {
+  min-width: 0;
+}
+
+.ui-page-kicker {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.ui-page-title {
+  font-size: 30px;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+.ui-page-actions {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+
+.ui-back {
+  width: 40px;
+  height: 40px;
+  margin-left: -4px;
+}
+
+.section-head--count {
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.section-head-action {
+  margin-right: -10px;
+}
+
+.section-head--count .section-head-action {
+  margin-left: auto;
+}
+
+.banner--lg {
+  padding: 14px 16px;
+  gap: 14px;
+}
+
+.banner-circle {
+  width: 42px;
+  height: 42px;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.banner--accent .banner-circle {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.banner--sage .banner-circle {
+  background: var(--color-accent-2);
+  color: var(--color-bg);
+}
+
+.banner-title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.banner-body {
+  color: inherit;
+}
+
+.banner--top {
+  align-items: flex-start;
+}
+
+.ui-banner-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ui-banner-title {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.ui-banner-body {
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.ui-banner-chevron {
+  flex: none;
+  align-self: center;
+}
+
+.banner--tap {
+  transition: transform 0.12s ease;
+}
+
+.banner--tap:active {
+  transform: scale(0.985);
+}
+
+/* — sheet title — */
+
+.ui-sheet-title {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ui-kicker {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-accent-700);
+}
+
+/* — photo input — */
+
+.ui-photo-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.ui-photo-icon {
+  width: 46px;
+  height: 46px;
+  background: var(--color-accent-100);
+  color: var(--color-accent-700);
+}
+
+.ui-photo-gallery {
+  gap: 7px;
+}
+
+.ui-photo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.ui-photo-thumb {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+
+.ui-photo-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+}
+
+.ui-photo-title {
+  font-weight: 700;
+}
+
+.ui-photo-name {
+  font-size: 14px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photo-drop:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* — slide to confirm — */
+
+.ui-slide {
+  position: relative;
+  height: 64px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--color-accent-100);
+  color: var(--color-accent-800);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.ui-slide--sage {
+  background: var(--color-accent-2-100);
+  color: var(--color-accent-2-800);
+}
+
+/* Inside a tinted card the track takes the ground color, so it stands out. */
+.card .ui-slide {
+  background: var(--color-bg);
+}
+
+.ui-slide-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: inherit;
+  background: var(--color-accent-200);
+  transition: width 0.35s cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+.ui-slide--sage .ui-slide-fill {
+  background: var(--color-accent-2-200);
+}
+
+.ui-slide-label {
+  position: absolute;
+  inset: 0 20px 0 70px;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  text-wrap: balance;
+  overflow: hidden;
+  background: linear-gradient(
+    100deg,
+    currentColor 0%,
+    currentColor 40%,
+    color-mix(in srgb, currentColor 35%, transparent) 50%,
+    currentColor 60%,
+    currentColor 100%
+  );
+  background-size: 240% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: ui-shine 2.6s ease-in-out infinite;
+  transition: opacity 0.2s ease;
+}
+
+.ui-slide.is-done .ui-slide-label,
+.ui-slide.is-loading .ui-slide-label {
+  inset: 0 70px 0 20px;
+  animation: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+@keyframes ui-shine {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -40% 0;
+  }
+}
+
+.ui-slide-knob {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  box-shadow: var(--shadow-md);
+  touch-action: none;
+  cursor: grab;
+  transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.25, 1), background 0.2s ease;
+}
+
+.ui-slide--sage .ui-slide-knob {
+  background: var(--color-accent-2);
+}
+
+.ui-slide.is-dragging .ui-slide-knob,
+.ui-slide.is-dragging .ui-slide-fill {
+  transition: none;
+  cursor: grabbing;
+}
+
+.ui-slide.is-done .ui-slide-knob {
+  background: var(--color-accent-2);
+}
+
+.ui-slide.is-disabled {
+  opacity: 0.5;
+}
+
+.ui-slide.is-disabled .ui-slide-knob {
+  cursor: default;
+}
+
+/* — pull to refresh — */
+
+.ui-ptr {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--top-inset) + 4px);
+  z-index: 4;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--color-surface);
+  color: var(--color-accent-700);
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.ui-ptr.is-visible {
+  visibility: visible;
+}
+
+.ui-ptr svg {
+  transition: transform 0.2s ease;
+}
+
+.ui-ptr.is-settling,
+.ui-ptr-scroll.is-settling {
+  transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.25, 1), opacity 0.3s ease;
+}
+
+/* — bottom bar fallback — */
+
+/* The secondary action takes the width of its words; the primary one fills the rest. */
+.ui-bar-secondary {
+  flex: 0 1 auto;
+  padding-inline: 22px;
+  font-size: 17px;
+  white-space: nowrap;
+}
+
+.ui-bar-primary {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* — toast with a tone or an action — */
+
+.toast > .ui-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+
+.ui-toast--action {
+  pointer-events: auto;
+  padding: 8px 8px 8px 20px;
+}
+
+.ui-toast-icon {
+  flex: none;
+}
+
+.ui-toast--success .ui-toast-icon {
+  color: var(--color-accent-2-300);
+}
+
+.ui-toast--error .ui-toast-icon {
+  color: var(--color-accent-300);
+}
+
+.ui-toast-text {
+  min-width: 0;
+}
+
+.ui-toast-action {
+  flex: none;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-bg) 16%, transparent);
+  color: var(--color-accent-300);
+  font-weight: 700;
+}
+
+:root[data-theme="dark"] .ui-toast--success .ui-toast-icon {
+  color: var(--color-accent-2-300);
+}
+
+/* — feature hosts — */
+
+.ui-plus-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 8px;
+}
+
+.ui-plus-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 8px 12px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  transition: transform 0.1s ease;
+}
+
+.ui-plus-action:active {
+  transform: scale(0.96);
+}
+
+.ui-plus-action .circle {
+  width: 42px;
+  height: 42px;
+  background: var(--color-accent-100);
+  color: var(--color-accent-700);
+}
