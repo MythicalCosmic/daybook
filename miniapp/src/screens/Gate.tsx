@@ -1,4 +1,4 @@
-import { Ban, Clock3, KeyRound, Send, WifiOff } from "lucide-react";
+import { Ban, CirclePause, Clock3, KeyRound, Send, WifiOff } from "lucide-react";
 import type { ReactNode } from "react";
 
 import type { Membership } from "../api/types";
@@ -51,6 +51,12 @@ export function Declined({ membership }: { membership: Membership }) {
 export function Blocked() {
   const { t } = useI18n();
   return <Message icon={<Ban size={32} strokeWidth={2.4} />} title={t("gate.blocked.title")} body={t("gate.blocked.body")} />;
+}
+
+/** Shown to a suspended person when no feature brings its own "Access paused" screen. */
+export function Suspended() {
+  const { t } = useI18n();
+  return <Message icon={<CirclePause size={32} strokeWidth={2.4} />} title={t("gate.suspended.title")} body={t("gate.suspended.body")} />;
 }
 
 const FAILURES = {

@@ -27,6 +27,8 @@ const uz: Partial<Record<Key, string>> = {
   "gate.declined.now": "Taklif havolasi orqali qayta so‘rov yuborishingiz mumkin.",
   "gate.blocked.title": "Kirish yopilgan",
   "gate.blocked.body": "Agar bu xato deb hisoblasangiz, rahbaringizga murojaat qiling.",
+  "gate.suspended.title": "Kirish vaqtincha to‘xtatilgan",
+  "gate.suspended.body": "Rahbaringiz kirishingizni hozircha to‘xtatib qo‘ydi. Savollaringiz bo‘lsa, undan so‘rang.",
   "gate.close": "Ilovani yopish",
 
   "signup.step": "{n}-qadam, jami 3",

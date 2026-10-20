@@ -123,7 +123,7 @@ function MeRow({ feature, item, context }: { feature: Feature; item: MeItem<stri
       title={featureText(feature.messages, lang, item.label)}
       value={status.value}
       badge={status.badge}
-      onClick={() => openTarget(navigation, feature, item.to)}
+      onClick={() => openTarget(navigation, feature, item.open)}
     />
   );
 }
@@ -143,7 +143,7 @@ function PlusActions({ placed }: { placed: Placed<PlusAction<string, string, str
             className="ui-plus-action"
             onClick={() => {
               haptic();
-              openTarget(navigation, feature, item.to);
+              openTarget(navigation, feature, item.open);
             }}
           >
             <span className="circle">{renderIcon(item.icon, 21)}</span>

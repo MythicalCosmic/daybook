@@ -6,26 +6,27 @@
  *   export default defineFeature({
  *     id: "wallet",                                   // = the folder name
  *     messages,                                       // defineMessages({en, ru, uz}) from ./messages
- *     visible: (member) => can(member, "payroll.view") || true,
+ *     visible: (member) => member.status === "approved",
  *     pages: { home: lazy(() => import("./WalletPage")), payslip: lazy(() => import("./Payslip")) },
  *     sheets: { advance: lazy(() => import("./AdvanceSheet")) },
  *     homeCards: [{ id: "earned", component: EarnedCard }],
- *     meItems: [{ id: "pay", group: "money", label: "me.pay", icon: Wallet, to: { page: "home" } }],
- *     plusActions: [{ id: "advance", label: "plus.advance", icon: HandCoins, to: { sheet: "advance" } }],
+ *     meItems: [{ id: "pay", group: "money", label: "me.pay", icon: Wallet, open: { page: "home" } }],
+ *     plusActions: [{ id: "advance", label: "plus.advance", icon: HandCoins, open: { sheet: "advance" } }],
  *     routes: { payslip: { page: "payslip", tab: "profile" } },   // ?screen=payslip:12
  *   });
  *
  * Home renders `homeHero` and `homeCards`, Profile ("Me") renders `meItems` grouped by `group`,
- * the (+) sheet renders `plusActions`. A visible item can `replaces` a built-in entry (for
- * example the leave feature replaces "me.timeOff"), and the built-in one disappears. Pages and
- * sheets open through `useNavigation()`: `push({feature: "wallet", page: "payslip", params: {id}})`
- * or `openSheet({kind: "feature", feature: "wallet", sheet: "advance"})`.
+ * the (+) sheet renders `plusActions`. `replaces` names a built-in entry the feature takes over
+ * ("timeOff" for the leave feature, "teamResults" for a leaderboard that supersedes it); the
+ * built-in entry is hidden while that feature is visible. Pages and sheets open through
+ * `useNavigation()`: `push({feature: "wallet", page: "payslip", params: {id}})` or
+ * `openSheet({kind: "feature", feature: "wallet", sheet: "advance"})`.
  */
 
 import type { LucideIcon } from "lucide-react";
 import type { ComponentType, ReactNode } from "react";
 
-import type { MemberBrief, Summary } from "../api/types";
+import type { MemberBrief, Membership, Summary } from "../api/types";
 import type { Dictionary } from "../i18n";
 import type { FeatureMessages } from "../i18n/feature";
 import type { NavigationInit, PageRef, Params, Tab } from "../state/navigation";
@@ -37,10 +38,12 @@ export type Visible = (member: Member, summary: Summary | undefined) => boolean;
 export type SlotProps = { member: Member; summary: Summary | undefined };
 export type PageProps = { params: Params };
 export type SheetProps = { params: Params; close: () => void };
+/** What a gate screen receives: the membership the app would otherwise show. */
+export type GateProps = { membership: Membership };
 
-/** Built-in entries a feature may replace with its own (critic item 43). */
-export const BUILT_IN_ENTRIES = ["me.timeOff", "me.team", "me.work"] as const;
-export type BuiltInEntry = (typeof BUILT_IN_ENTRIES)[number];
+/** Built-in entries a feature may take over (critic item 43): Me's time off and team results. */
+export const BUILT_INS = ["timeOff", "teamResults"] as const;
+export type BuiltIn = (typeof BUILT_INS)[number];
 
 /** The groups on the Me screen, in display order. */
 export const ME_GROUPS = ["money", "work", "documents", "team"] as const;
@@ -55,11 +58,20 @@ export type Slot = {
   /** Lower comes first; default 100. */
   order?: number;
   visible?: Visible;
-  replaces?: readonly BuiltInEntry[];
 };
 
-/** Where a Me row or a (+) action leads: one of the feature's pages or sheets. */
-export type Target<P extends string, S extends string> = { page: P; params?: Params } | { sheet: S; params?: Params };
+/** A sheet anywhere in the app: a feature's (`{feature, sheet}`) or a built-in one (`{feature: "core", sheet: "add"}`). */
+export type SheetRef = { feature: string; sheet: string; params?: Params };
+
+/**
+ * Where a Me row or a (+) action leads. Name one of this feature's pages or sheets (checked), or
+ * give `feature` for any page (`PageRef`) or sheet (`SheetRef`) in the app.
+ */
+export type Open<P extends string, S extends string> =
+  | { page: P; params?: Params; feature?: undefined }
+  | { sheet: S; params?: Params; feature?: undefined }
+  | PageRef
+  | SheetRef;
 
 export type MeItemStatus = {
   /** Text on the right, before the chevron ("3 days", "1 250 000 so‘m"). */
@@ -74,19 +86,19 @@ export type MeItem<K extends string, P extends string, S extends string> = {
   /** A key in the feature's messages. */
   label: K;
   icon: LucideIcon;
-  to: Target<P, S>;
+  open: Open<P, S>;
   order?: number;
   visible?: Visible;
-  replaces?: readonly BuiltInEntry[];
   /** A React hook (it may call useQuery) for the row's value and badge. */
   useStatus?: (props: SlotProps) => MeItemStatus;
 };
 
+/** A quick-add row in the (+) sheet ("Expense", "Kudos", "Swap a shift"). */
 export type PlusAction<K extends string, P extends string, S extends string> = {
   id: string;
   label: K;
   icon: LucideIcon;
-  to: Target<P, S>;
+  open: Open<P, S>;
   order?: number;
   visible?: Visible;
 };
@@ -129,11 +141,18 @@ export type Feature = {
   homeCards?: readonly Slot[];
   meItems?: readonly MeItem<string, string, string>[];
   plusActions?: readonly PlusAction<string, string, string>[];
+  /** Built-in entries this feature takes over while it is visible. */
+  replaces?: readonly BuiltIn[];
   routes?: Partial<Record<string, Route<string, string>>>;
   /** Custom rows for inbox notification kinds (the Inbox tab uses them when present). */
   inboxRenderers?: Partial<Record<string, ComponentType<InboxRendererProps>>>;
+  /**
+   * Screens shown instead of the app for a membership state: `suspended` is the lifecycle
+   * feature's "Access paused" screen. It renders inside the navigation, so it can open pages.
+   */
+  gates?: { suspended?: ComponentType<GateProps> };
   messages: { en: Dictionary; ru: Dictionary; uz: Dictionary };
-  /** Hide everything the feature shows (slots, rows, actions) for this person. */
+  /** Hide everything the feature shows (slots, rows, actions, replacements) for this person. */
   visible?: Visible;
 };
 
@@ -181,10 +200,18 @@ export function collectFeatures(modules: Record<string, unknown>): { features: F
       problems.push(`${path}: messages need en, ru and uz`);
       continue;
     }
-    const targets = [...(feature.meItems ?? []), ...(feature.plusActions ?? [])].map((item) => item.to);
-    const missing = targets.filter((to) => ("page" in to ? !feature.pages?.[to.page] : !feature.sheets?.[to.sheet]));
+    const unknownBuiltIns = (feature.replaces ?? []).filter((entry) => !(BUILT_INS as readonly string[]).includes(entry));
+    if (unknownBuiltIns.length) {
+      problems.push(`${path}: replaces unknown built-in ${unknownBuiltIns.join(", ")} (known: ${BUILT_INS.join(", ")})`);
+      continue;
+    }
+    // Own targets are checked here; ones naming another feature are checked when opened.
+    const own = [...(feature.meItems ?? []), ...(feature.plusActions ?? [])]
+      .map((item) => item.open)
+      .filter((open) => open.feature === undefined || open.feature === feature.id);
+    const missing = own.filter((open) => ("page" in open ? !feature.pages?.[open.page] : !feature.sheets?.[open.sheet]));
     if (missing.length) {
-      problems.push(`${path}: unknown targets ${missing.map((to) => JSON.stringify(to)).join(", ")}`);
+      problems.push(`${path}: unknown targets ${missing.map((open) => JSON.stringify(open)).join(", ")}`);
       continue;
     }
     features.push(feature);
@@ -261,16 +288,16 @@ export function plusActions(list: readonly Feature[], context: FeatureContext): 
   return place(list, context, (feature) => feature.plusActions);
 }
 
-/** Built-in entries that a visible slot or Me row replaces for this person. */
-export function replacedEntries(list: readonly Feature[], context: FeatureContext): Set<BuiltInEntry> {
-  const replaced = new Set<BuiltInEntry>();
-  const items = [
-    ...place(list, context, (feature) => feature.homeHero),
-    ...place(list, context, (feature) => feature.homeCards),
-    ...place(list, context, (feature) => feature.meItems),
-  ];
-  for (const { item } of items) for (const entry of item.replaces ?? []) replaced.add(entry);
+/** Built-in entries that a feature visible to this person takes over. */
+export function replacedEntries(list: readonly Feature[], context: FeatureContext): Set<BuiltIn> {
+  const replaced = new Set<BuiltIn>();
+  for (const feature of visibleFeatures(list, context)) for (const entry of feature.replaces ?? []) replaced.add(entry);
   return replaced;
+}
+
+/** The screen a feature shows for a suspended membership, if one does (first folder wins). */
+export function suspendedGate(list: readonly Feature[]): ComponentType<GateProps> | null {
+  return list.find((feature) => feature.gates?.suspended)?.gates?.suspended ?? null;
 }
 
 // — pages, sheets and routes —

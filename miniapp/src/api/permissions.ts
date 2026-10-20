@@ -8,7 +8,7 @@ export type SchemaPerm = components["schemas"]["PermissionsEnum"];
  * regenerates `schema.d.ts` at integration. Keep this list in the same order as the plan.
  */
 export const PHASE2_PERMS = [
-  // §5: owner console, money, HR and AI
+  // §5: owner console, money, HR and AI (29)
   "dashboard.access",
   "company.settings",
   "audit.view",
@@ -17,6 +17,7 @@ export const PHASE2_PERMS = [
   "sales.view",
   "sales.operate",
   "sales.manage",
+  "sales.invoices",
   "stock.manage",
   "finance.view",
   "finance.record",
@@ -26,6 +27,7 @@ export const PHASE2_PERMS = [
   "hr.view",
   "hr.manage",
   "hr.sensitive",
+  "hr.hiring",
   "attendance.view",
   "attendance.manage",
   "time_off.manage",
@@ -36,21 +38,19 @@ export const PHASE2_PERMS = [
   "payroll.pay",
   "ai.use",
   "ai.configure",
-  // §13: projects, people lifecycle, knowledge base, CRM and invoices
+  // §13: projects, people lifecycle, knowledge base, company calendar, CRM (12)
   "projects.view_all",
   "projects.manage",
   "projects.time_view",
   "hr.discipline",
   "hr.suspend",
   "hr.terminate",
-  "org.manage",
   "assets.manage",
-  "hiring.manage",
   "reviews.manage",
   "knowledge.manage",
+  "agenda.manage",
   "crm.view",
   "crm.manage",
-  "invoices.manage",
 ] as const;
 
 export type Phase2Perm = (typeof PHASE2_PERMS)[number];

@@ -20,6 +20,7 @@ import {
   meItemsByGroup,
   plusActions,
   replacedEntries,
+  suspendedGate,
   visibleFeatures,
   type Feature,
   type PageProps,
@@ -51,9 +52,9 @@ function Crash(): ReactNode {
 const alpha: Feature = defineFeature({
   id: "alpha",
   messages: {
-    en: { "me.pay": "Pay", "plus.advance": "Advance" },
-    ru: { "me.pay": "Зарплата", "plus.advance": "Аванс" },
-    uz: { "me.pay": "Maosh", "plus.advance": "Avans" },
+    en: { "me.pay": "Pay", "plus.advance": "Advance", "plus.task": "Days off" },
+    ru: { "me.pay": "Зарплата", "plus.advance": "Аванс", "plus.task": "Выходные" },
+    uz: { "me.pay": "Maosh", "plus.advance": "Avans", "plus.task": "Dam olish" },
   },
   pages: { pay: Page },
   sheets: { advance: SheetBody },
@@ -65,11 +66,14 @@ const alpha: Feature = defineFeature({
       group: "money",
       label: "me.pay",
       icon: Wallet,
-      to: { page: "pay", params: { month: "2026-10" } },
+      open: { page: "pay", params: { month: "2026-10" } },
       useStatus: () => ({ value: "3 days", badge: 2 }),
     },
   ],
-  plusActions: [{ id: "advance", label: "plus.advance", icon: Wallet, to: { sheet: "advance" } }],
+  plusActions: [
+    { id: "advance", label: "plus.advance", icon: Wallet, open: { sheet: "advance" } },
+    { id: "task", label: "plus.task", icon: Receipt, open: { feature: "core", sheet: "timeOff" }, order: 200 },
+  ],
 });
 
 const beta: Feature = defineFeature({
@@ -78,7 +82,8 @@ const beta: Feature = defineFeature({
   visible: (member) => member.permissions.includes("reports.view"),
   pages: { leave: Page },
   homeCards: [{ id: "first", component: Card("beta card"), order: 10 }],
-  meItems: [{ id: "leave", group: "work", label: "leave", icon: Receipt, to: { page: "leave" }, replaces: ["me.timeOff"] }],
+  replaces: ["timeOff"],
+  meItems: [{ id: "leave", group: "work", label: "leave", icon: Receipt, open: { page: "leave" } }],
 });
 
 const hidden: Feature = defineFeature({
@@ -86,7 +91,8 @@ const hidden: Feature = defineFeature({
   messages: { en: { x: "X" }, ru: { x: "X" }, uz: { x: "X" } },
   visible: () => false,
   pages: { x: Page },
-  meItems: [{ id: "x", group: "team", label: "x", icon: Receipt, to: { page: "x" }, replaces: ["me.team"] }],
+  replaces: ["teamResults"],
+  meItems: [{ id: "x", group: "team", label: "x", icon: Receipt, open: { page: "x" } }],
 });
 
 const crashing: Feature = defineFeature({
@@ -157,13 +163,13 @@ describe("registry helpers", () => {
   });
 
   it("lets a visible feature replace a built-in entry, and only then", () => {
-    expect([...replacedEntries(all, { member: member(["reports.view"]), summary })]).toEqual(["me.timeOff"]);
-    // beta is invisible without reports.view; hidden is never visible, so me.team stays.
+    expect([...replacedEntries(all, { member: member(["reports.view"]), summary })]).toEqual(["timeOff"]);
+    // beta is invisible without reports.view; hidden is never visible, so team results stay.
     expect([...replacedEntries(all, { member: member(), summary })]).toEqual([]);
   });
 
   it("collects (+) actions", () => {
-    expect(plusActions(all, { member: member(), summary }).map(({ feature, item }) => `${feature.id}.${item.id}`)).toEqual(["alpha.advance"]);
+    expect(plusActions(all, { member: member(), summary }).map(({ feature, item }) => `${feature.id}.${item.id}`)).toEqual(["alpha.advance", "alpha.task"]);
   });
 
   it("finds pages and sheets", () => {
@@ -181,15 +187,26 @@ describe("registry helpers", () => {
       "./empty/index.ts": {},
       "./nomsg/index.ts": { default: { id: "nomsg", messages: { en: {} } } },
       "./badtarget/index.ts": {
-        default: { id: "badtarget", messages: { en: {}, ru: {}, uz: {} }, meItems: [{ id: "a", group: "money", label: "a", icon: Wallet, to: { page: "missing" } }] },
+        default: { id: "badtarget", messages: { en: {}, ru: {}, uz: {} }, meItems: [{ id: "a", group: "money", label: "a", icon: Wallet, open: { page: "missing" } }] },
+      },
+      "./badbuiltin/index.ts": {
+        default: { id: "badbuiltin", messages: { en: {}, ru: {}, uz: {} }, replaces: ["profile"] },
       },
     });
     expect(features.map((f) => f.id)).toEqual(["alpha"]);
-    expect(problems).toHaveLength(4);
+    expect(problems).toHaveLength(5);
     expect(problems.join("\n")).toMatch(/id "beta" must match its folder "wallet"/);
     expect(problems.join("\n")).toMatch(/no default export/);
     expect(problems.join("\n")).toMatch(/messages need en, ru and uz/);
     expect(problems.join("\n")).toMatch(/unknown targets/);
+    expect(problems.join("\n")).toMatch(/replaces unknown built-in profile/);
+  });
+
+  it("finds a feature's screen for suspended people", () => {
+    const Paused = () => null;
+    const lifecycle: Feature = defineFeature({ id: "lifecycle", messages: { en: {}, ru: {}, uz: {} }, gates: { suspended: Paused } });
+    expect(suspendedGate([alpha, lifecycle])).toBe(Paused);
+    expect(suspendedGate([alpha])).toBeNull();
   });
 });
 
@@ -288,6 +305,9 @@ describe("feature slots", () => {
     expect(screen.getByText("Быстро добавить")).toBeTruthy();
     act(() => fireEvent.click(screen.getByRole("button", { name: "Аванс" })));
     expect(nav!.sheet).toEqual({ kind: "feature", feature: "alpha", sheet: "advance", params: undefined });
+    // An action may open one of the app's own sheets by name.
+    act(() => fireEvent.click(screen.getByRole("button", { name: "Выходные" })));
+    expect(nav!.sheet).toEqual({ kind: "timeOff" });
   });
 
   it("tell screens which built-ins are replaced for this person", () => {
@@ -302,6 +322,6 @@ describe("feature slots", () => {
         <Probe />
       </Providers>,
     );
-    expect(seen.at(-1)).toEqual(["me.timeOff"]);
+    expect(seen.at(-1)).toEqual(["timeOff"]);
   });
 });

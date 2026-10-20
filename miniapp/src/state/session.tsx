@@ -21,6 +21,8 @@ function pickMembership(me: Me, preferred: number | null): Membership | null {
   return (
     approved.find((m) => m.company.id === preferred) ??
     approved[0] ??
+    // "suspended" arrives with the lifecycle work; the gate shows the "Access paused" screen.
+    memberships.find((m) => (m.status as string) === "suspended") ??
     memberships.find((m) => m.status === "pending") ??
     memberships.find((m) => m.status === "rejected") ??
     memberships.find((m) => m.status === "blocked") ??

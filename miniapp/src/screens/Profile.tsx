@@ -2,9 +2,9 @@ import { BarChart3, Check, ChevronRight, Flame, PartyPopper, TreePalm } from "lu
 import { useState } from "react";
 
 import { useCancelTimeOff, useHolidays, useSummary, useTimeOff } from "../api/hooks";
+import type { Day } from "../api/types";
 import { FeatureSlot } from "../features/FeatureSlot";
 import { useReplacedEntries } from "../features/hosts";
-import type { Day } from "../api/types";
 import { LANGUAGES, useI18n } from "../i18n";
 import { errorText } from "../lib/actions";
 import { cancellable, current, STATUS_TAG } from "../lib/timeOff";
@@ -26,7 +26,7 @@ export function Profile() {
   const cancelTimeOff = useCancelTimeOff(member.companyId);
   const toast = useToast();
   const [theme, setTheme] = useState<ThemeMode>(savedThemeMode);
-  // Feature folders can take over these built-in sections (the leave feature replaces time off).
+  // Feature folders can take over built-in entries (the leave feature replaces time off).
   const replaced = useReplacedEntries();
   const numbers = summary.data;
   const today = dayKey(new Date(), member.timeZone);
@@ -92,7 +92,7 @@ export function Profile() {
         </div>
       </div>
 
-      {!replaced.has("me.work") && numbers?.quiet_from && numbers.quiet_until && (
+      {numbers?.quiet_from && numbers.quiet_until && (
         <>
           <div className="section-head section-head--small">{t("profile.work")}</div>
           <div className="card list-card">
@@ -107,7 +107,7 @@ export function Profile() {
         </>
       )}
 
-      {!replaced.has("me.timeOff") && (
+      {!replaced.has("timeOff") && (
         <>
           <div className="section-head section-head--small">{t("timeOff.section")}</div>
           <div className="card list-card">
@@ -163,7 +163,7 @@ export function Profile() {
       <FeatureSlot
         name="me.items"
         builtIns={{
-          team: member.permissions.includes("reports.view") && !replaced.has("me.team") && (
+          team: member.permissions.includes("reports.view") && !replaced.has("teamResults") && (
             <button className="list-item" onClick={() => navigation.openPage("team")}>
               <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <BarChart3 size={20} strokeWidth={2.4} />

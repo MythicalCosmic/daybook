@@ -25,6 +25,8 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
   "gate.declined.now": "Вы можете отправить запрос снова по ссылке-приглашению.",
   "gate.blocked.title": "Доступ закрыт",
   "gate.blocked.body": "Если это ошибка, обратитесь к руководителю.",
+  "gate.suspended.title": "Доступ приостановлен",
+  "gate.suspended.body": "Руководитель временно приостановил ваш доступ. Если есть вопросы, спросите у него.",
   "gate.close": "Закрыть приложение",
 
   "signup.step": "Шаг {n} из 3",

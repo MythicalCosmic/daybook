@@ -2,7 +2,7 @@ import { Component, Suspense, type ErrorInfo, type ReactNode } from "react";
 
 import { useSummary } from "../api/hooks";
 import { useI18n } from "../i18n";
-import { useNavigation, type Navigation, type Params } from "../state/navigation";
+import { CORE, useNavigation, type Navigation, type Params } from "../state/navigation";
 import { useMember } from "../state/session";
 import { EmptyState } from "../ui/EmptyState";
 import { Screen } from "../ui/Layout";
@@ -12,10 +12,10 @@ import {
   findPage,
   findSheet,
   replacedEntries,
-  type BuiltInEntry,
+  type BuiltIn,
   type Feature,
   type FeatureContext,
-  type Target,
+  type Open,
 } from "./registry";
 
 /** Keeps one feature's crash inside its own box: the rest of the screen carries on. */
@@ -42,27 +42,36 @@ export function useFeatureContext(): FeatureContext {
   return { member, summary: summary.data };
 }
 
-const NONE: ReadonlySet<BuiltInEntry> = new Set();
+const NONE: ReadonlySet<BuiltIn> = new Set();
 
 /**
- * Built-in entries a visible feature replaces for this person. With no feature folders the
+ * Built-in entries a visible feature takes over for this person. With no feature folders the
  * answer is fixed, so screens pay nothing (the branch is on a module constant).
  */
-export function useReplacedEntries(): ReadonlySet<BuiltInEntry> {
+export function useReplacedEntries(): ReadonlySet<BuiltIn> {
   // Calling a hook after this early return is safe: `features` never changes at runtime.
   if (features.length === 0) return NONE;
   return useReplacedFromFeatures();
 }
 
-function useReplacedFromFeatures(): ReadonlySet<BuiltInEntry> {
+function useReplacedFromFeatures(): ReadonlySet<BuiltIn> {
   const context = useFeatureContext();
   return replacedEntries(features, context);
 }
 
-/** Open a feature's page or sheet. */
-export function openTarget(navigation: Navigation, feature: Feature, target: Target<string, string>): void {
-  if ("page" in target) navigation.push({ feature: feature.id, page: target.page, params: target.params });
-  else navigation.openSheet({ kind: "feature", feature: feature.id, sheet: target.sheet, params: target.params });
+/** The app's own sheets a feature may open by name (`{feature: "core", sheet: "add"}`). */
+const CORE_SHEETS = ["add", "language", "company", "timeOff"] as const;
+
+/** Open where a Me row or (+) action leads: the feature's own page or sheet, or any other one. */
+export function openTarget(navigation: Navigation, feature: Feature, open: Open<string, string>): void {
+  const owner = open.feature ?? feature.id;
+  if ("page" in open) {
+    navigation.push({ feature: owner, page: open.page, params: open.params });
+    return;
+  }
+  const core = CORE_SHEETS.find((kind) => kind === open.sheet);
+  if (owner === CORE && core) navigation.openSheet({ kind: core });
+  else navigation.openSheet({ kind: "feature", feature: owner, sheet: open.sheet, params: open.params });
 }
 
 function NotFound({ onBack }: { onBack: () => void }) {

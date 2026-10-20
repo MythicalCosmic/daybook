@@ -44,6 +44,7 @@ import {
   MoneyText,
   NumberPad,
   PageHeader,
+  PdfLink,
   PhotoInput,
   ProgressBar,
   ProgressRing,
@@ -384,6 +385,10 @@ export function Kitchen({ section }: { section: string | null }) {
           <ListRow icon={CalendarCheck} title={d.attendance} value={d.days} onClick={() => undefined} />
           <ListRow icon={FileSignature} title={d.documents} subtitle={d.signBody} badge={2} onClick={() => undefined} />
           <ListRow icon={Receipt} title={d.expenses} onClick={() => undefined} />
+        </ListCard>
+        <PdfLink title={d.late} subtitle="Paid 5 Oct · 2 pages" href={() => new Promise((resolve) => window.setTimeout(() => resolve("about:blank"), 600))} />
+        <ListCard>
+          <PdfLink variant="inset" title={d.documents} subtitle={d.signBody} href="about:blank" />
         </ListCard>
         <ListRow variant="card" icon={HandCoins} tone="sage" title={d.handover} subtitle={d.handoverBody} onClick={() => undefined} />
         <ListRow variant="card" icon={Clock3} tone="accent" title={d.late} subtitle="Late 25 min" alert value="09:25" />

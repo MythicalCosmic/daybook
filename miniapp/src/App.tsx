@@ -2,11 +2,14 @@ import { useEffect, useRef, useState } from "react";
 
 import { ApiError } from "./api/client";
 import { useMe, useSummary } from "./api/hooks";
+import type { Membership } from "./api/types";
 import { TabBar } from "./components/TabBar";
+import { FeatureBoundary, FeaturePage } from "./features/hosts";
+import { features, suspendedGate } from "./features/registry";
 import { asLang, I18nProvider, useI18n } from "./i18n";
 import { ActivityScreen } from "./screens/Activity";
 import { CreateAccount } from "./screens/CreateAccount";
-import { Blocked, Declined, Failure, NoAccess } from "./screens/Gate";
+import { Blocked, Declined, Failure, NoAccess, Suspended } from "./screens/Gate";
 import { Home } from "./screens/Home";
 import { Profile } from "./screens/Profile";
 import { Splash } from "./screens/Splash";
@@ -14,8 +17,6 @@ import { TaskDetail } from "./screens/TaskDetail";
 import { Tasks } from "./screens/Tasks";
 import { Team } from "./screens/Team";
 import { Waiting } from "./screens/Waiting";
-import { FeaturePage } from "./features/hosts";
-import { features } from "./features/registry";
 import { Sheets } from "./sheets/Sheets";
 import { initialFromLaunch } from "./state/deeplink";
 import { CORE, NavigationProvider, useNavigation, type NavigationInit, type PageRef } from "./state/navigation";
@@ -91,6 +92,8 @@ function Gatekeeper() {
   if (!membership || status === "left") return <NoAccess />;
   if (status === "rejected") return <Declined membership={membership} />;
   if (status === "blocked") return <Blocked />;
+  // Not in the generated schema yet: the lead adds "suspended" with the lifecycle work (§13).
+  if ((status as string) === "suspended") return <PausedApp membership={membership} />;
   if (!membership.is_onboarded) return <CreateAccount membership={membership} />;
   if (status === "pending" || celebrating) {
     return <Waiting membership={membership} onOpen={() => setCelebrating(false)} />;
@@ -98,15 +101,18 @@ function Gatekeeper() {
   return <MainApp />;
 }
 
+/** Telegram's back button closes a sheet first, then the page on top (an open task, a page). */
+function useStackBackButton() {
+  const { sheet, stack, closeSheet, pop } = useNavigation();
+  const back = sheet ? closeSheet : stack.length ? pop : null;
+  useEffect(() => useBackButton(back), [back]);
+}
+
 function MainApp() {
   const navigation = useNavigation();
   const member = useMember();
   const summary = useSummary(member.companyId);
-  const { sheet, stack, closeSheet, pop } = navigation;
-
-  // Telegram's back button closes a sheet first, then the page on top (an open task, a page).
-  const back = sheet ? closeSheet : stack.length ? pop : null;
-  useEffect(() => useBackButton(back), [back]);
+  useStackBackButton();
 
   return (
     <>
@@ -115,11 +121,42 @@ function MainApp() {
       {navigation.tab === "activity" && <ActivityScreen />}
       {navigation.tab === "profile" && <Profile />}
       {/* Pages cover the tabs, each over the last; an open task brings its own action bar. */}
+      <StackPages />
+      {navigation.stack.length === 0 && <TabBar unread={summary.data?.unread_activity ?? 0} />}
+      <Sheets />
+    </>
+  );
+}
+
+/**
+ * A suspended person: the lifecycle feature's "Access paused" screen when it exists (it may open
+ * the pages they keep, such as pay and documents), otherwise a calm built-in message.
+ */
+function PausedApp({ membership }: { membership: Membership }) {
+  const Gate = suspendedGate(features);
+  useStackBackButton();
+  return (
+    <>
+      {Gate ? (
+        <FeatureBoundary name="gates.suspended" fallback={<Suspended />}>
+          <Gate membership={membership} />
+        </FeatureBoundary>
+      ) : (
+        <Suspended />
+      )}
+      <StackPages />
+      <Sheets />
+    </>
+  );
+}
+
+function StackPages() {
+  const { stack } = useNavigation();
+  return (
+    <>
       {stack.map((page, index) => (
         <StackPage key={pageKey(page, index)} page={page} />
       ))}
-      {stack.length === 0 && <TabBar unread={summary.data?.unread_activity ?? 0} />}
-      <Sheets />
     </>
   );
 }

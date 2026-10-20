@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { defineFeature, type Feature, type PageProps, type SheetProps } from "../features/registry";
 import { parseScreen, readScreenLink, resolveScreen } from "./deeplink";
@@ -82,10 +82,26 @@ describe("resolving screen links", () => {
     expect(resolve("wallet.nope:7")).toBeNull();
   });
 
+  it("let a feature that takes over time off answer the timeOff link", () => {
+    const leave: Feature = defineFeature({
+      id: "leave",
+      messages: { en: { t: "Time off" }, ru: { t: "Отпуск" }, uz: { t: "Ta’til" } },
+      replaces: ["timeOff"],
+      pages: { home: Page },
+      routes: { timeOff: { page: "home", tab: "profile" } },
+    });
+    expect(resolve("timeOff", [leave])).toEqual({ tab: "profile", stack: [{ feature: "leave", page: "home", params: {} }] });
+    // Without a route of that name the built-in sheet still opens.
+    expect(resolve("timeOff", [{ ...leave, routes: {} }])).toEqual({ tab: "profile", sheet: { kind: "timeOff" } });
+  });
+
   it("start normally for unknown names and broken routes", () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => undefined);
     expect(resolve("c_invite123")).toBeNull();
     expect(resolve("payslip:12", [])).toBeNull();
     expect(resolve("broken")).toBeNull();
     expect(resolveScreen(null, [wallet])).toBeNull();
+    expect(errors).toHaveBeenCalledOnce();
+    errors.mockRestore();
   });
 });
