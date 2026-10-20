@@ -9,8 +9,9 @@ from aiogram.types import Chat, Message, User
 
 from apps.tasks.models import Task
 from bot.commands import private_commands
-from bot.handlers.features import attendance, finance
-from bot.middlewares.menu_commands import is_menu_command, menu_commands
+from bot.deeplinks import register_start_param, unregister_start_param
+from bot.handlers.features import applicants, attendance, finance
+from bot.middlewares.menu_commands import interrupts, is_menu_command, menu_commands
 from tests import updates
 
 ASKS_FOR_DUE = "When is it due?"
@@ -62,6 +63,13 @@ def test_the_menu_commands_are_the_private_menu():
 )
 def test_what_counts_as_a_menu_command(text, expected):
     assert is_menu_command(text_message(text)) is expected
+    assert interrupts(text_message(text)) is expected
+
+
+def test_start_is_left_to_the_start_router():
+    assert is_menu_command(text_message("/start login_abc"))
+    assert not interrupts(text_message("/start login_abc"))
+    assert not interrupts(text_message("/start"))
 
 
 pytestmark_db = pytest.mark.django_db(transaction=True)
@@ -146,3 +154,46 @@ async def test_start_ends_the_conversation(dp, bot, company, member):
 
     assert ASKS_FOR_DUE not in bot.sent_texts()[-1]
     assert not await Task.objects.filter(assignee=worker).aexists()
+
+
+class Application(StatesGroup):
+    answer = State()
+
+
+@pytestmark_db
+async def test_a_menu_command_ends_an_applicants_conversation_too(dp, bot):
+    tg = updates.tg_user(721)  # not a member of anything
+    context = dp.fsm.get_context(bot, chat_id=tg.id, user_id=tg.id)
+    answers = []
+
+    async def answer(message: Message) -> None:
+        answers.append(message.text)
+
+    with temporary_handler(applicants.router.message, answer, Application.answer, F.text):
+        await context.set_state(Application.answer)
+        await dp.feed_update(bot, updates.message(tg, "Two years at a bakery"))
+        await dp.feed_update(bot, updates.message(tg, "/tasks"))
+
+    assert answers == ["Two years at a bakery"]
+    assert await context.get_state() is None
+
+
+@pytestmark_db
+async def test_a_deep_link_handler_decides_about_the_open_conversation(dp, bot):
+    tg = updates.tg_user(722)
+    context = dp.fsm.get_context(bot, chat_id=tg.id, user_id=tg.id)
+    seen = []
+
+    async def opened(message: Message, payload: str, *, user, state) -> None:
+        seen.append(await state.get_state())
+
+    register_start_param("keep_", opened)
+    try:
+        await context.set_state(Application.answer)
+        await dp.feed_update(bot, updates.message(tg, "/start keep_1"))
+        assert seen == [Application.answer.state]  # still there for the handler to use
+
+        await dp.feed_update(bot, updates.message(tg, "/start"))  # plain /start: home
+        assert await context.get_state() is None
+    finally:
+        unregister_start_param("keep_")

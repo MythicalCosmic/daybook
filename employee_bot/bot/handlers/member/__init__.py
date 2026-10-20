@@ -16,7 +16,6 @@ from bot.handlers.member.announcements import router as announcements_router
 from bot.handlers.member.home import router as home_router
 from bot.handlers.member.tasks import router as tasks_router
 from bot.middlewares.access import MemberAccessMiddleware
-from bot.middlewares.menu_commands import MenuCommandMiddleware
 
 try:
     # The generic inbox buttons ([Approve] [Reject] on notifications) come from the platform
@@ -52,10 +51,8 @@ FEATURE_ROUTERS = [
 router = Router(name="member")
 router.message.outer_middleware(MemberAccessMiddleware())
 router.callback_query.outer_middleware(MemberAccessMiddleware())
-# A command from the menu (/checkin, /expense …) ends whatever conversation was open, so the
-# state-bound routers below never take it as the text they were waiting for.
-router.message.outer_middleware(MenuCommandMiddleware())
 # Tasks first: their menu buttons win over an announcement being drafted. Both hold
 # conversation states (a proof photo, an announcement text), and a state they are waiting in
-# wins over every feature; home answers whatever nothing else took.
+# wins over every feature; home answers whatever nothing else took. A menu command (/checkin …)
+# ends an open conversation before routing (bot.middlewares.menu_commands).
 router.include_routers(tasks_router, announcements_router, *FEATURE_ROUTERS, home_router)
