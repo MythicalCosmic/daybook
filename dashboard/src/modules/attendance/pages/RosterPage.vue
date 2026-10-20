@@ -218,7 +218,7 @@ onMounted(() => {
 
     <UiDrawer query-key="person" size="lg" :title="personName || t('attendance.person.title')">
       <template #default="{ value }">
-        <PersonMonth v-if="value" :member-id="Number(value)" />
+        <PersonMonth v-if="value" class="p-5" :member-id="Number(value)" />
       </template>
     </UiDrawer>
   </div>

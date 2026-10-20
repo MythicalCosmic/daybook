@@ -162,10 +162,10 @@ async function destroy(): Promise<void> {
           </button>
         </div>
       </div>
-      <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <FormField :label="t('attendance.roster.day')" class="col-span-2 sm:col-span-2"><DatePicker v-model="form.date" /></FormField>
-        <FormField :label="t('attendance.roster.start')"><TimePicker v-model="form.start" :step="15" /></FormField>
-        <FormField :label="t('attendance.roster.end')"><TimePicker v-model="form.end" :step="15" /></FormField>
+      <div class="grid grid-cols-2 gap-3">
+        <FormField :label="t('attendance.roster.day')" class="col-span-2 min-w-0"><DatePicker v-model="form.date" /></FormField>
+        <FormField :label="t('attendance.roster.start')" class="min-w-0"><TimePicker v-model="form.start" class="!w-full" :step="15" /></FormField>
+        <FormField :label="t('attendance.roster.end')" class="min-w-0"><TimePicker v-model="form.end" class="!w-full" :step="15" /></FormField>
       </div>
       <p class="-mt-2 text-xs text-muted">
         {{ t("attendance.roster.length", { d: fmt.duration(length) }) }}<template v-if="overnight"> · {{ t("attendance.roster.overnight") }}</template>

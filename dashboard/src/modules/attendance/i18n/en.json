@@ -402,8 +402,6 @@
   "attendance.settings.autoCloseHint": "Hours after the shift ends; the person is asked to correct it.",
   "attendance.settings.overtime": "Overtime from",
   "attendance.settings.overtimeHint": "Extra time shorter than this isn’t overtime.",
-  "attendance.settings.minutes": "{n} min",
-  "attendance.settings.hours": "{n} h",
   "attendance.settings.swaps": "Swaps",
   "attendance.settings.swapsApproval": "Approve swaps and covers",
   "attendance.settings.swapsApprovalHint": "After the colleague agrees, a manager approves before the shift moves.",

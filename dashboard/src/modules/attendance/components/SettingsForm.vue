@@ -66,7 +66,6 @@ function reset(): void {
   if (query.data.value) draft.value = { ...query.data.value };
 }
 
-const minutes = (n: number) => t("attendance.settings.minutes", { n });
 </script>
 
 <template>
@@ -102,28 +101,28 @@ const minutes = (n: number) => t("attendance.settings.minutes", { n });
         <h3 class="flex items-center gap-2 text-sm font-semibold text-fg"><Clock3 :size="15" class="text-subtle" />{{ t("attendance.settings.timing") }}</h3>
         <div class="ui-card grid divide-y divide-line">
           <FormField class="p-3" layout="inline" :label="t('attendance.settings.grace')" :hint="t('attendance.settings.graceHint')">
-            <NumberInput v-model="draft.grace_minutes" :min="0" :max="240" :suffix="minutes(draft.grace_minutes)" class="w-40" />
+            <NumberInput v-model="draft.grace_minutes" :min="0" :max="240" :suffix="t('attendance.unit.min')" class="w-40" />
           </FormField>
           <FormField class="p-3" layout="inline" :label="t('attendance.settings.earlyLeave')" :hint="t('attendance.settings.earlyLeaveHint')">
-            <NumberInput v-model="draft.early_leave_grace_minutes" :min="0" :max="240" :suffix="minutes(draft.early_leave_grace_minutes)" class="w-40" />
+            <NumberInput v-model="draft.early_leave_grace_minutes" :min="0" :max="240" :suffix="t('attendance.unit.min')" class="w-40" />
           </FormField>
           <FormField class="p-3" layout="inline" :label="t('attendance.settings.preShift')" :hint="t('attendance.settings.preShiftHint')">
-            <NumberInput v-model="draft.pre_shift_reminder_minutes" :min="0" :max="240" :step="5" :suffix="minutes(draft.pre_shift_reminder_minutes)" class="w-40" />
+            <NumberInput v-model="draft.pre_shift_reminder_minutes" :min="0" :max="240" :step="5" :suffix="t('attendance.unit.min')" class="w-40" />
           </FormField>
           <FormField class="p-3" layout="inline" :label="t('attendance.settings.remind')" :hint="t('attendance.settings.remindHint')">
-            <NumberInput v-model="draft.remind_after_minutes" :min="0" :max="240" :step="5" :suffix="minutes(draft.remind_after_minutes)" class="w-40" />
+            <NumberInput v-model="draft.remind_after_minutes" :min="0" :max="240" :step="5" :suffix="t('attendance.unit.min')" class="w-40" />
           </FormField>
           <FormField class="p-3" layout="inline" :label="t('attendance.settings.noShow')" :hint="t('attendance.settings.noShowHint')">
-            <NumberInput v-model="draft.no_show_alert_minutes" :min="0" :max="480" :step="5" :suffix="minutes(draft.no_show_alert_minutes)" class="w-40" />
+            <NumberInput v-model="draft.no_show_alert_minutes" :min="0" :max="480" :step="5" :suffix="t('attendance.unit.min')" class="w-40" />
           </FormField>
           <FormField class="p-3" layout="inline" :label="t('attendance.settings.earlyCheckIn')" :hint="t('attendance.settings.earlyCheckInHint')">
-            <NumberInput v-model="draft.early_check_in_minutes" :min="0" :max="480" :step="15" :suffix="minutes(draft.early_check_in_minutes)" class="w-40" />
+            <NumberInput v-model="draft.early_check_in_minutes" :min="0" :max="480" :step="15" :suffix="t('attendance.unit.min')" class="w-40" />
           </FormField>
           <FormField class="p-3" layout="inline" :label="t('attendance.settings.autoClose')" :hint="t('attendance.settings.autoCloseHint')">
-            <NumberInput v-model="draft.auto_close_after_hours" :min="1" :max="24" :suffix="t('attendance.settings.hours', { n: draft.auto_close_after_hours })" class="w-40" />
+            <NumberInput v-model="draft.auto_close_after_hours" :min="1" :max="24" :suffix="t('attendance.unit.h')" class="w-40" />
           </FormField>
           <FormField class="p-3" layout="inline" :label="t('attendance.settings.overtime')" :hint="t('attendance.settings.overtimeHint')">
-            <NumberInput v-model="draft.overtime_after_minutes" :min="0" :max="240" :step="5" :suffix="minutes(draft.overtime_after_minutes)" class="w-40" />
+            <NumberInput v-model="draft.overtime_after_minutes" :min="0" :max="240" :step="5" :suffix="t('attendance.unit.min')" class="w-40" />
           </FormField>
         </div>
       </section>

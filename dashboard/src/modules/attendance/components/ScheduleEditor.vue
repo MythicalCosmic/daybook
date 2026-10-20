@@ -148,7 +148,7 @@ async function save(): Promise<void> {
 
 <template>
   <UiDrawer v-model:open="open" size="lg" :title="schedule ? t('attendance.schedules.editTitle') : t('attendance.schedules.newTitle')" :description="t('attendance.schedules.editorHint')">
-    <form class="flex flex-col gap-5" @submit.prevent="save">
+    <form class="flex flex-col gap-5 p-5" @submit.prevent="save">
       <FormField :label="t('attendance.schedules.name')" :error="nameError" required>
         <TextInput v-model="name" :maxlength="100" :placeholder="t('attendance.schedules.namePlaceholder')" autofocus />
       </FormField>

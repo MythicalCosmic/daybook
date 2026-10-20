@@ -205,7 +205,7 @@ const memberSubtitle = (member: RosterMember) =>
                 </span>
                 <span class="att-chip-sub">
                   <template v-if="!shift.published">{{ t("attendance.roster.draft") }} · </template>
-                  <template v-if="shift.branch && shift.branch.id !== member.home_branch?.id">{{ shift.branch.code || shift.branch.name }} · </template>{{ hours(shift.minutes) }}{{ t("attendance.unit.h") }}
+                  <template v-if="shift.branch && shift.branch.id !== member.home_branch?.id">{{ shift.branch.code || shift.branch.name }} · </template>{{ hours(shift.minutes) }} {{ t("attendance.unit.h") }}
                 </span>
               </template>
             </button>

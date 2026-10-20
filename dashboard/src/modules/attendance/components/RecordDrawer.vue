@@ -6,6 +6,7 @@
  * absence, decide overtime. The History tab reads the audit log.
  */
 import { Camera, Check, Clock3, LogIn, LogOut, PencilLine, ShieldCheck } from "@lucide/vue";
+import { DialogTitle } from "reka-ui";
 import { computed, defineAsyncComponent, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -207,20 +208,23 @@ async function decide(approve: boolean, reason = ""): Promise<void> {
       <div v-if="record" class="flex min-w-0 items-center gap-3">
         <UserAvatar :name="record.member.name" :src="record.member.photo_url" :size="36" />
         <div class="min-w-0">
-          <p class="truncate text-md font-semibold text-fg">{{ record.member.name }}</p>
+          <DialogTitle class="truncate text-md font-semibold text-fg">{{ record.member.name }}</DialogTitle>
           <p class="truncate text-xs text-muted">{{ fmt.day(record.date, "weekday") }}<template v-if="record.branch"> · {{ record.branch.name }}</template></p>
         </div>
       </div>
-      <SkeletonBlock v-else width="60%" height="20px" />
+      <template v-else>
+        <DialogTitle class="sr-only">{{ t("attendance.record.title") }}</DialogTitle>
+        <SkeletonBlock width="60%" height="20px" />
+      </template>
     </template>
 
-    <div v-if="query.isPending.value" class="flex flex-col gap-4 p-1">
+    <div v-if="query.isPending.value" class="flex flex-col gap-4 p-5">
       <SkeletonBlock height="22px" width="40%" radius="999px" />
       <SkeletonBlock :lines="4" />
       <SkeletonBlock height="180px" radius="10px" />
     </div>
-    <ErrorState v-else-if="query.isError.value" :error="query.error.value" :retry="() => query.refetch()" />
-    <div v-else-if="record" class="flex flex-col gap-5">
+    <ErrorState v-else-if="query.isError.value" class="p-5" :error="query.error.value" :retry="() => query.refetch()" />
+    <div v-else-if="record" class="flex flex-col gap-5 p-5">
       <div class="flex flex-wrap items-center gap-1.5">
         <StatusPill :tone="STATUS_TONES[record.status]" :label="t(`attendance.status.${record.status}`)" :live="record.status === 'open'" />
         <StatusPill v-if="record.is_late" tone="warning" :label="t('attendance.record.lateBy', { late: fmt.duration(record.late_minutes) })" />

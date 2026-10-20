@@ -12,7 +12,7 @@ import SegmentedControl from "@/components/SegmentedControl.vue";
 import SelectBox from "@/components/SelectBox.vue";
 
 const model = defineModel<number | null>({ required: true });
-withDefaults(defineProps<{ size?: "sm" | "md"; allowAll?: boolean }>(), { size: "sm", allowAll: true });
+withDefaults(defineProps<{ size?: "sm" | "md" }>(), { size: "sm" });
 
 const { t } = useI18n();
 const branches = useScopedBranches();

@@ -252,11 +252,11 @@ const columnLabel = (state: BoardState) => t(`attendance.state.${state}`);
     <RecordDrawer />
     <UiDrawer query-key="person" size="lg" :title="personName || t('attendance.person.title')">
       <template #default="{ value }">
-        <PersonMonth v-if="value" :member-id="Number(value)" />
+        <PersonMonth v-if="value" class="p-5" :member-id="Number(value)" />
       </template>
     </UiDrawer>
     <UiDrawer v-model:open="settingsOpen" size="lg" :title="t('attendance.settings.title')" :description="t('attendance.settings.description')">
-      <SettingsForm v-if="settingsOpen" />
+      <SettingsForm v-if="settingsOpen" class="p-5" />
     </UiDrawer>
   </div>
 </template>
