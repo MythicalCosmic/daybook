@@ -6,6 +6,8 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from apps.accounts.models import User
+from apps.audit import services as audit
+from apps.audit.models import AuditLog
 from apps.companies.models import Company
 from apps.core.exceptions import DomainError
 from apps.groups import tasks as group_jobs
@@ -134,6 +136,7 @@ def approve(membership: Membership, *, by: User) -> Membership:
         )
     _record_decision(membership, by)
     membership.save()
+    _audit(AuditLog.Action.MEMBER_APPROVED, membership, by)
     transaction.on_commit(partial(tasks.notify_join_decision.delay, membership.pk))
     transaction.on_commit(partial(group_jobs.announce_member.delay, membership.pk))
     return membership
@@ -148,6 +151,7 @@ def reject(membership: Membership, *, by: User) -> Membership:
     membership.status = Membership.Status.REJECTED
     _record_decision(membership, by)
     membership.save()
+    _audit(AuditLog.Action.MEMBER_REJECTED, membership, by)
     transaction.on_commit(partial(tasks.notify_join_decision.delay, membership.pk))
     return membership
 
@@ -206,6 +210,7 @@ def block(membership: Membership, *, by: User) -> Membership:
     membership.status = Membership.Status.BLOCKED
     _record_decision(membership, by)
     membership.save()
+    _audit(AuditLog.Action.MEMBER_BLOCKED, membership, by)
     return membership
 
 
@@ -215,6 +220,10 @@ def _lock(membership: Membership) -> Membership:
         .select_related("company", "role")
         .get(pk=membership.pk)
     )
+
+
+def _audit(action: AuditLog.Action, membership: Membership, by: User) -> None:
+    audit.record(action, company_id=membership.company_id, actor=by, target=membership)
 
 
 def _ensure_status(membership: Membership, expected: Membership.Status) -> None:

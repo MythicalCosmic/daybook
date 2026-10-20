@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-20 17:29+0500\n"
+"POT-Creation-Date: 2026-10-20 17:36+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -25,6 +25,98 @@ msgstr "Faqat odam Telegram’da ulashgan kontaktdan olinadi."
 #: backend/apps/accounts/models.py
 msgid "When Telegram said this person blocked the employee bot."
 msgstr "Telegram bu odam xodimlar botini bloklaganini bildirgan vaqt."
+
+#: backend/apps/audit/models.py
+msgid "Approved a join request"
+msgstr "Qo‘shilish so‘rovini tasdiqladi"
+
+#: backend/apps/audit/models.py
+msgid "Rejected a join request"
+msgstr "Qo‘shilish so‘rovini rad etdi"
+
+#: backend/apps/audit/models.py
+msgid "Blocked a member"
+msgstr "Xodimni blokladi"
+
+#: backend/apps/audit/models.py
+msgid "Gave a task"
+msgstr "Vazifa berdi"
+
+#: backend/apps/audit/models.py
+msgid "Changed a task"
+msgstr "Vazifani o‘zgartirdi"
+
+#: backend/apps/audit/models.py
+msgid "Accepted a task"
+msgstr "Vazifani qabul qildi"
+
+#: backend/apps/audit/models.py backend/apps/tasks/models.py
+msgid "Sent a task back"
+msgstr "Vazifani qaytardi"
+
+#: backend/apps/audit/models.py
+msgid "Cancelled a task"
+msgstr "Vazifani bekor qildi"
+
+#: backend/apps/audit/models.py
+msgid "Added a daily task"
+msgstr "Kundalik vazifa qo‘shdi"
+
+#: backend/apps/audit/models.py
+msgid "Changed a daily task"
+msgstr "Kundalik vazifani o‘zgartirdi"
+
+#: backend/apps/audit/models.py
+msgid "Deleted a daily task"
+msgstr "Kundalik vazifani o‘chirdi"
+
+#: backend/apps/audit/models.py
+msgid "Added reminder settings"
+msgstr "Eslatma sozlamalarini qo‘shdi"
+
+#: backend/apps/audit/models.py
+msgid "Changed reminder settings"
+msgstr "Eslatma sozlamalarini o‘zgartirdi"
+
+#: backend/apps/audit/models.py
+msgid "Deleted reminder settings"
+msgstr "Eslatma sozlamalarini o‘chirdi"
+
+#: backend/apps/audit/models.py
+msgid "Connected a group"
+msgstr "Guruhni uladi"
+
+#: backend/apps/audit/models.py
+msgid "Changed a group's settings"
+msgstr "Guruh sozlamalarini o‘zgartirdi"
+
+#: backend/apps/audit/models.py
+msgid "Disconnected a group"
+msgstr "Guruhni uzdi"
+
+#: backend/apps/audit/models.py
+msgid "Removed the bot from a group"
+msgstr "Botni guruhdan chiqardi"
+
+#: backend/apps/audit/models.py
+msgid "Added in the admin"
+msgstr "Admin panelda qo‘shdi"
+
+#: backend/apps/audit/models.py
+msgid "Changed in the admin"
+msgstr "Admin panelda o‘zgartirdi"
+
+#: backend/apps/audit/models.py
+msgid "Deleted in the admin"
+msgstr "Admin panelda o‘chirdi"
+
+#: backend/apps/audit/models.py
+msgid "Empty when the system did it."
+msgstr "Tizim bajargan bo‘lsa, bo‘sh."
+
+#: backend/apps/audit/models.py
+msgid "Its name at the time."
+msgstr "O‘sha paytdagi nomi."
 
 #: backend/apps/companies/admin.py
 msgid "Members"
@@ -1035,10 +1127,6 @@ msgstr "Siz bergan vazifani bajardi"
 #: backend/apps/tasks/models.py
 msgid "Checked your task"
 msgstr "Vazifangizni tekshirdi"
-
-#: backend/apps/tasks/models.py
-msgid "Sent a task back"
-msgstr "Vazifani qaytardi"
 
 #: backend/apps/tasks/models.py
 msgid "Commented on a task"

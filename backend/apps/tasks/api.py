@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_field
@@ -8,6 +9,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.audit import services as audit
+from apps.audit.models import AuditLog
 from apps.core.exceptions import DomainError
 from apps.members.api import IsCompanyMember, MemberBriefSerializer, requires
 from apps.members.models import Membership, Position
@@ -405,8 +408,31 @@ class TaskTemplateViewSet(viewsets.ModelViewSet):
             "company": membership.company if membership else None
         }
 
+    @transaction.atomic
     def perform_create(self, serializer):
-        serializer.save(company=self.membership.company, created_by=self.membership)
+        template = serializer.save(company=self.membership.company, created_by=self.membership)
+        self._audit(AuditLog.Action.TEMPLATE_CREATED, template)
+
+    @transaction.atomic
+    def perform_update(self, serializer):
+        before = audit.snapshot(serializer.instance)
+        template = serializer.save()
+        if changes := audit.diff(before, audit.snapshot(template)):
+            self._audit(AuditLog.Action.TEMPLATE_CHANGED, template, changes=changes)
+
+    @transaction.atomic
+    def perform_destroy(self, template):
+        self._audit(AuditLog.Action.TEMPLATE_DELETED, template)
+        template.delete()
+
+    def _audit(self, action: AuditLog.Action, template: TaskTemplate, **details) -> None:
+        audit.record(
+            action,
+            company_id=template.company_id,
+            actor=self.request.user,
+            target=template,
+            **details,
+        )
 
 
 class DaySerializer(serializers.Serializer):

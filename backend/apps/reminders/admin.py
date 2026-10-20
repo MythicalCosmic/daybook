@@ -1,6 +1,7 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
 
+from apps.audit.admin import AuditedAdmin
 from apps.reminders.models import ReminderLog, ReminderPolicy, ReminderText
 
 
@@ -10,7 +11,7 @@ class ReminderTextInline(TabularInline):
 
 
 @admin.register(ReminderPolicy)
-class ReminderPolicyAdmin(ModelAdmin):
+class ReminderPolicyAdmin(AuditedAdmin, ModelAdmin):
     list_display = (
         "name",
         "company",

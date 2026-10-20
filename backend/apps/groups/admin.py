@@ -1,6 +1,7 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
 
+from apps.audit.admin import AuditedAdmin
 from apps.groups.forms import TelegramGroupForm
 from apps.groups.models import GroupReport, TelegramGroup
 
@@ -19,7 +20,7 @@ class TelegramGroupInline(TabularInline):
 
 
 @admin.register(TelegramGroup)
-class TelegramGroupAdmin(ModelAdmin):
+class TelegramGroupAdmin(AuditedAdmin, ModelAdmin):
     form = TelegramGroupForm
     list_display = ("__str__", "company", "chat_id", "is_active", "linked_by")
     list_filter = ("company", "is_active")

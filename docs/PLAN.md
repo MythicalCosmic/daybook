@@ -117,7 +117,7 @@ Edge cases handled: bot removed from group (`my_chat_member`), group → supergr
 | `reminders` | `ReminderPolicy` (fields from 3.4); `ReminderMessageTemplate` (policy, step, language, text); `ReminderLog` (task, step, chat_id, message_id, sent_at, error) |
 | `groups` | `TelegramGroup` (company, chat_id, title, events[], positions, linked_by, is_active, next_post_at); `GroupReport` (group, kind morning/evening, day): each daily report goes out once |
 | `notifications` | No table: messages for both bots go through Celery tasks queued after commit, retried on network errors and Telegram's `retry_after`; group posts are also paced per group. A database outbox can come later if delivery needs an audit trail |
-| `audit` | `AuditLog` (company, actor, action, target, diff, created_at) |
+| `audit` | `AuditLog` (company, actor, action, target type/id/name, details such as changes or the reason, created_at): approvals, blocks, managing others' tasks, daily-task and reminder settings, group links and admin edits; read-only in the admin |
 
 HR later extends `Membership` (or a 1-1 `EmployeeProfile`) — nothing here blocks it.
 

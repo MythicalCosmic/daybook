@@ -3,6 +3,7 @@ from django.core.exceptions import PermissionDenied
 from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin
 
+from apps.audit.admin import AuditedAdmin
 from apps.core.exceptions import DomainError
 from apps.members import services
 from apps.members.forms import AccessRoleForm
@@ -10,7 +11,7 @@ from apps.members.models import AccessRole, Membership, Position
 
 
 @admin.register(AccessRole)
-class AccessRoleAdmin(ModelAdmin):
+class AccessRoleAdmin(AuditedAdmin, ModelAdmin):
     form = AccessRoleForm
     list_display = ("name", "company", "is_owner", "is_default", "permission_count")
     list_filter = ("company", "is_owner", "is_default")
@@ -24,7 +25,7 @@ class AccessRoleAdmin(ModelAdmin):
 
 
 @admin.register(Position)
-class PositionAdmin(ModelAdmin):
+class PositionAdmin(AuditedAdmin, ModelAdmin):
     list_display = ("name", "company", "order", "is_active")
     list_filter = ("company", "is_active")
     search_fields = ("name", "company__name")
@@ -32,7 +33,7 @@ class PositionAdmin(ModelAdmin):
 
 
 @admin.register(Membership)
-class MembershipAdmin(ModelAdmin):
+class MembershipAdmin(AuditedAdmin, ModelAdmin):
     list_display = ("__str__", "company", "status", "position", "role", "phone", "created_at")
     list_filter = ("status", "company")
     search_fields = (

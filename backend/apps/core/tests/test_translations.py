@@ -38,6 +38,7 @@ def test_the_compiled_catalogues_match_their_sources(language):
 
 @pytest.mark.skipif(shutil.which("xgettext") is None, reason="needs GNU gettext")
 def test_no_message_is_missing_from_the_catalogues(settings, tmp_path, monkeypatch):
+    known = {entry.msgid for entry in catalogue("uz")}
     # makemessages writes into every locale directory it finds, so it reads a copy of the code.
     root = settings.BASE_DIR.parent
     skip = shutil.ignore_patterns("locale", "tests", "migrations", "__pycache__")
@@ -50,6 +51,5 @@ def test_no_message_is_missing_from_the_catalogues(settings, tmp_path, monkeypat
 
     extracted = polib.pofile(str(tmp_path / "locale/uz/LC_MESSAGES/django.po"))
     found = {entry.msgid for entry in extracted}
-    known = {entry.msgid for entry in catalogue("uz")}
     assert found - known == set(), "new texts: run `make messages` and translate them"
     assert known - found == set(), "unused texts: run `make messages`"

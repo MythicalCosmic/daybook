@@ -8,6 +8,8 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
+from apps.audit import services as audit
+from apps.audit.models import AuditLog
 from apps.core.exceptions import DomainError
 from apps.groups import tasks as group_jobs
 from apps.members.models import Membership
@@ -83,6 +85,7 @@ def create_task(
         _repeat_personal_task(task, repeat)
     if kind == Task.Kind.ASSIGNED:
         _add_to_feed(Activity.Kind.ASSIGNED, task, [assignee], by)
+        _audit(AuditLog.Action.TASK_ASSIGNED, task, by, assignee=str(assignee))
         transaction.on_commit(partial(jobs.notify_task_assigned.delay, task.pk))
     return task
 
@@ -96,10 +99,14 @@ def update_task(task: Task, *, by: Membership, **changes) -> Task:
         raise PermissionDenied(_("You can't change this task."))
     if not task.is_open:
         raise DomainError(_("Only open tasks can be changed."))
+    before = {field: audit.plain(getattr(task, field)) for field in changes}
     _apply_changes(task, changes)
     if "due_at" in changes:
         _restart_reminders(task)
     task.save()
+    after = {field: audit.plain(getattr(task, field)) for field in changes}
+    if changed := audit.diff(before, after):
+        _audit(AuditLog.Action.TASK_CHANGED, task, by, changes=changed)
     return task
 
 
@@ -152,6 +159,7 @@ def confirm_task(task: Task, *, by: Membership) -> Task:
     task.confirmed_at = timezone.now()
     task.save()
     _add_to_feed(Activity.Kind.CONFIRMED, task, [task.assignee], by)
+    _audit(AuditLog.Action.TASK_CONFIRMED, task, by)
     transaction.on_commit(partial(jobs.notify_task_reviewed.delay, task.pk))
     return task
 
@@ -169,6 +177,7 @@ def return_task(task: Task, *, by: Membership, reason: str) -> Task:
     task.save()
     TaskComment.objects.create(task=task, author=by, text=reason)
     _add_to_feed(Activity.Kind.RETURNED, task, [task.assignee], by, reason)
+    _audit(AuditLog.Action.TASK_RETURNED, task, by, reason=reason)
     transaction.on_commit(partial(jobs.notify_task_reviewed.delay, task.pk))
     return task
 
@@ -183,6 +192,7 @@ def cancel_task(task: Task, *, by: Membership, stop_repeating: bool = False) -> 
     task.status = Task.Status.CANCELLED
     task.next_reminder_at = None
     task.save()
+    _audit(AuditLog.Action.TASK_CANCELLED, task, by)
     if stop_repeating and task.template is not None and task.template.personal:
         task.template.is_active = False
         task.template.save(update_fields=["is_active", "updated_at"])
@@ -282,6 +292,12 @@ def _repeat_personal_task(task: Task, repeat: str) -> None:
     task.template = template
     task.for_date = due.date()
     task.save(update_fields=["template", "for_date", "updated_at"])
+
+
+def _audit(action: AuditLog.Action, task: Task, by: Membership, **details) -> None:
+    """Management of shared work is logged; someone's own personal tasks are theirs alone."""
+    if task.kind != Task.Kind.PERSONAL:
+        audit.record(action, company_id=task.company_id, actor=by.user, target=task, **details)
 
 
 def _apply_changes(task: Task, changes: dict) -> None:

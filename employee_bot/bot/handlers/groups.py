@@ -48,8 +48,8 @@ async def added(event: ChatMemberUpdated, bot: Bot, user: User | None = None) ->
 
 
 @router.my_chat_member(ChatMemberUpdatedFilter(IS_MEMBER >> IS_NOT_MEMBER))
-async def removed(event: ChatMemberUpdated) -> None:
-    await sync_to_async(services.bot_removed)(event.chat.id)
+async def removed(event: ChatMemberUpdated, user: User | None = None) -> None:
+    await sync_to_async(services.bot_removed)(event.chat.id, by=user)
 
 
 # Upgrading to a supergroup changes the chat id; both sides of the move are announced.

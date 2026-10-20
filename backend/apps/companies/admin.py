@@ -3,6 +3,7 @@ from django.db.models import Count, Q
 from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin, StackedInline, TabularInline
 
+from apps.audit.admin import AuditedAdmin
 from apps.companies.models import Company
 from apps.groups.admin import TelegramGroupInline
 from apps.members.forms import AccessRoleForm
@@ -24,7 +25,7 @@ class AccessRoleInline(StackedInline):
 
 
 @admin.register(Company)
-class CompanyAdmin(ModelAdmin):
+class CompanyAdmin(AuditedAdmin, ModelAdmin):
     list_display = ("name", "slug", "timezone", "default_language", "member_count", "is_active")
     list_filter = ("is_active",)
     search_fields = ("name", "slug")

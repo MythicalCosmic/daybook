@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-20 17:17+0500\n"
+"POT-Creation-Date: 2026-10-20 17:36+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -25,6 +25,98 @@ msgstr "Заполняется только из контакта, которы�
 #: backend/apps/accounts/models.py
 msgid "When Telegram said this person blocked the employee bot."
 msgstr "Когда Telegram сообщил, что человек заблокировал бота для сотрудников."
+
+#: backend/apps/audit/models.py
+msgid "Approved a join request"
+msgstr "Заявка одобрена"
+
+#: backend/apps/audit/models.py
+msgid "Rejected a join request"
+msgstr "Заявка отклонена"
+
+#: backend/apps/audit/models.py
+msgid "Blocked a member"
+msgstr "Сотрудник заблокирован"
+
+#: backend/apps/audit/models.py
+msgid "Gave a task"
+msgstr "Выдано поручение"
+
+#: backend/apps/audit/models.py
+msgid "Changed a task"
+msgstr "Задача изменена"
+
+#: backend/apps/audit/models.py
+msgid "Accepted a task"
+msgstr "Задача принята"
+
+#: backend/apps/audit/models.py backend/apps/tasks/models.py
+msgid "Sent a task back"
+msgstr "Задача возвращена"
+
+#: backend/apps/audit/models.py
+msgid "Cancelled a task"
+msgstr "Задача отменена"
+
+#: backend/apps/audit/models.py
+msgid "Added a daily task"
+msgstr "Добавлена ежедневная задача"
+
+#: backend/apps/audit/models.py
+msgid "Changed a daily task"
+msgstr "Изменена ежедневная задача"
+
+#: backend/apps/audit/models.py
+msgid "Deleted a daily task"
+msgstr "Удалена ежедневная задача"
+
+#: backend/apps/audit/models.py
+msgid "Added reminder settings"
+msgstr "Добавлены настройки напоминаний"
+
+#: backend/apps/audit/models.py
+msgid "Changed reminder settings"
+msgstr "Изменены настройки напоминаний"
+
+#: backend/apps/audit/models.py
+msgid "Deleted reminder settings"
+msgstr "Удалены настройки напоминаний"
+
+#: backend/apps/audit/models.py
+msgid "Connected a group"
+msgstr "Подключена группа"
+
+#: backend/apps/audit/models.py
+msgid "Changed a group's settings"
+msgstr "Изменены настройки группы"
+
+#: backend/apps/audit/models.py
+msgid "Disconnected a group"
+msgstr "Отключена группа"
+
+#: backend/apps/audit/models.py
+msgid "Removed the bot from a group"
+msgstr "Бот удалён из группы"
+
+#: backend/apps/audit/models.py
+msgid "Added in the admin"
+msgstr "Добавлено в админке"
+
+#: backend/apps/audit/models.py
+msgid "Changed in the admin"
+msgstr "Изменено в админке"
+
+#: backend/apps/audit/models.py
+msgid "Deleted in the admin"
+msgstr "Удалено в админке"
+
+#: backend/apps/audit/models.py
+msgid "Empty when the system did it."
+msgstr "Пусто, если это сделала система."
+
+#: backend/apps/audit/models.py
+msgid "Its name at the time."
+msgstr "Название на тот момент."
 
 #: backend/apps/companies/admin.py
 msgid "Members"
@@ -1034,10 +1126,6 @@ msgstr "Ваше поручение выполнено"
 #: backend/apps/tasks/models.py
 msgid "Checked your task"
 msgstr "Ваша задача проверена"
-
-#: backend/apps/tasks/models.py
-msgid "Sent a task back"
-msgstr "Задача возвращена"
 
 #: backend/apps/tasks/models.py
 msgid "Commented on a task"

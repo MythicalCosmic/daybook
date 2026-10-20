@@ -1,7 +1,10 @@
+from django.db import transaction
 from django.utils.translation import gettext as _
 from rest_framework import serializers, viewsets
 from rest_framework.permissions import IsAuthenticated
 
+from apps.audit import services as audit
+from apps.audit.models import AuditLog
 from apps.core.exceptions import DomainError
 from apps.members.api import IsCompanyMember, requires
 from apps.members.permissions import Perm
@@ -46,10 +49,26 @@ class ReminderPolicyViewSet(viewsets.ModelViewSet):
             return ReminderPolicy.objects.none()
         return ReminderPolicy.objects.for_company(self.membership.company)
 
+    @transaction.atomic
     def perform_create(self, serializer):
-        serializer.save(company=self.membership.company)
+        policy = serializer.save(company=self.membership.company)
+        self._audit(AuditLog.Action.POLICY_CREATED, policy)
 
+    @transaction.atomic
+    def perform_update(self, serializer):
+        before = audit.snapshot(serializer.instance)
+        policy = serializer.save()
+        if changes := audit.diff(before, audit.snapshot(policy)):
+            self._audit(AuditLog.Action.POLICY_CHANGED, policy, changes=changes)
+
+    @transaction.atomic
     def perform_destroy(self, policy):
         if policy.is_default:
             raise DomainError(_("The company's default policy can't be deleted."))
+        self._audit(AuditLog.Action.POLICY_DELETED, policy)
         policy.delete()
+
+    def _audit(self, action: AuditLog.Action, policy: ReminderPolicy, **details) -> None:
+        audit.record(
+            action, company_id=policy.company_id, actor=self.request.user, target=policy, **details
+        )

@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "apps.tasks",
     "apps.reminders",
     "apps.groups",
+    "apps.audit",
 ]
 
 AUTH_USER_MODEL = "accounts.User"

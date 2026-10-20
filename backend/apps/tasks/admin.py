@@ -1,11 +1,12 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
 
+from apps.audit.admin import AuditedAdmin
 from apps.tasks.models import ChecklistItem, Task, TaskComment, TaskTemplate
 
 
 @admin.register(TaskTemplate)
-class TaskTemplateAdmin(ModelAdmin):
+class TaskTemplateAdmin(AuditedAdmin, ModelAdmin):
     list_display = ("title", "company", "due_time", "proof", "needs_confirmation", "is_active")
     list_filter = ("company", "is_active", "personal", "proof")
     search_fields = ("title", "company__name")
