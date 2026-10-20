@@ -5,8 +5,10 @@ from zoneinfo import ZoneInfo
 
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.db.models import ProtectedError
 from django.utils import timezone
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy
 
 from apps.accounts.models import User
 from apps.audit import services as audit
@@ -15,7 +17,8 @@ from apps.companies.models import Branch, Company
 from apps.core.exceptions import DomainError
 from apps.core.signals import send_on_commit
 from apps.groups import tasks as group_jobs
-from apps.members import signals, tasks
+from apps.inbox import services as inbox
+from apps.members import scope, signals, tasks
 from apps.members.audit_actions import MemberAction
 from apps.members.callbacks import JoinAction
 from apps.members.models import AccessRole, Membership, Position
@@ -26,6 +29,12 @@ from apps.timeoff.signals import time_off_cancelled
 
 # A suspended person keeps their record; a blocked or offboarded one has left.
 CURRENT = (Membership.Status.APPROVED, Membership.Status.SUSPENDED)
+# Join requests reach approvers as this inbox kind (Needs you + a Telegram copy).
+JOIN_KIND = "members.join"
+APPROVED = gettext_lazy("Approved")
+REJECTED = gettext_lazy("Rejected")
+# "Leave this field as it is" for update_member's nullable fields.
+UNSET = object()
 
 
 def create_default_roles(company: Company) -> None:
@@ -161,37 +170,66 @@ def decide(membership_id: int, action: JoinAction, *, by: User) -> Membership:
 
 
 @transaction.atomic
-def approve(membership: Membership, *, by: User) -> Membership:
-    """Let a person in: the default role (or the one set on the request, if the approver may
-    give it), and the company's branch when it has exactly one."""
+def approve(
+    membership: Membership,
+    *,
+    by: User,
+    role: AccessRole | None = None,
+    position: Position | None = None,
+    branches: list[Branch] | None = None,
+    home_branch: Branch | None = None,
+) -> Membership:
+    """Let a person in: `role` if the approver may give it (rule 3), else the role set on the
+    request, else the default one; `position` replaces the one they picked; `branches` and
+    `home_branch` say where they work (the company's branch when it has exactly one).
+
+    Every approver's copy of the request, in the bot and in Needs you, shows the outcome."""
     membership = _lock(membership)
     ensure_can(by, membership.company, Perm.MEMBERS_APPROVE)
     _ensure_status(membership, Membership.Status.PENDING)
     actor = _actor(by, membership.company)
+    company = membership.company
 
-    membership.status = Membership.Status.APPROVED
+    if role is not None:
+        if role.company_id != company.pk:
+            raise DomainError(_("Pick a role of this company."))
+        membership.role = role
     if membership.role_id is None:
-        membership.role = (
-            AccessRole.objects.for_company(membership.company).filter(is_default=True).first()
-        )
+        membership.role = AccessRole.objects.for_company(company).filter(is_default=True).first()
     elif not by.is_platform_admin:
         ensure_may_assign_role(actor, membership.role)
-    only_branch = _only_active_branch(membership.company)
-    if only_branch is not None:
-        membership.home_branch = only_branch
+    if position is not None:
+        if position.company_id != company.pk or not position.is_active:
+            raise DomainError(_("Pick a position of this company."))
+        membership.position = position
+    chosen = _valid_branches(company, branches, home_branch, actor=actor)
+    if chosen is None:
+        only_branch = _only_active_branch(company)
+        chosen = ([only_branch], only_branch) if only_branch is not None else None
+    if chosen is not None:
+        membership.home_branch = chosen[1]
+    membership.status = Membership.Status.APPROVED
     _record_decision(membership, by)
     membership.save()
-    if only_branch is not None:
-        membership.branches.set([only_branch])
-    _audit(AuditLog.Action.MEMBER_APPROVED, membership, by)
+    if chosen is not None:
+        membership.branches.set(chosen[0])
+    _audit(
+        AuditLog.Action.MEMBER_APPROVED,
+        membership,
+        by,
+        role=membership.role.name if membership.role else None,
+        branches=[branch.name for branch in chosen[0]] if chosen else [],
+    )
+    inbox.settle(membership, outcome=APPROVED, by=actor, kind=JOIN_KIND)
     transaction.on_commit(partial(tasks.notify_join_decision.delay, membership.pk))
     transaction.on_commit(partial(group_jobs.announce_member.delay, membership.pk))
+    transaction.on_commit(partial(_bump, company.pk, "members.pending", "members.people"))
     send_on_commit(signals.member_approved, sender=Membership, membership=membership, by=actor)
     return membership
 
 
 @transaction.atomic
-def reject(membership: Membership, *, by: User) -> Membership:
+def reject(membership: Membership, *, by: User, reason: str = "") -> Membership:
     membership = _lock(membership)
     ensure_can(by, membership.company, Perm.MEMBERS_APPROVE)
     _ensure_status(membership, Membership.Status.PENDING)
@@ -199,9 +237,42 @@ def reject(membership: Membership, *, by: User) -> Membership:
     membership.status = Membership.Status.REJECTED
     _record_decision(membership, by)
     membership.save()
-    _audit(AuditLog.Action.MEMBER_REJECTED, membership, by)
+    reason = (reason or "").strip()[:300]
+    if reason:
+        _audit(AuditLog.Action.MEMBER_REJECTED, membership, by, reason=reason)
+    else:
+        _audit(AuditLog.Action.MEMBER_REJECTED, membership, by)
+    actor = _actor(by, membership.company)
+    inbox.settle(membership, outcome=REJECTED, by=actor, kind=JOIN_KIND)
     transaction.on_commit(partial(tasks.notify_join_decision.delay, membership.pk))
+    transaction.on_commit(partial(_bump, membership.company_id, "members.pending"))
     return membership
+
+
+def approve_request(
+    membership: Membership,
+    *,
+    by: Membership,
+    role: AccessRole | None = None,
+    position: Position | None = None,
+    branches: list[Branch] | None = None,
+    home_branch: Branch | None = None,
+) -> Membership:
+    """`approve` for a dashboard user acting in their company (by: Membership)."""
+    _ensure_same_company(membership, by)
+    return approve(
+        membership,
+        by=by.user,
+        role=role,
+        position=position,
+        branches=branches,
+        home_branch=home_branch,
+    )
+
+
+def reject_request(membership: Membership, *, by: Membership, reason: str = "") -> Membership:
+    _ensure_same_company(membership, by)
+    return reject(membership, by=by.user, reason=reason)
 
 
 @transaction.atomic
@@ -273,6 +344,10 @@ def block(membership: Membership, *, by: User) -> Membership:
         )
     else:
         _audit(AuditLog.Action.MEMBER_BLOCKED, membership, by)
+    inbox.settle(membership, outcome=REJECTED, by=actor, kind=JOIN_KIND)
+    transaction.on_commit(
+        partial(_bump, membership.company_id, "members.people", "members.pending")
+    )
     return membership
 
 
@@ -280,21 +355,25 @@ def block(membership: Membership, *, by: User) -> Membership:
 def offboard(
     membership: Membership,
     *,
-    by: User,
+    by: User | None,
     terminated_on: date | None = None,
     details: dict | None = None,
+    reason: str = "",
 ) -> Membership:
     """Someone leaves the company: access ends now and their open work is handed back.
 
     `terminated_on` is their last day (today when not given; never in the future), and
     `details` the offboarding wizard's answers per step key; both reach `member_left`.
+    `by=None` is the system (a termination scheduled for that day); `reason` is the
+    wizard's reason code, kept in the audit log.
     """
     membership = _lock(membership)
-    ensure_can(by, membership.company, Perm.MEMBERS_MANAGE)
-    if membership.user_id == by.pk:
-        raise DomainError(_("You can't offboard yourself."))
-    if _holds_owner_role(membership) and not _is_owner(by, membership.company):
-        raise PermissionDenied(_("Only owners can offboard an owner."))
+    if by is not None:
+        ensure_can(by, membership.company, Perm.MEMBERS_MANAGE)
+        if membership.user_id == by.pk:
+            raise DomainError(_("You can't offboard yourself."))
+        if _holds_owner_role(membership) and not _is_owner(by, membership.company):
+            raise PermissionDenied(_("Only owners can offboard an owner."))
     if membership.status not in CURRENT:
         raise DomainError(_("Only current members can be offboarded."))
     today = _today(membership.company)
@@ -302,15 +381,23 @@ def offboard(
     if terminated_on > today:
         raise DomainError(_("The last day can't be in the future."))
     _ensure_not_last_owner(membership)
-    actor = _actor(by, membership.company)
+    actor = _actor(by, membership.company) if by is not None else None
 
     membership.status = Membership.Status.LEFT
     membership.suspended_until = None
     _record_decision(membership, by)
     membership.save()
     _wind_down(membership, by=actor)
-    _audit(AuditLog.Action.MEMBER_LEFT, membership, by, terminated_on=terminated_on.isoformat())
+    extra = {"reason": reason} if reason else {}
+    _audit(
+        AuditLog.Action.MEMBER_LEFT,
+        membership,
+        by,
+        terminated_on=terminated_on.isoformat(),
+        **extra,
+    )
     transaction.on_commit(partial(tasks.notify_offboarded.delay, membership.pk))
+    transaction.on_commit(partial(_bump, membership.company_id, "members.people"))
     send_on_commit(
         signals.member_left,
         sender=Membership,
@@ -422,6 +509,501 @@ def reinstate_finished_suspensions(now=None) -> int:
             reinstate(membership, by=None)
             reinstated += 1
     return reinstated
+
+
+# Owner console: people, roles, positions, offboarding (by: Membership) ------------------
+
+
+def block_member(membership: Membership, *, by: Membership) -> Membership:
+    """`block` for a dashboard user: access ends for good and they can't ask to join again."""
+    _ensure_same_company(membership, by)
+    return block(membership, by=by.user)
+
+
+@transaction.atomic
+def unblock(membership: Membership, *, by: Membership) -> Membership:
+    """Lift a block: they count as a former member again and may ask to join with the invite
+    link (a new request is approved like anyone's)."""
+    _ensure_same_company(membership, by)
+    membership = _lock(membership)
+    if not by.has_perm(Perm.MEMBERS_MANAGE):
+        raise PermissionDenied(_("You don't have permission to do this."))
+    if membership.status != Membership.Status.BLOCKED:
+        raise DomainError(_("This person isn't blocked."))
+    membership.status = Membership.Status.LEFT
+    membership.save(update_fields=["status", "updated_at"])
+    audit.record(
+        MemberAction.UNBLOCKED, company_id=membership.company_id, actor=by.user, target=membership
+    )
+    transaction.on_commit(partial(_bump, membership.company_id, "members.people"))
+    return membership
+
+
+@transaction.atomic
+def update_member(
+    membership: Membership,
+    *,
+    by: Membership,
+    first_name: str | None = None,
+    last_name: str | None = None,
+    position: Position | object | None = UNSET,
+    branches: list[Branch] | None = None,
+    home_branch: Branch | object | None = UNSET,
+) -> Membership:
+    """Change someone's name, position, branches or home branch (members.manage). Someone who
+    sees only some branches can hand out only those, and keeps the others as they were."""
+    _ensure_same_company(membership, by)
+    membership = _lock(membership)
+    if not by.has_perm(Perm.MEMBERS_MANAGE):
+        raise PermissionDenied(_("You don't have permission to do this."))
+    if membership.status not in CURRENT:
+        raise DomainError(_("Only current members can be changed."))
+    if _holds_owner_role(membership) and not _is_owner_member(by) and by.pk != membership.pk:
+        raise PermissionDenied(_("Only owners can change an owner."))
+    company = membership.company
+    changes: dict[str, list] = {}
+
+    for field, value in (("first_name", first_name), ("last_name", last_name)):
+        if value is None:
+            continue
+        value = value.strip()[:100]
+        if field == "first_name" and not value:
+            raise DomainError(_("A first name is required."))
+        if value != getattr(membership, field):
+            changes[field] = [getattr(membership, field), value]
+            setattr(membership, field, value)
+
+    if position is not UNSET:
+        if position is not None and (position.company_id != company.pk or not position.is_active):
+            raise DomainError(_("Pick a position of this company."))
+        if (position.pk if position else None) != membership.position_id:
+            changes["position"] = [
+                membership.position.name if membership.position else None,
+                position.name if position else None,
+            ]
+            membership.position = position
+
+    new_branches = None
+    if branches is not None:
+        if any(b.company_id != company.pk or not b.is_active for b in branches):
+            raise DomainError(_("Pick branches of this company."))
+        current = list(membership.branches.all())
+        allowed = scope.branch_ids(by)
+        if allowed is not None and any(branch.pk not in allowed for branch in branches):
+            raise PermissionDenied(_("You can only give the branches you manage."))
+        kept = [b for b in current if allowed is not None and b.pk not in allowed]
+        new_branches = _dedupe([*kept, *branches])
+        if {b.pk for b in new_branches} != {b.pk for b in current}:
+            changes["branches"] = [
+                sorted(b.name for b in current),
+                sorted(b.name for b in new_branches),
+            ]
+
+    if home_branch is not UNSET:
+        if home_branch is not None and home_branch.company_id != company.pk:
+            raise DomainError(_("Pick a branch of this company."))
+        if (home_branch.pk if home_branch else None) != membership.home_branch_id:
+            changes["home_branch"] = [
+                membership.home_branch.name if membership.home_branch else None,
+                home_branch.name if home_branch else None,
+            ]
+            membership.home_branch = home_branch
+
+    final = new_branches if new_branches is not None else list(membership.branches.all())
+    final_ids = {b.pk for b in final}
+    if (
+        membership.home_branch_id is not None
+        and final
+        and membership.home_branch_id not in final_ids
+    ):
+        if home_branch is not UNSET:
+            raise DomainError(_("The home branch must be one of their branches."))
+        # Their home branch was taken away: the first remaining branch becomes it.
+        changes["home_branch"] = [membership.home_branch.name, final[0].name]
+        membership.home_branch = final[0]
+    if membership.home_branch_id is None and final and new_branches is not None:
+        membership.home_branch = final[0]
+        changes.setdefault("home_branch", [None, final[0].name])
+
+    if not changes:
+        return membership
+    membership.save()
+    if new_branches is not None:
+        membership.branches.set(new_branches)
+    audit.record(
+        MemberAction.CHANGED,
+        company_id=membership.company_id,
+        actor=by.user,
+        target=membership,
+        changes=changes,
+    )
+    transaction.on_commit(partial(_bump, membership.company_id, "members.people"))
+    return membership
+
+
+@transaction.atomic
+def change_role(membership: Membership, *, by: Membership, role: AccessRole) -> Membership:
+    """Give someone another role, by the anti-escalation rules (§5): only owners give or take
+    the Owner role; anyone else gives only roles whose permissions they hold all of; the last
+    owner can't be demoted."""
+    _ensure_same_company(membership, by)
+    membership = _lock(membership)
+    if not by.has_perm(Perm.ROLES_MANAGE):
+        raise PermissionDenied(_("You don't have permission to do this."))
+    if role.company_id != membership.company_id:
+        raise DomainError(_("Pick a role of this company."))
+    if membership.status not in CURRENT:
+        raise DomainError(_("Only current members can be changed."))
+    if membership.role_id == role.pk:
+        return membership
+    ensure_may_assign_role(by, role, target=membership)
+    if _holds_owner_role(membership) and not role.is_owner:
+        _ensure_not_last_owner(membership)
+    before = membership.role.name if membership.role else None
+    membership.role = role
+    membership.save(update_fields=["role", "updated_at"])
+    audit.record(
+        MemberAction.ROLE_CHANGED,
+        company_id=membership.company_id,
+        actor=by.user,
+        target=membership,
+        changes={"role": [before, role.name]},
+    )
+    transaction.on_commit(partial(_bump, membership.company_id, "members.people"))
+    return membership
+
+
+@transaction.atomic
+def save_role(
+    company: Company,
+    *,
+    by: Membership,
+    role: AccessRole | None = None,
+    name: str,
+    permissions: Iterable[str],
+    is_default: bool | None = None,
+) -> AccessRole:
+    """Create a role or change one's name, permissions and default flag. Rules (§5): only
+    owners edit the Owner role or a role they hold; a non-owner puts in a bundle only
+    permissions they hold themselves (and takes out only those too)."""
+    if by.company_id != company.pk or not by.has_perm(Perm.ROLES_MANAGE):
+        raise PermissionDenied(_("You don't have permission to do this."))
+    name = (name or "").strip()[:100]
+    if not name:
+        raise DomainError(_("Name the role."))
+    codes = sorted({str(code) for code in permissions})
+    unknown = [code for code in codes if code not in Perm.values]
+    if unknown:
+        raise DomainError(_("Unknown permission: %(code)s") % {"code": unknown[0]})
+    if role is not None:
+        role = AccessRole.objects.select_for_update().get(pk=role.pk, company=company)
+        if not may_edit_role(by, role):
+            raise PermissionDenied(_("Only owners can change this role."))
+    clash = AccessRole.objects.for_company(company).filter(name__iexact=name)
+    if role is not None:
+        clash = clash.exclude(pk=role.pk)
+    if clash.exists():
+        raise DomainError(_("There is already a role with that name."))
+    before_codes = set(role.permissions) if role is not None else set()
+    if role is None or not role.is_owner:
+        added = set(codes) - before_codes
+        removed = before_codes - set(codes)
+        if not may_grant(by, added):
+            raise PermissionDenied(_("You can only grant permissions you have yourself."))
+        if not may_grant(by, removed):
+            raise PermissionDenied(_("You can only take away permissions you have yourself."))
+
+    created = role is None
+    if created:
+        role = AccessRole(company=company)
+    before_name = role.name
+    role.name = name
+    if not role.is_owner:
+        role.permissions = codes
+    role.save()
+    if is_default and not role.is_default:
+        AccessRole.objects.for_company(company).exclude(pk=role.pk).update(is_default=False)
+        role.is_default = True
+        role.save(update_fields=["is_default", "updated_at"])
+    changes = {}
+    if before_name != role.name:
+        changes["name"] = [before_name or None, role.name]
+    if not role.is_owner and sorted(before_codes) != codes:
+        changes["permissions"] = [sorted(before_codes), codes]
+    if is_default:
+        changes["is_default"] = [False, True]
+    audit.record(
+        MemberAction.ROLE_CREATED if created else MemberAction.ROLE_SAVED,
+        company_id=company.pk,
+        actor=by.user,
+        target=role,
+        changes=changes,
+    )
+    transaction.on_commit(partial(_bump, company.pk, "members.roles", "members.people"))
+    return role
+
+
+@transaction.atomic
+def delete_role(role: AccessRole, *, by: Membership) -> None:
+    """Remove a role nobody holds (never the Owner role or the default one)."""
+    role = AccessRole.objects.select_for_update().get(pk=role.pk)
+    if by.company_id != role.company_id or not by.has_perm(Perm.ROLES_MANAGE):
+        raise PermissionDenied(_("You don't have permission to do this."))
+    if not may_edit_role(by, role):
+        raise PermissionDenied(_("Only owners can change this role."))
+    if role.is_owner:
+        raise DomainError(_("The Owner role can't be deleted."))
+    if role.is_default:
+        raise DomainError(_("Make another role the default one first."))
+    if Membership.objects.filter(role=role).exists():
+        raise DomainError(_("Give the people in this role another role first."))
+    audit.record(
+        MemberAction.ROLE_DELETED,
+        company_id=role.company_id,
+        actor=by.user,
+        target=role,
+        name=role.name,
+    )
+    role.delete()
+    transaction.on_commit(partial(_bump, by.company_id, "members.roles"))
+
+
+@transaction.atomic
+def save_position(
+    company: Company,
+    *,
+    by: Membership,
+    position: Position | None = None,
+    name: str | None = None,
+    is_active: bool | None = None,
+) -> Position:
+    """Create a position or rename, hide or bring back one (positions.manage)."""
+    if by.company_id != company.pk or not by.has_perm(Perm.POSITIONS_MANAGE):
+        raise PermissionDenied(_("You don't have permission to do this."))
+    created = position is None
+    if created:
+        position = Position(company=company, order=_next_order(company))
+    else:
+        position = Position.objects.select_for_update().get(pk=position.pk, company=company)
+    changes = {}
+    if name is not None or created:
+        clean = (name or "").strip()[:100]
+        if not clean:
+            raise DomainError(_("Name the position."))
+        clash = Position.objects.for_company(company).filter(name__iexact=clean)
+        if not created:
+            clash = clash.exclude(pk=position.pk)
+        if clash.exists():
+            raise DomainError(_("There is already a position with that name."))
+        if clean != position.name:
+            changes["name"] = [position.name or None, clean]
+            position.name = clean
+    if is_active is not None and is_active != position.is_active:
+        changes["is_active"] = [position.is_active, is_active]
+        position.is_active = is_active
+    if not changes and not created:
+        return position
+    position.save()
+    audit.record(
+        MemberAction.POSITION_CREATED if created else MemberAction.POSITION_SAVED,
+        company_id=company.pk,
+        actor=by.user,
+        target=position,
+        changes=changes,
+    )
+    transaction.on_commit(partial(_bump, company.pk, "members.positions"))
+    return position
+
+
+@transaction.atomic
+def delete_position(position: Position, *, by: Membership) -> None:
+    """Remove a position nobody ever held; one in use is hidden instead (is_active)."""
+    position = Position.objects.select_for_update().get(pk=position.pk)
+    if by.company_id != position.company_id or not by.has_perm(Perm.POSITIONS_MANAGE):
+        raise PermissionDenied(_("You don't have permission to do this."))
+    if Membership.objects.filter(position=position).exists():
+        raise DomainError(_("People hold this position: hide it instead of deleting it."))
+    audit.record(
+        MemberAction.POSITION_DELETED,
+        company_id=position.company_id,
+        actor=by.user,
+        target=position,
+        name=position.name,
+    )
+    try:
+        with transaction.atomic():
+            position.delete()
+    except ProtectedError:
+        raise DomainError(
+            _("This position is still used elsewhere: hide it instead of deleting it.")
+        ) from None
+    transaction.on_commit(partial(_bump, by.company_id, "members.positions"))
+
+
+@transaction.atomic
+def reorder_positions(company: Company, *, by: Membership, ids: list[int]) -> None:
+    """Put positions in this order (the order people see when they register)."""
+    if by.company_id != company.pk or not by.has_perm(Perm.POSITIONS_MANAGE):
+        raise PermissionDenied(_("You don't have permission to do this."))
+    positions = {p.pk: p for p in Position.objects.select_for_update().filter(company=company)}
+    if set(ids) - set(positions) or len(set(ids)) != len(ids):
+        raise DomainError(_("Send each of the company's positions once."))
+    rest = sorted((p for pk, p in positions.items() if pk not in ids), key=lambda p: p.order)
+    for index, position in enumerate([positions[pk] for pk in ids] + rest):
+        if position.order != index:
+            position.order = index
+            position.save(update_fields=["order", "updated_at"])
+    audit.record(
+        MemberAction.POSITIONS_REORDERED,
+        company_id=company.pk,
+        actor=by.user,
+        target=company,
+        order=[positions[pk].name for pk in ids],
+    )
+    transaction.on_commit(partial(_bump, company.pk, "members.positions"))
+
+
+def offboard_preview(membership: Membership, *, by: Membership | None = None) -> dict:
+    """The offboarding wizard for `membership`: every registered step `by` may run (an owner's
+    view for the system), in order, with its lines, blockers, questions and default answers."""
+    from apps.console.registry import collect_offboard_steps
+
+    viewer = by
+    if viewer is None:
+        viewer = (
+            Membership.objects.filter(
+                company_id=membership.company_id,
+                status=Membership.Status.APPROVED,
+                role__is_owner=True,
+            )
+            .select_related("role", "company")
+            .first()
+        )
+    steps = collect_offboard_steps(membership, by=viewer) if viewer is not None else []
+    return {
+        "steps": steps,
+        "blockers": sum(len(step.get("blockers") or []) for step in steps),
+        "can_override": by is None or _is_owner_member(by),
+    }
+
+
+# Why someone leaves (the wizard's first question; package S's Termination kinds match).
+OFFBOARD_REASONS = (
+    "resignation",
+    "mutual_agreement",
+    "contract_end",
+    "dismissal",
+    "probation_failed",
+    "redundancy",
+    "other",
+)
+
+
+@transaction.atomic
+def complete_offboarding(
+    membership: Membership,
+    *,
+    by: Membership | None,
+    terminated_on: date | None,
+    reason: str,
+    note: str = "",
+    steps: dict | None = None,
+    override_blockers: bool = False,
+) -> Membership:
+    """The offboarding wizard's last step, and what a scheduled termination (package S) calls
+    on the person's last day with `by=None`.
+
+    Every registered step's blockers stop it, unless an owner overrides them (the system may);
+    each step's required questions must be answered (missing answers take the step's defaults).
+    The answers reach `member_left` receivers as `details[step key]`, and the wizard's own as
+    `details["members"] = {"reason", "note", "override_blockers"}`."""
+    if reason not in OFFBOARD_REASONS:
+        raise DomainError(_("Pick why they are leaving."))
+    if by is not None:
+        _ensure_same_company(membership, by)
+        if not by.has_perm(Perm.MEMBERS_MANAGE):
+            raise PermissionDenied(_("You don't have permission to do this."))
+    preview = offboard_preview(membership, by=by)
+    blockers = [line for step in preview["steps"] for line in step.get("blockers") or []]
+    if blockers and not override_blockers:
+        raise DomainError(blockers[0])
+    if blockers and by is not None and not _is_owner_member(by):
+        raise PermissionDenied(_("Only an owner can go ahead despite the blockers."))
+    answers = steps or {}
+    details: dict[str, dict] = {}
+    for step in preview["steps"]:
+        given = answers.get(step["key"]) or {}
+        if not isinstance(given, dict):
+            raise DomainError(_("The answers of %(step)s are invalid.") % {"step": step["label"]})
+        merged = {**(step.get("defaults") or {}), **given}
+        for field in step.get("fields") or []:
+            if field.get("required") and merged.get(field["name"]) in (None, ""):
+                raise DomainError(
+                    _("%(step)s: “%(field)s” is required.")
+                    % {"step": step["label"], "field": field["label"]}
+                )
+        details[step["key"]] = merged
+    details["members"] = {
+        **details.get("members", {}),
+        "reason": reason,
+        "note": (note or "").strip()[:1000],
+        "override_blockers": bool(blockers),
+    }
+    return offboard(
+        membership,
+        by=by.user if by is not None else None,
+        terminated_on=terminated_on,
+        details=details,
+        reason=reason,
+    )
+
+
+def _valid_branches(
+    company: Company,
+    branches: list[Branch] | None,
+    home_branch: Branch | None,
+    *,
+    actor: Membership | None,
+) -> tuple[list[Branch], Branch] | None:
+    """Checked (branches, home branch) for an approval, or None when none were given."""
+    if not branches:
+        if home_branch is None:
+            return None
+        branches = [home_branch]
+    if any(branch.company_id != company.pk or not branch.is_active for branch in branches):
+        raise DomainError(_("Pick branches of this company."))
+    allowed = scope.branch_ids(actor) if actor is not None else None
+    if allowed is not None and any(branch.pk not in allowed for branch in branches):
+        raise PermissionDenied(_("You can only give the branches you manage."))
+    branches = _dedupe(branches)
+    if home_branch is None:
+        home_branch = branches[0]
+    if home_branch.pk not in {branch.pk for branch in branches}:
+        raise DomainError(_("The home branch must be one of their branches."))
+    return branches, home_branch
+
+
+def _dedupe(branches: list[Branch]) -> list[Branch]:
+    seen: dict[int, Branch] = {}
+    for branch in branches:
+        seen.setdefault(branch.pk, branch)
+    return list(seen.values())
+
+
+def _next_order(company: Company) -> int:
+    last = Position.objects.for_company(company).order_by("-order").first()
+    return (last.order + 1) if last else 0
+
+
+def _ensure_same_company(membership: Membership, by: Membership) -> None:
+    if by.company_id != membership.company_id or by.status != Membership.Status.APPROVED:
+        raise PermissionDenied(_("You don't have permission to do this."))
+
+
+def _bump(company_id: int, *keys: str) -> None:
+    from apps.console import pulse
+
+    pulse.bump(company_id, *keys)
 
 
 def _wind_down(membership: Membership, *, by: Membership | None) -> None:

@@ -1,14 +1,19 @@
 from django.conf import settings
 from django.utils import translation
+from django.utils.translation import gettext as _
 
 from apps.accounts.models import User
 from apps.companies.models import Company
+from apps.inbox import services as inbox
+from apps.inbox.services import NotificationAction
 from apps.members import bot_messages
 from apps.members.models import Membership
 from apps.members.permissions import Perm
 from apps.members.queries import members_with_perm
 from apps.notifications.tasks import send_telegram_message
 from apps.notifications.telegram import BotName, serialize_markup
+
+JOIN_KIND = "members.join"
 
 
 def approver_chats(company: Company) -> dict[int, str]:
@@ -27,12 +32,36 @@ def approver_chats(company: Company) -> dict[int, str]:
 
 
 def send_join_request(membership_id: int) -> None:
+    """Tell the approvers: through the inbox (Needs you, and a Telegram copy whose Approve
+    button asks for branches when the company has several), and with the classic message to
+    platform admins who aren't members of the company."""
     membership = _load(membership_id)
     if membership is None or membership.status != Membership.Status.PENDING:
         return
     if not membership.is_onboarded:
         return  # nothing to decide on until they've filled in their details
-    for chat_id, language in approver_chats(membership.company).items():
+    company = membership.company
+    approvers = list(
+        members_with_perm(company, Perm.MEMBERS_APPROVE).select_related("user", "company")
+    )
+    inbox.notify(
+        approvers,
+        JOIN_KIND,
+        title=lambda person: bot_messages.join_request_title(membership),
+        body=lambda person: bot_messages.join_request_body(membership),
+        url=f"/c/{company.pk}/people/requests?request={membership.pk}",
+        target=membership,
+        actions=[
+            NotificationAction("approve", lambda person: _("✅ Approve"), "primary"),
+            NotificationAction("reject", lambda person: _("❌ Reject"), "danger"),
+        ],
+        # One copy per request: a person asking again after a refusal is a new request.
+        dedupe_key=f"members.join:{membership.pk}:{int(membership.updated_at.timestamp())}",
+    )
+    reached = {person.user.telegram_id for person in approvers}
+    for chat_id, language in approver_chats(company).items():
+        if chat_id in reached:
+            continue
         with translation.override(language):
             text, markup = bot_messages.join_request(membership)
         send_telegram_message.delay(BotName.EMPLOYEE, chat_id, text, serialize_markup(markup))

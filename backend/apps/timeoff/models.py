@@ -4,6 +4,7 @@ from django.db.models import F, Q
 from django.utils.translation import gettext_lazy as _
 
 from apps.companies.models import TenantModel
+from apps.core.storage import private_storage, private_upload_to
 from apps.members.models import Membership
 
 
@@ -62,6 +63,12 @@ class TimeOff(TenantModel):
         related_name="+",
     )
     revoke_reason = models.CharField(max_length=300, blank=True)
+    attachment = models.FileField(
+        storage=private_storage,
+        upload_to=private_upload_to("timeoff"),
+        blank=True,
+        help_text=_("A sick note or another document, kept private."),
+    )
 
     class Meta:
         verbose_name_plural = "time off"

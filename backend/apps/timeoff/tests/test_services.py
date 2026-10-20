@@ -7,11 +7,11 @@ from django.utils import timezone
 
 from apps.audit.models import AuditLog
 from apps.core.exceptions import DomainError
+from apps.inbox.callbacks import InboxAction
 from apps.members.models import Membership
 from apps.tasks.models import Task
 from apps.tasks.tests.factories import TaskFactory
 from apps.timeoff import services
-from apps.timeoff.callbacks import TimeOffAction, TimeOffDecision
 from apps.timeoff.models import TimeOff
 
 pytestmark = pytest.mark.django_db
@@ -56,10 +56,8 @@ def test_a_request_goes_to_the_approvers(
     assert "Wedding" in message["text"]
     assert "days: 3" in message["text"]
     buttons = [b["callback_data"] for b in message["reply_markup"]["inline_keyboard"][0]]
-    assert [TimeOffDecision.unpack(data).action for data in buttons] == [
-        TimeOffAction.APPROVE,
-        TimeOffAction.REJECT,
-    ]
+    # The approvers' copy is an inbox notification: its buttons settle every copy at once.
+    assert [InboxAction.unpack(data).key for data in buttons] == ["approve", "reject"]
     assert not to(sent_messages, worker)
 
 
