@@ -16,6 +16,7 @@ from django.utils import timezone, translation
 from apps.accounts.models import User
 from apps.inbox import bot_messages, registry
 from apps.inbox.models import Notification
+from apps.members.models import Membership
 from apps.notifications import telegram
 from apps.notifications.tasks import edit_telegram_message
 from apps.notifications.telegram import BotName, serialize_markup
@@ -52,6 +53,9 @@ def deliver(notification_id: int, *, photo: str | None = None, photo_storage: st
         .first()
     )
     if item is None or item.telegram_sent_at is not None or item.acted_at is not None:
+        return
+    # Someone blocked, offboarded or suspended since the notification was made hears nothing.
+    if item.recipient.status != Membership.Status.APPROVED or not item.company.is_active:
         return
     user = item.recipient.user
     if user.telegram_id is None:

@@ -7,6 +7,7 @@ from decimal import Decimal
 from types import ModuleType
 
 import pytest
+from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.utils import timezone
 from openpyxl import load_workbook
@@ -411,3 +412,18 @@ def test_files_saved_by_hand_get_a_server_chosen_name(owner, exporters):
 
     assert export.file.name.startswith(f"exports/{owner.company_id}/")
     assert ".." not in export.file.name and "passwd" not in export.file.name
+
+
+@pytest.mark.usefixtures("exporters")
+def test_asking_for_exports_is_throttled(company, owner, owner_api):
+    cache.clear()
+    client = owner_api(owner)
+    body = {"kind": "exports.tasks", "format": "csv"}
+
+    statuses = [
+        client.post(exports_url(company), body, format="json").status_code for _ in range(11)
+    ]
+
+    assert statuses[:10] == [202] * 10
+    assert statuses[10] == 429
+    assert client.get(exports_url(company)).status_code == 200  # reading isn't throttled

@@ -8,6 +8,7 @@ from apps.core import redis as core_redis
 from apps.core.storage import private_storage
 from apps.members.models import Membership
 from apps.members.permissions import Perm
+from apps.notifications import telegram
 
 pytestmark = pytest.mark.django_db
 
@@ -66,8 +67,6 @@ def test_fake_redis_is_in_memory_and_prefixed(fake_redis, settings):
 
 
 def test_sent_messages_records_the_storage_too(sent_messages):
-    from apps.notifications import telegram
-
     telegram.send_message("employee", 1, "Hi", None, "receipts/1/a.jpg", "private")
 
     assert sent_messages[0]["photo_storage"] == "private"

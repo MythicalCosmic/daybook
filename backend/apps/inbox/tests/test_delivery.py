@@ -184,3 +184,13 @@ def test_the_task_delivers_through_celery(owner, telegram, django_capture_on_com
         notify([owner], "inbox.claim", title="Claim")
 
     assert len(telegram.sent) == 1
+
+
+def test_someone_who_lost_access_since_hears_nothing(owner, telegram):
+    [item] = notify([owner], "inbox.claim", title="Claim")
+    owner.status = owner.Status.BLOCKED
+    owner.save()
+
+    delivery.deliver(item.pk)
+
+    assert telegram.sent == []

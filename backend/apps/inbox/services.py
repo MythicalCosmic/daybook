@@ -112,7 +112,7 @@ def notify(
                     body=_render(body, person),
                     url=url[:300],
                     app_screen=app_screen[:120],
-                    target_type=target._meta.model_name if target is not None else "",
+                    target_type=target._meta.model_name[:32] if target is not None else "",
                     target_id=target.pk if target is not None else None,
                     actor=actor,
                     actions=[
@@ -153,11 +153,7 @@ def run_action(notification_id: int, key: str, *, by: Membership, reason: str = 
     reason = (reason or "").strip()
     now = timezone.now()
     with transaction.atomic():
-        item = (
-            Notification.objects.select_for_update(of=("self",))
-            .select_related("recipient__user", "company")
-            .get(pk=notification_id)
-        )
+        item = _lock_copies(notification_id)
         if item.recipient_id != by.pk or by.status != Membership.Status.APPROVED:
             raise PermissionDenied(_("You don't have access to this."))
         if item.acted_at is not None:
@@ -195,6 +191,28 @@ def run_action(notification_id: int, key: str, *, by: Membership, reason: str = 
     )
     transaction.on_commit(lambda: pulse.bump(item.company_id, UNREAD_PULSE))
     return message
+
+
+def _lock_copies(notification_id: int) -> Notification:
+    """Lock the notification and every copy of it (same kind and target), in id order, so two
+    approvers pressing at the same moment run the handler once; return it, freshly read."""
+    first = Notification.objects.only("company_id", "kind", "target_type", "target_id").get(
+        pk=notification_id
+    )
+    copies = Notification.objects.filter(pk=first.pk)
+    if first.target_id is not None:
+        copies = Notification.objects.filter(
+            company_id=first.company_id,
+            kind=first.kind,
+            target_type=first.target_type,
+            target_id=first.target_id,
+        )
+    locked = (
+        copies.select_for_update(of=("self",))
+        .select_related("recipient__user", "company")
+        .order_by("pk")
+    )
+    return next(copy for copy in locked if copy.pk == first.pk)
 
 
 @dataclass(frozen=True)

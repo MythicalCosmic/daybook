@@ -3,6 +3,7 @@
 from datetime import date
 
 import pytest
+from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -140,8 +141,6 @@ def test_a_handled_notification_answers_400(company, owner, claims, owner_api):
 def test_a_handler_refusing_on_permission_answers_403(
     company, owner, claims, owner_api, monkeypatch
 ):
-    from django.core.exceptions import PermissionDenied
-
     def no(notification, by, reason):
         raise PermissionDenied("Only accountants pay claims.")
 
