@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, time
 from decimal import Decimal, InvalidOperation
 
 from django.db import IntegrityError, transaction
@@ -166,7 +166,7 @@ def _record(action: str, company, by: Membership | None, target, **details) -> N
 def _jsonable(value):
     if isinstance(value, Decimal):
         return str(value)
-    if isinstance(value, date | datetime):
+    if isinstance(value, date | datetime | time):
         return value.isoformat()
     if isinstance(value, dict):
         return {str(k): _jsonable(v) for k, v in value.items()}

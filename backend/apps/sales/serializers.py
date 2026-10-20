@@ -200,7 +200,8 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 def _shift_photo(attr: str):
-    return PrivateFileSerializerField(check="sales.shift_photo", source=attr, allow_null=True)
+    del attr
+    return PrivateFileSerializerField(check="sales.shift_photo", allow_null=True)
 
 
 class ShiftListSerializer(serializers.ModelSerializer):

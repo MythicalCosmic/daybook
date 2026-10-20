@@ -35,8 +35,21 @@ def keyed(shift) -> dict[str, Transaction]:
 
 
 def test_defaults_make_methods_a_till_and_a_safe_per_branch(shop):
-    codes = set(PaymentMethod.objects.filter(company=shop.company).values_list("system_code", flat=True))
-    assert {"cash", "uzcard", "humo", "visa", "click", "payme", "uzum", "transfer", "credit", "installment"} == codes
+    codes = set(
+        PaymentMethod.objects.filter(company=shop.company).values_list("system_code", flat=True)
+    )
+    assert {
+        "cash",
+        "uzcard",
+        "humo",
+        "visa",
+        "click",
+        "payme",
+        "uzum",
+        "transfer",
+        "credit",
+        "installment",
+    } == codes
     assert Register.objects.filter(company=shop.company).count() == 2
     till = shop.register.cash_account
     assert till.kind == MoneyAccount.Kind.CASH and till.branch_id == shop.branch.pk
@@ -128,7 +141,9 @@ def test_numbers_stay_unique_when_two_shifts_open_at_once(db):
     def open_one(cashier, register):
         try:
             barrier.wait(timeout=5)
-            numbers.append(services.open_shift(by=cashier, register=register, opening_float="0").number)
+            numbers.append(
+                services.open_shift(by=cashier, register=register, opening_float="0").number
+            )
         except Exception as exc:  # pragma: no cover - reported below
             errors.append(exc)
         finally:
@@ -153,7 +168,11 @@ def test_a_later_float_that_differs_books_the_difference(shop):
     second = services.open_shift(by=shop.cashier, register=shop.register, opening_float="1150000")
     assert second.expected_float == Decimal("1200000.00")
     row = keyed(second)["float"]
-    assert (row.kind, row.amount, row.category.system_code) == ("expense", Decimal("-50000.00"), "cash_shortage")
+    assert (row.kind, row.amount, row.category.system_code) == (
+        "expense",
+        Decimal("-50000.00"),
+        "cash_shortage",
+    )
     shop.register.cash_account.refresh_from_db()
     assert shop.register.cash_account.balance == Decimal("1150000.00")
 
@@ -180,7 +199,9 @@ def test_business_day_around_midnight(shop, clock, ends_at, expected_day):
 
 def test_a_night_shift_books_on_the_evening_it_started(shop):
     opened = datetime(2026, 10, 20, 23, 30, tzinfo=TASHKENT)
-    shift = services.open_shift(by=shop.cashier, register=shop.register, opening_float="0", now=opened)
+    shift = services.open_shift(
+        by=shop.cashier, register=shop.register, opening_float="0", now=opened
+    )
     assert shift.business_day.isoformat() == "2026-10-20"
     closed = services.close_shift(
         shift,
@@ -197,7 +218,9 @@ def test_a_night_shift_books_on_the_evening_it_started(shop):
 
 
 def test_close_books_exactly_the_rows_of_the_plan(shop):
-    shop.method("uzcard").__class__.objects.filter(pk=shop.method("uzcard").pk).update(fee_percent=Decimal("1.00"))
+    shop.method("uzcard").__class__.objects.filter(pk=shop.method("uzcard").pk).update(
+        fee_percent=Decimal("1.00")
+    )
     shift = services.open_shift(by=shop.cashier, register=shop.register, opening_float="200000")
     closed = services.close_shift(
         shift,
@@ -213,7 +236,14 @@ def test_close_books_exactly_the_rows_of_the_plan(shop):
     )
     cash_id, card_id = shop.method("cash").pk, shop.method("uzcard").pk
     rows = keyed(closed)
-    assert set(rows) == {"float", f"m{cash_id}", f"r{cash_id}", f"m{card_id}", f"f{card_id}", "diff"}
+    assert set(rows) == {
+        "float",
+        f"m{cash_id}",
+        f"r{cash_id}",
+        f"m{card_id}",
+        f"f{card_id}",
+        "diff",
+    }
     assert (rows[f"m{cash_id}"].amount, rows[f"m{cash_id}"].account_id) == (
         Decimal("1000000.00"),
         shop.register.cash_account_id,
@@ -223,7 +253,7 @@ def test_close_books_exactly_the_rows_of_the_plan(shop):
     assert rows[f"m{card_id}"].account_id == shop.method("uzcard").account_id
     assert rows[f"f{card_id}"].amount == Decimal("-6000.00")
     assert rows[f"f{card_id}"].category.system_code == "bank_fees"
-    # Expected 200 000 + 1 000 000 − 50 000 = 1 150 000; counted 1 135 000.
+    # Expected 200 000 + 1 000 000 - 50 000 = 1 150 000; counted 1 135 000.
     assert closed.expected_cash == Decimal("1150000.00")
     assert closed.difference == Decimal("-15000.00")
     assert rows["diff"].category.system_code == "cash_shortage"
@@ -242,21 +272,36 @@ def test_close_needs_a_count_and_the_photos(shop):
     shift = services.open_shift(by=shop.cashier, register=shop.register, opening_float="0")
     card = [PaymentLine(shop.method("uzcard"), Decimal("100000"))]
     with pytest.raises(DomainError):
-        services.close_shift(shift, by=shop.cashier, payments=card, z_photo=jpeg(), terminal_photo=jpeg())
+        services.close_shift(
+            shift, by=shop.cashier, payments=card, z_photo=jpeg(), terminal_photo=jpeg()
+        )
     with pytest.raises(DomainError):
-        services.close_shift(shift, by=shop.cashier, payments=card, counted_cash="0", terminal_photo=jpeg())
+        services.close_shift(
+            shift, by=shop.cashier, payments=card, counted_cash="0", terminal_photo=jpeg()
+        )
     with pytest.raises(DomainError):
-        services.close_shift(shift, by=shop.cashier, payments=card, counted_cash="0", z_photo=jpeg())
+        services.close_shift(
+            shift, by=shop.cashier, payments=card, counted_cash="0", z_photo=jpeg()
+        )
     closed = services.close_shift(
-        shift, by=shop.cashier, payments=card, counted_cash="0", z_photo=jpeg(), terminal_photo=jpeg()
+        shift,
+        by=shop.cashier,
+        payments=card,
+        counted_cash="0",
+        z_photo=jpeg(),
+        terminal_photo=jpeg(),
     )
     assert closed.z_photo.name.endswith(".jpg") and closed.z_photo.name.startswith("sales/shifts/")
     with pytest.raises(DomainError):
-        services.close_shift(closed, by=shop.cashier, payments=card, counted_cash="0", z_photo=jpeg())
+        services.close_shift(
+            closed, by=shop.cashier, payments=card, counted_cash="0", z_photo=jpeg()
+        )
 
 
 def test_a_correction_voids_and_rebooks_with_matching_sums(shop):
-    closed = open_and_close(shop, opening="200000", cash_sales="1000000", card_sales="500000", counted="1190000")
+    closed = open_and_close(
+        shop, opening="200000", cash_sales="1000000", card_sales="500000", counted="1190000"
+    )
     before = keyed(closed)
     services.correct_shift(
         closed,
@@ -287,7 +332,9 @@ def test_verify_with_a_recount_moves_the_difference(shop):
     assert closed.difference == Decimal("0.00")
     with pytest.raises(DomainError):
         services.verify_shift(closed, by=shop.cashier)  # nobody checks their own shift
-    verified = services.verify_shift(closed, by=shop.manager, recount_cash="1180000", note="Recounted")
+    verified = services.verify_shift(
+        closed, by=shop.manager, recount_cash="1180000", note="Recounted"
+    )
     assert verified.status == CashShift.Status.VERIFIED
     assert verified.difference == Decimal("-20000.00")
     assert keyed(verified)["diff"].amount == Decimal("-20000.00")
@@ -319,7 +366,9 @@ def test_force_close_without_a_count_books_no_difference(shop):
 
 def test_record_ai_reading_is_the_only_writer(shop):
     closed = open_and_close(shop)
-    services.record_ai_reading(closed, reading={"cash": "1000000.00", "card": "480000.00"}, mismatch=True)
+    services.record_ai_reading(
+        closed, reading={"cash": "1000000.00", "card": "480000.00"}, mismatch=True
+    )
     closed.refresh_from_db()
     assert closed.ai_mismatch and closed.ai_reading["card"] == "480000.00"
     # No other code path writes ai_reading.

@@ -247,3 +247,99 @@ def not_received_label() -> str:
 
 def verify_label() -> str:
     return _("Verify")
+
+
+# The "🧾 Kassa" menu button -----------------------------------------------------------------
+
+KASSA_BUTTON = "🧾 Kassa"
+
+
+def kassa_status(membership):
+    """What the bot answers to the Kassa button: the open till (never how much cash there should
+    be), or how to open one, and the handovers waiting for this person with their buttons."""
+    from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
+    from django.conf import settings
+    from django.utils import html as django_html
+
+    from apps.members.bot_messages import miniapp_url
+    from apps.members.permissions import Perm
+    from apps.sales import cash, queries
+    from apps.sales.callbacks import HandoverAnswer, SalesHandover
+    from apps.sales.days import local
+
+    company = membership.company
+    lines: list[str] = []
+    rows: list[list] = []
+    if membership.has_perm(Perm.SALES_OPERATE):
+        shift = queries.current_shift(membership)
+        if shift is not None:
+            since = local(company, shift.opened_at).strftime("%H:%M")
+            moved = cash.movement_totals_by_kind(shift)
+            lines += [
+                _("🧾 <b>%(shift)s</b> is open") % {"shift": shift.code},
+                _("%(branch)s · %(till)s · since %(time)s")
+                % {
+                    "branch": django_html.escape(shift.branch.name),
+                    "till": django_html.escape(shift.register.name),
+                    "time": since,
+                },
+                _("Float: %(amount)s")
+                % {"amount": money(shift.opening_float, company.base_currency)},
+            ]
+            if moved.get("payout"):
+                lines.append(_("Payouts: %(amount)s") % {"amount": money(moved["payout"])})
+            if moved.get("handover"):
+                lines.append(_("Handed over: %(amount)s") % {"amount": money(moved["handover"])})
+            lines.append(_("Close the shift in Kassa when the day ends."))
+        else:
+            lines += [
+                _("🧾 No till is open."),
+                _("Open a shift in Kassa: count the float and start."),
+            ]
+        url = miniapp_url("kassa")
+        if settings.EMPLOYEE_MINIAPP_URL and url.startswith("https://"):
+            rows.append([InlineKeyboardButton(text=_("Open Kassa"), web_app=WebAppInfo(url=url))])
+    pending = list(queries.pending_handovers_for(membership))
+    if pending:
+        if lines:
+            lines.append("")
+        lines.append(_("💵 <b>Cash handed to you</b>"))
+        for movement in pending:
+            lines.append(
+                _("%(person)s · %(amount)s · %(branch)s, %(time)s")
+                % {
+                    "person": django_html.escape(str(movement.created_by)),
+                    "amount": money(movement.amount, movement.currency),
+                    "branch": django_html.escape(movement.branch.name),
+                    "time": local(company, movement.created_at).strftime("%d.%m %H:%M"),
+                }
+            )
+            label = money(movement.amount, movement.currency)
+            rows.append(
+                [
+                    InlineKeyboardButton(
+                        text=_("✅ Received %(amount)s") % {"amount": label},
+                        callback_data=SalesHandover(
+                            answer=HandoverAnswer.RECEIVED, movement_id=movement.pk
+                        ).pack(),
+                    ),
+                    InlineKeyboardButton(
+                        text=_("❌ Not received"),
+                        callback_data=SalesHandover(
+                            answer=HandoverAnswer.NOT_RECEIVED, movement_id=movement.pk
+                        ).pack(),
+                    ),
+                ]
+            )
+    if not lines:
+        lines.append(_("Kassa is for the people who run a till. Nothing waits for you here."))
+    markup = InlineKeyboardMarkup(inline_keyboard=rows) if rows else None
+    return "\n".join(lines), markup
+
+
+def handover_answered(answer: str, amount, currency: str) -> str:
+    if answer == "ok":
+        return _("✅ Received: %(amount)s. Thank you!") % {"amount": money(amount, currency)}
+    return _("❌ Marked as not received: %(amount)s. The owners were told.") % {
+        "amount": money(amount, currency)
+    }

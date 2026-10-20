@@ -25,11 +25,15 @@ def test_demo_seeds_shifts_and_keeps_the_ledger_in_step(company, demo_people):
     assert shifts.filter(ai_mismatch=True).count() == 1
     assert DailySales.objects.filter(company=company).count() > 20
     assert SalesTarget.objects.filter(company=company).exists()
-    assert CashMovement.objects.filter(company=company, kind="handover", confirmed_at__isnull=True).exists()
+    assert CashMovement.objects.filter(
+        company=company, kind="handover", confirmed_at__isnull=True
+    ).exists()
 
     # Every till's cached balance equals the sum of its posted rows.
     for account in MoneyAccount.objects.filter(company=company):
-        posted = Transaction.objects.filter(account=account, status="posted").aggregate(t=Sum("amount"))["t"]
+        posted = Transaction.objects.filter(account=account, status="posted").aggregate(
+            t=Sum("amount")
+        )["t"]
         assert account.balance == (posted or Decimal(0)), account.name
     # Every closed shift booked its sales on its business day.
     for shift in shifts.exclude(status=CashShift.Status.OPEN)[:10]:

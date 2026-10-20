@@ -13,7 +13,8 @@ from apps.finance import defaults as finance_defaults
 from apps.members.models import AccessRole, Membership
 from apps.members.permissions import Perm
 from apps.members.tests.factories import MembershipFactory
-from apps.sales import defaults, services
+from apps.sales import defaults, rollup, services
+from apps.sales.conf import get_settings
 from apps.sales.models import CashShift, PaymentMethod, Register
 from apps.sales.services import PaymentLine
 
@@ -65,6 +66,7 @@ def make_shop(**company_fields) -> Shop:
     first.save()
     second = Branch.objects.create(company=company, name="Yunusobod", code="YNS", order=1)
     defaults.ensure(company)
+    get_settings(company)  # the lazy row exists, so tests may update it directly
     register = Register.objects.get(branch=first)
     other_register = Register.objects.get(branch=second)
     return Shop(
@@ -101,7 +103,7 @@ def open_and_close(
     lines = [PaymentLine(shop.method("cash"), Decimal(cash_sales), Decimal(refunds), 0)]
     if Decimal(card_sales):
         lines.append(PaymentLine(shop.method("uzcard"), Decimal(card_sales), Decimal(0), 0))
-    return services.close_shift(
+    closed = services.close_shift(
         shift,
         by=cashier,
         payments=lines,
@@ -110,6 +112,9 @@ def open_and_close(
         z_photo=jpeg(),
         terminal_photo=jpeg() if Decimal(card_sales) else None,
     )
+    # What the close queues after commit (tests run inside one transaction).
+    rollup.rebuild_day(closed.branch_id, closed.business_day)
+    return closed
 
 
 def jpeg(name: str = "photo.jpg"):

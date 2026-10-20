@@ -232,6 +232,7 @@ def handover_sent(movement_id: int) -> None:
         target=movement,
         actor=movement.created_by,
         actions=[RECEIVED, NOT_RECEIVED],
+        dedupe_key=f"sales.handover:{movement.pk}",
     )
 
 
