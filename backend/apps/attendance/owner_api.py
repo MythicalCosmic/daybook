@@ -269,6 +269,7 @@ class RecordViewSet(
             else None
         )
         data["edited_by"] = record.edited_by.get_full_name() if record.edited_by_id else None
+        data["branch_geo"] = queries.branch_geo(record.branch)
         return Response(data)
 
     @extend_schema(request=s.RecordCreateSerializer, responses={201: s.RecordRowSerializer})

@@ -133,6 +133,7 @@ class RecordRowSerializer(RecordOutSerializer):
 class RecordDetailSerializer(RecordRowSerializer):
     photo_url = serializers.CharField(allow_null=True)
     edited_by = serializers.CharField(allow_null=True)
+    branch_geo = BranchGeoSerializer(allow_null=True)
 
 
 # The board ------------------------------------------------------------------------------
