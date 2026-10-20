@@ -8,6 +8,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.accounts.models import User
+from apps.announcements.models import Announcement
 from apps.audit.models import AuditLog
 from apps.companies.models import Company
 from apps.companies.services import create_company
@@ -28,6 +29,7 @@ EVERYONE = (OWNER, MANAGER, WORKER, COLLEAGUE, STOCKER, COURIER, APPLICANT, WAIT
 # Deleted in this order, so nothing still points at what goes next.
 TENANT_MODELS = (
     AuditLog,
+    Announcement,
     TelegramGroup,
     Holiday,
     TimeOff,

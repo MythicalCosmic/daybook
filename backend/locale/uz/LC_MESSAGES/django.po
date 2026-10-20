@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-20 18:12+0500\n"
+"POT-Creation-Date: 2026-10-20 18:20+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -25,6 +25,117 @@ msgstr "Faqat odam Telegram’da ulashgan kontaktdan olinadi."
 #: backend/apps/accounts/models.py
 msgid "When Telegram said this person blocked the employee bot."
 msgstr "Telegram bu odam xodimlar botini bloklaganini bildirgan vaqt."
+
+#: backend/apps/announcements/admin.py
+msgid "Read"
+msgstr "O‘qilgan"
+
+#: backend/apps/announcements/bot_messages.py
+msgid "📣 Send the announcement as one message. Bold, italics and links are kept."
+msgstr "📣 E’lonni bitta xabar qilib yuboring. Qalin, kursiv matn va havolalar saqlanadi."
+
+#: backend/apps/announcements/bot_messages.py
+msgid "📤 Send to the chosen positions"
+msgstr "📤 Tanlangan lavozimlarga yuborish"
+
+#: backend/apps/announcements/bot_messages.py
+msgid "📤 Send to everyone"
+msgstr "📤 Hammaga yuborish"
+
+#: backend/apps/announcements/bot_messages.py
+msgid "Who should get it? Tap positions, or send it to everyone."
+msgstr "Kimlar olsin? Lavozimlarni tanlang yoki hammaga yuboring."
+
+#: backend/apps/announcements/bot_messages.py
+msgid "📣 <b>Preview</b>"
+msgstr "📣 <b>Oldindan ko‘rish</b>"
+
+#: backend/apps/announcements/bot_messages.py
+#, python-format
+msgid "📣 Sent. Recipients: %(count)d. Tap below to see who has read it."
+msgstr ""
+"📣 Yuborildi. Qabul qiluvchilar: %(count)d ta. Kim o‘qiganini ko‘rish uchun pastdagi tugmani "
+"bosing."
+
+#: backend/apps/announcements/bot_messages.py
+#, python-format
+msgid "📣 <b>Reminder</b>: please read this announcement from %(name)s."
+msgstr "📣 <b>Eslatma</b>: iltimos, %(name)s yuborgan e’lonni o‘qing."
+
+#: backend/apps/announcements/bot_messages.py
+#, python-format
+msgid "📣 <b>Announcement</b> · %(name)s"
+msgstr "📣 <b>E’lon</b> · %(name)s"
+
+#: backend/apps/announcements/bot_messages.py
+msgid "✅ I've read it"
+msgstr "✅ O‘qidim"
+
+#: backend/apps/announcements/bot_messages.py
+msgid "✅ You have read this."
+msgstr "✅ Siz buni o‘qidingiz."
+
+#: backend/apps/announcements/bot_messages.py
+#, python-format
+msgid "📣 Read by %(read)d of %(total)d."
+msgstr "📣 %(total)d kishidan %(read)d tasi o‘qidi."
+
+#: backend/apps/announcements/bot_messages.py
+#, python-format
+msgid "Not yet: %(names)s"
+msgstr "Hali o‘qimaganlar: %(names)s"
+
+#: backend/apps/announcements/bot_messages.py
+#, python-format
+msgid ""
+"📣 A day later, %(unread)d of %(total)d people still haven't read your announcement “%(title)s”: "
+"%(names)s"
+msgstr ""
+"📣 Bir kun o‘tdi, lekin %(total)d kishidan %(unread)d tasi hali “%(title)s” e’loningizni o‘qimadi: "
+"%(names)s"
+
+#: backend/apps/announcements/bot_messages.py backend/apps/groups/bot_messages.py
+#: backend/apps/reports/bot_messages.py
+#, python-format
+msgid "…and %(count)d more"
+msgstr "…va yana %(count)d ta"
+
+#: backend/apps/announcements/bot_messages.py
+msgid "👀 Who has read it?"
+msgstr "👀 Kim o‘qidi?"
+
+#: backend/apps/announcements/bot_messages.py backend/apps/tasks/bot_messages.py
+msgid "✖️ Cancel"
+msgstr "✖️ Bekor qilish"
+
+#: backend/apps/announcements/models.py
+msgid "As the author wrote it, formatting included."
+msgstr "Muallif yozganidek, formatlash bilan."
+
+#: backend/apps/announcements/models.py
+msgid "Who gets it. None = everyone."
+msgstr "Kim oladi. Bo‘sh = hamma."
+
+#: backend/apps/announcements/models.py
+msgid "When the author heard who still hadn't read it."
+msgstr "Muallifga kim hali o‘qimagani aytilgan vaqt."
+
+#: backend/apps/announcements/services.py employee_bot/bot/handlers/member/announcements.py
+msgid "Only managers can send announcements."
+msgstr "E’lonni faqat rahbarlar yubora oladi."
+
+#: backend/apps/announcements/services.py
+msgid "Write something to send."
+msgstr "Yuborish uchun nimadir yozing."
+
+#: backend/apps/announcements/services.py employee_bot/bot/handlers/member/announcements.py
+#, python-format
+msgid "That's too long for one message: %(limit)d characters at most."
+msgstr "Bitta xabar uchun juda uzun: ko‘pi bilan %(limit)d belgi."
+
+#: backend/apps/announcements/services.py
+msgid "This announcement no longer exists."
+msgstr "Bu e’lon endi mavjud emas."
 
 #: backend/apps/audit/models.py
 msgid "Approved a join request"
@@ -105,6 +216,10 @@ msgstr "Dam olishni tasdiqladi"
 #: backend/apps/audit/models.py
 msgid "Rejected time off"
 msgstr "Dam olishni rad etdi"
+
+#: backend/apps/audit/models.py
+msgid "Sent an announcement"
+msgstr "E’lon yubordi"
 
 #: backend/apps/audit/models.py
 msgid "Added in the admin"
@@ -234,11 +349,6 @@ msgstr "⏰ Kechikib bajarildi: %(count)d"
 #, python-format
 msgid "❌ Not done: %(count)d"
 msgstr "❌ Bajarilmadi: %(count)d"
-
-#: backend/apps/groups/bot_messages.py backend/apps/reports/bot_messages.py
-#, python-format
-msgid "…and %(count)d more"
-msgstr "…va yana %(count)d ta"
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
@@ -646,6 +756,10 @@ msgstr "Hisobot va statistikani ko‘rish"
 msgid "Approve or reject time off"
 msgstr "Dam olish so‘rovlarini tasdiqlash yoki rad etish"
 
+#: backend/apps/members/permissions.py
+msgid "Send announcements"
+msgstr "E’lon yuborish"
+
 #: backend/apps/members/services.py
 msgid "You don't have permission to do this."
 msgstr "Bunga ruxsatingiz yo‘q."
@@ -990,10 +1104,6 @@ msgstr "🌅 Ertaga 09:00"
 #: backend/apps/tasks/bot_messages.py
 msgid "♾ No deadline"
 msgstr "♾ Muddatsiz"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "✖️ Cancel"
-msgstr "✖️ Bekor qilish"
 
 #: backend/apps/tasks/bot_messages.py
 msgid "⏰ When is it due? Pick one or send a time like 18:30 or 25.10 18:30."
@@ -1385,6 +1495,10 @@ msgid "New task"
 msgstr "Yangi vazifa"
 
 #: employee_bot/bot/commands.py
+msgid "Send an announcement (managers)"
+msgstr "E’lon yuborish (rahbarlar uchun)"
+
+#: employee_bot/bot/commands.py
 msgid "Link this group to your company"
 msgstr "Bu guruhni kompaniyangizga ulash"
 
@@ -1396,9 +1510,17 @@ msgstr "Bu yerga nima yozilishini tanlash"
 msgid "Stop posting here"
 msgstr "Bu yerga yozishni to‘xtatish"
 
-#: employee_bot/bot/handlers/member/tasks.py
+#: employee_bot/bot/handlers/member/announcements.py
+msgid "This draft has expired. Send /announce to start again."
+msgstr "Bu qoralama eskirdi. Qaytadan boshlash uchun /announce yuboring."
+
+#: employee_bot/bot/handlers/member/announcements.py employee_bot/bot/handlers/member/tasks.py
 msgid "Okay, cancelled."
 msgstr "Mayli, bekor qilindi."
+
+#: employee_bot/bot/handlers/member/announcements.py
+msgid "Thank you!"
+msgstr "Rahmat!"
 
 #: employee_bot/bot/handlers/member/tasks.py
 msgid "Started 💪"

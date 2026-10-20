@@ -18,3 +18,4 @@ class Perm(models.TextChoices):
     GROUPS_MANAGE = "groups.manage", _("Connect and configure groups")
     REPORTS_VIEW = "reports.view", _("View reports and statistics")
     TIME_OFF_APPROVE = "time_off.approve", _("Approve or reject time off")
+    ANNOUNCE = "announcements.send", _("Send announcements")

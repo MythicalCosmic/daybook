@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-20 18:12+0500\n"
+"POT-Creation-Date: 2026-10-20 18:20+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -25,6 +25,115 @@ msgstr "Заполняется только из контакта, которы�
 #: backend/apps/accounts/models.py
 msgid "When Telegram said this person blocked the employee bot."
 msgstr "Когда Telegram сообщил, что человек заблокировал бота для сотрудников."
+
+#: backend/apps/announcements/admin.py
+msgid "Read"
+msgstr "Прочитано"
+
+#: backend/apps/announcements/bot_messages.py
+msgid "📣 Send the announcement as one message. Bold, italics and links are kept."
+msgstr "📣 Пришлите объявление одним сообщением. Жирный текст, курсив и ссылки сохранятся."
+
+#: backend/apps/announcements/bot_messages.py
+msgid "📤 Send to the chosen positions"
+msgstr "📤 Отправить выбранным должностям"
+
+#: backend/apps/announcements/bot_messages.py
+msgid "📤 Send to everyone"
+msgstr "📤 Отправить всем"
+
+#: backend/apps/announcements/bot_messages.py
+msgid "Who should get it? Tap positions, or send it to everyone."
+msgstr "Кому отправить? Выберите должности или отправьте всем."
+
+#: backend/apps/announcements/bot_messages.py
+msgid "📣 <b>Preview</b>"
+msgstr "📣 <b>Предпросмотр</b>"
+
+#: backend/apps/announcements/bot_messages.py
+#, python-format
+msgid "📣 Sent. Recipients: %(count)d. Tap below to see who has read it."
+msgstr "📣 Отправлено. Получателей: %(count)d. Нажмите ниже, чтобы увидеть, кто прочитал."
+
+#: backend/apps/announcements/bot_messages.py
+#, python-format
+msgid "📣 <b>Reminder</b>: please read this announcement from %(name)s."
+msgstr "📣 <b>Напоминание</b>: пожалуйста, прочитайте объявление от %(name)s."
+
+#: backend/apps/announcements/bot_messages.py
+#, python-format
+msgid "📣 <b>Announcement</b> · %(name)s"
+msgstr "📣 <b>Объявление</b> · %(name)s"
+
+#: backend/apps/announcements/bot_messages.py
+msgid "✅ I've read it"
+msgstr "✅ Прочитано"
+
+#: backend/apps/announcements/bot_messages.py
+msgid "✅ You have read this."
+msgstr "✅ Вы это прочитали."
+
+#: backend/apps/announcements/bot_messages.py
+#, python-format
+msgid "📣 Read by %(read)d of %(total)d."
+msgstr "📣 Прочитали %(read)d из %(total)d."
+
+#: backend/apps/announcements/bot_messages.py
+#, python-format
+msgid "Not yet: %(names)s"
+msgstr "Ещё не прочитали: %(names)s"
+
+#: backend/apps/announcements/bot_messages.py
+#, python-format
+msgid ""
+"📣 A day later, %(unread)d of %(total)d people still haven't read your announcement “%(title)s”: "
+"%(names)s"
+msgstr ""
+"📣 Прошли сутки, а %(unread)d из %(total)d так и не прочитали ваше объявление «%(title)s»: "
+"%(names)s"
+
+#: backend/apps/announcements/bot_messages.py backend/apps/groups/bot_messages.py
+#: backend/apps/reports/bot_messages.py
+#, python-format
+msgid "…and %(count)d more"
+msgstr "…и ещё %(count)d"
+
+#: backend/apps/announcements/bot_messages.py
+msgid "👀 Who has read it?"
+msgstr "👀 Кто прочитал?"
+
+#: backend/apps/announcements/bot_messages.py backend/apps/tasks/bot_messages.py
+msgid "✖️ Cancel"
+msgstr "✖️ Отмена"
+
+#: backend/apps/announcements/models.py
+msgid "As the author wrote it, formatting included."
+msgstr "Как написал автор, с оформлением."
+
+#: backend/apps/announcements/models.py
+msgid "Who gets it. None = everyone."
+msgstr "Кому отправлено. Пусто = всем."
+
+#: backend/apps/announcements/models.py
+msgid "When the author heard who still hadn't read it."
+msgstr "Когда автору сообщили, кто ещё не прочитал."
+
+#: backend/apps/announcements/services.py employee_bot/bot/handlers/member/announcements.py
+msgid "Only managers can send announcements."
+msgstr "Отправлять объявления могут только руководители."
+
+#: backend/apps/announcements/services.py
+msgid "Write something to send."
+msgstr "Напишите, что отправить."
+
+#: backend/apps/announcements/services.py employee_bot/bot/handlers/member/announcements.py
+#, python-format
+msgid "That's too long for one message: %(limit)d characters at most."
+msgstr "Слишком длинно для одного сообщения: не больше %(limit)d символов."
+
+#: backend/apps/announcements/services.py
+msgid "This announcement no longer exists."
+msgstr "Этого объявления больше нет."
 
 #: backend/apps/audit/models.py
 msgid "Approved a join request"
@@ -105,6 +214,10 @@ msgstr "Отгул одобрен"
 #: backend/apps/audit/models.py
 msgid "Rejected time off"
 msgstr "Отгул отклонён"
+
+#: backend/apps/audit/models.py
+msgid "Sent an announcement"
+msgstr "Отправлено объявление"
 
 #: backend/apps/audit/models.py
 msgid "Added in the admin"
@@ -234,11 +347,6 @@ msgstr "⏰ С опозданием: %(count)d"
 #, python-format
 msgid "❌ Not done: %(count)d"
 msgstr "❌ Не выполнено: %(count)d"
-
-#: backend/apps/groups/bot_messages.py backend/apps/reports/bot_messages.py
-#, python-format
-msgid "…and %(count)d more"
-msgstr "…и ещё %(count)d"
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
@@ -645,6 +753,10 @@ msgstr "Просмотр отчётов и статистики"
 msgid "Approve or reject time off"
 msgstr "Одобрение и отклонение отгулов"
 
+#: backend/apps/members/permissions.py
+msgid "Send announcements"
+msgstr "Отправка объявлений"
+
 #: backend/apps/members/services.py
 msgid "You don't have permission to do this."
 msgstr "У вас нет прав на это действие."
@@ -989,10 +1101,6 @@ msgstr "🌅 Завтра 09:00"
 #: backend/apps/tasks/bot_messages.py
 msgid "♾ No deadline"
 msgstr "♾ Без срока"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "✖️ Cancel"
-msgstr "✖️ Отмена"
 
 #: backend/apps/tasks/bot_messages.py
 msgid "⏰ When is it due? Pick one or send a time like 18:30 or 25.10 18:30."
@@ -1384,6 +1492,10 @@ msgid "New task"
 msgstr "Новая задача"
 
 #: employee_bot/bot/commands.py
+msgid "Send an announcement (managers)"
+msgstr "Отправить объявление (для руководителей)"
+
+#: employee_bot/bot/commands.py
 msgid "Link this group to your company"
 msgstr "Подключить группу к компании"
 
@@ -1395,9 +1507,17 @@ msgstr "Выбрать, что сюда присылать"
 msgid "Stop posting here"
 msgstr "Перестать сюда писать"
 
-#: employee_bot/bot/handlers/member/tasks.py
+#: employee_bot/bot/handlers/member/announcements.py
+msgid "This draft has expired. Send /announce to start again."
+msgstr "Черновик устарел. Отправьте /announce, чтобы начать заново."
+
+#: employee_bot/bot/handlers/member/announcements.py employee_bot/bot/handlers/member/tasks.py
 msgid "Okay, cancelled."
 msgstr "Хорошо, отменено."
+
+#: employee_bot/bot/handlers/member/announcements.py
+msgid "Thank you!"
+msgstr "Спасибо!"
 
 #: employee_bot/bot/handlers/member/tasks.py
 msgid "Started 💪"

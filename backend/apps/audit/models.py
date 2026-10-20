@@ -29,6 +29,7 @@ class AuditLog(TenantModel):
         GROUP_REMOVED = "group.removed", _("Removed the bot from a group")
         TIME_OFF_APPROVED = "time_off.approved", _("Approved time off")
         TIME_OFF_REJECTED = "time_off.rejected", _("Rejected time off")
+        ANNOUNCEMENT_SENT = "announcement.sent", _("Sent an announcement")
         ADMIN_CREATED = "admin.created", _("Added in the admin")
         ADMIN_CHANGED = "admin.changed", _("Changed in the admin")
         ADMIN_DELETED = "admin.deleted", _("Deleted in the admin")

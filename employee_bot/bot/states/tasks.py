@@ -12,3 +12,8 @@ class CompleteTask(StatesGroup):
 
 class ReturnTask(StatesGroup):
     reason = State()
+
+
+class Announce(StatesGroup):
+    text = State()
+    audience = State()

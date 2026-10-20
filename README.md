@@ -71,6 +71,10 @@ When a business rule is broken, the API returns `400 {"detail": "<message safe t
 
 The bot keeps the link when a group becomes a supergroup, and switches the group off when it's removed. Posts to one group are spaced 3 seconds apart, under Telegram's limit of about 20 a minute.
 
+## Announcements
+
+Managers send `/announce` to the bot, write the message (formatting is kept), pick everyone or some positions, and send it. Each person gets it with an "I've read it" button, and the author can tap "Who has read it?" any time. Anyone who hasn't read it after 3 hours gets one reminder, and a day later the author hears who still hasn't. Announcements and their read receipts are listed in the admin.
+
 ## Morning digest
 
 At the company's morning report time, everyone working that day gets their open tasks from the bot, overdue ones first, one tap from each task's card. Nobody gets one on a holiday or a day off, or with nothing open. It can be switched off on the company page in the admin.

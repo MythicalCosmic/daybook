@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "apps.audit",
     "apps.reports",
     "apps.timeoff",
+    "apps.announcements",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
@@ -131,6 +132,11 @@ CELERY_BEAT_SCHEDULE = {
     "send-morning-digests": {
         "task": "apps.reports.tasks.send_morning_digests",
         "schedule": crontab(minute="*/5"),
+    },
+    # One reminder for unread announcements, then a summary for their authors.
+    "follow-up-announcements": {
+        "task": "apps.announcements.tasks.follow_up_announcements",
+        "schedule": crontab(minute="*/15"),
     },
     # Monday mornings only; once per person per week.
     "send-weekly-reports": {

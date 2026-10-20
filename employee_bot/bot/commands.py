@@ -22,6 +22,7 @@ def private_commands() -> list[BotCommand]:
         BotCommand(command="start", description=_("Home")),
         BotCommand(command="tasks", description=_("My tasks")),
         BotCommand(command="new", description=_("New task")),
+        BotCommand(command="announce", description=_("Send an announcement (managers)")),
     ]
 
 
