@@ -188,7 +188,11 @@ export function formatMoney(
   return (signed ? signed[0] : "") + withCurrency(unsigned, currency, lang);
 }
 
-/** The pieces of a formatted amount, for layouts that style the currency apart from the number. */
+/**
+ * The pieces of a formatted amount, for layouts that style the currency apart from the number.
+ * A compact Russian or Uzbek amount moves its scale word to the currency side ("12,5" +
+ * "mln so‘m"), so the big number stays one short run of digits.
+ */
 export function moneyParts(
   amount: DecimalString,
   currency: Currency | string,
@@ -196,7 +200,10 @@ export function moneyParts(
   options: Omit<MoneyFormat, "bare"> = {},
 ): { number: string; currency: string; currencyFirst: boolean } {
   const look = CURRENCY[currency as Currency]?.[lang] ?? { text: currency, before: false };
-  return { number: formatAmount(amount, lang, { ...options, currency }), currency: look.text, currencyFirst: look.before };
+  const number = formatAmount(amount, lang, { ...options, currency });
+  const scale = options.compact && lang !== "en" ? number.lastIndexOf(NBSP) : -1;
+  if (scale < 0 || look.before) return { number, currency: look.text, currencyFirst: look.before };
+  return { number: number.slice(0, scale), currency: `${number.slice(scale + 1)}${NBSP}${look.text}`, currencyFirst: false };
 }
 
 /**

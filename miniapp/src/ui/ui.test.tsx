@@ -267,6 +267,8 @@ describe("counting cash", () => {
     fireEvent.click(more[0]);
     fireEvent.click(more[1]);
     expect(container.querySelector(".ui-denoms-total .ui-money")?.textContent).toBe("101,000UZS");
+    // Row subtotals stay short; the total names the currency.
+    expect([...container.querySelectorAll(".ui-denom-sum")].map((sum) => sum.textContent)).toEqual(["100K", "1K"]);
     expect(container.querySelector(".ui-denoms-total-label")?.textContent).toBe("Total3 notes");
   });
 

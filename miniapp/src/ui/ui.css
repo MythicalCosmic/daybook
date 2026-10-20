@@ -539,7 +539,8 @@
   gap: 6px;
 }
 
-/* Note and stepper keep their size; the subtotal takes what is left (and gives way first). */
+/* Note and stepper keep their size; the subtotal takes what is left (and gives way first). With
+   subgrid every row shares one set of columns, so the steppers line up under each other. */
 .ui-denom {
   display: grid;
   grid-template-columns: auto auto minmax(0, 1fr);
@@ -586,6 +587,23 @@
   font-size: 14px;
   font-weight: 600;
   color: var(--muted);
+}
+
+@supports (grid-template-columns: subgrid) {
+  .ui-denoms {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    row-gap: 6px;
+  }
+
+  .ui-denom {
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+  }
+
+  .ui-denoms-total {
+    grid-column: 1 / -1;
+  }
 }
 
 /* Phones narrower than 390 px: the banknote glyph goes, so "200 000" never meets the stepper. */

@@ -88,14 +88,23 @@ function builtIn({ name, arg }: ScreenLink): NavigationInit | null {
 /** Built-in screen names that lead to an entry a feature may take over (`replaces`). */
 const TAKEN_OVER: Partial<Record<string, BuiltIn>> = { timeOff: "timeOff", team: "teamResults" };
 
-/** Where a screen link leads, or null for the normal start (unknown names are ignored). */
-export function resolveScreen(link: ScreenLink | null, features: readonly Feature[]): NavigationInit | null {
+/**
+ * Where a screen link leads, or null for the normal start (unknown names are ignored).
+ * `replacing` are the features that take over built-in entries for this person (the visible
+ * ones); a hidden leave feature must not swallow the `timeOff` link of the built-in sheet.
+ */
+export function resolveScreen(
+  link: ScreenLink | null,
+  features: readonly Feature[],
+  replacing: readonly Feature[] = features,
+): NavigationInit | null {
   if (!link) return null;
   try {
     // When a feature takes over a built-in entry, its own route of the same name wins.
     const entry = TAKEN_OVER[link.name];
-    if (entry && features.some((feature) => feature.replaces?.includes(entry))) {
-      const replacement = routeTarget(features, link.name, link.arg);
+    const takers = entry ? replacing.filter((feature) => feature.replaces?.includes(entry)) : [];
+    if (takers.length) {
+      const replacement = routeTarget(takers, link.name, link.arg);
       if (replacement) return replacement;
     }
     return builtIn(link) ?? routeTarget(features, link.name, link.arg);
@@ -104,9 +113,4 @@ export function resolveScreen(link: ScreenLink | null, features: readonly Featur
     console.error("Deep link failed", link, error);
     return null;
   }
-}
-
-/** The navigation the app starts with, read from the launch URL. */
-export function initialFromLaunch(features: readonly Feature[]): NavigationInit | null {
-  return resolveScreen(readScreenLink(), features);
 }

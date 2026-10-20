@@ -110,6 +110,8 @@ describe("resolving screen links", () => {
     expect(resolve("timeOff", [leave])).toEqual({ tab: "profile", stack: [{ feature: "leave", page: "home", params: {} }] });
     // Without a route of that name the built-in sheet still opens.
     expect(resolve("timeOff", [{ ...leave, routes: {} }])).toEqual({ tab: "profile", sheet: { kind: "timeOff" } });
+    // Hidden for this person (the module is off): the built-in sheet answers, as Me shows it.
+    expect(resolveScreen(parseScreen("timeOff"), [leave], [])).toEqual({ tab: "profile", sheet: { kind: "timeOff" } });
   });
 
   it("start normally for unknown names and broken routes", () => {

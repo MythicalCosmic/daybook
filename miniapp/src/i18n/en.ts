@@ -28,7 +28,8 @@ const en = {
   "gate.blocked.title": "Access is closed",
   "gate.blocked.body": "Talk to your manager if you think this is a mistake.",
   "gate.suspended.title": "Your access is paused",
-  "gate.suspended.body": "Your manager paused your access for now. Ask them if you have questions.",
+  "gate.suspended.body": "Your manager paused your access until further notice. Ask them if you have questions.",
+  "gate.suspended.until": "Your manager paused your access until {date}. Ask them if you have questions.",
   "gate.close": "Close the app",
 
   "signup.step": "Step {n} of 3",

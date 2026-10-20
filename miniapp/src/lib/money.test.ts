@@ -65,6 +65,11 @@ describe("money formatting", () => {
   it("splits the parts for layouts with a small currency", () => {
     expect(moneyParts("1250.5", "USD", "en")).toEqual({ number: "1,250.50", currency: "$", currencyFirst: true });
     expect(moneyParts("1250000", "UZS", "uz")).toEqual({ number: `1${NB}250${NB}000`, currency: "so‘m", currencyFirst: false });
+    // Compact: the scale word joins the small currency, the big number stays digits.
+    expect(moneyParts("12500000", "UZS", "ru", { compact: true })).toEqual({ number: "12,5", currency: `млн${NB}сум`, currencyFirst: false });
+    expect(moneyParts("250000", "UZS", "uz", { compact: true })).toEqual({ number: "250", currency: `ming${NB}so‘m`, currencyFirst: false });
+    expect(moneyParts("12500000", "UZS", "en", { compact: true })).toEqual({ number: "12.5M", currency: "UZS", currencyFirst: false });
+    expect(moneyParts("-950", "UZS", "ru", { compact: true })).toEqual({ number: "−950", currency: "сум", currencyFirst: false });
     expect(formatAmount("1250000", "ru")).toBe(`1${NB}250${NB}000`);
     expect(groupDigits("1000", "en")).toBe("1,000");
   });

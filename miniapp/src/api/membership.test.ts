@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { baseCurrency, branchIds, hasModule, homeBranch, isSuspended, ownerSeesPersonalTasks, teamDirectoryPhones } from "./membership";
+import {
+  baseCurrency,
+  branchIds,
+  hasModule,
+  homeBranch,
+  isSuspended,
+  ownerSeesPersonalTasks,
+  suspendedUntil,
+  teamDirectoryPhones,
+} from "./membership";
 import type { Membership } from "./types";
 
 /** A membership as `me/` sends it, with or without the phase 2 fields. */
@@ -54,5 +63,7 @@ describe("membership facts", () => {
   it("tell a suspended membership apart", () => {
     expect(isSuspended(membership({}, { status: "suspended" }))).toBe(true);
     expect(isSuspended(membership())).toBe(false);
+    expect(suspendedUntil(membership({}, { status: "suspended", suspended_until: "2026-11-12" }))).toBe("2026-11-12");
+    expect(suspendedUntil(membership({}, { status: "suspended", suspended_until: null }))).toBeNull();
   });
 });

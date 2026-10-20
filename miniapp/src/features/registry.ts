@@ -26,7 +26,7 @@
 import type { LucideIcon } from "lucide-react";
 import type { ComponentType, ReactNode } from "react";
 
-import type { MemberBrief, Membership, Summary } from "../api/types";
+import type { Membership, Summary } from "../api/types";
 import type { Dictionary } from "../i18n";
 import type { FeatureMessages } from "../i18n/feature";
 import type { NavigationInit, PageRef, Params, Tab } from "../state/navigation";
@@ -114,20 +114,30 @@ export type Route<P extends string, S extends string> =
   | { sheet: S; param?: string; tab?: Tab }
   | ((arg: string | null) => NavigationInit | null);
 
-/** A notification in the employee inbox (PLAN-OWNER §3.4), for `inboxRenderers`. */
+/**
+ * A notification in the employee inbox (PLAN-OWNER §3.4), for `inboxRenderers`: the shape of
+ * `inbox.serializers.NotificationSerializer` (W0-L1), until the regenerated schema has it.
+ */
 export type InboxItem = {
   id: number;
   kind: string;
   severity: "info" | "warning" | "critical";
   title: string;
   body: string;
+  /** The dashboard route; the mini app opens `app_screen` instead. */
+  url: string;
+  /** A deep link for the mini app ("payslip:12"), read like `?screen=`. */
   app_screen: string;
-  actor: MemberBrief | null;
-  actions: { key: string; label: string; style: string }[];
+  target_type: string;
+  target_id: number | null;
+  actor: { id: number; name: string } | null;
+  /** Buttons, empty once someone acted. */
+  actions: { key: string; label: string; style: "primary" | "danger" | "default"; needs_reason: boolean }[];
   data: Record<string, unknown>;
+  created_at: string;
   read_at: string | null;
   acted_at: string | null;
-  created_at: string;
+  acted_by: string | null;
 };
 
 export type InboxRendererProps = { item: InboxItem; member: Member };

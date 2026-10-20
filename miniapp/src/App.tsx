@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { ApiError } from "./api/client";
 import { useMe, useSummary } from "./api/hooks";
@@ -6,7 +6,7 @@ import { isSuspended } from "./api/membership";
 import type { Membership } from "./api/types";
 import { TabBar } from "./components/TabBar";
 import { FeatureBoundary, FeaturePage } from "./features/hosts";
-import { features, suspendedGate } from "./features/registry";
+import { features, suspendedGate, visibleFeatures } from "./features/registry";
 import { asLang, I18nProvider, useI18n } from "./i18n";
 import { ActivityScreen } from "./screens/Activity";
 import { CreateAccount } from "./screens/CreateAccount";
@@ -19,7 +19,7 @@ import { Tasks } from "./screens/Tasks";
 import { Team } from "./screens/Team";
 import { Waiting } from "./screens/Waiting";
 import { Sheets } from "./sheets/Sheets";
-import { initialFromLaunch } from "./state/deeplink";
+import { readScreenLink, resolveScreen, type ScreenLink } from "./state/deeplink";
 import { CORE, NavigationProvider, useNavigation, type NavigationInit, type PageRef } from "./state/navigation";
 import { SessionProvider, useMember, useSession } from "./state/session";
 import { ToastProvider } from "./state/toast";
@@ -32,7 +32,7 @@ export function App() {
   const insideTelegram = Boolean(initData());
   const me = useMe({ enabled: insideTelegram });
   // Read once at launch: `?screen=payslip:12` or a startapp parameter picks the first screen.
-  const [launch] = useState<NavigationInit | null>(() => initialFromLaunch(features));
+  const [launch] = useState<ScreenLink | null>(() => readScreenLink());
   const [splashOver, setSplashOver] = useState(false);
   useEffect(() => {
     const timer = window.setTimeout(() => setSplashOver(true), SPLASH_MS);
@@ -57,15 +57,29 @@ export function App() {
             <SplashScreen />
           ) : (
             <SessionProvider me={me.data}>
-              <NavigationProvider initial={launch}>
+              <LaunchNavigation link={launch}>
                 <Gatekeeper />
-              </NavigationProvider>
+              </LaunchNavigation>
             </SessionProvider>
           )}
         </ToastProvider>
       </div>
     </I18nProvider>
   );
+}
+
+/**
+ * The navigation, started where the launch link points. It resolves once the membership is
+ * known, so only features this person sees can take a built-in link over (§9.1 `replaces`).
+ */
+function LaunchNavigation({ link, children }: { link: ScreenLink | null; children: ReactNode }) {
+  const { membership } = useSession();
+  const [initial] = useState<NavigationInit | null>(() => {
+    if (!link) return null;
+    const member = membership && { ...membership, timeZone: membership.company.timezone, companyId: membership.company.id };
+    return resolveScreen(link, features, member ? visibleFeatures(features, { member, summary: undefined }) : features);
+  });
+  return <NavigationProvider initial={initial}>{children}</NavigationProvider>;
 }
 
 function SplashScreen() {
@@ -138,11 +152,11 @@ function PausedApp({ membership }: { membership: Membership }) {
   return (
     <>
       {Gate ? (
-        <FeatureBoundary name="gates.suspended" fallback={<Suspended />}>
+        <FeatureBoundary name="gates.suspended" fallback={<Suspended membership={membership} />}>
           <Gate membership={membership} />
         </FeatureBoundary>
       ) : (
-        <Suspended />
+        <Suspended membership={membership} />
       )}
       <StackPages />
       <Sheets />

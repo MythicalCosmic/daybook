@@ -1,7 +1,7 @@
 import { Banknote } from "lucide-react";
 
 import { useI18n } from "../i18n";
-import { groupDigits, multiplyMoney, sumMoney, type Currency } from "../lib/money";
+import { formatMoney, groupDigits, multiplyMoney, sumMoney, type Currency } from "../lib/money";
 import { cx } from "./cx";
 import { MoneyText } from "./MoneyText";
 import { Stepper } from "./Stepper";
@@ -52,7 +52,8 @@ export function DenominationCounter({
               <span className="num">{groupDigits(note, lang)}</span>
             </span>
             <Stepper value={count} onChange={(next) => onChange({ ...counts, [note]: next })} editable size="sm" label={groupDigits(note, lang)} />
-            <span className="ui-denom-sum num">{count > 0 ? <MoneyText amount={multiplyMoney(note, count)} currency={currency} compact /> : "—"}</span>
+            {/* Short and without the currency: the total below names it, and phones are narrow. */}
+            <span className="ui-denom-sum num">{count > 0 ? formatMoney(multiplyMoney(note, count), currency, lang, { compact: true, bare: true }) : "—"}</span>
           </div>
         );
       })}

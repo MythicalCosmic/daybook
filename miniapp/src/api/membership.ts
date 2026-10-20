@@ -21,7 +21,7 @@ type CompanyFacts = {
   base_currency?: string;
 };
 
-type MembershipFacts = { home_branch?: BranchBrief | null; branch_ids?: readonly number[] };
+type MembershipFacts = { home_branch?: BranchBrief | null; branch_ids?: readonly number[]; suspended_until?: string | null };
 
 type HasCompany = { company: Membership["company"] };
 
@@ -60,4 +60,9 @@ export function branchIds(member: Membership): readonly number[] {
 /** Whether the membership is suspended (§13.4): the app shows the "Access paused" screen. */
 export function isSuspended(member: Pick<Membership, "status">): boolean {
   return (member.status as string) === "suspended";
+}
+
+/** The last day of a suspension ("2026-11-12"), or null while it runs until reinstated. */
+export function suspendedUntil(member: Membership): string | null {
+  return (member as Membership & MembershipFacts).suspended_until ?? null;
 }

@@ -18,8 +18,9 @@ vi.mock("./features/registry", async (importOriginal) => {
   return { ...real, features: registry.list };
 });
 
-function me(status: string, permissions: string[] = []): Me {
+function me(status: string, permissions: string[] = [], extra: Record<string, unknown> = {}): Me {
   const membership = {
+    ...extra,
     id: 7,
     company: { id: 1, name: "Demo Shop", timezone: "Asia/Tashkent" },
     status,
@@ -116,6 +117,26 @@ describe("app", () => {
     expect(await screen.findByText("This part didn't open", {}, { timeout: 3000 })).toBeTruthy();
   });
 
+  it("lets only a feature this person sees take a built-in link over", async () => {
+    const Leave = () => <h1>Leave balances</h1>;
+    const leave: Feature = defineFeature({
+      id: "leave",
+      messages: { en: { t: "Time off" }, ru: { t: "Отпуск" }, uz: { t: "Ta’til" } },
+      replaces: ["timeOff"],
+      visible: (member) => member.permissions.includes("reports.view"),
+      pages: { home: Leave },
+      routes: { timeOff: { page: "home", tab: "profile" } },
+    });
+    registry.list.push(leave);
+    window.history.replaceState(null, "", "/app/?screen=timeOff");
+    renderApp(me("approved"));
+    // Hidden for this person: the built-in sheet opens, as Me would show it.
+    expect(await screen.findByRole("dialog", { name: "Days off" }, { timeout: 3000 })).toBeTruthy();
+    cleanup();
+    renderApp(me("approved", ["reports.view"]));
+    expect(await screen.findByRole("heading", { name: "Leave balances" }, { timeout: 3000 })).toBeTruthy();
+  });
+
   it("wires Telegram's back button to the stack: the sheet first, then the page, then away", async () => {
     const back = { show: vi.fn(), hide: vi.fn(), onClick: vi.fn(), offClick: vi.fn() };
     vi.stubGlobal("Telegram", {
@@ -159,7 +180,12 @@ describe("app", () => {
   it("shows a calm paused screen to a suspended person", async () => {
     renderApp(me("suspended"));
     expect(await screen.findByText("Your access is paused", {}, { timeout: 3000 })).toBeTruthy();
+    expect(screen.getByText(/until further notice/)).toBeTruthy();
     expect(document.querySelector(".tabbar")).toBeNull();
+    cleanup();
+    // With an end date, it says until when, as the bot does.
+    renderApp(me("suspended", [], { suspended_until: "2026-11-12" }));
+    expect(await screen.findByText(/paused your access until 12 Nov\./, {}, { timeout: 3000 })).toBeTruthy();
   });
 
   it("uses the lifecycle feature's paused screen when there is one", async () => {
