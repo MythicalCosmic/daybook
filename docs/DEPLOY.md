@@ -49,7 +49,7 @@ In `.env`, set:
 | `DASHBOARD_URL` | `https://<your domain>/dashboard/` |
 | `PLATFORM_ADMIN_TG_IDS` | your Telegram id (@userinfobot tells you) |
 | `TELEGRAM_DRY_RUN` | `false` |
-| `FIELD_ENCRYPTION_KEY` | `python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` (or the same with `docker run --rm python:3.14-slim` after `pip install cryptography`) |
+| `FIELD_ENCRYPTION_KEY` | a Fernet key: `python3 -c "import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())"` |
 | `FIELD_HASH_KEY` | another long random string |
 | `COMPANY_SIGNUP` | `code` (default: a new owner needs a signup code from you), `open` (anyone may create a company in the owner bot) or `off` |
 

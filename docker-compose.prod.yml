@@ -17,10 +17,9 @@ services:
       - media:/srv/media:ro
       - caddy_data:/data
       - caddy_config:/config
+    # Not on stream: without it the site still works and the dashboard polls for AI answers.
     depends_on:
       backend:
-        condition: service_healthy
-      stream:
         condition: service_healthy
     restart: unless-stopped
     profiles: ["app"]
