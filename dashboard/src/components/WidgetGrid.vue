@@ -46,6 +46,10 @@ async function enableDrag(): Promise<void> {
     sortable = SortableJs.create(grid.value, {
       animation: 200,
       handle: "[data-widget-handle]",
+      // Pointer events instead of native drag and drop: the same on touch screens, and the
+      // dragged card follows the pointer instead of a translucent browser snapshot.
+      forceFallback: true,
+      fallbackOnBody: true,
       ghostClass: "widget-ghost",
       chosenClass: "widget-chosen",
       onEnd: (event) => {
