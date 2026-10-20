@@ -189,3 +189,31 @@ def test_making_another_role_the_default(owner_api, company, owner):
 
     assert response.status_code == 200
     assert AccessRole.objects.get(company=company, is_default=True) == cashier
+
+
+def test_a_non_owner_doesnt_move_someone_out_of_a_role_above_theirs(owner_api, company, member, hr):
+    accountant = member.registered(company, "Accountant")  # finance permissions HR lacks
+    url = PEOPLE.format(cid=company.pk) + f"{accountant.pk}/"
+
+    assert owner_api(hr).get(url).data["can"]["change_role"] is False
+    refused = owner_api(hr).patch(url, {"role_id": role(company, "Employee").pk}, format="json")
+    assert refused.status_code == 403
+    accountant.refresh_from_db()
+    assert accountant.role.name == "Accountant"
+    # Someone in a role HR could give is fine.
+    worker = member.registered(company, "Cashier")
+    AccessRole.objects.filter(pk=worker.role_id).update(permissions=[str(Perm.FINANCE_CLAIM)])
+    worker.role.refresh_from_db()
+    services.change_role(worker, by=hr, role=role(company, "Employee"))
+
+
+def test_the_owner_role_is_never_the_default(owner_api, company, owner):
+    owner_role = role(company, "Owner")
+
+    response = owner_api(owner).patch(
+        ROLES.format(cid=company.pk) + f"{owner_role.pk}/", {"is_default": True}, format="json"
+    )
+
+    assert response.status_code == 400
+    owner_role.refresh_from_db()
+    assert not owner_role.is_default

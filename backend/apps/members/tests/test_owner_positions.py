@@ -75,7 +75,7 @@ def test_demo_with_extra_staff(company, demo_people, monkeypatch):
 
     assert Membership.objects.filter(company=company, status="approved").count() == 18
     owner = people["owner"]
-    result = call_tool("members_directory", owner)
+    result = call_tool("members_list_people", owner)
     assert len(result["rows"]) >= 18
     rates = {row["name"]: row["on_time_percent_30d"] for row in result["rows"]}
     assert rates["Gulnora Ismoilova"] == "100"
@@ -94,6 +94,6 @@ def test_ai_person_tool_respects_scope(company, member):
     far = member.registered(company, home_branch=yunusobod)
     far.branches.set([yunusobod])
 
-    assert call_tool("members_person", viewer, member_id=far.pk) == {"error": "not_found"}
-    mine = call_tool("members_person", viewer, member_id=viewer.pk)
+    assert call_tool("members_person_overview", viewer, member_id=far.pk) == {"error": "not_found"}
+    mine = call_tool("members_person_overview", viewer, member_id=viewer.pk)
     assert mine["data"]["name"] == str(viewer)

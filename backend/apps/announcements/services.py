@@ -36,6 +36,8 @@ MAX_LENGTH = 3500
 MAX_SCHEDULE_AHEAD = timedelta(days=90)
 # A scheduled announcement must leave the job a moment to pick it up.
 MIN_SCHEDULE_AHEAD = timedelta(minutes=1)
+# "Leave this as it is" for update_scheduled's nullable times.
+UNSET = object()
 
 
 @transaction.atomic
@@ -96,24 +98,40 @@ def update_scheduled(
     position_ids: Iterable[int] | None = None,
     branch_ids: Iterable[int] | None = None,
     scheduled_for: datetime | None = None,
-    pinned_until: datetime | None = None,
-    expires_at: datetime | None = None,
+    pinned_until: datetime | object | None = UNSET,
+    expires_at: datetime | object | None = UNSET,
 ) -> Announcement:
-    """Change an announcement that hasn't gone out yet: text, audience and times."""
+    """Change an announcement that hasn't gone out yet: text, audience and times. What isn't
+    passed stays as it is; `pinned_until=None` / `expires_at=None` take the pin or expiry off."""
     announcement = _lock(announcement)
     _ensure_may_manage(announcement, by)
     if announcement.status != Announcement.Status.SCHEDULED:
         raise DomainError(_("Only a scheduled announcement can be changed."))
     now = timezone.now()
+    changed = []
     if text is not None:
-        announcement.text = _valid_text(text)
+        clean = _valid_text(text)
+        if clean != announcement.text:
+            changed.append("text")
+        announcement.text = clean
     when = scheduled_for or announcement.scheduled_for
-    _check_times(now, when, pinned_until, expires_at)
-    announcement.scheduled_for = when
-    announcement.pinned_until = pinned_until
-    announcement.expires_at = expires_at
+    pinned = announcement.pinned_until if pinned_until is UNSET else pinned_until
+    expires = announcement.expires_at if expires_at is UNSET else expires_at
+    _check_times(now, when, pinned, expires)
+    for field, value in (
+        ("scheduled_for", when),
+        ("pinned_until", pinned),
+        ("expires_at", expires),
+    ):
+        if getattr(announcement, field) != value:
+            changed.append(field)
+            setattr(announcement, field, value)
     announcement.save()
     if position_ids is not None or branch_ids is not None:
+        before = (
+            set(announcement.positions.values_list("pk", flat=True)),
+            set(announcement.branches.values_list("pk", flat=True)),
+        )
         positions, branches = _audience_filters(
             by,
             position_ids
@@ -125,12 +143,15 @@ def update_scheduled(
         )
         announcement.positions.set(positions)
         announcement.branches.set(branches)
+        if before != ({p.pk for p in positions}, {b.pk for b in branches}):
+            changed.append("audience")
     audit.record(
         AnnouncementAction.EDITED,
         company_id=announcement.company_id,
         actor=by.user,
         target=announcement,
         scheduled_for=when.isoformat(),
+        changed=changed,
     )
     return announcement
 
@@ -359,6 +380,8 @@ def _valid_text(text: str) -> str:
 def _audience_filters(
     author: Membership, position_ids: Iterable[int], branch_ids: Iterable[int]
 ) -> tuple[list[Position], list[Branch]]:
+    """The company's positions and branches among these ids (others are ignored, the W0
+    contract; the owner API refuses unknown ids before it gets here)."""
     positions = list(Position.objects.for_company(author.company_id).filter(pk__in=position_ids))
     branches = list(Branch.objects.for_company(author.company_id).filter(pk__in=branch_ids))
     allowed = scope.branch_ids(author)

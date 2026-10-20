@@ -312,8 +312,7 @@ def person_overview(membership: Membership, start: date, end: date, now: datetim
         .order_by("first_day")
         .values("id", "first_day", "last_day", "status", "reason")[:5]
     )
-    joined = membership.decided_at or membership.created_at
-    joined_on = timezone.localtime(joined, tz).date() if joined else None
+    joined_on, left_on = employment(membership)
     return {
         "range": {"from": start.isoformat(), "to": end.isoformat()},
         "on_time_percent": round(100 * period["on_time"] / total, 1) if total else None,
@@ -327,7 +326,11 @@ def person_overview(membership: Membership, start: date, end: date, now: datetim
         "streak": streak(membership, now),
         "trend": on_time_trend(membership, now),
         "joined_on": joined_on.isoformat() if joined_on else None,
-        "tenure_days": (today - joined_on).days if joined_on else None,
+        "left_on": left_on.isoformat() if left_on else None,
+        # Time with the company: until their last day for someone who left.
+        "tenure_days": max(0, (min(left_on or today, today) - joined_on).days)
+        if joined_on
+        else None,
         "days_off_this_year": days_off,
         "upcoming_time_off": [
             {
@@ -340,6 +343,16 @@ def person_overview(membership: Membership, start: date, end: date, now: datetim
             for row in upcoming
         ],
     }
+
+
+def employment(membership: Membership) -> tuple[date | None, date | None]:
+    """(first day, last day or None) of someone's time here, from the employment-dates
+    contract (`hr.queries.employment_dates`: the latest approval and departure today, the HR
+    profile's hire and termination dates once package G is in). (None, None) for someone who
+    never joined."""
+    from apps.hr.queries import employment_dates
+
+    return employment_dates(membership.company, [membership.pk]).get(membership.pk, (None, None))
 
 
 def team_stats(viewer: Membership, now: datetime) -> dict:
@@ -417,6 +430,28 @@ def former_member(membership: Membership) -> dict | None:
     left_on = (row.details or {}).get("terminated_on") or row.created_at.date().isoformat()
     how = "blocked" if row.action == AuditLog.Action.MEMBER_BLOCKED else "left"
     return {"left_on": left_on, "how": how}
+
+
+def former_members(company: Company, member_ids: list[int]) -> dict[int, dict | None]:
+    """`former_member` for several requests at once (one query): {membership id: …}."""
+    from apps.audit.models import AuditLog
+
+    found: dict[int, dict | None] = dict.fromkeys(member_ids)
+    rows = (
+        AuditLog.objects.filter(
+            company_id=company.pk,
+            target_type="membership",
+            target_id__in=member_ids,
+            action__in=(AuditLog.Action.MEMBER_LEFT, AuditLog.Action.MEMBER_BLOCKED),
+        )
+        .order_by("target_id", "-created_at", "-pk")
+        .distinct("target_id")
+    )
+    for row in rows:
+        left_on = (row.details or {}).get("terminated_on") or row.created_at.date().isoformat()
+        how = "blocked" if row.action == AuditLog.Action.MEMBER_BLOCKED else "left"
+        found[row.target_id] = {"left_on": left_on, "how": how}
+    return found
 
 
 def roles(company: Company) -> QuerySet[AccessRole]:

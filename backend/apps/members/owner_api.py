@@ -14,6 +14,7 @@
 from datetime import timedelta
 from zoneinfo import ZoneInfo
 
+from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -81,6 +82,7 @@ class PersonSerializer(serializers.ModelSerializer):
     home_branch = serializers.SerializerMethodField()
     branches = serializers.SerializerMethodField()
     joined_on = serializers.SerializerMethodField()
+    left_on = serializers.SerializerMethodField()
     onboarded = serializers.SerializerMethodField()
     bot_blocked = serializers.SerializerMethodField()
     work = serializers.SerializerMethodField()
@@ -108,6 +110,7 @@ class PersonSerializer(serializers.ModelSerializer):
             "status",
             "suspended_until",
             "joined_on",
+            "left_on",
             "onboarded",
             "bot_blocked",
             "work",
@@ -148,10 +151,18 @@ class PersonSerializer(serializers.ModelSerializer):
         return [branch_ref(b) for b in sorted(person.branches.all(), key=lambda b: (b.order, b.pk))]
 
     def get_joined_on(self, person: Membership) -> str | None:
-        joined = person.decided_at if person.status != Membership.Status.PENDING else None
-        joined = joined or person.onboarded_at or person.created_at
+        """Their first day (the employment-dates contract); when they asked, for a request."""
+        dates = self.context.get("dates", {}).get(person.pk)
+        if dates is not None:
+            return dates[0].isoformat()
+        asked = person.onboarded_at or person.created_at
         tz = ZoneInfo(self.context["company"].timezone)
-        return timezone.localtime(joined, tz).date().isoformat() if joined else None
+        return timezone.localtime(asked, tz).date().isoformat() if asked else None
+
+    def get_left_on(self, person: Membership) -> str | None:
+        """Their last day, for someone who left or was blocked."""
+        dates = self.context.get("dates", {}).get(person.pk)
+        return dates[1].isoformat() if dates is not None and dates[1] else None
 
     def get_onboarded(self, person: Membership) -> bool:
         return person.onboarded_at is not None
@@ -181,7 +192,6 @@ class PersonSerializer(serializers.ModelSerializer):
 
 
 class PersonDetailSerializer(PersonSerializer):
-    telegram_id = serializers.SerializerMethodField()
     language = serializers.SerializerMethodField()
     overview = serializers.SerializerMethodField()
     can = serializers.SerializerMethodField()
@@ -189,15 +199,11 @@ class PersonDetailSerializer(PersonSerializer):
     class Meta(PersonSerializer.Meta):
         fields = (
             *PersonSerializer.Meta.fields,
-            "telegram_id",
             "language",
             "overview",
             "can",
         )
         read_only_fields = fields
-
-    def get_telegram_id(self, person: Membership) -> int | None:
-        return person.user.telegram_id
 
     def get_language(self, person: Membership) -> str:
         return person.user.language
@@ -219,9 +225,11 @@ def allowed_actions(viewer: Membership, person: Membership) -> dict[str, bool]:
     viewer_is_owner = bool(viewer.role and viewer.role.is_owner)
     may_touch_owner = viewer_is_owner or not person_is_owner
     manage = viewer.has_perm(Perm.MEMBERS_MANAGE) and may_touch_owner
+    # Rule 2 both ways: a non-owner moves someone only out of a role they could have given.
+    role_ok = person.role is None or services.may_assign_role(viewer, person.role, target=person)
     return {
         "edit": manage and current,
-        "change_role": viewer.has_perm(Perm.ROLES_MANAGE) and current and may_touch_owner,
+        "change_role": viewer.has_perm(Perm.ROLES_MANAGE) and current and role_ok,
         "block": manage and not is_self and person.status != Membership.Status.BLOCKED,
         "unblock": manage and person.status == Membership.Status.BLOCKED,
         "offboard": manage and current and not is_self,
@@ -291,12 +299,16 @@ class HistoryRecordSerializer(serializers.ModelSerializer):
 
 
 def people_context(viewer: Membership, people: list[Membership]) -> dict:
-    """Serializer context for directory rows: work numbers and other modules' fields."""
+    """Serializer context for directory rows: employment dates, work numbers and other
+    modules' fields, each fetched once for the whole page."""
+    from apps.hr.queries import employment_dates
+
     ids = [person.pk for person in people]
     now = timezone.now()
     return {
         "membership": viewer,
         "company": viewer.company,
+        "dates": employment_dates(viewer.company, ids),
         "work": queries.work_scores(viewer.company, ids, now),
         "fields": registry.collect_person_fields(viewer, ids, now),
     }
@@ -415,10 +427,18 @@ class PeopleViewSet(
         person = self.get_object()
         serializer = PersonUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
+        # The role and the rest change together or not at all.
+        with transaction.atomic():
+            self._update(person, serializer.validated_data)
+        self.bump(PEOPLE)
+        return Response(self._detail(self.get_queryset().get(pk=person.pk)))
+
+    def _update(self, person: Membership, data: dict) -> None:
         if "role_id" in data:
             if not self.membership.has_perm(Perm.ROLES_MANAGE):
-                self.permission_denied(request, message=_("Changing a role needs roles.manage."))
+                self.permission_denied(
+                    self.request, message=_("Changing a role needs roles.manage.")
+                )
             role = get_object_or_404(
                 AccessRole.objects.for_company(self.company), pk=data["role_id"]
             )
@@ -443,8 +463,6 @@ class PeopleViewSet(
             )
         if changes:
             services.update_member(person, by=self.membership, **changes)
-        self.bump(PEOPLE)
-        return Response(self._detail(self.get_queryset().get(pk=person.pk)))
 
     @extend_schema(request=None, responses=PersonDetailSerializer)
     @action(detail=True, methods=["post"])
@@ -570,7 +588,6 @@ class JoinRequestSerializer(serializers.ModelSerializer):
     photo_url = serializers.SerializerMethodField()
     phone = serializers.SerializerMethodField()
     username = serializers.SerializerMethodField()
-    telegram_id = serializers.SerializerMethodField()
     position = serializers.SerializerMethodField()
     onboarded = serializers.SerializerMethodField()
     requested_at = serializers.SerializerMethodField()
@@ -587,7 +604,6 @@ class JoinRequestSerializer(serializers.ModelSerializer):
             "photo_url",
             "phone",
             "username",
-            "telegram_id",
             "position",
             "onboarded",
             "requested_at",
@@ -608,9 +624,6 @@ class JoinRequestSerializer(serializers.ModelSerializer):
     def get_username(self, row: Membership) -> str:
         return row.user.telegram_username or ""
 
-    def get_telegram_id(self, row: Membership) -> int | None:
-        return row.user.telegram_id
-
     @extend_schema_field(NamedSerializer(allow_null=True))
     def get_position(self, row: Membership) -> dict | None:
         return {"id": row.position.pk, "name": row.position.name} if row.position else None
@@ -629,7 +642,8 @@ class JoinRequestSerializer(serializers.ModelSerializer):
         )
     )
     def get_former(self, row: Membership) -> dict | None:
-        return queries.former_member(row)
+        former = self.context.get("former")
+        return former.get(row.pk) if former is not None else queries.former_member(row)
 
     @extend_schema_field(serializers.DictField())
     def get_extra(self, row: Membership) -> dict:
@@ -662,10 +676,12 @@ class JoinRequestViewSet(mixins.ListModelMixin, OwnerViewSet):
 
     def list(self, request, *args, **kwargs):
         rows = list(self.get_queryset())
-        fields = registry.collect_person_fields(
-            self.membership, [row.pk for row in rows], timezone.now()
-        )
-        context = self.get_serializer_context() | {"fields": fields}
+        ids = [row.pk for row in rows]
+        fields = registry.collect_person_fields(self.membership, ids, timezone.now())
+        context = self.get_serializer_context() | {
+            "fields": fields,
+            "former": queries.former_members(self.company, ids),
+        }
         return Response(JoinRequestSerializer(rows, many=True, context=context).data)
 
     def _request(self, pk) -> Membership:

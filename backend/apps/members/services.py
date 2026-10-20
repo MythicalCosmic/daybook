@@ -657,6 +657,11 @@ def change_role(membership: Membership, *, by: Membership, role: AccessRole) -> 
     if membership.role_id == role.pk:
         return membership
     ensure_may_assign_role(by, role, target=membership)
+    # Rule 2 both ways: a non-owner moves someone only out of a role they could have given.
+    if membership.role is not None and not may_assign_role(by, membership.role, target=membership):
+        raise PermissionDenied(
+            _("You can only change the role of someone whose role you could give yourself.")
+        )
     if _holds_owner_role(membership) and not role.is_owner:
         _ensure_not_last_owner(membership)
     before = membership.role.name if membership.role else None
@@ -699,6 +704,9 @@ def save_role(
         role = AccessRole.objects.select_for_update().get(pk=role.pk, company=company)
         if not may_edit_role(by, role):
             raise PermissionDenied(_("Only owners can change this role."))
+    if is_default and role is not None and role.is_owner:
+        # Every approved join request would make its person an owner.
+        raise DomainError(_("The Owner role can't be the default one."))
     clash = AccessRole.objects.for_company(company).filter(name__iexact=name)
     if role is not None:
         clash = clash.exclude(pk=role.pk)
@@ -864,27 +872,51 @@ def reorder_positions(company: Company, *, by: Membership, ids: list[int]) -> No
 
 
 def offboard_preview(membership: Membership, *, by: Membership | None = None) -> dict:
-    """The offboarding wizard for `membership`: every registered step `by` may run (an owner's
-    view for the system), in order, with its lines, blockers, questions and default answers."""
-    from apps.console.registry import collect_offboard_steps
+    """The offboarding wizard for `membership`, in step order: every registered step `by` may
+    run with its lines, blockers, questions and default answers (everything for the system).
 
-    viewer = by
-    if viewer is None:
-        viewer = (
-            Membership.objects.filter(
-                company_id=membership.company_id,
-                status=Membership.Status.APPROVED,
-                role__is_owner=True,
-            )
-            .select_related("role", "company")
-            .first()
-        )
-    steps = collect_offboard_steps(membership, by=viewer) if viewer is not None else []
+    A step `by` may not see still blocks: it comes as `restricted` with its label and blockers
+    only (no lines, questions or answers), so nobody offboards around, say, cash still held
+    just because they can't open Sales."""
+    steps = [_as_seen_by(step, by) for step in _offboard_steps(membership, by=by)]
+    steps = [step for step in steps if step is not None]
     return {
         "steps": steps,
         "blockers": sum(len(step.get("blockers") or []) for step in steps),
         "can_override": by is None or _is_owner_member(by),
     }
+
+
+def _offboard_steps(membership: Membership, *, by: Membership | None) -> list[dict]:
+    """Every registered step's preview as an owner of the company sees it (`by` when the
+    company has no approved owner left to stand in)."""
+    from apps.console.registry import collect_offboard_steps
+
+    viewer = (
+        Membership.objects.filter(
+            company_id=membership.company_id,
+            status=Membership.Status.APPROVED,
+            role__is_owner=True,
+        )
+        .select_related("role", "company")
+        .first()
+    ) or by
+    return collect_offboard_steps(membership, by=viewer) if viewer is not None else []
+
+
+def _may_see_step(step: dict, by: Membership | None) -> bool:
+    from apps.console.registry import OFFBOARD_STEPS, usable
+
+    entry = OFFBOARD_STEPS.get(step["key"])
+    return by is None or entry is None or usable(entry, by)
+
+
+def _as_seen_by(step: dict, by: Membership | None) -> dict | None:
+    if _may_see_step(step, by):
+        return step
+    if not step.get("blockers"):
+        return None  # nothing in it concerns them
+    return step | {"lines": [], "fields": [], "defaults": {}, "restricted": True}
 
 
 # Why someone leaves (the wizard's first question; package S's Termination kinds match).
@@ -913,9 +945,10 @@ def complete_offboarding(
     """The offboarding wizard's last step, and what a scheduled termination (package S) calls
     on the person's last day with `by=None`.
 
-    Every registered step's blockers stop it, unless an owner overrides them (the system may);
-    each step's required questions must be answered (missing answers take the step's defaults).
-    The answers reach `member_left` receivers as `details[step key]`, and the wizard's own as
+    Every registered step's blockers stop it, those of steps `by` can't see included, unless an
+    owner overrides them (the system may); each step's required questions must be answered
+    (missing answers take the step's defaults; a step `by` can't see keeps its defaults). The
+    answers reach `member_left` receivers as `details[step key]`, and the wizard's own as
     `details["members"] = {"reason", "note", "override_blockers"}`."""
     if reason not in OFFBOARD_REASONS:
         raise DomainError(_("Pick why they are leaving."))
@@ -923,21 +956,22 @@ def complete_offboarding(
         _ensure_same_company(membership, by)
         if not by.has_perm(Perm.MEMBERS_MANAGE):
             raise PermissionDenied(_("You don't have permission to do this."))
-    preview = offboard_preview(membership, by=by)
-    blockers = [line for step in preview["steps"] for line in step.get("blockers") or []]
+    every_step = _offboard_steps(membership, by=by)
+    blockers = [line for step in every_step for line in step.get("blockers") or []]
     if blockers and not override_blockers:
         raise DomainError(blockers[0])
     if blockers and by is not None and not _is_owner_member(by):
         raise PermissionDenied(_("Only an owner can go ahead despite the blockers."))
     answers = steps or {}
     details: dict[str, dict] = {}
-    for step in preview["steps"]:
+    for step in every_step:
         given = answers.get(step["key"]) or {}
         if not isinstance(given, dict):
             raise DomainError(_("The answers of %(step)s are invalid.") % {"step": step["label"]})
-        merged = {**(step.get("defaults") or {}), **given}
+        visible = _may_see_step(step, by)
+        merged = {**(step.get("defaults") or {}), **(given if visible else {})}
         for field in step.get("fields") or []:
-            if field.get("required") and merged.get(field["name"]) in (None, ""):
+            if visible and field.get("required") and merged.get(field["name"]) in (None, ""):
                 raise DomainError(
                     _("%(step)s: “%(field)s” is required.")
                     % {"step": step["label"], "field": field["label"]}

@@ -2,6 +2,7 @@
 and the answers that reach `member_left` receivers."""
 
 import pytest
+from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 
 from apps.console import registry
@@ -11,6 +12,7 @@ from apps.members import services
 from apps.members.models import Membership
 from apps.members.permissions import Perm
 from apps.members.signals import member_left
+from apps.members.tests.factories import AccessRoleFactory
 from apps.timeoff.models import TimeOff
 
 pytestmark = pytest.mark.django_db
@@ -180,3 +182,97 @@ def test_an_unknown_reason_is_refused(company, member):
 
     with pytest.raises(DomainError):
         services.complete_offboarding(worker, by=owner, terminated_on=None, reason="vibes")
+
+
+PEOPLE_TEAM = [
+    str(Perm.DASHBOARD_ACCESS),
+    str(Perm.MEMBERS_VIEW),
+    str(Perm.MEMBERS_MANAGE),
+    str(Perm.BRANCHES_ALL),
+]
+
+
+def test_a_step_the_manager_cant_see_still_blocks(
+    owner_api, company, member, received, django_capture_on_commit_callbacks
+):
+    """A Sales step needs sales.manage: an HR manager without it sees only its blocker and can't
+    go ahead; an owner who overrides it passes the step's defaults to its receiver."""
+
+    def preview(membership):
+        return OffboardStep(
+            lines=["Holds 1 200 000 so‘m of company cash."],
+            blockers=["Open till CHL-1042 must be closed first."],
+            fields=[FieldSpec("handover_to", "Hand the cash to", kind="member", required=True)],
+            defaults={"write_off": False},
+        )
+
+    with registry.OFFBOARD_STEPS.isolated():
+        registry.OFFBOARD_STEPS.add(
+            registry.OffboardStepProvider(
+                "sales", "sales", Perm.SALES_MANAGE, None, 30, "Cash", preview
+            )
+        )
+        role = AccessRoleFactory(company=company, name="People", permissions=PEOPLE_TEAM)
+        manager = member.registered(company, role.name)
+        owner = member.registered(company, "Owner")
+        worker = member.registered(company)
+
+        seen = owner_api(manager).get(
+            URL.format(cid=company.pk, pk=worker.pk) + "offboard-preview/"
+        )
+        [cash] = [step for step in seen.data["steps"] if step["key"] == "sales"]
+        assert cash["restricted"] is True
+        assert cash["blockers"] == ["Open till CHL-1042 must be closed first."]
+        assert cash["lines"] == [] and cash["fields"] == [] and cash["defaults"] == {}
+        assert seen.data["blockers"] == 1
+
+        with pytest.raises(DomainError):
+            services.complete_offboarding(worker, by=manager, terminated_on=None, reason="other")
+        with pytest.raises(PermissionDenied):
+            services.complete_offboarding(
+                worker, by=manager, terminated_on=None, reason="other", override_blockers=True
+            )
+        with django_capture_on_commit_callbacks(execute=True):
+            services.complete_offboarding(
+                worker,
+                by=owner,
+                terminated_on=None,
+                reason="other",
+                override_blockers=True,
+                steps={"sales": {"handover_to": owner.pk}},
+            )
+
+    assert received[-1]["details"]["sales"] == {"write_off": False, "handover_to": owner.pk}
+
+
+def test_a_hidden_step_without_blockers_stays_out_of_the_way(
+    company, member, received, django_capture_on_commit_callbacks
+):
+    def preview(membership):
+        return OffboardStep(
+            lines=["Final payslip"],
+            blockers=[],
+            fields=[FieldSpec("why", "Why", required=True)],
+            defaults={"prepare": True},
+        )
+
+    with registry.OFFBOARD_STEPS.isolated():
+        registry.OFFBOARD_STEPS.add(
+            registry.OffboardStepProvider(
+                "payroll", "payroll", Perm.PAYROLL_MANAGE, None, 80, "Pay", preview
+            )
+        )
+        role = AccessRoleFactory(company=company, name="People", permissions=PEOPLE_TEAM)
+        manager = member.registered(company, role.name)
+        member.registered(company, "Owner")
+        worker = member.registered(company)
+
+        keys = [step["key"] for step in services.offboard_preview(worker, by=manager)["steps"]]
+        # Its required question isn't theirs to answer: the step keeps its defaults.
+        with django_capture_on_commit_callbacks(execute=True):
+            services.complete_offboarding(
+                worker, by=manager, terminated_on=None, reason="other", steps={"payroll": {"x": 1}}
+            )
+
+    assert "payroll" not in keys
+    assert received[-1]["details"]["payroll"] == {"prepare": True}

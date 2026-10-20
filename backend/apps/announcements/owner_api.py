@@ -27,7 +27,9 @@ from rest_framework.response import Response
 
 from apps.announcements import queries, services, telegram_html
 from apps.announcements.models import Announcement, Receipt
+from apps.companies.models import Branch
 from apps.console.base import OwnerViewSet
+from apps.members.models import Position
 from apps.members.permissions import Perm
 from apps.members.queries import branch_ref, person_ref
 
@@ -188,6 +190,7 @@ class AnnouncementViewSet(
         serializer = PublishSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+        _check_audience(self.company, data)
         announcement = services.publish(
             self.membership,
             telegram_html.from_editor(data["text_html"]),
@@ -207,6 +210,7 @@ class AnnouncementViewSet(
         serializer = UpdateSerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+        _check_audience(self.company, data)
         services.update_scheduled(
             announcement,
             by=self.membership,
@@ -214,8 +218,8 @@ class AnnouncementViewSet(
             position_ids=data.get("position_ids"),
             branch_ids=data.get("branch_ids"),
             scheduled_for=data.get("scheduled_for"),
-            pinned_until=data.get("pinned_until", announcement.pinned_until),
-            expires_at=data.get("expires_at", announcement.expires_at),
+            pinned_until=data.get("pinned_until", services.UNSET),
+            expires_at=data.get("expires_at", services.UNSET),
         )
         self.bump(PULSE)
         return Response(self.get_serializer(self.get_queryset().get(pk=announcement.pk)).data)
@@ -319,6 +323,18 @@ class AnnouncementViewSet(
     @action(detail=False, methods=["get"])
     def stats(self, request, company_id):
         return Response(queries.stats(self.membership, timezone.now()))
+
+
+def _check_audience(company, data: dict) -> None:
+    """Every position and branch id must be the company's: one dropped silently could widen
+    the audience to everyone."""
+    for key, model, message in (
+        ("position_ids", Position, _("Pick positions of this company.")),
+        ("branch_ids", Branch, _("Pick branches of this company.")),
+    ):
+        ids = set(data.get(key) or [])
+        if ids and model.objects.for_company(company).filter(pk__in=ids).count() != len(ids):
+            raise ValidationError({key: [message]})
 
 
 def _ints(values) -> list[int]:

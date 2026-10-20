@@ -153,6 +153,29 @@ def test_the_follow_up_counts_from_when_it_went_out(shop, sent_messages):
     assert sent_messages == []
 
 
+def test_nobody_is_reminded_about_an_expired_announcement(
+    shop, sent_messages, django_capture_on_commit_callbacks
+):
+    from apps.announcements.notifications import follow_up, remind
+
+    now = timezone.now()
+    flash = services.publish(shop["owner"], "Today only", expires_at=now + timedelta(hours=1))
+    Announcement.objects.filter(pk=flash.pk).update(sent_at=now - timedelta(hours=4))
+    lasting = services.publish(shop["owner"], "For the week")
+    Announcement.objects.filter(pk=lasting.pk).update(sent_at=now - timedelta(hours=4))
+    sent_messages.clear()
+
+    follow_up(now + timedelta(hours=2))  # the first expired an hour ago
+
+    reminded = {m["text"] for m in sent_messages}
+    assert reminded and all("For the week" in text for text in reminded)
+    # "Remind unread now" queued before it expired doesn't go out after.
+    sent_messages.clear()
+    Announcement.objects.filter(pk=flash.pk).update(expires_at=now - timedelta(minutes=1))
+    remind(flash.pk, list(flash.receipts.values_list("pk", flat=True)))
+    assert sent_messages == []
+
+
 @pytest.mark.parametrize(
     ("html", "telegram"),
     [

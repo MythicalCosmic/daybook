@@ -14,6 +14,7 @@ from apps.audit.models import AuditLog
 from apps.companies.models import Branch, Company
 from apps.console.registry import OffboardStep, QueueAction, QueueItem, SearchHit, StreamItem
 from apps.core.exceptions import DomainError
+from apps.hr.queries import employment_dates
 from apps.members import queries, scope, services
 from apps.members.models import AccessRole, Membership, Position
 
@@ -147,24 +148,37 @@ def stream_joined(member: Membership, since: datetime | None, limit: int) -> lis
         since=since or timezone.now() - timedelta(days=30),
     )[: limit * 2]
     ids = [row.target_id for row in rows]
-    visible = set(
-        queries.directory(
+    visible = {
+        person.pk: person
+        for person in queries.directory(
             member.company, branch_ids=scope.branch_ids(member), status="current", include=member
-        )
-        .filter(pk__in=ids)
-        .values_list("pk", flat=True)
-    )
+        ).filter(pk__in=ids)
+    }
     items = []
     for row in rows:
-        if row.target_id not in visible:
+        person = visible.get(row.target_id)
+        if person is None:
             continue
+        details = " · ".join(
+            part
+            for part in (
+                person.position.name if person.position else None,
+                person.home_branch.name if person.home_branch else None,
+            )
+            if part
+        )
         items.append(
             StreamItem(
                 at=row.created_at,
                 kind="members.joined",
-                actor=None,
-                title=_("%(name)s joined the team") % {"name": row.target},
-                url=f"people/{row.target_id}",
+                # The newcomer is the face of the line ("Ali · joined the team").
+                actor={"id": person.pk, "name": str(person)},
+                title=(
+                    _("Joined the team · %(details)s") % {"details": details}
+                    if details
+                    else _("Joined the team")
+                ),
+                url=f"people/{person.pk}",
             )
         )
     return items[:limit]
@@ -272,6 +286,7 @@ EXPORT_COLUMNS = [
     ("telegram", gettext_lazy("Telegram")),
     ("status", gettext_lazy("Status")),
     ("joined_on", gettext_lazy("Joined"), "date"),
+    ("left_on", gettext_lazy("Left"), "date"),
     ("on_time_30d", gettext_lazy("On time, 30 days (%)"), "number"),
 ]
 
@@ -285,9 +300,11 @@ def export_rows(member: Membership, params: dict):
         include=member,
     ).order_by("first_name", "last_name")
     people = list(people)
-    scores = queries.work_scores(member.company, [p.pk for p in people], timezone.now())
+    ids = [p.pk for p in people]
+    scores = queries.work_scores(member.company, ids, timezone.now())
+    dates = employment_dates(member.company, ids)
     for person in people:
-        joined = person.decided_at or person.created_at
+        first_day, last_day = dates.get(person.pk, (None, None))
         yield {
             "name": str(person),
             "position": person.position.name if person.position else "",
@@ -299,7 +316,8 @@ def export_rows(member: Membership, params: dict):
             if person.user.telegram_username
             else "",
             "status": person.get_status_display(),
-            "joined_on": timezone.localtime(joined).date() if joined else None,
+            "joined_on": first_day,
+            "left_on": last_day,
             "on_time_30d": scores.get(person.pk, {}).get("on_time_30d"),
         }
 

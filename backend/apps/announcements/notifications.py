@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
-from django.db.models import Exists, OuterRef
-from django.utils import translation
+from django.db.models import Exists, OuterRef, Q
+from django.utils import timezone, translation
 
 from apps.announcements import bot_messages
 from apps.announcements.models import Announcement, Receipt
@@ -28,13 +28,18 @@ def deliver(announcement_id: int) -> None:
 def follow_up(now: datetime) -> None:
     """Remind people who haven't read recent announcements, then tell the authors."""
     # Counted from when it went out: a scheduled announcement may be written days before.
-    due = Receipt.objects.filter(
-        read_at__isnull=True,
-        reminded_at__isnull=True,
-        announcement__status=Announcement.Status.SENT,
-        announcement__sent_at__lte=now - REMIND_AFTER,
-        announcement__sent_at__gte=now - FOLLOW_UP_FOR,
-    ).select_related("announcement__author", "membership__user")
+    # Nobody is reminded about an announcement that has expired meanwhile.
+    due = (
+        Receipt.objects.filter(
+            read_at__isnull=True,
+            reminded_at__isnull=True,
+            announcement__status=Announcement.Status.SENT,
+            announcement__sent_at__lte=now - REMIND_AFTER,
+            announcement__sent_at__gte=now - FOLLOW_UP_FOR,
+        )
+        .filter(Q(announcement__expires_at__isnull=True) | Q(announcement__expires_at__gt=now))
+        .select_related("announcement__author", "membership__user")
+    )
     for receipt in due:
         _send(receipt, lambda item: bot_messages.copy(item, reminder=True), receipt.announcement)
         Receipt.objects.filter(pk=receipt.pk).update(reminded_at=now)
@@ -65,9 +70,17 @@ def follow_up(now: datetime) -> None:
 
 def remind(announcement_id: int, receipt_ids: list[int]) -> None:
     """The "remind unread now" copies, sent to those receipts still unread."""
-    receipts = Receipt.objects.filter(
-        pk__in=receipt_ids, announcement_id=announcement_id, read_at__isnull=True
-    ).select_related("announcement__author", "membership__user")
+    now = timezone.now()
+    receipts = (
+        Receipt.objects.filter(
+            pk__in=receipt_ids,
+            announcement_id=announcement_id,
+            announcement__status=Announcement.Status.SENT,
+            read_at__isnull=True,
+        )
+        .filter(Q(announcement__expires_at__isnull=True) | Q(announcement__expires_at__gt=now))
+        .select_related("announcement__author", "membership__user")
+    )
     for receipt in receipts:
         _send(receipt, lambda item: bot_messages.copy(item, reminder=True), receipt.announcement)
 

@@ -127,7 +127,7 @@ def calendar_holidays(company, start: date, end: date, member: Membership) -> li
     return [
         CalendarItem(
             id=f"holiday:{holiday.pk}",
-            kind="timeoff.holiday",
+            kind="timeoff.holidays",
             title=holiday.name,
             start=holiday.date,
             end=holiday.date,

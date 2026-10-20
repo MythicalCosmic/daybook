@@ -174,3 +174,156 @@ def test_demo(company, demo_people):
     assert statuses == {"sent", "scheduled", "cancelled"}
     assert Receipt.objects.filter(announcement__company=company, read_at__isnull=False).exists()
     assert Announcement.objects.filter(company=company, pinned_until__gt=timezone.now()).exists()
+
+
+# Every endpoint against the owner-API rules (§2.3 rule 21) -----------------------------------
+
+
+def endpoints(sent, scheduled) -> list[tuple[str, str, dict]]:
+    later = (timezone.now() + timedelta(days=2)).isoformat()
+    return [
+        ("get", "announcements/", {}),
+        ("post", "announcements/", {"text_html": "<p>Hi</p>"}),
+        ("get", f"announcements/{sent.pk}/", {}),
+        ("patch", f"announcements/{scheduled.pk}/", {"text_html": "<p>Changed</p>"}),
+        ("get", f"announcements/{sent.pk}/receipts/", {}),
+        ("post", f"announcements/{sent.pk}/remind/", {}),
+        ("post", f"announcements/{scheduled.pk}/cancel/", {}),
+        ("post", f"announcements/{sent.pk}/pin/", {"pinned_until": later}),
+        ("post", f"announcements/{sent.pk}/unpin/", {}),
+        ("get", "announcements/audience/", {}),
+        ("get", "announcements/stats/", {}),
+    ]
+
+
+def call(client, method, url, body):
+    return (
+        getattr(client, method)(url, body, format="json") if body else getattr(client, method)(url)
+    )
+
+
+def at(company, suffix):
+    return f"/api/v1/owner/companies/{company.pk}/{suffix}"
+
+
+@pytest.fixture
+def both(company, other_company, member, team):
+    owner, _people = team
+    theirs = member.registered(other_company, "Owner")
+    member.registered(other_company)
+    later = timezone.now() + timedelta(days=1)
+    return (
+        owner,
+        services.publish(owner, "Ours"),
+        services.publish(owner, "Ours later", scheduled_for=later),
+        theirs,
+        services.publish(theirs, "Theirs"),
+        services.publish(theirs, "Theirs later", scheduled_for=later),
+    )
+
+
+def test_another_companys_member_gets_404_everywhere(owner_api, company, both):
+    _owner, sent, scheduled, theirs, _their_sent, _their_scheduled = both
+
+    for method, suffix, body in endpoints(sent, scheduled):
+        response = call(owner_api(theirs), method, at(company, suffix), body)
+        assert response.status_code == 404, (method, suffix, response.status_code)
+
+
+def test_another_companys_ids_are_404_in_our_urls(owner_api, company, other_company, both):
+    owner, _sent, _scheduled, _theirs, their_sent, their_scheduled = both
+    api = owner_api(owner)
+
+    for method, suffix, body in endpoints(their_sent, their_scheduled):
+        if not any(char.isdigit() for char in suffix):
+            continue
+        response = call(api, method, at(company, suffix), body)
+        assert response.status_code == 404, (method, suffix, response.status_code)
+    their_scheduled.refresh_from_db()
+    assert their_scheduled.status == Announcement.Status.SCHEDULED
+
+
+def test_another_companys_positions_and_branches_are_refused(
+    owner_api, company, other_company, team
+):
+    owner, _people = team
+    foreign_position = PositionFactory(company=other_company)
+    foreign_branch = other_company.branches.first()
+    api = owner_api(owner)
+
+    to_position = api.post(
+        URL.format(cid=company.pk),
+        {"text_html": "<p>Cooks only</p>", "position_ids": [foreign_position.pk]},
+        format="json",
+    )
+    to_branch = api.post(
+        URL.format(cid=company.pk),
+        {"text_html": "<p>Branch only</p>", "branch_ids": [foreign_branch.pk]},
+        format="json",
+    )
+
+    # Dropping the unknown id would have sent it to everyone.
+    assert to_position.status_code == 400 and "position_ids" in to_position.data
+    assert to_branch.status_code == 400 and "branch_ids" in to_branch.data
+    assert not Announcement.objects.filter(company=company).exists()
+
+
+def test_without_the_permission_every_endpoint_is_403(owner_api, company, member, both):
+    _owner, sent, scheduled, *_rest = both
+    from apps.members.permissions import Perm
+    from apps.members.tests.factories import AccessRoleFactory
+
+    role = AccessRoleFactory(company=company, permissions=[Perm.DASHBOARD_ACCESS])
+    api = owner_api(member.registered(company, role.name))
+
+    for method, suffix, body in endpoints(sent, scheduled):
+        response = call(api, method, at(company, suffix), body)
+        assert response.status_code == 403, (method, suffix, response.status_code)
+
+
+def test_lists_dont_grow_queries_with_rows(owner_api, company, team):
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    owner, people = team
+    api = owner_api(owner)
+    first = services.publish(owner, "First", [], branch_ids=[company.branches.first().pk])
+    urls = [URL.format(cid=company.pk), URL.format(cid=company.pk) + f"{first.pk}/receipts/"]
+
+    def count(url):
+        with CaptureQueriesContext(connection) as captured:
+            assert api.get(url).status_code == 200
+        return len(captured)
+
+    few = {url: count(url) for url in urls}
+    position = PositionFactory(company=company)
+    for index in range(8):
+        services.publish(owner, f"Note {index}", [position.pk], branch_ids=[])
+    for person in people:
+        services.read(first, by=person)
+
+    for url in urls:
+        assert count(url) <= few[url], url
+
+
+def test_editing_the_text_keeps_the_pin_and_expiry(owner_api, company, team):
+    owner, _people = team
+    later = timezone.now() + timedelta(days=1)
+    scheduled = services.publish(
+        owner,
+        "Inventory",
+        scheduled_for=later,
+        pinned_until=later + timedelta(days=2),
+        expires_at=later + timedelta(days=5),
+    )
+
+    response = owner_api(owner).patch(
+        URL.format(cid=company.pk) + f"{scheduled.pk}/", {"text_html": "<p>Stock count</p>"}
+    )
+    changed = services.update_scheduled(scheduled, by=owner, text="Stock count!")
+
+    assert response.status_code == 200
+    assert changed.pinned_until == later + timedelta(days=2)
+    assert changed.expires_at == later + timedelta(days=5)
+    unpinned = services.update_scheduled(scheduled, by=owner, pinned_until=None)
+    assert unpinned.pinned_until is None and unpinned.expires_at is not None

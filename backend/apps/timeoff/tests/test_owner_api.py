@@ -239,7 +239,7 @@ def test_calendar_sources_and_offboarding_step(company, setup, today):
 
     items = registry.collect_calendar(setup["owner"], today, today + timedelta(days=10))
     kinds = {item.kind for item in items}
-    assert {"timeoff.time_off", "timeoff.holiday"} <= kinds
+    assert {"timeoff.time_off", "timeoff.holidays"} <= kinds
 
     [step] = [
         s
@@ -282,3 +282,145 @@ def test_demo(company, demo_people):
     statuses = set(TimeOff.objects.filter(company=company).values_list("status", flat=True))
     assert {"approved", "pending", "rejected"} <= statuses
     assert TimeOff.objects.filter(company=company, recorded_by__isnull=False).exists()
+
+
+# Every endpoint against the owner-API rules (§2.3 rule 21) -----------------------------------
+
+
+@pytest.fixture
+def both(company, other_company, member, setup, today):
+    """A request, approved time off and a holiday here and in another company."""
+
+    def records(target, owner, person):
+        return {
+            "owner": owner,
+            "person": person,
+            "request": asks(person, today + timedelta(days=4)),
+            "approved": TimeOff.objects.create(
+                company=target,
+                membership=person,
+                first_day=today + timedelta(days=10),
+                last_day=today + timedelta(days=11),
+                status=TimeOff.Status.APPROVED,
+            ),
+            "holiday": Holiday.objects.create(company=target, date=today, name="Day"),
+        }
+
+    theirs_owner = member.registered(other_company, "Owner")
+    theirs_person = member.registered(other_company)
+    return (
+        records(company, setup["owner"], setup["near"]),
+        records(other_company, theirs_owner, theirs_person),
+    )
+
+
+def endpoints(objects, today) -> list[tuple[str, str, dict]]:
+    request, approved, holiday = (
+        objects["request"].pk,
+        objects["approved"].pk,
+        objects["holiday"].pk,
+    )
+    day = str(today + timedelta(days=20))
+    return [
+        ("get", "time-off/", {}),
+        ("get", f"time-off/{request}/", {}),
+        ("post", f"time-off/{request}/approve/", {}),
+        ("post", f"time-off/{request}/reject/", {}),
+        ("post", f"time-off/{approved}/revoke/", {"reason": "Busy week"}),
+        (
+            "post",
+            "time-off/record/",
+            {"member_id": objects["person"].pk, "first_day": day, "last_day": day},
+        ),
+        ("get", "time-off/calendar/", {}),
+        ("get", "time-off/stats/", {}),
+        ("get", "holidays/", {}),
+        ("post", "holidays/", {"date": day, "name": "Extra"}),
+        ("patch", f"holidays/{holiday}/", {"name": "Renamed"}),
+        ("delete", f"holidays/{holiday}/", {}),
+        ("post", "holidays/public/", {"year": 2027}),
+    ]
+
+
+def call(client, method, url, body):
+    return (
+        getattr(client, method)(url, body, format="json") if body else getattr(client, method)(url)
+    )
+
+
+def at(company, suffix):
+    return f"/api/v1/owner/companies/{company.pk}/{suffix}"
+
+
+def test_another_companys_member_gets_404_everywhere(owner_api, company, both, today):
+    ours, theirs = both
+    stranger = owner_api(theirs["owner"])
+
+    for method, suffix, body in endpoints(ours, today):
+        response = call(stranger, method, at(company, suffix), body)
+        assert response.status_code == 404, (method, suffix, response.status_code)
+
+
+def test_another_companys_ids_are_404_in_our_urls(owner_api, company, both, today):
+    ours, theirs = both
+    api = owner_api(ours["owner"])
+
+    for method, suffix, body in endpoints(theirs, today):
+        if suffix == "time-off/record/":
+            response = call(api, method, at(company, suffix), body)
+            assert response.status_code == 400  # their person isn't ours to record for
+            continue
+        if not any(char.isdigit() for char in suffix):
+            continue
+        response = call(api, method, at(company, suffix), body)
+        assert response.status_code == 404, (method, suffix, response.status_code)
+    assert not TimeOff.objects.filter(membership=theirs["person"], recorded_by__isnull=False)
+
+
+def test_without_time_off_approve_every_endpoint_is_403(owner_api, company, member, both, today):
+    ours, _theirs = both
+    role = AccessRoleFactory(company=company, permissions=[Perm.DASHBOARD_ACCESS])
+    nobody = member.registered(company, role.name)
+    api = owner_api(nobody)
+
+    for method, suffix, body in endpoints(ours, today):
+        response = call(api, method, at(company, suffix), body)
+        assert response.status_code == 403, (method, suffix, response.status_code)
+
+
+def test_lists_dont_grow_queries_with_rows(owner_api, company, member, setup, today):
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    api = owner_api(setup["owner"])
+    urls = [
+        at(company, "time-off/"),
+        at(company, "time-off/calendar/?everyone=1"),
+        at(company, "holidays/"),
+    ]
+
+    def count(url):
+        with CaptureQueriesContext(connection) as captured:
+            assert api.get(url).status_code == 200
+        return len(captured)
+
+    services.record_time_off(
+        setup["near"], by=setup["owner"], first_day=today, last_day=today, reason="Sick"
+    )
+    Holiday.objects.create(company=company, date=today + timedelta(days=40), name="One")
+    few = {url: count(url) for url in urls}
+    branch = company.branches.first()
+    for index in range(8):
+        person = member.registered(company, home_branch=branch)
+        person.branches.set([branch])
+        services.record_time_off(
+            person,
+            by=setup["owner"],
+            first_day=today + timedelta(days=index),
+            last_day=today + timedelta(days=index + 1),
+        )
+        asks(person, today + timedelta(days=20 + index))
+        Holiday.objects.create(company=company, date=today + timedelta(days=50 + index), name="H")
+
+    for url in urls:
+        assert count(url) <= few[url], url

@@ -1,7 +1,10 @@
-"""Read-only AI tools about the team (docs/PLAN-OWNER.md §8.3). They act as the person asking:
-their company, their branch scope, nothing they couldn't open in the dashboard."""
+"""Read-only AI tools about the team (docs/PLAN-OWNER.md §8.3): `members_list_people` wraps
+`members.queries.directory`, `members_person_overview` wraps `members.queries.person_overview`.
+They act as the person asking: their company, their branch scope, nothing they couldn't open in
+the dashboard, and no free text people typed (time-off reasons can be about health)."""
 
 from datetime import timedelta
+from zoneinfo import ZoneInfo
 
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -22,13 +25,13 @@ class DirectoryInput(BaseModel):
 
 
 @ai_tool(
-    "members_directory",
+    "members_list_people",
     domain="people",
     perm=Perm.MEMBERS_VIEW,
     label=_("Team directory: who works here, their position, role, branch and on-time rate"),
     input=DirectoryInput,
 )
-def members_directory(ctx: ToolContext, args: DirectoryInput) -> ToolResult:
+def members_list_people(ctx: ToolContext, args: DirectoryInput) -> ToolResult:
     status = args.status if args.status in queries.DIRECTORY_STATUSES else "current"
     people = list(
         queries.directory(
@@ -60,17 +63,17 @@ def members_directory(ctx: ToolContext, args: DirectoryInput) -> ToolResult:
 
 
 class PersonInput(BaseModel):
-    member_id: int = Field(description="The person's id from members_directory.")
+    member_id: int = Field(description="The person's id from members_list_people.")
 
 
 @ai_tool(
-    "members_person",
+    "members_person_overview",
     domain="people",
     perm=Perm.MEMBERS_VIEW,
     label=_("One person's numbers: tenure, on-time rate and trend, open and late work, time off"),
     input=PersonInput,
 )
-def members_person(ctx: ToolContext, args: PersonInput) -> ToolResult:
+def members_person_overview(ctx: ToolContext, args: PersonInput) -> ToolResult:
     person = (
         Membership.objects.filter(company=ctx.company, pk=args.member_id)
         .select_related("user", "role", "position", "home_branch", "company")
@@ -78,7 +81,7 @@ def members_person(ctx: ToolContext, args: PersonInput) -> ToolResult:
     )
     if person is None or not _visible(ctx, person):
         raise ToolNotFound
-    today = timezone.localtime(ctx.now).date()
+    today = timezone.localtime(ctx.now, ZoneInfo(ctx.company.timezone)).date()
     overview = queries.person_overview(person, today - timedelta(days=29), today, ctx.now)
     data = {
         "id": person.pk,
@@ -86,8 +89,12 @@ def members_person(ctx: ToolContext, args: PersonInput) -> ToolResult:
         "position": person.position.name if person.position else None,
         "role": person.role.name if person.role else None,
         "status": person.status,
-        **{key: overview[key] for key in overview if key != "upcoming_time_off"},
-        "upcoming_time_off": overview["upcoming_time_off"],
+        **{key: value for key, value in overview.items() if key != "upcoming_time_off"},
+        # Dates and status only: the reason someone gave is theirs.
+        "upcoming_time_off": [
+            {key: item[key] for key in ("id", "first_day", "last_day", "status")}
+            for item in overview["upcoming_time_off"]
+        ],
     }
     return ToolResult(data=data, as_of=ctx.now)
 
