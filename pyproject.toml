@@ -23,6 +23,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "factory-boy>=3.3.3",
+    "polib>=1.2.0",
     "pytest>=8.4.0",
     "pytest-asyncio>=1.2.0",
     "pytest-django>=4.11.0",

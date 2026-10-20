@@ -11,6 +11,7 @@ from aiogram.methods import SendMessage
 from django.core.files.base import ContentFile
 from django.utils import timezone
 
+from apps.companies.tests.factories import CompanyFactory
 from apps.groups.models import GroupEvent
 from apps.groups.tasks import POST_GAP, announce_task_done, post_to_group
 from apps.groups.tests.factories import TelegramGroupFactory
@@ -296,3 +297,19 @@ def test_posts_to_one_group_are_spaced_out(company, worker, manager, monkeypatch
     assert queued[2] == pytest.approx(2 * POST_GAP.total_seconds(), abs=1)
     group.refresh_from_db()
     assert group.next_post_at > timezone.now() + 2 * POST_GAP
+
+
+@pytest.mark.parametrize(
+    ("language", "expected"),
+    [("uz", "vazifasini bajardi"), ("ru", "выполнена"), ("en", "finished")],
+)
+def test_group_posts_are_in_the_companys_language(member, sent_messages, language, expected):
+    company = CompanyFactory(default_language=language)
+    manager = member.registered(company, "Manager", user__language="en")
+    worker = member.registered(company, user__language="en")
+    TelegramGroupFactory(company=company, events=[GroupEvent.TASKS_DONE])
+
+    announce_task_done(finished(worker, created_by=manager).pk)
+
+    [post] = sent_messages
+    assert expected in post["text"]

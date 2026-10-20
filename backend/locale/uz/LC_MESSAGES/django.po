@@ -1,0 +1,1203 @@
+# Uzbek (Latin) translations for 911 Trello: the bots, notifications and API messages.
+# Refresh with `make messages`, then fill in the new entries.
+msgid ""
+msgstr ""
+"Project-Id-Version: 911 Trello\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-20 17:29+0500\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: \n"
+"Language-Team: uz\n"
+"Language: uz\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: backend/apps/accounts/admin.py
+msgid "Telegram"
+msgstr "Telegram"
+
+#: backend/apps/accounts/models.py
+msgid "Only set from a contact the person shared in Telegram."
+msgstr "Faqat odam Telegram’da ulashgan kontaktdan olinadi."
+
+#: backend/apps/accounts/models.py
+msgid "When Telegram said this person blocked the employee bot."
+msgstr "Telegram bu odam xodimlar botini bloklaganini bildirgan vaqt."
+
+#: backend/apps/companies/admin.py
+msgid "Members"
+msgstr "Xodimlar"
+
+#: backend/apps/companies/admin.py
+msgid "Invite link"
+msgstr "Taklif havolasi"
+
+#: backend/apps/companies/admin.py
+msgid "Set EMPLOYEE_BOT_USERNAME to build the link"
+msgstr "Havola uchun EMPLOYEE_BOT_USERNAME ni sozlang"
+
+#: backend/apps/companies/admin.py
+msgid "Regenerate invite links"
+msgstr "Taklif havolalarini yangilash"
+
+#: backend/apps/companies/admin.py
+msgid "Invite links regenerated. Old links no longer work."
+msgstr "Taklif havolalari yangilandi. Eski havolalar endi ishlamaydi."
+
+#: backend/apps/companies/models.py
+#, python-format
+msgid "Unknown timezone: %(value)s"
+msgstr "Noma’lum vaqt mintaqasi: %(value)s"
+
+#: backend/apps/companies/models.py
+msgid "How long a rejected person waits before asking to join again."
+msgstr "Rad etilgan odam qayta so‘rov yuborishdan oldin qancha kutadi."
+
+#: backend/apps/companies/models.py
+msgid "When groups get today's plan, in the company's timezone."
+msgstr "Guruhlar bugungi rejani qachon oladi (kompaniya vaqt mintaqasida)."
+
+#: backend/apps/companies/models.py
+msgid "When groups get the end-of-day summary."
+msgstr "Guruhlar kun yakunini qachon oladi."
+
+#: backend/apps/companies/services.py
+msgid "This invite link is invalid or has expired. Ask your manager for a new one."
+msgstr "Bu taklif havolasi noto‘g‘ri yoki eskirgan. Rahbaringizdan yangisini so‘rang."
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "✅ <b>%(name)s</b> finished <b>%(task)s</b>"
+msgstr "✅ <b>%(name)s</b> <b>%(task)s</b> vazifasini bajardi"
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "At %(time)s, on time."
+msgstr "Soat %(time)s da, o‘z vaqtida."
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "At %(time)s, %(late)s late."
+msgstr "Soat %(time)s da, %(late)s kechikib."
+
+#: backend/apps/groups/bot_messages.py
+msgid "Waiting for a check."
+msgstr "Tekshiruv kutilmoqda."
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "🚨 <b>%(name)s</b> is %(late)s late with <b>%(task)s</b>."
+msgstr "🚨 <b>%(name)s</b> <b>%(task)s</b> vazifasini %(late)s kechiktirmoqda."
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "👋 <b>%(name)s</b> joined the team as %(position)s."
+msgstr "👋 <b>%(name)s</b> jamoaga %(position)s sifatida qo‘shildi."
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "👋 <b>%(name)s</b> joined the team."
+msgstr "👋 <b>%(name)s</b> jamoaga qo‘shildi."
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "🌅 <b>Today's plan</b> · %(date)s"
+msgstr "🌅 <b>Bugungi reja</b> · %(date)s"
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "• %(name)s: %(count)d, the first at %(time)s"
+msgstr "• %(name)s: %(count)d ta, birinchisi soat %(time)s da"
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "🌙 <b>How today went</b> · %(date)s"
+msgstr "🌙 <b>Kun qanday o‘tdi</b> · %(date)s"
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "✅ Done on time: %(count)d"
+msgstr "✅ O‘z vaqtida bajarildi: %(count)d"
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "⏰ Done late: %(count)d"
+msgstr "⏰ Kechikib bajarildi: %(count)d"
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "❌ Not done: %(count)d"
+msgstr "❌ Bajarilmadi: %(count)d"
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "…and %(count)d more"
+msgstr "…va yana %(count)d ta"
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "🔗 This group is now connected to <b>%(company)s</b>."
+msgstr "🔗 Bu guruh endi <b>%(company)s</b> kompaniyasiga ulandi."
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "👥 Whose news: %(who)s"
+msgstr "👥 Kimning yangiliklari: %(who)s"
+
+#: backend/apps/groups/bot_messages.py
+msgid "✔️ Done"
+msgstr "✔️ Tayyor"
+
+#: backend/apps/groups/bot_messages.py
+msgid "⚙️ <b>What should I post here?</b> Tap to turn things on or off."
+msgstr "⚙️ <b>Bu yerga nimalarni yozay?</b> Yoqish yoki o‘chirish uchun bosing."
+
+#: backend/apps/groups/bot_messages.py
+msgid "⬅️ Back"
+msgstr "⬅️ Orqaga"
+
+#: backend/apps/groups/bot_messages.py
+msgid ""
+"👥 <b>Whose news should this group get?</b> Pick positions, or leave them all off for everyone."
+msgstr ""
+"👥 <b>Bu guruh kimlarning yangiliklarini olsin?</b> Lavozimlarni tanlang yoki hamma uchun "
+"birortasini ham belgilamang."
+
+#: backend/apps/groups/bot_messages.py
+msgid "This company has no positions yet."
+msgstr "Bu kompaniyada hali lavozimlar yo‘q."
+
+#: backend/apps/groups/bot_messages.py
+msgid "everyone"
+msgstr "hamma"
+
+#: backend/apps/groups/bot_messages.py
+msgid ""
+"👋 Hi! I post this team's task news here: finished work, late tasks and daily summaries.\n"
+"A manager can link me to the company by sending /connect."
+msgstr ""
+"👋 Salom! Men bu yerga jamoaning vazifalar bo‘yicha yangiliklarini yozaman: bajarilgan ishlar, kechikkan vazifalar va kunlik hisobotlar.\n"
+"Rahbar /connect yuborib, meni kompaniyaga ulashi mumkin."
+
+#: backend/apps/groups/bot_messages.py
+msgid "This group isn't connected to a company yet. A manager can send /connect."
+msgstr "Bu guruh hali kompaniyaga ulanmagan. Rahbar /connect yuborishi mumkin."
+
+#: backend/apps/groups/bot_messages.py
+msgid ""
+"I can't tell who you are while you post anonymously. Turn off “Remain anonymous” in your admin "
+"rights and try again."
+msgstr ""
+"Anonim yozayotganingizda kimligingizni bila olmayman. Admin huquqlaringizda “Anonim qolish”ni "
+"o‘chirib, qayta urinib ko‘ring."
+
+#: backend/apps/groups/bot_messages.py
+msgid ""
+"🔌 Disconnected. I won't post here any more. A manager can send /connect to link this group again."
+msgstr ""
+"🔌 Uzildi. Endi bu yerga yozmayman. Rahbar guruhni qayta ulash uchun /connect yuborishi mumkin."
+
+#: backend/apps/groups/bot_messages.py
+msgid "Nothing will be posted here. Send /settings to change that."
+msgstr "Bu yerga hech narsa yozilmaydi. O‘zgartirish uchun /settings yuboring."
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "I'll post here: %(events)s."
+msgstr "Bu yerga yozaman: %(events)s."
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "Only about: %(positions)s."
+msgstr "Faqat %(positions)s haqida."
+
+#: backend/apps/groups/bot_messages.py
+msgid "Send /settings to change that."
+msgstr "O‘zgartirish uchun /settings yuboring."
+
+#: backend/apps/groups/forms.py
+msgid "Pick positions from this group's company."
+msgstr "Lavozimlarni shu guruhning kompaniyasidan tanlang."
+
+#: backend/apps/groups/models.py
+msgid "Daily tasks done"
+msgstr "Bajarilgan kundalik vazifalar"
+
+#: backend/apps/groups/models.py
+msgid "Assigned tasks done"
+msgstr "Bajarilgan topshiriqlar"
+
+#: backend/apps/groups/models.py
+msgid "Late tasks"
+msgstr "Kechikkan vazifalar"
+
+#: backend/apps/groups/models.py
+msgid "New people"
+msgstr "Yangi xodimlar"
+
+#: backend/apps/groups/models.py
+msgid "Morning plan"
+msgstr "Ertalabki reja"
+
+#: backend/apps/groups/models.py
+msgid "End-of-day summary"
+msgstr "Kun yakuni"
+
+#: backend/apps/groups/models.py
+msgid "Only news about people in these positions. None = everyone."
+msgstr "Faqat shu lavozimlardagi odamlar haqidagi yangiliklar. Bo‘sh = hamma."
+
+#: backend/apps/groups/models.py
+msgid "Off once the bot is removed or the group is disconnected."
+msgstr "Bot chiqarilsa yoki guruh uzilsa, o‘chadi."
+
+#: backend/apps/groups/services.py
+msgid "Only a company manager can connect this group. Ask one to send /connect here."
+msgstr ""
+"Bu guruhni faqat kompaniya rahbari ulay oladi. Rahbardan bu yerda /connect yuborishini so‘rang."
+
+#: backend/apps/groups/services.py
+msgid "This group is already connected to another company."
+msgstr "Bu guruh allaqachon boshqa kompaniyaga ulangan."
+
+#: backend/apps/groups/services.py
+msgid "Only a manager of this company can change that."
+msgstr "Buni faqat shu kompaniya rahbari o‘zgartira oladi."
+
+#: backend/apps/groups/services.py
+msgid "That position no longer exists."
+msgstr "Bu lavozim endi mavjud emas."
+
+#: backend/apps/members/admin.py
+msgid "Permissions"
+msgstr "Ruxsatlar"
+
+#: backend/apps/members/admin.py
+msgid "All"
+msgstr "Hammasi"
+
+#: backend/apps/members/admin.py
+msgid "Phone"
+msgstr "Telefon"
+
+#: backend/apps/members/admin.py
+msgid "Approve selected requests"
+msgstr "Tanlangan so‘rovlarni tasdiqlash"
+
+#: backend/apps/members/admin.py
+#, python-format
+msgid "Approved: %(count)d"
+msgstr "Tasdiqlandi: %(count)d"
+
+#: backend/apps/members/admin.py
+msgid "Reject selected requests"
+msgstr "Tanlangan so‘rovlarni rad etish"
+
+#: backend/apps/members/admin.py
+#, python-format
+msgid "Rejected: %(count)d"
+msgstr "Rad etildi: %(count)d"
+
+#: backend/apps/members/admin.py
+msgid "Block selected members"
+msgstr "Tanlangan xodimlarni bloklash"
+
+#: backend/apps/members/admin.py
+#, python-format
+msgid "Blocked: %(count)d"
+msgstr "Bloklandi: %(count)d"
+
+#: backend/apps/members/bot_messages.py
+msgid "📋 My tasks"
+msgstr "📋 Vazifalarim"
+
+#: backend/apps/members/bot_messages.py
+msgid "➕ New task"
+msgstr "➕ Yangi vazifa"
+
+#: backend/apps/members/bot_messages.py
+msgid "📱 Open app"
+msgstr "📱 Ilovani ochish"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "📝 <b>Join request</b> · %(company)s"
+msgstr "📝 <b>Qo‘shilish so‘rovi</b> · %(company)s"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "Name: %(name)s"
+msgstr "Ism: %(name)s"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "Position: %(position)s"
+msgstr "Lavozim: %(position)s"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "Phone: %(phone)s"
+msgstr "Telefon: %(phone)s"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "Username: @%(username)s"
+msgstr "Foydalanuvchi nomi: @%(username)s"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "Telegram ID: <code>%(id)s</code>"
+msgstr "Telegram ID: <code>%(id)s</code>"
+
+#: backend/apps/members/bot_messages.py
+msgid "✅ Approve"
+msgstr "✅ Tasdiqlash"
+
+#: backend/apps/members/bot_messages.py
+msgid "❌ Reject"
+msgstr "❌ Rad etish"
+
+#: backend/apps/members/bot_messages.py
+msgid "👋 Hi! To join your company, open the invite link your manager sent you."
+msgstr "👋 Salom! Kompaniyangizga qo‘shilish uchun rahbaringiz yuborgan taklif havolasini oching."
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "👋 Welcome! You're joining <b>%(company)s</b>."
+msgstr "👋 Xush kelibsiz! Siz <b>%(company)s</b> kompaniyasiga qo‘shilyapsiz."
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid ""
+"⏳ Your request to join <b>%(company)s</b> is waiting for approval. I'll message you as soon as "
+"it's decided."
+msgstr ""
+"⏳ <b>%(company)s</b> kompaniyasiga qo‘shilish so‘rovingiz tasdiqlanishini kutmoqda. Qaror chiqishi"
+" bilan sizga yozaman."
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "🎉 Your request to join <b>%(company)s</b> was approved!"
+msgstr "🎉 <b>%(company)s</b> kompaniyasiga qo‘shilish so‘rovingiz tasdiqlandi!"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "✅ You're a member of <b>%(company)s</b>."
+msgstr "✅ Siz <b>%(company)s</b> xodimisiz."
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "👋 Welcome to <b>%(company)s</b>!"
+msgstr "👋 <b>%(company)s</b> jamoasiga xush kelibsiz!"
+
+#: backend/apps/members/bot_messages.py
+msgid "📱 Thanks, your phone number is saved."
+msgstr "📱 Rahmat, telefon raqamingiz saqlandi."
+
+#: backend/apps/members/bot_messages.py
+msgid "Please share your own phone number with the button below."
+msgstr "Iltimos, quyidagi tugma orqali o‘z raqamingizni ulashing."
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "🎉 Registration complete! Welcome aboard, %(name)s."
+msgstr "🎉 Ro‘yxatdan o‘tish yakunlandi! Jamoaga xush kelibsiz, %(name)s."
+
+#: backend/apps/members/bot_messages.py
+msgid "Your request is waiting for approval. I'll message you as soon as it's decided."
+msgstr "So‘rovingiz tasdiqlanishini kutmoqda. Qaror chiqishi bilan sizga yozaman."
+
+#: backend/apps/members/bot_messages.py
+msgid "Use the menu below to see your tasks or add one."
+msgstr "Vazifalaringizni ko‘rish yoki yangisini qo‘shish uchun quyidagi menyudan foydalaning."
+
+#: backend/apps/members/bot_messages.py
+msgid "Accounts are created in the app, which isn't set up yet. Ask your manager."
+msgstr "Hisob ilovada yaratiladi, lekin u hali sozlanmagan. Rahbaringizga murojaat qiling."
+
+#: backend/apps/members/bot_messages.py
+msgid "📱 Create account"
+msgstr "📱 Hisob yaratish"
+
+#: backend/apps/members/bot_messages.py
+msgid "Open the app to create your account: your name, phone and position."
+msgstr "Hisobingizni yaratish uchun ilovani oching: ismingiz, telefoningiz va lavozimingiz."
+
+#: backend/apps/members/bot_messages.py
+msgid "📱 Share my phone number"
+msgstr "📱 Raqamimni ulashish"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "Your request to join <b>%(company)s</b> was declined."
+msgstr "<b>%(company)s</b> kompaniyasiga qo‘shilish so‘rovingiz rad etildi."
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "You can ask again after %(time)s."
+msgstr "%(time)s dan keyin qayta so‘rov yuborishingiz mumkin."
+
+#: backend/apps/members/bot_messages.py
+msgid "You can ask again by opening the invite link."
+msgstr "Taklif havolasini ochib, qayta so‘rov yuborishingiz mumkin."
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "✅ Approved by %(name)s"
+msgstr "✅ %(name)s tasdiqladi"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "❌ Rejected by %(name)s"
+msgstr "❌ %(name)s rad etdi"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "⛔ Blocked by %(name)s"
+msgstr "⛔ %(name)s blokladi"
+
+#: backend/apps/members/models.py
+msgid "Owners have every permission."
+msgstr "Egalarda barcha ruxsatlar bor."
+
+#: backend/apps/members/models.py
+msgid "Given to new members when they are approved."
+msgstr "Yangi xodimlarga tasdiqlanganda beriladi."
+
+#: backend/apps/members/models.py
+msgid "Pending"
+msgstr "Kutilmoqda"
+
+#: backend/apps/members/models.py
+msgid "Approved"
+msgstr "Tasdiqlangan"
+
+#: backend/apps/members/models.py
+msgid "Rejected"
+msgstr "Rad etilgan"
+
+#: backend/apps/members/models.py
+msgid "Blocked"
+msgstr "Bloklangan"
+
+#: backend/apps/members/models.py
+msgid "Left"
+msgstr "Ketgan"
+
+#: backend/apps/members/models.py
+msgid "Must belong to the same company."
+msgstr "Xuddi shu kompaniyaga tegishli bo‘lishi kerak."
+
+#: backend/apps/members/permissions.py
+msgid "View members"
+msgstr "Xodimlarni ko‘rish"
+
+#: backend/apps/members/permissions.py
+msgid "Approve or reject join requests"
+msgstr "Qo‘shilish so‘rovlarini tasdiqlash yoki rad etish"
+
+#: backend/apps/members/permissions.py
+msgid "Edit and block members, change their roles"
+msgstr "Xodimlarni tahrirlash, bloklash va rollarini o‘zgartirish"
+
+#: backend/apps/members/permissions.py
+msgid "Manage access roles"
+msgstr "Kirish rollarini boshqarish"
+
+#: backend/apps/members/permissions.py
+msgid "Manage positions"
+msgstr "Lavozimlarni boshqarish"
+
+#: backend/apps/members/permissions.py
+msgid "View everyone's tasks"
+msgstr "Hammaning vazifalarini ko‘rish"
+
+#: backend/apps/members/permissions.py
+msgid "Assign tasks to others"
+msgstr "Boshqalarga vazifa berish"
+
+#: backend/apps/members/permissions.py
+msgid "Manage daily task templates"
+msgstr "Kundalik vazifa shablonlarini boshqarish"
+
+#: backend/apps/members/permissions.py
+msgid "Confirm completed tasks"
+msgstr "Bajarilgan vazifalarni qabul qilish"
+
+#: backend/apps/members/permissions.py
+msgid "Configure reminders"
+msgstr "Eslatmalarni sozlash"
+
+#: backend/apps/members/permissions.py
+msgid "Connect and configure groups"
+msgstr "Guruhlarni ulash va sozlash"
+
+#: backend/apps/members/permissions.py
+msgid "View reports and statistics"
+msgstr "Hisobot va statistikani ko‘rish"
+
+#: backend/apps/members/services.py
+msgid "You don't have permission to do this."
+msgstr "Bunga ruxsatingiz yo‘q."
+
+#: backend/apps/members/services.py
+msgid "This request no longer exists."
+msgstr "Bu so‘rov endi mavjud emas."
+
+#: backend/apps/members/services.py
+msgid "You've already completed registration."
+msgstr "Siz allaqachon ro‘yxatdan o‘tgansiz."
+
+#: backend/apps/members/services.py
+msgid "Share your phone number in the bot first."
+msgstr "Avval botda telefon raqamingizni ulashing."
+
+#: backend/apps/members/services.py
+msgid "Choose your position."
+msgstr "Lavozimingizni tanlang."
+
+#: backend/apps/members/services.py
+msgid "Choose a position from the list."
+msgstr "Ro‘yxatdan lavozim tanlang."
+
+#: backend/apps/members/services.py
+msgid "You can't block yourself."
+msgstr "O‘zingizni bloklay olmaysiz."
+
+#: backend/apps/members/services.py
+msgid "Only owners can block an owner."
+msgstr "Egani faqat egalar bloklay oladi."
+
+#: backend/apps/members/services.py
+msgid "This member is already blocked."
+msgstr "Bu xodim allaqachon bloklangan."
+
+#: backend/apps/members/services.py
+#, python-format
+msgid "This request is already %(status)s."
+msgstr "Bu so‘rov allaqachon %(status)s."
+
+#: backend/apps/reminders/api.py
+msgid "The company's default policy can't be deleted."
+msgstr "Kompaniyaning asosiy eslatma sozlamasini o‘chirib bo‘lmaydi."
+
+#: backend/apps/reminders/bot_messages.py
+#, python-format
+msgid "⏳ Heads-up: <b>%(task)s</b> is due at %(time)s."
+msgstr "⏳ Eslatma: <b>%(task)s</b> muddati soat %(time)s da."
+
+#: backend/apps/reminders/bot_messages.py
+msgid "Your manager"
+msgstr "Rahbaringiz"
+
+#: backend/apps/reminders/bot_messages.py
+#, python-format
+msgid "⏰ <b>%(task)s</b> was due at %(time)s. Please do it now."
+msgstr "⏰ <b>%(task)s</b> muddati soat %(time)s da edi. Iltimos, hozir bajaring."
+
+#: backend/apps/reminders/bot_messages.py
+#, python-format
+msgid "🚨 <b>%(task)s</b> is %(late)s late. %(manager)s has been told."
+msgstr "🚨 <b>%(task)s</b> %(late)s kechikdi. %(manager)s xabardor qilindi."
+
+#: backend/apps/reminders/bot_messages.py
+#, python-format
+msgid "😤 Still not done: <b>%(task)s</b>, %(late)s late. Finish it now, please."
+msgstr "😤 Hali bajarilmadi: <b>%(task)s</b>, %(late)s kechikdi. Iltimos, hoziroq tugating."
+
+#: backend/apps/reminders/bot_messages.py
+#, python-format
+msgid "🔔 Reminder %(step)d: <b>%(task)s</b> is %(late)s late."
+msgstr "🔔 %(step)d-eslatma: <b>%(task)s</b> %(late)s kechikdi."
+
+#: backend/apps/reminders/bot_messages.py
+#, python-format
+msgid "🚨 <b>%(name)s</b> is %(late)s late with <b>%(task)s</b>. Reminders sent: %(count)d."
+msgstr ""
+"🚨 <b>%(name)s</b> <b>%(task)s</b> vazifasini %(late)s kechiktirmoqda. Yuborilgan eslatmalar: "
+"%(count)d."
+
+#: backend/apps/reminders/bot_messages.py
+#, python-format
+msgid ""
+"⛔ <b>%(name)s</b> blocked the bot, so reminders can't reach them. <b>%(task)s</b> is still open."
+msgstr ""
+"⛔ <b>%(name)s</b> botni bloklagan, shuning uchun eslatmalar unga yetib bormaydi. <b>%(task)s</b> "
+"hali ochiq."
+
+#: backend/apps/reminders/bot_messages.py backend/apps/tasks/bot_messages.py
+msgid "✅ Done"
+msgstr "✅ Bajarildi"
+
+#: backend/apps/reminders/bot_messages.py
+#, python-format
+msgid "⏰ %(minutes)d min"
+msgstr "⏰ %(minutes)d daq"
+
+#: backend/apps/reminders/bot_messages.py
+msgid "📋 Open"
+msgstr "📋 Ochish"
+
+#: backend/apps/reminders/models.py
+msgid "A nudge this many minutes before the deadline. 0 = none."
+msgstr "Muddatdan shuncha daqiqa oldin eslatish. 0 = yo‘q."
+
+#: backend/apps/reminders/models.py
+msgid "After the deadline, remind again this often until it's done."
+msgstr "Muddat o‘tgach, bajarilmaguncha shu oraliqda qayta eslatish."
+
+#: backend/apps/reminders/models.py
+msgid "Stop after this many reminders. 0 = until it's done."
+msgstr "Shuncha eslatmadan keyin to‘xtatish. 0 = bajarilguncha."
+
+#: backend/apps/reminders/models.py
+msgid "Tell the manager after this many reminders. 0 = never."
+msgstr "Shuncha eslatmadan keyin rahbarga xabar berish. 0 = hech qachon."
+
+#: backend/apps/reminders/models.py
+msgid "No reminders from…"
+msgstr "Eslatmasiz vaqt boshlanishi…"
+
+#: backend/apps/reminders/models.py
+msgid "…until."
+msgstr "…tugashi."
+
+#: backend/apps/reminders/models.py
+msgid "Days with no reminders at all."
+msgstr "Umuman eslatma bo‘lmaydigan kunlar."
+
+#: backend/apps/reminders/models.py
+msgid "Snoozes allowed per task. 0 = none."
+msgstr "Bitta vazifani necha marta keyinga surish mumkin. 0 = mumkin emas."
+
+#: backend/apps/reminders/models.py
+msgid "Delete the last reminder when sending the next, instead of stacking them."
+msgstr "Keyingisini yuborganda oldingi eslatmani o‘chirish, to‘plab qo‘ymaslik."
+
+#: backend/apps/reminders/models.py
+msgid "Used from this reminder on (1 = the first one)."
+msgstr "Shu eslatmadan boshlab ishlatiladi (1 = birinchisi)."
+
+#: backend/apps/reminders/models.py
+#, python-brace-format
+msgid "Placeholders: {name} {task} {due} {late}"
+msgstr "O‘rinbosarlar: {name} {task} {due} {late}"
+
+#: backend/apps/reminders/models.py
+msgid "Heads-up"
+msgstr "Oldindan eslatma"
+
+#: backend/apps/reminders/models.py
+msgid "Reminder"
+msgstr "Eslatma"
+
+#: backend/apps/reminders/models.py
+msgid "Escalation"
+msgstr "Rahbarga xabar"
+
+#: backend/apps/reminders/models.py
+msgid "Blocked the bot"
+msgstr "Botni bloklagan"
+
+#: backend/apps/tasks/api.py
+msgid "The photo is too large (10 MB at most)."
+msgstr "Rasm juda katta (ko‘pi bilan 10 MB)."
+
+#: backend/apps/tasks/api.py
+msgid "The proof must be an image."
+msgstr "Tasdiq rasm bo‘lishi kerak."
+
+#: backend/apps/tasks/api.py
+msgid "That checklist item doesn't exist."
+msgstr "Bunday ro‘yxat bandi yo‘q."
+
+#: backend/apps/tasks/api.py
+msgid "That person isn't in your company."
+msgstr "Bu odam sizning kompaniyangizda emas."
+
+#: backend/apps/tasks/bot_messages.py
+msgid "🎉 Nothing on your list right now."
+msgstr "🎉 Hozircha ro‘yxatingiz bo‘sh."
+
+#: backend/apps/tasks/bot_messages.py
+msgid "📋 <b>Your tasks</b>"
+msgstr "📋 <b>Vazifalaringiz</b>"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "Tap a task to open it."
+msgstr "Ochish uchun vazifani bosing."
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Status: %(status)s"
+msgstr "Holati: %(status)s"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Due: %(when)s"
+msgstr "Muddat: %(when)s"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "From: %(name)s"
+msgstr "Kimdan: %(name)s"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "For: %(name)s"
+msgstr "Kimga: %(name)s"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Checklist: %(done)d of %(total)d"
+msgstr "Ro‘yxat: %(total)d tadan %(done)d tasi"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Proof needed: %(proof)s"
+msgstr "Kerakli tasdiq: %(proof)s"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Report: %(text)s"
+msgstr "Hisobot: %(text)s"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "📨 <b>New task</b> from %(name)s"
+msgstr "📨 %(name)s dan <b>yangi vazifa</b>"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "🔎 %(name)s finished a task. Please check it."
+msgstr "🔎 %(name)s vazifani bajardi. Iltimos, tekshiring."
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "✅ %(name)s completed a task."
+msgstr "✅ %(name)s vazifani bajardi."
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "👍 %(name)s confirmed your task."
+msgstr "👍 %(name)s vazifangizni qabul qildi."
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "↩️ Your task was sent back: %(reason)s"
+msgstr "↩️ Vazifangiz qaytarildi: %(reason)s"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "📷 Send a photo to complete <b>%(title)s</b>."
+msgstr "📷 <b>%(title)s</b> vazifasini yakunlash uchun rasm yuboring."
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "✍️ Send a short report to complete <b>%(title)s</b>."
+msgstr "✍️ <b>%(title)s</b> vazifasini yakunlash uchun qisqa hisobot yuboring."
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "📷 Send a photo or a short report to complete <b>%(title)s</b>."
+msgstr "📷 <b>%(title)s</b> vazifasini yakunlash uchun rasm yoki qisqa hisobot yuboring."
+
+#: backend/apps/tasks/bot_messages.py
+msgid "What needs to be fixed? Send a short comment."
+msgstr "Nimani tuzatish kerak? Qisqa izoh yuboring."
+
+#: backend/apps/tasks/bot_messages.py
+msgid "✍️ What needs to be done? Send the task title."
+msgstr "✍️ Nima qilish kerak? Vazifa nomini yuboring."
+
+#: backend/apps/tasks/bot_messages.py
+msgid "⏰ In an hour"
+msgstr "⏰ Bir soatdan keyin"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "🌆 Today 18:00"
+msgstr "🌆 Bugun 18:00"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "🌅 Tomorrow 09:00"
+msgstr "🌅 Ertaga 09:00"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "♾ No deadline"
+msgstr "♾ Muddatsiz"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "✖️ Cancel"
+msgstr "✖️ Bekor qilish"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "⏰ When is it due? Pick one or send a time like 18:30 or 25.10 18:30."
+msgstr "⏰ Muddati qachon? Birini tanlang yoki vaqtni 18:30 yoki 25.10 18:30 ko‘rinishida yuboring."
+
+#: backend/apps/tasks/bot_messages.py
+msgid "today"
+msgstr "bugun"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "tomorrow"
+msgstr "ertaga"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "⚠️ late by %(duration)s"
+msgstr "⚠️ %(duration)s kechikdi"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "%(minutes)d min"
+msgstr "%(minutes)d daq"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "%(hours)d h %(minutes)d min"
+msgstr "%(hours)d soat %(minutes)d daq"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "%(days)d d %(hours)d h"
+msgstr "%(days)d kun %(hours)d soat"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "▶️ Start"
+msgstr "▶️ Boshlash"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "✅ Confirm"
+msgstr "✅ Qabul qilish"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "↩️ Send back"
+msgstr "↩️ Qaytarish"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "⬅️ My tasks"
+msgstr "⬅️ Vazifalarim"
+
+#: backend/apps/tasks/models.py
+msgid "Monday"
+msgstr "Dushanba"
+
+#: backend/apps/tasks/models.py
+msgid "Tuesday"
+msgstr "Seshanba"
+
+#: backend/apps/tasks/models.py
+msgid "Wednesday"
+msgstr "Chorshanba"
+
+#: backend/apps/tasks/models.py
+msgid "Thursday"
+msgstr "Payshanba"
+
+#: backend/apps/tasks/models.py
+msgid "Friday"
+msgstr "Juma"
+
+#: backend/apps/tasks/models.py
+msgid "Saturday"
+msgstr "Shanba"
+
+#: backend/apps/tasks/models.py
+msgid "Sunday"
+msgstr "Yakshanba"
+
+#: backend/apps/tasks/models.py
+msgid "Not needed"
+msgstr "Kerak emas"
+
+#: backend/apps/tasks/models.py
+msgid "Photo"
+msgstr "Rasm"
+
+#: backend/apps/tasks/models.py
+msgid "Text report"
+msgstr "Qisqa hisobot"
+
+#: backend/apps/tasks/models.py
+msgid "Photo or text report"
+msgstr "Rasm yoki hisobot"
+
+#: backend/apps/tasks/models.py
+msgid "Doesn't repeat"
+msgstr "Takrorlanmaydi"
+
+#: backend/apps/tasks/models.py
+msgid "Every day"
+msgstr "Har kuni"
+
+#: backend/apps/tasks/models.py
+msgid "Weekdays"
+msgstr "Ish kunlari"
+
+#: backend/apps/tasks/models.py
+msgid "Every week"
+msgstr "Har hafta"
+
+#: backend/apps/tasks/models.py
+msgid "In the company's timezone."
+msgstr "Kompaniya vaqt mintaqasida."
+
+#: backend/apps/tasks/models.py
+msgid "No tasks are made for days before this."
+msgstr "Bundan oldingi kunlar uchun vazifa yaratilmaydi."
+
+#: backend/apps/tasks/models.py
+msgid "Everyone holding one of these positions gets the task."
+msgstr "Shu lavozimlardan birida ishlaydigan har bir xodim vazifani oladi."
+
+#: backend/apps/tasks/models.py
+msgid "Made by an employee for themselves; it repeats a personal task."
+msgstr "Xodim o‘zi uchun yaratgan; shaxsiy vazifani takrorlaydi."
+
+#: backend/apps/tasks/models.py
+msgid "Leave empty for the company's default."
+msgstr "Kompaniyaning asosiy sozlamasi uchun bo‘sh qoldiring."
+
+#: backend/apps/tasks/models.py
+msgid "Who hears when it's late. Empty: everyone who can confirm tasks."
+msgstr "Kechiksa, kim xabar oladi. Bo‘sh: vazifalarni qabul qila oladigan hamma."
+
+#: backend/apps/tasks/models.py
+msgid "Daily"
+msgstr "Kundalik"
+
+#: backend/apps/tasks/models.py
+msgid "Assigned"
+msgstr "Topshiriq"
+
+#: backend/apps/tasks/models.py
+msgid "Personal"
+msgstr "Shaxsiy"
+
+#: backend/apps/tasks/models.py
+msgid "To do"
+msgstr "Bajarish kerak"
+
+#: backend/apps/tasks/models.py
+msgid "In progress"
+msgstr "Jarayonda"
+
+#: backend/apps/tasks/models.py
+msgid "Waiting for confirmation"
+msgstr "Tekshirilmoqda"
+
+#: backend/apps/tasks/models.py
+msgid "Sent back"
+msgstr "Qaytarildi"
+
+#: backend/apps/tasks/models.py
+msgid "Done"
+msgstr "Bajarildi"
+
+#: backend/apps/tasks/models.py
+msgid "Cancelled"
+msgstr "Bekor qilindi"
+
+#: backend/apps/tasks/models.py
+msgid "Low"
+msgstr "Past"
+
+#: backend/apps/tasks/models.py
+msgid "Normal"
+msgstr "Oddiy"
+
+#: backend/apps/tasks/models.py
+msgid "High"
+msgstr "Yuqori"
+
+#: backend/apps/tasks/models.py
+msgid "Urgent"
+msgstr "Shoshilinch"
+
+#: backend/apps/tasks/models.py
+msgid "For daily tasks: the local day it belongs to."
+msgstr "Kundalik vazifalar uchun: u tegishli bo‘lgan mahalliy kun."
+
+#: backend/apps/tasks/models.py
+msgid "Gave you a task"
+msgstr "Sizga vazifa berdi"
+
+#: backend/apps/tasks/models.py
+msgid "Asked you to check a task"
+msgstr "Vazifani tekshirishingizni so‘radi"
+
+#: backend/apps/tasks/models.py
+msgid "Completed a task you gave"
+msgstr "Siz bergan vazifani bajardi"
+
+#: backend/apps/tasks/models.py
+msgid "Checked your task"
+msgstr "Vazifangizni tekshirdi"
+
+#: backend/apps/tasks/models.py
+msgid "Sent a task back"
+msgstr "Vazifani qaytardi"
+
+#: backend/apps/tasks/models.py
+msgid "Commented on a task"
+msgstr "Vazifaga izoh qoldirdi"
+
+#: backend/apps/tasks/services.py
+msgid "You can't assign tasks to others."
+msgstr "Siz boshqalarga vazifa bera olmaysiz."
+
+#: backend/apps/tasks/services.py
+msgid "Tasks can only go to registered members of your company."
+msgstr "Vazifani faqat kompaniyangizning ro‘yxatdan o‘tgan xodimlariga berish mumkin."
+
+#: backend/apps/tasks/services.py
+msgid "Repeating tasks for others are set up as daily tasks."
+msgstr "Boshqalar uchun takrorlanuvchi vazifalar kundalik vazifa sifatida sozlanadi."
+
+#: backend/apps/tasks/services.py
+msgid "Pick a time for a repeating task."
+msgstr "Takrorlanuvchi vazifa uchun vaqt tanlang."
+
+#: backend/apps/tasks/services.py
+msgid "You can't change this task."
+msgstr "Bu vazifani o‘zgartira olmaysiz."
+
+#: backend/apps/tasks/services.py
+msgid "Only open tasks can be changed."
+msgstr "Faqat ochiq vazifalarni o‘zgartirish mumkin."
+
+#: backend/apps/tasks/services.py
+msgid "This task has already been started."
+msgstr "Bu vazifa allaqachon boshlangan."
+
+#: backend/apps/tasks/services.py
+msgid "Say what needs to be fixed."
+msgstr "Nimani tuzatish kerakligini yozing."
+
+#: backend/apps/tasks/services.py
+msgid "You can't cancel this task."
+msgstr "Bu vazifani bekor qila olmaysiz."
+
+#: backend/apps/tasks/services.py
+msgid "Only open tasks with a deadline can be snoozed."
+msgstr "Faqat muddati bor ochiq vazifalarni keyinga surish mumkin."
+
+#: backend/apps/tasks/services.py
+msgid "No snoozes left for this task."
+msgstr "Bu vazifani boshqa keyinga surib bo‘lmaydi."
+
+#: backend/apps/tasks/services.py
+msgid "A comment can't be empty."
+msgstr "Izoh bo‘sh bo‘lmasligi kerak."
+
+#: backend/apps/tasks/services.py
+msgid "Give the task a title."
+msgstr "Vazifaga nom bering."
+
+#: backend/apps/tasks/services.py
+msgid "The deadline must be in the future."
+msgstr "Muddat kelajakda bo‘lishi kerak."
+
+#: backend/apps/tasks/services.py
+msgid "Attach a photo to complete this task."
+msgstr "Vazifani yakunlash uchun rasm biriktiring."
+
+#: backend/apps/tasks/services.py
+msgid "Write a short report to complete this task."
+msgstr "Vazifani yakunlash uchun qisqa hisobot yozing."
+
+#: backend/apps/tasks/services.py
+msgid "Attach a photo or write a short report to complete this task."
+msgstr "Vazifani yakunlash uchun rasm biriktiring yoki qisqa hisobot yozing."
+
+#: backend/apps/tasks/services.py
+#, python-format
+msgid "This task is already %(status)s."
+msgstr "Bu vazifa allaqachon “%(status)s” holatida."
+
+#: backend/apps/tasks/services.py
+msgid "Only the person this task is for can do that."
+msgstr "Buni faqat vazifa berilgan odam qila oladi."
+
+#: backend/apps/tasks/services.py
+msgid "You can't confirm this task."
+msgstr "Bu vazifani qabul qila olmaysiz."
+
+#: backend/apps/tasks/services.py
+msgid "This task isn't waiting for confirmation."
+msgstr "Bu vazifa tekshiruvni kutmayapti."
+
+#: backend/apps/tasks/services.py
+msgid "Finish registration first."
+msgstr "Avval ro‘yxatdan o‘tishni yakunlang."
+
+#: employee_bot/bot/commands.py
+msgid "Home"
+msgstr "Bosh sahifa"
+
+#: employee_bot/bot/commands.py
+msgid "My tasks"
+msgstr "Vazifalarim"
+
+#: employee_bot/bot/commands.py
+msgid "New task"
+msgstr "Yangi vazifa"
+
+#: employee_bot/bot/commands.py
+msgid "Link this group to your company"
+msgstr "Bu guruhni kompaniyangizga ulash"
+
+#: employee_bot/bot/commands.py
+msgid "Choose what gets posted here"
+msgstr "Bu yerga nima yozilishini tanlash"
+
+#: employee_bot/bot/commands.py
+msgid "Stop posting here"
+msgstr "Bu yerga yozishni to‘xtatish"
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "Okay, cancelled."
+msgstr "Mayli, bekor qilindi."
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "Started 💪"
+msgstr "Boshlandi 💪"
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "Done! 🎉"
+msgstr "Bajarildi! 🎉"
+
+#: employee_bot/bot/handlers/member/tasks.py
+#, python-format
+msgid "Snoozed until %(time)s."
+msgstr "%(time)s gacha keyinga surildi."
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "Confirmed 👍"
+msgstr "Qabul qilindi 👍"
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "This task isn't waiting for your confirmation."
+msgstr "Bu vazifa sizning tekshiruvingizni kutmayapti."
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "↩️ Sent back with your comment."
+msgstr "↩️ Izohingiz bilan qaytarildi."
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "I didn't get that. Send a time like 18:30 or 25.10 18:30."
+msgstr "Tushunmadim. Vaqtni 18:30 yoki 25.10 18:30 ko‘rinishida yuboring."
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "✅ Added to your list."
+msgstr "✅ Ro‘yxatingizga qo‘shildi."
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "This task no longer exists."
+msgstr "Bu vazifa endi mavjud emas."
+
+#: employee_bot/bot/middlewares/access.py
+msgid "You don't have access to this."
+msgstr "Bunga kirish huquqingiz yo‘q."

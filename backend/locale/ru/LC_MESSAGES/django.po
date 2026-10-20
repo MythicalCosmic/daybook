@@ -1,0 +1,1202 @@
+# Russian translations for 911 Trello: the bots, notifications and API messages.
+# Refresh with `make messages`, then fill in the new entries.
+msgid ""
+msgstr ""
+"Project-Id-Version: 911 Trello\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-20 17:17+0500\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: \n"
+"Language-Team: ru\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n%100>=11 && n%100<=14)? 2 : 3);\n"
+
+#: backend/apps/accounts/admin.py
+msgid "Telegram"
+msgstr "Telegram"
+
+#: backend/apps/accounts/models.py
+msgid "Only set from a contact the person shared in Telegram."
+msgstr "Заполняется только из контакта, которым человек поделился в Telegram."
+
+#: backend/apps/accounts/models.py
+msgid "When Telegram said this person blocked the employee bot."
+msgstr "Когда Telegram сообщил, что человек заблокировал бота для сотрудников."
+
+#: backend/apps/companies/admin.py
+msgid "Members"
+msgstr "Сотрудники"
+
+#: backend/apps/companies/admin.py
+msgid "Invite link"
+msgstr "Ссылка-приглашение"
+
+#: backend/apps/companies/admin.py
+msgid "Set EMPLOYEE_BOT_USERNAME to build the link"
+msgstr "Укажите EMPLOYEE_BOT_USERNAME, чтобы получить ссылку"
+
+#: backend/apps/companies/admin.py
+msgid "Regenerate invite links"
+msgstr "Обновить ссылки-приглашения"
+
+#: backend/apps/companies/admin.py
+msgid "Invite links regenerated. Old links no longer work."
+msgstr "Ссылки-приглашения обновлены. Старые ссылки больше не работают."
+
+#: backend/apps/companies/models.py
+#, python-format
+msgid "Unknown timezone: %(value)s"
+msgstr "Неизвестный часовой пояс: %(value)s"
+
+#: backend/apps/companies/models.py
+msgid "How long a rejected person waits before asking to join again."
+msgstr "Сколько отклонённый человек ждёт, прежде чем снова подать заявку."
+
+#: backend/apps/companies/models.py
+msgid "When groups get today's plan, in the company's timezone."
+msgstr "Когда группы получают план на день, по часовому поясу компании."
+
+#: backend/apps/companies/models.py
+msgid "When groups get the end-of-day summary."
+msgstr "Когда группы получают итоги дня."
+
+#: backend/apps/companies/services.py
+msgid "This invite link is invalid or has expired. Ask your manager for a new one."
+msgstr "Ссылка-приглашение недействительна или устарела. Попросите у руководителя новую."
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "✅ <b>%(name)s</b> finished <b>%(task)s</b>"
+msgstr "✅ <b>%(name)s</b>: задача <b>%(task)s</b> выполнена"
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "At %(time)s, on time."
+msgstr "В %(time)s, вовремя."
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "At %(time)s, %(late)s late."
+msgstr "В %(time)s, с опозданием на %(late)s."
+
+#: backend/apps/groups/bot_messages.py
+msgid "Waiting for a check."
+msgstr "Ждёт проверки."
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "🚨 <b>%(name)s</b> is %(late)s late with <b>%(task)s</b>."
+msgstr "🚨 <b>%(name)s</b>: задача <b>%(task)s</b> просрочена на %(late)s."
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "👋 <b>%(name)s</b> joined the team as %(position)s."
+msgstr "👋 В команде новый сотрудник: <b>%(name)s</b>, %(position)s."
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "👋 <b>%(name)s</b> joined the team."
+msgstr "👋 В команде новый сотрудник: <b>%(name)s</b>."
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "🌅 <b>Today's plan</b> · %(date)s"
+msgstr "🌅 <b>План на сегодня</b> · %(date)s"
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "• %(name)s: %(count)d, the first at %(time)s"
+msgstr "• %(name)s: %(count)d, первая в %(time)s"
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "🌙 <b>How today went</b> · %(date)s"
+msgstr "🌙 <b>Итоги дня</b> · %(date)s"
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "✅ Done on time: %(count)d"
+msgstr "✅ Вовремя: %(count)d"
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "⏰ Done late: %(count)d"
+msgstr "⏰ С опозданием: %(count)d"
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "❌ Not done: %(count)d"
+msgstr "❌ Не выполнено: %(count)d"
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "…and %(count)d more"
+msgstr "…и ещё %(count)d"
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "🔗 This group is now connected to <b>%(company)s</b>."
+msgstr "🔗 Группа подключена к компании <b>%(company)s</b>."
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "👥 Whose news: %(who)s"
+msgstr "👥 Чьи новости: %(who)s"
+
+#: backend/apps/groups/bot_messages.py
+msgid "✔️ Done"
+msgstr "✔️ Готово"
+
+#: backend/apps/groups/bot_messages.py
+msgid "⚙️ <b>What should I post here?</b> Tap to turn things on or off."
+msgstr "⚙️ <b>Что сюда присылать?</b> Нажмите, чтобы включить или выключить."
+
+#: backend/apps/groups/bot_messages.py
+msgid "⬅️ Back"
+msgstr "⬅️ Назад"
+
+#: backend/apps/groups/bot_messages.py
+msgid ""
+"👥 <b>Whose news should this group get?</b> Pick positions, or leave them all off for everyone."
+msgstr ""
+"👥 <b>Чьи новости получать этой группе?</b> Выберите должности или не выбирайте ни одной, чтобы "
+"получать про всех."
+
+#: backend/apps/groups/bot_messages.py
+msgid "This company has no positions yet."
+msgstr "В компании пока нет должностей."
+
+#: backend/apps/groups/bot_messages.py
+msgid "everyone"
+msgstr "все"
+
+#: backend/apps/groups/bot_messages.py
+msgid ""
+"👋 Hi! I post this team's task news here: finished work, late tasks and daily summaries.\n"
+"A manager can link me to the company by sending /connect."
+msgstr ""
+"👋 Привет! Я присылаю сюда новости команды по задачам: выполненные дела, просрочки и итоги дня.\n"
+"Руководитель может подключить меня к компании командой /connect."
+
+#: backend/apps/groups/bot_messages.py
+msgid "This group isn't connected to a company yet. A manager can send /connect."
+msgstr "Эта группа ещё не подключена к компании. Руководитель может отправить /connect."
+
+#: backend/apps/groups/bot_messages.py
+msgid ""
+"I can't tell who you are while you post anonymously. Turn off “Remain anonymous” in your admin "
+"rights and try again."
+msgstr ""
+"Пока вы пишете анонимно, я не знаю, кто вы. Отключите «Анонимность» в правах администратора и "
+"попробуйте снова."
+
+#: backend/apps/groups/bot_messages.py
+msgid ""
+"🔌 Disconnected. I won't post here any more. A manager can send /connect to link this group again."
+msgstr ""
+"🔌 Отключено. Больше не буду сюда писать. Руководитель может снова подключить группу командой "
+"/connect."
+
+#: backend/apps/groups/bot_messages.py
+msgid "Nothing will be posted here. Send /settings to change that."
+msgstr "Сюда ничего не будет приходить. Чтобы изменить, отправьте /settings."
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "I'll post here: %(events)s."
+msgstr "Буду присылать сюда: %(events)s."
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "Only about: %(positions)s."
+msgstr "Только про: %(positions)s."
+
+#: backend/apps/groups/bot_messages.py
+msgid "Send /settings to change that."
+msgstr "Чтобы изменить, отправьте /settings."
+
+#: backend/apps/groups/forms.py
+msgid "Pick positions from this group's company."
+msgstr "Выберите должности из компании этой группы."
+
+#: backend/apps/groups/models.py
+msgid "Daily tasks done"
+msgstr "Выполненные ежедневные задачи"
+
+#: backend/apps/groups/models.py
+msgid "Assigned tasks done"
+msgstr "Выполненные поручения"
+
+#: backend/apps/groups/models.py
+msgid "Late tasks"
+msgstr "Просроченные задачи"
+
+#: backend/apps/groups/models.py
+msgid "New people"
+msgstr "Новые сотрудники"
+
+#: backend/apps/groups/models.py
+msgid "Morning plan"
+msgstr "Утренний план"
+
+#: backend/apps/groups/models.py
+msgid "End-of-day summary"
+msgstr "Итоги дня"
+
+#: backend/apps/groups/models.py
+msgid "Only news about people in these positions. None = everyone."
+msgstr "Только новости о людях на этих должностях. Пусто = про всех."
+
+#: backend/apps/groups/models.py
+msgid "Off once the bot is removed or the group is disconnected."
+msgstr "Выключается, когда бота удаляют или группу отключают."
+
+#: backend/apps/groups/services.py
+msgid "Only a company manager can connect this group. Ask one to send /connect here."
+msgstr ""
+"Подключить группу может только руководитель компании. Попросите его отправить сюда /connect."
+
+#: backend/apps/groups/services.py
+msgid "This group is already connected to another company."
+msgstr "Эта группа уже подключена к другой компании."
+
+#: backend/apps/groups/services.py
+msgid "Only a manager of this company can change that."
+msgstr "Изменить это может только руководитель этой компании."
+
+#: backend/apps/groups/services.py
+msgid "That position no longer exists."
+msgstr "Такой должности больше нет."
+
+#: backend/apps/members/admin.py
+msgid "Permissions"
+msgstr "Права"
+
+#: backend/apps/members/admin.py
+msgid "All"
+msgstr "Все"
+
+#: backend/apps/members/admin.py
+msgid "Phone"
+msgstr "Телефон"
+
+#: backend/apps/members/admin.py
+msgid "Approve selected requests"
+msgstr "Одобрить выбранные заявки"
+
+#: backend/apps/members/admin.py
+#, python-format
+msgid "Approved: %(count)d"
+msgstr "Одобрено: %(count)d"
+
+#: backend/apps/members/admin.py
+msgid "Reject selected requests"
+msgstr "Отклонить выбранные заявки"
+
+#: backend/apps/members/admin.py
+#, python-format
+msgid "Rejected: %(count)d"
+msgstr "Отклонено: %(count)d"
+
+#: backend/apps/members/admin.py
+msgid "Block selected members"
+msgstr "Заблокировать выбранных сотрудников"
+
+#: backend/apps/members/admin.py
+#, python-format
+msgid "Blocked: %(count)d"
+msgstr "Заблокировано: %(count)d"
+
+#: backend/apps/members/bot_messages.py
+msgid "📋 My tasks"
+msgstr "📋 Мои задачи"
+
+#: backend/apps/members/bot_messages.py
+msgid "➕ New task"
+msgstr "➕ Новая задача"
+
+#: backend/apps/members/bot_messages.py
+msgid "📱 Open app"
+msgstr "📱 Открыть приложение"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "📝 <b>Join request</b> · %(company)s"
+msgstr "📝 <b>Заявка на вступление</b> · %(company)s"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "Name: %(name)s"
+msgstr "Имя: %(name)s"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "Position: %(position)s"
+msgstr "Должность: %(position)s"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "Phone: %(phone)s"
+msgstr "Телефон: %(phone)s"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "Username: @%(username)s"
+msgstr "Имя пользователя: @%(username)s"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "Telegram ID: <code>%(id)s</code>"
+msgstr "Telegram ID: <code>%(id)s</code>"
+
+#: backend/apps/members/bot_messages.py
+msgid "✅ Approve"
+msgstr "✅ Одобрить"
+
+#: backend/apps/members/bot_messages.py
+msgid "❌ Reject"
+msgstr "❌ Отклонить"
+
+#: backend/apps/members/bot_messages.py
+msgid "👋 Hi! To join your company, open the invite link your manager sent you."
+msgstr "👋 Привет! Чтобы присоединиться к компании, откройте ссылку-приглашение от руководителя."
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "👋 Welcome! You're joining <b>%(company)s</b>."
+msgstr "👋 Добро пожаловать! Вы присоединяетесь к компании <b>%(company)s</b>."
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid ""
+"⏳ Your request to join <b>%(company)s</b> is waiting for approval. I'll message you as soon as "
+"it's decided."
+msgstr "⏳ Ваша заявка в <b>%(company)s</b> ждёт одобрения. Я напишу, как только будет решение."
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "🎉 Your request to join <b>%(company)s</b> was approved!"
+msgstr "🎉 Ваша заявка в <b>%(company)s</b> одобрена!"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "✅ You're a member of <b>%(company)s</b>."
+msgstr "✅ Вы сотрудник компании <b>%(company)s</b>."
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "👋 Welcome to <b>%(company)s</b>!"
+msgstr "👋 Добро пожаловать в <b>%(company)s</b>!"
+
+#: backend/apps/members/bot_messages.py
+msgid "📱 Thanks, your phone number is saved."
+msgstr "📱 Спасибо, номер телефона сохранён."
+
+#: backend/apps/members/bot_messages.py
+msgid "Please share your own phone number with the button below."
+msgstr "Пожалуйста, поделитесь своим номером кнопкой ниже."
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "🎉 Registration complete! Welcome aboard, %(name)s."
+msgstr "🎉 Регистрация завершена! Добро пожаловать в команду, %(name)s."
+
+#: backend/apps/members/bot_messages.py
+msgid "Your request is waiting for approval. I'll message you as soon as it's decided."
+msgstr "Ваша заявка ждёт одобрения. Я напишу, как только будет решение."
+
+#: backend/apps/members/bot_messages.py
+msgid "Use the menu below to see your tasks or add one."
+msgstr "В меню ниже можно посмотреть задачи или добавить новую."
+
+#: backend/apps/members/bot_messages.py
+msgid "Accounts are created in the app, which isn't set up yet. Ask your manager."
+msgstr "Аккаунт создаётся в приложении, но оно ещё не настроено. Обратитесь к руководителю."
+
+#: backend/apps/members/bot_messages.py
+msgid "📱 Create account"
+msgstr "📱 Создать аккаунт"
+
+#: backend/apps/members/bot_messages.py
+msgid "Open the app to create your account: your name, phone and position."
+msgstr "Откройте приложение, чтобы создать аккаунт: имя, телефон и должность."
+
+#: backend/apps/members/bot_messages.py
+msgid "📱 Share my phone number"
+msgstr "📱 Поделиться номером"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "Your request to join <b>%(company)s</b> was declined."
+msgstr "Ваша заявка в <b>%(company)s</b> отклонена."
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "You can ask again after %(time)s."
+msgstr "Снова подать заявку можно после %(time)s."
+
+#: backend/apps/members/bot_messages.py
+msgid "You can ask again by opening the invite link."
+msgstr "Можно подать заявку снова, открыв ссылку-приглашение."
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "✅ Approved by %(name)s"
+msgstr "✅ Одобрено: %(name)s"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "❌ Rejected by %(name)s"
+msgstr "❌ Отклонено: %(name)s"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "⛔ Blocked by %(name)s"
+msgstr "⛔ Заблокировано: %(name)s"
+
+#: backend/apps/members/models.py
+msgid "Owners have every permission."
+msgstr "У владельцев есть все права."
+
+#: backend/apps/members/models.py
+msgid "Given to new members when they are approved."
+msgstr "Выдаётся новым сотрудникам после одобрения."
+
+#: backend/apps/members/models.py
+msgid "Pending"
+msgstr "Ожидает"
+
+#: backend/apps/members/models.py
+msgid "Approved"
+msgstr "Одобрено"
+
+#: backend/apps/members/models.py
+msgid "Rejected"
+msgstr "Отклонено"
+
+#: backend/apps/members/models.py
+msgid "Blocked"
+msgstr "Заблокировано"
+
+#: backend/apps/members/models.py
+msgid "Left"
+msgstr "Не в компании"
+
+#: backend/apps/members/models.py
+msgid "Must belong to the same company."
+msgstr "Должно относиться к той же компании."
+
+#: backend/apps/members/permissions.py
+msgid "View members"
+msgstr "Просмотр сотрудников"
+
+#: backend/apps/members/permissions.py
+msgid "Approve or reject join requests"
+msgstr "Одобрение и отклонение заявок"
+
+#: backend/apps/members/permissions.py
+msgid "Edit and block members, change their roles"
+msgstr "Редактирование и блокировка сотрудников, смена ролей"
+
+#: backend/apps/members/permissions.py
+msgid "Manage access roles"
+msgstr "Управление ролями доступа"
+
+#: backend/apps/members/permissions.py
+msgid "Manage positions"
+msgstr "Управление должностями"
+
+#: backend/apps/members/permissions.py
+msgid "View everyone's tasks"
+msgstr "Просмотр задач всех сотрудников"
+
+#: backend/apps/members/permissions.py
+msgid "Assign tasks to others"
+msgstr "Назначение задач другим"
+
+#: backend/apps/members/permissions.py
+msgid "Manage daily task templates"
+msgstr "Управление шаблонами ежедневных задач"
+
+#: backend/apps/members/permissions.py
+msgid "Confirm completed tasks"
+msgstr "Приёмка выполненных задач"
+
+#: backend/apps/members/permissions.py
+msgid "Configure reminders"
+msgstr "Настройка напоминаний"
+
+#: backend/apps/members/permissions.py
+msgid "Connect and configure groups"
+msgstr "Подключение и настройка групп"
+
+#: backend/apps/members/permissions.py
+msgid "View reports and statistics"
+msgstr "Просмотр отчётов и статистики"
+
+#: backend/apps/members/services.py
+msgid "You don't have permission to do this."
+msgstr "У вас нет прав на это действие."
+
+#: backend/apps/members/services.py
+msgid "This request no longer exists."
+msgstr "Этой заявки больше нет."
+
+#: backend/apps/members/services.py
+msgid "You've already completed registration."
+msgstr "Вы уже прошли регистрацию."
+
+#: backend/apps/members/services.py
+msgid "Share your phone number in the bot first."
+msgstr "Сначала поделитесь номером телефона в боте."
+
+#: backend/apps/members/services.py
+msgid "Choose your position."
+msgstr "Выберите должность."
+
+#: backend/apps/members/services.py
+msgid "Choose a position from the list."
+msgstr "Выберите должность из списка."
+
+#: backend/apps/members/services.py
+msgid "You can't block yourself."
+msgstr "Нельзя заблокировать самого себя."
+
+#: backend/apps/members/services.py
+msgid "Only owners can block an owner."
+msgstr "Заблокировать владельца может только владелец."
+
+#: backend/apps/members/services.py
+msgid "This member is already blocked."
+msgstr "Этот сотрудник уже заблокирован."
+
+#: backend/apps/members/services.py
+#, python-format
+msgid "This request is already %(status)s."
+msgstr "Статус заявки уже: «%(status)s»."
+
+#: backend/apps/reminders/api.py
+msgid "The company's default policy can't be deleted."
+msgstr "Основные настройки напоминаний компании удалить нельзя."
+
+#: backend/apps/reminders/bot_messages.py
+#, python-format
+msgid "⏳ Heads-up: <b>%(task)s</b> is due at %(time)s."
+msgstr "⏳ Напоминаю: срок задачи <b>%(task)s</b> — %(time)s."
+
+#: backend/apps/reminders/bot_messages.py
+msgid "Your manager"
+msgstr "Ваш руководитель"
+
+#: backend/apps/reminders/bot_messages.py
+#, python-format
+msgid "⏰ <b>%(task)s</b> was due at %(time)s. Please do it now."
+msgstr "⏰ Срок задачи <b>%(task)s</b> был в %(time)s. Пожалуйста, сделайте её сейчас."
+
+#: backend/apps/reminders/bot_messages.py
+#, python-format
+msgid "🚨 <b>%(task)s</b> is %(late)s late. %(manager)s has been told."
+msgstr "🚨 Задача <b>%(task)s</b> просрочена на %(late)s. %(manager)s уже в курсе."
+
+#: backend/apps/reminders/bot_messages.py
+#, python-format
+msgid "😤 Still not done: <b>%(task)s</b>, %(late)s late. Finish it now, please."
+msgstr "😤 Всё ещё не сделано: <b>%(task)s</b>, просрочка %(late)s. Пожалуйста, закончите сейчас."
+
+#: backend/apps/reminders/bot_messages.py
+#, python-format
+msgid "🔔 Reminder %(step)d: <b>%(task)s</b> is %(late)s late."
+msgstr "🔔 Напоминание %(step)d: задача <b>%(task)s</b> просрочена на %(late)s."
+
+#: backend/apps/reminders/bot_messages.py
+#, python-format
+msgid "🚨 <b>%(name)s</b> is %(late)s late with <b>%(task)s</b>. Reminders sent: %(count)d."
+msgstr ""
+"🚨 <b>%(name)s</b>: задача <b>%(task)s</b> просрочена на %(late)s. Отправлено напоминаний: "
+"%(count)d."
+
+#: backend/apps/reminders/bot_messages.py
+#, python-format
+msgid ""
+"⛔ <b>%(name)s</b> blocked the bot, so reminders can't reach them. <b>%(task)s</b> is still open."
+msgstr ""
+"⛔ <b>%(name)s</b>: бот заблокирован, напоминания не доходят. Задача <b>%(task)s</b> всё ещё "
+"открыта."
+
+#: backend/apps/reminders/bot_messages.py backend/apps/tasks/bot_messages.py
+msgid "✅ Done"
+msgstr "✅ Готово"
+
+#: backend/apps/reminders/bot_messages.py
+#, python-format
+msgid "⏰ %(minutes)d min"
+msgstr "⏰ %(minutes)d мин"
+
+#: backend/apps/reminders/bot_messages.py
+msgid "📋 Open"
+msgstr "📋 Открыть"
+
+#: backend/apps/reminders/models.py
+msgid "A nudge this many minutes before the deadline. 0 = none."
+msgstr "Напомнить за столько минут до срока. 0 = не напоминать."
+
+#: backend/apps/reminders/models.py
+msgid "After the deadline, remind again this often until it's done."
+msgstr "После срока напоминать с таким интервалом, пока задача не выполнена."
+
+#: backend/apps/reminders/models.py
+msgid "Stop after this many reminders. 0 = until it's done."
+msgstr "Остановиться после стольких напоминаний. 0 = пока не выполнено."
+
+#: backend/apps/reminders/models.py
+msgid "Tell the manager after this many reminders. 0 = never."
+msgstr "Сообщить руководителю после стольких напоминаний. 0 = никогда."
+
+#: backend/apps/reminders/models.py
+msgid "No reminders from…"
+msgstr "Без напоминаний с…"
+
+#: backend/apps/reminders/models.py
+msgid "…until."
+msgstr "…до."
+
+#: backend/apps/reminders/models.py
+msgid "Days with no reminders at all."
+msgstr "Дни совсем без напоминаний."
+
+#: backend/apps/reminders/models.py
+msgid "Snoozes allowed per task. 0 = none."
+msgstr "Сколько раз можно отложить задачу. 0 = нельзя."
+
+#: backend/apps/reminders/models.py
+msgid "Delete the last reminder when sending the next, instead of stacking them."
+msgstr "Удалять прошлое напоминание при отправке следующего, а не копить их."
+
+#: backend/apps/reminders/models.py
+msgid "Used from this reminder on (1 = the first one)."
+msgstr "Используется начиная с этого напоминания (1 = первое)."
+
+#: backend/apps/reminders/models.py
+#, python-brace-format
+msgid "Placeholders: {name} {task} {due} {late}"
+msgstr "Подстановки: {name} {task} {due} {late}"
+
+#: backend/apps/reminders/models.py
+msgid "Heads-up"
+msgstr "Предупреждение"
+
+#: backend/apps/reminders/models.py
+msgid "Reminder"
+msgstr "Напоминание"
+
+#: backend/apps/reminders/models.py
+msgid "Escalation"
+msgstr "Эскалация"
+
+#: backend/apps/reminders/models.py
+msgid "Blocked the bot"
+msgstr "Бот заблокирован"
+
+#: backend/apps/tasks/api.py
+msgid "The photo is too large (10 MB at most)."
+msgstr "Фото слишком большое (не больше 10 МБ)."
+
+#: backend/apps/tasks/api.py
+msgid "The proof must be an image."
+msgstr "Подтверждение должно быть изображением."
+
+#: backend/apps/tasks/api.py
+msgid "That checklist item doesn't exist."
+msgstr "Такого пункта чек-листа нет."
+
+#: backend/apps/tasks/api.py
+msgid "That person isn't in your company."
+msgstr "Этого человека нет в вашей компании."
+
+#: backend/apps/tasks/bot_messages.py
+msgid "🎉 Nothing on your list right now."
+msgstr "🎉 Сейчас список пуст."
+
+#: backend/apps/tasks/bot_messages.py
+msgid "📋 <b>Your tasks</b>"
+msgstr "📋 <b>Ваши задачи</b>"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "Tap a task to open it."
+msgstr "Нажмите на задачу, чтобы открыть её."
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Status: %(status)s"
+msgstr "Статус: %(status)s"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Due: %(when)s"
+msgstr "Срок: %(when)s"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "From: %(name)s"
+msgstr "От: %(name)s"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "For: %(name)s"
+msgstr "Кому: %(name)s"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Checklist: %(done)d of %(total)d"
+msgstr "Чек-лист: %(done)d из %(total)d"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Proof needed: %(proof)s"
+msgstr "Нужно приложить: %(proof)s"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Report: %(text)s"
+msgstr "Отчёт: %(text)s"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "📨 <b>New task</b> from %(name)s"
+msgstr "📨 <b>Новая задача</b> от %(name)s"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "🔎 %(name)s finished a task. Please check it."
+msgstr "🔎 %(name)s: задача выполнена. Пожалуйста, проверьте."
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "✅ %(name)s completed a task."
+msgstr "✅ %(name)s: задача выполнена."
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "👍 %(name)s confirmed your task."
+msgstr "👍 %(name)s: ваша задача принята."
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "↩️ Your task was sent back: %(reason)s"
+msgstr "↩️ Задачу вернули: %(reason)s"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "📷 Send a photo to complete <b>%(title)s</b>."
+msgstr "📷 Чтобы завершить <b>%(title)s</b>, пришлите фото."
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "✍️ Send a short report to complete <b>%(title)s</b>."
+msgstr "✍️ Чтобы завершить <b>%(title)s</b>, пришлите короткий отчёт."
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "📷 Send a photo or a short report to complete <b>%(title)s</b>."
+msgstr "📷 Чтобы завершить <b>%(title)s</b>, пришлите фото или короткий отчёт."
+
+#: backend/apps/tasks/bot_messages.py
+msgid "What needs to be fixed? Send a short comment."
+msgstr "Что нужно исправить? Напишите короткий комментарий."
+
+#: backend/apps/tasks/bot_messages.py
+msgid "✍️ What needs to be done? Send the task title."
+msgstr "✍️ Что нужно сделать? Пришлите название задачи."
+
+#: backend/apps/tasks/bot_messages.py
+msgid "⏰ In an hour"
+msgstr "⏰ Через час"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "🌆 Today 18:00"
+msgstr "🌆 Сегодня 18:00"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "🌅 Tomorrow 09:00"
+msgstr "🌅 Завтра 09:00"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "♾ No deadline"
+msgstr "♾ Без срока"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "✖️ Cancel"
+msgstr "✖️ Отмена"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "⏰ When is it due? Pick one or send a time like 18:30 or 25.10 18:30."
+msgstr "⏰ Какой срок? Выберите вариант или пришлите время, например 18:30 или 25.10 18:30."
+
+#: backend/apps/tasks/bot_messages.py
+msgid "today"
+msgstr "сегодня"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "tomorrow"
+msgstr "завтра"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "⚠️ late by %(duration)s"
+msgstr "⚠️ просрочено на %(duration)s"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "%(minutes)d min"
+msgstr "%(minutes)d мин"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "%(hours)d h %(minutes)d min"
+msgstr "%(hours)d ч %(minutes)d мин"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "%(days)d d %(hours)d h"
+msgstr "%(days)d д %(hours)d ч"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "▶️ Start"
+msgstr "▶️ Начать"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "✅ Confirm"
+msgstr "✅ Принять"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "↩️ Send back"
+msgstr "↩️ Вернуть"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "⬅️ My tasks"
+msgstr "⬅️ Мои задачи"
+
+#: backend/apps/tasks/models.py
+msgid "Monday"
+msgstr "Понедельник"
+
+#: backend/apps/tasks/models.py
+msgid "Tuesday"
+msgstr "Вторник"
+
+#: backend/apps/tasks/models.py
+msgid "Wednesday"
+msgstr "Среда"
+
+#: backend/apps/tasks/models.py
+msgid "Thursday"
+msgstr "Четверг"
+
+#: backend/apps/tasks/models.py
+msgid "Friday"
+msgstr "Пятница"
+
+#: backend/apps/tasks/models.py
+msgid "Saturday"
+msgstr "Суббота"
+
+#: backend/apps/tasks/models.py
+msgid "Sunday"
+msgstr "Воскресенье"
+
+#: backend/apps/tasks/models.py
+msgid "Not needed"
+msgstr "Не нужно"
+
+#: backend/apps/tasks/models.py
+msgid "Photo"
+msgstr "Фото"
+
+#: backend/apps/tasks/models.py
+msgid "Text report"
+msgstr "Короткий отчёт"
+
+#: backend/apps/tasks/models.py
+msgid "Photo or text report"
+msgstr "Фото или отчёт"
+
+#: backend/apps/tasks/models.py
+msgid "Doesn't repeat"
+msgstr "Не повторяется"
+
+#: backend/apps/tasks/models.py
+msgid "Every day"
+msgstr "Каждый день"
+
+#: backend/apps/tasks/models.py
+msgid "Weekdays"
+msgstr "По будням"
+
+#: backend/apps/tasks/models.py
+msgid "Every week"
+msgstr "Каждую неделю"
+
+#: backend/apps/tasks/models.py
+msgid "In the company's timezone."
+msgstr "По часовому поясу компании."
+
+#: backend/apps/tasks/models.py
+msgid "No tasks are made for days before this."
+msgstr "Задачи на дни до этой даты не создаются."
+
+#: backend/apps/tasks/models.py
+msgid "Everyone holding one of these positions gets the task."
+msgstr "Задачу получает каждый, кто занимает одну из этих должностей."
+
+#: backend/apps/tasks/models.py
+msgid "Made by an employee for themselves; it repeats a personal task."
+msgstr "Создан сотрудником для себя; повторяет личную задачу."
+
+#: backend/apps/tasks/models.py
+msgid "Leave empty for the company's default."
+msgstr "Оставьте пустым, чтобы взять настройки компании по умолчанию."
+
+#: backend/apps/tasks/models.py
+msgid "Who hears when it's late. Empty: everyone who can confirm tasks."
+msgstr "Кому сообщать о просрочке. Пусто: всем, кто может принимать задачи."
+
+#: backend/apps/tasks/models.py
+msgid "Daily"
+msgstr "Ежедневная"
+
+#: backend/apps/tasks/models.py
+msgid "Assigned"
+msgstr "Поручение"
+
+#: backend/apps/tasks/models.py
+msgid "Personal"
+msgstr "Личная"
+
+#: backend/apps/tasks/models.py
+msgid "To do"
+msgstr "Сделать"
+
+#: backend/apps/tasks/models.py
+msgid "In progress"
+msgstr "В работе"
+
+#: backend/apps/tasks/models.py
+msgid "Waiting for confirmation"
+msgstr "На проверке"
+
+#: backend/apps/tasks/models.py
+msgid "Sent back"
+msgstr "Возвращена"
+
+#: backend/apps/tasks/models.py
+msgid "Done"
+msgstr "Готово"
+
+#: backend/apps/tasks/models.py
+msgid "Cancelled"
+msgstr "Отменена"
+
+#: backend/apps/tasks/models.py
+msgid "Low"
+msgstr "Низкий"
+
+#: backend/apps/tasks/models.py
+msgid "Normal"
+msgstr "Обычный"
+
+#: backend/apps/tasks/models.py
+msgid "High"
+msgstr "Высокий"
+
+#: backend/apps/tasks/models.py
+msgid "Urgent"
+msgstr "Срочный"
+
+#: backend/apps/tasks/models.py
+msgid "For daily tasks: the local day it belongs to."
+msgstr "Для ежедневных задач: местная дата, к которой она относится."
+
+#: backend/apps/tasks/models.py
+msgid "Gave you a task"
+msgstr "Новая задача для вас"
+
+#: backend/apps/tasks/models.py
+msgid "Asked you to check a task"
+msgstr "Просит проверить задачу"
+
+#: backend/apps/tasks/models.py
+msgid "Completed a task you gave"
+msgstr "Ваше поручение выполнено"
+
+#: backend/apps/tasks/models.py
+msgid "Checked your task"
+msgstr "Ваша задача проверена"
+
+#: backend/apps/tasks/models.py
+msgid "Sent a task back"
+msgstr "Задача возвращена"
+
+#: backend/apps/tasks/models.py
+msgid "Commented on a task"
+msgstr "Новый комментарий к задаче"
+
+#: backend/apps/tasks/services.py
+msgid "You can't assign tasks to others."
+msgstr "Вы не можете назначать задачи другим."
+
+#: backend/apps/tasks/services.py
+msgid "Tasks can only go to registered members of your company."
+msgstr "Задачи можно назначать только зарегистрированным сотрудникам вашей компании."
+
+#: backend/apps/tasks/services.py
+msgid "Repeating tasks for others are set up as daily tasks."
+msgstr "Повторяющиеся задачи для других настраиваются как ежедневные."
+
+#: backend/apps/tasks/services.py
+msgid "Pick a time for a repeating task."
+msgstr "Выберите время для повторяющейся задачи."
+
+#: backend/apps/tasks/services.py
+msgid "You can't change this task."
+msgstr "Вы не можете изменить эту задачу."
+
+#: backend/apps/tasks/services.py
+msgid "Only open tasks can be changed."
+msgstr "Изменять можно только открытые задачи."
+
+#: backend/apps/tasks/services.py
+msgid "This task has already been started."
+msgstr "Задача уже начата."
+
+#: backend/apps/tasks/services.py
+msgid "Say what needs to be fixed."
+msgstr "Напишите, что нужно исправить."
+
+#: backend/apps/tasks/services.py
+msgid "You can't cancel this task."
+msgstr "Вы не можете отменить эту задачу."
+
+#: backend/apps/tasks/services.py
+msgid "Only open tasks with a deadline can be snoozed."
+msgstr "Отложить можно только открытую задачу со сроком."
+
+#: backend/apps/tasks/services.py
+msgid "No snoozes left for this task."
+msgstr "Эту задачу больше нельзя отложить."
+
+#: backend/apps/tasks/services.py
+msgid "A comment can't be empty."
+msgstr "Комментарий не может быть пустым."
+
+#: backend/apps/tasks/services.py
+msgid "Give the task a title."
+msgstr "Укажите название задачи."
+
+#: backend/apps/tasks/services.py
+msgid "The deadline must be in the future."
+msgstr "Срок должен быть в будущем."
+
+#: backend/apps/tasks/services.py
+msgid "Attach a photo to complete this task."
+msgstr "Чтобы завершить задачу, приложите фото."
+
+#: backend/apps/tasks/services.py
+msgid "Write a short report to complete this task."
+msgstr "Чтобы завершить задачу, напишите короткий отчёт."
+
+#: backend/apps/tasks/services.py
+msgid "Attach a photo or write a short report to complete this task."
+msgstr "Чтобы завершить задачу, приложите фото или напишите короткий отчёт."
+
+#: backend/apps/tasks/services.py
+#, python-format
+msgid "This task is already %(status)s."
+msgstr "Задача уже в статусе «%(status)s»."
+
+#: backend/apps/tasks/services.py
+msgid "Only the person this task is for can do that."
+msgstr "Это может сделать только исполнитель задачи."
+
+#: backend/apps/tasks/services.py
+msgid "You can't confirm this task."
+msgstr "Вы не можете принять эту задачу."
+
+#: backend/apps/tasks/services.py
+msgid "This task isn't waiting for confirmation."
+msgstr "Эта задача не ждёт проверки."
+
+#: backend/apps/tasks/services.py
+msgid "Finish registration first."
+msgstr "Сначала завершите регистрацию."
+
+#: employee_bot/bot/commands.py
+msgid "Home"
+msgstr "Главная"
+
+#: employee_bot/bot/commands.py
+msgid "My tasks"
+msgstr "Мои задачи"
+
+#: employee_bot/bot/commands.py
+msgid "New task"
+msgstr "Новая задача"
+
+#: employee_bot/bot/commands.py
+msgid "Link this group to your company"
+msgstr "Подключить группу к компании"
+
+#: employee_bot/bot/commands.py
+msgid "Choose what gets posted here"
+msgstr "Выбрать, что сюда присылать"
+
+#: employee_bot/bot/commands.py
+msgid "Stop posting here"
+msgstr "Перестать сюда писать"
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "Okay, cancelled."
+msgstr "Хорошо, отменено."
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "Started 💪"
+msgstr "Начато 💪"
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "Done! 🎉"
+msgstr "Готово! 🎉"
+
+#: employee_bot/bot/handlers/member/tasks.py
+#, python-format
+msgid "Snoozed until %(time)s."
+msgstr "Отложено до %(time)s."
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "Confirmed 👍"
+msgstr "Принято 👍"
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "This task isn't waiting for your confirmation."
+msgstr "Эта задача не ждёт вашей проверки."
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "↩️ Sent back with your comment."
+msgstr "↩️ Возвращено с вашим комментарием."
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "I didn't get that. Send a time like 18:30 or 25.10 18:30."
+msgstr "Не понял. Пришлите время, например 18:30 или 25.10 18:30."
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "✅ Added to your list."
+msgstr "✅ Добавлено в ваш список."
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "This task no longer exists."
+msgstr "Этой задачи больше нет."
+
+#: employee_bot/bot/middlewares/access.py
+msgid "You don't have access to this."
+msgstr "У вас нет доступа к этому."

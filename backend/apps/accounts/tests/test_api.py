@@ -86,3 +86,27 @@ def test_me_only_lets_the_language_change(api):
     assert user.language == "ru"
     assert user.telegram_id != 1
     assert user.phone == ""
+
+
+@pytest.mark.parametrize(
+    ("language", "expected"),
+    [("ru", "Вы уже прошли регистрацию."), ("uz", "Siz allaqachon ro‘yxatdan o‘tgansiz.")],
+)
+def test_the_api_answers_in_the_persons_language(api, language, expected):
+    membership = MembershipFactory(
+        status=Membership.Status.APPROVED,
+        onboarded_at="2026-01-01T00:00Z",
+        user__language=language,
+        user__phone="+998901234567",
+    )
+    authenticate(api, membership.user)
+
+    response = api.post(
+        f"/api/v1/companies/{membership.company_id}/onboarding/",
+        {"first_name": "Ali", "last_name": "Valiyev"},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert response.data["detail"] == expected
+    assert response["Content-Language"] == language

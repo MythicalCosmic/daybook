@@ -71,6 +71,12 @@ When a business rule is broken, the API returns `400 {"detail": "<message safe t
 
 The bot keeps the link when a group becomes a supergroup, and switches the group off when it's removed. Posts to one group are spaced 3 seconds apart, under Telegram's limit of about 20 a minute.
 
+## Translations
+
+The bots, their notifications and the API's messages come in Uzbek, Russian and English. Each person gets their own language (taken from Telegram at first, then whatever they pick in the app), and groups get the company's default language. The mini app has its own texts in `miniapp/src/i18n/`.
+
+After adding or changing a text in the Python code, run `make messages`, fill in the new entries in `backend/locale/uz/LC_MESSAGES/django.po` and `backend/locale/ru/LC_MESSAGES/django.po`, and run `make messages` again to compile them. The tests fail while a text is missing or untranslated.
+
 `make check` runs ruff, the Django system checks, the type check and all tests. It needs `make up` first.
 
 Set `TELEGRAM_DRY_RUN=true` to log bot messages instead of sending them, for example when running locally without a real bot token.

@@ -28,9 +28,15 @@ ANONYMOUS_ADMIN = User(
 )
 
 
-def tg_user(user_id: int, first_name: str = "Ali", username: str | None = "ali") -> User:
+def tg_user(
+    user_id: int, first_name: str = "Ali", username: str | None = "ali", language_code: str = "en"
+) -> User:
     return User(
-        id=user_id, is_bot=False, first_name=first_name, username=username, language_code="en"
+        id=user_id,
+        is_bot=False,
+        first_name=first_name,
+        username=username,
+        language_code=language_code,
     )
 
 

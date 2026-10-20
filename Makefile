@@ -1,7 +1,11 @@
 .DEFAULT_GOAL := help
 MANAGE := uv run backend/manage.py
+# Collects the translatable strings of the backend and the bots into backend/locale.
+MAKEMESSAGES := PYTHONPATH=backend DJANGO_SETTINGS_MODULE=config.settings.dev uv run django-admin \
+	makemessages -l uz -l ru -i miniapp -i node_modules -i tests -i staticfiles -i media \
+	--add-location=file --no-obsolete
 
-.PHONY: help up down install migrate makemigrations superuser shell demo run worker beat bot app app-build api-types stack stack-down test lint fmt check
+.PHONY: help up down install migrate makemigrations superuser shell demo run worker beat bot app app-build api-types messages stack stack-down test lint fmt check
 
 help: ## Show this help
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -27,6 +31,10 @@ superuser: ## Create an admin user
 
 shell: ## Django shell
 	$(MANAGE) shell
+
+messages: ## Collect new bot and API texts into the uz/ru .po files and compile them
+	$(MAKEMESSAGES)
+	cd backend && uv run python manage.py compilemessages
 
 demo: ## Rebuild the Demo Shop company (development only)
 	$(MANAGE) seed_demo --reset

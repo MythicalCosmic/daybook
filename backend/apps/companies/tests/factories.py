@@ -11,6 +11,8 @@ class CompanyFactory(DjangoModelFactory):
 
     name = factory.Sequence(lambda n: f"Company {n}")
     slug = factory.Sequence(lambda n: f"company-{n}")
+    # Tests read English; the translation tests pick other languages on purpose.
+    default_language = "en"
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
