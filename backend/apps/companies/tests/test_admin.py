@@ -1,6 +1,7 @@
 import pytest
 
 from apps.companies.models import Company
+from apps.groups.tests.factories import TelegramGroupFactory
 from apps.members.models import Membership
 from apps.members.tests.factories import MembershipFactory
 
@@ -16,6 +17,8 @@ def test_admin_creates_company_with_default_roles(admin_client):
             "timezone": "Asia/Tashkent",
             "default_language": "uz",
             "rejoin_cooldown_hours": 24,
+            "morning_report_at": "09:00",
+            "evening_report_at": "20:00",
         },
     )
 
@@ -33,6 +36,8 @@ def test_admin_creates_company_with_default_roles(admin_client):
         "/admin/members/accessrole/",
         "/admin/members/position/",
         "/admin/accounts/user/",
+        "/admin/groups/telegramgroup/",
+        "/admin/groups/groupreport/",
     ],
 )
 def test_admin_pages_render(admin_client, company, url):
@@ -40,10 +45,13 @@ def test_admin_pages_render(admin_client, company, url):
 
 
 def test_company_change_page_renders_with_inlines(admin_client, company):
+    TelegramGroupFactory(company=company, title="Shop team")
+
     response = admin_client.get(f"/admin/companies/company/{company.pk}/change/")
 
     assert response.status_code == 200
     assert b"Employee" in response.content
+    assert b"Shop team" in response.content
 
 
 def test_admin_approve_action(admin_client, company):

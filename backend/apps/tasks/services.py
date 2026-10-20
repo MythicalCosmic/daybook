@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from apps.core.exceptions import DomainError
+from apps.groups import tasks as group_jobs
 from apps.members.models import Membership
 from apps.members.permissions import Perm
 from apps.reminders.policies import policy_for
@@ -138,6 +139,7 @@ def complete_task(
     elif task.kind == Task.Kind.ASSIGNED:
         _add_to_feed(Activity.Kind.COMPLETED, task, [task.created_by], by)
     transaction.on_commit(partial(jobs.notify_task_completed.delay, task.pk))
+    transaction.on_commit(partial(group_jobs.announce_task_done.delay, task.pk))
     return task
 
 

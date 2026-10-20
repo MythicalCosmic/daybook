@@ -3,9 +3,29 @@
 from datetime import datetime
 from itertools import count
 
-from aiogram.types import CallbackQuery, Chat, Contact, Message, PhotoSize, Update, User
+from aiogram.types import (
+    CallbackQuery,
+    Chat,
+    ChatMemberLeft,
+    ChatMemberMember,
+    ChatMemberUpdated,
+    Contact,
+    Message,
+    PhotoSize,
+    Update,
+    User,
+)
+
+from tests.mocked_bot import BOT_USERNAME
 
 _ids = count(1)
+
+GROUP_ID = -1_001_555
+BOT = User(id=42, is_bot=True, first_name="Daybook", username=BOT_USERNAME)
+# Who a message seems to come from when an admin posts anonymously, as the group.
+ANONYMOUS_ADMIN = User(
+    id=1_087_968_824, is_bot=True, first_name="Group", username="GroupAnonymousBot"
+)
 
 
 def tg_user(user_id: int, first_name: str = "Ali", username: str | None = "ali") -> User:
@@ -76,6 +96,65 @@ def callback(from_user: User, data: str) -> Update:
                 date=datetime.now(),
                 chat=Chat(id=from_user.id, type="private"),
                 text="Join request",
+            ),
+        ),
+    )
+
+
+def group_chat(chat_id: int = GROUP_ID, chat_type: str = "supergroup") -> Chat:
+    return Chat(id=chat_id, type=chat_type, title="Shop team")
+
+
+def group_message(
+    from_user: User, text: str | None = None, chat: Chat | None = None, **fields
+) -> Update:
+    return Update(
+        update_id=next(_ids),
+        message=Message(
+            message_id=next(_ids),
+            date=datetime.now(),
+            chat=chat or group_chat(),
+            from_user=from_user,
+            text=text,
+            **fields,
+        ),
+    )
+
+
+def bot_added(by: User, chat_id: int = GROUP_ID) -> Update:
+    return _bot_membership(by, ChatMemberLeft(user=BOT), ChatMemberMember(user=BOT), chat_id)
+
+
+def bot_removed(by: User, chat_id: int = GROUP_ID) -> Update:
+    return _bot_membership(by, ChatMemberMember(user=BOT), ChatMemberLeft(user=BOT), chat_id)
+
+
+def _bot_membership(by: User, old, new, chat_id: int) -> Update:
+    return Update(
+        update_id=next(_ids),
+        my_chat_member=ChatMemberUpdated(
+            chat=group_chat(chat_id),
+            from_user=by,
+            date=datetime.now(),
+            old_chat_member=old,
+            new_chat_member=new,
+        ),
+    )
+
+
+def group_callback(from_user: User, data: str, chat_id: int = GROUP_ID) -> Update:
+    return Update(
+        update_id=next(_ids),
+        callback_query=CallbackQuery(
+            id=str(next(_ids)),
+            from_user=from_user,
+            chat_instance="group",
+            data=data,
+            message=Message(
+                message_id=next(_ids),
+                date=datetime.now(),
+                chat=group_chat(chat_id),
+                text="What should I post here?",
             ),
         ),
     )

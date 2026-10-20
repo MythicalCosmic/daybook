@@ -80,12 +80,11 @@ Implementation: indexed `Task.next_reminder_at`. A Celery beat job runs every mi
 
 ### 3.5 Groups
 
-1. An owner/manager generates a one-time link code (admin or bot), adds the bot to the group, sends `/connect <code>`.
-2. Bot checks the code and that the sender has `groups.manage` → group is linked to the company.
-3. Pick event types with an inline keyboard: daily tasks done, overdue/escalations, new members, morning plan, end-of-day summary. Optional filter by position.
-4. Events fan out to subscribed groups **and** owners' private chats (through the owner bot once it exists).
+1. Someone with `groups.manage` adds the bot to the group and it is linked to their company at once. Anyone else adding it gets told to ask a manager, who sends `/connect` in the group. No link codes: the permission check already proves who is asking, and a group already linked to another company is refused.
+2. Pick event types with an inline keyboard: daily tasks done (with the proof photo), assigned tasks done, late tasks (posted once, at escalation), new members, morning plan, end-of-day summary. "Whose news" narrows a group to some positions. `/settings` reopens it, `/disconnect` unlinks.
+3. Events fan out to subscribed groups **and**, later, owners' private chats (through the owner bot once it exists).
 
-Edge cases handled: bot removed from group (`my_chat_member`), group → supergroup migration (chat_id changes), Telegram limits (≈20 msg/min per group, ≈30 msg/s global) via a throttled outbox.
+Edge cases handled: bot removed from group (`my_chat_member`), group → supergroup migration (chat_id changes, settings kept), anonymous admins (asked to post as themselves), Telegram limits (≈20 msg/min per group) by spacing each group's posts 3 s apart and honouring `retry_after`.
 
 ## 4. Extra features (proposed — keep, drop, or reorder)
 
@@ -116,8 +115,8 @@ Edge cases handled: bot removed from group (`my_chat_member`), group → supergr
 | `members` | `Position` (company, name, order, is_active); `AccessRole` (company, name, permissions[], is_owner, is_default); `Membership` (company, user, status pending/approved/rejected/blocked/left, first_name, last_name, phone, position, role, decided_by, decided_at, onboarded_at), unique (company, user); permission registry `Perm` in code |
 | `tasks` | `TaskTemplate` (company, title, description, weekdays, due_time, assignees, positions, proof, needs_confirmation, is_active, created_by); `Task` (company, kind daily/assigned/personal, template, for_date, created_by, assignee, title, description, priority, due_at, status todo/in_progress/review/returned/done/cancelled, proof, needs_confirmation, proof_text, proof_photo, started/completed/confirmed_at, confirmed_by); `ChecklistItem`; `TaskComment`. M5 adds the reminder fields (next_reminder_at, reminders_sent, escalated_at, snoozed_until) |
 | `reminders` | `ReminderPolicy` (fields from 3.4); `ReminderMessageTemplate` (policy, step, language, text); `ReminderLog` (task, step, chat_id, message_id, sent_at, error) |
-| `groups` | `TelegramGroup` (company, chat_id, title, bot, linked_by, is_active); `GroupSubscription` (group, event_type, positions filter); `GroupLinkCode` (company, code, expires_at, created_by) |
-| `notifications` | `Outbox` (bot employee/owner, chat_id, payload, status, attempts, send_after) — reliable, rate-limited delivery for both bots |
+| `groups` | `TelegramGroup` (company, chat_id, title, events[], positions, linked_by, is_active, next_post_at); `GroupReport` (group, kind morning/evening, day): each daily report goes out once |
+| `notifications` | No table: messages for both bots go through Celery tasks queued after commit, retried on network errors and Telegram's `retry_after`; group posts are also paced per group. A database outbox can come later if delivery needs an audit trail |
 | `audit` | `AuditLog` (company, actor, action, target, diff, created_at) |
 
 HR later extends `Membership` (or a 1-1 `EmployeeProfile`) — nothing here blocks it.
@@ -149,7 +148,7 @@ HR later extends `Membership` (or a 1-1 `EmployeeProfile`) — nothing here bloc
 │       ├── tasks/
 │       ├── reminders/
 │       ├── groups/
-│       ├── notifications/  # Outbox + Telegram senders for both bots
+│       ├── notifications/  # Telegram senders for both bots
 │       ├── audit/
 │       └── api/            # v1/ for the mini app
 ├── employee_bot/           # `boundless new` (Django ORM mode); imports the backend's models
@@ -172,7 +171,7 @@ HR later extends `Membership` (or a 1-1 `EmployeeProfile`) — nothing here bloc
 | M4 ✅ | Tasks core (done 2026-10-19) | personal + assigned + daily templates (generated every 10 min, idempotent); checklists, comments, sent back with a reason; proof photo/text; confirmation flow; bot: My tasks, task cards, proof collection, New task with deadline presets, confirm/send back; task API for the mini app with per-task allowed actions; notifications (with the proof photo) |
 | MA ✅ | Employee mini app (done 2026-10-20) | React + TypeScript app from the Daybook design: create account, waiting room, home (progress, streak, late, up next, feed), tasks (daily/assigned/mine/to check), task detail (checklist, comments, proof photo/note, confirm/send back), activity, profile (streak week, month stats, language, theme), dark mode, uz/ru/en; served by Django at /app/ |
 | M5 ✅ | Reminder engine (done 2026-10-20) | per-company policies (heads-up, repeat every N min, cap, escalate after N, quiet hours and days, snooze length and limit, replace or stack, owner-written texts by step); Celery beat every minute with row locks so nothing goes out twice; firmer wording each time; escalation to a named contact, the assigner, or everyone who confirms; blocked-bot detection reported once; snooze in the bot and the app; the app shows the reminder timeline from the design |
-| M6 | Groups | `/connect` flow, subscriptions, event fan-out, morning/evening summaries, throttled outbox |
+| M6 ✅ | Groups (done 2026-10-20) | adding the bot links the group for managers, `/connect` for everyone else; event toggles and a positions filter from inline buttons; finished daily and assigned work (with the proof photo), late tasks at escalation, new people; morning plan and evening summary at per-company times, once a day; supergroup upgrades, removal and anonymous admins handled; posts paced under Telegram's per-group limit; command menus for private and group chats |
 | M7 | Polish | KPIs/stats, i18n (uz/ru/en), audit log, chosen extras from §4, deploy |
 
 ## 9. Questions (answered with "go" on 2026-10-19, so the defaults in brackets stand)

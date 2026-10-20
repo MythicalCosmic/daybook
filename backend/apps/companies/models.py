@@ -1,6 +1,6 @@
 import secrets
 import zoneinfo
-from datetime import datetime
+from datetime import datetime, time
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -32,6 +32,12 @@ class Company(TimeStampedModel):
     )
     rejoin_cooldown_hours = models.PositiveIntegerField(
         default=24, help_text=_("How long a rejected person waits before asking to join again.")
+    )
+    morning_report_at = models.TimeField(
+        default=time(9, 0), help_text=_("When groups get today's plan, in the company's timezone.")
+    )
+    evening_report_at = models.TimeField(
+        default=time(20, 0), help_text=_("When groups get the end-of-day summary.")
     )
     is_active = models.BooleanField(default=True)
 

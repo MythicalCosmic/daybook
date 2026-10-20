@@ -25,6 +25,7 @@ make migrate
 make superuser
 make run               # admin at http://127.0.0.1:28000/admin/, API docs at /api/docs/
 make worker            # Celery worker, separate terminal
+make beat              # Celery beat (daily tasks, reminders, group reports), separate terminal
 make bot               # employee bot, separate terminal
 make app               # mini app at http://127.0.0.1:28173/app/, separate terminal
 ```
@@ -61,6 +62,14 @@ When a business rule is broken, the API returns `400 {"detail": "<message safe t
 2. Run `make run`, `make worker`, `make bot` and `make app`, then send `/start` to the bot once yourself so it's allowed to message you.
 3. Create a company in the admin and copy its invite link from the company page.
 4. Open the link from another Telegram account and create the account in the app. You get the request with the person's details and Approve and Reject buttons, and the other account hears the decision.
+
+## Group chats
+
+1. Add the bot to a Telegram group. If you can manage groups (owners and managers can, by default), the group is linked to your company straight away. Otherwise a manager sends `/connect` in the group.
+2. The bot posts the group's settings. Tap what the group should get: finished daily tasks (with the proof photo), finished assigned tasks, late tasks, new people, the morning plan and the end-of-day summary. "Whose news" narrows it to some positions, for example a group for the kitchen. `/settings` brings the buttons back and `/disconnect` stops the posts.
+3. A late task is posted once, when the reminders reach the manager. The morning and evening reports go out at the company's report times, set on the company page in the admin; a day with nothing to report gets no post.
+
+The bot keeps the link when a group becomes a supergroup, and switches the group off when it's removed. Posts to one group are spaced 3 seconds apart, under Telegram's limit of about 20 a minute.
 
 `make check` runs ruff, the Django system checks, the type check and all tests. It needs `make up` first.
 

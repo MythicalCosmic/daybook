@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin, StackedInline, TabularInline
 
 from apps.companies.models import Company
+from apps.groups.admin import TelegramGroupInline
 from apps.members.forms import AccessRoleForm
 from apps.members.models import AccessRole, Membership, Position
 from apps.members.services import create_default_roles
@@ -34,6 +35,8 @@ class CompanyAdmin(ModelAdmin):
         "timezone",
         "default_language",
         "rejoin_cooldown_hours",
+        "morning_report_at",
+        "evening_report_at",
         "is_active",
         "invite_code",
         "invite_link_display",
@@ -49,7 +52,7 @@ class CompanyAdmin(ModelAdmin):
 
     def get_inlines(self, request, obj):
         # Default roles are created when the company is saved, so editing starts on the change page.
-        return [PositionInline, AccessRoleInline] if obj else []
+        return [PositionInline, AccessRoleInline, TelegramGroupInline] if obj else []
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)

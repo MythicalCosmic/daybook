@@ -8,6 +8,7 @@ from django.utils.translation import gettext as _
 from apps.accounts.models import User
 from apps.companies.models import Company
 from apps.core.exceptions import DomainError
+from apps.groups import tasks as group_jobs
 from apps.members import tasks
 from apps.members.callbacks import JoinAction
 from apps.members.models import AccessRole, Membership, Position
@@ -134,6 +135,7 @@ def approve(membership: Membership, *, by: User) -> Membership:
     _record_decision(membership, by)
     membership.save()
     transaction.on_commit(partial(tasks.notify_join_decision.delay, membership.pk))
+    transaction.on_commit(partial(group_jobs.announce_member.delay, membership.pk))
     return membership
 
 

@@ -9,6 +9,7 @@ from aiogram.exceptions import TelegramAPIError, TelegramForbiddenError
 from django.db import transaction
 from django.utils import timezone, translation
 
+from apps.groups import tasks as group_jobs
 from apps.members.models import Membership
 from apps.notifications import telegram
 from apps.notifications.telegram import BotName, serialize_markup
@@ -112,6 +113,8 @@ def _deliver(claim: Claim, now: datetime) -> None:
     user = member.user
     recipients = escalation_recipients(task) if claim.escalate else []
     manager = str(recipients[0]) if len(recipients) == 1 else None  # named in the reminder
+    if claim.escalate:
+        group_jobs.announce_late.delay(task.pk)  # once per task, when the manager hears too
     with translation.override(user.language):
         if claim.kind == ReminderLog.Kind.HEADS_UP:
             text, markup = bot_messages.heads_up(task)

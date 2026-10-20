@@ -12,6 +12,7 @@ from aiogram.fsm.storage.base import BaseStorage
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage
 
+from bot.commands import set_commands
 from bot.handlers import register_all_handlers
 from bot.middlewares import register_all_middlewares
 from core.config import settings
@@ -45,6 +46,7 @@ async def main() -> None:
 
     logger.info("Employee bot starting in polling mode")
     await bot.delete_webhook()
+    await set_commands(bot)
     await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
 
 

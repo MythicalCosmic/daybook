@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "apps.notifications",
     "apps.tasks",
     "apps.reminders",
+    "apps.groups",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
@@ -114,6 +115,11 @@ CELERY_BEAT_SCHEDULE = {
     "send-due-reminders": {
         "task": "apps.reminders.tasks.send_due_reminders",
         "schedule": crontab(),  # every minute
+    },
+    # Each report goes out once a day, in the first run after the company's report time.
+    "send-group-reports": {
+        "task": "apps.groups.tasks.send_daily_reports",
+        "schedule": crontab(minute="*/5"),
     },
 }
 
