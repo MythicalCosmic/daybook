@@ -62,6 +62,9 @@
   "common.export.failed": "Eksport amalga oshmadi. Qayta urinib ko‘ring.",
   "common.export.download": "Yuklab olish",
 
+  "common.calendar.prevWeek": "Oldingi hafta",
+  "common.calendar.nextWeek": "Keyingi hafta",
+
   "common.discard": "Bekor qilish",
   "common.unsaved": "Saqlanmagan o‘zgarishlar bor",
 

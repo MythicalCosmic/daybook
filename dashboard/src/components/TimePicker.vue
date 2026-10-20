@@ -90,7 +90,7 @@ watch(open, async (isOpen) => {
   if (!isOpen) return;
   await nextTick();
   const target = list.value?.querySelector<HTMLElement>('[aria-selected="true"]') ?? list.value?.querySelector<HTMLElement>('[data-near="true"]');
-  target?.scrollIntoView({ block: "center" });
+  target?.scrollIntoView?.({ block: "center" });
   target?.focus();
 });
 

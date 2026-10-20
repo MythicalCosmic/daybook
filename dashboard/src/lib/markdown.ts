@@ -151,6 +151,10 @@ let purifier: ReturnType<typeof DOMPurify> | null = null;
 function sanitizer(): ReturnType<typeof DOMPurify> {
   if (purifier) return purifier;
   purifier = DOMPurify(window);
+  // Only the chips' two data attributes survive (ALLOW_DATA_ATTR stays off for everything else).
+  purifier.addHook("uponSanitizeAttribute", (_node, data) => {
+    if (data.attrName === "data-record" || data.attrName === "data-id") data.forceKeepAttr = true;
+  });
   purifier.addHook("afterSanitizeAttributes", (node) => {
     if (node.tagName === "A") {
       const href = node.getAttribute("href") ?? "";

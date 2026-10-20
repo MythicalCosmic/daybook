@@ -62,6 +62,9 @@
   "common.export.failed": "Экспорт не удался. Попробуйте ещё раз.",
   "common.export.download": "Скачать",
 
+  "common.calendar.prevWeek": "Предыдущая неделя",
+  "common.calendar.nextWeek": "Следующая неделя",
+
   "common.discard": "Сбросить",
   "common.unsaved": "Есть несохранённые изменения",
 

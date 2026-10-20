@@ -172,6 +172,8 @@ const virtualizer = useVirtualizer(
     getScrollElement: () => scroller.value,
     estimateSize: () => rowHeight.value,
     overscan: 12,
+    // A first guess of the viewport, so the first paint has rows before the scroller is measured.
+    initialRect: { width: 1024, height: 640 },
   })),
 );
 watch(rowHeight, () => virtualizer.value.measure());
@@ -184,7 +186,9 @@ const padBottom = computed(() => {
 const renderedRows = computed(() => (virtualOn.value ? virtualItems.value.map((item) => rows.value[item.index]!).filter(Boolean) : rows.value));
 
 // Back to the top when the page or ordering changes.
-watch([props.state.page, props.state.ordering], () => scroller.value?.scrollTo({ top: 0 }));
+watch([props.state.page, props.state.ordering], () => {
+  if (scroller.value) scroller.value.scrollTop = 0;
+});
 
 // Selection.
 const pageKeys = computed(() => rows.value.map((row) => row.id));

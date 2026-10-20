@@ -62,6 +62,9 @@
   "common.export.failed": "The export failed. Try again.",
   "common.export.download": "Download",
 
+  "common.calendar.prevWeek": "Previous week",
+  "common.calendar.nextWeek": "Next week",
+
   "common.discard": "Discard",
   "common.unsaved": "You have unsaved changes",
 
