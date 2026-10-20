@@ -1,0 +1,245 @@
+/* Semantic design tokens (plan §6.3). Components read only these, through CSS (`var(--c-surface)`)
+   or through the Tailwind utilities generated from the @theme block below (`bg-surface`, `text-muted`,
+   `border-line`, `rounded-card`, `shadow-pop`, `text-base`, `ease-out`…).
+
+   Tailwind's default palette and type scale are switched off on purpose: a module that needs a color
+   that isn't here asks W0 for a token instead of reaching for `red-500`. */
+
+:root {
+  /* Radii: 6 inputs, 8 buttons, 12 cards, 16 drawers, full for chips */
+  --r-input: 6px;
+  --r-button: 8px;
+  --r-card: 12px;
+  --r-drawer: 16px;
+
+  /* Layout */
+  --row-h: 44px;
+  --control-h: 32px;
+  --nav-w: 248px;
+  --rail-w: 64px;
+  --topbar-h: 52px;
+  --tabbar-h: 58px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Ground and surfaces */
+  --c-canvas: #f7f3ec;
+  --c-surface: #ffffff;
+  --c-surface-2: #f1ebe1; /* hover, table header */
+  --c-surface-3: #e8e0d3; /* pressed, selected neutral */
+  --c-border: rgb(32 30 29 / 0.1);
+  --c-border-strong: rgb(32 30 29 / 0.18);
+
+  /* Text */
+  --c-text: #201e1d;
+  --c-muted: #6b6359;
+  --c-subtle: #8e8579; /* placeholders, disabled, tertiary */
+
+  /* Brand */
+  --c-primary: #a85a27; /* ≥ 4.5:1 with --c-on-primary */
+  --c-primary-hover: #8c491a;
+  --c-on-primary: #ffffff;
+  --c-accent-soft: #fff2eb; /* selected rows, chips */
+  --c-accent-fg: #8c491a; /* text and icons on accent-soft */
+
+  /* Status */
+  --c-success: #5f7a45;
+  --c-success-soft: #eef4e3;
+  --c-warning: #a8701c;
+  --c-warning-soft: #fbf0db;
+  --c-danger: #b3412e;
+  --c-danger-soft: #fbe8e3;
+  --c-info: #4a6a8a;
+  --c-info-soft: #e7eef5;
+
+  /* Chrome */
+  --c-overlay: rgb(28 22 16 / 0.36);
+  --c-ring: rgb(168 90 39 / 0.55);
+  --c-nav: var(--c-canvas);
+  --c-nav-hover: rgb(32 30 29 / 0.05);
+  --c-nav-active: #ffffff;
+  --c-highlight: rgb(32 30 29 / 0.045); /* highlighted list row (palette, menus) */
+  --c-skeleton: rgb(32 30 29 / 0.07);
+  --c-skeleton-shine: rgb(255 255 255 / 0.55);
+
+  /* Chart series 1–8 */
+  --c-chart-1: #c67139;
+  --c-chart-2: #7a8a5e;
+  --c-chart-3: #4a6a8a;
+  --c-chart-4: #d1a040;
+  --c-chart-5: #8a5a7a;
+  --c-chart-6: #3f8a83;
+  --c-chart-7: #a66a4f;
+  --c-chart-8: #8c857a;
+
+  /* Depth: borders by default, shadows only on overlays */
+  --sh-xs: 0 1px 2px rgb(32 30 29 / 0.05);
+  --sh-raised: 0 1px 2px rgb(32 30 29 / 0.06), 0 0 0 1px rgb(32 30 29 / 0.07);
+  --sh-pop: 0 0 0 1px rgb(32 30 29 / 0.08), 0 4px 8px -2px rgb(32 30 29 / 0.06),
+    0 12px 28px -6px rgb(32 30 29 / 0.14);
+  --sh-drawer: 0 0 0 1px rgb(32 30 29 / 0.08), 0 24px 48px -12px rgb(32 30 29 / 0.22);
+  --sh-palette: 0 0 0 1px rgb(32 30 29 / 0.08), 0 8px 20px -6px rgb(32 30 29 / 0.12),
+    0 32px 72px -16px rgb(32 30 29 / 0.3);
+}
+
+/* Density: comfortable (44 px rows) or compact (36 px), remembered per person. The attribute
+   selectors also work on any element, so a region (the component gallery) can show the other density. */
+[data-density="comfortable"] {
+  --row-h: 44px;
+  --control-h: 32px;
+}
+[data-density="compact"] {
+  --row-h: 36px;
+  --control-h: 30px;
+}
+
+/* Dark. Like density, it also applies to a nested [data-theme] region (the gallery's side-by-side view);
+   portals and the rest of the app follow <html data-theme>. */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --c-canvas: #141210;
+  --c-surface: #1c1916;
+  --c-surface-2: #24201b;
+  --c-surface-3: #2d2822;
+  --c-border: rgb(245 234 216 / 0.09);
+  --c-border-strong: rgb(245 234 216 / 0.16);
+
+  --c-text: #f3ece1;
+  --c-muted: #a39a8c;
+  --c-subtle: #7d756a;
+
+  --c-primary: #e08a52;
+  --c-primary-hover: #f6a06b;
+  --c-on-primary: #1e130b;
+  --c-accent-soft: #402310;
+  --c-accent-fg: #ffc6a5;
+
+  --c-success: #9cc07a;
+  --c-success-soft: #232c1a;
+  --c-warning: #e0a84a;
+  --c-warning-soft: #33270f;
+  --c-danger: #f07a63;
+  --c-danger-soft: #3a1a14;
+  --c-info: #8fb0d4;
+  --c-info-soft: #1b2633;
+
+  --c-overlay: rgb(5 4 3 / 0.62);
+  --c-ring: rgb(224 138 82 / 0.6);
+  --c-nav: var(--c-canvas);
+  --c-nav-hover: rgb(245 234 216 / 0.05);
+  --c-nav-active: #221e1a;
+  --c-highlight: rgb(245 234 216 / 0.06);
+  --c-skeleton: rgb(245 234 216 / 0.065);
+  --c-skeleton-shine: rgb(245 234 216 / 0.05);
+
+  /* Lightened equivalents, each ≥ 4.5:1 against #1c1916 */
+  --c-chart-1: #e8955c;
+  --c-chart-2: #a9ba88;
+  --c-chart-3: #8fb0d4;
+  --c-chart-4: #e6bd62;
+  --c-chart-5: #c79bbb;
+  --c-chart-6: #6ec2b8;
+  --c-chart-7: #d6997e;
+  --c-chart-8: #b7b0a4;
+
+  --sh-xs: 0 1px 2px rgb(0 0 0 / 0.3);
+  --sh-raised: 0 1px 2px rgb(0 0 0 / 0.35), 0 0 0 1px rgb(245 234 216 / 0.07);
+  --sh-pop: 0 0 0 1px rgb(245 234 216 / 0.09), 0 4px 8px -2px rgb(0 0 0 / 0.35),
+    0 16px 32px -8px rgb(0 0 0 / 0.55);
+  --sh-drawer: 0 0 0 1px rgb(245 234 216 / 0.09), 0 24px 56px -12px rgb(0 0 0 / 0.65);
+  --sh-palette: 0 0 0 1px rgb(245 234 216 / 0.1), 0 8px 20px -6px rgb(0 0 0 / 0.45),
+    0 32px 80px -16px rgb(0 0 0 / 0.7);
+}
+
+@theme inline {
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  --color-canvas: var(--c-canvas);
+  --color-surface: var(--c-surface);
+  --color-surface-2: var(--c-surface-2);
+  --color-surface-3: var(--c-surface-3);
+  --color-line: var(--c-border);
+  --color-line-strong: var(--c-border-strong);
+  --color-fg: var(--c-text);
+  --color-muted: var(--c-muted);
+  --color-subtle: var(--c-subtle);
+  --color-primary: var(--c-primary);
+  --color-primary-hover: var(--c-primary-hover);
+  --color-on-primary: var(--c-on-primary);
+  --color-accent-soft: var(--c-accent-soft);
+  --color-accent-fg: var(--c-accent-fg);
+  --color-success: var(--c-success);
+  --color-success-soft: var(--c-success-soft);
+  --color-warning: var(--c-warning);
+  --color-warning-soft: var(--c-warning-soft);
+  --color-danger: var(--c-danger);
+  --color-danger-soft: var(--c-danger-soft);
+  --color-info: var(--c-info);
+  --color-info-soft: var(--c-info-soft);
+  --color-overlay: var(--c-overlay);
+  --color-ring: var(--c-ring);
+  --color-highlight: var(--c-highlight);
+  --color-chart-1: var(--c-chart-1);
+  --color-chart-2: var(--c-chart-2);
+  --color-chart-3: var(--c-chart-3);
+  --color-chart-4: var(--c-chart-4);
+  --color-chart-5: var(--c-chart-5);
+  --color-chart-6: var(--c-chart-6);
+  --color-chart-7: var(--c-chart-7);
+  --color-chart-8: var(--c-chart-8);
+
+  --font-sans: "Figtree Variable", "Figtree", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Caprasimo", "Figtree Variable", Georgia, serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  /* Type: 12 / 13 / 14 base / 16 / 20 / 24 / 32 */
+  --text-*: initial;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.125rem;
+  --text-base: 0.875rem;
+  --text-base--line-height: 1.25rem;
+  --text-md: 1rem;
+  --text-md--line-height: 1.5rem;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.5rem;
+  --text-xl--line-height: 2rem;
+  --text-xl--letter-spacing: -0.012em;
+  --text-2xl: 2rem;
+  --text-2xl--line-height: 2.5rem;
+  --text-2xl--letter-spacing: -0.02em;
+
+  --radius-input: var(--r-input);
+  --radius-button: var(--r-button);
+  --radius-card: var(--r-card);
+  --radius-drawer: var(--r-drawer);
+
+  --shadow-xs: var(--sh-xs);
+  --shadow-raised: var(--sh-raised);
+  --shadow-pop: var(--sh-pop);
+  --shadow-drawer: var(--sh-drawer);
+  --shadow-palette: var(--sh-palette);
+
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 80rem;
+}

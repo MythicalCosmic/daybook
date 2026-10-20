@@ -1,0 +1,16 @@
+{
+  "auth.title": "Kirish",
+  "auth.dev.cafeManager": "Demo Café menejeri",
+  "auth.login.title": "Telegram orqali kirish",
+  "auth.login.body": "Konsolni egalar botidagi menyu tugmasi orqali yoki bot yuboradigan kirish havolasi bilan oching.",
+  "auth.login.dev": "Dasturchilar uchun kirish",
+  "auth.dev.title": "Dasturchilar uchun kirish",
+  "auth.dev.body": "Ishlab chiqish bazasidagi istalgan Telegram hisobi nomidan kiring. Faqat DEBUG backend va yoqilgan DASHBOARD_DEV_LOGIN bilan ishlaydi.",
+  "auth.dev.telegramId": "Telegram id",
+  "auth.dev.submit": "Kirish",
+  "auth.dev.presets": "Demo xodimlar",
+  "auth.dev.owner": "Egasi",
+  "auth.dev.manager": "Menejer",
+  "auth.dev.you": "Siz",
+  "auth.dev.invalidId": "Telegram id kiriting: faqat raqamlar"
+}

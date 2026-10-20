@@ -1,0 +1,16 @@
+{
+  "auth.title": "Sign-in",
+  "auth.dev.cafeManager": "Demo Café manager",
+  "auth.login.title": "Sign in with Telegram",
+  "auth.login.body": "Open the console from the owner bot’s menu button, or use the sign-in link the bot sends you.",
+  "auth.login.dev": "Developer sign-in",
+  "auth.dev.title": "Developer sign-in",
+  "auth.dev.body": "Sign in as any Telegram account in the development database. Works only on a DEBUG backend with DASHBOARD_DEV_LOGIN on.",
+  "auth.dev.telegramId": "Telegram id",
+  "auth.dev.submit": "Sign in",
+  "auth.dev.presets": "Demo people",
+  "auth.dev.owner": "Owner",
+  "auth.dev.manager": "Manager",
+  "auth.dev.you": "You",
+  "auth.dev.invalidId": "Enter a Telegram id: digits only"
+}

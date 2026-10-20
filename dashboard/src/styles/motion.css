@@ -1,0 +1,324 @@
+/* Motion (plan §6.3): 120 ms hover/press, 180 ms fades and tooltips, 240 ms drawers and sheets,
+   320 ms phone overlays; easing out cubic-bezier(.2,.8,.2,1), standard cubic-bezier(.4,0,.2,1).
+
+   Every enter/exit animation is one pair of keyframes driven by custom properties, so reduced
+   motion only has to zero the distances: no transforms, 80 ms opacity only. */
+
+:root {
+  --dur-press: 120ms;
+  --dur-fade: 180ms;
+  --dur-drawer: 240ms;
+  --dur-sheet: 320ms;
+  --dur-route: 180ms;
+  --dur-reduced: 80ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+}
+
+@keyframes enter {
+  from {
+    opacity: var(--enter-opacity, 0);
+    transform: translate3d(var(--enter-x, 0), var(--enter-y, 0), 0) scale(var(--enter-scale, 1));
+  }
+}
+
+@keyframes exit {
+  to {
+    opacity: var(--exit-opacity, 0);
+    transform: translate3d(var(--exit-x, 0), var(--exit-y, 0), 0) scale(var(--exit-scale, 1));
+  }
+}
+
+/* reka-ui overlays animate through data-state; Presence waits for the exit animation to end. */
+
+.anim-fade[data-state="open"] {
+  animation: enter var(--dur-fade) var(--ease-standard);
+}
+.anim-fade[data-state="closed"] {
+  animation: exit var(--dur-fade) var(--ease-standard);
+}
+
+/* Popovers, menus, tooltips: scale from the trigger side. */
+.anim-pop {
+  transform-origin: var(
+    --reka-popover-content-transform-origin,
+    var(--reka-dropdown-menu-content-transform-origin, var(--reka-tooltip-content-transform-origin, center))
+  );
+  --enter-scale: 0.96;
+  --exit-scale: 0.97;
+}
+.anim-pop[data-side="bottom"] {
+  --enter-y: -4px;
+}
+.anim-pop[data-side="top"] {
+  --enter-y: 4px;
+}
+.anim-pop[data-side="left"] {
+  --enter-x: 4px;
+}
+.anim-pop[data-side="right"] {
+  --enter-x: -4px;
+}
+.anim-pop[data-state="open"],
+.anim-pop[data-state="delayed-open"],
+.anim-pop[data-state="instant-open"] {
+  animation: enter var(--dur-fade) var(--ease-out);
+}
+.anim-pop[data-state="closed"] {
+  animation: exit 120ms var(--ease-in);
+}
+
+/* Centered dialogs and the command palette. */
+.anim-dialog {
+  --enter-scale: 0.97;
+  --enter-y: 8px;
+  --exit-scale: 0.98;
+}
+.anim-dialog[data-state="open"] {
+  animation: enter 200ms var(--ease-out);
+}
+.anim-dialog[data-state="closed"] {
+  animation: exit 140ms var(--ease-in);
+}
+
+/* Side drawers. */
+.anim-drawer-right {
+  --enter-x: 24px;
+  --exit-x: 24px;
+  --enter-opacity: 0;
+}
+.anim-drawer-left {
+  --enter-x: -24px;
+  --exit-x: -24px;
+}
+.anim-drawer-right[data-state="open"],
+.anim-drawer-left[data-state="open"] {
+  animation: enter var(--dur-drawer) var(--ease-out);
+}
+.anim-drawer-right[data-state="closed"],
+.anim-drawer-left[data-state="closed"] {
+  animation: exit 180ms var(--ease-in);
+}
+
+/* Phone bottom sheets. */
+.anim-sheet {
+  --enter-y: 100%;
+  --exit-y: 100%;
+  --enter-opacity: 1;
+  --exit-opacity: 1;
+}
+.anim-sheet[data-state="open"] {
+  animation: enter var(--dur-sheet) var(--ease-out);
+}
+.anim-sheet[data-state="closed"] {
+  animation: exit var(--dur-drawer) var(--ease-in);
+}
+
+.anim-overlay[data-state="open"] {
+  animation: enter var(--dur-fade) var(--ease-standard);
+}
+.anim-overlay[data-state="closed"] {
+  animation: exit var(--dur-fade) var(--ease-standard);
+}
+
+/* Vue <Transition> names. */
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--dur-fade) var(--ease-standard);
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Route change: content fades and rises 6 px; the shell stays still. */
+.route-enter-active {
+  transition:
+    opacity var(--dur-route) var(--ease-out),
+    transform var(--dur-route) var(--ease-out);
+}
+/* The old page leaves at once, so a prefetched route shows without waiting for an exit. */
+.route-leave-active {
+  display: none;
+}
+.route-enter-from {
+  opacity: 0;
+  transform: translate3d(0, var(--route-rise, 6px), 0);
+}
+.route-leave-to {
+  opacity: 0;
+}
+
+/* Crossfade from a skeleton to content. */
+.swap-enter-active {
+  transition: opacity var(--dur-fade) var(--ease-standard);
+}
+.swap-leave-active {
+  display: none;
+}
+.swap-enter-from {
+  opacity: 0;
+}
+
+/* Lists: FLIP moves through <TransitionGroup name="list">. */
+.list-move,
+.list-enter-active,
+.list-leave-active {
+  transition:
+    opacity var(--dur-drawer) var(--ease-out),
+    transform var(--dur-drawer) var(--ease-out);
+}
+.list-enter-from {
+  opacity: 0;
+  transform: translate3d(0, var(--list-rise, -6px), 0);
+}
+.list-leave-to {
+  opacity: 0;
+  transform: scale(0.98);
+}
+.list-leave-active {
+  position: absolute;
+  inset-inline: 0;
+}
+
+/* Toasts. */
+.toast-move,
+.toast-enter-active,
+.toast-leave-active {
+  transition:
+    opacity var(--dur-drawer) var(--ease-out),
+    transform var(--dur-drawer) var(--ease-out);
+}
+.toast-enter-from {
+  opacity: 0;
+  transform: translate3d(0, var(--toast-rise, 12px), 0) scale(0.97);
+}
+.toast-leave-to {
+  opacity: 0;
+  transform: scale(0.96);
+}
+.toast-leave-active {
+  position: absolute;
+  inset-inline: 0;
+}
+
+/* Collapsible regions (nav sub-items). */
+.collapse-enter-active,
+.collapse-leave-active {
+  transition:
+    grid-template-rows var(--dur-fade) var(--ease-out),
+    opacity var(--dur-fade) var(--ease-out);
+  display: grid;
+}
+.collapse-enter-from,
+.collapse-leave-to {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+.collapse-enter-to,
+.collapse-leave-from {
+  grid-template-rows: 1fr;
+}
+
+/* Live inserts glow for 1.5 s. */
+@keyframes live-glow {
+  0% {
+    background-color: var(--c-accent-soft);
+    box-shadow: inset 2px 0 0 var(--c-primary);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: inset 2px 0 0 transparent;
+  }
+}
+.live-glow {
+  animation: live-glow 1.5s var(--ease-standard);
+}
+
+/* A dot that breathes (live status). */
+@keyframes breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 45%, transparent);
+  }
+  60% {
+    box-shadow: 0 0 0 5px color-mix(in srgb, currentColor 0%, transparent);
+  }
+}
+
+/* Skeleton shimmer. */
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Press feedback for buttons and rows. */
+.pressable {
+  transition:
+    background-color var(--dur-press) var(--ease-standard),
+    border-color var(--dur-press) var(--ease-standard),
+    color var(--dur-press) var(--ease-standard),
+    box-shadow var(--dur-press) var(--ease-standard),
+    transform var(--dur-press) var(--ease-standard);
+}
+.pressable:active:not(:disabled):not([aria-disabled="true"]) {
+  transform: scale(0.98);
+}
+
+/* Reduced motion: no transforms, 80 ms opacity only. Driven by the OS setting, and by
+   html[data-motion="reduced"] which app/providers.ts mirrors from it. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    --enter-x: 0 !important;
+    --enter-y: 0 !important;
+    --enter-scale: 1 !important;
+    --exit-x: 0 !important;
+    --exit-y: 0 !important;
+    --exit-scale: 1 !important;
+    --route-rise: 0px !important;
+    --list-rise: 0px !important;
+    --toast-rise: 0px !important;
+    animation-duration: var(--dur-reduced) !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: var(--dur-reduced) !important;
+    scroll-behavior: auto !important;
+  }
+  .pressable:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+:root[data-motion="reduced"] *,
+:root[data-motion="reduced"] *::before,
+:root[data-motion="reduced"] *::after {
+  --enter-x: 0 !important;
+  --enter-y: 0 !important;
+  --enter-scale: 1 !important;
+  --exit-x: 0 !important;
+  --exit-y: 0 !important;
+  --exit-scale: 1 !important;
+  --route-rise: 0px !important;
+  --list-rise: 0px !important;
+  --toast-rise: 0px !important;
+  animation-duration: var(--dur-reduced) !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: var(--dur-reduced) !important;
+  scroll-behavior: auto !important;
+}
+:root[data-motion="reduced"] .pressable:active {
+  transform: none;
+}
