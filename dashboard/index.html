@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="uz">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f7f3ec" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#141210" media="(prefers-color-scheme: dark)" />
+    <title>Daybook Console</title>
+    <link rel="icon" type="image/svg+xml" href="/dashboard/favicon.svg" />
+    <!-- Boot ground and splash until the app mounts. The CSP allows inline styles, never inline scripts. -->
+    <style>
+      html { background: #f7f3ec; }
+      @media (prefers-color-scheme: dark) { html { background: #141210; } }
+      .boot { position: fixed; inset: 0; display: grid; place-items: center; }
+      .boot svg { width: 40px; height: 40px; animation: boot 1.2s ease-in-out infinite alternate; }
+      @keyframes boot { from { opacity: .35; transform: scale(.96); } to { opacity: 1; transform: none; } }
+      @media (prefers-reduced-motion: reduce) { .boot svg { animation: none; } }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div class="boot" aria-hidden="true">
+        <svg viewBox="0 0 50 50"><circle cx="21" cy="21" r="21" fill="#c67139"/><path d="M12.25 21.9 18.4 28 29.6 15.8" fill="none" stroke="#f5ead8" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="39" cy="39" r="11" fill="#7a8a5e" stroke="#f5ead8" stroke-width="3"/></svg>
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

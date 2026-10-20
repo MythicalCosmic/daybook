@@ -1,0 +1,126 @@
+/* Global element defaults on top of Tailwind's preflight. Everything sits in the base layer, so a
+   utility class on an element always wins (e.g. `focus-visible:outline-none` on a field). */
+
+@layer base {
+  html {
+    background: var(--c-canvas);
+    color: var(--c-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+    /* Every number in the console lines up: amounts, counts, times, dates. */
+    font-variant-numeric: tabular-nums;
+    overscroll-behavior: none;
+  }
+
+  #app {
+    min-height: 100dvh;
+    isolation: isolate;
+  }
+
+  button,
+  [role="button"],
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  :focus {
+    outline: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--c-ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--c-primary) 24%, transparent);
+  }
+
+  ::placeholder {
+    color: var(--c-subtle);
+    opacity: 1;
+  }
+
+  /* Lucide icons: 1.75 stroke everywhere (author CSS beats the svg's presentation attribute). */
+  svg.lucide {
+    stroke-width: 1.75;
+    flex-shrink: 0;
+  }
+
+  /* Thin, warm scrollbars. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--c-text) 18%, transparent) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--c-text) 16%, transparent);
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, var(--c-text) 28%, transparent);
+  }
+
+  .font-display {
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+}
+
+@utility num {
+  font-variant-numeric: tabular-nums;
+}
+
+@utility scroll-fade-y {
+  mask-image: linear-gradient(to bottom, transparent, #000 12px, #000 calc(100% - 12px), transparent);
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Caprasimo and Figtree have no Cyrillic: Russian headlines use the bold system sans instead of a
+   browser-picked serif. Outside the layer, so it beats the `font-display` utility. */
+:root:lang(ru) .font-display {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+/* Theme switch: View Transitions circular reveal (the animation itself runs from app/theme.ts). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
+}
