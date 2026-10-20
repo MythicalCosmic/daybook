@@ -13,3 +13,9 @@ from apps.signin import housekeeping
 def flush_expired_tokens() -> None:
     """Daily: expired refresh tokens and sessions that can never be used again."""
     housekeeping.flush_expired_tokens()
+
+
+@shared_task
+def expire_login_links() -> None:
+    """Hourly: stale login links become expired; week-old ones go."""
+    housekeeping.expire_login_links()

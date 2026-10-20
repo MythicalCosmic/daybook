@@ -9,10 +9,16 @@ from django.utils.translation import gettext as _
 from apps.accounts.models import User
 from apps.audit import services as audit
 from apps.audit.models import AuditLog
-from apps.companies.models import Company
+from apps.companies.models import Branch, Company
 from apps.core.exceptions import DomainError
 from apps.groups import tasks as group_jobs
-from apps.groups.models import DEFAULT_EVENTS, EVENT_FEATURES, GroupEvent, TelegramGroup
+from apps.groups.models import (
+    DEFAULT_EVENTS,
+    EVENT_FEATURES,
+    GroupEvent,
+    TelegramGroup,
+    available_events,
+)
 from apps.members import services as members
 from apps.members.models import Membership, Position
 from apps.members.permissions import Perm
@@ -176,3 +182,63 @@ def _audit(action: AuditLog.Action, group: TelegramGroup, by: User | None, **det
 def migrated(old_chat_id: int, new_chat_id: int) -> None:
     """A group that became a supergroup gets a new id; keep posting to it."""
     TelegramGroup.objects.move_chat(old_chat_id, new_chat_id)
+
+
+def update_settings(
+    group: TelegramGroup,
+    *,
+    by: Membership,
+    events: Iterable[str] | None = None,
+    position_ids: Iterable[int] | None = None,
+    branch_ids: Iterable[int] | None = None,
+) -> TelegramGroup:
+    """What a group gets, from the dashboard (§4.4): its events, and the positions and branches
+    its news is narrowed to (empty = everyone, every branch). Only the arguments given change.
+    An event of a switched-off module can be kept (it was chosen before) but not added."""
+    if not by.has_perm(Perm.GROUPS_MANAGE) or by.company_id != group.company_id:
+        raise PermissionDenied(_("Only a manager of this company can change that."))
+    with transaction.atomic():
+        group = TelegramGroup.objects.select_for_update().select_related("company").get(pk=group.pk)
+        if not group.is_active:
+            raise DomainError(_("This group is disconnected. Add the bot to it again first."))
+        before = _settings_snapshot(group)
+        if events is not None:
+            wanted = list(dict.fromkeys(str(event) for event in events))
+            allowed = {str(event) for event in available_events(group.company, group.events)}
+            if any(event not in allowed for event in wanted):
+                raise DomainError(_("That event isn't available for this company."))
+            group.events = [event for event in GroupEvent.values if event in wanted]
+            group.save(update_fields=["events", "updated_at"])
+        if position_ids is not None:
+            ids = set(position_ids)
+            positions = list(Position.objects.for_company(group.company_id).filter(pk__in=ids))
+            if len(positions) != len(ids):
+                raise DomainError(_("Pick positions of this company."))
+            group.positions.set(positions)
+        if branch_ids is not None:
+            ids = set(branch_ids)
+            branches = list(Branch.objects.for_company(group.company_id).filter(pk__in=ids))
+            if len(branches) != len(ids):
+                raise DomainError(_("Pick branches of this company."))
+            group.branches.set(branches)
+        after = _settings_snapshot(group)
+        changes = {
+            name: [before[name], value] for name, value in after.items() if before[name] != value
+        }
+        if changes:
+            audit.record(
+                AuditLog.Action.GROUP_CHANGED,
+                company_id=group.company_id,
+                actor=by.user,
+                target=group,
+                changes=changes,
+            )
+    return group
+
+
+def _settings_snapshot(group: TelegramGroup) -> dict:
+    return {
+        "events": list(group.events),
+        "positions": sorted(group.positions.values_list("pk", flat=True)),
+        "branches": sorted(group.branches.values_list("pk", flat=True)),
+    }
