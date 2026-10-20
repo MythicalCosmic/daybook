@@ -6,7 +6,15 @@ from datetime import date, time, timedelta
 import pytest
 
 from apps.ai.tools.testing import call_tool
-from apps.attendance import providers, queries, services
+
+# Imported here so the tool registers when the tests are collected, before apps/ai's tests
+# swap the registry out (autodiscovery can't re-register a module that is already imported).
+from apps.attendance import (
+    ai_tools,  # noqa: F401
+    providers,
+    queries,
+    services,
+)
 from apps.attendance.models import AttendanceRecord
 from apps.attendance.tests.conftest import DAY, local
 from apps.attendance.tests.factories import absent, assign, shift_at, weekly_schedule

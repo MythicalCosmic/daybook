@@ -13,14 +13,14 @@ import { haptic } from "../../telegram";
 import { Avatar, Badge, Button, Card, EmptyState, PageHeader, Screen, SectionHead, Segmented, SkeletonList, useToast } from "../../ui";
 import { useClaim, useOpenShifts, useSwapAction, useSwaps } from "./api";
 import { shiftDay, shiftLine } from "./lib";
-import { swapStatusLabel, useT } from "./text";
+import { swapStatusLabel, usePageT } from "./pageText";
 import type { OpenShift, Shift, Swap } from "./types";
 import "./attendance.css";
 
 type Tab = "forMe" | "mine";
 
 export default function SwapsPage() {
-  const t = useT();
+  const t = usePageT();
   const member = useMember();
   const navigation = useNavigation();
   const swaps = useSwaps(member.companyId);
@@ -78,7 +78,7 @@ function useShiftText() {
 }
 
 function ForMe({ requests, openShifts }: { requests: Swap[]; openShifts: OpenShift[] }) {
-  const t = useT();
+  const t = usePageT();
   if (!requests.length && !openShifts.length) {
     return <EmptyState icon={Inbox} tone="sage" title={t("forMe.empty")} body={t("forMe.emptyBody")} />;
   }
@@ -105,7 +105,7 @@ function ForMe({ requests, openShifts }: { requests: Swap[]; openShifts: OpenShi
 }
 
 function RequestCard({ swap }: { swap: Swap }) {
-  const t = useT();
+  const t = usePageT();
   const member = useMember();
   const toast = useToast();
   const text = useShiftText();
@@ -156,7 +156,7 @@ function RequestCard({ swap }: { swap: Swap }) {
 }
 
 function OpenShiftCard({ shift }: { shift: OpenShift }) {
-  const t = useT();
+  const t = usePageT();
   const member = useMember();
   const toast = useToast();
   const text = useShiftText();
@@ -204,7 +204,7 @@ function OpenShiftCard({ shift }: { shift: OpenShift }) {
 }
 
 function Mine({ swaps, memberId, onShifts }: { swaps: Swap[]; memberId: number; onShifts: () => void }) {
-  const t = useT();
+  const t = usePageT();
   if (!swaps.length) {
     return <EmptyState icon={Repeat2} tone="sage" title={t("mine.empty")} body={t("mine.emptyBody")} action={{ label: t("link.shifts"), onClick: onShifts }} />;
   }
@@ -218,7 +218,7 @@ function Mine({ swaps, memberId, onShifts }: { swaps: Swap[]; memberId: number; 
 }
 
 function MineCard({ swap, mine }: { swap: Swap; mine: boolean }) {
-  const t = useT();
+  const t = usePageT();
   const member = useMember();
   const toast = useToast();
   const text = useShiftText();

@@ -14,14 +14,14 @@ import { Avatar, Button, EmptyState, Field, Segmented, SheetTitle, SkeletonList,
 import type { SheetProps } from "../registry";
 import { useCandidates, useMyShifts, useRequestSwap } from "./api";
 import { shiftDay, shiftHours, shiftLine } from "./lib";
-import { useT } from "./text";
+import { usePageT } from "./pageText";
 import type { Candidate, Shift } from "./types";
 import "./attendance.css";
 
 type Kind = "cover" | "swap";
 
 export default function SwapSheet({ params, close }: SheetProps) {
-  const t = useT();
+  const t = usePageT();
   const member = useMember();
   const shiftId = Number(params.shift);
   const shifts = useMyShifts(member.companyId);
@@ -33,7 +33,7 @@ export default function SwapSheet({ params, close }: SheetProps) {
 }
 
 function SwapForm({ shift, close }: { shift: Shift; close: () => void }) {
-  const t = useT();
+  const t = usePageT();
   const { locale } = useI18n();
   const member = useMember();
   const toast = useToast();

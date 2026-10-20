@@ -15,14 +15,15 @@ import { Badge, Card, EmptyState, IconButton, ListCard, ListRow, PageHeader, Scr
 import { useCorrections, useMonth, useToday } from "./api";
 import { CheckInCard } from "./CheckInCard";
 import { FIXABLE, monthWeeks, shiftDay, shiftLine, shiftMonth, wallClock, weekOf } from "./lib";
-import { codeLabel, duration, hoursText, monthTitle, requestStatusLabel, useT } from "./text";
+import { codeLabel, hoursText, monthTitle, requestStatusLabel, usePageT } from "./pageText";
+import { duration } from "./text";
 import type { CellCode, Correction, MyMonth } from "./types";
 import "./attendance.css";
 
 const LEGEND: readonly CellCode[] = ["present", "late", "absent", "leave", "planned"];
 
 export default function AttendancePage() {
-  const t = useT();
+  const t = usePageT();
   const { locale } = useI18n();
   const member = useMember();
   const navigation = useNavigation();
@@ -103,7 +104,7 @@ function MonthCard({
   onMonth: (month: string) => void;
   onDay: (date: string, recordId: number | null) => void;
 }) {
-  const t = useT();
+  const t = usePageT();
   const { locale } = useI18n();
   const weeks = monthWeeks(month);
   const header = weekOf(`${month}-01`);
@@ -161,7 +162,7 @@ function MonthCard({
 }
 
 function Totals({ data }: { data: MyMonth }) {
-  const t = useT();
+  const t = usePageT();
   const totals = data.totals;
   const worked = totals.worked_minutes ?? 0;
   const overtime = totals.overtime_minutes ?? totals.approved_overtime_minutes ?? 0;
@@ -186,7 +187,7 @@ function Totals({ data }: { data: MyMonth }) {
 }
 
 function CorrectionRow({ item }: { item: Correction }) {
-  const t = useT();
+  const t = usePageT();
   const { locale } = useI18n();
   const times = [item.check_in_at, item.check_out_at].map((value) => (value ? wallClock(value) : "…")).join("–");
   const tone = item.status === "approved" ? "sage" : item.status === "rejected" ? "neutral" : "accent";

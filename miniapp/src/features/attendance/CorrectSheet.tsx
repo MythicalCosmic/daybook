@@ -15,12 +15,13 @@ import { Button, EmptyState, Field, Input, SheetTitle, SkeletonList, Textarea, u
 import type { SheetProps } from "../registry";
 import { useRecord, useRequestCorrection } from "./api";
 import { wallClock } from "./lib";
-import { duration, useT } from "./text";
+import { usePageT, type PageT } from "./pageText";
+import { duration } from "./text";
 import type { AttendanceRecord } from "./types";
 import "./attendance.css";
 
 export default function CorrectSheet({ params, close }: SheetProps) {
-  const t = useT();
+  const t = usePageT();
   const member = useMember();
   const recordId = params.record !== undefined && Number.isFinite(Number(params.record)) ? Number(params.record) : null;
   const record = useRecord(member.companyId, recordId);
@@ -31,7 +32,7 @@ export default function CorrectSheet({ params, close }: SheetProps) {
 }
 
 /** The record as it stands: "09:12–18:00 · 8 h 48 min", or its status. */
-function currentText(record: AttendanceRecord, t: ReturnType<typeof useT>): string {
+function currentText(record: AttendanceRecord, t: PageT): string {
   if (!record.check_in_at) return t(`code.${record.status === "excused" ? "excused" : "absent"}`);
   const out = record.check_out_at ? wallClock(record.check_out_at) : "…";
   const span = `${wallClock(record.check_in_at)}–${out}`;
@@ -39,7 +40,7 @@ function currentText(record: AttendanceRecord, t: ReturnType<typeof useT>): stri
 }
 
 function CorrectForm({ record, initialDate, close }: { record: AttendanceRecord | null; initialDate: string | null; close: () => void }) {
-  const t = useT();
+  const t = usePageT();
   const { locale } = useI18n();
   const member = useMember();
   const toast = useToast();

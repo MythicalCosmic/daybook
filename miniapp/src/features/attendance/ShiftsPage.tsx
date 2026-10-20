@@ -11,12 +11,13 @@ import { useMember } from "../../state/session";
 import { Badge, Banner, EmptyState, ListCard, ListRow, PageHeader, Screen, SkeletonList } from "../../ui";
 import { useMyShifts, useToday } from "./api";
 import { shiftDay, shiftLine } from "./lib";
-import { codeLabel, duration, useT } from "./text";
+import { codeLabel, usePageT } from "./pageText";
+import { duration } from "./text";
 import type { Shift } from "./types";
 import "./attendance.css";
 
 export default function ShiftsPage() {
-  const t = useT();
+  const t = usePageT();
   const member = useMember();
   const navigation = useNavigation();
   const shifts = useMyShifts(member.companyId);
@@ -63,7 +64,7 @@ export default function ShiftsPage() {
 }
 
 function ShiftRow({ shift, now, onAsk }: { shift: Shift; now: number; onAsk: (shift: Shift) => void }) {
-  const t = useT();
+  const t = usePageT();
   const { locale } = useI18n();
   const member = useMember();
   const isToday = shift.date === dayKey(new Date(now), member.timeZone);

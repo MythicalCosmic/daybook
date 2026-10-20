@@ -19,6 +19,8 @@ import attendance from ".";
 import { CheckInCard } from "./CheckInCard";
 import { fenceCheck, minutesBetween, monthWeeks, shiftMonth } from "./lib";
 import { messages } from "./messages";
+import { pageMessages } from "./pageMessages";
+import { allMessages, monthTitle } from "./pageText";
 import { duration } from "./text";
 import type { MyDay } from "./types";
 
@@ -363,5 +365,30 @@ describe("helpers", () => {
     expect(duration(uz, 120)).toBe("2 soat");
     expect(duration(ru, 61)).toBe("1 ч 1 мин");
     expect(ru("home.requests", { count: 5 })).toBe("5 запросов на обмен ждут вас");
+    expect(monthTitle(featureTranslator(allMessages, "uz"), "2026-10")).toBe("2026-yil oktabr");
+    expect(monthTitle(featureTranslator(allMessages, "en"), "2026-10")).toBe("October 2026");
+  });
+});
+
+describe("the pages' strings", () => {
+  // The app's parity test checks the registered (Home) messages; these load with the pages.
+  const placeholders = (text: string) => [...text.matchAll(/\{(\w+)\}/g)].map((match) => match[1]).sort();
+
+  it("have the same keys and placeholders in every language, and Uzbek marks", () => {
+    const english = Object.keys(pageMessages.en).sort();
+    for (const lang of ["ru", "uz"] as const) {
+      const dictionary = pageMessages[lang] as Record<string, string>;
+      expect(Object.keys(dictionary).sort()).toEqual(english);
+      for (const key of english) {
+        expect(dictionary[key].trim(), `${lang} ${key}`).not.toBe("");
+        expect(placeholders(dictionary[key]), `${lang} ${key}`).toEqual(placeholders((pageMessages.en as Record<string, string>)[key]));
+      }
+    }
+    for (const [key, value] of Object.entries(pageMessages.uz)) {
+      expect(/[`']/.test(value), `uz ${key} uses an ASCII quote`).toBe(false);
+      expect(/[oOgG][’ʻʼ]/.test(value), `uz ${key} spells o‘/g‘ with the wrong mark`).toBe(false);
+    }
+    // No key is defined twice (the page set overrides nothing of the card's).
+    expect(Object.keys(pageMessages.en).filter((key) => key in messages.en)).toEqual([]);
   });
 });
