@@ -114,7 +114,7 @@ function countIn(role: Role, group: PermissionGroup): number {
             v-for="role in roles"
             :key="role.id"
             scope="col"
-            class="sticky top-0 z-20 min-w-[132px] border-b border-line bg-surface px-3 py-3 text-center align-bottom font-semibold"
+            class="sticky top-0 z-20 min-w-[104px] border-b sm:min-w-[132px] border-line bg-surface px-3 py-3 text-center align-bottom font-semibold"
           >
             <slot name="header" :role="role">
               <span class="inline-flex items-center gap-1 text-fg"><Crown v-if="role.is_owner" :size="13" class="text-primary" />{{ role.name }}</span>
@@ -136,7 +136,7 @@ function countIn(role: Role, group: PermissionGroup): number {
             <span class="block text-base text-fg">{{ perm.label }}</span>
             <code class="mt-0.5 block text-[11px] text-subtle">{{ perm.code }}</code>
           </th>
-          <td v-for="role in roles" :key="role.id" :class="['border-b border-line px-3 py-2.5 text-center', role.is_owner && 'bg-accent-soft/30', changed(role, perm.code) && 'is-changed']">
+          <td v-for="role in roles" :key="role.id" :class="['border-b border-line px-3 py-2.5 text-center', role.is_owner && 'bg-surface-2/60', changed(role, perm.code) && 'is-changed']">
             <UiTooltip :content="reason(role, perm.code)" :disabled="!reason(role, perm.code)">
               <span class="inline-flex items-center justify-center">
                 <Lock v-if="role.is_owner" :size="14" class="text-primary" :aria-label="t('people.roles.ownerLocked')" />
@@ -171,5 +171,11 @@ function countIn(role: Role, group: PermissionGroup): number {
 }
 .corner {
   min-width: 280px;
+}
+/* Phones show one role at a time: the permission column takes what the role column leaves. */
+@media (max-width: 639px) {
+  .corner {
+    min-width: 0;
+  }
 }
 </style>

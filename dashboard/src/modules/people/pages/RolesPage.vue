@@ -6,7 +6,7 @@
  * Owner column, read-only roles, greyed-out permissions) and the server enforces them.
  */
 import { Copy, Ellipsis, Pencil, Plus, Search, ShieldCheck, Star, Trash2 } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import DropdownMenu, { type MenuEntry } from "@/components/DropdownMenu.vue";
@@ -53,7 +53,15 @@ const phoneRole = ref<number | null>(null);
 const list = computed(() => roles.data.value ?? []);
 const areas = computed(() => [...new Set((registry.data.value ?? []).map((p) => p.group))].map((value) => ({ value, label: te(`people.area.${value}`) ? t(`people.area.${value}`) : value })));
 const changedRoles = computed(() => list.value.filter((role) => draft.value[role.id]));
-const shownRoles = computed(() => (isPhone.value ? list.value.filter((role) => role.id === (phoneRole.value ?? list.value.find((r) => !r.is_owner)?.id)) : list.value));
+// Phones edit one role at a time, the first one besides Owner until another is picked.
+watch(
+  list,
+  (rows) => {
+    if (phoneRole.value === null || !rows.some((role) => role.id === phoneRole.value)) phoneRole.value = rows.find((role) => !role.is_owner)?.id ?? null;
+  },
+  { immediate: true },
+);
+const shownRoles = computed(() => (isPhone.value ? list.value.filter((role) => role.id === phoneRole.value) : list.value));
 
 /** Rule 2 in the UI: owners grant anything, others only what they hold. */
 const grantable = (code: string) => isOwner.value || can(code as never);
@@ -137,7 +145,7 @@ function menu(role: Role): MenuEntry[] {
 
 <template>
   <div class="flex flex-col gap-5">
-    <PageHeader :title="t('people.roles.title')" :description="t('people.roles.description')" :back="`/c/${company.currentId}/people`" :back-label="t('people.nav.team')">
+    <PageHeader class="!mb-0" :title="t('people.roles.title')" :description="t('people.roles.description')" :back="`/c/${company.currentId}/people`" :back-label="t('people.title')">
       <template #actions>
         <UiButton variant="primary" :icon="Plus" @click="openNew()">{{ t("people.roles.new") }}</UiButton>
       </template>
@@ -151,9 +159,9 @@ function menu(role: Role): MenuEntry[] {
     <div v-else-if="roles.data.value && !list.length" class="ui-card"><EmptyState :icon="ShieldCheck" :title="t('people.roles.emptyTitle')" :description="t('people.roles.emptyBody')" /></div>
     <template v-else-if="roles.data.value && registry.data.value">
       <div class="flex flex-wrap items-center gap-2">
-        <SelectBox v-if="isPhone" v-model="phoneRole" class="min-w-[180px] flex-1" :options="list.filter((r) => !r.is_owner).map((r) => ({ value: r.id, label: r.name }))" :placeholder="t('people.roles.pickRole')" />
+        <div v-if="isPhone" class="min-w-[180px] flex-1"><SelectBox v-model="phoneRole" :options="list.filter((r) => !r.is_owner).map((r) => ({ value: r.id, label: r.name }))" :placeholder="t('people.roles.pickRole')" /></div>
         <TextInput v-model="query" class="w-full sm:w-[280px]" :icon="Search" :placeholder="t('people.roles.search')" clearable />
-        <SelectBox v-model="area" class="w-full sm:w-[220px]" :options="areas" :placeholder="t('people.roles.allAreas')" clearable />
+        <div class="w-full sm:w-[220px]"><SelectBox v-model="area" :options="areas" :placeholder="t('people.roles.allAreas')" clearable /></div>
         <span class="flex-1" />
         <p class="hidden text-sm text-muted lg:block">{{ t("people.roles.legend") }}</p>
       </div>

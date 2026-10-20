@@ -26,7 +26,12 @@ const { t } = useI18n();
 const fmt = useFormat();
 const company = useCompanyStore();
 
-const trend = computed(() => props.person.overview.trend);
+// Weeks before their first task (new people) would only draw a flat zero, so the chart starts there.
+const trend = computed(() => {
+  const points = props.person.overview.trend;
+  const first = points.findIndex((point) => point.total > 0);
+  return first > 0 ? points.slice(first) : points;
+});
 const hasTrend = computed(() => trend.value.some((point) => point.total > 0));
 const categories = computed(() => trend.value.map((point) => point.date));
 const series = computed(() => [
@@ -78,7 +83,7 @@ function span(first: string, last: string): string {
         :empty-text="t('people.overview.trendEmpty')"
         :csv="csv"
       >
-        <LineChart :categories="categories" :series="series" value-format="percent" x-format="day" height="220px" :target="{ value: 90, label: t('people.overview.goal') }" smooth />
+        <LineChart :categories="categories" :series="series" value-format="percent" x-format="day" height="220px" :target="{ value: 90, label: t('people.overview.goal') }" />
       </ChartCard>
 
       <section class="ui-card p-5">
@@ -87,7 +92,7 @@ function span(first: string, last: string): string {
           <span class="text-sm text-muted">{{ fmt.range(o.range) }}</span>
         </div>
         <template v-if="o.total">
-          <ProgressBar class="mt-4" size="lg" :segments="split" :max="o.total" :label="t('people.overview.monthTitle')" />
+          <ProgressBar class="mt-4" size="lg" :segments="split" :max="o.total" :aria-label="t('people.overview.monthTitle')" />
           <dl class="mt-4 grid grid-cols-3 gap-3">
             <div v-for="part in split" :key="part.label" class="min-w-0">
               <dt class="flex items-center gap-1.5 text-xs font-medium text-muted"><span class="size-2 rounded-full" :style="{ background: part.color }" />{{ part.label }}</dt>

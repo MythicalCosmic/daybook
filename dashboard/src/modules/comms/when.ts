@@ -10,7 +10,7 @@ import { addDays, todayIn, zonedDay } from "@/lib/dates";
 export function zonedIso(day: string, time: string, tz: string): string {
   const [y, m, d] = day.split("-").map(Number) as [number, number, number];
   const [hh, mm] = time.split(":").map(Number) as [number, number];
-  return new TZDate(y, m - 1, d, hh, mm, 0, tz).toISOString();
+  return new Date(new TZDate(y, m - 1, d, hh, mm, 0, tz).getTime()).toISOString();
 }
 
 /** An ISO instant as the company-local day and "HH:MM". */

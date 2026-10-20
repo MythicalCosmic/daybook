@@ -3,7 +3,7 @@
  * Announcements (plan §6.2): everything sent and scheduled, with who it went to and how many have
  * read it. Status tabs and search live in the URL; a row opens the announcement.
  */
-import { CalendarClock, Megaphone, Pin, SquarePen } from "@lucide/vue";
+import { CalendarClock, Megaphone, Pin, Search, SquarePen } from "@lucide/vue";
 import { computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -91,7 +91,7 @@ function open(row: Announcement): void {
 
 <template>
   <div class="flex flex-col gap-5">
-    <PageHeader v-model:tab="tab" :title="t('comms.list.title')" :description="t('comms.list.description')" :tabs="tabs">
+    <PageHeader class="!mb-0" v-model:tab="tab" :title="t('comms.list.title')" :description="t('comms.list.description')" :tabs="tabs">
       <template #actions>
         <UiButton variant="primary" :icon="SquarePen" :to="`/c/${company.currentId}/announcements/new`">{{ t("comms.cmd.new") }}</UiButton>
       </template>
@@ -122,7 +122,7 @@ function open(row: Announcement): void {
       "
     >
       <template #toolbar>
-        <TextInput v-model="search" class="w-full sm:w-[300px]" size="sm" :placeholder="t('comms.list.search')" clearable />
+        <TextInput v-model="search" class="w-full sm:w-[300px]" type="search" :icon="Search" :placeholder="t('comms.list.search')" clearable />
       </template>
       <template #cell-title="{ row }">
         <div class="flex min-w-0 items-start gap-2.5 py-0.5">

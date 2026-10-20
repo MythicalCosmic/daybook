@@ -104,11 +104,11 @@ const kpis = computed(() => {
       id: "on_time",
       label: t("people.kpi.onTime30"),
       value: o?.on_time_percent ?? null,
-      format: (value: number) => `${fmt.number(value, 1)}%`,
-      hint: o ? t("people.kpi.onTimeOf", { done: o.on_time, total: o.total }) : undefined,
+      format: (value: number) => fmt.percent(value, 1),
+      hint: o?.total ? t("people.kpi.onTimeOf", { done: o.on_time, total: o.total }) : undefined,
     },
     { id: "done", label: t("people.kpi.done30"), value: o?.done ?? null },
-    { id: "late", label: t("people.kpi.lateNow"), value: o?.late_now ?? null, hint: o ? t("people.kpi.openNow", { n: o.open_now }) : undefined },
+    { id: "late", label: t("people.kpi.lateNow"), value: o?.late_now ?? null, hint: o?.open_now ? t("people.kpi.openNow", { n: o.open_now }) : undefined },
     { id: "streak", label: t("people.kpi.streak"), value: o?.streak ?? null, format: (value: number) => t("people.days", { n: value }, value) },
     { id: "off", label: t("people.kpi.daysOff"), value: o?.days_off_this_year ?? null, format: (value: number) => t("people.days", { n: value }, value) },
   ];
@@ -182,7 +182,7 @@ const hasProfileActions = computed(() => hasExtension("people.profile.actions", 
       :to="`/c/${company.currentId}/people`"
       class="group -mb-2 -ml-1 inline-flex w-fit items-center gap-1.5 rounded-[6px] px-1 py-0.5 text-sm font-medium text-muted hover:text-fg"
     >
-      <ArrowLeft :size="15" class="transition-transform duration-150 group-hover:-translate-x-0.5" />{{ t("people.nav.team") }}
+      <ArrowLeft :size="15" class="transition-transform duration-150 group-hover:-translate-x-0.5" />{{ t("people.title") }}
     </RouterLink>
 
     <!-- Loading -->
@@ -208,7 +208,7 @@ const hasProfileActions = computed(() => hasExtension("people.profile.actions", 
             </div>
             <p class="mt-1 text-base text-muted">
               {{ person.position?.name ?? t("people.noPosition") }}
-              <template v-if="person.role && !person.role.is_owner"> · {{ person.role.name }}</template>
+              <template v-if="person.role && !person.role.is_owner && person.role.name !== person.position?.name"> · {{ person.role.name }}</template>
             </p>
             <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted">
               <span v-if="person.home_branch" class="inline-flex items-center gap-1.5">

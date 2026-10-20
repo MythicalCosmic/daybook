@@ -5,7 +5,7 @@
  * a manager), holidays and days off shaded, today marked. Names stay put while the days scroll
  * sideways on small screens. A bar opens its request.
  */
-import { computed } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import UiTooltip from "@/components/UiTooltip.vue";
@@ -35,6 +35,21 @@ const days = computed(() => {
 });
 const count = computed(() => days.value.length);
 const todayIndex = computed(() => days.value.findIndex((d) => d.today));
+
+// When the month does not fit, start scrolled so today sits near the left edge of the days.
+const wrap = ref<HTMLElement | null>(null);
+function scrollToToday() {
+  const el = wrap.value;
+  if (!el || el.scrollWidth <= el.clientWidth) return;
+  const name = el.querySelector<HTMLElement>(".name")?.offsetWidth ?? 0;
+  const dayWidth = (el.scrollWidth - name) / count.value;
+  el.scrollLeft = todayIndex.value > 2 ? (todayIndex.value - 2) * dayWidth : 0;
+}
+onMounted(scrollToToday);
+watch(
+  () => props.month.from,
+  () => void nextTick(scrollToToday),
+);
 
 function bar(item: CalendarItem) {
   const start = Math.max(0, diffDays(props.month.from, item.first_day));
@@ -66,7 +81,7 @@ function tip(item: CalendarItem, name: string): string {
 </script>
 
 <template>
-  <div class="grid-wrap ui-card overflow-x-auto" :style="{ '--days': count }">
+  <div ref="wrap" class="grid-wrap ui-card overflow-x-auto" :style="{ '--days': count }">
     <div class="board" role="grid" :aria-rowcount="month.rows.length + 1" :aria-label="t('timeoff.calendar.label', { month: fmt.day(month.from, 'monthYear') })">
       <!-- Header -->
       <div class="row head" role="row">

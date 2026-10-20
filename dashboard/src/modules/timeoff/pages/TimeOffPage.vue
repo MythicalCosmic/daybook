@@ -158,7 +158,7 @@ const nextHoliday = computed(() => stats.data.value?.next_holiday ?? null);
 
 <template>
   <div class="flex flex-col gap-5">
-    <PageHeader :title="t('timeoff.page.title')" :description="t('timeoff.page.description')">
+    <PageHeader class="!mb-0" :title="t('timeoff.page.title')" :description="t('timeoff.page.description')">
       <template #actions>
         <UiButton :to="`/c/${company.currentId}/time-off/holidays`" :icon="PartyPopper">{{ t("timeoff.nav.holidays") }}</UiButton>
         <UiButton variant="primary" :icon="CalendarPlus" @click="recordParam = '1'">{{ t("timeoff.cmd.record") }}</UiButton>
@@ -187,7 +187,9 @@ const nextHoliday = computed(() => stats.data.value?.next_holiday ?? null);
         <UiButton v-if="monthStart !== startOfMonth(today)" size="sm" variant="ghost" @click="month = ''">{{ t("common.today") }}</UiButton>
       </template>
       <span class="flex-1" />
-      <BranchPicker v-if="company.current && company.current.branches.length > 1" v-model="branchIds" multiple class="w-full sm:w-[220px]" :placeholder="t('timeoff.allBranches')" />
+      <div v-if="company.current && company.current.branches.length > 1" class="w-full sm:w-[220px]">
+        <BranchPicker v-model="branchIds" multiple :placeholder="t('timeoff.allBranches')" />
+      </div>
       <SegmentedControl
         v-if="view === 'calendar'"
         v-model="who"

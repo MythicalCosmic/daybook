@@ -6,7 +6,7 @@ export const routes: RouteRecordRaw[] = [
     path: "people",
     name: "people.team",
     component: () => import("./pages/TeamPage.vue"),
-    meta: { title: "people.nav.team" },
+    meta: { title: "people.team.title" },
   },
   {
     path: "people/requests",

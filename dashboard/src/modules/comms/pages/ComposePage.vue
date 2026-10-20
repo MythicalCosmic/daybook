@@ -151,6 +151,7 @@ const previewTime = computed(() => (scheduledFor.value ? fmt.instant(scheduledFo
 <template>
   <div class="flex flex-col gap-5">
     <PageHeader
+      class="!mb-0"
       :title="editId ? t('comms.compose.editTitle') : t('comms.compose.title')"
       :description="t('comms.compose.description')"
       :back="`/c/${company.currentId}/announcements`"

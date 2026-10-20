@@ -139,7 +139,7 @@ function away(day: string): string | null {
 
 <template>
   <div class="flex flex-col gap-5">
-    <PageHeader :title="t('timeoff.holidays.title')" :description="t('timeoff.holidays.description')" :back="`/c/${company.currentId}/time-off`" :back-label="t('timeoff.nav.calendar')">
+    <PageHeader class="!mb-0" :title="t('timeoff.holidays.title')" :description="t('timeoff.holidays.description')" :back="`/c/${company.currentId}/time-off`" :back-label="t('timeoff.title')">
       <template #actions>
         <UiButton :icon="Flag" :loading="addPublic.isPending.value" @click="addPublicHolidays">{{ t("timeoff.holidays.addPublic", { year }) }}</UiButton>
         <UiButton variant="primary" :icon="Plus" @click="addParam = true">{{ t("timeoff.holidays.add") }}</UiButton>

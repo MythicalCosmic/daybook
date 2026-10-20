@@ -118,7 +118,7 @@ async function deletePosition(row: PositionRow): Promise<void> {
 
 <template>
   <div class="flex flex-col gap-5">
-    <PageHeader :title="t('people.positions.title')" :description="t('people.positions.description')" :back="`/c/${company.currentId}/people`" :back-label="t('people.nav.team')">
+    <PageHeader class="!mb-0" :title="t('people.positions.title')" :description="t('people.positions.description')" :back="`/c/${company.currentId}/people`" :back-label="t('people.title')">
       <template #actions>
         <UiButton variant="primary" :icon="Plus" @click="openAdd">{{ t("people.positions.add") }}</UiButton>
       </template>

@@ -89,7 +89,7 @@ async function reject(row: JoinRequest): Promise<void> {
 
 <template>
   <div class="flex flex-col gap-5">
-    <PageHeader :title="t('people.requests.title')" :description="t('people.requests.description')" :back="`/c/${company.currentId}/people`" :back-label="t('people.nav.team')">
+    <PageHeader class="!mb-0" :title="t('people.requests.title')" :description="t('people.requests.description')" :back="`/c/${company.currentId}/people`" :back-label="t('people.title')">
       <template v-if="invite" #actions>
         <UiButton :to="invite" :icon="QrCode">{{ t("people.requests.invite") }}</UiButton>
       </template>

@@ -6,7 +6,7 @@ export const routes: RouteRecordRaw[] = [
     path: "time-off",
     name: "timeoff.calendar",
     component: () => import("./pages/TimeOffPage.vue"),
-    meta: { title: "timeoff.nav.calendar", perm: "time_off.approve" },
+    meta: { title: "timeoff.title", perm: "time_off.approve" },
   },
   {
     path: "time-off/holidays",

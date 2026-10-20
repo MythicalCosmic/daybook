@@ -52,6 +52,19 @@ const items = computed<DescriptionItem[]>(() => {
   return list;
 });
 
+// The audit trail names the fields and shows its ISO days the way the rest of the drawer does.
+const auditLabels = computed(() => ({
+  first_day: t("timeoff.audit.firstDay"),
+  last_day: t("timeoff.audit.lastDay"),
+  cancelled_from: t("timeoff.audit.cancelledFrom"),
+  cancelled_to: t("timeoff.audit.cancelledTo"),
+  reason: t("timeoff.drawer.reason"),
+  member: t("timeoff.audit.member"),
+}));
+function auditValue(_field: string, value: unknown): string | null {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? fmt.day(value, "medium") : null;
+}
+
 async function run(approve: boolean): Promise<void> {
   const r = row.value;
   if (!r) return;
@@ -66,9 +79,9 @@ async function run(approve: boolean): Promise<void> {
 
 <template>
   <UiDrawer query-key="request" :title="t('timeoff.drawer.title')" size="md">
-    <div v-if="query.isPending.value" class="flex flex-col gap-4"><SkeletonBlock height="40px" /><SkeletonBlock :lines="5" /></div>
-    <ErrorState v-else-if="query.isError.value" compact :error="query.error.value" :retry="() => query.refetch()" />
-    <div v-else-if="row" class="flex flex-col gap-5">
+    <div v-if="query.isPending.value" class="flex flex-col gap-4 p-5"><SkeletonBlock height="40px" /><SkeletonBlock :lines="5" /></div>
+    <ErrorState v-else-if="query.isError.value" compact class="m-5" :error="query.error.value" :retry="() => query.refetch()" />
+    <div v-else-if="row" class="flex flex-col gap-5 p-5">
       <div class="flex items-start justify-between gap-3">
         <PersonCell :person="row.member" :subtitle="[row.position, row.home_branch?.name].filter(Boolean).join(' · ')" size="lg" link />
         <StatusPill :tone="TONES[row.status]" :label="t(`timeoff.state.${row.status}`)" />
@@ -85,7 +98,7 @@ async function run(approve: boolean): Promise<void> {
       </a>
       <section class="border-t border-line pt-4">
         <h3 class="mb-3 text-sm font-semibold text-fg">{{ t("timeoff.drawer.history") }}</h3>
-        <AuditTrail target-type="timeoff" :target-id="row.id" :page-size="10" />
+        <AuditTrail target-type="timeoff" :target-id="row.id" :page-size="10" :field-labels="auditLabels" :format-value="auditValue" />
       </section>
     </div>
     <template v-if="row && (row.can_decide || row.can_revoke)" #footer>

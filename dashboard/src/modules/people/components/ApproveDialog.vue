@@ -15,6 +15,7 @@ import SelectBox from "@/components/SelectBox.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
+import { formatPhone } from "@/lib/format";
 import { useCompanyStore } from "@/stores/company";
 
 import { usePositions, useRoles } from "../api";
@@ -63,10 +64,14 @@ watch(
   },
   { immediate: true },
 );
-watch(branchIds, (ids) => {
-  if (!ids.length) homeId.value = null;
-  else if (homeId.value === null || !ids.includes(homeId.value)) homeId.value = ids[0]!;
-});
+watch(
+  branchIds,
+  (ids) => {
+    if (!ids.length) homeId.value = null;
+    else if (homeId.value === null || !ids.includes(homeId.value)) homeId.value = ids[0]!;
+  },
+  { immediate: true },
+);
 
 const valid = computed(() => !severalBranches.value || branchIds.value.length > 0);
 const summary = computed(() => {
@@ -92,7 +97,7 @@ function submit(): void {
         <UserAvatar :name="request.name" :src="request.photo_url" :size="40" />
         <div class="min-w-0">
           <p class="truncate text-base font-semibold text-fg">{{ request.name }}</p>
-          <p class="truncate text-sm text-muted">{{ [request.position?.name, request.phone].filter(Boolean).join(" · ") }}</p>
+          <p class="truncate text-sm text-muted">{{ [request.position?.name, formatPhone(request.phone)].filter(Boolean).join(" · ") }}</p>
         </div>
       </div>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">

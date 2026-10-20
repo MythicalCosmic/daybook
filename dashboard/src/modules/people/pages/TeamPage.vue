@@ -30,6 +30,7 @@ import UiTooltip from "@/components/UiTooltip.vue";
 import { useDataTable } from "@/components/useDataTable";
 import { toast } from "@/components/useToast";
 import { counter, pulse } from "@/core/pulse";
+import { formatPhone } from "@/lib/format";
 import { useFormat } from "@/lib/useFormat";
 import { usePermission } from "@/lib/usePermission";
 import { rs, useRouteState } from "@/lib/useRouteState";
@@ -80,7 +81,7 @@ const defs = computed<FilterDef[]>(() => [
 ]);
 const filters = useUrlFilters(defs);
 
-const table = useDataTable({ id: "people.team", ordering: "name", pageSize: 50, url: true });
+const table = useDataTable({ id: "people.team", ordering: "name", pageSize: 50, url: true, hidden: ["phone"] });
 const params = computed(() => ({
   ...filters.params.value,
   q: search.value || undefined,
@@ -110,7 +111,7 @@ const stats = useQuery({
 const kpis = computed(() => {
   const s = stats.data.value;
   return [
-    { id: "active", label: t("people.kpi.active"), value: s?.active, hint: t("people.kpi.activeHint"), icon: Users },
+    { id: "active", label: t("people.kpi.active"), value: s?.active, hint: t("people.kpi.activeHint") },
     { id: "leave", label: t("people.kpi.onLeave"), value: s?.on_leave_today, hint: t("people.kpi.onLeaveHint") },
     { id: "joined", label: t("people.kpi.joined"), value: s?.joined_30d, hint: t("people.kpi.joinedHint") },
     { id: "suspended", label: t("people.kpi.suspended"), value: s?.suspended, hint: t("people.kpi.suspendedHint") },
@@ -158,17 +159,17 @@ const hasAttendance = computed(() => rows.value.some((row) => row.fields?.attend
 const columns = computed<TableColumn<Person>[]>(() => {
   const list: TableColumn<Person>[] = [
     { id: "person", header: t("people.col.person"), minWidth: 240, sticky: true, hideable: false, sortable: "name", value: (row) => row.name },
-    { id: "status", header: t("people.col.status"), width: 170, value: (row) => chipLabel(row) },
+    { id: "status", header: t("people.col.status"), width: 190, value: (row) => chipLabel(row) },
     { id: "role", header: t("people.col.role"), width: 140, value: (row) => row.role?.name ?? "" },
     { id: "branch", header: t("people.col.branch"), width: 150, sortable: "branch", value: (row) => row.home_branch?.name ?? "" },
     { id: "on_time", header: t("people.col.onTime"), width: 150, hint: t("people.col.onTimeHint"), value: (row) => row.work.on_time_30d ?? "" },
-    { id: "late_now", header: t("people.col.lateNow"), width: 96, numeric: true, value: (row) => row.work.late_now },
+    { id: "late_now", header: t("people.col.lateNow"), width: 112, numeric: true, value: (row) => row.work.late_now },
   ];
   if (hasAttendance.value) list.push({ id: "attendance", header: t("people.col.attendance"), width: 120, numeric: true, value: (row) => row.fields.attendance_30d ?? "" });
   if (hasSalary.value) list.push({ id: "salary", header: t("people.col.salary"), width: 150, numeric: true, value: (row) => row.fields.salary?.amount ?? "" });
   list.push(
-    { id: "joined", header: t("people.col.joined"), width: 120, sortable: "joined", value: (row) => row.joined_on ?? "", format: (v) => (v ? fmt.day(String(v), "medium") : "—") },
-    { id: "phone", header: t("people.col.phone"), width: 150, value: (row) => row.phone },
+    { id: "joined", header: t("people.col.joined"), width: 140, sortable: "joined", value: (row) => row.joined_on ?? "", format: (v) => (v ? fmt.day(String(v), "medium") : "—") },
+    { id: "phone", header: t("people.col.phone"), width: 150, value: (row) => formatPhone(row.phone) },
   );
   return list;
 });
@@ -187,7 +188,7 @@ function clearAll(): void {
 
 <template>
   <div class="flex flex-col gap-5">
-    <PageHeader :title="t('people.team.title')" :description="t('people.team.description')">
+    <PageHeader class="!mb-0" :title="t('people.team.title')" :description="t('people.team.description')">
       <template #actions>
         <UiButton v-if="can('members.approve')" :to="`/c/${company.currentId}/people/requests`" :icon="UserPlus" :variant="pending ? 'primary' : 'secondary'">
           {{ t("people.team.requests") }}
@@ -266,7 +267,7 @@ function clearAll(): void {
         <template #cell-on_time="{ row }">
           <div v-if="row.work.on_time_30d !== null" class="flex min-w-0 items-center gap-2">
             <ProgressBar class="w-16" size="xs" :value="Number(row.work.on_time_30d)" :tone="rateTone(row.work.on_time_30d)" />
-            <span class="text-sm tabular-nums text-fg">{{ fmt.number(row.work.on_time_30d, 1) }}%</span>
+            <span class="text-sm tabular-nums text-fg">{{ fmt.percent(Number(row.work.on_time_30d), 1) }}</span>
           </div>
           <span v-else class="text-sm text-subtle">{{ t("people.noWork") }}</span>
         </template>
@@ -274,7 +275,7 @@ function clearAll(): void {
           <span :class="['tabular-nums', row.work.late_now ? 'font-semibold text-danger' : 'text-subtle']">{{ row.work.late_now }}</span>
         </template>
         <template #cell-attendance="{ row }">
-          <span class="tabular-nums">{{ row.fields.attendance_30d ? `${fmt.number(row.fields.attendance_30d, 1)}%` : "—" }}</span>
+          <span class="tabular-nums">{{ row.fields.attendance_30d ? fmt.percent(Number(row.fields.attendance_30d), 1) : "—" }}</span>
         </template>
         <template #cell-salary="{ row }">
           <MoneyText v-if="row.fields.salary" :value="row.fields.salary.amount" :currency="row.fields.salary.currency" />
@@ -282,7 +283,7 @@ function clearAll(): void {
         </template>
         <template #cell-phone="{ row }">
           <span class="flex items-center gap-1.5">
-            <span class="truncate text-sm tabular-nums text-muted">{{ row.phone || "—" }}</span>
+            <span class="truncate text-sm tabular-nums text-muted">{{ formatPhone(row.phone) || "—" }}</span>
             <UiTooltip v-if="row.bot_blocked" :content="t('people.botBlocked')">
               <UserRoundX :size="14" class="shrink-0 text-danger" :aria-label="t('people.botBlocked')" />
             </UiTooltip>

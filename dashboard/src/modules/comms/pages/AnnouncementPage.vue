@@ -56,6 +56,19 @@ const table = useDataTable({ id: "comms.receipts", url: "r", pageSize: 50 });
 watch(state, () => table.resetPage());
 const receipts = useReceipts(id, computed(() => ({ state: state.value === "all" ? undefined : state.value, ...table.params.value })));
 
+// The history names its fields and shows moments in the company's time.
+const auditLabels = computed(() => ({
+  recipients: t("comms.audit.recipients"),
+  people: t("comms.audit.people"),
+  scheduled_for: t("comms.audit.scheduledFor"),
+  pinned_until: t("comms.audit.pinnedUntil"),
+  positions: t("comms.compose.positions"),
+  branches: t("comms.compose.branches"),
+}));
+function auditValue(_field: string, value: unknown): string | null {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}T/.test(value) ? fmt.instant(value, "short") : null;
+}
+
 const TONES: Record<AnnouncementStatus, StatusTone> = { draft: "neutral", scheduled: "info", sent: "success", cancelled: "neutral" };
 const readPercent = computed(() => (row.value?.recipients_count ? (row.value.read_count / row.value.recipients_count) * 100 : 0));
 const unread = computed(() => (row.value ? row.value.recipients_count - row.value.read_count : 0));
@@ -142,7 +155,7 @@ async function savePin(): Promise<void> {
     <div v-if="skeleton && !row" class="flex flex-col gap-4"><SkeletonBlock width="40%" height="28px" /><SkeletonBlock height="96px" radius="12px" /><SkeletonBlock height="240px" radius="12px" /></div>
     <ErrorState v-else-if="query.isError.value" class="ui-card" :error="query.error.value" :retry="() => query.refetch()" />
     <template v-else-if="row">
-      <PageHeader :title="row.title" :back="`/c/${company.currentId}/announcements`" :back-label="t('comms.nav.announcements')">
+      <PageHeader class="!mb-0" :title="row.title" :back="`/c/${company.currentId}/announcements`" :back-label="t('comms.nav.announcements')">
         <template #actions>
           <template v-if="row.status === 'scheduled'">
             <UiButton :icon="CalendarX2" class="hover:!text-danger" :loading="act.isPending.value && act.variables.value?.action === 'cancel'" @click="cancel">{{ t("comms.detail.cancel") }}</UiButton>
@@ -174,7 +187,7 @@ async function savePin(): Promise<void> {
           </section>
           <section class="ui-card p-4">
             <h2 class="mb-3 text-sm font-semibold text-fg">{{ t("comms.detail.history") }}</h2>
-            <AuditTrail target-type="announcement" :target-id="row.id" :page-size="10" />
+            <AuditTrail target-type="announcement" :target-id="row.id" :page-size="10" :field-labels="auditLabels" :format-value="auditValue" />
           </section>
         </div>
 
@@ -192,15 +205,6 @@ async function savePin(): Promise<void> {
           </section>
 
           <template v-if="row.status === 'sent'">
-            <SegmentedControl
-              v-model="state"
-              class="w-fit"
-              :options="[
-                { value: 'unread', label: t('comms.detail.tabUnread'), count: unread },
-                { value: 'read', label: t('comms.detail.tabRead'), count: row.read_count },
-                { value: 'all', label: t('comms.detail.tabAll'), count: row.recipients_count },
-              ]"
-            />
             <DataTable
               :state="table"
               :columns="columns"
@@ -215,6 +219,16 @@ async function savePin(): Promise<void> {
               :empty-description="state === 'unread' ? t('comms.detail.allReadBody') : t('comms.detail.noneReadBody')"
               csv-name="Receipts"
             >
+              <template #toolbar>
+                <SegmentedControl
+                  v-model="state"
+                  :options="[
+                    { value: 'unread', label: t('comms.detail.tabUnread'), count: unread },
+                    { value: 'read', label: t('comms.detail.tabRead'), count: row.read_count },
+                    { value: 'all', label: t('comms.detail.tabAll'), count: row.recipients_count },
+                  ]"
+                />
+              </template>
               <template #cell-member="{ row: receipt }">
                 <PersonCell :person="receipt.member" :subtitle="receipt.position" size="sm" link />
               </template>
