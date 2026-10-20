@@ -174,13 +174,22 @@ export interface DashboardModule {
   messages: () => Promise<ModuleMessages>;
 }
 
-export const defineModule = (m: DashboardModule): DashboardModule => m;
+/**
+ * A function declaration on purpose: this file eagerly imports every module's index.ts (below), and
+ * those import defineModule back. Declarations are hoisted, so the call works inside that cycle; a
+ * `const` arrow would still be uninitialized.
+ */
+export function defineModule(m: DashboardModule): DashboardModule {
+  return m;
+}
 
 export function byGroupThenOrder(a: DashboardModule, b: DashboardModule): number {
   const group = MODULE_GROUPS.indexOf(a.group) - MODULE_GROUPS.indexOf(b.group);
   return group || a.order - b.order || a.id.localeCompare(b.id);
 }
 
+// Modules import defineModule (and @/core helpers) back from here. That cycle is safe as long as
+// this file is what loads them, which is the case in the app: nothing else imports a module's index.ts.
 const found = import.meta.glob<{ default: DashboardModule }>("../modules/*/index.ts", { eager: true });
 
 /** Every module, sorted for the sidebar. Built once at startup; never mutate it outside dev tooling. */

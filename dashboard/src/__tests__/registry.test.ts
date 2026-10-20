@@ -14,7 +14,9 @@ import { moduleNavItems } from "@/core/nav";
 import { PERMS, isPerm, type PermRequirement } from "@/core/perms";
 import { devStubModules } from "@/dev/stubModules";
 
-const discovered = import.meta.glob<{ default: DashboardModule }>("../modules/*/index.ts", { eager: true });
+// Lazy on purpose: core/modules (imported above) must load the modules first, as in the app; an
+// eager glob here would evaluate a module's index.ts before the registry it registers with.
+const discovered = import.meta.glob<{ default: DashboardModule }>("../modules/*/index.ts");
 
 function permsOf(required: PermRequirement | undefined): string[] {
   if (required === undefined) return [];
@@ -168,7 +170,8 @@ describe("catalog", () => {
 describe("registry", () => {
   it("real modules honour the contract", async () => {
     const problems: string[] = [];
-    for (const [path, mod] of Object.entries(discovered)) {
+    for (const [path, load] of Object.entries(discovered)) {
+      const mod = await load();
       const folder = /modules\/([^/]+)\/index\.ts$/.exec(path)?.[1];
       problems.push(...moduleProblems(mod.default, folder));
       problems.push(...(await messageProblems(mod.default)));

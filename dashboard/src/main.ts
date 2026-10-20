@@ -22,6 +22,10 @@ async function start(): Promise<void> {
   await detectTelegram();
   const app = createApp(App);
   const router = createAppRouter();
+  // Development only: the component kitchen at /dashboard/_kitchen (plan §6.3), W0-D's visual acceptance test.
+  if (import.meta.env.DEV) {
+    router.addRoute({ path: "/_kitchen", name: "kitchen", component: () => import("./dev/Kitchen.vue"), meta: { public: true, title: "dev.kitchen.title" } });
+  }
   installProviders(app, router);
   app.use(router);
   bindTelegram(router);

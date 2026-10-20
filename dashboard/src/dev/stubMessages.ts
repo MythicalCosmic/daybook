@@ -4,6 +4,8 @@
  */
 import type { Messages, ModuleMessages } from "@/core/modules";
 
+import { kitchenMessages } from "./kitchen/kitchenMessages";
+
 type Triple = [en: string, ru: string, uz: string];
 
 export const STUB_TITLES: Record<string, { title: Triple; pages: Record<string, Triple> }> = {
@@ -140,6 +142,7 @@ export const STUB_TITLES: Record<string, { title: Triple; pages: Record<string, 
 /** Placeholder pages' own strings, merged as-is (not through a module namespace). */
 export const DEV_MESSAGES: ModuleMessages = {
   en: {
+    ...kitchenMessages(0),
     "dev.stub.badge": "Placeholder",
     "dev.stub.title": "Arrives with package {pkg}",
     "dev.stub.body": "The mock build shows where this page lives. The module that owns it replaces this placeholder.",
@@ -167,6 +170,7 @@ export const DEV_MESSAGES: ModuleMessages = {
     "dev.newCompany.note": "Package A creates the company here. In the mock build this form only closes.",
   },
   ru: {
+    ...kitchenMessages(1),
     "dev.stub.badge": "Заглушка",
     "dev.stub.title": "Появится в пакете {pkg}",
     "dev.stub.body": "Мок-сборка показывает, где будет эта страница. Модуль-владелец заменит заглушку.",
@@ -194,6 +198,7 @@ export const DEV_MESSAGES: ModuleMessages = {
     "dev.newCompany.note": "Компанию здесь создаёт пакет A. В мок-сборке форма просто закрывается.",
   },
   uz: {
+    ...kitchenMessages(2),
     "dev.stub.badge": "Vaqtinchalik",
     "dev.stub.title": "{pkg} paketida qo‘shiladi",
     "dev.stub.body": "Mock yig‘ma bu sahifa qayerda bo‘lishini ko‘rsatadi. Uning egasi bo‘lgan modul shu joyni egallaydi.",

@@ -1,24 +1,19 @@
 <script setup lang="ts">
 /**
  * Dev-only stand-in for package A's Overview, so the mock shell can be judged with a realistic page
- * in it. Numbers are static demo values; "Needs you" reads the mock queue through the real API layer.
+ * in it. Numbers are static demo values; the registered widgets (the inbox's "Needs you") are live.
  */
-import { useQuery } from "@tanstack/vue-query";
 import { ArrowUpRight, TrendingUp } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { RouterLink } from "vue-router";
 
-import { keys } from "@/api/keys";
-import { shellApi } from "@/api/shell";
 import PageHeader from "@/components/PageHeader.vue";
-import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import StatusPill from "@/components/StatusPill.vue";
 import UiBadge from "@/components/UiBadge.vue";
-import UiButton from "@/components/UiButton.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
+import { isModuleVisible } from "@/core/access";
+import { modules } from "@/core/modules";
 import { dayPart, formatDay, todayIn } from "@/lib/dates";
-import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 import { useSessionStore } from "@/stores/session";
@@ -55,12 +50,16 @@ const branches = computed(() => [
   { name: "Sergeli", code: "SRG", open: true, status: t("dev.overview.opened", { time: "08:41", name: "Bekzod" }), staff: "5/5", tills: 1, sales: fmt.money("4880000", "UZS", { compact: true }), ring: 64 },
 ]);
 
-const queue = useQuery({
-  queryKey: computed(() => keys.queue(company.currentId ?? 0)),
-  queryFn: () => shellApi.queue(company.currentId!),
-  enabled: computed(() => company.currentId !== null),
-});
-const queueSkeleton = useDelayedPending(computed(() => queue.isPending.value));
+/** Widgets every visible module registered, in their order. */
+const widgets = computed(() =>
+  modules
+    .filter((module) => isModuleVisible(module, company.current))
+    .flatMap((module) => module.widgets ?? [])
+    .filter((widget) => company.can(widget.perm) && company.enabled(widget.feature))
+    .sort((a, b) => a.order - b.order),
+);
+const range = computed(() => ({ from: todayIn(company.timezone), to: todayIn(company.timezone) }));
+
 
 const activity = [
   { name: "Madina Saidova", text: "Fridge temperature check · +4 °C", minutes: 6 },
@@ -145,33 +144,9 @@ const ago = (minutes: number) => fmt.relative(new Date(Date.now() - minutes * 60
 
     <div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-5">
       <section class="lg:col-span-3">
-        <div class="mb-3 flex items-center gap-2">
-          <h2 class="text-md font-semibold text-fg">{{ t("dev.overview.needsYou") }}</h2>
-          <UiBadge v-if="queue.data.value" :count="queue.data.value.total" tone="primary" />
-          <span class="flex-1" />
-          <UiButton variant="ghost" size="sm" :to="{ query: { inbox: 'needs' } }">{{ t("common.viewAll") }}</UiButton>
-        </div>
-        <div class="overflow-hidden rounded-card border border-line bg-surface">
-          <template v-if="queueSkeleton">
-            <div v-for="n in 4" :key="n" class="flex items-center gap-3 border-b border-line p-3 last:border-b-0">
-              <SkeletonBlock circle height="32px" /><div class="flex flex-1 flex-col gap-1.5"><SkeletonBlock width="60%" /><SkeletonBlock width="35%" height="11px" /></div>
-            </div>
-          </template>
-          <template v-else>
-            <RouterLink
-              v-for="item in queue.data.value?.results.slice(0, 4) ?? []"
-              :key="`${item.kind}:${item.id}`"
-              :to="{ query: { inbox: 'needs' } }"
-              class="flex items-center gap-3 border-b border-line px-4 py-3 transition-colors last:border-b-0 hover:bg-surface-2/60"
-            >
-              <UserAvatar :name="item.actor?.name ?? item.title" :size="32" />
-              <div class="min-w-0 flex-1">
-                <p class="truncate text-base font-medium text-fg">{{ item.title }}</p>
-                <p class="truncate text-sm text-muted">{{ item.subtitle }}</p>
-              </div>
-              <span class="shrink-0 text-xs text-subtle">{{ fmt.relative(item.created_at) }}</span>
-            </RouterLink>
-          </template>
+        <!-- Registered Overview widgets (the inbox module's "Needs you" today; package N builds the real grid). -->
+        <div class="grid h-full gap-3">
+          <component :is="widget.component" v-for="widget in widgets" :key="widget.id" :company-id="company.currentId ?? 0" :range="range" :compare="null" />
         </div>
       </section>
       <section class="lg:col-span-2">

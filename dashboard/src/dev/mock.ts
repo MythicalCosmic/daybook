@@ -7,6 +7,10 @@
 import type { Language } from "@/api/types";
 
 import { companies, meFor, notifications, notificationsFor, pulseCounters, queueFor, queueItems, search } from "./mockData";
+import { auditRecords, createExport, exportStatus, MORE_NOTIFICATIONS, PEOPLE, POSITIONS } from "./mockExtras";
+
+// A longer history for the inbox page (the drawer shows the first page).
+notifications[1]?.push(...(MORE_NOTIFICATIONS as unknown as NonNullable<(typeof notifications)[number]>));
 
 interface MockResult {
   status: number;
@@ -108,9 +112,30 @@ function route(method: string, path: string, query: URLSearchParams, body: Recor
     return { status: 200, body: { total: data.total, kinds: data.kinds } };
   }
   if (rest === "inbox/") {
-    const results = notificationsFor(id, language, query.get("tab") ?? "all");
+    const all = notificationsFor(id, language, query.get("tab") ?? "all");
+    const page = Number(query.get("page") ?? 1);
+    const size = Number(query.get("page_size") ?? 30);
+    const results = all.slice((page - 1) * size, page * size);
+    const next = page * size < all.length ? `?page=${page + 1}` : null;
+    return { status: 200, body: { count: all.length, next, previous: page > 1 ? `?page=${page - 1}` : null, results } };
+  }
+  const archived = /^inbox\/(\d+)\/archive\/$/.exec(rest);
+  if (archived && method === "POST") {
+    const list = notifications[id] ?? [];
+    const index = list.findIndex((n) => n.id === Number(archived[1]));
+    if (index >= 0) list.splice(index, 1);
+    return { status: 204 };
+  }
+  if (rest === "audit/records/") {
+    const results = auditRecords(language);
     return { status: 200, body: { count: results.length, next: null, previous: null, results } };
   }
+  if (rest === "exports/" && method === "POST") return { status: 202, body: createExport() };
+  const exportJob = /^exports\/(\d+)\/$/.exec(rest);
+  if (exportJob) return { status: 200, body: exportStatus(Number(exportJob[1])) };
+  if (rest === "people/") return { status: 200, body: { count: PEOPLE.length, next: null, previous: null, results: PEOPLE } };
+  if (rest === "positions/") return { status: 200, body: { count: POSITIONS.length, next: null, previous: null, results: POSITIONS } };
+  if (rest === "saved-views/") return method === "GET" ? { status: 200, body: [] } : { status: 201, body: { id: Date.now(), mine: true, shared: false, ...body } };
   if (rest === "inbox/unread-count/") {
     const list = notifications[id] ?? [];
     return { status: 200, body: { count: list.filter((n) => !n.read_at).length, critical: list.filter((n) => !n.read_at && n.severity === "critical").length } };
