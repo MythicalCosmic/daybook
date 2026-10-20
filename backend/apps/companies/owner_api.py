@@ -243,6 +243,14 @@ class ReorderSerializer(serializers.Serializer):
     ids = serializers.ListField(child=serializers.IntegerField(), min_length=1)
 
 
+class ManagerOptionSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    position = serializers.CharField()
+    branch = serializers.CharField()
+    photo_url = serializers.CharField(allow_null=True)
+
+
 class BranchViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerViewSet):
     """Branches: address, hours, open weekdays, the check-in geofence, manager, cash limit.
     Closed instead of deleted, so their history stays."""
@@ -287,6 +295,29 @@ class BranchViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerViewS
         branch = services.activate_branch(self.get_object(), by=self.membership)
         self.bump("companies.branches", "companies.setup")
         return Response(self._fresh(branch))
+
+    @extend_schema(responses=ManagerOptionSerializer(many=True))
+    @action(detail=False, methods=["get"])
+    def managers(self, request, company_id):
+        """Who can manage a branch: the company's approved members."""
+        members = (
+            Membership.objects.for_company(self.company)
+            .filter(status=Membership.Status.APPROVED)
+            .select_related("user", "position", "home_branch")
+            .order_by("first_name", "last_name", "pk")
+        )
+        return Response(
+            [
+                {
+                    "id": member.pk,
+                    "name": str(member),
+                    "position": member.position.name if member.position else "",
+                    "branch": member.home_branch.name if member.home_branch else "",
+                    "photo_url": member.user.photo.url if member.user.photo else None,
+                }
+                for member in members
+            ]
+        )
 
     @extend_schema(request=ReorderSerializer, responses=BranchSerializer(many=True))
     @action(detail=False, methods=["post"])

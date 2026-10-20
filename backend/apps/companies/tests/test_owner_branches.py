@@ -204,3 +204,16 @@ def test_another_companys_branch_is_not_found(company, other_company, owner, own
         == 404
     )
     assert owner_api(owner).get(url(other_company)).status_code == 404
+
+
+def test_manager_options_list_approved_members(company, owner, owner_api, member):
+    worker = member(company, "Employee", first_name="Madina", last_name="Saidova")
+    member(company, "Employee", status="pending")
+
+    response = owner_api(owner).get(url(company, "managers/"))
+
+    assert response.status_code == 200
+    rows = {row["id"]: row for row in response.json()}
+    assert set(rows) == {owner.pk, worker.pk}
+    assert rows[worker.pk]["name"] == "Madina Saidova"
+    assert owner_api(member(company, "Manager")).get(url(company, "managers/")).status_code == 403

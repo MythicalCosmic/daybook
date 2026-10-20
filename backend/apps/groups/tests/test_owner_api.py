@@ -198,3 +198,14 @@ def test_demo_groups(company, demo_people):
         "sales",
     }
     assert [p.name for p in kassa.positions.all()] == ["Cashier"]
+
+
+def test_the_list_offers_the_companys_positions_and_branches(company, owner, owner_api, group):
+    cashier = PositionFactory(company=company, name="Cashier")
+    PositionFactory(company=company, name="Old job", is_active=False)
+    branch = company.branches.get()
+
+    options = owner_api(owner).get(url(company)).json()["options"]
+
+    assert options["positions"] == [{"id": cashier.pk, "name": "Cashier"}]
+    assert options["branches"] == [{"id": branch.pk, "name": branch.name}]

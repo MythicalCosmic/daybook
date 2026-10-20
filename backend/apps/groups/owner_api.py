@@ -129,17 +129,31 @@ class GroupViewSet(mixins.ListModelMixin, OwnerViewSet):
                 ),
                 "bot_username": serializers.CharField(),
                 "person_events": serializers.ListField(child=serializers.CharField()),
+                "options": inline_serializer(
+                    "GroupsFilterOptions",
+                    {"positions": RefSerializer(many=True), "branches": RefSerializer(many=True)},
+                ),
             },
         )
     )
     def list(self, request, company_id):
         rows = GroupSerializer(self.get_queryset(), many=True).data
+        positions = Position.objects.for_company(self.company).filter(is_active=True)
+        branches = Branch.objects.for_company(self.company).filter(is_active=True)
         return Response(
             {
                 "results": rows,
                 "connect_link": connect_link(),
                 "bot_username": settings.EMPLOYEE_BOT_USERNAME,
                 "person_events": [str(event) for event in PERSON_EVENTS],
+                "options": {
+                    "positions": [
+                        {"id": p.pk, "name": p.name} for p in positions.order_by("order", "name")
+                    ],
+                    "branches": [
+                        {"id": b.pk, "name": b.name} for b in branches.order_by("order", "name")
+                    ],
+                },
             }
         )
 

@@ -1,8 +1,9 @@
 /**
- * Signing in (plan §6.1 "/dashboard/login", §7): the only module with `publicRoutes`. W0 ships the
- * placeholder login page and, in development only, the developer sign-in; package A takes the
- * module over (QR code, number matching, silent initData login inside Telegram, sessions page).
- * It has no sidebar row (`nav: []`) and no company routes.
+ * Signing in (plan §6.1 "/dashboard/login", §7): the only module with `publicRoutes`. The login
+ * page shows a QR code of a Telegram deep link with number matching; inside Telegram the shell
+ * signs in silently with initData (TelegramBridge), so the page never shows there. In
+ * development only, `/dev/login` signs in as any Telegram id. No sidebar row, no company routes;
+ * the sessions page lives in Settings.
  */
 import { LogIn } from "@lucide/vue";
 import type { RouteRecordRaw } from "vue-router";
