@@ -20,7 +20,7 @@
   "comms.kpi.readRate": "Read rate",
   "comms.kpi.last30": "Last 30 days",
   "comms.kpi.unread": "Unread copies",
-  "comms.kpi.unreadHint": "People who haven’t read one yet, last 30 days",
+  "comms.kpi.unreadHint": "Haven’t read one yet, last 30 days",
   "comms.kpi.scheduled": "Scheduled",
   "comms.kpi.scheduledHint": "Waiting for their time",
   "comms.col.announcement": "Announcement",

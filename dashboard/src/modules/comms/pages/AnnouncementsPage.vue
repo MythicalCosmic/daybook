@@ -81,7 +81,7 @@ const columns = computed<TableColumn<Announcement>[]>(() => [
   { id: "audience", header: t("comms.col.audience"), width: 220, value: (row) => [...row.branches, ...row.positions].map((x) => x.name).join(", ") || t("comms.audience.everyone") },
   { id: "when", header: t("comms.col.when"), width: 150, value: (row) => when(row) },
   { id: "read", header: t("comms.col.read"), width: 190, value: (row) => row.read_rate ?? "" },
-  { id: "status", header: t("comms.col.status"), width: 130, value: (row) => t(`comms.status.${row.status}`) },
+  { id: "status", header: t("comms.col.status"), width: 160, value: (row) => t(`comms.status.${row.status}`) },
 ]);
 
 function open(row: Announcement): void {

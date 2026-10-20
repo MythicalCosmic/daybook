@@ -20,7 +20,7 @@
   "comms.kpi.readRate": "Прочитано",
   "comms.kpi.last30": "За последние 30 дней",
   "comms.kpi.unread": "Непрочитанные копии",
-  "comms.kpi.unreadHint": "Кто ещё не прочитал, за последние 30 дней",
+  "comms.kpi.unreadHint": "Ещё не прочитали, за 30 дней",
   "comms.kpi.scheduled": "Запланировано",
   "comms.kpi.scheduledHint": "Ждут своего времени",
   "comms.col.announcement": "Объявление",

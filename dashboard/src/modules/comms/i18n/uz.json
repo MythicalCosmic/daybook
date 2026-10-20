@@ -20,7 +20,7 @@
   "comms.kpi.readRate": "O‘qilish darajasi",
   "comms.kpi.last30": "Oxirgi 30 kun",
   "comms.kpi.unread": "O‘qilmagan nusxalar",
-  "comms.kpi.unreadHint": "E’lonni hali o‘qimaganlar, oxirgi 30 kun",
+  "comms.kpi.unreadHint": "Hali o‘qimaganlar, 30 kunda",
   "comms.kpi.scheduled": "Rejalashtirilgan",
   "comms.kpi.scheduledHint": "Vaqti kelishini kutmoqda",
   "comms.col.announcement": "E’lon",
