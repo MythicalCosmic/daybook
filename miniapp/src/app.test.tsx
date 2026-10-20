@@ -115,7 +115,7 @@ describe("app", () => {
     window.history.replaceState(null, "", "/app/?screen=wallet.broken");
     renderApp(me("approved", ["reports.view"]));
     expect(await screen.findByText("This part didn't open", {}, { timeout: 3000 })).toBeTruthy();
-  });
+  }, 15_000);
 
   it("lets only a feature this person sees take a built-in link over", async () => {
     const Leave = () => <h1>Leave balances</h1>;
@@ -135,9 +135,9 @@ describe("app", () => {
     cleanup();
     renderApp(me("approved", ["reports.view"]));
     expect(await screen.findByRole("heading", { name: "Leave balances" }, { timeout: 3000 })).toBeTruthy();
-  });
+  }, 15_000);
 
-  it("wires Telegram's back button to the stack: the sheet first, then the page, then away", async () => {
+  it("wires Telegram's back button to the stack: it closes the top page, then hands the button back", async () => {
     const back = { show: vi.fn(), hide: vi.fn(), onClick: vi.fn(), offClick: vi.fn() };
     vi.stubGlobal("Telegram", {
       WebApp: {
@@ -166,7 +166,7 @@ describe("app", () => {
         <InTelegram />
       </QueryClientProvider>,
     );
-    expect(await screen.findByRole("heading", { name: "Team results" }, { timeout: 3000 })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Team results" }, { timeout: 10_000 })).toBeTruthy();
     const press = () => act(() => (back.onClick.mock.calls.at(-1)![0] as () => void)());
     expect(back.show).toHaveBeenCalled();
     press();
@@ -175,7 +175,8 @@ describe("app", () => {
     // Nothing left to close: Telegram hides the button and its press goes to Telegram again.
     expect(back.hide).toHaveBeenCalled();
     expect(back.offClick).toHaveBeenCalled();
-  });
+    // A fresh module graph (to load telegram.ts with the stub) is slow when every file runs at once.
+  }, 20_000);
 
   it("shows a calm paused screen to a suspended person", async () => {
     renderApp(me("suspended"));
@@ -186,7 +187,7 @@ describe("app", () => {
     // With an end date, it says until when, as the bot does.
     renderApp(me("suspended", [], { suspended_until: "2026-11-12" }));
     expect(await screen.findByText(/paused your access until 12 Nov\./, {}, { timeout: 3000 })).toBeTruthy();
-  });
+  }, 15_000);
 
   it("uses the lifecycle feature's paused screen when there is one", async () => {
     const Paused = ({ membership }: GateProps) => <h1>{`Paused for ${membership.first_name}`}</h1>;

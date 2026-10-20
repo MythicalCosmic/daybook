@@ -211,6 +211,11 @@ describe("sheet", () => {
     fireEvent.click(opener);
     const dialog = screen.getByRole("dialog", { name: "New expense" });
     expect(document.activeElement).toBe(dialog);
+    // Tab stays inside: from the dialog to its only button, and round again.
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Send" }));
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Send" }));
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(document.activeElement).toBe(opener);

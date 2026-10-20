@@ -48,9 +48,28 @@ export function Sheet({
     const opener = active instanceof HTMLElement && active !== document.body && matchesFocusVisible(active) ? active : null;
     if (!element.contains(document.activeElement)) element.focus({ preventScroll: true });
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !event.defaultPrevented) {
+      if (event.defaultPrevented) return;
+      if (event.key === "Escape") {
         event.preventDefault();
         close.current();
+      } else if (event.key === "Tab") {
+        // Keep Tab inside the sheet: the page behind it is covered and inert to the eye.
+        const stops = [...element.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+          (node) => node.tabIndex >= 0 && !node.closest("[hidden], [inert]"),
+        );
+        const first = stops[0];
+        const last = stops.at(-1);
+        const active = document.activeElement;
+        if (!first || !last) {
+          event.preventDefault();
+          element.focus({ preventScroll: true });
+        } else if (event.shiftKey && (active === first || active === element || !element.contains(active))) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && (active === last || active === element || !element.contains(active))) {
+          event.preventDefault();
+          first.focus();
+        }
       }
     };
     document.addEventListener("keydown", onKey);
@@ -86,6 +105,9 @@ export function Sheet({
     </div>
   );
 }
+
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 function matchesFocusVisible(element: Element): boolean {
   try {
