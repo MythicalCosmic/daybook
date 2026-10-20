@@ -9,12 +9,24 @@ from apps.members.models import Membership
 TABS = ("unread", "all")
 
 
-def inbox(member: Membership, *, tab: str = "all") -> QuerySet[Notification]:
-    """The member's in-app notifications, newest first, archived ones left out."""
+def inbox(
+    member: Membership, *, tab: str = "all", audience: str | None = None
+) -> QuerySet[Notification]:
+    """The member's in-app notifications, newest first, archived ones left out.
+
+    `audience="employee"` keeps the kinds registered for employees: the mini app's inbox, which
+    leaves owner notifications (approvals and alerts) to the dashboard."""
     items = Notification.objects.filter(recipient=member, in_app=True, archived_at__isnull=True)
     if tab == "unread":
         items = items.filter(read_at__isnull=True)
+    if audience is not None:
+        items = items.filter(kind__in=kinds_for(audience))
     return items.select_related(*SERIALIZER_RELATIONS).order_by("-created_at", "-pk")
+
+
+def kinds_for(audience: str) -> list[str]:
+    """The registered notification kinds of one audience ("owner" or "employee")."""
+    return [kind.key for kind in registry.KINDS if kind.audience == audience]
 
 
 # What NotificationSerializer reads (a member without a name shows their user's name).

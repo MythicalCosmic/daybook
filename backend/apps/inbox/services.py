@@ -25,7 +25,7 @@ from apps.accounts.models import User
 from apps.console import pulse
 from apps.console.registry import QUEUE_STYLES
 from apps.core.exceptions import DomainError
-from apps.inbox import bot_messages, delivery, registry, tasks
+from apps.inbox import bot_messages, delivery, queries, registry, tasks
 from apps.inbox.models import Notification, NotificationPreference
 from apps.members.models import Membership
 
@@ -288,9 +288,18 @@ def act_from_bot(notification_id: int, key: str, *, user: User) -> BotActionResu
     return BotActionResult(True, message or _("Done."))
 
 
-def mark_read(member: Membership, *, ids: Sequence[int] = (), everything: bool = False) -> int:
-    """Mark `member`'s notifications read: the given ids, or all of them."""
+def mark_read(
+    member: Membership,
+    *,
+    ids: Sequence[int] = (),
+    everything: bool = False,
+    audience: str | None = None,
+) -> int:
+    """Mark `member`'s notifications read: the given ids, or all of them (of one audience's
+    kinds when `audience` is given, like the mini app's inbox shows them)."""
     unread = Notification.objects.filter(recipient=member, in_app=True, read_at__isnull=True)
+    if audience is not None:
+        unread = unread.filter(kind__in=queries.kinds_for(audience))
     if not everything:
         unread = unread.filter(pk__in=list(ids))
     count = unread.update(read_at=timezone.now())

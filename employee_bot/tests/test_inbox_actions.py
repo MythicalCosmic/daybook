@@ -60,7 +60,7 @@ def press(item: Notification) -> str:
 
 
 def test_the_module_router_handles_inbox_buttons():
-    assert inbox_actions.router.name == "inbox_actions"
+    assert inbox_actions.router.name == "feature_inbox_actions"
     assert inbox_actions.router.callback_query.handlers
 
 

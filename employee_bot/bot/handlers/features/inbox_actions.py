@@ -12,8 +12,11 @@ from apps.inbox.callbacks import InboxAction
 
 
 def make_router() -> Router:
-    """A fresh router (a router attaches to one dispatcher only; tests build their own)."""
-    router = Router(name="inbox_actions")
+    """A fresh router (a router attaches to one dispatcher only; tests build their own).
+
+    Named `feature_<module>` like every area router in this package (W0-L3's dispatcher
+    tests check it)."""
+    router = Router(name="feature_inbox_actions")
     router.callback_query.register(handle_action, InboxAction.filter())
     return router
 

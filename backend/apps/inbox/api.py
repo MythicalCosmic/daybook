@@ -13,7 +13,8 @@ from apps.members.api import IsCompanyMember
 
 
 class EmployeeInboxView(ListAPIView):
-    """My notifications in this company, newest first."""
+    """My notifications in this company, newest first (employee kinds: approvals and alerts
+    for owners and managers live in the dashboard)."""
 
     permission_classes = (IsAuthenticated, IsCompanyMember)
     serializer_class = NotificationSerializer
@@ -21,7 +22,7 @@ class EmployeeInboxView(ListAPIView):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):  # schema generation has no member
             return Notification.objects.none()
-        return queries.inbox(self.membership)
+        return queries.inbox(self.membership, audience="employee")
 
 
 class EmployeeMarkReadView(APIView):
@@ -37,5 +38,6 @@ class EmployeeMarkReadView(APIView):
             self.membership,
             ids=serializer.validated_data.get("ids", []),
             everything=serializer.validated_data["all"],
+            audience="employee",
         )
         return Response({"updated": count})

@@ -248,6 +248,28 @@ def test_the_mini_app_inbox_shows_my_notifications_in_this_company(
     assert [row["title"] for row in response.data["results"]] == ["Your week"]
 
 
+def test_the_mini_app_leaves_owner_notifications_to_the_dashboard(
+    company, owner, api_as, owner_api
+):
+    [digest] = notify([owner], "inbox.digest", title="Your week")
+    [claim] = notify([owner], "inbox.claim", title="Claim to approve", actions=[APPROVE])
+    client = api_as(owner)
+
+    listed = client.get(f"/api/v1/companies/{company.pk}/inbox/").data["results"]
+    assert [row["id"] for row in listed] == [digest.pk]
+    marked = client.post(
+        f"/api/v1/companies/{company.pk}/inbox/read/", {"all": True}, format="json"
+    )
+    assert marked.data == {"updated": 1}
+    also = client.post(
+        f"/api/v1/companies/{company.pk}/inbox/read/", {"ids": [claim.pk]}, format="json"
+    )
+    assert also.data == {"updated": 0}
+    claim.refresh_from_db()
+    assert claim.read_at is None  # still unread in the dashboard
+    assert owner_api(owner).get(inbox_url(company, "unread-count/")).data["count"] == 1
+
+
 def test_the_mini_app_marks_read(company, member, api_as):
     worker = member(company)
     [item] = notify([worker], "inbox.digest", title="Your week")
