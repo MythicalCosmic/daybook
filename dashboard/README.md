@@ -161,4 +161,5 @@ of W0).
 vue-i18n runs without its message compiler (`__INTLIFY_DROP_MESSAGE_COMPILER__`);
 `src/i18n/compile.ts` compiles messages instead. It supports `{name}`, `{0}`, `{'literal'}` and
 plural forms separated by ` | ` (`t(key, { n }, n)`); linked messages (`@:key`) are not
-supported, and `@` or `$` are plain text.
+supported, and `@` or `$` are plain text. In development vue-i18n logs once that a custom message
+compiler is in use; that is expected.

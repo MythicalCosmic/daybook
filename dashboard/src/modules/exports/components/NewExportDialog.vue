@@ -26,7 +26,7 @@ import { useCreateExport, useExporters } from "../api";
 const open = defineModel<boolean>("open", { default: false });
 
 const { t } = useI18n();
-const exporters = useExporters();
+const exporters = useExporters(open);
 const create = useCreateExport();
 
 const kind = ref<string | null>(null);

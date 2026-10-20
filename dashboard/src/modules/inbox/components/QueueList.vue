@@ -35,7 +35,8 @@ const confirm = useConfirm();
 const kind = useRouteState("kind", rs.string(""));
 // All kinds come from the unfiltered queue; the list shows the chosen one.
 const all = useQueue(null);
-const kinds = computed(() => all.data.value?.kinds ?? []);
+// Every kind the person may act on comes back, empty ones too; list those with something waiting.
+const kinds = computed(() => (all.data.value?.kinds ?? []).filter((entry) => entry.count > 0 || entry.kind === kind.value));
 const items = computed(() => (all.data.value?.items ?? []).filter((item) => !kind.value || item.kind === kind.value));
 const groups = computed(() =>
   kinds.value

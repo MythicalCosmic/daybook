@@ -57,12 +57,13 @@ export function useExports(params: MaybeRefOrGetter<{ page: number; page_size: n
   });
 }
 
-export function useExporters() {
+/** What may be exported here; `when` holds the request back until it is needed (the dialog opens). */
+export function useExporters(when: MaybeRefOrGetter<boolean> = true) {
   const companyId = useCompanyId();
   return useQuery({
     queryKey: computed(() => exportKeys.kinds(companyId.value)),
     queryFn: ({ signal }) => listExporters(companyId.value, signal),
-    enabled: computed(() => companyId.value > 0),
+    enabled: computed(() => companyId.value > 0 && toValue(when)),
     staleTime: 5 * 60_000,
   });
 }

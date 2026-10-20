@@ -222,7 +222,7 @@ const languageMenu = computed<MenuEntry[]>(() => [
           <UserAvatar :name="user.full_name" :src="user.photo_url" :size="36" />
           <div class="min-w-0 flex-1">
             <p class="truncate text-base font-semibold text-fg">{{ user.full_name }}</p>
-            <p class="truncate text-xs text-muted">{{ user.username ? `@${user.username}` : `#${user.telegram_id}` }}</p>
+            <p v-if="user.username || user.telegram_id" class="truncate text-xs text-muted">{{ user.username ? `@${user.username}` : `#${user.telegram_id}` }}</p>
           </div>
         </div>
         <div class="-mx-1 mb-1 h-px bg-line" />
