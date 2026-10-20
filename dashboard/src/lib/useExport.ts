@@ -1,6 +1,7 @@
 /**
- * Server exports (plan §4.2): `POST exports/ {kind, format, params}` → 202 `{id}`; the file is built
- * in the background, offered for download here and sent to the person in Telegram too.
+ * Server exports (plan §4.2): `POST exports/ {kind, format, params, deliver_telegram}` → 202 `{id}`;
+ * the file is built in the background and offered for download here. It is also sent to Telegram
+ * only when the person ticked "Also send to Telegram" (off by default, §3.5).
  */
 import { ref } from "vue";
 
@@ -25,6 +26,8 @@ export interface ExportRequest {
   kind: string;
   format?: ExportFormat;
   params?: Record<string, unknown>;
+  /** Also send the file to the person in Telegram (opt-in; never for sensitive exporters by default). */
+  deliverTelegram?: boolean;
 }
 
 const POLL_MS = 1500;
@@ -46,6 +49,7 @@ export function useExport() {
         kind: request.kind,
         format: request.format ?? "xlsx",
         params: request.params ?? {},
+        deliver_telegram: request.deliverTelegram ?? false,
       });
       const started = Date.now();
       while (Date.now() - started < GIVE_UP_MS) {
@@ -55,7 +59,7 @@ export function useExport() {
           const url = job.file_url;
           toast.success(t("common.export.ready"), {
             id: toastId,
-            description: t("common.export.telegram"),
+            description: request.deliverTelegram ? t("common.export.telegram") : undefined,
             action: {
               label: t("common.export.download"),
               onClick: () => {

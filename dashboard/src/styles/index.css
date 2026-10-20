@@ -3,6 +3,7 @@
 @import "./tokens.css";
 @import "./base.css";
 @import "./motion.css";
+@import "./controls.css";
 
 /* Dark mode follows html[data-theme], not the media query (system is resolved in app/theme.ts). */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));

@@ -6,6 +6,27 @@
    that isn't here asks W0 for a token instead of reaching for `red-500`. */
 
 :root {
+  /* Radii: 6 inputs, 8 buttons, 12 cards, 16 drawers, full for chips */
+  --r-input: 6px;
+  --r-button: 8px;
+  --r-card: 12px;
+  --r-drawer: 16px;
+
+  /* Layout */
+  --row-h: 44px;
+  --control-h: 32px;
+  --nav-w: 248px;
+  --rail-w: 64px;
+  --topbar-h: 52px;
+  --tabbar-h: 58px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+
+:root,
+[data-theme="light"] {
   color-scheme: light;
 
   /* Ground and surfaces */
@@ -66,33 +87,22 @@
   --sh-drawer: 0 0 0 1px rgb(32 30 29 / 0.08), 0 24px 48px -12px rgb(32 30 29 / 0.22);
   --sh-palette: 0 0 0 1px rgb(32 30 29 / 0.08), 0 8px 20px -6px rgb(32 30 29 / 0.12),
     0 32px 72px -16px rgb(32 30 29 / 0.3);
-
-  /* Radii: 6 inputs, 8 buttons, 12 cards, 16 drawers, full for chips */
-  --r-input: 6px;
-  --r-button: 8px;
-  --r-card: 12px;
-  --r-drawer: 16px;
-
-  /* Layout */
-  --row-h: 44px;
-  --control-h: 32px;
-  --nav-w: 248px;
-  --rail-w: 64px;
-  --topbar-h: 52px;
-  --tabbar-h: 58px;
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-right: env(safe-area-inset-right, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-left: env(safe-area-inset-left, 0px);
 }
 
-/* Density: comfortable (44 px rows) or compact (36 px), remembered per person. */
-:root[data-density="compact"] {
+/* Density: comfortable (44 px rows) or compact (36 px), remembered per person. The attribute
+   selectors also work on any element, so a region (the component gallery) can show the other density. */
+[data-density="comfortable"] {
+  --row-h: 44px;
+  --control-h: 32px;
+}
+[data-density="compact"] {
   --row-h: 36px;
   --control-h: 30px;
 }
 
-:root[data-theme="dark"] {
+/* Dark. Like density, it also applies to a nested [data-theme] region (the gallery's side-by-side view);
+   portals and the rest of the app follow <html data-theme>. */
+[data-theme="dark"] {
   color-scheme: dark;
 
   --c-canvas: #141210;
