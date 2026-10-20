@@ -27,6 +27,7 @@ from django.db.models import (
     ExpressionWrapper,
     F,
     Max,
+    Min,
     Q,
     QuerySet,
     Sum,
@@ -993,7 +994,8 @@ def balances_on(company, on: date, *, branch_ids) -> dict:
 
 def category_trend(company, category: Category, months: int, *, branch_ids, today: date) -> dict:
     """A category (with its subcategories) month by month for the last `months` months,
-    this one included, and the monthly average of the full months."""
+    this one included, and the monthly average of the full months since the books began (months
+    before the first ledger row would only drag the average down)."""
     months = max(1, min(int(months), 36))
     first = _add_months(date(today.year, today.month, 1), -(months - 1))
     rows = posted_rows(company, branch_ids=branch_ids).filter(
@@ -1015,7 +1017,11 @@ def category_trend(company, category: Category, months: int, *, branch_ids, toda
         series.append(
             {"date": month.isoformat(), "amount": quantize(sign * (sums.get(month) or ZERO))}
         )
-    full = [point["amount"] for point in series[:-1]] or [series[-1]["amount"]]
+    began = posted_rows(company, branch_ids=branch_ids).aggregate(day=Min("occurred_on"))["day"]
+    since = date(began.year, began.month, 1).isoformat() if began else first.isoformat()
+    full = [point["amount"] for point in series[:-1] if point["date"] >= since] or [
+        series[-1]["amount"]
+    ]
     return {
         "category": {"id": category.pk, "name": category.name, "kind": category.kind},
         "currency": company.base_currency,

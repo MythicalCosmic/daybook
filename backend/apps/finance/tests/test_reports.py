@@ -158,6 +158,8 @@ def test_debt_aging(books, ledger):
 def test_category_trend(books, ledger):
     data = queries.category_trend(books, ledger["goods"], 3, branch_ids=None, today=OCT_10)
     assert [point["amount"] for point in data["series"]] == [D("0.00"), D("2500000.00"), D("0.00")]
+    # The average counts the full months since the books began (September), not empty August.
+    assert data["average"] == D("2500000.00")
 
 
 def test_totals_ignore_owner_money_transfers_and_openings(books, ledger):
