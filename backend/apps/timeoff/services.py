@@ -11,12 +11,14 @@ from apps.accounts.models import User
 from apps.audit import services as audit
 from apps.audit.models import AuditLog
 from apps.core.exceptions import DomainError
+from apps.core.signals import send_on_commit
 from apps.members import services as members
 from apps.members.models import Membership
 from apps.members.permissions import Perm
 from apps.tasks.models import Task
 from apps.timeoff import tasks as jobs
 from apps.timeoff.models import TimeOff
+from apps.timeoff.signals import time_off_approved, time_off_cancelled
 
 MAX_DAYS = 60
 TAKEN = (TimeOff.Status.PENDING, TimeOff.Status.APPROVED)
@@ -84,8 +86,16 @@ def cancel(time_off: TimeOff, *, by: Membership) -> TimeOff:
         raise DomainError(_already(time_off))
     if time_off.status == TimeOff.Status.APPROVED and time_off.first_day <= _today(by):
         raise DomainError(_("Time off that has already started can't be cancelled."))
+    previous_status = time_off.status
     time_off.status = TimeOff.Status.CANCELLED
     time_off.save(update_fields=["status", "updated_at"])
+    send_on_commit(
+        time_off_cancelled,
+        sender=TimeOff,
+        time_off=time_off,
+        by=by,
+        previous_status=previous_status,
+    )
     return time_off
 
 
@@ -117,6 +127,13 @@ def _settle(time_off: TimeOff, status: TimeOff.Status, by: User) -> None:
     )
     if status == TimeOff.Status.APPROVED:
         _cancel_todays_daily_tasks(time_off)
+        acting = members.get_membership(by, time_off.company)
+        send_on_commit(
+            time_off_approved,
+            sender=TimeOff,
+            time_off=time_off,
+            by=acting if acting is not None and acting.has_perm(Perm.TIME_OFF_APPROVE) else None,
+        )
 
 
 def _cancel_todays_daily_tasks(time_off: TimeOff) -> None:

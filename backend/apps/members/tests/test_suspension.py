@@ -244,6 +244,19 @@ def test_the_employee_api_answers_403_suspended(company, owner, worker):
         assert "paused until 31.01.2099" in response.data["detail"]
 
 
+def test_until_further_notice_is_null(company, owner, worker):
+    services.suspend(worker, by=owner, until=None, reason="x")
+
+    response = api_for(worker).get(f"/api/v1/companies/{company.pk}/tasks/")
+
+    assert response.status_code == 403
+    assert response.data == {
+        "code": "suspended",
+        "detail": f"Your access to {company.name} is paused until further notice.",
+        "until": None,
+    }
+
+
 def test_me_still_works_and_shows_the_suspension(company, owner, worker):
     services.suspend(worker, by=owner, until=None, reason="x")
 

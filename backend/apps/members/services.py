@@ -401,9 +401,16 @@ def _wind_down(membership: Membership, *, by: Membership | None) -> None:
         .order_by("first_day")
     )
     for time_off in cancelled:
+        previous_status = time_off.status
         time_off.status = TimeOff.Status.CANCELLED
         time_off.save(update_fields=["status", "updated_at"])
-        send_on_commit(time_off_cancelled, sender=TimeOff, time_off=time_off, by=by)
+        send_on_commit(
+            time_off_cancelled,
+            sender=TimeOff,
+            time_off=time_off,
+            by=by,
+            previous_status=previous_status,
+        )
 
 
 def _lock(membership: Membership) -> Membership:

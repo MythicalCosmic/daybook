@@ -109,13 +109,14 @@ class MemberSuspended(PermissionDenied):
 
     def __init__(self, membership: Membership):
         until = membership.suspended_until
-        super().__init__(
-            {
-                "code": "suspended",
-                "detail": bot_messages.paused_text(membership),
-                "until": until.isoformat() if until else None,
-            }
-        )
+        text = bot_messages.paused_text(membership)
+        super().__init__(text)
+        # The body as is: DRF would turn a missing date into the string "None".
+        self.detail = {
+            "code": "suspended",
+            "detail": text,
+            "until": until.isoformat() if until else None,
+        }
 
 
 class IsCompanyMember(BasePermission):

@@ -16,15 +16,17 @@ Both raise `InvalidUpload` (a `DomainError`, so the API answers 400 with its mes
 
 import csv
 import io
+import threading
 import uuid
 import warnings
 import zipfile
 from collections.abc import Iterable
+from contextlib import contextmanager
 
 import pillow_heif
 from django.core.files.base import ContentFile
 from django.utils.translation import gettext as _
-from PIL import Image, ImageCms, ImageOps, UnidentifiedImageError
+from PIL import Image, ImageCms, ImageFile, ImageOps, UnidentifiedImageError
 
 from apps.core.exceptions import DomainError
 
@@ -48,6 +50,7 @@ MAX_UNPACKED_BYTES = 200 * 1024 * 1024
 CSV_ENCODINGS = ("utf-8-sig", "cp1251")
 
 _SRGB = ImageCms.createProfile("sRGB")
+_decoding_lock = threading.Lock()
 
 
 class InvalidUpload(DomainError):
@@ -131,10 +134,23 @@ def _read(file, max_bytes: int) -> bytes:
     return data
 
 
+@contextmanager
+def _strict_decoding():
+    """Truncated files must fail to decode. WeasyPrint switches Pillow's process-wide
+    LOAD_TRUNCATED_IMAGES on when it is imported, so it is turned off around our decoding."""
+    with _decoding_lock:
+        previous = ImageFile.LOAD_TRUNCATED_IMAGES
+        ImageFile.LOAD_TRUNCATED_IMAGES = False
+        try:
+            yield
+        finally:
+            ImageFile.LOAD_TRUNCATED_IMAGES = previous
+
+
 def _decode(data: bytes) -> Image.Image:
     """Open and fully decode the picture, or refuse it."""
     try:
-        with warnings.catch_warnings():
+        with _strict_decoding(), warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
             image = Image.open(io.BytesIO(data), formats=IMAGE_FORMATS)
             if image.width * image.height > MAX_PIXELS:

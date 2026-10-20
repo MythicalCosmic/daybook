@@ -12,6 +12,7 @@ from apps.announcements import tasks as jobs
 from apps.announcements.models import Announcement, Receipt
 from apps.audit import services as audit
 from apps.audit.models import AuditLog
+from apps.companies.models import Branch
 from apps.core.exceptions import DomainError
 from apps.members import services as members
 from apps.members.models import Membership, Position
@@ -22,8 +23,15 @@ MAX_LENGTH = 3500
 
 
 @transaction.atomic
-def publish(author: Membership, text: str, position_ids: Iterable[int] = ()) -> Announcement:
-    """Send an announcement to everyone, or to the given positions. Returns it with receipts."""
+def publish(
+    author: Membership,
+    text: str,
+    position_ids: Iterable[int] = (),
+    *,
+    branch_ids: Iterable[int] = (),
+) -> Announcement:
+    """Send an announcement to everyone, or only to people in the given positions and/or
+    branches (each filter only when given). Returns it with its receipts."""
     if not author.has_perm(Perm.ANNOUNCE):
         raise PermissionDenied(_("Only managers can send announcements."))
     text = text.strip()
@@ -35,11 +43,17 @@ def publish(author: Membership, text: str, position_ids: Iterable[int] = ()) -> 
             % {"limit": MAX_LENGTH}
         )
     positions = list(Position.objects.for_company(author.company_id).filter(pk__in=position_ids))
+    branches = list(Branch.objects.for_company(author.company_id).filter(pk__in=branch_ids))
     announcement = Announcement.objects.create(
-        company_id=author.company_id, author=author, text=text
+        company_id=author.company_id,
+        author=author,
+        text=text,
+        status=Announcement.Status.SENT,
+        sent_at=timezone.now(),
     )
     announcement.positions.set(positions)
-    recipients = list(audience(author.company_id, positions).exclude(pk=author.pk))
+    announcement.branches.set(branches)
+    recipients = list(audience(author.company_id, positions, branches).exclude(pk=author.pk))
     Receipt.objects.bulk_create(
         Receipt(announcement=announcement, membership=person) for person in recipients
     )
@@ -50,17 +64,25 @@ def publish(author: Membership, text: str, position_ids: Iterable[int] = ()) -> 
         target=announcement,
         recipients=len(recipients),
         positions=[position.name for position in positions],
+        branches=[branch.name for branch in branches],
     )
     transaction.on_commit(partial(jobs.deliver_announcement.delay, announcement.pk))
     return announcement
 
 
-def audience(company_id: int, positions: list[Position]) -> QuerySet[Membership]:
-    """Registered members, only of `positions` when any are given."""
+def audience(
+    company_id: int, positions: list[Position], branches: list[Branch] = ()
+) -> QuerySet[Membership]:
+    """Registered members (suspended people excluded), only of `positions` and only working
+    in one of `branches` when any are given."""
     people = Membership.objects.filter(
         company_id=company_id, status=Membership.Status.APPROVED, onboarded_at__isnull=False
     )
-    return people.filter(position__in=positions) if positions else people
+    if positions:
+        people = people.filter(position__in=positions)
+    if branches:
+        people = people.filter(branches__in=branches).distinct()
+    return people
 
 
 def mark_read(announcement_id: int, user: User) -> Receipt | None:

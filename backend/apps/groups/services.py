@@ -1,15 +1,61 @@
+from collections.abc import Iterable
+
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.db.models import Q
 from django.utils.translation import gettext as _
 
 from apps.accounts.models import User
 from apps.audit import services as audit
 from apps.audit.models import AuditLog
+from apps.companies.models import Company
 from apps.core.exceptions import DomainError
-from apps.groups.models import DEFAULT_EVENTS, GroupEvent, TelegramGroup
+from apps.groups import tasks as group_jobs
+from apps.groups.models import DEFAULT_EVENTS, EVENT_FEATURES, GroupEvent, TelegramGroup
 from apps.members import services as members
 from apps.members.models import Membership, Position
 from apps.members.permissions import Perm
+
+
+def broadcast(
+    company_id: int,
+    event: GroupEvent,
+    text: str,
+    *,
+    position_ids: Iterable[int] = (),
+    branch_id: int | None = None,
+    photo: str | None = None,
+    photo_storage: str = "default",
+) -> int:
+    """Post `text` (HTML, already in the company's language) to every group of the company
+    that wants `event`. Returns how many groups it was queued for.
+
+    News about people in some positions reaches groups without a position filter and groups
+    narrowed to one of those positions; news from a branch reaches groups without a branch
+    filter and groups of that branch. News about nobody in particular (no positions, no
+    branch) reaches every group that wants the event. An event whose module is off goes
+    nowhere. `photo` is a path in `photo_storage` ("default" public media or "private").
+    """
+    if photo_storage not in ("default", "private"):
+        raise ValueError(f"Unknown storage {photo_storage!r}.")
+    company = Company.objects.filter(pk=company_id, is_active=True).first()
+    if company is None:
+        return 0
+    feature = EVENT_FEATURES.get(event)
+    if feature is not None and not company.has_feature(feature):
+        return 0
+    groups = TelegramGroup.objects.filter(
+        company_id=company_id, is_active=True, events__contains=[event]
+    )
+    position_ids = list(position_ids)
+    if position_ids:
+        groups = groups.filter(Q(positions=None) | Q(positions__in=position_ids))
+    if branch_id is not None:
+        groups = groups.filter(Q(branches=None) | Q(branches=branch_id))
+    group_ids = list(groups.values_list("pk", flat=True).distinct())
+    for group_id in group_ids:
+        group_jobs.queue_post(group_id, (text, None), photo, photo_storage)
+    return len(group_ids)
 
 
 def managing_membership(user: User) -> Membership | None:

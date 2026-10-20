@@ -92,10 +92,17 @@ def test_refusals_are_domain_errors_with_a_safe_message():
         sanitize_image(upload(SVG))
 
 
-def test_a_truncated_jpeg_is_refused():
+@pytest.mark.parametrize("weasyprint_loaded", [False, True])
+def test_a_truncated_jpeg_is_refused(monkeypatch, weasyprint_loaded):
+    from PIL import ImageFile
+
+    # Importing WeasyPrint switches Pillow's LOAD_TRUNCATED_IMAGES on for the whole process.
+    monkeypatch.setattr(ImageFile, "LOAD_TRUNCATED_IMAGES", weasyprint_loaded)
     data = picture(size=(400, 300))
+
     with pytest.raises(InvalidUpload):
         sanitize_image(upload(data[: len(data) // 2]))
+    assert weasyprint_loaded == ImageFile.LOAD_TRUNCATED_IMAGES  # restored afterwards
 
 
 def test_empty_and_oversized_uploads_are_refused():
