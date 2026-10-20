@@ -86,6 +86,15 @@ def _prompt_for(membership: Membership):
 # The location, then the selfie when the company asks for one ----------------------------
 
 
+@flow.message(CheckFlow.location, F.location, F.forward_origin)
+async def forwarded_location(message: Message) -> None:
+    """A forwarded location is somebody else's place, not where this person is now."""
+    await message.answer(
+        _("That location was forwarded. Tap «%(button)s» below to share where you are now.")
+        % {"button": _(bot_messages.SEND_LOCATION)}
+    )
+
+
 @flow.message(CheckFlow.location, F.location)
 async def got_location(message: Message, membership: Membership, state: FSMContext) -> None:
     data = await state.get_data()

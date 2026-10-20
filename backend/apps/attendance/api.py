@@ -326,14 +326,16 @@ class CandidatesView(MemberView):
             raise NotFound
         people = list(queries.eligible_for(shift))
         horizon = timezone.now() + timedelta(days=21)
-        theirs: dict[int, list] = {}
-        for other in (
+        coming = list(
             WorkShift.objects.working()
             .filter(membership__in=people, starts_at__gt=timezone.now(), starts_at__lte=horizon)
-            .select_related("branch", "position")
+            .select_related("branch", "position", "membership")
             .order_by("starts_at")
-        ):
-            if queries.is_eligible(other, self.membership, ignore_shift_ids=[shift.pk]):
+        )
+        mine = queries.takeable(self.membership, coming, ignore_shift_ids=[shift.pk])
+        theirs: dict[int, list] = {}
+        for other in coming:
+            if other.pk in mine:
                 theirs.setdefault(other.membership_id, []).append(
                     queries.shift_payload(other, self.company)
                 )

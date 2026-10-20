@@ -261,6 +261,54 @@ def is_eligible(shift: WorkShift, member: Membership, *, ignore_shift_ids=()) ->
     return eligible_for(shift, ignore_shift_ids=ignore_shift_ids).filter(pk=member.pk).exists()
 
 
+def takeable(member: Membership, shifts, *, ignore_shift_ids=()) -> set[int]:
+    """Ids of `shifts` that `member` may take, by the rules of `eligible_for`, in three queries
+    however many shifts there are (the mini app's lists check dozens at once). Pass shifts with
+    their `membership` loaded. `ignore_shift_ids`: shifts of the member's own that don't count
+    as busy (the one they would give away in a swap)."""
+    shifts = list(shifts)
+    if not shifts or member.status != Membership.Status.APPROVED:
+        return set()
+    branches = set(member.branches.values_list("pk", flat=True))
+    if member.home_branch_id:
+        branches.add(member.home_branch_id)
+    first = min(shift.date for shift in shifts) - timedelta(days=1)
+    last = max(shift.date for shift in shifts) + timedelta(days=1)
+    busy = list(
+        WorkShift.objects.live()
+        .filter(membership=member, date__range=(first, last))
+        .exclude(status=WorkShift.Status.OPEN)
+        .exclude(pk__in=list(ignore_shift_ids))
+        .values_list("pk", "date", "starts_at", "ends_at")
+    )
+    away: set[date] = set()
+    for first_day, last_day in TimeOff.objects.filter(
+        membership=member,
+        status=TimeOff.Status.APPROVED,
+        first_day__lte=last,
+        last_day__gte=first,
+    ).values_list("first_day", "last_day"):
+        away.update(clock.days(first_day, last_day))
+    found = set()
+    for shift in shifts:
+        if shift.membership_id == member.pk or shift.date in away:
+            continue
+        owner = shift.membership if shift.membership_id else None
+        position_id = shift.position_id or (owner.position_id if owner else None)
+        if position_id and member.position_id != position_id:
+            continue
+        if shift.branch_id and shift.branch_id not in branches:
+            continue
+        clash = any(
+            pk != shift.pk
+            and (day == shift.date or (starts < shift.ends_at and ends > shift.starts_at))
+            for pk, day, starts, ends in busy
+        )
+        if not clash:
+            found.add(shift.pk)
+    return found
+
+
 # Pending work for managers -------------------------------------------------------------
 
 
@@ -348,21 +396,23 @@ def day_board(
     settings = conf.get_settings(company)
     today = clock.today(company, now)
     people = list(
-        staff(company, branch_ids=branch_ids).select_related("user", "position", "home_branch")
+        staff(company, branch_ids=branch_ids).select_related(
+            "user", "position", "home_branch", "work_schedule"
+        )
     )
     ids = [member.pk for member in people]
     shifts = list(
         WorkShift.objects.live()
         .filter(company=company, date=day, membership_id__in=ids)
         .exclude(status=WorkShift.Status.OPEN)
-        .select_related("branch")
+        .select_related("branch", "position")
         .order_by("starts_at")
     )
     if branch_ids is not None:
         shifts = [shift for shift in shifts if shift.branch_id in branch_ids]
     records = list(
         AttendanceRecord.objects.filter(company=company, date=day, membership_id__in=ids)
-        .select_related("branch", "shift")
+        .select_related("branch", "shift__branch", "shift__position")
         .order_by("check_in_at")
     )
     if branch_ids is not None:
@@ -649,7 +699,12 @@ class PeriodAttendance:
 
 
 def period_summary(
-    company: Company, start: date, end: date, *, branch_ids: list[int] | None
+    company: Company,
+    start: date,
+    end: date,
+    *,
+    branch_ids: list[int] | None,
+    member_ids: list[int] | None = None,
 ) -> dict[int, PeriodAttendance]:
     """Attendance per membership id from `start` to `end` (both included), for payroll.
 
@@ -657,6 +712,7 @@ def period_summary(
     the person has any in the period, otherwise the days in `Company.workdays`; holidays are
     removed in both cases. Leave days are scheduled days covered by approved time off.
     Attended days are days with a check-in; absent days are scheduled days marked absent.
+    `member_ids` narrows it to those people (the timesheet of one branch or one person).
     """
     people = set(staff(company, branch_ids=branch_ids).values_list("pk", flat=True))
     # People who left during the period still get their days (a final payslip needs them).
@@ -668,7 +724,11 @@ def period_summary(
             AttendanceRecord.objects.filter(company=company, date__range=(start, end)), branch_ids
         ),
     ):
+        if member_ids is not None:
+            rows = rows.filter(membership_id__in=list(member_ids))
         people |= set(rows.exclude(membership__isnull=True).values_list("membership_id", flat=True))
+    if member_ids is not None:
+        people &= set(member_ids)
     people = sorted(people)
     days_off = holidays(company, start, end)
     workdays = set(company.workdays or [])
@@ -922,7 +982,7 @@ def timesheet(
         if key not in records or (record.attended and not records[key].attended):
             records[key] = record
     away = leave_days(company, start, end, ids)
-    totals = period_summary(company, start, end, branch_ids=None)
+    totals = period_summary(company, start, end, branch_ids=None, member_ids=ids)
 
     rows = []
     for member in people:
@@ -1195,13 +1255,9 @@ def open_shifts_for(member: Membership, *, now: datetime | None = None) -> Query
     shifts = (
         WorkShift.objects.live()
         .filter(company=member.company, status=WorkShift.Status.OPEN, starts_at__gt=now)
-        .select_related("branch", "position")
         .order_by("starts_at")
     )
-    eligible = []
-    for shift in shifts[:50]:
-        if is_eligible(shift, member):
-            eligible.append(shift.pk)
+    eligible = takeable(member, shifts[:50])
     return (
         WorkShift.objects.filter(pk__in=eligible)
         .select_related("branch", "position")
@@ -1227,13 +1283,13 @@ def requests_for(member: Membership) -> QuerySet[ShiftSwap]:
         kind__in=(ShiftSwap.Kind.COVER, ShiftSwap.Kind.SWAP),
     ).exclude(requested_by=member)
     named = offered.filter(target=member)
-    anyone = [
-        swap.pk
-        for swap in offered.filter(target__isnull=True).select_related(
-            "shift__membership", "shift__company"
-        )[:50]
-        if is_eligible(swap.shift, member)
-    ]
+    open_requests = list(
+        offered.filter(target__isnull=True)
+        .select_related("shift__membership")
+        .order_by("expires_at")[:50]
+    )
+    can_take = takeable(member, [swap.shift for swap in open_requests])
+    anyone = [swap.pk for swap in open_requests if swap.shift_id in can_take]
     return (
         ShiftSwap.objects.filter(Q(pk__in=named.values("pk")) | Q(pk__in=anyone))
         .select_related(
@@ -1270,7 +1326,7 @@ def person_fields(company: Company, member_ids: list[int], now: datetime) -> dic
     states = {row["member"]["id"]: row["state"] for row in board["people"]}
     start = today - timedelta(days=30)
     end = today - timedelta(days=1)
-    rates = period_summary(company, start, end, branch_ids=None)
+    rates = period_summary(company, start, end, branch_ids=None, member_ids=list(member_ids))
     found = {}
     for member_id in member_ids:
         rate = rates.get(member_id)

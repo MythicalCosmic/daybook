@@ -816,12 +816,17 @@ def _copy_week(company, by, start, ids, branch_id, allowed) -> int:
     ).filter(status__in=(WorkShift.Status.PLANNED, WorkShift.Status.OPEN))
     source = source.filter(Q(membership_id__in=ids) | Q(membership__isnull=True))
     days_off = set(queries.holidays(company, start, start + timedelta(days=6)))
+    week = (start, start + timedelta(days=6))
     taken = set(
-        WorkShift.objects.filter(
-            company=company, date__range=(start, start + timedelta(days=6)), membership_id__in=ids
-        )
+        WorkShift.objects.filter(company=company, date__range=week, membership_id__in=ids)
         .exclude(status=WorkShift.Status.CANCELLED)
         .values_list("membership_id", "date")
+    )
+    # Open shifts already in the week (copied before, or added by hand) aren't copied again.
+    open_taken = set(
+        WorkShift.objects.filter(company=company, date__range=week, membership__isnull=True)
+        .exclude(status=WorkShift.Status.CANCELLED)
+        .values_list("branch_id", "starts_at", "ends_at")
     )
     away = queries.leave_days(company, start, start + timedelta(days=6), ids)
     made = []
@@ -836,6 +841,10 @@ def _copy_week(company, by, start, ids, branch_id, allowed) -> int:
         starts = clock.local(company, shift.starts_at).time()
         ends = clock.local(company, shift.ends_at).time()
         start_dt, end_dt = clock.window(company, day, starts, ends)
+        if shift.membership_id is None:
+            if (shift.branch_id, start_dt, end_dt) in open_taken:
+                continue
+            open_taken.add((shift.branch_id, start_dt, end_dt))
         made.append(
             WorkShift(
                 company=company,
@@ -1278,6 +1287,8 @@ def edit_record(
         }
         new_in = record.check_in_at if check_in_at is UNSET else check_in_at
         new_out = record.check_out_at if check_out_at is UNSET else check_out_at
+        if new_in is None and record.attended:
+            raise DomainError(_("Give the check-in time too."))
         _times(record.date, new_in, new_out, company)
         record.check_in_at, record.check_out_at = new_in, new_out
         if note is not UNSET:
@@ -1627,8 +1638,6 @@ def request_swap(
         raise DomainError(_("That isn't your shift."))
     if shift.status != WorkShift.Status.PLANNED or shift.starts_at <= now:
         raise DomainError(_("This shift can't be handed over any more."))
-    if shift.swaps.filter(status__in=ShiftSwap.OPEN_STATUSES).exists():
-        raise DomainError(_("You already asked about this shift."))
     expires = shift.starts_at
     if kind == ShiftSwap.Kind.SWAP:
         if other_shift is None:
@@ -1652,6 +1661,10 @@ def request_swap(
     elif not queries.eligible_for(shift).exists():
         raise DomainError(_("Nobody else can take this shift right now."))
     with transaction.atomic():
+        # The shift's row lock makes a double tap (or two requests at once) one request.
+        WorkShift.objects.select_for_update().filter(pk=shift.pk).first()
+        if ShiftSwap.objects.filter(shift=shift, status__in=ShiftSwap.OPEN_STATUSES).exists():
+            raise DomainError(_("You already asked about this shift."))
         swap = ShiftSwap.objects.create(
             company=company,
             shift=shift,
@@ -1690,6 +1703,10 @@ def accept_swap(swap: ShiftSwap, *, by: Membership, now: datetime | None = None)
         ignore = [swap.other_shift_id] if swap.other_shift_id else []
         if not queries.is_eligible(swap.shift, by, ignore_shift_ids=ignore):
             raise DomainError(_("You can't take this shift."))
+        if swap.kind == ShiftSwap.Kind.SWAP and not queries.is_eligible(
+            swap.other_shift, swap.requested_by, ignore_shift_ids=[swap.shift_id]
+        ):
+            raise DomainError(_("These shifts have changed since the request."))
         swap.accepted_by = by
         swap.status = ShiftSwap.Status.ACCEPTED
         swap.save(update_fields=["accepted_by", "status", "updated_at"])
@@ -1783,7 +1800,6 @@ def claim_open_shift(shift: WorkShift, *, by: Membership, now: datetime | None =
         )
         if not settings.open_shift_claim_needs_approval:
             _apply_swap(swap, by=None, now=now)
-            inbox.settle(shift, outcome=gettext_lazy("Taken"), by=by)
         else:
             swap_id = swap.pk
             transaction.on_commit(lambda: notify.swap_waiting(swap_id))
@@ -1833,19 +1849,26 @@ def _apply_swap(swap: ShiftSwap, *, by: Membership | None, now: datetime) -> Non
     shift = shifts[swap.shift_id]
     if shift.starts_at <= now:
         raise DomainError(_("This shift has already started."))
-    taker = swap.accepted_by
+    taker = Membership.objects.select_related("company", "user").get(pk=swap.accepted_by_id)
+    cannot = _("%(name)s can't take this shift any more.") % {"name": taker}
     if swap.kind == ShiftSwap.Kind.CLAIM:
         if shift.status != WorkShift.Status.OPEN or shift.membership_id is not None:
             raise DomainError(_("Someone has already taken this shift."))
         _check_free(taker, shift.starts_at, shift.ends_at, exclude=shift)
+        if not queries.is_eligible(shift, taker):
+            raise DomainError(cannot)
         shift.membership = taker
         shift.status = WorkShift.Status.PLANNED
         shift.source = WorkShift.Source.SWAP
         shift.save()
+        # The open shift's offers to everyone else are over.
+        inbox.settle(shift, outcome=gettext_lazy("Taken"), by=taker, kind="attendance.open_shift")
     elif swap.kind == ShiftSwap.Kind.COVER:
         if shift.membership_id != swap.requested_by_id or shift.status != WorkShift.Status.PLANNED:
             raise DomainError(_("This shift has changed since the request."))
         _check_free(taker, shift.starts_at, shift.ends_at, exclude=shift)
+        if not queries.is_eligible(shift, taker):
+            raise DomainError(cannot)
         shift.membership = taker
         shift.source = WorkShift.Source.SWAP
         shift.save()
@@ -1855,7 +1878,13 @@ def _apply_swap(swap: ShiftSwap, *, by: Membership | None, now: datetime) -> Non
             shift.membership_id != swap.requested_by_id
             or other.membership_id != taker.pk
             or other.starts_at <= now
+            or shift.status != WorkShift.Status.PLANNED
+            or other.status != WorkShift.Status.PLANNED
         ):
+            raise DomainError(_("These shifts have changed since the request."))
+        if not queries.is_eligible(
+            shift, taker, ignore_shift_ids=[other.pk]
+        ) or not queries.is_eligible(other, shift.membership, ignore_shift_ids=[shift.pk]):
             raise DomainError(_("These shifts have changed since the request."))
         mine, theirs = shift.membership, other.membership
         # Through an empty owner first, so the one-shift-per-start constraint never trips.

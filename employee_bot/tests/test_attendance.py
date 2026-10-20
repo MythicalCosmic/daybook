@@ -195,3 +195,22 @@ async def test_still_here_and_check_in_buttons(dp, bot, company, member):
     assert "check out" in [r.text for r in bot.requests if isinstance(r, AnswerCallbackQuery)][-1]
     await dp.feed_update(bot, updates.callback(tg, press(AttendanceAction.CHECK_IN)))
     assert "Send your location" in sent(bot)[-1].text
+
+
+async def test_a_forwarded_location_is_refused(dp, bot, company, member):
+    from aiogram.types import MessageOriginUser
+
+    worker, _manager = await shop_with_shift(company, member)
+    tg = updates.tg_user(worker.user.telegram_id)
+    await dp.feed_update(bot, updates.message(tg, "/checkin"))
+    forwarded = location(tg)
+    origin = MessageOriginUser(type="user", date=datetime.now(), sender_user=updates.tg_user(77))
+    forwarded = forwarded.model_copy(
+        update={"message": forwarded.message.model_copy(update={"forward_origin": origin})}
+    )
+    await dp.feed_update(bot, forwarded)
+    assert "forwarded" in sent(bot)[-1].text
+    assert not await AttendanceRecord.objects.filter(membership=worker).aexists()
+    # Their own location still works afterwards: the conversation waits for it.
+    await dp.feed_update(bot, location(tg))
+    assert "Checked in at" in sent(bot)[-1].text

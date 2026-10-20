@@ -75,6 +75,15 @@ def _ints(values) -> list[int]:
         raise ValidationError({"branch": [_("Give branch ids.")]}) from exc
 
 
+def _id(value, name: str) -> int | None:
+    if value in (None, ""):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError({name: [_("Give a number.")]}) from exc
+
+
 class Scoped:
     """Branch-scope helpers for the views below."""
 
@@ -87,7 +96,8 @@ class Scoped:
         return asked if allowed is None else [branch for branch in asked if branch in allowed]
 
     def one_branch(self, value) -> Branch | None:
-        if value in (None, ""):
+        value = _id(value, "branch")
+        if value is None:
             return None
         branch = Branch.objects.filter(company=self.company, pk=value).first()
         if branch is None or not scope.allows(self.branch_scope, branch.pk):
@@ -213,7 +223,7 @@ class RecordViewSet(
         if params.get("to"):
             records = records.filter(date__lte=_day(params["to"], "to"))
         if params.get("member"):
-            records = records.filter(membership_id=int(params["member"]))
+            records = records.filter(membership_id=_id(params["member"], "member"))
         if params.get("flag"):
             records = records.filter(flags__contains=[params["flag"]])
         if params.get("status"):
@@ -365,7 +375,7 @@ class SummaryView(ModuleOn, Scoped, RangeMixin, OwnerAPIView):
     )
     def get(self, request, company_id):
         period = self.range
-        member_id = request.query_params.get("member")
+        member_id = _id(request.query_params.get("member"), "member")
         member = self.staff_member(member_id) if member_id else None
         compare = (period.compare_start, period.compare_end) if period.has_compare else None
         return Response(
@@ -626,7 +636,7 @@ class ShiftViewSet(
             end,
             branch_ids=self.branch_scope,
             branch_id=branch.pk if branch else None,
-            member_id=int(params["member"]) if params.get("member") else None,
+            member_id=_id(params.get("member"), "member"),
         )
         return Response([queries.shift_payload(shift, self.company) for shift in shifts])
 
