@@ -44,7 +44,7 @@ class InboxViewSet(mixins.ListModelMixin, OwnerViewSet):
     @extend_schema(responses=CountSerializer)
     @action(detail=False, url_path="unread-count")
     def unread_count(self, request, company_id):
-        return Response({"count": queries.unread_count(self.membership)})
+        return Response(queries.unread_counts(self.membership))
 
     @extend_schema(request=MarkReadSerializer, responses=UpdatedSerializer)
     @action(detail=False, methods=["post"])
@@ -88,7 +88,7 @@ class InboxViewSet(mixins.ListModelMixin, OwnerViewSet):
             )
         except DjangoPermissionDenied as exc:
             raise PermissionDenied(str(exc) or None) from exc
-        item = Notification.objects.select_related("actor", "acted_by").get(pk=pk)
+        item = Notification.objects.select_related(*queries.SERIALIZER_RELATIONS).get(pk=pk)
         return Response(
             {"message": message or _("Done."), "notification": NotificationSerializer(item).data}
         )

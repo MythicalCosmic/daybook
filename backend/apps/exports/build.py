@@ -161,8 +161,7 @@ def _xlsx_cell(sheet, column: Column, value, tz) -> WriteOnlyCell:
             cell = WriteOnlyCell(sheet, value=Decimal(value))
             cell.number_format = "#,##0.00"
         case "number":
-            number = value if isinstance(value, int | float) else Decimal(value)
-            cell = WriteOnlyCell(sheet, value=number)
+            cell = WriteOnlyCell(sheet, value=_number(value))
         case "date":
             cell = WriteOnlyCell(sheet, value=_as_date(value))
             cell.number_format = "yyyy-mm-dd"
@@ -196,7 +195,9 @@ def _csv_value(column: Column, value, tz) -> str:
         case "money":
             return f"{Decimal(value):.2f}"
         case "number":
-            return str(value)
+            # Parsed like the xlsx writer does, so text can't slip into a number column as a
+            # formula ("=HYPERLINK(...)" raises instead of reaching the file).
+            return str(_number(value))
         case "date":
             return _as_date(value).isoformat()
         case "datetime":
@@ -214,6 +215,14 @@ def _count(count: int) -> int:
             _("More than %(max)s rows; narrow the filters and try again.") % {"max": MAX_ROWS}
         )
     return count
+
+
+def _number(value) -> int | float | Decimal:
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, int | float | Decimal):
+        return value
+    return Decimal(str(value))  # numeric text; anything else raises
 
 
 def _as_date(value) -> date:

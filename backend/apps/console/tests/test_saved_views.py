@@ -137,3 +137,20 @@ def test_saved_views_are_company_scoped(company, other_company, member, owner_ap
     assert owner_api(employee).get(views_url(company)).status_code == 403
     # Another company's id in the URL never reaches this company's views.
     assert owner_api(outsider).get(views_url(other_company, view.pk)).status_code == 404
+
+
+def test_the_list_takes_a_fixed_number_of_queries(
+    company, owner, member, owner_api, django_assert_max_num_queries
+):
+    client = owner_api(owner)
+    for n in range(5):
+        colleague = member(company, "Manager")
+        colleague.first_name = colleague.last_name = ""  # their name comes from the user
+        colleague.save()
+        SavedViewFactory(membership=colleague, name=f"Shared {n}", is_shared=True)
+
+    with django_assert_max_num_queries(4):
+        response = client.get(views_url(company))
+
+    assert len(response.data) == 5
+    assert all(row["owner"]["name"] for row in response.data)

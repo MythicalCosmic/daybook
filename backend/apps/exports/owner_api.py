@@ -61,6 +61,7 @@ class ExportSerializer(serializers.ModelSerializer):
             user=self.context["request"].user,
             company_id=export.company_id,
             check=file_check_kind(export),
+            filename=build.download_name(export),
         )
 
     @extend_schema_field(serializers.CharField(allow_null=True))
@@ -106,7 +107,12 @@ class ExportViewSet(
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):  # schema generation has no member
             return Export.objects.none()
-        return Export.objects.filter(requested_by=self.membership).order_by("-created_at", "-pk")
+        # The company's timezone names the files, so it comes along (no query per row).
+        return (
+            Export.objects.filter(requested_by=self.membership)
+            .select_related("company")
+            .order_by("-created_at", "-pk")
+        )
 
     def get_throttles(self):
         if self.action == "create":
@@ -132,7 +138,7 @@ class ExportViewSet(
             )
         except DjangoPermissionDenied as exc:
             raise PermissionDenied(str(exc)) from exc
-        self.bump(build.EXPORTS_PULSE)
+        # services.request_export bumps the exports pulse key after commit.
         return Response({"id": export.pk}, status=status.HTTP_202_ACCEPTED)
 
     @extend_schema(responses=ExporterSerializer(many=True))

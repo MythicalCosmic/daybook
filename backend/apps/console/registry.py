@@ -28,6 +28,7 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field, fields, is_dataclass
 from datetime import date, datetime
+from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
 from django.utils import timezone
@@ -259,12 +260,13 @@ class CalendarItem:
 
 
 def to_json(value: Any) -> Any:
-    """Shapes as JSON: dataclasses to dicts, moments to ISO strings, lazy text to str."""
+    """Shapes as JSON: dataclasses to dicts, moments to ISO strings, lazy text to str, and
+    decimals (money) to strings, never floats."""
     if is_dataclass(value) and not isinstance(value, type):
         return {f.name: to_json(getattr(value, f.name)) for f in fields(value)}
     if isinstance(value, datetime | date):
         return value.isoformat()
-    if isinstance(value, Promise):
+    if isinstance(value, Promise | Decimal):
         return str(value)
     if isinstance(value, dict):
         return {str(k): to_json(v) for k, v in value.items()}
@@ -691,15 +693,42 @@ def collect_company_facts(member: Membership, range: Range) -> dict[str, dict]:
 def run_copy(source: Company, target: Company, keys: list[str], *, by: Membership) -> dict:
     """Copy the chosen parts from `source` into `target` as `by` (a member of `target`).
 
-    Unknown parts and parts `by` may not copy raise `RegistryError`; a failing part raises
-    too, so the caller's transaction keeps either everything or nothing."""
-    counts: dict[str, int] = {}
+    `by`'s user must also be an approved member of `source` with dashboard access and each
+    part's permission there: nobody copies the setup of a company they can't see. Unknown
+    parts and parts `by` may not copy raise `RegistryError`, before anything is copied; a
+    failing part raises too, so the caller's transaction keeps everything or nothing."""
+    if by.company_id != target.pk:
+        raise RegistryError("`by` must be a member of the company copied into.")
+    if source.pk == target.pk:
+        raise RegistryError("Pick another company to copy from.")
+    reader = _source_member(source, by)
+    parts = []
     for key in keys:
         part = COPY_PARTS.get(key)
-        if part is None or not usable(part, by):
+        if part is None or not usable(part, by) or reader is None or not holds(reader, part.perm):
             raise RegistryError(f"Can't copy {key!r}.")
-        counts[key] = part.copy(source, target, by)
-    return counts
+        parts.append(part)
+    return {part.key: part.copy(source, target, by) for part in parts}
+
+
+def _source_member(source: Company, by: Membership) -> Membership | None:
+    """`by`'s user's membership in `source`, when it lets them open that company's dashboard."""
+    from apps.members.models import Membership
+    from apps.members.permissions import Perm
+
+    reader = (
+        Membership.objects.select_related("role", "company")
+        .filter(
+            company=source,
+            company__is_active=True,
+            user_id=by.user_id,
+            status=Membership.Status.APPROVED,
+        )
+        .first()
+    )
+    if reader is None or not reader.has_perm(Perm.DASHBOARD_ACCESS):
+        return None
+    return reader
 
 
 def collect_calendar(

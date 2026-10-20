@@ -1,166 +1,183 @@
-"""Documents, private photos and message edits (docs/PLAN-OWNER.md §2.8, §3.2)."""
+"""Sending documents, private photos and edits through the bots (no network: a fake session)."""
+
+from datetime import datetime
 
 import pytest
-from aiogram.exceptions import TelegramBadRequest
-from aiogram.methods import EditMessageText
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram import Bot
+from aiogram.client.default import DefaultBotProperties
+from aiogram.client.session.base import BaseSession
+from aiogram.enums import ParseMode
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
+from aiogram.methods import EditMessageText, SendDocument, SendMessage, SendPhoto
+from aiogram.types import Chat, InlineKeyboardButton, InlineKeyboardMarkup, Message
 from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 
 from apps.core.storage import private_storage
 from apps.notifications import telegram
-from apps.notifications.tasks import edit_telegram_message, send_telegram_document
-
-BUTTONS = InlineKeyboardMarkup(
-    inline_keyboard=[[InlineKeyboardButton(text="Open", callback_data="x")]]
+from apps.notifications.tasks import (
+    edit_telegram_message,
+    send_telegram_document,
+    send_telegram_message,
 )
+
+
+class RecordingSession(BaseSession):
+    def __init__(self, fail_with: Exception | None = None):
+        super().__init__()
+        self.requests = []
+        self.fail_with = fail_with
+
+    async def make_request(self, bot, method, timeout=None):  # noqa: ASYNC109
+        self.requests.append(method)
+        if self.fail_with is not None:
+            raise self.fail_with
+        if isinstance(method, SendMessage | SendPhoto | SendDocument):
+            return Message(
+                message_id=len(self.requests) + 100,
+                date=datetime.now(),
+                chat=Chat(id=int(method.chat_id), type="private"),
+            )
+        return True
+
+    async def close(self):
+        pass
+
+    async def stream_content(self, *args, **kwargs):
+        yield b""
 
 
 @pytest.fixture
-def bots(settings):
-    settings.EMPLOYEE_BOT_TOKEN = "1:EMPLOYEE"
-    settings.OWNER_BOT_TOKEN = "2:OWNER"
+def session(settings, monkeypatch, tmp_path):
     settings.TELEGRAM_DRY_RUN = False
+    settings.EMPLOYEE_BOT_TOKEN = "42:TEST"
+    settings.OWNER_BOT_TOKEN = "43:TEST"
+    settings.MEDIA_ROOT = tmp_path / "media"
+    settings.PRIVATE_MEDIA_ROOT = tmp_path / "private"
+    recording = RecordingSession()
+    tokens = []
+
+    def bot(token):
+        tokens.append(token)
+        return Bot(
+            token, session=recording, default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+        )
+
+    monkeypatch.setattr(telegram, "_bot", bot)
+    recording.tokens = tokens
+    return recording
 
 
-def test_storage_names():
-    assert telegram.storage_named("private") is private_storage
-    with pytest.raises(ValueError):
-        telegram.storage_named("public")
+MARKUP = telegram.serialize_markup(
+    InlineKeyboardMarkup(
+        inline_keyboard=[[InlineKeyboardButton(text="Approve", callback_data="x:1")]]
+    )
+)
 
 
-def test_a_document_is_read_from_private_storage(bots, monkeypatch):
-    path = private_storage.save("exports/1/abc.xlsx", ContentFile(b"PK-sheet"))
-    calls = []
-
-    async def fake_send(token, chat_id, document, caption, markup):
-        calls.append((token, chat_id, document.data, document.filename, caption, markup))
-        return 77
-
-    monkeypatch.setattr(telegram, "_send_document", fake_send)
+def test_a_private_document_is_sent_with_its_caption(session):
+    path = private_storage.save("payslips/1/abc.pdf", ContentFile(b"%PDF-1.7"))
 
     message_id = telegram.send_document(
-        telegram.BotName.OWNER,
-        5,
+        telegram.BotName.EMPLOYEE,
+        77,
         path,
-        caption="Tasks · 12 rows",
-        filename="tasks-2026-10-20.xlsx",
-        reply_markup=telegram.serialize_markup(BUTTONS),
+        caption="Your October payslip",
+        filename="Payslip-2026-10.pdf",
+        reply_markup=MARKUP,
     )
 
-    assert message_id == 77
-    assert calls == [
-        ("2:OWNER", 5, b"PK-sheet", "tasks-2026-10-20.xlsx", "Tasks · 12 rows", BUTTONS)
-    ]
+    [request] = session.requests
+    assert isinstance(request, SendDocument)
+    assert request.chat_id == 77
+    assert request.caption == "Your October payslip"
+    assert request.document.filename == "Payslip-2026-10.pdf"
+    assert request.document.data == b"%PDF-1.7"
+    assert request.reply_markup.inline_keyboard[0][0].text == "Approve"
+    assert message_id == 101
 
 
-def test_nothing_is_sent_without_a_token_or_in_a_dry_run(settings, monkeypatch):
-    calls = []
-    monkeypatch.setattr(telegram, "_send_document", lambda *args: calls.append(args))
-    settings.OWNER_BOT_TOKEN = ""
+def test_a_long_caption_follows_the_document(session):
+    path = private_storage.save("exports/1/a.xlsx", ContentFile(b"PK"))
 
-    assert telegram.send_document(telegram.BotName.OWNER, 5, "x.pdf") is None
-    settings.OWNER_BOT_TOKEN = "2:OWNER"
-    settings.TELEGRAM_DRY_RUN = True
-    assert telegram.send_document(telegram.BotName.OWNER, 5, "x.pdf") is None
-    assert calls == []
+    telegram.send_document(telegram.BotName.OWNER, 5, path, caption="x" * 2000)
+
+    assert [type(r) for r in session.requests] == [SendDocument, SendMessage]
+    assert session.tokens == ["43:TEST"]
 
 
-def test_a_photo_can_come_from_private_storage(bots, monkeypatch):
-    path = private_storage.save("receipts/1/r.jpg", ContentFile(b"jpeg"))
-    seen = []
+def test_a_photo_can_come_from_private_storage(session):
+    path = private_storage.save("receipts/1/r.jpg", ContentFile(b"\xff\xd8\xff"))
 
-    async def fake_send(token, chat_id, text, markup, image):
-        seen.append((image.data, image.filename))
-        return 5
+    telegram.send_message(
+        telegram.BotName.EMPLOYEE, 9, "Claim to approve", photo=path, photo_storage="private"
+    )
 
-    monkeypatch.setattr(telegram, "_send", fake_send)
-
-    telegram.send_message(telegram.BotName.EMPLOYEE, 1, "Claim", None, path, "private")
-
-    assert seen == [(b"jpeg", "r.jpg")]
+    [request] = session.requests
+    assert isinstance(request, SendPhoto)
+    assert request.photo.data == b"\xff\xd8\xff"
+    assert request.caption == "Claim to approve"
 
 
-class FakeBot:
-    def __init__(self, text_error=None):
-        self.text_error = text_error
-        self.calls = []
+def test_public_photos_still_come_from_media(session):
+    path = default_storage.save("proofs/1/p.jpg", ContentFile(b"\xff\xd8"))
 
-    async def __aenter__(self):
-        return self
+    telegram.send_message(telegram.BotName.EMPLOYEE, 9, "Done", photo=path)
 
-    async def __aexit__(self, *exc):
-        return False
-
-    async def edit_message_text(self, **kwargs):
-        self.calls.append(("text", kwargs))
-        if self.text_error:
-            raise TelegramBadRequest(EditMessageText(text="x"), self.text_error)
-
-    async def edit_message_caption(self, **kwargs):
-        self.calls.append(("caption", kwargs))
+    assert session.requests[0].photo.data == b"\xff\xd8"
 
 
-def test_edit_replaces_the_text_and_keyboard(bots, monkeypatch):
-    bot = FakeBot()
-    monkeypatch.setattr(telegram, "_bot", lambda token: bot)
-
-    telegram.edit_message(telegram.BotName.OWNER, 5, 9, "Approved", None)
-
-    assert bot.calls == [
-        ("text", {"text": "Approved", "chat_id": 5, "message_id": 9, "reply_markup": None})
-    ]
-
-
-def test_editing_a_photo_changes_its_caption(bots, monkeypatch):
-    bot = FakeBot("Bad Request: there is no text in the message to edit")
-    monkeypatch.setattr(telegram, "_bot", lambda token: bot)
-
-    telegram.edit_message(telegram.BotName.EMPLOYEE, 5, 9, "x" * 2000, None)
-
-    kind, kwargs = bot.calls[-1]
-    assert kind == "caption" and len(kwargs["caption"]) == telegram.CAPTION_LIMIT
-
-
-@pytest.mark.parametrize(
-    "error", ["Bad Request: message is not modified", "Bad Request: message to edit not found"]
-)
-def test_harmless_edit_errors_are_ignored(bots, monkeypatch, error):
-    monkeypatch.setattr(telegram, "_bot", lambda token: FakeBot(error))
-
-    telegram.edit_message(telegram.BotName.EMPLOYEE, 5, 9, "Approved")
-
-
-def test_other_edit_errors_are_raised_but_the_task_gives_up_quietly(bots, monkeypatch):
-    monkeypatch.setattr(telegram, "_bot", lambda token: FakeBot("Bad Request: chat not found"))
-
-    with pytest.raises(TelegramBadRequest):
-        telegram.edit_message(telegram.BotName.EMPLOYEE, 5, 9, "Approved")
-    edit_telegram_message.delay(telegram.BotName.EMPLOYEE, 5, 9, "Approved")
-
-
-def test_only_inline_keyboards_can_be_edited_in(bots):
-    reply = {"keyboard": [[{"text": "Menu"}]]}
-
+def test_unknown_storages_are_refused(session):
     with pytest.raises(ValueError):
-        telegram.edit_message(telegram.BotName.EMPLOYEE, 5, 9, "x", reply)
+        telegram.send_document(telegram.BotName.EMPLOYEE, 1, "a.pdf", storage="s3")
 
 
-def test_the_document_task_passes_everything_on(monkeypatch):
-    calls = []
-    monkeypatch.setattr(
-        telegram, "send_document", lambda *args, **kwargs: calls.append((args, kwargs))
+def test_editing_replaces_text_and_keyboard(session):
+    telegram.edit_message(telegram.BotName.OWNER, 5, 321, "✅ Approved by Olim", MARKUP)
+
+    [request] = session.requests
+    assert isinstance(request, EditMessageText)
+    assert (request.chat_id, request.message_id, request.text) == (5, 321, "✅ Approved by Olim")
+
+
+def test_editing_a_message_that_is_gone_is_fine(session):
+    session.fail_with = TelegramBadRequest(
+        EditMessageText(chat_id=5, message_id=1, text="x"), "message to edit not found"
     )
 
-    send_telegram_document.delay("owner", 5, "exports/1/a.csv", caption="Rows", filename="a.csv")
+    telegram.edit_message(telegram.BotName.OWNER, 5, 1, "x")  # no exception
 
-    assert calls == [
-        (
-            ("owner", 5, "exports/1/a.csv"),
-            {
-                "storage": "private",
-                "caption": "Rows",
-                "filename": "a.csv",
-                "reply_markup": None,
-            },
-        )
-    ]
+
+def test_dry_run_and_missing_tokens_send_nothing(session, settings):
+    path = private_storage.save("payslips/1/abc.pdf", ContentFile(b"%PDF-1.7"))
+    settings.TELEGRAM_DRY_RUN = True
+    assert telegram.send_document(telegram.BotName.EMPLOYEE, 1, path) is None
+    telegram.edit_message(telegram.BotName.EMPLOYEE, 1, 2, "x")
+    settings.TELEGRAM_DRY_RUN = False
+    settings.EMPLOYEE_BOT_TOKEN = ""
+    assert telegram.send_document(telegram.BotName.EMPLOYEE, 1, path) is None
+
+    assert session.requests == []
+
+
+def test_the_celery_wrappers_pass_everything_on(session):
+    path = private_storage.save("payslips/1/abc.pdf", ContentFile(b"%PDF-1.7"))
+    photo = private_storage.save("receipts/1/r.jpg", ContentFile(b"\xff\xd8\xff"))
+
+    send_telegram_document.delay(
+        telegram.BotName.EMPLOYEE, 1, path, caption="Payslip", filename="p.pdf"
+    )
+    send_telegram_message.delay(
+        telegram.BotName.EMPLOYEE, 1, "Receipt", None, photo, photo_storage="private"
+    )
+    edit_telegram_message.delay(telegram.BotName.EMPLOYEE, 1, 5, "Done", MARKUP)
+
+    assert [type(r) for r in session.requests] == [SendDocument, SendPhoto, EditMessageText]
+
+
+def test_the_wrappers_give_up_quietly_on_blocked_chats(session):
+    session.fail_with = TelegramForbiddenError(SendMessage(chat_id=1, text="x"), "blocked")
+    path = private_storage.save("payslips/1/abc.pdf", ContentFile(b"%PDF-1.7"))
+
+    send_telegram_document.delay(telegram.BotName.EMPLOYEE, 1, path)
+    edit_telegram_message.delay(telegram.BotName.EMPLOYEE, 1, 5, "Done")

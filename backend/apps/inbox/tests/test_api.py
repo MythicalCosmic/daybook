@@ -64,8 +64,37 @@ def test_the_unread_tab_and_count(company, owner, claims, owner_api):
 
     unread = client.get(inbox_url(company), {"tab": "unread"}).data["results"]
     assert [row["id"] for row in unread] == [claims[1].pk]
-    assert client.get(inbox_url(company, "unread-count/")).data == {"count": 1}
+    assert client.get(inbox_url(company, "unread-count/")).data == {"count": 1, "critical": 0}
     assert client.get(inbox_url(company), {"tab": "later"}).status_code == 400
+
+
+def test_the_unread_count_says_how_many_are_critical(company, owner, claims, owner_api):
+    notify([owner], "inbox.claim", title="Cash short", severity="critical")
+    read = notify([owner], "inbox.claim", title="Seen already", severity="critical")[0]
+    Notification.objects.filter(pk=read.pk).update(read_at=timezone.now())
+
+    data = owner_api(owner).get(inbox_url(company, "unread-count/")).data
+
+    assert data == {"count": 3, "critical": 1}
+
+
+def test_the_drawer_takes_a_fixed_number_of_queries(
+    company, member, owner, owner_api, django_assert_max_num_queries
+):
+    client = owner_api(owner)
+    nameless = member(company, "Manager")
+    nameless.first_name = nameless.last_name = ""
+    nameless.save()
+    notify([owner], "inbox.claim", title="First", actor=nameless)
+    client.get(inbox_url(company))
+    for n in range(4):
+        notify([owner], "inbox.claim", title=f"Claim {n}", actor=member(company))
+
+    with django_assert_max_num_queries(6):
+        response = client.get(inbox_url(company))
+
+    assert len(response.data["results"]) == 5
+    assert response.data["results"][-1]["actor"]["name"] == str(nameless.user)
 
 
 def test_mark_some_or_all_read(company, owner, claims, owner_api):

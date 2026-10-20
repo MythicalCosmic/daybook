@@ -8,6 +8,7 @@ integration merge both exist and these become plain calls.
 
 import importlib
 import importlib.util
+import inspect
 from types import ModuleType
 
 
@@ -46,9 +47,17 @@ def register_file_check(kind: str, check) -> bool:
     return True
 
 
-def signed_url(file, *, user, company_id: int, check: str, ttl: int = 600) -> str | None:
-    """`apps.core.files.signed_url(...)`: `/api/v1/files/<token>/`, or None without it."""
+def signed_url(
+    file, *, user, company_id: int, check: str, ttl: int = 600, filename: str | None = None
+) -> str | None:
+    """`apps.core.files.signed_url(...)`: `/api/v1/files/<token>/`, or None without it.
+
+    `filename` is the name the browser saves the file under (the stored name is random); it is
+    passed on only when the module takes it."""
     module = files()
     if module is None or not file:
         return None
-    return module.signed_url(file, user=user, company_id=company_id, check=check, ttl=ttl)
+    extra = {}
+    if filename and "filename" in inspect.signature(module.signed_url).parameters:
+        extra["filename"] = filename
+    return module.signed_url(file, user=user, company_id=company_id, check=check, ttl=ttl, **extra)

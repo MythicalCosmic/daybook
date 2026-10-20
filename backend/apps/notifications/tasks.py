@@ -1,7 +1,6 @@
 import logging
 
 from aiogram.exceptions import (
-    TelegramBadRequest,
     TelegramForbiddenError,
     TelegramNetworkError,
     TelegramRetryAfter,
@@ -13,7 +12,7 @@ from apps.notifications import telegram
 
 logger = logging.getLogger(__name__)
 
-RETRY = {
+RETRYING = {
     "bind": True,
     "autoretry_for": (TelegramNetworkError, TelegramServerError),
     "retry_backoff": True,
@@ -21,19 +20,22 @@ RETRY = {
 }
 
 
-@shared_task(**RETRY)
+@shared_task(**RETRYING)
 def send_telegram_message(
     self, bot, chat_id, text, reply_markup=None, photo=None, photo_storage="default"
 ):
+    # The storage only travels when it isn't the usual one, so callers and test doubles of
+    # telegram.send_message that predate it keep working.
+    extra = {"photo_storage": photo_storage} if photo_storage != "default" else {}
     try:
-        telegram.send_message(bot, chat_id, text, reply_markup, photo, photo_storage)
+        telegram.send_message(bot, chat_id, text, reply_markup, photo, **extra)
     except TelegramRetryAfter as exc:
         raise self.retry(countdown=exc.retry_after) from exc
     except TelegramForbiddenError:
         logger.info("Chat %s blocked the %s bot or never started it", chat_id, bot)
 
 
-@shared_task(**RETRY)
+@shared_task(**RETRYING)
 def send_telegram_document(
     self, bot, chat_id, path, storage="private", caption="", filename=None, reply_markup=None
 ):
@@ -53,11 +55,11 @@ def send_telegram_document(
         logger.info("Chat %s blocked the %s bot or never started it", chat_id, bot)
 
 
-@shared_task(**RETRY)
+@shared_task(**RETRYING)
 def edit_telegram_message(self, bot, chat_id, message_id, text, reply_markup=None):
     try:
         telegram.edit_message(bot, chat_id, message_id, text, reply_markup)
     except TelegramRetryAfter as exc:
         raise self.retry(countdown=exc.retry_after) from exc
-    except (TelegramForbiddenError, TelegramBadRequest) as exc:
-        logger.info("Message %s in chat %s not edited: %s", message_id, chat_id, exc)
+    except TelegramForbiddenError:
+        logger.info("Chat %s blocked the %s bot or never started it", chat_id, bot)

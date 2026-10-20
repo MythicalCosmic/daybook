@@ -31,6 +31,13 @@ def test_dev_login_is_off_by_default(client, company, member, settings):
     assert dev_login(client, owner.user.telegram_id, **DASHBOARD).status_code == 404
 
 
+def test_switched_off_it_answers_404_to_anything(client, company, member):
+    owner = member(company, "Owner")
+
+    assert dev_login(client, owner.user.telegram_id).status_code == 404  # no dashboard header
+    assert client.get(DEV_LOGIN).status_code == 404
+
+
 def test_dev_login_needs_debug_too(client, company, member, settings):
     owner = member(company, "Owner")
     settings.DASHBOARD_DEV_LOGIN = True

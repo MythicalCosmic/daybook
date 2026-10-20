@@ -1,6 +1,7 @@
 """The registries modules plug into: rules at registration, and how the console runs them."""
 
 from datetime import UTC, date, datetime, timedelta
+from decimal import Decimal
 
 import pytest
 from django.apps import apps as django_apps
@@ -265,6 +266,14 @@ def test_shapes_turn_into_json():
     }
 
 
+def test_money_in_shapes_stays_a_string():
+    action = QueueAction(
+        "pay", "Pay", "primary", "POST", "things/1/pay/", body={"amount": Decimal("450000.00")}
+    )
+
+    assert registry.to_json(action)["body"] == {"amount": "450000.00"}
+
+
 def test_field_spec_kinds_are_checked():
     with pytest.raises(ValueError):
         FieldSpec("note", "Note", kind="html")
@@ -511,17 +520,24 @@ def test_company_facts_check_their_shape(company, member):
     assert facts["inbox"] == {"waiting": 0}  # registered by apps.inbox
 
 
-@pytest.mark.django_db
-def test_copy_parts_run_only_with_permission(company, other_company, member):
-    owner, manager = member(company, "Owner"), member(company, "Manager")
-    copied = []
+@pytest.fixture
+def copied(isolated_registries):
+    calls = []
     entry(
         registry.COPY_PARTS,
         "console.roles",
         label="Roles",
         perm=Perm.ROLES_MANAGE,
-        copy=lambda source, target, by: copied.append((source, target)) or 3,
+        copy=lambda source, target, by: calls.append((source, target)) or 3,
     )
+    return calls
+
+
+@pytest.mark.django_db
+def test_copy_parts_run_only_with_permission(company, other_company, member, copied):
+    owner, manager = member(company, "Owner"), member(company, "Manager")
+    member(other_company, "Owner", user=owner.user)
+    member(other_company, "Manager", user=manager.user)
 
     assert registry.run_copy(other_company, company, ["console.roles"], by=owner) == {
         "console.roles": 3
@@ -531,6 +547,41 @@ def test_copy_parts_run_only_with_permission(company, other_company, member):
         registry.run_copy(other_company, company, ["console.roles"], by=manager)
     with pytest.raises(registry.RegistryError):
         registry.run_copy(other_company, company, ["console.nothing"], by=owner)
+
+
+@pytest.mark.django_db
+def test_nobody_copies_from_a_company_they_cant_see(company, other_company, member, copied):
+    owner = member(company, "Owner")
+
+    with pytest.raises(registry.RegistryError):
+        registry.run_copy(other_company, company, ["console.roles"], by=owner)
+    # A member there, but not one who may open its dashboard or manage its roles:
+    member(other_company, "Employee", user=owner.user)
+    with pytest.raises(registry.RegistryError):
+        registry.run_copy(other_company, company, ["console.roles"], by=owner)
+    assert copied == []
+
+
+@pytest.mark.django_db
+def test_copying_needs_the_permission_in_the_source_too(company, other_company, member, copied):
+    owner = member(company, "Owner")
+    member(other_company, "Manager", user=owner.user)  # dashboard access, no roles.manage
+
+    with pytest.raises(registry.RegistryError):
+        registry.run_copy(other_company, company, ["console.roles"], by=owner)
+    assert copied == []
+
+
+@pytest.mark.django_db
+def test_copying_goes_into_the_members_own_company(company, other_company, member, copied):
+    owner = member(company, "Owner")
+    member(other_company, "Owner", user=owner.user)
+
+    with pytest.raises(registry.RegistryError):
+        registry.run_copy(company, other_company, ["console.roles"], by=owner)
+    with pytest.raises(registry.RegistryError):
+        registry.run_copy(company, company, ["console.roles"], by=owner)
+    assert copied == []
 
 
 @pytest.mark.django_db

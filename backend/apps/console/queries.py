@@ -156,7 +156,8 @@ def saved_views(member: Membership, *, module: str | None = None):
     )
     if module:
         views = views.filter(module=module)
-    return views.select_related("membership").order_by("module", "order", "name", "pk")
+    # The owner's name falls back to their user's when the membership has none.
+    return views.select_related("membership__user").order_by("module", "order", "name", "pk")
 
 
 def _after_closing(branch: Branch, now: time) -> bool:

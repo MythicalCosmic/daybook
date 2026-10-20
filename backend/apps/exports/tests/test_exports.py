@@ -169,6 +169,25 @@ def test_csv_has_a_bom_and_defuses_formulas(owner, exporters):
     assert rows[2] == ['\'=HYPERLINK("http://evil")', "", "", "", "No", ""]
 
 
+@pytest.mark.parametrize("format", ["csv", "xlsx"])
+def test_text_in_a_number_column_fails_instead_of_reaching_the_file(owner, exporters, format):
+    exporters.rows = [{"title": "x", "count": '=HYPERLINK("http://evil")'}]
+
+    export = built(owner, format=format)
+
+    assert export.status == "failed" and not export.file
+
+
+def test_numeric_text_and_bools_in_a_number_column_are_numbers(owner, exporters):
+    exporters.rows = [{"title": "x", "count": "12.5"}, {"title": "y", "count": True}]
+
+    export = built(owner, format="csv")
+
+    with private_storage.open(export.file.name, "rb") as file:
+        rows = list(csv.reader(io.StringIO(file.read().decode("utf-8-sig"))))
+    assert [row[5] for row in rows[1:]] == ["12.5", "1"]
+
+
 def test_a_failing_exporter_fails_the_export_with_a_safe_message(owner, exporters, caplog):
     exporters.rows = [{"title": "ok", "amount": "not money"}]
 
@@ -361,6 +380,41 @@ def test_the_detail_carries_a_signed_link(company, owner, owner_api, monkeypatch
     detail = owner_api(owner).get(exports_url(company, f"{export.pk}/")).data
 
     assert detail["file_url"] == f"/api/v1/files/exports.export:{export.pk}:{owner.user_id}:600/"
+
+
+@pytest.mark.usefixtures("exporters")
+def test_the_link_names_the_file_for_people(company, owner, owner_api, monkeypatch):
+    seen = {}
+
+    def signed_url(file, *, user, company_id, check, ttl, filename=None):
+        seen["filename"] = filename
+        return "/api/v1/files/x/"
+
+    fake = ModuleType("apps.core.files")
+    fake.signed_url = signed_url
+    monkeypatch.setattr(compat, "files", lambda: fake)
+    export = built(owner, format="csv")
+
+    owner_api(owner).get(exports_url(company, f"{export.pk}/"))
+
+    assert seen["filename"] == build.download_name(export)
+    assert seen["filename"].startswith("tasks-todayall-") and seen["filename"].endswith(".csv")
+
+
+@pytest.mark.usefixtures("exporters")
+def test_the_list_takes_a_fixed_number_of_queries(
+    company, owner, owner_api, django_assert_max_num_queries
+):
+    client = owner_api(owner)
+    built(owner, format="csv")
+    first = len(client.get(exports_url(company)).data["results"])
+    for _ in range(4):
+        built(owner, format="csv")
+
+    with django_assert_max_num_queries(8):
+        response = client.get(exports_url(company))
+
+    assert first == 1 and len(response.data["results"]) == 5
 
 
 @pytest.mark.usefixtures("exporters")

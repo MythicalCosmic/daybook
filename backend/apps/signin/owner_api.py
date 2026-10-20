@@ -85,10 +85,15 @@ class LogoutView(CookieAuthView):
 class DevLoginView(CookieAuthView):
     """Development only (`DEBUG` and `DASHBOARD_DEV_LOGIN`): sign in as a Telegram id."""
 
-    @extend_schema(request=DevLoginSerializer, responses={200: AccessSerializer})
-    def post(self, request):
+    def initial(self, request, *args, **kwargs):
+        # Switched off, it doesn't exist: 404 before any header, permission or throttle check
+        # could answer differently.
         if not (settings.DEBUG and settings.DASHBOARD_DEV_LOGIN):
             raise Http404
+        super().initial(request, *args, **kwargs)
+
+    @extend_schema(request=DevLoginSerializer, responses={200: AccessSerializer})
+    def post(self, request):
         serializer = DevLoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = User.objects.filter(telegram_id=serializer.validated_data["telegram_id"]).first()

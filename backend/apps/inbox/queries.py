@@ -1,6 +1,6 @@
 """Read functions of the inbox, for other apps, the dashboard and the AI tools."""
 
-from django.db.models import QuerySet
+from django.db.models import Count, Q, QuerySet
 
 from apps.inbox import registry
 from apps.inbox.models import Notification, NotificationPreference
@@ -14,13 +14,30 @@ def inbox(member: Membership, *, tab: str = "all") -> QuerySet[Notification]:
     items = Notification.objects.filter(recipient=member, in_app=True, archived_at__isnull=True)
     if tab == "unread":
         items = items.filter(read_at__isnull=True)
-    return items.select_related("actor", "acted_by").order_by("-created_at", "-pk")
+    return items.select_related(*SERIALIZER_RELATIONS).order_by("-created_at", "-pk")
+
+
+# What NotificationSerializer reads (a member without a name shows their user's name).
+SERIALIZER_RELATIONS = ("actor__user", "acted_by")
+
+
+def _unread(member: Membership) -> QuerySet[Notification]:
+    return Notification.objects.filter(
+        recipient=member, in_app=True, archived_at__isnull=True, read_at__isnull=True
+    )
 
 
 def unread_count(member: Membership) -> int:
-    return Notification.objects.filter(
-        recipient=member, in_app=True, archived_at__isnull=True, read_at__isnull=True
-    ).count()
+    return _unread(member).count()
+
+
+def unread_counts(member: Membership) -> dict[str, int]:
+    """`{count, critical}`: unread in-app notifications, and how many of them are critical
+    (the shell's toast and favicon badge)."""
+    return _unread(member).aggregate(
+        count=Count("pk"),
+        critical=Count("pk", filter=Q(severity=Notification.Severity.CRITICAL)),
+    )
 
 
 def preferences(member: Membership) -> list[dict]:
