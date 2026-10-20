@@ -63,6 +63,8 @@ SERVED_TYPES = {
 STORAGES: dict[str, Storage] = {"private": private_storage, "default": default_storage}
 
 _checks: dict[str, FileCheck] = {}
+# What _verify returns for a genuine link whose time is up.
+EXPIRED = object()
 
 
 class DuplicateFileCheck(ValueError):
@@ -148,7 +150,7 @@ class PrivateFileView(View):
         grant = _verify(token)
         if grant is None:
             raise Http404
-        if grant == "expired":
+        if grant is EXPIRED:
             return _plain(410, _("This link has expired. Open the file again from the app."))
         if not _may_open(grant):
             raise Http404
@@ -238,7 +240,7 @@ def _storage_key(storage: Storage) -> str:
     raise ValueError("Only files in private or default storage can be signed.")
 
 
-def _verify(token: str) -> _Grant | str | None:
+def _verify(token: str) -> _Grant | object | None:
     try:
         payload = signing.loads(token, salt=SALT)
         grant = _Grant(
@@ -256,7 +258,7 @@ def _verify(token: str) -> _Grant | str | None:
     if PurePosixPath(grant.name).suffix.lower() not in SERVED_TYPES:
         return None
     if time.time() > expires:
-        return "expired"
+        return EXPIRED
     return grant
 
 
