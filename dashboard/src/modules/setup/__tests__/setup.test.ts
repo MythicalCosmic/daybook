@@ -100,6 +100,10 @@ describe("GetStartedPage", () => {
     const again = mountWithProviders(GetStartedPage, { plugins: (await testApp("/c/1/get-started")).plugins });
     await flushPromises();
     expect(again.wrapper.text()).toContain("You’re all set");
+    // All done and still shown: the card offers to hide it; nothing offers to "show" it again.
+    expect(again.wrapper.text()).toContain("Hide the checklist");
+    expect(again.wrapper.text()).not.toContain("Show in the sidebar");
+    expect(again.wrapper.text()).not.toContain("Dismiss for now");
   });
 });
 

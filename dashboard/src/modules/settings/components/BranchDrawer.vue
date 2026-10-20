@@ -4,18 +4,20 @@
  * place and check-in circle on a map, opening hours and days, the manager and the cash limit.
  * Closing a branch keeps its history; its audit trail is at the bottom.
  */
-import { Archive, ArchiveRestore, History, MapPin } from "@lucide/vue";
+import { Archive, ArchiveRestore, History, MapPin, Store } from "@lucide/vue";
 import { computed, defineAsyncComponent, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import { z } from "zod";
 
+import EmptyState from "@/components/EmptyState.vue";
 import FormField from "@/components/FormField.vue";
 import MoneyInput from "@/components/MoneyInput.vue";
 import NumberInput from "@/components/NumberInput.vue";
 import PersonPicker from "@/components/PersonPicker.vue";
 import type { PersonOption } from "@/components/pickers";
 import SegmentedControl from "@/components/SegmentedControl.vue";
+import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import TextInput from "@/components/TextInput.vue";
 import TimePicker from "@/components/TimePicker.vue";
 import UiButton from "@/components/UiButton.vue";
@@ -33,7 +35,7 @@ import MapPicker from "./MapPicker.vue";
 
 const AuditTrail = defineAsyncComponent(() => import("@/components/AuditTrail.vue"));
 
-const props = defineProps<{ branches: Branch[]; canEdit: boolean }>();
+const props = withDefaults(defineProps<{ branches: Branch[]; canEdit: boolean; loaded?: boolean }>(), { loaded: true });
 
 const { t } = useI18n();
 const route = useRoute();
@@ -116,7 +118,7 @@ watch(
 );
 
 const radii = [50, 100, 150, 300, 500];
-const radiusOptions = computed(() => radii.map((m) => ({ value: m, label: `${m} m` })));
+const radiusOptions = computed(() => radii.map((m) => ({ value: m, label: t("settings.branch.metres", { m }) })));
 const radiusChoice = computed({
   get: () => (radii.includes(form.values.geofence_m) ? form.values.geofence_m : (null as unknown as number)),
   set: (metres: number) => (form.values.geofence_m = metres),
@@ -184,7 +186,7 @@ const company_ = computed(() => company.current);
         />
         <div class="flex flex-wrap items-end gap-3">
           <FormField :label="t('settings.branch.radius')" :error="form.errors.geofence_m" class="w-[170px]">
-            <NumberInput v-model="form.values.geofence_m" :min="25" :max="5000" :step="25" suffix="m" :disabled="!canEdit" />
+            <NumberInput v-model="form.values.geofence_m" :min="25" :max="5000" :step="25" :suffix="t('settings.branch.metresUnit')" :disabled="!canEdit" />
           </FormField>
           <SegmentedControl v-model="radiusChoice" :options="radiusOptions" size="sm" :disabled="!canEdit" class="mb-0.5" :aria-label="t('settings.branch.radius')" />
         </div>
@@ -224,6 +226,13 @@ const company_ = computed(() => company.current);
         </div>
       </section>
     </form>
+    <!-- An old link, a closed branch outside your scope, or a branch of another company. -->
+    <EmptyState v-else-if="loaded" class="p-5" :icon="Store" tone="neutral" :title="t('settings.branch.missingTitle')" :description="t('settings.branch.missingBody')">
+      <UiButton @click="close">{{ t("common.close") }}</UiButton>
+    </EmptyState>
+    <div v-else class="flex flex-col gap-4 p-5" aria-busy="true">
+      <SkeletonBlock height="36px" /><SkeletonBlock height="36px" width="70%" /><SkeletonBlock height="220px" radius="12px" />
+    </div>
     <template #footer>
       <UiButton
         v-if="branch && canEdit"
@@ -234,7 +243,7 @@ const company_ = computed(() => company.current);
         @click="toggleActive"
       >{{ branch.is_active ? t("settings.branch.close") : t("settings.branch.reopen") }}</UiButton>
       <UiButton variant="ghost" @click="close">{{ t("common.cancel") }}</UiButton>
-      <UiButton v-if="canEdit" variant="primary" type="submit" form="branch-form" :loading="form.submitting.value">
+      <UiButton v-if="canEdit && (isNew || branch)" variant="primary" type="submit" form="branch-form" :loading="form.submitting.value">
         {{ isNew ? t("settings.branch.add") : t("common.save") }}
       </UiButton>
     </template>

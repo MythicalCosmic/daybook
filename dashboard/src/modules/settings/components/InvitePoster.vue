@@ -22,7 +22,7 @@ const say = (key: string, locale: Language) => t(key, {}, { locale });
 </script>
 
 <template>
-  <div data-theme="light" :class="['invite-poster mx-auto flex aspect-[210/297] w-full flex-col items-center bg-surface text-center text-fg', preview ? 'max-w-[420px] rounded-[10px] p-[6%] shadow-[0_0_0_1px_rgb(32_30_29/0.1),0_18px_40px_-18px_rgb(32_30_29/0.35)]' : 'p-[8%]']">
+  <div data-theme="light" :class="['invite-poster mx-auto flex aspect-[210/297] w-full flex-col items-center bg-surface text-center text-fg', preview ? 'max-w-[420px] rounded-[10px] p-[6%] shadow-drawer' : 'p-[8%]']">
     <CompanyLogo :name="invite.company.name" :src="invite.company.logo" :size="preview ? 52 : 96" />
     <p :class="['mt-[3%] font-semibold leading-tight', preview ? 'text-[20px]' : 'text-[40px]']">{{ invite.company.name }}</p>
     <div class="mt-[4%] flex flex-col gap-[1%]">
@@ -62,17 +62,17 @@ const say = (key: string, locale: Language) => t(key, {}, { locale });
     size: A4 portrait;
     margin: 0;
   }
-  body.printing-poster * {
-    visibility: hidden !important;
-  }
-  body.printing-poster .invite-poster-print,
-  body.printing-poster .invite-poster-print * {
-    visibility: visible !important;
+  /* Everything else leaves the layout (not just hidden), so the poster is one page, not one
+     page plus blank pages as tall as the app. */
+  body.printing-poster > *:not(.invite-poster-print) {
+    display: none !important;
   }
   body.printing-poster .invite-poster-print {
-    position: fixed;
-    inset: 0;
     display: block !important;
+    width: 210mm;
+    height: 297mm;
+    overflow: hidden;
+    break-inside: avoid;
   }
 }
 </style>

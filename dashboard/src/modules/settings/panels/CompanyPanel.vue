@@ -143,7 +143,7 @@ async function dropLogo(): Promise<void> {
         <div class="flex flex-col gap-5">
           <div class="flex flex-wrap items-center gap-4">
             <CompanyLogo :name="form.values.name || settings.data.value.name" :src="settings.data.value.logo" :size="64" />
-            <div class="flex min-w-0 flex-1 flex-col gap-1">
+            <div class="flex min-w-[12rem] flex-1 flex-col gap-1">
               <p class="text-base font-medium text-fg">{{ t("settings.company.logo") }}</p>
               <p class="text-sm text-muted">{{ t("settings.company.logoHint") }}</p>
             </div>
@@ -221,7 +221,7 @@ async function dropLogo(): Promise<void> {
             />
           </div>
           <div class="flex flex-wrap items-start justify-between gap-3 pt-4">
-            <span class="min-w-0 flex-1">
+            <span class="min-w-0 flex-1 basis-[16rem]">
               <span class="block text-base font-medium text-fg">{{ t("settings.company.cooldown") }}</span>
               <span class="mt-0.5 block text-sm text-muted">{{ t("settings.company.cooldownHint") }}</span>
             </span>
@@ -238,11 +238,9 @@ async function dropLogo(): Promise<void> {
         </div>
       </PageSection>
 
-      <p class="flex items-center gap-2 text-sm text-muted">
-        <ShieldCheck :size="15" class="text-success" />
-        {{ t("settings.company.audited") }}
-        <CalendarClock :size="15" class="ml-2 text-subtle" />
-        {{ t("settings.company.timesLocal", { zone: form.values.timezone }) }}
+      <p class="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-muted">
+        <span class="inline-flex items-center gap-2"><ShieldCheck :size="15" class="shrink-0 text-success" />{{ t("settings.company.audited") }}</span>
+        <span class="inline-flex items-center gap-2"><CalendarClock :size="15" class="shrink-0 text-subtle" />{{ t("settings.company.timesLocal", { zone: form.values.timezone }) }}</span>
       </p>
 
       <StickyActionBar v-if="canEdit" :show="form.dirty.value" :message="form.formError.value ?? t('common.unsaved')" :tone="form.formError.value ? 'warning' : 'neutral'">

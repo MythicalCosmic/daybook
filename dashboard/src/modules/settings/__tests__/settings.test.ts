@@ -147,6 +147,42 @@ describe("CompanyPanel", () => {
   });
 });
 
+const BRANCH = {
+  id: 7,
+  name: "Chilonzor",
+  code: "CHL",
+  address: "Bunyodkor 12",
+  phone: "",
+  latitude: "41.285480",
+  longitude: "69.203560",
+  geofence_m: 150,
+  opens_at: "09:00",
+  closes_at: "21:00",
+  open_weekdays: [0, 1, 2, 3, 4, 5, 6],
+  manager: { id: 4, name: "Bekzod Mirzayev" },
+  cash_limit: "20000000.00",
+  is_active: true,
+  order: 1,
+  people: 4,
+};
+
+describe("BranchesPanel", () => {
+  it("lists branches and says so when a link points at a branch that isn't there", async () => {
+    stub({ "GET branches/": () => json([BRANCH]), "GET branches/managers/": () => json([]) });
+    const app = await testApp("/c/1/settings/branches?branch=999");
+    const { default: BranchesPanel } = await import("../panels/BranchesPanel.vue");
+    const { wrapper } = mountWithProviders(BranchesPanel, { plugins: app.plugins });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Chilonzor");
+    expect(wrapper.text()).toContain("Bekzod Mirzayev");
+    expect(document.body.textContent).toContain("This branch isn’t here");
+    // Nothing to save in that state.
+    expect([...document.querySelectorAll("button")].some((b) => b.textContent?.trim() === "Save")).toBe(false);
+    wrapper.unmount();
+  });
+});
+
 describe("FeaturesPanel", () => {
   it("switches a module on at once and puts it back when the server refuses", async () => {
     let refuse = false;

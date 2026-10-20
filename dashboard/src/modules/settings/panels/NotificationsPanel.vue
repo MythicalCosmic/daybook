@@ -98,7 +98,7 @@ function set(row: NotificationPreference, field: "in_app" | "telegram", value: b
           </li>
         </ul>
       </section>
-      <p class="flex items-center gap-2 text-sm text-muted"><BellRing :size="15" class="text-primary" />{{ t("settings.notifications.footer") }}</p>
+      <p class="flex items-center gap-2 text-sm text-muted"><BellRing :size="15" class="shrink-0 text-primary" />{{ t("settings.notifications.footer") }}</p>
     </div>
   </div>
 </template>

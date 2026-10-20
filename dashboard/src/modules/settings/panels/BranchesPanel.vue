@@ -155,7 +155,7 @@ function menu(branch: Branch, index: number) {
       </PageSection>
     </div>
 
-    <BranchDrawer :branches="branches.data.value ?? []" :can-edit="canEdit" />
+    <BranchDrawer :branches="branches.data.value ?? []" :loaded="!!branches.data.value" :can-edit="canEdit" />
   </div>
 </template>
 

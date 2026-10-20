@@ -50,9 +50,10 @@ async function dismiss(): Promise<void> {
 <template>
   <div class="mx-auto max-w-[920px]">
     <PageHeader :title="t('setup.title')" :description="t('setup.description', { company: company.current?.name ?? '' })">
-      <template v-if="data?.can_dismiss" #actions>
-        <UiButton v-if="!data.dismissed && !allDone" variant="ghost" :icon="EyeOff" :loading="visibility.dismiss.isPending.value" @click="dismiss">{{ t("setup.dismiss") }}</UiButton>
-        <UiButton v-else variant="ghost" :icon="RotateCcw" :loading="visibility.resume.isPending.value" @click="visibility.resume.mutate()">{{ t("setup.resume") }}</UiButton>
+      <!-- All done and still shown: the progress card offers "Hide the checklist" instead. -->
+      <template v-if="data?.can_dismiss && (data.dismissed || !allDone)" #actions>
+        <UiButton v-if="data.dismissed" variant="ghost" :icon="RotateCcw" :loading="visibility.resume.isPending.value" @click="visibility.resume.mutate()">{{ t("setup.resume") }}</UiButton>
+        <UiButton v-else variant="ghost" :icon="EyeOff" :loading="visibility.dismiss.isPending.value" @click="dismiss">{{ t("setup.dismiss") }}</UiButton>
       </template>
     </PageHeader>
 

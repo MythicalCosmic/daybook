@@ -13,6 +13,7 @@ import {
   Clock3,
   KeyRound,
   Lock,
+  QrCode as QrCodeIcon,
   ReceiptText,
   RefreshCw,
   Send,
@@ -22,7 +23,7 @@ import {
   Users,
   WifiOff,
 } from "@lucide/vue";
-import { computed, defineAsyncComponent, onMounted, type Component } from "vue";
+import { computed, defineAsyncComponent, onMounted, ref, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
@@ -30,6 +31,7 @@ import ProgressRing from "@/components/ProgressRing.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UiButton from "@/components/UiButton.vue";
 import { safeNext } from "@/lib/links";
+import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useSessionStore } from "@/stores/session";
 
 import BrandMark from "../components/BrandMark.vue";
@@ -41,7 +43,11 @@ const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const session = useSessionStore();
+const { isPhone } = useBreakpoints();
 const dev = import.meta.env.DEV;
+/** On a phone the deep link opens Telegram on the same phone; the QR is for another device. */
+const showQr = ref(false);
+const qrSize = computed(() => (isPhone.value ? 176 : 208));
 
 const login = useLoginLink({
   onSignedIn: async (access) => {
@@ -102,7 +108,7 @@ const steps = computed(() => [
     <div class="login-glow pointer-events-none absolute inset-0 -z-10" aria-hidden="true" />
     <div class="mx-auto grid min-h-dvh w-full max-w-[1120px] items-center gap-10 px-4 py-8 md:grid-cols-[1.1fr_minmax(380px,440px)] md:gap-16 md:px-8 md:py-12">
       <!-- The story (desktop) -->
-      <section class="hidden flex-col md:flex" aria-hidden="false">
+      <section class="hidden flex-col md:flex">
         <BrandMark />
         <h1 class="mt-10 max-w-[520px] font-display text-[44px] leading-[1.08] text-fg">
           {{ t("auth.login.headline") }}
@@ -134,24 +140,27 @@ const steps = computed(() => [
       <!-- The sign-in card -->
       <section class="w-full">
         <div class="mb-6 flex justify-center md:hidden"><BrandMark compact /></div>
-        <div class="rounded-[20px] border border-line bg-surface p-6 shadow-[0_1px_2px_rgb(32_30_29/0.04),0_32px_64px_-32px_rgb(32_30_29/0.28)] md:p-8">
+        <div class="rounded-[20px] border border-line bg-surface p-6 shadow-drawer md:p-8">
           <h2 class="text-lg font-semibold tracking-[-0.01em] text-fg">{{ t("auth.login.title") }}</h2>
-          <p v-if="login.phase.value === 'starting' || login.phase.value === 'waiting'" class="mt-1 text-base text-muted">{{ t("auth.login.lead") }}</p>
+          <p v-if="login.phase.value === 'starting' || login.phase.value === 'waiting'" class="mt-1 text-base text-muted">
+            {{ isPhone ? t("auth.login.leadPhone") : t("auth.login.lead") }}
+          </p>
 
           <Transition name="swap" mode="out-in">
             <!-- Waiting for Telegram (or getting the code) -->
             <div v-if="login.phase.value === 'starting' || login.phase.value === 'waiting'" key="waiting" class="mt-6 flex flex-col items-center">
-              <div class="relative">
-                <QrCode v-if="login.link.value" :value="login.link.value.deep_link" :size="184" level="M" :label="undefined" />
-                <div v-else class="grid size-[208px] place-items-center rounded-[14px] border border-line bg-surface-2">
-                  <SkeletonBlock width="184px" height="184px" radius="8px" />
+              <!-- A phone can't scan its own screen: there the code waits behind "another device". -->
+              <div v-if="!isPhone || showQr" :class="['relative', isPhone && 'order-last mt-5']">
+                <QrCode v-if="login.link.value" :value="login.link.value.deep_link" :size="qrSize" level="M" :label="undefined" />
+                <div v-else class="grid place-items-center rounded-[14px] border border-line bg-surface-2" :style="{ width: `${qrSize + 24}px`, height: `${qrSize + 24}px` }">
+                  <SkeletonBlock :width="`${qrSize}px`" :height="`${qrSize}px`" radius="8px" />
                 </div>
                 <span class="absolute -bottom-2 -right-2 grid size-9 place-items-center rounded-full border-[3px] border-surface bg-primary text-on-primary" aria-hidden="true">
                   <Send :size="15" />
                 </span>
               </div>
 
-              <div class="mt-7 flex flex-col items-center" aria-live="polite">
+              <div :class="['flex flex-col items-center', isPhone ? 'mt-1' : 'mt-7']" aria-live="polite">
                 <p class="text-sm font-medium text-muted">{{ t("auth.login.tapLabel") }}</p>
                 <div class="mt-2 flex gap-2" :aria-label="login.link.value?.match_code" role="img">
                   <template v-if="digits.length">
@@ -175,7 +184,7 @@ const steps = computed(() => [
                     <span class="absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-60 motion-reduce:hidden" />
                     <span class="relative inline-flex size-2.5 rounded-full bg-primary" />
                   </span>
-                  <span class="truncate">{{ login.reconnecting.value ? t("auth.login.reconnecting") : t("auth.login.waiting") }}</span>
+                  <span class="min-w-0 leading-snug">{{ login.reconnecting.value ? t("auth.login.reconnecting") : t("auth.login.waiting") }}</span>
                 </span>
                 <span v-if="login.phase.value === 'waiting'" class="flex shrink-0 items-center gap-1.5 tabular-nums text-muted" :title="t('auth.login.expiresIn', { time: countdown })">
                   <ProgressRing :value="login.progress.value * 100" :size="16" :stroke="2.5" tone="primary" />
@@ -194,6 +203,9 @@ const steps = computed(() => [
                   :disabled="!login.link.value"
                 >{{ t("auth.login.open") }}</UiButton>
                 <UiButton variant="ghost" block :icon="RefreshCw" :disabled="login.phase.value === 'starting'" @click="login.start()">{{ t("auth.login.newCode") }}</UiButton>
+                <UiButton v-if="isPhone" variant="ghost" size="sm" block :icon="QrCodeIcon" :aria-expanded="showQr" @click="showQr = !showQr">
+                  {{ showQr ? t("auth.login.hideQr") : t("auth.login.showQr") }}
+                </UiButton>
               </div>
             </div>
 

@@ -102,11 +102,11 @@ async function signOutEverywhere(): Promise<void> {
     <EmptyState v-else-if="!sessions.data.value.length" :title="t('settings.sessions.emptyTitle')" :description="t('settings.sessions.emptyBody')" :icon="ShieldCheck" tone="success" />
 
     <TransitionGroup v-else tag="ul" name="list" class="ui-card divide-y divide-line overflow-hidden">
-      <li v-for="row in sessions.data.value" :key="row.id" class="flex flex-wrap items-center gap-x-4 gap-y-3 p-4">
-        <span :class="['grid size-10 shrink-0 place-items-center rounded-[10px]', row.current ? 'bg-success-soft text-success' : 'bg-surface-2 text-muted']">
+      <li v-for="row in sessions.data.value" :key="row.id" class="flex items-center gap-3 p-4 sm:gap-4">
+        <span :class="['grid size-10 shrink-0 place-items-center self-start rounded-[10px] sm:self-center', row.current ? 'bg-success-soft text-success' : 'bg-surface-2 text-muted']">
           <component :is="icons[row.device.kind]" :size="20" />
         </span>
-        <div class="min-w-0 flex-1 basis-[200px]">
+        <div class="min-w-0 flex-1">
           <p class="flex flex-wrap items-center gap-2 text-base font-semibold text-fg">
             {{ row.device.label }}
             <UiBadge v-if="row.current" tone="success">{{ t("settings.sessions.thisDevice") }}</UiBadge>
@@ -118,7 +118,7 @@ async function signOutEverywhere(): Promise<void> {
             <span v-else>{{ t("settings.sessions.lastSeen") }} <RelativeTime :value="row.last_seen_at" /></span>
           </p>
         </div>
-        <UiButton v-if="!row.current" variant="ghost" size="sm" :icon="LogOut" class="ml-auto" @click="signOut(row)">{{ t("settings.sessions.signOut") }}</UiButton>
+        <UiButton v-if="!row.current" variant="ghost" size="sm" :icon="LogOut" class="shrink-0" @click="signOut(row)">{{ t("settings.sessions.signOut") }}</UiButton>
       </li>
     </TransitionGroup>
 
