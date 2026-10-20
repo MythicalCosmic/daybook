@@ -117,10 +117,11 @@ def test_queue_counts_per_kind(company, member, owner_api):
     as_manager = owner_api(manager).get(url(company, "queue/counts/")).data
 
     assert as_owner["total"] == 4
-    assert as_manager == {
-        "total": 1,
-        "kinds": [{"kind": "console.time_off", "label": "Time off", "count": 1}],
-    }
+    assert as_manager["total"] == 1
+    # The apps' real queues (an empty "Tasks to check" once apps.tasks registers it) may join.
+    assert [kind for kind in as_manager["kinds"] if kind["kind"].startswith("console.")] == [
+        {"kind": "console.time_off", "label": "Time off", "count": 1}
+    ]
 
 
 @pytest.mark.usefixtures("providers")

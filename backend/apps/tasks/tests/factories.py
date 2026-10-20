@@ -1,3 +1,4 @@
+import importlib
 import io
 from dataclasses import dataclass
 
@@ -6,10 +7,24 @@ from django.core.files.base import ContentFile
 from factory.django import DjangoModelFactory
 from PIL import Image
 
+from apps.ai.tools import registry as ai_registry
 from apps.companies.tests.factories import BranchFactory
 from apps.members.models import AccessRole, Membership
 from apps.members.permissions import Perm
 from apps.tasks.models import Task, TaskTemplate
+
+
+def ensure_ai_tools(*modules: str) -> None:
+    """Make sure the tools of `modules` are in the AI tool registry.
+
+    apps.ai's `test_every_installed_tool_follows_the_rules` imports every app's ai_tools module
+    into a throwaway registry, so a test running after it can find the real one without them
+    (the modules are imported, so discovery never runs them again). Load them again if so.
+    """
+    present = {tool.fn.__module__ for tool in ai_registry.all_tools()}
+    for name in modules:
+        if name not in present:
+            importlib.reload(importlib.import_module(name))
 
 
 @dataclass

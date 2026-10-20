@@ -181,16 +181,18 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         )
         template.positions.set([p for name in roles for p in position(name)])
 
-    # A month of routine work, so reports, trends and compliance have something to show.
+    # A month of routine work, so reports, trends and compliance have something to show. It
+    # keeps the core demo's story: Nigora is never late, Jasur is often late but his only
+    # missed tasks are the core demo's two.
     history = [
         (opening, people["worker"], 0.86, 0.02),
         (closing, people["madina"], 0.9, 0.0),
         (fridge, people["worker"], 0.8, 0.04),
         (fridge, people["madina"], 0.93, 0.0),
-        (delivery, people["jasur"], 0.62, 0.07),
-        (orders, people["nigora"], 0.88, 0.02),
-        (shelves, people["jasur"], 0.7, 0.05),
-        (shelves, people["nigora"], 0.82, 0.03),
+        (delivery, people["jasur"], 0.62, 0.0),
+        (orders, people["nigora"], 1.0, 0.0),
+        (shelves, people["jasur"], 0.7, 0.0),
+        (shelves, people["nigora"], 1.0, 0.0),
         (inventory, people["worker"], 0.75, 0.0),
     ]
     for template, person, on_time, missed in history:
@@ -397,6 +399,15 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         reward=Decimal("75000.00"),
     )
     _photo(done_given, "window", rng)
+    glass = given(
+        "Vitrina oynalarini artish",
+        people["worker"],
+        now - timedelta(minutes=20),
+        status=Task.Status.DONE,
+        completed_at=now - timedelta(minutes=28),
+        proof=Proof.PHOTO,
+    )
+    _photo(glass, "window", rng)
     given(
         "Kassir uchun yangi terminalni sozlash",
         people["madina"],
@@ -538,7 +549,22 @@ def _history_task(
         for step in range(1, (3 if completed is None else task.reminders_sent) + 1):
             _log(task, ReminderLog.Kind.REMINDER, step, person, due + timedelta(minutes=20 * step))
     Task.objects.filter(pk=task.pk).update(created_at=due - timedelta(hours=8))
+    # The last two days keep their proof photos, so the photo wall has something to page back to.
+    if (
+        completed
+        and template.proof == Proof.PHOTO
+        and (timezone.localdate(timezone=tz) - day).days <= 2
+    ):
+        _photo(task, PHOTO_SCENES.get(template.title, "shelf"), rng)
     return task
+
+
+PHOTO_SCENES = {
+    "Do‘konni ochish: tekshiruv ro‘yxati": "store",
+    "Kassani yopish va Z-hisobot": "tags",
+    "Ertalabki yukni qabul qilish": "boxes",
+    "Javonlarni to‘ldirish va narx yorliqlari": "shelf",
+}
 
 
 def _log(task, kind, step, recipient, at, error=""):

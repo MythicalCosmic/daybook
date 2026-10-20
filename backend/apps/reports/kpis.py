@@ -131,10 +131,16 @@ _SCORES = {
 
 
 def team(
-    company: Company, start: date, end: date, now: datetime, *, branch_ids: list[int] | None
+    company: Company,
+    start: date,
+    end: date,
+    now: datetime,
+    *,
+    branch_ids: list[int] | None = None,
 ) -> TeamReport:
-    """Scores for everyone registered (in `branch_ids`' people), best first, from `start` to
-    the day before `end`."""
+    """Scores for everyone registered (in `branch_ids`' people; None for the whole company),
+    best first, from `start` to the day before `end`. Callers serving a person pass their
+    scope (`members.scope.branch_ids`)."""
     since, until = _window(company, start, end, now)
     shared = _shared(company, branch_ids)
     grouped = (
