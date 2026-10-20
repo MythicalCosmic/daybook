@@ -162,12 +162,17 @@ def test_receipts_only_in_receipts_mode(shop, client):
     response = client.post(url(shop.company, "entries/"), body, format="json")
     assert response.status_code == 201 and response.json()["total"] == "45000.00"
     sale_id = response.json()["id"]
+    shift = client.get(url(shop.company, "shifts/current/")).json()["shift"]
+    assert [(row["id"], row["total"]) for row in shift["entries"]] == [(sale_id, "45000.00")]
+    assert shift["entries"][0]["methods"][0]["amount"] == "45000.00"
     assert (
         client.post(
             url(shop.company, f"entries/{sale_id}/void/"), {"reason": "Mistake"}, format="json"
         ).status_code
         == 200
     )
+    shift = client.get(url(shop.company, f"shifts/{shift['id']}/")).json()
+    assert shift["entries"][0]["voided_at"] is not None
 
 
 def test_handovers_are_answered_by_their_receiver(shop, api_as):

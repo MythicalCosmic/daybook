@@ -147,6 +147,7 @@ def shift_data(shift: CashShift, request, *, blind: bool, detail: bool = False) 
                 kind: m(total) for kind, total in cash.movement_totals_by_kind(shift).items()
             },
             "receipts_recorded": _receipts_recorded(shift),
+            "entries": _entries(shift),
             "photos": {
                 "z_photo": _signed(shift, "z_photo", request),
                 "terminal_photo": _signed(shift, "terminal_photo", request),
@@ -165,6 +166,26 @@ def _receipts_recorded(shift: CashShift) -> dict:
         }
         for method_id, row in found.items()
     }
+
+
+def _entries(shift: CashShift, limit: int = 30) -> list[dict]:
+    """The shift's latest single receipts (receipts mode), so a mistyped one can be voided."""
+    rows = shift.sales.prefetch_related("payments__method").order_by("-sold_at", "-pk")[:limit]
+    return [
+        {
+            "id": sale.pk,
+            "kind": sale.kind,
+            "total": m(sale.total),
+            "number": sale.number,
+            "sold_at": sale.sold_at.isoformat(),
+            "voided_at": sale.voided_at.isoformat() if sale.voided_at else None,
+            "methods": [
+                {"id": line.method_id, "name": line.method.name, "amount": m(line.amount)}
+                for line in sale.payments.all()
+            ],
+        }
+        for sale in rows
+    ]
 
 
 def _signed(shift: CashShift, attr: str, request) -> str | None:

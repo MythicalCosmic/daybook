@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from apps.companies.models import Branch
 from apps.finance.models import LIVE_STATUSES, MoneyAccount, Transaction
+from apps.members.permissions import Perm
 from apps.sales import demo
 from apps.sales.models import CashMovement, CashShift, DailySales, SalesTarget
 
@@ -28,6 +29,10 @@ def test_demo_seeds_shifts_and_keeps_the_ledger_in_step(company, demo_people):
 
     shifts = CashShift.objects.filter(company=company)
     assert shifts.filter(status=CashShift.Status.OPEN).count() >= 1
+    # Whoever runs a till in the story can open Kassa in the mini app.
+    for key in ("madina", "jasur", "nigora"):
+        people[key].refresh_from_db()
+        assert people[key].has_perm(Perm.SALES_OPERATE), key
     assert shifts.filter(status=CashShift.Status.VERIFIED).count() > 20
     assert shifts.filter(status=CashShift.Status.CLOSED).exists()  # waiting in Needs you
     assert shifts.filter(ai_mismatch=True).count() == 1

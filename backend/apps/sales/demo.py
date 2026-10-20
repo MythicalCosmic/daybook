@@ -23,6 +23,8 @@ from apps.core.exceptions import DomainError
 from apps.finance import defaults as finance_defaults
 from apps.finance import services as finance
 from apps.finance.models import Category, MoneyAccount
+from apps.members.models import AccessRole, Membership
+from apps.members.permissions import Perm
 from apps.sales import defaults, rollup, services
 from apps.sales.days import local
 from apps.sales.models import CashShift, PaymentMethod, Register, SalesSettings
@@ -87,6 +89,7 @@ def seed(company, people, now) -> None:
     finance_defaults.ensure(company)
     defaults.ensure(company)
     _configure(company)
+    _cashiers(company, people)
     branches = list(company.branches.filter(is_active=True).order_by("order", "pk"))
     owner, manager = people["owner"], people["manager"]
     first = branches[0]
@@ -183,6 +186,22 @@ def _configure(company) -> None:
         PaymentMethod.objects.filter(company=company, system_code=code).update(
             fee_percent=Decimal(fee)
         )
+
+
+def _cashiers(company, people) -> None:
+    """Madina, Jasur and Nigora run the tills in this story: they get the Cashier role (it only
+    adds the till permission to an employee's), so the mini app shows them Kassa too."""
+    role = AccessRole.objects.filter(company=company, name="Cashier").first()
+    if role is None:
+        return
+    for key in ("madina", "jasur", "nigora"):
+        member = people.get(key)
+        if member is None or member.has_perm(Perm.SALES_OPERATE):
+            continue
+        if member.role is not None and member.role.is_owner:
+            continue
+        Membership.objects.filter(pk=member.pk).update(role=role)
+        member.role = role
 
 
 def _bank(company, owner) -> MoneyAccount:
