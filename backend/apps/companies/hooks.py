@@ -52,6 +52,30 @@ registry.register_setup_step(
 )
 
 
+def setup_brief(company, day, now, branch_ids) -> dict | None:
+    """A line in the owner bot's /today (and briefings) until "Get started" is done."""
+    if company.setup_completed_at is not None:
+        return None
+    steps = [
+        step
+        for step in registry.SETUP_STEPS
+        if step.feature is None or company.has_feature(step.feature)
+    ]
+    done = sum(1 for step in steps if step.done(company))
+    if not steps or done == len(steps):
+        return None
+    return {
+        "emoji": "🚀",
+        "title": str(_("Get started")),
+        "lines": [str(_("%(done)d of %(total)d steps done")) % {"done": done, "total": len(steps)}],
+    }
+
+
+registry.register_brief_section(
+    "companies.setup", perm=Perm.COMPANY_SETTINGS, order=900, build=setup_brief
+)
+
+
 def search_branches(member, q: str, limit: int) -> list[registry.SearchHit]:
     rows = scope.restrict(
         Branch.objects.for_company(member.company).filter(name__icontains=q),

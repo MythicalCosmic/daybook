@@ -1,25 +1,45 @@
 """`/start` and the block/unblock notices Telegram sends about private chats.
 
 Starting the bot is what lets owner notifications come here instead of through the employee
-bot (`OwnerUserMiddleware` records it). Package A grows `/start` (sign-in links, `new_` codes).
+bot (`OwnerUserMiddleware` records it). Deep links:
+
+    /start login_<code>   confirm a dashboard sign-in (number matching)
+    /start new_<code>     create a company with that signup code
 """
 
 from aiogram import F, Router
 from aiogram.enums import ChatMemberStatus, ChatType
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandObject, CommandStart
+from aiogram.fsm.context import FSMContext
 from aiogram.types import ChatMemberUpdated, Message
 from asgiref.sync import sync_to_async
 from django.utils import timezone
 
 from apps.accounts.models import User
-from ownerbot import bot_messages
+from ownerbot import bot_messages, brief
+from ownerbot.handlers import new_company, signin
 
 router = Router(name="start")
 
 
 @router.message(CommandStart(), F.chat.type == ChatType.PRIVATE)
-async def cmd_start(message: Message, user: User) -> None:
-    text, markup = bot_messages.welcome(user)
+async def cmd_start(
+    message: Message, user: User, state: FSMContext, command: CommandObject | None = None
+) -> None:
+    payload = (command.args or "").strip() if command else ""
+    if payload.startswith(signin.START_PREFIX):
+        await signin.start_login(
+            message, payload.removeprefix(signin.START_PREFIX), user=user, state=state
+        )
+        return
+    if payload.startswith(new_company.START_PREFIX):
+        await new_company.begin(
+            message, user, state, code=payload.removeprefix(new_company.START_PREFIX)
+        )
+        return
+    await state.clear()
+    companies = await sync_to_async(brief.companies_summary)(user)
+    text, markup = bot_messages.welcome(user, companies)
     await message.answer(text, reply_markup=markup)
 
 
