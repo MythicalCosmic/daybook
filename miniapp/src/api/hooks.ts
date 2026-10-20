@@ -4,6 +4,7 @@ import { api } from "./client";
 import type {
   Activity,
   Comment,
+  Holiday,
   Language,
   Me,
   Membership,
@@ -14,6 +15,7 @@ import type {
   Summary,
   Task,
   TeamStats,
+  TimeOff,
 } from "./types";
 
 export const keys = {
@@ -27,6 +29,8 @@ export const keys = {
   activity: (company: number) => ["activity", company] as const,
   positions: (company: number) => ["positions", company] as const,
   team: (company: number, period: Period) => ["team", company, period] as const,
+  timeOff: (company: number) => ["timeOff", company] as const,
+  holidays: (company: number) => ["holidays", company] as const,
 };
 
 const tasksPath = (company: number) => `/companies/${company}/tasks`;
@@ -95,6 +99,45 @@ export function useTeamStats(company: number, period: Period) {
     queryKey: keys.team(company, period),
     queryFn: () => api<TeamStats>(`/companies/${company}/team-stats/?period=${period}`),
     staleTime: 60_000,
+  });
+}
+
+export function useTimeOff(company: number) {
+  return useQuery({
+    queryKey: keys.timeOff(company),
+    queryFn: () => api<TimeOff[]>(`/companies/${company}/time-off/`),
+  });
+}
+
+export function useHolidays(company: number) {
+  return useQuery({
+    queryKey: keys.holidays(company),
+    queryFn: () => api<Holiday[]>(`/companies/${company}/holidays/`),
+    staleTime: 60 * 60_000,
+  });
+}
+
+export function useRequestTimeOff(company: number) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (request: { first_day: string; last_day: string; reason: string }) =>
+      api<TimeOff>(`/companies/${company}/time-off/`, { json: request }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: keys.timeOff(company) });
+      void client.invalidateQueries({ queryKey: keys.summary(company) });
+    },
+  });
+}
+
+export function useCancelTimeOff(company: number) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      api<TimeOff>(`/companies/${company}/time-off/${id}/cancel/`, { method: "POST" }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: keys.timeOff(company) });
+      void client.invalidateQueries({ queryKey: keys.summary(company) });
+    },
   });
 }
 

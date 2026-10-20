@@ -9,7 +9,8 @@ export type Sheet =
   | { kind: "return"; taskId: number }
   | { kind: "add" }
   | { kind: "language" }
-  | { kind: "company" };
+  | { kind: "company" }
+  | { kind: "timeOff" };
 
 type State = {
   tab: Tab;

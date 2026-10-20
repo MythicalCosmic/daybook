@@ -17,3 +17,4 @@ class Perm(models.TextChoices):
     REMINDERS_CONFIGURE = "reminders.configure", _("Configure reminders")
     GROUPS_MANAGE = "groups.manage", _("Connect and configure groups")
     REPORTS_VIEW = "reports.view", _("View reports and statistics")
+    TIME_OFF_APPROVE = "time_off.approve", _("Approve or reject time off")

@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import type { Task } from "../api/types";
+import type { Task, TimeOff } from "../api/types";
 import en from "../i18n/en";
 import { translate } from "../i18n";
 import ru from "../i18n/ru";
 import uz from "../i18n/uz";
 import { glyph, groupTasks, repeatLabel, rowMeta, rowRight, type ViewContext } from "./taskView";
 import { nameInitials, tone } from "./team";
+import { cancellable, current } from "./timeOff";
 import {
   addDays,
   clock,
@@ -183,5 +184,34 @@ describe("Uzbek dates", () => {
 
   it("leave other languages to the browser", () => {
     expect(dayMonth(moment, "Asia/Tashkent", "en-GB")).toBe("21 Oct");
+  });
+});
+
+describe("time off", () => {
+  const today = "2026-10-21";
+  const item = (fields: Partial<TimeOff>): TimeOff => ({
+    id: 1,
+    first_day: "2026-10-22",
+    last_day: "2026-10-23",
+    reason: "",
+    status: "pending",
+    days: 2,
+    decided_by: null,
+    created_at: "2026-10-20T10:00:00Z",
+    ...fields,
+  });
+
+  it("can be taken back until approved days begin", () => {
+    expect(cancellable(item({ status: "pending", first_day: today }), today)).toBe(true);
+    expect(cancellable(item({ status: "approved" }), today)).toBe(true);
+    expect(cancellable(item({ status: "approved", first_day: today }), today)).toBe(false);
+    expect(cancellable(item({ status: "rejected" }), today)).toBe(false);
+  });
+
+  it("lists what isn't over or cancelled", () => {
+    const kept = item({ id: 1 });
+    const over = item({ id: 2, first_day: "2026-10-10", last_day: "2026-10-20" });
+    const cancelled = item({ id: 3, status: "cancelled" });
+    expect(current([kept, over, cancelled], today)).toEqual([kept]);
   });
 });

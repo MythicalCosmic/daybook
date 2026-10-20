@@ -8,10 +8,14 @@ from apps.members.models import Membership
 from apps.reminders.policies import policy_for
 from apps.reminders.schedule import first_reminder_at
 from apps.tasks.models import Task, TaskTemplate
+from apps.timeoff.queries import is_holiday, members_off
 
 
 def generate_daily_tasks(company: Company, day: date) -> None:
     """Create the day's tasks from the company's active templates. Safe to run repeatedly."""
+    if is_holiday(company, day):
+        return  # nobody works on a company holiday
+    off = members_off(company, day)
     tz = ZoneInfo(company.timezone)
     now = timezone.now()
     templates = (
@@ -31,6 +35,8 @@ def generate_daily_tasks(company: Company, day: date) -> None:
         for member in _people_for(template):
             if member.onboarded_at >= due_at:
                 continue  # they registered after the deadline
+            if member.pk in off:
+                continue  # approved time off
             new_tasks.append(
                 Task(
                     company=company,

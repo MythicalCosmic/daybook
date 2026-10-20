@@ -116,6 +116,31 @@ paths:
               schema:
                 $ref: '#/components/schemas/Marked'
           description: ''
+  /api/v1/companies/{company_id}/holidays/:
+    get:
+      operationId: v1_companies_holidays_list
+      description: 'The company''s coming holidays: no daily tasks and no reminders
+        on those days.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Holiday'
+          description: ''
   /api/v1/companies/{company_id}/members/:
     get:
       operationId: v1_companies_members_list
@@ -1134,6 +1159,109 @@ paths:
               schema:
                 $ref: '#/components/schemas/TeamStats'
           description: ''
+  /api/v1/companies/{company_id}/time-off/:
+    get:
+      operationId: v1_companies_time_off_list
+      description: 'The signed-in member''s own time off: upcoming requests and the
+        last month''s.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TimeOff'
+          description: ''
+    post:
+      operationId: v1_companies_time_off_create
+      description: 'The signed-in member''s own time off: upcoming requests and the
+        last month''s.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TimeOffRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TimeOffRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TimeOffRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeOff'
+          description: ''
+  /api/v1/companies/{company_id}/time-off/{id}/cancel/:
+    post:
+      operationId: v1_companies_time_off_cancel_create
+      description: 'The signed-in member''s own time off: upcoming requests and the
+        last month''s.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this time off.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TimeOffRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TimeOffRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TimeOffRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimeOff'
+          description: ''
   /api/v1/me/:
     get:
       operationId: v1_me_retrieve
@@ -1350,6 +1478,23 @@ components:
       required:
       - date
       - state
+    Holiday:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        date:
+          type: string
+          format: date
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+      required:
+      - date
+      - id
+      - name
     LanguageEnum:
       enum:
       - uz
@@ -1507,6 +1652,30 @@ components:
         * `rejected` - Rejected
         * `blocked` - Blocked
         * `left` - Left
+    OffToday:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/OffTodayKindEnum'
+        name:
+          type: string
+          description: The holiday's name; empty for time off.
+        until:
+          type: string
+          format: date
+          description: The last day off.
+      required:
+      - kind
+      - name
+      - until
+    OffTodayKindEnum:
+      enum:
+      - holiday
+      - time_off
+      type: string
+      description: |-
+        * `holiday` - holiday
+        * `time_off` - time_off
     OnboardingRequest:
       type: object
       properties:
@@ -1726,6 +1895,7 @@ components:
       - reminders.configure
       - groups.manage
       - reports.view
+      - time_off.approve
       type: string
       description: |-
         * `members.view` - View members
@@ -1740,6 +1910,7 @@ components:
         * `reminders.configure` - Configure reminders
         * `groups.manage` - Connect and configure groups
         * `reports.view` - View reports and statistics
+        * `time_off.approve` - Approve or reject time off
     Position:
       type: object
       properties:
@@ -2043,11 +2214,17 @@ components:
           type: integer
         awaiting_review:
           type: integer
+        off_today:
+          allOf:
+          - $ref: '#/components/schemas/OffToday'
+          nullable: true
+          description: Set when today is a holiday or the person's time off.
       required:
       - awaiting_review
       - late
       - month_done
       - month_on_time_percent
+      - off_today
       - quiet_from
       - quiet_until
       - streak_days
@@ -2418,6 +2595,71 @@ components:
           description: Telegram.WebApp.initData, exactly as received.
       required:
       - init_data
+    TimeOff:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        first_day:
+          type: string
+          format: date
+        last_day:
+          type: string
+          format: date
+        reason:
+          type: string
+          maxLength: 300
+        status:
+          allOf:
+          - $ref: '#/components/schemas/TimeOffStatusEnum'
+          readOnly: true
+        days:
+          type: integer
+          readOnly: true
+        decided_by:
+          type: string
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - days
+      - decided_by
+      - first_day
+      - id
+      - last_day
+      - status
+    TimeOffRequest:
+      type: object
+      properties:
+        first_day:
+          type: string
+          format: date
+        last_day:
+          type: string
+          format: date
+        reason:
+          type: string
+          maxLength: 300
+      required:
+      - first_day
+      - last_day
+    TimeOffStatusEnum:
+      enum:
+      - pending
+      - approved
+      - rejected
+      - cancelled
+      type: string
+      description: |-
+        * `pending` - Waiting for approval
+        * `approved` - Approved
+        * `rejected` - Rejected
+        * `cancelled` - Cancelled
     TokenPair:
       type: object
       properties:

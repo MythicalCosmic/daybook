@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-20 17:42+0500\n"
+"POT-Creation-Date: 2026-10-20 18:01+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -97,6 +97,14 @@ msgstr "Guruhni uzdi"
 #: backend/apps/audit/models.py
 msgid "Removed the bot from a group"
 msgstr "Botni guruhdan chiqardi"
+
+#: backend/apps/audit/models.py
+msgid "Approved time off"
+msgstr "Dam olishni tasdiqladi"
+
+#: backend/apps/audit/models.py
+msgid "Rejected time off"
+msgstr "Dam olishni rad etdi"
 
 #: backend/apps/audit/models.py
 msgid "Added in the admin"
@@ -443,11 +451,11 @@ msgstr "Foydalanuvchi nomi: @%(username)s"
 msgid "Telegram ID: <code>%(id)s</code>"
 msgstr "Telegram ID: <code>%(id)s</code>"
 
-#: backend/apps/members/bot_messages.py
+#: backend/apps/members/bot_messages.py backend/apps/timeoff/bot_messages.py
 msgid "✅ Approve"
 msgstr "✅ Tasdiqlash"
 
-#: backend/apps/members/bot_messages.py
+#: backend/apps/members/bot_messages.py backend/apps/timeoff/bot_messages.py
 msgid "❌ Reject"
 msgstr "❌ Rad etish"
 
@@ -535,12 +543,12 @@ msgstr "%(time)s dan keyin qayta so‘rov yuborishingiz mumkin."
 msgid "You can ask again by opening the invite link."
 msgstr "Taklif havolasini ochib, qayta so‘rov yuborishingiz mumkin."
 
-#: backend/apps/members/bot_messages.py
+#: backend/apps/members/bot_messages.py backend/apps/timeoff/bot_messages.py
 #, python-format
 msgid "✅ Approved by %(name)s"
 msgstr "✅ %(name)s tasdiqladi"
 
-#: backend/apps/members/bot_messages.py
+#: backend/apps/members/bot_messages.py backend/apps/timeoff/bot_messages.py
 #, python-format
 msgid "❌ Rejected by %(name)s"
 msgstr "❌ %(name)s rad etdi"
@@ -562,11 +570,11 @@ msgstr "Yangi xodimlarga tasdiqlanganda beriladi."
 msgid "Pending"
 msgstr "Kutilmoqda"
 
-#: backend/apps/members/models.py
+#: backend/apps/members/models.py backend/apps/timeoff/models.py
 msgid "Approved"
 msgstr "Tasdiqlangan"
 
-#: backend/apps/members/models.py
+#: backend/apps/members/models.py backend/apps/timeoff/models.py
 msgid "Rejected"
 msgstr "Rad etilgan"
 
@@ -630,11 +638,15 @@ msgstr "Guruhlarni ulash va sozlash"
 msgid "View reports and statistics"
 msgstr "Hisobot va statistikani ko‘rish"
 
+#: backend/apps/members/permissions.py
+msgid "Approve or reject time off"
+msgstr "Dam olish so‘rovlarini tasdiqlash yoki rad etish"
+
 #: backend/apps/members/services.py
 msgid "You don't have permission to do this."
 msgstr "Bunga ruxsatingiz yo‘q."
 
-#: backend/apps/members/services.py
+#: backend/apps/members/services.py backend/apps/timeoff/services.py
 msgid "This request no longer exists."
 msgstr "Bu so‘rov endi mavjud emas."
 
@@ -666,7 +678,7 @@ msgstr "Egani faqat egalar bloklay oladi."
 msgid "This member is already blocked."
 msgstr "Bu xodim allaqachon bloklangan."
 
-#: backend/apps/members/services.py
+#: backend/apps/members/services.py backend/apps/timeoff/services.py
 #, python-format
 msgid "This request is already %(status)s."
 msgstr "Bu so‘rov allaqachon %(status)s."
@@ -1129,7 +1141,7 @@ msgstr "Qaytarildi"
 msgid "Done"
 msgstr "Bajarildi"
 
-#: backend/apps/tasks/models.py
+#: backend/apps/tasks/models.py backend/apps/timeoff/models.py
 msgid "Cancelled"
 msgstr "Bekor qilindi"
 
@@ -1258,9 +1270,89 @@ msgstr "Bu vazifani qabul qila olmaysiz."
 msgid "This task isn't waiting for confirmation."
 msgstr "Bu vazifa tekshiruvni kutmayapti."
 
-#: backend/apps/tasks/services.py
+#: backend/apps/tasks/services.py backend/apps/timeoff/services.py
 msgid "Finish registration first."
 msgstr "Avval ro‘yxatdan o‘tishni yakunlang."
+
+#: backend/apps/timeoff/admin.py
+msgid "Approve selected time off"
+msgstr "Tanlangan dam olishlarni tasdiqlash"
+
+#: backend/apps/timeoff/admin.py
+msgid "Reject selected time off"
+msgstr "Tanlangan dam olishlarni rad etish"
+
+#: backend/apps/timeoff/admin.py
+#, python-format
+msgid "Decided: %(count)d"
+msgstr "Qaror qabul qilindi: %(count)d"
+
+#: backend/apps/timeoff/bot_messages.py
+#, python-format
+msgid "🌴 <b>Time off request</b> · %(name)s"
+msgstr "🌴 <b>Dam olish so‘rovi</b> · %(name)s"
+
+#: backend/apps/timeoff/bot_messages.py
+#, python-format
+msgid "📅 %(dates)s · days: %(count)d"
+msgstr "📅 %(dates)s · %(count)d kun"
+
+#: backend/apps/timeoff/bot_messages.py
+#, python-format
+msgid "Reason: %(reason)s"
+msgstr "Sabab: %(reason)s"
+
+#: backend/apps/timeoff/bot_messages.py
+#, python-format
+msgid ""
+"🌴 Your time off is approved: %(dates)s. No tasks or reminders from me on those days. Have a good "
+"rest!"
+msgstr ""
+"🌴 Dam olish kunlaringiz tasdiqlandi: %(dates)s. Bu kunlarda sizga vazifa ham, eslatma ham "
+"yubormayman. Yaxshi dam oling!"
+
+#: backend/apps/timeoff/bot_messages.py
+#, python-format
+msgid "Your time off request for %(dates)s was declined."
+msgstr "%(dates)s uchun dam olish so‘rovingiz rad etildi."
+
+#: backend/apps/timeoff/bot_messages.py
+#, python-format
+msgid "🚫 Cancelled by %(name)s"
+msgstr "🚫 %(name)s bekor qildi"
+
+#: backend/apps/timeoff/models.py
+msgid "Waiting for approval"
+msgstr "Tasdiq kutilmoqda"
+
+#: backend/apps/timeoff/services.py
+msgid "The last day can't be before the first one."
+msgstr "Oxirgi kun birinchi kundan oldin bo‘lishi mumkin emas."
+
+#: backend/apps/timeoff/services.py
+msgid "Time off can't start in the past."
+msgstr "Dam olish o‘tgan kundan boshlana olmaydi."
+
+#: backend/apps/timeoff/services.py
+#, python-format
+msgid "Ask for at most %(days)d days at a time."
+msgstr "Bir martada ko‘pi bilan %(days)d kun so‘rash mumkin."
+
+#: backend/apps/timeoff/services.py
+msgid "You've already asked for some of these days."
+msgstr "Bu kunlarning ba’zilarini allaqachon so‘ragansiz."
+
+#: backend/apps/timeoff/services.py
+msgid "Someone else has to decide on your own time off."
+msgstr "O‘z dam olishingiz bo‘yicha boshqa odam qaror qilishi kerak."
+
+#: backend/apps/timeoff/services.py
+msgid "Only the person who asked can cancel this."
+msgstr "Buni faqat so‘ragan odam bekor qila oladi."
+
+#: backend/apps/timeoff/services.py
+msgid "Time off that has already started can't be cancelled."
+msgstr "Boshlangan dam olishni bekor qilib bo‘lmaydi."
 
 #: employee_bot/bot/commands.py
 msgid "Home"

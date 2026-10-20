@@ -1,4 +1,4 @@
-import { AlarmClock, ChevronRight, Eye, Flame } from "lucide-react";
+import { AlarmClock, ChevronRight, Eye, Flame, TreePalm } from "lucide-react";
 
 import { useActivity, useBoard, useSummary } from "../api/hooks";
 import { ActivityRow } from "../components/ActivityRow";
@@ -6,7 +6,7 @@ import { Ring } from "../components/Ring";
 import { RowSkeleton, TaskRow } from "../components/TaskRow";
 import { useCompleteTask } from "../lib/actions";
 import { byDue, isDueToday, isLate, isOpen } from "../lib/taskView";
-import { hourIn, longDate } from "../lib/time";
+import { dayKey, dayMonth, hourIn, longDate } from "../lib/time";
 import { useViewContext } from "../lib/useNow";
 import { useNavigation } from "../state/navigation";
 import { useMember } from "../state/session";
@@ -57,6 +57,24 @@ export function Home() {
           )}
         </span>
       </button>
+
+      {numbers?.off_today && (
+        <div className="banner banner--sage" style={{ padding: "14px 16px", gap: 14 }}>
+          <span className="circle" style={{ width: 42, height: 42, background: "var(--color-accent-2)", color: "var(--color-bg)" }}>
+            <TreePalm size={21} strokeWidth={2.4} />
+          </span>
+          <span className="row-main">
+            <span style={{ fontSize: 16, fontWeight: 700 }}>
+              {numbers.off_today.kind === "holiday" ? numbers.off_today.name : t("home.offToday")}
+            </span>
+            <span className="row-meta" style={{ color: "inherit", whiteSpace: "normal" }}>
+              {numbers.off_today.until === dayKey(ctx.now, ctx.timeZone)
+                ? t("home.offTodayBody")
+                : t("home.offUntil", { date: dayMonth(`${numbers.off_today.until}T12:00:00Z`, "UTC", ctx.locale) })}
+            </span>
+          </span>
+        </div>
+      )}
 
       {late.length > 0 && (
         <button className="banner banner--accent" style={{ padding: "14px 16px", gap: 14 }} onClick={() => navigation.openTask(late[0].id)}>

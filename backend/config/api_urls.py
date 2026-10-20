@@ -7,6 +7,7 @@ from apps.members.api import MemberListView, OnboardingView, PositionListView
 from apps.reminders.api import ReminderPolicyViewSet
 from apps.reports.api import TeamStatsView
 from apps.tasks.api import ActivityViewSet, SummaryView, TaskTemplateViewSet, TaskViewSet
+from apps.timeoff.api import HolidayListView, TimeOffViewSet
 
 COMPANY = "companies/<int:company_id>"
 
@@ -16,6 +17,7 @@ router.register(
     r"companies/(?P<company_id>\d+)/task-templates", TaskTemplateViewSet, basename="task-template"
 )
 router.register(r"companies/(?P<company_id>\d+)/activity", ActivityViewSet, basename="activity")
+router.register(r"companies/(?P<company_id>\d+)/time-off", TimeOffViewSet, basename="time-off")
 router.register(
     r"companies/(?P<company_id>\d+)/reminder-policies",
     ReminderPolicyViewSet,
@@ -31,5 +33,6 @@ urlpatterns = [
     path(f"{COMPANY}/onboarding/", OnboardingView.as_view(), name="onboarding"),
     path(f"{COMPANY}/summary/", SummaryView.as_view(), name="summary"),
     path(f"{COMPANY}/team-stats/", TeamStatsView.as_view(), name="team-stats"),
+    path(f"{COMPANY}/holidays/", HolidayListView.as_view(), name="holidays"),
     *router.urls,
 ]

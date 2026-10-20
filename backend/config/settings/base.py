@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "apps.groups",
     "apps.audit",
     "apps.reports",
+    "apps.timeoff",
 ]
 
 AUTH_USER_MODEL = "accounts.User"

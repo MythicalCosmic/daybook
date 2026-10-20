@@ -9,6 +9,7 @@ from apps.groups.admin import TelegramGroupInline
 from apps.members.forms import AccessRoleForm
 from apps.members.models import AccessRole, Membership, Position
 from apps.members.services import create_default_roles
+from apps.timeoff.admin import HolidayInline
 
 
 class PositionInline(TabularInline):
@@ -53,7 +54,7 @@ class CompanyAdmin(AuditedAdmin, ModelAdmin):
 
     def get_inlines(self, request, obj):
         # Default roles are created when the company is saved, so editing starts on the change page.
-        return [PositionInline, AccessRoleInline, TelegramGroupInline] if obj else []
+        return [PositionInline, AccessRoleInline, HolidayInline, TelegramGroupInline] if obj else []
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)

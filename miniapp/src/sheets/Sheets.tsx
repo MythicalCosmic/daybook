@@ -1,7 +1,7 @@
 import { Camera, Check } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { useCreateTask, useSetLanguage, useTask, useTaskAction } from "../api/hooks";
+import { useCreateTask, useRequestTimeOff, useSetLanguage, useTask, useTaskAction } from "../api/hooks";
 import type { Repeat, Task } from "../api/types";
 import { Sheet } from "../components/Sheet";
 import { LANGUAGES, useI18n } from "../i18n";
@@ -23,6 +23,7 @@ export function Sheets() {
       {sheet.kind === "add" && <AddSheet />}
       {sheet.kind === "language" && <LanguageSheet />}
       {sheet.kind === "company" && <CompanySheet />}
+      {sheet.kind === "timeOff" && <TimeOffSheet />}
     </Sheet>
   );
 }
@@ -217,6 +218,69 @@ function AddSheet() {
       </div>
       <button className="btn btn-primary btn-lg btn-block" disabled={!title.trim() || create.isPending} onClick={submit}>
         {t("add.submit")}
+      </button>
+    </>
+  );
+}
+
+function TimeOffSheet() {
+  const { t } = useI18n();
+  const member = useMember();
+  const navigation = useNavigation();
+  const request = useRequestTimeOff(member.companyId);
+  const toast = useToast();
+  const today = dayKey(new Date(), member.timeZone);
+  const [first, setFirst] = useState(addDays(today, 1));
+  const [last, setLast] = useState(addDays(today, 1));
+  const [reason, setReason] = useState("");
+  const valid = first >= today && last >= first;
+
+  const submit = () => {
+    if (!valid || request.isPending) return;
+    request.mutate(
+      { first_day: first, last_day: last, reason: reason.trim() },
+      {
+        onSuccess: (created) => {
+          haptic("success");
+          navigation.closeSheet();
+          toast(t(created.status === "approved" ? "timeOff.toastTaken" : "timeOff.toastSent"));
+        },
+        onError: (error) => toast(errorText(error, t)),
+      },
+    );
+  };
+
+  return (
+    <>
+      <div className="heading title-sm">{t("timeOff.title")}</div>
+      <div style={{ display: "flex", gap: "var(--space-2)" }}>
+        <div className="field" style={{ flex: 1, minWidth: 0 }}>
+          <label htmlFor="off-first">{t("timeOff.first")}</label>
+          <input
+            id="off-first"
+            className="input num"
+            type="date"
+            min={today}
+            value={first}
+            onChange={(event) => {
+              const day = event.target.value || first;
+              setFirst(day);
+              if (last < day) setLast(day);
+            }}
+          />
+        </div>
+        <div className="field" style={{ flex: 1, minWidth: 0 }}>
+          <label htmlFor="off-last">{t("timeOff.last")}</label>
+          <input id="off-last" className="input num" type="date" min={first} value={last} onChange={(event) => setLast(event.target.value || last)} />
+        </div>
+      </div>
+      <div className="field">
+        <label htmlFor="off-reason">{t("timeOff.reason")}</label>
+        <textarea id="off-reason" className="input" placeholder={t("timeOff.reasonPlaceholder")} value={reason} maxLength={300} onChange={(event) => setReason(event.target.value)} />
+      </div>
+      <div className="muted" style={{ fontSize: 14 }}>{t("timeOff.note")}</div>
+      <button className="btn btn-primary btn-lg btn-block" disabled={!valid || request.isPending} onClick={submit}>
+        {t("timeOff.send")}
       </button>
     </>
   );

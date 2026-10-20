@@ -443,6 +443,12 @@ class DaySerializer(serializers.Serializer):
     )
 
 
+class OffTodaySerializer(serializers.Serializer):
+    kind = serializers.ChoiceField(["holiday", "time_off"])
+    name = serializers.CharField(help_text="The holiday's name; empty for time off.")
+    until = serializers.DateField(help_text="The last day off.")
+
+
 class SummarySerializer(serializers.Serializer):
     today_total = serializers.IntegerField()
     today_done = serializers.IntegerField()
@@ -457,6 +463,9 @@ class SummarySerializer(serializers.Serializer):
     quiet_until = serializers.TimeField(allow_null=True, help_text="…until.")
     unread_activity = serializers.IntegerField()
     awaiting_review = serializers.IntegerField()
+    off_today = OffTodaySerializer(
+        allow_null=True, help_text="Set when today is a holiday or the person's time off."
+    )
 
 
 class SummaryView(APIView):

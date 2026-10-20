@@ -1,6 +1,7 @@
 """When reminders go out. Pure functions of a policy and the clock."""
 
-from datetime import datetime, time, timedelta
+from collections.abc import Collection
+from datetime import date, datetime, time, timedelta
 
 from apps.reminders.models import ReminderPolicy
 
@@ -18,13 +19,18 @@ def first_reminder_at(
     return due_at
 
 
-def quiet_until(local_now: datetime, policy: ReminderPolicy) -> datetime | None:
-    """If `local_now` (in the company's timezone) is quiet, the moment it stops being; else None."""
+def quiet_until(
+    local_now: datetime, policy: ReminderPolicy, days_off: Collection[date] = ()
+) -> datetime | None:
+    """If `local_now` (in the company's timezone) is quiet, the moment it stops being; else None.
+
+    Quiet means quiet hours, the policy's quiet days, or one of the person's `days_off`.
+    """
     moment = local_now
-    for _ in range(16):  # quiet hours and up to a week of quiet days
+    for _ in range(16 + 2 * len(days_off)):  # quiet hours, a week of quiet days, the days off
         if (end := _end_of_quiet_hours(moment, policy)) is not None:
             moment = end
-        elif moment.weekday() in policy.quiet_days:
+        elif moment.weekday() in policy.quiet_days or moment.date() in days_off:
             moment = datetime.combine(moment.date() + timedelta(days=1), time.min, moment.tzinfo)
         else:
             break

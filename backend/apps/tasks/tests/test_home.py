@@ -118,8 +118,10 @@ def test_summary_endpoint(company, worker):
         "quiet_until",
         "unread_activity",
         "awaiting_review",
+        "off_today",
     }
     assert len(response.data["week"]) == 7
+    assert response.data["off_today"] is None
 
 
 def test_week_shows_each_of_the_last_seven_days(worker):

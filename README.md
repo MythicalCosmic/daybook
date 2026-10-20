@@ -71,6 +71,12 @@ When a business rule is broken, the API returns `400 {"detail": "<message safe t
 
 The bot keeps the link when a group becomes a supergroup, and switches the group off when it's removed. Posts to one group are spaced 3 seconds apart, under Telegram's limit of about 20 a minute.
 
+## Time off
+
+People ask for days off in the app (Profile → Time off). Everyone who can approve time off (owners and managers, by default) gets the request in the bot with Approve and Reject buttons, and the person hears the answer. Owners and managers who ask just take the days. Company holidays are set on the company page in the admin.
+
+On a holiday nobody gets daily tasks; on approved days off that person doesn't. Reminders wait until the days off are over, and approving time off that starts today takes today's daily tasks off the list. Assigned tasks stay for the manager to move.
+
 ## Team results
 
 People who may see reports (owners and managers, by default) find **Team results** in the app's profile: each person's on-time rate, late and unfinished work for this week, last week or this month, and who is late right now. Personal tasks don't count. On Monday mornings, at the company's morning report time, the bot also sends them last week's numbers.

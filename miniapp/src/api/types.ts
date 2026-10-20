@@ -21,5 +21,9 @@ export type Period = Schemas["PeriodEnum"];
 export type Score = Schemas["Score"];
 export type TeamRow = Schemas["TeamRow"];
 export type TeamStats = Schemas["TeamStats"];
+export type TimeOff = Schemas["TimeOff"];
+export type TimeOffStatus = Schemas["TimeOffStatusEnum"];
+export type Holiday = Schemas["Holiday"];
+export type OffToday = Schemas["OffToday"];
 
 export type Page<T> = { count: number; next: string | null; previous: string | null; results: T[] };

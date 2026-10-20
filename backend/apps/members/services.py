@@ -29,6 +29,7 @@ DEFAULT_ROLES = (
             Perm.TASKS_CONFIRM,
             Perm.GROUPS_MANAGE,
             Perm.REPORTS_VIEW,
+            Perm.TIME_OFF_APPROVE,
         ],
     },
     {"name": "Employee", "is_default": True},

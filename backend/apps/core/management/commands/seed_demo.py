@@ -15,6 +15,7 @@ from apps.groups.models import TelegramGroup
 from apps.members.models import AccessRole, Membership, Position
 from apps.reminders.models import ReminderLog, ReminderPolicy
 from apps.tasks.models import Activity, ChecklistItem, Proof, Task, TaskComment, TaskTemplate
+from apps.timeoff.models import Holiday, TimeOff
 
 SLUG = "demo-shop"
 POSITIONS = ["Sales floor", "Cashier", "Stock & warehouse", "Shift lead", "Delivery", "Office"]
@@ -28,6 +29,8 @@ EVERYONE = (OWNER, MANAGER, WORKER, COLLEAGUE, STOCKER, COURIER, APPLICANT, WAIT
 TENANT_MODELS = (
     AuditLog,
     TelegramGroup,
+    Holiday,
+    TimeOff,
     Activity,
     Task,
     TaskTemplate,
@@ -418,6 +421,29 @@ class Command(BaseCommand):
         history(madina, "Count the till", late={3, 9})
         history(jasur, "Receive the morning delivery", late={1, 2, 5, 8, 12}, missed={4, 10})
         history(nigora, "Deliver online orders")
+
+        # Time off: Madina is off today and tomorrow, Alisher is waiting for an answer.
+        today = timezone.localdate()
+        TimeOff.objects.create(
+            company=company,
+            membership=madina,
+            first_day=today,
+            last_day=today + timedelta(days=1),
+            status=TimeOff.Status.APPROVED,
+            decided_by=manager.user,
+            decided_at=now - timedelta(days=2),
+        )
+        TimeOff.objects.create(
+            company=company,
+            membership=me,
+            first_day=today + timedelta(days=7),
+            last_day=today + timedelta(days=8),
+            reason="My sister's wedding",
+        )
+        constitution_day = today.replace(month=12, day=8)
+        if constitution_day < today:
+            constitution_day = constitution_day.replace(year=today.year + 1)
+        Holiday.objects.create(company=company, date=constitution_day, name="Constitution Day")
 
         def feed(kind, about, actor, text="", minutes_ago=0, read=False):
             entry = Activity.objects.create(

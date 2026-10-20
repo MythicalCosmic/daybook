@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-20 17:42+0500\n"
+"POT-Creation-Date: 2026-10-20 18:01+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -97,6 +97,14 @@ msgstr "Отключена группа"
 #: backend/apps/audit/models.py
 msgid "Removed the bot from a group"
 msgstr "Бот удалён из группы"
+
+#: backend/apps/audit/models.py
+msgid "Approved time off"
+msgstr "Отгул одобрен"
+
+#: backend/apps/audit/models.py
+msgid "Rejected time off"
+msgstr "Отгул отклонён"
 
 #: backend/apps/audit/models.py
 msgid "Added in the admin"
@@ -444,11 +452,11 @@ msgstr "Имя пользователя: @%(username)s"
 msgid "Telegram ID: <code>%(id)s</code>"
 msgstr "Telegram ID: <code>%(id)s</code>"
 
-#: backend/apps/members/bot_messages.py
+#: backend/apps/members/bot_messages.py backend/apps/timeoff/bot_messages.py
 msgid "✅ Approve"
 msgstr "✅ Одобрить"
 
-#: backend/apps/members/bot_messages.py
+#: backend/apps/members/bot_messages.py backend/apps/timeoff/bot_messages.py
 msgid "❌ Reject"
 msgstr "❌ Отклонить"
 
@@ -534,12 +542,12 @@ msgstr "Снова подать заявку можно после %(time)s."
 msgid "You can ask again by opening the invite link."
 msgstr "Можно подать заявку снова, открыв ссылку-приглашение."
 
-#: backend/apps/members/bot_messages.py
+#: backend/apps/members/bot_messages.py backend/apps/timeoff/bot_messages.py
 #, python-format
 msgid "✅ Approved by %(name)s"
 msgstr "✅ Одобрено: %(name)s"
 
-#: backend/apps/members/bot_messages.py
+#: backend/apps/members/bot_messages.py backend/apps/timeoff/bot_messages.py
 #, python-format
 msgid "❌ Rejected by %(name)s"
 msgstr "❌ Отклонено: %(name)s"
@@ -561,11 +569,11 @@ msgstr "Выдаётся новым сотрудникам после одобр
 msgid "Pending"
 msgstr "Ожидает"
 
-#: backend/apps/members/models.py
+#: backend/apps/members/models.py backend/apps/timeoff/models.py
 msgid "Approved"
 msgstr "Одобрено"
 
-#: backend/apps/members/models.py
+#: backend/apps/members/models.py backend/apps/timeoff/models.py
 msgid "Rejected"
 msgstr "Отклонено"
 
@@ -629,11 +637,15 @@ msgstr "Подключение и настройка групп"
 msgid "View reports and statistics"
 msgstr "Просмотр отчётов и статистики"
 
+#: backend/apps/members/permissions.py
+msgid "Approve or reject time off"
+msgstr "Одобрение и отклонение отгулов"
+
 #: backend/apps/members/services.py
 msgid "You don't have permission to do this."
 msgstr "У вас нет прав на это действие."
 
-#: backend/apps/members/services.py
+#: backend/apps/members/services.py backend/apps/timeoff/services.py
 msgid "This request no longer exists."
 msgstr "Этой заявки больше нет."
 
@@ -665,7 +677,7 @@ msgstr "Заблокировать владельца может только в
 msgid "This member is already blocked."
 msgstr "Этот сотрудник уже заблокирован."
 
-#: backend/apps/members/services.py
+#: backend/apps/members/services.py backend/apps/timeoff/services.py
 #, python-format
 msgid "This request is already %(status)s."
 msgstr "Статус заявки уже: «%(status)s»."
@@ -1128,7 +1140,7 @@ msgstr "Возвращена"
 msgid "Done"
 msgstr "Готово"
 
-#: backend/apps/tasks/models.py
+#: backend/apps/tasks/models.py backend/apps/timeoff/models.py
 msgid "Cancelled"
 msgstr "Отменена"
 
@@ -1257,9 +1269,89 @@ msgstr "Вы не можете принять эту задачу."
 msgid "This task isn't waiting for confirmation."
 msgstr "Эта задача не ждёт проверки."
 
-#: backend/apps/tasks/services.py
+#: backend/apps/tasks/services.py backend/apps/timeoff/services.py
 msgid "Finish registration first."
 msgstr "Сначала завершите регистрацию."
+
+#: backend/apps/timeoff/admin.py
+msgid "Approve selected time off"
+msgstr "Одобрить выбранные отгулы"
+
+#: backend/apps/timeoff/admin.py
+msgid "Reject selected time off"
+msgstr "Отклонить выбранные отгулы"
+
+#: backend/apps/timeoff/admin.py
+#, python-format
+msgid "Decided: %(count)d"
+msgstr "Решено: %(count)d"
+
+#: backend/apps/timeoff/bot_messages.py
+#, python-format
+msgid "🌴 <b>Time off request</b> · %(name)s"
+msgstr "🌴 <b>Заявка на отгул</b> · %(name)s"
+
+#: backend/apps/timeoff/bot_messages.py
+#, python-format
+msgid "📅 %(dates)s · days: %(count)d"
+msgstr "📅 %(dates)s · дней: %(count)d"
+
+#: backend/apps/timeoff/bot_messages.py
+#, python-format
+msgid "Reason: %(reason)s"
+msgstr "Причина: %(reason)s"
+
+#: backend/apps/timeoff/bot_messages.py
+#, python-format
+msgid ""
+"🌴 Your time off is approved: %(dates)s. No tasks or reminders from me on those days. Have a good "
+"rest!"
+msgstr ""
+"🌴 Ваш отгул одобрен: %(dates)s. В эти дни я не буду присылать задачи и напоминания. Хорошего "
+"отдыха!"
+
+#: backend/apps/timeoff/bot_messages.py
+#, python-format
+msgid "Your time off request for %(dates)s was declined."
+msgstr "Ваша заявка на отгул (%(dates)s) отклонена."
+
+#: backend/apps/timeoff/bot_messages.py
+#, python-format
+msgid "🚫 Cancelled by %(name)s"
+msgstr "🚫 Отменено: %(name)s"
+
+#: backend/apps/timeoff/models.py
+msgid "Waiting for approval"
+msgstr "Ждёт одобрения"
+
+#: backend/apps/timeoff/services.py
+msgid "The last day can't be before the first one."
+msgstr "Последний день не может быть раньше первого."
+
+#: backend/apps/timeoff/services.py
+msgid "Time off can't start in the past."
+msgstr "Отгул не может начинаться в прошлом."
+
+#: backend/apps/timeoff/services.py
+#, python-format
+msgid "Ask for at most %(days)d days at a time."
+msgstr "За раз можно попросить не больше %(days)d дней."
+
+#: backend/apps/timeoff/services.py
+msgid "You've already asked for some of these days."
+msgstr "Вы уже просили часть этих дней."
+
+#: backend/apps/timeoff/services.py
+msgid "Someone else has to decide on your own time off."
+msgstr "Решение по вашему отгулу должен принять кто-то другой."
+
+#: backend/apps/timeoff/services.py
+msgid "Only the person who asked can cancel this."
+msgstr "Отменить может только тот, кто просил."
+
+#: backend/apps/timeoff/services.py
+msgid "Time off that has already started can't be cancelled."
+msgstr "Уже начавшийся отгул нельзя отменить."
 
 #: employee_bot/bot/commands.py
 msgid "Home"

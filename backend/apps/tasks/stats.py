@@ -7,6 +7,7 @@ from apps.members.models import Membership
 from apps.reminders.policies import default_policy
 from apps.tasks.models import Activity, Task
 from apps.tasks.queries import awaiting_review_by
+from apps.timeoff.queries import off_today
 
 STREAK_LOOKBACK_DAYS = 365
 # Finished from the assignee's point of view: waiting for a check counts.
@@ -47,6 +48,7 @@ def summary(member: Membership, now: datetime) -> dict:
         "quiet_until": policy.quiet_until,
         "unread_activity": Activity.objects.filter(recipient=member, read_at__isnull=True).count(),
         "awaiting_review": awaiting_review_by(member).count(),
+        "off_today": off_today(member, today),
     }
 
 

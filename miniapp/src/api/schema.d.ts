@@ -75,6 +75,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/holidays/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The company's coming holidays: no daily tasks and no reminders on those days. */
+        get: operations["v1_companies_holidays_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/members/": {
         parameters: {
             query?: never;
@@ -413,6 +430,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/time-off/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The signed-in member's own time off: upcoming requests and the last month's. */
+        get: operations["v1_companies_time_off_list"];
+        put?: never;
+        /** @description The signed-in member's own time off: upcoming requests and the last month's. */
+        post: operations["v1_companies_time_off_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/time-off/{id}/cancel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description The signed-in member's own time off: upcoming requests and the last month's. */
+        post: operations["v1_companies_time_off_cancel_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/": {
         parameters: {
             query?: never;
@@ -511,6 +563,12 @@ export interface components {
              */
             state: components["schemas"]["StateEnum"];
         };
+        Holiday: {
+            readonly id: number;
+            /** Format: date */
+            readonly date: string;
+            readonly name: string;
+        };
         /**
          * @description * `uz` - O'zbekcha
          *     * `ru` - Русский
@@ -570,6 +628,22 @@ export interface components {
          * @enum {string}
          */
         MembershipStatusEnum: "pending" | "approved" | "rejected" | "blocked" | "left";
+        OffToday: {
+            kind: components["schemas"]["OffTodayKindEnum"];
+            /** @description The holiday's name; empty for time off. */
+            name: string;
+            /**
+             * Format: date
+             * @description The last day off.
+             */
+            until: string;
+        };
+        /**
+         * @description * `holiday` - holiday
+         *     * `time_off` - time_off
+         * @enum {string}
+         */
+        OffTodayKindEnum: "holiday" | "time_off";
         OnboardingRequest: {
             first_name: string;
             last_name: string;
@@ -695,9 +769,10 @@ export interface components {
          *     * `reminders.configure` - Configure reminders
          *     * `groups.manage` - Connect and configure groups
          *     * `reports.view` - View reports and statistics
+         *     * `time_off.approve` - Approve or reject time off
          * @enum {string}
          */
-        PermissionsEnum: "members.view" | "members.approve" | "members.manage" | "roles.manage" | "positions.manage" | "tasks.view_all" | "tasks.assign" | "tasks.templates" | "tasks.confirm" | "reminders.configure" | "groups.manage" | "reports.view";
+        PermissionsEnum: "members.view" | "members.approve" | "members.manage" | "roles.manage" | "positions.manage" | "tasks.view_all" | "tasks.assign" | "tasks.templates" | "tasks.confirm" | "reminders.configure" | "groups.manage" | "reports.view" | "time_off.approve";
         Position: {
             readonly id: number;
             readonly name: string;
@@ -852,6 +927,8 @@ export interface components {
             quiet_until: string | null;
             unread_activity: number;
             awaiting_review: number;
+            /** @description Set when today is a holiday or the person's time off. */
+            off_today: components["schemas"]["OffToday"] | null;
         };
         Task: {
             readonly id: number;
@@ -1002,6 +1079,34 @@ export interface components {
             /** @description Telegram.WebApp.initData, exactly as received. */
             init_data: string;
         };
+        TimeOff: {
+            readonly id: number;
+            /** Format: date */
+            first_day: string;
+            /** Format: date */
+            last_day: string;
+            reason?: string;
+            readonly status: components["schemas"]["TimeOffStatusEnum"];
+            readonly days: number;
+            readonly decided_by: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        TimeOffRequest: {
+            /** Format: date */
+            first_day: string;
+            /** Format: date */
+            last_day: string;
+            reason?: string;
+        };
+        /**
+         * @description * `pending` - Waiting for approval
+         *     * `approved` - Approved
+         *     * `rejected` - Rejected
+         *     * `cancelled` - Cancelled
+         * @enum {string}
+         */
+        TimeOffStatusEnum: "pending" | "approved" | "rejected" | "cancelled";
         TokenPair: {
             access: string;
             refresh: string;
@@ -1125,6 +1230,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Marked"];
+                };
+            };
+        };
+    };
+    v1_companies_holidays_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Holiday"][];
                 };
             };
         };
@@ -1893,6 +2019,83 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TeamStats"];
+                };
+            };
+        };
+    };
+    v1_companies_time_off_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeOff"][];
+                };
+            };
+        };
+    };
+    v1_companies_time_off_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimeOffRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["TimeOffRequest"];
+                "multipart/form-data": components["schemas"]["TimeOffRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeOff"];
+                };
+            };
+        };
+    };
+    v1_companies_time_off_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: string;
+                /** @description A unique integer value identifying this time off. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimeOffRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["TimeOffRequest"];
+                "multipart/form-data": components["schemas"]["TimeOffRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimeOff"];
                 };
             };
         };

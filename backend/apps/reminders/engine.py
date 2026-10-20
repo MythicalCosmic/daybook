@@ -19,12 +19,14 @@ from apps.reminders.policies import escalation_recipients, policy_for
 from apps.reminders.schedule import quiet_until
 from apps.tasks.models import Task
 from apps.tasks.queries import TASK_RELATIONS
+from apps.timeoff.queries import days_off
 
 logger = logging.getLogger(__name__)
 
 BATCH = 500
 # While someone has blocked the bot, try again this often instead of every few minutes.
 BLOCKED_RETRY = timedelta(hours=1)
+DAYS_OFF_AHEAD = timedelta(days=70)
 
 
 @dataclass
@@ -78,9 +80,10 @@ def _claim(task_id: int, now: datetime) -> Claim | None:
         _save(task, next_reminder_at=None)
         return None
     policy = policy_for(task)
-    if (
-        resume_at := quiet_until(timezone.localtime(now, ZoneInfo(task.company.timezone)), policy)
-    ) is not None:
+    local_now = timezone.localtime(now, ZoneInfo(task.company.timezone))
+    # Holidays and approved time off are quiet too, for as far ahead as time off can reach.
+    off = days_off(member, local_now.date(), local_now.date() + DAYS_OFF_AHEAD)
+    if (resume_at := quiet_until(local_now, policy, off)) is not None:
         _save(task, next_reminder_at=resume_at)
         return None
 
