@@ -140,6 +140,22 @@ def test_corrections(staff, api_as):
     assert response.status_code == 404
 
 
+def test_my_record_only(staff, api_as):
+    company = staff.ali.company
+    yesterday = DAY - timedelta(days=1)
+    mine = AttendanceRecord.objects.create(
+        company=company, membership=staff.ali, date=yesterday, status="absent"
+    )
+    theirs = AttendanceRecord.objects.create(
+        company=company, membership=staff.vali, date=yesterday, status="absent"
+    )
+    client = api_as(staff.ali)
+    found = client.get(url(company, f"records/{mine.pk}/"))
+    assert found.status_code == 200
+    assert found.json()["date"] == str(yesterday) and found.json()["status"] == "absent"
+    assert client.get(url(company, f"records/{theirs.pk}/")).status_code == 404
+
+
 def test_swaps_flow_through_the_app(staff, api_as):
     company = staff.ali.company
     mine = shift_at(staff.ali, FRIDAY)
@@ -186,10 +202,12 @@ def test_open_shifts_and_claims(staff, api_as, chilonzor):
     listed = api_as(staff.ali).get(url(company, "open-shifts/")).json()
     assert [row["id"] for row in listed] == [open_shift.pk] and listed[0]["claimed"] is False
     assert api_as(staff.bob).get(url(company, "open-shifts/")).json() == []
+    assert api_as(staff.ali).get(url(company, "today/")).json()["open_shifts"] == 1
     claimed = api_as(staff.ali).post(url(company, f"open-shifts/{open_shift.pk}/claim/"))
     assert claimed.status_code == 200 and claimed.json()["kind"] == "claim"
     assert api_as(staff.ali).get(url(company, "open-shifts/")).json()[0]["claimed"] is True
-    assert api_as(staff.ali).get(url(company, "today/")).json()["open_shifts"] == 1
+    # Asked for: no longer counted as one to take.
+    assert api_as(staff.ali).get(url(company, "today/")).json()["open_shifts"] == 0
 
 
 def test_board_for_managers_only(staff, api_as):

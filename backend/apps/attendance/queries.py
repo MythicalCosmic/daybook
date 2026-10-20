@@ -1156,7 +1156,8 @@ def my_day(member: Membership, now: datetime | None = None) -> dict:
         "branch": branch_geo(branch),
         "record": record_payload(record, company) if record else None,
         "next_shift": shift_payload(upcoming, company) if upcoming else None,
-        "open_shifts": open_shifts_for(member, now=now).count(),
+        # Open shifts still to take (ones already asked for wait for the manager).
+        "open_shifts": open_shifts_for(member, now=now).filter(claimed=False).count(),
         "requests": requests_for(member).count(),
     }
 

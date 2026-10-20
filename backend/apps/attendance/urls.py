@@ -9,6 +9,7 @@ urlpatterns = [
     path("attendance/today/", api.TodayView.as_view(), name="attendance-today"),
     path("attendance/check-in/", api.CheckInView.as_view(), name="attendance-check-in"),
     path("attendance/check-out/", api.CheckOutView.as_view(), name="attendance-check-out"),
+    path("attendance/records/<int:pk>/", api.RecordView.as_view(), name="attendance-my-record"),
     path("attendance/shifts/", api.ShiftsView.as_view(), name="attendance-my-shifts"),
     path(
         "attendance/corrections/", api.CorrectionsView.as_view(), name="attendance-my-corrections"

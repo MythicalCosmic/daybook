@@ -149,6 +149,21 @@ class ShiftsView(MemberView):
         return Response([queries.shift_payload(shift, self.company) for shift in shifts])
 
 
+class RecordView(MemberView):
+    """One of my own records (the correction sheet opened from a notification)."""
+
+    @extend_schema(responses=s.RecordOutSerializer)
+    def get(self, request, company_id, pk):
+        record = (
+            AttendanceRecord.objects.filter(membership=self.membership, pk=pk)
+            .select_related("branch")
+            .first()
+        )
+        if record is None:
+            raise NotFound
+        return Response(queries.record_payload(record, self.company))
+
+
 class CorrectionsView(MemberView):
     """My correction requests, and a new one."""
 
