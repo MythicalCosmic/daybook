@@ -14,7 +14,14 @@ const indicator = ref<{ left: number; width: number } | null>(null);
 function measure(): void {
   const el = strip.value?.querySelector<HTMLElement>(`[data-tab="${props.active}"]`);
   indicator.value = el ? { left: el.offsetLeft, width: el.offsetWidth } : null;
-  el?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+  // Bring the active tab into view sideways only: scrollIntoView would also scroll the page.
+  const nav = strip.value;
+  if (el && nav && nav.scrollWidth > nav.clientWidth) {
+    const left = el.offsetLeft;
+    const right = left + el.offsetWidth;
+    if (left < nav.scrollLeft) nav.scrollLeft = left;
+    else if (right > nav.scrollLeft + nav.clientWidth) nav.scrollLeft = right - nav.clientWidth;
+  }
 }
 
 watch(() => [props.active, props.tabs.length], () => nextTick(measure));

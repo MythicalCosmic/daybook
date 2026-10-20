@@ -123,7 +123,7 @@
   "timeoff.holidays.title": "Праздники",
   "timeoff.holidays.description": "Выходные для всех: ни регулярных задач, ни напоминаний, и в отпуск они не засчитываются.",
   "timeoff.holidays.add": "Добавить праздник",
-  "timeoff.holidays.addPublic": "Добавить государственные праздники {year}",
+  "timeoff.holidays.addPublic": "Добавить госпраздники {year} года",
   "timeoff.holidays.addTitle": "Новый праздник",
   "timeoff.holidays.editTitle": "Изменить праздник",
   "timeoff.holidays.dialogHint": "В этот день отдыхает вся компания.",
