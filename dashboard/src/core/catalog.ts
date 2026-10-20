@@ -51,11 +51,13 @@ export const CATALOG: readonly CatalogEntry[] = [
     group: "work",
     order: 10,
     pkg: "B",
+    perm: ["tasks.view_all", "tasks.confirm", "tasks.assign"],
     hotkey: "t",
+    badge: "tasks.review",
     pages: [
-      { id: "all", to: "tasks" },
-      { id: "reviews", to: "tasks/reviews", badge: "tasks.review" },
-      { id: "photos", to: "tasks/photos" },
+      { id: "all", to: "tasks", perm: "tasks.view_all" },
+      { id: "reviews", to: "tasks/reviews", perm: ["tasks.confirm", "tasks.view_all", "tasks.assign"], badge: "tasks.review" },
+      { id: "photos", to: "tasks/photos", perm: "tasks.view_all" },
     ],
   },
   {
