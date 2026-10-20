@@ -1020,3 +1020,9 @@
     animation: none;
   }
 }
+
+/* A sideways-scrolling row inside a column that overflows: never squash it to nothing. */
+.kassa-keep {
+  flex: none;
+  min-width: 0;
+}

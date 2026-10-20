@@ -1,5 +1,6 @@
 import { ArrowRightLeft, ChevronRight, HandCoins, Hourglass, LockKeyhole, ReceiptText, Store } from "lucide-react";
 
+import { can } from "../../api/permissions";
 import { useI18n } from "../../i18n";
 import { sumMoney } from "../../lib/money";
 import { clock } from "../../lib/time";
@@ -31,6 +32,8 @@ export function KassaHero({ member }: SlotProps) {
   const shift = data.shift;
 
   if (!shift) {
+    // Owners and managers (who have the dashboard) see the closed till only once they ran one.
+    if (!data.recent.length && can(member, "dashboard.access")) return null;
     const branch = data.registers.find((till) => !till.busy)?.branch.name ?? data.registers[0]?.branch.name;
     return (
       <CardButton className="kassa-hero kassa-hero--closed" onClick={openKassa}>
@@ -38,8 +41,9 @@ export function KassaHero({ member }: SlotProps) {
           <Store size={22} strokeWidth={2.4} aria-hidden />
         </span>
         <span className="row-main">
+          {branch && <span className="kassa-kicker">{branch}</span>}
           <span className="kassa-hero-title">{t("hero.closedTitle")}</span>
-          <span className="row-meta">{branch ? `${branch} · ${t("hero.closedBody")}` : t("hero.closedBody")}</span>
+          <span className="row-meta">{t("hero.closedBody")}</span>
         </span>
         <span className="btn btn-primary kassa-hero-cta">{t("hero.open")}</span>
       </CardButton>
@@ -91,7 +95,7 @@ export function KassaHero({ member }: SlotProps) {
           onClick={() => navigation.push({ feature: "kassa", page: "close", params: { id: shift.id } })}
           haptic="light"
         >
-          {t("action.close")}
+          {t("hero.close")}
         </Button>
       </div>
     </Card>

@@ -265,7 +265,6 @@ const SaleBody: Body = ({ kassa, shift }) => {
   const [kind, setKind] = useState<"sale" | "refund">("sale");
   const [method, setMethod] = useState<string | null>(methods[0] ? String(methods[0].id) : null);
   const [amount, setAmount] = useState("");
-  const [number, setNumber] = useState("");
   const [last, setLast] = useState<{ id: number; text: string } | null>(null);
   const value = amountFromTyping(amount);
   const valid = Boolean(value && !isZero(value) && method);
@@ -276,14 +275,15 @@ const SaleBody: Body = ({ kassa, shift }) => {
   const submit = () => {
     if (!value || !method) return;
     sale.mutate(
-      { kind, payments: [{ method_id: Number(method), amount: value }], number: number.trim() },
+      { kind, payments: [{ method_id: Number(method), amount: value }] },
       {
         onSuccess: (saved) => {
           haptic.notify("success");
           setLast({ id: saved.id, text: t("sale.saved", { amount: `${kind === "refund" ? "−" : ""}${money(value)}`, method: methodName }) });
           setAmount("");
-          setNumber("");
           setKind("sale");
+          // The confirmation and its Undo sit at the top of the sheet.
+          document.querySelector(".sheet")?.scrollTo?.({ top: 0, behavior: "smooth" });
         },
         onError: done.fail,
       },
@@ -330,13 +330,10 @@ const SaleBody: Body = ({ kassa, shift }) => {
           { value: "refund", label: t("sale.refund") },
         ]}
       />
-      <NumberPad value={amount} onChange={setAmount} currency={kassa.settings.currency} label={t(kind === "sale" ? "sale.amount" : "sale.refundAmount")} />
-      <Field label={t("sale.method")}>
+      <div className="kassa-keep">
         <ChipGroup scroll value={method} onChange={setMethod} options={methods.map((row) => ({ value: String(row.id), label: row.name }))} label={t("sale.method")} />
-      </Field>
-      <Field label={t("sale.number")} optional>
-        <Input value={number} onChange={(event) => setNumber(event.target.value.slice(0, 32))} inputMode="numeric" num />
-      </Field>
+      </div>
+      <NumberPad value={amount} onChange={setAmount} currency={kassa.settings.currency} label={t(kind === "sale" ? "sale.amount" : "sale.refundAmount")} />
       <Button variant="primary" size="lg" block icon={ReceiptText} disabled={!valid} loading={sale.isPending} onClick={submit}>
         {valid && value ? t(kind === "sale" ? "sale.submit" : "sale.submitRefund", { amount: money(value) }) : t("sale.title")}
       </Button>

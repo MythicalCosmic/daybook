@@ -106,11 +106,9 @@ export function ShiftRow({ shift, currency }: { shift: Shift; currency: string }
         <span className="kassa-day-week">{weekdayShort(day, "UTC", locale)}</span>
       </span>
       <span className="row-main">
-        <span className="row-title num">
-          {shift.code} · {shift.register.name}
-        </span>
+        <span className="row-title num">{money(shift.net, { compact: true })}</span>
         <span className="row-meta num">
-          {money(shift.net, { compact: true })}
+          {shift.code} · {shift.register.name}
           {shift.closed_at ? ` · ${clock(shift.opened_at, timeZone, locale)}–${clock(shift.closed_at, timeZone, locale)}` : ""}
         </span>
       </span>

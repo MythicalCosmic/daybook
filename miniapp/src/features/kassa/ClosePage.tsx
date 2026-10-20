@@ -239,7 +239,7 @@ function CloseWizard({ kassa, shift, onClosed }: { kassa: Kassa; shift: ShiftDet
   const go = (step: Step) => {
     update({ step });
     haptic.select();
-    document.querySelector(".kassa-close-screen")?.scrollTo({ top: 0 });
+    document.querySelector(".kassa-close-screen")?.scrollTo?.({ top: 0 });
   };
   const index = STEPS.indexOf(draft.step);
 
