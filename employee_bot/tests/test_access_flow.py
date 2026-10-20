@@ -270,7 +270,7 @@ async def test_several_branches_ask_for_branches_then_the_home_branch(dp, bot, c
         _edit, buttons = last_markup(bot)
     assert unchosen(buttons) == []
     approve = next(b for b in buttons if JoinSetup.unpack(b.callback_data).step == "ok")
-    assert len(JoinSetup.unpack(approve.callback_data).branches.split(".")) == 2
+    assert JoinSetup.unpack(approve.callback_data).branches == "3"  # both bits of the mask
     await dp.feed_update(bot, updates.callback(presser, approve.callback_data))
     edit, buttons = last_markup(bot)
     assert "home branch" in edit.text
@@ -283,3 +283,33 @@ async def test_several_branches_ask_for_branches_then_the_home_branch(dp, bot, c
     assert home == "Yunusobod"
     final = [r for r in bot.requests if isinstance(r, EditMessageText)][-1]
     assert "Approved" in final.text and final.reply_markup is None
+
+
+def test_branch_choices_fit_telegrams_callback_limit():
+    """Twelve branches with long ids, all chosen, still fit 64 bytes of callback data."""
+    from types import SimpleNamespace
+
+    from apps.members import bot_messages
+    from apps.members.callbacks import JoinSetup, JoinStep
+
+    branches = [SimpleNamespace(pk=9_000_000 + index) for index in range(12)]
+    chosen = [branch.pk for branch in branches]
+
+    packed = bot_messages._pack(chosen, branches)
+    data = JoinSetup(
+        step=JoinStep.HOME,
+        membership_id=98_765_432,
+        nid=987_654_321,
+        branches=packed,
+        role=12_345_678,
+        pick=9_000_011,
+    ).pack()
+
+    assert len(data.encode()) <= 64
+    assert bot_messages.unpack_branches(packed, branches) == chosen
+    assert (
+        bot_messages.unpack_branches(bot_messages._pack(chosen[3:5], branches), branches)
+        == chosen[3:5]
+    )
+    assert bot_messages.unpack_branches("", branches) == []
+    assert bot_messages.unpack_branches("not base36!", branches) == []

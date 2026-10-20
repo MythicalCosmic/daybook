@@ -142,7 +142,7 @@ def _step(user: User, data: JoinSetup) -> Answer:
         return problem
     branches = _branches(membership, user)
     ids = {branch.pk for branch in branches}
-    chosen = [pk for pk in bot_messages.unpack_branches(data.branches) if pk in ids]
+    chosen = bot_messages.unpack_branches(data.branches, branches)
     role_id = data.role
 
     if data.step == JoinStep.BRANCH and data.pick in ids:
@@ -165,7 +165,12 @@ def _step(user: User, data: JoinSetup) -> Answer:
         ]
         return Answer(
             message=bot_messages.join_roles(
-                membership, roles=roles, current_id=role_id, chosen=chosen, nid=data.nid
+                membership,
+                roles=roles,
+                current_id=role_id,
+                branches=branches,
+                chosen=chosen,
+                nid=data.nid,
             )
         )
     elif data.step == JoinStep.ROLE:

@@ -290,7 +290,7 @@ def join_setup(
         "",
         _("<b>Where will %(name)s work?</b> Tap the branches, then approve.") % {"name": name},
     ]
-    packed = _pack(chosen)
+    packed = _pack(chosen, branches)
     role_id = role.pk if role is not None and not role.is_default else 0
     rows = []
     row: list[InlineKeyboardButton] = []
@@ -351,7 +351,7 @@ def join_home(
         "",
         _("<b>Which is %(name)s's home branch?</b> New tasks will belong to it.") % {"name": name},
     ]
-    packed = _pack(chosen)
+    packed = _pack(chosen, branches)
     rows = [
         [
             _setup_button(
@@ -384,11 +384,17 @@ def join_home(
 
 
 def join_roles(
-    membership: Membership, *, roles: list, current_id: int, chosen: list[int], nid: int
+    membership: Membership,
+    *,
+    roles: list,
+    current_id: int,
+    branches: list,
+    chosen: list[int],
+    nid: int,
 ) -> BotMessage:
     """The roles the approver may give; the default one first."""
     lines = [_join_header(membership), "", _("<b>Which role?</b> It decides what they may do.")]
-    packed = _pack(chosen)
+    packed = _pack(chosen, branches)
     rows = []
     for role in roles:
         value = 0 if role.is_default else role.pk
@@ -410,12 +416,25 @@ def join_roles(
     return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def unpack_branches(text: str) -> list[int]:
-    return [int(part) for part in text.split(".") if part.isdigit()]
+def unpack_branches(text: str, branches: list) -> list[int]:
+    """The ids of the branches a button's choice names (see `_pack`), in branch order."""
+    try:
+        mask = int(text or "0", 36)
+    except ValueError:
+        return []
+    return [branch.pk for index, branch in enumerate(branches) if mask >> index & 1]
 
 
-def _pack(ids: list[int]) -> str:
-    return ".".join(str(pk) for pk in ids)
+def _pack(chosen: list[int], branches: list) -> str:
+    """The chosen branches as a base-36 bitmask over the approver's branches in order: Telegram
+    allows 64 bytes of callback data, which a list of ids outgrows once ids are long."""
+    mask = sum(1 << index for index, branch in enumerate(branches) if branch.pk in chosen)
+    digits = "0123456789abcdefghijklmnopqrstuvwxyz"
+    packed = ""
+    while mask:
+        mask, rest = divmod(mask, 36)
+        packed = digits[rest] + packed
+    return packed
 
 
 def _join_header(membership: Membership) -> str:

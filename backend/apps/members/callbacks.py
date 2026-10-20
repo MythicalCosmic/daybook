@@ -28,8 +28,9 @@ class JoinStep(StrEnum):
 
 class JoinSetup(CallbackData, prefix="joins"):
     """The approver's choices travel in the button itself (no conversation state): `branches`
-    is a dot-separated list of branch ids, `role` 0 for the default role, `nid` the inbox
-    notification the message belongs to (0 for a classic request message)."""
+    is a base-36 bitmask over the branches the approver may hand out, in their order (a list of
+    ids would outgrow Telegram's 64 bytes of callback data), `role` 0 for the default role, `nid`
+    the inbox notification the message belongs to (0 for a classic request message)."""
 
     step: JoinStep
     membership_id: int
