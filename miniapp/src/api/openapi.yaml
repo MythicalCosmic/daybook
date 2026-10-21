@@ -507,7 +507,7 @@ paths:
           description: ''
   /api/v1/companies/{company_id}/attendance/swaps/{id}/{verb}/:
     post:
-      operationId: v1_companies_attendance_swaps_create_2
+      operationId: v1_companies_attendance_swaps_answer
       description: accept · decline · cancel one request.
       parameters:
       - in: path
@@ -1599,13 +1599,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/SalesReasonRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/SalesReasonRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/SalesReasonRequest'
         required: true
       security:
       - jwtAuth: []
@@ -3256,6 +3256,19 @@ components:
           maxLength: 32
       required:
       - payments
+    AttendanceBranchRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+      required:
+      - code
+      - id
+      - name
     AttendanceCorrectionStatusEnum:
       enum:
       - pending
@@ -3308,6 +3321,16 @@ components:
         * `auto_closed` - Closed automatically
         * `absent` - Absent
         * `excused` - Excused
+    AttendanceRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
     AttendanceShiftSourceEnum:
       enum:
       - schedule
@@ -3356,14 +3379,6 @@ components:
         * `rejected` - Rejected
         * `cancelled` - Cancelled
         * `expired` - Expired
-    BaseCurrencyEnum:
-      enum:
-      - UZS
-      - USD
-      type: string
-      description: |-
-        * `UZS` - Uzbek som
-        * `USD` - US dollar
     Board:
       type: object
       properties:
@@ -3440,7 +3455,7 @@ components:
           $ref: '#/components/schemas/PersonCard'
         branch:
           allOf:
-          - $ref: '#/components/schemas/BranchRef'
+          - $ref: '#/components/schemas/AttendanceBranchRef'
           nullable: true
         state:
           $ref: '#/components/schemas/BoardRowStateEnum'
@@ -3513,19 +3528,6 @@ components:
       - id
       - latitude
       - longitude
-      - name
-    BranchRef:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        code:
-          type: string
-      required:
-      - code
-      - id
       - name
     Calendar:
       type: object
@@ -3693,10 +3695,8 @@ components:
     CloseRequest:
       type: object
       properties:
-        payments:
-          type: string
-        closing_count:
-          type: string
+        payments: {}
+        closing_count: {}
         counted_cash:
           type: string
           format: decimal
@@ -3834,7 +3834,7 @@ components:
           description: Owners see the personal tasks employees make for themselves.
         base_currency:
           allOf:
-          - $ref: '#/components/schemas/BaseCurrencyEnum'
+          - $ref: '#/components/schemas/CurrencyEnum'
           readOnly: true
           description: |-
             The currency reports and the ledger add up in. Locked once money is booked.
@@ -4811,11 +4811,11 @@ components:
           readOnly: true
         branch:
           allOf:
-          - $ref: '#/components/schemas/BranchRef'
+          - $ref: '#/components/schemas/SalesBranchRef'
           readOnly: true
         register:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/SalesRef'
           readOnly: true
         shift:
           type: object
@@ -4824,17 +4824,17 @@ components:
           readOnly: true
         receiver:
           allOf:
-          - $ref: '#/components/schemas/Person'
+          - $ref: '#/components/schemas/SalesPerson'
           nullable: true
           readOnly: true
         to_account:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/SalesRef'
           nullable: true
           readOnly: true
         category:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/SalesRef'
           nullable: true
           readOnly: true
         reason:
@@ -4847,7 +4847,7 @@ components:
           readOnly: true
         created_by:
           allOf:
-          - $ref: '#/components/schemas/Person'
+          - $ref: '#/components/schemas/SalesPerson'
           readOnly: true
         created_at:
           type: string
@@ -4860,7 +4860,7 @@ components:
           nullable: true
         confirmed_by:
           allOf:
-          - $ref: '#/components/schemas/Person'
+          - $ref: '#/components/schemas/SalesPerson'
           nullable: true
           readOnly: true
         declined_at:
@@ -5154,8 +5154,7 @@ components:
       properties:
         register_id:
           type: integer
-        opening_count:
-          type: string
+        opening_count: {}
         opening_float:
           type: string
           format: decimal
@@ -5193,11 +5192,11 @@ components:
           description: Planned working minutes, the break left out.
         branch:
           allOf:
-          - $ref: '#/components/schemas/BranchRef'
+          - $ref: '#/components/schemas/AttendanceBranchRef'
           nullable: true
         position:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/AttendanceRef'
           nullable: true
         status:
           $ref: '#/components/schemas/AttendanceShiftStatusEnum'
@@ -5654,16 +5653,6 @@ components:
         * `agenda.manage` - Add company events to the calendar
         * `crm.view` - See CRM deals
         * `crm.manage` - Manage CRM deals and pipelines
-    Person:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-      required:
-      - id
-      - name
     PersonCard:
       type: object
       properties:
@@ -5676,11 +5665,11 @@ components:
           nullable: true
         position:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/AttendanceRef'
           nullable: true
         home_branch:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/AttendanceRef'
           nullable: true
         status:
           type: string
@@ -6412,15 +6401,6 @@ components:
         * `photo` - Photo
         * `text` - Text report
         * `any` - Photo or text report
-    ReasonRequest:
-      type: object
-      properties:
-        reason:
-          type: string
-          minLength: 1
-          maxLength: 300
-      required:
-      - reason
     RecordOut:
       type: object
       properties:
@@ -6470,7 +6450,7 @@ components:
           nullable: true
         branch:
           allOf:
-          - $ref: '#/components/schemas/BranchRef'
+          - $ref: '#/components/schemas/AttendanceBranchRef'
           nullable: true
         in_source:
           type: string
@@ -6524,16 +6504,6 @@ components:
       - shift_id
       - status
       - worked_minutes
-    Ref:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-      required:
-      - id
-      - name
     ReminderInfo:
       type: object
       properties:
@@ -6728,6 +6698,19 @@ components:
       required:
       - amount
       - method_id
+    SalesBranchRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+      required:
+      - code
+      - id
+      - name
     SalesCashMovementKindEnum:
       enum:
       - payout
@@ -6744,6 +6727,35 @@ components:
         * `to_safe` - To the safe
         * `from_safe` - From the safe
         * `to_bank` - To the bank
+    SalesPerson:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    SalesReasonRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+      required:
+      - reason
+    SalesRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
     SalesSaleKindEnum:
       enum:
       - sale
@@ -6818,11 +6830,11 @@ components:
           description: Planned working minutes, the break left out.
         branch:
           allOf:
-          - $ref: '#/components/schemas/BranchRef'
+          - $ref: '#/components/schemas/AttendanceBranchRef'
           nullable: true
         position:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/AttendanceRef'
           nullable: true
         status:
           $ref: '#/components/schemas/AttendanceShiftStatusEnum'
@@ -6929,14 +6941,14 @@ components:
           - $ref: '#/components/schemas/ShiftOut'
           nullable: true
         requested_by:
-          $ref: '#/components/schemas/Ref'
+          $ref: '#/components/schemas/AttendanceRef'
         target:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/AttendanceRef'
           nullable: true
         accepted_by:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/AttendanceRef'
           nullable: true
         note:
           type: string
@@ -7064,6 +7076,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ChecklistItem'
+        card:
+          allOf:
+          - $ref: '#/components/schemas/TaskCard'
+          nullable: true
+          readOnly: true
         reminder:
           allOf:
           - $ref: '#/components/schemas/ReminderInfo'
@@ -7109,6 +7126,7 @@ components:
       required:
       - actions
       - assignee
+      - card
       - checklist
       - completed_at
       - confirmed_at
@@ -7150,6 +7168,24 @@ components:
       - id
       - status
       - title
+    TaskCard:
+      type: object
+      properties:
+        project_id:
+          type: integer
+        project_key:
+          type: string
+          description: '"RENO"'
+        number:
+          type: integer
+        key:
+          type: string
+          description: The card's key, "RENO-14".
+      required:
+      - key
+      - number
+      - project_id
+      - project_key
     TaskCreateRequest:
       type: object
       properties:

@@ -10,6 +10,7 @@ from apps.groups.tasks import post_daily_reports
 from apps.groups.tests.factories import TelegramGroupFactory
 from apps.members.models import Membership
 from apps.members.tests.factories import PositionFactory
+from apps.projects.tests.factories import card, project, team
 from apps.tasks.models import Task
 from apps.tasks.tests.factories import TaskFactory
 
@@ -83,6 +84,17 @@ def test_the_day_is_counted_as_on_time_late_and_not_done(company, manager, ali, 
     assert stats.late == 1
     assert stats.not_done == [("Vali Aliyev", "Cash report")]
     assert stats.total == 4
+
+
+def test_unfinished_cards_are_listed_with_their_key(company, member, today):
+    people = team(company, member)
+    reno = project(company, people["owner"], key="RENO")
+    tiles = card(reno, people["owner"], title="Order tiles", assignee=people["aziz"])
+    Task.objects.filter(pk=tiles.pk).update(due_at=at(today, 10))
+
+    stats = reports.day_stats(company, today)
+
+    assert stats.not_done == [(str(people["aziz"]), "RENO-1 · Order tiles")]
 
 
 def test_the_morning_plan_goes_out_once_after_its_time(

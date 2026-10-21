@@ -360,6 +360,7 @@ class ReceiptSerializer(serializers.ModelSerializer):
     is_image = serializers.BooleanField(read_only=True)
 
     class Meta:
+        ref_name = "FinanceReceipt"
         model = Receipt
         fields = ("id", "url", "thumb_url", "content_type", "size", "is_image", "created_at")
 
@@ -623,6 +624,9 @@ class TransactionUpdateSerializer(serializers.Serializer):
 class ReasonSerializer(serializers.Serializer):
     reason = serializers.CharField(max_length=300)
 
+    class Meta:
+        ref_name = "FinanceReason"
+
 
 class BulkSerializer(serializers.Serializer):
     ids = serializers.ListField(child=serializers.IntegerField(), min_length=1, max_length=200)
@@ -630,11 +634,17 @@ class BulkSerializer(serializers.Serializer):
     category = serializers.IntegerField(required=False)
     reason = serializers.CharField(max_length=300, required=False, allow_blank=True)
 
+    class Meta:
+        ref_name = "FinanceBulk"
+
 
 class BulkResultSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     ok = serializers.BooleanField()
     error = serializers.CharField(required=False)
+
+    class Meta:
+        ref_name = "FinanceBulkResult"
 
 
 class ReceiptUploadSerializer(serializers.Serializer):
@@ -930,6 +940,7 @@ class SettingsSerializer(serializers.ModelSerializer):
     can_reopen = serializers.SerializerMethodField()
 
     class Meta:
+        ref_name = "FinanceSettings"
         model = FinanceSettings
         fields = (
             "locked_until",

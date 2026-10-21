@@ -256,6 +256,9 @@ class BranchSerializer(serializers.ModelSerializer):
 class ReorderSerializer(serializers.Serializer):
     ids = serializers.ListField(child=serializers.IntegerField(), min_length=1)
 
+    class Meta:
+        ref_name = "CompaniesReorder"
+
 
 class ManagerOptionSerializer(serializers.Serializer):
     id = serializers.IntegerField()
