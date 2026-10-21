@@ -23,7 +23,7 @@ ITEMS = [
             "<b>Ertadan yangi referent narxlar</b> 💊\n\n"
             "Retseptli dorilarning referent narxlari yangilandi. Ertalab smenani ochishda narx "
             "yorliqlarini yangi ro‘yxat bo‘yicha tekshiring: ustama xarid narxidan "
-            "<b>20 %</b> dan oshmasin.\n\nSavollar bo‘lsa, mudiringizga yozing."
+            "<b>20\u00a0%</b> dan oshmasin.\n\nSavollar bo‘lsa, mudiringizga yozing."
         ),
         "pinned_days": 6,
         "read_share": 0.72,

@@ -64,7 +64,7 @@ SERGELI_CARDS = [
     ("Yashil xochli peshlavhaga buyurtma", "nigora", DONE, ["Reklama"], -16, {}),
     ("Bo‘yoq va qurilish mollarini obyektga yetkazish", "jasur", DONE, ["Ta’mir"], -13, {}),
     ("Devor va shiftni bo‘yash", "manager", DONE, ["Ta’mir"], -12, {}),
-    ("Konditsioner o‘rnatish (xona 25 °C dan oshmasin)", "manager", DONE, ["Uskunalar"], -9, {}),
+    ("Konditsioner o‘rnatish (25\u00a0°C dan oshmasin)", "manager", DONE, ["Uskunalar"], -9, {}),
     ("Yong‘in xavfsizligi tekshiruvi", "manager", DONE, ["Hujjatlar", URGENT], -6, {}),
     ("Internet va kassa dasturini ulash", "madina", DONE, ["Uskunalar"], -5, {}),
     ("Ochilish e’lonini tayyorlash", "nigora", DONE, ["Reklama"], -3, {}),
@@ -94,7 +94,7 @@ SERGELI_CARDS = [
             "checklist": [
                 ("Muzlatgich keldi", True),
                 ("Termometr o‘rnatildi", True),
-                ("24 soatlik sinov: +2…+8 °C", False),
+                ("24 soatlik sinov: +2…+8\u00a0°C", False),
             ]
         },
     ),
@@ -476,7 +476,7 @@ def _count_cards(counted: int, crew: dict) -> list[tuple]:
             counted + 15,
             {},
         ),
-        ("2 % dan ortiq farqli dorilarni qayta sanash", "madina", BACKLOG, ["Sanash"], 38, {}),
+        ("2\u00a0% dan ortiq farqli dorilarni qayta sanash", "madina", BACKLOG, ["Sanash"], 38, {}),
         (
             "Muddati o‘tgan dorilarni hisobdan chiqarish",
             "manager",
@@ -866,7 +866,7 @@ def _expenses(company, sergeli, gpp, diabetes, owner, *, today: date) -> None:
         (sergeli, "repairs", "19500000", -30, "Ta’mir pudratchisi: buzish va devorlar"),
         (sergeli, "repairs", "12600000", -22, "Ta’mir pudratchisi: elektr va suvoq"),
         (sergeli, equipment, "21400000", -24, "Mebel ustaxonasi: dori shkaflari va javonlar"),
-        (sergeli, equipment, "13900000", -11, "Farmatsevtik muzlatgich, +2…+8 °C"),
+        (sergeli, equipment, "13900000", -11, "Farmatsevtik muzlatgich, +2…+8\u00a0°C"),
         (sergeli, equipment, "4600000", -17, "Kassa apparati va terminal"),
         (sergeli, "marketing", "5200000", -14, "Yashil xochli peshlavha"),
         (sergeli, "repairs", "4800000", -8, "Pol plitkasi va yelim"),

@@ -1,3 +1,4 @@
+import re
 from collections import defaultdict
 from datetime import timedelta
 from io import StringIO
@@ -8,15 +9,16 @@ from django.db.models import Sum
 from django.utils import timezone
 
 from apps.accounts.models import User
+from apps.announcements.models import Announcement
 from apps.attendance import queries as attendance
 from apps.attendance.models import AttendanceRecord, WorkShift
 from apps.companies.models import Company, Feature
 from apps.companies.tests.factories import CompanyFactory
 from apps.core import demo_plan
 from apps.core.management.commands import seed_demo
-from apps.finance.models import MoneyAccount, Transaction
+from apps.finance.models import Category, MoneyAccount, Transaction
 from apps.inbox.models import Notification
-from apps.knowledge.models import PageVersion
+from apps.knowledge.models import Page, PageVersion
 from apps.members.models import AccessRole, Membership, Position
 from apps.projects.models import TimeEntry
 from apps.sales.models import CashMovement, CashShift, DailySales
@@ -250,6 +252,17 @@ def test_the_whole_demo_tells_one_story(debug):
         ]
     )
     assert not [name for name in REAL_NAMES if name in texts]
+    # A number keeps its % or °C on its line (a no-break space between them): Telegram's
+    # preview of the prices announcement broke "20 %" before the %. (Page titles are left out:
+    # the knowledge service collapses their spaces.)
+    words = [
+        texts,
+        *Announcement.objects.values_list("text", flat=True),
+        *Page.objects.values_list("body", flat=True),
+        *Category.objects.values_list("name", flat=True),
+        *Task.objects.values_list("description", flat=True),
+    ]
+    assert not [text for text in words if re.search(r"\d [%°]", text)]
     # What the services store in words comes out in the company's language (Uzbek), as when
     # its people use the apps: a till's cash difference, a knowledge page's first version.
     shortages = Transaction.objects.filter(company=pharmacy, source_type="sales.cashshift")
@@ -328,6 +341,18 @@ def test_the_distributor_is_a_second_smaller_company_with_the_same_owner(debug):
         assert today.filter(template__title="Ombor harorati va namligini yozish").count() == 1
     # The core demo's own routines (both companies') have run for a while.
     assert not list(made_today(Company.objects.filter(slug__in=(PHARMACY, DISTRIBUTOR))))
+
+
+def test_each_company_works_the_days_its_branches_open(debug):
+    seed_core()
+
+    # The time-off calendar shades, and Settings lists, the company's working days: both
+    # pharmacies open every day, the distributor's warehouse Monday to Saturday.
+    for slug, days in ((PHARMACY, [0, 1, 2, 3, 4, 5, 6]), (DISTRIBUTOR, [0, 1, 2, 3, 4, 5])):
+        company = Company.objects.get(slug=slug)
+        assert sorted(company.workdays) == days, slug
+        opens = {day for branch in company.branches.all() for day in branch.open_weekdays}
+        assert sorted(opens) == days, slug
 
 
 def test_owner_tg_makes_a_real_account_owner_of_both_companies(debug):

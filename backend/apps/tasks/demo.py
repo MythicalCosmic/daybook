@@ -33,7 +33,7 @@ PALETTES = [
     ((236, 241, 246), [(250, 250, 250), (90, 150, 110), (210, 90, 80), (70, 110, 170)]),
 ]
 COLD_CHAIN = (
-    "Sovuq zanjir: muzlatgichda +2…+8 °C bo‘lishi kerak. Termometrdagi raqamni yozing; "
+    "Sovuq zanjir: muzlatgichda +2…+8\u00a0°C bo‘lishi kerak. Termometrdagi raqamni yozing; "
     "chegaradan chiqsa, darhol mudirga xabar bering va dorilarni zaxira muzlatgichga o‘tkazing."
 )
 
@@ -595,11 +595,11 @@ def _given(company, story, people, now, rng, strict) -> None:
             reason="Qadoqlar yaltirab chiqqan, yorug‘ joyda qayta oling.",
         )
     given(
-        "Ombordagi konditsionerni ta’mirlatish (xona harorati 25 °C dan oshmasin)",
+        "Ombordagi konditsionerni ta’mirlatish (xona harorati 25\u00a0°C dan oshmasin)",
         "manager",
         on_day("manager", next_day("manager"), 17),
         priority=Task.Priority.HIGH,
-        description="Dori saqlash xonasida harorat 24 °C ga yetdi. Usta chaqiring.",
+        description="Dori saqlash xonasida harorat 24\u00a0°C ga yetdi. Usta chaqiring.",
     )
     back = next_day("madina", story.day(1))
     given(

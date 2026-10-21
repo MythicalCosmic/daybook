@@ -83,7 +83,7 @@ PAY = {
 NIGHT = ("nigora", "dilshod")
 SMALL_PAY = {"manager": 9_000_000, "worker": 5_000_000, "cashier": 7_000_000, "driver": 4_500_000}
 # The general tax regime (see the docstring): category names, rates and when they are due.
-VAT, PROFIT_TAX = "QQS (12 %)", "Foyda solig‘i (15 %)"
+VAT, PROFIT_TAX = "QQS (12\u00a0%)", "Foyda solig‘i (15\u00a0%)"
 VAT_SHARE = D(12) / D(112)  # of a price that includes 12 % VAT
 PROFIT_TAX_RATE = D("0.15")
 VAT_DUE_DAY, PROFIT_TAX_DUE_DAY = 20, 25
@@ -845,7 +845,7 @@ class Ledger:
                 account=self.bank,
                 category=self.cat["payroll_taxes"],
                 counterparty=self.party["tax"],
-                description=f"Ijtimoiy soliq (12 %), {day:%m.%Y}",
+                description=f"Ijtimoiy soliq (12\u00a0%), {day:%m.%Y}",
             )
 
     # Debts, one-offs and settings ---------------------------------------------------------------
@@ -945,7 +945,7 @@ class Ledger:
             "14500000",
             self.cat["equipment"],
             branch=self.yns,
-            description="Yunusobod uchun ikkinchi farmatsevtik muzlatgich (+2…+8 °C)",
+            description="Yunusobod uchun ikkinchi farmatsevtik muzlatgich (+2…+8\u00a0°C)",
             by=self.manager,
         )
         self.receipt(
@@ -1326,7 +1326,7 @@ class Distributor:
                     occurred_on=day,
                     account=bank,
                     category=code["payroll_taxes"],
-                    description=f"Ijtimoiy soliq (12 %), {day:%m.%Y}",
+                    description=f"Ijtimoiy soliq (12\u00a0%), {day:%m.%Y}",
                 )
         # A distributor turns over far more than the turnover-tax threshold: VAT and profit tax.
         _book_taxes(company, by=by, bank=bank, start=self.start, today=self.today)

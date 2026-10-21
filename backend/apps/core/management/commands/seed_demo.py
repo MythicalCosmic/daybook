@@ -38,7 +38,7 @@ from django.db.models import F, ProtectedError, Q
 from django.utils import timezone, translation
 
 from apps.accounts.models import User
-from apps.companies.models import Branch, Company, Feature, TenantModel
+from apps.companies.models import Branch, Company, Feature, TenantModel, every_weekday
 from apps.companies.services import create_company
 from apps.core import demo_plan as plan
 from apps.core.demo_time import quiet, run_hooks
@@ -441,6 +441,9 @@ class Command(BaseCommand):
 
     def _build_pharmacy(self, now) -> tuple[Company, dict[str, Membership]]:
         company = create_company(name=NAME, slug=SLUG, timezone="Asia/Tashkent")
+        # Both pharmacies open every day (§14.3); the distributor keeps Monday to Saturday.
+        company.workdays = every_weekday()
+        company.save(update_fields=["workdays", "updated_at"])
         chilonzor, yunusobod = self._branches(company, BRANCHES)
         staff = self._staff(company, plan.PEOPLE, {"C": chilonzor, "Y": yunusobod}, now)
         chilonzor.manager = staff["manager"]

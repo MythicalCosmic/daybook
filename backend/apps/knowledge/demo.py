@@ -109,7 +109,7 @@ dorini qabul qilmang: haydovchi bilan birga dalolatnoma tuzing.</p></div>
 
 COLD_CHAIN = """
 <p>Insulin, ba’zi vaksinalar va ko‘z tomchilari kabi issiqqa sezgir dorilar muzlatgichda
-<strong>+2 °C dan +8 °C gacha</strong> saqlanadi.</p>
+<strong>+2\u00a0°C dan +8\u00a0°C gacha</strong> saqlanadi.</p>
 <h2>Har kuni</h2>
 <ol>
 <li><p>Haroratni kuniga ikki marta — 09:00 da va 20:30 da — botdagi vazifaga yozing.</p></li>
@@ -118,7 +118,7 @@ COLD_CHAIN = """
 <div data-callout="danger"><p>Harorat chegaradan chiqsa: darhol mudirga xabar bering, dorilarni
 zaxira muzlatgichga o‘tkazing va nima bo‘lganini jurnalga yozing. Bunday dorini mudir
 ruxsatisiz sotmang.</p></div>
-<p>Xona harorati +15 °C dan +25 °C gacha bo‘lishi kerak.</p>
+<p>Xona harorati +15\u00a0°C dan +25\u00a0°C gacha bo‘lishi kerak.</p>
 """
 
 PRESCRIPTION = """
@@ -156,7 +156,7 @@ CONTROLLED = """
 PRICES = """
 <p>Har bir dorining narxi ko‘rinib turishi va mas’ul shaxs imzosi bilan tasdiqlanishi kerak.</p>
 <ul>
-<li><p>Retseptli dorilarga ustama xarid narxidan <strong>20 % dan</strong> oshmaydi va
+<li><p>Retseptli dorilarga ustama xarid narxidan <strong>20\u00a0% dan</strong> oshmaydi va
 referent narxdan yuqori bo‘lmaydi.</p></li>
 <li><p>Narx yorliqlarini yangi kirimdan keyin seshanba va juma kunlari yangilaymiz.</p></li>
 </ul>
@@ -268,11 +268,11 @@ uchun bu sahifa arxivda saqlanadi.</p>
 """
 
 CLIMATE = """
-<p>Savdo zalida dorilar <strong>+15…+25 °C</strong> haroratda va <strong>60 %</strong> dan past
-namlikda saqlanadi.</p>
+<p>Savdo zalida dorilar <strong>+15…+25\u00a0°C</strong> haroratda va
+<strong>60\u00a0%</strong> dan past namlikda saqlanadi.</p>
 <ul>
 <li><p>Termometr va gigrometr ko‘rsatkichlarini ertalab va kechqurun jurnalga yozing.</p></li>
-<li><p>Harorat +25 °C dan oshsa, konditsionerni yoqing va mudirga xabar bering.</p></li>
+<li><p>Harorat +25\u00a0°C dan oshsa, konditsionerni yoqing va mudirga xabar bering.</p></li>
 <li><p>Quyosh tushadigan vitrinaga dori qo‘ymang.</p></li>
 </ul>
 """
