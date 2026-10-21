@@ -9,15 +9,25 @@
     <title>Daybook</title>
     <link rel="icon" type="image/svg+xml" href="/app/favicon.svg" />
     <script src="https://telegram.org/js/telegram-web-app.js?59"></script>
-    <!-- Figtree and Caprasimo have no Cyrillic: Onest and Literata Black draw Russian letters
-         (tokens.css). Google splits every family by unicode-range, so a screen without Cyrillic
-         never downloads them. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&family=Literata:wght@900&family=Onest:wght@400;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap"
     />
+    <!-- Figtree and Caprasimo have no Cyrillic: Onest and Literata Black draw Russian letters
+         (tokens.css). Their stylesheet doesn't block the first paint (the splash screen covers the
+         swap), and Google splits each family by unicode-range, so only a screen with Cyrillic
+         text downloads their font files. -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Literata:wght@900&family=Onest:wght@400..700&display=swap"
+      media="print"
+      onload="this.media = 'all'"
+    />
+    <noscript>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:wght@900&family=Onest:wght@400..700&display=swap" />
+    </noscript>
   </head>
   <body>
     <div id="root"></div>
