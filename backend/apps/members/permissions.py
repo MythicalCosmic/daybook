@@ -113,8 +113,11 @@ class Perm(models.TextChoices):
 
 # The roles every new company starts with. Existing companies got theirs through migrations
 # that only add (members/0005 creates Cashier and Accountant; members/0008 gives each role still
-# named like one of these its Phase 2 permissions). A permission added here later needs a
-# migration of its own for existing companies (members/tests/test_phase2_role_migration.py).
+# named like one of these its Phase 2 permissions; members/0009 creates Pharmacist where the
+# name is free). A permission added here later needs a migration of its own for existing
+# companies (members/tests/test_phase2_role_migration.py, test_pharmacist_role_migration.py).
+# Pharmacist is for a pharmacy's qualified staff, who sell at the counter and run its till
+# (docs/PLAN-OWNER.md §14.3); W2.a adds `stock.operate` to it.
 DEFAULT_ROLES = (
     {"name": "Owner", "is_owner": True},
     {
@@ -174,6 +177,7 @@ DEFAULT_ROLES = (
             Perm.PAYROLL_PAY,
         ],
     },
+    {"name": "Pharmacist", "permissions": [Perm.SALES_OPERATE, Perm.FINANCE_CLAIM]},
     {"name": "Cashier", "permissions": [Perm.SALES_OPERATE, Perm.FINANCE_CLAIM]},
     {"name": "Employee", "is_default": True, "permissions": [Perm.FINANCE_CLAIM]},
 )

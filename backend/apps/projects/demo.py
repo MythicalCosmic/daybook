@@ -7,7 +7,11 @@ running timer and expenses on the ledger.
 - "GPP tekshiruviga tayyorgarlik" (GPP): ready for the GPP surveillance visit in three weeks;
   active, on track.
 - "IV chorak: to‘liq inventarizatsiya" (INV): both pharmacies counted before the year closes;
-  planning.
+  active, getting ready for Yunusobod's count on the story's Saturday (the calendar's event),
+  Chilonzor two weeks later.
+
+Cards are started, finished and checked while their people are at work (`_at_work`), never on
+a day off or on leave.
 - "Diabet haftaligi" (DIA): a week of free blood sugar checks; completed last month.
 """
 
@@ -58,14 +62,15 @@ SERGELI_CARDS = [
     ("Provizor va farmatsevt vakansiyasini e’lon qilish", "owner", DONE, ["Xodimlar"], -24, {}),
     ("Nomzodlar bilan suhbat", "manager", DONE, ["Xodimlar"], -14, {}),
     ("Yashil xochli peshlavhaga buyurtma", "nigora", DONE, ["Reklama"], -16, {}),
-    ("Devor va shiftni bo‘yash", "jasur", DONE, ["Ta’mir"], -12, {}),
+    ("Bo‘yoq va qurilish mollarini obyektga yetkazish", "jasur", DONE, ["Ta’mir"], -13, {}),
+    ("Devor va shiftni bo‘yash", "manager", DONE, ["Ta’mir"], -12, {}),
     ("Konditsioner o‘rnatish (xona 25 °C dan oshmasin)", "manager", DONE, ["Uskunalar"], -9, {}),
     ("Yong‘in xavfsizligi tekshiruvi", "manager", DONE, ["Hujjatlar", URGENT], -6, {}),
     ("Internet va kassa dasturini ulash", "madina", DONE, ["Uskunalar"], -5, {}),
     ("Ochilish e’lonini tayyorlash", "nigora", DONE, ["Reklama"], -3, {}),
     (
-        "Pollarga plitka yotqizish",
-        "jasur",
+        "Pol plitkasi: ustaning ishini qabul qilish",
+        "manager",
         REVIEW,
         ["Ta’mir"],
         1,
@@ -102,7 +107,7 @@ SERGELI_CARDS = [
         4,
         {"checklist": [("Gulnoza", True), ("Sardorbek", True), ("Shahnoza", False)]},
     ),
-    ("Peshlavhani o‘rnatish", "jasur", DOING, ["Reklama", URGENT], -1, {}),
+    ("Peshlavhani ustaxonadan olib kelish", "jasur", DOING, ["Reklama", URGENT], -1, {}),
     ("Elektr tarmog‘ini yakuniy tekshirish", "manager", DOING, ["Ta’mir"], 2, {}),
     ("Dori shkaflarini joylashtirish rejasi", "worker", DOING, ["Uskunalar"], 3, {}),
     ("Distribyutorlardan birinchi kirim", "manager", TODO, [], 4, {}),
@@ -193,7 +198,11 @@ def seed(company, people, now) -> None:
     tz = ZoneInfo(company.timezone)
     today = story.today
     owner, manager = people["owner"], people["manager"]
-    chilonzor, yunusobod = story.branches["C"], story.branches["Y"]
+    chilonzor = story.branches["C"]
+    # The rule-22 people and, when the company has them, Yunusobod's head and senior pharmacist.
+    crew = dict(people) | {
+        key: story.member(key) for key in ("farrux", "malika") if story.member(key) is not None
+    }
 
     sergeli = _project(
         company,
@@ -234,7 +243,9 @@ def seed(company, people, now) -> None:
         ],
         now=now,
     )
-    _cards(sergeli, people, SERGELI_CARDS, today=today, tz=tz, now=now, rng=rng, start=-42)
+    _cards(
+        sergeli, crew, SERGELI_CARDS, today=today, tz=tz, now=now, rng=rng, start=-42, story=story
+    )
     gpp = _project(
         company,
         people,
@@ -270,37 +281,52 @@ def seed(company, people, now) -> None:
         ],
         now=now,
     )
-    _cards(gpp, people, GPP_CARDS, today=today, tz=tz, now=now, rng=rng, start=-32)
+    _cards(gpp, crew, GPP_CARDS, today=today, tz=tz, now=now, rng=rng, start=-32, story=story)
+    # Yunusobod is counted on the story's stock-count Saturday (the calendar's event, the
+    # extra shifts and the head's revoked day off), Chilonzor two weeks later.
+    counted = (story.inventory_day() - today).days
     count = _project(
         company,
-        people,
+        crew,
         name="IV chorak: to‘liq inventarizatsiya",
         key="INV",
         color="chart-6",
         icon="clipboard-list",
         description=(
             "Yil yopilishidan oldin ikkala dorixonani to‘liq sanash, seriya va yaroqlilik "
-            "muddatlari bilan, hisob dasturi va buxgalteriya bilan solishtirish."
+            "muddatlari bilan: avval Yunusobod (dorixona ishlashda davom etadi, sanash "
+            "ombordan boshlanadi), ikki haftadan keyin Chilonzor. Keyin hisob dasturi va "
+            "buxgalteriya bilan solishtirish."
         ),
-        status=Project.Status.PLANNING,
+        status=Project.Status.ACTIVE,
         priority=Project.Priority.NORMAL,
         lead=manager,
-        branch=yunusobod,
-        start_on=today + timedelta(days=10),
+        branch=None,
+        start_on=today - timedelta(days=8),
         due_on=today + timedelta(days=45),
         budget=Decimal("6000000"),
         visibility=Project.Visibility.MEMBERS,
-        members=["worker", "madina", "nigora"],
+        members=[key for key in ("worker", "madina", "nigora", "farrux", "malika") if key in crew],
         labels=[("Sanash", "chart-2"), ("Ombor", "chart-3"), ("Solishtirish", "chart-4")],
         milestones=[
-            ("Sanash rejasi kelishildi", 9, False),
-            ("Yunusobod sanaldi", 24, False),
-            ("Chilonzor sanaldi", 34, False),
+            ("Sanash rejasi kelishildi", -3, True),
+            ("Yunusobod sanaldi", counted, False),
+            ("Chilonzor sanaldi", counted + 14, False),
             ("Buxgalteriya bilan solishtirildi", 45, False),
         ],
         now=now,
     )
-    _cards(count, people, _count_cards(), today=today, tz=tz, now=now, rng=rng, start=-6)
+    _cards(
+        count,
+        crew,
+        _count_cards(counted, crew),
+        today=today,
+        tz=tz,
+        now=now,
+        rng=rng,
+        start=-8,
+        story=story,
+    )
     diabetes = _project(
         company,
         people,
@@ -329,7 +355,17 @@ def seed(company, people, now) -> None:
         (title, who, DONE, labels, -48 + i * 2, {})
         for i, (title, who, labels) in enumerate(DIABETES_CARDS)
     ]
-    _cards(diabetes, people, diabetes_cards, today=today, tz=tz, now=now, rng=rng, start=-50)
+    _cards(
+        diabetes,
+        crew,
+        diabetes_cards,
+        today=today,
+        tz=tz,
+        now=now,
+        rng=rng,
+        start=-50,
+        story=story,
+    )
     Project.objects.filter(pk=diabetes.pk).update(completed_at=now - timedelta(days=30))
 
     _updates(sergeli, gpp, diabetes, people, now)
@@ -392,7 +428,13 @@ def _project(company, people, *, members, labels, milestones, now, **fields) -> 
     return project
 
 
-def _count_cards() -> list[tuple]:
+def _count_cards(counted: int, crew: dict) -> list[tuple]:
+    """The stock count's cards: getting ready before Yunusobod's Saturday (`counted` days
+    ahead), its areas that day, Chilonzor's two weeks later, then the reconciliation."""
+
+    def who(key):
+        return key if key in crew else "manager"
+
     cards = [
         ("Sanash sanalarini hisobchi bilan kelishish", "manager", DONE, ["Solishtirish"], -4, {}),
         (
@@ -403,26 +445,37 @@ def _count_cards() -> list[tuple]:
             -2,
             {},
         ),
-        ("Shtrix-kodli sanash varaqalarini chop etish", "worker", DOING, ["Sanash"], 6, {}),
-        ("Distribyutordan ikkita skaner so‘rash", "manager", DOING, ["Ombor"], 8, {}),
-        ("Sanash kunlarining smenalarini rejalash", "manager", TODO, ["Sanash"], 9, {}),
-        ("Sanash kunlari kirimni to‘xtatish", "madina", TODO, ["Ombor"], 12, {}),
-        ("Sanash guruhlariga yo‘riqnoma", "madina", TODO, ["Sanash"], 13, {}),
-        ("Har bir javonga joy kodini yopishtirish", "worker", TODO, ["Ombor"], 14, {}),
+        ("Sanash kunlarining smenalarini rejalash", who("farrux"), DOING, ["Sanash"], 1, {}),
+        ("Distribyutordan ikkita skaner so‘rash", "manager", DOING, ["Ombor"], 1, {}),
+        (
+            "Shtrix-kodli sanash varaqalarini chop etish",
+            "worker",
+            DOING,
+            ["Sanash"],
+            counted - 1,
+            {},
+        ),
+        ("Sanash kuni kirimni to‘xtatish", who("farrux"), TODO, ["Ombor"], counted - 1, {}),
+        ("Sanash guruhlariga yo‘riqnoma", "madina", TODO, ["Sanash"], counted - 1, {}),
+        ("Har bir javonga joy kodini yopishtirish", "worker", TODO, ["Ombor"], counted + 7, {}),
     ]
-    people = ["worker", "madina", "nigora", "manager"]
-    for index, area in enumerate(COUNT_AREAS):
+    yunusobod = [who(key) for key in ("nigora", "farrux", "malika", "manager")]
+    chilonzor = ["worker", "madina", "manager"]
+    for index, area in enumerate(area for area in COUNT_AREAS if area.startswith("Yunusobod")):
+        cards.append((f"Sanash: {area}", yunusobod[index % 4], TODO, ["Sanash"], counted, {}))
+    for index, area in enumerate(area for area in COUNT_AREAS if area.startswith("Chilonzor")):
         cards.append(
-            (
-                f"Sanash: {area}",
-                people[index % len(people)],
-                BACKLOG if index > 1 else TODO,
-                ["Sanash"],
-                18 + index,
-                {},
-            )
+            (f"Sanash: {area}", chilonzor[index % 3], BACKLOG, ["Sanash"], counted + 14, {})
         )
     cards += [
+        (
+            "Sanash: muddati o‘tgan va qaytariladigan dorilar",
+            "madina",
+            BACKLOG,
+            ["Sanash"],
+            counted + 15,
+            {},
+        ),
         ("2 % dan ortiq farqli dorilarni qayta sanash", "madina", BACKLOG, ["Sanash"], 38, {}),
         (
             "Muddati o‘tgan dorilarni hisobdan chiqarish",
@@ -447,7 +500,31 @@ def _due(today: date, offset: int, tz: ZoneInfo, rng: random.Random) -> datetime
     return datetime.combine(today + timedelta(days=offset), time(hour, 0), tzinfo=tz)
 
 
-def _cards(project: Project, people, rows, *, today, tz, now, rng, start: int) -> None:
+def _at_work(story, member, moment: datetime, now: datetime) -> datetime:
+    """The latest time at or before `moment` (and before `now`) when `member` was at work: in
+    one of their shifts (half an hour after it starts at the earliest), or in office hours on a
+    day they work for people without shifts; never on a day off, on leave or before joining."""
+    moment = min(moment, now - timedelta(minutes=20))
+    key = story.key_of(member)
+    if key is None:
+        return moment
+    day = story.local(moment).date()
+    for _ in range(40):
+        if story.works(key, day):
+            shift = story.shift(key, day)
+            if shift is None:
+                first, last = story.at(day, time(9, 30)), story.at(day, time(18, 0))
+            else:
+                first, last = shift.starts + timedelta(minutes=30), shift.ends
+            if moment >= first:
+                return min(moment, last - timedelta(minutes=20))
+        day -= timedelta(days=1)
+    return moment
+
+
+def _cards(project: Project, people, rows, *, today, tz, now, rng, start: int, story) -> None:
+    """The project's cards, each worked on, finished and checked while the people concerned
+    were at work (`_at_work`)."""
     lists = list(project.lists.order_by("position"))
     by_status = dict(zip((BACKLOG, TODO, DOING, REVIEW, DONE), lists, strict=True))
     labels = {label.name: label for label in project.labels.all()}
@@ -466,6 +543,16 @@ def _cards(project: Project, people, rows, *, today, tz, now, rng, start: int) -
         created = now + timedelta(days=start + rng.randint(0, 4), hours=rng.randint(-3, 3))
         if created > due_at:
             created = due_at - timedelta(days=rng.randint(2, 6))
+        created = _at_work(story, project.lead, created, now)
+        started = completed = confirmed = None
+        if status != Task.Status.TODO:
+            started = max(_at_work(story, assignee, created + timedelta(hours=2), now), created)
+        if status in (Task.Status.DONE, Task.Status.REVIEW):
+            finished = due_at - timedelta(hours=rng.randint(2, 30))
+            completed = max(_at_work(story, assignee, finished, now), started)
+        if status == Task.Status.DONE and extra.get("needs_confirmation"):
+            checked = due_at - timedelta(hours=1)
+            confirmed = max(_at_work(story, project.lead, checked, now), completed)
         milestone = next((m for m in milestones if m.due_on and m.due_on >= due_at.date()), None)
         task = Task.objects.create(
             company=project.company,
@@ -480,24 +567,16 @@ def _cards(project: Project, people, rows, *, today, tz, now, rng, start: int) -
             due_at=due_at,
             proof=extra.get("proof", Proof.NONE),
             needs_confirmation=extra.get("needs_confirmation", False),
-            started_at=created + timedelta(hours=2) if status != Task.Status.TODO else None,
-            completed_at=(due_at - timedelta(hours=rng.randint(2, 30)))
-            if status in (Task.Status.DONE, Task.Status.REVIEW)
-            else None,
-            confirmed_at=due_at - timedelta(hours=1)
-            if status == Task.Status.DONE and extra.get("needs_confirmation")
-            else None,
+            started_at=started,
+            completed_at=completed,
+            confirmed_at=confirmed,
             project=project,
             project_list=project_list,
             milestone=milestone,
             list_position=positions[project_list.pk],
         )
-        if task.completed_at and task.completed_at > now:
-            Task.objects.filter(pk=task.pk).update(
-                completed_at=now - timedelta(hours=rng.randint(1, 20))
-            )
         Task.objects.filter(pk=task.pk).update(
-            created_at=min(created, now),
+            created_at=created,
             project_list=project_list,
             list_position=positions[project_list.pk],
         )
@@ -521,8 +600,9 @@ def _cards(project: Project, people, rows, *, today, tz, now, rng, start: int) -
             comment = TaskComment.objects.create(
                 task=task, author=project.lead, text=rng.choice(COMMENTS)
             )
+            said = min(now - timedelta(hours=1), created + timedelta(days=1))
             TaskComment.objects.filter(pk=comment.pk).update(
-                created_at=min(now - timedelta(hours=1), created + timedelta(days=1))
+                created_at=max(_at_work(story, project.lead, said, now), created)
             )
 
 
@@ -569,7 +649,7 @@ def _updates(sergeli, gpp, diabetes, people, now) -> None:
             people["manager"],
             "at_risk",
             "Plitka uch kun kechikdi, peshlavha hali o‘rnatilmagan, litsenziya arizasi esa "
-            "topshirilmagan. Shanba kuni ochilish payshanbadagi elektr tekshiruviga bog‘liq.",
+            "topshirilmagan. Ochilish elektr tarmog‘ining yakuniy tekshiruviga bog‘liq.",
             1,
         ),
         (

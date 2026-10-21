@@ -25,6 +25,7 @@ from apps.reminders.models import ReminderLog, ReminderPolicy, ReminderText
 from apps.tasks.models import Activity, ChecklistItem, Proof, Task, TaskComment, TaskTemplate
 
 HISTORY_DAYS = 60  # two months: the reports compare a month with the one before
+STREAK_DAYS = 14  # Alisher's routines of the last two weeks were all done in time
 EVERY_DAY = [0, 1, 2, 3, 4, 5, 6]
 PALETTES = [
     ((240, 244, 242), [(46, 125, 107), (226, 236, 233), (64, 112, 160), (198, 70, 64)]),
@@ -198,7 +199,7 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
     tags = routine(
         "Narx yorliqlarini yangilash",
         time(14, 0),
-        who=[*closers, "malika"],
+        who=[*closers, "malika", "bobur"],
         weekdays=[1, 4],
         proof=Proof.PHOTO,
         description="Yangi kirimdagi narxlar bo‘yicha. Retseptli dorilar vitrinaga qo‘yilmaydi.",
@@ -223,17 +224,20 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         ],
     )
     evening_report = routine(
-        "Kechki savdo hisobotini ko‘rib chiqish",
-        time(21, 30),
+        "Kunlik savdo hisobotini ko‘rib chiqish",
+        time(17, 30),
         who=["manager"],
         weekdays=[0, 1, 2, 3, 4],
         reminder_policy=gentle,
-        description="Ikkala dorixonaning kunlik savdosi va kassa farqini ko‘rib chiqing.",
+        description=(
+            "Ikkala dorixonaning kechagi savdosi, kassa farqlari va tekshirilmagan smenalarini "
+            "ko‘rib chiqing."
+        ),
     )
     orders = adopt(
         demo_plan.TELEGRAM_ORDERS,
         time(12, 0),
-        who=openers,
+        who=[*openers, "bobur"],  # and Chilonzor's weekday pharmacist (suspended for now)
         branch=chilonzor,
         description=(
             "Telegramdagi buyurtmalarga javob bering. Retseptli dori so‘rashsa, retsept bilan "
@@ -331,6 +335,7 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         (tags, "madina", 0.85),
         (tags, "sardor", 0.8),
         (tags, "malika", 0.9),
+        (tags, "bobur", 0.85),
         (defektura, "worker", 0.82),
         (defektura, "gulnora", 0.88),
         (defektura, "shahzoda", 0.9),
@@ -342,6 +347,7 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         (evening_report, "manager", 0.88),
         (orders, "worker", 0.82),
         (orders, "gulnora", 0.9),
+        (orders, "bobur", 0.85),
         (deliveries, "jasur", 0.62),
         (rx_log, "manager", 0.9),
         (rx_log, "farrux", 0.95),
@@ -363,7 +369,9 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
                 continue
             if (template.pk, member.pk, day) in taken:
                 continue
-            task, steps = _history_task(company, story, template, member, day, rng, on_time)
+            # Alisher hasn't missed a deadline for two weeks: his streak.
+            share = 1.0 if key == "worker" and days_ago <= STREAK_DAYS else on_time
+            task, steps = _history_task(company, story, template, member, day, rng, share)
             rows.append(task)
             logs.extend((task, step) for step in steps)
     Task.objects.bulk_create(rows)
@@ -412,7 +420,7 @@ def _today(company, story, plan, now, rng) -> None:
             if fields["escalated_at"] > now:
                 fields = {"reminders_sent": 1}
         elif due < now:
-            completed = due - timedelta(minutes=rng.randint(4, 35))
+            completed = story.at_work(key, today, due - timedelta(minutes=rng.randint(4, 35)))
             review = template.needs_confirmation or template.title == demo_plan.RECEIVING
             status = Task.Status.REVIEW if review else Task.Status.DONE
         task = Task.objects.create(
@@ -699,6 +707,10 @@ def _given(company, story, people, now, rng, strict) -> None:
 
 
 def _policies(company) -> tuple[ReminderPolicy, ReminderPolicy]:
+    # The company's default policy, in its own words like the two the heads added.
+    ReminderPolicy.objects.filter(company=company, is_default=True, name="Default").update(
+        name="Odatiy"
+    )
     strict = ReminderPolicy.objects.create(
         company=company,
         name="Kassa va sovuq zanjir (qattiq)",
@@ -757,12 +769,13 @@ def _reading(rng: random.Random) -> str:
 
 def _history_task(company, story, template, person, day, rng, on_time: float):
     """One past day's task (not saved) and the reminder steps it got: done in time, or
-    late after reminders."""
+    late after reminders; always while the person was at work (`Plan.at_work`)."""
     due = story.at(day, template.due_time)
     if rng.random() < on_time:
         status, completed = Task.Status.DONE, due - timedelta(minutes=rng.randint(4, 55))
     else:
         status, completed = Task.Status.DONE, due + timedelta(minutes=rng.randint(12, 140))
+    completed = story.at_work(story.key_of(person), day, completed)
     late = completed > due
     task = Task(
         company=company,

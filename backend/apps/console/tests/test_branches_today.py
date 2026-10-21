@@ -48,8 +48,10 @@ def branch(company):
     )
 
 
-def status(branch, at, *, holiday=False, card=None):
-    return queries.branch_status(branch, at, holiday=holiday, card=card or {})
+def status(branch, at, *, holiday=False, card=None, records_openings=True):
+    return queries.branch_status(
+        branch, at, holiday=holiday, card=card or {}, records_openings=records_openings
+    )
 
 
 def test_open_once_a_till_or_the_first_check_in_opened_it(branch):
@@ -179,3 +181,33 @@ def test_a_holiday_makes_every_branch_a_day_off(company, member, branch):
     cards = queries.branches_today(owner, local(12, 0))
 
     assert next(c for c in cards if c["id"] == branch.pk)["status"] == "day_off"
+
+
+def test_without_sales_or_attendance_a_branch_goes_by_its_hours(branch, company):
+    """Nothing but a till or a check-in records an opening: a company with neither (a
+    distributor's warehouse) sees its branch open in its hours, never "not opened"."""
+    untracked = {"records_openings": False}
+
+    assert status(branch, local(12, 0), **untracked) == "open"
+    assert status(branch, local(8, 0), **untracked) == "closed"
+    assert status(branch, local(21, 30), **untracked) == "closed"
+    assert status(branch, local(12, 0, date(2026, 10, 25)), **untracked) == "day_off"
+    bar = BranchFactory(company=company, opens_at=time(18, 0), closes_at=time(2, 0))
+    assert status(bar, local(1, 0), **untracked) == "open"
+    assert status(bar, local(3, 0), **untracked) == "closed"
+    assert status(BranchFactory(company=company), local(12, 0), **untracked) == "closed"
+
+
+def test_cards_follow_the_hours_only_when_no_module_records_openings(company, member, branch):
+    owner = member(company, "Owner")
+
+    company.features = ["finance", "hr"]
+    company.save(update_fields=["features"])
+    [card] = [c for c in queries.branches_today(owner, local(12, 0)) if c["id"] == branch.pk]
+    assert card["status"] == "open"
+
+    for feature in ("sales", "attendance"):
+        company.features = ["finance", feature]
+        company.save(update_fields=["features"])
+        cards = queries.branches_today(owner, local(12, 0))
+        assert next(c for c in cards if c["id"] == branch.pk)["status"] == "not_opened"

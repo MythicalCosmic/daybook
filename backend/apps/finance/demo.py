@@ -10,12 +10,22 @@ account), takes the cash to the safe and the safe to the bank, and settles the t
 the bank; from then on the sales demo books every shift itself, so no day is counted twice
 (the sales demo shows the earlier days as imported shifts with exactly these totals).
 Every working day a distributor delivers medicines: on credit with its own terms (payables due
-on dates the calendar shows) or paid ahead. Rent (Yunusobod's in dollars), salaries (night hours
-paid 1.5 times), utilities, disinfection, the bank loan, the owner's draws, nasiya for three
-regular customers and a clinic, a bad debt, a voided mistake, an entry waiting for approval and
-receipts with pictures fill the rest. Pay goes out on the month's last weekday with the 12 %
-social tax on it. `finish`, once every app has booked its rows, settles the terminal into the
-bank for the tills' weeks and closes the books up to the end of the month before last.
+on dates the calendar shows) or paid ahead. Rent (Chilonzor's by bank transfer, Yunusobod's in
+dollars), salaries (night hours paid 1.5 times), utilities, disinfection, the bank loan, the
+owner's draws, nasiya for three regular customers and a clinic, a bad debt, a voided mistake, an
+entry waiting for approval and receipts with pictures fill the rest. Pay goes out on the month's
+last weekday with the 12 % social tax on it.
+
+Taxes: the demo assumes the general regime. Its sales, about 18 mln so‘m a day or 6.5 bn a
+year, are above the turnover-tax threshold of 12 000 base values from 01.06.2026 (about 4.9 bn
+so‘m at 412 000 so‘m a base value; docs/PLAN-OWNER.md §14.4 row 28, confirm). So there is no
+turnover tax: each month's VAT (12 % of what the month's sales add to its medicine purchases) is
+owed to the tax office at the month's end and paid on the 20th of the next, and the last
+quarter's profit tax (15 % of its operating profit, without the new pharmacy's fit-out) is due
+on the 25th of the month after it. Wave 2's package I adds the company's tax-regime setting.
+
+`finish`, once every app has booked its rows, settles the terminal into the bank for the tills'
+weeks, books the taxes and closes the books up to the end of the month before last.
 
 Daily sales and salaries carry the source `finance.demo` (id = branch or person, key
 `s:<yymmdd>:<cash|card>` / `sal:<yyyymm>`).
@@ -27,6 +37,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from django.core.files.base import ContentFile
+from django.db.models import Q, Sum
 from django.utils import translation
 
 from apps.core import demo_plan
@@ -37,6 +48,7 @@ from apps.finance.models import (
     ExchangeRate,
     MoneyAccount,
     RateSource,
+    Transaction,
 )
 from apps.finance.sources import Source
 
@@ -66,9 +78,17 @@ PAY = {
     "otabek": 4_500_000,
     "aziza": 6_000_000,
     "bobur": 4_600_000,
+    "nodira": 4_700_000,  # paid for the months she worked, until she left
 }
 NIGHT = ("nigora", "dilshod")
 SMALL_PAY = {"manager": 9_000_000, "worker": 5_000_000, "cashier": 7_000_000, "driver": 4_500_000}
+# The general tax regime (see the docstring): category names, rates and when they are due.
+VAT, PROFIT_TAX = "QQS (12 %)", "Foyda solig‘i (15 %)"
+VAT_SHARE = D(12) / D(112)  # of a price that includes 12 % VAT
+PROFIT_TAX_RATE = D("0.15")
+VAT_DUE_DAY, PROFIT_TAX_DUE_DAY = 20, 25
+TAX_OFFICE = "Soliq inspeksiyasi"
+NEW_PHARMACY = "SRG"  # the projects demo's "Sergeli pharmacy opening"
 
 
 def seed(company, people, now) -> None:
@@ -102,6 +122,10 @@ def finish(company, people, now) -> None:
 
 def _round(value: float, step: int = 1000) -> Decimal:
     return D(round(value / step) * step)
+
+
+def _month_end(day: date) -> date:
+    return (day.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
 
 
 def _last_weekday(day: date) -> date:
@@ -213,7 +237,10 @@ class Ledger:
             )
 
         self.cat = {
-            "retail": child("sales", "Chakana savdo"),
+            # The day's takings go where the tills book theirs (`sales`), so a month compares
+            # with the one before whichever booked it.
+            "sales": code["sales"],
+            "retail": child("sales", "Nasiyaga savdo"),
             "corporate": child("sales", "Klinika va tashkilotlarga savdo"),
             "delivery_income": child("sales", "Yetkazib berish xizmati"),
             "medicines": child("goods", "Dori vositalari"),
@@ -230,6 +257,8 @@ class Ledger:
             "print": child("marketing", "Narx yorliqlari va bosma"),
             "fuel": child("transport", "Kuryer yoqilg‘isi"),
             "licences": child("taxes", "Litsenziya va ruxsatnomalar"),
+            "vat": child("taxes", VAT),
+            "profit_tax": child("taxes", PROFIT_TAX),
             "salaries": code["salaries"],
             "payroll_taxes": code["payroll_taxes"],
             "bank_fees": code["bank_fees"],
@@ -310,7 +339,10 @@ class Ledger:
                 "Rustam Qodirov (ijara)",
                 other,
                 phone="+998901237788",
-                notes="Chilonzordagi dorixona binosi egasi. Ijara har oy 3-sanagacha, naqd.",
+                notes=(
+                    "Chilonzordagi dorixona binosi egasi. Ijara har oy 3-sanagacha, bank "
+                    "o‘tkazmasi bilan (shartnoma soliq idorasida ro‘yxatdan o‘tgan)."
+                ),
             ),
             "landlord_yns": party(
                 "Akmal Hasanov (ijara)",
@@ -321,7 +353,7 @@ class Ledger:
             "electric": party("Elektr ta’minoti", state),
             "water": party("Suv ta’minoti", state),
             "internet": party("Internet provayderi", supplier),
-            "tax": party("Soliq inspeksiyasi", state),
+            "tax": party(TAX_OFFICE, state),
             "sanitary": party(
                 "Dezinfeksiya xizmati", supplier, notes="Har oy dezinfeksiya va deratizatsiya."
             ),
@@ -514,7 +546,7 @@ class Ledger:
                         amount=amount,
                         occurred_on=day,
                         account=account,
-                        category=self.cat["retail"],
+                        category=self.cat["sales"],
                         branch=branch,
                         description=f"Kunlik savdo, {branch.name} "
                         f"({'naqd' if channel == 'cash' else 'karta va QR'})",
@@ -690,7 +722,7 @@ class Ledger:
         if day.day == 3:
             row = self.expense(
                 day,
-                self.safe["C"],
+                self.bank,
                 "9000000",
                 self.cat["rent_chl"],
                 counterparty=self.party["landlord_chl"],
@@ -770,9 +802,16 @@ class Ledger:
 
     def salaries(self, day: date) -> None:
         """The month's pay on its last weekday, for everyone who worked in it (night hours at 1.5
-        times), and the employer's 12 % social tax on it."""
+        times), and the employer's 12 % social tax on it. The books start partway through their
+        first month: that month's pay covers the days since then, like its sales (what the days
+        before earned was owed before the books moved here)."""
         month_start = day.replace(day=1)
         month = day.strftime("%Y%m")
+        period = f"{day:%m.%Y}"
+        share = 1.0
+        if month_start <= self.start:
+            share = (_month_end(day) - self.start).days / _month_end(day).day
+            period = f"{self.start + timedelta(days=1):%d}–{_month_end(day):%d.%m.%Y}"
         total = D(0)
         for key, member in self.story.members().items():
             amount = PAY.get(key)
@@ -780,19 +819,20 @@ class Ledger:
                 continue
             if self.story.away(key, month_start) in ("left", "blocked"):
                 continue
+            amount = _round(amount * share)
             total += amount
             note = ", tungi soatlar 1,5 baravar" if key in NIGHT else ""
             services.record_transaction(
                 self.company,
                 by=self.owner,
                 kind="expense",
-                amount=D(amount),
+                amount=amount,
                 occurred_on=day,
                 account=self.bank,
                 category=self.cat["salaries"],
                 membership=member,
                 branch=member.home_branch,
-                description=f"Ish haqi, {member} ({day:%m.%Y}{note})",
+                description=f"Ish haqi, {member} ({period}{note})",
                 source=Source(DEMO_SOURCE, member.pk, f"sal:{month}"),
             )
         if total:
@@ -857,19 +897,27 @@ class Ledger:
         services.write_off(
             zuhra, by=by, reason="Mijoz boshqa shaharga ko‘chib ketgan, bog‘lanib bo‘lmayapti"
         )
-        # Payables fall due on their terms: paid from the bank, except one Tolzor invoice that
-        # is a week overdue (the head is sorting out a short delivery on it).
-        overdue = None
-        late_window = (today - timedelta(days=10), today - timedelta(days=4))
-        for debt in queries.open_debts(self.company, direction="payable", kind="trade"):
-            if debt.due_on is None or debt.due_on >= today:
-                continue
-            if (
-                overdue is None
-                and debt.counterparty_id == self.party["tolzor"].pk
-                and late_window[0] <= debt.due_on <= late_window[1]
-            ):
-                overdue = debt
+        # Payables fall due on their terms: paid from the bank, except the latest Tolzor invoice
+        # that fell due at least four days ago, now a week or two overdue (the head is sorting
+        # out a short delivery on it). Tolzor delivers every few days on 14 days' terms, so
+        # there always is one, whatever day the demo is built.
+        due = [
+            debt
+            for debt in queries.open_debts(self.company, direction="payable", kind="trade")
+            if debt.due_on is not None and debt.due_on < today
+        ]
+        overdue = max(
+            (
+                debt
+                for debt in due
+                if debt.counterparty_id == self.party["tolzor"].pk
+                and debt.due_on <= today - timedelta(days=4)
+            ),
+            key=lambda debt: (debt.due_on, debt.pk),
+            default=None,
+        )
+        for debt in due:
+            if debt == overdue:
                 continue
             services.pay_debt(
                 debt, by=by, amount=debt.amount - debt.paid, paid_on=debt.due_on, account=self.bank
@@ -1023,7 +1071,92 @@ class Ledger:
                         description="Terminal tushumi (karta va QR)",
                     )
             day += timedelta(days=1)
+        self.taxes()
         services.update_account(self.bank, by=self.owner, allow_negative=False)
+
+    def taxes(self) -> None:
+        """The general regime's taxes, once every demo has booked its sales."""
+        _book_taxes(self.company, by=self.owner, bank=self.bank, start=self.start, today=self.today)
+
+
+def _book_taxes(company, *, by, bank, start: date, today: date) -> None:
+    """The general regime's taxes (see the module's docstring): each finished month's VAT, owed
+    at its end and paid on the 20th of the next, and the last finished quarter's profit tax, due
+    on the 25th of the month after it. A tax due before today has been paid on its day, from
+    `bank`; a due day on a weekend moves to the Monday."""
+    office = Counterparty.objects.filter(company=company, name=TAX_OFFICE).first()
+    if office is None:
+        office = services.create_counterparty(
+            company, by=by, name=TAX_OFFICE, kind=Counterparty.Kind.STATE
+        )
+    taxes = Category.objects.get(company=company, system_code="taxes")
+    categories = {}
+    for name in (VAT, PROFIT_TAX):
+        categories[name] = Category.objects.filter(company=company, name=name).first()
+        if categories[name] is None:
+            categories[name] = services.create_category(
+                company, by=by, name=name, kind=taxes.kind, parent=taxes
+            )
+    posted = Transaction.objects.filter(company=company, status=Transaction.Status.POSTED)
+
+    def total(rows) -> Decimal:
+        return rows.aggregate(total=Sum("base_amount"))["total"] or D(0)
+
+    def owe(name, amount, owed_on, due_on, description):
+        if amount <= 0:
+            return
+        while due_on.weekday() >= 5:
+            due_on += timedelta(days=1)
+        debt = services.open_debt(
+            company,
+            by=by,
+            direction="payable",
+            kind="tax",
+            amount=amount,
+            currency="UZS",
+            issued_on=owed_on,
+            due_on=due_on,
+            counterparty=office,
+            category=categories[name],
+            description=description,
+        )
+        if due_on < today:
+            services.pay_debt(debt, by=by, amount=amount, paid_on=due_on, account=bank)
+
+    sales = Q(category__system_code="sales") | Q(category__parent__system_code="sales")
+    goods = Q(category__system_code="goods") | Q(category__parent__system_code="goods")
+    month = start.replace(day=1)
+    while (last := _month_end(month)) < today:  # the running month isn't over yet
+        rows = posted.filter(occurred_on__range=(max(month, start), last))
+        added = total(rows.filter(sales, kind="income")) + total(rows.filter(goods, kind="expense"))
+        owe(
+            VAT,
+            _round(float(added * VAT_SHARE)),
+            last,
+            (last + timedelta(days=1)).replace(day=VAT_DUE_DAY),
+            f"QQS, {month:%m.%Y}",
+        )
+        month = last + timedelta(days=1)
+
+    # The quarter before this one: its operating profit (the new pharmacy's fit-out, booked on
+    # its project, is an investment written off over years, not this quarter's cost).
+    quarter_end = today.replace(month=(today.month - 1) // 3 * 3 + 1, day=1) - timedelta(days=1)
+    quarter_start = quarter_end.replace(month=quarter_end.month - 2, day=1)
+    rows = (
+        posted.filter(
+            occurred_on__range=(max(quarter_start, start), quarter_end),
+            kind__in=Transaction.PNL_KINDS,
+        )
+        .exclude(category__is_capex=True)
+        .exclude(project__key=NEW_PHARMACY)
+    )
+    owe(
+        PROFIT_TAX,
+        _round(float(total(rows) * PROFIT_TAX_RATE)),
+        quarter_end,
+        (quarter_end + timedelta(days=1)).replace(day=PROFIT_TAX_DUE_DAY),
+        f"Foyda solig‘i, {(quarter_end.month - 1) // 3 + 1}-chorak {quarter_end:%Y}",
+    )
 
 
 class Distributor:
@@ -1161,21 +1294,28 @@ class Distributor:
                 )
             if day == _last_weekday(day):  # pay day, with the 12 % social tax
                 month, total = day.strftime("%Y%m"), D(0)
+                # The books' first month pays for the days since they started (as the
+                # pharmacy's ledger does).
+                share, period = 1.0, f"{day:%m.%Y}"
+                if day.replace(day=1) <= self.start:
+                    share = (_month_end(day) - self.start).days / _month_end(day).day
+                    period = f"{self.start + timedelta(days=1):%d}–{_month_end(day):%d.%m.%Y}"
                 for key, member in self.story.members().items():
                     amount = SMALL_PAY.get(key)
                     if amount is None:
                         continue
+                    amount = _round(amount * share)
                     total += amount
                     services.record_transaction(
                         company,
                         by=by,
                         kind="expense",
-                        amount=D(amount),
+                        amount=amount,
                         occurred_on=day,
                         account=bank,
                         category=code["salaries"],
                         membership=member,
-                        description=f"Ish haqi, {member} ({day:%m.%Y})",
+                        description=f"Ish haqi, {member} ({period})",
                         source=Source(DEMO_SOURCE, member.pk, f"sal:{month}"),
                     )
                 services.record_transaction(
@@ -1188,6 +1328,8 @@ class Distributor:
                     category=code["payroll_taxes"],
                     description=f"Ijtimoiy soliq (12 %), {day:%m.%Y}",
                 )
+        # A distributor turns over far more than the turnover-tax threshold: VAT and profit tax.
+        _book_taxes(company, by=by, bank=bank, start=self.start, today=self.today)
 
 
 def _receipt_picture(shop: str, day: date, lines: list[tuple[str, str]], total: str) -> bytes:

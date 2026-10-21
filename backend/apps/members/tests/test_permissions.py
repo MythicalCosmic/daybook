@@ -61,7 +61,7 @@ OWNER_CONSOLE = {
     "data.export": {"Accountant"},
     "branches.all": {"Manager", "Accountant"},
     "sales.view": {"Manager", "Accountant"},
-    "sales.operate": {"Cashier"},
+    "sales.operate": {"Pharmacist", "Cashier"},
     "sales.manage": {"Manager"},
     "sales.invoices": {"Accountant"},
     "stock.manage": {"Manager"},
@@ -69,7 +69,7 @@ OWNER_CONSOLE = {
     "finance.record": {"Accountant"},
     "finance.manage": {"Accountant"},
     "finance.approve": {"Accountant"},
-    "finance.claim": {"Manager", "Accountant", "Cashier", "Employee"},
+    "finance.claim": {"Manager", "Accountant", "Pharmacist", "Cashier", "Employee"},
     "hr.view": {"Manager", "Accountant"},
     "hr.manage": {"Accountant"},
     "hr.sensitive": set(),
@@ -143,7 +143,7 @@ def test_accountant_also_reads_members_and_reports(company):
 
 def test_default_roles_are_well_formed():
     names = [entry["name"] for entry in DEFAULT_ROLES]
-    assert names == ["Owner", "Manager", "Accountant", "Cashier", "Employee"]
+    assert names == ["Owner", "Manager", "Accountant", "Pharmacist", "Cashier", "Employee"]
     assert [entry["name"] for entry in DEFAULT_ROLES if entry.get("is_default")] == ["Employee"]
     for entry in DEFAULT_ROLES:
         permissions = entry.get("permissions", [])

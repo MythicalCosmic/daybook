@@ -36,7 +36,7 @@ def test_create_company_adds_default_roles():
     company = create_company(name="Acme", slug="acme")
 
     roles = {role.name: role for role in company.accessroles.all()}
-    assert set(roles) == {"Owner", "Manager", "Accountant", "Cashier", "Employee"}
+    assert set(roles) == {"Owner", "Manager", "Accountant", "Pharmacist", "Cashier", "Employee"}
     assert roles["Owner"].is_owner
     assert roles["Employee"].is_default
     assert roles["Employee"].permissions == ["finance.claim"]

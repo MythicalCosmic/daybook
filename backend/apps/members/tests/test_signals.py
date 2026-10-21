@@ -302,5 +302,5 @@ def test_approving_with_a_preset_role_follows_the_same_rule(company, manager, ow
 def test_default_roles_are_only_added_where_missing(company):
     services.create_default_roles(company)
 
-    assert AccessRole.objects.filter(company=company).count() == 5
+    assert AccessRole.objects.filter(company=company).count() == 6
     assert AccessRole.objects.filter(company=company, is_default=True).count() == 1

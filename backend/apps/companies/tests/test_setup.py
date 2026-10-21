@@ -44,6 +44,7 @@ def test_a_new_company_starts_with_roles_policy_and_a_branch(
         "Owner",
         "Manager",
         "Accountant",
+        "Pharmacist",
         "Cashier",
         "Employee",
     }

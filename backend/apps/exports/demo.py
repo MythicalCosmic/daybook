@@ -1,4 +1,4 @@
-"""Demo data of exports: three files the owner downloaded this week (last week's overdue tasks,
+"""Demo data of exports: three files the owner downloaded this week (the past week's tasks,
 last month's timesheet and the profit and loss), built through the real exporters once every
 other demo has written its rows."""
 
@@ -24,7 +24,8 @@ def finish(company, people, now) -> None:
         (
             "tasks.list",
             "xlsx",
-            {"due_from": str(story.day(-7)), "due_to": str(story.day(-1)), "overdue": "true"},
+            # Nothing past is left undone in the demo: the week's tasks, not its overdue ones.
+            {"due_from": str(story.day(-7)), "due_to": str(story.day(-1))},
             3,
         ),
         ("attendance.timesheet", "xlsx", {"month": last_month}, 2),

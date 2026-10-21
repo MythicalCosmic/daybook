@@ -101,10 +101,11 @@ def test_nothing_is_removed_and_a_second_run_changes_nothing(company, other_comp
 def test_the_frozen_lists_cover_todays_default_roles():
     """A Phase 2 permission added to a default role later needs its own migration for the roles
     of existing companies; this fails until there is one (then extend the expected set here)."""
+    created_later = {"Pharmacist"}  # members/0009 makes it with its own frozen list
     today = {
         definition["name"]: [str(perm) for perm in definition.get("permissions", ())]
         for definition in DEFAULT_ROLES
-        if not definition.get("is_owner")
+        if not definition.get("is_owner") and definition["name"] not in created_later
     }
 
     for name, permissions in today.items():

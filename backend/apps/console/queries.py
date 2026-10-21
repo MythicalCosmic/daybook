@@ -12,7 +12,7 @@ from django.db.models import Prefetch, Q
 from django.utils import timezone
 
 from apps.accounts.models import User
-from apps.companies.models import Branch
+from apps.companies.models import Branch, Feature
 from apps.console import pulse, registry
 from apps.console.models import SavedView
 from apps.members import scope
@@ -110,6 +110,9 @@ def branches_today(member: Membership, now: datetime) -> list[dict]:
     branches = visible_branches(member)
     holiday = Holiday.objects.filter(company=company, date=day).exists()
     facts = registry.collect_branch_facts(member, day, now, [branch.pk for branch in branches])
+    # Only a till or a check-in records that a branch opened: without either module a branch
+    # (a distributor's warehouse, an office) goes by its hours instead of "not opened" all day.
+    records_openings = company.has_feature(Feature.SALES) or company.has_feature(Feature.ATTENDANCE)
     cards = []
     for branch in branches:
         card = {
@@ -122,15 +125,21 @@ def branches_today(member: Membership, now: datetime) -> list[dict]:
         for key, by_branch in facts.items():
             if branch.pk in by_branch:
                 card[key] = by_branch[branch.pk]
-        card["status"] = branch_status(branch, local, holiday=holiday, card=card)
+        card["status"] = branch_status(
+            branch, local, holiday=holiday, card=card, records_openings=records_openings
+        )
         cards.append(card)
     return cards
 
 
-def branch_status(branch: Branch, local: datetime, *, holiday: bool, card: dict) -> str:
+def branch_status(
+    branch: Branch, local: datetime, *, holiday: bool, card: dict, records_openings: bool = True
+) -> str:
     """open (a till or the first check-in opened it), not_opened (an open day, more than 10
     minutes past `opens_at`, nothing recorded), closed (after `closes_at`, or not open yet) or
-    day_off (a weekday it doesn't open, or a holiday)."""
+    day_off (a weekday it doesn't open, or a holiday). When the company runs neither sales nor
+    attendance (`records_openings` off), nothing can record an opening: a branch is open within
+    its hours on an open day, never not_opened."""
     opened = bool(
         (card.get("sales") or {}).get("opened_at")
         or (card.get("attendance") or {}).get("first_check_in")
@@ -142,6 +151,8 @@ def branch_status(branch: Branch, local: datetime, *, holiday: bool, card: dict)
         return BranchStatus.CLOSED
     if opened:
         return BranchStatus.OPEN
+    if not records_openings:
+        return BranchStatus.OPEN if _within_hours(branch, local.time()) else BranchStatus.CLOSED
     if branch.opens_at is not None and local >= _at(local.date(), branch.opens_at, local) + (
         OPENING_GRACE
     ):
@@ -167,6 +178,17 @@ def _after_closing(branch: Branch, now: time) -> bool:
     if opens is not None and closes < opens:  # open past midnight, e.g. 18:00-02:00
         return closes <= now < opens
     return now >= closes
+
+
+def _within_hours(branch: Branch, now: time) -> bool:
+    opens, closes = branch.opens_at, branch.closes_at
+    if opens is None:
+        return False
+    if closes is None:
+        return now >= opens
+    if closes < opens:  # open past midnight
+        return now >= opens or now < closes
+    return opens <= now < closes
 
 
 def _at(day: date, clock: time, local: datetime) -> datetime:
