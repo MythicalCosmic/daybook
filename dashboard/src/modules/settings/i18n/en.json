@@ -174,8 +174,6 @@
   "settings.day.sun": "Sun",
   "settings.map.label": "Map of the branch",
   "settings.map.clickToPlace": "Click the map to place the branch",
-  "settings.map.myLocation": "My location",
-  "settings.map.locateFailed": "Couldn’t get your location. Click the map instead.",
   "settings.invite.description": "Staff join from Telegram: they open the link, share their name and position, and you approve them.",
   "settings.invite.shareText": "Join {company} in Telegram",
   "settings.invite.copied": "Link copied",

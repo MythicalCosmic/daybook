@@ -101,6 +101,12 @@
     -webkit-appearance: none;
     margin: 0;
   }
+  /* A clearable search field has its own clear button; Chromium and Safari would add a second. */
+  .ui-input[type="search"][data-clearable]::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+    display: none;
+  }
 
   /* Leading and trailing adornments inside a control: icons, units, currency. */
   .ui-adorn {

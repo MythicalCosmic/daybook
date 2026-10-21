@@ -109,6 +109,7 @@ defineExpose({ focus: () => input.value?.focus(), select: () => input.value?.sel
       :required="control.required.value || undefined"
       :aria-invalid="control.invalid.value || undefined"
       :aria-describedby="control.describedBy.value"
+      :data-clearable="clearable || undefined"
       v-bind="{ ...$attrs, class: undefined, style: undefined }"
       @keydown="onKeydown"
     />

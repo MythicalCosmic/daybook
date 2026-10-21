@@ -2,7 +2,8 @@
  * ECharts options for the line, area and bar charts, built from the tokens (useChartTheme) and the
  * dataviz mark specs: 2 px lines, area washes, bars at most 24 px thick with 4 px rounded ends and
  * 2 px surface gaps, hairline solid grid, a crosshair tooltip, compact axis numbers, and animation
- * of 400 ms that switches off above 1 000 points or with reduced motion.
+ * of 400 ms that switches off above 1 000 points or with reduced motion. A target is a dashed line
+ * named in the legend and the tooltip (never a label on the plot, which collides with the data).
  */
 import type { Currency, Language } from "@/api/types";
 import { formatDay } from "@/lib/dates";
@@ -79,7 +80,14 @@ export interface CartesianInput {
   xFormat?: "day" | "month" | "none";
   legend?: boolean;
   target?: { value: number | string; label?: string } | null;
+  /** The value axis runs from 0 to this, in four steps (100 for percentages, so it stops at 100 %). */
+  yMax?: number;
+  /** Whole-number ticks only (counts never get 0.5). */
+  integer?: boolean;
 }
+
+/** Legend key for a target: a short dashed line (the other keys are swatches). */
+const DASH_ICON = "path://M0 4h5v2H0zM8 4h5v2H8z";
 
 export interface CartesianStyle {
   type: "line" | "bar";
@@ -103,7 +111,10 @@ export function cartesianOption(theme: ChartTheme, input: CartesianInput, style:
   }
   const points = values.reduce((sum, list) => sum + list.length, 0);
   const animate = points <= 1000 && !reducedMotion();
-  const showLegend = input.legend ?? input.series.length + (input.compare ? 1 : 0) > 1;
+  const targetValue = input.target ? toNumber(input.target.value) : null;
+  /** A named target gets its own legend entry (and tooltip row); an unnamed one is just the line. */
+  const targetName = targetValue !== null ? input.target?.label || "" : "";
+  const showLegend = input.legend ?? input.series.length + (input.compare ? 1 : 0) + (targetName ? 1 : 0) > 1;
   const stacked = style.stacked || style.normalize;
 
   const series: Record<string, unknown>[] = input.series.map((entry, index) => {
@@ -175,17 +186,29 @@ export function cartesianOption(theme: ChartTheme, input: CartesianInput, style:
     });
   }
 
-  if (input.target) {
-    const value = toNumber(input.target.value);
-    if (value !== null) {
-      (series[0] ??= { type: style.type, data: [] }).markLine = {
-        silent: true,
-        symbol: "none",
+  if (targetValue !== null) {
+    const markLine = {
+      silent: true,
+      symbol: "none",
+      lineStyle: { color: theme.muted, type: [4, 4], width: 1 },
+      // No label on the plot: at the line's end it sat on the last point ("План", "Daily target").
+      label: { show: false },
+      data: [style.horizontal ? { xAxis: targetValue } : { yAxis: targetValue }],
+    };
+    if (targetName) {
+      // A series with no points of its own: it carries the line and its legend entry (which also
+      // hides the line), nothing else.
+      series.push({
+        type: "line",
+        name: targetName,
+        data: [],
+        showSymbol: false,
         lineStyle: { color: theme.muted, type: [4, 4], width: 1 },
-        label: { formatter: input.target.label ?? "", color: theme.muted, fontFamily: theme.fontFamily, fontSize: CHART_TYPE.axis, position: "insideEndTop" },
-        data: [style.horizontal ? { xAxis: value } : { yAxis: value }],
-      };
-    }
+        itemStyle: { color: theme.muted },
+        markLine,
+        z: 2,
+      });
+    } else (series[0] ??= { type: style.type, data: [] }).markLine = markLine;
   }
 
   const labels = categories.map((category) => categoryText(category, input.xFormat, ctx.lang));
@@ -204,10 +227,13 @@ export function cartesianOption(theme: ChartTheme, input: CartesianInput, style:
     ...axes,
     max: style.normalize ? 100 : undefined,
     splitNumber: 4,
+    ...(input.yMax !== undefined && input.yMax > 0 ? { min: 0, max: input.yMax, interval: input.yMax / 4 } : {}),
+    ...(input.integer ? { minInterval: 1 } : {}),
     axisLabel: { ...axes.axisLabel, formatter: (value: number) => axisText(value, format, ctx) },
   };
 
-  const swatchColors = [...input.series.map((s, i) => colorOf(s, i)), ...(input.compare ? [theme.compare] : [])];
+  const swatchColors = [...input.series.map((s, i) => colorOf(s, i)), ...(input.compare ? [theme.compare] : []), ...(targetName ? [theme.muted] : [])];
+  const legendNames = [...input.series.map((s) => s.name), ...(input.compare ? [input.compare.name] : [])];
 
   return {
     animation: animate,
@@ -226,6 +252,7 @@ export function cartesianOption(theme: ChartTheme, input: CartesianInput, style:
           itemHeight: 10,
           itemGap: 16,
           textStyle: { color: theme.muted, fontFamily: theme.fontFamily, fontSize: CHART_TYPE.label },
+          ...(targetName ? { data: [...legendNames, { name: targetName, icon: DASH_ICON }] } : {}),
         }
       : { show: false },
     tooltip: {
@@ -241,6 +268,7 @@ export function cartesianOption(theme: ChartTheme, input: CartesianInput, style:
           value: typeof param.value === "number" ? param.value : null,
           dashed: param.seriesIndex >= input.series.length || input.series[param.seriesIndex]?.dashed,
         }));
+        if (targetName) rows.push({ name: targetName, color: theme.muted, value: targetValue, dashed: true });
         return tooltipHtml(labels[first.dataIndex] ?? "", rows, format, ctx, theme);
       },
     },

@@ -174,7 +174,7 @@ watch(
       <BranchSwitch v-model="branch" />
     </div>
 
-    <KpiStrip class="att-kpis" :items="kpis" :columns="5" />
+    <KpiStrip :items="kpis" :columns="5" phone="grid" />
 
     <div v-if="skeleton" class="ui-card flex flex-col gap-2 p-4">
       <SkeletonBlock v-for="n in 7" :key="n" height="34px" radius="8px" />

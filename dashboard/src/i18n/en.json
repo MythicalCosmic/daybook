@@ -87,6 +87,10 @@
   "common.number.decrease": "Decrease",
   "common.money.currency": "Currency",
   "common.time.pick": "Choose a time",
+  "common.map.label": "Map",
+  "common.map.clickToPlace": "Click the map to choose the place",
+  "common.map.myLocation": "My location",
+  "common.map.locateFailed": "Couldn’t get your location. Click the map instead.",
 
   "common.date.placeholder": "Pick a date",
   "common.date.prevMonth": "Previous month",
@@ -454,6 +458,8 @@
   "shell.searchType.crm": "Deals",
   "shell.searchType.inventory": "Products",
   "shell.searchType.knowledge": "Knowledge pages",
+  "shell.searchType.branches": "Branches",
+  "shell.searchType.events": "Events",
   "shell.searchType.other": "Other",
 
   "shell.telegram.endedTitle": "Session ended",

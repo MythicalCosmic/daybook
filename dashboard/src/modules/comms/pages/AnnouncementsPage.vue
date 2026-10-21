@@ -97,7 +97,7 @@ function open(row: Announcement): void {
       </template>
     </PageHeader>
 
-    <KpiStrip class="page-kpis" :items="kpis" :loading="stats.isPending.value" :columns="4" />
+    <KpiStrip :items="kpis" :loading="stats.isPending.value" :columns="4" phone="compact" />
 
     <DataTable
       :state="table"
@@ -165,18 +165,3 @@ function open(row: Announcement): void {
     </DataTable>
   </div>
 </template>
-
-<style scoped>
-/* Phones: the four numbers as a 2 × 2 grid without hints, so the page starts on the first screen. */
-@media (max-width: 639px) {
-  .page-kpis :deep(.kpi-strip) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .page-kpis :deep(.kpi-strip > *) {
-    padding: 0.75rem 1rem;
-  }
-  .page-kpis :deep(.kpi-strip > * > .mt-auto) {
-    display: none;
-  }
-}
-</style>

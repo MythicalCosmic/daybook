@@ -24,7 +24,6 @@ import UiButton from "@/components/UiButton.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { useHotkey } from "@/core/hotkeys";
-import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
@@ -39,7 +38,6 @@ const fmt = useFormat();
 const route = useRoute();
 const router = useRouter();
 const confirm = useConfirm();
-const { isPhone } = useBreakpoints();
 
 const onboarding = computed(() => route.name === "routines.onboarding");
 const search = useRouteState("q", rs.string(""));
@@ -150,7 +148,7 @@ function who(routine: Routine): string {
   <div class="flex min-w-0 flex-col gap-5">
     <PageHeader :title="t('routines.title')" :description="onboarding ? t('routines.onboardingDescription') : t('routines.description')" :tabs="tabs">
       <template #actions>
-        <UiButton variant="primary" :icon="Plus" :kbd="isPhone ? undefined : 'N'" @click="create">{{ onboarding ? t("routines.newOnboarding") : t("routines.new") }}</UiButton>
+        <UiButton variant="primary" :icon="Plus" kbd="N" @click="create">{{ onboarding ? t("routines.newOnboarding") : t("routines.new") }}</UiButton>
       </template>
     </PageHeader>
 

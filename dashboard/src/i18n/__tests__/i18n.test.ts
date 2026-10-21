@@ -57,6 +57,27 @@ describe("i18n", () => {
     expect([1, 3, 5, 21].map((n) => i18n.global.t("demo.tasks", { n }, n))).toEqual(["1 задача", "3 задачи", "5 задач", "21 задача"]);
   });
 
+  it("loads each language's shell dictionary on demand and switches once it has arrived", async () => {
+    // A fresh copy of the module: nothing loaded yet, as in the app before main.ts runs.
+    vi.resetModules();
+    const fresh = await import("@/i18n");
+    expect(fresh.t("shell.inbox.title")).toBe("shell.inbox.title");
+    await fresh.setLanguage("ru");
+    expect(fresh.currentLanguage()).toBe("ru");
+    expect(fresh.t("shell.inbox.title")).toBe("Входящие");
+    // Another language: the old one stays until the new dictionary is here.
+    const switching = fresh.setLanguage("uz");
+    expect(fresh.currentLanguage()).toBe("ru");
+    await switching;
+    expect(fresh.currentLanguage()).toBe("uz");
+    expect(fresh.t("shell.inbox.title")).toBe("Kiruvchilar");
+    // A module's keys merged before a shell dictionary survive it (merge, not replace).
+    fresh.mergeModuleMessages("kudos", { en: { "kudos.title": "Kudos" }, ru: { "kudos.title": "Благодарности" }, uz: { "kudos.title": "Rahmatlar" } });
+    await fresh.loadAllLanguages();
+    expect(fresh.allLanguages("shell.inbox.title").en).toBe("Inbox");
+    expect(fresh.allLanguages("kudos.title")).toEqual({ uz: "Rahmatlar", ru: "Благодарности", en: "Kudos" });
+  });
+
   it("has small guards", () => {
     expect(isLanguage("uz")).toBe(true);
     expect(isLanguage("de")).toBe(false);

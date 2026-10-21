@@ -174,8 +174,6 @@
   "settings.day.sun": "Ya",
   "settings.map.label": "Filial xaritasi",
   "settings.map.clickToPlace": "Filialni belgilash uchun xaritani bosing",
-  "settings.map.myLocation": "Mening joylashuvim",
-  "settings.map.locateFailed": "Joylashuvingiz aniqlanmadi. Xaritani bosing.",
   "settings.invite.description": "Xodimlar Telegram orqali qo‘shiladi: havolani ochadi, ismi va lavozimini yuboradi, siz tasdiqlaysiz.",
   "settings.invite.shareText": "Telegram’da {company} jamoasiga qo‘shiling",
   "settings.invite.copied": "Havola nusxalandi",

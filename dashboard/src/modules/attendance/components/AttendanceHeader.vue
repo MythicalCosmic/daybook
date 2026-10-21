@@ -4,8 +4,6 @@
  * (Today · Timesheet · Roster · Schedules · Swaps · Corrections) as links, with the waiting counts
  * from the pulse. Tabs the person may not open are left out.
  */
-import "../attendance.css";
-
 import { CalendarClock, CalendarDays, CalendarRange, ClipboardCheck, Clock3, Repeat2 } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";

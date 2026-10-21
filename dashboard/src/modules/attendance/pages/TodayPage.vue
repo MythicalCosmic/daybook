@@ -34,7 +34,7 @@ import RecordDrawer from "../components/RecordDrawer.vue";
 import { BOARD_STATES, clockOf, formatDistance, STATE_COLORS } from "../lib";
 import type { BoardRow, BoardState } from "../types";
 
-const GeoMap = defineAsyncComponent(() => import("../components/GeoMap.vue"));
+const MapView = defineAsyncComponent(() => import("@/components/MapView.vue"));
 const PersonMonth = defineAsyncComponent(() => import("../components/PersonMonth.vue"));
 const SettingsForm = defineAsyncComponent(() => import("../components/SettingsForm.vue"));
 
@@ -171,7 +171,7 @@ const columnLabel = (state: BoardState) => t(`attendance.state.${state}`);
     </div>
     <ErrorState v-else-if="board.isError.value" :error="board.error.value" :retry="() => board.refetch()" />
     <template v-else-if="data">
-      <KpiStrip class="att-kpis" :items="kpis" :columns="5" />
+      <KpiStrip :items="kpis" :columns="5" phone="grid" />
 
       <EmptyState
         v-if="!data.people.length || unplanned"
@@ -219,7 +219,7 @@ const columnLabel = (state: BoardState) => t(`attendance.state.${state}`);
             <h2 class="text-sm font-semibold text-fg">{{ t("attendance.map.title") }}</h2>
             <span class="text-xs text-subtle">{{ t("attendance.map.hint") }}</span>
           </header>
-          <GeoMap v-if="mapBranches.some((b) => b.latitude)" :branches="mapBranches" :points="mapPoints" height="300px" @select="(id) => (recordId = Number(id))" />
+          <MapView v-if="mapBranches.some((b) => b.latitude)" :branches="mapBranches" :points="mapPoints" height="300px" @select="(id) => (recordId = Number(id))" />
           <EmptyState v-else size="sm" tone="neutral" :icon="MapPinned" :title="t('attendance.map.noCoordinates')" :description="t('attendance.map.noCoordinatesBody')" />
           <div class="flex flex-wrap items-center gap-3 text-xs text-muted">
             <span class="inline-flex items-center gap-1.5"><span class="size-2.5 rounded-full bg-success" />{{ t("attendance.map.inside") }}</span>

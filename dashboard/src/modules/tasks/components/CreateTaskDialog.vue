@@ -25,7 +25,6 @@ import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
 import { addDays, todayIn, zonedNow } from "@/lib/dates";
-import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useCompanyStore } from "@/stores/company";
 
 import { useCreateTasks, useTaskOptions } from "../api";
@@ -38,7 +37,6 @@ const emit = defineEmits<{ created: [ids: number[]] }>();
 
 const { t } = useI18n();
 const company = useCompanyStore();
-const { isPhone } = useBreakpoints();
 const options = useTaskOptions();
 const create = useCreateTasks();
 
@@ -249,7 +247,7 @@ async function submit(): Promise<void> {
         <span class="truncate">{{ recipients.length ? t("tasks.create.makes", { n: recipients.length }, recipients.length) : t("tasks.create.nobodyYet") }}</span>
       </div>
       <UiButton variant="ghost" @click="open = false">{{ t("common.cancel") }}</UiButton>
-      <UiButton variant="primary" :icon="proof === 'photo' ? Camera : undefined" :loading="create.isPending.value" :kbd="isPhone ? undefined : '⌘↵'" @click="submit">{{ t("tasks.create.submit") }}</UiButton>
+      <UiButton variant="primary" :icon="proof === 'photo' ? Camera : undefined" :loading="create.isPending.value" kbd="⌘↵" @click="submit">{{ t("tasks.create.submit") }}</UiButton>
     </template>
   </UiDialog>
 </template>

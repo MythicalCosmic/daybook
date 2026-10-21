@@ -24,9 +24,9 @@ import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { useHotkey } from "@/core/hotkeys";
 import { todayIn } from "@/lib/dates";
-import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
+import { usePageTitle } from "@/lib/usePageTitle";
 import { useCompanyStore } from "@/stores/company";
 
 import { archiveProject, restoreProject, useProject, useRefreshProjects } from "../api";
@@ -54,13 +54,14 @@ const fmt = useFormat();
 const route = useRoute();
 const router = useRouter();
 const company = useCompanyStore();
-const { isPhone } = useBreakpoints();
 const confirm = useConfirm();
 const refresh = useRefreshProjects();
 
 const projectId = computed(() => Number(route.params.projectId) || 0);
 const query = useProject(projectId);
 const project = computed(() => query.data.value ?? null);
+// The breadcrumb and the browser tab say which project this is.
+usePageTitle(() => project.value?.name);
 const caps = computed(() => project.value?.capabilities);
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const notFound = computed(() => isApiError(query.error.value) && query.error.value.status === 404);
@@ -182,7 +183,7 @@ const daysLeft = computed(() => {
     <template v-else-if="project">
       <PageHeader :title="project.name" :back="`/c/${company.currentId}/projects`" :back-label="t('projects.title')" :tabs="tabs">
         <template #actions>
-          <UiButton v-if="caps?.post_update" variant="secondary" :icon="MessageSquarePlus" :kbd="isPhone ? undefined : 'U'" @click="posting = true">{{ t("projects.action.postUpdate") }}</UiButton>
+          <UiButton v-if="caps?.post_update" variant="secondary" :icon="MessageSquarePlus" kbd="U" @click="posting = true">{{ t("projects.action.postUpdate") }}</UiButton>
           <UiButton v-if="caps?.manage" variant="ghost" :icon="Pencil" class="max-sm:hidden" @click="editing = true">{{ t("projects.action.edit") }}</UiButton>
           <DropdownMenu v-if="menu.length" :items="menu">
             <template #trigger><IconButton :icon="Ellipsis" :label="t('common.more')" variant="secondary" /></template>

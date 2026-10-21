@@ -23,6 +23,8 @@
     "@tanstack/vue-virtual": "3.13.39",
     "@tiptap/core": "3.31.4",
     "@tiptap/extension-link": "3.31.4",
+    "@tiptap/extension-list": "3.31.4",
+    "@tiptap/extensions": "3.31.4",
     "@tiptap/pm": "3.31.4",
     "@tiptap/starter-kit": "3.31.4",
     "@tiptap/vue-3": "3.31.4",

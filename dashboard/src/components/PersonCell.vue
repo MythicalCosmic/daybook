@@ -35,6 +35,11 @@ const card = computed<PersonPreview | null>(() => {
   if (typeof props.preview === "object") return props.preview;
   return { name: props.person.name, photo_url: props.person.photo_url, subtitle: props.subtitle ?? undefined };
 });
+
+/** A linked name opens the person, not the row it sits in; a plain name lets the row's click through. */
+function onNameClick(event: MouseEvent): void {
+  if (to.value) event.stopPropagation();
+}
 </script>
 
 <template>
@@ -47,7 +52,7 @@ const card = computed<PersonPreview | null>(() => {
           :is="to ? RouterLink : 'span'"
           :to="to"
           :class="['block truncate font-medium text-fg', size === 'sm' ? 'text-sm' : 'text-base', to && 'hover:text-primary hover:underline hover:underline-offset-2']"
-          @click.stop
+          @click="onNameClick"
           >{{ person.name }}</component
         >
       </HoverCard>
@@ -56,7 +61,7 @@ const card = computed<PersonPreview | null>(() => {
         v-else
         :to="to"
         :class="['block truncate font-medium text-fg', size === 'sm' ? 'text-sm' : 'text-base', to && 'hover:text-primary hover:underline hover:underline-offset-2']"
-        @click.stop
+        @click="onNameClick"
         >{{ person.name }}</component
       >
       <span v-if="subtitle" class="mt-0.5 block truncate text-xs text-muted">{{ subtitle }}</span>

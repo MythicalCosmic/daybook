@@ -5,11 +5,11 @@ import { useI18n } from "vue-i18n";
 
 import type { Range } from "@/api/types";
 import ChartCard from "@/components/ChartCard.vue";
+import LineChart from "@/components/LineChart.vue";
 
 import { useFormat } from "@/lib/useFormat";
 
 import { useSummary } from "../api";
-import ScaledChart from "../components/ScaledChart.vue";
 
 defineProps<{ companyId: number; range?: Range; compare?: Range | null }>();
 const { t } = useI18n();
@@ -48,7 +48,7 @@ const csv = computed(() => ({
     :empty-text="t('tasks.chart.empty')"
     :csv="csv as never"
   >
-    <ScaledChart
+    <LineChart
       :categories="categories"
       :series="[{ name: t('tasks.kpi.onTime'), data: series.map((point) => point.on_time_percent) }]"
       value-format="percent"

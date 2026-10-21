@@ -72,7 +72,8 @@ onMounted(() => {
         <h1 class="text-lg font-semibold tracking-[-0.01em] text-fg md:text-xl">{{ title }}</h1>
         <p v-if="description" class="mt-1 max-w-[720px] text-base text-muted">{{ description }}</p>
       </div>
-      <div v-if="$slots.actions" class="flex shrink-0 flex-wrap items-center gap-2">
+      <!-- Never wider than the header: on phones the actions take their own full row and wrap inside it. -->
+      <div v-if="$slots.actions" class="flex min-w-0 max-w-full shrink-0 flex-wrap items-center gap-2 max-sm:w-full" data-page-actions>
         <slot name="actions" />
       </div>
     </div>

@@ -2,7 +2,13 @@
  * vue-i18n setup (plan §6.5). Messages are flat ("tasks.board.empty": "…"): the shell's own
  * dictionaries here, merged with each module's `messages()` when that module is first needed.
  * Keys are namespaced by module id; shell keys use "common." and "shell.".
+ *
+ * The shell dictionaries load per language (each is its own chunk, ~5–6 KB gzipped): main.ts
+ * loads the person's language before mounting, `setLanguage` loads another one before switching,
+ * and the palette loads all three to match titles in any language. Tests have all three loaded
+ * up front (src/test/setup.ts).
  */
+import { ref } from "vue";
 import { createI18n } from "vue-i18n";
 
 import { LANGUAGES, type Language } from "@/api/types";
@@ -10,9 +16,6 @@ import type { DashboardModule, Messages } from "@/core/modules";
 import { readStored, writeStored } from "@/lib/storage";
 
 import { compileMessage } from "./compile";
-import en from "./en.json";
-import ru from "./ru.json";
-import uz from "./uz.json";
 
 export type { Language };
 
@@ -50,7 +53,7 @@ export const i18n = createI18n({
   globalInjection: true,
   locale: initialLanguage(),
   fallbackLocale: "en",
-  messages: { uz, ru, en } as Record<Language, Messages>,
+  messages: { uz: {}, ru: {}, en: {} } as Record<Language, Messages>,
   // Flat keys: a dot is part of the key, never a path.
   messageResolver: (messages, path) => {
     const value = (messages as Record<string, unknown>)[path];
@@ -73,14 +76,58 @@ export function currentLanguage(): Language {
   return isLanguage(locale) ? locale : "uz";
 }
 
-export function setLanguage(language: Language): void {
-  i18n.global.locale.value = language;
-  writeStored("language", language);
-  if (typeof document !== "undefined") document.documentElement.lang = language;
+const SHELL_DICTIONARIES: Record<Language, () => Promise<{ default: Messages }>> = {
+  uz: () => import("./uz.json"),
+  ru: () => import("./ru.json"),
+  en: () => import("./en.json"),
+};
+const shellLoaded = new Set<Language>();
+const shellPending = new Map<Language, Promise<void>>();
+/** Bumped when a shell dictionary arrives, so `allLanguages` readers recompute. */
+const shellVersion = ref(0);
+
+/** Adds a language's shell dictionary (merged: module keys already there stay). */
+export function addShellMessages(language: Language, messages: Messages): void {
+  i18n.global.mergeLocaleMessage(language, messages);
+  shellLoaded.add(language);
+  shellVersion.value++;
+}
+
+/** Loads a language's shell dictionary once; later calls share the same promise. */
+export function loadLanguage(language: Language): Promise<void> {
+  if (shellLoaded.has(language)) return Promise.resolve();
+  let pending = shellPending.get(language);
+  if (!pending) {
+    pending = SHELL_DICTIONARIES[language]()
+      .then((module) => addShellMessages(language, module.default))
+      .finally(() => shellPending.delete(language));
+    shellPending.set(language, pending);
+  }
+  return pending;
+}
+
+/** All three shell dictionaries (the palette matches titles in any language). */
+export function loadAllLanguages(): Promise<void> {
+  return Promise.all(LANGUAGES.map(loadLanguage)).then(() => undefined);
+}
+
+/** Switches the UI language, at once when its dictionary is already here, else once it has loaded. */
+export function setLanguage(language: Language): Promise<void> {
+  const apply = () => {
+    i18n.global.locale.value = language;
+    writeStored("language", language);
+    if (typeof document !== "undefined") document.documentElement.lang = language;
+  };
+  if (shellLoaded.has(language)) {
+    apply();
+    return Promise.resolve();
+  }
+  return loadLanguage(language).then(apply);
 }
 
 /** Text of `key` in every language, for searching titles in uz, ru and en at once. */
 export function allLanguages(key: string): Record<Language, string> {
+  void shellVersion.value;
   const out = {} as Record<Language, string>;
   for (const language of LANGUAGES) {
     const messages = i18n.global.getLocaleMessage(language) as Record<string, unknown>;

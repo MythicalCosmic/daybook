@@ -57,7 +57,7 @@ async function link(target: Target): Promise<void> {
 <template>
   <UiDialog v-model:open="open" :title="t('knowledge.links.dialogTitle')" :description="t('knowledge.links.dialogHint')" size="md">
     <div class="flex flex-col gap-3">
-      <TextInput v-model="query" enterkeyhint="search" :icon="Search" :placeholder="t('knowledge.links.search')" autofocus clearable />
+      <TextInput v-model="query" type="search" :icon="Search" :placeholder="t('knowledge.links.search')" autofocus clearable />
       <div v-if="targets.isPending.value" class="flex flex-col gap-2"><SkeletonBlock v-for="n in 4" :key="n" height="44px" radius="8px" /></div>
       <EmptyState v-else-if="!(targets.data.value ?? []).length" size="sm" tone="neutral" :icon="Search" :title="t('knowledge.links.none')" :description="t('knowledge.links.noneHint')" />
       <ul v-else class="flex max-h-[360px] flex-col overflow-y-auto">

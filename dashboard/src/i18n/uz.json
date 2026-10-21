@@ -87,6 +87,10 @@
   "common.number.decrease": "Kamaytirish",
   "common.money.currency": "Valyuta",
   "common.time.pick": "Vaqtni tanlang",
+  "common.map.label": "Xarita",
+  "common.map.clickToPlace": "Joyni tanlash uchun xaritani bosing",
+  "common.map.myLocation": "Mening joylashuvim",
+  "common.map.locateFailed": "Joylashuvingiz aniqlanmadi. Xaritani bosing.",
 
   "common.date.placeholder": "Sanani tanlang",
   "common.date.prevMonth": "Oldingi oy",
@@ -454,6 +458,8 @@
   "shell.searchType.crm": "Bitimlar",
   "shell.searchType.inventory": "Mahsulotlar",
   "shell.searchType.knowledge": "Bilimlar bazasi sahifalari",
+  "shell.searchType.branches": "Filiallar",
+  "shell.searchType.events": "Tadbirlar",
   "shell.searchType.other": "Boshqa",
 
   "shell.telegram.endedTitle": "Sessiya tugadi",

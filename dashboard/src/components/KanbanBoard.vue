@@ -199,6 +199,12 @@ function onCardKeydown(event: KeyboardEvent, item: Item): void {
 function openAdd(column: KanbanColumn): void {
   adding.value = column.id;
   emit("add-open", column);
+  // The quick add follows the last card, so in a long column it opens below the fold.
+  void nextTick(() =>
+    document
+      .querySelector<HTMLElement>(`[data-board="${boardId}"] [data-column="${CSS.escape(column.id)}"] [data-kanban-add]`)
+      ?.scrollIntoView?.({ block: "nearest" }),
+  );
 }
 
 function wipTone(column: KanbanColumn): "over" | "at" | null {
@@ -253,6 +259,14 @@ function wipTone(column: KanbanColumn): "over" | "at" | null {
           {{ t("common.kanban.notAllowed") }}
         </p>
 
+        <!-- "No cards" sits at the top of an empty column, above the quick add. -->
+        <p v-if="!(lists[column.id]?.length) && adding !== column.id" class="shrink-0 px-3 pb-2 pt-1 text-center text-xs text-subtle" data-kanban-empty>
+          <slot name="empty" :column="column">{{ t("common.kanban.empty") }}</slot>
+        </p>
+
+        <!-- The list fills the column, so a card dropped anywhere below the last one lands at the
+             end. Only cards are sortable (`draggable`); the quick add follows the last card inside
+             the list and hides while a card is dragged, so the drop preview never lands after it. -->
         <VueDraggable
           :model-value="lists[column.id] ?? []"
           :data-column="column.id"
@@ -260,6 +274,7 @@ function wipTone(column: KanbanColumn): "over" | "at" | null {
           :group="groupFor(column.id)"
           :sort="sortable"
           :disabled="disabled"
+          draggable="[data-card-key]"
           :animation="180"
           :delay="150"
           :delay-on-touch-only="true"
@@ -287,25 +302,20 @@ function wipTone(column: KanbanColumn): "over" | "at" | null {
           >
             <slot name="card" :item="item" :column="column" :lifted="lifted?.key === keyOf(item)" />
           </div>
-        </VueDraggable>
-
-        <p v-if="!(lists[column.id]?.length) && adding !== column.id" class="pointer-events-none -mt-12 mb-6 px-3 text-center text-xs text-subtle">
-          <slot name="empty" :column="column">{{ t("common.kanban.empty") }}</slot>
-        </p>
-
-        <div v-if="$slots['quick-add'] && !disabled" class="shrink-0 px-2 pb-2">
-          <div v-if="adding === column.id" class="rounded-[10px] border border-line bg-surface p-2 shadow-xs">
-            <slot name="quick-add" :column="column" :close="() => (adding = null)" />
+          <div v-if="$slots['quick-add'] && !disabled" v-show="!dragging" class="shrink-0" data-kanban-add>
+            <div v-if="adding === column.id" class="rounded-[10px] border border-line bg-surface p-2 shadow-xs">
+              <slot name="quick-add" :column="column" :close="() => (adding = null)" />
+            </div>
+            <button
+              v-else
+              type="button"
+              class="flex h-8 w-full items-center gap-1.5 rounded-[8px] px-2 text-sm font-medium text-muted transition-colors hover:bg-highlight hover:text-fg"
+              @click="openAdd(column)"
+            >
+              <Plus :size="15" />{{ t("common.kanban.add") }}
+            </button>
           </div>
-          <button
-            v-else
-            type="button"
-            class="flex h-8 w-full items-center gap-1.5 rounded-[8px] px-2 text-sm font-medium text-muted transition-colors hover:bg-highlight hover:text-fg"
-            @click="openAdd(column)"
-          >
-            <Plus :size="15" />{{ t("common.kanban.add") }}
-          </button>
-        </div>
+        </VueDraggable>
       </section>
     </div>
   </div>

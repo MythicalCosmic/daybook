@@ -104,7 +104,7 @@ useHotkey("n", () => canManage.value && void router.push(`${base.value}/new`), {
     </PageHeader>
 
     <div v-if="isPhone" class="mb-5">
-      <TextInput v-model="query" enterkeyhint="search" :icon="Search" :placeholder="t('knowledge.sidebar.search')" clearable size="lg" />
+      <TextInput v-model="query" type="search" :icon="Search" :placeholder="t('knowledge.sidebar.search')" clearable size="lg" />
       <div v-if="searching" class="ui-card mt-2 p-1.5">
         <p v-if="results.data.value && !results.data.value.results.length" class="px-2 py-3 text-sm text-muted">{{ t("knowledge.sidebar.noResults") }}</p>
         <PageListItem v-for="page in results.data.value?.results ?? []" :key="page.id" :page="page" show-excerpt />

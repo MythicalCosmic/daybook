@@ -66,16 +66,20 @@ import { allowed, isModuleVisible } from "@/core/access";
 import { hasExtension } from "@/core/extensions";
 import { modules, type Command, type CommandCtx } from "@/core/modules";
 import type { NavGroup } from "@/core/nav";
-import { allLanguages } from "@/i18n";
+import { allLanguages, loadAllLanguages } from "@/i18n";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useCompanyStore } from "@/stores/company";
 import { usePaletteStore } from "@/stores/palette";
 import { useUiStore } from "@/stores/ui";
 
+import { searchTypeKey } from "./searchTypes";
+
 const props = defineProps<{ groups: NavGroup[]; aiAvailable: boolean }>();
 const emit = defineEmits<{ openInbox: []; signOut: [] }>();
 
 const { t, te, locale } = useI18n();
+// Titles match in any of the three languages, so the other two shell dictionaries load now.
+void loadAllLanguages().catch(() => undefined);
 const { isPhone } = useBreakpoints();
 const route = useRoute();
 const router = useRouter();
@@ -312,13 +316,9 @@ const resultItems = computed<Item[]>(() => {
 const isPersonHit = (type: string) => type === "people" || type.endsWith(".people") || type === "members";
 
 const typeLabel = (type: string) => {
-  const [prefix] = type.split(".");
-  const candidates = [type, type.split(".").pop() ?? type, prefix ?? type];
-  for (const candidate of candidates) {
-    const key = `shell.searchType.${candidate}`;
-    if (te(key)) return t(key);
-  }
-  const module = modules.find((m) => m.id === prefix);
+  const key = searchTypeKey(type, (candidate) => te(candidate));
+  if (key) return t(key);
+  const module = modules.find((m) => m.id === type.split(".")[0]);
   return module ? t(module.title) : t("shell.searchType.other");
 };
 

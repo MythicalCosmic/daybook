@@ -95,7 +95,7 @@ const widths = { sm: "w-[400px]", md: "w-[480px]", lg: "w-[640px]", xl: "w-[820p
             <slot name="title">
               <DialogTitle class="truncate text-md font-semibold text-fg">{{ title }}</DialogTitle>
             </slot>
-            <DialogDescription v-if="description" class="truncate text-sm text-muted">{{ description }}</DialogDescription>
+            <DialogDescription v-if="description" class="line-clamp-2 text-sm text-muted" :title="description">{{ description }}</DialogDescription>
           </div>
           <slot name="header-actions" :value="queryValue" />
           <DialogClose

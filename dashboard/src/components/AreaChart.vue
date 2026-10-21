@@ -21,11 +21,15 @@ withDefaults(
     height?: string;
     legend?: boolean;
     target?: { value: number | string; label?: string } | null;
+    /** The value axis runs 0…yMax in four steps (100: a percentage axis stops at 100 %). */
+    yMax?: number;
+    /** Whole-number ticks only (counts). */
+    integer?: boolean;
     label?: string;
     stacked?: boolean;
     smooth?: boolean;
   }>(),
-  { compare: null, valueFormat: "number", currency: undefined, xFormat: "none", height: "240px", legend: undefined, target: null, label: undefined, stacked: false, smooth: true },
+  { compare: null, valueFormat: "number", currency: undefined, xFormat: "none", height: "240px", legend: undefined, target: null, yMax: undefined, integer: false, label: undefined, stacked: false, smooth: true },
 );
 </script>
 

@@ -64,10 +64,12 @@ function guard(event: Event): void {
   <DialogRoot v-else v-model:open="open">
     <DialogPortal>
       <DialogOverlay class="anim-overlay fixed inset-0 z-[60] bg-overlay backdrop-blur-[2px]" />
+      <!-- The dialog's max height leaves this top offset and the 16px bottom padding, so a tall form
+           scrolls inside its body and the footer stays on screen. -->
       <div class="pointer-events-none fixed inset-0 z-[61] flex items-start justify-center overflow-y-auto p-4 pt-[min(14vh,120px)]">
         <DialogContent
           :class="[
-            'anim-dialog pointer-events-auto relative flex max-h-[calc(100dvh-32px)] w-full flex-col overflow-hidden rounded-drawer bg-surface shadow-palette outline-none',
+            'anim-dialog pointer-events-auto relative flex max-h-[calc(100dvh-min(14vh,120px)-16px)] w-full flex-col overflow-hidden rounded-drawer bg-surface shadow-palette outline-none',
             widths[size],
           ]"
           @pointer-down-outside="guard"
