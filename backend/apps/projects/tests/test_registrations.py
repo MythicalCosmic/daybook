@@ -17,6 +17,7 @@ from apps.projects import providers, services
 from apps.projects.models import Project, ProjectUpdate, TimeEntry
 from apps.projects.tests.factories import card, project, team
 from apps.tasks import visibility
+from apps.tasks.models import Task
 from apps.tasks.tests.factories import jpeg
 
 pytestmark = pytest.mark.django_db
@@ -150,8 +151,8 @@ def test_the_demo(company, demo_people):
     opening = projects["SRG"]
     assert opening.status == "active" and opening.health == "at_risk"
     assert opening.budget == Decimal("150000000.00")
-    assert opening.tasks.count() == 30 and projects["GPP"].tasks.count() == 30
-    assert projects["INV"].tasks.count() == 30 and projects["INV"].status == "planning"
+    assert opening.tasks.count() == 31 and projects["GPP"].tasks.count() == 30
+    assert projects["INV"].tasks.count() == 30 and projects["INV"].status == "active"
     assert projects["GPP"].health == "on_track"
     assert projects["DIA"].status == "completed"
     # Time only on the days each person works.
@@ -160,6 +161,20 @@ def test_the_demo(company, demo_people):
     story = demo_plan.Plan(company, people, now)
     for entry in TimeEntry.objects.filter(company=company).select_related("membership"):
         assert story.works(story.key_of(entry.membership), entry.day)
+    # Cards are started, finished and checked while their people are at work, never on leave.
+    for task in Task.objects.filter(project__company=company).select_related("project"):
+        for moment, who in (
+            (task.started_at, task.assignee),
+            (task.completed_at, task.assignee),
+            (task.confirmed_at, task.project.lead),
+        ):
+            if moment is not None:
+                assert moment <= now, task.title
+                day = timezone.localtime(moment, ZoneInfo(company.timezone)).date()
+                assert story.away(story.key_of(who), day) is None, (task.title, day)
+    # Yunusobod is counted on the story's stock-count Saturday, as the calendar says.
+    counted = projects["INV"].milestones.get(name="Yunusobod sanaldi")
+    assert counted.due_on == story.inventory_day()
     assert opening.finance_transactions.filter(kind="expense").count() == 9
     assert TimeEntry.objects.filter(company=company).count() > 20
     assert ProjectUpdate.objects.filter(project=opening).count() == 3

@@ -1,7 +1,7 @@
 """The demo's shared story (apps/core/demo_plan.py) and running code at its moments
 (apps/core/demo_time.py)."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from unittest import mock
 from zoneinfo import ZoneInfo
 
@@ -52,6 +52,28 @@ def test_nobody_works_while_away_and_a_colleague_covers(story):
     inventory = story.inventory_day()
     assert inventory.weekday() == 5 and story.works("farrux", inventory)
     assert story.away("farrux", inventory - timedelta(days=1)) == "time_off"
+
+
+def test_work_is_moved_into_the_persons_hours(story):
+    """Routines and cards are finished while the person is at work, even when early or late."""
+    today = story.today
+    # Alisher opens Chilonzor today, 08:00 to 20:00.
+    assert story.at_work("worker", today, story.at(today, time(7, 20))) == story.at(
+        today, time(8, 5)
+    )
+    assert story.at_work("worker", today, story.at(today, time(23, 40))) == story.at(
+        today, time(19, 57)
+    )
+    noon = story.at(today, time(12, 0))
+    assert story.at_work("worker", today, noon) == noon
+    # A night pharmacist's hours run into the next morning.
+    starts, ends = story.hours("nigora", today)
+    assert (starts.hour, ends.hour, (ends - starts).days) == (20, 8, 0)
+    past_midnight = story.at(today + timedelta(days=1), time(2, 30))
+    assert story.at_work("nigora", today, past_midnight) == past_midnight
+    # On a day they don't work nothing moves (Madina is on leave).
+    assert story.hours("madina", today) is None
+    assert story.at_work("madina", today, noon) == noon
 
 
 def test_a_swapped_shift_belongs_to_whoever_worked_it(story):

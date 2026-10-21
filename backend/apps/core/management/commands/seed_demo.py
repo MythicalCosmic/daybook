@@ -35,10 +35,10 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.db.models import F, ProtectedError, Q
-from django.utils import timezone
+from django.utils import timezone, translation
 
 from apps.accounts.models import User
-from apps.companies.models import Branch, Company, Feature, TenantModel
+from apps.companies.models import Branch, Company, Feature, TenantModel, every_weekday
 from apps.companies.services import create_company
 from apps.core import demo_plan as plan
 from apps.core.demo_time import quiet, run_hooks
@@ -301,7 +301,11 @@ class Command(BaseCommand):
 
         def run(label, function, company, crew):
             started = stopwatch.perf_counter()
-            with run_hooks():  # what this demo left for after commit happens now, in its turn
+            # What the services write in words (ledger descriptions, first versions, system
+            # notes) comes out in the company's language, as when its people use the apps;
+            # notifications still go out in each reader's own. What this demo left for after
+            # commit happens now, in its turn.
+            with translation.override(company.default_language), run_hooks():
                 function(company, crew, now)
             timings[label] = timings.get(label, 0.0) + stopwatch.perf_counter() - started
 
@@ -437,6 +441,9 @@ class Command(BaseCommand):
 
     def _build_pharmacy(self, now) -> tuple[Company, dict[str, Membership]]:
         company = create_company(name=NAME, slug=SLUG, timezone="Asia/Tashkent")
+        # Both pharmacies open every day (§14.3); the distributor keeps Monday to Saturday.
+        company.workdays = every_weekday()
+        company.save(update_fields=["workdays", "updated_at"])
         chilonzor, yunusobod = self._branches(company, BRANCHES)
         staff = self._staff(company, plan.PEOPLE, {"C": chilonzor, "Y": yunusobod}, now)
         chilonzor.manager = staff["manager"]
@@ -587,6 +594,7 @@ class Command(BaseCommand):
             created_by=me,
         )
         climate.assignees.add(me)
+        made_long_ago(story, handover, orders, climate)
         task(
             climate.title,
             kind=Task.Kind.PERSONAL,
@@ -683,8 +691,17 @@ class Command(BaseCommand):
             due=time(9, 15),
             days=days,
             late={2},
+            today=True,
         )
-        history(story, boss, "manager", "Kunlik jo‘natmalarni tekshirish", due=time(17), days=days)
+        history(
+            story,
+            boss,
+            "manager",
+            "Kunlik jo‘natmalarni tekshirish",
+            due=time(17),
+            days=days,
+            today=True,
+        )
         history(
             story,
             boss,
@@ -693,6 +710,7 @@ class Command(BaseCommand):
             due=time(14),
             days=days,
             late={3},
+            today=True,
         )
         picking = TaskTemplate.objects.create(
             company=company,
@@ -704,6 +722,7 @@ class Command(BaseCommand):
         )
         picker = story.member("worker")
         picking.assignees.add(picker)
+        made_long_ago(story, picking)
         if story.works("worker", story.today):
             due = story.at(story.today, time(11, 0))
             Task.objects.create(
@@ -739,10 +758,20 @@ class Command(BaseCommand):
         return company, people
 
 
-def history(story, by, key, title, *, due=time(10, 0), days=14, late=()):
+def made_long_ago(story, *templates) -> None:
+    """Routines the company has run for months (like the tasks demo's), not ones made today:
+    a routine made after today's deadline would only start tomorrow."""
+    TaskTemplate.objects.filter(pk__in=[template.pk for template in templates]).update(
+        created_at=story.now - timedelta(days=90)
+    )
+
+
+def history(story, by, key, title, *, due=time(10, 0), days=14, late=(), today=False):
     """Two weeks (`days`) of one person's routine, on the days they work, all done: `late`
     counts their working days back (1 is the last one) when it was done after reminders, so the
-    story stays the same whatever the rota. Nothing past stays open."""
+    story stays the same whatever the rota. Nothing past stays open. With `today`, also today's
+    run when they work today (done once its time has passed), for a company no tasks demo
+    fills."""
     who = story.member(key)
     if who is None:
         return None
@@ -751,6 +780,7 @@ def history(story, by, key, title, *, due=time(10, 0), days=14, late=()):
         company=company, title=title, due_time=due, created_by=by
     )
     template.assignees.add(who)
+    made_long_ago(story, template)
     tasks, worked = [], 0
     for days_ago in range(1, days + 1):
         day = story.day(-days_ago)
@@ -758,7 +788,8 @@ def history(story, by, key, title, *, due=time(10, 0), days=14, late=()):
             continue
         worked += 1
         due_at = story.at(day, due)
-        done_at = due_at + timedelta(minutes=40 if worked in late else -15)
+        # Done while they were at work, even when late.
+        done_at = story.at_work(key, day, due_at + timedelta(minutes=40 if worked in late else -15))
         tasks.append(
             Task(
                 company=company,
@@ -772,7 +803,7 @@ def history(story, by, key, title, *, due=time(10, 0), days=14, late=()):
                 due_at=due_at,
                 status=Task.Status.DONE,
                 completed_at=done_at,
-                reminders_sent=2 if worked in late else 0,
+                reminders_sent=2 if done_at > due_at else 0,
             )
         )
     Task.objects.bulk_create(tasks)
@@ -780,6 +811,27 @@ def history(story, by, key, title, *, due=time(10, 0), days=14, late=()):
     Task.objects.filter(pk__in=[work.pk for work in tasks]).update(
         created_at=F("due_at") - timedelta(hours=8)
     )
+    if today and story.works(key, story.today):
+        due_at = story.at(story.today, due)
+        done = due_at <= story.now - timedelta(minutes=5)
+        run = Task.objects.create(
+            company=company,
+            kind=Task.Kind.DAILY,
+            template=template,
+            for_date=story.today,
+            title=title,
+            assignee=who,
+            branch=who.home_branch,
+            created_by=by,
+            due_at=due_at,
+            status=Task.Status.DONE if done else Task.Status.TODO,
+            completed_at=story.at_work(key, story.today, due_at - timedelta(minutes=12))
+            if done
+            else None,
+        )
+        # Made at midnight, like daily generation.
+        made = min(story.now - timedelta(minutes=10), story.at(story.today, time(0, 5)))
+        Task.objects.filter(pk=run.pk).update(created_at=made)
     logs = [
         ReminderLog(task=work, kind=ReminderLog.Kind.REMINDER, step=step, recipient=who)
         for work in tasks

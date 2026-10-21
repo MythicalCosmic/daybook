@@ -51,8 +51,9 @@ SALES_MANAGER = "Sales manager"
 DRIVER = "Driver"
 SMALL_POSITIONS = [WAREHOUSE_HEAD, STOREKEEPER, SALES_MANAGER, DRIVER, OFFICE]
 QUALIFIED = (HEAD, SENIOR, PHARMACIST)  # pharmaceutical education: may sell medicines
-# Pharmacists who run a till hold the Cashier role, the others Employee; the head of Yunusobod
-# has the one role the demo adds, which sees only her pharmacy.
+# Pharmacists and senior pharmacists hold the Pharmacist role (they sell at the counter and run
+# its till), the courier, the storekeeper and anyone else Employee; the head of Yunusobod has the
+# one role the demo adds, which sees only his pharmacy.
 BRANCH_MANAGER = "Branch manager"
 IN_UZBEK_POSITIONS = {
     HEAD: "Dorixona mudiri",
@@ -70,6 +71,7 @@ IN_UZBEK_ROLES = {
     "Owner": "Egasi",
     "Manager": "Rahbar",
     "Accountant": "Hisobchi",
+    "Pharmacist": "Farmatsevt",
     "Cashier": "Kassir",
     "Employee": "Xodim",
     BRANCH_MANAGER: "Filial rahbari",
@@ -117,6 +119,8 @@ ROTAS = {
     "yns_night_a": Rota("Yunusobod tungi 2/2 (A)", H(20), H(8), 60, (), TWO_TWO, 0, 7, True),
     "yns_night_b": Rota("Yunusobod tungi 2/2 (B)", H(20), H(8), 60, (), TWO_TWO, 2, 8, True),
     "senior5": Rota("Provizor 5/2", H(9), H(18), 60, WEEKDAYS, color=6, counter=True),
+    # A third pharmacist at Chilonzor's counter on weekdays, between the opener and the closer.
+    "chl_day5": Rota("Chilonzor 5/2 kunduzgi", H(9), H(18), 60, WEEKDAYS, color=6, counter=True),
     "head5": Rota("Mudir 5/2", H(9), H(18), 60, WEEKDAYS, color=1),
     "head6": Rota("Mudir 6/1", H(9), H(18), 60, SIX_DAYS, color=2),
     "office": Rota("Ofis 5/2", H(9), H(18), 60, WEEKDAYS, color=1),
@@ -159,7 +163,7 @@ class Person:
 
 
 P = Person
-TILL = "Cashier"  # runs a till: the Cashier role adds that to an employee's
+TILL = "Pharmacist"  # sells at the counter and runs its till (docs/PLAN-OWNER.md §14.3)
 # Demo Dorixona. The first six are the `people` every demo.py gets (rule 22).
 PEOPLE = [
     P("owner", 1001, "Dilnoza", "Karimova", OFFICE, "Owner", "CY", 1100, None),
@@ -173,7 +177,7 @@ PEOPLE = [
     P("sardor", 3001, "Sardor", "Rahimov", SENIOR, TILL, "C", 410, "chl_close_b"),
     # Yunusobod: its head, a senior pharmacist on weekdays, two day and two night pharmacists.
     P("farrux", 3007, "Farrux", "Aliyev", HEAD, BRANCH_MANAGER, "Y", 520, "head6"),
-    P("malika", 3009, "Malika", "Tosheva", SENIOR, "Employee", "Y", 150, "senior5"),
+    P("malika", 3009, "Malika", "Tosheva", SENIOR, TILL, "Y", 150, "senior5"),
     P("shahzoda", 3004, "Shahzoda", "Yusupova", PHARMACIST, TILL, "Y", 96, "yns_day_a"),
     P("kamola", 3006, "Kamola", "Ergasheva", PHARMACIST, TILL, "Y", 21, "yns_day_b"),
     P("dilshod", 3008, "Dilshod", "Karimov", PHARMACIST, TILL, "Y", 330, "yns_night_b"),
@@ -185,7 +189,7 @@ CORE = ("owner", "manager", "worker", "madina", "jasur", "nigora")
 
 # People the members demo adds with their own status: a suspension, people who left and join
 # requests (one from a former storekeeper).
-SUSPENDED = P("bobur", 3013, "Bobur", "Saidov", PHARMACIST, "Employee", "C", 300, "office")
+SUSPENDED = P("bobur", 3013, "Bobur", "Saidov", PHARMACIST, TILL, "C", 300, "chl_day5")
 LEFT = P("nodira", 3014, "Nodira", "Xolmatova", PHARMACIST, TILL, "Y", 420, "yns_day_b")
 BLOCKED = P("rustam", 3015, "Rustam", "Nurmatov", COURIER, "Employee", "C", 200, None)
 RETURNING = P("jahongir", 3018, "Jahongir", "Mirzaev", STOCK, "Employee", "C", 700, None)
@@ -518,6 +522,28 @@ class Plan:
         if person is not None and person.rota is None:
             return day.weekday() < 6 and self.away(key, day) is None
         return self.shift(key, day) is not None
+
+    def hours(self, key: str, day: date) -> tuple[datetime, datetime] | None:
+        """When `key` works on `day`: their shift (it may end the next morning) or, for people
+        without shifts, their home branch's opening hours (09:00 to 18:00 at a branch open
+        around the clock). None on a day they don't work."""
+        if not self.works(key, day):
+            return None
+        shift = self.shift(key, day)
+        if shift is not None:
+            return shift.starts, shift.ends
+        branch = self.branch(key)
+        return self.at(day, branch.opens_at or time(9)), self.at(day, branch.closes_at or time(18))
+
+    def at_work(self, key: str, day: date, moment: datetime) -> datetime:
+        """`moment` moved into `key`'s hours on `day` (a few minutes after they start at the
+        earliest, a few before they finish at the latest), so work is done while they're
+        there; unchanged on a day they don't work."""
+        hours = self.hours(key, day)
+        if hours is None:
+            return moment
+        first, last = hours[0] + timedelta(minutes=5), hours[1] - timedelta(minutes=3)
+        return min(max(moment, first), last)
 
     def working(self, day: date, *, branch: str | None = None, counter: bool | None = None):
         """Shifts worked on `day` by people in the company, optionally of one branch or only

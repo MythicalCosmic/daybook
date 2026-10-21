@@ -151,7 +151,8 @@ def seed(company, people, now) -> None:
                 methods=methods,
                 owner=owner,
                 bank=bank,
-                with_photos=back <= 5,
+                # The last days' photos, and those of the shifts someone looks into.
+                with_photos=back <= 5 or story_kind in ("dispute", "recount"),
                 kind=story_kind,
             )
         shifts.append((session, shift, story_kind))
@@ -591,7 +592,7 @@ def _history_shift(company, rng, *, session, register, methods, owner, bank, wit
             z_number=f"{412 + shift.number:04d}",
             fiscal_cash_total=str(cash_net),
             fiscal_card_total=str(net - cash_net),
-            z_photo=_z_report(company, register, shift, lines, receipts)
+            z_photo=_z_report(company, register, shift, lines, receipts, blurred=kind == "dispute")
             if with_photos
             else _blank(),
             terminal_photo=(_terminal(lines) if with_photos else _blank()) if takes_cards else None,
@@ -742,7 +743,7 @@ def _extras(company, story, rng, now, methods) -> None:
                 source="dashboard",
                 note=note,
                 sold_at=at,
-                number=f"BUY-{1040 + back}",
+                number=f"BUY-{1100 - back}",  # numbers grow with time
             )
 
 
@@ -812,7 +813,8 @@ def _sum(value: Decimal) -> str:
     return f"{int(value):,}".replace(",", " ")
 
 
-def _z_report(company, register, shift, lines, receipts) -> bytes:
+def _z_report(company, register, shift, lines, receipts, *, blurred=False) -> bytes:
+    """The Z-report's picture; `blurred` for the disputed shift (the owner can't read it)."""
     rows = [
         (company.name.upper(), "", True),
         (f"{register.branch.name} · {register.name}", "", False),
@@ -831,7 +833,16 @@ def _z_report(company, register, shift, lines, receipts) -> bytes:
         ("JAMI", _sum(total), True),
         ("QQS 12%", _sum(total * Decimal("0.1071")), False),
     ]
-    return _paper(rows, title="Z-HISOBOT")
+    picture = _paper(rows, title="Z-HISOBOT")
+    return _blur(picture) if blurred else picture
+
+
+def _blur(picture: bytes) -> bytes:
+    from PIL import Image, ImageFilter
+
+    out = io.BytesIO()
+    Image.open(io.BytesIO(picture)).filter(ImageFilter.GaussianBlur(3.2)).save(out, "JPEG")
+    return out.getvalue()
 
 
 def _terminal(lines) -> bytes:

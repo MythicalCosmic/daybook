@@ -275,9 +275,46 @@ def _record(company, shift, settings, rng, *, check_in, check_out, far=False, ac
     return record
 
 
+def _tills(company) -> tuple[dict, dict]:
+    """When the tills opened and closed (the sales demo runs first), by (membership, business
+    day) of whoever opened or closed them: nobody opens a till before checking in or closes one
+    after checking out."""
+    try:
+        from apps.sales.models import CashShift
+    except ImportError:  # pragma: no cover - sales is always installed
+        return {}, {}
+    opened, closed = {}, {}
+    for till in CashShift.objects.filter(company=company).only(
+        "cashier_id", "closed_by_id", "business_day", "opened_at", "closed_at"
+    ):
+        key = (till.cashier_id, till.business_day)
+        opened[key] = min(till.opened_at, opened.get(key, till.opened_at))
+        if till.closed_at is not None and till.closed_by_id is not None:
+            key = (till.closed_by_id, till.business_day)
+            closed[key] = max(till.closed_at, closed.get(key, till.closed_at))
+    return opened, closed
+
+
+def _around_tills(tills, shift, arrive, leave, rng):
+    """`arrive` and `leave` moved so that `shift`'s person was in when opening or closing a
+    till that day; whoever opened it late came in late too."""
+    opened, closed = tills
+    till_opened = opened.get((shift.membership_id, shift.date))
+    if till_opened is not None:
+        came = till_opened - timedelta(minutes=rng.randint(2, 7))
+        late = till_opened > shift.starts_at + timedelta(minutes=10)
+        arrive = came if late else min(arrive, came)
+    till_closed = closed.get((shift.membership_id, shift.date))
+    if till_closed is not None and leave is not None:
+        leave = max(leave, till_closed + timedelta(minutes=rng.randint(3, 9)))
+    return arrive, leave
+
+
 def _history(company, story, now, rng, settings) -> None:
-    """A check-in and out for every shift worked that's over (some late, some overtime)."""
+    """A check-in and out for every shift worked that's over (some late, some overtime), around
+    the tills each person opened or closed."""
     keys = {member.pk: key for key, member in story.members().items()}
+    tills = _tills(company)
     # Nigora once checked in from home, three shifts ago.
     far_day = story.today
     for _ in range(3):
@@ -300,6 +337,7 @@ def _history(company, story, now, rng, settings) -> None:
             leave = shift.ends_at + timedelta(minutes=rng.randint(45, 110))
         else:
             leave = shift.ends_at + timedelta(minutes=rng.randint(-6, 14))
+        arrive, leave = _around_tills(tills, shift, arrive, leave, rng)
         low = rng.random() < 0.04
         record = _record(
             company,
@@ -332,6 +370,11 @@ def _last_shift(company, member, story, *, skip: int = 0):
     return rows[skip] if len(rows) > skip else None
 
 
+def _asked_at(row, at) -> None:
+    """A request as made at `at` (they're made at seed time, so they'd all read "just now")."""
+    type(row).objects.filter(pk=row.pk).update(created_at=at, updated_at=at)
+
+
 def _stories(company, story, now, settings) -> None:
     manager, worker, jasur = (story.member(key) for key in ("manager", "worker", "jasur"))
 
@@ -351,7 +394,9 @@ def _stories(company, story, now, settings) -> None:
     record = AttendanceRecord.objects.filter(shift=forgot).first() if forgot else None
     if record is not None:
         record.status = AttendanceRecord.Status.AUTO_CLOSED
-        record.check_in_at = forgot.starts_at - timedelta(minutes=4)
+        record.check_in_at, _left = _around_tills(
+            _tills(company), forgot, forgot.starts_at - timedelta(minutes=4), None, random.Random(7)
+        )
         record.check_out_at = forgot.ends_at
         record.out_source = Source.SYSTEM
         record.flags = [Flag.AUTO_CLOSED]
@@ -359,7 +404,7 @@ def _stories(company, story, now, settings) -> None:
         rules.compute(record, settings)
         record.save()
         out = forgot.ends_at + timedelta(minutes=22)
-        AttendanceCorrection.objects.create(
+        asked = AttendanceCorrection.objects.create(
             company=company,
             membership=worker,
             record=record,
@@ -367,6 +412,8 @@ def _stories(company, story, now, settings) -> None:
             check_out_at=out,
             reason=f"Telefonim o‘chib qolgan edi, {story.local(out):%H:%M} da chiqdim.",
         )
+        # Asked once his phone was charged again, that evening.
+        _asked_at(asked, min(out + timedelta(minutes=50), now - timedelta(hours=1)))
 
     # A shift of Jasur's without a check-in: his phone had died; he asks to fix it.
     missed = _last_shift(company, jasur, story, skip=2)
@@ -380,7 +427,7 @@ def _stories(company, story, now, settings) -> None:
             status=AttendanceRecord.Status.ABSENT,
             branch=missed.branch,
         )
-        AttendanceCorrection.objects.create(
+        asked = AttendanceCorrection.objects.create(
             company=company,
             membership=jasur,
             date=missed.date,
@@ -388,6 +435,7 @@ def _stories(company, story, now, settings) -> None:
             check_out_at=missed.ends_at + timedelta(minutes=3),
             reason="Telefonim zaryadsiz qolgan edi, ilova ochilmadi.",
         )
+        _asked_at(asked, min(missed.ends_at + timedelta(hours=1, minutes=10), now))
 
     # On a day off this week Jasur came in to help unload a delivery: an unscheduled day.
     extra_day = next(
@@ -426,8 +474,9 @@ def _today(company, story, now, settings) -> None:
     """Check-ins of the shifts under way or finished today, as far as the clock has got:
     Bekzod and Alisher on time, Jasur late, the night shift handed over at 08:00."""
     rng = random.Random(f"attendance:today:{company.pk}:{story.today.isoformat()}")
-    offsets = {"manager": -14, "worker": -3, "jasur": 23, "kamola": -6}
+    offsets = {"manager": -6, "worker": -3, "jasur": 23, "kamola": -6}
     keys = {member.pk: key for key, member in story.members().items()}
+    tills = _tills(company)
     done = set(
         AttendanceRecord.objects.filter(company=company, date__gte=story.day(-1)).values_list(
             "shift_id", flat=True
@@ -447,7 +496,10 @@ def _today(company, story, now, settings) -> None:
             continue
         left = None
         if shift.ends_at + timedelta(minutes=10) < now:
-            left = shift.ends_at + timedelta(minutes=rng.randint(0, 9))
+            left = shift.ends_at + timedelta(minutes=rng.randint(0, 3))  # no overtime to approve
+        arrive, left = _around_tills(tills, shift, arrive, left, rng)
+        if left is not None and left > now - timedelta(minutes=2):
+            left = None  # still closing up
         _record(company, shift, settings, rng, check_in=arrive, check_out=left).save()
 
 
@@ -573,7 +625,7 @@ def _requests(company, story, now) -> None:
     day = story.next_working_day("worker", story.day(3))
     shift = own_shift(worker, day) if day else None
     if shift is not None and _free(story, "gulnora", day):
-        ShiftSwap.objects.create(
+        asked = ShiftSwap.objects.create(
             company=company,
             shift=shift,
             requested_by=worker,
@@ -584,6 +636,7 @@ def _requests(company, story, now) -> None:
             note="Ukamni aeroportdan kutib olishim kerak.",
             expires_at=shift.starts_at,
         )
+        _asked_at(asked, now - timedelta(hours=27))  # yesterday; Gulnora agreed that evening
     # A pharmacist off that day wants the first open counter shift.
     open_shift = (
         WorkShift.objects.live()
@@ -608,7 +661,7 @@ def _requests(company, story, now) -> None:
             None,
         )
         if taker is not None:
-            ShiftSwap.objects.create(
+            asked = ShiftSwap.objects.create(
                 company=company,
                 shift=open_shift,
                 requested_by=story.member(taker),
@@ -618,12 +671,13 @@ def _requests(company, story, now) -> None:
                 note="Bu smenani men olaman.",
                 expires_at=open_shift.starts_at,
             )
+            _asked_at(asked, max(open_shift.published_at, now - timedelta(hours=5)))
     # Nigora asks Dilshod to cover one of her nights; he hasn't answered yet.
     for offset in range(2, 15):
         day = story.day(offset)
         hers = own_shift(nigora, day) if story.shift("nigora", day) else None
         if hers is not None and _free(story, "dilshod", day):
-            ShiftSwap.objects.create(
+            asked = ShiftSwap.objects.create(
                 company=company,
                 shift=hers,
                 requested_by=nigora,
@@ -632,6 +686,7 @@ def _requests(company, story, now) -> None:
                 note="Shifokor qabuliga yozilganman.",
                 expires_at=hers.starts_at,
             )
+            _asked_at(asked, now - timedelta(hours=9))
             break
     # A night Dilshod worked for Nigora: the head approved it beforehand.
     for swap in story.swaps:
@@ -639,7 +694,8 @@ def _requests(company, story, now) -> None:
         shift = own_shift(cover, story.day(swap.day)) if cover else None
         if shift is None or shift.source != WorkShift.Source.SWAP:
             continue
-        ShiftSwap.objects.create(
+        decided = shift.starts_at - timedelta(days=2)
+        asked = ShiftSwap.objects.create(
             company=company,
             shift=shift,
             requested_by=story.member(swap.who),
@@ -648,7 +704,8 @@ def _requests(company, story, now) -> None:
             accepted_by=cover,
             status=ShiftSwap.Status.APPROVED,
             decided_by=(story.member("farrux") or manager).user,
-            decided_at=shift.starts_at - timedelta(days=2),
+            decided_at=decided,
             expires_at=shift.starts_at,
             note=swap.note,
         )
+        _asked_at(asked, decided - timedelta(hours=20))

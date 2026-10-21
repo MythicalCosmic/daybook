@@ -1,7 +1,7 @@
 """Demo data of announcements (docs/PLAN-OWNER.md §14.3): what Demo Dorixona's owner and heads
-send (in Uzbek, one in Russian), with read receipts, a pinned rule, a scheduled reminder of the
-sanitary day, an expired notice and a cancelled one, so the list, the read-rate bars and the
-receipts page have something real."""
+send (in the company's Uzbek, like everything its people write), with read receipts, a pinned
+rule, a scheduled reminder of the sanitary day, an expired notice and a cancelled one, so the
+list, the read-rate bars and the receipts page have something real."""
 
 from datetime import timedelta
 
@@ -23,7 +23,7 @@ ITEMS = [
             "<b>Ertadan yangi referent narxlar</b> 💊\n\n"
             "Retseptli dorilarning referent narxlari yangilandi. Ertalab smenani ochishda narx "
             "yorliqlarini yangi ro‘yxat bo‘yicha tekshiring: ustama xarid narxidan "
-            "<b>20 %</b> dan oshmasin.\n\nSavollar bo‘lsa, mudiringizga yozing."
+            "<b>20\u00a0%</b> dan oshmasin.\n\nSavollar bo‘lsa, mudiringizga yozing."
         ),
         "pinned_days": 6,
         "read_share": 0.72,
@@ -62,8 +62,8 @@ ITEMS = [
         "days_ago": 14,
         "author": "owner",
         "text": (
-            "Коллеги, напоминаю: белый халат и бейдж обязательны с первого дня смены. "
-            "Новые халаты можно получить у Азизы в офисе."
+            "Hamkasblar, eslatma: oq xalat va beyj smenaning birinchi daqiqasidan majburiy. "
+            "Yangi xalatlarni ofisda Azizadan olishingiz mumkin."
         ),
         "read_share": 0.64,
         "expired_days": 4,
@@ -151,13 +151,24 @@ def seed(company, people, now) -> None:
         positions=[],
         branches=[branch.name for branch in chilonzor],
     )
-    # A notice the owner called off (the team day moved to next month).
+    # A notice the owner called off: the team day out next week (the calendar's event, cancelled
+    # yesterday) moved to the month after the stock count.
+    written, called_off_at = now - timedelta(days=3, hours=1), now - timedelta(hours=20)
     called_off = Announcement.objects.create(
         company=company,
         author=people["owner"],
-        text="Juma kuni jamoa bilan dam olish kuni — tafsilotlar keyinroq.",
+        text="Keyingi hafta jamoa bilan dam olish kuni — tafsilotlar keyinroq.",
         status=Announcement.Status.CANCELLED,
         scheduled_for=now + timedelta(days=2),
     )
-    for action in (AnnouncementAction.SCHEDULED, AnnouncementAction.CANCELLED):
-        audit.record(action, company_id=company.pk, actor=people["owner"].user, target=called_off)
+    Announcement.objects.filter(pk=called_off.pk).update(
+        created_at=written, updated_at=called_off_at
+    )
+    for action, at in (
+        (AnnouncementAction.SCHEDULED, written),
+        (AnnouncementAction.CANCELLED, called_off_at),
+    ):
+        entry = audit.record(
+            action, company_id=company.pk, actor=people["owner"].user, target=called_off
+        )
+        AuditLog.objects.filter(pk=entry.pk).update(created_at=at)

@@ -41,7 +41,7 @@ def test_admin_sets_up_a_new_company_like_the_owner_bot(
 
     assert response.status_code == 302
     company = Company.objects.get(slug="acme")
-    assert company.accessroles.count() == 5
+    assert company.accessroles.count() == 6
     assert [branch.name for branch in company.branches.all()] == ["Acme"]
     assert ReminderPolicy.objects.filter(company=company, is_default=True).exists()
     assert [(kwargs["company"], kwargs["by"]) for kwargs in created] == [(company, None)]

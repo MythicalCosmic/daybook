@@ -97,10 +97,10 @@ def owner_api(db):
 DEMO_PEOPLE = {
     "owner": ("Dilnoza", "Karimova", "Owner", "Office"),
     "manager": ("Bekzod", "Mirzayev", "Manager", "Head of pharmacy"),
-    "worker": ("Alisher", "Valiyev", "Employee", "Pharmacist"),
-    "madina": ("Madina", "Saidova", "Employee", "Senior pharmacist"),
+    "worker": ("Alisher", "Valiyev", "Pharmacist", "Pharmacist"),
+    "madina": ("Madina", "Saidova", "Pharmacist", "Senior pharmacist"),
     "jasur": ("Jasur", "Tursunov", "Employee", "Courier"),
-    "nigora": ("Nigora", "Azimova", "Employee", "Pharmacist"),
+    "nigora": ("Nigora", "Azimova", "Pharmacist", "Pharmacist"),
 }
 
 

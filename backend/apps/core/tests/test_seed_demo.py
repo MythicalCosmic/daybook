@@ -1,3 +1,5 @@
+import re
+from collections import defaultdict
 from datetime import timedelta
 from io import StringIO
 
@@ -7,18 +9,20 @@ from django.db.models import Sum
 from django.utils import timezone
 
 from apps.accounts.models import User
+from apps.announcements.models import Announcement
 from apps.attendance import queries as attendance
 from apps.attendance.models import AttendanceRecord, WorkShift
 from apps.companies.models import Company, Feature
 from apps.companies.tests.factories import CompanyFactory
 from apps.core import demo_plan
 from apps.core.management.commands import seed_demo
-from apps.finance.models import MoneyAccount, Transaction
+from apps.finance.models import Category, MoneyAccount, Transaction
 from apps.inbox.models import Notification
+from apps.knowledge.models import Page, PageVersion
 from apps.members.models import AccessRole, Membership, Position
 from apps.projects.models import TimeEntry
 from apps.sales.models import CashMovement, CashShift, DailySales
-from apps.tasks.models import Task
+from apps.tasks.models import Task, TaskTemplate
 from apps.timeoff.models import TimeOff
 
 pytestmark = pytest.mark.django_db
@@ -75,6 +79,15 @@ def demos(calls) -> list[str]:
     return [call[1] for call in calls if call[0] == "demo"]
 
 
+def made_today(companies):
+    """Routines of `companies` made today: a routine made after today's deadline only starts
+    tomorrow, so a fresh demo would offer "give today's task now" on it."""
+    midnight = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
+    return TaskTemplate.objects.filter(
+        company__in=companies, onboarding=False, created_at__gte=midnight
+    ).values_list("title", flat=True)
+
+
 def leave_days(company) -> set[tuple[int, object]]:
     days = set()
     for row in TimeOff.objects.filter(company=company, status=TimeOff.Status.APPROVED):
@@ -118,7 +131,7 @@ def test_the_whole_demo_tells_one_story(debug):
     assert {"Ombor mudiri", "Omborchi", "Savdo menejeri", "Haydovchi", "Ofis"} <= set(
         Position.objects.filter(company=distributor).values_list("name", flat=True)
     )
-    assert {"Egasi", "Rahbar", "Kassir", "Xodim", "Filial rahbari"} <= set(
+    assert {"Egasi", "Rahbar", "Farmatsevt", "Kassir", "Xodim", "Filial rahbari"} <= set(
         AccessRole.objects.filter(company=pharmacy).values_list("name", flat=True)
     )
     # Two pharmacists share a position and a shift pattern, so their nights can be swapped.
@@ -152,9 +165,41 @@ def test_the_whole_demo_tells_one_story(debug):
     stale = routines.filter(for_date__lt=timezone.localdate())
     open_states = (Task.Status.TODO, Task.Status.IN_PROGRESS, Task.Status.RETURNED)
     assert stale.exists() and not stale.filter(status__in=open_states).exists()
-    # A till is run by someone rostered that day.
+    assert not list(made_today([pharmacy, distributor]))
+    # A till is run by someone rostered that day, who checked in before opening it and checked
+    # out after closing it.
     rostered = set(shifts.values_list("membership_id", "date"))
     assert all((c.cashier_id, c.business_day) in rostered for c in tills)
+    days = {(r.membership_id, r.date): r for r in records}
+    for till in tills:
+        came = days.get((till.cashier_id, till.business_day))
+        assert came is None or came.check_in_at <= till.opened_at, till.number
+        went = days.get((till.closed_by_id, till.business_day))
+        if till.closed_at and went and went.check_out_at:
+            assert went.check_out_at >= till.closed_at, till.number
+    # Nobody starts, finishes or checks a task (a card, a routine, a job given) while away.
+    for task in Task.objects.filter(company=pharmacy):
+        for moment, who in (
+            (task.started_at, task.assignee_id),
+            (task.completed_at, task.assignee_id),
+            (task.confirmed_at, task.confirmed_by_id),
+        ):
+            if moment is not None:
+                assert (who, timezone.localtime(moment).date()) not in away, task.title
+    # ...and finishes it while there: in one of their shifts or, without one, in the branch's
+    # opening hours (Yunusobod is open around the clock).
+    spans = defaultdict(list)
+    for shift in shifts:
+        spans[shift.membership_id].append(
+            (shift.starts_at - timedelta(minutes=30), shift.ends_at + timedelta(minutes=30))
+        )
+    finished = Task.objects.filter(company=pharmacy, completed_at__isnull=False)
+    for task in finished.select_related("branch"):
+        if any(start <= task.completed_at <= end for start, end in spans[task.assignee_id]):
+            continue
+        if task.branch.opens_at is not None and task.branch.closes_at is not None:
+            clock = timezone.localtime(task.completed_at).time()
+            assert task.branch.opens_at <= clock <= task.branch.closes_at, (task.title, clock)
     now = timezone.now() + timedelta(minutes=1)
     assert not Task.objects.filter(company=pharmacy, created_at__gt=now).exists()
     assert not AttendanceRecord.objects.filter(company=pharmacy, check_in_at__gt=now).exists()
@@ -207,6 +252,24 @@ def test_the_whole_demo_tells_one_story(debug):
         ]
     )
     assert not [name for name in REAL_NAMES if name in texts]
+    # A number keeps its % or °C on its line (a no-break space between them): Telegram's
+    # preview of the prices announcement broke "20 %" before the %. (Page titles are left out:
+    # the knowledge service collapses their spaces.)
+    words = [
+        texts,
+        *Announcement.objects.values_list("text", flat=True),
+        *Page.objects.values_list("body", flat=True),
+        *Category.objects.values_list("name", flat=True),
+        *Task.objects.values_list("description", flat=True),
+    ]
+    assert not [text for text in words if re.search(r"\d [%°]", text)]
+    # What the services store in words comes out in the company's language (Uzbek), as when
+    # its people use the apps: a till's cash difference, a knowledge page's first version.
+    shortages = Transaction.objects.filter(company=pharmacy, source_type="sales.cashshift")
+    assert shortages.filter(description__endswith=": kassa farqi").exists()
+    assert not shortages.filter(description__contains="cash difference").exists()
+    assert PageVersion.objects.filter(page__company=pharmacy, note="Birinchi versiya").exists()
+    assert not PageVersion.objects.filter(page__company=pharmacy, note="First version").exists()
     uzbek_readers = Notification.objects.filter(recipient__user__language="uz")
     assert uzbek_readers.exists()
     assert not uzbek_readers.filter(title__startswith="Cash difference").exists()
@@ -271,6 +334,25 @@ def test_the_distributor_is_a_second_smaller_company_with_the_same_owner(debug):
     owned = Membership.objects.filter(user=owner, role__is_owner=True, status="approved")
     assert sorted(owned.values_list("company__slug", flat=True)) == sorted([PHARMACY, DISTRIBUTOR])
     assert Task.objects.for_company(distributor).filter(branch=branch).count() > 14
+    # No tasks demo fills the distributor: its routines get today's runs from the core demo.
+    story = demo_plan.Plan(distributor, {}, timezone.now())
+    if story.works("worker", story.today):
+        today = Task.objects.for_company(distributor).filter(for_date=story.today)
+        assert today.filter(template__title="Ombor harorati va namligini yozish").count() == 1
+    # The core demo's own routines (both companies') have run for a while.
+    assert not list(made_today(Company.objects.filter(slug__in=(PHARMACY, DISTRIBUTOR))))
+
+
+def test_each_company_works_the_days_its_branches_open(debug):
+    seed_core()
+
+    # The time-off calendar shades, and Settings lists, the company's working days: both
+    # pharmacies open every day, the distributor's warehouse Monday to Saturday.
+    for slug, days in ((PHARMACY, [0, 1, 2, 3, 4, 5, 6]), (DISTRIBUTOR, [0, 1, 2, 3, 4, 5])):
+        company = Company.objects.get(slug=slug)
+        assert sorted(company.workdays) == days, slug
+        opens = {day for branch in company.branches.all() for day in branch.open_weekdays}
+        assert sorted(opens) == days, slug
 
 
 def test_owner_tg_makes_a_real_account_owner_of_both_companies(debug):
