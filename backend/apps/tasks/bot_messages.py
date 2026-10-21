@@ -5,10 +5,11 @@ from zoneinfo import ZoneInfo
 
 from aiogram import html
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from django.utils import timezone
+from django.utils import timezone, translation
 from django.utils.translation import gettext as _
 
 from apps.companies.models import Company
+from apps.core.money import format_money
 from apps.members.bot_messages import BotMessage
 from apps.members.models import Membership
 from apps.tasks import rules
@@ -45,15 +46,25 @@ def list_button(label: str) -> InlineKeyboardButton:
     return _button(label, TaskAction.LIST)
 
 
+def display_title(task: Task) -> str:
+    """The title as messages show it: with the project's key in front when it has one
+    ("RENO · Paint the wall")."""
+    project = task.project if task.project_id else None
+    return f"{project.key} · {task.title}" if project is not None else task.title
+
+
 def task_card(task: Task, member: Membership, now: datetime, header: str = "") -> BotMessage:
     lines = [header, ""] if header else []
-    lines.append(f"{_icon(task, now)} <b>{html.quote(task.title)}</b>")
+    lines.append(f"{_icon(task, now)} <b>{html.quote(display_title(task))}</b>")
     if task.description:
         lines.append(html.quote(task.description))
     lines.append("")
     lines.append(_("Status: %(status)s") % {"status": task.get_status_display()})
     if task.due_at:
         lines.append(_("Due: %(when)s") % {"when": format_due(task, now)})
+    if task.reward:
+        reward = format_money(task.reward, task.company.base_currency, translation.get_language())
+        lines.append(_("🎁 Reward: +%(amount)s") % {"amount": reward})
     if task.kind == Task.Kind.ASSIGNED and task.created_by:
         lines.append(_("From: %(name)s") % {"name": html.quote(str(task.created_by))})
     if not rules.is_assignee(task, member):
@@ -96,6 +107,26 @@ def task_confirmed(task: Task, now: datetime) -> BotMessage:
 def task_returned(task: Task, reason: str, now: datetime) -> BotMessage:
     header = _("↩️ Your task was sent back: %(reason)s") % {"reason": html.quote(reason)}
     return task_card(task, task.assignee, now, header)
+
+
+def nudge(task: Task, by: Membership, now: datetime) -> BotMessage:
+    """The dashboard's "Nudge now": a friendly push from a named person."""
+    header = _("👋 %(name)s is waiting for this task.") % {"name": html.quote(str(by))}
+    return task_card(task, task.assignee, now, header)
+
+
+def onboarding_welcome(member: Membership, tasks: list[Task], now: datetime) -> BotMessage:
+    """A new person's first tasks, right after they were let in."""
+    lines = [
+        _("👋 Welcome to %(company)s, %(name)s!")
+        % {
+            "company": html.quote(member.company.name),
+            "name": html.quote(member.first_name or str(member)),
+        },
+        _("Here are your first tasks to get started. Tap one to open it."),
+    ]
+    rows = [[task_button(task, now)] for task in tasks[:LIST_LIMIT]]
+    return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def proof_request(task: Task) -> BotMessage:
@@ -192,7 +223,8 @@ def _list_label(task: Task, now: datetime) -> str:
         due = timezone.localtime(task.due_at, tz)
         same_day = due.date() == timezone.localtime(now, tz).date()
         when = f"{due:%H:%M}" if same_day else f"{due:%d.%m %H:%M}"
-    title = task.title if len(task.title) <= 40 else f"{task.title[:39]}…"
+    full = display_title(task)
+    title = full if len(full) <= 40 else f"{full[:39]}…"
     return f"{_icon(task, now)} {when} · {title}"
 
 

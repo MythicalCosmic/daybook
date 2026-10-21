@@ -353,6 +353,7 @@ def test_stream_merges_sources_newest_first_and_honours_since(company, member):
 @pytest.mark.django_db
 def test_branch_facts_that_dont_fit_their_shape_are_dropped(company, member, caplog):
     owner = member(company, "Owner")
+    registry.BRANCH_FACTS._entries.pop("tasks", None)  # apps.tasks' real provider
     entry(
         registry.BRANCH_FACTS,
         "tasks",
@@ -504,6 +505,7 @@ def test_setup_steps_report_done(company, member):
 @pytest.mark.django_db
 def test_company_facts_check_their_shape(company, member):
     owner = member(company, "Owner")
+    registry.COMPANY_FACTS._entries.pop("tasks", None)  # apps.tasks' real provider
     entry(
         registry.COMPANY_FACTS,
         "tasks",

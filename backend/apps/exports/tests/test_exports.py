@@ -430,11 +430,10 @@ def test_kinds_lists_what_i_may_export(company, owner, accountant, owner_api):
 
     assert {"exports.tasks", "exports.salaries"} <= as_owner
     assert "exports.sales_only" not in as_owner  # module off
-    assert [row["kind"] for row in as_accountant if row["kind"].startswith("exports.")] == [
-        "exports.salaries"
-    ]
-    assert as_accountant[0]["sensitive"] is True
-    assert as_accountant[0]["columns"][1] == {"key": "salary", "label": "Salary", "kind": "money"}
+    mine = [row for row in as_accountant if row["kind"].startswith("exports.")]
+    assert [row["kind"] for row in mine] == ["exports.salaries"]
+    assert mine[0]["sensitive"] is True
+    assert mine[0]["columns"][1] == {"key": "salary", "label": "Salary", "kind": "money"}
 
 
 @pytest.mark.parametrize("path", ["", "kinds/"])

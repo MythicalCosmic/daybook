@@ -47,6 +47,27 @@ def send_task_reviewed(task_id: int) -> None:
         _send(task.assignee, bot_messages.task_returned, task, reason or "", now)
 
 
+def send_nudge(task_id: int, by_id: int) -> None:
+    """The dashboard's "Nudge now": the task's card with who is waiting for it."""
+    task = _load(task_id)
+    by = Membership.objects.select_related("user").filter(pk=by_id).first()
+    if task is None or by is None or not task.is_open:
+        return
+    _send(task.assignee, bot_messages.nudge, task, by, timezone.now())
+
+
+def send_onboarding(member_id: int, task_ids: list[int]) -> None:
+    """A new person's first tasks, in one welcome message."""
+    member = Membership.objects.select_related("user", "company").filter(pk=member_id).first()
+    if member is None:
+        return
+    tasks = list(
+        Task.objects.select_related(*TASK_RELATIONS).filter(pk__in=task_ids).order_by("due_at")
+    )
+    if tasks:
+        _send(member, bot_messages.onboarding_welcome, member, tasks, timezone.now())
+
+
 def send_work_handed_back(member_id: int, handed_back: list) -> None:
     """Tell each giver which of the leaver's tasks came back to them."""
     leaver = Membership.objects.filter(pk=member_id).first()

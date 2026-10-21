@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from apps.members.api import IsCompanyMember, MemberBriefSerializer, requires
 from apps.members.models import Membership
 from apps.members.permissions import Perm
+from apps.members.scope import branch_ids
 from apps.reports import kpis
 from apps.reports.periods import Period, bounds
 
@@ -57,7 +58,8 @@ class TeamStatsView(APIView):
         now = timezone.now()
         today = timezone.localtime(now, ZoneInfo(company.timezone)).date()
         start, end = bounds(Period(period), today)
-        report = kpis.team(company, start, end, now)
+        # Only the people and tasks of the caller's branches (docs/PLAN-OWNER.md §2.6).
+        report = kpis.team(company, start, end, now, branch_ids=branch_ids(self.membership))
         data = {
             "period": period,
             "start": start,

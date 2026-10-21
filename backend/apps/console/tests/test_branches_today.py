@@ -21,7 +21,9 @@ def local(hour: int, minute: int = 0, day: date = TUESDAY) -> datetime:
 
 
 def add_facts(key: str, perm, facts, feature=None) -> None:
-    """Register a provider as its own app would (fixed keys belong to their apps)."""
+    """Register a provider as its own app would (fixed keys belong to their apps), in place of
+    the app's real one once that app has landed (the registry is isolated per test)."""
+    registry.BRANCH_FACTS._entries.pop(key, None)
     registry.BRANCH_FACTS.add(registry.BranchFactsProvider(key, key, perm, feature, facts))
 
 
