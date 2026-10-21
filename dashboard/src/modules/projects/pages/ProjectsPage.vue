@@ -26,7 +26,6 @@ import type { TableColumn } from "@/components/table";
 import UiButton from "@/components/UiButton.vue";
 import { useDataTable } from "@/components/useDataTable";
 import { useHotkey } from "@/core/hotkeys";
-import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
@@ -45,7 +44,6 @@ const fmt = useFormat();
 const route = useRoute();
 const router = useRouter();
 const company = useCompanyStore();
-const { isPhone } = useBreakpoints();
 
 const view = useRouteState("view", rs.enum(["cards", "table"] as const, "cards"));
 const search = useRouteState("q", rs.string());
@@ -151,7 +149,7 @@ function open(row: ProjectItem): void {
       <template #actions>
         <SegmentedControl v-model="view" :options="viewOptions" size="sm" :aria-label="t('projects.view.label')" />
         <UiButton variant="ghost" :icon="GanttChart" :to="`/c/${company.currentId}/projects/roadmap`">{{ t("projects.nav.roadmap") }}</UiButton>
-        <UiButton v-if="canCreate" variant="primary" :icon="FolderPlus" :kbd="isPhone ? undefined : 'N'" @click="creating = true">{{ t("projects.new") }}</UiButton>
+        <UiButton v-if="canCreate" variant="primary" :icon="FolderPlus" kbd="N" @click="creating = true">{{ t("projects.new") }}</UiButton>
       </template>
     </PageHeader>
 

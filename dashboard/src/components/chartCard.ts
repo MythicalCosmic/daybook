@@ -46,8 +46,12 @@ export interface ChartBaseProps {
   xFormat?: "day" | "month" | "none";
   height?: string;
   legend?: boolean;
-  /** A horizontal line (a sales target, a budget). */
+  /** A horizontal line (a sales target, a budget); its label is named in the legend and tooltip. */
   target?: { value: number | string; label?: string } | null;
+  /** The value axis runs 0…yMax in four steps (100: a percentage axis stops at 100 %). */
+  yMax?: number;
+  /** Whole-number ticks only (counts). */
+  integer?: boolean;
   label?: string;
 }
 

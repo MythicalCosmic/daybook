@@ -24,7 +24,6 @@ import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { useHotkey } from "@/core/hotkeys";
 import { todayIn } from "@/lib/dates";
-import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
@@ -54,7 +53,6 @@ const fmt = useFormat();
 const route = useRoute();
 const router = useRouter();
 const company = useCompanyStore();
-const { isPhone } = useBreakpoints();
 const confirm = useConfirm();
 const refresh = useRefreshProjects();
 
@@ -182,7 +180,7 @@ const daysLeft = computed(() => {
     <template v-else-if="project">
       <PageHeader :title="project.name" :back="`/c/${company.currentId}/projects`" :back-label="t('projects.title')" :tabs="tabs">
         <template #actions>
-          <UiButton v-if="caps?.post_update" variant="secondary" :icon="MessageSquarePlus" :kbd="isPhone ? undefined : 'U'" @click="posting = true">{{ t("projects.action.postUpdate") }}</UiButton>
+          <UiButton v-if="caps?.post_update" variant="secondary" :icon="MessageSquarePlus" kbd="U" @click="posting = true">{{ t("projects.action.postUpdate") }}</UiButton>
           <UiButton v-if="caps?.manage" variant="ghost" :icon="Pencil" class="max-sm:hidden" @click="editing = true">{{ t("projects.action.edit") }}</UiButton>
           <DropdownMenu v-if="menu.length" :items="menu">
             <template #trigger><IconButton :icon="Ellipsis" :label="t('common.more')" variant="secondary" /></template>

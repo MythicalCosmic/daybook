@@ -83,7 +83,7 @@ function span(first: string, last: string): string {
         :empty-text="t('people.overview.trendEmpty')"
         :csv="csv"
       >
-        <LineChart :categories="categories" :series="series" value-format="percent" x-format="day" height="220px" :target="{ value: 90, label: t('people.overview.goal') }" />
+        <LineChart :categories="categories" :series="series" value-format="percent" x-format="day" height="220px" :y-max="100" :target="{ value: 90, label: t('people.overview.goal') }" />
       </ChartCard>
 
       <section class="ui-card p-5">

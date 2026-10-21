@@ -9,6 +9,7 @@ import AvatarStack from "@/components/AvatarStack.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import KbdKey from "@/components/KbdKey.vue";
+import KpiStrip from "@/components/KpiStrip.vue";
 import UiBadge from "@/components/UiBadge.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
@@ -76,6 +77,14 @@ describe("UiButton", () => {
     expect(busy.attributes("aria-busy")).toBe("true");
     expect(busy.find(".ui-spinner").exists()).toBe(true);
     expect(busy.text()).toContain("Save");
+  });
+
+  it("hides its shortcut hint on phones and touch screens by itself", () => {
+    const button = mount(UiButton, { props: { kbd: "N", variant: "primary" }, slots: { default: "New task" }, global: { plugins: plugins() } });
+    const hint = button.findComponent(KbdKey);
+    expect(hint.exists()).toBe(true);
+    // Below 768 px (the phone layout) and with a coarse pointer (any touch screen).
+    expect(hint.classes()).toEqual(expect.arrayContaining(["max-md:hidden", "pointer-coarse:hidden"]));
   });
 });
 
@@ -161,6 +170,29 @@ describe("ExtensionSlot", () => {
     expect(bare.findAll("a.pill.shrink-0")).toHaveLength(2);
     expect(warn.mock.calls.flat().join(" ")).not.toMatch(/Extraneous non-props attributes/);
     warn.mockRestore();
+  });
+});
+
+describe("KpiStrip", () => {
+  const items = (n: number) => Array.from({ length: n }, (_, i) => ({ label: `K${i}`, value: i, hint: "hint" }));
+  const strip = (props: Record<string, unknown>) => mount(KpiStrip, { props, global: { plugins: plugins() } }).find(".kpi-strip");
+
+  it("stacks on phones by default and keeps its desktop columns", () => {
+    const grid = strip({ items: items(4), columns: 4 });
+    expect(grid.classes()).toEqual(expect.arrayContaining(["grid-cols-1", "sm:grid-cols-2", "xl:grid-cols-4"]));
+    expect(grid.attributes("data-phone")).toBe("stack");
+  });
+
+  it("opts into two numbers per row on phones (three for a strip of three)", () => {
+    const five = strip({ items: items(5), columns: 5, phone: "compact" });
+    expect(five.classes()).toEqual(expect.arrayContaining(["grid-cols-2", "sm:grid-cols-2", "lg:grid-cols-3", "xl:grid-cols-5"]));
+    expect(five.classes()).not.toContain("grid-cols-1");
+    expect(five.attributes()).toMatchObject({ "data-phone": "compact", "data-phone-columns": "2" });
+    // Compact hides each number's footer on phones; KpiCard marks it for that.
+    expect(five.findAll("[data-kpi-foot]")).toHaveLength(5);
+    const three = strip({ items: items(3), columns: 3, phone: "grid" });
+    expect(three.classes()).toEqual(expect.arrayContaining(["grid-cols-3", "sm:grid-cols-3"]));
+    expect(three.attributes("data-phone-columns")).toBe("3");
   });
 });
 

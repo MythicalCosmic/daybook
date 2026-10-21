@@ -198,7 +198,7 @@ function clearAll(): void {
       </template>
     </PageHeader>
 
-    <KpiStrip class="team-kpis" :items="kpis" :loading="stats.isPending.value" :columns="4" />
+    <KpiStrip :items="kpis" :loading="stats.isPending.value" :columns="4" phone="compact" />
 
     <div class="flex flex-col gap-3">
       <SavedViewsTabs
@@ -316,18 +316,3 @@ function clearAll(): void {
     </div>
   </div>
 </template>
-
-<style scoped>
-/* Phones: the four numbers as a 2 × 2 grid without hints, so the list starts on the first screen. */
-@media (max-width: 639px) {
-  .team-kpis :deep(.kpi-strip) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .team-kpis :deep(.kpi-strip > *) {
-    padding: 0.75rem 1rem;
-  }
-  .team-kpis :deep(.kpi-strip > * > .mt-auto) {
-    display: none;
-  }
-}
-</style>

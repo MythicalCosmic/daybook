@@ -127,7 +127,7 @@ const change = computed(() => {
     </template>
     <template v-else>
       <p class="mt-1.5 truncate text-[1.625rem] font-semibold leading-8 tracking-[-0.02em] tabular-nums text-fg" :title="full" aria-live="polite">{{ text }}</p>
-      <div class="mt-auto flex min-h-[32px] items-end justify-between gap-3 pt-2">
+      <div class="mt-auto flex min-h-[32px] items-end justify-between gap-3 pt-2" data-kpi-foot>
         <div class="flex min-w-0 flex-col gap-1">
           <DeltaBadge v-if="change !== null || previous !== undefined || delta !== undefined" :value="change" :inverse="inverse" :points="points" :suffix="deltaLabel" />
           <span v-if="hint" class="truncate text-xs text-muted">{{ hint }}</span>

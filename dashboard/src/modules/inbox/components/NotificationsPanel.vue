@@ -27,7 +27,6 @@ import { toast } from "@/components/useToast";
 import { isModuleVisible } from "@/core/access";
 import { useHotkey } from "@/core/hotkeys";
 import { modules } from "@/core/modules";
-import { useBreakpoints } from "@/lib/useBreakpoints";
 import { companyUrl } from "@/lib/links";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
@@ -42,7 +41,6 @@ const fmt = useFormat();
 const router = useRouter();
 const company = useCompanyStore();
 const confirm = useConfirm();
-const { isPhone } = useBreakpoints();
 
 const tab = useRouteState<NotificationTab>("show", rs.enum(["unread", "all"] as const, "unread"));
 const openId = useRouteState("note", rs.optionalNumber(), { push: true });
@@ -258,7 +256,7 @@ const unreadInView = computed(() => notes.value.filter((note) => !note.read_at).
             >{{ t("common.open") }}</UiButton
           >
           <span class="flex-1" />
-          <UiButton variant="ghost" :icon="Archive" :kbd="isPhone ? undefined : 'e'" @click="archiveMany([selected.id])">{{ t("inbox.archive") }}</UiButton>
+          <UiButton variant="ghost" :icon="Archive" kbd="e" @click="archiveMany([selected.id])">{{ t("inbox.archive") }}</UiButton>
         </footer>
       </article>
     </template>

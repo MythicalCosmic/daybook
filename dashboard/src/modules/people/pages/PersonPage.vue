@@ -250,7 +250,7 @@ const hasProfileActions = computed(() => hasExtension("people.profile.actions", 
           <UiButton v-if="person.can.unblock" size="sm" :icon="Undo2" :loading="act.isPending.value" @click="unblock(person)">{{ t("people.action.unblock") }}</UiButton>
         </div>
         <div class="border-t border-line">
-          <KpiStrip :items="kpis" :columns="5" class="person-kpis !rounded-none !border-0 !shadow-none" />
+          <KpiStrip :items="kpis" :columns="5" phone="compact" class="!rounded-none !border-0 !shadow-none" />
         </div>
       </section>
 
@@ -267,21 +267,3 @@ const hasProfileActions = computed(() => hasExtension("people.profile.actions", 
     </template>
   </div>
 </template>
-
-<style scoped>
-/* Phones: the five numbers as a 2-up grid without hints, so the tabs are on the first screen. */
-@media (max-width: 639px) {
-  .person-kpis :deep(.kpi-strip) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .person-kpis :deep(.kpi-strip > *) {
-    padding: 0.75rem 1rem;
-  }
-  .person-kpis :deep(.kpi-strip > * > .mt-auto) {
-    display: none;
-  }
-  .person-kpis :deep(.kpi-strip > *:last-child:nth-child(odd)) {
-    grid-column: 1 / -1;
-  }
-}
-</style>

@@ -9,6 +9,7 @@ import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
 import AuditTrail from "@/components/AuditTrail.vue";
+import BarChart from "@/components/BarChart.vue";
 import ChartCard from "@/components/ChartCard.vue";
 import DateRangePicker from "@/components/DateRangePicker.vue";
 import ErrorState from "@/components/ErrorState.vue";
@@ -31,7 +32,6 @@ import { useCompliance, usePlanOptions, useRoutine, useSaveRoutine } from "../ap
 import { formatRoutineAudit, routineFieldLabels } from "../audit";
 import RoutineEditor from "../components/RoutineEditor.vue";
 import RoutinePreview from "../components/RoutinePreview.vue";
-import ScaledChart from "../components/ScaledChart.vue";
 import WeekdayDots from "../components/WeekdayDots.vue";
 
 const { t } = useI18n();
@@ -128,7 +128,7 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
           :empty-text="t('routines.detail.chartEmpty')"
           height="260px"
         >
-          <ScaledChart type="bar" :categories="series.map((d) => d.date)" :series="chartSeries" stacked integer x-format="day" height="260px" />
+          <BarChart :categories="series.map((d) => d.date)" :series="chartSeries" stacked integer x-format="day" height="260px" />
         </ChartCard>
         <section class="ui-card flex flex-col gap-3 p-4">
           <h2 class="text-sm font-semibold text-fg">{{ t("routines.preview.title") }}</h2>

@@ -176,7 +176,7 @@ const viewOptions = computed(() => [
     <PageHeader :title="t('tasks.title')" :description="t('tasks.description')">
       <template #actions>
         <ExtensionSlot name="tasks.toolbar" as="none" :context="{ companyId: company.currentId, filters: params }" />
-        <UiButton v-if="can('tasks.assign')" variant="primary" :icon="Plus" :kbd="isPhone ? undefined : 'N'" @click="createOpen = true">{{ t("tasks.create.button") }}</UiButton>
+        <UiButton v-if="can('tasks.assign')" variant="primary" :icon="Plus" kbd="N" @click="createOpen = true">{{ t("tasks.create.button") }}</UiButton>
       </template>
     </PageHeader>
 

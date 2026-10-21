@@ -2,7 +2,8 @@
 /**
  * The button. Variants: primary (one per view), secondary (default), ghost, soft, danger, link.
  * Renders a RouterLink with `to`, an anchor with `href`, a button otherwise. `loading` swaps the
- * leading icon for a spinner and keeps the width; `kbd` shows the shortcut at the end.
+ * leading icon for a spinner and keeps the width; `kbd` shows the shortcut at the end (not on
+ * phones or touch screens, which have no keyboard to press it on).
  */
 import { computed, type Component } from "vue";
 import { RouterLink, type RouteLocationRaw } from "vue-router";
@@ -96,7 +97,7 @@ const iconSize = computed(() => (props.size === "lg" ? 18 : 16));
       v-if="kbd"
       :keys="kbd"
       :inverted="variant === 'primary' || variant === 'danger'"
-      class="-mr-1 ml-0.5"
+      class="-mr-1 ml-0.5 max-md:hidden pointer-coarse:hidden"
     />
   </component>
 </template>

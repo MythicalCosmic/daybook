@@ -194,7 +194,7 @@ async function savePin(): Promise<void> {
         <div class="flex min-w-0 flex-col gap-5">
           <section v-if="row.status === 'sent'" class="ui-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
             <ProgressRing :value="readPercent" :size="96" :stroke="9" tone="auto" show-value :label="t('comms.detail.readRate')" />
-            <KpiStrip :items="kpis" :columns="3" class="read-kpis min-w-0 flex-1 !border-0 !shadow-none" />
+            <KpiStrip :items="kpis" :columns="3" phone="compact" class="min-w-0 flex-1 !border-0 !shadow-none" />
           </section>
           <section v-else-if="row.status === 'scheduled'" class="ui-card flex items-center gap-3 p-5">
             <span class="grid size-11 place-items-center rounded-[12px] bg-info-soft text-info"><CalendarClock :size="20" /></span>
@@ -260,18 +260,3 @@ async function savePin(): Promise<void> {
     </template>
   </div>
 </template>
-
-<style scoped>
-/* Phones: got it / read / not yet side by side. */
-@media (max-width: 639px) {
-  .read-kpis :deep(.kpi-strip) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .read-kpis :deep(.kpi-strip > *) {
-    padding: 0.75rem;
-  }
-  .read-kpis :deep(.kpi-strip > * > .mt-auto) {
-    display: none;
-  }
-}
-</style>

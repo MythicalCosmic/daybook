@@ -171,7 +171,7 @@ const columnLabel = (state: BoardState) => t(`attendance.state.${state}`);
     </div>
     <ErrorState v-else-if="board.isError.value" :error="board.error.value" :retry="() => board.refetch()" />
     <template v-else-if="data">
-      <KpiStrip class="att-kpis" :items="kpis" :columns="5" />
+      <KpiStrip :items="kpis" :columns="5" phone="grid" />
 
       <EmptyState
         v-if="!data.people.length || unplanned"

@@ -13,7 +13,6 @@ import UiButton from "@/components/UiButton.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { useHotkey } from "@/core/hotkeys";
-import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { rs, useRouteState } from "@/lib/useRouteState";
 
@@ -26,7 +25,6 @@ import ReminderTimelinePreview from "./ReminderTimelinePreview.vue";
 
 const { t } = useI18n();
 const confirm = useConfirm();
-const { isPhone } = useBreakpoints();
 const query = usePolicies();
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const makeDefault = useMakeDefault();
@@ -97,7 +95,7 @@ defineExpose({ create });
   <div class="flex flex-col gap-3">
     <div class="flex items-center justify-between gap-3">
       <p class="text-sm text-muted">{{ t("reminders.policies.hint") }}</p>
-      <UiButton variant="primary" :icon="Plus" :kbd="isPhone ? undefined : 'N'" @click="create">{{ t("reminders.new") }}</UiButton>
+      <UiButton variant="primary" :icon="Plus" kbd="N" @click="create">{{ t("reminders.new") }}</UiButton>
     </div>
     <div v-if="skeleton" class="grid gap-3 lg:grid-cols-2"><SkeletonBlock v-for="n in 4" :key="n" height="190px" radius="12px" /></div>
     <ErrorState v-else-if="query.isError.value" class="ui-card" :error="query.error.value" :retry="() => query.refetch()" />

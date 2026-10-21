@@ -4,8 +4,6 @@
  * person drawer of the attendance pages. A calendar of coded days, the month's totals, the coming
  * shifts and the latest check-ins (each opens the record drawer).
  */
-import "../attendance.css";
-
 import { CalendarClock, ChevronLeft, ChevronRight, LogIn } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
@@ -78,7 +76,7 @@ function cellTitle(day: string, cell: Cell): string {
     </div>
     <ErrorState v-else-if="query.isError.value" :error="query.error.value" :retry="() => query.refetch()" />
     <template v-else-if="data">
-      <KpiStrip class="att-kpis" :items="kpis" :columns="4" />
+      <KpiStrip :items="kpis" :columns="4" phone="grid" />
 
       <section class="ui-card p-3" :aria-label="t('attendance.person.calendar')">
         <div class="grid grid-cols-7 gap-1 text-center">
