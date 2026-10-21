@@ -125,6 +125,7 @@
 .agm-c-chart-8 { --agm-color: var(--agm-c-chart-8); }
 .agm-c-danger { --agm-color: var(--agm-c-danger); }
 .agm-c-success { --agm-color: var(--color-accent-2); }
+.agm-c-accent,
 .agm-c-primary,
 .agm-c-warning { --agm-color: var(--color-accent); }
 .agm-c-info { --agm-color: var(--agm-c-chart-3); }

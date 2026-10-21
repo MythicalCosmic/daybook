@@ -50,6 +50,10 @@ def sources(isolated_registries):
     def broken(company, start, end, member):
         raise RuntimeError("down")
 
+    # Only this app's own source and the fakes below (the real ones of other apps, timeoff's
+    # holidays among them, come back when the test ends).
+    own = registry.CALENDAR_SOURCES.get("agenda.events")
+    registry.CALENDAR_SOURCES._entries = {"agenda.events": own}
     registry.CALENDAR_SOURCES.add(
         registry.CalendarSource("timeoff.holidays", "timeoff", None, None, "Holidays", holidays)
     )

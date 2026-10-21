@@ -39,10 +39,26 @@ afterEach(() => {
 });
 
 describe("lib", () => {
-  it("turns colour tokens into CSS and passes anything else through", () => {
+  it("turns colour tokens into CSS variables and ignores anything else, with a warning", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     expect(tokenColor("chart-3")).toBe("var(--c-chart-3)");
+    expect(tokenColor("chart-8")).toBe("var(--c-chart-8)");
     expect(tokenColor("danger")).toBe("var(--c-danger)");
+    expect(tokenColor("warning")).toBe("var(--c-warning)");
+    expect(tokenColor("success")).toBe("var(--c-success)");
+    expect(tokenColor("info")).toBe("var(--c-info)");
+    expect(tokenColor("accent")).toBe("var(--c-primary)");
     expect(tokenColor("")).toBeNull();
+    expect(warn).not.toHaveBeenCalled();
+    expect(tokenColor("#c67139")).toBeNull();
+    expect(tokenColor("#c67139")).toBeNull();
+    expect(tokenColor("var(--c-danger)")).toBeNull();
+    expect(tokenColor("constructor")).toBeNull();
+    expect(warn).toHaveBeenCalledTimes(3);
+    expect(String(warn.mock.calls[0]![0])).toContain("#c67139");
+    // An item with a raw colour falls back to the calendar's colour for its kind.
+    expect(toCalendarItem(entry({ color: "#ff0000" })).color).toBeNull();
+    warn.mockRestore();
   });
 
   it("finds the company event behind an item, repeating or not", () => {

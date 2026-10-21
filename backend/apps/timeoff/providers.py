@@ -114,9 +114,7 @@ def calendar_time_off(company, start: date, end: date, member: Membership) -> li
             start=row.first_day,
             end=row.last_day,
             all_day=True,
-            color="var(--c-chart-3)"
-            if row.status == TimeOff.Status.APPROVED
-            else "var(--c-warning)",
+            color="chart-3" if row.status == TimeOff.Status.APPROVED else "warning",
             url=f"time-off?request={row.pk}",
         )
         for row in rows
@@ -132,7 +130,7 @@ def calendar_holidays(company, start: date, end: date, member: Membership) -> li
             start=holiday.date,
             end=holiday.date,
             all_day=True,
-            color="var(--c-chart-1)",
+            color="chart-1",
             url="time-off/holidays",
         )
         for holiday in Holiday.objects.filter(company=company, date__range=(start, end))

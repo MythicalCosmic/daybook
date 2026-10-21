@@ -26,7 +26,7 @@ import re
 import sys
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from dataclasses import dataclass, field, fields, is_dataclass
+from dataclasses import dataclass, field, fields, is_dataclass, replace
 from datetime import date, datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
@@ -247,6 +247,14 @@ class OffboardStep:
     defaults: dict
 
 
+# The colours a calendar item may carry: design-token names the clients map to their own CSS
+# variables (the dashboard's `--c-chart-3`, the mini app's palette), never a raw colour, so a
+# source looks the same in both apps and in light and dark.
+CALENDAR_COLORS = frozenset(
+    {*(f"chart-{n}" for n in range(1, 9)), "danger", "warning", "success", "info", "accent"}
+)
+
+
 @dataclass(frozen=True)
 class CalendarItem:
     id: int | str
@@ -255,7 +263,7 @@ class CalendarItem:
     start: date | datetime
     end: date | datetime | None
     all_day: bool
-    color: str
+    color: str  # one of CALENDAR_COLORS, or "" for the client's default
     url: str
 
 
@@ -519,7 +527,9 @@ def register_calendar_source(
     events: Callable[[Company, date, date, Membership], list[CalendarItem]],
     feature: str | None = None,
 ) -> None:
-    """Company calendar dates: `events(company, start, end, member)`, both days inclusive."""
+    """Company calendar dates: `events(company, start, end, member)`, both days inclusive.
+    Each item's `color` is a token of `CALENDAR_COLORS` ("chart-3", "danger"); anything else is
+    logged and dropped by `collect_calendar`."""
     CALENDAR_SOURCES.add(CalendarSource(key, calling_app(), perm, feature, label, events))
 
 
@@ -738,13 +748,28 @@ def collect_calendar(
     for source in CALENDAR_SOURCES.visible_to(member):
         if sources and source.key not in sources:
             continue
-        items += list(
-            _safely(
-                CALENDAR_SOURCES, source.key, [], source.events, member.company, start, end, member
-            )
+        found = _safely(
+            CALENDAR_SOURCES, source.key, [], source.events, member.company, start, end, member
         )
+        items += _token_colors(source.key, found)
     items.sort(key=lambda item: _as_datetime(item.start))
     return items
+
+
+def _token_colors(key: str, items) -> list[CalendarItem]:
+    """The items with any colour that isn't a token (a hex, a CSS variable) dropped, so the
+    client falls back to its default; logged once per source, for its module to fix."""
+    clean, wrong = [], set()
+    for item in items:
+        if item.color and item.color not in CALENDAR_COLORS:
+            wrong.add(item.color)
+            item = replace(item, color="")
+        clean.append(item)
+    if wrong:
+        logger.warning(
+            "calendar source %r sent colours that aren't tokens, dropped: %s", key, sorted(wrong)
+        )
+    return clean
 
 
 def _as_datetime(value: date | datetime) -> datetime:

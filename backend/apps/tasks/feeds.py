@@ -231,7 +231,7 @@ def calendar_events(company, start: date, end: date, member: Membership) -> list
             start=day["date"],
             end=None,
             all_day=True,
-            color="danger" if day["late"] else "primary",
+            color="danger" if day["late"] else "accent",
             url=f"tasks?view=calendar&month={day['date'].isoformat()[:7]}",
         )
         for day in data["days"]
