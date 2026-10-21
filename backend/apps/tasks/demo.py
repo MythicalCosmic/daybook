@@ -302,48 +302,49 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         template.positions.set(positions)
 
     # Two months of routine work, so reports, trends and compliance have something to show:
-    # (routine, person, share on time, share missed in the last three weeks).
+    # (routine, person, share on time; the rest was done late). Nothing past stays open: a
+    # pile of old runs would read as a neglected list rather than a team's slips.
     plan = [
-        (handover, "worker", 0.86, 0.02),
-        (handover, "gulnora", 0.9, 0.0),
-        (handover, "shahzoda", 0.92, 0.0),
-        (handover, "kamola", 0.8, 0.0),
-        (night_handover, "nigora", 0.95, 0.0),
-        (night_handover, "dilshod", 0.9, 0.0),
-        (fridge_morning, "worker", 0.8, 0.04),
-        (fridge_morning, "gulnora", 0.9, 0.0),
-        (fridge_morning, "shahzoda", 0.93, 0.0),
-        (fridge_morning, "kamola", 0.85, 0.03),
-        (fridge_evening, "madina", 0.93, 0.0),
-        (fridge_evening, "sardor", 0.88, 0.0),
-        (fridge_evening, "nigora", 1.0, 0.0),
-        (fridge_evening, "dilshod", 0.9, 0.0),
-        (cash_report, "madina", 0.9, 0.0),
-        (cash_report, "sardor", 0.85, 0.0),
-        (day_cash, "shahzoda", 0.9, 0.0),
-        (day_cash, "kamola", 0.85, 0.0),
-        (night_cash, "nigora", 0.95, 0.0),
-        (night_cash, "dilshod", 0.9, 0.0),
-        (receiving, "otabek", 0.7, 0.0),
-        (expiry, "otabek", 0.8, 0.0),
-        (expiry, "malika", 0.95, 0.0),
-        (tags, "madina", 0.85, 0.0),
-        (tags, "sardor", 0.8, 0.0),
-        (tags, "malika", 0.9, 0.0),
-        (defektura, "worker", 0.82, 0.0),
-        (defektura, "gulnora", 0.88, 0.0),
-        (defektura, "shahzoda", 0.9, 0.0),
-        (defektura, "kamola", 0.8, 0.0),
-        (cleaning, "madina", 0.9, 0.0),
-        (cleaning, "sardor", 0.85, 0.0),
-        (cleaning, "nigora", 0.95, 0.0),
-        (cleaning, "dilshod", 0.9, 0.0),
-        (evening_report, "manager", 0.88, 0.0),
-        (orders, "worker", 0.82, 0.0),
-        (orders, "gulnora", 0.9, 0.0),
-        (deliveries, "jasur", 0.62, 0.0),
-        (rx_log, "manager", 0.9, 0.0),
-        (rx_log, "farrux", 0.95, 0.0),
+        (handover, "worker", 0.86),
+        (handover, "gulnora", 0.9),
+        (handover, "shahzoda", 0.92),
+        (handover, "kamola", 0.8),
+        (night_handover, "nigora", 0.95),
+        (night_handover, "dilshod", 0.9),
+        (fridge_morning, "worker", 0.8),
+        (fridge_morning, "gulnora", 0.9),
+        (fridge_morning, "shahzoda", 0.93),
+        (fridge_morning, "kamola", 0.85),
+        (fridge_evening, "madina", 0.93),
+        (fridge_evening, "sardor", 0.88),
+        (fridge_evening, "nigora", 1.0),
+        (fridge_evening, "dilshod", 0.9),
+        (cash_report, "madina", 0.9),
+        (cash_report, "sardor", 0.85),
+        (day_cash, "shahzoda", 0.9),
+        (day_cash, "kamola", 0.85),
+        (night_cash, "nigora", 0.95),
+        (night_cash, "dilshod", 0.9),
+        (receiving, "otabek", 0.7),
+        (expiry, "otabek", 0.8),
+        (expiry, "malika", 0.95),
+        (tags, "madina", 0.85),
+        (tags, "sardor", 0.8),
+        (tags, "malika", 0.9),
+        (defektura, "worker", 0.82),
+        (defektura, "gulnora", 0.88),
+        (defektura, "shahzoda", 0.9),
+        (defektura, "kamola", 0.8),
+        (cleaning, "madina", 0.9),
+        (cleaning, "sardor", 0.85),
+        (cleaning, "nigora", 0.95),
+        (cleaning, "dilshod", 0.9),
+        (evening_report, "manager", 0.88),
+        (orders, "worker", 0.82),
+        (orders, "gulnora", 0.9),
+        (deliveries, "jasur", 0.62),
+        (rx_log, "manager", 0.9),
+        (rx_log, "farrux", 0.95),
     ]
     plan = [row for row in plan if story.member(row[1]) is not None]
     # Days somebody already has the routine's task (the core demo's own history): never a
@@ -354,7 +355,7 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
         )
     )
     rows, logs = [], []
-    for template, key, on_time, missed in plan:
+    for template, key, on_time in plan:
         member = story.member(key)
         for days_ago in range(HISTORY_DAYS, 0, -1):
             day = today - timedelta(days=days_ago)
@@ -362,10 +363,7 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
                 continue
             if (template.pk, member.pk, day) in taken:
                 continue
-            # Misses only in the last three weeks: older open routine work would read as a
-            # neglected list rather than a team's recent slips.
-            chance = missed if days_ago <= 21 else 0.0
-            task, steps = _history_task(company, story, template, member, day, rng, on_time, chance)
+            task, steps = _history_task(company, story, template, member, day, rng, on_time)
             rows.append(task)
             logs.extend((task, step) for step in steps)
     Task.objects.bulk_create(rows)
@@ -397,7 +395,7 @@ def _today(company, story, plan, now, rng) -> None:
     and the courier's deliveries, which run late. The core demo's own tasks stay as they are."""
     today = story.today
     start_of_day = min(now - timedelta(minutes=10), story.at(today, time(0, 5)))
-    for template, key, _on_time, _missed in plan:
+    for template, key, _on_time in plan:
         member = story.member(key)
         if not template.is_due_on(today) or not story.works(key, today):
             continue
@@ -617,7 +615,9 @@ def _given(company, story, people, now, rng, strict) -> None:
         on_day("nigora", banner_day, 22, 30),
         status=Task.Status.DONE,
         completed_at=on_day("nigora", banner_day, 21, 50),
-        confirmed_at=on_day("nigora", banner_day + timedelta(days=1), 9, 20),
+        confirmed_at=min(
+            on_day("nigora", banner_day + timedelta(days=1), 9, 20), now - timedelta(minutes=20)
+        ),
         confirmed_by=owner,
         proof=Proof.PHOTO,
         reward=Decimal("75000.00"),
@@ -755,17 +755,15 @@ def _reading(rng: random.Random) -> str:
     return f"+{rng.choice([3, 4, 4, 5, 5, 6])} °C"
 
 
-def _history_task(company, story, template, person, day, rng, on_time: float, missed: float):
-    """One past day's task (not saved) and the reminder steps it got."""
+def _history_task(company, story, template, person, day, rng, on_time: float):
+    """One past day's task (not saved) and the reminder steps it got: done in time, or
+    late after reminders."""
     due = story.at(day, template.due_time)
-    roll = rng.random()
-    if roll < missed:
-        status, completed = Task.Status.TODO, None
-    elif roll < missed + on_time:
+    if rng.random() < on_time:
         status, completed = Task.Status.DONE, due - timedelta(minutes=rng.randint(4, 55))
     else:
         status, completed = Task.Status.DONE, due + timedelta(minutes=rng.randint(12, 140))
-    late = completed is None or completed > due
+    late = completed > due
     task = Task(
         company=company,
         kind=Task.Kind.DAILY,
@@ -781,11 +779,11 @@ def _history_task(company, story, template, person, day, rng, on_time: float, mi
         if completed and template.needs_confirmation
         else None,
         proof=template.proof,
-        proof_text=_reading(rng) if template.proof == Proof.TEXT and completed else "",
+        proof_text=_reading(rng) if template.proof == Proof.TEXT else "",
         needs_confirmation=template.needs_confirmation,
         reminder_policy=template.reminder_policy,
         branch=person.home_branch,
-        reminders_sent=0 if not late else (3 if completed is None else rng.randint(1, 3)),
+        reminders_sent=rng.randint(1, 3) if late else 0,
     )
     return task, list(range(1, task.reminders_sent + 1))
 

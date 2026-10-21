@@ -52,7 +52,7 @@ messages: ## Collect new bot and API texts into the uz/ru .po files and compile 
 	$(MAKEMESSAGES)
 	cd backend && uv run python manage.py compilemessages
 
-demo: ## Rebuild Demo Shop and Demo Café [PKG, DEMO_APPS=sales,finance, OWNER_TG=<telegram id>]
+demo: ## Rebuild Demo Dorixona and Demo Distribyutor [PKG, DEMO_APPS=sales,finance, OWNER_TG=<telegram id>]
 	$(PKG_ENV) $(MANAGE) seed_demo --reset $(if $(DEMO_APPS),--only $(DEMO_APPS)) \
 		$(if $(OWNER_TG),--owner-tg $(OWNER_TG))
 

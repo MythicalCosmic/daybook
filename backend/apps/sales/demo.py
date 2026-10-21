@@ -1,5 +1,5 @@
-"""Demo data of sales and cash (docs/PLAN-OWNER.md §14.3, apps/core/demo_plan.py): four weeks
-of Demo Dorixona's tills.
+"""Demo data of sales and cash (docs/PLAN-OWNER.md §14.3, apps/core/demo_plan.py): two months
+of Demo Dorixona's tills, the last three weeks in full.
 
 Chilonzor's till runs one session a day: the pharmacist who opens at 08:00 opens it and the one
 who closes at 22:00 closes it. Yunusobod is open around the clock, so its till has a day session
@@ -12,29 +12,50 @@ Everything goes through `apps.sales.services` (so the ledger, the audit log and 
 are exactly what real use would leave), with the clock set to each moment as it happens
 (`demo_time.moment`), so times in lists, timelines, alerts and the audit log read naturally. The
 last two days stay unverified (they wait in Needs you), the tills of the shifts under way are
-open, one handover still waits for the owner and one was declined; a couple of shortages, one
-disputed shift and one mismatch found by the assistant give the screens something to show.
+open, the evening takings go to the owner (on Mondays to the bank's cash collector), one handover
+still waits for the owner and one was declined; a couple of shortages, one disputed shift and
+one mismatch found by the assistant give the screens something to show.
+
+The weeks before come in as imported shifts (`CashShift.Source.IMPORT`, as when a pharmacy
+loads its earlier Z-reports): one per session from the same roster, with exactly the day's sales
+the ledger's demo booked for that pharmacy (its cash, and its cards and QR payments split over
+the methods) and the evenings' cash taken to the safe linked to the ledger's transfers, so the
+sales pages compare a month with the one before and every figure matches the books. They are
+written in bulk, with no ledger rows of their own (the ledger already holds those days): the
+real path costs half a second a shift.
 """
 
 import io
 import random
+from collections import defaultdict
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
-from datetime import datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 from unittest import mock
+
+from django.db.models import DateTimeField, ExpressionWrapper, F, OuterRef, Subquery
 
 from apps.companies.models import Feature
 from apps.core import demo_plan
 from apps.core.demo_time import moment
 from apps.finance import defaults as finance_defaults
+from apps.finance import queries as finance_queries
 from apps.finance import services as finance
-from apps.finance.models import Category, MoneyAccount
+from apps.finance.demo import DEMO_SOURCE
+from apps.finance.models import Category, MoneyAccount, Transaction, Transfer
 from apps.members.models import AccessRole, Membership
 from apps.members.permissions import Perm
 from apps.sales import alerts, defaults, rollup, services
-from apps.sales.models import CashShift, PaymentMethod, Register, SalesSettings
+from apps.sales.models import (
+    CashMovement,
+    CashShift,
+    PaymentMethod,
+    Register,
+    SalesSettings,
+    ShiftPayment,
+)
 from apps.sales.services import PaymentLine
 
 DAYS = demo_plan.SALES_DAYS
@@ -52,6 +73,7 @@ MIX = {"cash": 0.40, "uzcard": 0.20, "humo": 0.15, "click": 0.12, "payme": 0.09,
 FEES = {"uzcard": "0.60", "humo": "0.50", "click": "1.00", "payme": "1.00", "uzum": "1.00"}
 # Expected sales of a session (so‘m): Chilonzor's day, Yunusobod's day and night.
 SESSION_SALES = {("C", False): 6_000_000, ("Y", False): 9_600_000, ("Y", True): 2_400_000}
+NIGHT_SHARE = 0.2  # of a Yunusobod day's sales, in the imported weeks
 AVERAGE_RECEIPT = (48_000, 62_000)
 PAYOUTS = [
     ("Ichimlik suvi, 19 l × 2", "other_expense", 40_000, 60_000),
@@ -105,11 +127,13 @@ def seed(company, people, now) -> None:
         tills[code] = register
     bank = _bank(company, owner)
     methods = {m.system_code: m for m in PaymentMethod.objects.filter(company=company)}
-    sessions = _sessions(story, now)
+    sessions = _sessions(story, now, range(DAYS, -1, -1))
     _cashiers(
         company,
         {s.opener.pk: s.opener for s in sessions} | {s.closer.pk: s.closer for s in sessions},
     )
+    # Imported first, so their numbers come before the ones the tills give out now.
+    first_day = _imported(company, story, now, tills, methods)
 
     # The last day session that closed keeps its handover waiting for the owner.
     closed = [s for s in sessions if s.closes <= now - timedelta(minutes=5)]
@@ -158,7 +182,8 @@ def seed(company, people, now) -> None:
     _open_now(company, story, sessions, now, tills, methods)
     _extras(company, story, rng, now, methods)
     _targets(company, story, people)
-    rollup.rebuild_range(company, story.today - timedelta(days=DAYS + 1), story.today)
+    first_day = min(first_day, story.today - timedelta(days=DAYS + 1))
+    rollup.rebuild_range(company, first_day, story.today)
 
 
 @contextmanager
@@ -179,11 +204,11 @@ def _no_alert(*args, **kwargs):
     return None
 
 
-def _sessions(story, now) -> list[Session]:
-    """The till sessions of the last three weeks and today, from the roster: who opens and who
-    closes each one."""
+def _sessions(story, now, backs) -> list[Session]:
+    """The till sessions of the days `backs` days ago, from the roster: who opens and who closes
+    each one."""
     sessions = []
-    for back in range(DAYS, -1, -1):
+    for back in backs:
         day = story.today - timedelta(days=back)
         for code, night in (("C", False), ("Y", False), ("Y", True)):
             if code == "Y" and story.branches["Y"] == story.branches["C"]:
@@ -208,6 +233,159 @@ def _sessions(story, now) -> list[Session]:
                 )
             )
     return sessions
+
+
+def _imported(company, story, now, tills, methods) -> date:
+    """The imported weeks before the tills' detailed ones (see the module's docstring), built
+    from the ledger demo's daily sales. Returns the first day with sales (the detailed weeks'
+    first day when there is nothing to import: the ledger's demo didn't run)."""
+    first_detailed = story.today - timedelta(days=DAYS)
+    daily: dict[tuple[int, date], dict[str, Decimal]] = defaultdict(dict)
+    rows = Transaction.objects.filter(
+        company=company,
+        source_type=DEMO_SOURCE,
+        source_key__startswith="s:",
+        status=Transaction.Status.POSTED,
+    ).values_list("source_id", "source_key", "amount")
+    for branch_id, key, amount in rows:
+        _sales, stamp, channel = key.split(":")
+        day = datetime.strptime(stamp, "%y%m%d").date()
+        if day < first_detailed:
+            daily[(branch_id, day)][channel] = amount
+    if not daily:
+        return first_detailed
+    first_day = min(day for _branch, day in daily)
+    backs = range((story.today - first_day).days, DAYS, -1)
+    by_day = defaultdict(list)
+    for session in _sessions(story, now, backs):
+        by_day[(session.code, session.day)].append(session)
+
+    rng = random.Random(912)
+    card_mix = {code: share for code, share in MIX.items() if code != "cash"}
+    specs = []  # (session, register, opening float, cash, {card method: sales}, transfer)
+    for code, register in tills.items():
+        if code == "Y" and story.branches["Y"] == story.branches["C"]:
+            continue
+        branch, till = story.branches[code], register.cash_account
+        safe = MoneyAccount.objects.filter(
+            company=company, branch=branch, kind=MoneyAccount.Kind.SAFE, currency=till.currency
+        ).first()
+        to_safe = {
+            transfer.occurred_on: transfer
+            for transfer in Transfer.objects.filter(
+                company=company,
+                status=Transfer.Status.POSTED,
+                from_account=till,
+                to_account=safe,
+                occurred_on__range=(first_day, first_detailed),
+            )
+        }
+        held = finance_queries.balance(till, first_day - timedelta(days=1))
+        for back in backs:
+            day = story.today - timedelta(days=back)
+            totals, sessions = daily.get((branch.pk, day)), by_day.get((code, day))
+            if not totals or not sessions:
+                continue
+            shares = [1.0] if len(sessions) == 1 else [1 - NIGHT_SHARE, NIGHT_SHARE]
+            cash_parts = _split(totals.get("cash", Decimal(0)), shares)
+            card_parts = _split(totals.get("card", Decimal(0)), shares)
+            for index, session in enumerate(sessions):
+                # The day's cash goes to the safe at the end of its last session.
+                moved = to_safe.get(day) if index == len(sessions) - 1 else None
+                cards = _split(card_parts[index], list(card_mix.values()))
+                specs.append(
+                    (
+                        session,
+                        register,
+                        held,
+                        cash_parts[index],
+                        dict(zip(card_mix, cards, strict=True)),
+                        moved,
+                    )
+                )
+                held += cash_parts[index] - (moved.amount_out if moved else 0)
+
+    number = SalesSettings.objects.get(company=company).next_shift_number
+    shifts, payments, movements = [], [], []
+    for session, register, opening, cash, cards, moved in sorted(specs, key=lambda s: s[0].opens):
+        counted = opening + cash - (moved.amount_out if moved else 0)
+        card = sum(cards.values(), Decimal(0))
+        verified = story.at(session.day + timedelta(days=1), time(9, 40 + rng.randint(0, 15)))
+        shift = CashShift(
+            company=company,
+            number=number,
+            branch=story.branches[session.code],
+            register=register,
+            cashier=session.opener,
+            business_day=session.day,
+            status=CashShift.Status.VERIFIED,
+            source=CashShift.Source.IMPORT,
+            opened_at=session.opens + timedelta(minutes=rng.randint(0, 5)),
+            opening_float=opening,
+            opening_count=_count(opening),
+            expected_float=opening,
+            closed_at=session.closes - timedelta(minutes=rng.randint(0, 4)),
+            closed_by=session.closer,
+            counted_cash=counted,
+            closing_count=_count(counted),
+            expected_cash=counted,
+            difference=Decimal(0),
+            fiscal_cash_total=cash,
+            fiscal_card_total=card,
+            z_number=f"{412 + number:04d}",
+            receipts=max(int((cash + card) / rng.randint(*AVERAGE_RECEIPT)), 1),
+            verified_by=_verifier(story, session),
+            verified_at=min(verified, now),
+        )
+        shifts.append(shift)
+        for code, amount in (("cash", cash), *cards.items()):
+            if amount > 0 and code in methods:
+                payments.append(ShiftPayment(shift=shift, method=methods[code], sales=amount))
+        if moved is not None:
+            movements.append(
+                CashMovement(
+                    company=company,
+                    branch=shift.branch,
+                    register=register,
+                    shift=shift,
+                    kind=CashMovement.Kind.TO_SAFE,
+                    amount=moved.amount_out,
+                    currency=register.cash_account.currency,
+                    transfer=moved,
+                    reason="Kunlik tushum seyfga",
+                    created_by=session.closer,
+                    confirmed_by=session.closer,
+                )
+            )
+        number += 1
+    CashShift.objects.bulk_create(shifts)
+    for row in (*payments, *movements):
+        row.shift_id = row.shift.pk
+    ShiftPayment.objects.bulk_create(payments)
+    CashMovement.objects.bulk_create(movements)
+    SalesSettings.objects.filter(company=company).update(next_shift_number=number)
+    # Written when they happened, not now.
+    ids = [shift.pk for shift in shifts]
+    CashShift.objects.filter(pk__in=ids).update(
+        created_at=F("opened_at"), updated_at=F("verified_at")
+    )
+    before_closing = ExpressionWrapper(
+        Subquery(CashShift.objects.filter(pk=OuterRef("shift_id")).values("closed_at")[:1])
+        - timedelta(minutes=12),
+        output_field=DateTimeField(),
+    )
+    CashMovement.objects.filter(shift_id__in=ids).update(
+        created_at=before_closing, updated_at=before_closing, confirmed_at=before_closing
+    )
+    return first_day
+
+
+def _split(amount: Decimal, shares: list[float]) -> list[Decimal]:
+    """`amount` in parts as `shares` (rounded to 1 000 so‘m; the last part takes the rest)."""
+    total = sum(shares)
+    parts = [_round(float(amount) * share / total) for share in shares[:-1]]
+    parts.append(amount - sum(parts, Decimal(0)))
+    return parts
 
 
 def _configure(company) -> None:
@@ -297,8 +475,8 @@ def _lines(rng, methods, net_target: int) -> tuple[list[PaymentLine], Decimal]:
 
 def _history_shift(company, rng, *, session, register, methods, owner, bank, with_photos, kind):
     opened = session.opens + timedelta(minutes=rng.randint(0, 5))
-    if kind == "short" and not session.night and rng.random() < 0.5:
-        opened += timedelta(minutes=35)  # a late opening for the scorecard
+    if kind == "small_short" and session.code == "C":
+        opened += timedelta(minutes=35)  # a late opening for the scorecard (08:00 at Chilonzor)
     count, amount = _opening(register)
     with moment(opened):
         shift = services.open_shift(
@@ -332,7 +510,7 @@ def _history_shift(company, rng, *, session, register, methods, owner, bank, wit
             )
         moves -= amount
     # Busy days a midday drop into the safe; every evening all but the next session's change
-    # goes to the owner.
+    # goes to the owner (on Mondays to the bank's cash collector).
     if not session.night and session.day.toordinal() % 3 == 0 and cash_net > 3_000_000:
         drop = Decimal(1_500_000)
         with moment(opened + timedelta(hours=6, minutes=10)):
@@ -344,7 +522,20 @@ def _history_shift(company, rng, *, session, register, methods, owner, bank, wit
     closer = session.closer
     before_handover = shift.opening_float + cash_net + moves
     handover_amount = ((before_handover - KEEP) // 100_000) * 100_000
-    if not session.night and handover_amount > 0:
+    # Monday evenings the bank's cash collector takes the day's takings instead.
+    collected = session.day.weekday() == 0 and kind not in ("pending", "declined")
+    if not session.night and handover_amount > 0 and collected:
+        with moment(closed_at - timedelta(minutes=15)):
+            services.record_movement(
+                by=closer,
+                register=register,
+                kind="to_bank",
+                amount=handover_amount,
+                to_account=bank,
+                reason="Inkassatsiya",
+            )
+        moves -= handover_amount
+    elif not session.night and handover_amount > 0:
         receiver = owner
         if kind == "declined":
             # The owner says the envelope never reached her; it was still in the till's drawer,
@@ -537,12 +728,15 @@ def _extras(company, story, rng, now, methods) -> None:
         (25, "C", [("payme", 380_000)], "Yetkazib berish buyurtmasi"),
     ]
     for back, code, pays, note in entries:
+        # The pharmacy's head enters them in office hours, on a day they work.
+        key = "manager" if code == "C" or story.member("farrux") is None else "farrux"
         day = story.today - timedelta(days=back)
-        at = story.at(day, time(rng.randint(11, 17), rng.randint(0, 59)))
-        head = story.member("manager") if code == "C" else story.member("farrux")
+        if not story.works(key, day):
+            day = story.last_working_day(key, day) or day
+        at = story.at(day, time(rng.randint(10, 16), rng.randint(0, 59)))
         with moment(at):
             services.record_sale(
-                by=head or story.member("manager"),
+                by=story.member(key),
                 payments=[(methods[method], amount) for method, amount in pays],
                 branch=story.branches[code],
                 source="dashboard",
@@ -564,7 +758,7 @@ def _targets(company, story, people) -> None:
             company, by=owner, month=month, amount=Decimal("370000000"), branch=story.branches["Y"]
         )
     services.set_target(
-        company, by=owner, month=month, amount=Decimal("95000000"), membership=people["madina"]
+        company, by=owner, month=month, amount=Decimal("100000000"), membership=people["worker"]
     )
     previous = (month - timedelta(days=1)).replace(day=1)
     services.set_target(company, by=owner, month=previous, amount=Decimal("540000000"))

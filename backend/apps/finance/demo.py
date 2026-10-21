@@ -7,14 +7,15 @@ open around the clock). The ledger starts 62 days ago with opening balances and 
 tills' weeks begin (`demo_plan.SALES_DAYS` ago, when the sales demo runs) it books each day's
 sales per pharmacy (cash into the pharmacy's till, cards and QR payments into the terminal
 account), takes the cash to the safe and the safe to the bank, and settles the terminal into
-the bank; from then on the sales demo books every shift itself, so no day is counted twice.
+the bank; from then on the sales demo books every shift itself, so no day is counted twice
+(the sales demo shows the earlier days as imported shifts with exactly these totals).
 Every working day a distributor delivers medicines: on credit with its own terms (payables due
 on dates the calendar shows) or paid ahead. Rent (Yunusobod's in dollars), salaries (night hours
 paid 1.5 times), utilities, disinfection, the bank loan, the owner's draws, nasiya for three
 regular customers and a clinic, a bad debt, a voided mistake, an entry waiting for approval and
-receipts with pictures fill the rest. `finish`, once every app has booked its rows, settles the
-terminal into the bank for the tills' weeks, pays the month's turnover tax and closes the books
-up to the end of the month before last.
+receipts with pictures fill the rest. Pay goes out on the month's last weekday with the 12 %
+social tax on it. `finish`, once every app has booked its rows, settles the terminal into the
+bank for the tills' weeks and closes the books up to the end of the month before last.
 
 Daily sales and salaries carry the source `finance.demo` (id = branch or person, key
 `s:<yymmdd>:<cash|card>` / `sal:<yyyymm>`).
@@ -86,9 +87,8 @@ def seed_small(company, people, now) -> None:
 
 def finish(company, people, now) -> None:
     """Once every app has booked its rows: settle the card terminal into the bank for the days
-    the tills booked, pay the turnover tax on the sales the ledger now holds, and close the
-    books up to the end of the month before last (a closed period refuses rows, and the
-    projects and sales demos book older ones)."""
+    the tills booked and close the books up to the end of the month before last (a closed
+    period refuses rows, and the projects and sales demos book older ones)."""
     if company.slug == demo_plan.DISTRIBUTOR:
         return
     with translation.override(company.default_language):
@@ -102,6 +102,14 @@ def finish(company, people, now) -> None:
 
 def _round(value: float, step: int = 1000) -> Decimal:
     return D(round(value / step) * step)
+
+
+def _last_weekday(day: date) -> date:
+    """The last Monday-to-Friday day of `day`'s month."""
+    last = (day.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+    while last.weekday() > 4:
+        last -= timedelta(days=1)
+    return last
 
 
 class Ledger:
@@ -165,7 +173,7 @@ class Ledger:
             "payroll_taxes": "Ish haqi soliqlari",
             "bank_fees": "Bank xizmatlari",
             "taxes": "Soliqlar va yig‘imlar",
-            "marketing": "Marketing",
+            "marketing": "Reklama va marketing",
             "transport": "Transport va yetkazish",
             "repairs": "Ta’mirlash",
             "cash_shortage": "Kassa kamomadi",
@@ -221,9 +229,9 @@ class Ledger:
             "ads": child("marketing", "Ijtimoiy tarmoqlarda reklama"),
             "print": child("marketing", "Narx yorliqlari va bosma"),
             "fuel": child("transport", "Kuryer yoqilg‘isi"),
-            "turnover_tax": child("taxes", "Aylanmadan olinadigan soliq"),
             "licences": child("taxes", "Litsenziya va ruxsatnomalar"),
             "salaries": code["salaries"],
+            "payroll_taxes": code["payroll_taxes"],
             "bank_fees": code["bank_fees"],
             "repairs": code["repairs"],
             "other_income": code["other_income"],
@@ -690,20 +698,20 @@ class Ledger:
                 description=f"{self.chl.name} dorixonasi ijarasi, {day:%m.%Y}",
             )
             self.receipt(row, "IJARA SHARTNOMASI", [("Oylik ijara", "9 000 000")], "9 000 000")
-        if day.day == 5:
+        if day.day == 5 and self.loan.status == "open":
+            services.pay_debt(
+                self.loan, by=self.owner, amount=D("6700000"), paid_on=day, account=self.bank
+            )
+            self.expense(
+                day,
+                self.bank,
+                "1400000",
+                self.cat["interest"],
+                counterparty=self.party["bank"],
+                description="Kredit foizi",
+            )
+        if day == _last_weekday(day):
             self.salaries(day)
-            if self.loan.status == "open":
-                services.pay_debt(
-                    self.loan, by=self.owner, amount=D("6700000"), paid_on=day, account=self.bank
-                )
-                self.expense(
-                    day,
-                    self.bank,
-                    "1400000",
-                    self.cat["interest"],
-                    counterparty=self.party["bank"],
-                    description="Kredit foizi",
-                )
         if day.day == 10:
             for code, branch in self.pharmacies():
                 electricity = self.expense(
@@ -761,16 +769,18 @@ class Ledger:
             self.expense(day, self.bank, "85000", self.cat["bank_fees"], description="Bank xizmati")
 
     def salaries(self, day: date) -> None:
-        """Last month's pay for everyone who worked in it (night hours at 1.5 times)."""
-        month_end = day.replace(day=1) - timedelta(days=1)
-        month_start = month_end.replace(day=1)
-        month = month_end.strftime("%Y%m")
+        """The month's pay on its last weekday, for everyone who worked in it (night hours at 1.5
+        times), and the employer's 12 % social tax on it."""
+        month_start = day.replace(day=1)
+        month = day.strftime("%Y%m")
+        total = D(0)
         for key, member in self.story.members().items():
             amount = PAY.get(key)
-            if amount is None or self.story.joined(key) > month_end:
+            if amount is None or self.story.joined(key) > day:
                 continue
             if self.story.away(key, month_start) in ("left", "blocked"):
                 continue
+            total += amount
             note = ", tungi soatlar 1,5 baravar" if key in NIGHT else ""
             services.record_transaction(
                 self.company,
@@ -782,8 +792,20 @@ class Ledger:
                 category=self.cat["salaries"],
                 membership=member,
                 branch=member.home_branch,
-                description=f"Ish haqi, {member} ({month_end:%m.%Y}{note})",
+                description=f"Ish haqi, {member} ({day:%m.%Y}{note})",
                 source=Source(DEMO_SOURCE, member.pk, f"sal:{month}"),
+            )
+        if total:
+            services.record_transaction(
+                self.company,
+                by=self.owner,
+                kind="expense",
+                amount=_round(float(total) * 0.12, 1000),
+                occurred_on=day,
+                account=self.bank,
+                category=self.cat["payroll_taxes"],
+                counterparty=self.party["tax"],
+                description=f"Ijtimoiy soliq (12 %), {day:%m.%Y}",
             )
 
     # Debts, one-offs and settings ---------------------------------------------------------------
@@ -984,14 +1006,6 @@ class Ledger:
             company=self.company, kind=MoneyAccount.Kind.CLEARING, branch=None, currency="UZS"
         )
         self.bank = MoneyAccount.objects.get(company=self.company, name="Asosiy bank hisobi")
-        self.cat = {
-            "turnover_tax": Category.objects.get(
-                company=self.company, name="Aylanmadan olinadigan soliq"
-            )
-        }
-        self.party = {
-            "tax": Counterparty.objects.get(company=self.company, name="Soliq inspeksiyasi")
-        }
         # The tills' weeks: the bank settles what reached the terminal every two days (the
         # sales module booked each provider's fee with the shift).
         day = self.tills_from
@@ -1007,28 +1021,6 @@ class Ledger:
                         amount_out=settled,
                         occurred_on=day,
                         description="Terminal tushumi (karta va QR)",
-                    )
-            day += timedelta(days=1)
-        # Turnover tax on the 20th for the month before, now that every sale is booked.
-        day = self.start + timedelta(days=1)
-        while day < self.today:
-            if day.day == 20:
-                month_end = day.replace(day=1) - timedelta(days=1)
-                month_start = month_end.replace(day=1)
-                income = queries.totals(self.company, month_start, month_end, branch_ids=None)[
-                    "income"
-                ]
-                if income > 0:
-                    services.record_transaction(
-                        self.company,
-                        by=self.owner,
-                        kind="expense",
-                        amount=_round(float(income) * 0.04, 1000),
-                        occurred_on=day,
-                        account=self.bank,
-                        category=self.cat["turnover_tax"],
-                        counterparty=self.party["tax"],
-                        description=f"Aylanmadan olinadigan soliq, {month_start:%m.%Y}",
                     )
             day += timedelta(days=1)
         services.update_account(self.bank, by=self.owner, allow_negative=False)
@@ -1052,12 +1044,24 @@ class Distributor:
         code = {c.system_code: c for c in Category.objects.filter(company=company)}
         services.update_category(code["sales"], by=by, name="Ulgurji savdo")
         services.update_category(code["goods"], by=by, name="Dori xaridi")
+        # One cash desk: the warehouse's own (the company's spare one goes), and its safe.
         accounts = MoneyAccount.objects.filter(company=company)
-        desk = accounts.filter(kind=MoneyAccount.Kind.CASH).order_by("pk").first()
+        cash = list(accounts.filter(kind=MoneyAccount.Kind.CASH).order_by("pk"))
+        desk = next((account for account in cash if account.branch_id), cash[0] if cash else None)
         if desk is not None:
             desk = services.update_account(desk, by=by, name="Ombor kassasi")
         else:
             desk = services.create_account(company, by=by, kind="cash", name="Ombor kassasi")
+        for spare in cash:
+            if spare.pk != desk.pk and not spare.transactions.exists():
+                spare.delete()
+        warehouse = next(iter(self.story.branches.values()))
+        safe = services.account_for_branch(warehouse, currency="UZS")
+        safe = services.update_account(safe, by=by, name="Ombor seyfi")
+        # Buyers pay invoices by bank transfer: the card terminal's account isn't used.
+        for terminal in accounts.filter(kind=MoneyAccount.Kind.CLEARING, is_active=True):
+            if not terminal.transactions.exists():
+                services.archive_account(terminal, by=by)
         bank = services.create_account(company, by=by, kind="bank", name="Asosiy bank hisobi")
         services.update_account(bank, by=by, number_last4="7302")
 
@@ -1074,11 +1078,11 @@ class Distributor:
             party(
                 "Zarbuloq Farmatsevtika", Counterparty.Kind.SUPPLIER, tags=["ishlab chiqaruvchi"]
             ),
-            party("Qorasuv Med Import", Counterparty.Kind.SUPPLIER, tags=["import"]),
+            party("Sarvqad Med Import", Counterparty.Kind.SUPPLIER, tags=["import"]),
         ]
         landlord = party("Sherali Rahmonov (ombor ijarasi)", Counterparty.Kind.OTHER)
         day = self.start
-        for account, amount in ((bank, "240000000"), (desk, "5000000")):
+        for account, amount in ((bank, "240000000"), (desk, "5000000"), (safe, "3000000")):
             services.record_transaction(
                 company,
                 by=by,
@@ -1088,7 +1092,7 @@ class Distributor:
                 account=account,
                 description="Boshlang‘ich qoldiq",
             )
-        number = 2210
+        number, sold = 2210, D(0)
         while day < self.today:
             day += timedelta(days=1)
             if self.story.holiday(day) or day.weekday() == 6:
@@ -1110,16 +1114,21 @@ class Distributor:
                     category=code["sales"],
                     description=f"Hisob-faktura №{number}",
                 )
+                sold += amount
                 if debt.due_on < self.today - timedelta(days=2) and rng.random() < 0.8:
                     services.pay_debt(debt, by=by, amount=amount, paid_on=debt.due_on, account=bank)
+            # Twice a week the manufacturers deliver what was sold since, at cost: a
+            # distributor keeps about 14 %.
             if day.weekday() in (0, 3):
                 maker = makers[day.toordinal() % 2]
+                cost = max(float(sold) * 0.86 * rng.uniform(0.95, 1.05), 20_000_000)
+                sold = D(0)
                 services.open_debt(
                     company,
                     by=self.people["manager"],
                     direction="payable",
                     kind="trade",
-                    amount=_round(rng.uniform(40_000_000, 70_000_000), 100_000),
+                    amount=_round(cost, 100_000),
                     currency="UZS",
                     issued_on=day,
                     due_on=day + timedelta(days=30),
@@ -1150,12 +1159,13 @@ class Distributor:
                     counterparty=landlord,
                     description=f"Ombor ijarasi, {day:%m.%Y}",
                 )
-            if day.day == 5:
-                month = (day.replace(day=1) - timedelta(days=1)).strftime("%Y%m")
+            if day == _last_weekday(day):  # pay day, with the 12 % social tax
+                month, total = day.strftime("%Y%m"), D(0)
                 for key, member in self.story.members().items():
                     amount = SMALL_PAY.get(key)
                     if amount is None:
                         continue
+                    total += amount
                     services.record_transaction(
                         company,
                         by=by,
@@ -1165,9 +1175,19 @@ class Distributor:
                         account=bank,
                         category=code["salaries"],
                         membership=member,
-                        description=f"Ish haqi, {member}",
+                        description=f"Ish haqi, {member} ({day:%m.%Y})",
                         source=Source(DEMO_SOURCE, member.pk, f"sal:{month}"),
                     )
+                services.record_transaction(
+                    company,
+                    by=by,
+                    kind="expense",
+                    amount=_round(float(total) * 0.12, 1000),
+                    occurred_on=day,
+                    account=bank,
+                    category=code["payroll_taxes"],
+                    description=f"Ijtimoiy soliq (12 %), {day:%m.%Y}",
+                )
 
 
 def _receipt_picture(shop: str, day: date, lines: list[tuple[str, str]], total: str) -> bytes:

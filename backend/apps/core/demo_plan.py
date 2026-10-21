@@ -33,8 +33,8 @@ DISTRIBUTOR = "demo-distributor"
 OLD_SLUGS = ("demo-shop", "demo-cafe", "shifo-dorixonalari", "salomat-dorixona")
 
 LEDGER_DAYS = 62  # the finance ledger: two months, so a month compares with the one before
-SALES_DAYS = 21  # tills through the real sales services (the ledger books the days before)
-ROSTER_DAYS = 35  # attendance: five weeks of shifts and check-ins
+SALES_DAYS = 21  # tills through the real sales services (before: imported, from the ledger)
+ROSTER_DAYS = LEDGER_DAYS  # attendance: every day a till ran has its shifts and check-ins
 SMALL_DAYS = 21  # the distributor's routines and books
 
 # Positions in roster order (English as made, Uzbek once every demo has run).
@@ -167,7 +167,7 @@ PEOPLE = [
     P("worker", 4242, "Alisher", "Valiyev", PHARMACIST, TILL, "C", 380, "chl_open_a"),
     P("madina", 1004, "Madina", "Saidova", SENIOR, TILL, "C", 230, "chl_close_a"),
     P("jasur", 1005, "Jasur", "Tursunov", COURIER, "Employee", "CY", 140, "courier"),
-    P("nigora", 1006, "Nigora", "Azimova", PHARMACIST, TILL, "Y", 58, "yns_night_a"),
+    P("nigora", 1006, "Nigora", "Azimova", PHARMACIST, TILL, "Y", 160, "yns_night_a"),
     # Chilonzor's second pair.
     P("gulnora", 3002, "Gulnora", "Ismoilova", PHARMACIST, TILL, "C", 265, "chl_open_b"),
     P("sardor", 3001, "Sardor", "Rahimov", SENIOR, TILL, "C", 410, "chl_close_b"),
@@ -186,7 +186,7 @@ CORE = ("owner", "manager", "worker", "madina", "jasur", "nigora")
 # People the members demo adds with their own status: a suspension, people who left and join
 # requests (one from a former storekeeper).
 SUSPENDED = P("bobur", 3013, "Bobur", "Saidov", PHARMACIST, "Employee", "C", 300, "office")
-LEFT = P("nodira", 3014, "Nodira", "Xolmatova", PHARMACIST, TILL, "Y", 420, None)
+LEFT = P("nodira", 3014, "Nodira", "Xolmatova", PHARMACIST, TILL, "Y", 420, "yns_day_b")
 BLOCKED = P("rustam", 3015, "Rustam", "Nurmatov", COURIER, "Employee", "C", 200, None)
 RETURNING = P("jahongir", 3018, "Jahongir", "Mirzaev", STOCK, "Employee", "C", 700, None)
 REQUESTS = [
