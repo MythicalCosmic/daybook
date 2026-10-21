@@ -1,0 +1,178 @@
+/* The calendar in Daybook: the week strip, calendar colours and event rows. The calendar colours
+   match the owner dashboard's chart palette so a source looks the same in both apps. */
+
+:root {
+  --agm-c-chart-1: var(--color-accent);
+  --agm-c-chart-2: var(--color-accent-2);
+  --agm-c-chart-3: #4a6a8a;
+  --agm-c-chart-4: #c9952f;
+  --agm-c-chart-5: #8a5a7a;
+  --agm-c-chart-6: #3f8a83;
+  --agm-c-chart-7: #a66a4f;
+  --agm-c-chart-8: #8c857a;
+  --agm-c-danger: #b3412e;
+}
+
+:root[data-theme="dark"] {
+  --agm-c-chart-3: #8fb0d4;
+  --agm-c-chart-4: #e0b25a;
+  --agm-c-chart-5: #c79bbb;
+  --agm-c-chart-6: #74c2ba;
+  --agm-c-chart-7: #d29a80;
+  --agm-c-chart-8: #b5ad9f;
+  --agm-c-danger: #f07a63;
+}
+
+.agm-week {
+  display: grid;
+  grid-template-columns: 34px repeat(7, minmax(0, 1fr)) 34px;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 6px;
+}
+
+.agm-week-nav {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+}
+
+.agm-week-nav:active {
+  background: var(--hairline);
+}
+
+.agm-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 0 7px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  min-width: 0;
+}
+
+.agm-day-name {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.agm-day-num {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.agm-day--today .agm-day-num {
+  color: var(--color-accent-700);
+  box-shadow: inset 0 0 0 2px var(--color-accent-300);
+}
+
+.agm-day[aria-pressed="true"] .agm-day-num {
+  background: var(--color-accent);
+  color: #fff;
+  box-shadow: none;
+}
+
+.agm-dots {
+  display: flex;
+  gap: 3px;
+  height: 6px;
+}
+
+.agm-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--agm-color, var(--color-accent));
+}
+
+.agm-bar {
+  display: inline-block;
+  width: 5px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--agm-color, var(--color-accent));
+}
+
+.agm-time {
+  font-variant-numeric: tabular-nums;
+}
+
+.agm-c-chart-1 { --agm-color: var(--agm-c-chart-1); }
+.agm-c-chart-2 { --agm-color: var(--agm-c-chart-2); }
+.agm-c-chart-3 { --agm-color: var(--agm-c-chart-3); }
+.agm-c-chart-4 { --agm-color: var(--agm-c-chart-4); }
+.agm-c-chart-5 { --agm-color: var(--agm-c-chart-5); }
+.agm-c-chart-6 { --agm-color: var(--agm-c-chart-6); }
+.agm-c-chart-7 { --agm-color: var(--agm-c-chart-7); }
+.agm-c-chart-8 { --agm-color: var(--agm-c-chart-8); }
+.agm-c-danger { --agm-color: var(--agm-c-danger); }
+.agm-c-success { --agm-color: var(--color-accent-2); }
+.agm-c-primary,
+.agm-c-warning { --agm-color: var(--color-accent); }
+.agm-c-info { --agm-color: var(--agm-c-chart-3); }
+
+.agm-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.agm-fact {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 16px;
+}
+
+.agm-fact svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--muted);
+}
+
+.agm-description {
+  white-space: pre-line;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.agm-person {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--color-neutral-200);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.agm-hint {
+  color: var(--muted);
+  font-size: 15px;
+  padding: 2px 4px 6px;
+}
+
+.agm-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
