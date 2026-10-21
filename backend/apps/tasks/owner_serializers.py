@@ -9,7 +9,7 @@ from rest_framework import serializers
 from apps.core.money import MoneySerializerField
 from apps.members.models import Membership
 from apps.reminders.policies import escalation_recipients, policy_for
-from apps.tasks import rules
+from apps.tasks import generation, rules
 from apps.tasks.models import ChecklistItem, Proof, Task, TaskComment, TaskTemplate
 
 
@@ -52,6 +52,9 @@ class ProjectRefSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     key = serializers.CharField()
     name = serializers.CharField()
+    # The card's number on the project's board ("OPEN-14" is key and number); null until the
+    # board has numbered it.
+    number = serializers.IntegerField(allow_null=True)
 
 
 class ProgressSerializer(serializers.Serializer):
@@ -129,7 +132,11 @@ class TaskRowSerializer(serializers.ModelSerializer):
     @extend_schema_field(ProjectRefSerializer(allow_null=True))
     def get_project(self, task: Task) -> dict | None:
         project = task.project if task.project_id else None
-        return {"id": project.pk, "key": project.key, "name": project.name} if project else None
+        if project is None:
+            return None
+        card = getattr(task, "card", None)  # apps.projects' Card, loaded with the task
+        number = card.number if card is not None else None
+        return {"id": project.pk, "key": project.key, "name": project.name, "number": number}
 
     @extend_schema_field(ProgressSerializer)
     def get_checklist(self, task: Task) -> dict:
@@ -360,6 +367,21 @@ class BulkResponseSerializer(serializers.Serializer):
 # Routines ----------------------------------------------------------------------------------
 
 
+class RoutineGiveSerializer(serializers.Serializer):
+    people = serializers.IntegerField()
+    due_at = serializers.DateTimeField()
+
+
+class RoutineTodaySerializer(serializers.Serializer):
+    """Today, on a routine's own page: why it makes no tasks today (null when it does), and
+    "Give today's task now" (who would get it, by when) when it was made after today's
+    deadline."""
+
+    date = serializers.DateField()
+    reason = serializers.CharField(allow_null=True)
+    give = RoutineGiveSerializer(allow_null=True)
+
+
 class RoutineSerializer(serializers.ModelSerializer):
     branch = serializers.SerializerMethodField()
     assignees = serializers.SerializerMethodField()
@@ -367,6 +389,8 @@ class RoutineSerializer(serializers.ModelSerializer):
     reminder_policy = serializers.SerializerMethodField()
     escalate_to = serializers.SerializerMethodField()
     stats = serializers.SerializerMethodField()
+    next_run = serializers.SerializerMethodField()
+    today = serializers.SerializerMethodField()
 
     class Meta:
         model = TaskTemplate
@@ -389,6 +413,8 @@ class RoutineSerializer(serializers.ModelSerializer):
             "reminder_policy",
             "escalate_to",
             "stats",
+            "next_run",
+            "today",
             "created_at",
         )
         read_only_fields = fields
@@ -420,6 +446,23 @@ class RoutineSerializer(serializers.ModelSerializer):
         """30-day completion and a 14-day sparkline, when the list computed them."""
         return self.context.get("stats", {}).get(template.pk)
 
+    @extend_schema_field(serializers.DateTimeField(allow_null=True))
+    def get_next_run(self, template: TaskTemplate) -> str | None:
+        """When its next tasks are due, by daily generation's rules (holidays included); null
+        for paused and onboarding routines."""
+        runs = self.context.get("next_runs")
+        if runs is not None and template.pk in runs:
+            value = runs[template.pk]
+        else:
+            value = generation.next_run(template, self.context.get("now") or timezone.now())
+        return serializers.DateTimeField().to_representation(value) if value else None
+
+    @extend_schema_field(RoutineTodaySerializer(allow_null=True))
+    def get_today(self, template: TaskTemplate) -> dict | None:
+        """Only on a routine's own answers (detail, create, edit), not in the list."""
+        today = self.context.get("today", {}).get(template.pk)
+        return RoutineTodaySerializer(today).data if today is not None else None
+
 
 class RoutineWriteSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=200, required=False)
@@ -444,5 +487,52 @@ class RoutineWriteSerializer(serializers.Serializer):
     escalate_to_id = serializers.IntegerField(allow_null=True, required=False)
 
 
+class GiveTodayInputSerializer(serializers.Serializer):
+    due_time = serializers.TimeField(
+        required=False, help_text="Today, in the company's timezone. Default: in two hours."
+    )
+
+
 def now_context() -> dict:
     return {"now": timezone.now()}
+
+
+# Routine work (the Routines page) ----------------------------------------------------------
+
+
+def routine_ref(template: TaskTemplate) -> dict:
+    """A routine as the Routines page's Today, History and To confirm name it."""
+    branch = template.branch
+    return {
+        "id": template.pk,
+        "title": template.title,
+        "due_time": template.due_time.strftime("%H:%M"),
+        "branch": {"id": branch.pk, "name": branch.name, "code": branch.code} if branch else None,
+        "proof": template.proof,
+        "needs_confirmation": template.needs_confirmation,
+        "is_active": template.is_active,
+    }
+
+
+def run_row(task: Task, state: str, member: Membership) -> dict:
+    """One person's run of a routine on a day: how it stands (`dashboard.run_state`), when it
+    was finished and whether in time, its proof, and whether `member` may confirm it."""
+    items = list(task.checklist.all())
+    completed = task.completed_at
+    branch = task.branch
+    return {
+        "id": task.pk,
+        "member": person(task.assignee),
+        "branch": {"id": branch.pk, "name": branch.name, "code": branch.code} if branch else None,
+        "state": state,
+        "status": task.status,
+        "due_at": task.due_at,
+        "completed_at": completed,
+        "on_time": completed <= task.due_at if completed and task.due_at else None,
+        "proof": task.proof,
+        "proof_text": task.proof_text,
+        "proof_thumb": file_url(task.proof_thumb) or file_url(task.proof_photo),
+        "proof_photo": file_url(task.proof_photo),
+        "checklist": {"done": sum(item.is_done for item in items), "total": len(items)},
+        "can_confirm": task.status == Task.Status.REVIEW and rules.can_review(task, member),
+    }

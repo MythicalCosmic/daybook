@@ -44,7 +44,11 @@ registry.register_queue(
     count=feeds.review_count,
     items=feeds.review_items,
 )
+# Badges: one-off work to check (Tasks), routine work to confirm (Routines → To confirm).
 registry.register_pulse("tasks.review", perm=None, count=queries.review_count)
+registry.register_pulse(
+    "tasks.routine_review", perm=Perm.TASKS_CONFIRM, count=queries.routine_review_count
+)
 registry.register_pulse("tasks.late_now", perm=Perm.TASKS_VIEW_ALL, count=queries.late_now_count)
 # Version keys: any task (or routine) changed, so open dashboards refetch.
 registry.register_pulse("tasks.tasks", perm=None, count=None)

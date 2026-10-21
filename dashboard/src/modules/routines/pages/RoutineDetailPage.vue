@@ -3,7 +3,7 @@
  * One routine (plan §6.1 `routines/:id`): how it went over a range (on time, late, missed per day
  * and per person), who gets it on a day, its settings and its audited history.
  */
-import { CalendarClock, Clock, ListChecks, Pause, Pencil, Play, Store, UsersRound } from "@lucide/vue";
+import { CalendarClock, Clock, ListChecks, Pause, Pencil, Play, Repeat, Send, Store, UsersRound } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
@@ -12,7 +12,9 @@ import AuditTrail from "@/components/AuditTrail.vue";
 import BarChart from "@/components/BarChart.vue";
 import ChartCard from "@/components/ChartCard.vue";
 import DateRangePicker from "@/components/DateRangePicker.vue";
+import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
+import InlineAlert from "@/components/InlineAlert.vue";
 import KpiCard from "@/components/KpiCard.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
 import PageHeader from "@/components/PageHeader.vue";
@@ -23,16 +25,21 @@ import UiButton from "@/components/UiButton.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { useChartTheme } from "@/components/useChartTheme";
 import { toast } from "@/components/useToast";
+import { isApiError } from "@/api/http";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useFormat } from "@/lib/useFormat";
+import { usePageTitle } from "@/lib/usePageTitle";
 import { useRangeState } from "@/lib/useRangeState";
 import { useCompanyStore } from "@/stores/company";
 
 import { useCompliance, usePlanOptions, useRoutine, useSaveRoutine } from "../api";
 import { formatRoutineAudit, routineFieldLabels } from "../audit";
+import GiveTodayDialog from "../components/GiveTodayDialog.vue";
 import RoutineEditor from "../components/RoutineEditor.vue";
 import RoutinePreview from "../components/RoutinePreview.vue";
 import WeekdayDots from "../components/WeekdayDots.vue";
+import { capitalize, runDayWords, runLabel } from "../lib";
+import { useRunWords } from "../useRunWords";
 
 const { t } = useI18n();
 const { isPhone } = useBreakpoints();
@@ -55,6 +62,23 @@ const auditLabels = computed(() => routineFieldLabels(t));
 const auditFormat = computed(() => formatRoutineAudit(t, { options: planOptions.data.value, branches: company.current?.branches ?? [] }));
 
 const data = computed(() => routine.data.value ?? null);
+// Deleted (or never there): trying again won't bring it back, so the page offers the list instead.
+const gone = computed(() => isApiError(routine.error.value) && routine.error.value.status === 404);
+usePageTitle(() => data.value?.title);
+
+// Made today after its due time: it starts the next day it's due, and today's task can still go out.
+const words = useRunWords();
+const giveOpen = ref(false);
+const lateToday = computed(() => {
+  const routine = data.value;
+  if (routine?.today?.reason !== "made_late") return null;
+  const due = routine.due_time.slice(0, 5);
+  const day = routine.next_run ? runDayWords(routine.next_run, words.value) : null;
+  return {
+    title: day ? capitalize(t("routines.give.title", { day })) : t("routines.give.titleLater"),
+    body: routine.today.give ? t("routines.give.detailBody", { due, n: routine.today.give.people }, routine.today.give.people) : t("routines.give.detailBodyNobody", { due }),
+  };
+});
 const totals = computed(() => compliance.data.value?.totals);
 const kpis = computed(() => [
   { id: "made", label: t("routines.detail.made"), value: totals.value?.made ?? null },
@@ -91,6 +115,11 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
 <template>
   <div class="flex min-w-0 flex-col gap-5">
     <div v-if="routine.isPending.value" class="flex flex-col gap-4"><SkeletonBlock width="30%" height="28px" /><SkeletonBlock height="120px" radius="12px" /></div>
+    <div v-else-if="routine.isError.value && gone" class="ui-card">
+      <EmptyState :icon="Repeat" :title="t('routines.detail.goneTitle')" :description="t('routines.detail.goneBody')">
+        <UiButton :to="{ name: 'routines.list' }">{{ t("routines.nav.all") }}</UiButton>
+      </EmptyState>
+    </div>
     <ErrorState v-else-if="routine.isError.value" class="ui-card" :error="routine.error.value" :retry="() => routine.refetch()" />
     <template v-else-if="data">
       <PageHeader :title="data.title" :description="data.description || undefined" :back="{ name: 'routines.list' }" :back-label="t('routines.title')">
@@ -103,7 +132,10 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
       <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted">
         <span v-if="!data.is_active" class="rounded-full bg-surface-2 px-2 py-px text-xs font-medium text-muted">{{ t("routines.paused") }}</span>
         <WeekdayDots :days="data.weekdays" />
-        <span class="inline-flex items-center gap-1 tabular-nums"><Clock :size="14" />{{ data.due_time.slice(0, 5) }}</span>
+        <span v-if="data.next_run" class="inline-flex items-center gap-1 tabular-nums" :title="t('routines.nextRunHint')" data-testid="next-run">
+          <Clock :size="14" /><span class="text-subtle">{{ t("routines.next") }}</span><span class="font-medium text-fg">{{ runLabel(data.next_run, words) }}</span>
+        </span>
+        <span v-else class="inline-flex items-center gap-1 tabular-nums"><Clock :size="14" />{{ data.due_time.slice(0, 5) }}</span>
         <span v-if="data.branch" class="inline-flex items-center gap-1"><Store :size="14" />{{ data.branch.name }}</span>
         <span class="inline-flex items-center gap-1"><UsersRound :size="14" />{{ [...data.positions.map((p) => p.name), ...data.assignees.map((p) => p.name)].join(", ") || t("routines.nobody") }}</span>
         <span v-if="data.checklist.length" class="inline-flex items-center gap-1"><ListChecks :size="14" />{{ t("routines.steps", { n: data.checklist.length }, data.checklist.length) }}</span>
@@ -111,6 +143,13 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
         <span class="flex-1" />
         <DateRangePicker v-model="period" align="end" />
       </div>
+
+      <InlineAlert v-if="lateToday" tone="warning" :icon="CalendarClock" :title="lateToday.title" data-testid="late-today">
+        {{ lateToday.body }}
+        <template v-if="data.today?.give" #actions>
+          <UiButton size="sm" variant="primary" :icon="Send" @click="giveOpen = true">{{ t("routines.give.button") }}</UiButton>
+        </template>
+      </InlineAlert>
 
       <div v-if="isPhone" class="grid grid-cols-2 gap-2">
         <KpiCard v-for="(item, index) in kpis" :key="index" v-bind="{ ...item, spark: undefined, hint: undefined }" :loading="compliance.isPending.value" />
@@ -174,6 +213,7 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
       </PageSection>
 
       <RoutineEditor v-model:open="editorOpen" :routine="data" @deleted="router.push({ name: 'routines.list' })" />
+      <GiveTodayDialog v-model:open="giveOpen" :routine="data" />
     </template>
   </div>
 </template>

@@ -282,6 +282,10 @@
   overflow-x: auto;
 }
 
+.kb-prose .tableWrapper > table {
+  margin: 0;
+}
+
 .kb-prose table {
   width: 100%;
   border-collapse: separate;
@@ -302,6 +306,9 @@
   vertical-align: top;
   min-width: 4em;
   position: relative;
+  /* Columns size to their longest word: "anywhere" (the body's rule, for long links) would let a
+     narrow screen squeeze a column until words break mid-word ("Paratseta|mol"). */
+  overflow-wrap: break-word;
 }
 
 .kb-prose tr > :last-child {

@@ -43,6 +43,7 @@ import { toast } from "@/components/useToast";
 import { useHotkey } from "@/core/hotkeys";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
+import { usePageTitle } from "@/lib/usePageTitle";
 import { patchQuery } from "@/lib/useRouteState";
 import { useCompanyStore } from "@/stores/company";
 
@@ -66,6 +67,7 @@ const ack = useAck();
 const pageId = computed(() => Number(route.params.pageId));
 const query = usePage(pageId);
 const page = computed(() => query.data.value ?? null);
+usePageTitle(() => page.value?.title);
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const canEdit = computed(() => !!page.value?.can_edit);
 const showReaders = computed(() => canEdit.value && !!page.value?.published && !!page.value.require_ack && !page.value.archived);

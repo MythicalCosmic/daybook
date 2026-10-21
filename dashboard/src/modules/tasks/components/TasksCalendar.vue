@@ -84,6 +84,22 @@ function openItem(item: CalendarItem): void {
     <ErrorState v-if="query.isError.value" class="ui-card" :error="query.error.value" :retry="() => query.refetch()" />
     <div v-else class="flex flex-col gap-3">
       <p v-if="query.data.value?.truncated" class="rounded-[8px] bg-warning-soft px-3 py-2 text-sm text-warning">{{ t("tasks.calendar.truncated") }}</p>
+      <!-- One header for both views: what the colours mean, and Month / Week. -->
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <ul class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+          <li v-for="entry in legend" :key="entry.id" class="inline-flex items-center gap-1.5">
+            <span class="size-2 rounded-full" :style="{ background: entry.color }" />{{ entry.label }}
+          </li>
+        </ul>
+        <SegmentedControl
+          v-model="mode"
+          size="sm"
+          :options="[
+            { value: 'month', label: t('common.calendar.month'), icon: CalendarDays },
+            { value: 'week', label: t('common.calendar.week'), icon: CalendarRange },
+          ]"
+        />
+      </div>
       <CalendarMonth
         v-if="mode === 'month'"
         v-model:month="month"
@@ -94,40 +110,13 @@ function openItem(item: CalendarItem): void {
         @item-click="openItem"
       >
         <template #toolbar>
-          <div class="flex flex-wrap items-center gap-3">
-            <p v-if="day" class="text-sm text-muted">
-              <span class="font-semibold text-fg">{{ fmt.day(day.date, "weekday") }}:</span>
-              {{ t("tasks.calendar.dayCounts", { total: day.total, done: day.done, late: day.late }) }}
-            </p>
-            <SegmentedControl
-              v-model="mode"
-              size="sm"
-              :options="[
-                { value: 'month', label: t('common.calendar.month'), icon: CalendarDays },
-                { value: 'week', label: t('common.calendar.week'), icon: CalendarRange },
-              ]"
-            />
-          </div>
+          <p v-if="day" class="text-sm text-muted max-sm:order-last max-sm:w-full">
+            <span class="font-semibold text-fg">{{ fmt.day(day.date, "weekday") }}:</span>
+            {{ t("tasks.calendar.dayCounts", { total: day.total, done: day.done, late: day.late }) }}
+          </p>
         </template>
       </CalendarMonth>
-      <div v-else class="flex flex-col gap-3">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <ul class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
-            <li v-for="entry in legend" :key="entry.id" class="inline-flex items-center gap-1.5">
-              <span class="size-2 rounded-full" :style="{ background: entry.color }" />{{ entry.label }}
-            </li>
-          </ul>
-          <SegmentedControl
-            v-model="mode"
-            size="sm"
-            :options="[
-              { value: 'month', label: t('common.calendar.month'), icon: CalendarDays },
-              { value: 'week', label: t('common.calendar.week'), icon: CalendarRange },
-            ]"
-          />
-        </div>
-        <CalendarWeek v-model:week="week" :items="items" :start-hour="7" :end-hour="23" @item-click="openItem" />
-      </div>
+      <CalendarWeek v-else v-model:week="week" :items="items" :start-hour="7" :end-hour="23" @item-click="openItem" />
     </div>
   </div>
 </template>

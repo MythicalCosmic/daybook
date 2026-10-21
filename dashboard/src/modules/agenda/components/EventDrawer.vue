@@ -19,11 +19,12 @@ import UiButton from "@/components/UiButton.vue";
 import UiDrawer from "@/components/UiDrawer.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
+import { addDays, diffDays, zonedDay } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
 import { agendaApi, agendaKeys, useEvent } from "../api";
-import { remindKey, tokenColor } from "../lib";
+import { parseEventParam, remindKey, tokenColor } from "../lib";
 import type { AgendaEvent, AttendeeResponse } from "../types";
 
 const emit = defineEmits<{ edit: [event: AgendaEvent] }>();
@@ -35,11 +36,12 @@ const client = useQueryClient();
 const company = useCompanyStore();
 const confirm = useConfirm();
 
-const eventId = computed(() => {
+// `?event=12`, or `?event=12-20261027` for one occurrence of a repeating event.
+const param = computed(() => {
   const raw = route.query.event;
-  const value = Number(Array.isArray(raw) ? raw[0] : raw);
-  return Number.isFinite(value) && value > 0 ? value : null;
+  return parseEventParam(Array.isArray(raw) ? raw[0] : raw);
 });
+const eventId = computed(() => param.value?.id ?? null);
 const query = useEvent(eventId);
 const event = computed(() => query.data.value ?? null);
 const busy = ref<string | null>(null);
@@ -47,11 +49,14 @@ const busy = ref<string | null>(null);
 const when = computed(() => {
   const current = event.value;
   if (!current) return "";
+  // A repeating event shows the occurrence that was opened; the series' first date otherwise.
+  const occurrence = current.repeat !== "none" ? param.value?.day : null;
   if (current.all_day) {
-    const first = fmt.day(current.start, "weekday");
-    return current.end && current.end !== current.start ? `${fmt.day(current.start, "medium")} – ${fmt.day(current.end, "medium")}` : first;
+    const first = occurrence ?? current.start.slice(0, 10);
+    const span = current.end && current.end !== current.start ? diffDays(current.start.slice(0, 10), current.end.slice(0, 10)) : 0;
+    return span > 0 ? `${fmt.day(first, "medium")} – ${fmt.day(addDays(first, span), "medium")}` : fmt.day(first, "weekday");
   }
-  const day = fmt.day(current.start.slice(0, 10), "weekday");
+  const day = fmt.day(occurrence ?? zonedDay(current.start, company.timezone), "weekday");
   const start = fmt.instant(current.start, "time");
   return current.end ? `${day} · ${start} – ${fmt.instant(current.end, "time")}` : `${day} · ${start}`;
 });

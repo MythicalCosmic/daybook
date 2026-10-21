@@ -1,10 +1,13 @@
 <script setup lang="ts">
 /**
- * Tasks (plan §6.1 `tasks?view=table|board|calendar&task=:id`): every task the person may see,
- * as a table, a board or a calendar. Saved views as tabs, filter chips in the URL, the KPI strip,
- * the drawer (`?task=`) and "New task" (`N`). Other modules add tools through `tasks.toolbar`.
+ * Tasks (plan §6.1 `tasks?view=table|board|calendar&task=:id`): one-off work the person may see
+ * (given by hand, personal, project cards) as a table, a board or a calendar. Routine work (the
+ * daily task a routine gives each person) lives on the Routines page; "Include routines" (or
+ * picking a routine or the Routine kind) brings it in here, and the KPIs count the same work as
+ * the list. Saved views as tabs, filter chips in the URL, the drawer (`?task=`) and "New task"
+ * (`N`). Other modules add tools through `tasks.toolbar`.
  */
-import { CalendarDays, Columns3, Plus, Rows3 } from "@lucide/vue";
+import { CalendarDays, Columns3, Plus, Repeat, Rows3 } from "@lucide/vue";
 import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
@@ -34,7 +37,7 @@ import TaskDrawer from "../components/TaskDrawer.vue";
 import TasksBoard from "../components/TasksBoard.vue";
 import TasksCalendar from "../components/TasksCalendar.vue";
 import TasksTable from "../components/TasksTable.vue";
-import { builtinTabs, builtinViews, filterDefs, viewParams } from "../filters";
+import { asksForRoutines, builtinTabs, builtinViews, filterDefs, viewParams } from "../filters";
 import type { TaskRow, TaskView } from "../types";
 
 const { t } = useI18n();
@@ -55,7 +58,13 @@ const viewId = useRouteState("sv", rs.string("open"));
 
 const defs = computed(() => filterDefs(t, options.data.value, branches.value, owner.value));
 const filters = useUrlFilters(defs);
-const params = computed<Record<string, string | string[]>>(() => (search.value ? { ...filters.params.value, q: search.value } : filters.params.value));
+// One-off work unless routine work is asked for: the chip, a routine, or the Routine kind.
+const withRoutines = useRouteState("routines", rs.boolean(false));
+const routinesAsked = computed(() => withRoutines.value || asksForRoutines(filters.params.value));
+const params = computed<Record<string, string | string[]>>(() => {
+  const base = search.value ? { ...filters.params.value, q: search.value } : filters.params.value;
+  return routinesAsked.value ? base : { ...base, routines: "without" };
+});
 const filtered = computed(() => filters.active.value > 0 || !!search.value);
 
 const table = useDataTable({ id: "tasks.list", ordering: "due_at", url: true, hidden: ["routine", "created_by", "reward", "completed_at"] });
@@ -110,21 +119,22 @@ onMounted(() => {
   if (!hasAny) patchQuery(router, builtins.value[0]!.params);
 });
 
-// KPIs ---------------------------------------------------------------------------------------
-const summary = useSummary();
+// KPIs: the same work as the list (one-off tasks, or with routine work when it's asked for) -----
+const summary = useSummary(computed(() => (routinesAsked.value ? {} : { routines: "without" })));
 const kpis = computed(() => {
   const data = summary.data.value;
   const cid = company.currentId;
+  const counts = routinesAsked.value ? "All" : "OneOff";
   return [
     {
       id: "done",
       label: t("tasks.kpi.doneToday"),
       value: data?.done_today ?? null,
       format: (value: number) => (data ? `${value} / ${data.total_today}` : String(value)),
-      hint: t("tasks.kpi.doneTodayHint"),
+      hint: t(`tasks.kpi.doneTodayHint${counts}`),
     },
-    { id: "late", label: t("tasks.kpi.lateNow"), value: data?.late_now ?? null, to: `/c/${cid}/tasks?sv=late&overdue=true`, hint: t("tasks.kpi.lateNowHint") },
-    { id: "review", label: t("tasks.kpi.review"), value: data?.review ?? null, to: `/c/${cid}/tasks/reviews` },
+    { id: "late", label: t("tasks.kpi.lateNow"), value: data?.late_now ?? null, to: `/c/${cid}/tasks?sv=late&overdue=true`, hint: t(`tasks.kpi.lateNowHint${counts}`) },
+    { id: "review", label: t("tasks.kpi.review"), value: data?.review ?? null, to: `/c/${cid}/tasks/reviews`, hint: t(`tasks.kpi.reviewHint${counts}`) },
     {
       id: "on_time",
       label: t("tasks.kpi.onTime"),
@@ -197,7 +207,20 @@ const viewOptions = computed(() => [
         @delete="(target) => (saved.remove.mutate(Number(target.id)), applyView('open'))"
       />
       <div class="flex min-w-0 flex-wrap items-start gap-2">
-        <FilterBar v-model="filters.values.value" v-model:search="search" class="min-w-0 flex-1" :defs="defs" searchable :search-placeholder="t('tasks.searchPlaceholder')" />
+        <FilterBar v-model="filters.values.value" v-model:search="search" class="min-w-0 flex-1 max-sm:basis-full" :defs="defs" searchable :search-placeholder="t('tasks.searchPlaceholder')" />
+        <button
+          type="button"
+          :aria-pressed="routinesAsked"
+          :title="t('tasks.filter.includeRoutinesHint')"
+          :class="[
+            'pressable inline-flex h-8 shrink-0 items-center gap-1.5 rounded-button border px-2.5 text-sm font-medium transition-colors',
+            routinesAsked ? 'border-transparent bg-accent-soft text-accent-fg' : 'border-dashed border-line-strong bg-surface text-muted hover:bg-highlight hover:text-fg',
+          ]"
+          data-testid="include-routines"
+          @click="withRoutines = !withRoutines"
+        >
+          <Repeat :size="14" aria-hidden="true" />{{ t("tasks.filter.includeRoutines") }}
+        </button>
         <SegmentedControl v-model="view" :options="viewOptions" :aria-label="t('tasks.view.label')" />
       </div>
 

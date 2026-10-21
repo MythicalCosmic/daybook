@@ -13,7 +13,7 @@ import AgendaList from "../components/AgendaList.vue";
 import SourceToggles from "../components/SourceToggles.vue";
 import en from "../i18n/en.json";
 import module from "../index";
-import { eventIdOf, remindKey, sourceLabel, toCalendarItem, tokenColor, windowFor } from "../lib";
+import { byPriority, eventIdOf, eventParam, monthChips, parseEventParam, remindKey, sourceColor, sourceLabel, sourceRank, toCalendarItem, tokenColor, windowFor } from "../lib";
 import type { CalendarEntry } from "../types";
 
 const entry = (overrides: Partial<CalendarEntry> = {}): CalendarEntry => ({
@@ -90,6 +90,50 @@ describe("lib", () => {
     const t = (key: string) => `«${key}»`;
     expect(sourceLabel({ key: "agenda.events", label: "Company events" }, t)).toBe("«agenda.sources.own»");
     expect(sourceLabel({ key: "timeoff.holidays", label: "Bayramlar" }, t)).toBe("Bayramlar");
+  });
+
+  it("orders a crowded day: company events first, shifts last, unknown calendars before the tasks", () => {
+    const shifts = entry({ id: "attendance.shifts:1", source: "attendance.shifts", kind: "attendance.shift", title: "Chilonzor: 2 on shift", start: "2026-10-26", end: null, all_day: true });
+    const tasks = entry({ id: "tasks.due:1", source: "tasks.due", kind: "tasks.due", title: "12 tasks due", start: "2026-10-26", end: null, all_day: true });
+    const birthdays = entry({ id: "people.birthdays:1", source: "people.birthdays", kind: "people.birthday", title: "Aziz", start: "2026-10-26", end: null, all_day: true });
+    const late = entry({ id: "agenda.events:13", title: "Stock count", start: "2026-10-26T15:00:00+05:00" });
+    const early = entry({ id: "agenda.events:12", title: "Planning", start: "2026-10-26T09:00:00+05:00" });
+    expect(byPriority([shifts, tasks, late, birthdays, early]).map((e) => e.id)).toEqual(["agenda.events:12", "agenda.events:13", "people.birthdays:1", "tasks.due:1", "attendance.shifts:1"]);
+    expect(sourceRank("timeoff.holidays")).toBeLessThan(sourceRank("tasks.due"));
+  });
+
+  it("gives the month a labelled chip on every day of a long date, and timed dates their time", () => {
+    const away = entry({ id: "timeoff.time_off:7", source: "timeoff.time_off", kind: "timeoff.time_off", title: "Aziz · time off", start: "2026-09-27", end: "2026-09-30", all_day: true });
+    const meeting = entry({ id: "agenda.events:12-20260928", start: "2026-09-28T23:30:00+05:00", end: null });
+    const { items, meta } = monthChips([away, meeting], { from: "2026-09-28", to: "2026-11-08" }, "Asia/Tashkent", (iso) => iso.slice(11, 16));
+
+    // The meeting first (company events lead), on its company-local day, as an all-day chip with its time beside it.
+    expect(items.map((item) => [item.id, item.start, item.all_day])).toEqual([
+      ["agenda.events:12-20260928", "2026-09-28", true],
+      ["timeoff.time_off:7@2026-09-28", "2026-09-28", true],
+      ["timeoff.time_off:7@2026-09-29", "2026-09-29", true],
+      ["timeoff.time_off:7@2026-09-30", "2026-09-30", true],
+    ]);
+    expect(meta.get("agenda.events:12-20260928")).toEqual({ time: "23:30", title: "Weekly planning", origin: "agenda.events:12-20260928" });
+    expect(meta.get("timeoff.time_off:7@2026-09-29")).toEqual({ time: null, title: "Aziz · time off", origin: "timeoff.time_off:7" });
+    expect(items[1]!.color).toBe("var(--c-chart-3)");
+  });
+
+  it("colours each calendar's chip by its own colour, else by most of its dates", () => {
+    const debts = [entry({ source: "finance.debts_due", color: "danger" }), entry({ source: "finance.debts_due", color: "danger" }), entry({ source: "finance.debts_due", color: "success" })];
+    expect(sourceColor("finance.debts_due", debts)).toBe("var(--c-danger)");
+    expect(sourceColor("tasks.due", [entry({ source: "tasks.due", color: "danger" })])).toBe("var(--c-primary)");
+    expect(sourceColor("projects.milestones", [])).toBeNull();
+  });
+
+  it("opens a repeating event on the occurrence that was clicked", () => {
+    expect(eventParam(entry({ id: "agenda.events:12-20261027" }))).toBe("12-20261027");
+    expect(eventParam(entry())).toBe("12");
+    expect(eventParam(entry({ kind: "timeoff.holiday", id: "timeoff.holidays:3" }))).toBeNull();
+    expect(parseEventParam("12-20261027")).toEqual({ id: 12, day: "2026-10-27" });
+    expect(parseEventParam("12")).toEqual({ id: 12, day: null });
+    expect(parseEventParam("x")).toBeNull();
+    expect(parseEventParam("0")).toBeNull();
   });
 });
 

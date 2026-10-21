@@ -88,7 +88,8 @@ export function audienceText(space: Pick<Space, "audience_all" | "positions">, e
 
 /**
  * The server cleaned the body against its allow-list; the browser cleans it again before showing it
- * (defence in depth) and makes checklists read-only in the reading view.
+ * (defence in depth), makes checklists read-only in the reading view and puts each table in the
+ * editor's scrolling wrapper, so a wide table scrolls on a phone instead of widening the page.
  */
 export async function safeBody(html: string): Promise<string> {
   const { default: DOMPurify } = await import("dompurify");
@@ -100,15 +101,18 @@ export async function safeBody(html: string): Promise<string> {
     ALLOWED_ATTR: ["href", "target", "rel", "src", "alt", "data-image-id", "data-type", "data-checked", "data-callout", "type", "checked", "disabled", "colspan", "rowspan", "start"],
     ALLOW_DATA_ATTR: false,
   });
-  return clean.replace(/<input type="checkbox"/g, '<input type="checkbox" disabled');
+  return clean
+    .replace(/<input type="checkbox"/g, '<input type="checkbox" disabled')
+    .replace(/<table\b/g, '<div class="tableWrapper"><table')
+    .replace(/<\/table>/g, "</table></div>");
 }
 
-/** A short emoji set for pages and spaces: rules, money, goods, people, time, food, safety. */
+/** A short emoji set for pages and spaces: rules, money, goods, medicines, people, time, safety. */
 export const EMOJIS = [
   "📘", "📗", "📕", "📙", "📒", "📚", "📖", "📝", "✅", "☑️", "⚠️", "❗",
   "💡", "📌", "🔒", "🔓", "💰", "💳", "🧾", "🏦", "📦", "🚚", "🛒", "🛍",
   "🏪", "🏬", "🧹", "🧼", "👕", "👔", "👋", "🙋", "🤝", "📞", "📱", "💬",
-  "📣", "📅", "🕘", "⏰", "🏖", "🎉", "🎂", "🍽", "☕", "🥖", "🍎", "🧊",
+  "📣", "📅", "🕘", "⏰", "🏖", "🎉", "🎂", "💊", "🩺", "🌡️", "🧴", "🧊",
   "🔥", "🧯", "🚨", "🔧", "🛠", "⚙️", "📈", "📊", "🗂", "🏷", "🎯", "⭐",
-  "🌿", "🧑‍🍳", "👩‍💼", "🧑‍🔧",
+  "🌿", "🧑‍⚕️", "👩‍💼", "🧑‍🔧",
 ];

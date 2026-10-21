@@ -29,6 +29,22 @@ TASK_RELATIONS = (
     "branch",
 )
 
+# Routine work: the daily task a routine made for one person. Everything else is a one-off task
+# (given by hand, someone's own, a project card), and the dashboard keeps the two apart: the Tasks
+# page lists one-off work, the Routines page routine work (`routines=without|only` on the lists).
+ROUTINE_WORK = Q(kind=Task.Kind.DAILY, template__isnull=False)
+WITHOUT_ROUTINES = "without"
+ONLY_ROUTINES = "only"
+
+
+def split(tasks: QuerySet[Task], routines: str | None) -> QuerySet[Task]:
+    """`tasks` without routine work ("without"), only routine work ("only"), or all of it."""
+    if routines == WITHOUT_ROUTINES:
+        return tasks.exclude(ROUTINE_WORK)
+    if routines == ONLY_ROUTINES:
+        return tasks.filter(ROUTINE_WORK)
+    return tasks
+
 
 def visible_tasks(member: Membership) -> QuerySet[Task]:
     """Tasks the member may see (docs/PLAN-OWNER.md §3.2).
@@ -193,6 +209,7 @@ class TaskFilters:
     has_proof: bool | None = None
     needs_confirmation: bool | None = None
     q: str = ""
+    routines: str = ""  # "without": one-off work only, "only": routine work only, "": both
 
 
 def filtered(
@@ -204,6 +221,7 @@ def filtered(
         tasks = tasks.filter(
             Q(branch_id__in=branch_ids) | Q(assignee=viewer) | Q(created_by=viewer)
         )
+    tasks = split(tasks, filters.routines)
     if filters.status:
         tasks = tasks.filter(status__in=filters.status)
     if filters.kind:
@@ -258,7 +276,13 @@ def late_now_count(member: Membership) -> int:
 
 
 def review_count(member: Membership) -> int:
-    return awaiting_review_by(member).count()
+    """One-off work waiting for `member`'s check (the Tasks badge); routine work has its own."""
+    return awaiting_review_by(member).exclude(ROUTINE_WORK).count()
+
+
+def routine_review_count(member: Membership) -> int:
+    """Routine work waiting for `member`'s check (the Routines "To confirm" badge)."""
+    return awaiting_review_by(member).filter(ROUTINE_WORK).count()
 
 
 def day_bounds(company, day: date) -> tuple[datetime, datetime]:

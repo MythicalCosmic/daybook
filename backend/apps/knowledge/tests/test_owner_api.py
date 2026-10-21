@@ -348,7 +348,7 @@ def test_link_targets_links_and_linked(company, owner, manager, owner_api):
 
 
 def test_uploaded_picture_shows_through_a_signed_link_for_readers_only(
-    company, owner, owner_api, cashier, cook, cashier_position, client
+    company, owner, owner_api, cashier, courier, cashier_position, client
 ):
     space = SpaceFactory(company=company, audience_all=False, positions=[cashier_position])
     uploaded = owner_api(owner).post(url(company, "images/"), {"file": png()}, format="multipart")
@@ -373,11 +373,11 @@ def test_uploaded_picture_shows_through_a_signed_link_for_readers_only(
     as_cashier = signed_url(
         image.file, user=cashier.user, company_id=company.pk, check=f"knowledge.image:{image_id}"
     )
-    as_cook = signed_url(
-        image.file, user=cook.user, company_id=company.pk, check=f"knowledge.image:{image_id}"
+    as_courier = signed_url(
+        image.file, user=courier.user, company_id=company.pk, check=f"knowledge.image:{image_id}"
     )
     assert client.get(as_cashier).status_code == 200
-    assert client.get(as_cook).status_code == 404
+    assert client.get(as_courier).status_code == 404
 
 
 def test_upload_refuses_svg(company, owner, owner_api):
@@ -391,7 +391,7 @@ def test_upload_refuses_svg(company, owner, owner_api):
 # Overview and settings ------------------------------------------------------------------
 
 
-def test_overview_lists_pages_that_need_readers(company, owner, owner_api, cashier, cook):
+def test_overview_lists_pages_that_need_readers(company, owner, owner_api, cashier, courier):
     page = PageFactory(space=SpaceFactory(company=company), require_ack=True, title="Rules")
     PageAckFactory(page=page, membership=cashier)
 

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from functools import partial
 from zoneinfo import ZoneInfo
@@ -12,6 +12,7 @@ from django.utils.translation import gettext as _
 
 from apps.audit import services as audit
 from apps.audit.models import AuditLog
+from apps.console import pulse
 from apps.core import uploads
 from apps.core.exceptions import DomainError
 from apps.groups import tasks as group_jobs
@@ -21,7 +22,7 @@ from apps.members.scope import branch_ids
 from apps.reminders.models import ReminderPolicy
 from apps.reminders.policies import policy_for
 from apps.reminders.schedule import first_reminder_at
-from apps.tasks import queries, rules
+from apps.tasks import generation, queries, rules
 from apps.tasks import tasks as jobs
 from apps.tasks.audit_actions import TasksAction
 from apps.tasks.models import (
@@ -35,6 +36,7 @@ from apps.tasks.models import (
     Weekday,
 )
 from apps.tasks.queries import TASK_RELATIONS
+from apps.timeoff.queries import is_holiday
 
 EDITABLE_FIELDS = frozenset({"title", "description", "due_at", "priority", "reward"})
 # One create, one bulk action: enough for a big team, small enough to stay one request.
@@ -610,6 +612,83 @@ def delete_template(template: TaskTemplate, *, by: Membership) -> None:
         target=template,
     )
     template.delete()
+
+
+@transaction.atomic
+def give_routine_today(
+    template: TaskTemplate, *, by: Membership, due_at: datetime | None = None
+) -> list[Task]:
+    """Today's tasks of a routine made after today's deadline, given now. Such a routine starts
+    the next day it is due (`generation.MADE_LATE`); this gives today's task anyway, to everyone
+    daily generation would give it to (time off, days off, suspended, joined later…, and not to
+    whoever has it already), due at `due_at`: later today, by default
+    `generation.suggested_deadline`. Each person hears about it like any task given to them."""
+    _ensure_may_plan(by)
+    template = (
+        TaskTemplate.objects.select_for_update(of=("self",))
+        .select_related("company", "reminder_policy")
+        .prefetch_related("assignees", "positions")
+        .get(pk=template.pk)
+    )
+    _ensure_template_in_scope(template, by)
+    now = timezone.now()
+    company = template.company
+    tz = ZoneInfo(company.timezone)
+    today = timezone.localtime(now, tz).date()
+    reason = generation.skip_reason(template, today, tz=tz, holiday=is_holiday(company, today))
+    if reason != generation.MADE_LATE:
+        raise DomainError(_today_refusal(reason, template))
+    if due_at is None:
+        due_at = generation.suggested_deadline(now, tz)
+    elif due_at <= now or timezone.localtime(due_at, tz).date() != today:
+        raise DomainError(_("Pick a time later today."))
+    people = generation.give_now_people(
+        template, today, due_at, related=("user", "position", "company")
+    )
+    if not people:
+        raise DomainError(_("Nobody gets today's task: everyone it names is off or has it."))
+    tasks = Task.objects.bulk_create(
+        generation.build_tasks(template, today, due_at, people=people, created_by=by, now=now)
+    )
+    if template.checklist:
+        generation.add_checklists([template], today)
+    Activity.objects.bulk_create(
+        Activity(
+            company_id=task.company_id,
+            recipient=task.assignee,
+            actor=by,
+            kind=Activity.Kind.ASSIGNED,
+            task=task,
+        )
+        for task in tasks
+        if task.assignee_id != by.pk
+    )
+    for task in tasks:
+        _audit(AuditLog.Action.TASK_ASSIGNED, task, by, assignee=str(task.assignee))
+        if task.assignee_id != by.pk:
+            transaction.on_commit(partial(jobs.notify_task_assigned.delay, task.pk))
+    # bulk_create sends no post_save, so open dashboards hear about the new tasks from here.
+    transaction.on_commit(partial(pulse.bump, template.company_id, "tasks.tasks"))
+    return tasks
+
+
+def _today_refusal(reason: str | None, template: TaskTemplate) -> str:
+    """Why today's task of `template` can't be given now (`reason` from `skip_reason`)."""
+    match reason:
+        case None:
+            return _("This routine gives today's tasks by itself.")
+        case generation.PAUSED:
+            return _("This routine is paused.")
+        case generation.ONBOARDING:
+            return _("Onboarding tasks go out when someone is let in.")
+        case generation.HOLIDAY:
+            return _("Today is a company holiday: nobody gets routine tasks.")
+        case generation.NOT_DUE:
+            return _("Today isn't one of this routine's days.")
+        case _:
+            return _("This routine starts on %(day)s.") % {
+                "day": template.starts_on.strftime("%d.%m.%Y")
+            }
 
 
 def _ensure_may_plan(by: Membership) -> None:

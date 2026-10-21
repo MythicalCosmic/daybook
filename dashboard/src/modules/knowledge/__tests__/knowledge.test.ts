@@ -223,6 +223,13 @@ describe("reading", () => {
     expect(clean).toContain('<input type="checkbox" disabled');
   });
 
+  it("puts each table in a scrolling wrapper, so a wide table never widens the page", async () => {
+    const clean = await safeBody("<table><tbody><tr><td>Insulin</td><td>+2…+8 °C</td></tr></tbody></table><p>Then</p><table><tbody><tr><td>B</td></tr></tbody></table>");
+    expect(clean).toBe(
+      '<div class="tableWrapper"><table><tbody><tr><td>Insulin</td><td>+2…+8 °C</td></tr></tbody></table></div><p>Then</p><div class="tableWrapper"><table><tbody><tr><td>B</td></tr></tbody></table></div>',
+    );
+  });
+
   it("renders a page body", async () => {
     const app = await testApp("/c/1/knowledge/p/5");
     const { wrapper } = mountWithProviders(PageBody, { props: { html: "<h2>Steps</h2><p>Count</p>" }, plugins: app.plugins });

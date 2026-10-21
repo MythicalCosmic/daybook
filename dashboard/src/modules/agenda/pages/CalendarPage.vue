@@ -40,7 +40,7 @@ import EventDialog from "../components/EventDialog.vue";
 import EventDrawer from "../components/EventDrawer.vue";
 import SourceToggles from "../components/SourceToggles.vue";
 import UpcomingList from "../components/UpcomingList.vue";
-import { eventIdOf, sourceLabel, toCalendarItem, tokenColor, windowFor } from "../lib";
+import { byPriority, eventParam, monthChips, sourceColor, sourceLabel, toCalendarItem, windowFor } from "../lib";
 import type { AgendaEvent, CalendarEntry, CalendarView } from "../types";
 
 const { t } = useI18n();
@@ -77,10 +77,12 @@ const skeleton = useDelayedPending(computed(() => calendar.isPending.value));
 const sources = computed(() => (calendar.data.value?.sources ?? []).map((source) => ({ ...source, label: sourceLabel(source, t) })));
 const labels = computed(() => Object.fromEntries(sources.value.map((source) => [source.key, source.label])));
 const entries = computed(() => calendar.data.value?.items ?? []);
-const visibleEntries = computed(() => entries.value.filter((entry) => !hidden.value.includes(entry.source)));
+const visibleEntries = computed(() => byPriority(entries.value.filter((entry) => !hidden.value.includes(entry.source))));
 const items = computed(() => visibleEntries.value.map((entry) => toCalendarItem(entry, labels.value[entry.source])));
+// The month grid on wider screens: a chip per day, in calendar order (phones show dots and a day list).
+const chips = computed(() => monthChips(visibleEntries.value, range.value, company.timezone, (iso) => fmt.instant(iso, "time")));
 const upcomingItems = computed(() =>
-  (upcoming.data.value?.items ?? []).filter((entry) => !hidden.value.includes(entry.source)).map((entry) => toCalendarItem(entry, labels.value[entry.source] ?? entry.source)),
+  byPriority((upcoming.data.value?.items ?? []).filter((entry) => !hidden.value.includes(entry.source))).map((entry) => toCalendarItem(entry, labels.value[entry.source] ?? entry.source)),
 );
 const byId = computed(() => new Map([...entries.value, ...(upcoming.data.value?.items ?? [])].map((entry) => [entry.id, entry])));
 
@@ -91,10 +93,7 @@ const counts = computed(() => {
 });
 const colors = computed(() => {
   const out: Record<string, string> = {};
-  for (const source of sources.value) {
-    const first = entries.value.find((entry) => entry.source === source.key && entry.color);
-    out[source.key] = tokenColor(first?.color) ?? `var(--c-chart-${hashIndex(source.key, 8) + 1})`;
-  }
+  for (const source of sources.value) out[source.key] = sourceColor(source.key, entries.value) ?? `var(--c-chart-${hashIndex(source.key, 8) + 1})`;
   return out;
 });
 /** Holidays shade their day in the month and week grids. */
@@ -153,10 +152,11 @@ function onDay(day: string): void {
 const other = ref<CalendarEntry | null>(null);
 const otherOpen = ref(false);
 function open(item: CalendarItem): void {
-  const entry = byId.value.get(String(item.id));
-  const eventId = entry ? eventIdOf(entry) : null;
-  if (eventId) {
-    patchQuery(router, { event: String(eventId) }, true);
+  const entry = byId.value.get(chips.value.meta.get(String(item.id))?.origin ?? String(item.id));
+  // A repeating event opens on the occurrence that was clicked, not the series' first date.
+  const event = entry ? eventParam(entry) : null;
+  if (event) {
+    patchQuery(router, { event }, true);
     return;
   }
   if (entry?.url) {
@@ -190,7 +190,7 @@ useHotkey("n", () => create(), { description: "agenda.hotkey.new", group: "page"
       <SourceToggles v-if="sources.length" v-model="hidden" :sources="sources" :counts="counts" :colors="colors" class="lg:ml-2" />
     </div>
 
-    <div class="grid gap-6" :class="view === 'month' && 'xl:grid-cols-[minmax(0,1fr)_288px]'">
+    <div class="grid gap-6" :class="view === 'month' && '2xl:grid-cols-[minmax(0,1fr)_300px]'">
       <div class="min-w-0">
         <ErrorState v-if="calendar.isError.value" :error="calendar.error.value" :retry="() => calendar.refetch()" />
         <div v-else-if="skeleton" class="flex flex-col gap-3">
@@ -202,12 +202,17 @@ useHotkey("n", () => create(), { description: "agenda.hotkey.new", group: "page"
             v-if="view === 'month'"
             v-model:month="month"
             v-model:selected="selected"
-            :items="items"
+            :items="isPhone ? items : chips.items"
             :holidays="holidays"
             :loading="calendar.isFetching.value"
             @item-click="open"
             @day-click="onDay"
-          />
+          >
+            <template #item="{ item }">
+              <span v-if="chips.meta.get(String(item.id))?.time" class="shrink-0 tabular-nums text-muted">{{ chips.meta.get(String(item.id))?.time }}</span>
+              <span class="truncate">{{ chips.meta.get(String(item.id))?.title ?? item.title }}</span>
+            </template>
+          </CalendarMonth>
           <CalendarWeek v-else-if="view === 'week'" v-model:week="anchor" :items="items" :holidays="holidays" @item-click="open" @slot-click="({ day, time }) => create(day, time)" />
           <AgendaList v-else v-model:anchor="anchor" :items="items" :can-create="canManage" @item-click="open" @create="create()" />
           <p v-if="view === 'month' && canManage && !isPhone" class="mt-2 text-xs text-subtle">{{ t("agenda.monthHint") }}</p>
@@ -215,8 +220,8 @@ useHotkey("n", () => create(), { description: "agenda.hotkey.new", group: "page"
       </div>
 
       <!-- Week and agenda already list what is coming, and need the width: the rail goes with the month only
-           (beside it on wide screens, under it on narrow ones, where the month shows only dots). -->
-      <aside v-if="view === 'month'" class="flex min-w-0 flex-col gap-4">
+           (beside it from 1536 px, where the grid still has room for readable chips; under it below). -->
+      <aside v-if="view === 'month'" class="grid min-w-0 content-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)] lg:items-start 2xl:grid-cols-1">
         <section class="ui-card p-3" :aria-label="t('agenda.upcoming.title')">
           <h2 class="mb-2 px-2 pt-1 text-sm font-semibold text-fg">{{ t("agenda.upcoming.title") }}</h2>
           <div v-if="upcoming.isPending.value" class="flex flex-col gap-2 px-2"><SkeletonBlock v-for="n in 4" :key="n" height="34px" radius="8px" /></div>

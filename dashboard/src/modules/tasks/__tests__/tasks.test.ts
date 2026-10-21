@@ -12,10 +12,10 @@ import { mountWithProviders, testApp } from "@/test/plugins";
 import { filterParams, moveInColumns, taskKeys, tasksApi } from "../api";
 import TaskDrawer from "../components/TaskDrawer.vue";
 import TaskTimeline from "../components/TaskTimeline.vue";
-import { builtinTabs, builtinViews, filterDefs, viewParams } from "../filters";
+import { asksForRoutines, builtinTabs, builtinViews, filterDefs, viewParams } from "../filters";
 import en from "../i18n/en.json";
 import module from "../index";
-import { lateness, minutesBetween, zonedIso, zonedParts } from "../meta";
+import { cardKey, lateness, minutesBetween, zonedIso, zonedParts } from "../meta";
 import type { BoardColumn, TaskDetail, TaskRow } from "../types";
 
 interface Call {
@@ -43,7 +43,7 @@ const person = (id: number, name: string) => ({ id, name, photo_url: null, posit
 const row = (overrides: Partial<TaskRow> = {}): TaskRow => ({
   id: 7,
   kind: "assigned",
-  title: "Count the drinks fridge",
+  title: "Check the expiry dates on shelf 3",
   status: "review",
   priority: "normal",
   due_at: "2026-10-21T13:00:00Z",
@@ -213,7 +213,7 @@ describe("TaskDrawer", () => {
     await flushPromises();
     await flushPromises();
     const text = document.body.textContent ?? "";
-    expect(text).toContain("Count the drinks fridge");
+    expect(text).toContain("Check the expiry dates on shelf 3");
     expect(text).toContain("Madina Saidova");
     expect(text).toContain("Middle shelf");
     expect(document.body.querySelector('img[src="/media/proofs/thumbs/1/a.webp"], img[src="/media/proofs/1/a.jpg"]')).not.toBeNull();
@@ -232,7 +232,7 @@ describe("TaskDrawer", () => {
       target_type,
       target_id,
       target_title: "",
-      page: { id: 40 + target_id, title, emoji: "📄", space: { id: 1, name: "Shop", emoji: "🏪" } },
+      page: { id: 40 + target_id, title, emoji: "📄", space: { id: 1, name: "Dorixona", emoji: "💊" } },
       created_at: "2026-10-01T09:00:00Z",
     });
     const calls = stub({
@@ -252,6 +252,40 @@ describe("TaskDrawer", () => {
     expect(text).toContain("Closing the till");
     expect(text).toContain("Counting fridges");
     expect(document.body.querySelector('a[href="/dashboard/c/1/knowledge/p/43"], a[href="/c/1/knowledge/p/43"]')).not.toBeNull();
+    wrapper.unmount();
+  });
+
+  it("names a board card by its key and links to it, and says when finished work came in and how late", async () => {
+    stub({
+      "GET tasks/7/": () =>
+        json(
+          detail({
+            status: "done",
+            actions: ["comment"],
+            project: { id: 13, key: "OPEN", name: "Chilonzor branch opening", number: 22 },
+            due_at: "2026-10-21T13:00:00Z",
+            completed_at: "2026-10-21T15:10:00Z",
+          }),
+        ),
+      "GET tasks/options/": () => json({ people: [], positions: [], routines: [], policies: [] }),
+    });
+    const app = await testApp("/c/1/tasks?task=7");
+    const { wrapper } = mountWithProviders(TaskDrawer, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    const text = document.body.textContent ?? "";
+    // Under the title: the card instead of "Given by hand".
+    expect(text).toContain("OPEN-22 · Chilonzor branch opening · Chilonzor");
+    expect(text).not.toContain("Given by hand");
+    const link = document.body.querySelector<HTMLAnchorElement>('a[href$="/c/1/projects/13/board?card=7"]');
+    expect(link?.textContent).toContain("OPEN-22");
+    // Finished 2 h 10 min after the deadline: the header says so instead of repeating the deadline.
+    expect(text).toContain("late 2 h");
+    // Nothing left to do: no empty actions row.
+    const pill = [...document.body.querySelectorAll("section")][0]!;
+    expect(pill.querySelectorAll("div.empty\\:hidden button").length).toBe(0);
+    expect(cardKey({ key: "OPEN", number: 22 })).toBe("OPEN-22");
+    expect(cardKey({ key: "OPEN", number: null })).toBe("OPEN");
     wrapper.unmount();
   });
 
@@ -277,7 +311,7 @@ describe("TaskTimeline", () => {
       "GET tasks/7/timeline/": () =>
         json([
           { at: "2026-10-21T08:00:00Z", kind: "created", action: "created", actor: person(1, "Dilnoza Karimova"), text: "", meta: {} },
-          { at: "2026-10-21T09:00:00Z", kind: "comment", action: "comment", actor: person(2, "Bekzod Mirzayev"), text: "Phone: Sharq Savdo", meta: {} },
+          { at: "2026-10-21T09:00:00Z", kind: "comment", action: "comment", actor: person(2, "Bekzod Mirzayev"), text: "Phone: the distributor", meta: {} },
           { at: "2026-10-21T10:00:00Z", kind: "reminder", action: "reminder", actor: person(11, "Madina Saidova"), text: "", meta: { step: 2, delivered: true } },
         ]),
     });
@@ -288,7 +322,7 @@ describe("TaskTimeline", () => {
     const text = wrapper.text();
     expect(text).toContain("Bekzod Mirzayev commented");
     expect(text.match(/Bekzod Mirzayev/g)).toHaveLength(1);
-    expect(text).toContain("Phone: Sharq Savdo");
+    expect(text).toContain("Phone: the distributor");
     expect(text).toContain("Reminder 2 sent to Madina Saidova");
     wrapper.unmount();
   });
@@ -302,5 +336,55 @@ describe("reviews", () => {
     const page = await tasksApi.reviews(1, { page_size: 100 });
     expect(page.results[0]!.proof_text).toBe("+4 °C");
     expect(calls[0]!.url).toContain("/tasks/reviews/?page_size=100");
+  });
+});
+
+describe("one-off tasks and routine work", () => {
+  const empty = { count: 0, next: null, previous: null, results: [] };
+  const summary = { today: "2026-10-21", done_today: 1, total_today: 2, late_now: 0, review: 0, open: 1, on_time_percent: null, on_time_previous: null, done_7d: 0, done_prev_7d: 0, series: [] };
+
+  it("asks for routine work only when a routine or the Routine kind is picked", () => {
+    expect(asksForRoutines({})).toBe(false);
+    expect(asksForRoutines({ status: ["todo"], kind: ["assigned"] })).toBe(false);
+    expect(asksForRoutines({ routine: ["4"] })).toBe(true);
+    expect(asksForRoutines({ kind: "daily" })).toBe(true);
+    expect(asksForRoutines({ kind: ["personal", "daily"] })).toBe(true);
+  });
+
+  it("the Tasks page lists and counts one-off work until routines are included", async () => {
+    const calls = stub({
+      "GET tasks/": () => json(empty),
+      "GET tasks/summary/": () => json(summary),
+      "GET tasks/options/": () => json({ people: [], positions: [], routines: [], policies: [] }),
+      "GET saved-views/": () => json([]),
+    });
+    const app = await testApp("/c/1/tasks");
+    const { default: TasksPage } = await import("../pages/TasksPage.vue");
+    const { wrapper } = mountWithProviders(TasksPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    const lists = () => calls.filter((c) => c.url.includes("/tasks/?"));
+    const summaries = () => calls.filter((c) => c.url.includes("/tasks/summary/"));
+    expect(lists().at(-1)!.url).toContain("routines=without");
+    expect(summaries().at(-1)!.url).toContain("routines=without");
+    document.body.querySelector<HTMLButtonElement>("[data-testid=include-routines]")!.click();
+    await flushPromises();
+    await flushPromises();
+    expect(app.router.currentRoute.value.query.routines).toBe("1");
+    expect(lists().at(-1)!.url).not.toContain("routines=");
+    expect(summaries().at(-1)!.url).not.toContain("routines=");
+    wrapper.unmount();
+  });
+
+  it("the review queue is one-off work; routine work waits on its own page", async () => {
+    const calls = stub({ "GET tasks/reviews/": () => json(empty) });
+    const app = await testApp("/c/1/tasks/reviews");
+    const { useReviews } = await import("../api");
+    const { defineComponent, h } = await import("vue");
+    const Probe = defineComponent({ setup: () => (useReviews(), () => h("div")) });
+    const { wrapper } = mountWithProviders(Probe, { plugins: app.plugins });
+    await flushPromises();
+    expect(calls[0]!.url).toContain("/tasks/reviews/?page_size=100&routines=without");
+    wrapper.unmount();
   });
 });
