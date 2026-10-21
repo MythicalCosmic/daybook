@@ -12,7 +12,7 @@ from django.utils.translation import gettext as _
 from apps.console.registry import SearchHit, StreamItem
 from apps.knowledge import queries, sanitize
 from apps.knowledge.models import Page, PageImage, PageVersion, Space
-from apps.members.models import Membership
+from apps.members.models import Membership, Position
 
 
 def _url(page: Page) -> str:
@@ -83,21 +83,33 @@ def image_check(user, company_id: int, object_id: int) -> bool:
 @transaction.atomic
 def copy_spaces(source, target, by: Membership) -> int:
     """Copy every active space of `source` and its published pages (with their pictures) into
-    `target`, as drafts-free first versions. Spaces read by positions become "everyone" spaces
-    (positions differ between companies). Returns the number of rows created."""
+    `target`, as drafts-free first versions. A space read by positions keeps the positions
+    `target` has under the same names (copying positions comes first in "copy setup"), and is
+    read by everyone when none match. The empty starter shelf a new company gets is replaced.
+    Returns the number of rows created."""
+    spaces = list(
+        Space.objects.filter(company=source, archived_at__isnull=True)
+        .prefetch_related("positions")
+        .order_by("position", "pk")
+    )
+    if not spaces:
+        return 0
+    Space.objects.filter(company=target, created_by__isnull=True, pages__isnull=True).delete()
+    positions = {position.name: position for position in Position.objects.filter(company=target)}
     created = 0
-    for space in Space.objects.filter(company=source, archived_at__isnull=True).order_by(
-        "position", "pk"
-    ):
+    for space in spaces:
+        mapped = [positions[p.name] for p in space.positions.all() if p.name in positions]
         copy = Space.objects.create(
             company=target,
             name=space.name,
             icon=space.icon,
             description=space.description,
-            audience_all=True,
+            audience_all=space.audience_all or not mapped,
             position=space.position,
             created_by=by,
         )
+        if not copy.audience_all:
+            copy.positions.set(mapped)
         created += 1
         pages = queries._page_rows(source.pk, [space.pk])
         live = queries._readable_ids(pages)

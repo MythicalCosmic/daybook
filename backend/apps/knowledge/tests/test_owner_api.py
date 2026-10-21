@@ -400,6 +400,12 @@ def test_overview_lists_pages_that_need_readers(company, owner, owner_api, cashi
     assert data["counts"]["require_ack"] == 1
     assert data["attention"][0]["id"] == page.pk
     assert data["attention"][0]["read"]["read"] == 1
+    total = data["attention"][0]["read"]["total"]
+    # The tiles' second lines: pages and confirmations still missing, changes this week.
+    assert data["counts"]["attention"] == 1
+    assert data["counts"]["awaiting"] == total - 1
+    assert data["counts"]["changed_week"] == 1
+    assert data["counts"]["to_read"] == 1  # the owner hasn't confirmed it either
 
 
 def test_settings_round_trip(company, owner, owner_api):

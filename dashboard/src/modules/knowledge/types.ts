@@ -167,7 +167,22 @@ export interface UploadedImage {
 }
 
 export interface Overview {
-  counts: { spaces: number; pages: number; published: number; drafts: number; require_ack: number };
+  counts: {
+    spaces: number;
+    /** Spaces everyone in the company reads. */
+    spaces_everyone: number;
+    pages: number;
+    published: number;
+    /** Published pages changed in the last seven days. */
+    changed_week: number;
+    drafts: number;
+    require_ack: number;
+    /** Pages the caller still has to confirm. */
+    to_read: number;
+    /** Managers: must-read pages not everyone confirmed, and the confirmations missing. */
+    attention: number;
+    awaiting: number;
+  };
   attention: PageRow[];
   recent: PageRow[];
   to_read: PageRow[];

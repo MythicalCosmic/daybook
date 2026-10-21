@@ -89,6 +89,7 @@ DROP_WITH_CONTENT = frozenset(
 )
 CALLOUT_TONES = frozenset({"info", "success", "warning", "danger", "note"})
 SAFE_URL = re.compile(r"^(https?://|mailto:|tel:)", re.IGNORECASE)
+TRAILING_EMPTY = re.compile(r"(?:\s*<p>(?:<br>)?</p>)+\s*$")
 BLOCKS = frozenset(
     {
         "p",
@@ -227,9 +228,9 @@ def clean(raw: str) -> str:
     cleaner = _Cleaner()
     cleaner.feed(raw[: MAX_BODY_CHARS * 2])
     cleaner.close()
-    out = cleaner.result().strip()
-    # An editor's empty document is "<p></p>".
-    return "" if out in ("<p></p>", "<p><br></p>") else out
+    # An editor's empty document is "<p></p>", and it keeps an empty paragraph after a last
+    # callout, table or picture so there is somewhere to type: neither is content.
+    return TRAILING_EMPTY.sub("", cleaner.result()).strip()
 
 
 class _Render(HTMLParser):

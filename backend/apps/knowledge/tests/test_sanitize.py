@@ -90,6 +90,16 @@ def test_an_empty_editor_document_is_empty():
     assert sanitize.clean("") == ""
 
 
+def test_the_editors_empty_last_paragraph_is_dropped():
+    """Tiptap keeps an empty paragraph after a last callout, table or picture; it isn't content
+    (and must not make an unchanged page look edited)."""
+    callout = '<div data-callout="info"><p>Ask Bekzod</p></div>'
+
+    assert sanitize.clean(f"{callout}<p></p>") == callout
+    assert sanitize.clean(f"{callout}<p><br></p>\n<p></p>") == callout
+    assert sanitize.clean("<p>One</p><p></p><p>Two</p>") == "<p>One</p><p></p><p>Two</p>"
+
+
 def test_plain_text_keeps_lists_checkboxes_and_tables():
     body = sanitize.clean(
         "<h2>Close</h2><p>Steps:</p><ol><li><p>Z report</p></li><li><p>Count</p></li></ol>"

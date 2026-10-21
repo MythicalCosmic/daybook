@@ -56,6 +56,14 @@ export function flatten(data: readonly TreeNodeData[], depth = 0): Array<{ node:
   return data.flatMap((node) => [{ node, depth }, ...flatten(node.children, depth + 1)]);
 }
 
+/**
+ * A body as the editor and the server agree on it: the editor adds an empty paragraph after a
+ * last callout, table or picture (so there is somewhere to type), which is not a change.
+ */
+export function normalizeBody(html: string): string {
+  return html.replace(/(?:\s*<p>(?:<br\s*\/?>)?<\/p>)+\s*$/i, "").trim();
+}
+
 export function displayTitle(page: Pick<PageRow, "emoji" | "title">): string {
   return `${page.emoji ? `${page.emoji} ` : ""}${page.title}`;
 }

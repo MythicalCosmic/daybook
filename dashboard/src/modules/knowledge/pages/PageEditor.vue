@@ -30,7 +30,7 @@ import { useCompanyStore } from "@/stores/company";
 import { knowledgeApi, usePage, usePutPage, useRefresh, useSpaces, useTree } from "../api";
 import EmojiPicker from "../components/EmojiPicker.vue";
 import RichEditor from "../components/editor/RichEditor.vue";
-import { flatten } from "../lib";
+import { flatten, normalizeBody } from "../lib";
 import type { PageDetail } from "../types";
 
 const { t } = useI18n();
@@ -52,11 +52,14 @@ const spaces = useSpaces();
 const draft = reactive({ title: "", emoji: "", body: "", requireAck: false, note: "", reread: false, notify: true, space: 0, parent: 0 });
 const baseline = ref("");
 const loaded = ref(false);
+// Set by `load`: the editor's next "ready" is that document, normalised, and becomes the baseline.
+let awaitingEditor = false;
 const saving = ref(false);
 const savedAt = ref<string | null>(null);
 const titleEl = ref<HTMLTextAreaElement | null>(null);
 
-const snapshot = () => JSON.stringify([draft.title, draft.emoji, draft.body, draft.requireAck]);
+// The editor's own normalisation (an empty last paragraph) isn't an unsaved change.
+const snapshot = () => JSON.stringify([draft.title, draft.emoji, normalizeBody(draft.body), draft.requireAck]);
 const dirty = computed(() => loaded.value && snapshot() !== baseline.value);
 const page = computed<PageDetail | null>(() => query.data.value ?? null);
 const published = computed(() => !!page.value?.published);
@@ -81,7 +84,15 @@ function load(from: PageDetail | null): void {
   draft.reread = false;
   baseline.value = snapshot();
   loaded.value = true;
+  awaitingEditor = true;
   void nextTick(resizeTitle);
+}
+
+function onEditorReady(html: string): void {
+  if (!awaitingEditor) return;
+  awaitingEditor = false;
+  draft.body = html;
+  baseline.value = snapshot();
 }
 
 watch(
@@ -281,7 +292,7 @@ const status = computed(() => {
               @keydown.enter.prevent
             />
           </div>
-          <RichEditor v-model="draft.body" :upload="upload" :autofocus="!isNew" style="--kb-toolbar-top: 60px" />
+          <RichEditor v-model="draft.body" :upload="upload" :autofocus="!isNew" style="--kb-toolbar-top: 60px" @ready="onEditorReady" />
         </div>
 
         <aside class="flex min-w-0 flex-col gap-4 xl:sticky xl:top-[76px] xl:self-start">

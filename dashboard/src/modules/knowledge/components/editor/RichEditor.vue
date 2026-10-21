@@ -28,6 +28,7 @@ import {
   Underline,
   Undo2,
 } from "@lucide/vue";
+import type { Editor as CoreEditor } from "@tiptap/core";
 import { EditorContent, useEditor } from "@tiptap/vue-3";
 import { computed, onBeforeUnmount, ref, shallowRef, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -49,6 +50,11 @@ const props = withDefaults(defineProps<{ upload: (file: File) => Promise<{ id: n
   autofocus: false,
 });
 
+const emit = defineEmits<{
+  /** The document as the editor holds it after loading: the baseline for "unsaved changes". */
+  ready: [html: string];
+}>();
+
 const { t } = useI18n();
 const uploading = ref(0);
 const fileInput = ref<HTMLInputElement | null>(null);
@@ -64,6 +70,7 @@ const editor = useEditor({
     handlePaste: (_view, event) => takeImages(event.clipboardData?.files),
     handleDrop: (_view, event) => takeImages((event as DragEvent).dataTransfer?.files),
   },
+  onCreate: ({ editor: current }) => settle(current),
   onUpdate: ({ editor: current }) => {
     model.value = current.isEmpty ? "" : current.getHTML();
   },
@@ -72,12 +79,26 @@ const editor = useEditor({
   },
 });
 
+/**
+ * Let the editor normalise a freshly loaded document (whitespace, the empty paragraph it keeps
+ * after a last callout or table) in one quiet step, and say what it now holds, so opening a page
+ * never reads as an unsaved change.
+ */
+function settle(current: CoreEditor): void {
+  current.view.dispatch(current.state.tr.setMeta("addToHistory", false));
+  const html = current.isEmpty ? "" : current.getHTML();
+  if (html !== model.value) model.value = html;
+  emit("ready", html);
+}
+
 // An outside change (a restored version, a reload) replaces the document.
 watch(model, (html) => {
   const current = editor.value;
   if (!current) return;
   const now = current.isEmpty ? "" : current.getHTML();
-  if (html !== now) current.commands.setContent(html || "", { emitUpdate: false });
+  if (html === now) return;
+  current.commands.setContent(html || "", { emitUpdate: false });
+  settle(current);
 });
 
 onBeforeUnmount(() => editor.value?.destroy());

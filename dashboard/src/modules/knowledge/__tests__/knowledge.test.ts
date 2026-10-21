@@ -17,7 +17,8 @@ import PageBody from "../components/PageBody.vue";
 import { buildExtensions } from "../components/editor/extensions";
 import en from "../i18n/en.json";
 import module from "../index";
-import { moveData, pathTo, readTone, safeBody, toTreeNodes } from "../lib";
+import RichEditor from "../components/editor/RichEditor.vue";
+import { moveData, normalizeBody, pathTo, readTone, safeBody, toTreeNodes } from "../lib";
 import PageView from "../pages/PageView.vue";
 import type { PageDetail, TreeNodeData } from "../types";
 
@@ -183,6 +184,33 @@ describe("editor", () => {
     editor.commands.insertTable(2, 2);
     expect(editor.getHTML().match(/<table>/g)).toHaveLength(2);
     editor.destroy();
+  });
+
+  it("settles a loaded page quietly, so opening it is not an unsaved change", async () => {
+    const app = await testApp("/c/1/knowledge/p/5/edit");
+    // Hand-written HTML (newlines between blocks) ending in a callout: the editor reflows it and
+    // adds an empty paragraph after the callout.
+    const loaded = '<p>Salom\nhammaga</p>\n<div data-callout="info"><p>Bekzodga yozing</p></div>\n';
+    const models: string[] = [];
+    const { wrapper, inner } = mountWithProviders(RichEditor, {
+      props: { modelValue: loaded, upload: vi.fn(), "onUpdate:modelValue": (html: string) => models.push(html) },
+      plugins: app.plugins,
+    });
+    // Tiptap says "created" on the next tick.
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await flushPromises();
+    const [[ready]] = inner.emitted<[string]>("ready")!;
+    expect(ready).toContain('<div data-callout="info"><p>Bekzodga yozing</p></div>');
+    expect(ready).not.toContain("\n");
+    expect(models.at(-1)).toBe(ready);
+    expect(normalizeBody(ready)).toBe('<p>Salom hammaga</p><div data-callout="info"><p>Bekzodga yozing</p></div>');
+    wrapper.unmount();
+  });
+
+  it("ignores the editor's empty last paragraph when comparing bodies", () => {
+    expect(normalizeBody("<p>A</p><p></p>")).toBe("<p>A</p>");
+    expect(normalizeBody("<p>A</p><p><br></p> <p></p>")).toBe("<p>A</p>");
+    expect(normalizeBody("<p>A</p><p></p><p>B</p>")).toBe("<p>A</p><p></p><p>B</p>");
   });
 });
 

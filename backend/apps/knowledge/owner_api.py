@@ -4,8 +4,11 @@ Reading needs only dashboard access (each person sees the spaces and pages they 
 with `knowledge.manage` see everything, drafts included). Every change needs `knowledge.manage`.
 """
 
+from datetime import timedelta
+
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import mixins, serializers, status
@@ -544,12 +547,21 @@ class OverviewView(OwnerAPIView):
         manage = queries.can_manage(member)
         spaces = queries.visible_spaces(member)
         pages = queries.readable_pages(member)
+        mine = queries.to_read(member)
         counts = {
             "spaces": spaces.count(),
+            "spaces_everyone": spaces.filter(audience_all=True).count(),
             "pages": pages.count(),
             "published": pages.filter(published=True).count(),
+            "changed_week": pages.filter(
+                published=True, updated_at__gte=timezone.now() - timedelta(days=7)
+            ).count(),
             "drafts": pages.filter(published=False).count() if manage else 0,
             "require_ack": pages.filter(published=True, require_ack=True).count(),
+            "to_read": len(mine),
+            # Managers: must-read pages not everyone confirmed, and the confirmations missing.
+            "attention": 0,
+            "awaiting": 0,
         }
         recent = queries.recent(member, limit=6)
         attention = []
@@ -564,8 +576,11 @@ class OverviewView(OwnerAPIView):
                 (page for page in needing if read.get(page.pk, (0, 0))[1]),
                 key=lambda page: read[page.pk][0] / read[page.pk][1],
             )
-            attention = [page for page in attention if read[page.pk][0] < read[page.pk][1]][:5]
-        to_read = queries.to_read(member)[:5]
+            attention = [page for page in attention if read[page.pk][0] < read[page.pk][1]]
+            counts["attention"] = len(attention)
+            counts["awaiting"] = sum(read[page.pk][1] - read[page.pk][0] for page in attention)
+            attention = attention[:5]
+        to_read = mine[:5]
         return Response(
             {
                 "counts": counts,

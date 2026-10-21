@@ -55,12 +55,23 @@ const searching = computed(() => debounced.value.trim().length >= 2);
 const results = usePages(computed(() => ({ q: searching.value ? debounced.value.trim() : undefined, page_size: 10 })));
 
 const counts = computed(() => overview.data.value?.counts);
-const kpis = computed(() => [
-  { id: "spaces", label: t("knowledge.kpi.spaces"), value: counts.value?.spaces ?? null, icon: Layers },
-  { id: "published", label: t("knowledge.kpi.published"), value: counts.value?.published ?? null, icon: BookOpen },
-  ...(canManage.value ? [{ id: "drafts", label: t("knowledge.kpi.drafts"), value: counts.value?.drafts ?? null, icon: FilePen }] : []),
-  { id: "ack", label: t("knowledge.kpi.mustRead"), value: counts.value?.require_ack ?? null, icon: CircleCheckBig },
-]);
+const kpis = computed(() => {
+  const c = counts.value;
+  // A zero reads differently ("Everyone has confirmed"), and Russian has no zero form.
+  const plural = (key: string, n: number) => (n ? t(key, { n }, n) : t(`${key}None`));
+  return [
+    { id: "spaces", label: t("knowledge.kpi.spaces"), value: c?.spaces ?? null, icon: Layers, hint: c ? plural("knowledge.kpi.spacesHint", c.spaces_everyone) : undefined },
+    { id: "published", label: t("knowledge.kpi.published"), value: c?.published ?? null, icon: BookOpen, hint: c ? plural("knowledge.kpi.publishedHint", c.changed_week) : undefined },
+    ...(canManage.value ? [{ id: "drafts", label: t("knowledge.kpi.drafts"), value: c?.drafts ?? null, icon: FilePen, hint: t("knowledge.kpi.draftsHint") }] : []),
+    {
+      id: "ack",
+      label: t("knowledge.kpi.mustRead"),
+      value: c?.require_ack ?? null,
+      icon: CircleCheckBig,
+      hint: !c ? undefined : canManage.value ? plural("knowledge.kpi.awaitingHint", c.awaiting) : plural("knowledge.kpi.toReadHint", c.to_read),
+    },
+  ];
+});
 
 async function remind(page: PageRow): Promise<void> {
   reminding.value = page.id;
@@ -122,7 +133,7 @@ useHotkey("n", () => canManage.value && void router.push(`${base.value}/new`), {
       <section v-if="canManage && overview.data.value.attention.length" class="ui-card p-1.5" :aria-label="t('knowledge.attention.title')">
         <header class="flex flex-wrap items-center gap-2 px-3 pb-1 pt-3">
           <h2 class="text-md font-semibold text-fg">{{ t("knowledge.attention.title") }}</h2>
-          <UiBadge :count="overview.data.value.attention.length" tone="warning" />
+          <UiBadge :count="overview.data.value.counts.attention || overview.data.value.attention.length" tone="warning" />
           <p class="basis-full text-sm text-muted">{{ t("knowledge.attention.body") }}</p>
         </header>
         <ul>
@@ -160,10 +171,12 @@ useHotkey("n", () => canManage.value && void router.push(`${base.value}/new`), {
                 <p class="line-clamp-2 min-h-[2.5em] text-sm text-muted">{{ space.description || t("knowledge.space.noDescription") }}</p>
               </div>
             </div>
-            <div class="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line pt-3 text-xs text-muted">
-              <span class="inline-flex items-center gap-1 font-semibold text-fg"><BookOpen :size="13" class="text-subtle" />{{ t("knowledge.pagesCount", { n: space.counts.pages }, space.counts.pages) }}</span>
-              <span class="inline-flex min-w-0 items-center gap-1"><Users :size="13" class="shrink-0 text-subtle" /><span class="truncate">{{ audienceText(space, t("knowledge.space.everyone")) }}</span></span>
-              <UiBadge v-if="canManage && space.counts.drafts" tone="neutral" variant="outline">{{ t("knowledge.draftsCount", { n: space.counts.drafts }, space.counts.drafts) }}</UiBadge>
+            <div class="mt-auto flex flex-col gap-1.5 border-t border-line pt-3 text-xs text-muted">
+              <div class="flex items-center gap-2">
+                <span class="inline-flex items-center gap-1 font-semibold text-fg"><BookOpen :size="13" class="text-subtle" />{{ t("knowledge.pagesCount", { n: space.counts.pages }, space.counts.pages) }}</span>
+                <UiBadge v-if="canManage && space.counts.drafts" tone="neutral" variant="outline">{{ t("knowledge.draftsCount", { n: space.counts.drafts }, space.counts.drafts) }}</UiBadge>
+              </div>
+              <span class="inline-flex min-w-0 items-center gap-1" :title="audienceText(space, t('knowledge.space.everyone'))"><Users :size="13" class="shrink-0 text-subtle" /><span class="truncate">{{ audienceText(space, t("knowledge.space.everyone")) }}</span></span>
             </div>
           </RouterLink>
         </div>
