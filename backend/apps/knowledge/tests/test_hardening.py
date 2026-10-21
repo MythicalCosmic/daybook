@@ -232,3 +232,26 @@ def test_asking_for_confirmations_later_restarts_the_reminder_clock(company, own
     page.refresh_from_db()
     assert timezone.now() - page.ack_since < timedelta(minutes=1)
     assert services.remind_due() == 0  # the company's 24 hours start now
+
+
+# The archive ------------------------------------------------------------------------------
+
+
+def test_the_archive_lists_what_was_archived_and_when(company, owner, owner_api):
+    space = SpaceFactory(company=company, name="Old shelf")
+    first = PageFactory(space=space, title="First")
+    second = PageFactory(space=space, title="Second")
+    services.archive_page(first, by=owner)
+    services.archive_page(second, by=owner)
+    services.archive_space(space, by=owner)
+    client = owner_api(owner)
+
+    pages = client.get(
+        owner_url(company, "pages/"), {"status": "archived", "ordering": "-archived_at"}
+    )
+    spaces = client.get(owner_url(company, "spaces/"), {"archived": "true"})
+
+    assert [row["title"] for row in pages.data["results"]] == ["Second", "First"]
+    assert all(row["archived_at"] for row in pages.data["results"])
+    [shelf] = [row for row in spaces.data if row["id"] == space.pk]
+    assert shelf["archived"] is True and shelf["archived_at"]

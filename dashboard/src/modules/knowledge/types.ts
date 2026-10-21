@@ -22,6 +22,7 @@ export interface SpaceRef {
 }
 
 export interface Space extends SpaceRef {
+  archived_at?: string | null;
   description: string;
   audience_all: boolean;
   positions: KbRef[];
@@ -56,6 +57,7 @@ export interface ReadCount {
 }
 
 export interface PageRow {
+  archived_at?: string | null;
   id: number;
   title: string;
   emoji: string;

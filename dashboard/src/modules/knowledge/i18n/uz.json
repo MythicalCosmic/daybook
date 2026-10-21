@@ -247,5 +247,15 @@
   "knowledge.widget.empty": "Hamma xabardor",
   "knowledge.widget.emptyBody": "O‘qilishi shart barcha sahifalar tasdiqlangan.",
   "knowledge.space.mustReadCount": "O‘qish shart: {n}",
-  "knowledge.space.inside": "{title} ichida"
+  "knowledge.space.inside": "{title} ichida",
+  "knowledge.cmd.archive": "Bilimlar bazasi arxivi",
+  "knowledge.archive.title": "Arxiv",
+  "knowledge.archive.description": "Arxivlangan bo‘lim va sahifalar. Qayta tiklasangiz, o‘quvchilar yana ko‘radi.",
+  "knowledge.archive.spaces": "Bo‘limlar",
+  "knowledge.archive.pages": "Sahifalar",
+  "knowledge.archive.restore": "Tiklash",
+  "knowledge.archive.archivedOn": "{date} arxivlangan",
+  "knowledge.archive.spaceRestored": "“{name}” qaytarildi",
+  "knowledge.archive.emptyTitle": "Arxiv bo‘sh",
+  "knowledge.archive.emptyBody": "Arxivlangan bo‘lim va sahifalar shu yerda turadi. Hech narsa o‘chirilmaydi."
 }

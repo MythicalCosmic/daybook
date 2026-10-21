@@ -3,7 +3,7 @@
  * versions, "who has read it" and links to tasks and routines. Everything heavy (pages, the Tiptap
  * editor, widgets) loads on first use; this file stays tiny because it is in the first bundle.
  */
-import { BookOpen, FilePlus2, Search } from "@lucide/vue";
+import { Archive, BookOpen, FilePlus2, Search } from "@lucide/vue";
 import { defineAsyncComponent } from "vue";
 
 import { defineModule } from "@/core/modules";
@@ -29,6 +29,14 @@ export default defineModule({
       perm: "knowledge.manage",
       keywords: ["page", "sahifa", "страница", "sop", "how to", "yo‘riqnoma", "инструкция"],
       run: () => ctx.go("knowledge/new"),
+    },
+    {
+      id: "knowledge.archive",
+      title: ctx.t("knowledge.cmd.archive"),
+      icon: Archive,
+      perm: "knowledge.manage",
+      keywords: ["archive", "restore", "arxiv", "tiklash", "архив", "восстановить"],
+      run: () => ctx.go("knowledge?archive=1"),
     },
     {
       id: "knowledge.open",

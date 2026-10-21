@@ -247,5 +247,15 @@
   "knowledge.widget.empty": "Everyone is up to date",
   "knowledge.widget.emptyBody": "Every must-read page has been confirmed.",
   "knowledge.space.mustReadCount": "Must read: {n}",
-  "knowledge.space.inside": "In {title}"
+  "knowledge.space.inside": "In {title}",
+  "knowledge.cmd.archive": "Knowledge base archive",
+  "knowledge.archive.title": "Archive",
+  "knowledge.archive.description": "Archived spaces and pages. Restore one and readers see it again.",
+  "knowledge.archive.spaces": "Spaces",
+  "knowledge.archive.pages": "Pages",
+  "knowledge.archive.restore": "Restore",
+  "knowledge.archive.archivedOn": "archived {date}",
+  "knowledge.archive.spaceRestored": "“{name}” is back",
+  "knowledge.archive.emptyTitle": "The archive is empty",
+  "knowledge.archive.emptyBody": "Archived spaces and pages wait here. Nothing is ever deleted."
 }

@@ -214,7 +214,13 @@ class PageViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerViewSet
         if q := (params.get("q") or "").strip():
             pages = pages.filter(Q(title__icontains=q) | Q(body_text__icontains=q))
         ordering = params.get("ordering") or "-updated_at"
-        if ordering.lstrip("-") not in ("updated_at", "title", "published_at", "created_at"):
+        if ordering.lstrip("-") not in (
+            "updated_at",
+            "title",
+            "published_at",
+            "created_at",
+            "archived_at",
+        ):
             ordering = "-updated_at"
         return pages.select_related("space", "updated_by__user").order_by(ordering, "-pk")
 

@@ -120,12 +120,12 @@ export function useOverview() {
   });
 }
 
-export function useSpaces(archived: MaybeRefOrGetter<boolean> = false) {
+export function useSpaces(archived: MaybeRefOrGetter<boolean> = false, enabled: MaybeRefOrGetter<boolean> = true) {
   const cid = useCompanyId();
   return useQuery({
     queryKey: computed(() => kbKeys.spaces(cid.value, toValue(archived))),
     queryFn: ({ signal }) => knowledgeApi.spaces(cid.value, toValue(archived), signal),
-    enabled: computed(() => cid.value > 0),
+    enabled: computed(() => cid.value > 0 && toValue(enabled)),
     staleTime: 30_000,
   });
 }
@@ -140,12 +140,12 @@ export function useTree(spaceId: MaybeRefOrGetter<number | null>) {
   });
 }
 
-export function usePages(params: MaybeRefOrGetter<PageListParams>) {
+export function usePages(params: MaybeRefOrGetter<PageListParams>, enabled: MaybeRefOrGetter<boolean> = true) {
   const cid = useCompanyId();
   return useQuery({
     queryKey: computed(() => kbKeys.pages(cid.value, toValue(params))),
     queryFn: ({ signal }) => knowledgeApi.pages(cid.value, toValue(params), signal),
-    enabled: computed(() => cid.value > 0),
+    enabled: computed(() => cid.value > 0 && toValue(enabled)),
     placeholderData: keepPreviousData,
     staleTime: 15_000,
   });

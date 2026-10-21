@@ -184,6 +184,11 @@ beraymi?”</p></blockquote>
 </ul>
 """
 
+OLD_TILL = """
+<p>Eski kassa dasturida smena <strong>F2</strong> tugmasi bilan ochilardi. Yangi dasturga o‘tilgani
+uchun bu sahifa arxivda saqlanadi.</p>
+"""
+
 PLANTS = """
 <p>Zaldagi gullar haftada ikki marta — dushanba va payshanba kunlari sug‘oriladi.</p>
 <ul>
@@ -389,6 +394,13 @@ def seed(company, people, now) -> None:
     _timeline(delivery, now, 8.3)
     _timeline(greeting, now, 5)
     _timeline(plants, now, 15.5)
+
+    # The old till software's guide went to the archive when the new one came (nothing is
+    # deleted: it waits in the archive).
+    old_till = page(till, "Eski kassa dasturi (2025)", "🗄", OLD_TILL)
+    _timeline(old_till, now, 60)
+    services.archive_page(old_till, by=owner)
+    Page.objects.filter(pk=old_till.pk).update(archived_at=now - timedelta(days=9))
 
     # Links to routines ("How to do this"), when the demo has them.
     from apps.knowledge import targets

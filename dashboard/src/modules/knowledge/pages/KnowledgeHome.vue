@@ -3,7 +3,7 @@
  * Knowledge base home: what the shelves hold, which pages people still have to confirm (managers
  * can remind them in one click), the spaces, and what changed lately.
  */
-import { BellRing, BookOpen, CircleCheckBig, FilePen, FilePlus2, FolderPlus, Layers, Library, Search, Settings, Users } from "@lucide/vue";
+import { Archive, BellRing, BookOpen, CircleCheckBig, FilePen, FilePlus2, FolderPlus, Layers, Library, Search, Settings, Users } from "@lucide/vue";
 import { refDebounced } from "@vueuse/core";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
@@ -24,9 +24,11 @@ import { useHotkey } from "@/core/hotkeys";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useCan } from "@/lib/usePermission";
+import { patchQuery } from "@/lib/useRouteState";
 import { useCompanyStore } from "@/stores/company";
 
 import { knowledgeApi, useOverview, usePages, useRefresh, useSpaces } from "../api";
+import ArchiveDrawer from "../components/ArchiveDrawer.vue";
 import KnowledgeSettingsPanel from "../components/KnowledgeSettingsPanel.vue";
 import PageListItem from "../components/PageListItem.vue";
 import ReadProgress from "../components/ReadProgress.vue";
@@ -93,6 +95,7 @@ useHotkey("n", () => canManage.value && void router.push(`${base.value}/new`), {
   <div>
     <PageHeader :title="t('knowledge.title')" :description="t('knowledge.description')">
       <template v-if="canManage" #actions>
+        <IconButton :icon="Archive" :label="t('knowledge.archive.title')" variant="ghost" @click="patchQuery(router, { archive: '1' }, true)" />
         <IconButton :icon="Settings" :label="t('knowledge.settings.title')" variant="ghost" @click="settingsOpen = true" />
         <UiButton :icon="FolderPlus" @click="creatingSpace = true">{{ t("knowledge.space.newTitle") }}</UiButton>
         <UiButton variant="primary" :icon="FilePlus2" :to="`${base}/new`" kbd="N">{{ t("knowledge.newPage") }}</UiButton>
@@ -189,6 +192,7 @@ useHotkey("n", () => canManage.value && void router.push(`${base.value}/new`), {
     </div>
 
     <SpaceDialog v-model:open="creatingSpace" />
+    <ArchiveDrawer v-if="canManage" />
     <UiDialog v-model:open="settingsOpen" :title="t('knowledge.settings.title')" :description="t('knowledge.settings.description')">
       <KnowledgeSettingsPanel />
     </UiDialog>

@@ -13,6 +13,7 @@ import { mountWithProviders, testApp } from "@/test/plugins";
 import { useSessionStore } from "@/stores/session";
 
 import { kbKeys, knowledgeApi } from "../api";
+import ArchiveDrawer from "../components/ArchiveDrawer.vue";
 import PageBody from "../components/PageBody.vue";
 import { buildExtensions } from "../components/editor/extensions";
 import en from "../i18n/en.json";
@@ -251,5 +252,45 @@ describe("reading", () => {
     expect(calls.some((c) => c.method === "POST" && c.url.endsWith("knowledge/pages/5/ack/"))).toBe(true);
     // Refused: the page asks again.
     expect(wrapper.text()).toContain("Please read this page");
+  });
+});
+
+describe("archive", () => {
+  it("lists archived spaces and top archived pages, and restores one", async () => {
+    const space = { id: 7, name: "Eski qoidalar", icon: "🗂", description: "", audience_all: true, positions: [], position: 3, archived: true, archived_at: "2026-10-12T10:00:00+05:00", counts: { pages: 2, published: 2, drafts: 0 }, created_at: "", updated_at: "" };
+    const live = { ...space, id: 8, name: "Savdo zali", archived: false, archived_at: null };
+    const parent = { ...detail({ id: 20, title: "Eski kassa tartibi", archived: true, parent_id: null }), archived_at: "2026-10-15T10:00:00+05:00" };
+    const child = { ...detail({ id: 21, title: "Ichki sahifa", archived: true, parent_id: 20 }), archived_at: "2026-10-15T10:00:00+05:00" };
+    const calls = stubApi({
+      "GET knowledge/spaces/": () => json([space, live]),
+      "GET knowledge/pages/": () => json({ count: 2, next: null, previous: null, results: [parent, child] }),
+      "POST knowledge/pages/20/restore/": () => json(detail({ id: 20 })),
+    });
+    const app = await testApp("/c/1/knowledge?archive=1");
+    const { wrapper } = mountWithProviders(ArchiveDrawer, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+
+    const text = document.body.textContent ?? "";
+    expect(text).toContain("Eski qoidalar");
+    expect(text).not.toContain("Savdo zali"); // not archived
+    expect(text).toContain("Eski kassa tartibi");
+    expect(text).not.toContain("Ichki sahifa"); // comes back with the page above it
+    expect(calls.find((c) => c.url.includes("knowledge/pages/"))!.url).toContain("status=archived");
+
+    const restore = Array.from(document.body.querySelectorAll("button")).filter((b) => b.textContent?.includes("Restore"));
+    restore.at(-1)!.click();
+    await flushPromises();
+    expect(calls.some((c) => c.method === "POST" && c.url.endsWith("knowledge/pages/20/restore/"))).toBe(true);
+    wrapper.unmount();
+  });
+
+  it("asks for nothing while closed", async () => {
+    const calls = stubApi({});
+    const app = await testApp("/c/1/knowledge");
+    const { wrapper } = mountWithProviders(ArchiveDrawer, { plugins: app.plugins });
+    await flushPromises();
+    expect(calls).toHaveLength(0);
+    wrapper.unmount();
   });
 });
