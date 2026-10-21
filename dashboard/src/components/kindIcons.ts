@@ -4,6 +4,7 @@
  * rows. A key matches its full name first, then its last segment, then its app.
  */
 import {
+  ArrowLeftRight,
   Award,
   Banknote,
   BellRing,
@@ -14,7 +15,9 @@ import {
   Download,
   FileText,
   FolderKanban,
+  HandCoins,
   Handshake,
+  Hourglass,
   IdCard,
   Landmark,
   Lightbulb,
@@ -24,10 +27,12 @@ import {
   MessagesSquare,
   Network,
   Receipt,
+  ReceiptText,
   Repeat,
   ScrollText,
   Sparkles,
   Store,
+  TimerReset,
   TreePalm,
   UserPlus,
   Users,
@@ -35,6 +40,12 @@ import {
 import type { Component } from "vue";
 
 const ICONS: Record<string, Component> = {
+  // queue kinds that share an app but not a meaning (Inbox lists them side by side)
+  "sales.verify": ReceiptText,
+  "sales.handover": HandCoins,
+  "attendance.corrections": TimerReset,
+  "attendance.overtime": Hourglass,
+  "attendance.swaps": ArrowLeftRight,
   // apps
   members: Users,
   tasks: ListTodo,

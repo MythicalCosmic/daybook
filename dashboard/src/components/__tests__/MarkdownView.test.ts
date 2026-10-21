@@ -38,8 +38,8 @@ describe("renderMarkdown: sanitizing", () => {
   });
 
   it("opens outside links in a new tab without the opener", () => {
-    const html = render("[Kapitalbank](https://kapitalbank.uz) and https://soliq.uz");
-    expect(html).toContain('href="https://kapitalbank.uz"');
+    const html = render("[Narxlar ro‘yxati](https://example.uz/narxlar) and https://soliq.uz");
+    expect(html).toContain('href="https://example.uz/narxlar"');
     expect(html.match(/target="_blank"/g)).toHaveLength(2);
     expect(html).toContain('rel="noopener noreferrer nofollow"');
   });

@@ -238,7 +238,8 @@ watch(zoom, () => void scrollToToday(false));
             <div class="pointer-events-none absolute inset-y-0" :style="{ left: `${labelWidth}px`, width: `${width}px` }" aria-hidden="true">
               <div v-for="x in weekends" :key="`w${x}`" class="absolute inset-y-0 bg-surface-2/45 dark:bg-surface-2/60" :style="{ left: `${x}px`, width: `${ppd}px` }" />
               <div v-for="tick in header.bottom" :key="`l${tick.day}`" class="absolute inset-y-0 w-px bg-line/70" :style="{ left: `${tick.left}px` }" />
-              <div class="absolute inset-y-0 z-[2] w-0.5 bg-danger/80" :style="{ left: `${dayCenter(today, range.from, zoom) - 1}px` }">
+              <!-- Today sits above the shading and grid lines and under the bars, milestones and their labels. -->
+              <div class="absolute inset-y-0 z-[1] w-0.5 bg-danger/80" :style="{ left: `${dayCenter(today, range.from, zoom) - 1}px` }">
                 <span class="absolute -left-[3px] -top-1 size-2 rounded-full bg-danger" />
               </div>
             </div>
@@ -269,7 +270,7 @@ watch(zoom, () => void scrollToToday(false));
                   :class="[
                     'gantt-bar group/bar absolute top-1/2 flex h-7 -translate-y-1/2 touch-none select-none items-center overflow-visible rounded-[7px] outline-offset-2',
                     canEdit(bar) ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
-                    drag?.kind === 'bar' && drag.id === bar.id && 'z-[3] shadow-pop',
+                    drag?.kind === 'bar' && drag.id === bar.id ? 'z-[3] shadow-pop' : 'z-[2]',
                   ]"
                   :style="{
                     left: `${barBox(preview(row, bar), range.from, zoom).left + 1}px`,
@@ -327,7 +328,7 @@ watch(zoom, () => void scrollToToday(false));
                       background: milestone.done ? (milestone.color ?? 'var(--c-text)') : 'var(--c-surface)',
                     }"
                   />
-                  <span class="whitespace-nowrap rounded-[5px] bg-surface/90 px-1 text-[11px] font-semibold text-fg backdrop-blur-sm">{{ milestone.label }}</span>
+                  <span class="max-w-[11rem] truncate rounded-[5px] bg-surface/90 px-1 text-[11px] font-semibold text-fg backdrop-blur-sm" :title="milestone.label">{{ milestone.label }}</span>
                 </div>
               </div>
             </div>

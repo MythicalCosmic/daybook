@@ -34,12 +34,15 @@ export function compareOf(value: DateRangeValue): Range | null {
 }
 
 /**
- * Query parameters for an analytics endpoint (plan §4: `?from&to&compare`): the days, and the
- * comparison mode (`prev` or `year`) when it is on. The server derives the compare days itself
- * with the same rule as `compareOf`.
+ * Query parameters for an analytics endpoint (plan §4: `?preset` or `?from&to`, and `compare`): a
+ * preset goes as itself and a custom range as its days, with the comparison mode (`prev` or `year`)
+ * when it is on. The server derives the compare days with the same rule as `compareOf`, and it needs
+ * the preset for that: "this month" compares with the same days of last month (1–21 September, as
+ * the picker says), where its days sent alone would be a custom range, compared with the days just
+ * before (10–30 September).
  */
 export function rangeParams(value: DateRangeValue): Record<string, string> {
-  const params: Record<string, string> = { from: value.range.from, to: value.range.to };
+  const params: Record<string, string> = value.preset === "custom" ? { from: value.range.from, to: value.range.to } : { preset: value.preset };
   if (value.compare !== "none") params.compare = value.compare;
   return params;
 }

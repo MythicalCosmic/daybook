@@ -1,5 +1,5 @@
 /**
- * Demo data for the component kitchen (dev only): a shop's people, transactions, tasks, projects
+ * Demo data for the component kitchen (dev only): a pharmacy chain's people, transactions, tasks, projects
  * and numbers, deterministic so screenshots compare run to run.
  */
 import type { BranchRef } from "@/api/types";
@@ -19,29 +19,29 @@ export function seeded(seed: number): () => number {
 
 export const PEOPLE: PersonOption[] = [
   { id: 11, name: "Dilnoza Karimova", subtitle: "Owner · Office" },
-  { id: 12, name: "Bekzod Mirzayev", subtitle: "Shift lead · Chilonzor" },
-  { id: 13, name: "Alisher Valiyev", subtitle: "Sales floor · Chilonzor" },
-  { id: 14, name: "Madina Saidova", subtitle: "Cashier · Chilonzor" },
-  { id: 15, name: "Jasur Ergashev", subtitle: "Warehouse · Sergeli" },
-  { id: 16, name: "Nigora Tursunova", subtitle: "Delivery · Yunusobod" },
-  { id: 31, name: "Aziz Karimov", subtitle: "Cashier · Yunusobod" },
-  { id: 32, name: "G‘ayrat Ro‘ziyev", subtitle: "Barista · Mirobod" },
-  { id: 33, name: "Shahzoda Yusupova", subtitle: "Barista · Mirobod" },
-  { id: 34, name: "Sardor Rahimov", subtitle: "Cashier · Sergeli" },
+  { id: 12, name: "Bekzod Mirzayev", subtitle: "Head of pharmacy · Chilonzor" },
+  { id: 13, name: "Alisher Valiyev", subtitle: "Pharmacist · Chilonzor" },
+  { id: 14, name: "Madina Saidova", subtitle: "Senior pharmacist · Chilonzor" },
+  { id: 15, name: "Jasur Ergashev", subtitle: "Stock & receiving · Yunusobod" },
+  { id: 16, name: "Nigora Tursunova", subtitle: "Pharmacist, nights · Yunusobod" },
+  { id: 31, name: "Aziz Karimov", subtitle: "Pharmacist · Chilonzor" },
+  { id: 32, name: "G‘ayrat Ro‘ziyev", subtitle: "Storekeeper · Sergeli ombori" },
+  { id: 33, name: "Shahzoda Yusupova", subtitle: "Sales manager · Sergeli ombori" },
+  { id: 34, name: "Sardor Rahimov", subtitle: "Courier · Yunusobod" },
 ];
 
 export const POSITIONS: PositionOption[] = [
-  { id: 1, name: "Cashier", color: "var(--c-chart-1)" },
-  { id: 2, name: "Shift lead", color: "var(--c-chart-3)" },
-  { id: 3, name: "Sales floor", color: "var(--c-chart-4)" },
-  { id: 4, name: "Warehouse", color: "var(--c-chart-5)" },
-  { id: 5, name: "Delivery", color: "var(--c-chart-6)" },
-  { id: 6, name: "Barista", color: "var(--c-chart-2)" },
+  { id: 1, name: "Pharmacist", color: "var(--c-chart-1)" },
+  { id: 2, name: "Head of pharmacy", color: "var(--c-chart-3)" },
+  { id: 3, name: "Senior pharmacist", color: "var(--c-chart-4)" },
+  { id: 4, name: "Stock & receiving", color: "var(--c-chart-5)" },
+  { id: 5, name: "Courier", color: "var(--c-chart-6)" },
+  { id: 6, name: "Storekeeper", color: "var(--c-chart-2)" },
 ];
 
 export const BRANCHES: BranchRef[] = [
   { id: 1, name: "Chilonzor", code: "CHL" },
-  { id: 2, name: "Yunusobod", code: "YUN" },
+  { id: 2, name: "Yunusobod", code: "YNS" },
   { id: 3, name: "Sergeli", code: "SRG" },
 ];
 
@@ -56,8 +56,8 @@ export interface DemoTransaction {
   status: "posted" | "pending" | "void";
 }
 
-const CATEGORIES = ["Rent", "Supplies", "Salaries", "Utilities", "Delivery", "Marketing", "Repairs"];
-const DESCRIPTIONS = ["Korzinka · supplies", "Electricity · October", "Shift CHL-1042 cash", "Packaging from Makro", "Fuel for delivery", "Instagram ads", "Fridge repair", "Card terminal payout", "Water and coffee", "Advance · Nigora"];
+const CATEGORIES = ["Rent", "Medicine purchases", "Supplies", "Salaries", "Utilities", "Delivery", "Repairs"];
+const DESCRIPTIONS = ["Oqtosh Med Ta’minot · invoice 118", "Electricity · October", "Shift CHL-1042 cash", "Ko‘kterak Farm · invoice 2231", "Fuel for delivery", "Pharmacy licence renewal", "Medicine fridge repair", "Card terminal payout", "Thermometers and hygrometers", "Advance · Nigora"];
 
 export function transactions(count: number, today: string): DemoTransaction[] {
   const random = seeded(42);
@@ -118,7 +118,7 @@ export function boardCards(today: string): DemoCard[] {
   const all = ["backlog", "todo", "doing", "review", "done"];
   const card = (id: number, title: string, list: string, person: number, due: number, labels: DemoCard["labels"], checklist: [number, number], allowed = all) => ({
     id,
-    key: `RENO-${id}`,
+    key: `OPEN-${id}`,
     title,
     list,
     assignee: PEOPLE[person]!,
@@ -128,13 +128,13 @@ export function boardCards(today: string): DemoCard[] {
     allowed,
   });
   return [
-    card(11, "Order signage for the new branch", "backlog", 0, 12, [label("Design", 5)], [0, 3]),
-    card(12, "Get the fire safety certificate", "backlog", 1, 20, [label("Legal", 3)], [1, 4]),
-    card(14, "Hire two cashiers", "todo", 0, 6, [label("Hiring", 4)], [2, 5]),
+    card(11, "Order the pharmacy sign", "backlog", 0, 12, [label("Design", 5)], [0, 3]),
+    card(12, "Apply for the pharmacy licence", "backlog", 1, 20, [label("Legal", 3)], [1, 4]),
+    card(14, "Hire two pharmacists", "todo", 0, 6, [label("Hiring", 4)], [2, 5]),
     card(15, "Install the card terminal", "todo", 4, 3, [label("Equipment", 6)], [0, 2]),
-    card(16, "Paint the sales floor", "doing", 2, 1, [label("Fit-out", 1)], [3, 6]),
-    card(17, "Shelving and fridges", "doing", 4, -1, [label("Fit-out", 1), label("Equipment", 6)], [5, 8], ["doing", "review"]),
-    card(18, "Opening day stock list", "doing", 3, 4, [label("Stock", 2)], [1, 1]),
+    card(16, "Fit out the dispensing counter", "doing", 2, 1, [label("Fit-out", 1)], [3, 6]),
+    card(17, "Shelving and medicine fridges", "doing", 4, -1, [label("Fit-out", 1), label("Equipment", 6)], [5, 8], ["doing", "review"]),
+    card(18, "First order from the distributor", "doing", 3, 4, [label("Stock", 2)], [1, 1]),
     card(19, "Opening announcement for the team", "review", 1, 2, [label("Comms", 4)], [2, 2], ["doing", "review", "done"]),
     card(20, "Lease agreement signed", "done", 0, -9, [label("Legal", 3)], [4, 4]),
   ];
@@ -148,14 +148,14 @@ export function calendarItems(today: string): CalendarItem[] {
     { id: "l1", kind: "leave", title: "Madina · leave", start: addDays(monday, 2), end: addDays(monday, 4), all_day: true, color: "var(--c-chart-6)" },
     { id: "p1", kind: "payroll", title: "October payroll", start: addDays(today, 10), all_day: true, color: "var(--c-chart-5)" },
     { id: "t1", kind: "tax", title: "VAT return due", start: addDays(today, 5), all_day: true, color: "var(--c-chart-4)" },
-    { id: "m1", kind: "meeting", title: "Branch managers", start: at(addDays(monday, 0), "09:30"), end: at(addDays(monday, 0), "10:30"), subtitle: "Office" },
-    { id: "m2", kind: "meeting", title: "Supplier: Makro", start: at(addDays(monday, 1), "11:00"), end: at(addDays(monday, 1), "12:00"), subtitle: "Chilonzor" },
-    { id: "m3", kind: "interview", title: "Interview · cashier", start: at(addDays(monday, 1), "11:30"), end: at(addDays(monday, 1), "12:15"), subtitle: "Bekzod" },
-    { id: "m4", kind: "milestone", title: "Soft launch", start: at(addDays(monday, 3), "15:00"), end: at(addDays(monday, 3), "17:00"), subtitle: "RENO" },
+    { id: "m1", kind: "meeting", title: "Pharmacy heads", start: at(addDays(monday, 0), "09:30"), end: at(addDays(monday, 0), "10:30"), subtitle: "Office" },
+    { id: "m2", kind: "meeting", title: "Distributor: Oqtosh Med Ta’minot", start: at(addDays(monday, 1), "11:00"), end: at(addDays(monday, 1), "12:00"), subtitle: "Chilonzor" },
+    { id: "m3", kind: "interview", title: "Interview · pharmacist", start: at(addDays(monday, 1), "11:30"), end: at(addDays(monday, 1), "12:15"), subtitle: "Bekzod" },
+    { id: "m4", kind: "milestone", title: "Soft launch", start: at(addDays(monday, 3), "15:00"), end: at(addDays(monday, 3), "17:00"), subtitle: "OPEN" },
     { id: "m5", kind: "meeting", title: "Inventory count", start: at(addDays(monday, 4), "08:00"), end: at(addDays(monday, 4), "10:00"), subtitle: "Sergeli" },
-    { id: "m6", kind: "training", title: "Card terminal training", start: at(addDays(today, -6), "14:00"), end: at(addDays(today, -6), "15:00") },
+    { id: "m6", kind: "training", title: "Cold-chain training", start: at(addDays(today, -6), "14:00"), end: at(addDays(today, -6), "15:00") },
     { id: "m7", kind: "meeting", title: "Accountant", start: at(addDays(today, -2), "10:00"), end: at(addDays(today, -2), "11:00") },
-    { id: "m8", kind: "delivery", title: "Coca-Cola delivery", start: at(addDays(today, 1), "07:30"), end: at(addDays(today, 1), "08:00") },
+    { id: "m8", kind: "delivery", title: "Delivery from Ko‘kterak Farm", start: at(addDays(today, 1), "07:30"), end: at(addDays(today, 1), "08:00") },
   ];
 }
 
@@ -163,15 +163,15 @@ export function ganttRows(today: string): GanttRow[] {
   return [
     {
       id: "reno",
-      label: "Chilonzor-2 opening",
-      sublabel: "RENO · 64%",
+      label: "Sergeli pharmacy opening",
+      sublabel: "OPEN · 64%",
       color: "var(--c-chart-1)",
       bars: [{ id: "reno-1", start: addDays(today, -18), end: addDays(today, 9), label: "Fit-out", progress: 64 }],
       milestones: [{ id: "reno-m", date: addDays(today, 12), label: "Soft launch" }],
     },
     {
       id: "web",
-      label: "Website relaunch",
+      label: "Online orders and delivery",
       sublabel: "WEB · 41%",
       color: "var(--c-chart-3)",
       bars: [
@@ -182,14 +182,14 @@ export function ganttRows(today: string): GanttRow[] {
     },
     {
       id: "crm",
-      label: "Loyalty cards",
-      sublabel: "LOY · 12%",
+      label: "GPP inspection readiness",
+      sublabel: "GPP · 12%",
       color: "var(--c-chart-4)",
-      bars: [{ id: "crm-1", start: addDays(today, -3), end: addDays(today, 30), label: "Rollout", progress: 12 }],
+      bars: [{ id: "crm-1", start: addDays(today, -3), end: addDays(today, 30), label: "Checklist", progress: 12 }],
     },
     {
       id: "hire",
-      label: "Hiring: 6 cashiers",
+      label: "Hiring: 6 pharmacists",
       sublabel: "HR",
       color: "var(--c-chart-6)",
       bars: [{ id: "hire-1", start: addDays(today, -25), end: addDays(today, -5), label: "Round 1", progress: 100 }, { id: "hire-2", start: addDays(today, 2), end: addDays(today, 16), label: "Round 2" }],
@@ -197,7 +197,7 @@ export function ganttRows(today: string): GanttRow[] {
     },
     {
       id: "inv",
-      label: "Stock count",
+      label: "Q4 stock count",
       sublabel: "OPS",
       color: "var(--c-chart-5)",
       bars: [{ id: "inv-1", start: addDays(today, 6), end: addDays(today, 7), label: "Count" }],
@@ -211,9 +211,11 @@ export const KNOWLEDGE: TreeNode[] = [
     label: "Operations",
     badge: 12,
     children: [
-      { id: "open", label: "Opening the shop", meta: "Read by 18" },
+      { id: "open", label: "Opening the pharmacy", meta: "Read by 18" },
+      { id: "rx", label: "Selling prescription medicines" },
       { id: "close", label: "Closing and the cash count", children: [{ id: "z", label: "Z-report photos" }, { id: "safe", label: "Handing cash to the safe" }] },
-      { id: "fridge", label: "Fridge temperatures" },
+      { id: "fridge", label: "Cold chain: fridges at 2–8 °C" },
+      { id: "expired", label: "Writing off expired medicines" },
     ],
   },
   { id: "people", label: "People and HR", badge: 5, children: [{ id: "leave", label: "How to ask for leave" }, { id: "uniform", label: "Uniform" }] },

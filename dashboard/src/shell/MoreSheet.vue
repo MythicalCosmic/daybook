@@ -48,12 +48,13 @@ function close(): void {
               <span class="min-w-0 flex-1 truncate text-md font-medium text-fg">{{ t(module.title) }}</span>
               <UiBadge v-if="module.badge" :count="module.badge" tone="primary" />
             </RouterLink>
-            <div v-if="module.children.length > 1" class="no-scrollbar -mt-1 flex gap-1.5 overflow-x-auto px-3.5 pb-3 pl-[46px]">
+            <!-- Pages wrap onto more lines rather than running off the edge; each chip is a 44 px target (36 px plus 4 px above and below). -->
+            <div v-if="module.children.length > 1" class="-mt-1 flex flex-wrap gap-2 px-3.5 pb-3 pl-[46px]">
               <RouterLink
                 v-for="child in module.children.slice(1)"
                 :key="child.key"
                 :to="child.path"
-                class="flex h-7 shrink-0 items-center gap-1.5 rounded-full border border-line px-2.5 text-sm font-medium text-muted active:bg-highlight"
+                class="relative flex h-9 items-center gap-1.5 rounded-full border border-line px-3 text-sm font-medium text-muted after:absolute after:inset-x-0 after:-inset-y-1 after:content-[''] active:bg-highlight"
                 @click="close"
               >
                 {{ t(child.title) }}

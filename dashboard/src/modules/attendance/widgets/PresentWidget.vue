@@ -12,6 +12,7 @@ import { RouterLink } from "vue-router";
 import type { Range } from "@/api/types";
 import ErrorState from "@/components/ErrorState.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
+import { useFormat } from "@/lib/useFormat";
 
 import { useBoard, useSummary } from "../api";
 import { STATE_COLORS } from "../lib";
@@ -20,6 +21,7 @@ import type { BoardState } from "../types";
 const props = defineProps<{ companyId: number; range?: Range; compare?: Range | null }>();
 
 const { t } = useI18n();
+const fmt = useFormat();
 const board = useBoard({ date: null, branch: [] });
 const trend = useSummary({ preset: "last_30" });
 
@@ -43,32 +45,33 @@ const breakdown = computed(() => {
 </script>
 
 <template>
-  <ErrorState v-if="board.isError.value" compact :error="board.error.value" :retry="() => board.refetch()" class="ui-card h-full" />
   <RouterLink
-    v-else
     :to="`/c/${props.companyId}/attendance`"
-    class="ui-card group flex h-full min-w-0 flex-col gap-3 p-4 transition-colors hover:border-line-strong"
+    class="ui-card group flex h-full min-w-0 flex-col p-4 transition-colors @container hover:border-line-strong"
     :aria-label="t('attendance.kpi.presentNow')"
   >
-    <div class="flex items-center gap-2 text-sm text-muted">
-      <Users :size="15" class="text-subtle" aria-hidden="true" />
-      <span class="font-medium">{{ t("attendance.kpi.presentNow") }}</span>
-      <span class="flex-1" />
-      <ArrowUpRight :size="14" class="text-subtle opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true" />
+    <!-- The same header and number as every KPI tile (KpiCard), so a row of tiles lines up. -->
+    <div class="flex items-start gap-2">
+      <Users :size="15" class="mt-px shrink-0 text-subtle" aria-hidden="true" />
+      <span class="kpi-label" :title="t('attendance.kpi.presentNow')">{{ t("attendance.kpi.presentNow") }}</span>
+      <ArrowUpRight :size="15" class="mt-px shrink-0 text-subtle opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true" />
     </div>
-    <div v-if="board.isPending.value" class="flex flex-col gap-2">
-      <SkeletonBlock width="40%" height="28px" />
+    <ErrorState v-if="board.isError.value" class="mt-2.5" compact bare :error="board.error.value" :retry="() => board.refetch()" @click.stop.prevent />
+    <div v-else-if="board.isPending.value" class="flex flex-col gap-3">
+      <SkeletonBlock class="mt-2.5" width="40%" height="26px" />
       <SkeletonBlock width="70%" height="12px" />
     </div>
     <template v-else-if="totals">
-      <div class="flex items-baseline gap-1.5">
-        <span class="text-2xl font-semibold tabular-nums text-fg">{{ present }}</span>
-        <span class="text-base tabular-nums text-subtle">/ {{ totals.rostered }}</span>
-        <span v-if="share !== null" class="ml-auto rounded-full bg-success-soft px-2 py-0.5 text-xs font-semibold tabular-nums text-success">{{ share }}%</span>
+      <!-- The rostered count is said once, in the line below ("of 10 on shift"). -->
+      <div class="mt-1.5 flex items-baseline gap-1.5">
+        <span class="kpi-value">{{ present }}</span>
+        <!-- Read aloud "9, 90 %", not "990 %": the pill sits apart only to the eye. -->
+        <span v-if="share !== null" class="sr-only">, </span>
+        <span v-if="share !== null" class="ml-auto self-center rounded-full bg-success-soft px-2 py-0.5 text-xs font-semibold tabular-nums text-success">{{ fmt.percent(share) }}</span>
       </div>
-      <p class="truncate text-xs text-muted">{{ t("attendance.kpi.ofRostered", { n: totals.rostered }) }}</p>
+      <p class="mt-0.5 truncate text-xs text-muted">{{ t("attendance.kpi.ofRostered", { n: totals.rostered }) }}</p>
       <!-- Today's board in four lines: the same states as its columns. -->
-      <ul class="flex flex-col gap-1.5 border-t border-line pt-3">
+      <ul class="mt-3 flex flex-col gap-1.5 border-t border-line pt-3">
         <li v-for="item in breakdown" :key="item.state" class="flex items-center gap-2 text-xs">
           <span class="size-2 shrink-0 rounded-full" :style="{ background: STATE_COLORS[item.state] }" aria-hidden="true" />
           <span class="min-w-0 flex-1 truncate text-muted">{{ item.label }}</span>
@@ -76,7 +79,7 @@ const breakdown = computed(() => {
         </li>
       </ul>
     </template>
-    <div v-if="days.length" class="mt-auto flex flex-col gap-1.5">
+    <div v-if="days.length" class="mt-auto flex flex-col gap-1.5 pt-3">
       <span class="text-[11px] text-subtle">{{ t("attendance.widget.last14") }}</span>
       <div class="flex h-8 items-end gap-[3px]" aria-hidden="true">
         <span
@@ -84,7 +87,7 @@ const breakdown = computed(() => {
           :key="day.date"
           class="flex-1 rounded-t-[2px] bg-[color-mix(in_srgb,var(--c-chart-2)_70%,transparent)]"
           :style="{ height: `${Math.max(6, (day.present / peak) * 100)}%` }"
-          :title="`${day.date}: ${day.present}/${day.rostered}`"
+          :title="`${fmt.day(day.date, 'short')}: ${day.present}/${day.rostered}`"
         />
       </div>
     </div>

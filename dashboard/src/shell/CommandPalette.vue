@@ -46,7 +46,7 @@ import {
   DialogTitle,
   VisuallyHidden,
 } from "reka-ui";
-import { computed, ref, watch, type Component } from "vue";
+import { computed, onBeforeUnmount, ref, watch, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
@@ -66,20 +66,23 @@ import { allowed, isModuleVisible } from "@/core/access";
 import { hasExtension } from "@/core/extensions";
 import { modules, type Command, type CommandCtx } from "@/core/modules";
 import type { NavGroup } from "@/core/nav";
-import { allLanguages, loadAllLanguages } from "@/i18n";
+import { allLanguages, loadAllLanguages, loadModuleTitles } from "@/i18n";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useCompanyStore } from "@/stores/company";
 import { usePaletteStore } from "@/stores/palette";
 import { useUiStore } from "@/stores/ui";
 
+import { isTextKey, markPaletteMounted } from "./paletteLoader";
+import { byMatch, bySectionMatch, groupWeight, keepLocal, plain } from "./paletteRank";
 import { searchTypeKey } from "./searchTypes";
 
 const props = defineProps<{ groups: NavGroup[]; aiAvailable: boolean }>();
 const emit = defineEmits<{ openInbox: []; signOut: [] }>();
 
 const { t, te, locale } = useI18n();
-// Titles match in any of the three languages, so the other two shell dictionaries load now.
-void loadAllLanguages().catch(() => undefined);
+// Titles match in any of the three languages: the other two shell dictionaries and every module's
+// titles (one small chunk, not their whole dictionaries) load now.
+void Promise.all([loadAllLanguages(), loadModuleTitles()]).catch(() => undefined);
 const { isPhone } = useBreakpoints();
 const route = useRoute();
 const router = useRouter();
@@ -112,12 +115,38 @@ const query = ref("");
 const debounced = refDebounced(query, 150);
 const trimmed = computed(() => query.value.trim());
 
+/**
+ * Keys typed between ⌘K and the field taking focus (the dialog mounts and focuses a frame later)
+ * would be lost, and "CHL-8" would search "HL-8": while the palette is open and its field isn't
+ * focused yet, printable keys go into the query and focus moves to the field.
+ */
+function catchEarlyKeys(event: KeyboardEvent): void {
+  if (!palette.open || !isTextKey(event)) return;
+  const input = document.querySelector<HTMLInputElement>("[data-palette-input]");
+  if (input && document.activeElement === input) return;
+  event.preventDefault();
+  query.value += event.key;
+  input?.focus();
+}
+
 watch(
   () => palette.open,
   (open) => {
-    if (open) query.value = palette.initialQuery;
+    if (open) {
+      query.value = palette.initialQuery;
+      window.addEventListener("keydown", catchEarlyKeys, true);
+    } else {
+      window.removeEventListener("keydown", catchEarlyKeys, true);
+    }
   },
+  { immediate: true },
 );
+// Until now the shell buffered keys into `palette.initialQuery` (read just above); from here on they are ours.
+markPaletteMounted(true);
+onBeforeUnmount(() => {
+  markPaletteMounted(false);
+  window.removeEventListener("keydown", catchEarlyKeys, true);
+});
 
 const companyId = computed(() => company.currentId);
 const base = computed(() => (companyId.value === null ? "" : `/c/${companyId.value}`));
@@ -265,18 +294,22 @@ const companyItems = computed<Item[]>(() =>
 );
 
 const localItems = computed(() => [...jumpItems.value, ...moduleCommands.value, ...shellCommands.value, ...companyItems.value]);
+// Matched without Uzbek apostrophes or leading emoji (paletteRank `plain`): "tatil" finds "Ta’til".
 const fuse = computed(
   () =>
     new Fuse(localItems.value, {
       keys: [
-        { name: "title", weight: 2 },
-        { name: "keywords", weight: 1 },
+        { name: "title", weight: 2, getFn: (item: Item) => plain(item.title) },
+        { name: "keywords", weight: 1, getFn: (item: Item) => item.keywords.map(plain) },
       ],
       threshold: 0.3,
       ignoreLocation: true,
       minMatchCharLength: 1,
+      includeScore: true,
     }),
 );
+/** A fuzzy-only match (no word starts with the query) must be this close: "finanse" finds Finance, "Barakat" doesn't find "xarajat". */
+const LOOSE_SCORE = 0.2;
 
 const search = useQuery({
   queryKey: computed(() => keys.search(companyId.value ?? 0, debounced.value.trim())),
@@ -322,22 +355,6 @@ const typeLabel = (type: string) => {
   return module ? t(module.title) : t("shell.searchType.other");
 };
 
-/**
- * Fuse scores "fin" in "Briefings" like "fin" in "Finance"; people expect the word that starts with
- * what they typed first. Stable: Fuse's order is kept inside each bucket.
- */
-function rankByPrefix(items: Item[], q: string): Item[] {
-  const needle = q.toLocaleLowerCase();
-  const bucket = (item: Item) => {
-    const words = [item.title, ...item.keywords].map((w) => w.toLocaleLowerCase());
-    if (words.some((w) => w.startsWith(needle))) return 0;
-    if (words.some((w) => w.split(/[\s·:,()/-]+/).some((part) => part.startsWith(needle)))) return 1;
-    return 2;
-  };
-  return items.map((item, index) => ({ item, index, rank: bucket(item) })).sort((a, b) => a.rank - b.rank || a.index - b.index).map((x) => x.item);
-}
-
-
 interface SectionView {
   id: string;
   label: string;
@@ -354,18 +371,28 @@ const sections = computed<SectionView[]>(() => {
     if (companyItems.value.length) out.push({ id: "companies", label: t("shell.palette.companies"), items: companyItems.value.slice(0, 4) });
     return out.filter((s) => s.items.length);
   }
-  const matched = rankByPrefix(fuse.value.search(q).map((r) => r.item), q);
+  const found = fuse.value.search(plain(q)).filter((r) => keepLocal(r.item, q, r.score ?? 0, LOOSE_SCORE));
+  const matched = byMatch(
+    found.map((r) => r.item),
+    q,
+  );
   const jump = matched.filter((i) => i.section === "jump").slice(0, 6);
   const actions = matched.filter((i) => i.section === "actions").slice(0, 5);
   const companies = matched.filter((i) => i.section === "companies").slice(0, 4);
-  if (jump.length) out.push({ id: "jump", label: t("shell.palette.jump"), items: jump });
   const byType = new Map<string, Item[]>();
   for (const item of resultItems.value) {
     const list = byType.get(item.hit!.type) ?? [];
     list.push(item);
     byType.set(item.hit!.type, list);
   }
-  for (const [type, items] of byType) out.push({ id: `results:${type}`, label: typeLabel(type), items });
+  // Pages and record groups in one order, the best answer first: "Chil" leads with the branch
+  // Chilonzor, "CHL-17" with the shifts before the payments that name them, "Settings" with the page.
+  const ranked: Array<SectionView & { weight: number }> = [];
+  if (jump.length) ranked.push({ id: "jump", label: t("shell.palette.jump"), items: jump, weight: -1 });
+  for (const [type, items] of byType) {
+    ranked.push({ id: `results:${type}`, label: typeLabel(type), items: byMatch(items, q), weight: groupWeight(searchTypeKey(type, (candidate) => te(candidate))) });
+  }
+  out.push(...bySectionMatch(ranked, q));
   if (actions.length) out.push({ id: "actions", label: t("shell.palette.actions"), items: actions });
   if (companies.length) out.push({ id: "companies", label: t("shell.palette.companies"), items: companies });
   if (props.aiAvailable) {
@@ -421,6 +448,7 @@ function onOpenChange(open: boolean): void {
               <ComboboxInput
                 v-model="query"
                 auto-focus
+                data-palette-input
                 class="h-full min-w-0 flex-1 bg-transparent text-md text-fg outline-none placeholder:text-subtle focus-visible:outline-none"
                 :placeholder="t('shell.palette.placeholder')"
               />

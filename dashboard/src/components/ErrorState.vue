@@ -19,8 +19,10 @@ const props = withDefaults(
     retry?: () => unknown;
     retrying?: boolean;
     compact?: boolean;
+    /** Compact without its own frame, inside a card that already has one (a KPI tile). */
+    bare?: boolean;
   }>(),
-  { error: undefined, title: undefined, description: undefined, retry: undefined, retrying: false, compact: false },
+  { error: undefined, title: undefined, description: undefined, retry: undefined, retrying: false, compact: false, bare: false },
 );
 
 const { t } = useI18n();
@@ -47,10 +49,11 @@ const message = computed(() => {
   <div
     v-if="compact"
     role="alert"
-    class="flex items-center gap-3 rounded-card border border-line bg-surface px-3 py-2.5 text-sm"
+    :class="['flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm', !bare && 'rounded-card border border-line bg-surface px-3 py-2.5']"
   >
-    <component :is="icon" :size="16" class="text-danger" aria-hidden="true" />
-    <span class="line-clamp-2 min-w-0 flex-1 text-muted">{{ title ?? message }}</span>
+    <component :is="icon" :size="16" class="shrink-0 text-danger" aria-hidden="true" />
+    <!-- Wraps rather than cuts: in a narrow tile the button takes the next line. -->
+    <span class="min-w-[8rem] flex-1 text-muted">{{ title ?? message }}</span>
     <UiButton v-if="retry" size="sm" variant="ghost" :loading="retrying" @click="retry()">{{ t("common.retry") }}</UiButton>
   </div>
   <div v-else role="alert" class="flex flex-col items-center gap-3 px-6 py-12 text-center">

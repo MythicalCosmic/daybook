@@ -4,6 +4,8 @@ import tailwindcss from "@tailwindcss/vite";
 import vue from "@vitejs/plugin-vue";
 import { defineConfig } from "vitest/config";
 
+import { moduleTitles } from "./scripts/moduleTitles.mjs";
+
 // Ports per package come from the environment (plan §2.4, §6.5): DEV_PORT for this server,
 // API_PORT for the Django it proxies to, STREAM_PORT for the stream service.
 const port = Number(process.env.DEV_PORT ?? 28174);
@@ -22,7 +24,8 @@ const isolated: Array<[name: string, test: RegExp]> = [
 ];
 
 export default defineConfig({
-  plugins: [vue(), tailwindcss()],
+  // moduleTitles: `virtual:module-titles`, every module's titles in all three languages for the palette.
+  plugins: [vue(), tailwindcss(), moduleTitles(fileURLToPath(new URL("./src/modules", import.meta.url)))],
   // Served by Django at /dashboard/ in production; the dev server mirrors that.
   base: "/dashboard/",
   resolve: {
@@ -58,6 +61,9 @@ export default defineConfig({
   build: {
     target: "es2022",
     sourcemap: false,
+    // Fonts are never inlined into the CSS: each loads only when its unicode-range is on screen
+    // (styles/fonts.css), and a base64 copy would ride in everyone's first load.
+    assetsInlineLimit: (file) => (/\.woff2?$/.test(file) ? false : undefined),
     rolldownOptions: {
       output: {
         codeSplitting: {

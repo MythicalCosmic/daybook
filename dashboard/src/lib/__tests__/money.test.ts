@@ -31,12 +31,12 @@ describe("formatMoney", () => {
   it("formats UZS per language (plan §6.3)", () => {
     expect(formatMoney("1250000.00", "UZS", "uz")).toBe(`1${S}250${S}000${S}so‘m`);
     expect(formatMoney("1250000.00", "UZS", "ru")).toBe(`1${S}250${S}000${S}сум`);
-    expect(formatMoney("1250000.00", "UZS", "en")).toBe(`UZS${S}1,250,000`);
+    expect(formatMoney("1250000.00", "UZS", "en")).toBe(`1,250,000${S}UZS`);
   });
 
   it("shows tiyins only when there are some", () => {
     expect(formatMoney("1250000.50", "UZS", "uz")).toBe(`1${S}250${S}000,50${S}so‘m`);
-    expect(formatMoney("1250000.5", "UZS", "en")).toBe(`UZS${S}1,250,000.50`);
+    expect(formatMoney("1250000.5", "UZS", "en")).toBe(`1,250,000.50${S}UZS`);
   });
 
   it("always shows cents for USD", () => {
@@ -48,8 +48,8 @@ describe("formatMoney", () => {
   it("uses a real minus sign and optional plus", () => {
     expect(formatMoney("-15000", "UZS", "uz")).toBe(`${M}15${S}000${S}so‘m`);
     expect(formatMoney("-12.5", "USD", "en")).toBe(`${M}$12.50`);
-    expect(formatMoney("300000", "UZS", "en", { sign: "always" })).toBe(`+UZS${S}300,000`);
-    expect(formatMoney("0", "UZS", "en", { sign: "always" })).toBe(`UZS${S}0`);
+    expect(formatMoney("300000", "UZS", "en", { sign: "always" })).toBe(`+300,000${S}UZS`);
+    expect(formatMoney("0", "UZS", "en", { sign: "always" })).toBe(`0${S}UZS`);
   });
 
   it("can print just the number", () => {
@@ -59,8 +59,8 @@ describe("formatMoney", () => {
   it("formats compact amounts for small tiles", () => {
     expect(formatMoney("12500000", "UZS", "uz", { compact: true })).toBe(`12,5${S}mln${S}so‘m`);
     expect(formatMoney("12500000", "UZS", "ru", { compact: true })).toBe(`12,5${S}млн${S}сум`);
-    expect(formatMoney("12500000", "UZS", "en", { compact: true })).toBe(`UZS${S}12.5M`);
-    expect(formatMoney("-86420000", "UZS", "en", { compact: true })).toBe(`${M}UZS${S}86.4M`);
+    expect(formatMoney("12500000", "UZS", "en", { compact: true })).toBe(`12.5M${S}UZS`);
+    expect(formatMoney("-86420000", "UZS", "en", { compact: true })).toBe(`${M}86.4M${S}UZS`);
   });
 
   it("shows a dash for missing values", () => {

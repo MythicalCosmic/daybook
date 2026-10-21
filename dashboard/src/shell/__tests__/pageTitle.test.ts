@@ -3,7 +3,6 @@ import "@/core/modules";
 
 import { flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
-import { TooltipProvider } from "reka-ui";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, h, ref } from "vue";
 import { createMemoryHistory, createRouter, RouterView } from "vue-router";
@@ -40,10 +39,7 @@ async function shell(path: string) {
   });
   await router.push(path);
   const Host = defineComponent({
-    setup: () => () =>
-      h(TooltipProvider, null, {
-        default: () => [h(TopBar, { phone: false, companyless: false, aiAvailable: false, inboxCount: 0, inboxCritical: false }), h(RouterView)],
-      }),
+    setup: () => () => [h(TopBar, { phone: false, companyless: false, aiAvailable: false, inboxCount: 0, inboxCritical: false }), h(RouterView)],
   });
   const wrapper = mount(Host, { global: { plugins: [router, i18n] }, attachTo: document.body });
   await flushPromises();

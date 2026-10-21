@@ -1,5 +1,6 @@
 /**
- * Money display (plan §6.3): "1 250 000 so‘m" · "1 250 000 сум" · "UZS 1,250,000", compact
+ * Money display (plan §6.3): "1 250 000 so‘m" · "1 250 000 сум" · "1,250,000 UZS" (the amount first in
+ * every language, as in the mini app; dollars stay "$1,250.00" in English), compact
  * "12,5 mln" on small tiles, "≈ $98" hints. Amounts arrive as decimal strings and are formatted with
  * exact integer arithmetic (BigInt cents); nothing here ever goes through a float.
  * For client-side sums use lib/decimal.ts.
@@ -132,7 +133,7 @@ export function formatMoney(value: Money | number | null | undefined, currency: 
   if (options.currencyDisplay === "none") return sign + unsigned;
   const label = currencyLabel(currency, lang);
   if (currency === "USD") return lang === "en" ? `${sign}$${unsigned}` : `${sign}${unsigned}${NBSP}$`;
-  return lang === "en" ? `${sign}${label}${NBSP}${unsigned}` : `${sign}${unsigned}${NBSP}${label}`;
+  return `${sign}${unsigned}${NBSP}${label}`;
 }
 
 /** "≈ $98" / "≈ 1,2 mln so‘m": a rounded hint for an amount already converted by the caller. */

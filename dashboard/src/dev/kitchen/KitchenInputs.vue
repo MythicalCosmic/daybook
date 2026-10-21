@@ -76,6 +76,7 @@ const statusOptions = computed<SelectOption<string>[]>(() => [
   { value: "done", label: k("status.done"), color: "var(--c-success)" },
 ]);
 const categoryOptions = computed<SelectOption<string>[]>(() => [
+  { value: "medicines", label: "Medicine purchases", group: k("expenses"), description: "Invoices from distributors" },
   { value: "rent", label: "Rent", group: k("expenses") },
   { value: "supplies", label: "Supplies", group: k("expenses"), description: "Cleaning, packaging, stationery" },
   { value: "utilities", label: "Utilities", group: k("expenses") },
@@ -84,11 +85,11 @@ const categoryOptions = computed<SelectOption<string>[]>(() => [
 ]);
 
 const COUNTERPARTIES: SelectOption<number>[] = [
-  { value: 1, label: "Korzinka", description: "Supermarket chain" },
-  { value: 2, label: "Makro", description: "Wholesale" },
-  { value: 3, label: "Coca-Cola Ichimligi", description: "Drinks supplier" },
-  { value: 4, label: "Kapitalbank", description: "Bank" },
-  { value: 5, label: "Uzbektelecom", description: "Internet" },
+  { value: 1, label: "Ko‘kterak Farm Distribyutor", description: "Distributor · pays in 30 days" },
+  { value: 2, label: "Oqtosh Med Ta’minot", description: "Distributor · pays in 45 days" },
+  { value: 3, label: "Tolzor Farm Savdo", description: "Distributor · pays in 14 days" },
+  { value: 4, label: "Chinorbek Pharma Logistika", description: "Distributor · prepaid" },
+  { value: 5, label: "Elektr ta’minoti", description: "Utilities" },
 ];
 /** A pretend server search: 300 ms later, filtered. */
 const searchCounterparties = (query: string, signal: AbortSignal) =>
@@ -136,7 +137,7 @@ const aiModel = ref("standard");
           <TextArea v-model="note" :rows="2" />
         </FormField>
         <FormField :label="k('disabled')" disabled>
-          <TextInput model-value="RENO-14" mono />
+          <TextInput model-value="OPEN-14" mono />
         </FormField>
       </div>
     </KitchenSpecimen>

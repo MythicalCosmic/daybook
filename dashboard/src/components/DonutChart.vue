@@ -13,7 +13,7 @@ import type { Currency } from "@/api/types";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
-import { EChartAsync, toNumber, type ValueFormat } from "./chartCard";
+import { EChartAsync, shareText, toNumber, type ValueFormat } from "./chartCard";
 import { reducedMotion, tooltipHtml, valueText } from "./chartOptions";
 import { tooltipStyle, useChartTheme } from "./useChartTheme";
 
@@ -105,7 +105,7 @@ const option = computed(() => ({
         <span class="size-2.5 shrink-0 rounded-[3px]" :style="{ background: part.fill }" aria-hidden="true" />
         <span class="min-w-0 flex-1 truncate text-fg">{{ part.name }}</span>
         <span class="shrink-0 tabular-nums text-muted">{{ valueText(part.number, valueFormat, ctx) }}</span>
-        <span class="w-12 shrink-0 text-right font-semibold tabular-nums text-fg">{{ fmt.percent(share(part.number)) }}</span>
+        <span class="w-12 shrink-0 text-right font-semibold tabular-nums text-fg">{{ shareText(share(part.number), fmt.lang.value) }}</span>
       </li>
     </ul>
   </div>

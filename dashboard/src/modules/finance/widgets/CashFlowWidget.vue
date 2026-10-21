@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /** Overview widget "Cash flow, 30 days": money in and out of the accounts per day. */
+import { ArrowLeftRight } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { RouterLink } from "vue-router";
 
 import type { Range } from "@/api/types";
 import BarChart from "@/components/BarChart.vue";
@@ -29,6 +29,7 @@ const empty = computed(() => !!data.value && data.value.series.every((p) => p.in
 <template>
   <ChartCard
     class="h-full"
+    :icon="ArrowLeftRight"
     :title="t('finance.widget.cashFlow')"
     :value="data ? fmt.money(data.totals.net, undefined, { sign: 'always', compact: true }) : undefined"
     :subtitle="t('finance.widget.cashFlowSub')"
@@ -37,11 +38,9 @@ const empty = computed(() => !!data.value && data.value.series.every((p) => p.in
     :retry="() => flow.refetch()"
     :empty="empty"
     :empty-text="t('finance.overview.cashFlowEmpty')"
+    :to="`/c/${props.companyId}/finance/reports/cash-flow`"
     height="200px"
   >
-    <template #actions>
-      <RouterLink :to="`/c/${props.companyId}/finance/reports/cash-flow`" class="rounded-[6px] px-1.5 py-0.5 text-sm font-semibold text-muted hover:bg-highlight hover:text-fg">{{ t("common.viewAll") }}</RouterLink>
-    </template>
     <BarChart :categories="(data?.series ?? []).map((p) => p.date)" :series="series" value-format="money" x-format="day" height="200px" />
   </ChartCard>
 </template>

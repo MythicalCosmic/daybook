@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * A person in a table or list: avatar, name, a second line, optionally a link to their Person 360
- * page (`/c/:id/people/:memberId`) with the hover preview.
+ * page (`/c/:id/people/:memberId`) with the hover preview. A name or second line cut short shows
+ * whole on hover (the preview card shows it when there is one).
  *
  *   <PersonCell :person="row.member" :subtitle="row.position" link />
  */
@@ -11,6 +12,7 @@ import { RouterLink } from "vue-router";
 import { useCompanyStore } from "@/stores/company";
 
 import HoverCard, { type PersonPreview } from "./HoverCard.vue";
+import { vTruncateTitle } from "./truncateTitle";
 import UserAvatar, { type AvatarStatus } from "./UserAvatar.vue";
 
 const props = withDefaults(
@@ -59,12 +61,13 @@ function onNameClick(event: MouseEvent): void {
       <component
         :is="to ? RouterLink : 'span'"
         v-else
+        v-truncate-title
         :to="to"
         :class="['block truncate font-medium text-fg', size === 'sm' ? 'text-sm' : 'text-base', to && 'hover:text-primary hover:underline hover:underline-offset-2']"
         @click="onNameClick"
         >{{ person.name }}</component
       >
-      <span v-if="subtitle" class="mt-0.5 block truncate text-xs text-muted">{{ subtitle }}</span>
+      <span v-if="subtitle" v-truncate-title class="mt-0.5 block truncate text-xs text-muted">{{ subtitle }}</span>
     </span>
   </span>
 </template>

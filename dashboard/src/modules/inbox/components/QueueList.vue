@@ -4,7 +4,7 @@
  * that need a reason ask for it first; a decided item leaves at once (and returns if the server
  * refuses). J/K move between items, Enter opens the record.
  */
-import { ArrowUpRight, ListFilter } from "@lucide/vue";
+import { ArrowUpRight, Inbox, ListFilter } from "@lucide/vue";
 import { computed, nextTick, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, useRouter } from "vue-router";
@@ -99,7 +99,7 @@ async function pickKind(next: string): Promise<void> {
 </script>
 
 <template>
-  <div class="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
+  <div class="grid gap-6 lg:grid-cols-[236px_minmax(0,1fr)]">
     <!-- Kinds -->
     <nav :aria-label="t('inbox.kinds')" class="min-w-0">
       <p class="mb-2 hidden items-center gap-1.5 px-2 text-xs font-semibold uppercase tracking-[0.05em] text-subtle lg:flex"><ListFilter :size="13" />{{ t("inbox.kinds") }}</p>
@@ -110,6 +110,7 @@ async function pickKind(next: string): Promise<void> {
           :class="['flex shrink-0 items-center gap-2 rounded-[8px] px-2.5 py-1.5 text-left text-sm font-medium transition-colors', !kind ? 'bg-surface text-fg shadow-raised lg:bg-accent-soft lg:text-accent-fg lg:shadow-none' : 'text-muted hover:bg-highlight hover:text-fg']"
           @click="pickKind('')"
         >
+          <Inbox :size="14" class="shrink-0 opacity-70" aria-hidden="true" />
           <span class="min-w-0 flex-1 truncate">{{ t("inbox.allKinds") }}</span>
           <UiBadge :count="all.data.value?.total ?? 0" :tone="!kind ? 'primary' : 'neutral'" />
         </button>
@@ -121,7 +122,8 @@ async function pickKind(next: string): Promise<void> {
           :class="['flex shrink-0 items-center gap-2 rounded-[8px] px-2.5 py-1.5 text-left text-sm font-medium transition-colors', kind === entry.kind ? 'bg-surface text-fg shadow-raised lg:bg-accent-soft lg:text-accent-fg lg:shadow-none' : 'text-muted hover:bg-highlight hover:text-fg']"
           @click="pickKind(entry.kind)"
         >
-          <span class="min-w-0 flex-1 truncate">{{ entry.label }}</span>
+          <component :is="iconForKind(entry.kind)" :size="14" class="shrink-0 opacity-70" aria-hidden="true" />
+          <span class="min-w-0 flex-1 truncate" :title="entry.label">{{ entry.label }}</span>
           <UiBadge :count="entry.count" :tone="kind === entry.kind ? 'primary' : 'neutral'" />
         </button>
       </div>

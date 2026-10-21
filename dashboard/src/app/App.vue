@@ -1,6 +1,5 @@
 <script setup lang="ts">
-/** The root: tooltips provider, the routed page, toasts and `useConfirm()` dialogs. */
-import { TooltipProvider } from "reka-ui";
+/** The root: the routed page, toasts and `useConfirm()` dialogs. (Tooltips need no provider: UiTooltip.) */
 import { defineAsyncComponent, ref, watch } from "vue";
 import { RouterView } from "vue-router";
 
@@ -14,9 +13,7 @@ watch(confirmQueue, (queue) => queue.length && (confirmMounted.value = true));
 </script>
 
 <template>
-  <TooltipProvider :delay-duration="450" :skip-delay-duration="250">
-    <RouterView />
-    <ToastHost />
-    <ConfirmHost v-if="confirmMounted" />
-  </TooltipProvider>
+  <RouterView />
+  <ToastHost />
+  <ConfirmHost v-if="confirmMounted" />
 </template>

@@ -6,7 +6,7 @@
  * registered a renderer, by the default row otherwise.
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
-import { ArrowUpRight, BellRing, CheckCheck, CircleAlert, Info, TriangleAlert } from "@lucide/vue";
+import { ArrowUpRight, BellRing, CheckCheck, CircleAlert, Info, TriangleAlert, X } from "@lucide/vue";
 import { computed, ref, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, useRoute, useRouter } from "vue-router";
@@ -16,6 +16,7 @@ import { shellApi, withoutQueueItem } from "@/api/shell";
 import type { Notification, QueueAction, QueueItem, QueueView, Severity } from "@/api/types";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
+import IconButton from "@/components/IconButton.vue";
 import { iconForKind } from "@/components/kindIcons";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UiBadge from "@/components/UiBadge.vue";
@@ -25,6 +26,7 @@ import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { isModuleVisible } from "@/core/access";
 import { modules } from "@/core/modules";
+import { PULSE_INBOX_UNREAD, usePulseCount } from "@/core/pulse";
 import { companyUrl as linkInCompany } from "@/lib/links";
 import { applyQueryPatch, closeQueryKey } from "@/lib/useRouteState";
 import { useDelayedPending } from "@/lib/useDelayedPending";
@@ -174,6 +176,9 @@ const severityTone: Record<Severity, string> = {
 
 const inboxPage = computed(() => router.resolve(`/c/${companyId.value}/inbox`).name !== "company-not-found");
 const unreadCount = computed(() => (notesFilter.value === "unread" ? (notes.data.value?.count ?? 0) : 0));
+// The tab says how many are unread before its list has loaded: the pulse's count, as the bell's.
+const unreadPulse = usePulseCount(PULSE_INBOX_UNREAD);
+const unreadBadge = computed(() => (notes.data.value && notesFilter.value === "unread" ? unreadCount.value : unreadPulse.value));
 </script>
 
 <template>
@@ -196,6 +201,8 @@ const unreadCount = computed(() => (notesFilter.value === "unread" ? (notes.data
             @click="markRead.mutate('all')"
             >{{ t("shell.inbox.markAllRead") }}</UiButton
           >
+          <!-- Like every drawer's header (UiDrawer): a way out besides Esc and the backdrop. -->
+          <IconButton :icon="X" :label="t('shell.overlay.close')" size="sm" class="-mr-1.5" data-inbox-close @click="close" />
         </div>
         <div class="mt-2 flex gap-1" role="tablist">
           <button
@@ -212,7 +219,7 @@ const unreadCount = computed(() => (notesFilter.value === "unread" ? (notes.data
           >
             {{ item === "needs" ? t("shell.inbox.needsYou") : t("shell.inbox.notifications") }}
             <UiBadge v-if="item === 'needs' && queue.data.value?.total" :count="queue.data.value.total" :tone="tab === item ? 'primary' : 'neutral'" />
-            <UiBadge v-if="item === 'notifications' && unreadCount" :count="unreadCount" :tone="tab === item ? 'primary' : 'neutral'" />
+            <UiBadge v-if="item === 'notifications' && unreadBadge" :count="unreadBadge" :tone="tab === item ? 'primary' : 'neutral'" />
             <span v-if="tab === item" class="absolute inset-x-1 -bottom-px h-[2px] rounded-full bg-primary" />
           </button>
         </div>

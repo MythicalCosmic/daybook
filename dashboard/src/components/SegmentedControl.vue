@@ -6,9 +6,11 @@
  *   <SegmentedControl v-model="view" :options="[{ value: 'table', label: t('tasks.table'), icon: Rows3 }, …]" />
  */
 import { RadioGroupItem, RadioGroupRoot } from "reka-ui";
-import { nextTick, onMounted, ref, watch, type Component } from "vue";
+import { computed, ref, type Component } from "vue";
 
 import { formatCount } from "@/lib/format";
+
+import { useSlidingIndicator } from "./useSlidingIndicator";
 
 export interface SegmentOption<T> {
   value: T;
@@ -33,18 +35,16 @@ const props = withDefaults(
   { size: "md", block: false, disabled: false, ariaLabel: undefined },
 );
 
+// The thumb follows the chosen segment, also when a count arrives and widens a segment before it.
+// The group never runs past its column (three long options on a phone): it scrolls sideways
+// inside itself instead, keeping the chosen option in view.
 const root = ref<HTMLElement | null>(null);
-const thumb = ref<{ left: number; width: number } | null>(null);
-
-function measure(): void {
-  const el = root.value?.querySelector<HTMLElement>('[data-state="checked"]');
-  thumb.value = el ? { left: el.offsetLeft, width: el.offsetWidth } : null;
-}
-
-watch([model, () => props.options], () => nextTick(measure), { deep: true });
-onMounted(() => {
-  measure();
-  void document.fonts?.ready.then(measure);
+const box = computed(() => root.value?.parentElement ?? null);
+const { indicator: thumb } = useSlidingIndicator(box, {
+  active: () => '[data-state="checked"]',
+  items: "[data-state]",
+  reveal: true,
+  deps: [model, () => props.options.map((option) => `${String(option.value)}:${option.label}:${option.count ?? ""}`).join("|")],
 });
 
 function onUpdate(value: unknown): void {
@@ -59,7 +59,7 @@ function onUpdate(value: unknown): void {
     :aria-label="ariaLabel"
     orientation="horizontal"
     loop
-    :class="['relative isolate inline-flex shrink-0 rounded-[9px] bg-surface-2 p-0.5 dark:bg-surface-3/60', block && 'flex w-full']"
+    :class="['no-scrollbar relative isolate inline-flex max-w-full shrink-0 overflow-x-auto rounded-[9px] bg-surface-2 p-0.5 dark:bg-surface-3/60', block && 'flex w-full']"
     @update:model-value="onUpdate"
   >
     <div ref="root" class="contents">

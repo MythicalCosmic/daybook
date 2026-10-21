@@ -1,5 +1,6 @@
 <script setup lang="ts">
-/** Overview chart `tasks.chart.on_time_trend`: on-time % and finished tasks over 14 days. */
+/** Overview chart `tasks.chart.on_time_trend`: on-time % and finished one-off tasks over 14 days. */
+import { Timer } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -11,12 +12,14 @@ import { useFormat } from "@/lib/useFormat";
 
 import { useSummary } from "../api";
 
-defineProps<{ companyId: number; range?: Range; compare?: Range | null }>();
+const props = defineProps<{ companyId: number; range?: Range; compare?: Range | null }>();
 const { t } = useI18n();
 const fmt = useFormat();
-const query = useSummary();
+const query = useSummary({ routines: "without" });
 const series = computed(() => query.data.value?.series ?? []);
 const categories = computed(() => series.value.map((point) => point.date));
+// Today counts only what was due so far: its point is "so far", dashed, not a fall.
+const partial = computed(() => (categories.value.at(-1) === query.data.value?.today ? { label: t("common.chart.soFar") } : null));
 // The headline covers the same 14 days as the line (the KPI tile shows the last 7).
 const value = computed(() => {
   const due = series.value.reduce((sum, point) => sum + point.total, 0);
@@ -38,8 +41,10 @@ const csv = computed(() => ({
 <template>
   <ChartCard
     class="h-full"
+    :icon="Timer"
     :title="t('tasks.chart.onTimeTrend')"
-    :subtitle="t('tasks.chart.last14')"
+    :to="`/c/${props.companyId}/reports/team`"
+    :subtitle="`${t('tasks.kpi.reviewHintOneOff')} · ${t('tasks.chart.last14').toLocaleLowerCase()}`"
     :value="value"
     :loading="query.isPending.value"
     :error="query.error.value"
@@ -55,6 +60,7 @@ const csv = computed(() => ({
       x-format="day"
       height="220px"
       :y-max="100"
+      :partial="partial"
       smooth
     />
   </ChartCard>

@@ -116,6 +116,21 @@ describe("dispatch", () => {
     expect(registeredHotkeys).toHaveLength(0);
   });
 
+  it("lets a page's own shortcut beat a shell-wide one registered after it", () => {
+    // The Tasks page mounts first; the top bar's quick add (N for an expense) loads a moment later.
+    const newTask = vi.fn();
+    const quickAdd = vi.fn();
+    const removePage = registerHotkey("n", newTask, { description: "tasks.keys.new", group: "page" });
+    registerHotkey("n", quickAdd, { description: "finance.quick.hotkey", group: "general" });
+    press("n");
+    expect(newTask).toHaveBeenCalledTimes(1);
+    expect(quickAdd).not.toHaveBeenCalled();
+    // On a page without its own N, the quick add answers.
+    removePage();
+    press("n");
+    expect(quickAdd).toHaveBeenCalledTimes(1);
+  });
+
   it("respects enabled() and prevents the browser default", () => {
     let on = false;
     const toggle = vi.fn();

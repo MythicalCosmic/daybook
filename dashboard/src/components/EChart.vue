@@ -1,3 +1,22 @@
+<script lang="ts">
+/**
+ * Whether this page can draw on a canvas at all, asked once. Without one (jsdom in the tests, a
+ * browser with canvas blocked) a chart keeps its box and label and draws nothing, rather than
+ * ECharts failing a tick later ("clearRect" of null) and taking whatever renders next down with it.
+ */
+let canvas: boolean | undefined;
+function canDraw(): boolean {
+  if (canvas === undefined) {
+    try {
+      canvas = typeof document !== "undefined" && !!document.createElement("canvas").getContext("2d");
+    } catch {
+      canvas = false;
+    }
+  }
+  return canvas;
+}
+</script>
+
 <script setup lang="ts">
 /**
  * The one place ECharts is loaded (plan §6.5: vue-echarts over a tree-shaken `echarts/core`, only
@@ -17,6 +36,8 @@ use([LineChart, BarChart, PieChart, HeatmapChart, GridComponent, TooltipComponen
 
 type Option = ComposeOption<never>;
 
+const drawable = canDraw();
+
 defineProps<{ option: Record<string, unknown>; height: string; label?: string }>();
 
 const chart = ref<InstanceType<typeof VChart> | null>(null);
@@ -32,6 +53,6 @@ onBeforeUnmount(() => card?.register(null));
 
 <template>
   <div role="img" :aria-label="label" :style="{ height }">
-    <VChart ref="chart" :option="(option as Option)" autoresize :update-options="{ notMerge: true }" class="size-full" />
+    <VChart v-if="drawable" ref="chart" :option="(option as Option)" autoresize :update-options="{ notMerge: true }" class="size-full" />
   </div>
 </template>

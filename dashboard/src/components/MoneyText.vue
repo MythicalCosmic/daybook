@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * An amount, formatted for the language without floats (plan §6.3):
- *   <MoneyText value="1250000.00" currency="UZS" />  → "1 250 000 so‘m" / "1 250 000 сум" / "UZS 1,250,000"
+ *   <MoneyText value="1250000.00" currency="UZS" />  → "1 250 000 so‘m" / "1 250 000 сум" / "1,250,000 UZS"
  *   <MoneyText value="12500000" compact />           → "12,5 mln so‘m" (the full amount in the tooltip)
  *   <MoneyText value="1240.00" currency="USD" :approx="{ value: '15624000', currency: 'UZS' }" />  → "$1,240.00 ≈ 15,6 mln so‘m"
  * `colored` paints negatives red and (with `sign="always"`) positives green.

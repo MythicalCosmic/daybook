@@ -32,6 +32,8 @@ const props = withDefaults(
     horizontal?: boolean;
     normalize?: boolean;
     smooth?: boolean;
+    /** The last category is still in progress (today so far): dashed into a hollow point, "so far" in the tooltip. */
+    partial?: { label: string } | null;
   }>(),
   {
     compare: null,
@@ -49,6 +51,7 @@ const props = withDefaults(
     horizontal: false,
     normalize: false,
     smooth: false,
+    partial: null,
   },
 );
 
@@ -70,6 +73,7 @@ const option = computed(() =>
       target: props.target,
       yMax: props.yMax,
       integer: props.integer,
+      partial: props.partial,
     },
     { type: props.type, area: props.area, stacked: props.stacked, horizontal: props.horizontal, normalize: props.normalize, smooth: props.smooth },
     { lang: fmt.lang.value, currency: props.currency ?? company.currency },

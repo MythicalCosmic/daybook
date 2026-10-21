@@ -289,6 +289,7 @@
   "common.chart.empty": "No data for this period",
   "common.chart.compare": "Previous period",
   "common.chart.target": "Target",
+  "common.chart.soFar": "so far",
   "common.chart.other": "Other",
   "common.kpi.open": "Open the list",
 
@@ -316,7 +317,7 @@
   "shell.nav.showPages": "Show pages",
 
   "shell.tabs.today": "Today",
-  "shell.tabs.tasks": "Tasks",
+  "shell.tabs.work": "Work",
   "shell.tabs.people": "People",
   "shell.tabs.money": "Money",
   "shell.tabs.more": "More",
@@ -362,6 +363,7 @@
   "shell.company.role": "Your role: {role}",
   "shell.company.none": "No companies yet",
   "shell.company.noneBody": "Create your first company, or ask an owner to give you access to theirs.",
+  "shell.company.waitingElsewhere": "{n} waiting in your other companies",
 
   "shell.palette.title": "Command palette",
   "shell.palette.description": "Search pages, records and actions",
@@ -424,6 +426,11 @@
   "shell.forbidden.title": "This page isn’t open to you",
   "shell.forbidden.body": "Your role in {company} doesn’t include it. Ask the owner if you need access.",
   "shell.forbidden.home": "Go to the overview",
+  "shell.forbidden.offTitle": "{module} is off in {company}",
+  "shell.forbidden.offTitleAny": "This module is off in {company}",
+  "shell.forbidden.offBodyOwner": "Switch it on in Settings › Modules to use it here.",
+  "shell.forbidden.offBody": "The owner can switch it on in Settings › Modules.",
+  "shell.forbidden.openModules": "Open Settings › Modules",
 
   "shell.notFound.title": "Page not found",
   "shell.notFound.body": "The link may be old, or the page has moved.",

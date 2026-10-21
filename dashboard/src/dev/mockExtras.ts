@@ -10,20 +10,20 @@ const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000).
 
 export const PEOPLE = [
   { id: 11, full_name: "Dilnoza Karimova", photo_url: null, position: { id: 7, name: "Owner" }, home_branch: { id: 1, name: "Office" } },
-  { id: 12, full_name: "Bekzod Mirzayev", photo_url: null, position: { id: 2, name: "Shift lead" }, home_branch: { id: 1, name: "Chilonzor" } },
-  { id: 13, full_name: "Alisher Valiyev", photo_url: null, position: { id: 3, name: "Sales floor" }, home_branch: { id: 1, name: "Chilonzor" } },
-  { id: 14, full_name: "Madina Saidova", photo_url: null, position: { id: 1, name: "Cashier" }, home_branch: { id: 1, name: "Chilonzor" } },
-  { id: 15, full_name: "Jasur Ergashev", photo_url: null, position: { id: 4, name: "Warehouse" }, home_branch: { id: 3, name: "Sergeli" } },
-  { id: 16, full_name: "Nigora Tursunova", photo_url: null, position: { id: 5, name: "Delivery" }, home_branch: { id: 2, name: "Yunusobod" } },
-  { id: 31, full_name: "Aziz Karimov", photo_url: null, position: { id: 1, name: "Cashier" }, home_branch: { id: 2, name: "Yunusobod" } },
+  { id: 12, full_name: "Bekzod Mirzayev", photo_url: null, position: { id: 2, name: "Head of pharmacy" }, home_branch: { id: 1, name: "Chilonzor" } },
+  { id: 13, full_name: "Alisher Valiyev", photo_url: null, position: { id: 1, name: "Pharmacist" }, home_branch: { id: 1, name: "Chilonzor" } },
+  { id: 14, full_name: "Madina Saidova", photo_url: null, position: { id: 3, name: "Senior pharmacist" }, home_branch: { id: 1, name: "Chilonzor" } },
+  { id: 15, full_name: "Jasur Ergashev", photo_url: null, position: { id: 4, name: "Stock & receiving" }, home_branch: { id: 2, name: "Yunusobod" } },
+  { id: 16, full_name: "Nigora Tursunova", photo_url: null, position: { id: 1, name: "Pharmacist" }, home_branch: { id: 2, name: "Yunusobod" } },
+  { id: 31, full_name: "Aziz Karimov", photo_url: null, position: { id: 1, name: "Pharmacist" }, home_branch: { id: 1, name: "Chilonzor" } },
 ];
 
 export const POSITIONS = [
-  { id: 1, name: "Cashier", color: "#c67139" },
-  { id: 2, name: "Shift lead", color: "#4a6a8a" },
-  { id: 3, name: "Sales floor", color: "#d1a040" },
-  { id: 4, name: "Warehouse", color: "#8a5a7a" },
-  { id: 5, name: "Delivery", color: "#3f8a83" },
+  { id: 1, name: "Pharmacist", color: "#c67139" },
+  { id: 2, name: "Head of pharmacy", color: "#4a6a8a" },
+  { id: 3, name: "Senior pharmacist", color: "#d1a040" },
+  { id: 4, name: "Stock & receiving", color: "#8a5a7a" },
+  { id: 5, name: "Courier", color: "#3f8a83" },
 ];
 
 /** `GET audit/records/`: rows as apps.audit.owner_api sends them (`details.changes` is {field: [old, new]}). */
@@ -37,19 +37,19 @@ export function auditRecords(language: Language) {
     actor,
     target_type: "transaction",
     target_id: 7002,
-    target: "Korzinka · supplies",
+    target: "Oqtosh Med Ta’minot · invoice 118",
     details,
   });
   return [
     row(5, 8, { id: 11, name: "Dilnoza Karimova" }, "finance.transaction_changed", L("Changed a transaction", "Изменила операцию", "Operatsiyani o‘zgartirdi"), {
-      changes: { category: ["Other", "Supplies"], amount: ["400000.00", "450000.00"] },
+      changes: { category: ["Other", "Medicine purchases"], amount: ["18000000.00", "18400000.00"] },
     }),
     row(4, 60 * 3, { id: 12, name: "Bekzod Mirzayev" }, "finance.receipt_attached", L("Attached a receipt", "Приложил чек", "Chek biriktirdi"), {
-      file: "korzinka-14-10.jpg",
+      file: "nakladnoy-118.jpg",
     }),
     row(3, 60 * 27, { id: 12, name: "Bekzod Mirzayev" }, "finance.transaction_changed", L("Changed a transaction", "Изменил операцию", "Operatsiyani o‘zgartirdi"), {
-      changes: { counterparty: [null, "Korzinka"], card_number: ["•••", "•••"] },
-      reason: text(L("The shop was missing on the receipt", "На чеке не было магазина", "Chekda do‘kon nomi yo‘q edi")),
+      changes: { counterparty: [null, "Oqtosh Med Ta’minot"], card_number: ["•••", "•••"] },
+      reason: text(L("The distributor was missing on the invoice", "В накладной не был указан дистрибьютор", "Nakladnoyda distribyutor ko‘rsatilmagan edi")),
     }),
     row(2, 60 * 28, null, "finance.transaction_recorded", L("Recorded from the bot", "Записано из бота", "Botdan kiritildi"), {
       branch: "Chilonzor",
@@ -66,15 +66,15 @@ interface ExtraNotification extends Omit<Notification, "title" | "body" | "actio
 
 /** Older notifications so the inbox page has history to page through. */
 export const MORE_NOTIFICATIONS: ExtraNotification[] = [
-  ["tasks.overdue", "warning", 60 * 5, L("3 tasks are late at Sergeli", "3 задачи просрочены в Сергели", "Sergelida 3 ta vazifa kechikdi"), L("The oldest is 2 hours past due.", "Самая старая просрочена на 2 часа.", "Eng eskisi 2 soat kechikkan.")],
-  ["attendance.late", "info", 60 * 7, L("Aziz checked in 18 minutes late", "Азиз отметился с опозданием на 18 минут", "Aziz 18 daqiqa kechikib keldi"), L("Yunusobod · shift from 09:00", "Юнусабад · смена с 09:00", "Yunusobod · smena 09:00 dan")],
+  ["tasks.overdue", "warning", 60 * 5, L("3 tasks are late at Yunusobod", "3 задачи просрочены в Юнусабаде", "Yunusobodda 3 ta vazifa kechikdi"), L("The oldest is 2 hours past due.", "Самая старая просрочена на 2 часа.", "Eng eskisi 2 soat kechikkan.")],
+  ["attendance.late", "info", 60 * 7, L("Aziz checked in 18 minutes late", "Азиз отметился с опозданием на 18 минут", "Aziz 18 daqiqa kechikib keldi"), L("Chilonzor · shift from 08:00", "Чиланзар · смена с 08:00", "Chilonzor · smena 08:00 dan")],
   ["finance.budget", "warning", 60 * 9, L("Supplies budget is at 92%", "Бюджет на хозтовары израсходован на 92%", "Xo‘jalik byudjetining 92% sarflandi"), L("With 11 days left in October.", "До конца октября 11 дней.", "Oktabr tugashiga 11 kun qoldi.")],
   ["sales.target", "info", 60 * 20, L("Chilonzor passed 80% of the October target", "Чиланзар выполнил 80% плана октября", "Chilonzor oktabr rejasining 80% ini bajardi"), L("48,1 mln of 60 mln so‘m.", "48,1 млн из 60 млн сум.", "60 mln so‘mdan 48,1 mln.")],
   ["hr.contract_ending", "warning", 60 * 33, L("Jasur’s contract ends on 31 October", "Договор Жасура заканчивается 31 октября", "Jasurning shartnomasi 31-oktabrda tugaydi"), L("Keep or extend it before then.", "Продлите или завершите его до этого дня.", "Shu kungacha uzaytiring yoki yakunlang.")],
-  ["stock.low", "info", 60 * 40, L("6 products are running low", "6 товаров заканчиваются", "6 ta mahsulot tugab bormoqda"), L("Milk 1 l, sugar 1 kg, cups 250 ml and 3 more.", "Молоко 1 л, сахар 1 кг, стаканы 250 мл и ещё 3.", "Sut 1 l, shakar 1 kg, stakan 250 ml va yana 3 ta.")],
+  ["stock.low", "info", 60 * 40, L("6 medicines are running low", "6 препаратов заканчиваются", "6 ta dori tugab bormoqda"), L("Paracetamol 500 mg, Ibuprofen 200 mg, Loratadine 10 mg and 3 more.", "Парацетамол 500 мг, Ибупрофен 200 мг, Лоратадин 10 мг и ещё 3.", "Paratsetamol 500 mg, Ibuprofen 200 mg, Loratadin 10 mg va yana 3 ta.")],
   ["payroll.paid", "info", 60 * 50, L("September payroll is marked paid", "Зарплата за сентябрь выплачена", "Sentabr ish haqi to‘langan deb belgilandi"), L("23 people · 58 900 000 so‘m", "23 человека · 58 900 000 сум", "23 kishi · 58 900 000 so‘m")],
   ["lifecycle.resignation", "warning", 60 * 70, L("Nigora asked to resign", "Нигора подала заявление об уходе", "Nigora ishdan ketish arizasini berdi"), L("Wants her last day to be 15 November.", "Просит последний день 15 ноября.", "Oxirgi kuni 15-noyabr bo‘lishini so‘ramoqda.")],
-  ["projects.milestone", "info", 60 * 80, L("“Fit-out” milestone is done", "Этап «Ремонт» завершён", "“Ta’mirlash” bosqichi yakunlandi"), L("Chilonzor-2 opening · 64%", "Открытие Чиланзар-2 · 64%", "Chilonzor-2 ochilishi · 64%")],
+  ["projects.milestone", "info", 60 * 80, L("“Fit-out” milestone is done", "Этап «Ремонт» завершён", "«Ta’mirlash» bosqichi yakunlandi"), L("Sergeli pharmacy opening · 64%", "Открытие аптеки в Сергели · 64%", "Sergeli dorixonasi ochilishi · 64%")],
 ].map(([kind, severity, minutes, title, body], index) => ({
   id: 920 + index,
   kind: kind as string,

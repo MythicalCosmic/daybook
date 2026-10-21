@@ -42,3 +42,20 @@ export function canAccessRecords(records: readonly RouteRecordNormalized[], comp
 export function canAccessRoute(route: RouteLocationNormalizedLoaded, company: Company | null | undefined): boolean {
   return canAccessRecords(route.matched, company);
 }
+
+/**
+ * Why a route is closed when it is the company's switch, not the person's role: the module (or
+ * page) whose feature is off, so the page can say "Sales is off" rather than "your role doesn't
+ * include it". Null when a switch isn't the reason (or the route is open).
+ */
+export function switchedOff(records: readonly RouteRecordNormalized[], company: Company | null | undefined): { feature: CompanyFeature; module: DashboardModule | null } | null {
+  if (!company) return null;
+  for (const record of records) {
+    const meta = record.meta;
+    if (meta.public || meta.companyless) continue;
+    const module = findModule(meta.module) ?? null;
+    if (module?.feature && !hasFeature(company, module.feature)) return { feature: module.feature, module };
+    if (meta.feature && !hasFeature(company, meta.feature)) return { feature: meta.feature, module };
+  }
+  return null;
+}

@@ -289,6 +289,7 @@
   "common.chart.empty": "Нет данных за этот период",
   "common.chart.compare": "Прошлый период",
   "common.chart.target": "План",
+  "common.chart.soFar": "на данный момент",
   "common.chart.other": "Прочее",
   "common.kpi.open": "Открыть список",
 
@@ -316,7 +317,7 @@
   "shell.nav.showPages": "Показать страницы",
 
   "shell.tabs.today": "Сегодня",
-  "shell.tabs.tasks": "Задачи",
+  "shell.tabs.work": "Работа",
   "shell.tabs.people": "Люди",
   "shell.tabs.money": "Деньги",
   "shell.tabs.more": "Ещё",
@@ -362,6 +363,7 @@
   "shell.company.role": "Ваша роль: {role}",
   "shell.company.none": "Компаний пока нет",
   "shell.company.noneBody": "Создайте первую компанию или попросите владельца дать вам доступ к своей.",
+  "shell.company.waitingElsewhere": "В других ваших компаниях ждут: {n}",
 
   "shell.palette.title": "Командная панель",
   "shell.palette.description": "Поиск страниц, записей и действий",
@@ -424,6 +426,11 @@
   "shell.forbidden.title": "Эта страница вам недоступна",
   "shell.forbidden.body": "Ваша роль в «{company}» её не включает. Попросите владельца, если нужен доступ.",
   "shell.forbidden.home": "К обзору",
+  "shell.forbidden.offTitle": "Модуль «{module}» выключен в «{company}»",
+  "shell.forbidden.offTitleAny": "Этот модуль выключен в «{company}»",
+  "shell.forbidden.offBodyOwner": "Включите его в Настройках › Модули, чтобы пользоваться им здесь.",
+  "shell.forbidden.offBody": "Владелец может включить его в Настройках › Модули.",
+  "shell.forbidden.openModules": "Открыть Настройки › Модули",
 
   "shell.notFound.title": "Страница не найдена",
   "shell.notFound.body": "Ссылка устарела или страница переехала.",

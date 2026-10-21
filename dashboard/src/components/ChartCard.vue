@@ -9,9 +9,10 @@
  *     <LineChart … />
  *   </ChartCard>
  */
-import { BarChart3, Download, Ellipsis, Image as ImageIcon } from "@lucide/vue";
-import { computed, provide, ref } from "vue";
+import { ArrowRight, BarChart3, Download, Ellipsis, Image as ImageIcon } from "@lucide/vue";
+import { computed, provide, ref, type Component } from "vue";
 import { useI18n } from "vue-i18n";
+import { RouterLink, type RouteLocationRaw } from "vue-router";
 
 import { downloadFile, safeFilename, toCsv, type CsvColumn } from "@/lib/csv";
 import { useDelayedPending } from "@/lib/useDelayedPending";
@@ -22,6 +23,7 @@ import EmptyState from "./EmptyState.vue";
 import ErrorState from "./ErrorState.vue";
 import IconButton from "./IconButton.vue";
 import SkeletonBlock from "./SkeletonBlock.vue";
+import { vTruncateTitle } from "./truncateTitle";
 
 export interface ChartCsv<Row = Record<string, unknown>> {
   filename: string;
@@ -44,8 +46,27 @@ const props = withDefaults(
     /** Body height while loading or empty, to keep the layout still. */
     height?: string;
     flush?: boolean;
+    /** Before the title, as on the Overview's other cards (WidgetCard). */
+    icon?: Component;
+    /** The page behind the chart: "View all →" beside the menu. */
+    to?: RouteLocationRaw;
+    linkLabel?: string;
   }>(),
-  { subtitle: undefined, value: undefined, loading: false, error: undefined, retry: undefined, empty: false, emptyText: undefined, csv: null, height: "240px", flush: false },
+  {
+    subtitle: undefined,
+    value: undefined,
+    loading: false,
+    error: undefined,
+    retry: undefined,
+    empty: false,
+    emptyText: undefined,
+    csv: null,
+    height: "240px",
+    flush: false,
+    icon: undefined,
+    to: undefined,
+    linkLabel: undefined,
+  },
 );
 
 const { t } = useI18n();
@@ -87,15 +108,27 @@ const menu = computed<MenuEntry[]>(() => {
 
 <template>
   <section ref="root" class="ui-card flex min-w-0 flex-col" :aria-label="title" :aria-busy="loading || undefined">
-    <header class="flex flex-wrap items-start gap-x-3 gap-y-2 px-4 pb-2 pt-4 md:px-5">
+    <header :class="['@container flex flex-wrap items-start gap-x-3 gap-y-2 px-4 pb-2 pt-4', !icon && 'md:px-5']">
       <div class="min-w-[min(100%,180px)] flex-1">
-        <h3 class="truncate text-sm font-semibold text-fg">{{ title }}</h3>
+        <h3 class="flex min-h-5 min-w-0 items-center gap-2 text-sm font-semibold text-fg">
+          <component :is="icon" v-if="icon" :size="16" class="shrink-0 text-subtle" aria-hidden="true" />
+          <span v-truncate-title class="truncate">{{ title }}</span>
+        </h3>
         <p v-if="value && !loading" class="mt-1 truncate text-xl font-semibold tracking-[-0.015em] tabular-nums text-fg">{{ value }}</p>
         <SkeletonBlock v-else-if="value !== undefined && skeleton" class="mt-1.5" width="140px" height="24px" />
-        <p v-if="subtitle" class="mt-0.5 truncate text-xs text-muted">{{ subtitle }}</p>
+        <p v-if="subtitle" v-truncate-title class="mt-0.5 truncate text-xs text-muted">{{ subtitle }}</p>
       </div>
-      <div class="flex min-w-0 max-w-full items-center gap-1">
+      <div class="-mt-0.5 flex min-w-0 max-w-full items-center gap-1">
         <slot name="actions" />
+        <RouterLink
+          v-if="to"
+          :to="to"
+          :title="linkLabel ?? t('common.viewAll')"
+          class="group/link relative inline-flex shrink-0 items-center gap-1 rounded-[6px] px-1.5 py-0.5 text-sm font-semibold text-muted transition-colors after:absolute after:-inset-x-1 after:-inset-y-2.5 after:content-[''] hover:bg-highlight hover:text-fg"
+        >
+          <!-- As on every Overview card (WidgetCard): a narrow card shows the arrow, and says the label to screen readers only. -->
+          <span class="@max-[24rem]:sr-only">{{ linkLabel ?? t("common.viewAll") }}</span><ArrowRight :size="14" class="transition-transform duration-150 group-hover/link:translate-x-0.5" aria-hidden="true" />
+        </RouterLink>
         <DropdownMenu v-if="exportable" :items="menu" width="190px">
           <template #trigger>
             <IconButton :icon="Ellipsis" :label="t('common.chart.actions')" size="sm" />

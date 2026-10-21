@@ -141,7 +141,8 @@ function prefetch(path: string): void {
                     <component :is="module.icon" :size="17" class="nav-icon" aria-hidden="true" />
                     <span class="min-w-0 flex-1 truncate">{{ t(module.title) }}</span>
                     <UiBadge v-if="module.badge && !isOpen(module)" :count="module.badge" :tone="containsRoute(module) ? 'primary' : 'neutral'" />
-                    <span v-if="module.children.length" class="w-5 shrink-0" aria-hidden="true" />
+                    <!-- Every row keeps the chevron's column, so all counts line up (children included). -->
+                    <span class="w-5 shrink-0" aria-hidden="true" />
                   </RouterLink>
                   <button
                     v-if="module.children.length"
@@ -246,7 +247,8 @@ function prefetch(path: string): void {
   align-items: center;
   gap: 8px;
   height: 30px;
-  padding: 0 8px;
+  /* The right padding matches a module row (8 px padding + 10 px gap + the 20 px chevron column), so counts align. */
+  padding: 0 38px 0 8px;
   border-radius: 7px;
   font-size: var(--text-sm);
   font-weight: 500;

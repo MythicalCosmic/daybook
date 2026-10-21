@@ -7,17 +7,26 @@ import { createMemoryHistory, createRouter, type Router } from "vue-router";
 import { ApiError } from "@/api/http";
 import AvatarStack from "@/components/AvatarStack.vue";
 import CalendarWeek from "@/components/CalendarWeek.vue";
+import ChartCard from "@/components/ChartCard.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import KbdKey from "@/components/KbdKey.vue";
+import KpiCard from "@/components/KpiCard.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import PersonCell from "@/components/PersonCell.vue";
+import SavedViewsTabs from "@/components/SavedViewsTabs.vue";
+import SegmentedControl from "@/components/SegmentedControl.vue";
+import SparkLine from "@/components/SparkLine.vue";
 import TextInput from "@/components/TextInput.vue";
+import TreeList from "@/components/TreeList.vue";
+import { syncTruncateTitle } from "@/components/truncateTitle";
 import UiBadge from "@/components/UiBadge.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import UiDrawer from "@/components/UiDrawer.vue";
+import { fadeMask, moreToTheRight } from "@/components/useScrollFade";
+import WidgetCard from "@/components/WidgetCard.vue";
 import { dismissToast, pauseToast, resumeToast, showToast, toasts } from "@/components/useToast";
 import { defineModule, registerDevModules } from "@/core/modules";
 import { i18n, setLanguage } from "@/i18n";
@@ -134,7 +143,7 @@ describe("ExtensionSlot", () => {
         title: "slotprovider.title",
         routes: [],
         extensions: { "tasks.toolbar": [Good, Bad] },
-        messages: () => Promise.resolve({ uz: {}, ru: {}, en: {} }),
+        messages: () => Promise.resolve({}),
       }),
     ]);
     const wrapper = mount(ExtensionSlot, { props: { name: "tasks.toolbar", context: { count: 3 } }, global: { plugins: plugins() } });
@@ -159,7 +168,7 @@ describe("ExtensionSlot", () => {
         title: "attrsprovider.title",
         routes: [],
         extensions: { "shell.nav.top": [Pill], "comms.composer.tools": [Pill, Pill] },
-        messages: () => Promise.resolve({ uz: {}, ru: {}, en: {} }),
+        messages: () => Promise.resolve({}),
       }),
     ]);
     const wrapped = mount(ExtensionSlot, { props: { name: "shell.nav.top", context: {} }, attrs: { class: "px-3 pt-2 empty:hidden", "data-x": "1" }, global: { plugins: plugins() } });
@@ -189,7 +198,9 @@ describe("KpiStrip", () => {
 
   it("opts into two numbers per row on phones (three for a strip of three)", () => {
     const five = strip({ items: items(5), columns: 5, phone: "compact" });
-    expect(five.classes()).toEqual(expect.arrayContaining(["grid-cols-2", "sm:grid-cols-2", "lg:grid-cols-3", "xl:grid-cols-5"]));
+    // Six tracks from 1024 px (three numbers over two, no empty cell), five across from 1280 px.
+    expect(five.classes()).toEqual(expect.arrayContaining(["grid-cols-2", "sm:grid-cols-2", "lg:grid-cols-6", "xl:grid-cols-5"]));
+    expect(five.attributes("data-count")).toBe("5");
     expect(five.classes()).not.toContain("grid-cols-1");
     expect(five.attributes()).toMatchObject({ "data-phone": "compact", "data-phone-columns": "2" });
     // Compact hides each number's footer on phones; KpiCard marks it for that.
@@ -254,6 +265,126 @@ describe("small layout fixes", () => {
     expect(header.find("[data-page-actions]").classes()).toEqual(expect.arrayContaining(["max-w-full", "min-w-0", "flex-wrap", "max-sm:w-full"]));
   });
 
+  it("PageHeader moves the tab underline when a tab's count arrives and widens it", async () => {
+    // jsdom has no layout: a tab is 10 px per character, placed after the tabs before it.
+    const width = (el: HTMLElement) => (el.textContent ?? "").trim().length * 10;
+    const widthSpy = vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) {
+      return width(this);
+    });
+    const leftSpy = vi.spyOn(HTMLElement.prototype, "offsetLeft", "get").mockImplementation(function (this: HTMLElement) {
+      let left = 0;
+      for (let el = this.previousElementSibling as HTMLElement | null; el; el = el.previousElementSibling as HTMLElement | null) if (el.dataset.tab) left += width(el);
+      return left;
+    });
+    const tabs = (count?: number) => [
+      { id: "verify", label: "To verify", count },
+      { id: "all", label: "All" },
+    ];
+    const header = mount(PageHeader, { props: { title: "Shifts", tabs: tabs(), tab: "all" }, global: { plugins: plugins() } });
+    await flushPromises();
+    const underline = () => header.find("nav span[aria-hidden='true']").attributes("style");
+    expect(underline()).toContain("left: 90px");
+    await header.setProps({ tabs: tabs(4) });
+    await flushPromises();
+    // "To verify" grew a badge: "All", and its underline, start further right.
+    const first = header.find("[data-tab='verify']").element as HTMLElement;
+    expect(width(first)).toBeGreaterThan(90);
+    expect(underline()).toContain(`left: ${width(first)}px`);
+    widthSpy.mockRestore();
+    leftSpy.mockRestore();
+  });
+
+  it("PageHeader scrolls its tab strip, and only the strip, to the active tab on a narrow screen", async () => {
+    // A 300 px strip of 120 px tabs: "Money", the fifth, starts at 480 px, out of sight.
+    const widthSpy = vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) {
+      return this.dataset.tab ? 120 : 0;
+    });
+    const leftSpy = vi.spyOn(HTMLElement.prototype, "offsetLeft", "get").mockImplementation(function (this: HTMLElement) {
+      let left = 0;
+      for (let el = this.previousElementSibling as HTMLElement | null; el; el = el.previousElementSibling as HTMLElement | null) if (el.dataset.tab) left += 120;
+      return left;
+    });
+    const scrollWidthSpy = vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockImplementation(function (this: HTMLElement) {
+      return this.tagName === "NAV" ? 720 : 0;
+    });
+    const clientWidthSpy = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(function (this: HTMLElement) {
+      return this.tagName === "NAV" ? 300 : 0;
+    });
+    const scrolled: number[] = [];
+    const scrollSpy = vi.spyOn(HTMLElement.prototype, "scrollLeft", "set").mockImplementation(function (this: HTMLElement, value: number) {
+      scrolled.push(value);
+    });
+    const tabs = ["overview", "board", "timeline", "people", "money", "files"].map((id) => ({ id, label: id }));
+    const header = mount(PageHeader, { props: { title: "Sergeli pharmacy opening", tabs, tab: "money" }, global: { plugins: plugins() } });
+    await flushPromises();
+    // Its right edge (480 + 120) plus 16 px of air, at the strip's right edge: 616 - 300.
+    expect(scrolled.at(-1)).toBe(316);
+    header.unmount();
+    for (const spy of [widthSpy, leftSpy, scrollWidthSpy, clientWidthSpy, scrollSpy]) spy.mockRestore();
+  });
+
+  it("SegmentedControl scrolls inside itself to the chosen option instead of running past a phone's edge", async () => {
+    // Three 120 px options in a 300 px column: "Decided", the third, starts at 240 px.
+    const widthSpy = vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) {
+      return this.getAttribute("role") === "radio" ? 120 : 0;
+    });
+    const leftSpy = vi.spyOn(HTMLElement.prototype, "offsetLeft", "get").mockImplementation(function (this: HTMLElement) {
+      let left = 0;
+      for (let el = this.previousElementSibling as HTMLElement | null; el; el = el.previousElementSibling as HTMLElement | null) if (el.getAttribute("role") === "radio") left += 120;
+      return left;
+    });
+    const scrollWidthSpy = vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockImplementation(function (this: HTMLElement) {
+      return this.getAttribute("role") === "radiogroup" ? 364 : 0;
+    });
+    const clientWidthSpy = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(function (this: HTMLElement) {
+      return this.getAttribute("role") === "radiogroup" ? 300 : 0;
+    });
+    const scrolled: number[] = [];
+    const scrollSpy = vi.spyOn(HTMLElement.prototype, "scrollLeft", "set").mockImplementation(function (this: HTMLElement, value: number) {
+      if (this.getAttribute("role") === "radiogroup") scrolled.push(value);
+    });
+    const options = [
+      { value: "you", label: "Waiting for you" },
+      { value: "colleague", label: "Waiting for a colleague" },
+      { value: "decided", label: "Decided" },
+    ];
+    const control = mount(SegmentedControl, { props: { modelValue: "decided", options }, global: { plugins: plugins() }, attachTo: document.body });
+    await flushPromises();
+    expect(control.find("[role='radiogroup']").classes()).toEqual(expect.arrayContaining(["max-w-full", "overflow-x-auto"]));
+    // Its right edge (240 + 120) plus 16 px of air, at the group's right edge: 376 - 300.
+    expect(scrolled.at(-1)).toBe(76);
+    control.unmount();
+    for (const spy of [widthSpy, leftSpy, scrollWidthSpy, clientWidthSpy, scrollSpy]) spy.mockRestore();
+  });
+
+  it("SavedViewsTabs moves the underline when a view's count arrives and widens a tab before it", async () => {
+    // jsdom has no layout: a tab is 10 px per character, placed after the tabs before it.
+    const width = (el: HTMLElement) => (el.textContent ?? "").trim().length * 10;
+    const widthSpy = vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) {
+      return width(this);
+    });
+    const leftSpy = vi.spyOn(HTMLElement.prototype, "offsetLeft", "get").mockImplementation(function (this: HTMLElement) {
+      let left = 0;
+      for (let el = this.previousElementSibling as HTMLElement | null; el; el = el.previousElementSibling as HTMLElement | null) if (el.dataset.active) left += width(el);
+      return left;
+    });
+    const views = (count?: number) => [
+      { id: "verify", name: "To verify", builtin: true, count },
+      { id: "all", name: "All", builtin: true },
+    ];
+    const tabs = mount(SavedViewsTabs, { props: { modelValue: "all", views: views() as never }, global: { plugins: plugins() } });
+    await flushPromises();
+    const underline = () => tabs.find("[role='tablist'] > span[aria-hidden='true']").attributes("style");
+    expect(underline()).toContain("left: 90px");
+    await tabs.setProps({ views: views(4) as never });
+    await flushPromises();
+    const first = tabs.find("[data-active='false']").element as HTMLElement;
+    expect(width(first)).toBeGreaterThan(90);
+    expect(underline()).toContain(`left: ${width(first)}px`);
+    widthSpy.mockRestore();
+    leftSpy.mockRestore();
+  });
+
   it("TextInput marks a clearable field, so a search field shows only its own clear button", async () => {
     const search = mount(TextInput, { props: { modelValue: "milk", type: "search", clearable: true }, global: { plugins: plugins() } });
     expect(search.find("input").attributes("data-clearable")).toBe("true");
@@ -301,5 +432,167 @@ describe("UiDrawer", () => {
     await flushPromises();
     expect(router.currentRoute.value.fullPath).toBe("/c/1/tasks?view=board");
     wrapper.unmount();
+  });
+});
+
+describe("WidgetCard", () => {
+  it("frames a widget: title, a count only when there is one, the page link and a footer", () => {
+    const card = mount(WidgetCard, {
+      props: { title: "Projects at risk", count: 2, countTone: "warning", to: "/c/1/projects" },
+      slots: { default: () => h("ul", [h("li", "Chilonzor opening")]), footer: () => "1 more" },
+      global: { plugins: plugins() },
+    });
+    expect(card.find("h3").text()).toBe("Projects at risk");
+    expect(card.find("header").text()).toContain("2");
+    const link = card.find("a");
+    expect(link.attributes("href")).toBe("/c/1/projects");
+    expect(link.attributes("title")).toBe("View all");
+    expect(card.find("footer").text()).toBe("1 more");
+    const empty = mount(WidgetCard, { props: { title: "Off today", count: 0 }, global: { plugins: plugins() } });
+    expect(empty.find("h3").element.parentElement!.textContent!.trim()).toBe("Off today");
+    expect(empty.find("a").exists()).toBe(false);
+  });
+
+  it("fades only the edge that has more to scroll to", () => {
+    expect(fadeMask(0, 300, 300)).toBeNull();
+    expect(fadeMask(0, 300, 500)).toBe("linear-gradient(to bottom, #000 0, #000 14px, #000 calc(100% - 14px), transparent 100%)");
+    expect(fadeMask(100, 300, 500)).toContain("transparent 0");
+    expect(fadeMask(100, 300, 500)).toContain("transparent 100%");
+    expect(fadeMask(200, 300, 500)).toBe("linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 14px), #000 100%)");
+  });
+
+  it("KpiCard keeps its label when the number fails, and Try again doesn't follow the tile's link", async () => {
+    const retry = vi.fn();
+    const tile = mount(KpiCard, {
+      props: { label: "Done today", value: null, to: "/c/1/tasks", error: new ApiError(500, null), retry },
+      global: { plugins: plugins() },
+    });
+    expect(tile.text()).toContain("Done today");
+    expect(tile.find("[role='alert']").exists()).toBe(true);
+    const before = router.currentRoute.value.fullPath;
+    await tile.find("[role='alert'] button").trigger("click");
+    await flushPromises();
+    expect(retry).toHaveBeenCalledTimes(1);
+    expect(router.currentRoute.value.fullPath).toBe(before);
+  });
+
+  it("KpiCard keeps cents for dollars and none for so‘m", async () => {
+    const dollars = mount(KpiCard, { props: { label: "Dollar safe", value: "1600.00", format: "money", currency: "USD" }, global: { plugins: plugins() } });
+    const soum = mount(KpiCard, { props: { label: "Cash now", value: "4100000.40", format: "money", currency: "UZS" }, global: { plugins: plugins() } });
+    await flushPromises();
+    expect(dollars.find(".kpi-value").text()).toBe("$1,600.00");
+    expect(soum.find(".kpi-value").text()).toBe("4,100,000 UZS");
+  });
+
+  it("knows when a wide table still has columns past its right edge", () => {
+    expect(moreToTheRight(0, 1000, 1000)).toBe(false);
+    expect(moreToTheRight(0, 1000, 1240)).toBe(true);
+    expect(moreToTheRight(240, 1000, 1240)).toBe(false);
+  });
+});
+
+describe("SparkLine", () => {
+  it("steps over a missing day instead of breaking the line, and marks the last point with a round dot", () => {
+    const spark = mount(SparkLine, { props: { data: [75, null, null, 80, 100, null] } });
+    const line = spark.find("[data-spark-line]").attributes("d")!;
+    // One stroke through the three days that have a value, each at its own day's place.
+    expect(line.match(/[ML]/g)).toEqual(["M", "L", "L"]);
+    expect(line.startsWith("M3.0,")).toBe(true);
+    // The wash closes under that one stroke (no second, slanted piece).
+    expect(spark.find("[data-spark-fill]").attributes("d")!.match(/M/g)).toHaveLength(1);
+    // A zero-length round-capped stroke, so stretching (`fluid`) can't turn the dot into an ellipse.
+    const dot = spark.find("[data-spark-dot]");
+    expect(dot.attributes("d")).toMatch(/h0$/);
+    expect(dot.attributes("stroke-linecap")).toBe("round");
+    expect(mount(SparkLine, { props: { data: [5, null] } }).find("[data-spark-line]").exists()).toBe(false);
+  });
+
+  it("draws a steady series across the middle, where the bottom would read as zero", () => {
+    const steady = mount(SparkLine, { props: { data: [100, 100, null, 100], height: 32 } });
+    const ys = [...steady.find("[data-spark-line]").attributes("d")!.matchAll(/[ML][\d.]+,([\d.]+)/g)].map((match) => Number(match[1]));
+    expect(ys).toEqual([16, 16, 16]);
+    // A series that moves still spans the full height.
+    const moving = mount(SparkLine, { props: { data: [0, 50, 100], height: 32 } });
+    const yMoving = [...moving.find("[data-spark-line]").attributes("d")!.matchAll(/[ML][\d.]+,([\d.]+)/g)].map((match) => Number(match[1]));
+    expect(yMoving).toEqual([29, 16, 3]);
+  });
+
+  it("KpiCard draws its trend across free height in a tall tile, and beside the delta in a short one", async () => {
+    let height = 20;
+    const observers: Array<() => void> = [];
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(private callback: ResizeObserverCallback) {}
+        observe(target: Element) {
+          const fire = () => this.callback([{ target, contentRect: { height } } as unknown as ResizeObserverEntry], this as unknown as ResizeObserver);
+          observers.push(fire);
+          fire();
+        }
+        unobserve() {}
+        disconnect() {}
+      },
+    );
+    const tile = mount(KpiCard, {
+      props: { label: "Sales yesterday", value: "17700000", format: "money", compact: true, spark: [12, 15, 11, 17], sparkLabels: ["8 Oct", "Yesterday"] },
+      global: { plugins: plugins() },
+    });
+    await flushPromises();
+    expect(tile.find("[data-kpi-foot] svg").exists()).toBe(true);
+    expect(tile.find("[data-kpi-trend]").exists()).toBe(false);
+    // The row grew (a richer tile beside it): the trend moves into the free space, with its days.
+    height = 120;
+    observers.forEach((fire) => fire());
+    await flushPromises();
+    expect(tile.find("[data-kpi-trend]").exists()).toBe(true);
+    expect(tile.find("[data-kpi-foot] svg").exists()).toBe(false);
+    expect(tile.find("[data-kpi-spare]").text()).toBe("8 OctYesterday");
+    vi.unstubAllGlobals();
+  });
+});
+
+describe("names cut short", () => {
+  it("PersonCell and ChartCard show a cut name, position or subtitle whole on hover", async () => {
+    const widthSpy = vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockReturnValue(300);
+    const clientSpy = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(120);
+    const person = mount(PersonCell, { props: { person: { id: 7, name: "Gulnora Ismoilova-Rahimberdiyeva" }, subtitle: "Farmatsevt · Chilonzor dorixonasi" }, global: { plugins: plugins() } });
+    for (const text of ["Gulnora Ismoilova-Rahimberdiyeva", "Farmatsevt · Chilonzor dorixonasi"]) {
+      const el = person.findAll("span").find((span) => span.text() === text)!;
+      await el.trigger("pointerenter");
+      expect(el.attributes("title")).toBe(text);
+    }
+    const chart = mount(ChartCard, { props: { title: "Payment mix by branch", subtitle: "Share of each method in every branch" }, global: { plugins: plugins() } });
+    const subtitle = chart.find("header p");
+    await subtitle.trigger("pointerenter");
+    expect(subtitle.attributes("title")).toBe("Share of each method in every branch");
+    widthSpy.mockRestore();
+    clientSpy.mockRestore();
+  });
+});
+
+describe("TreeList on touch", () => {
+  it("shows its drag handles and keeps the finger's drag from scrolling the page", () => {
+    const tree = mount(TreeList, {
+      props: { nodes: [{ id: 1, label: "Dorixona qoidalari" }, { id: 2, label: "Kassa" }], draggable: true },
+      global: { plugins: plugins() },
+    });
+    const handles = tree.findAll("[data-tree-handle]");
+    expect(handles).toHaveLength(2);
+    for (const handle of handles) expect(handle.classes()).toEqual(expect.arrayContaining(["touch-none", "pointer-coarse:opacity-100"]));
+    tree.unmount();
+  });
+});
+
+describe("v-truncate-title", () => {
+  it("shows a text cut short in a tooltip, and nothing for a text that fits", () => {
+    const el = document.createElement("span");
+    el.textContent = "Terminal (karta va QR)";
+    Object.defineProperty(el, "clientWidth", { value: 80, configurable: true });
+    Object.defineProperty(el, "scrollWidth", { value: 140, configurable: true });
+    syncTruncateTitle(el);
+    expect(el.title).toBe("Terminal (karta va QR)");
+    Object.defineProperty(el, "scrollWidth", { value: 80, configurable: true });
+    syncTruncateTitle(el);
+    expect(el.hasAttribute("title")).toBe(false);
   });
 });

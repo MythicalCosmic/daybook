@@ -95,6 +95,38 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* The headline number of a KPI tile (KpiCard and the Overview's own tiles), one size everywhere. It
+   shrinks a little in narrow tiles (two per row on phones) so "25,6 mln so‘m" still fits. */
+@utility kpi-value {
+  font-size: clamp(1.25rem, 14cqi, 1.625rem);
+  line-height: 2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text);
+}
+
+/* The label of a KPI tile (KpiCard and the Overview's own tiles): up to two lines, never cut to
+   "Выполнено с…" in a tile two to a row on a phone, where both lines are kept so the numbers of a
+   row stay level. Its tile is the size container (`@container`). */
+@utility kpi-label {
+  min-width: 0;
+  flex: 1 1 0%;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+  font-weight: 500;
+  color: var(--c-muted);
+  @container (max-width: 12rem) {
+    min-height: calc(var(--text-sm--line-height) * 2);
+  }
+}
+
 @utility scroll-fade-y {
   mask-image: linear-gradient(to bottom, transparent, #000 12px, #000 calc(100% - 12px), transparent);
 }
@@ -104,14 +136,6 @@
   &::-webkit-scrollbar {
     display: none;
   }
-}
-
-/* Caprasimo and Figtree have no Cyrillic: Russian headlines use the bold system sans instead of a
-   browser-picked serif. Outside the layer, so it beats the `font-display` utility. */
-:root:lang(ru) .font-display {
-  font-family: var(--font-sans);
-  font-weight: 700;
-  letter-spacing: -0.015em;
 }
 
 /* Theme switch: View Transitions circular reveal (the animation itself runs from app/theme.ts). */

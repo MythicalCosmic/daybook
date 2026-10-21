@@ -3,7 +3,8 @@
  * Notifications: a list beside the selected one (SplitView). Opening one marks it read; rows can be
  * selected for "Mark read" / "Archive" in bulk. The module that owns a kind may register a renderer
  * for it (`inbox` in its defineModule); the detail uses it, like the shell's drawer does.
- * J/K move through the list, E archives, Enter opens the record.
+ * J/K move through the list, E archives, Enter opens the record. Titles say what happened ("Cash
+ * difference at YNS-78: −45 000 so‘m"), so the list starts wider and gives them two lines.
  */
 import { Archive, ArrowUpRight, BellRing, CheckCheck, CircleAlert, Info, TriangleAlert } from "@lucide/vue";
 import { computed, ref, watch, type Component } from "vue";
@@ -154,7 +155,7 @@ const unreadInView = computed(() => notes.value.filter((note) => !note.read_at).
 </script>
 
 <template>
-  <SplitView id="inbox" :detail-open="!!selected" :back-label="t('inbox.backToList')" height="calc(100dvh - 252px)" @back="openId = null">
+  <SplitView id="inbox" :detail-open="!!selected" :back-label="t('inbox.backToList')" height="calc(100dvh - 252px)" :list-width="440" @back="openId = null">
     <template #list>
       <div class="flex shrink-0 items-center gap-2 border-b border-line px-3 py-2.5">
         <SegmentedControl v-model="tab" :options="tabOptions" size="sm" :aria-label="t('inbox.tabNotifications')" />
@@ -200,12 +201,12 @@ const unreadInView = computed(() => notes.value.filter((note) => !note.read_at).
               </span>
               <div class="min-w-0 flex-1">
                 <div class="flex items-baseline gap-2">
-                  <p :class="['min-w-0 flex-1 truncate text-base', note.read_at ? 'font-medium text-muted' : 'font-semibold text-fg']">{{ note.title }}</p>
+                  <p :class="['line-clamp-2 min-w-0 flex-1 text-base', note.read_at ? 'font-medium text-muted' : 'font-semibold text-fg']" :title="note.title">{{ note.title }}</p>
                   <RelativeTime :value="note.created_at" class="shrink-0 text-xs text-subtle" />
                 </div>
                 <p v-if="note.body" class="mt-0.5 line-clamp-1 text-sm text-muted">{{ note.body }}</p>
               </div>
-              <span v-if="!note.read_at" class="absolute left-0 top-1/2 size-1.5 -translate-y-1/2 rounded-full bg-primary" :aria-label="t('inbox.unread')" />
+              <span v-if="!note.read_at" class="absolute left-0 top-6 size-1.5 -translate-y-1/2 rounded-full bg-primary" :aria-label="t('inbox.unread')" />
             </div>
           </li>
         </ul>

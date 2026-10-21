@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Phones (< 768 px): Today · Tasks · People · Money · More (plan §6.1). Each tab goes to the first
+ * Phones (< 768 px): Today · Work · People · Money · More (plan §6.1). Each tab goes to the first
  * module of its area the person can open; "More" opens the full navigation in a sheet.
  */
 import { House, LayoutGrid, ListChecks, Users, Wallet } from "@lucide/vue";
@@ -40,7 +40,7 @@ function badgeOf(groupIds: ModuleGroup[]): number {
 const tabs = computed<Tab[]>(() => {
   const specs: Array<{ id: string; icon: Component; groups: ModuleGroup[]; preferred: string[] }> = [
     { id: "today", icon: House, groups: ["overview"], preferred: ["overview", "inbox"] },
-    { id: "tasks", icon: ListChecks, groups: ["work"], preferred: ["tasks", "projects"] },
+    { id: "work", icon: ListChecks, groups: ["work"], preferred: ["tasks", "projects"] },
     { id: "people", icon: Users, groups: ["people"], preferred: ["people", "attendance"] },
     { id: "money", icon: Wallet, groups: ["money"], preferred: ["sales", "finance", "payroll"] },
   ];

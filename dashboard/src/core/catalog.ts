@@ -71,7 +71,22 @@ export const CATALOG: readonly CatalogEntry[] = [
       { id: "roadmap", to: "projects/roadmap" },
     ],
   },
-  { id: "routines", group: "work", order: 30, pkg: "B", perm: "tasks.templates", hotkey: "r", pages: [{ id: "all", to: "routines" }] },
+  // Routines are not tasks (plan §15.2): Today, History, To confirm and the routines themselves.
+  {
+    id: "routines",
+    group: "work",
+    order: 30,
+    pkg: "B",
+    perm: ["tasks.templates", "tasks.view_all", "tasks.confirm"],
+    hotkey: "r",
+    badge: "tasks.routine_review",
+    pages: [
+      { id: "today", to: "routines", perm: "tasks.view_all" },
+      { id: "history", to: "routines/history", perm: "tasks.view_all" },
+      { id: "confirm", to: "routines/confirm", perm: "tasks.confirm", badge: "tasks.routine_review" },
+      { id: "all", to: "routines/all", perm: "tasks.templates" },
+    ],
+  },
   { id: "reminders", group: "work", order: 40, pkg: "B", perm: "reminders.configure", pages: [{ id: "policies", to: "reminders" }] },
 
   // People

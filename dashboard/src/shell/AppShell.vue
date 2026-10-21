@@ -13,6 +13,7 @@ import { RouterView, useRoute, useRouter } from "vue-router";
 import { keys } from "@/api/keys";
 import { shellApi } from "@/api/shell";
 import ExtensionSlot from "@/components/ExtensionSlot.vue";
+import { menuPanel, preloadWhenIdle } from "@/components/lazyPart";
 import { toast } from "@/components/useToast";
 import { canAccessRoute, visibleModules } from "@/core/access";
 import { hasExtension } from "@/core/extensions";
@@ -29,13 +30,15 @@ import { usePaletteStore } from "@/stores/palette";
 import { useSessionStore } from "@/stores/session";
 import { useUiStore } from "@/stores/ui";
 
+import { companyMenu } from "./companySwitcher";
 import ForbiddenPage from "./ForbiddenPage.vue";
 import MobileTabBar from "./MobileTabBar.vue";
 import SideNav from "./SideNav.vue";
+import { bufferKeysUntilPaletteMounts, loadPalette, prefetchPaletteOnModifier } from "./paletteLoader";
 import { resolveStartParam, telegram } from "./TelegramBridge";
 import TopBar from "./TopBar.vue";
 
-const CommandPalette = defineAsyncComponent(() => import("./CommandPalette.vue"));
+const CommandPalette = defineAsyncComponent(loadPalette);
 const InboxDrawer = defineAsyncComponent(() => import("./InboxDrawer.vue"));
 const ShortcutsDialog = defineAsyncComponent(() => import("./ShortcutsDialog.vue"));
 const MoreSheet = defineAsyncComponent(() => import("./MoreSheet.vue"));
@@ -186,6 +189,11 @@ removers.push(
   registerHotkey("mod+j", () => aiAvailable.value && ui.askAi(), { allowInInputs: true, allowInDialogs: true, enabled: () => aiAvailable.value }),
   registerHotkey("?", () => (ui.shortcutsOpen = true)),
   registerHotkey("[", () => ui.toggleSidebar(), { enabled: () => isDesktop.value && !companyless.value }),
+  prefetchPaletteOnModifier(),
+  bufferKeysUntilPaletteMounts(
+    () => palette.open,
+    (key) => (palette.initialQuery += key),
+  ),
 );
 let jumpRemovers: Array<() => void> = [];
 watch(
@@ -220,6 +228,9 @@ watch(
 );
 
 onMounted(() => {
+  // The menus (reka-ui and its positioning) are not in the first load: fetched now that the page
+  // has painted, so the first menu opens at once (components/lazyPart.ts).
+  removers.push(preloadWhenIdle([menuPanel, companyMenu]));
   window.addEventListener("popstate", onPopState);
   // Opened from the owner bot with a `startapp` parameter: go there once.
   const tg = telegram();

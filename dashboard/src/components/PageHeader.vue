@@ -5,10 +5,12 @@
  * The active tab's underline slides between tabs.
  */
 import { ArrowLeft } from "@lucide/vue";
-import { computed, nextTick, onMounted, ref, watch, type Component } from "vue";
+import { useEventListener } from "@vueuse/core";
+import { computed, onMounted, ref, type Component } from "vue";
 import { RouterLink, useRoute, useRouter, type RouteLocationRaw } from "vue-router";
 
 import UiBadge from "./UiBadge.vue";
+import { useSlidingIndicator } from "./useSlidingIndicator";
 
 export interface PageTab {
   id: string;
@@ -41,24 +43,36 @@ function isActive(tab: PageTab): boolean {
 
 const current = computed(() => props.tabs.find(isActive)?.id ?? null);
 
-const tabsEl = ref<HTMLElement | null>(null);
-const indicator = ref<{ left: number; width: number } | null>(null);
-
-function measure(): void {
-  const el = tabsEl.value?.querySelector<HTMLElement>(`[data-tab="${current.value}"]`);
-  indicator.value = el ? { left: el.offsetLeft, width: el.offsetWidth } : null;
+/**
+ * The same distance to the content on every page: 24 px (20 px under tabs). Half the pages put the
+ * header in a `flex-col gap-5` column, whose gap used to add to the header's own margin (44 px
+ * there, 24 px elsewhere), so the parent's row gap is taken off the margin.
+ */
+const root = ref<HTMLElement | null>(null);
+const parentGap = ref(0);
+function measureGap(): void {
+  const parent = root.value?.parentElement;
+  if (!parent || typeof getComputedStyle === "undefined") return;
+  const style = getComputedStyle(parent);
+  const stacked = style.display.includes("grid") || (style.display.includes("flex") && style.flexDirection.startsWith("column"));
+  parentGap.value = stacked ? Number.parseFloat(style.rowGap) || 0 : 0;
 }
+onMounted(measureGap);
+useEventListener("resize", measureGap, { passive: true });
+const spacing = computed(() => `${Math.max(0, (props.tabs.length ? 20 : 24) - parentGap.value)}px`);
 
-watch([current, () => props.tabs.length], () => nextTick(measure));
-onMounted(() => {
-  measure();
-  // Fonts change tab widths once they load.
-  void document.fonts?.ready.then(measure);
+// The underline follows the active tab, also when a count arrives and widens a tab before it.
+const tabsEl = ref<HTMLElement | null>(null);
+const { indicator } = useSlidingIndicator(tabsEl, {
+  active: () => `[data-tab="${current.value}"]`,
+  items: "[data-tab]",
+  reveal: true,
+  deps: [current, () => props.tabs.map((tab) => `${tab.id}:${tab.label}:${tab.count ?? ""}`).join("|")],
 });
 </script>
 
 <template>
-  <header class="flex flex-col gap-1" :class="tabs.length ? 'mb-5' : 'mb-6'">
+  <header ref="root" class="flex flex-col gap-1" :style="{ marginBottom: spacing }">
     <RouterLink
       v-if="back"
       :to="back"

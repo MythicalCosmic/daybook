@@ -44,19 +44,20 @@ const hint = computed(() => {
 </script>
 
 <template>
-  <ErrorState v-if="overview.isError.value" compact :error="overview.error.value" :retry="() => overview.refetch()" class="h-full" />
-  <RouterLink v-else :to="`/c/${companyId}/finance/accounts`" class="ui-card group flex h-full min-h-[148px] min-w-0 flex-col p-4 transition-colors hover:border-line-strong" :aria-busy="overview.isPending.value || undefined">
-    <div class="flex items-center gap-2">
-      <Wallet :size="15" class="shrink-0 text-subtle" aria-hidden="true" />
-      <span class="min-w-0 flex-1 truncate text-sm font-medium text-muted">{{ t("finance.overview.cashNow") }}</span>
-      <ArrowUpRight :size="15" class="shrink-0 text-subtle opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true" />
+  <RouterLink :to="`/c/${companyId}/finance/accounts`" class="ui-card group flex h-full min-h-[148px] min-w-0 flex-col p-4 transition-colors @container hover:border-line-strong" :aria-busy="overview.isPending.value || undefined">
+    <div class="flex items-start gap-2">
+      <Wallet :size="15" class="mt-px shrink-0 text-subtle" aria-hidden="true" />
+      <span class="kpi-label" :title="t('finance.overview.cashNow')">{{ t("finance.overview.cashNow") }}</span>
+      <ArrowUpRight :size="15" class="mt-px shrink-0 text-subtle opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true" />
     </div>
-    <template v-if="overview.isPending.value">
+    <!-- A failed load keeps the tile and its label, like every KPI tile (KpiCard). -->
+    <ErrorState v-if="overview.isError.value" class="mt-2.5" compact bare :error="overview.error.value" :retry="() => overview.refetch()" @click.stop.prevent />
+    <template v-else-if="overview.isPending.value">
       <SkeletonBlock class="mt-2.5" width="62%" height="26px" />
       <SkeletonBlock class="mt-auto" height="44px" />
     </template>
     <template v-else-if="cash">
-      <p class="mt-1.5 truncate text-[1.625rem] font-semibold leading-8 tracking-[-0.02em] tabular-nums text-fg" :title="fmt.money(cash.total)">
+      <p class="kpi-value mt-1.5 truncate" :title="fmt.money(cash.total)">
         {{ fmt.money(cash.total, undefined, { compact: true, decimals: "never" }) }}
       </p>
       <p class="mt-0.5 truncate text-xs text-muted">{{ hint }}</p>

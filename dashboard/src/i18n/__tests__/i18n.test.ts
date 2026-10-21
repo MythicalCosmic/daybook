@@ -31,12 +31,60 @@ describe("i18n", () => {
     expect(warn).toHaveBeenCalled();
   });
 
-  it("loads a module's messages once", async () => {
-    const messages = vi.fn(() => Promise.resolve({ en: { "kudos.title": "Kudos" }, ru: { "kudos.title": "Благодарности" }, uz: { "kudos.title": "Rahmatlar" } }));
+  it("loads a module's messages once per language, only the language asked for", async () => {
+    const texts = { en: { "kudos.title": "Kudos" }, ru: { "kudos.title": "Благодарности" }, uz: { "kudos.title": "Rahmatlar" } };
+    // One JSON module per language, as `import(`./i18n/${language}.json`)` gives it.
+    const messages = vi.fn((language: "uz" | "ru" | "en") => Promise.resolve({ default: texts[language] }));
     const module = defineModule({ id: "kudos", group: "people", order: 1, icon: {}, title: "kudos.title", routes: [], messages });
     await Promise.all([ensureModuleMessages(module), ensureModuleMessages(module)]);
     expect(messages).toHaveBeenCalledTimes(1);
-    expect(allLanguages("kudos.title")).toEqual({ uz: "Rahmatlar", ru: "Благодарности", en: "Kudos" });
+    expect(messages).toHaveBeenCalledWith("en");
+    expect(allLanguages("kudos.title")).toEqual({ uz: "kudos.title", ru: "kudos.title", en: "Kudos" });
+    await ensureModuleMessages(module, "ru");
+    expect(messages).toHaveBeenCalledTimes(2);
+    expect(allLanguages("kudos.title").ru).toBe("Благодарности");
+  });
+
+  it("loads every requested module's new language before switching", async () => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const texts = { en: { "cheers.title": "Cheers" }, ru: { "cheers.title": "Ура" }, uz: { "cheers.title": "Olqish" } };
+    const messages = vi.fn(async (language: "uz" | "ru" | "en") => {
+      if (language === "uz") await gate;
+      return texts[language];
+    });
+    const module = defineModule({ id: "cheers", group: "people", order: 1, icon: {}, title: "cheers.title", routes: [], messages });
+    await ensureModuleMessages(module, "en");
+    const switching = setLanguage("uz");
+    // The shell's Uzbek is here (tests preload it) but the module's isn't yet: no switch, no keys.
+    expect(i18n.global.locale.value).toBe("en");
+    expect(messages).toHaveBeenLastCalledWith("uz");
+    release();
+    await switching;
+    expect(i18n.global.locale.value).toBe("uz");
+    expect(t("cheers.title")).toBe("Olqish");
+    // Back to a language already loaded: at once.
+    void setLanguage("en");
+    expect(i18n.global.locale.value).toBe("en");
+    // Later tests switch to Russian synchronously.
+    await ensureModuleMessages(module, "ru");
+  });
+
+  it("a later switch wins over one still loading", async () => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const messages = vi.fn(async (language: "uz" | "ru" | "en") => {
+      if (language === "ru") await gate;
+      return { [`slow.title`]: language };
+    });
+    const module = defineModule({ id: "slow", group: "people", order: 1, icon: {}, title: "slow.title", routes: [], messages });
+    await ensureModuleMessages(module, "en");
+    await ensureModuleMessages(module, "uz");
+    const toRussian = setLanguage("ru");
+    await setLanguage("uz");
+    release();
+    await toRussian;
+    expect(i18n.global.locale.value).toBe("uz");
   });
 
   it("compiles messages without vue-i18n's full compiler: named, list, literal and plural forms", () => {
@@ -76,6 +124,27 @@ describe("i18n", () => {
     await fresh.loadAllLanguages();
     expect(fresh.allLanguages("shell.inbox.title").en).toBe("Inbox");
     expect(fresh.allLanguages("kudos.title")).toEqual({ uz: "Rahmatlar", ru: "Благодарности", en: "Kudos" });
+  });
+
+  it("keeps loading pages in the language on screen when a switch's dictionary fails to arrive", async () => {
+    vi.resetModules();
+    vi.doMock("@/i18n/ru.json", () => {
+      throw new Error("offline");
+    });
+    try {
+      const fresh = await import("@/i18n");
+      await fresh.setLanguage("en");
+      await expect(fresh.setLanguage("ru")).rejects.toThrow();
+      expect(fresh.currentLanguage()).toBe("en");
+      const loader = vi.fn(async (language: "uz" | "ru" | "en") => ({ "late.title": `in ${language}` }));
+      const late = defineModule({ id: "late", group: "work", order: 1, icon: {}, title: "late.title", routes: [], messages: loader });
+      await fresh.ensureModuleMessages(late);
+      expect(loader).toHaveBeenCalledWith("en");
+      expect(fresh.t("late.title")).toBe("in en");
+    } finally {
+      vi.doUnmock("@/i18n/ru.json");
+      vi.resetModules();
+    }
   });
 
   it("has small guards", () => {

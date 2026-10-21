@@ -16,18 +16,12 @@ import { safeNext } from "@/lib/links";
 import { useForm } from "@/lib/useForm";
 import { useSessionStore } from "@/stores/session";
 
+import { DEMO_COMPANIES, DEMO_STRANGERS } from "../demoPeople";
+
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const session = useSessionStore();
-
-/** People `seed_demo` creates (backend/apps/core/management/commands/seed_demo.py) and the owner's own account (plan §13.0). */
-const presets = [
-  { id: 1001, name: "Dilnoza Karimova", role: "auth.dev.owner" },
-  { id: 1002, name: "Bekzod Mirzayev", role: "auth.dev.manager" },
-  { id: 2001, name: "Sardor Qodirov", role: "auth.dev.cafeManager" },
-  { id: 6589960007, name: "6589960007", role: "auth.dev.you" },
-];
 
 const schema = z.object({
   telegramId: z.string().trim().regex(/^\d{3,15}$/, "auth.dev.invalidId"),
@@ -52,24 +46,44 @@ function pick(id: number): void {
       <h1 class="text-lg font-semibold text-fg">{{ t("auth.dev.title") }}</h1>
       <p class="mt-1.5 text-sm text-muted">{{ t("auth.dev.body") }}</p>
 
-      <p class="mb-2 mt-6 text-xs font-medium text-muted">{{ t("auth.dev.presets") }}</p>
-      <div class="flex flex-col gap-1.5">
-        <button
-          v-for="preset in presets"
-          :key="preset.id"
-          type="button"
-          class="pressable flex items-center gap-3 rounded-[10px] border border-line px-3 py-2 text-left hover:border-line-strong hover:bg-surface-2"
-          :disabled="form.submitting.value"
-          @click="pick(preset.id)"
-        >
-          <UserAvatar :name="preset.name" :size="32" />
-          <span class="min-w-0 flex-1">
-            <span class="block truncate text-base font-semibold text-fg">{{ preset.name }}</span>
-            <span class="block text-xs text-muted">{{ t(preset.role) }} · {{ preset.id }}</span>
-          </span>
-          <ArrowRight :size="16" class="text-subtle" />
-        </button>
-      </div>
+      <p class="mt-6 text-xs font-medium text-muted">{{ t("auth.dev.presets") }}</p>
+      <section v-for="demo in DEMO_COMPANIES" :key="demo.name" class="mt-3" :aria-label="demo.name" data-demo-company>
+        <h2 class="mb-1.5 text-xs font-semibold uppercase tracking-[0.05em] text-subtle">{{ demo.name }}</h2>
+        <div class="flex flex-col gap-1">
+          <button
+            v-for="person in demo.people"
+            :key="person.id"
+            type="button"
+            class="pressable group flex items-center gap-3 rounded-[10px] border border-line px-3 py-1.5 text-left hover:border-line-strong hover:bg-surface-2"
+            :disabled="form.submitting.value"
+            :data-telegram-id="person.id"
+            @click="pick(person.id)"
+          >
+            <UserAvatar :name="person.name" :size="28" />
+            <span class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-semibold text-fg">{{ person.name }}</span>
+              <span class="block truncate text-xs text-muted">{{ t(person.role) }} · {{ person.id }}</span>
+            </span>
+            <ArrowRight :size="15" class="text-subtle transition-transform group-hover:translate-x-0.5" />
+          </button>
+        </div>
+      </section>
+      <section class="mt-3" :aria-label="t('auth.dev.strangers')">
+        <h2 class="mb-1.5 text-xs font-semibold uppercase tracking-[0.05em] text-subtle">{{ t("auth.dev.strangers") }}</h2>
+        <div class="flex flex-wrap gap-1.5">
+          <button
+            v-for="person in DEMO_STRANGERS"
+            :key="person.id"
+            type="button"
+            class="pressable rounded-full border border-line px-2.5 py-1 text-xs font-medium text-muted hover:border-line-strong hover:bg-surface-2 hover:text-fg"
+            :disabled="form.submitting.value"
+            :data-telegram-id="person.id"
+            @click="pick(person.id)"
+          >
+            {{ t(person.role) }} · <span class="tabular-nums">{{ person.id }}</span>
+          </button>
+        </div>
+      </section>
 
       <label for="dev-telegram-id" class="mb-1.5 mt-6 text-sm font-medium text-fg">{{ t("auth.dev.telegramId") }}</label>
       <input

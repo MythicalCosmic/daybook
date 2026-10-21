@@ -34,6 +34,8 @@ import IconButton from "./IconButton.vue";
 import SelectBox from "./SelectBox.vue";
 import SkeletonBlock from "./SkeletonBlock.vue";
 import { columnValue, csvColumns, keyOf, sortField, type RowKey, type TableColumn } from "./table";
+import { vTruncateTitle } from "./truncateTitle";
+import { useMoreToTheRight } from "./useScrollFade";
 import UiButton from "./UiButton.vue";
 import type { DataTableState } from "./useDataTable";
 
@@ -165,6 +167,9 @@ const rows = computed(() => table.getRowModel().rows);
 const density = computed(() => props.state.density.value ?? ui.density);
 const rowHeight = computed(() => (density.value === "compact" ? 36 : 44));
 const scroller = ref<HTMLElement | null>(null);
+const tableEl = ref<HTMLElement | null>(null);
+// Columns past the right edge (a wide table on a laptop): a shadow says the table goes on.
+const moreRight = useMoreToTheRight(scroller, tableEl);
 const virtualOn = computed(() => (props.virtual === "auto" ? rows.value.length > 60 : props.virtual) && !isPhone.value);
 const virtualizer = useVirtualizer(
   computed(() => ({
@@ -376,8 +381,15 @@ const tableMinWidth = computed(
     <!-- Table -->
     <div v-else class="ui-card relative min-w-0 overflow-hidden">
       <div v-if="fetching && !skeleton" class="table-progress absolute inset-x-0 top-0 z-[3] h-0.5" aria-hidden="true" />
+      <div
+        v-show="moreRight"
+        class="pointer-events-none absolute inset-y-0 right-0 z-[4] w-8 bg-linear-to-l from-[color-mix(in_srgb,var(--c-text)_9%,transparent)] to-transparent"
+        aria-hidden="true"
+        data-more-right
+      />
       <div ref="scroller" class="overflow-auto overscroll-contain" :style="{ maxHeight }">
         <table
+          ref="tableEl"
           class="w-full table-fixed border-separate border-spacing-0 text-base"
           :style="{ minWidth: `${tableMinWidth}px` }"
           :aria-busy="fetching || loading || undefined"
@@ -472,7 +484,7 @@ const tableMinWidth = computed(
                 >
                   <div :class="['flex min-w-0 items-center', alignClass(column)]">
                     <slot :name="`cell-${column.id}`" :row="row.original" :value="columnValue(column, row.original)">
-                      <span :class="['truncate', cellText(column, row.original) === '—' && 'text-subtle']">{{ cellText(column, row.original) }}</span>
+                      <span v-truncate-title :class="['truncate', cellText(column, row.original) === '—' && 'text-subtle']">{{ cellText(column, row.original) }}</span>
                     </slot>
                   </div>
                 </td>

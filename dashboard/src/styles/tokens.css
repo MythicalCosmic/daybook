@@ -200,9 +200,10 @@
   --color-chart-7: var(--c-chart-7);
   --color-chart-8: var(--c-chart-8);
 
-  --font-sans: "Figtree Variable", "Figtree", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
-  --font-display: "Caprasimo", "Figtree Variable", Georgia, serif;
+  /* Latin from Figtree and Caprasimo, Cyrillic from their companions (styles/fonts.css). */
+  --font-sans: "Figtree Variable", "Figtree", "Onest Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Caprasimo", "Daybook Display Cyrillic", "Figtree Variable", Georgia, serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
 
   /* Type: 12 / 13 / 14 base / 16 / 20 / 24 / 32 */

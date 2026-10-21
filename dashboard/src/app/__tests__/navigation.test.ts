@@ -23,7 +23,7 @@ const people = defineModule({
     { path: "people/:memberId/:tab?", name: "people.person", component: Page },
   ],
   deepLinks: { member: (id) => `people/${id}` },
-  messages: () => Promise.resolve({ uz: {}, ru: {}, en: {} }),
+  messages: () => Promise.resolve({}),
 });
 const auth = defineModule({
   id: "auth",
@@ -33,7 +33,7 @@ const auth = defineModule({
   title: "auth.title",
   routes: [],
   publicRoutes: [{ path: "/login", name: "login", component: Page }],
-  messages: () => Promise.resolve({ uz: {}, ru: {}, en: {} }),
+  messages: () => Promise.resolve({}),
 });
 
 function router() {

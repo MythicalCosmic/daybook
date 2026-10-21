@@ -1,7 +1,19 @@
 import { describe, expect, it } from "vitest";
 
+import { shareText } from "@/components/chartCard";
 import { cartesianOption, type CartesianInput } from "@/components/chartOptions";
 import type { ChartTheme } from "@/components/useChartTheme";
+
+describe("shareText", () => {
+  it("never rounds a sliver to 0 % or a part to the whole", () => {
+    expect(shareText(0.3, "en")).toBe("<1%");
+    expect(shareText(0.3, "ru")).toBe("<1 %");
+    expect(shareText(0, "en")).toBe("0%");
+    expect(shareText(42.4, "uz")).toBe("42%");
+    expect(shareText(99.7, "en")).toBe(">99%");
+    expect(shareText(100, "en")).toBe("100%");
+  });
+});
 
 const theme: ChartTheme = {
   text: "#201e1d",
@@ -41,6 +53,14 @@ describe("cartesianOption", () => {
     expect(sideways.yAxis.type).toBe("category");
   });
 
+  it("keeps a long legend on one line that pages, never wrapping into the plot", () => {
+    const methods = ["Naqd", "Terminal", "Click", "Payme", "Uzum", "Humo"].map((name) => ({ name, data: [10, 20, 30], stack: "mix" }));
+    const legend = build({ series: methods }, { type: "bar", horizontal: true, normalize: true, stacked: true }).legend;
+    expect(legend).toMatchObject({ type: "scroll", top: 0, left: 0, right: 0 });
+    // One series: no legend at all.
+    expect(build({}).legend).toEqual({ show: false });
+  });
+
   it("gives counts whole-number ticks", () => {
     expect(build({ integer: true }, { type: "bar", stacked: true }).yAxis.minInterval).toBe(1);
     expect(build({}).yAxis.minInterval).toBeUndefined();
@@ -58,6 +78,22 @@ describe("cartesianOption", () => {
     const html: string = option.tooltip.formatter([{ dataIndex: 2, seriesIndex: 0, seriesName: "On time", color: "#c67139", value: 100 }]);
     expect(html).toContain("Goal");
     expect(html).toContain("90");
+  });
+
+  it("finishes an in-progress last point with a dashed segment and says so in the tooltip", () => {
+    const option = build({ partial: { label: "so far" }, valueFormat: "percent", xFormat: "day" });
+    // The solid line stops a point early; a helper of the same name dashes into a hollow dot.
+    expect(option.series).toHaveLength(2);
+    expect(option.series[0].data).toEqual([80, 95, null]);
+    expect(option.series[1]).toMatchObject({ name: "On time", lineStyle: { type: [4, 4] }, tooltip: { show: false } });
+    expect(option.series[1].data).toEqual([null, 95, { value: 100, symbol: "emptyCircle", symbolSize: 8 }]);
+    // One row per series, with today's real value, titled "so far".
+    const html: string = option.tooltip.formatter([{ dataIndex: 2, seriesIndex: 0, seriesName: "On time", color: "#c67139", value: null }]);
+    expect(html).toContain("21 Oct · so far");
+    expect(html.match(/On time/g)).toHaveLength(1);
+    expect(html).toContain("100");
+    // Bars and stacks have no in-progress look.
+    expect(build({ partial: { label: "so far" } }, { type: "bar" }).series).toHaveLength(1);
   });
 
   it("draws an unnamed target as the line alone", () => {

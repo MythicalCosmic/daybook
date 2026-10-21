@@ -9,7 +9,7 @@
 import type { Component } from "vue";
 import type { RouteLocationRaw, RouteRecordRaw, Router } from "vue-router";
 
-import type { Company, Pulse, Range } from "@/api/types";
+import type { Company, Language, Pulse, Range } from "@/api/types";
 import type { CompanyFeature } from "@/core/features";
 import type { Perm, PermRequirement } from "@/core/perms";
 
@@ -27,7 +27,12 @@ export const MODULE_GROUPS: readonly ModuleGroup[] = [
 ];
 
 export type Messages = Record<string, string>;
-export type ModuleMessages = Record<"uz" | "ru" | "en", Messages>;
+export type ModuleMessages = Record<Language, Messages>;
+/**
+ * One language's dictionary, loaded when that language is needed: a JSON module
+ * (`(language) => import(`./i18n/${language}.json`)`, one chunk per language) or a plain object.
+ */
+export type ModuleMessagesLoader = (language: Language) => Promise<Messages | { default: Messages }>;
 
 export interface NavItem {
   /** Unique within the module (registry.test.ts). */
@@ -171,7 +176,8 @@ export interface DashboardModule {
   personTabs?: PersonTab[];
   /** `startapp` prefixes this module answers inside Telegram ("shift" for "shift_1042"). */
   deepLinks?: Record<string, DeepLinkResolver>;
-  messages: () => Promise<ModuleMessages>;
+  /** The module's dictionary in one language: `(language) => import(`./i18n/${language}.json`)`. */
+  messages: ModuleMessagesLoader;
 }
 
 /**
