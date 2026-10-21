@@ -213,6 +213,7 @@
   "routines.today.showAll": "Показать все ({n})",
   "routines.today.skipped": "Пропущены",
   "routines.today.openTask": "Открыть задачу: {name}",
+  "routines.today.onlyOne": "Одна регулярная задача",
   "routines.runState.done": "Выполнено {time}",
   "routines.runState.doneLate": "Выполнено {time} · с опозданием",
   "routines.runState.review": "Ждёт подтверждения · {time}",

@@ -567,3 +567,26 @@ describe("RoutineDetailPage", () => {
     wrapper.unmount();
   });
 });
+
+describe("Today focused on a routine with nothing that day", () => {
+  it("still offers to show every routine", async () => {
+    stub({
+      "GET tasks/options/": () => json(options),
+      "GET routines/day/": () => json({ day: "2026-10-20", holiday: false, idle: 2, totals: { done: 0, review: 0, late: 0, missed: 0, returned: 0, open: 0, cancelled: 0, skipped: 0, total: 0, finished: 0, routines: 0 }, routines: [] }),
+    });
+    const app = await testApp("/c/1/routines?day=2026-10-20&routine=99");
+    for (const name of ["routines.today", "routines.history", "routines.confirm", "routines.list", "routines.onboarding", "routines.detail"]) {
+      app.router.addRoute({ path: `/named/${name}/:id?`, name, component: { render: () => null } });
+    }
+    const { default: TodayPage } = await import("../pages/TodayPage.vue");
+    const { wrapper } = mountWithProviders(TodayPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    const chip = [...document.body.querySelectorAll("button")].find((b) => b.textContent?.includes("One routine"));
+    expect(chip).toBeTruthy();
+    chip!.click();
+    await flushPromises();
+    expect(app.router.currentRoute.value.query.routine).toBeUndefined();
+    wrapper.unmount();
+  });
+});

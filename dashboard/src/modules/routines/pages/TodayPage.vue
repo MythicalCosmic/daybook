@@ -165,12 +165,12 @@ function give(target: GiveTarget): void {
     <div class="flex min-w-0 flex-wrap items-center gap-2">
       <FilterBar v-model="filters.values.value" class="min-w-0 flex-1" :defs="defs" />
       <button
-        v-if="focused"
+        v-if="only"
         type="button"
         class="inline-flex h-8 max-w-full items-center gap-1.5 rounded-button border border-line-strong bg-accent-soft px-2.5 text-sm font-medium text-accent-fg"
         @click="only = ''"
       >
-        <Repeat :size="14" class="shrink-0" aria-hidden="true" /><span class="truncate">{{ t("routines.today.only", { title: focused.title }) }}</span><X :size="14" class="shrink-0" :aria-label="t('routines.today.showEvery')" />
+        <Repeat :size="14" class="shrink-0" aria-hidden="true" /><span class="truncate">{{ focused ? t("routines.today.only", { title: focused.title }) : t("routines.today.onlyOne") }}</span><X :size="14" class="shrink-0" :aria-label="t('routines.today.showEvery')" />
       </button>
     </div>
 
