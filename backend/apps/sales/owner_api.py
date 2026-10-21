@@ -6,6 +6,9 @@ Every view is company-scoped and branch-scoped (§2.6: an id outside the caller'
 lets the services audit and bump the pulse keys.
 """
 
+from datetime import date, datetime, time, timedelta
+from zoneinfo import ZoneInfo
+
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext as _
@@ -23,7 +26,7 @@ from apps.finance.models import Category, MoneyAccount
 from apps.members import scope
 from apps.members.models import Membership
 from apps.members.permissions import Perm
-from apps.sales import queries, services
+from apps.sales import cash, queries, services
 from apps.sales.conf import get_settings
 from apps.sales.days import business_day
 from apps.sales.models import (
@@ -87,6 +90,31 @@ def _ids(params, name: str) -> list[int]:
     for raw in params.getlist(name):
         values += [int(part) for part in str(raw).split(",") if part.strip().isdigit()]
     return values
+
+
+def _int(params, name: str) -> int | None:
+    """An id filter; anything that isn't a number is a 400, never a server error."""
+    raw = (params.get(name) or "").strip()
+    if not raw:
+        return None
+    if not raw.isdigit():
+        raise ValidationError({name: [_("A number, please.")]})
+    return int(raw)
+
+
+def _day(params, name: str):
+    """A company-local `YYYY-MM-DD` filter (else a 400)."""
+    raw = (params.get(name) or "").strip()
+    if not raw:
+        return None
+    try:
+        return date.fromisoformat(raw)
+    except ValueError:
+        raise ValidationError({name: [_("A date like 2026-10-21.")]}) from None
+
+
+def _day_start(company, day) -> datetime:
+    return datetime.combine(day, time.min, tzinfo=ZoneInfo(company.timezone))
 
 
 def _flag(params, name: str) -> bool | None:
@@ -224,12 +252,16 @@ class RegisterViewSet(
     def get_serializer_context(self):
         context = super().get_serializer_context()
         if hasattr(self, "company"):
-            context["open_shifts"] = {
+            open_shifts = {
                 shift.register_id: shift
                 for shift in CashShift.objects.filter(
                     company=self.company, status=CashShift.Status.OPEN
-                ).select_related("cashier")
+                ).select_related("cashier", "branch")
             }
+            context["open_shifts"] = open_shifts
+            if self.action == "list":
+                # What each till holds, for the whole list in a few queries.
+                context["cash_now"] = cash.tills_now(self.get_queryset(), open_shifts)
         return context
 
     @extend_schema(parameters=[OpenApiParameter("branch", int, many=True)])
@@ -325,9 +357,12 @@ class TargetViewSet(mixins.DestroyModelMixin, SalesViewSet):
         branch = _branch(self.membership, values["branch_id"]) if values.get("branch_id") else None
         member = None
         if values.get("member_id"):
-            member = (
-                Membership.objects.for_company(self.company).filter(pk=values["member_id"]).first()
+            people = Membership.objects.for_company(self.company).filter(
+                status=Membership.Status.APPROVED
             )
+            if self.branch_scope is not None:
+                people = people.filter(home_branch_id__in=self.branch_scope)
+            member = people.filter(pk=values["member_id"]).first()
             if member is None:
                 raise ValidationError({"member_id": [_("Pick someone from the team.")]})
         if branch is None and member is None and self.branch_scope is not None:
@@ -532,7 +567,7 @@ class ShiftViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, SalesViewSe
         params = self.request.query_params
         filters = {
             "branch": _ids(params, "branch"),
-            "register": params.get("register"),
+            "register": _int(params, "register"),
             "cashier": _ids(params, "cashier"),
             "status": [
                 s
@@ -540,8 +575,8 @@ class ShiftViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, SalesViewSe
                 for s in raw.split(",")
                 if s in CashShift.Status.values
             ],
-            "from": params.get("from"),
-            "to": params.get("to"),
+            "from": _day(params, "from"),
+            "to": _day(params, "to"),
             "has_difference": _flag(params, "has_difference"),
             "mismatch": _flag(params, "mismatch"),
             "q": params.get("q"),
@@ -695,9 +730,9 @@ class MovementViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, SalesVie
             if k in CashMovement.Kind.values
         ]:
             rows = rows.filter(kind__in=kinds)
-        if register := params.get("register"):
+        if register := _int(params, "register"):
             rows = rows.filter(register_id=register)
-        if shift := params.get("shift"):
+        if shift := _int(params, "shift"):
             rows = rows.filter(shift_id=shift)
         state = params.get("status")
         if state == "pending":
@@ -713,10 +748,11 @@ class MovementViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, SalesVie
             rows = rows.filter(voided_at__isnull=False)
         elif state == "done":
             rows = rows.filter(confirmed_at__isnull=False, voided_at__isnull=True)
-        if start := params.get("from"):
-            rows = rows.filter(created_at__date__gte=start)
-        if end := params.get("to"):
-            rows = rows.filter(created_at__date__lte=end)
+        # Days in the company's calendar, not the server's.
+        if start := _day(params, "from"):
+            rows = rows.filter(created_at__gte=_day_start(self.company, start))
+        if end := _day(params, "to"):
+            rows = rows.filter(created_at__lt=_day_start(self.company, end + timedelta(days=1)))
         return rows.order_by("-created_at", "-pk")
 
     @extend_schema(
@@ -740,11 +776,14 @@ class MovementViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, SalesVie
         values = data.validated_data
         if not values.get("register_id"):
             raise ValidationError({"register_id": [_("Pick the till.")]})
-        movement = services.record_movement(
-            by=self.membership,
-            register=_register(self.membership, values["register_id"]),
-            **movement_kwargs(self.company, values),
-        )
+        register = _register(self.membership, values["register_id"])
+        kwargs = movement_kwargs(self.company, values)
+        account = kwargs.get("to_account")
+        # The other account must be one the caller sees: their branches' accounts, or
+        # company-level ones only for someone who sees every branch.
+        if account is not None and not scope.allows(self.branch_scope, account.branch_id):
+            raise ValidationError({"to_account_id": [_("Unknown account.")]})
+        movement = services.record_movement(by=self.membership, register=register, **kwargs)
         return Response(
             MovementSerializer(movement, context=self.get_serializer_context()).data,
             status=status.HTTP_201_CREATED,
@@ -810,13 +849,13 @@ class EntryViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, SalesViewSe
         )
         if branches := _ids(params, "branch"):
             rows = rows.filter(branch_id__in=branches)
-        if kind := params.get("kind"):
+        if (kind := params.get("kind")) in Sale.Kind.values:
             rows = rows.filter(kind=kind)
-        if shift := params.get("shift"):
+        if shift := _int(params, "shift"):
             rows = rows.filter(shift_id=shift)
-        if start := params.get("from"):
+        if start := _day(params, "from"):
             rows = rows.filter(business_day__gte=start)
-        if end := params.get("to"):
+        if end := _day(params, "to"):
             rows = rows.filter(business_day__lte=end)
         if _flag(params, "void") is False:
             rows = rows.filter(voided_at__isnull=True)

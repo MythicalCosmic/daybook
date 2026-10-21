@@ -90,7 +90,11 @@ def payment_account(register: Register, method: PaymentMethod) -> MoneyAccount:
         return method.account
     if method.is_cash:
         return register.cash_account
-    return finance.account_for_branch(register.branch, kind=MoneyAccount.Kind.CLEARING)
+    return finance.account_for_branch(
+        register.branch,
+        kind=MoneyAccount.Kind.CLEARING,
+        currency=register.cash_account.currency,
+    )
 
 
 def _free_account_name(company, name: str) -> str:
@@ -309,7 +313,11 @@ def _transfer_accounts(movement: CashMovement) -> tuple[MoneyAccount, MoneyAccou
     till = movement.register.cash_account
     kind = movement.kind
     if kind == CashMovement.Kind.HANDOVER:
-        return till, finance.account_for_holder(movement.company, movement.receiver)
+        # The receiver's cash-on-hand account in the till's currency (a USD company's till
+        # must not land in a UZS account).
+        return till, finance.account_for_holder(
+            movement.company, movement.receiver, currency=till.currency
+        )
     if kind == CashMovement.Kind.TO_SAFE:
         return till, finance.account_for_branch(movement.branch, currency=till.currency)
     if kind == CashMovement.Kind.FROM_SAFE:
@@ -341,13 +349,15 @@ def movement_day(movement: CashMovement):
 
 
 def book_sale(sale: Sale, register: Register, *, by: Membership | None) -> None:
-    """A receipt entered without a shift books on its own (one row per payment method)."""
+    """A receipt entered without a shift books on its own: one row per payment method, plus the
+    provider's fee on a sale, like a shift's ``f<method>`` row."""
     for payment in sale.payments.select_related("method__account"):
         method = payment.method
         if method.is_credit:
             continue
         account = payment_account(register, method)
         is_refund = sale.kind == Sale.Kind.REFUND
+        label = _("Receipt %(number)s") % {"number": sale}
         finance.record_transaction(
             sale.company,
             by=by,
@@ -358,14 +368,29 @@ def book_sale(sale: Sale, register: Register, *, by: Membership | None) -> None:
             category="refunds" if is_refund else "sales",
             is_contra=is_refund,
             branch=sale.branch,
-            description=(sale.note or _("Receipt %(number)s") % {"number": sale})[:300],
+            description=(sale.note or label)[:300],
             source=Source(SALE, sale.pk, f"m{method.pk}"),
         )
+        # The fee after the income, so an account that may not go below zero never has to.
+        fee = ZERO if is_refund else fee_of(method, quantize(payment.amount))
+        if fee:
+            finance.record_transaction(
+                sale.company,
+                by=by,
+                kind="expense",
+                amount=fee,
+                occurred_on=sale.business_day,
+                account=account,
+                category="bank_fees",
+                branch=sale.branch,
+                description=f"{label} · {method.name}"[:300],
+                source=Source(SALE, sale.pk, f"f{method.pk}"),
+            )
 
 
 def void_sale_booking(sale: Sale, *, by: Membership, reason: str) -> None:
     rows = Transaction.objects.filter(
         company_id=sale.company_id, source_type=SALE, source_id=sale.pk, status__in=LIVE_STATUSES
-    )
+    ).order_by("-pk")
     for row in rows:
         finance.void_transaction(row, by=by, reason=reason)

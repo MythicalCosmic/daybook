@@ -88,7 +88,7 @@ def shows_result(shift: CashShift, blind: bool) -> bool:
 
 
 def shift_data(shift: CashShift, request, *, blind: bool, detail: bool = False) -> dict:
-    payments = list(shift.payments.select_related("method"))
+    payments = cash.payments_of(shift)
     net = sum((p.sales - p.refunds for p in payments), 0)
     result = shows_result(shift, blind)
     data = {
@@ -271,7 +271,8 @@ class CurrentView(APIView):
         recent = (
             CashShift.objects.filter(cashier=member)
             .exclude(status=CashShift.Status.OPEN)
-            .select_related("branch", "register", "verified_by")[:5]
+            .select_related("branch", "register", "verified_by")
+            .prefetch_related("payments__method")[:5]
         )
         return Response(
             {
@@ -350,8 +351,10 @@ class ShiftListView(ListAPIView):
     membership: Membership
 
     def get_queryset(self):
-        return CashShift.objects.filter(cashier=self.membership).select_related(
-            "branch", "register", "verified_by"
+        return (
+            CashShift.objects.filter(cashier=self.membership)
+            .select_related("branch", "register", "verified_by")
+            .prefetch_related("payments__method")
         )
 
     @extend_schema(
@@ -422,7 +425,9 @@ class CloseSerializer(serializers.Serializer):
     counted_cash = MoneySerializerField(
         positive=False, min_value=0, required=False, allow_null=True
     )
-    receipts = serializers.IntegerField(min_value=0, required=False, allow_null=True)
+    receipts = serializers.IntegerField(
+        min_value=0, max_value=1_000_000, required=False, allow_null=True
+    )
     z_number = serializers.CharField(required=False, allow_blank=True, max_length=32, default="")
     fiscal_cash_total = MoneySerializerField(
         positive=False, min_value=0, required=False, allow_null=True

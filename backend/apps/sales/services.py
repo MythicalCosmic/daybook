@@ -607,8 +607,8 @@ def _check_lines(company, lines: list[PaymentLine]) -> list[PaymentLine]:
         sales = money(line.sales or 0, allow_zero=True)
         refunds = money(line.refunds or 0, allow_zero=True)
         receipts = int(line.receipts or 0)
-        if receipts < 0:
-            raise DomainError(_("The number of receipts can't be negative."))
+        if receipts < 0 or receipts > MAX_COUNT * 10:
+            raise DomainError(_("The number of receipts doesn't look right."))
         if sales or refunds or receipts:
             cleaned.append(PaymentLine(method, sales, refunds, receipts))
     return cleaned
@@ -1066,6 +1066,8 @@ def confirm_handover(movement: CashMovement, *, by: Membership) -> CashMovement:
     finance_bridge.book_movement(movement, by=by)
     inbox.settle(movement, outcome=_("Received"), by=by)
     _record(SalesAction.HANDOVER_CONFIRMED, movement.company, by, movement, amount=movement.amount)
+    pk = movement.pk
+    transaction.on_commit(lambda: alerts.handover_answered(pk))
     _bump(movement.company_id, PULSE_CASH)
     return movement
 
@@ -1090,6 +1092,7 @@ def decline_handover(movement: CashMovement, *, by: Membership, reason: str = ""
     )
     pk = movement.pk
     transaction.on_commit(lambda: alerts.handover_declined(pk))
+    transaction.on_commit(lambda: alerts.handover_answered(pk))
     _bump(movement.company_id, PULSE_CASH)
     return movement
 

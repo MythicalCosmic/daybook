@@ -21,6 +21,14 @@ from apps.sales.models import CashMovement, CashShift, PaymentMethod, Register, 
 ZERO = Decimal(0)
 
 
+def payments_of(shift: CashShift) -> list:
+    """A shift's payment lines with their methods: from the prefetch when the caller made one
+    (lists), else in one query."""
+    if "payments" in getattr(shift, "_prefetched_objects_cache", {}):
+        return list(shift.payments.all())
+    return list(shift.payments.select_related("method"))
+
+
 def movement_total(shift: CashShift) -> Decimal:
     """Σ of the shift's live movements, + for cash in, - for cash out."""
     total = ZERO
@@ -99,7 +107,7 @@ def expected_cash(shift: CashShift) -> Decimal:
     if shift.status == CashShift.Status.OPEN:
         cash = receipts_cash_net(shift)
     else:
-        cash = cash_net_of_lines(list(shift.payments.select_related("method")))
+        cash = cash_net_of_lines(payments_of(shift))
     return shift.opening_float + cash + movement_total(shift)
 
 
@@ -133,6 +141,66 @@ def till_now(register: Register, open_shift: CashShift | None = None) -> Decimal
     if open_shift is not None:
         return max(expected_cash(open_shift), ZERO)
     return till_physical(register)
+
+
+def tills_now(registers, open_shifts: dict[int, CashShift]) -> dict[int, Decimal]:
+    """`till_now` for many tills at once, in four queries whatever their number (lists, branch
+    cards and "where is my cash" call this instead of `till_now` per till)."""
+    registers = list(registers)
+    if not registers:
+        return {}
+    shifts = [open_shifts[r.pk] for r in registers if r.pk in open_shifts]
+    shift_ids = [shift.pk for shift in shifts]
+    idle = [r for r in registers if r.pk not in open_shifts]
+
+    balances = dict(
+        MoneyAccount.objects.filter(pk__in=[r.cash_account_id for r in idle]).values_list(
+            "pk", "balance"
+        )
+    )
+    unbooked = dict(
+        CashMovement.objects.filter(
+            register__in=idle,
+            kind=CashMovement.Kind.HANDOVER,
+            voided_at__isnull=True,
+            transfer__isnull=True,
+        )
+        .values("register_id")
+        .annotate(total=Sum("amount"))
+        .values_list("register_id", "total")
+    )
+    moved: dict[int, Decimal] = defaultdict(lambda: ZERO)
+    received: dict[int, Decimal] = defaultdict(lambda: ZERO)
+    if shift_ids:
+        for shift_id, kind, total in (
+            CashMovement.objects.filter(shift_id__in=shift_ids, voided_at__isnull=True)
+            .values("shift_id", "kind")
+            .annotate(total=Sum("amount"))
+            .values_list("shift_id", "kind", "total")
+        ):
+            moved[shift_id] += total if kind in CashMovement.INCOMING else -total
+        for shift_id, kind, total in (
+            SalePayment.objects.filter(
+                sale__shift_id__in=shift_ids,
+                sale__voided_at__isnull=True,
+                method__kind=PaymentMethod.Kind.CASH,
+            )
+            .values("sale__shift_id", "sale__kind")
+            .annotate(total=Sum("amount"))
+            .values_list("sale__shift_id", "sale__kind", "total")
+        ):
+            received[shift_id] += -total if kind == Sale.Kind.REFUND else total
+
+    found: dict[int, Decimal] = {}
+    for register in registers:
+        shift = open_shifts.get(register.pk)
+        if shift is not None:
+            expected = shift.opening_float + received[shift.pk] + moved[shift.pk]
+            found[register.pk] = max(expected, ZERO)
+        else:
+            balance = balances.get(register.cash_account_id) or ZERO
+            found[register.pk] = balance - (unbooked.get(register.pk) or ZERO)
+    return found
 
 
 def in_transit_filter() -> Q:

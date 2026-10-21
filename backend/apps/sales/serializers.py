@@ -181,6 +181,9 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.CharField())
     def get_cash_now(self, register) -> str:
+        amounts = self.context.get("cash_now")
+        if amounts is not None and register.pk in amounts:
+            return m(amounts[register.pk])
         return m(cash.till_now(register, self._open(register)))
 
     @extend_schema_field(serializers.DictField(allow_null=True))
@@ -412,7 +415,7 @@ class ShiftDetailSerializer(ShiftListSerializer):
     @extend_schema_field(ShiftPaymentSerializer(many=True))
     def get_payments(self, shift) -> list[dict]:
         rows = []
-        for payment in shift.payments.select_related("method"):
+        for payment in cash.payments_of(shift):
             rows.append(
                 {
                     "method": {
@@ -439,7 +442,7 @@ class ShiftDetailSerializer(ShiftListSerializer):
             sales, refunds = cash_net, 0
         else:
             sales = refunds = 0
-            for payment in shift.payments.select_related("method"):
+            for payment in cash.payments_of(shift):
                 if payment.method.kind == PaymentMethod.Kind.CASH:
                     sales += payment.sales
                     refunds += payment.refunds
@@ -539,7 +542,7 @@ class PaymentLineSerializer(serializers.Serializer):
     method_id = serializers.IntegerField()
     sales = MoneySerializerField(positive=False, min_value=0, required=False, default="0")
     refunds = MoneySerializerField(positive=False, min_value=0, required=False, default="0")
-    receipts = serializers.IntegerField(min_value=0, required=False, default=0)
+    receipts = serializers.IntegerField(min_value=0, max_value=1_000_000, required=False, default=0)
 
 
 def payment_lines(company, rows: list[dict]) -> list[PaymentLine]:

@@ -731,12 +731,15 @@ def cash_by_branch(company, branch_ids: list[int] | None) -> dict[int, dict]:
         ).select_related("cashier", "register")
     }
     found: dict[int, dict] = defaultdict(lambda: {"tills": [], "safe": None, "total": ZERO})
-    registers = restrict(
-        Register.objects.for_company(company).filter(is_active=True), branch_ids
-    ).select_related("cash_account", "branch")
+    registers = list(
+        restrict(Register.objects.for_company(company).filter(is_active=True), branch_ids)
+        .select_related("cash_account", "branch")
+        .order_by("branch__order", "order", "name")
+    )
+    amounts = cash.tills_now(registers, open_shifts)
     for register in registers:
         shift = open_shifts.get(register.pk)
-        amount = cash.till_now(register, shift)
+        amount = amounts[register.pk]
         found[register.branch_id]["tills"].append(
             {"register": register, "shift": shift, "amount": amount}
         )
@@ -1388,6 +1391,21 @@ def offboard_preview(membership: Membership) -> OffboardStep:
         lines.append(
             _("%(count)s handovers they made (%(amount)s) aren't confirmed by the receiver yet.")
             % {"count": sent.count(), "amount": msg.money(total)}
+        )
+    held = (
+        MoneyAccount.objects.filter(
+            company_id=membership.company_id,
+            holder=membership,
+            kind=MoneyAccount.Kind.EMPLOYEE,
+            is_active=True,
+        )
+        .exclude(balance=0)
+        .order_by("currency")
+    )
+    for account in held:
+        lines.append(
+            _("They hold %(amount)s in cash handed to them: settle it before they leave.")
+            % {"amount": msg.money(account.balance, account.currency)}
         )
     closed = CashShift.objects.filter(cashier=membership).exclude(status=Status.OPEN)
     unverified = closed.filter(status=Status.CLOSED).count()

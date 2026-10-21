@@ -8,6 +8,7 @@ Every function returns text in the active language; `apps.inbox.services.notify`
 from decimal import Decimal
 
 from django.utils import translation
+from django.utils.html import escape
 from django.utils.translation import gettext as _
 
 from apps.core.money import format_money
@@ -210,9 +211,10 @@ def over_limit_body(limit: Decimal) -> str:
 
 
 def group_shift_closed(code: str, branch: str, cashier: str, net: Decimal, difference) -> str:
+    # Group posts are Telegram HTML: names are escaped.
     lines = [
-        _("🧾 <b>%(shift)s</b> closed · %(branch)s") % {"shift": code, "branch": branch},
-        cashier,
+        _("🧾 <b>%(shift)s</b> closed · %(branch)s") % {"shift": code, "branch": escape(branch)},
+        escape(cashier),
         _("Sales: %(net)s") % {"net": money(net)},
     ]
     if difference is not None:
@@ -220,12 +222,27 @@ def group_shift_closed(code: str, branch: str, cashier: str, net: Decimal, diffe
     return "\n".join(lines)
 
 
+def group_handover(
+    cashier: str, receiver: str, amount: Decimal, currency: str, branch: str, *, received: bool
+) -> str:
+    """The cash groups hear when handed-over cash arrives, or doesn't."""
+    values = {
+        "cashier": escape(cashier),
+        "receiver": escape(receiver),
+        "amount": money(amount, currency),
+        "branch": escape(branch),
+    }
+    if received:
+        return _("💵 %(cashier)s → %(receiver)s: %(amount)s received ✓ · %(branch)s") % values
+    return _("⚠️ %(cashier)s → %(receiver)s: %(amount)s NOT received · %(branch)s") % values
+
+
 def group_evening(day_label: str, rows: list[tuple[str, Decimal, int]], total: Decimal, change):
     lines = [_("📊 <b>Sales · %(day)s</b>") % {"day": day_label}]
     for name, net, receipts in rows:
         lines.append(
             _("%(branch)s: %(net)s (%(receipts)s receipts)")
-            % {"branch": name, "net": money(net), "receipts": receipts}
+            % {"branch": escape(name), "net": money(net), "receipts": receipts}
         )
     total_line = _("Total: <b>%(total)s</b>") % {"total": money(total)}
     if change is not None:

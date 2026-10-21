@@ -236,6 +236,23 @@ def handover_sent(movement_id: int) -> None:
     )
 
 
+def handover_answered(movement_id: int) -> None:
+    """One line in the company's cash groups once the receiver answered a handover."""
+    movement = _movement(movement_id)
+    if movement is None or movement.status not in ("done", "declined"):
+        return
+    with translation.override(movement.company.default_language):
+        text = msg.group_handover(
+            str(movement.created_by),
+            str(movement.receiver),
+            movement.amount,
+            movement.currency,
+            movement.branch.name,
+            received=movement.status == "done",
+        )
+    broadcast(movement.company_id, GroupEvent.CASH, text, branch_id=movement.branch_id)
+
+
 def handover_declined(movement_id: int) -> None:
     movement = _movement(movement_id)
     if movement is None:

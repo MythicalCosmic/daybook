@@ -185,11 +185,10 @@ def cash_in_branch(branch: Branch) -> Decimal:
         shift.register_id: shift
         for shift in CashShift.objects.filter(branch=branch, status=CashShift.Status.OPEN)
     }
-    total = Decimal(0)
-    for register in Register.objects.filter(branch=branch, is_active=True).select_related(
+    registers = Register.objects.filter(branch=branch, is_active=True).select_related(
         "cash_account"
-    ):
-        total += cash.till_now(register, open_shifts.get(register.pk))
+    )
+    total = sum(cash.tills_now(registers, open_shifts).values(), Decimal(0))
     safe = MoneyAccount.objects.filter(
         company_id=branch.company_id, branch=branch, kind=MoneyAccount.Kind.SAFE, is_active=True
     ).aggregate(total=Sum("balance"))["total"]
