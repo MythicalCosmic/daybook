@@ -8,7 +8,8 @@
  * "Customize" lets the person drag cards into their own order and hide the ones they don't need;
  * the arrangement is their `overview` SavedView, and "Reset" goes back to the registered order.
  */
-import { Check, LayoutGrid, RotateCcw, SlidersHorizontal } from "@lucide/vue";
+// LayoutDashboard is the module's own icon, already in the first load (README "Budgets").
+import { Check, LayoutDashboard, LayoutGrid } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -23,12 +24,11 @@ import { modules, type WidgetSpan } from "@/core/modules";
 import { dayPart, formatDay, todayIn } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
 import { useNow } from "@/lib/useNow";
-import { useSavedViews } from "@/lib/useSavedViews";
 import { useCompanyStore } from "@/stores/company";
 import { useSessionStore } from "@/stores/session";
 
 import WidgetCell from "../components/WidgetCell.vue";
-import { cockpit, isDefaultLayout, LAYOUT_VIEW, layoutFromState, layoutToState } from "../layout";
+import { cockpit, isDefaultLayout, LAYOUT_VIEW, layoutFromState, layoutToState, saveOverviewLayout, useOverviewViews } from "../layout";
 
 const { t } = useI18n();
 const fmt = useFormat();
@@ -51,8 +51,8 @@ const widgets = computed(() =>
 const widgetProps = computed(() => ({ companyId: company.currentId ?? 0, range: { from: today.value, to: today.value }, compare: null }));
 
 // The person's own arrangement (their `overview` SavedView), applied as soon as it arrives.
-const views = useSavedViews("overview");
-const saved = computed(() => (views.list.data.value ?? []).find((view) => view.is_mine && view.name === LAYOUT_VIEW) ?? null);
+const views = useOverviewViews();
+const saved = computed(() => (views.data.value ?? []).find((view) => view.is_mine && view.name === LAYOUT_VIEW) ?? null);
 const layout = ref<WidgetLayout>(EMPTY_LAYOUT);
 const editing = ref(false);
 watch(
@@ -66,23 +66,29 @@ watch(
 const shown = computed(() => arrange(widgets.value, layout.value).filter((widget) => !widget.hidden));
 const bands = computed(() => cockpit(shown.value));
 
-/** Two columns below desktop (an odd last tile takes the whole row), the packed span on desktop. */
-const KPI_SPAN: Record<WidgetSpan, string> = { 1: "lg:col-span-1", 2: "lg:col-span-2", 3: "lg:col-span-3", 4: "lg:col-span-4" };
-const CARD_SPAN: Record<WidgetSpan, string> = { 1: "md:col-span-1 lg:col-span-1", 2: "md:col-span-2 lg:col-span-2", 3: "md:col-span-2 lg:col-span-3", 4: "md:col-span-2 lg:col-span-4" };
+/**
+ * Columns follow the page's own width, not the window's (the sidebar takes 248 px of it): four
+ * from 56rem, two below (an odd last KPI tile takes its whole row), cards in one column under
+ * 36rem. The packed spans apply in four columns; in two a card is one column or the whole row.
+ */
+const KPI_SPAN: Record<WidgetSpan, string> = { 1: "@4xl:col-span-1", 2: "@4xl:col-span-2", 3: "@4xl:col-span-3", 4: "@4xl:col-span-4" };
+const CARD_SPAN: Record<WidgetSpan, string> = {
+  1: "@xl:col-span-1 @4xl:col-span-1",
+  2: "@xl:col-span-2 @4xl:col-span-2",
+  3: "@xl:col-span-2 @4xl:col-span-3",
+  4: "@xl:col-span-2 @4xl:col-span-4",
+};
 
 async function finish(): Promise<void> {
   editing.value = false;
-  const current = saved.value;
+  const state = isDefaultLayout(widgets.value, layout.value) ? null : { ...layoutToState(widgets.value, layout.value) };
   try {
-    if (isDefaultLayout(widgets.value, layout.value)) {
-      if (current) await views.remove.mutateAsync(current.id);
-    } else {
-      const state = { ...layoutToState(widgets.value, layout.value) };
-      if (current) await views.update.mutateAsync({ id: current.id, state });
-      else await views.create.mutateAsync({ name: LAYOUT_VIEW, state });
-    }
+    // The registered order needs no saved layout: Reset deletes it.
+    if (state || saved.value) await saveOverviewLayout(company.currentId ?? 0, saved.value, state);
   } catch {
     // The API layer already said what went wrong; the layout stays as arranged on this page.
+  } finally {
+    void views.refetch();
   }
 }
 </script>
@@ -92,12 +98,12 @@ async function finish(): Promise<void> {
     <PageHeader :title="greeting" :description="subtitle">
       <template v-if="widgets.length" #actions>
         <template v-if="editing">
-          <UiButton variant="ghost" size="sm" :icon="RotateCcw" :disabled="isDefaultLayout(widgets, layout)" @click="layout = EMPTY_LAYOUT">
+          <UiButton variant="ghost" size="sm" :disabled="isDefaultLayout(widgets, layout)" @click="layout = EMPTY_LAYOUT">
             {{ t("overview.customize.reset") }}
           </UiButton>
           <UiButton variant="primary" size="sm" :icon="Check" @click="finish">{{ t("common.done") }}</UiButton>
         </template>
-        <UiButton v-else variant="ghost" size="sm" :icon="SlidersHorizontal" @click="editing = true">{{ t("overview.customize.open") }}</UiButton>
+        <UiButton v-else variant="ghost" size="sm" :icon="LayoutDashboard" @click="editing = true">{{ t("overview.customize.open") }}</UiButton>
       </template>
     </PageHeader>
     <ExtensionSlot name="overview.hero" class="mb-4 empty:hidden" :context="{ companyId: company.currentId }" />
@@ -111,23 +117,23 @@ async function finish(): Promise<void> {
       </WidgetGrid>
     </template>
 
-    <div v-else-if="shown.length" class="flex flex-col gap-3">
+    <div v-else-if="shown.length" class="flex flex-col gap-3 @container">
       <div v-for="widget in bands.lead" :key="widget.id" :data-widget="widget.id" class="min-w-0 empty:hidden">
         <WidgetCell :widget="widget" :widget-props="widgetProps" :placeholder="false" />
       </div>
-      <div v-if="bands.kpis.length" class="grid grid-cols-2 gap-3 lg:grid-cols-4" data-band="kpis">
+      <div v-if="bands.kpis.length" class="grid grid-cols-2 gap-3 @4xl:grid-cols-4" data-band="kpis">
         <div
           v-for="{ widget, span } in bands.kpis"
           :key="widget.id"
           :data-widget="widget.id"
-          :class="['min-w-0 empty:hidden max-lg:last:odd:col-span-2', KPI_SPAN[span]]"
+          :class="['min-w-0 empty:hidden @max-4xl:last:odd:col-span-2', KPI_SPAN[span]]"
         >
           <WidgetCell :widget="widget" :widget-props="widgetProps" />
         </div>
       </div>
       <!-- A row is as tall as its tallest card, at most 22rem (26rem stacked on phones): longer lists scroll inside. -->
-      <div v-if="bands.cards.length" class="grid grid-flow-row-dense grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4" data-band="cards">
-        <div v-for="{ widget, span } in bands.cards" :key="widget.id" :data-widget="widget.id" :class="['min-w-0 max-h-[26rem] empty:hidden lg:max-h-[22rem]', CARD_SPAN[span]]">
+      <div v-if="bands.cards.length" class="grid grid-flow-row-dense grid-cols-1 gap-3 @xl:grid-cols-2 @4xl:grid-cols-4" data-band="cards">
+        <div v-for="{ widget, span } in bands.cards" :key="widget.id" :data-widget="widget.id" :class="['min-w-0 max-h-[26rem] empty:hidden @4xl:max-h-[22rem]', CARD_SPAN[span]]">
           <WidgetCell :widget="widget" :widget-props="widgetProps" />
         </div>
       </div>
@@ -135,7 +141,7 @@ async function finish(): Promise<void> {
 
     <div v-else class="ui-card">
       <EmptyState v-if="widgets.length" :icon="LayoutGrid" :title="t('overview.customize.allHidden')" :description="t('overview.customize.allHiddenBody')">
-        <UiButton variant="secondary" :icon="SlidersHorizontal" @click="editing = true">{{ t("overview.customize.open") }}</UiButton>
+        <UiButton variant="secondary" :icon="LayoutDashboard" @click="editing = true">{{ t("overview.customize.open") }}</UiButton>
       </EmptyState>
       <EmptyState v-else :icon="LayoutGrid" :title="t('overview.empty.title')" :description="t('overview.empty.body')" />
     </div>

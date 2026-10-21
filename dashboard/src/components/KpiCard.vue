@@ -19,6 +19,7 @@ import { useTween } from "@/lib/useTween";
 
 import { toNumber } from "./chartCard";
 import DeltaBadge from "./DeltaBadge.vue";
+import ErrorState from "./ErrorState.vue";
 import SkeletonBlock from "./SkeletonBlock.vue";
 import SparkLine from "./SparkLine.vue";
 
@@ -44,6 +45,9 @@ const props = withDefaults(
     hint?: string;
     icon?: Component;
     loading?: boolean;
+    /** The number failed to load: the tile keeps its label and says so, with Try again. */
+    error?: unknown;
+    retry?: () => unknown;
     /** "plain" for use inside KpiStrip (no own border). */
     variant?: "card" | "plain";
   }>(),
@@ -62,6 +66,8 @@ const props = withDefaults(
     hint: undefined,
     icon: undefined,
     loading: false,
+    error: undefined,
+    retry: undefined,
     variant: "card",
   },
 );
@@ -121,7 +127,8 @@ const change = computed(() => {
       <span class="min-w-0 flex-1 truncate text-sm font-medium text-muted" :title="label">{{ label }}</span>
       <ArrowUpRight v-if="to" :size="15" class="shrink-0 text-subtle opacity-0 transition-opacity group-hover:opacity-100" :aria-label="t('common.kpi.open')" />
     </div>
-    <template v-if="loading">
+    <ErrorState v-if="error" class="mt-2.5" compact bare :error="error" :retry="retry" @click.stop.prevent />
+    <template v-else-if="loading">
       <SkeletonBlock class="mt-2.5" width="62%" height="26px" />
       <SkeletonBlock class="mt-3" width="40%" height="14px" />
     </template>

@@ -10,6 +10,7 @@ import CalendarWeek from "@/components/CalendarWeek.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import KbdKey from "@/components/KbdKey.vue";
+import KpiCard from "@/components/KpiCard.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import PersonCell from "@/components/PersonCell.vue";
@@ -359,6 +360,21 @@ describe("WidgetCard", () => {
     expect(fadeMask(100, 300, 500)).toContain("transparent 0");
     expect(fadeMask(100, 300, 500)).toContain("transparent 100%");
     expect(fadeMask(200, 300, 500)).toBe("linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 14px), #000 100%)");
+  });
+
+  it("KpiCard keeps its label when the number fails, and Try again doesn't follow the tile's link", async () => {
+    const retry = vi.fn();
+    const tile = mount(KpiCard, {
+      props: { label: "Done today", value: null, to: "/c/1/tasks", error: new ApiError(500, null), retry },
+      global: { plugins: plugins() },
+    });
+    expect(tile.text()).toContain("Done today");
+    expect(tile.find("[role='alert']").exists()).toBe(true);
+    const before = router.currentRoute.value.fullPath;
+    await tile.find("[role='alert'] button").trigger("click");
+    await flushPromises();
+    expect(retry).toHaveBeenCalledTimes(1);
+    expect(router.currentRoute.value.fullPath).toBe(before);
   });
 
   it("knows when a wide table still has columns past its right edge", () => {

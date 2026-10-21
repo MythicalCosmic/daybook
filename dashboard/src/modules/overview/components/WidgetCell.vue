@@ -7,7 +7,6 @@
 import { onErrorCaptured, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
-import ErrorState from "@/components/ErrorState.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import type { Widget, WidgetProps } from "@/core/modules";
 
@@ -25,7 +24,11 @@ onErrorCaptured((error) => {
 </script>
 
 <template>
-  <ErrorState v-if="failure" compact class="ui-card h-full" :title="t('overview.widget.failed')" :error="failure" :retry="() => (failure = null)" />
+  <!-- Plain markup, not ErrorState: the Overview page is part of the first-load budget. -->
+  <div v-if="failure" class="ui-card flex h-full min-h-[136px] flex-col items-center justify-center gap-1.5 p-4 text-center" role="alert">
+    <p class="text-sm font-semibold text-fg">{{ t("overview.widget.failed") }}</p>
+    <button type="button" class="rounded-[6px] px-2 py-0.5 text-sm font-semibold text-primary hover:bg-highlight" @click="failure = null">{{ t("common.retry") }}</button>
+  </div>
   <Suspense v-else>
     <component :is="widget.component" v-bind="widgetProps" />
     <template #fallback>

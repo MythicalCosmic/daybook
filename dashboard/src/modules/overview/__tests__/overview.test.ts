@@ -152,6 +152,8 @@ describe("OverviewPage", () => {
     const activity = wrapper.find('[data-widget="overview.activity"]');
     await activity.find("button[aria-pressed]").trigger("click");
     await button("Done").trigger("click");
+    // The write loads its helper on use: wait for it, then for the list to refetch.
+    await vi.waitFor(() => expect(sent.some((call) => call.method === "POST" && call.path === "saved-views/")).toBe(true));
     await flushPromises();
     const created = sent.find((call) => call.method === "POST" && call.path === "saved-views/")!;
     expect(created.body).toMatchObject({ module: "overview", name: "layout", is_shared: false });
@@ -165,7 +167,8 @@ describe("OverviewPage", () => {
     await button(en["overview.customize.reset"]).trigger("click");
     await button("Done").trigger("click");
     await flushPromises();
-    expect(sent.some((call) => call.method === "DELETE" && call.path === "saved-views/9/")).toBe(true);
+    await vi.waitFor(() => expect(sent.some((call) => call.method === "DELETE" && call.path === "saved-views/9/")).toBe(true));
+    await flushPromises();
     expect(wrapper.find('[data-widget="overview.activity"]').exists()).toBe(true);
   });
 });

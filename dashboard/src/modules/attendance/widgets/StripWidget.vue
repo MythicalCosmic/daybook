@@ -51,19 +51,19 @@ const pct = (value: number) => `${(value / peak.value) * 100}%`;
     <template v-else>
       <!-- The bars fill whatever height the card has (absolute, so their percentages have a height to use). -->
       <div class="relative mt-2 min-h-[120px] flex-1">
-      <div class="absolute inset-0 flex items-end gap-1.5" role="img" :aria-label="t('attendance.widget.stripSubtitle')">
-        <div
-          v-for="day in days"
-          :key="day.date"
-          class="group flex h-full min-w-0 flex-1 flex-col justify-end"
-          :title="`${fmt.day(day.date, 'short')} · ${t('attendance.widget.onTime')} ${day.present - day.late} · ${t('attendance.widget.lateLegend')} ${day.late} · ${t('attendance.widget.absentLegend')} ${day.absent}`"
-        >
-          <span v-if="day.absent" class="w-full rounded-t-[3px] bg-danger/80" :style="{ height: pct(day.absent) }" />
-          <span v-if="day.late" :class="['w-full bg-warning/85', !day.absent && 'rounded-t-[3px]']" :style="{ height: pct(day.late) }" />
-          <span v-if="day.present - day.late" :class="['w-full bg-success/80', !day.absent && !day.late && 'rounded-t-[3px]']" :style="{ height: pct(day.present - day.late) }" />
-          <span v-if="!day.present && !day.absent" class="h-[3px] w-full rounded-full bg-surface-2" />
+        <div class="absolute inset-0 flex items-end gap-1.5" role="img" :aria-label="t('attendance.widget.stripSubtitle')">
+          <div
+            v-for="day in days"
+            :key="day.date"
+            class="group flex h-full min-w-0 flex-1 flex-col justify-end"
+            :title="`${fmt.day(day.date, 'short')} · ${t('attendance.widget.onTime')} ${day.present - day.late} · ${t('attendance.widget.lateLegend')} ${day.late} · ${t('attendance.widget.absentLegend')} ${day.absent}`"
+          >
+            <span v-if="day.absent" class="w-full rounded-t-[3px] bg-danger/80" :style="{ height: pct(day.absent) }" />
+            <span v-if="day.late" :class="['w-full bg-warning/85', !day.absent && 'rounded-t-[3px]']" :style="{ height: pct(day.late) }" />
+            <span v-if="day.present - day.late" :class="['w-full bg-success/80', !day.absent && !day.late && 'rounded-t-[3px]']" :style="{ height: pct(day.present - day.late) }" />
+            <span v-if="!day.present && !day.absent" class="h-[3px] w-full rounded-full bg-surface-2" />
+          </div>
         </div>
-      </div>
       </div>
       <div class="mt-1.5 flex gap-1.5">
         <span v-for="day in days" :key="day.date" :class="['min-w-0 flex-1 text-center text-[10px] tabular-nums', day.date === today ? 'font-semibold text-primary' : 'text-subtle']">

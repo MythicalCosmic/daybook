@@ -34,14 +34,15 @@ const to = computed(() => ({ path: `/c/${props.companyId}/finance/transactions`,
 </script>
 
 <template>
-  <ErrorState v-if="overview.isError.value" compact :error="overview.error.value" :retry="() => overview.refetch()" class="h-full" />
-  <RouterLink v-else :to="to" class="ui-card group flex h-full min-h-[148px] min-w-0 flex-col p-4 transition-colors @container hover:border-line-strong" :aria-busy="overview.isPending.value || undefined">
+  <RouterLink :to="to" class="ui-card group flex h-full min-h-[148px] min-w-0 flex-col p-4 transition-colors @container hover:border-line-strong" :aria-busy="overview.isPending.value || undefined">
     <div class="flex items-center gap-2">
       <TrendingDown :size="15" class="shrink-0 text-subtle" aria-hidden="true" />
       <span class="min-w-0 flex-1 truncate text-sm font-medium text-muted" :title="t('finance.overview.expensesMonth')">{{ t("finance.overview.expensesMonth") }}</span>
       <ArrowUpRight :size="15" class="shrink-0 text-subtle opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true" />
     </div>
-    <template v-if="overview.isPending.value">
+    <!-- A failed load keeps the tile and its label, like every KPI tile (KpiCard). -->
+    <ErrorState v-if="overview.isError.value" class="mt-2.5" compact bare :error="overview.error.value" :retry="() => overview.refetch()" @click.stop.prevent />
+    <template v-else-if="overview.isPending.value">
       <SkeletonBlock class="mt-2.5" width="62%" height="26px" />
       <SkeletonBlock class="mt-auto" height="44px" />
     </template>

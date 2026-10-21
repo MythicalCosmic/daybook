@@ -11,8 +11,15 @@
  * Within each band the registered `order` (then id) decides, or the person's own order when they
  * customised the page (widgetLayout.ts `arrange`, saved as their `overview` SavedView).
  */
+import { useQuery } from "@tanstack/vue-query";
+import { computed } from "vue";
+
+import { http, ownerPath } from "@/api/http";
+import { qk } from "@/api/keys";
 import { arrange, type LayoutWidget, type WidgetLayout } from "@/components/widgetLayout";
 import type { WidgetSpan } from "@/core/modules";
+import type { SavedView } from "@/lib/useSavedViews";
+import { useCompanyStore } from "@/stores/company";
 
 /** The personal layout's SavedView (plan §3.3): `module="overview"`, `name="layout"`. */
 export const LAYOUT_VIEW = "layout";
@@ -38,6 +45,32 @@ export function layoutToState(widgets: readonly LayoutWidget[], layout: WidgetLa
 /** Whether `layout` shows every widget in the registered order (nothing worth saving). */
 export function isDefaultLayout(widgets: readonly LayoutWidget[], layout: WidgetLayout): boolean {
   return arrange(widgets, layout).every((widget, index) => !widget.hidden && widget.id === widgets[index]?.id);
+}
+
+/**
+ * The person's own saved views of the Overview (`saved-views/?module=overview`). Same key as
+ * `useSavedViews("overview")`, so the shell's `console.saved_views` pulse refreshes it. Here and
+ * not in api.ts, which the widgets share: the page stays light (README "Budgets").
+ */
+export function useOverviewViews() {
+  const company = useCompanyStore();
+  const companyId = computed(() => company.currentId ?? 0);
+  return useQuery({
+    queryKey: computed(() => qk(companyId.value, "shell", "saved-views", { module: "overview" })),
+    queryFn: ({ signal }) => http.get<SavedView[]>(ownerPath(companyId.value, "saved-views/"), { module: "overview" }, { signal }),
+    enabled: computed(() => companyId.value > 0),
+    staleTime: 5 * 60_000,
+  });
+}
+
+/** Saves (or, with `state: null`, deletes) the person's layout; the helper loads on use ("Done" is rare). */
+export async function saveOverviewLayout(companyId: number, current: SavedView | null, state: Record<string, unknown> | null): Promise<void> {
+  const { savedViewsApi } = await import("@/lib/useSavedViews");
+  const api = savedViewsApi(companyId);
+  if (state === null) {
+    if (current) await api.remove(current.id);
+  } else if (current) await api.update(current.id, { state });
+  else await api.create("overview", { name: LAYOUT_VIEW, state });
 }
 
 export interface CockpitWidget {

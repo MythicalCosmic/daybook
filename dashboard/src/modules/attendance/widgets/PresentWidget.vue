@@ -44,9 +44,7 @@ const breakdown = computed(() => {
 </script>
 
 <template>
-  <ErrorState v-if="board.isError.value" compact :error="board.error.value" :retry="() => board.refetch()" class="ui-card h-full" />
   <RouterLink
-    v-else
     :to="`/c/${props.companyId}/attendance`"
     class="ui-card group flex h-full min-w-0 flex-col p-4 transition-colors @container hover:border-line-strong"
     :aria-label="t('attendance.kpi.presentNow')"
@@ -57,7 +55,8 @@ const breakdown = computed(() => {
       <span class="min-w-0 flex-1 truncate text-sm font-medium text-muted">{{ t("attendance.kpi.presentNow") }}</span>
       <ArrowUpRight :size="15" class="shrink-0 text-subtle opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true" />
     </div>
-    <div v-if="board.isPending.value" class="flex flex-col gap-3">
+    <ErrorState v-if="board.isError.value" class="mt-2.5" compact bare :error="board.error.value" :retry="() => board.refetch()" @click.stop.prevent />
+    <div v-else-if="board.isPending.value" class="flex flex-col gap-3">
       <SkeletonBlock class="mt-2.5" width="40%" height="26px" />
       <SkeletonBlock width="70%" height="12px" />
     </div>

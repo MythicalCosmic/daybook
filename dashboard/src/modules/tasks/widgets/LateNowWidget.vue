@@ -5,7 +5,6 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
 import type { Range } from "@/api/types";
-import ErrorState from "@/components/ErrorState.vue";
 import KpiCard from "@/components/KpiCard.vue";
 
 import { useSummary } from "../api";
@@ -17,9 +16,9 @@ const data = computed(() => query.data.value);
 </script>
 
 <template>
-  <ErrorState v-if="query.isError.value" class="ui-card h-full" compact :error="query.error.value" :retry="() => query.refetch()" />
   <KpiCard
-    v-else
+    :error="query.isError.value ? query.error.value : undefined"
+    :retry="() => query.refetch()"
     class="h-full"
     :icon="AlarmClock"
     :label="t('tasks.kpi.lateNow')"
