@@ -35,10 +35,10 @@ const to = computed(() => ({ path: `/c/${props.companyId}/finance/transactions`,
 
 <template>
   <ErrorState v-if="overview.isError.value" compact :error="overview.error.value" :retry="() => overview.refetch()" class="h-full" />
-  <RouterLink v-else :to="to" class="ui-card group flex h-full min-h-[148px] min-w-0 flex-col p-4 transition-colors hover:border-line-strong" :aria-busy="overview.isPending.value || undefined">
+  <RouterLink v-else :to="to" class="ui-card group flex h-full min-h-[148px] min-w-0 flex-col p-4 transition-colors @container hover:border-line-strong" :aria-busy="overview.isPending.value || undefined">
     <div class="flex items-center gap-2">
       <TrendingDown :size="15" class="shrink-0 text-subtle" aria-hidden="true" />
-      <span class="min-w-0 flex-1 truncate text-sm font-medium text-muted">{{ t("finance.overview.expensesMonth") }}</span>
+      <span class="min-w-0 flex-1 truncate text-sm font-medium text-muted" :title="t('finance.overview.expensesMonth')">{{ t("finance.overview.expensesMonth") }}</span>
       <ArrowUpRight :size="15" class="shrink-0 text-subtle opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true" />
     </div>
     <template v-if="overview.isPending.value">
@@ -46,7 +46,7 @@ const to = computed(() => ({ path: `/c/${props.companyId}/finance/transactions`,
       <SkeletonBlock class="mt-auto" height="44px" />
     </template>
     <template v-else-if="month">
-      <p class="mt-1.5 truncate text-[1.625rem] font-semibold leading-8 tracking-[-0.02em] tabular-nums text-fg" :title="fmt.money(month.expense)">
+      <p class="kpi-value mt-1.5 truncate" :title="fmt.money(month.expense)">
         {{ fmt.money(month.expense, undefined, { compact: true, decimals: "never" }) }}
       </p>
       <DeltaBadge class="mt-1 self-start" :value="change" inverse :suffix="t('finance.overview.vsLastMonth')" />

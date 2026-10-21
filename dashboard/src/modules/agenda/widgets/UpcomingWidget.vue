@@ -1,15 +1,16 @@
 <script setup lang="ts">
 /** Overview widget "Coming up": the next seven days from every calendar the person may see. */
-import { ArrowRight, CalendarDays } from "@lucide/vue";
+import { CalendarDays } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { RouterLink, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
 
 import type { Range } from "@/api/types";
 import type { CalendarItem } from "@/components/calendarItems";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
+import WidgetCard from "@/components/WidgetCard.vue";
 import { addDays, todayIn } from "@/lib/dates";
 import { companyUrl } from "@/lib/links";
 import { useDelayedPending } from "@/lib/useDelayedPending";
@@ -42,23 +43,13 @@ function open(item: CalendarItem): void {
 </script>
 
 <template>
-  <section class="ui-card flex h-full min-w-0 flex-col" :aria-label="t('agenda.upcoming.title')">
-    <header class="flex items-center gap-2 px-4 pb-2 pt-4">
-      <CalendarDays :size="16" class="text-subtle" aria-hidden="true" />
-      <h3 class="text-sm font-semibold text-fg">{{ t("agenda.upcoming.title") }}</h3>
-      <span class="flex-1" />
-      <RouterLink :to="base" class="inline-flex items-center gap-1 rounded-[6px] px-1.5 py-0.5 text-sm font-semibold text-muted hover:bg-highlight hover:text-fg">
-        {{ t("agenda.upcoming.open") }}<ArrowRight :size="14" />
-      </RouterLink>
-    </header>
-    <div class="min-h-0 flex-1 px-2 pb-3">
-      <div v-if="skeleton" class="flex flex-col gap-2 p-2"><SkeletonBlock v-for="n in 4" :key="n" height="32px" radius="8px" /></div>
-      <ErrorState v-else-if="calendar.isError.value" compact :error="calendar.error.value" :retry="() => calendar.refetch()" class="m-2" />
-      <UpcomingList v-else-if="calendar.data.value" :items="items" :limit="6" @item-click="open">
-        <template #empty>
-          <EmptyState size="sm" tone="success" :icon="CalendarDays" :title="t('agenda.upcoming.empty')" :description="t('agenda.upcoming.emptyBody')" />
-        </template>
-      </UpcomingList>
-    </div>
-  </section>
+  <WidgetCard :title="t('agenda.upcoming.title')" :icon="CalendarDays" :to="base" :link-label="t('agenda.upcoming.open')">
+    <div v-if="skeleton" class="flex flex-col gap-2 p-2"><SkeletonBlock v-for="n in 4" :key="n" height="32px" radius="8px" /></div>
+    <ErrorState v-else-if="calendar.isError.value" compact :error="calendar.error.value" :retry="() => calendar.refetch()" class="m-2" />
+    <UpcomingList v-else-if="calendar.data.value" :items="items" :limit="8" @item-click="open">
+      <template #empty>
+        <EmptyState class="my-auto" size="sm" tone="success" :icon="CalendarDays" :title="t('agenda.upcoming.empty')" :description="t('agenda.upcoming.emptyBody')" />
+      </template>
+    </UpcomingList>
+  </WidgetCard>
 </template>

@@ -28,5 +28,11 @@
   "overview.activity.title": "Activity",
   "overview.activity.empty": "Quiet so far",
   "overview.activity.emptyBody": "Check-ins, closed shifts, finished tasks and more appear here as they happen.",
-  "overview.activity.system": "System"
+  "overview.activity.system": "System",
+  "overview.customize.open": "Customize",
+  "overview.customize.reset": "Reset to default",
+  "overview.customize.hint": "Drag the cards into the order you like and hide the ones you don’t need. Only you see this layout.",
+  "overview.customize.allHidden": "Every card is hidden",
+  "overview.customize.allHiddenBody": "Customize the page to bring them back.",
+  "overview.widget.failed": "This card couldn’t load"
 }

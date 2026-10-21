@@ -95,6 +95,17 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* The headline number of a KPI tile (KpiCard and the Overview's own tiles), one size everywhere. It
+   shrinks a little in narrow tiles (two per row on phones) so "25,6 mln so‘m" still fits. */
+@utility kpi-value {
+  font-size: clamp(1.25rem, 14cqi, 1.625rem);
+  line-height: 2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text);
+}
+
 @utility scroll-fade-y {
   mask-image: linear-gradient(to bottom, transparent, #000 12px, #000 calc(100% - 12px), transparent);
 }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /** Overview chart `tasks.chart.on_time_trend`: on-time % and finished tasks over 14 days. */
+import { Timer } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -11,7 +12,7 @@ import { useFormat } from "@/lib/useFormat";
 
 import { useSummary } from "../api";
 
-defineProps<{ companyId: number; range?: Range; compare?: Range | null }>();
+const props = defineProps<{ companyId: number; range?: Range; compare?: Range | null }>();
 const { t } = useI18n();
 const fmt = useFormat();
 const query = useSummary();
@@ -38,7 +39,9 @@ const csv = computed(() => ({
 <template>
   <ChartCard
     class="h-full"
+    :icon="Timer"
     :title="t('tasks.chart.onTimeTrend')"
+    :to="`/c/${props.companyId}/reports/team`"
     :subtitle="t('tasks.chart.last14')"
     :value="value"
     :loading="query.isPending.value"

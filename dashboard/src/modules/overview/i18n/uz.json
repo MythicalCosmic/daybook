@@ -28,5 +28,11 @@
   "overview.activity.title": "Faollik",
   "overview.activity.empty": "Hozircha tinch",
   "overview.activity.emptyBody": "Kelganlar, yopilgan smenalar, bajarilgan vazifalar va boshqalar sodir bo‘lishi bilan shu yerda paydo bo‘ladi.",
-  "overview.activity.system": "Tizim"
+  "overview.activity.system": "Tizim",
+  "overview.customize.open": "Sozlash",
+  "overview.customize.reset": "Asl holiga qaytarish",
+  "overview.customize.hint": "Kartalarni sudrab, o‘zingizga qulay tartibda joylang, keraksizlarini yashiring. Bu ko‘rinishni faqat siz ko‘rasiz.",
+  "overview.customize.allHidden": "Barcha kartalar yashirilgan",
+  "overview.customize.allHiddenBody": "Ularni qaytarish uchun sahifani sozlang.",
+  "overview.widget.failed": "Bu karta yuklanmadi"
 }

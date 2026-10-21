@@ -28,5 +28,11 @@
   "overview.activity.title": "Активность",
   "overview.activity.empty": "Пока тихо",
   "overview.activity.emptyBody": "Отметки прихода, закрытые смены, выполненные задачи и другое появятся здесь по мере событий.",
-  "overview.activity.system": "Система"
+  "overview.activity.system": "Система",
+  "overview.customize.open": "Настроить",
+  "overview.customize.reset": "Вернуть как было",
+  "overview.customize.hint": "Перетащите карточки в удобном порядке и скройте ненужные. Эту раскладку видите только вы.",
+  "overview.customize.allHidden": "Все карточки скрыты",
+  "overview.customize.allHiddenBody": "Настройте страницу, чтобы вернуть их.",
+  "overview.widget.failed": "Не удалось загрузить карточку"
 }

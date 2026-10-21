@@ -64,13 +64,13 @@ function hasFacts(branch: BranchToday): boolean {
 
 <template>
   <section class="ui-card flex h-full min-w-0 flex-col" :aria-label="t('overview.branches.title')">
-    <header class="flex items-center gap-2 px-4 pb-1 pt-4">
+    <header class="flex min-h-[44px] items-center gap-2 px-4 pb-1 pt-4">
       <Store :size="16" class="text-subtle" aria-hidden="true" />
       <h3 class="text-sm font-semibold text-fg">{{ t("overview.branches.title") }}</h3>
       <span v-if="branches.length" class="text-xs font-medium text-subtle">{{ t("overview.branches.openOf", { n: openCount, total: branches.length }) }}</span>
     </header>
     <div class="min-h-0 flex-1 p-3 pt-2">
-      <div v-if="skeleton" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <div v-if="skeleton" class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,17rem),1fr))] gap-3">
         <div v-for="n in 3" :key="n" class="flex flex-col gap-3 rounded-[12px] border border-line p-3.5">
           <SkeletonBlock width="45%" />
           <SkeletonBlock width="60%" height="20px" radius="999px" />
@@ -79,7 +79,7 @@ function hasFacts(branch: BranchToday): boolean {
       </div>
       <ErrorState v-else-if="query.isError.value" compact :error="query.error.value" :retry="() => query.refetch()" />
       <EmptyState v-else-if="query.data.value && !branches.length" size="sm" tone="neutral" :icon="Store" :title="t('overview.branches.empty')" :description="t('overview.branches.emptyBody')" />
-      <ul v-else class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <ul v-else class="grid grid-cols-[repeat(auto-fit,minmax(min(100%,17rem),1fr))] gap-3">
         <li
           v-for="branch in branches"
           :key="branch.id"

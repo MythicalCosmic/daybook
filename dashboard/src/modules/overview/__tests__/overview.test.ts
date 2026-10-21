@@ -11,6 +11,7 @@ import { json } from "@/test/fixtures";
 import { mountWithProviders as mountRaw, testApp } from "@/test/plugins";
 
 import { listBranchesToday, listStream, minutesLate, overviewKeys } from "../api";
+import { cockpit, isDefaultLayout, layoutFromState, layoutToState, pack } from "../layout";
 import en from "../i18n/en.json";
 import module from "../index";
 import OverviewPage from "../pages/OverviewPage.vue";
@@ -101,12 +102,106 @@ describe("OverviewPage", () => {
     const w0 = ["overview.branches", "inbox.needs", "overview.activity"];
     expect(ids).toEqual(expect.arrayContaining(w0));
     expect(ids.filter((id) => w0.includes(id))).toEqual(w0);
-    // …each widget once, every one of them registered, laid out by `order` and then by id.
-    const registered = new Map(modules.flatMap((m) => m.widgets ?? []).map((w) => [w.id, w.order]));
+    // …each widget once, every one of them registered…
+    const registered = new Map(modules.flatMap((m) => m.widgets ?? []).map((w) => [w.id, w]));
     expect(new Set(ids).size).toBe(ids.length);
     expect(ids.every((id) => registered.has(id))).toBe(true);
-    const byOrder = [...ids].sort((a, b) => registered.get(a)! - registered.get(b)! || a.localeCompare(b));
-    expect(ids).toEqual(byOrder);
+    // …branches leading the page, then every KPI tile together, by `order` and then by id.
+    const kpis = wrapper.findAll('[data-band="kpis"] [data-widget]').map((el) => el.attributes("data-widget")!);
+    const allKpis = ids.filter((id) => registered.get(id)!.kind === "kpi");
+    expect(ids.slice(0, ids.indexOf(allKpis[0]!))).toContain("overview.branches");
+    expect(kpis.slice(0, allKpis.length)).toEqual(allKpis);
+    const byOrder = [...allKpis].sort((a, b) => registered.get(a)!.order - registered.get(b)!.order || a.localeCompare(b));
+    expect(allKpis).toEqual(byOrder);
+  });
+
+  it("saves the person's arrangement as their overview layout and resets it", async () => {
+    const sent: Array<{ method: string; path: string; body: unknown }> = [];
+    let views: unknown[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string, init?: RequestInit) => {
+        const path = input.replace("/api/v1/owner/companies/1/", "").split("?")[0]!;
+        const method = init?.method ?? "GET";
+        if (method !== "GET") sent.push({ method, path, body: init?.body ? JSON.parse(String(init.body)) : null });
+        if (path === "saved-views/" && method === "GET") return json(views);
+        if (path === "saved-views/" && method === "POST") {
+          views = [{ id: 9, module: "overview", name: "layout", state: (sent.at(-1)!.body as { state: unknown }).state, is_shared: false, order: 0, owner: { id: 1, name: "Dilnoza" }, is_mine: true }];
+          return json(views[0], 201);
+        }
+        if (path === "saved-views/9/" && method === "DELETE") {
+          views = [];
+          return new Response(null, { status: 204 });
+        }
+        if (path === "branches/today/") return json([]);
+        if (path === "stream/") return json({ items: [] });
+        if (path === "queue/counts/") return json({ total: 0, kinds: [] });
+        if (path === "queue/") return json({ items: [] });
+        return json({ detail: "Not found." }, 404);
+      }),
+    );
+    const app = await testApp("/c/1");
+    const { wrapper } = mountWithProviders(OverviewPage, { plugins: app.plugins });
+    await flushPromises();
+    const button = (label: string) => wrapper.findAll("button").find((b) => b.text() === label)!;
+
+    await button(en["overview.customize.open"]).trigger("click");
+    await flushPromises();
+    expect(wrapper.text()).toContain(en["overview.customize.hint"]);
+    // Hide Activity with its eye, then Done: the layout is saved with Activity hidden.
+    const activity = wrapper.find('[data-widget="overview.activity"]');
+    await activity.find("button[aria-pressed]").trigger("click");
+    await button("Done").trigger("click");
+    await flushPromises();
+    const created = sent.find((call) => call.method === "POST" && call.path === "saved-views/")!;
+    expect(created.body).toMatchObject({ module: "overview", name: "layout", is_shared: false });
+    const rows = (created.body as { state: { widgets: Array<{ id: string; hidden: boolean; order: number }> } }).state.widgets;
+    expect(rows.find((row) => row.id === "overview.activity")).toMatchObject({ hidden: true });
+    expect(rows.map((row) => row.order)).toEqual(rows.map((_, index) => index));
+    expect(wrapper.find('[data-widget="overview.activity"]').exists()).toBe(false);
+
+    // Reset brings back the registered order and deletes the saved layout.
+    await button(en["overview.customize.open"]).trigger("click");
+    await button(en["overview.customize.reset"]).trigger("click");
+    await button("Done").trigger("click");
+    await flushPromises();
+    expect(sent.some((call) => call.method === "DELETE" && call.path === "saved-views/9/")).toBe(true);
+    expect(wrapper.find('[data-widget="overview.activity"]').exists()).toBe(true);
+  });
+});
+
+describe("cockpit layout", () => {
+  const w = (id: string, kind: "kpi" | "card" | "chart", span: 1 | 2 | 3 | 4 = 1) => ({ id, kind, span });
+
+  it("leads with the cards above the first KPI, gathers the KPIs and squares their band with narrow cards", () => {
+    const result = cockpit([w("setup", "card", 2), w("branches", "card", 4), w("k1", "kpi"), w("needs", "card", 2), w("k2", "kpi"), w("k3", "kpi"), w("team", "card", 1), w("off", "card", 1), w("trend", "chart", 2)]);
+    expect(result.lead.map((x) => x.id)).toEqual(["setup", "branches"]);
+    expect(result.kpis.map((x) => [x.widget.id, x.span])).toEqual([["k1", 1], ["k2", 1], ["k3", 1], ["team", 1]]);
+    expect(result.cards.map((x) => [x.widget.id, x.span])).toEqual([["needs", 2], ["off", 2], ["trend", 4]]);
+  });
+
+  it("packs cards into full rows: later cards fill earlier gaps and a short row widens", () => {
+    const placed = pack([w("a", "card", 2), w("b", "card", 2), w("c", "card", 2), w("d", "card", 1), w("e", "chart", 2), w("f", "card", 1)]);
+    // Rows: [a b] [c d f] -> f fills the gap beside c and d, [e] alone widens to the whole row.
+    expect(placed.map((x) => [x.widget.id, x.span])).toEqual([["a", 2], ["b", 2], ["c", 2], ["d", 1], ["f", 1], ["e", 4]]);
+    expect(pack([w("x", "card", 1), w("y", "card", 1)]).map((x) => x.span)).toEqual([2, 2]);
+    expect(pack([w("k1", "kpi"), w("k2", "kpi"), w("k3", "kpi")]).map((x) => x.span)).toEqual([1, 1, 2]);
+  });
+
+  it("reads and writes the saved layout, and knows when it is just the default", () => {
+    const widgets = [w("a", "card", 2), w("b", "card", 2), w("c", "kpi")];
+    expect(layoutFromState({ widgets: [{ id: "b", hidden: false, order: 1 }, { id: "c", hidden: true, order: 0 }] })).toEqual({ order: ["c", "b"], hidden: ["c"] });
+    expect(layoutFromState(null)).toEqual({ order: [], hidden: [] });
+    expect(layoutFromState({ widgets: "broken" })).toEqual({ order: [], hidden: [] });
+    expect(layoutToState(widgets, { order: ["b"], hidden: ["c"] }).widgets).toEqual([
+      { id: "b", hidden: false, order: 0 },
+      { id: "a", hidden: false, order: 1 },
+      { id: "c", hidden: true, order: 2 },
+    ]);
+    expect(isDefaultLayout(widgets, { order: [], hidden: [] })).toBe(true);
+    expect(isDefaultLayout(widgets, { order: ["a", "b", "c"], hidden: [] })).toBe(true);
+    expect(isDefaultLayout(widgets, { order: ["b"], hidden: [] })).toBe(false);
+    expect(isDefaultLayout(widgets, { order: [], hidden: ["a"] })).toBe(false);
   });
 });
 

@@ -108,7 +108,7 @@ const change = computed(() => {
     :is="to ? RouterLink : 'div'"
     :to="to"
     :class="[
-      'group relative flex min-w-0 flex-col p-4',
+      'group relative flex min-w-0 flex-col p-4 @container',
       variant === 'card' && 'ui-card transition-colors',
       to && 'cursor-pointer',
       to && variant === 'card' && 'hover:border-line-strong',
@@ -118,7 +118,7 @@ const change = computed(() => {
   >
     <div class="flex items-center gap-2">
       <component :is="icon" v-if="icon" :size="15" class="shrink-0 text-subtle" aria-hidden="true" />
-      <span class="min-w-0 flex-1 truncate text-sm font-medium text-muted">{{ label }}</span>
+      <span class="min-w-0 flex-1 truncate text-sm font-medium text-muted" :title="label">{{ label }}</span>
       <ArrowUpRight v-if="to" :size="15" class="shrink-0 text-subtle opacity-0 transition-opacity group-hover:opacity-100" :aria-label="t('common.kpi.open')" />
     </div>
     <template v-if="loading">
@@ -126,14 +126,15 @@ const change = computed(() => {
       <SkeletonBlock class="mt-3" width="40%" height="14px" />
     </template>
     <template v-else>
-      <p class="mt-1.5 truncate text-[1.625rem] font-semibold leading-8 tracking-[-0.02em] tabular-nums text-fg" :title="full" aria-live="polite">{{ text }}</p>
+      <p class="kpi-value mt-1.5 truncate" :title="full ?? text" aria-live="polite">{{ text }}</p>
       <div class="mt-auto flex min-h-[32px] items-end justify-between gap-3 pt-2" data-kpi-foot>
         <div class="flex min-w-0 flex-col gap-1">
           <DeltaBadge v-if="change !== null || previous !== undefined || delta !== undefined" :value="change" :inverse="inverse" :points="points" :suffix="deltaLabel" />
-          <span v-if="hint" class="truncate text-xs text-muted">{{ hint }}</span>
+          <span v-if="hint" class="line-clamp-2 text-xs text-muted">{{ hint }}</span>
           <slot />
         </div>
-        <SparkLine v-if="spark && spark.length > 1" :data="spark" :color="sparkColor" :width="104" :height="32" class="shrink-0" />
+        <!-- Two tiles per row on a phone leave no room beside the delta: the trend steps aside. -->
+        <SparkLine v-if="spark && spark.length > 1" :data="spark" :color="sparkColor" :width="104" :height="32" class="shrink-0 @max-[15rem]:hidden" />
       </div>
     </template>
   </component>
