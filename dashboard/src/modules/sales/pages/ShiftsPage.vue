@@ -4,7 +4,7 @@
  * saved ones, filters in the URL, a dense table with the difference in red or green, and the
  * shift drawer (`?shift=`). On phones the table becomes cards.
  */
-import { AlertTriangle, Building2, CircleDot, ClipboardList, Sparkles, UserRound } from "@lucide/vue";
+import { AlertTriangle, Building2, Check, CircleDot, ClipboardList, Sparkles, UserRound } from "@lucide/vue";
 import { computed, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
@@ -195,7 +195,12 @@ onMounted(() => {
         <template #cell-net="{ row }"><MoneyText :value="row.net" class="font-semibold" /></template>
         <template #cell-counted_cash="{ row }"><MoneyText :value="row.counted_cash" /></template>
         <template #cell-difference="{ row }">
-          <span :class="['font-semibold tabular-nums', differenceClass(differenceLevel(row.difference, tolerance))]">
+          <!-- An exact count stays quiet (a check); only real differences take colour. -->
+          <span v-if="differenceLevel(row.difference, tolerance) === 'none'" class="inline-flex items-center justify-end gap-1 tabular-nums text-muted" :title="t('sales.level.none')">
+            <Check :size="14" class="text-success" aria-hidden="true" />
+            <MoneyText :value="row.difference!" />
+          </span>
+          <span v-else :class="['font-semibold tabular-nums', differenceClass(differenceLevel(row.difference, tolerance))]">
             <MoneyText v-if="row.difference !== null" :value="row.difference" sign="always" />
             <span v-else>—</span>
           </span>
@@ -211,7 +216,10 @@ onMounted(() => {
             </div>
             <div class="flex items-end justify-between gap-3">
               <MoneyText :value="row.net" class="text-md font-semibold text-fg" />
-              <span :class="['text-sm font-semibold tabular-nums', differenceClass(differenceLevel(row.difference, tolerance))]">
+              <span v-if="differenceLevel(row.difference, tolerance) === 'none'" class="inline-flex items-center gap-1 text-sm tabular-nums text-muted">
+                <Check :size="14" class="text-success" aria-hidden="true" />{{ t("sales.level.none") }}
+              </span>
+              <span v-else :class="['text-sm font-semibold tabular-nums', differenceClass(differenceLevel(row.difference, tolerance))]">
                 <MoneyText v-if="row.difference !== null" :value="row.difference" sign="always" />
               </span>
             </div>

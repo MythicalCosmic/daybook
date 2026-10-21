@@ -52,7 +52,7 @@
   "sales.today.receipts": "{n} чек | {n} чека | {n} чеков",
   "sales.today.since": "с {time}",
   "sales.today.cash": "Наличные в филиале",
-  "sales.today.limit": "Лимит наличных {amount}",
+  "sales.today.limit": "лимит {amount}",
   "sales.today.month": "Этот месяц · {percent}%",
   "sales.today.pace": "Темп плана на месяц",
   "sales.today.tills": "Открытые кассы",
@@ -67,10 +67,10 @@
   "sales.kpi.receipts": "Чеки",
   "sales.kpi.avgCheck": "Средний чек",
   "sales.kpi.cashShare": "Оплачено наличными",
-  "sales.kpi.cashShareHint": "Доля выручки, оплаченная наличными",
+  "sales.kpi.cashShareHint": "Доля наличных в выручке",
   "sales.kpi.difference": "Расхождения в кассе",
-  "sales.kpi.differenceHint": "Пересчитано минус ожидалось, {n} смена | Пересчитано минус ожидалось, {n} смены | Пересчитано минус ожидалось, {n} смен",
-  "sales.kpi.vsPrevious": "к прошлому периоду",
+  "sales.kpi.differenceHint": "Факт минус ожидание, {n} смена | Факт минус ожидание, {n} смены | Факт минус ожидание, {n} смен",
+  "sales.kpi.vsPrevious": "к прошлому",
 
   "sales.chart.netByDay": "Выручка по дням",
   "sales.chart.net": "Выручка",
@@ -129,7 +129,7 @@
   "sales.col.accuracy": "Точность",
   "sales.col.shortages": "Недостачи",
   "sales.col.surpluses": "Излишки",
-  "sales.col.lateOpens": "Поздние открытия",
+  "sales.col.lateOpens": "Опоздания",
   "sales.col.checks": "Проверки",
   "sales.col.hours": "Ср. длительность",
 
@@ -332,7 +332,7 @@
   "sales.cash.declinedTitle": "{to}: передача {amount} от {from} не пришла",
   "sales.cash.declinedHint": "Выясните, что произошло; если деньги остались в кассе, отмените передачу.",
   "sales.cash.inBranch": "Наличные в филиале",
-  "sales.cash.limit": "Лимит {amount} · {percent}%",
+  "sales.cash.limit": "Лимит {amount}",
   "sales.cash.tillClosed": "Нет открытой смены",
   "sales.cash.safe": "Сейф",
   "sales.cash.openHint": "Открытые кассы показывают размен и движения на сейчас: выручка добавится при закрытии смены.",
@@ -513,5 +513,8 @@
   "sales.widget.soFar": "По сменам, закрытым на сейчас",
   "sales.widget.yesterday": "Продажи вчера",
   "sales.widget.vsWeekday": "к тому же дню прошлой недели",
-  "sales.widget.error": "Не удалось загрузить продажи"
+  "sales.widget.error": "Не удалось загрузить продажи",
+  "sales.shift.movedOut": "Выдано из кассы",
+  "sales.shift.movedOutHint": "выручка — при закрытии",
+  "sales.flow.soFar": "Размен минус выдачи, без выручки"
 }

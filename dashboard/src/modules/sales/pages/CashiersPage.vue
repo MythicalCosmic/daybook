@@ -81,16 +81,16 @@ const highlights = computed(() => {
 });
 
 const columns = computed<TableColumn<CashierScore>[]>(() => [
-  { id: "member", header: t("sales.col.cashier"), minWidth: 220, hideable: false, sticky: true, value: (row) => row.member.name },
-  { id: "shifts", header: t("sales.col.shifts"), sortable: true, numeric: true, width: 84 },
+  { id: "member", header: t("sales.col.cashier"), minWidth: 196, hideable: false, sticky: true, value: (row) => row.member.name },
+  { id: "shifts", header: t("sales.col.shifts"), sortable: true, numeric: true, width: 100 },
   { id: "net", header: t("sales.col.net"), sortable: true, numeric: true, width: 150, csv: (row) => row.net },
   { id: "avg_per_shift", header: t("sales.col.perShift"), sortable: true, numeric: true, width: 140, csv: (row) => row.avg_per_shift },
   { id: "avg_check", header: t("sales.col.avgCheck"), sortable: true, numeric: true, width: 124, csv: (row) => row.avg_check },
-  { id: "accuracy", header: t("sales.col.accuracy"), sortable: true, width: 150, hint: t("sales.cashiers.accuracyHint") },
-  { id: "shortages", header: t("sales.col.shortages"), sortable: "shortage_total", numeric: true, width: 150, csv: (row) => row.shortage_total },
+  { id: "accuracy", header: t("sales.col.accuracy"), sortable: true, width: 140, hint: t("sales.cashiers.accuracyHint") },
+  { id: "shortages", header: t("sales.col.shortages"), sortable: "shortage_total", numeric: true, width: 140, csv: (row) => row.shortage_total },
   { id: "surpluses", header: t("sales.col.surpluses"), numeric: true, width: 110 },
-  { id: "late_opens", header: t("sales.col.lateOpens"), sortable: true, numeric: true, width: 110 },
-  { id: "verified", header: t("sales.col.checks"), width: 140 },
+  { id: "late_opens", header: t("sales.col.lateOpens"), sortable: true, numeric: true, width: 120 },
+  { id: "verified", header: t("sales.col.checks"), width: 132 },
   { id: "avg_hours", header: t("sales.col.hours"), numeric: true, width: 100, format: (v) => t("sales.cashiers.hours", { n: String(v) }) },
 ]);
 

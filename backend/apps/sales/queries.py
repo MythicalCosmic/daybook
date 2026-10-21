@@ -121,10 +121,13 @@ def _shift_text(q: str) -> Q:
         | Q(register__name__icontains=q)
         | Q(z_number__icontains=q)
     )
+    # A code typed so far ("CHL-8", "104") finds the shifts it starts: CHL-85, CHL-81, 1042.
     if q.isdigit():
-        match |= Q(number=int(q))
+        match |= Q(number__startswith=q)
     elif number.isdigit() and code:
-        match |= Q(number=int(number), branch__code__iexact=code)
+        match |= Q(number__startswith=number, branch__code__iexact=code)
+    elif q.endswith("-") and code:
+        match |= Q(branch__code__iexact=code)
     return match
 
 
@@ -1214,7 +1217,18 @@ def search(member: Membership, q: str, limit: int) -> list[SearchHit]:
     q = (q or "").strip()
     if len(q) < 2:
         return []
-    rows = shifts(member.company, {"q": q}, limit, branch_ids=scope.branch_ids(member))
+    branch_ids = scope.branch_ids(member)
+    rows = list(shifts(member.company, {"q": q}, limit, branch_ids=branch_ids))
+    # The shift whose code is exactly what was typed comes first, even when newer shifts that
+    # merely start with it would fill the list.
+    code, _sep, number = q.rpartition("-")
+    exact = Q(number=int(number), branch__code__iexact=code) if code and number.isdigit() else None
+    if q.isdigit():
+        exact = Q(number=int(q))
+    if exact is not None:
+        found = shifts(member.company, {}, None, branch_ids=branch_ids).filter(exact).first()
+        if found is not None:
+            rows = [found, *[row for row in rows if row.pk != found.pk]][:limit]
     return [
         SearchHit(
             type="sales.shift",
@@ -1427,11 +1441,28 @@ def setup_done(company) -> bool:
 # Exports ----------------------------------------------------------------------------------
 
 
+def _param_ids(value) -> list[int]:
+    """Branch ids from export params: a list (the dashboard sends JSON), a number or "1,2"."""
+    if value in (None, ""):
+        return []
+    items = value if isinstance(value, list | tuple) else str(value).split(",")
+    return [int(item) for item in (str(part).strip() for part in items) if item.isdigit()]
+
+
+def _export_scope(member: Membership, params: dict) -> list[int] | None:
+    """The caller's branches, narrowed by the export's `branch` filter."""
+    allowed = scope.branch_ids(member)
+    wanted = _param_ids(params.get("branch"))
+    if not wanted:
+        return allowed
+    return wanted if allowed is None else [pk for pk in wanted if pk in allowed]
+
+
 def export_daily(member: Membership, params: dict):
     company = member.company
     end = _param_day(params.get("to")) or business_day(company)
     start = _param_day(params.get("from")) or end.replace(day=1)
-    for row in daily_rows(company, start, end, branch_ids=scope.branch_ids(member)):
+    for row in daily_rows(company, start, end, branch_ids=_export_scope(member, params)):
         cash_net = _row_totals(row).cash_net
         yield {
             "day": row.day,
@@ -1451,14 +1482,23 @@ def export_daily(member: Membership, params: dict):
 def export_shifts(member: Membership, params: dict):
     company = member.company
     filters = {key: params.get(key) for key in ("from", "to", "q") if params.get(key)}
-    if params.get("branch"):
-        filters["branch"] = [int(x) for x in str(params["branch"]).split(",") if x.isdigit()]
-    if params.get("status"):
-        filters["status"] = [s for s in str(params["status"]).split(",") if s in Status.values]
+    if cashiers := _param_ids(params.get("cashier")):
+        filters["cashier"] = cashiers
+    statuses = params.get("status") or []
+    if not isinstance(statuses, list | tuple):
+        statuses = str(statuses).split(",")
+    if found := [s for s in statuses if s in Status.values]:
+        filters["status"] = found
+    for flag in ("has_difference", "mismatch"):
+        value = params.get(flag)
+        if value in (True, "true", "1"):
+            filters[flag] = True
+        elif value in (False, "false", "0") and flag == "has_difference":
+            filters[flag] = False
     for key in ("from", "to"):
         if key in filters:
             filters[key] = _param_day(filters[key])
-    rows = shifts(company, filters, None, branch_ids=scope.branch_ids(member))
+    rows = shifts(company, filters, None, branch_ids=_export_scope(member, params))
     for shift in rows.iterator(chunk_size=500):
         yield {
             "code": shift.code,

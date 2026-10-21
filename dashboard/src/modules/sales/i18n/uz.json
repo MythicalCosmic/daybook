@@ -52,7 +52,7 @@
   "sales.today.receipts": "{n} ta chek | {n} ta chek | {n} ta chek",
   "sales.today.since": "{time} dan beri",
   "sales.today.cash": "Filialdagi naqd",
-  "sales.today.limit": "Naqd limiti {amount}",
+  "sales.today.limit": "limit {amount}",
   "sales.today.month": "Shu oy · {percent}%",
   "sales.today.pace": "Oylik reja sur’ati",
   "sales.today.tills": "Ochiq kassalar",
@@ -67,10 +67,10 @@
   "sales.kpi.receipts": "Cheklar",
   "sales.kpi.avgCheck": "O‘rtacha chek",
   "sales.kpi.cashShare": "Naqd to‘langan",
-  "sales.kpi.cashShareHint": "Sof savdoning naqd to‘langan ulushi",
+  "sales.kpi.cashShareHint": "Savdoning naqd ulushi",
   "sales.kpi.difference": "Naqd farqlari",
-  "sales.kpi.differenceHint": "Sanalgan minus kutilgan, {n} ta smena | Sanalgan minus kutilgan, {n} ta smena | Sanalgan minus kutilgan, {n} ta smena",
-  "sales.kpi.vsPrevious": "oldingi davrga nisbatan",
+  "sales.kpi.differenceHint": "Sanoq minus kutilgan, {n} smena | Sanoq minus kutilgan, {n} smena | Sanoq minus kutilgan, {n} smena",
+  "sales.kpi.vsPrevious": "oldingi davrga",
 
   "sales.chart.netByDay": "Kunlar bo‘yicha sof savdo",
   "sales.chart.net": "Sof savdo",
@@ -332,7 +332,7 @@
   "sales.cash.declinedTitle": "{to} {from} topshirgan {amount} kelmaganini aytmoqda",
   "sales.cash.declinedHint": "Nima bo‘lganini aniqlang; agar pul kassada qolgan bo‘lsa, topshirishni bekor qiling.",
   "sales.cash.inBranch": "Filialdagi naqd",
-  "sales.cash.limit": "Limit {amount} · {percent}%",
+  "sales.cash.limit": "Limit {amount}",
   "sales.cash.tillClosed": "Ochiq smena yo‘q",
   "sales.cash.safe": "Seyf",
   "sales.cash.openHint": "Ochiq kassalar boshlang‘ich naqd va hozirgacha bo‘lgan harakatlarni ko‘rsatadi: savdosi smena yopilganda qo‘shiladi.",
@@ -513,5 +513,8 @@
   "sales.widget.soFar": "Hozirgacha yopilgan smenalar bo‘yicha",
   "sales.widget.yesterday": "Kechagi savdo",
   "sales.widget.vsWeekday": "o‘tgan haftaning shu kuniga nisbatan",
-  "sales.widget.error": "Savdoni yuklab bo‘lmadi"
+  "sales.widget.error": "Savdoni yuklab bo‘lmadi",
+  "sales.shift.movedOut": "Hozircha chiqqan naqd",
+  "sales.shift.movedOutHint": "savdo yopishda qo‘shiladi",
+  "sales.flow.soFar": "Savdosiz: mayda pul minus chiqim"
 }

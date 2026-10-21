@@ -11,6 +11,7 @@ import { mountWithProviders, testApp } from "@/test/plugins";
 import salesModule from "..";
 import { salesApi } from "../api";
 import ShiftDrawer from "../components/ShiftDrawer.vue";
+import TodayBranches from "../components/TodayBranches.vue";
 import { countRows, differenceLevel, movementSign } from "../format";
 import type { ShiftDetail } from "../types";
 
@@ -144,6 +145,80 @@ describe("sales API", () => {
     await salesApi.correct(1, 42, { payments: [{ method_id: 1, sales: "6400000" }], reason: "Typo", counted_cash: null });
     expect(calls[0]!.body).toEqual({ recount_cash: "4220000", note: "Recounted" });
     expect(calls[1]).toMatchObject({ method: "PATCH", body: { payments: [{ method_id: 1, sales: "6400000" }], reason: "Typo", counted_cash: null } });
+  });
+});
+
+describe("TodayBranches", () => {
+  it("shows who opened each branch, its open tills and its cash against the limit", async () => {
+    stub({
+      "GET sales/today/": () =>
+        json({
+          branches: [
+            {
+              id: 1,
+              name: "Chilonzor",
+              code: "CHL",
+              status: "open",
+              opens_at: "09:00",
+              closes_at: "21:00",
+              opened_at: "2026-10-21T09:40:00+05:00",
+              opened_by: person(16, "Madina Saidova"),
+              open_tills: [{ register: { id: 3, name: "Kassa 1" }, shift: { id: 85, code: "CHL-85", since: "2026-10-21T04:40:00Z" }, cashier: person(16, "Madina Saidova"), amount: "1509000.00" }],
+              tills: 2,
+              net: "11700000.00",
+              receipts: 129,
+              cash_in_branch: "6500000.00",
+              cash_limit: "20000000.00",
+              target: null,
+              alerts: [{ kind: "difference", severity: "critical", shift: { id: 84, code: "CHL-84" }, amount: "-582000.00" }],
+            },
+          ],
+        }),
+    });
+    const app = await testApp("/c/1/sales");
+    await ensureModuleMessages(salesModule);
+    mountWithProviders(TodayBranches, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    const text = document.body.textContent ?? "";
+    expect(text).toContain("Chilonzor");
+    expect(text).toContain("Madina");
+    expect(text).toContain("CHL-85");
+    expect(text).toContain("limit");
+    expect(text).toContain("CHL-84");
+    // The open tills count stands in for the target when there is none.
+    expect(text).toContain("1 / 2");
+  });
+});
+
+describe("ShiftDrawer on an open till", () => {
+  it("shows the cash taken out instead of a negative expected cash before the close", async () => {
+    stub({
+      "GET sales/shifts/42/": () =>
+        json(
+          shift({
+            status: "open",
+            closed_at: null,
+            net: "0.00",
+            payments: [],
+            expected_cash: null,
+            counted_cash: null,
+            difference: null,
+            receipts_recorded: 0,
+            cash_flow: { opening_float: "1509000.00", cash_sales: "0.00", cash_refunds: "0.00", payout: "165000.00", deposit: "0.00", handover: "1500000.00", to_safe: "2000000.00", from_safe: "0.00", to_bank: "0.00", expected: "-2156000.00" },
+            actions: { verify: false, dispute: false, correct: false, force_close: true },
+          }),
+        ),
+    });
+    const app = await testApp("/c/1/sales/shifts?shift=42");
+    await ensureModuleMessages(salesModule);
+    mountWithProviders(ShiftDrawer, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    const text = document.body.textContent ?? "";
+    expect(text).toContain("Cash out so far");
+    expect(text).toContain("sales count at close");
+    expect(text).not.toContain("Expected cash");
   });
 });
 

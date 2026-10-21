@@ -100,15 +100,18 @@ const link = (branch: BranchTodaySales) => ({ path: `/c/${company.currentId}/sal
         </ul>
 
         <div class="grid grid-cols-2 gap-3 border-t border-line pt-3">
-          <div class="min-w-0">
-            <p class="text-[11px] text-muted">{{ t("sales.today.cash") }}</p>
+          <div class="min-w-0" role="group" :aria-label="t('sales.today.cash')">
+            <p class="flex items-baseline justify-between gap-2 text-[11px] text-muted">
+              <span class="truncate">{{ t("sales.today.cash") }}</span>
+              <span v-if="branch.cash_limit" class="shrink-0 tabular-nums text-subtle">{{ t("sales.today.limit", { amount: fmt.money(branch.cash_limit, undefined, { compact: true }) }) }}</span>
+            </p>
             <p class="truncate text-sm font-semibold text-fg"><MoneyText :value="branch.cash_in_branch" compact /></p>
-            <ProgressBar v-if="limitUse(branch) !== null" class="mt-1.5" size="xs" :value="Math.min(limitUse(branch)!, 100)" :tone="limitUse(branch)! >= 100 ? 'danger' : limitUse(branch)! >= 80 ? 'warning' : 'primary'" :label="t('sales.today.limit', { amount: fmt.money(branch.cash_limit, undefined, { compact: true }) })" />
+            <ProgressBar v-if="limitUse(branch) !== null" class="mt-2" size="xs" :value="Math.min(limitUse(branch)!, 100)" :tone="limitUse(branch)! >= 100 ? 'danger' : limitUse(branch)! >= 80 ? 'warning' : 'primary'" />
           </div>
-          <div v-if="branch.target" class="min-w-0">
-            <p class="text-[11px] text-muted">{{ t("sales.today.month", { percent: branch.target.percent }) }}</p>
+          <div v-if="branch.target" class="min-w-0" role="group" :aria-label="t('sales.today.pace')">
+            <p class="truncate text-[11px] text-muted">{{ t("sales.today.month", { percent: branch.target.percent }) }}</p>
             <p class="truncate text-sm font-semibold text-fg"><MoneyText :value="branch.target.actual" compact /> <span class="font-normal text-subtle">/ <MoneyText :value="branch.target.amount" compact /></span></p>
-            <ProgressBar class="mt-1.5" size="xs" :value="Number(branch.target.percent)" :target="(branch.target.elapsed / branch.target.days) * 100" :tone="branch.target.ahead ? 'success' : 'warning'" :label="t('sales.today.pace')" />
+            <ProgressBar class="mt-2" size="xs" :value="Number(branch.target.percent)" :target="(branch.target.elapsed / branch.target.days) * 100" :tone="branch.target.ahead ? 'success' : 'warning'" />
           </div>
           <div v-else class="min-w-0">
             <p class="text-[11px] text-muted">{{ t("sales.today.tills") }}</p>

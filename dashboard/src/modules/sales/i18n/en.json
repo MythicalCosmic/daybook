@@ -52,7 +52,7 @@
   "sales.today.receipts": "{n} receipts | {n} receipt | {n} receipts",
   "sales.today.since": "since {time}",
   "sales.today.cash": "Cash in branch",
-  "sales.today.limit": "Cash limit {amount}",
+  "sales.today.limit": "limit {amount}",
   "sales.today.month": "This month · {percent}%",
   "sales.today.pace": "Month target pace",
   "sales.today.tills": "Open tills",
@@ -67,10 +67,10 @@
   "sales.kpi.receipts": "Receipts",
   "sales.kpi.avgCheck": "Average check",
   "sales.kpi.cashShare": "Paid in cash",
-  "sales.kpi.cashShareHint": "Share of net sales paid in cash",
+  "sales.kpi.cashShareHint": "Share of sales paid in cash",
   "sales.kpi.difference": "Cash differences",
   "sales.kpi.differenceHint": "Counted minus expected, {n} shifts | Counted minus expected, {n} shift | Counted minus expected, {n} shifts",
-  "sales.kpi.vsPrevious": "vs previous period",
+  "sales.kpi.vsPrevious": "vs previous",
 
   "sales.chart.netByDay": "Net sales by day",
   "sales.chart.net": "Net sales",
@@ -332,7 +332,7 @@
   "sales.cash.declinedTitle": "{to} says the {amount} from {from} never arrived",
   "sales.cash.declinedHint": "Find out what happened, then void the handover if the cash is still in the till.",
   "sales.cash.inBranch": "Cash in the branch",
-  "sales.cash.limit": "Limit {amount} · {percent}%",
+  "sales.cash.limit": "Limit {amount}",
   "sales.cash.tillClosed": "No open shift",
   "sales.cash.safe": "Safe",
   "sales.cash.openHint": "Open tills show their float and movements so far: their sales count when the shift closes.",
@@ -513,5 +513,8 @@
   "sales.widget.soFar": "From the shifts closed so far",
   "sales.widget.yesterday": "Sales yesterday",
   "sales.widget.vsWeekday": "vs same day last week",
-  "sales.widget.error": "Couldn't load sales"
+  "sales.widget.error": "Couldn't load sales",
+  "sales.shift.movedOut": "Cash out so far",
+  "sales.shift.movedOutHint": "sales count at close",
+  "sales.flow.soFar": "Float minus cash out, before sales"
 }

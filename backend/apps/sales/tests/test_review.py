@@ -440,3 +440,40 @@ def test_contract_signatures():
     from apps.sales import signals
 
     assert signals.shift_closed and signals.shift_verified
+
+
+def test_a_partly_typed_code_finds_its_shifts_exact_first(shop):
+    from apps.sales.conf import get_settings
+    from apps.sales.models import SalesSettings
+
+    SalesSettings.objects.filter(pk=get_settings(shop.company).pk).update(next_shift_number=8)
+    first = open_and_close(shop)  # CHL-8
+    later = [open_and_close(shop) for _ in range(3)]  # CHL-9, CHL-10, CHL-11
+    SalesSettings.objects.filter(pk=get_settings(shop.company).pk).update(next_shift_number=80)
+    eighties = [open_and_close(shop) for _ in range(3)]  # CHL-80 … CHL-82
+    hits = queries.search(shop.owner, "CHL-8", 3)
+    assert hits[0].id == first.pk and len(hits) == 3
+    assert {hit.id for hit in hits[1:]} <= {shift.pk for shift in eighties}
+    assert {hit.id for hit in queries.search(shop.owner, "CHL-1", 10)} == {later[1].pk, later[2].pk}
+    assert len(queries.search(shop.owner, "CHL-", 20)) == 7
+
+
+def test_exports_follow_the_pages_filters_inside_the_scope(shop):
+    from apps.exports.registry import get_exporter
+
+    closed = open_and_close(shop, counted="1180000")
+    other = open_and_close(shop, cashier=shop.colleague, register=shop.other_register)
+    daily = get_exporter("sales.daily")
+    # The overview sends its branch filter as a JSON list.
+    rows = list(daily.rows(shop.owner, {"branch": [shop.other_branch.pk]}))
+    assert [row["branch"] for row in rows] == ["Yunusobod"]
+    shifts = get_exporter("sales.shifts")
+    exported = list(shifts.rows(shop.owner, {"status": ["closed"], "has_difference": "true"}))
+    assert [row["code"] for row in exported] == [closed.code]
+    exported = list(shifts.rows(shop.owner, {"cashier": str(shop.colleague.pk)}))
+    assert [row["code"] for row in exported] == [other.code]
+    # A branch outside the caller's scope stays out even when asked for.
+    lead = make_member(shop.company, "Owner", branches=(shop.other_branch,))
+    lead.role = scoped_role(shop.company, Perm.SALES_VIEW, Perm.DATA_EXPORT)
+    lead.save(update_fields=["role"])
+    assert list(daily.rows(lead, {"branch": [shop.branch.pk]})) == []

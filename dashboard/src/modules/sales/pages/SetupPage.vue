@@ -24,7 +24,8 @@ const tabs = computed(() => [
 </script>
 
 <template>
-  <div class="mx-auto w-full max-w-[880px]">
+  <div class="w-full max-w-[880px]">
+    <!-- Left-aligned like every other sales page; the panels read best at a form width. -->
     <PageHeader v-model:tab="tab" :title="t('sales.setup.title')" :description="t('sales.setup.description')" :tabs="tabs" />
     <RegistersPanel v-if="tab === 'tills'" />
     <PaymentMethodsPanel v-else-if="tab === 'methods'" />

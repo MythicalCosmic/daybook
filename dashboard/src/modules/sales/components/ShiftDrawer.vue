@@ -28,7 +28,7 @@ import UiDrawer from "@/components/UiDrawer.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { useHotkey } from "@/core/hotkeys";
-import { dec } from "@/lib/decimal";
+import { dec, subtract, sum } from "@/lib/decimal";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
@@ -69,6 +69,14 @@ const tabs = computed(() => [
 ]);
 
 const level = computed(() => (shift.value ? differenceLevel(shift.value.difference, shift.value.tolerance) : "unknown"));
+/** Open, and no single receipts recorded: its sales are unknown until the close. */
+const awaitingTotals = computed(() => shift.value?.status === "open" && !shift.value.receipts_recorded);
+/** Cash that left the till so far (payouts, handovers, safe, bank) minus what came in. */
+const movedOut = computed(() => {
+  const f = shift.value?.cash_flow;
+  if (!f) return "0.00";
+  return subtract(sum([f.payout, f.handover, f.to_safe, f.to_bank]), sum([f.from_safe, f.deposit]));
+});
 const title = computed(() => shift.value?.code ?? t("sales.drawer.loading"));
 const description = computed(() => {
   const s = shift.value;
@@ -163,7 +171,14 @@ const timeline = computed<TimelineEvent[]>(() =>
           <dd class="mt-1 text-md font-semibold text-fg"><MoneyText :value="shift.net" compact /></dd>
           <dd class="mt-0.5 text-[11px] text-subtle">{{ t("sales.shift.receipts", { n: shift.receipts }, shift.receipts) }}</dd>
         </div>
-        <div class="bg-surface p-3">
+        <!-- An open till without receipts has no sales yet (they come with the Z-report at close),
+             so "expected" would read float minus cash out, often below zero: show the cash out. -->
+        <div v-if="awaitingTotals" class="bg-surface p-3">
+          <dt class="text-xs text-muted">{{ t("sales.shift.movedOut") }}</dt>
+          <dd class="mt-1 text-md font-semibold text-fg"><MoneyText :value="movedOut" compact /></dd>
+          <dd class="mt-0.5 text-[11px] text-subtle">{{ t("sales.shift.movedOutHint") }}</dd>
+        </div>
+        <div v-else class="bg-surface p-3">
           <dt class="text-xs text-muted">{{ t("sales.shift.expected") }}</dt>
           <dd class="mt-1 text-md font-semibold text-fg"><MoneyText :value="shift.expected_cash ?? shift.cash_flow.expected" compact /></dd>
           <dd class="mt-0.5 text-[11px] text-subtle">{{ shift.status === "open" ? t("sales.shift.soFar") : t("sales.shift.inTill") }}</dd>
@@ -270,9 +285,10 @@ const timeline = computed<TimelineEvent[]>(() =>
             </li>
           </ul>
           <div class="flex items-center justify-between border-t border-line-strong bg-surface-2/60 px-4 py-2.5 text-sm font-semibold">
-            <span class="text-fg">{{ t("sales.flow.expected") }}</span>
+            <span class="text-fg">{{ awaitingTotals ? t("sales.flow.soFar") : t("sales.flow.expected") }}</span>
             <MoneyText :value="shift.cash_flow.expected" />
           </div>
+          <p v-if="awaitingTotals" class="border-t border-line px-4 py-2 text-xs text-muted">{{ t("sales.drawer.paymentsAtClose") }}</p>
           <div class="flex items-center justify-between border-t border-line px-4 py-2 text-sm">
             <span class="text-muted">{{ shift.recount_cash ? t("sales.shift.recounted") : t("sales.shift.counted") }}</span>
             <MoneyText :value="shift.counted_cash" />

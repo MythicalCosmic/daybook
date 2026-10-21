@@ -162,9 +162,10 @@ const base = computed(() => `/c/${company.currentId}/sales`);
           :loading="byDay.isPending.value"
           :error="byDay.error.value"
           :retry="() => byDay.refetch()"
-          height="260px"
+          height="340px"
         >
-          <LineChart :categories="categories" :series="netSeries" :compare="compareSeries" :target="dailyTarget" value-format="money" x-format="day" height="260px" />
+          <!-- As tall as the payment methods card beside it (donut plus its legend). -->
+          <LineChart :categories="categories" :series="netSeries" :compare="compareSeries" :target="dailyTarget" value-format="money" x-format="day" height="340px" />
         </ChartCard>
         <ChartCard
           :title="t('sales.chart.methods')"

@@ -2,7 +2,7 @@ import { ArrowRightLeft, ChevronRight, HandCoins, Hourglass, LockKeyhole, Receip
 
 import { can } from "../../api/permissions";
 import { useI18n } from "../../i18n";
-import { sumMoney } from "../../lib/money";
+import { subtractMoney, sumMoney } from "../../lib/money";
 import { clock } from "../../lib/time";
 import { useNow } from "../../lib/useNow";
 import { useNavigation } from "../../state/navigation";
@@ -52,7 +52,9 @@ export function KassaHero({ member }: SlotProps) {
 
   const receiptsMode = data.settings.mode === "receipts";
   const waiting = shift.movements.filter((movement) => movement.kind === "handover" && movement.status === "pending");
-  const recorded = sumMoney(Object.values(shift.receipts_recorded).map((row) => row.sales));
+  // Net of refunds, like the close will count it.
+  const rows = Object.values(shift.receipts_recorded);
+  const recorded = subtractMoney(sumMoney(rows.map((row) => row.sales)), sumMoney(rows.map((row) => row.refunds)));
   return (
     <Card tone="sage" className="kassa-hero kassa-hero--open">
       <button type="button" className="kassa-hero-main" onClick={openKassa}>
