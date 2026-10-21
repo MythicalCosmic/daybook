@@ -64,6 +64,10 @@ const columns = computed(() =>
   })),
 );
 const showBranch = computed(() => !branch.value && (data.value?.branches.length ?? 0) > 1);
+/** Nobody works and nobody came: either nobody has a schedule yet, or it's a day off for all. */
+const quiet = computed(() => !!data.value && data.value.totals.rostered === 0 && data.value.totals.in + data.value.totals.late === 0);
+const unplanned = computed(() => quiet.value && (data.value?.people ?? []).every((row) => row.state === "off" && row.reason === "no_shift"));
+const restDay = computed(() => quiet.value && !unplanned.value);
 /** People not here yet whose shift has already started (past the grace minutes). */
 const overdue = computed(() => (data.value?.people ?? []).filter((row) => row.state === "not_yet" && row.reason === "late").length);
 
@@ -170,12 +174,22 @@ const columnLabel = (state: BoardState) => t(`attendance.state.${state}`);
       <KpiStrip class="att-kpis" :items="kpis" :columns="5" />
 
       <EmptyState
-        v-if="!data.people.length"
+        v-if="!data.people.length || unplanned"
         :icon="Users"
         :title="t('attendance.today.emptyTitle')"
         :description="t('attendance.today.emptyBody')"
       >
         <UiButton v-if="company.can('attendance.manage')" variant="primary" :to="`/c/${company.currentId}/attendance/schedules`">{{ t("attendance.today.emptyAction") }}</UiButton>
+      </EmptyState>
+
+      <EmptyState
+        v-else-if="restDay"
+        :icon="CalendarDays"
+        tone="neutral"
+        :title="data.holiday ? t('attendance.today.holidayTitle', { name: data.holiday }) : t('attendance.today.restTitle')"
+        :description="t('attendance.today.restBody')"
+      >
+        <UiButton variant="secondary" :to="`/c/${company.currentId}/attendance/roster`">{{ t("attendance.today.restAction") }}</UiButton>
       </EmptyState>
 
       <div v-else class="grid items-start gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
@@ -197,7 +211,8 @@ const columnLabel = (state: BoardState) => t(`attendance.state.${state}`);
         </section>
       </div>
 
-      <div class="grid gap-3 lg:grid-cols-3">
+      <!-- The map and branch cards say nothing until people have shifts. -->
+      <div v-if="data.people.length && !unplanned" class="grid gap-3 lg:grid-cols-3">
         <section class="ui-card flex min-w-0 flex-col gap-3 p-4 lg:col-span-2" :aria-label="t('attendance.map.title')">
           <header class="flex items-center gap-2">
             <MapPinned :size="16" class="text-subtle" aria-hidden="true" />

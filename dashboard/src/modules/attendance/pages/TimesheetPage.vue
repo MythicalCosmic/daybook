@@ -134,8 +134,9 @@ const dayHeader = (day: string) => t(`common.weekday.min.${(new Date(`${day}T00:
 
 // This month opens scrolled so today's column is in view, next to the pinned totals.
 const scroller = ref<HTMLElement | null>(null);
+// The table renders after the skeleton's minimum time, so the element itself is watched too.
 watch(
-  () => [data.value?.month, data.value?.people.length],
+  () => [data.value?.month, data.value?.people.length, scroller.value],
   async () => {
     await nextTick();
     const el = scroller.value;
@@ -143,7 +144,8 @@ watch(
     if (!el || !today || !data.value?.days.includes(today)) return;
     const cell = el.querySelector<HTMLElement>(`th[data-day="${today}"]`);
     if (!cell) return;
-    const pinned = el.querySelector<HTMLElement>("thead .att-sticky-right")?.offsetWidth ?? 0;
+    const totals = el.querySelector<HTMLElement>("thead .att-sticky-right");
+    const pinned = totals && getComputedStyle(totals).position === "sticky" ? totals.offsetWidth : 0;
     const target = cell.offsetLeft + cell.offsetWidth + 3 * cell.offsetWidth - (el.clientWidth - pinned);
     el.scrollLeft = Math.max(0, target);
   },
@@ -305,5 +307,19 @@ watch(
 .att-sheet thead th.att-sticky-left,
 .att-sheet thead th.att-sticky-right {
   z-index: 25;
+}
+/* Phones: only the names stay pinned (and narrower), so the days have room to scroll; the totals
+   come after the last day. */
+@media (max-width: 639.98px) {
+  .att-sheet .att-sticky-left {
+    min-width: 0;
+    width: 136px;
+    max-width: 136px;
+  }
+  .att-sheet .att-sticky-right,
+  .att-sheet thead th.att-sticky-right {
+    position: static;
+    box-shadow: none;
+  }
 }
 </style>

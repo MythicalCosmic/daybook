@@ -427,5 +427,9 @@
   "attendance.record.absentNote": "Nobody checked in for this shift. Excuse it if there was a good reason, or record the times if they did work.",
   "attendance.record.excusedNote": "This absence was excused.",
   "attendance.widget.last14": "Last 14 days",
-  "attendance.widget.notYet": "Not here yet"
+  "attendance.widget.notYet": "Not here yet",
+  "attendance.today.restTitle": "Nobody works today",
+  "attendance.today.holidayTitle": "Holiday: {name}",
+  "attendance.today.restBody": "Everyone has the day off. The board fills in again on the next working day.",
+  "attendance.today.restAction": "Open the roster"
 }

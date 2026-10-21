@@ -70,7 +70,7 @@
   "attendance.kpi.notIn": "Ещё не пришли",
   "attendance.kpi.notYet": "Не пришли",
   "attendance.kpi.notInHint": "смена началась, отметки нет",
-  "attendance.kpi.absent": "Прогулы",
+  "attendance.kpi.absent": "Не пришли",
   "attendance.kpi.onTime30": "Вовремя, 30 дней",
   "attendance.kpi.onTimeHint": "от всех отметок",
   "attendance.map.title": "Где отмечались",
@@ -427,5 +427,9 @@
   "attendance.record.absentNote": "На эту смену никто не отметился. Если причина уважительная, отметьте как уважительную; если человек работал, укажите время.",
   "attendance.record.excusedNote": "Это отсутствие отмечено как уважительное.",
   "attendance.widget.last14": "Последние 14 дней",
-  "attendance.widget.notYet": "Ещё не пришли"
+  "attendance.widget.notYet": "Ещё не пришли",
+  "attendance.today.restTitle": "Сегодня никто не работает",
+  "attendance.today.holidayTitle": "Праздник: {name}",
+  "attendance.today.restBody": "Сегодня у всех выходной. Доска снова заполнится в следующий рабочий день.",
+  "attendance.today.restAction": "Открыть график смен"
 }

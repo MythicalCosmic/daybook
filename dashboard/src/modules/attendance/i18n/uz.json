@@ -427,5 +427,9 @@
   "attendance.record.absentNote": "Bu smenaga hech kim kelganini belgilamagan. Sababli bo‘lsa, uzrli deb belgilang; ishlagan bo‘lsa, vaqtini kiriting.",
   "attendance.record.excusedNote": "Bu kelmaslik uzrli deb belgilangan.",
   "attendance.widget.last14": "So‘nggi 14 kun",
-  "attendance.widget.notYet": "Hali kelmagan"
+  "attendance.widget.notYet": "Hali kelmagan",
+  "attendance.today.restTitle": "Bugun hech kim ishlamaydi",
+  "attendance.today.holidayTitle": "Bayram: {name}",
+  "attendance.today.restBody": "Bugun hamma dam oladi. Keyingi ish kunida bu yer yana to‘ladi.",
+  "attendance.today.restAction": "Smenalar jadvalini ochish"
 }
