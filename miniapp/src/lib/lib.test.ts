@@ -36,6 +36,7 @@ function task(overrides: Partial<Task> = {}): Task {
   return {
     id: 1,
     kind: "personal",
+    routine: null,
     title: "Order receipt rolls",
     description: "",
     status: "todo",

@@ -4113,7 +4113,7 @@ paths:
       operationId: companies_finance_reports_cash_flow_retrieve
       description: |-
         Cash flow in the analytics shape (`income`, `expense`, `net`) plus the operating,
-        investing, financing, owner, transfer and opening sections.
+        investing, financing, owner, transfer, opening and currency revaluation sections.
       parameters:
       - in: query
         name: branch
@@ -4449,6 +4449,10 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
+      - in: query
+        name: pnl
+        schema:
+          type: string
       - in: query
         name: project
         schema:
@@ -9805,7 +9809,11 @@ paths:
   /api/v1/owner/companies/{company_id}/routines/:
     get:
       operationId: companies_routines_list
-      description: Routines (daily templates) and onboarding templates (`?onboarding=true`).
+      description: |-
+        Routines (daily templates) and onboarding templates (`?onboarding=true`), and routine work:
+        a day of it (`day/`, the Routines page's Today), its history and what waits for confirmation.
+        Planning routines needs tasks.templates; seeing everyone's routine work tasks.view_all, and
+        confirming it tasks.confirm.
       parameters:
       - in: query
         name: active
@@ -9839,7 +9847,9 @@ paths:
           description: ''
     post:
       operationId: companies_routines_create
-      description: Routines (daily templates) and onboarding templates (`?onboarding=true`).
+      description: |-
+        The new routine, with `next_run` and `today`: when its first tasks come, and "Give
+        today's task now" when it was made after today's deadline.
       parameters:
       - in: path
         name: company_id
@@ -9871,7 +9881,11 @@ paths:
   /api/v1/owner/companies/{company_id}/routines/{id}/:
     get:
       operationId: companies_routines_retrieve
-      description: Routines (daily templates) and onboarding templates (`?onboarding=true`).
+      description: |-
+        Routines (daily templates) and onboarding templates (`?onboarding=true`), and routine work:
+        a day of it (`day/`, the Routines page's Today), its history and what waits for confirmation.
+        Planning routines needs tasks.templates; seeing everyone's routine work tasks.view_all, and
+        confirming it tasks.confirm.
       parameters:
       - in: path
         name: company_id
@@ -9897,7 +9911,11 @@ paths:
           description: ''
     patch:
       operationId: companies_routines_partial_update
-      description: Routines (daily templates) and onboarding templates (`?onboarding=true`).
+      description: |-
+        Routines (daily templates) and onboarding templates (`?onboarding=true`), and routine work:
+        a day of it (`day/`, the Routines page's Today), its history and what waits for confirmation.
+        Planning routines needs tasks.templates; seeing everyone's routine work tasks.view_all, and
+        confirming it tasks.confirm.
       parameters:
       - in: path
         name: company_id
@@ -9934,7 +9952,11 @@ paths:
           description: ''
     delete:
       operationId: companies_routines_destroy
-      description: Routines (daily templates) and onboarding templates (`?onboarding=true`).
+      description: |-
+        Routines (daily templates) and onboarding templates (`?onboarding=true`), and routine work:
+        a day of it (`day/`, the Routines page's Today), its history and what waits for confirmation.
+        Planning routines needs tasks.templates; seeing everyone's routine work tasks.view_all, and
+        confirming it tasks.confirm.
       parameters:
       - in: path
         name: company_id
@@ -9990,10 +10012,53 @@ paths:
               schema:
                 $ref: '#/components/schemas/RoutineCompliance'
           description: ''
+  /api/v1/owner/companies/{company_id}/routines/{id}/give-today/:
+    post:
+      operationId: companies_routines_give_today_create
+      description: |-
+        Give today's task now, for a routine made after today's deadline (it starts the next
+        day it is due): today's task to everyone it would give it to, due at `due_time` today
+        (default: in two hours).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task template.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GiveTodayInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GiveTodayInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GiveTodayInputRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutineGivenToday'
+          description: ''
   /api/v1/owner/companies/{company_id}/routines/{id}/preview/:
     get:
       operationId: companies_routines_preview_retrieve
-      description: Who would get it on `day`, by the same rules as daily generation.
+      description: |-
+        Who would get it on `day`, by the same rules as daily generation: a day it makes no
+        tasks says why (and when its next tasks come), each person who doesn't get it why.
       parameters:
       - in: path
         name: company_id
@@ -10021,6 +10086,113 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RoutinePreview'
+          description: ''
+  /api/v1/owner/companies/{company_id}/routines/day/:
+    get:
+      operationId: companies_routines_day_retrieve
+      description: |-
+        Every routine due on `day` (or with work that day): progress, each person's run with
+        its proof, and who it skipped, filtered by branch and position.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: day
+        schema:
+          type: string
+        description: 'Company-local day, YYYY-MM-DD. Default: today.'
+      - in: query
+        name: position
+        schema:
+          type: array
+          items:
+            type: integer
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutineDay'
+          description: ''
+  /api/v1/owner/companies/{company_id}/routines/history/:
+    get:
+      operationId: companies_routines_history_retrieve
+      description: |-
+        Routine work per routine per day (the completion heatmap; default the last 4 weeks),
+        per day and per person: made, finished, on time, late, missed and the rates.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: from
+        schema:
+          type: string
+      - in: query
+        name: position
+        schema:
+          type: array
+          items:
+            type: integer
+      - in: query
+        name: to
+        schema:
+          type: string
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutineHistory'
+          description: ''
+  /api/v1/owner/companies/{company_id}/routines/to-confirm/:
+    get:
+      operationId: companies_routines_to_confirm_retrieve
+      description: |-
+        Routine work waiting for the caller's confirmation, grouped by routine and day,
+        oldest first. Confirm a group with tasks/bulk/ (action confirm); send one back with
+        tasks/<id>/return/.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutineToConfirm'
           description: ''
   /api/v1/owner/companies/{company_id}/sales/cash-movements/:
     get:
@@ -11969,6 +12141,12 @@ paths:
           items:
             type: integer
       - in: query
+        name: routines
+        schema:
+          type: string
+        description: 'without: one-off tasks only (the Tasks page), only: routine
+          work only. Routine work is the daily task a routine made; empty: both.'
+      - in: query
         name: status
         schema:
           type: array
@@ -12443,6 +12621,12 @@ paths:
           items:
             type: integer
       - in: query
+        name: routines
+        schema:
+          type: string
+        description: 'without: one-off tasks only (the Tasks page), only: routine
+          work only. Routine work is the daily task a routine made; empty: both.'
+      - in: query
         name: status
         schema:
           type: array
@@ -12579,6 +12763,12 @@ paths:
           items:
             type: integer
       - in: query
+        name: routines
+        schema:
+          type: string
+        description: 'without: one-off tasks only (the Tasks page), only: routine
+          work only. Routine work is the daily task a routine made; empty: both.'
+      - in: query
         name: status
         schema:
           type: array
@@ -12627,7 +12817,9 @@ paths:
   /api/v1/owner/companies/{company_id}/tasks/reviews/:
     get:
       operationId: companies_tasks_reviews_list
-      description: Work waiting for the caller's check, oldest first, with proof photos.
+      description: |-
+        Work waiting for the caller's check, oldest first, with proof photos. One-off work is
+        checked here (`routines=without`); routine work has its own queue (routines/to-confirm/).
       parameters:
       - in: path
         name: company_id
@@ -12646,6 +12838,12 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
+      - in: query
+        name: routines
+        schema:
+          type: string
+        description: 'without: one-off tasks only, only: routine work only; empty:
+          both.'
       tags:
       - companies
       security:
@@ -12662,7 +12860,8 @@ paths:
       operationId: companies_tasks_summary_retrieve
       description: |-
         KPI numbers (personal tasks never count): today, late now, waiting for a check,
-        7-day on-time % against the 7 days before, a 14-day series.
+        7-day on-time % against the 7 days before, a 14-day series. `routines=without` counts
+        one-off work only (the Tasks page), `only` routine work only.
       parameters:
       - in: query
         name: assignee
@@ -12679,6 +12878,12 @@ paths:
         schema:
           type: integer
         required: true
+      - in: query
+        name: routines
+        schema:
+          type: string
+        description: 'without: one-off tasks only, only: routine work only; empty:
+          both.'
       tags:
       - companies
       security:
@@ -15873,7 +16078,11 @@ components:
           items:
             type: object
             additionalProperties: {}
+        previous_same_days:
+          type: object
+          additionalProperties: {}
       required:
+      - previous_same_days
       - series
     FinanceCounterpartyKindEnum:
       enum:
@@ -16351,6 +16560,13 @@ components:
             $ref: '#/components/schemas/PaymentLineRequest'
       required:
       - reason
+    GiveTodayInputRequest:
+      type: object
+      properties:
+        due_time:
+          type: string
+          format: time
+          description: 'Today, in the company''s timezone. Default: in two hours.'
     Group:
       type: object
       properties:
@@ -21248,10 +21464,14 @@ components:
           type: string
         name:
           type: string
+        number:
+          type: integer
+          nullable: true
       required:
       - id
       - key
       - name
+      - number
     ProjectWriteRequest:
       type: object
       properties:
@@ -23695,6 +23915,16 @@ components:
           type: object
           additionalProperties: {}
           readOnly: true
+        next_run:
+          type: string
+          format: date-time
+          nullable: true
+          readOnly: true
+        today:
+          allOf:
+          - $ref: '#/components/schemas/RoutineToday'
+          nullable: true
+          readOnly: true
         created_at:
           type: string
           format: date-time
@@ -23711,6 +23941,7 @@ components:
       - id
       - is_active
       - needs_confirmation
+      - next_run
       - onboarding
       - positions
       - proof
@@ -23718,6 +23949,7 @@ components:
       - starts_on
       - stats
       - title
+      - today
       - weekdays
     RoutineCompliance:
       type: object
@@ -23743,6 +23975,98 @@ components:
       - range
       - series
       - totals
+    RoutineDay:
+      type: object
+      properties:
+        day:
+          type: string
+          format: date
+        holiday:
+          type: boolean
+        idle:
+          type: integer
+          description: Routines with nothing that day.
+        totals:
+          type: object
+          additionalProperties: {}
+        routines:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          description: '{routine, due_at, reason, next_run, give, progress, counts,
+            runs, skipped}; a run''s state: done, review, late, missed, returned,
+            open, cancelled; skipped reasons: time_off, off, suspended, joined_later.'
+      required:
+      - day
+      - holiday
+      - idle
+      - routines
+      - totals
+    RoutineGive:
+      type: object
+      properties:
+        people:
+          type: integer
+        due_at:
+          type: string
+          format: date-time
+      required:
+      - due_at
+      - people
+    RoutineGivenToday:
+      type: object
+      properties:
+        given:
+          type: integer
+        due_at:
+          type: string
+          format: date-time
+        people:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+      required:
+      - due_at
+      - given
+      - people
+    RoutineHistory:
+      type: object
+      properties:
+        range:
+          type: object
+          additionalProperties: {}
+        days:
+          type: array
+          items:
+            type: string
+            format: date
+        routines:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        series:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        people:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        totals:
+          type: object
+          additionalProperties: {}
+      required:
+      - days
+      - people
+      - range
+      - routines
+      - series
+      - totals
     RoutinePreview:
       type: object
       properties:
@@ -23753,16 +24077,73 @@ components:
           type: boolean
         holiday:
           type: boolean
+        reason:
+          type: string
+          nullable: true
+          description: 'Why it makes no tasks that day: paused, onboarding, holiday,
+            not_due, not_started or made_late (made after that day''s deadline).'
+        due_at:
+          type: string
+          format: date-time
+        next_run:
+          type: string
+          format: date-time
+          nullable: true
         people:
           type: array
           items:
             type: object
             additionalProperties: {}
+          description: '{member, gets, reason}; reason: left, suspended, not_registered,
+            branch, joined_later, time_off or off.'
       required:
       - day
       - due
+      - due_at
       - holiday
+      - next_run
       - people
+      - reason
+    RoutineToConfirm:
+      type: object
+      properties:
+        count:
+          type: integer
+        groups:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          description: '{routine, day, items: [run]}'
+      required:
+      - count
+      - groups
+    RoutineToday:
+      type: object
+      description: |-
+        Today, on a routine's own page: why it makes no tasks today (null when it does), and
+        "Give today's task now" (who would get it, by when) when it was made after today's
+        deadline.
+      properties:
+        date:
+          type: string
+          format: date
+        reason:
+          type: string
+          nullable: true
+        give:
+          allOf:
+          - $ref: '#/components/schemas/RoutineGive'
+          nullable: true
+        given:
+          type: integer
+          default: 0
+          description: 'Made after today''s deadline: today''s tasks given by hand
+            anyway.'
+      required:
+      - date
+      - give
+      - reason
     RoutineWriteRequest:
       type: object
       properties:

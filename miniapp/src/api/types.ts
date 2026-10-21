@@ -5,9 +5,7 @@ type Schemas = components["schemas"];
 export type Me = Schemas["Me"];
 export type Membership = Schemas["Membership"];
 export type Position = Schemas["Position"];
-/** `routine`: the routine (task template) that made a daily task, null for one-off work. The
- * employee API sends it; until the schema is regenerated it's written here by hand. */
-export type Task = Schemas["Task"] & { routine?: number | null };
+export type Task = Schemas["Task"];
 export type TaskStatus = Schemas["TaskStatusEnum"];
 export type TaskAction = Schemas["ActionsEnum"];
 export type Comment = Schemas["Comment"];

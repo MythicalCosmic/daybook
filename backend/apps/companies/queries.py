@@ -60,9 +60,7 @@ def invite(company: Company) -> dict:
     nothing to decide on)."""
     counts = Membership.objects.for_company(company).aggregate(
         approved=Count("pk", filter=Q(status=Membership.Status.APPROVED)),
-        pending=Count(
-            "pk", filter=Q(status=Membership.Status.PENDING, onboarded_at__isnull=False)
-        ),
+        pending=Count("pk", filter=Q(status=Membership.Status.PENDING, onboarded_at__isnull=False)),
     )
     return {
         "link": company.invite_link,

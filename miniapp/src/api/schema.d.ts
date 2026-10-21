@@ -1182,6 +1182,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/tasks/confirm/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Confirm several finished tasks at once (a routine's runs, from the mini app's "Confirm
+         *     all"). Each is confirmed on its own, by the same rules and with the same audit row as
+         *     confirming it alone: only someone who may check it, never the person who did it. One
+         *     refusal never stops the others; the result says how each went.
+         */
+        post: operations["v1_companies_tasks_confirm_many"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/team-stats/": {
         parameters: {
             query?: never;
@@ -1714,6 +1736,19 @@ export interface components {
             proof_text: string;
             /** Format: binary */
             proof_photo?: string | null;
+        };
+        ConfirmManyRequest: {
+            ids: number[];
+        };
+        ConfirmManyResponse: {
+            done: number;
+            failed: number;
+            results: components["schemas"]["ConfirmManyResult"][];
+        };
+        ConfirmManyResult: {
+            id: number;
+            ok: boolean;
+            error: string;
         };
         /**
          * @description * `primary` - primary
@@ -3012,6 +3047,7 @@ export interface components {
         Task: {
             readonly id: number;
             readonly kind: components["schemas"]["TaskKindEnum"];
+            readonly routine: number | null;
             readonly title: string;
             readonly description: string;
             readonly status: components["schemas"]["TaskStatusEnum"];
@@ -5305,6 +5341,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Calendar"];
+                };
+            };
+        };
+    };
+    v1_companies_tasks_confirm_many: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmManyRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ConfirmManyRequest"];
+                "multipart/form-data": components["schemas"]["ConfirmManyRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfirmManyResponse"];
                 };
             };
         };
