@@ -15,6 +15,7 @@ import type { PermissionInfo } from "@/api/types";
 import CheckBox from "@/components/CheckBox.vue";
 import UiTooltip from "@/components/UiTooltip.vue";
 
+import { groupByArea, permissionArea } from "../permissionAreas";
 import type { Role } from "../types";
 
 /** Role id → its permission codes as edited (only roles that changed). */
@@ -40,24 +41,17 @@ export interface PermissionGroup {
   items: PermissionInfo[];
 }
 
+/** Areas that follow the sidebar (see permissionAreas.ts), not the API's code prefixes. */
 const groups = computed<PermissionGroup[]>(() => {
   const needle = (props.query ?? "").trim().toLowerCase();
-  const out: PermissionGroup[] = [];
-  for (const perm of props.permissions) {
-    if (props.area && perm.group !== props.area) continue;
-    if (needle && !`${perm.label} ${perm.code}`.toLowerCase().includes(needle)) continue;
-    let group = out.find((g) => g.area === perm.group);
-    if (!group) {
-      group = { area: perm.group, label: areaLabel(perm.group), items: [] };
-      out.push(group);
-    }
-    group.items.push(perm);
-  }
-  return out;
+  const shown = props.permissions.filter(
+    (perm) => (!props.area || permissionArea(perm.code) === props.area) && (!needle || `${perm.label} ${perm.code}`.toLowerCase().includes(needle)),
+  );
+  return groupByArea(shown).map((group) => ({ area: group.area, label: areaLabel(group.area), items: group.items }));
 });
 
 function areaLabel(area: string): string {
-  const key = `people.area.${area}`;
+  const key = `people.permArea.${area}`;
   return te(key) ? t(key) : area;
 }
 

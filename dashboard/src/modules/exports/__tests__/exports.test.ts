@@ -141,6 +141,18 @@ describe("ExportsPage", () => {
     expect(calls.find((c) => c.method === "POST")?.body).toEqual({ kind: "finance.transactions", format: "csv", params: { from: "2026-10-01" }, deliver_telegram: false });
     expect(toasts.at(-1)?.title).toBe("Building “Transactions”");
   });
+
+  it("explains an empty list and offers a new export instead of an empty table", async () => {
+    stub({ "GET exports/": () => page([]) });
+    const app = await testApp("/c/1/exports");
+    const { wrapper } = mountWithProviders(ExportsPage, { plugins: app.plugins });
+    await flushPromises();
+    const empty = wrapper.find("[data-exports-empty]");
+    expect(empty.exists()).toBe(true);
+    expect(empty.text()).toContain(en["exports.empty.body"]);
+    expect(empty.findAll("button").some((b) => b.text() === en["exports.new"])).toBe(true);
+    expect(wrapper.find("table").exists()).toBe(false);
+  });
 });
 
 describe("NewExportDialog", () => {

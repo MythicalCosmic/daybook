@@ -27,7 +27,7 @@ import BoardTile from "../components/BoardTile.vue";
 import ShiftGrid from "../components/ShiftGrid.vue";
 import en from "../i18n/en.json";
 import module from "../index";
-import { clockOf, compactTime, formatDistance, hours, localDateTime, shiftMonth, spanMinutes, weekdayIndex } from "../lib";
+import { clockOf, compactTime, formatDistance, hours, localDateTime, shiftMonth, spanMinutes, weekdayIndex, wholeDayScroll } from "../lib";
 import SwapsPage from "../pages/SwapsPage.vue";
 import type { BoardRow, Roster, Shift, Swap } from "../types";
 
@@ -209,6 +209,18 @@ describe("lib", () => {
     expect(compactTime("17:30:00")).toBe("17:30");
     expect(compactTime("09:00")).toBe("9:00");
   });
+
+  it("scrolls the month to whole days next to the pinned names", () => {
+    // Days of 32 px; the first day sits after the names at scroll 0.
+    expect(wholeDayScroll({ target: 300, start: 0, width: 32, max: 800 })).toBe(320);
+    expect(wholeDayScroll({ target: 320, start: 0, width: 32, max: 800 })).toBe(320);
+    // Early in the month nothing to scroll.
+    expect(wholeDayScroll({ target: -120, start: 0, width: 32, max: 800 })).toBe(0);
+    // At the end the furthest whole day, not the very end (which would cut a day in half).
+    expect(wholeDayScroll({ target: 790, start: 0, width: 32, max: 780 })).toBe(768);
+    // An offset start (padding before the first day) keeps the alignment.
+    expect(wholeDayScroll({ target: 300, start: 10, width: 32, max: 800 })).toBe(330);
+  });
 });
 
 describe("BoardTile", () => {
@@ -332,6 +344,38 @@ describe("ShiftGrid", () => {
     expect(inner.emitted("edit")).toHaveLength(1);
     const readonly = await grid(false);
     expect(readonly.wrapper.find(".att-add").exists()).toBe(false);
+  });
+});
+
+describe("TodayPage", () => {
+  it("shows the empty state without five zeros when nobody has a schedule yet", async () => {
+    const off = (id: number): BoardRow => ({
+      member: { id, name: `Person ${id}`, photo_url: null, position: null, home_branch: null, status: "approved" },
+      branch: null,
+      state: "off",
+      reason: "no_shift",
+      shift: null,
+      record: null,
+    });
+    stubApi({
+      "GET attendance/board/": () =>
+        json({
+          date: "2026-10-21",
+          is_today: true,
+          now: "2026-10-21T10:00:00+05:00",
+          holiday: null,
+          totals: { in: 0, late: 0, not_yet: 0, absent: 0, off: 2, rostered: 0, late_missing: 0 },
+          branches: [],
+          people: [off(1), off(2)],
+        }),
+    });
+    const { default: TodayPage } = await import("../pages/TodayPage.vue");
+    const app = await testApp("/c/1/attendance");
+    const { wrapper } = mountWithProviders(TodayPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(wrapper.text()).toContain("No one is working here yet");
+    expect(wrapper.text()).not.toContain("Present now");
   });
 });
 

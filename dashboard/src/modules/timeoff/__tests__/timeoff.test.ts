@@ -125,4 +125,63 @@ describe("LeaveMonthGrid", () => {
     await wrapper.findAll("button").find((b) => b.text().includes("Madina Saidova"))!.trigger("click");
     expect(inner.emitted("person")).toEqual([[12]]);
   });
+
+  it("starts on a whole day when the month runs out before today reaches the left edge", async () => {
+    // 31 days of 34 px after a 228 px name column, in a 756 px card: today (the 21st) can't scroll
+    // to the left edge, and the furthest scroll (526 px) would cut the 16th in half.
+    const has = (el: Element, name: string) => el.classList.contains(name);
+    vi.spyOn(Element.prototype, "scrollWidth", "get").mockImplementation(function (this: Element) {
+      return has(this, "grid-wrap") ? 228 + 31 * 34 : 0;
+    });
+    vi.spyOn(Element.prototype, "clientWidth", "get").mockImplementation(function (this: Element) {
+      return has(this, "grid-wrap") ? 756 : 0;
+    });
+    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) {
+      return has(this, "name") ? 228 : 0;
+    });
+    const scrolled: number[] = [];
+    vi.spyOn(Element.prototype, "scrollLeft", "set").mockImplementation(function (this: Element, value: number) {
+      if (has(this, "grid-wrap")) scrolled.push(value);
+    });
+    const app = await testApp("/c/1/time-off");
+    mountWithProviders(LeaveMonthGrid, { plugins: app.plugins, props: { month } });
+    await flushPromises();
+    expect(scrolled.at(-1)).toBe(15 * 34);
+  });
+});
+
+describe("PersonTimeOffTab", () => {
+  it("lists their time off with this year's approved days, leaving Record time off to the profile header", async () => {
+    const row = (id: number, first: string, last: string, days: number, status: string) => ({
+      id,
+      member: { id: 7, name: "Alisher Valiyev", photo_url: null },
+      position: null,
+      home_branch: null,
+      first_day: first,
+      last_day: last,
+      days,
+      reason: "",
+      status,
+      created_at: "2026-10-01T09:00:00+05:00",
+      decided_at: null,
+      decided_by: null,
+      recorded_by: null,
+      revoked_at: null,
+      revoked_by: null,
+      revoke_reason: "",
+      attachment: null,
+      can_decide: false,
+      can_revoke: false,
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => json({ count: 2, next: null, previous: null, results: [row(2, "2026-10-28", "2026-10-29", 2, "pending"), row(1, "2026-10-25", "2026-10-27", 3, "approved")] })),
+    );
+    const { default: PersonTimeOffTab } = await import("../components/PersonTimeOffTab.vue");
+    const app = await testApp("/c/1/people/7/time-off");
+    const { wrapper } = mountWithProviders(PersonTimeOffTab, { plugins: app.plugins, props: { memberId: 7 } });
+    await flushPromises();
+    expect(wrapper.text()).toContain("3 days approved this year");
+    expect(wrapper.text()).not.toContain("Record time off");
+  });
 });

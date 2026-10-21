@@ -44,7 +44,10 @@ function scrollToToday() {
   if (!el || el.scrollWidth <= el.clientWidth) return;
   const name = el.querySelector<HTMLElement>(".name")?.offsetWidth ?? 0;
   const dayWidth = (el.scrollWidth - name) / count.value;
-  el.scrollLeft = todayIndex.value > 2 ? (todayIndex.value - 2) * dayWidth : 0;
+  const target = todayIndex.value > 2 ? (todayIndex.value - 2) * dayWidth : 0;
+  // Late in the month the days run out before today reaches the left edge: stop on a whole day
+  // rather than at the very end, which would leave the first visible day cut in half.
+  el.scrollLeft = Math.min(target, Math.floor((el.scrollWidth - el.clientWidth) / dayWidth) * dayWidth);
 }
 onMounted(scrollToToday);
 // The days stretch with the card (the waiting list beside it arrives later), which would leave the
@@ -127,6 +130,7 @@ function tip(item: CalendarItem, name: string): string {
           type="button"
           class="name sticky left-0 z-10 flex min-w-0 items-center gap-2.5 border-b border-r border-line bg-surface px-4 text-left hover:bg-[color-mix(in_srgb,var(--c-text)_4%,var(--c-surface))]"
           role="rowheader"
+          :title="[row.member.name, row.position, row.home_branch?.name].filter(Boolean).join(' · ')"
           @click="emit('person', row.member.id)"
         >
           <UserAvatar :name="row.member.name" :src="row.member.photo_url" :size="26" />

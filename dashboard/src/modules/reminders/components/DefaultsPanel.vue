@@ -45,13 +45,14 @@ async function submit(): Promise<void> {
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="-mt-2 flex justify-end">
-      <UiButton variant="ghost" size="sm" :icon-right="ArrowUpRight" :to="`/c/${company.currentId}/reminders`">{{ t("reminders.defaults.allPolicies") }}</UiButton>
-    </div>
     <div v-if="query.isPending.value" class="flex flex-col gap-3"><SkeletonBlock height="120px" radius="12px" /><SkeletonBlock height="200px" radius="12px" /></div>
     <ErrorState v-else-if="query.isError.value" :error="query.error.value" :retry="() => query.refetch()" />
     <template v-else-if="policy">
-      <PolicyForm v-model="draft" :errors="errors" />
+      <!-- One card, like every other settings form; the link to every policy sits under it. -->
+      <div class="ui-card p-4 md:p-5">
+        <PolicyForm v-model="draft" :errors="errors" />
+      </div>
+      <UiButton variant="ghost" size="sm" class="-ml-2 self-start" :icon-right="ArrowUpRight" :to="`/c/${company.currentId}/reminders`">{{ t("reminders.defaults.allPolicies") }}</UiButton>
       <StickyActionBar :show="dirty" :message="t('common.unsaved')" tone="warning">
         <UiButton variant="ghost" @click="draft = toDraft(policy)">{{ t("common.discard") }}</UiButton>
         <UiButton variant="primary" :loading="save.isPending.value" @click="submit">{{ t("common.save") }}</UiButton>

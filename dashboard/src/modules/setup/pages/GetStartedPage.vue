@@ -48,7 +48,8 @@ async function dismiss(): Promise<void> {
 </script>
 
 <template>
-  <div class="mx-auto max-w-[920px]">
+  <!-- Left-aligned like every other page; the checklist keeps a readable width. -->
+  <div class="max-w-[920px]">
     <PageHeader :title="t('setup.title')" :description="t('setup.description', { company: company.current?.name ?? '' })">
       <!-- All done and still shown: the progress card offers "Hide the checklist" instead. -->
       <template v-if="data?.can_dismiss && (data.dismissed || !allDone)" #actions>
@@ -127,11 +128,11 @@ async function dismiss(): Promise<void> {
             :icon-right="ArrowRight"
             class="max-sm:w-full"
           >{{ t("setup.doIt") }}</UiButton>
-          <UiButton v-else :to="path(step.url)" variant="ghost" size="sm" class="text-muted max-sm:w-full">{{ t("setup.review") }}</UiButton>
+          <UiButton v-else :to="path(step.url)" variant="ghost" size="sm" class="text-muted max-sm:-mt-1 max-sm:ml-[52px]">{{ t("setup.review") }}</UiButton>
         </li>
       </TransitionGroup>
 
-      <p class="text-center text-sm text-muted">{{ t("setup.footer") }}</p>
+      <p class="text-sm text-muted">{{ t("setup.footer") }}</p>
     </div>
   </div>
 </template>

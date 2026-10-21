@@ -89,7 +89,7 @@ const menu = computed(() => [{ label: t("groups.disconnect"), icon: Link2Off, da
         <CompanyLogo :name="group.title || String(group.chat_id)" :size="40" />
         <span class="min-w-0 flex-1">
           <span class="block truncate text-md font-semibold text-fg">{{ group.title || t("groups.untitled") }}</span>
-          <span class="block truncate text-sm text-muted">
+          <span class="block text-sm text-muted sm:truncate">
             <template v-if="group.linked_by">{{ t("groups.connectedBy", { name: group.linked_by.name, date: fmt.instant(group.connected_at, "date") }) }}</template>
             <template v-else>{{ t("groups.connectedOn", { date: fmt.instant(group.connected_at, "date") }) }}</template>
           </span>

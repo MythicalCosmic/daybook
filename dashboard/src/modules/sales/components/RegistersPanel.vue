@@ -112,12 +112,20 @@ async function archive(register: Register): Promise<void> {
           <span class="grid size-9 shrink-0 place-items-center rounded-[10px] bg-accent-soft text-accent-fg"><Wallet :size="16" /></span>
           <div class="min-w-0 flex-1">
             <p class="truncate text-sm font-semibold text-fg">{{ register.name }}</p>
-            <p class="truncate text-xs text-muted">
+            <p class="text-xs text-muted sm:truncate">
               {{ register.fiscal_serial || t("sales.registers.noSerial") }} · {{ register.cash_account.name }}
             </p>
+            <!-- On a phone the open shift and the cash go under the name instead of being dropped. -->
+            <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 sm:hidden">
+              <StatusPill v-if="register.open_shift" size="sm" tone="info" live :label="t('sales.registers.openBy', { name: register.open_shift.cashier.name.split(' ')[0] })" />
+              <StatusPill v-else-if="!register.is_active" size="sm" tone="neutral" :label="t('sales.registers.archived')" />
+              <span class="inline-flex items-baseline gap-1.5 text-xs text-muted">{{ t("sales.registers.holds") }} <MoneyText :value="register.cash_now" class="text-sm font-semibold text-fg" /></span>
+            </div>
           </div>
-          <StatusPill v-if="register.open_shift" size="sm" tone="info" live :label="t('sales.registers.openBy', { name: register.open_shift.cashier.name.split(' ')[0] })" />
-          <StatusPill v-else-if="!register.is_active" size="sm" tone="neutral" :label="t('sales.registers.archived')" />
+          <span class="contents max-sm:hidden">
+            <StatusPill v-if="register.open_shift" size="sm" tone="info" live :label="t('sales.registers.openBy', { name: register.open_shift.cashier.name.split(' ')[0] })" />
+            <StatusPill v-else-if="!register.is_active" size="sm" tone="neutral" :label="t('sales.registers.archived')" />
+          </span>
           <div class="w-[120px] text-right max-sm:hidden">
             <p class="text-[11px] text-muted">{{ t("sales.registers.holds") }}</p>
             <MoneyText :value="register.cash_now" class="text-sm font-semibold text-fg" />

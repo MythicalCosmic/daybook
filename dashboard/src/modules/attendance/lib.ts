@@ -4,6 +4,7 @@
  */
 import type { StatusTone } from "@/components/StatusPill.vue";
 import { currentLanguage } from "@/i18n";
+import { formatNumber } from "@/lib/format";
 import { addDays } from "@/lib/dates";
 
 import type { BoardState, CellCode, RecordFlag, ShiftStatus, SwapKind } from "./types";
@@ -70,21 +71,29 @@ export function slotColor(slot: number | null | undefined): string {
   return `var(--c-chart-${index})`;
 }
 
-/** The UI language's decimal mark: "7.5" in English, "7,5" in Uzbek and Russian. */
-function decimal(text: string): string {
-  return currentLanguage() === "en" ? text : text.replace(".", ",");
-}
-
 /** "34 m", "1.2 km" ("1,2 km" in uz/ru). */
 export function formatDistance(meters: number | null | undefined, units: { m: string; km: string }): string {
   if (meters === null || meters === undefined) return "—";
-  if (meters >= 1000) return `${decimal((meters / 1000).toFixed(1))} ${units.km}`;
+  if (meters >= 1000) return `${formatNumber(meters / 1000, currentLanguage(), 1)} ${units.km}`;
   return `${meters} ${units.m}`;
 }
 
-/** Minutes as hours with one decimal ("7.5", "7,5" in uz/ru), without units. */
+/** Minutes as hours with at most one decimal ("7.5", "7,5" in uz/ru), without units. */
 export function hours(minutes: number): string {
-  return decimal((Math.round((minutes / 60) * 10) / 10).toFixed(minutes % 60 === 0 ? 0 : 1));
+  return formatNumber(Math.round((minutes / 60) * 10) / 10, currentLanguage(), 1);
+}
+
+/**
+ * Where a grid of equal day columns behind pinned names should scroll to show `target`: rounded up
+ * to a whole day, so the first day next to the names isn't cut in half (and the day `target` was
+ * worked out for stays in view). `start` is the scroll at which the first day sits right after the
+ * names; at the end of the month, where `max` stops the scroll, the furthest whole day instead.
+ */
+export function wholeDayScroll({ target, start, width, max }: { target: number; start: number; width: number; max: number }): number {
+  if (!width) return Math.max(0, Math.min(target, max));
+  let left = start + Math.ceil((target - start) / width) * width;
+  if (left > max) left = start + Math.floor((max - start) / width) * width;
+  return Math.max(0, left);
 }
 
 /** "08:30" → "8:30", "18:00" → "18:00": a wall-clock time as short as it can be without losing minutes. */

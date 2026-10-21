@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 
 import type { PermissionInfo } from "@/api/types";
+import { PERMS } from "@/core/perms.generated";
 import { i18n, mergeModuleMessages, setLanguage } from "@/i18n";
 import { json } from "@/test/fixtures";
 import { mountWithProviders, testApp } from "@/test/plugins";
@@ -17,7 +18,8 @@ import en from "../i18n/en.json";
 import ru from "../i18n/ru.json";
 import uz from "../i18n/uz.json";
 import module from "../index";
-import { rateTone, statusChip, tenureParts } from "../status";
+import { PERMISSION_AREAS, groupByArea, permissionArea } from "../permissionAreas";
+import { bookedDaysAhead, rateTone, statusChip, tenureParts } from "../status";
 import type { Role } from "../types";
 
 interface Call {
@@ -142,7 +144,8 @@ describe("PermissionMatrix", () => {
     const { wrapper, inner } = await mountMatrix(roles, (code) => code !== "finance.view");
     await flushPromises();
     const text = wrapper.text();
-    expect(text).toContain("Members");
+    // Areas follow the sidebar, not the code prefix.
+    expect(text).toContain("Team and attendance");
     expect(text).toContain("Finance");
     // Owner holds everything: its counts are full and it has no checkboxes.
     expect(wrapper.findAll('[aria-label="Owners hold every permission"]').length).toBe(3);
@@ -174,6 +177,51 @@ describe("PermissionMatrix", () => {
     const empty = mountWithProviders(PermissionMatrix, { plugins: app.plugins, props: { roles: [role({ id: 2 })], permissions, grantable: () => true, draft: {}, area: "finance", query: "approve" } });
     await flushPromises();
     expect(empty.wrapper.text()).toContain("No permission matches.");
+  });
+});
+
+describe("permission areas", () => {
+  it("places every permission in exactly one area, each named in every language", () => {
+    const placed = PERMISSION_AREAS.flatMap((area) => area.perms);
+    expect([...placed].sort()).toEqual([...PERMS].sort());
+    expect(new Set(placed).size).toBe(placed.length);
+    for (const area of [...PERMISSION_AREAS.map((a) => a.id), "other"]) {
+      for (const dictionary of [en, uz, ru] as Array<Record<string, string>>) expect(dictionary[`people.permArea.${area}`], area).toBeTruthy();
+    }
+    // Areas are not one-row leftovers of the code prefixes any more.
+    expect(PERMISSION_AREAS.every((area) => area.perms.length >= 3)).toBe(true);
+  });
+
+  it("groups in sidebar order and keeps a new permission near its prefix", () => {
+    const rows = [{ code: "finance.view" }, { code: "audit.view" }, { code: "members.view" }, { code: "company.settings" }, { code: "tasks.later_feature" }, { code: "brand.new" }];
+    expect(groupByArea(rows).map((g) => [g.area, g.items.map((i) => i.code)])).toEqual([
+      ["access", ["company.settings", "audit.view"]],
+      ["people", ["members.view"]],
+      ["work", ["tasks.later_feature"]],
+      ["finance", ["finance.view"]],
+      ["other", ["brand.new"]],
+    ]);
+    expect(permissionArea("time_off.approve")).toBe("people");
+    expect(permissionArea("roles.manage")).toBe("access");
+  });
+});
+
+describe("bookedDaysAhead", () => {
+  it("counts approved days after today, which days off taken leaves out", () => {
+    const today = "2026-10-21";
+    expect(
+      bookedDaysAhead(
+        [
+          { first_day: "2026-10-25", last_day: "2026-10-27", status: "approved" },
+          // Started already: only the days after today.
+          { first_day: "2026-10-20", last_day: "2026-10-22", status: "approved" },
+          { first_day: "2026-10-28", last_day: "2026-10-29", status: "pending" },
+          { first_day: "2026-10-19", last_day: "2026-10-21", status: "approved" },
+        ],
+        today,
+      ),
+    ).toBe(4);
+    expect(bookedDaysAhead([], today)).toBe(0);
   });
 });
 

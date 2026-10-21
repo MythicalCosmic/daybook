@@ -143,7 +143,13 @@ watch([param, panels], () => {
     <PageHeader v-if="!isPhone || !shown" :title="t('settings.title')" :description="t('settings.description')" />
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-[248px_minmax(0,1fr)] lg:gap-10">
       <!-- The panel list (a page of its own on a phone) -->
-      <nav v-if="!isPhone || !shown" :aria-label="t('settings.title')" class="flex flex-col gap-5 lg:sticky lg:top-[calc(var(--topbar-h)+20px)] lg:self-start" data-settings-nav>
+      <!-- On a desktop the list stays in view and scrolls on its own when it is taller than the window. -->
+      <nav
+        v-if="!isPhone || !shown"
+        :aria-label="t('settings.title')"
+        class="flex flex-col gap-5 lg:sticky lg:top-[calc(var(--topbar-h)+20px)] lg:-mx-1.5 lg:max-h-[calc(100dvh-var(--topbar-h)-44px)] lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:px-1.5 lg:pb-2"
+        data-settings-nav
+      >
         <section v-for="section in sections" :key="section.id" :data-section="section.id">
           <h2 class="mb-1.5 px-2.5 text-xs font-semibold uppercase tracking-[0.06em] text-subtle max-md:px-1">{{ sectionTitle(section) }}</h2>
           <ul :class="isPhone ? 'overflow-hidden rounded-[14px] border border-line bg-surface' : 'flex flex-col gap-0.5'">

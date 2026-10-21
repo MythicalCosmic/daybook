@@ -31,13 +31,18 @@ const summary = useSummary(computed(() => ({ assignee: props.memberId })));
 const open = useTaskList(computed(() => ({ assignee: [String(props.memberId)], status: ["todo", "in_progress", "review", "returned"], ordering: "due_at", page_size: 20 })));
 const recent = useTaskList(computed(() => ({ assignee: [String(props.memberId)], status: ["done"], ordering: "-completed_at", page_size: 8 })));
 
+/** A change only when there is something to compare with: otherwise the badge would just say "—". */
+function comparable(value: number | null | undefined, previous: number | null | undefined): number | undefined {
+  return value === null || value === undefined || previous === null || previous === undefined || (previous === 0 && value === 0) ? undefined : previous;
+}
+
 const kpis = computed(() => {
   const data = summary.data.value;
   return [
     { id: "today", label: t("tasks.kpi.doneToday"), value: data?.done_today ?? null, format: (v: number) => (data ? `${v} / ${data.total_today}` : String(v)) },
     { id: "late", label: t("tasks.kpi.lateNow"), value: data?.late_now ?? null },
-    { id: "on_time", label: t("tasks.kpi.onTime"), value: data?.on_time_percent ?? null, previous: data?.on_time_previous ?? null, format: "percent" as const, points: true, spark: data?.series.map((p) => p.on_time_percent) ?? [] },
-    { id: "done", label: t("tasks.person.done7d"), value: data?.done_7d ?? null, previous: data?.done_prev_7d ?? null },
+    { id: "on_time", label: t("tasks.kpi.onTime"), value: data?.on_time_percent ?? null, previous: comparable(data?.on_time_percent, data?.on_time_previous), format: "percent" as const, points: true, spark: data?.series.map((p) => p.on_time_percent) ?? [] },
+    { id: "done", label: t("tasks.person.done7d"), value: data?.done_7d ?? null, previous: data?.done_prev_7d ? comparable(data.done_7d, data.done_prev_7d) : undefined },
   ];
 });
 

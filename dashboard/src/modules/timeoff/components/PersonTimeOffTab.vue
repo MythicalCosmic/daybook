@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
  * Person 360 › Time off (registered by this module): everything they asked for or had recorded,
- * newest first, with the status and who decided, and "Record time off" for them.
+ * newest first, with the status and who decided. "Record time off" is the profile header's action.
  */
-import { CalendarPlus, FileText, TreePalm } from "@lucide/vue";
+import { FileText, TreePalm } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
@@ -12,7 +12,6 @@ import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import StatusPill, { type StatusTone } from "@/components/StatusPill.vue";
-import UiButton from "@/components/UiButton.vue";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
@@ -41,8 +40,7 @@ const base = computed(() => `/c/${company.currentId}/time-off`);
     <header class="flex flex-wrap items-center gap-2 border-b border-line px-5 py-3">
       <h2 class="text-md font-semibold text-fg">{{ t("timeoff.tab") }}</h2>
       <span v-if="rows.length" class="text-sm text-muted">· {{ t("timeoff.person.thisYear", { n: approvedDays }, approvedDays) }}</span>
-      <span class="flex-1" />
-      <UiButton size="sm" :icon="CalendarPlus" :to="{ path: base, query: { record: String(memberId) } }">{{ t("timeoff.cmd.record") }}</UiButton>
+      <!-- "Record time off" is in the profile header right above, for the people who may. -->
     </header>
     <div v-if="skeleton" class="flex flex-col gap-2 p-4"><SkeletonBlock v-for="n in 4" :key="n" height="44px" radius="8px" /></div>
     <ErrorState v-else-if="query.isError.value" compact class="m-4" :error="query.error.value" :retry="() => query.refetch()" />

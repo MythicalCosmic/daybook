@@ -159,7 +159,7 @@ const memberSubtitle = (member: RosterMember) =>
 
         <!-- People -->
         <template v-for="member in roster.members" :key="member.id">
-          <button type="button" class="att-cell att-side flex items-center gap-2 px-3 py-2 text-left hover:bg-highlight" role="rowheader" @click="emit('person', member)">
+          <button type="button" class="att-cell att-side flex items-center gap-2 px-3 py-2 text-left hover:bg-highlight" role="rowheader" :title="`${member.name} · ${memberSubtitle(member)}`" @click="emit('person', member)">
             <UserAvatar :name="member.name" :src="member.photo_url" :size="28" />
             <div class="min-w-0">
               <p class="truncate text-sm font-semibold text-fg">{{ member.name }}</p>

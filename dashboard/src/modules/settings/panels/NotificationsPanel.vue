@@ -80,7 +80,7 @@ function set(row: NotificationPreference, field: "in_app" | "telegram", value: b
         <ul class="divide-y divide-line">
           <li v-for="row in group.rows" :key="row.kind" class="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
             <span class="flex min-w-0 flex-1 basis-[220px] items-center gap-2">
-              <span class="truncate text-base text-fg">{{ row.label }}</span>
+              <span class="min-w-0 text-base text-fg sm:truncate">{{ row.label }}</span>
               <StatusPill v-if="row.severity !== 'info'" :tone="severityTone[row.severity]" size="sm" :label="t(`settings.notifications.severity.${row.severity}`)" />
             </span>
             <span class="flex w-full items-center justify-end gap-6 sm:w-auto sm:gap-0">

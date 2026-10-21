@@ -11,6 +11,7 @@ import { useI18n } from "vue-i18n";
 
 import type { ExportJob } from "@/api/types";
 import DataTable from "@/components/DataTable.vue";
+import EmptyState from "@/components/EmptyState.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import RelativeTime from "@/components/RelativeTime.vue";
 import StatusPill, { type StatusTone } from "@/components/StatusPill.vue";
@@ -93,7 +94,14 @@ const columns = computed<TableColumn<ExportJob>[]>(() => [
       </template>
     </PageHeader>
 
+    <!-- None yet: the reason and the way to make one, without an empty table and its column picker. -->
+    <div v-if="query.data.value?.count === 0" class="ui-card" data-exports-empty>
+      <EmptyState :icon="FileSpreadsheet" :title="t('exports.empty.title')" :description="t('exports.empty.body')">
+        <UiButton variant="secondary" :icon="Plus" @click="creating = true">{{ t("exports.new") }}</UiButton>
+      </EmptyState>
+    </div>
     <DataTable
+      v-else
       :state="table"
       :columns="columns"
       :rows="rows"

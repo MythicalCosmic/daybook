@@ -88,16 +88,17 @@ async function save(): Promise<void> {
         />
       </section>
 
-      <section class="ui-card grid grid-cols-1 gap-4 p-5 md:grid-cols-3">
-        <FormField :label="t('finance.prefs.receipt')" :hint="t('finance.prefs.receiptHint')" optional>
+      <!-- The labels share one row (a subgrid), so the three amounts line up even when a label wraps. -->
+      <section class="ui-card grid grid-cols-1 gap-4 p-5 md:grid-cols-3 md:grid-rows-[auto_auto] md:gap-y-1.5">
+        <FormField class="md:row-span-2 md:grid md:grid-rows-subgrid" :label="t('finance.prefs.receipt')" :hint="t('finance.prefs.receiptHint')" optional>
           <template #label><span class="inline-flex items-center gap-1.5"><Paperclip :size="14" class="text-subtle" />{{ t("finance.prefs.receipt") }}</span></template>
           <MoneyInput v-model="form.receipt_required_over" :placeholder="t('finance.prefs.off')" />
         </FormField>
-        <FormField :label="t('finance.prefs.alert')" :hint="t('finance.prefs.alertHint')" optional>
+        <FormField class="md:row-span-2 md:grid md:grid-rows-subgrid" :label="t('finance.prefs.alert')" :hint="t('finance.prefs.alertHint')" optional>
           <template #label><span class="inline-flex items-center gap-1.5"><BellRing :size="14" class="text-subtle" />{{ t("finance.prefs.alert") }}</span></template>
           <MoneyInput v-model="form.large_expense_alert" :placeholder="t('finance.prefs.off')" />
         </FormField>
-        <FormField :label="t('finance.prefs.approval')" :hint="t('finance.prefs.approvalHint')" optional>
+        <FormField class="md:row-span-2 md:grid md:grid-rows-subgrid" :label="t('finance.prefs.approval')" :hint="t('finance.prefs.approvalHint')" optional>
           <template #label><span class="inline-flex items-center gap-1.5"><ReceiptText :size="14" class="text-subtle" />{{ t("finance.prefs.approval") }}</span></template>
           <MoneyInput v-model="form.approval_threshold" :placeholder="t('finance.prefs.everyClaim')" />
         </FormField>
