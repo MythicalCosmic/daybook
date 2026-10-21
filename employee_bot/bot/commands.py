@@ -8,11 +8,20 @@ import logging
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError
-from aiogram.types import BotCommand, BotCommandScopeAllGroupChats, BotCommandScopeAllPrivateChats
+from aiogram.types import (
+    BotCommand,
+    BotCommandScopeAllGroupChats,
+    BotCommandScopeAllPrivateChats,
+    MenuButtonCommands,
+    MenuButtonWebApp,
+    WebAppInfo,
+)
+from django.conf import settings
 from django.utils import translation
 from django.utils.translation import gettext as _
 
 from apps.core.models import Language
+from apps.members.bot_messages import MENU_APP
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +52,16 @@ def group_commands() -> list[BotCommand]:
     ]
 
 
+def menu_button() -> MenuButtonWebApp | MenuButtonCommands:
+    """The chat's menu button opens the mini app (Telegram needs an https address). A Mini App
+    opened this way gets initData and signs the person in; one opened from a keyboard button
+    wouldn't, so the main menu's app button only asks the bot for an inline one."""
+    url = settings.EMPLOYEE_MINIAPP_URL
+    if url.startswith("https://"):
+        return MenuButtonWebApp(text=_(MENU_APP), web_app=WebAppInfo(url=url))
+    return MenuButtonCommands()
+
+
 async def set_commands(bot: Bot) -> None:
     """Best effort: without menus the bot still works, so a failure only gets logged."""
     try:
@@ -57,5 +76,8 @@ async def set_commands(bot: Bot) -> None:
                 await bot.set_my_commands(
                     group_commands(), scope=BotCommandScopeAllGroupChats(), language_code=language
                 )
+        # One menu button for every chat, so in the bot's first language.
+        with translation.override("uz"):
+            await bot.set_chat_menu_button(menu_button=menu_button())
     except TelegramAPIError as exc:
         logger.warning("Couldn't set the command menus: %s", exc)
