@@ -188,9 +188,12 @@ describe("meta", () => {
   it("says how late, and converts company-local times both ways", () => {
     const words = { min: "min", h: "h", d: "d" };
     expect(lateness(45, words)).toBe("45 min");
-    expect(lateness(130, words)).toBe("2 h 10 min");
+    expect(lateness(130, words)).toBe("2 h");
+    expect(lateness(100, words)).toBe("2 h");
     expect(lateness(120, words)).toBe("2 h");
+    expect(lateness(19 * 60 + 36, words)).toBe("20 h");
     expect(lateness(60 * 50, words)).toBe("2 d");
+    expect(lateness(23 * 60 + 50, words)).toBe("1 d");
     expect(minutesBetween("2026-10-21T10:00:00Z", "2026-10-21T11:30:00Z")).toBe(90);
     const iso = zonedIso("2026-10-21", "18:00", "Asia/Tashkent");
     expect(new Date(iso).toISOString()).toBe("2026-10-21T13:00:00.000Z");

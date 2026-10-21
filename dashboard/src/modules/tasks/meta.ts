@@ -52,12 +52,11 @@ export function minutesBetween(earlier: string | Date, later: string | Date): nu
 export function lateness(minutes: number, words: { min: string; h: string; d: string }): string {
   const value = Math.max(0, minutes);
   if (value < 60) return `${value} ${words.min}`;
-  const hours = Math.floor(value / 60);
-  if (hours < 24) {
-    const rest = value % 60;
-    return rest ? `${hours} ${words.h} ${rest} ${words.min}` : `${hours} ${words.h}`;
-  }
-  return `${Math.floor(hours / 24)} ${words.d}`;
+  // Past the first hour, whole hours read faster (and fit a table cell in every language) than
+  // "1 h 53 min"; the exact deadline is on hover and in the drawer.
+  const hours = Math.round(value / 60);
+  if (hours < 24) return `${hours} ${words.h}`;
+  return `${Math.max(1, Math.floor(value / 60 / 24))} ${words.d}`;
 }
 
 /** A company-local day and wall-clock time ("2026-10-21", "18:00") as an ISO instant. */

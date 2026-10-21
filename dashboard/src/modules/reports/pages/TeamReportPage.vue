@@ -85,13 +85,14 @@ const rows = computed(() => {
 });
 const columns = computed<TableColumn<TeamRow>[]>(() => [
   { id: "label", header: t(`reports.group.${groupBy.value}`), sortable: true, minWidth: 220, sticky: true, hideable: false, value: label },
-  { id: "total", header: t("reports.col.due"), sortable: true, numeric: true, width: 90 },
-  { id: "on_time", header: t("reports.kpi.onTimeShort"), sortable: true, numeric: true, width: 100 },
-  { id: "late", header: t("reports.kpi.late"), sortable: true, numeric: true, width: 90 },
-  { id: "missed", header: t("reports.kpi.missed"), sortable: true, numeric: true, width: 100 },
-  { id: "on_time_percent", header: t("reports.kpi.onTime"), sortable: true, width: 240, value: (row) => row.on_time_percent },
-  { id: "late_now", header: t("reports.col.lateNow"), sortable: true, numeric: true, width: 110 },
-  { id: "avg_delay_minutes", header: t("reports.col.delay"), sortable: true, numeric: true, width: 130, value: (row) => row.avg_delay_minutes },
+  // Short headers: the full words are in the KPI strip above, and long ones clip in uz/ru.
+  { id: "total", header: t("reports.th.due"), sortable: true, numeric: true, width: 90 },
+  { id: "on_time", header: t("reports.th.onTime"), sortable: true, numeric: true, width: 120 },
+  { id: "late", header: t("reports.th.late"), sortable: true, numeric: true, width: 100 },
+  { id: "missed", header: t("reports.th.missed"), sortable: true, numeric: true, width: 130 },
+  { id: "on_time_percent", header: t("reports.kpi.onTime"), sortable: true, width: 180, value: (row) => row.on_time_percent },
+  { id: "late_now", header: t("reports.th.lateNow"), sortable: true, numeric: true, width: 130 },
+  { id: "avg_delay_minutes", header: t("reports.th.delay"), sortable: true, numeric: true, width: 140, value: (row) => row.avg_delay_minutes },
   { id: "reminders", header: t("reports.col.reminders"), sortable: true, numeric: true, width: 120 },
 ]);
 const tone = (value: number | null) => (value === null ? "neutral" : value >= 90 ? "success" : value >= 75 ? "warning" : "danger");

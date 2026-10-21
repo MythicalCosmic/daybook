@@ -207,7 +207,7 @@ function who(routine: Routine): string {
           <AvatarStack v-if="routine.assignees.length" :people="routine.assignees" :max="3" :size="24" class="max-md:hidden" />
           <div v-if="!onboarding" class="flex items-center gap-3">
             <SparkLine :data="sparkOf(routine)" :width="96" :height="28" color="var(--c-chart-2)" :label="t('routines.sparkLabel')" />
-            <div class="w-[68px] text-right">
+            <div class="min-w-[68px] whitespace-nowrap text-right">
               <p :class="['text-md font-semibold tabular-nums', completionTone(routine.stats?.completion_30d ?? null)]">{{ routine.stats?.completion_30d === null || !routine.stats ? "—" : fmt.percent(routine.stats.completion_30d, 0) }}</p>
               <p class="text-xs text-subtle">{{ t("routines.done30") }}</p>
             </div>
