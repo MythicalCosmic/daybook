@@ -84,7 +84,8 @@ function hasFacts(branch: BranchToday): boolean {
           v-for="branch in branches"
           :key="branch.id"
           :class="[
-            'flex min-w-0 flex-col rounded-[12px] border p-3.5 transition-colors',
+            // A lone branch doesn't stretch its three numbers across the whole page.
+            'flex min-w-0 max-w-[40rem] flex-col rounded-[12px] border p-3.5 transition-colors',
             branch.status === 'not_opened' ? 'border-[color-mix(in_srgb,var(--c-danger)_35%,var(--c-border))] bg-danger-soft/40' : 'border-line bg-surface hover:border-line-strong',
           ]"
         >
