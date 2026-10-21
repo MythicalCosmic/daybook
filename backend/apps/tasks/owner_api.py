@@ -5,7 +5,8 @@ Visibility always goes through `queries.visible_tasks` (personal tasks only for 
 company setting on; branch scope §2.6), so a task outside it answers 404 like another company's.
 """
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from django.db import transaction
 from django.db.models import Case, F, IntegerField, Value, When
@@ -30,6 +31,7 @@ from apps.tasks.owner_serializers import (
     BulkSerializer,
     CommentRowSerializer,
     CommentSerializer,
+    GiveTodayInputSerializer,
     MoveSerializer,
     ReasonSerializer,
     ReassignSerializer,
@@ -664,26 +666,25 @@ class RoutineViewSet(
         if q := request.query_params.get("q", "").strip():
             templates = templates.filter(title__icontains=q)
         templates = list(templates.order_by("-is_active", "due_time", "title"))
-        stats = dashboard.routine_stats(templates, self.company, timezone.now())
-        context = self.get_serializer_context() | {"stats": stats}
+        now = timezone.now()
+        context = self.get_serializer_context() | {
+            "now": now,
+            "stats": dashboard.routine_stats(templates, self.company, now),
+            "next_runs": generation.next_runs(templates, self.company, now),
+        }
         return Response(RoutineSerializer(templates, many=True, context=context).data)
 
     def retrieve(self, request, company_id, pk):
-        template = self.get_object()
-        stats = dashboard.routine_stats([template], self.company, timezone.now())
-        return Response(
-            RoutineSerializer(
-                template, context=self.get_serializer_context() | {"stats": stats}
-            ).data
-        )
+        return Response(self._answer(self.get_object(), stats=True))
 
     @extend_schema(request=RoutineWriteSerializer, responses={201: RoutineSerializer})
     def create(self, request, company_id):
+        """The new routine, with `next_run` and `today`: when its first tasks come, and "Give
+        today's task now" when it was made after today's deadline."""
         fields = self._fields(request.data, partial=False)
         template = services.create_template(by=self.membership, **fields)
         return Response(
-            RoutineSerializer(self.get_queryset().get(pk=template.pk)).data,
-            status=status.HTTP_201_CREATED,
+            self._answer(self.get_queryset().get(pk=template.pk)), status=status.HTTP_201_CREATED
         )
 
     @extend_schema(request=RoutineWriteSerializer, responses=RoutineSerializer)
@@ -691,7 +692,17 @@ class RoutineViewSet(
         template = self.get_object()
         fields = self._fields(request.data, partial=True)
         template = services.update_template(template, by=self.membership, **fields)
-        return Response(RoutineSerializer(self.get_queryset().get(pk=template.pk)).data)
+        return Response(self._answer(self.get_queryset().get(pk=template.pk)))
+
+    def _answer(self, template: TaskTemplate, *, stats: bool = False) -> dict:
+        """One routine as its own page reads it: next run, today and (detail) its stats."""
+        now = timezone.now()
+        context = self.get_serializer_context() | {"now": now}
+        if not template.onboarding:
+            context["today"] = {template.pk: generation.today_status(template, now)}
+        if stats:
+            context["stats"] = dashboard.routine_stats([template], self.company, now)
+        return RoutineSerializer(template, context=context).data
 
     @transaction.atomic
     def perform_destroy(self, template):
@@ -741,13 +752,25 @@ class RoutineViewSet(
                 "day": serializers.DateField(),
                 "due": serializers.BooleanField(),
                 "holiday": serializers.BooleanField(),
-                "people": serializers.ListField(child=serializers.DictField()),
+                "reason": serializers.CharField(
+                    allow_null=True,
+                    help_text="Why it makes no tasks that day: paused, onboarding, holiday, "
+                    "not_due, not_started or made_late (made after that day's deadline).",
+                ),
+                "due_at": serializers.DateTimeField(),
+                "next_run": serializers.DateTimeField(allow_null=True),
+                "people": serializers.ListField(
+                    child=serializers.DictField(),
+                    help_text="{member, gets, reason}; reason: left, suspended, not_registered, "
+                    "branch, joined_later, time_off or off.",
+                ),
             },
         ),
     )
     @action(detail=True, methods=["get"])
     def preview(self, request, company_id, pk):
-        """Who would get it on `day`, by the same rules as daily generation."""
+        """Who would get it on `day`, by the same rules as daily generation: a day it makes no
+        tasks says why (and when its next tasks come), each person who doesn't get it why."""
         template = self.get_object()
         day = _day(request.query_params.get("day"), "day") or queries.company_today(
             self.company
@@ -758,11 +781,49 @@ class RoutineViewSet(
                 "day": day,
                 "due": data["due"],
                 "holiday": data["holiday"],
+                "reason": data["reason"],
+                "due_at": data["due_at"],
+                "next_run": data["next_run"],
                 "people": [
                     {"member": person(row["member"]), "gets": row["gets"], "reason": row["reason"]}
                     for row in data["people"]
                 ],
             }
+        )
+
+    @extend_schema(
+        request=GiveTodayInputSerializer,
+        responses={
+            201: inline_serializer(
+                "RoutineGivenToday",
+                {
+                    "given": serializers.IntegerField(),
+                    "due_at": serializers.DateTimeField(),
+                    "people": serializers.ListField(child=serializers.DictField()),
+                },
+            )
+        },
+    )
+    @action(detail=True, methods=["post"], url_path="give-today")
+    def give_today(self, request, company_id, pk):
+        """Give today's task now, for a routine made after today's deadline (it starts the next
+        day it is due): today's task to everyone it would give it to, due at `due_time` today
+        (default: in two hours)."""
+        template = self.get_object()
+        data = GiveTodayInputSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        due_at = None
+        if (due_time := data.validated_data.get("due_time")) is not None:
+            tz = ZoneInfo(self.company.timezone)
+            due_at = datetime.combine(queries.company_today(self.company), due_time, tzinfo=tz)
+        tasks = services.give_routine_today(template, by=self.membership, due_at=due_at)
+        return Response(
+            {
+                "given": len(tasks),
+                "due_at": tasks[0].due_at,
+                "people": [person(task.assignee) for task in tasks],
+            },
+            status=status.HTTP_201_CREATED,
         )
 
     @extend_schema(

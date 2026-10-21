@@ -14,6 +14,7 @@ import { formatRoutineAudit, routineFieldLabels } from "../audit";
 import RoutineEditor from "../components/RoutineEditor.vue";
 import en from "../i18n/en.json";
 import module from "../index";
+import { afterSave, missesToday, nextRunOf, runDayWords, runLabel, type RunWords } from "../lib";
 import type { Routine } from "../types";
 
 interface Call {
@@ -55,6 +56,8 @@ const routine = (overrides: Partial<Routine> = {}): Routine => ({
   reminder_policy: null,
   escalate_to: null,
   stats: null,
+  next_run: null,
+  today: null,
   created_at: "2026-09-01T08:00:00Z",
   ...overrides,
 });
@@ -211,5 +214,110 @@ describe("RoutineEditor", () => {
     expect(patch?.body).toMatchObject({ onboarding: true, due_after_days: 3 });
     expect(patch?.body).not.toHaveProperty("weekdays");
     wrapper.unmount();
+  });
+});
+
+describe("next run", () => {
+  const TZ = "Asia/Tashkent";
+  // Wednesday 21 October 2026, 12:30 in Tashkent (UTC+5).
+  const NOW = Date.parse("2026-10-21T07:30:00Z");
+  const every = [0, 1, 2, 3, 4, 5, 6];
+  const clock = new Intl.DateTimeFormat("en-GB", { timeZone: TZ, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  const words: RunWords = {
+    t: (key, params) => `${key}${params ? JSON.stringify(params) : ""}`,
+    timeZone: TZ,
+    now: NOW,
+    time: (iso) => clock.format(new Date(iso)),
+    day: (day) => day,
+  };
+
+  it("is the first of its days whose time is still ahead, like the generator", () => {
+    expect(nextRunOf({ weekdays: every, due_time: "13:00", starts_on: null }, NOW, TZ)).toBe("2026-10-21T08:00:00.000Z");
+    expect(nextRunOf({ weekdays: every, due_time: "09:00", starts_on: null }, NOW, TZ)).toBe("2026-10-22T04:00:00.000Z");
+    expect(nextRunOf({ weekdays: [0], due_time: "09:00:00", starts_on: null }, NOW, TZ)).toBe("2026-10-26T04:00:00.000Z");
+    expect(nextRunOf({ weekdays: every, due_time: "09:00", starts_on: "2026-11-02" }, NOW, TZ)).toBe("2026-11-02T04:00:00.000Z");
+    expect(nextRunOf({ weekdays: every, due_time: "09:00", starts_on: null, is_active: false }, NOW, TZ)).toBeNull();
+    expect(nextRunOf({ weekdays: [], due_time: "09:00", starts_on: null }, NOW, TZ)).toBeNull();
+  });
+
+  it("knows a routine made now has missed today's deadline", () => {
+    expect(missesToday({ weekdays: every, due_time: "09:00", starts_on: null }, NOW, TZ)).toBe(true);
+    expect(missesToday({ weekdays: every, due_time: "13:00", starts_on: null }, NOW, TZ)).toBe(false);
+    expect(missesToday({ weekdays: [0], due_time: "09:00", starts_on: null }, NOW, TZ)).toBe(false);
+    expect(missesToday({ weekdays: every, due_time: "09:00", starts_on: "2026-10-25" }, NOW, TZ)).toBe(false);
+  });
+
+  it("says today, tomorrow, the weekday this week, else the date", () => {
+    expect(runLabel("2026-10-21T08:00:00Z", words)).toBe('routines.run.today{"time":"13:00"}');
+    expect(runLabel("2026-10-22T04:00:00Z", words)).toBe('routines.run.tomorrow{"time":"09:00"}');
+    expect(runLabel("2026-10-26T04:00:00Z", words)).toBe('routines.run.weekday{"day":"routines.weekday.0","time":"09:00"}');
+    expect(runLabel("2026-11-02T04:00:00Z", words)).toBe('routines.run.date{"day":"2026-11-02","time":"09:00"}');
+    expect(runDayWords("2026-10-22T04:00:00Z", words)).toBe("routines.runDay.tomorrow");
+    expect(runDayWords("2026-10-23T04:00:00Z", words)).toBe("routines.runDay.weekday.4");
+  });
+
+  it("opens the give-today dialog only for a new routine that missed today", () => {
+    const late = { onboarding: false, today: { reason: "made_late", give: { people: 2, due_at: "2026-10-21T09:30:00Z" } } };
+    expect(afterSave(late, true)).toBe("dialog");
+    expect(afterSave(late, false)).toBe("offer");
+    expect(afterSave({ onboarding: false, today: { reason: "made_late", give: null } }, false)).toBe("plain");
+    expect(afterSave({ onboarding: false, today: { reason: null, give: null } }, true)).toBe("plain");
+    expect(afterSave({ onboarding: true, today: null }, true)).toBe("plain");
+  });
+});
+
+describe("a routine made after its time", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-21T07:30:00Z")); // Wednesday 12:30 in Tashkent
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it("the editor says its first tasks come tomorrow while it's being made", async () => {
+    stub({ "GET tasks/options/": () => json(options) });
+    const app = await testApp("/c/1/routines");
+    const { wrapper } = mountWithProviders(RoutineEditor, { plugins: app.plugins, props: { open: true } });
+    await flushPromises();
+    const hint = document.body.querySelector("[data-testid=run-hint]")?.textContent ?? "";
+    expect(hint).toContain("First tasks: Tomorrow 09:00");
+    expect(hint).toContain("Today's 09:00 has already passed");
+    wrapper.unmount();
+  });
+
+  it("says when it starts and gives today's task at the time picked", async () => {
+    const calls = stub({
+      "POST routines/50/give-today/": () => json({ given: 2, due_at: "2026-10-21T09:30:00Z", people: [] }, 201),
+    });
+    const made = routine({
+      id: 50,
+      title: "Muzlatgich haroratini yozish",
+      weekdays: [0, 1, 2, 3, 4, 5, 6],
+      due_time: "09:00:00",
+      next_run: "2026-10-22T04:00:00Z",
+      today: { date: "2026-10-21", reason: "made_late", give: { people: 2, due_at: "2026-10-21T09:30:00Z" } },
+    });
+    const app = await testApp("/c/1/routines");
+    const { default: GiveTodayDialog } = await import("../components/GiveTodayDialog.vue");
+    const { wrapper } = mountWithProviders(GiveTodayDialog, { plugins: app.plugins, props: { open: true, routine: made } });
+    await flushPromises();
+    const dialog = document.body.querySelector("[role=dialog]")?.textContent ?? "";
+    expect(dialog).toContain("It starts tomorrow");
+    expect(dialog).toContain("was made after today's 09:00, so its first tasks come tomorrow at 09:00");
+    expect(dialog).toContain("2 people get it today");
+    [...document.body.querySelectorAll("button")].find((b) => b.textContent?.trim() === "Give today's task now")!.click();
+    await flushPromises();
+    expect(calls.find((c) => c.method === "POST")?.body).toEqual({ due_time: "14:30" });
+    expect(toasts.at(-1)?.title).toBe("Today's task went to 2 people");
+    wrapper.unmount();
+  });
+
+  it("gives today's task through give-today, with the time when one is picked", async () => {
+    const calls = stub({ "POST routines/32/give-today/": () => json({ given: 1, due_at: "2026-10-21T09:30:00Z", people: [] }, 201) });
+    await routinesApi.giveToday(1, 32, "14:30");
+    await routinesApi.giveToday(1, 32, null);
+    expect(calls.map((c) => [c.url, c.body])).toEqual([
+      ["/api/v1/owner/companies/1/routines/32/give-today/", { due_time: "14:30" }],
+      ["/api/v1/owner/companies/1/routines/32/give-today/", {}],
+    ]);
   });
 });

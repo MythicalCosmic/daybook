@@ -9,7 +9,7 @@ from rest_framework import serializers
 from apps.core.money import MoneySerializerField
 from apps.members.models import Membership
 from apps.reminders.policies import escalation_recipients, policy_for
-from apps.tasks import rules
+from apps.tasks import generation, rules
 from apps.tasks.models import ChecklistItem, Proof, Task, TaskComment, TaskTemplate
 
 
@@ -367,6 +367,21 @@ class BulkResponseSerializer(serializers.Serializer):
 # Routines ----------------------------------------------------------------------------------
 
 
+class RoutineGiveSerializer(serializers.Serializer):
+    people = serializers.IntegerField()
+    due_at = serializers.DateTimeField()
+
+
+class RoutineTodaySerializer(serializers.Serializer):
+    """Today, on a routine's own page: why it makes no tasks today (null when it does), and
+    "Give today's task now" (who would get it, by when) when it was made after today's
+    deadline."""
+
+    date = serializers.DateField()
+    reason = serializers.CharField(allow_null=True)
+    give = RoutineGiveSerializer(allow_null=True)
+
+
 class RoutineSerializer(serializers.ModelSerializer):
     branch = serializers.SerializerMethodField()
     assignees = serializers.SerializerMethodField()
@@ -374,6 +389,8 @@ class RoutineSerializer(serializers.ModelSerializer):
     reminder_policy = serializers.SerializerMethodField()
     escalate_to = serializers.SerializerMethodField()
     stats = serializers.SerializerMethodField()
+    next_run = serializers.SerializerMethodField()
+    today = serializers.SerializerMethodField()
 
     class Meta:
         model = TaskTemplate
@@ -396,6 +413,8 @@ class RoutineSerializer(serializers.ModelSerializer):
             "reminder_policy",
             "escalate_to",
             "stats",
+            "next_run",
+            "today",
             "created_at",
         )
         read_only_fields = fields
@@ -427,6 +446,23 @@ class RoutineSerializer(serializers.ModelSerializer):
         """30-day completion and a 14-day sparkline, when the list computed them."""
         return self.context.get("stats", {}).get(template.pk)
 
+    @extend_schema_field(serializers.DateTimeField(allow_null=True))
+    def get_next_run(self, template: TaskTemplate) -> str | None:
+        """When its next tasks are due, by daily generation's rules (holidays included); null
+        for paused and onboarding routines."""
+        runs = self.context.get("next_runs")
+        if runs is not None and template.pk in runs:
+            value = runs[template.pk]
+        else:
+            value = generation.next_run(template, self.context.get("now") or timezone.now())
+        return serializers.DateTimeField().to_representation(value) if value else None
+
+    @extend_schema_field(RoutineTodaySerializer(allow_null=True))
+    def get_today(self, template: TaskTemplate) -> dict | None:
+        """Only on a routine's own answers (detail, create, edit), not in the list."""
+        today = self.context.get("today", {}).get(template.pk)
+        return RoutineTodaySerializer(today).data if today is not None else None
+
 
 class RoutineWriteSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=200, required=False)
@@ -449,6 +485,12 @@ class RoutineWriteSerializer(serializers.Serializer):
     position_ids = serializers.ListField(child=serializers.IntegerField(), required=False)
     reminder_policy_id = serializers.IntegerField(allow_null=True, required=False)
     escalate_to_id = serializers.IntegerField(allow_null=True, required=False)
+
+
+class GiveTodayInputSerializer(serializers.Serializer):
+    due_time = serializers.TimeField(
+        required=False, help_text="Today, in the company's timezone. Default: in two hours."
+    )
 
 
 def now_context() -> dict:

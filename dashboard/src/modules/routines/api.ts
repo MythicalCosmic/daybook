@@ -10,9 +10,11 @@ import { http, ownerPath } from "@/api/http";
 import { moduleKey, qk } from "@/api/keys";
 import { useCompanyStore } from "@/stores/company";
 
-import type { PlanOptions, Routine, RoutineCompliance, RoutineInput, RoutinePreview } from "./types";
+import type { GivenToday, PlanOptions, Routine, RoutineCompliance, RoutineInput, RoutinePreview } from "./types";
 
 export const MODULE = "routines";
+/** The tasks module's cache prefix: routine work given now shows up in its lists too. */
+const TASKS = "tasks";
 
 export const routinesApi = {
   list: (cid: number, params: { onboarding?: boolean; q?: string; active?: boolean }, signal?: AbortSignal) =>
@@ -26,6 +28,9 @@ export const routinesApi = {
   compliance: (cid: number, id: number, range: { from: string; to: string } | null, signal?: AbortSignal) =>
     http.get<RoutineCompliance>(ownerPath(cid, `routines/${id}/compliance/`), range ?? undefined, { signal }),
   options: (cid: number, signal?: AbortSignal) => http.get<PlanOptions>(ownerPath(cid, "tasks/options/"), undefined, { signal }),
+  /** "Give today's task now" for a routine made after today's deadline; `dueTime` "HH:MM" today. */
+  giveToday: (cid: number, id: number, dueTime: string | null) =>
+    http.post<GivenToday>(ownerPath(cid, `routines/${id}/give-today/`), dueTime ? { due_time: dueTime } : {}),
 };
 
 export const routineKeys = {
@@ -132,6 +137,17 @@ export function useToggleActive() {
       for (const [key, data] of context?.snapshot ?? []) client.setQueryData(key, data);
     },
     onSettled: refresh,
+  });
+}
+
+/** Today's tasks of a routine given now: routines and every task list refetch. */
+export function useGiveToday() {
+  const cid = useCompanyId();
+  const client = useQueryClient();
+  const refresh = useRefresh();
+  return useMutation({
+    mutationFn: ({ id, dueTime }: { id: number; dueTime: string | null }) => routinesApi.giveToday(cid.value, id, dueTime),
+    onSettled: () => Promise.all([refresh(), client.invalidateQueries({ queryKey: moduleKey(cid.value, TASKS) })]),
   });
 }
 

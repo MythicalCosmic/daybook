@@ -20,6 +20,20 @@ export interface RoutineStats {
   spark: Array<number | null>;
 }
 
+/** Why a routine makes no tasks on a day (`apps.tasks.generation`), in the order they're checked. */
+export type SkipReason = "paused" | "onboarding" | "holiday" | "not_due" | "not_started" | "made_late";
+/** Why someone a routine names doesn't get its task on a day. */
+export type PersonReason = "left" | "suspended" | "not_registered" | "branch" | "joined_later" | "time_off" | "off";
+
+/** Today, on a routine's own answers (detail, create, edit); null in the list. */
+export interface RoutineToday {
+  date: string;
+  /** Why it makes no tasks today; null when it does. */
+  reason: SkipReason | null;
+  /** "Give today's task now": made after today's deadline and someone would still get it. */
+  give: { people: number; due_at: string } | null;
+}
+
 export interface Routine {
   id: number;
   title: string;
@@ -41,6 +55,9 @@ export interface Routine {
   reminder_policy: { id: number; name: string } | null;
   escalate_to: RoutinePerson | null;
   stats: RoutineStats | null;
+  /** When its next tasks are due (holidays counted); null when paused or onboarding. */
+  next_run: string | null;
+  today: RoutineToday | null;
   created_at: string;
 }
 
@@ -67,7 +84,18 @@ export interface RoutinePreview {
   day: string;
   due: boolean;
   holiday: boolean;
-  people: Array<{ member: RoutinePerson; gets: boolean; reason: "off" | "branch" | "not_registered" | null }>;
+  /** Why it makes no tasks that day; null when it does. */
+  reason: SkipReason | null;
+  due_at: string;
+  /** When a day it skips is followed by tasks ("made after today's 09:00: starts tomorrow"). */
+  next_run: string | null;
+  people: Array<{ member: RoutinePerson; gets: boolean; reason: PersonReason | null }>;
+}
+
+export interface GivenToday {
+  given: number;
+  due_at: string;
+  people: RoutinePerson[];
 }
 
 export interface ComplianceDay {

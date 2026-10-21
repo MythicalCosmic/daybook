@@ -31,10 +31,13 @@ import { rs, useRouteState } from "@/lib/useRouteState";
 import { useDeleteRoutine, useRoutines, useToggleActive } from "../api";
 import RoutineEditor from "../components/RoutineEditor.vue";
 import WeekdayDots from "../components/WeekdayDots.vue";
+import { runLabel } from "../lib";
 import type { Routine } from "../types";
+import { useRunWords } from "../useRunWords";
 
 const { t } = useI18n();
 const fmt = useFormat();
+const words = useRunWords();
 const route = useRoute();
 const router = useRouter();
 const confirm = useConfirm();
@@ -196,7 +199,10 @@ function who(routine: Routine): string {
           <div class="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted">
             <WeekdayDots v-if="!onboarding" :days="routine.weekdays" />
             <span v-else class="inline-flex items-center gap-1"><CalendarClock :size="14" />{{ t("routines.dueAfter", { n: routine.due_after_days }, routine.due_after_days) }}</span>
-            <span class="inline-flex items-center gap-1 tabular-nums"><Clock :size="14" />{{ routine.due_time.slice(0, 5) }}</span>
+            <span v-if="!onboarding && routine.next_run" class="inline-flex items-center gap-1 tabular-nums" :title="t('routines.nextRunHint')" data-testid="next-run">
+              <Clock :size="14" /><span class="text-subtle">{{ t("routines.next") }}</span><span class="font-medium text-fg">{{ runLabel(routine.next_run, words) }}</span>
+            </span>
+            <span v-else class="inline-flex items-center gap-1 tabular-nums"><Clock :size="14" />{{ routine.due_time.slice(0, 5) }}</span>
             <span v-if="routine.branch" class="inline-flex items-center gap-1"><Store :size="14" />{{ routine.branch.name }}</span>
             <span class="inline-flex min-w-0 items-center gap-1"><UsersRound :size="14" class="shrink-0" /><span class="truncate">{{ who(routine) }}</span></span>
             <span v-if="routine.checklist.length" class="inline-flex items-center gap-1"><ListChecks :size="14" />{{ t("routines.steps", { n: routine.checklist.length }, routine.checklist.length) }}</span>
