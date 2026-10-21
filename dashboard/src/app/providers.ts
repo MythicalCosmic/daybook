@@ -77,7 +77,7 @@ export function installProviders(app: App, router: Router): QueryClient {
   watch(
     () => session.me?.language,
     (language) => {
-      if (isLanguage(language) && language !== currentLanguage()) setLanguage(language);
+      if (isLanguage(language) && language !== currentLanguage()) void setLanguage(language).catch(() => undefined);
     },
     { immediate: true },
   );
@@ -90,7 +90,8 @@ export function installProviders(app: App, router: Router): QueryClient {
 /** Switches the UI language now and saves it on the account. */
 export async function changeLanguage(language: string): Promise<void> {
   if (!isLanguage(language)) return;
-  setLanguage(language);
+  // Its dictionary first, so the refetches below already ask the API in the new language.
+  await setLanguage(language).catch(() => undefined);
   const session = useSessionStore();
   session.setLanguage(language);
   void activeClient?.invalidateQueries();

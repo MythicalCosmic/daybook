@@ -8,9 +8,13 @@ import App from "./app/App.vue";
 import { installProviders } from "./app/providers";
 import { createAppRouter } from "./app/router";
 import { registerDevModules } from "./core/modules";
+import { currentLanguage, loadLanguage } from "./i18n";
 import { bindTelegram, detectTelegram } from "./shell/TelegramBridge";
 
 async function start(): Promise<void> {
+  // The shell's strings in this browser's language load alongside everything below (the account's
+  // language, if different, follows when `me` arrives). A failed load still mounts the app.
+  const strings = loadLanguage(currentLanguage()).catch(() => undefined);
   // Development only: serve the API from demo data and show placeholder modules for packages that
   // haven't landed. `import.meta.env.DEV` is false in a build, so none of this ships.
   if (import.meta.env.DEV && import.meta.env.VITE_MOCK === "1") {
@@ -29,7 +33,7 @@ async function start(): Promise<void> {
   installProviders(app, router);
   app.use(router);
   bindTelegram(router);
-  await router.isReady();
+  await Promise.all([router.isReady(), strings]);
   app.mount("#app");
 }
 

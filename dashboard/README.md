@@ -102,7 +102,9 @@ The host renders `<ExtensionSlot name="…" :context="…" />`; other modules fi
 `extensions`. Points: `shell.panel`, `shell.topbar.end`, `shell.nav.top`, `shell.company.create`,
 `overview.hero`, `tasks.toolbar`, `tasks.drawer.actions`, `people.profile.actions`,
 `comms.composer.tools`, `finance.quickadd.receipt`, `finance.transactions.toolbar`,
-`sales.shift.detail`, `payroll.run.toolbar`. A component that throws only hides itself.
+`sales.shift.detail`, `payroll.run.toolbar`. A component that throws only hides itself. The host's
+attributes go on the slot's wrapper (`class="px-3 pt-2 empty:hidden"`: no gap when nothing renders);
+with `as="none"` each extension's root gets them.
 
 ### Boundaries
 
@@ -115,15 +117,20 @@ propose it in your hand-off.
 ### Components you will reach for
 
 Pages: `PageHeader` (tabs, actions), `PageSection`, `ResponsiveGrid`, `SplitView`,
-`StickyActionBar`, `WizardSteps`. Lists: `DataTable` + `useDataTable`, `FilterBar` +
-`useUrlFilters`, `SavedViewsTabs` + `useSavedViews`, `BulkActionBar`, `KanbanBoard`,
-`GanttTimeline`, `CalendarMonth`/`CalendarWeek`, `TreeList`, `TimelineList`, `AuditTrail`.
+`StickyActionBar`, `WizardSteps`; a page about one record names it in the breadcrumb and the tab
+title with `usePageTitle(() => project.value?.name)` (`@/lib/usePageTitle`). Lists: `DataTable` +
+`useDataTable`, `FilterBar` + `useUrlFilters`, `SavedViewsTabs` + `useSavedViews`,
+`BulkActionBar`, `KanbanBoard`, `GanttTimeline`, `CalendarMonth`/`CalendarWeek`, `TreeList`,
+`TimelineList`, `AuditTrail` (`field-order` when the details have an order to read in), `MapView`
+(branch circles and check-in points, or `picker` to choose a place).
 Forms: `FormField` around `TextInput`, `MoneyInput` (string values, never floats), `NumberInput`,
 `SelectBox`, `ComboBox`, `MultiSelect`, `PersonPicker`, `PositionPicker`, `BranchPicker`,
 `DatePicker`, `DateRangePicker`, `TimePicker`, `WeekdayPicker`, `FileDrop`, `CheckBox`,
 `ToggleSwitch`, `RadioCards`, `SegmentedControl`, with `useForm(zodSchema)`. Numbers:
-`KpiStrip`/`KpiCard`, `ChartCard` around `LineChart`, `AreaChart`, `BarChart`, `DonutChart`,
-`HeatmapChart`, `SparkLine`, `BulletBar`, `MoneyText`, `MoneyCell`, `DeltaBadge`. Decisions:
+`KpiStrip`/`KpiCard` (`phone="grid"` or `"compact"` keeps two per row on phones), `ChartCard` around
+`LineChart`, `AreaChart`, `BarChart` (`y-max="100"` for percentages, `integer` for counts, a
+`target` named in the legend), `DonutChart`, `HeatmapChart`, `SparkLine`, `BulletBar`,
+`MoneyText`, `MoneyCell`, `DeltaBadge`. Decisions:
 `ApproveRejectButtons`, `ConfirmDialog` / `useConfirm()`, `ExportButton`.
 
 Money is a decimal string end to end (`lib/money.ts`, `lib/decimal.ts`); dates are company-local
@@ -154,9 +161,44 @@ the real backend (`API_PORT`) or ask W0 for mock data.
 
 Initial JS (shell + Overview) ≤ 180 KB gzipped, each module chunk ≤ 80 KB. Heavy libraries load
 lazily on their own: charts (ECharts), `MarkdownView` (markdown-it + DOMPurify), `QrCode`, Tiptap,
-Leaflet, the drag library behind `WidgetGrid`'s Customize. Keep `index.ts` light; an Overview
-widget is part of the first load, so keep widgets lean too (shell + Overview was 176 KB at the end
-of W0).
+Leaflet (`MapView`), the drag library behind `WidgetGrid`'s Customize.
+
+**Measure it** after `npm run build` with `node scripts/budget.mjs` (exits 1 when over). It counts
+the entry chunk and everything it imports statically, plus the shell dictionary of one language
+(fetched before the first paint) and the Overview page. At the end of Wave 1 (20 modules):
+
+| | gzip |
+|---|---|
+| Initial JS (entry + static imports) | 160.5 KB |
+| + the largest shell dictionary (ru; uz 5.2, en 4.8) | 6.0 KB |
+| + the Overview page | 8.8 KB |
+| **Shell + Overview** | **175.3 KB** of 180 |
+
+**Every module's `index.ts` is in the first load**, so registries are where the budget goes: today
+a registry costs 0.5 KB (groups) to 1.3 KB (projects) to 2.6 KB (finance), measured by building
+without it. Waves 2–3 add about ten modules, so:
+
+- `index.ts` and `routes.ts` hold metadata only. Pages, widgets, panels, tabs, search hits, inbox
+  renderers and extensions are `defineAsyncComponent(() => import(...))` / `() => import(...)`;
+  never import a component, the API, a store-heavy helper or a library there.
+- Each lazy import also puts its **preload list** in the first load (`__vite__mapDeps`: the chunk
+  and every chunk it needs, about 40–80 bytes gzipped per import). Register what the person can
+  reach; don't split one page into many lazy pieces from the registry, and prefer one widget that
+  shows two numbers to two tiny widgets.
+- Each distinct icon named in `index.ts` (module, nav items, commands, settings panels) is inlined
+  into the first load (~0.1–0.15 KB each). Reuse the module's icon or a common one (`Plus`) for
+  commands rather than a new icon per command.
+- Palette commands: `ctx.t` titles and 3–5 short `keywords`, not long lists.
+- Module dictionaries load with the module (never in the first load); the shell's own dictionaries
+  load one language at a time (`src/i18n/index.ts`).
+
+How the build keeps it small (`vite.config.ts`): framework code is one `vendor` chunk; everything
+else the first load needs (shell, every registry, the icons and reka-ui pieces they use) is
+grouped into the entry chunk by Rolldown's `$initial` tag, instead of ~60 tiny shared chunks whose
+names would repeat in every preload list. That alone took Wave 1 from 191.8 to 174 KB.
+
+Known cost left: reka-ui depends on `@vueuse/core` 14 while the console uses 15, so two copies sit
+in the first load (about 4 KB gzipped); aligning the versions would remove one.
 
 vue-i18n runs without its message compiler (`__INTLIFY_DROP_MESSAGE_COMPILER__`);
 `src/i18n/compile.ts` compiles messages instead. It supports `{name}`, `{0}`, `{'literal'}` and
