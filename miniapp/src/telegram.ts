@@ -30,6 +30,28 @@ export function initData(): string {
   return webApp?.initData || import.meta.env.VITE_DEV_INIT_DATA || "";
 }
 
+/**
+ * Telegram hosts the page but signed nobody in: it gives a Mini App opened from a keyboard
+ * button (the bot's old main menu) no initData. The person has to open the app another way.
+ */
+export function openedWithoutSignIn(): boolean {
+  return insideTelegram() && !initData();
+}
+
+/**
+ * Send a short text to the bot and close the app. Telegram allows it only for an app opened from
+ * a keyboard button (exactly the one that can't sign in). Returns whether it was sent.
+ */
+export function sendToBot(data: string): boolean {
+  if (!webApp?.sendData || !insideTelegram()) return false;
+  try {
+    webApp.sendData(data);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function telegramName(): { first: string; last: string } {
   const user = webApp?.initDataUnsafe?.user;
   return { first: user?.first_name ?? "", last: user?.last_name ?? "" };
@@ -45,11 +67,20 @@ export function start(): void {
   webApp?.expand();
 }
 
+const prefersDark = () => (typeof window.matchMedia === "function" ? window.matchMedia("(prefers-color-scheme: dark)") : null);
+
+/** Telegram's light or dark theme; in a browser, the browser's preference. */
 export function colorScheme(): "light" | "dark" {
-  return webApp?.colorScheme === "dark" ? "dark" : "light";
+  if (insideTelegram()) return webApp?.colorScheme === "dark" ? "dark" : "light";
+  return prefersDark()?.matches ? "dark" : "light";
 }
 
 export function onThemeChange(callback: () => void): () => void {
+  if (!insideTelegram()) {
+    const query = prefersDark();
+    query?.addEventListener?.("change", callback);
+    return () => query?.removeEventListener?.("change", callback);
+  }
   webApp?.onEvent("themeChanged", callback);
   return () => webApp?.offEvent("themeChanged", callback);
 }
@@ -155,6 +186,10 @@ export function hasNativeButton(kind: NativeButtonKind): boolean {
 export function updateNativeButton(kind: NativeButtonKind, look: NativeButtonLook): void {
   const button = nativeButton(kind);
   if (!button) return;
+  // The spinner first: Telegram's hideProgress() makes an inactive button active again, so the
+  // params below must come after it, or every disabled button would look and feel enabled.
+  if (look.loading) button.showProgress(false);
+  else button.hideProgress();
   button.setParams({
     text: look.text,
     ...(look.color ? { color: look.color } : {}),
@@ -163,8 +198,6 @@ export function updateNativeButton(kind: NativeButtonKind, look: NativeButtonLoo
     ...(kind === "secondary" && look.position ? { position: look.position } : {}),
     is_active: !look.disabled && !look.loading,
   });
-  if (look.loading) button.showProgress(false);
-  else button.hideProgress();
 }
 
 /**

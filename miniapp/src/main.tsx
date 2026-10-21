@@ -8,11 +8,13 @@ import "./ui/ui.css";
 
 import { ApiError } from "./api/client";
 import { App } from "./App";
+import { keepFieldsInView } from "./lib/keyboard";
 import { start } from "./telegram";
 import { applyTheme, savedThemeMode } from "./theme";
 
 start();
 applyTheme(savedThemeMode());
+keepFieldsInView();
 
 const queryClient = new QueryClient({
   defaultOptions: {

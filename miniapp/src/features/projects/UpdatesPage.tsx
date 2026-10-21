@@ -5,7 +5,7 @@ import { useFeatureT } from "../../i18n/feature";
 import { dayMonth } from "../../lib/time";
 import { useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
-import { Avatar, Badge, BottomBar, Card, EmptyState, PageHeader, PullToRefresh, ScreenSkeleton } from "../../ui";
+import { Avatar, Badge, BottomBar, Card, EmptyState, LoadError, PageHeader, PullToRefresh, ScreenSkeleton } from "../../ui";
 import type { PageProps } from "../registry";
 import { useBoard, useUpdates } from "./api";
 import { healthTone } from "./lib";
@@ -29,6 +29,8 @@ export default function UpdatesPage({ params }: PageProps) {
       <PageHeader kicker={project ? `${project.key} · ${project.name}` : undefined} title={t("updates.title")} onBack={navigation.pop} />
       {updates.isPending ? (
         <ScreenSkeleton variant="list" delay={150} />
+      ) : updates.isError && !updates.data ? (
+        <LoadError compact error={updates.error} onRetry={() => void updates.refetch()} />
       ) : (updates.data ?? []).length === 0 ? (
         <EmptyState icon={HeartPulse} tone="sage" title={t("updates.empty")} body={t("updates.emptyBody")} />
       ) : (

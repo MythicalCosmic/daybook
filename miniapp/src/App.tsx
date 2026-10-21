@@ -10,7 +10,7 @@ import { features, suspendedGate, visibleFeatures } from "./features/registry";
 import { asLang, I18nProvider, useI18n } from "./i18n";
 import { ActivityScreen } from "./screens/Activity";
 import { CreateAccount } from "./screens/CreateAccount";
-import { Blocked, Declined, Failure, NoAccess, Suspended } from "./screens/Gate";
+import { Blocked, Declined, Failure, Left, NoAccess, Suspended } from "./screens/Gate";
 import { Home } from "./screens/Home";
 import { Profile } from "./screens/Profile";
 import { Splash } from "./screens/Splash";
@@ -23,14 +23,14 @@ import { readScreenLink, resolveScreen, type ScreenLink } from "./state/deeplink
 import { CORE, NavigationProvider, useNavigation, type NavigationInit, type PageRef } from "./state/navigation";
 import { SessionProvider, useMember, useSession } from "./state/session";
 import { ToastProvider } from "./state/toast";
-import { initData, onThemeChange, useBackButton } from "./telegram";
+import { initData, onThemeChange, openedWithoutSignIn, useBackButton } from "./telegram";
 import { applyTheme, savedThemeMode } from "./theme";
 
 const SPLASH_MS = 900;
 
 export function App() {
-  const insideTelegram = Boolean(initData());
-  const me = useMe({ enabled: insideTelegram });
+  const signedIn = Boolean(initData());
+  const me = useMe({ enabled: signedIn });
   // Read once at launch: `?screen=payslip:12` or a startapp parameter picks the first screen.
   const [launch] = useState<ScreenLink | null>(() => readScreenLink());
   const [splashOver, setSplashOver] = useState(false);
@@ -49,8 +49,10 @@ export function App() {
     <I18nProvider lang={language}>
       <div className="app">
         <ToastProvider>
-          {!insideTelegram ? (
-            <Problem kind="outside" />
+          {!signedIn ? (
+            // Inside Telegram without a sign-in, a keyboard button opened the app: say which
+            // button does sign in. Outside Telegram (a browser), say where the app lives.
+            <Problem kind={openedWithoutSignIn() ? "unsigned" : "outside"} />
           ) : me.isError ? (
             <Problem kind={me.error instanceof ApiError && me.error.status === 401 ? "expired" : "network"} retry={() => void me.refetch()} />
           ) : !me.data || !splashOver ? (
@@ -87,7 +89,7 @@ function SplashScreen() {
   return <Splash tagline={t("app.tagline")} />;
 }
 
-function Problem({ kind, retry }: { kind: "outside" | "expired" | "network"; retry?: () => void }) {
+function Problem({ kind, retry }: { kind: "outside" | "unsigned" | "expired" | "network"; retry?: () => void }) {
   return <Failure kind={kind} onRetry={kind === "network" ? retry : undefined} />;
 }
 
@@ -104,7 +106,8 @@ function Gatekeeper() {
     wasWaiting.current = waiting;
   }, [status, waiting]);
 
-  if (!membership || status === "left") return <NoAccess />;
+  if (!membership) return <NoAccess />;
+  if (status === "left") return <Left membership={membership} />;
   if (status === "rejected") return <Declined membership={membership} />;
   if (status === "blocked") return <Blocked />;
   if (isSuspended(membership)) return <PausedApp membership={membership} />;

@@ -133,6 +133,65 @@ describe("telegram helpers", () => {
     expect(webApp.MainButton.hide).toHaveBeenCalled();
   });
 
+  it("keep a disabled button disabled, though Telegram's hideProgress() switches it back on", async () => {
+    const webApp = fakeWebApp("8.0");
+    // Telegram's own rules (telegram-web-app.js): setParams sets the flag, showProgress(false)
+    // clears it, and hideProgress() makes an inactive button active again.
+    let active = true;
+    webApp.MainButton.setParams.mockImplementation((params: { is_active?: boolean }) => {
+      if (params.is_active !== undefined) active = params.is_active;
+    });
+    webApp.MainButton.showProgress.mockImplementation((leaveActive?: boolean) => {
+      active = Boolean(leaveActive);
+    });
+    webApp.MainButton.hideProgress.mockImplementation(() => {
+      active = true;
+    });
+    const { updateNativeButton } = await load(webApp);
+    updateNativeButton("main", { text: "Send my request", disabled: true });
+    expect(active).toBe(false);
+    updateNativeButton("main", { text: "Send my request" });
+    expect(active).toBe(true);
+    updateNativeButton("main", { text: "Sending…", loading: true });
+    expect(active).toBe(false);
+    updateNativeButton("main", { text: "Send my request", disabled: true });
+    expect(active).toBe(false);
+  });
+
+  it("tell an app opened from a keyboard button (Telegram, no sign-in) from a browser", async () => {
+    vi.stubEnv("VITE_DEV_INIT_DATA", "");
+    const keyboard = { ...fakeWebApp("8.0"), initData: "", sendData: vi.fn() };
+    const telegram = await load(keyboard);
+    expect(telegram.openedWithoutSignIn()).toBe(true);
+    // Telegram lets exactly such an app send the bot a line (and closes it).
+    expect(telegram.sendToBot("open_app")).toBe(true);
+    expect(keyboard.sendData).toHaveBeenCalledWith("open_app");
+
+    // A browser: telegram-web-app.js is there too, but reports the platform "unknown".
+    const browser = { ...fakeWebApp("6.0"), platform: "unknown", initData: "", sendData: vi.fn() };
+    const outside = await load(browser);
+    expect(outside.openedWithoutSignIn()).toBe(false);
+    expect(outside.sendToBot("open_app")).toBe(false);
+    expect(browser.sendData).not.toHaveBeenCalled();
+
+    const signed = { ...fakeWebApp("8.0"), initData: "user=%7B%22id%22%3A1%7D&hash=abc" };
+    const signedIn = await load(signed);
+    expect(signedIn.openedWithoutSignIn()).toBe(false);
+    vi.unstubAllEnvs();
+  });
+
+  it("follow Telegram's light or dark theme inside it, and the browser's outside", async () => {
+    const dark = vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+    vi.stubGlobal("matchMedia", dark);
+    const inside = await load({ ...fakeWebApp("8.0"), colorScheme: "light" } as ReturnType<typeof fakeWebApp>);
+    expect(inside.colorScheme()).toBe("light");
+    const browser = await load({ ...fakeWebApp("6.0"), platform: "unknown" });
+    expect(browser.colorScheme()).toBe("dark");
+    const changed = vi.fn();
+    browser.onThemeChange(changed)();
+    expect(dark).toHaveBeenCalledWith("(prefers-color-scheme: dark)");
+  });
+
   it("have no secondary button before Bot API 7.10", async () => {
     const { hasNativeButton, secondaryButton } = await load(fakeWebApp("7.7"));
     expect(hasNativeButton("main")).toBe(true);

@@ -363,7 +363,7 @@ describe("screens", () => {
     expect(await screen.findByText("This week: 2:30")).toBeTruthy();
     act(() => fireEvent.click(screen.getByRole("button", { name: "15 minutes more" })));
     act(() => fireEvent.click(screen.getByRole("button", { name: "15 minutes more" })));
-    act(() => fireEvent.change(screen.getByPlaceholderText("e.g. Painted the back wall"), { target: { value: " Sign brackets " } }));
+    act(() => fireEvent.change(screen.getByPlaceholderText("e.g. Set up the new vitamins shelf"), { target: { value: " Sign brackets " } }));
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Save 1:30" })));
     const post = server.calls.find((call) => call.method === "POST");
     expect(post?.path).toBe("/companies/1/projects/time/");

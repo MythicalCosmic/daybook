@@ -202,7 +202,7 @@ describe("during a shift", () => {
     const close = vi.fn();
     wrap(<PayoutSheet params={{}} close={close} />);
     fireEvent.change(await screen.findByLabelText("Amount"), { target: { value: "120000" } });
-    fireEvent.change(screen.getByLabelText("Details"), { target: { value: "Bread from Non uyi" } });
+    fireEvent.change(screen.getByLabelText("Details"), { target: { value: "Courier for a prescription delivery" } });
     // Goods comes first: a till pays for goods more than anything.
     expect(screen.getByRole("button", { name: "Goods" }).getAttribute("aria-pressed")).toBe("true");
     fireEvent.click(screen.getByRole("button", { name: /Pay out 120,000\sUZS/ }));
@@ -211,7 +211,7 @@ describe("during a shift", () => {
         kind: "payout",
         amount: "120000",
         category_id: 30,
-        reason: "Bread from Non uyi",
+        reason: "Courier for a prescription delivery",
         photo: null,
       }),
     );

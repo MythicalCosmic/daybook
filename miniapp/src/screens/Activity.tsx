@@ -7,7 +7,7 @@ import { useViewContext } from "../lib/useNow";
 import { useNavigation } from "../state/navigation";
 import { useMember } from "../state/session";
 import { haptic } from "../telegram";
-import { EmptyState } from "../ui";
+import { EmptyState, LoadError } from "../ui";
 
 export function ActivityScreen() {
   const ctx = useViewContext();
@@ -50,7 +50,8 @@ export function ActivityScreen() {
       </div>
 
       {activity.isPending && <RowSkeleton count={4} />}
-      {!activity.isPending && !items.length && (
+      {activity.isError && !activity.data && <LoadError compact error={activity.error} onRetry={() => void activity.refetch()} />}
+      {!activity.isPending && !activity.isError && !items.length && (
         <EmptyState compact tone="sage" icon={Bell} title={t("activity.empty")} body={t("activity.emptyBody")} />
       )}
       {groups.map((group) => (

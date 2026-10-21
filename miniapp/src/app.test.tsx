@@ -186,7 +186,14 @@ describe("app", () => {
     cleanup();
     // With an end date, it says until when, as the bot does.
     renderApp(me("suspended", [], { suspended_until: "2026-11-12" }));
-    expect(await screen.findByText(/paused your access until 12 Nov\./, {}, { timeout: 3000 })).toBeTruthy();
+    expect(await screen.findByText(/paused your access until 12\sNovember\./, {}, { timeout: 3000 })).toBeTruthy();
+  }, 15_000);
+
+  it("thanks someone who left the company instead of telling them they aren't in one yet", async () => {
+    renderApp(me("left"));
+    expect(await screen.findByText("You're no longer on the team", {}, { timeout: 3000 })).toBeTruthy();
+    expect(screen.getByText(/Thank you for your work at Demo Shop/)).toBeTruthy();
+    expect(document.querySelector(".tabbar")).toBeNull();
   }, 15_000);
 
   it("uses the lifecycle feature's paused screen when there is one", async () => {

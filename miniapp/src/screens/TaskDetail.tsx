@@ -20,23 +20,27 @@ import { useNavigation } from "../state/navigation";
 import { initials, useMember } from "../state/session";
 import { useToast } from "../state/toast";
 import { haptic } from "../telegram";
-import { BottomBar, type BottomAction } from "../ui";
+import { BottomBar, LoadError, ScreenSkeleton, type BottomAction } from "../ui";
 
 export function TaskDetail({ taskId }: { taskId: number }) {
   const ctx = useViewContext();
   const member = useMember();
   const task = useTask(member.companyId, taskId);
   const comments = useComments(member.companyId, taskId);
+  const navigation = useNavigation();
 
   return (
     <div className="detail-layer">
       {task.data ? (
         <Detail task={task.data} comments={comments.data ?? []} ctx={ctx} />
+      ) : task.isError ? (
+        // A task that's gone (or isn't mine to see) says so, instead of a skeleton that never ends.
+        <div className="screen screen--detail">
+          <LoadError error={task.error} onRetry={() => void task.refetch()} onBack={navigation.pop} />
+        </div>
       ) : (
         <div className="screen screen--detail">
-          <div className="skeleton" style={{ height: 40, width: "60%" }} />
-          <div className="skeleton" style={{ height: 120 }} />
-          <div className="skeleton" style={{ height: 180 }} />
+          <ScreenSkeleton variant="detail" delay={150} />
         </div>
       )}
     </div>

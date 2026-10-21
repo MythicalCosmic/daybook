@@ -1,16 +1,16 @@
-import { CheckCheck, Eye, ListPlus } from "lucide-react";
+import { CheckCheck, ListPlus } from "lucide-react";
 
 import { useBoard, useReviewQueue } from "../api/hooks";
 import type { Task } from "../api/types";
+import { ReviewQueue, RoutinesTab } from "../components/Routines";
 import { RowSkeleton, TaskRow } from "../components/TaskRow";
 import { useCompleteTask } from "../lib/actions";
 import { groupTasks, isDueToday, isOpen } from "../lib/taskView";
-import { clock } from "../lib/time";
 import { useViewContext } from "../lib/useNow";
 import { useNavigation, type TasksTab } from "../state/navigation";
 import { useMember } from "../state/session";
 import { haptic } from "../telegram";
-import { EmptyState } from "../ui";
+import { EmptyState, LoadError } from "../ui";
 
 /** Scroll the tab strip just enough to show the chosen tab (no page jump). */
 function keepInView(node: HTMLButtonElement | null) {
@@ -79,9 +79,14 @@ export function Tasks() {
       </div>
 
       {tab === "review" ? (
-        <ReviewList tasks={reviews.data} loading={reviews.isPending} onOpen={open} ctx={ctx} />
+        <ReviewQueue tasks={reviews.data} loading={reviews.isPending} error={reviews.error} onRetry={() => void reviews.refetch()} ctx={ctx} onOpen={open} />
       ) : board.isPending ? (
         <RowSkeleton count={4} />
+      ) : board.isError && !board.data ? (
+        // Not "All done here": the list didn't load, and saying so beats a false all-clear.
+        <LoadError compact error={board.error} onRetry={() => void board.refetch()} />
+      ) : tab === "daily" ? (
+        <RoutinesTab tasks={tasks.filter((task) => task.kind === "daily")} ctx={ctx} onOpen={open} onTick={complete} />
       ) : (
         <Groups tasks={tasks.filter((task) => task.kind === KIND[tab])} tab={tab} onOpen={open} onTick={complete} ctx={ctx} />
       )}
@@ -116,34 +121,6 @@ function Groups({ tasks, tab, onOpen, onTick, ctx }: {
             <TaskRow key={task.id} task={task} ctx={ctx} onOpen={() => onOpen(task)} onTick={() => onTick(task)} />
           ))}
         </div>
-      ))}
-    </>
-  );
-}
-
-function ReviewList({ tasks, loading, onOpen, ctx }: {
-  tasks: Task[] | undefined;
-  loading: boolean;
-  onOpen: (task: Task) => void;
-  ctx: ReturnType<typeof useViewContext>;
-}) {
-  if (loading) return <RowSkeleton count={3} />;
-  if (!tasks?.length) {
-    return <EmptyState compact tone="sage" icon={Eye} title={ctx.t("tasks.empty.review")} body={ctx.t("tasks.empty.reviewBody")} />;
-  }
-  return (
-    <>
-      {tasks.map((task) => (
-        <TaskRow
-          key={task.id}
-          task={task}
-          ctx={ctx}
-          onOpen={() => onOpen(task)}
-          meta={ctx.t("meta.finishedBy", {
-            name: task.assignee.name,
-            time: task.completed_at ? clock(task.completed_at, ctx.timeZone, ctx.locale) : "—",
-          })}
-        />
       ))}
     </>
   );

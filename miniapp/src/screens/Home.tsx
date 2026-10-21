@@ -6,6 +6,7 @@ import { FeatureSlot } from "../features/FeatureSlot";
 import { Ring } from "../components/Ring";
 import { RowSkeleton, TaskRow } from "../components/TaskRow";
 import { useCompleteTask } from "../lib/actions";
+import { isFinished, isRoutine, routineProgress } from "../lib/routines";
 import { byDue, isDueToday, isLate, isOpen } from "../lib/taskView";
 import { dayKey, dayMonth, hourIn, longDate } from "../lib/time";
 import { useViewContext } from "../lib/useNow";
@@ -45,6 +46,13 @@ export function Home() {
   const numbers = summary.data;
   // Nothing due today: the progress card says so, and an empty "Up next" would say it twice.
   const showUpNext = !numbers || numbers.today_total > 0;
+  // Routines and one-off work read apart: "Routines 2/4 · Tasks 1/3" when today has both.
+  const routines = routineProgress(tasks, ctx);
+  const oneOff = tasks.filter((task) => !isRoutine(task) && task.status !== "cancelled" && isDueToday(task, ctx));
+  const split =
+    routines.total > 0 && oneOff.length > 0
+      ? t("home.split", { routines: `${routines.done}/${routines.total}`, tasks: `${oneOff.filter(isFinished).length}/${oneOff.length}` })
+      : null;
 
   return (
     <div className="screen fade-in">
@@ -86,6 +94,7 @@ export function Home() {
               ? t("home.progress", { done: numbers.today_done, total: numbers.today_total })
               : t("home.nothingToday")}
           </span>
+          {split && numbers && numbers.today_total > 0 && <span className="home-today-split">{split}</span>}
           {numbers && numbers.streak_days > 0 && (
             <span className="tag tag-sage home-today-streak">
               <Flame size={15} strokeWidth={2.6} />

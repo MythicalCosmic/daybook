@@ -126,6 +126,7 @@ function renderWith(
     initial = undefined as NavigationInit | undefined,
     seed = undefined as { task: Task; comments: [] } | undefined,
     numbers = summary,
+    board = [] as Task[],
   } = {},
 ) {
   const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } });
@@ -134,7 +135,7 @@ function renderWith(
     client.setQueryData(keys.task(1, seed.task.id), seed.task);
     client.setQueryData(keys.comments(1, seed.task.id), seed.comments);
   }
-  client.setQueryData(keys.board(1), []);
+  client.setQueryData(keys.board(1), board);
   client.setQueryData(keys.activity(1), []);
   client.setQueryData(keys.timeOff(1), []);
   client.setQueryData(keys.holidays(1), []);
@@ -193,6 +194,32 @@ describe("feature hosts in the real screens", () => {
     renderWith(<Home />);
     expect(screen.getByText("3/8")).toBeTruthy();
     expect(screen.getByText("Up next")).toBeTruthy();
+  });
+
+  it("tell routines and one-off work apart on Home's day card, when today has both", () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-21T10:00:00+05:00"));
+    try {
+      const due = "2026-10-21T15:00:00+05:00";
+      const base = { description: "", priority: "normal", proof: "none", needs_confirmation: false, proof_text: "", proof_photo: null, checklist: [], reminder: null, repeat_weekdays: null, started_at: null, completed_at: null, confirmed_at: null, confirmed_by: null, is_overdue: false, actions: [], created_at: due, for_date: null, assignee: { id: 7, name: "Alisher Valiyev", position: null }, created_by: null };
+      const board = [
+        { ...base, id: 1, kind: "daily", title: "Fridge temperature", status: "done", due_at: due },
+        { ...base, id: 2, kind: "daily", title: "Expiry dates", status: "todo", due_at: due },
+        { ...base, id: 3, kind: "assigned", title: "Count the safe", status: "todo", due_at: due },
+      ] as unknown as Task[];
+      const { container } = renderWith(<Home />, { board, numbers: { ...summary, today_total: 3, today_done: 1 } });
+      expect(container.querySelector(".home-today-split")?.textContent).toBe("Routines 1/2 · Tasks 0/1");
+      // A routine's row carries the repeat mark; one-off work doesn't.
+      const rows = [...container.querySelectorAll(".row")];
+      expect(rows.find((row) => row.textContent?.includes("Expiry dates"))?.querySelector(".row-meta-routine")).toBeTruthy();
+      expect(rows.find((row) => row.textContent?.includes("Count the safe"))?.querySelector(".row-meta-routine")).toBeNull();
+      cleanup();
+
+      renderWith(<Home />, { board: board.filter((task) => task.kind === "daily"), numbers: { ...summary, today_total: 2, today_done: 1 } });
+      expect(document.querySelector(".home-today-split")).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("keep quiet hours with the settings on Me, under no group of their own", () => {
