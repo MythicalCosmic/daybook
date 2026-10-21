@@ -617,7 +617,9 @@ def _given(company, story, people, now, rng, strict) -> None:
         on_day("nigora", banner_day, 22, 30),
         status=Task.Status.DONE,
         completed_at=on_day("nigora", banner_day, 21, 50),
-        confirmed_at=on_day("nigora", banner_day + timedelta(days=1), 9, 20),
+        confirmed_at=min(
+            on_day("nigora", banner_day + timedelta(days=1), 9, 20), now - timedelta(minutes=20)
+        ),
         confirmed_by=owner,
         proof=Proof.PHOTO,
         reward=Decimal("75000.00"),

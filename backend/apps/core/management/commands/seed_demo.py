@@ -624,7 +624,8 @@ class Command(BaseCommand):
             if row.who not in ("madina", "worker") or row.status not in ("approved", "pending"):
                 continue
             decided = row.status == "approved"
-            TimeOff.objects.create(
+            asked = now - timedelta(days=row.asked, hours=3)
+            time_off = TimeOff.objects.create(
                 company=company,
                 membership=story.member(row.who),
                 first_day=story.day(row.first),
@@ -632,8 +633,9 @@ class Command(BaseCommand):
                 reason=row.reason,
                 status=row.status,
                 decided_by=story.member(row.decided_by).user if decided else None,
-                decided_at=now - timedelta(days=max(row.asked - 1, 0)) if decided else None,
+                decided_at=asked + timedelta(hours=20) if decided else None,
             )
+            TimeOff.objects.filter(pk=time_off.pk).update(created_at=asked)
 
         def feed(kind, about, actor, at_, text="", read=False):
             entry = Activity.objects.create(

@@ -17,7 +17,7 @@ from apps.finance.models import MoneyAccount, Transaction
 from apps.inbox.models import Notification
 from apps.members.models import AccessRole, Membership, Position
 from apps.projects.models import TimeEntry
-from apps.sales.models import CashShift
+from apps.sales.models import CashMovement, CashShift, DailySales
 from apps.tasks.models import Task
 from apps.timeoff.models import TimeOff
 
@@ -163,6 +163,27 @@ def test_the_whole_demo_tells_one_story(debug):
     tilled = rows.filter(source_type="sales.cashshift")
     till_days = set(tilled.values_list("occurred_on", flat=True))
     assert ledger_days and till_days and not ledger_days & till_days
+    # The ledger's days are the tills' imported weeks, with exactly its totals and its cash
+    # taken to the safe; so the sales pages compare this month with the one before.
+    daily = rows.filter(source_type="finance.demo", source_key__startswith="s:")
+    booked = {
+        (row["source_id"], row["occurred_on"]): row["total"]
+        for row in daily.values("source_id", "occurred_on").annotate(total=Sum("amount"))
+    }
+    imported = CashShift.objects.filter(company=pharmacy, source=CashShift.Source.IMPORT)
+    sold = {
+        (row["branch_id"], row["business_day"]): row["total"]
+        for row in imported.values("branch_id", "business_day").annotate(
+            total=Sum("payments__sales")
+        )
+    }
+    assert booked and sold == booked
+    assert not imported.exclude(status=CashShift.Status.VERIFIED).exists()
+    moved = CashMovement.objects.filter(shift__in=imported)
+    assert moved.exists() and not moved.filter(transfer__isnull=True).exists()
+    month = timezone.localdate().replace(day=1)
+    before = (month - timedelta(days=1)).replace(day=1)
+    assert DailySales.objects.filter(company=pharmacy, day=before).exists()
     for account in MoneyAccount.objects.filter(company__in=(pharmacy, distributor)):
         posted = Transaction.objects.filter(account=account, status="posted").aggregate(
             total=Sum("amount")

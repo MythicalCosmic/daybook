@@ -7,7 +7,8 @@ open around the clock). The ledger starts 62 days ago with opening balances and 
 tills' weeks begin (`demo_plan.SALES_DAYS` ago, when the sales demo runs) it books each day's
 sales per pharmacy (cash into the pharmacy's till, cards and QR payments into the terminal
 account), takes the cash to the safe and the safe to the bank, and settles the terminal into
-the bank; from then on the sales demo books every shift itself, so no day is counted twice.
+the bank; from then on the sales demo books every shift itself, so no day is counted twice
+(the sales demo shows the earlier days as imported shifts with exactly these totals).
 Every working day a distributor delivers medicines: on credit with its own terms (payables due
 on dates the calendar shows) or paid ahead. Rent (Yunusobod's in dollars), salaries (night hours
 paid 1.5 times), utilities, disinfection, the bank loan, the owner's draws, nasiya for three
@@ -1074,7 +1075,7 @@ class Distributor:
             party(
                 "Zarbuloq Farmatsevtika", Counterparty.Kind.SUPPLIER, tags=["ishlab chiqaruvchi"]
             ),
-            party("Qorasuv Med Import", Counterparty.Kind.SUPPLIER, tags=["import"]),
+            party("Sarvqad Med Import", Counterparty.Kind.SUPPLIER, tags=["import"]),
         ]
         landlord = party("Sherali Rahmonov (ombor ijarasi)", Counterparty.Kind.OTHER)
         day = self.start

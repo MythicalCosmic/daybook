@@ -1,6 +1,6 @@
-"""Demo data of attendance (apps/core/demo_plan.py): Demo Dorixona's rotas as schedules, five
-weeks of shifts and check-ins, today's board, open shifts, roster drafts and requests waiting
-for the heads.
+"""Demo data of attendance (apps/core/demo_plan.py): Demo Dorixona's rotas as schedules, two
+months of shifts and check-ins (every day its tills ran), today's board, open shifts, roster
+drafts and requests waiting for the heads.
 
 Chilonzor (08:00 to 22:00) has two pairs of pharmacists, two days on and two off, one opening
 and one closing; Yunusobod is open around the clock with 12-hour day (08:00 to 20:00) and night
@@ -27,7 +27,7 @@ from apps.attendance.models import (
     WorkShift,
 )
 from apps.core import demo_plan
-from apps.members.models import Position
+from apps.members.models import Membership, Position
 
 HISTORY_DAYS = demo_plan.ROSTER_DAYS
 Flag = AttendanceRecord.Flag
@@ -95,7 +95,7 @@ def _roster(company, story, now, *, days: int = HISTORY_DAYS) -> None:
     schedules = {}
     for key, member in story.members().items():
         person = story.cast[key]
-        if person.rota is None:
+        if person.rota is None or member.status == Membership.Status.LEFT:
             continue
         schedule = schedules.get(person.rota) or _schedule(company, story, person.rota)
         schedules[person.rota] = schedule
@@ -123,8 +123,9 @@ def _roster(company, story, now, *, days: int = HISTORY_DAYS) -> None:
     services.generate_shifts(
         company, start=start, days=days + services.GENERATE_DAYS, now=published
     )
-    # A suspended person gets no shifts at all: Bobur's weeks before the suspension, by hand.
-    _before_suspension(company, story, start, published)
+    # Nobody suspended or gone gets shifts from the schedules: Bobur's weeks before his
+    # suspension and Nodira's before she left, by hand.
+    _by_hand(company, story, start, published)
     # A shift a colleague took over with the manager's approval is theirs (see _requests).
     for swap in story.swaps:
         cover = story.member(swap.cover)
@@ -195,31 +196,34 @@ def _schedule(company, story, key: str) -> WorkSchedule:
     return schedule
 
 
-def _before_suspension(company, story, start, published) -> None:
-    bobur = story.member(demo_plan.SUSPENDED.key)
-    if bobur is None:
-        return
-    first = story.day(demo_plan.SUSPENSION[0])
+def _by_hand(company, story, start, published) -> None:
     rows = []
-    day = max(start, story.joined(demo_plan.SUSPENDED.key))
-    while day < first:
-        shift = story.shift(demo_plan.SUSPENDED.key, day)
-        if shift is not None:
-            rows.append(
-                WorkShift(
-                    company=company,
-                    membership=bobur,
-                    date=day,
-                    starts_at=shift.starts,
-                    ends_at=shift.ends,
-                    break_minutes=shift.break_minutes,
-                    branch=story.branches[shift.branch],
-                    position=bobur.position,
-                    source=WorkShift.Source.SCHEDULE,
-                    published_at=published,
+    for key, until in (
+        (demo_plan.SUSPENDED.key, story.day(demo_plan.SUSPENSION[0])),
+        (demo_plan.LEFT.key, story.day(-demo_plan.LEFT_DAYS_AGO)),
+    ):
+        member = story.member(key)
+        if member is None:
+            continue
+        day = max(start, story.joined(key))
+        while day < until:
+            shift = story.shift(key, day)
+            if shift is not None:
+                rows.append(
+                    WorkShift(
+                        company=company,
+                        membership=member,
+                        date=day,
+                        starts_at=shift.starts,
+                        ends_at=shift.ends,
+                        break_minutes=shift.break_minutes,
+                        branch=story.branches[shift.branch],
+                        position=member.position,
+                        source=WorkShift.Source.SCHEDULE,
+                        published_at=published,
+                    )
                 )
-            )
-        day += timedelta(days=1)
+            day += timedelta(days=1)
     WorkShift.objects.bulk_create(rows)
 
 

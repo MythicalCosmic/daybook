@@ -21,14 +21,18 @@ class TestCategories:
     def test_two_levels_of_one_kind(self, books, owner):
         goods = Category.objects.get(company=books, system_code="goods")
         drinks = services.create_category(
-            books, by=owner, name="Drinks", kind="expense", parent=goods
+            books, by=owner, name="Medicines", kind="expense", parent=goods
         )
         with pytest.raises(DomainError):
-            services.create_category(books, by=owner, name="Cola", kind="expense", parent=drinks)
+            services.create_category(
+                books, by=owner, name="Antibiotics", kind="expense", parent=drinks
+            )
         with pytest.raises(DomainError):
-            services.create_category(books, by=owner, name="Tips", kind="income", parent=goods)
+            services.create_category(books, by=owner, name="Bonuses", kind="income", parent=goods)
         with pytest.raises(DomainError):
-            services.create_category(books, by=owner, name="drinks", kind="expense", parent=goods)
+            services.create_category(
+                books, by=owner, name="medicines", kind="expense", parent=goods
+            )
 
     def test_system_categories_are_renamed_never_archived_and_salaries_stay_sensitive(
         self, books, owner
@@ -119,13 +123,13 @@ class TestCategories:
         from apps.finance import defaults
 
         goods = Category.objects.get(company=books, system_code="goods")
-        services.create_category(books, by=owner, name="Drinks", kind="expense", parent=goods)
+        services.create_category(books, by=owner, name="Medicines", kind="expense", parent=goods)
         services.create_category(books, by=owner, name="Supplies", kind="expense")
         defaults.ensure(other_company)
         target_owner = member(other_company, "Owner")
         assert services.copy_categories(books, other_company, target_owner) == 2
         assert services.copy_categories(books, other_company, target_owner) == 0
-        drinks = Category.objects.get(company=other_company, name="Drinks")
+        drinks = Category.objects.get(company=other_company, name="Medicines")
         assert drinks.parent.system_code == "goods"
 
 

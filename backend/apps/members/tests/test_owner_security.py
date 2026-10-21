@@ -95,7 +95,7 @@ def endpoints(objects) -> list[tuple[str, str, dict]]:
         ("patch", f"roles/{role}/", {"name": "Renamed"}),
         ("delete", f"roles/{role}/", {}),
         ("get", "positions/", {}),
-        ("post", "positions/", {"name": "Baker"}),
+        ("post", "positions/", {"name": "Driver"}),
         ("patch", f"positions/{position}/", {"name": "Senior courier"}),
         ("delete", f"positions/{position}/", {}),
         ("post", "positions/reorder/", {"ids": [position]}),
