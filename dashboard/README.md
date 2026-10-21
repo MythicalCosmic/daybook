@@ -211,14 +211,14 @@ Leaflet (`MapView`), the drag library behind `WidgetGrid`'s Customize.
 **Measure it** after `npm run build` with `node scripts/budget.mjs` (exits 1 when over). It counts
 the entry chunk and everything it imports statically, plus the shell dictionary of one language
 (fetched before the first paint) and the Overview page. After the Wave 1 visual pass (20 modules,
-with w1v/work's routine pages):
+the other areas' visual passes merged):
 
 | | gzip |
 |---|---|
-| Initial JS (entry + static imports) | 136.6 KB |
-| + the largest shell dictionary (ru; uz 5.2, en 4.9) | 6.1 KB |
+| Initial JS (entry + static imports) | 137.0 KB |
+| + the largest shell dictionary (ru; uz 5.3, en 4.9) | 6.2 KB |
 | + the Overview page (cockpit layout, Customize) | 11.7 KB |
-| **Shell + Overview** | **154.4 KB** of 180 (25.6 KB left) |
+| **Shell + Overview** | **155.0 KB** of 180 (25.0 KB left) |
 
 Menus and tooltips are not in it. reka-ui's menu and tooltip and their positioning library
 (floating-ui) were 24.5 KB of the first load, and no first paint needs them:
@@ -237,7 +237,7 @@ registry costs 0.5 KB (groups) to 1.3 KB (projects) to 2.6 KB (finance), measure
 without it. Waves 2–3 add about ten modules: **each new module may add at most 1.5 KB gzipped to
 shell + Overview** (its `index.ts`, `routes.ts`, the icons they name and the preload lists of its
 lazy imports; check with `scripts/budget.mjs` before and after), which keeps ten of them within
-the 25.6 KB left with room for the shell. So:
+the 25 KB left with room for the shell. So:
 
 - `index.ts` and `routes.ts` hold metadata only. Pages, widgets, panels, tabs, search hits, inbox
   renderers and extensions are `defineAsyncComponent(() => import(...))` / `() => import(...)`;

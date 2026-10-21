@@ -65,7 +65,9 @@ const breakdown = computed(() => {
       <!-- The rostered count is said once, in the line below ("of 10 on shift"). -->
       <div class="mt-1.5 flex items-baseline gap-1.5">
         <span class="kpi-value">{{ present }}</span>
-        <span v-if="share !== null" class="ml-auto self-center rounded-full bg-success-soft px-2 py-0.5 text-xs font-semibold tabular-nums text-success">{{ share }}%</span>
+        <!-- Read aloud "9, 90 %", not "990 %": the pill sits apart only to the eye. -->
+        <span v-if="share !== null" class="sr-only">, </span>
+        <span v-if="share !== null" class="ml-auto self-center rounded-full bg-success-soft px-2 py-0.5 text-xs font-semibold tabular-nums text-success">{{ fmt.percent(share) }}</span>
       </div>
       <p class="mt-0.5 truncate text-xs text-muted">{{ t("attendance.kpi.ofRostered", { n: totals.rostered }) }}</p>
       <!-- Today's board in four lines: the same states as its columns. -->
