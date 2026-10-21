@@ -196,6 +196,80 @@ def revoke_session(session: DeviceSession) -> None:
 
 
 @transaction.atomic
+def revoke_others(user: User, *, keep: int | None) -> int:
+    """Log out every other device: every session but `keep` ends, and every outstanding token
+    of the user except that session's is blacklisted. Returns how many sessions ended."""
+    now = timezone.now()
+    kept = DeviceSession.objects.filter(user=user, pk=keep, revoked_at__isnull=True).first()
+    others = DeviceSession.objects.filter(user=user, revoked_at__isnull=True)
+    if kept is not None:
+        others = others.exclude(pk=kept.pk)
+    count = others.update(revoked_at=now)
+    spare = {jti for jti in (kept.refresh_jti, kept.previous_jti) if jti} if kept else set()
+    outstanding = OutstandingToken.objects.filter(user=user, blacklistedtoken__isnull=True).exclude(
+        jti__in=spare
+    )
+    BlacklistedToken.objects.bulk_create(
+        [BlacklistedToken(token=token) for token in outstanding], ignore_conflicts=True
+    )
+    return count
+
+
+def active_sessions(user: User, now=None) -> list[DeviceSession]:
+    """The person's signed-in browsers, most recently used first. A browser idle for longer
+    than a refresh token lives can never refresh again, so it isn't signed in any more."""
+    now = now or timezone.now()
+    return list(
+        DeviceSession.objects.filter(
+            user=user,
+            revoked_at__isnull=True,
+            last_seen_at__gt=now - jwt_settings.REFRESH_TOKEN_LIFETIME,
+        )
+    )
+
+
+class InitDataRefused(Exception):
+    """Telegram launch data that can't sign anyone in. `code`: init_data_invalid, no_access."""
+
+    def __init__(self, code: str):
+        super().__init__(code)
+        self.code = code
+
+
+def user_from_init_data(init_data: str) -> User:
+    """The person behind Telegram Mini App `init_data` (§7.2): signed by the owner bot, or by
+    the employee bot as a fallback, at most `OWNER_INIT_DATA_MAX_AGE` old, and allowed into
+    the dashboard. Raises InitDataRefused."""
+    from apps.accounts.services import sync_telegram_user
+    from apps.accounts.telegram_auth import InvalidInitData, validate_init_data
+
+    web_user = None
+    for bot in ("owner", "employee"):
+        try:
+            web_user = validate_init_data(
+                init_data, bot=bot, max_age=settings.OWNER_INIT_DATA_MAX_AGE
+            )
+            break
+        except InvalidInitData:
+            continue
+    if web_user is None:
+        raise InitDataRefused("init_data_invalid")
+    # Nobody is created here: only people who already belong to a company may get in.
+    if not User.objects.filter(telegram_id=web_user.id).exists():
+        raise InitDataRefused("no_access")
+    user = sync_telegram_user(
+        telegram_id=web_user.id,
+        username=web_user.username,
+        first_name=web_user.first_name,
+        last_name=web_user.last_name,
+        language_code=None,
+    )
+    if not can_sign_in(user):
+        raise InitDataRefused("no_access")
+    return user
+
+
+@transaction.atomic
 def revoke_all(user: User) -> int:
     """Log out everywhere: every session ends and every outstanding token of the user is
     blacklisted. Returns how many sessions were still active."""

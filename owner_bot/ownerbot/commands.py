@@ -1,13 +1,17 @@
-"""The command menu Telegram shows in private chats with the owner bot.
-
-Package A adds `/new`, `/today` and `/dashboard` here together with their handlers.
-"""
+"""The command menu and the menu button Telegram shows in private chats with the owner bot."""
 
 import logging
 
 from aiogram import Bot
 from aiogram.exceptions import TelegramAPIError
-from aiogram.types import BotCommand, BotCommandScopeAllPrivateChats
+from aiogram.types import (
+    BotCommand,
+    BotCommandScopeAllPrivateChats,
+    MenuButtonCommands,
+    MenuButtonWebApp,
+    WebAppInfo,
+)
+from django.conf import settings
 from django.utils import translation
 from django.utils.translation import gettext as _
 
@@ -17,7 +21,20 @@ logger = logging.getLogger(__name__)
 
 
 def private_commands() -> list[BotCommand]:
-    return [BotCommand(command="start", description=_("Home"))]
+    return [
+        BotCommand(command="today", description=_("Today at a glance")),
+        BotCommand(command="dashboard", description=_("Open the dashboard")),
+        BotCommand(command="new", description=_("Create a company")),
+        BotCommand(command="start", description=_("Home")),
+    ]
+
+
+def menu_button() -> MenuButtonWebApp | MenuButtonCommands:
+    """The "Dashboard" button opens the console as a Mini App (needs an https address)."""
+    url = settings.DASHBOARD_URL
+    if url.startswith("https://"):
+        return MenuButtonWebApp(text=_("Dashboard"), web_app=WebAppInfo(url=url))
+    return MenuButtonCommands()
 
 
 async def set_commands(bot: Bot) -> None:
@@ -30,5 +47,7 @@ async def set_commands(bot: Bot) -> None:
                     scope=BotCommandScopeAllPrivateChats(),
                     language_code=language,
                 )
+        with translation.override("uz"):
+            await bot.set_chat_menu_button(menu_button=menu_button())
     except TelegramAPIError as exc:
         logger.warning("Couldn't set the owner bot's command menu: %s", exc)

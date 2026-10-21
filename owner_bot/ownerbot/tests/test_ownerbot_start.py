@@ -23,7 +23,7 @@ async def test_start_records_that_the_owner_bot_was_started(dp, bot):
     assert user.owner_bot_started_at is not None
     assert user.owner_bot_blocked_at is None
     [reply] = bot.sent()
-    assert "owner bot" in reply.text
+    assert "/new" in reply.text  # nobody has a company yet: the bot offers to create one
     assert reply.reply_markup is None  # no https dashboard address in tests
 
 
