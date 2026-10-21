@@ -251,14 +251,18 @@ the 25.7 KB left with room for the shell. So:
   commands rather than a new icon per command.
 - Palette commands: `ctx.t` titles and 3–5 short `keywords`, not long lists.
 - Dictionaries load one language at a time (`src/i18n/index.ts`): the shell's before the first
-  paint, every visible module's right after (20 small requests: 58 KB gzipped in English, 63 KB
-  in Uzbek, 76 KB in Russian, where all three languages used to cost 60 requests and 196 KB). The
+  paint, every visible module's right after (20 small requests: 61 KB gzipped in English, 65 KB
+  in Uzbek, 78 KB in Russian, where all three languages used to cost 60 requests and 196 KB). The
   other two languages load only when the person switches.
 
+A whole cold Overview on the production build (`vite preview`, the demo owner), until the network
+is idle, menus preloaded included: 159 requests and 608 KB in English, 613 KB in Uzbek, 642 KB in
+Russian (the Onest file included). The budget above is the part before the first paint.
+
 How the build keeps it small (`vite.config.ts`): framework code is one `vendor` chunk; everything
-else the first load needs (shell, every registry, the icons and reka-ui pieces they use) is
-grouped into the entry chunk by Rolldown's `$initial` tag, instead of ~60 tiny shared chunks whose
-names would repeat in every preload list. That alone took Wave 1 from 191.8 to 174 KB.
+else the first load needs (shell, every registry, the icons they use) is grouped into the entry
+chunk by Rolldown's `$initial` tag, instead of ~60 tiny shared chunks whose names would repeat in
+every preload list. That alone took Wave 1 from 191.8 to 174 KB.
 
 `@vueuse/core` is pinned to the 14.x that reka-ui depends on, so one copy ships (the duplicate
 cost 0.9 KB of the first load); `@vueuse/router` was never imported and is gone. Bump it together
