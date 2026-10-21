@@ -297,11 +297,13 @@ def _tills(company) -> tuple[dict, dict]:
 
 def _around_tills(tills, shift, arrive, leave, rng):
     """`arrive` and `leave` moved so that `shift`'s person was in when opening or closing a
-    till that day."""
+    till that day; whoever opened it late came in late too."""
     opened, closed = tills
     till_opened = opened.get((shift.membership_id, shift.date))
     if till_opened is not None:
-        arrive = min(arrive, till_opened - timedelta(minutes=rng.randint(2, 7)))
+        came = till_opened - timedelta(minutes=rng.randint(2, 7))
+        late = till_opened > shift.starts_at + timedelta(minutes=10)
+        arrive = came if late else min(arrive, came)
     till_closed = closed.get((shift.membership_id, shift.date))
     if till_closed is not None and leave is not None:
         leave = max(leave, till_closed + timedelta(minutes=rng.randint(3, 9)))
@@ -472,7 +474,7 @@ def _today(company, story, now, settings) -> None:
     """Check-ins of the shifts under way or finished today, as far as the clock has got:
     Bekzod and Alisher on time, Jasur late, the night shift handed over at 08:00."""
     rng = random.Random(f"attendance:today:{company.pk}:{story.today.isoformat()}")
-    offsets = {"manager": -14, "worker": -3, "jasur": 23, "kamola": -6}
+    offsets = {"manager": -6, "worker": -3, "jasur": 23, "kamola": -6}
     keys = {member.pk: key for key, member in story.members().items()}
     tills = _tills(company)
     done = set(
@@ -494,7 +496,7 @@ def _today(company, story, now, settings) -> None:
             continue
         left = None
         if shift.ends_at + timedelta(minutes=10) < now:
-            left = shift.ends_at + timedelta(minutes=rng.randint(0, 9))
+            left = shift.ends_at + timedelta(minutes=rng.randint(0, 3))  # no overtime to approve
         arrive, left = _around_tills(tills, shift, arrive, left, rng)
         if left is not None and left > now - timedelta(minutes=2):
             left = None  # still closing up

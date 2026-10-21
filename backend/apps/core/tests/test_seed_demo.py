@@ -16,6 +16,7 @@ from apps.core import demo_plan
 from apps.core.management.commands import seed_demo
 from apps.finance.models import MoneyAccount, Transaction
 from apps.inbox.models import Notification
+from apps.knowledge.models import PageVersion
 from apps.members.models import AccessRole, Membership, Position
 from apps.projects.models import TimeEntry
 from apps.sales.models import CashMovement, CashShift, DailySales
@@ -249,6 +250,13 @@ def test_the_whole_demo_tells_one_story(debug):
         ]
     )
     assert not [name for name in REAL_NAMES if name in texts]
+    # What the services store in words comes out in the company's language (Uzbek), as when
+    # its people use the apps: a till's cash difference, a knowledge page's first version.
+    shortages = Transaction.objects.filter(company=pharmacy, source_type="sales.cashshift")
+    assert shortages.filter(description__endswith=": kassa farqi").exists()
+    assert not shortages.filter(description__contains="cash difference").exists()
+    assert PageVersion.objects.filter(page__company=pharmacy, note="Birinchi versiya").exists()
+    assert not PageVersion.objects.filter(page__company=pharmacy, note="First version").exists()
     uzbek_readers = Notification.objects.filter(recipient__user__language="uz")
     assert uzbek_readers.exists()
     assert not uzbek_readers.filter(title__startswith="Cash difference").exists()

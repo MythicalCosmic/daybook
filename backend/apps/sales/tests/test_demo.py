@@ -99,3 +99,7 @@ def test_demo_seeds_shifts_and_keeps_the_ledger_in_step(pharmacy):
     assert any(row["late_opens"] for row in cashiers)
     target = SalesTarget.objects.get(company=company, membership__isnull=False)
     assert CashShift.objects.filter(company=company, cashier=target.membership).exists()
+    # The shift the owner disputed has its (blurred) Z-report and terminal photos to look at,
+    # not the grey placeholders older shifts get.
+    disputed = CashShift.objects.get(company=company, status=CashShift.Status.DISPUTED)
+    assert disputed.z_photo.size > 5_000 and disputed.terminal_photo.size > 5_000
