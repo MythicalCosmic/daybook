@@ -160,7 +160,7 @@ function give(target: GiveTarget): void {
       <template #actions>
         <div class="flex items-center gap-1">
           <IconButton :icon="ChevronLeft" :label="t('routines.today.previousDay')" :size="tap" variant="secondary" @click="day = addDays(day, -1)" />
-          <DatePicker v-model="day" :size="tap" :max="today" format="weekday" class="w-[220px] max-sm:min-w-0 max-sm:flex-1" />
+          <DatePicker v-model="day" :size="tap" :max="today" :format="isPhone ? 'medium' : 'weekday'" class="w-[220px] max-sm:min-w-0 max-sm:flex-1" />
           <IconButton :icon="ChevronRight" :label="t('routines.today.nextDay')" :size="tap" variant="secondary" :disabled="isToday" @click="day = addDays(day, 1)" />
         </div>
         <UiButton v-if="!isToday" :size="tap" :icon="CalendarCheck" @click="day = today">{{ t("routines.today.backToToday") }}</UiButton>
