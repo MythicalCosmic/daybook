@@ -209,10 +209,13 @@ watch(zoom, () => void scrollToToday(false));
               <div
                 v-for="tick in header.top"
                 :key="`t${tick.day}`"
-                class="absolute top-0 flex h-7 items-center overflow-hidden border-l border-line px-2 text-xs font-semibold text-fg first:border-l-0"
+                class="absolute top-0 flex h-7 items-center overflow-clip border-l border-line px-2 text-xs font-semibold text-fg first:border-l-0"
                 :style="{ left: `${tick.left}px`, width: `${tick.width}px` }"
               >
-                <span class="sticky left-2 truncate">{{ topLabel(tick.day) }}</span>
+                <!-- Sticks just right of the frozen label column while the timeline scrolls; `overflow-clip`
+                     (unlike hidden) doesn't make the tick a scroll container, so the sticky offset
+                     follows the scroller and the month name never slides under the label column. -->
+                <span class="sticky truncate" :style="{ left: `${labelWidth + 8}px` }">{{ topLabel(tick.day) }}</span>
               </div>
               <div
                 v-for="tick in header.bottom"

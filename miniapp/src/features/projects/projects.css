@@ -1,0 +1,427 @@
+/* Projects feature (PLAN-OWNER §13.3). Built only from the Daybook tokens: a project's palette key
+   maps onto the brand ramps (terracotta, sage, neutral), so boards stay in the family. */
+
+.prj-chart-1 { --prj: var(--color-accent-500); }
+.prj-chart-2 { --prj: var(--color-accent-2-600); }
+.prj-chart-3 { --prj: var(--color-neutral-700); }
+.prj-chart-4 { --prj: var(--color-accent-400); }
+.prj-chart-5 { --prj: var(--color-accent-700); }
+.prj-chart-6 { --prj: var(--color-accent-2-500); }
+.prj-chart-7 { --prj: var(--color-accent-600); }
+.prj-chart-8 { --prj: var(--color-neutral-500); }
+
+/* — project rows — */
+
+.prj-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+  padding: 18px 18px 16px 22px;
+  text-align: left;
+}
+
+.prj-card::before {
+  content: "";
+  position: absolute;
+  inset: 20px auto 20px 10px;
+  width: 4px;
+  border-radius: 4px;
+  background: var(--prj);
+}
+
+.prj-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.prj-key {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--prj);
+}
+
+.prj-name {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.prj-head-text {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.prj-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.prj-progress-text {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.prj-strong {
+  font-weight: 700;
+}
+
+.prj-meta {
+  color: var(--muted);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prj-meta--alert {
+  color: var(--color-accent-600);
+  font-weight: 600;
+}
+
+/* — board — */
+
+.prj-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.prj-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: calc(var(--radius-lg) * 0.8);
+  background: color-mix(in srgb, var(--color-surface) 55%, transparent);
+  border: 2px dashed transparent;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.prj-list--target {
+  border-color: var(--color-accent-400);
+  background: color-mix(in srgb, var(--color-accent-100) 70%, transparent);
+}
+
+.prj-list-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.prj-list-head .tag {
+  margin-left: auto;
+}
+
+.prj-list-done {
+  color: var(--color-accent-2-700);
+}
+
+.prj-wip--over {
+  color: var(--color-accent-600);
+}
+
+.prj-empty-list {
+  padding: 10px 6px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.prj-tile-badge {
+  align-self: flex-start;
+}
+
+.prj-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-sm);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  transition:
+    transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 160ms ease,
+    opacity 160ms ease;
+}
+
+.prj-tile:active {
+  transform: scale(0.985);
+}
+
+.prj-tile--mine {
+  box-shadow:
+    var(--shadow-sm),
+    inset 3px 0 0 var(--color-accent);
+}
+
+.prj-tile--lifted {
+  opacity: 0.35;
+}
+
+.prj-ghost {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  transform: rotate(-2deg) scale(1.03);
+  box-shadow: var(--shadow-lg);
+}
+
+.prj-tile-title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.prj-tile-title--done {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.prj-tile-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.prj-tile-foot .prj-spacer {
+  flex: 1;
+}
+
+.prj-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--hairline);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.prj-chip--late {
+  background: var(--color-accent-100);
+  color: var(--color-accent-700);
+}
+
+.prj-chip--soon {
+  background: var(--color-accent-200);
+  color: var(--color-accent-800);
+}
+
+.prj-chip--done {
+  background: var(--color-accent-2-100);
+  color: var(--color-accent-2-700);
+}
+
+.prj-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.prj-label {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--prj) 18%, transparent);
+  /* The lighter palette steps need a darker word to stay readable on their tint. */
+  color: color-mix(in srgb, var(--prj) 62%, var(--color-text));
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.prj-hint {
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* — timer — */
+
+.prj-timer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+}
+
+.prj-timer-clock {
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.prj-pulse {
+  animation: prj-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes prj-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* — sheets — */
+
+.prj-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.prj-facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
+}
+
+.prj-fact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.prj-fact-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.prj-fact-value {
+  font-size: 15px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prj-moves {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.prj-duration {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+
+.prj-duration-value {
+  min-width: 96px;
+  font-size: 34px;
+  font-weight: 800;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.prj-health {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.prj-health-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 6px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.prj-health-option[aria-checked="true"] {
+  border-color: var(--color-accent);
+  background: var(--color-accent-100);
+}
+
+.prj-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+}
+
+.prj-dot--on_track {
+  background: var(--color-accent-2);
+}
+
+.prj-dot--at_risk {
+  background: var(--color-accent-400);
+}
+
+.prj-dot--off_track {
+  background: var(--color-accent-700);
+}
+
+.prj-update {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prj-update-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.prj-update-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  white-space: pre-line;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prj-pulse {
+    animation: none;
+  }
+  .prj-tile,
+  .prj-list {
+    transition: none;
+  }
+}
+
+/* The ring turns its svgs a quarter back; the check inside stays upright. */
+.ui-ring .prj-ring-check {
+  transform: none;
+}
