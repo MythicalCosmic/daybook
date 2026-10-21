@@ -4,7 +4,7 @@
  * table with inline category edits, receipt thumbnails, bulk categorize and void, phone cards, the
  * sums of whatever the filters match, Excel export, and the entry drawer on `?txn=`.
  */
-import { ArrowLeftRight, Building2, CircleDot, FolderTree, Landmark, Paperclip, Plus, Receipt, Rows3, Tags, UserRound, Wallet } from "@lucide/vue";
+import { ArrowLeftRight, Building2, CircleDot, FolderTree, Landmark, Paperclip, Plus, Receipt, Rows3, Scale, Tags, UserRound, Wallet } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
@@ -84,6 +84,17 @@ const defs = computed<FilterDef[]>(() => {
     },
     { key: "has_receipt", label: t("finance.filter.receipt"), type: "boolean", icon: Paperclip, trueLabel: t("finance.filter.withReceipt"), falseLabel: t("finance.filter.withoutReceipt") },
     { key: "amount", label: t("finance.filter.amount"), type: "number-range", params: ["min", "max"] },
+    // The rows behind a P&L line, as the overview's income and expense tiles count them.
+    {
+      key: "pnl",
+      label: t("finance.filter.pnl"),
+      type: "select",
+      icon: Scale,
+      options: [
+        { value: "income", label: t("finance.filter.pnlIncome") },
+        { value: "expense", label: t("finance.filter.pnlExpense") },
+      ],
+    },
   ];
   if (branches.value.length > 1) {
     list.splice(4, 0, { key: "branch", label: t("finance.field.branch"), type: "multi", icon: Building2, options: branches.value.map((b) => ({ value: String(b.id), label: b.name, description: b.code })) });
@@ -161,14 +172,16 @@ function saveView(input: { name: string; shared: boolean }): void {
 const columns = computed<TableColumn<Transaction>[]>(() => [
   { id: "occurred_on", header: t("finance.field.date"), sortable: true, width: 96, format: (value) => fmt.day(String(value), "short") },
   { id: "description", header: t("finance.tx.what"), minWidth: 220, hideable: false, sticky: true, value: (row) => row.description || row.category?.name || row.kind_label },
-  // Widths add up to the content width of a 1440 px screen with the sidebar open, so the ledger
-  // needs no sideways scroll there; "What" takes whatever is left.
+  // The amount comes right after "What", like a bank statement, so a 1024 px screen (or a narrow
+  // window) still shows date, entry and amount before the table scrolls sideways. Widths add up to
+  // the content width of a 1440 px screen with the sidebar open, in every language ("Filial",
+  // "Филиал", "Hisobdan chiqarish" fit); "What" takes whatever is left.
+  { id: "amount", header: t("finance.field.amount"), sortable: true, numeric: true, width: 152, value: (row) => row.amount, csv: (row) => row.amount },
   { id: "category", header: t("finance.field.category"), width: 170, value: (row) => row.category?.name ?? "" },
   { id: "account", header: t("finance.field.account"), width: 160, value: (row) => row.account?.name ?? "" },
-  { id: "amount", header: t("finance.field.amount"), sortable: true, numeric: true, width: 152, value: (row) => row.amount, csv: (row) => row.amount },
   { id: "receipts", header: "", width: 44, hideable: false, align: "center", value: (row) => row.receipts.length || "", csv: (row) => row.receipts.length },
-  { id: "branch", header: t("finance.field.branch"), width: 76, value: (row) => row.branch?.name ?? "" },
-  { id: "status", header: t("finance.filter.status"), width: 128, value: (row) => row.status_label, csv: (row) => row.status_label },
+  { id: "branch", header: t("finance.field.branch"), width: 84, value: (row) => row.branch?.name ?? "" },
+  { id: "status", header: t("finance.filter.status"), width: 144, value: (row) => row.status_label, csv: (row) => row.status_label },
 ]);
 
 function open(row: Transaction): void {

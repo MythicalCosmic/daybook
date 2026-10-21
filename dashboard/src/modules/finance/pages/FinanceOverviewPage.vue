@@ -83,7 +83,9 @@ const kpis = computed(() => {
       compact: true,
       icon: ChartColumn,
       deltaLabel: vs,
-      to: { path: `${base.value}/transactions`, query: { kind: "income", from: d?.month.from, to: d?.month.to } },
+      // The P&L line, not "kind = income": refunds count against income here, so the list adds up
+      // to this tile.
+      to: { path: `${base.value}/transactions`, query: { pnl: "income", from: d?.month.from, to: d?.month.to } },
     },
     {
       id: "expense",
@@ -96,7 +98,8 @@ const kpis = computed(() => {
       inverse: true,
       icon: Landmark,
       deltaLabel: vs,
-      to: { path: `${base.value}/transactions`, query: { kind: "expense", from: d?.month.from, to: d?.month.to } },
+      // Write-offs and exchange losses are expenses on the P&L too (see the income tile).
+      to: { path: `${base.value}/transactions`, query: { pnl: "expense", from: d?.month.from, to: d?.month.to } },
     },
   ];
 });
@@ -285,7 +288,7 @@ const firstRun = computed(() => !!data.value && !data.value.has_ledger);
                     {{ debt.direction === "receivable" ? "+" : "−" }}
                   </span>
                   <div class="min-w-0 flex-1">
-                    <p class="truncate text-sm font-semibold text-fg">{{ debt.party?.name ?? t("finance.debts.hidden") }}</p>
+                    <p class="truncate text-sm font-semibold text-fg" :title="debt.party?.name">{{ debt.party?.name ?? t("finance.debts.hidden") }}</p>
                     <p class="truncate text-xs text-muted">{{ debt.due_on ? fmt.day(debt.due_on, "weekdayShort") : "" }} · {{ t(`finance.debtKind.${debt.kind}`) }}</p>
                   </div>
                   <span class="shrink-0 text-sm font-semibold tabular-nums text-fg"><MoneyText :value="debt.outstanding" :currency="debt.currency" compact /></span>
@@ -307,7 +310,7 @@ const firstRun = computed(() => !!data.value && !data.value.has_ledger);
               <li v-for="account in topAccounts(data.cash.accounts, 7)" :key="account.id">
                 <RouterLink :to="`${base}/accounts/${account.id}`" class="flex items-center gap-3 rounded-[10px] px-2 py-1.5 hover:bg-highlight">
                   <component :is="ACCOUNT_ICONS[account.kind]" :size="16" class="shrink-0 text-subtle" aria-hidden="true" />
-                  <span class="min-w-0 flex-1 truncate text-sm text-fg">{{ account.name }}</span>
+                  <span class="min-w-0 flex-1 truncate text-sm text-fg" :title="account.name">{{ account.name }}</span>
                   <span :class="['shrink-0 text-sm font-semibold tabular-nums', isNegative(account.balance) ? 'text-danger' : 'text-fg']">
                     <MoneyText :value="account.balance" :currency="account.currency" :compact="account.currency === company.currency" />
                   </span>

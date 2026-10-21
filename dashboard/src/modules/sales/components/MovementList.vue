@@ -57,7 +57,7 @@ function subject(movement: Movement): string {
           <span class="truncate">{{ t(`sales.movement.kind.${movement.kind}`) }}</span>
           <span v-if="subject(movement)" class="truncate font-normal text-muted">· {{ subject(movement) }}</span>
         </p>
-        <p class="truncate text-xs text-muted">
+        <p class="truncate text-xs text-muted" :title="movement.reason || undefined">
           {{ movement.created_by.name }} · <RelativeTime :value="movement.created_at" mode="short" />
           <template v-if="showShift && movement.shift"> · {{ movement.shift.code }}</template>
           <template v-if="movement.reason"> · {{ movement.reason }}</template>

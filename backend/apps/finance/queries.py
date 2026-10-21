@@ -743,6 +743,7 @@ TRANSACTION_FILTERS = (
     "source_type",
     "debt",
     "project",
+    "pnl",
 )
 
 
@@ -776,6 +777,10 @@ def filter_transactions(rows: QuerySet[Transaction], filters: dict) -> QuerySet[
     if categories := filters.get("category"):
         ids = list(categories) if isinstance(categories, list | tuple | set) else [categories]
         rows = rows.filter(Q(category_id__in=ids) | Q(category__parent_id__in=ids))
+    if side := filters.get("pnl"):
+        # The rows behind a P&L line ("income" or "expense"), the way `totals` counts them: every
+        # P&L kind by its category's kind, so refunds, write-offs and exchange differences are in.
+        rows = rows.filter(kind__in=PNL_KINDS, category__kind=side)
     if (low := filters.get("min")) is not None:
         rows = rows.filter(Q(base_amount__gte=low) | Q(base_amount__lte=-low))
     if (high := filters.get("max")) is not None:

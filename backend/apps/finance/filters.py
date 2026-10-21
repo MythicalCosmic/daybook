@@ -11,7 +11,7 @@ from decimal import Decimal, InvalidOperation
 from django.utils.translation import gettext as _
 from rest_framework.exceptions import ValidationError
 
-from apps.finance.models import Debt, Transaction
+from apps.finance.models import Category, Debt, Transaction
 
 MULTI_INTS = ("account", "category", "counterparty", "member", "branch", "debt", "project")
 
@@ -100,6 +100,8 @@ def transaction_filters(params) -> dict:
         "max": amount(params, "max"),
         "has_receipt": boolean(params, "has_receipt"),
         "source_type": _first(params, "source_type") or None,
+        # A P&L line: what the overview's "Income/Expenses this month" add up.
+        "pnl": (choices(params, "pnl", Category.Kind.values) or [None])[0],
     }
     for key in MULTI_INTS:
         filters[key] = ints(params, key)

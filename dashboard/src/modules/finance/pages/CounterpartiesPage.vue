@@ -28,7 +28,7 @@ import { useCompanyStore } from "@/stores/company";
 
 import { useCounterparties } from "../api";
 import CounterpartyFormDialog from "../components/CounterpartyFormDialog.vue";
-import { isZeroMoney, PARTY_TONES } from "../lib";
+import { fitTags, isZeroMoney, PARTY_TONES } from "../lib";
 import type { Counterparty } from "../types";
 
 const { t } = useI18n();
@@ -55,14 +55,21 @@ const filtered = computed(() => kind.value !== "all" || owes.value !== "any" || 
 
 const columns = computed<TableColumn<Counterparty>[]>(() => [
   { id: "name", header: t("finance.parties.name"), minWidth: 230, sticky: true, hideable: false },
-  { id: "kind", header: t("finance.parties.kind"), width: 120, value: (row) => row.kind_label },
-  // A full "+998 90 123 45 67" fits; the widths still leave the name its 230 px on a 1440 screen.
-  { id: "phone", header: t("finance.parties.phone"), width: 168, format: (value) => formatPhone(String(value ?? "")) || "—" },
+  // A full "+998 90 123 45 67", "Yetkazib beruvchi" and "Последнее движение" fit; the widths
+  // still leave the name its 230 px on a 1440 screen.
+  { id: "kind", header: t("finance.parties.kind"), width: 136, value: (row) => row.kind_label },
+  { id: "phone", header: t("finance.parties.phone"), width: 156, format: (value) => formatPhone(String(value ?? "")) || "—" },
   { id: "owes_us", header: t("finance.parties.owesUs"), numeric: true, width: 150 },
   { id: "we_owe", header: t("finance.parties.weOwe"), numeric: true, width: 140 },
-  { id: "last_activity", header: t("finance.parties.lastActivity"), width: 136, format: (value) => (value ? fmt.day(String(value), "short") : "—") },
-  { id: "tags", header: t("finance.parties.tags"), width: 136, value: (row) => row.tags.join(", ") },
+  { id: "last_activity", header: t("finance.parties.lastActivity"), width: 160, format: (value) => (value ? fmt.day(String(value), "short") : "—") },
+  { id: "tags", header: t("finance.parties.tags"), width: 132, value: (row) => row.tags.join(", ") },
 ]);
+
+/** "Shuhrat Karimov · STIR 305112874": the contact and the tax number, in the page's language. */
+const partyLine = (row: Counterparty) => [row.contact_person, row.tin ? t("finance.parties.tinShort", { tin: row.tin }) : ""].filter(Boolean).join(" · ");
+
+/** The tags that fit the 132 px column on one line (about 14 letters). */
+const fittingTags = (tags: readonly string[]) => fitTags(tags, 14);
 
 /** "Rustam Qodirov (ijara)" → initials of the name, not of the note in brackets. */
 const avatarName = (name: string) => name.replace(/\s*[(\[].*$/, "") || name;
@@ -137,7 +144,7 @@ const formOpen = ref(false);
           <UserAvatar :name="avatarName(row.name)" :size="30" shape="rounded" />
           <div class="min-w-0">
             <p class="truncate text-base font-medium text-fg" :title="row.name">{{ row.name }}</p>
-            <p class="truncate text-xs text-muted" :title="[row.contact_person, row.tin ? `INN ${row.tin}` : ''].filter(Boolean).join(' · ') || undefined">{{ [row.contact_person, row.tin ? `INN ${row.tin}` : ""].filter(Boolean).join(" · ") || row.kind_label }}</p>
+            <p class="truncate text-xs text-muted" :title="partyLine(row) || undefined">{{ partyLine(row) || row.kind_label }}</p>
           </div>
         </div>
       </template>
@@ -151,8 +158,10 @@ const formOpen = ref(false);
         <MoneyCell v-else :value="row.we_owe" :colored="false" strong />
       </template>
       <template #cell-tags="{ row }">
-        <span class="flex flex-wrap gap-1">
-          <span v-for="tag in row.tags.slice(0, 3)" :key="tag" class="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted">{{ tag }}</span>
+        <!-- One line, so a row keeps its height: the tags that fit, "+N" for the rest (all in the tooltip). -->
+        <span class="flex min-w-0 gap-1 overflow-hidden" :title="row.tags.join(', ') || undefined">
+          <span v-for="tag in fittingTags(row.tags).shown" :key="tag" class="shrink-0 whitespace-nowrap rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted">{{ tag }}</span>
+          <span v-if="fittingTags(row.tags).more" class="shrink-0 whitespace-nowrap rounded-full px-1 py-0.5 text-xs font-semibold text-subtle">+{{ fittingTags(row.tags).more }}</span>
         </span>
       </template>
       <template #card="{ row }">

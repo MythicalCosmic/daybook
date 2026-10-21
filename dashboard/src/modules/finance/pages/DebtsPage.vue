@@ -78,14 +78,14 @@ const tabs = computed(() => [
 const columns = computed<TableColumn<Debt>[]>(() => [
   { id: "party", header: direction.value === "receivable" ? t("finance.debts.whoOwes") : t("finance.debts.whomWeOwe"), minWidth: 200, sticky: true, hideable: false, value: (row) => row.party?.name ?? "" },
   // Fixed widths leave the name column room on a 1440 px screen in every language (Russian runs
-  // widest); "Due" fits "42 kun kechikkan" / "42 дня просрочки" under the date.
-  { id: "kind", header: t("finance.debts.kind"), width: 132, value: (row) => t(`finance.debtKind.${row.kind}`) },
+  // widest): "Аванс по зарплате" fits, and "Due" fits "42 kun kechikkan" under the date.
+  { id: "kind", header: t("finance.debts.kind"), width: 150, value: (row) => t(`finance.debtKind.${row.kind}`) },
   { id: "issued_on", header: t("finance.debts.issued"), width: 82, format: (value) => fmt.day(String(value), dayStyle(String(value))) },
   { id: "due_on", header: t("finance.debts.due"), width: 136, value: (row) => row.due_on ?? "" },
   { id: "amount", header: t("finance.debts.amount"), numeric: true, width: 128, value: (row) => row.amount },
   { id: "progress", header: t("finance.debts.paid"), width: 100, value: (row) => row.paid },
   { id: "outstanding", header: t("finance.debts.left"), numeric: true, width: 128, value: (row) => row.outstanding },
-  { id: "branch", header: t("finance.field.branch"), width: 72, value: (row) => row.branch?.name ?? "" },
+  { id: "branch", header: t("finance.field.branch"), width: 84, value: (row) => row.branch?.name ?? "" },
   { id: "status", header: t("finance.filter.status"), width: 100, value: (row) => row.status },
 ]);
 

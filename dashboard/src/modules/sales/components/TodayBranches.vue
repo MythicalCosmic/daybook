@@ -54,10 +54,15 @@ const link = (branch: BranchTodaySales) => ({ path: `/c/${company.currentId}/sal
 <template>
   <div>
     <div v-if="skeleton" class="grid gap-3 md:grid-cols-2">
+      <!-- Shaped like a loaded card (name, status, till, cash and month bars) so nothing jumps. -->
       <div v-for="n in 2" :key="n" class="ui-card flex flex-col gap-3 p-4">
         <SkeletonBlock width="40%" height="16px" />
         <SkeletonBlock width="55%" height="22px" radius="999px" />
-        <SkeletonBlock height="44px" radius="10px" />
+        <SkeletonBlock height="50px" radius="10px" />
+        <div class="mt-1 grid grid-cols-2 gap-4 border-t border-line pt-3">
+          <SkeletonBlock height="38px" />
+          <SkeletonBlock height="38px" />
+        </div>
       </div>
     </div>
     <ErrorState v-else-if="query.isError.value" compact :error="query.error.value" :retry="() => query.refetch()" />

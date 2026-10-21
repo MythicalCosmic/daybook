@@ -23,7 +23,7 @@ import TransactionDrawer from "../components/TransactionDrawer.vue";
 import PnlTable from "../components/reports/PnlTable.vue";
 import en from "../i18n/en.json";
 import module from "../index";
-import { baseTotal, colorFor, dayStyle, distinctColors, dropEmptyCompare, pickerOrder, topAccounts, trimLeadingEmpty, trimLeadingPeriods } from "../lib";
+import { baseTotal, colorFor, dayStyle, distinctColors, dropEmptyCompare, fitTags, pickerOrder, topAccounts, trimLeadingEmpty, trimLeadingPeriods } from "../lib";
 import type { Options, Pnl, PnlNode, Transaction, TransactionPage } from "../types";
 
 interface Call {
@@ -260,6 +260,13 @@ describe("lib", () => {
     expect(topAccounts(accounts, 4).map((a) => a.id)).toEqual([2, 3, 4, 5]);
   });
 
+  it("shows the tags that fit one line and counts the rest", () => {
+    expect(fitTags(["ulgurji", "nasiya"], 14)).toEqual({ shown: ["ulgurji", "nasiya"], more: 0 });
+    expect(fitTags(["ichimlik", "har hafta"], 14)).toEqual({ shown: ["ichimlik"], more: 1 });
+    expect(fitTags(["a very long tag indeed"], 14)).toEqual({ shown: ["a very long tag indeed"], more: 0 });
+    expect(fitTags([], 14)).toEqual({ shown: [], more: 0 });
+  });
+
   it("adds a group of accounts up in the base currency, or not at all without a value", () => {
     const rows = [
       { currency: "UZS", balance: "1360000.00", base: "1360000.00" },
@@ -279,6 +286,10 @@ describe("PnlTable", () => {
     const { wrapper } = mountWithProviders(PnlTable, { plugins: app.plugins, props: { data } });
     expect(wrapper.text()).toContain("Category 1");
     expect(wrapper.text()).not.toContain("Category 11");
+    // The currency is said once in the header; the cells are bare numbers.
+    expect(wrapper.find('[data-testid="pnl-unit"]').text()).toBe("(UZS)");
+    expect(wrapper.text()).toContain("900,000");
+    expect(wrapper.text().match(/UZS/g)).toHaveLength(1);
     const toggle = wrapper.find('button[aria-expanded="false"]');
     await toggle.trigger("click");
     expect(wrapper.text()).toContain("Category 11");
@@ -443,6 +454,51 @@ describe("useCategorize", () => {
     await pending;
     await flushPromises();
     expect(client.getQueryData<TransactionPage>(key)?.results[0]?.category?.id).toBe(4);
+  });
+});
+
+describe("FinanceOverviewPage", () => {
+  it("opens the P&L line behind the income and expense tiles, and lists the biggest accounts", async () => {
+    const account = (id: number, name: string, balance: string) => ({ id, name, kind: "cash", currency: "UZS", branch_id: 1, balance, base: balance });
+    const side = { total: "0.00", overdue: "0.00", count: 0, overdue_count: 0 };
+    stub({
+      "GET overview/": () =>
+        json({
+          currency: "UZS",
+          today: "2026-10-21",
+          cash: {
+            on: "2026-10-21",
+            currency: "UZS",
+            total: "924360000.00",
+            complete: true,
+            by_currency: [{ currency: "UZS", amount: "924360000.00", base: "924360000.00" }],
+            accounts: [account(1, "Empty till", "0.00"), account(2, "Kapitalbank", "923000000.00"), account(3, "Kassa", "1360000.00")],
+            rate: { rate: "12168.15", stale: false, source: "cbu" },
+          },
+          month: { from: "2026-10-01", to: "2026-10-21", income: "1231997387.50", expense: "673475930.00", profit: "558521457.50", previous: { from: "2026-09-01", to: "2026-09-21", income: "0.00", expense: "0.00", profit: "0.00" } },
+          receivable: side,
+          payable: side,
+          due_soon: [],
+          pending: { count: 0, total: "0.00" },
+          top_expenses: [],
+          negative_accounts: [],
+          rate: { rate: "12168.15", stale: false, source: "cbu" },
+          has_ledger: true,
+          locked_until: null,
+        }),
+      "GET reports/cash-flow/": () => json({ series: [], totals: { income: "0.00", expense: "0.00", net: "0.00" } }),
+    });
+    const FinanceOverviewPage = (await import("../pages/FinanceOverviewPage.vue")).default;
+    const app = await testApp("/c/1/finance");
+    mountWithProviders(FinanceOverviewPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    const hrefs = [...document.querySelectorAll("a")].map((a) => a.getAttribute("href") ?? "");
+    expect(hrefs).toContain("/c/1/finance/transactions?pnl=income&from=2026-10-01&to=2026-10-21");
+    expect(hrefs).toContain("/c/1/finance/transactions?pnl=expense&from=2026-10-01&to=2026-10-21");
+    // The accounts card starts with where the money is; the empty till comes last.
+    const accounts = hrefs.filter((href) => /\/finance\/accounts\/\d+$/.test(href));
+    expect(accounts).toEqual(["/c/1/finance/accounts/2", "/c/1/finance/accounts/3", "/c/1/finance/accounts/1"]);
   });
 });
 

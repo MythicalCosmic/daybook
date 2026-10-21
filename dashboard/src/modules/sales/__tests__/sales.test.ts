@@ -3,6 +3,7 @@ import "@/core/modules";
 
 import { flushPromises } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { defineComponent, h, ref } from "vue";
 
 import { ensureModuleMessages } from "@/i18n";
 import { json } from "@/test/fixtures";
@@ -244,6 +245,32 @@ function options(mode: "shift_totals" | "receipts" = "shift_totals") {
     accounts: [],
   };
 }
+
+describe("MovementDialog", () => {
+  it("names each till with its branch, since every branch has a Kassa 1", async () => {
+    stub({
+      "GET sales/options/": () =>
+        json({
+          ...options(),
+          registers: [
+            { id: 5, name: "Kassa 1", branch_id: 1, branch: "Chilonzor", is_active: true },
+            { id: 6, name: "Kassa 1", branch_id: 2, branch: "Yunusobod", is_active: true },
+          ],
+        }),
+    });
+    const MovementDialog = (await import("../components/MovementDialog.vue")).default;
+    const app = await testApp("/c/1/sales/cash");
+    await ensureModuleMessages(salesModule);
+    const open = ref(false);
+    const Host = defineComponent({ setup: () => () => h(MovementDialog, { open: open.value, "onUpdate:open": (value: boolean) => (open.value = value) }) });
+    mountWithProviders(Host, { plugins: app.plugins });
+    await flushPromises();
+    open.value = true; // opening picks the first till
+    await flushPromises();
+    await flushPromises();
+    expect(document.body.textContent).toContain("Chilonzor · Kassa 1");
+  });
+});
 
 describe("ShiftsPage", () => {
   const row = (extra: Record<string, unknown>) => ({

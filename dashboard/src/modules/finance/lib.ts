@@ -174,6 +174,21 @@ export function distinctColors(rows: ReadonlyArray<{ id: number; color?: string 
   });
 }
 
+/**
+ * The tags a one-line cell shows: in order while they fit about `letters` letters (the first
+ * always), and how many more there are, for a "+N".
+ */
+export function fitTags(tags: readonly string[], letters: number): { shown: string[]; more: number } {
+  const shown: string[] = [];
+  let used = 0;
+  for (const tag of tags) {
+    if (shown.length && used + tag.length > letters) break;
+    shown.push(tag);
+    used += tag.length;
+  }
+  return { shown, more: tags.length - shown.length };
+}
+
 /** Counterparty kinds as pills, the same on the list and on a counterparty's page. */
 export const PARTY_TONES: Record<CounterpartyKind, StatusTone> = { customer: "success", supplier: "info", both: "primary", state: "warning", other: "neutral" };
 
