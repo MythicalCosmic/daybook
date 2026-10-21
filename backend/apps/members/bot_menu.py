@@ -6,9 +6,11 @@
 
 `msgid` is the untranslated label (the bot matches incoming text against every translation of
 it, apps.members.bot_messages and bot.filters.menu.MenuButton); `visible(member)` decides per
-person; `web_app_screen` makes it open that screen of the mini app (`?screen=<screen>`)
-instead of sending the text to the bot. Buttons appear after "My tasks" and "New task", two
-per row, by `order`.
+person; with `web_app_screen` the bot answers the button with an inline button that opens that
+screen of the mini app (`?screen=<screen>`) when the app is configured, and the module's own
+handler gets the text otherwise. (A keyboard button can't open the app itself: Telegram gives
+such a Mini App no initData, so it couldn't sign the person in.) Buttons appear after "My
+tasks" and "New task", two per row, by `order`.
 """
 
 import logging
