@@ -59,8 +59,8 @@ PAY = {
     "gulnora": 4_800_000,
     "shahzoda": 4_700_000,
     "kamola": 4_500_000,
-    "nigora": 6_500_000,
-    "dilshod": 6_400_000,
+    "nigora": 7_000_000,
+    "dilshod": 6_800_000,
     "jasur": 3_500_000,
     "otabek": 4_500_000,
     "aziza": 6_000_000,
@@ -651,6 +651,15 @@ class Ledger:
         """What happens on fixed days of the month."""
         rng = self.rng
         if day.day == 1:
+            services.transfer(
+                self.company,
+                by=self.owner,
+                from_account=self.bank,
+                to_account=self.card,
+                amount_out=D("2000000"),
+                occurred_on=day,
+                description="Biznes kartani to‘ldirish",
+            )
             services.record_transaction(
                 self.company,
                 by=self.owner,
@@ -818,7 +827,7 @@ class Ledger:
             account=self.bank,
         )
         on_credit("rahima", "620000", 17, -3, category=self.cat["retail"])
-        botir = on_credit("botir", "380000", 9, 6, category=self.cat["retail"])
+        botir = on_credit("botir", "380000", 16, -2, category=self.cat["retail"])
         services.pay_debt(
             botir, by=by, amount=D("180000"), paid_on=today - timedelta(days=3), account=self.bank
         )
@@ -914,7 +923,7 @@ class Ledger:
         )
         mistake = self.expense(
             today - timedelta(days=3),
-            self.card,
+            self.bank,
             "420000",
             self.cat["internet"],
             counterparty=self.party["internet"],

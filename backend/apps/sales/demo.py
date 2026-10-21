@@ -111,12 +111,13 @@ def seed(company, people, now) -> None:
         {s.opener.pk: s.opener for s in sessions} | {s.closer.pk: s.closer for s in sessions},
     )
 
+    # The last day session that closed keeps its handover waiting for the owner.
+    closed = [s for s in sessions if s.closes <= now - timedelta(minutes=5)]
+    pending = max((s for s in closed if not s.night), key=lambda s: s.closes, default=None)
     shifts = []
-    for session in sessions:
+    for session in closed:
         back = (story.today - session.day).days
-        if session.closes > now - timedelta(minutes=5):
-            continue  # under way: opened below
-        story_kind = _story(back, session)
+        story_kind = "pending" if session is pending else _story(back, session)
         with _quiet_alerts(back):
             shift = _history_shift(
                 company,
@@ -260,8 +261,6 @@ def _verifier(story, session) -> Membership:
 def _story(back: int, session: Session) -> str:
     """Fixed events on fixed days back, so the demo always tells the same story."""
     yns, night = session.code == "Y", session.night
-    if yns and not night and back == 1:
-        return "pending"
     if yns and not night and back == 9:
         return "dispute"
     if not yns and back == 16:

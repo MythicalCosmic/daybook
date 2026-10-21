@@ -278,7 +278,8 @@ def test_demo(company, demo_people):
 
     demo.seed(company, people, timezone.now())
 
-    assert Holiday.objects.filter(company=company, name="Navro‘z bayrami").exists()
+    # Pharmacies work on public holidays: the pharmacy has none.
+    assert not Holiday.objects.filter(company=company).exists()
     statuses = set(TimeOff.objects.filter(company=company).values_list("status", flat=True))
     assert {"approved", "pending", "rejected"} <= statuses
     assert TimeOff.objects.filter(company=company, recorded_by__isnull=False).exists()

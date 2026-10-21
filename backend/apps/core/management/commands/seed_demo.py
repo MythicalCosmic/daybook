@@ -658,7 +658,7 @@ class Command(BaseCommand):
         Task.objects.filter(pk=showcase.pk).update(created_at=given)
         # Everything else Alisher has today was made at midnight, like daily generation.
         Task.objects.filter(company=company, assignee=me, for_date=today).update(
-            created_at=min(now, at(0, 5))
+            created_at=min(now - timedelta(minutes=10), at(0, 5))
         )
 
     def _build_distributor(self, now, *, owner: User) -> tuple[Company, dict[str, Membership]]:

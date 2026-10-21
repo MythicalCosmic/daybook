@@ -776,7 +776,7 @@ def _expenses(company, sergeli, gpp, diabetes, owner, *, today: date) -> None:
         company,
         by=owner,
         kind="owner",
-        amount=Decimal("100000000"),
+        amount=Decimal("150000000"),
         account=account,
         occurred_on=today - timedelta(days=50),
         description="Ta’sischi Sergeli dorixonasi va tadbirlar uchun mablag‘ kiritdi",

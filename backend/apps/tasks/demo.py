@@ -396,7 +396,7 @@ def _today(company, story, plan, now, rng) -> None:
     generation: done by now when their time has passed, except Alisher's morning fridge reading
     and the courier's deliveries, which run late. The core demo's own tasks stay as they are."""
     today = story.today
-    start_of_day = min(now, story.at(today, time(0, 5)))
+    start_of_day = min(now - timedelta(minutes=10), story.at(today, time(0, 5)))
     for template, key, _on_time, _missed in plan:
         member = story.member(key)
         if not template.is_due_on(today) or not story.works(key, today):
@@ -667,7 +667,8 @@ def _given(company, story, people, now, rng, strict) -> None:
         due_at=story.at(own_day, time(17, 0)),
         branch=manager.home_branch,
     )
-    Task.objects.filter(pk=own.pk).update(created_at=min(now, story.at(own_day, time(9, 10))))
+    noted = min(now - timedelta(hours=2), story.at(own_day, time(9, 10)))
+    Task.objects.filter(pk=own.pk).update(created_at=noted)
 
     # A heads-up before a fridge reading, and the person who blocked the bot two days ago.
     first_reading = (

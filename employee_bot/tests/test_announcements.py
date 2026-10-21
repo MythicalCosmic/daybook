@@ -31,7 +31,7 @@ def labels(markup) -> list[str]:
 
 async def test_a_manager_announces_to_one_position(dp, bot, company, member, sent_messages):
     cashier = await make_position(company=company, name="Cashier")
-    await make_position(company=company, name="Cook")
+    await make_position(company=company, name="Courier")
     manager = await member.aregistered(company, "Manager")
     reader = await member.aregistered(company, position=cashier, first_name="Ali")
     other = await member.aregistered(company)
@@ -45,7 +45,7 @@ async def test_a_manager_announces_to_one_position(dp, bot, company, member, sen
     assert "Inventory on Friday at 8:00." in preview.text
     assert labels(preview.reply_markup) == [
         "▫️ Cashier",
-        "▫️ Cook",
+        "▫️ Courier",
         "📤 Send to everyone",
         "✖️ Cancel",
     ]
@@ -56,7 +56,7 @@ async def test_a_manager_announces_to_one_position(dp, bot, company, member, sen
     [picked] = [r for r in bot.requests if isinstance(r, EditMessageReplyMarkup)]
     assert labels(picked.reply_markup)[:3] == [
         "✅ Cashier",
-        "▫️ Cook",
+        "▫️ Courier",
         "📤 Send to the chosen positions",
     ]
 

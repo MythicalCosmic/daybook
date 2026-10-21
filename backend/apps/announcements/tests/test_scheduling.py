@@ -22,7 +22,7 @@ def shop(company, member):
     chilonzor = company.branches.first()
     yunusobod = BranchFactory(company=company, name="Yunusobod")
     cashier = PositionFactory(company=company, name="Cashier")
-    cook = PositionFactory(company=company, name="Cook")
+    cook = PositionFactory(company=company, name="Courier")
 
     def person(name, branch, position):
         p = member.registered(company, first_name=name, position=position, home_branch=branch)

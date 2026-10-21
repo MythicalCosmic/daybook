@@ -98,20 +98,20 @@ def test_copy_keeps_positions_by_name_and_replaces_the_starter_shelf(
     target_owner = member(other_company, "Owner")
     defaults.ensure(other_company)  # the empty "Company handbook" a new company starts with
     cashier = Position.objects.create(company=company, name="Kassir")
-    cook = Position.objects.create(company=company, name="Oshpaz")
+    cook = Position.objects.create(company=company, name="Kuryer")
     their_cashier = Position.objects.create(company=other_company, name="Kassir")
     till = SpaceFactory(company=company, name="Kassa", audience_all=False, positions=[cashier])
-    kitchen = SpaceFactory(company=company, name="Oshxona", audience_all=False, positions=[cook])
+    kitchen = SpaceFactory(company=company, name="Yetkazish", audience_all=False, positions=[cook])
     PageFactory(space=till)
     PageFactory(space=kitchen)
 
     providers.copy_spaces(company, other_company, target_owner)
 
     copies = {space.name: space for space in Space.objects.filter(company=other_company)}
-    assert set(copies) == {"Kassa", "Oshxona"}  # the empty starter shelf made way
+    assert set(copies) == {"Kassa", "Yetkazish"}  # the empty starter shelf made way
     assert copies["Kassa"].audience_all is False
     assert list(copies["Kassa"].positions.all()) == [their_cashier]
-    assert copies["Oshxona"].audience_all is True  # no "Oshpaz" there: everyone reads it
+    assert copies["Yetkazish"].audience_all is True  # no "Kuryer" there: everyone reads it
 
 
 def test_copy_brings_pictures_along(company, other_company, owner, member):

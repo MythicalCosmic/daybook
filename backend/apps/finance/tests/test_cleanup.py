@@ -25,7 +25,7 @@ LEDGER = [Category, CompanyRate, Counterparty, Debt, MoneyAccount, Transaction, 
 
 @pytest.fixture
 def ledger(books, owner, cash, dollars, usd, day):
-    parent = CategoryFactory(company=books, name="Kitchen", kind="expense")
+    parent = CategoryFactory(company=books, name="Medicines", kind="expense")
     CategoryFactory(company=books, name="Gas", kind="expense", parent=parent)
     CompanyRateFactory(company=books, date=day)
     services.record_transaction(

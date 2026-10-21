@@ -163,7 +163,7 @@ def test_each_group_gets_the_report_for_its_positions(
 ):
     cashier = PositionFactory(company=company)
     work(member.registered(company, first_name="Kassir", position=cashier), manager, at(today, 10))
-    work(member.registered(company, first_name="Oshpaz"), manager, at(today, 11))
+    work(member.registered(company, first_name="Botir"), manager, at(today, 11))
     cashiers = TelegramGroupFactory(company=company, events=[GroupEvent.MORNING])
     cashiers.positions.add(cashier)
     everyone = TelegramGroupFactory(company=company, events=[GroupEvent.MORNING])
@@ -172,9 +172,9 @@ def test_each_group_gets_the_report_for_its_positions(
 
     by_group = {message["chat_id"]: message["text"] for message in sent_messages}
     assert "Kassir" in by_group[cashiers.chat_id]
-    assert "Oshpaz" not in by_group[cashiers.chat_id]
+    assert "Botir" not in by_group[cashiers.chat_id]
     assert "Kassir" in by_group[everyone.chat_id]
-    assert "Oshpaz" in by_group[everyone.chat_id]
+    assert "Botir" in by_group[everyone.chat_id]
 
 
 def test_a_group_whose_people_have_nothing_today_gets_no_plan(

@@ -87,7 +87,7 @@ def test_the_directory_lists_current_people_with_their_numbers(
 
 def test_filters_by_status_position_branch_and_search(owner_api, owner, company, member, branches):
     chilonzor, yunusobod = branches
-    cook = PositionFactory(company=company, name="Cook")
+    cook = PositionFactory(company=company, name="Courier")
     placed(member, company, chilonzor, first_name="Ali", position=cook)
     placed(member, company, yunusobod, first_name="Vali")
     member(company, status=Membership.Status.LEFT, first_name="Former")
@@ -191,7 +191,7 @@ def test_person_360_has_numbers_actions_and_upcoming_time_off(
 
 def test_editing_position_branches_and_home_branch(owner_api, owner, company, member, branches):
     chilonzor, yunusobod = branches
-    cook = PositionFactory(company=company, name="Cook")
+    cook = PositionFactory(company=company, name="Courier")
     worker = placed(member, company, chilonzor)
 
     response = owner_api(owner).patch(
@@ -211,7 +211,7 @@ def test_editing_position_branches_and_home_branch(owner_api, owner, company, me
     assert worker.home_branch == yunusobod
     row = AuditLog.objects.filter(target_type="membership", target_id=worker.pk).latest("pk")
     assert row.action == "members.changed"
-    assert row.details["changes"]["position"] == [None, "Cook"]
+    assert row.details["changes"]["position"] == [None, "Courier"]
 
 
 def test_a_home_branch_outside_the_branches_is_refused(owner_api, owner, company, member, branches):

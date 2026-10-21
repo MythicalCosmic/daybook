@@ -41,14 +41,14 @@ def world(company, other_company, member):
         "person": placed(company, first_name="Ali"),
         "request": _request(company, member),
         "role": AccessRoleFactory(company=company, name="Helpers", permissions=[]),
-        "position": PositionFactory(company=company, name="Cook"),
+        "position": PositionFactory(company=company, name="Courier"),
     }
     theirs = {
         "owner": placed(other_company, "Owner"),
         "person": placed(other_company),
         "request": _request(other_company, member),
         "role": AccessRoleFactory(company=other_company, name="Helpers", permissions=[]),
-        "position": PositionFactory(company=other_company, name="Cook"),
+        "position": PositionFactory(company=other_company, name="Courier"),
     }
     viewer_role = AccessRoleFactory(
         company=company, name="Viewer", permissions=[str(Perm.DASHBOARD_ACCESS)]
@@ -96,7 +96,7 @@ def endpoints(objects) -> list[tuple[str, str, dict]]:
         ("delete", f"roles/{role}/", {}),
         ("get", "positions/", {}),
         ("post", "positions/", {"name": "Baker"}),
-        ("patch", f"positions/{position}/", {"name": "Chef"}),
+        ("patch", f"positions/{position}/", {"name": "Senior courier"}),
         ("delete", f"positions/{position}/", {}),
         ("post", "positions/reorder/", {"ids": [position]}),
     ]

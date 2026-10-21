@@ -156,12 +156,12 @@ async def test_a_manager_chooses_what_the_group_gets(dp, bot, company, manager):
 async def test_a_manager_narrows_the_group_to_some_positions(dp, bot, company, manager):
     group = await make_group(company=company, chat_id=updates.GROUP_ID)
     cashier = await make_position(company=company, name="Cashier")
-    await make_position(company=company, name="Cook")
+    await make_position(company=company, name="Courier")
 
     await dp.feed_update(bot, updates.group_callback(tg(manager), press(GroupAction.WHO)))
 
     [picker] = [r for r in bot.requests if isinstance(r, EditMessageText)]
-    assert toggles(picker.reply_markup) == ["▫️ Cashier", "▫️ Cook", "⬅️ Back"]
+    assert toggles(picker.reply_markup) == ["▫️ Cashier", "▫️ Courier", "⬅️ Back"]
 
     await dp.feed_update(
         bot,
