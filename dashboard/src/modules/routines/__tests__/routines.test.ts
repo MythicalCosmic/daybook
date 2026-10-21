@@ -504,3 +504,46 @@ describe("routine work", () => {
     wrapper.unmount();
   });
 });
+
+describe("Today opened from History", () => {
+  it("shows one routine of that day and counts only it", async () => {
+    const counts = { done: 1, review: 1, late: 0, missed: 1, returned: 0, open: 0, cancelled: 0, skipped: 0 };
+    const row = (id: number, title: string, finished: number, total: number) => ({
+      routine: { id, title, due_time: "09:00", branch: null, proof: "none", needs_confirmation: false, is_active: true },
+      due_at: "2026-10-20T04:00:00Z",
+      reason: null,
+      next_run: null,
+      give: null,
+      progress: { finished, total, percent: Math.round((100 * finished) / total) },
+      counts,
+      runs: [],
+      skipped: [],
+    });
+    const calls = stub({
+      "GET tasks/options/": () => json(options),
+      "GET routines/day/": () =>
+        json({
+          day: "2026-10-20",
+          holiday: false,
+          idle: 0,
+          totals: { ...counts, done: 5, total: 10, finished: 6, routines: 2 },
+          routines: [row(4, "Kassani ochish", 2, 3), row(5, "Muzlatgich haroratini yozish", 4, 7)],
+        }),
+    });
+    const app = await testApp("/c/1/routines?day=2026-10-20&routine=4");
+    for (const name of ["routines.today", "routines.history", "routines.confirm", "routines.list", "routines.onboarding", "routines.detail"]) {
+      app.router.addRoute({ path: `/named/${name}/:id?`, name, component: { render: () => null } });
+    }
+    const { default: TodayPage } = await import("../pages/TodayPage.vue");
+    const { wrapper } = mountWithProviders(TodayPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(calls.find((c) => c.url.includes("routines/day/"))?.url).toContain("day=2026-10-20");
+    const text = document.body.textContent ?? "";
+    expect(text).toContain("Only “Kassani ochish”");
+    expect(text).not.toContain("Muzlatgich haroratini yozish");
+    expect(text).toContain("2 / 3");
+    expect(text).not.toContain("6 / 10");
+    wrapper.unmount();
+  });
+});

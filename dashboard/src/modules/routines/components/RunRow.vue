@@ -12,6 +12,7 @@ import IconButton from "@/components/IconButton.vue";
 import ProofThumb from "@/components/ProofThumb.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { useFormat } from "@/lib/useFormat";
+import { useCompanyStore } from "@/stores/company";
 
 import { RUN_LOOK, runText } from "../lib";
 import type { RoutineRun } from "../types";
@@ -21,6 +22,7 @@ const emit = defineEmits<{ confirm: [run: RoutineRun]; sendBack: [run: RoutineRu
 
 const { t } = useI18n();
 const fmt = useFormat();
+const company = useCompanyStore();
 const look = computed(() => RUN_LOOK[props.run.state]);
 const text = computed(() => runText(props.run, t, (iso) => fmt.instant(iso, "time")));
 const tone = computed(
@@ -48,7 +50,8 @@ const caption = computed(() => `${props.run.member.name} · ${props.title}${prop
   >
     <UserAvatar :name="run.member.name" :src="run.member.photo_url" :size="32" />
     <div class="min-w-0 flex-1">
-      <p class="truncate text-sm font-medium text-fg" :title="run.member.name">{{ run.member.name }}</p>
+      <!-- The task itself (checklist, comments, timeline) opens in Tasks; Back returns here. -->
+      <RouterLink :to="`/c/${company.currentId}/tasks?task=${run.id}&routines=1`" class="block truncate text-sm font-medium text-fg hover:underline" :title="t('routines.today.openTask', { name: run.member.name })">{{ run.member.name }}</RouterLink>
       <p :class="['mt-0.5 flex min-w-0 items-center gap-1 text-xs font-medium tabular-nums', tone]">
         <component :is="look.icon" :size="12" class="shrink-0" aria-hidden="true" />
         <span class="truncate" :title="text">{{ text }}</span>

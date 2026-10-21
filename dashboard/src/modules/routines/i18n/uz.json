@@ -210,6 +210,7 @@
   "routines.today.progress": "{done}/{total} bajarildi",
   "routines.today.showAll": "Hammasini ko‘rsatish ({n})",
   "routines.today.skipped": "Berilmadi",
+  "routines.today.openTask": "{name}ning vazifasini ochish",
   "routines.runState.done": "Bajarildi {time}",
   "routines.runState.doneLate": "Bajarildi {time} · kechikib",
   "routines.runState.review": "Tasdiq kutmoqda · {time}",

@@ -210,6 +210,7 @@
   "routines.today.progress": "{done}/{total} done",
   "routines.today.showAll": "Show all {n}",
   "routines.today.skipped": "Skipped",
+  "routines.today.openTask": "Open {name}'s task",
   "routines.runState.done": "Done {time}",
   "routines.runState.doneLate": "Done {time} · late",
   "routines.runState.review": "Waiting · done {time}",
