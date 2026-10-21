@@ -4,4 +4,11 @@ Read by file path when the settings load: import only the standard library and
 `celery.schedules`. Keys must be unique across apps (duplicates stop the settings).
 """
 
-SCHEDULE = {}
+from celery.schedules import crontab
+
+SCHEDULE = {
+    "knowledge-remind-unread": {
+        "task": "apps.knowledge.tasks.remind_unread",
+        "schedule": crontab(minute=25),
+    },
+}

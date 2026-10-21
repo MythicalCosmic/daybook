@@ -1,0 +1,377 @@
+/* Page bodies: the reading view and the editor share these rules, so a page looks the same while it
+   is written and once it is published. Only design tokens; sizes from the type scale. */
+
+.kb-prose {
+  color: var(--c-text);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.kb-prose > :first-child {
+  margin-top: 0;
+}
+
+.kb-prose > :last-child {
+  margin-bottom: 0;
+}
+
+.kb-prose p {
+  margin: 0 0 0.85em;
+}
+
+.kb-prose h1,
+.kb-prose h2,
+.kb-prose h3,
+.kb-prose h4 {
+  color: var(--c-text);
+  font-weight: 650;
+  letter-spacing: -0.012em;
+  line-height: 1.3;
+  scroll-margin-top: 80px;
+}
+
+.kb-prose h1 {
+  font-size: var(--text-xl);
+  margin: 1.6em 0 0.6em;
+}
+
+.kb-prose h2 {
+  font-size: var(--text-lg);
+  margin: 1.5em 0 0.55em;
+}
+
+.kb-prose h3 {
+  font-size: var(--text-md);
+  margin: 1.35em 0 0.45em;
+}
+
+.kb-prose h4 {
+  font-size: var(--text-base);
+  margin: 1.2em 0 0.4em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--c-muted);
+}
+
+.kb-prose strong,
+.kb-prose b {
+  font-weight: 650;
+}
+
+.kb-prose a {
+  color: var(--c-accent-fg);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--c-primary) 45%, transparent);
+  text-underline-offset: 3px;
+}
+
+.kb-prose a:hover {
+  text-decoration-color: var(--c-primary);
+}
+
+.kb-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: 5px;
+  padding: 0.1em 0.35em;
+}
+
+.kb-prose pre {
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-card);
+  padding: 0.9em 1.1em;
+  margin: 0 0 1em;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.kb-prose pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+}
+
+.kb-prose blockquote {
+  margin: 0 0 1em;
+  padding: 0.2em 0 0.2em 1em;
+  border-left: 3px solid var(--c-border-strong);
+  color: var(--c-muted);
+  font-style: italic;
+}
+
+.kb-prose blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+.kb-prose hr {
+  border: 0;
+  border-top: 1px solid var(--c-border);
+  margin: 1.8em 0;
+}
+
+.kb-prose ul,
+.kb-prose ol {
+  margin: 0 0 1em;
+  padding-left: 1.4em;
+}
+
+.kb-prose ul {
+  list-style: disc;
+}
+
+.kb-prose ol {
+  list-style: decimal;
+}
+
+.kb-prose li {
+  margin: 0.2em 0;
+}
+
+.kb-prose li > p {
+  margin: 0;
+}
+
+.kb-prose li::marker {
+  color: var(--c-subtle);
+}
+
+/* Checklists */
+.kb-prose ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0.1em;
+}
+
+.kb-prose ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6em;
+  margin: 0.3em 0;
+}
+
+.kb-prose ul[data-type="taskList"] li > label {
+  flex: none;
+  display: inline-flex;
+  margin-top: 0.3em;
+  user-select: none;
+}
+
+.kb-prose ul[data-type="taskList"] li > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.kb-prose ul[data-type="taskList"] input[type="checkbox"] {
+  appearance: none;
+  width: 1.05em;
+  height: 1.05em;
+  border-radius: 5px;
+  border: 1.5px solid var(--c-border-strong);
+  background: var(--c-surface);
+  display: grid;
+  place-content: center;
+  cursor: pointer;
+  transition: background var(--dur-press, 120ms) ease, border-color var(--dur-press, 120ms) ease;
+}
+
+.kb-prose ul[data-type="taskList"] input[type="checkbox"]:checked {
+  background: var(--c-success);
+  border-color: var(--c-success);
+}
+
+.kb-prose ul[data-type="taskList"] input[type="checkbox"]:checked::after {
+  content: "";
+  width: 0.55em;
+  height: 0.3em;
+  border-left: 2px solid var(--c-surface);
+  border-bottom: 2px solid var(--c-surface);
+  transform: translateY(-0.05em) rotate(-45deg);
+}
+
+.kb-prose ul[data-type="taskList"] input[type="checkbox"]:disabled {
+  cursor: default;
+}
+
+.kb-prose ul[data-type="taskList"] li[data-checked="true"] > div {
+  color: var(--c-muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--c-border-strong);
+}
+
+/* Callouts */
+.kb-prose div[data-callout] {
+  --callout: var(--c-info);
+  --callout-soft: var(--c-info-soft);
+  position: relative;
+  margin: 0 0 1em;
+  padding: 0.8em 1em 0.8em 2.85em;
+  border-radius: var(--r-card);
+  background: var(--callout-soft);
+  border: 1px solid color-mix(in srgb, var(--callout) 22%, transparent);
+}
+
+.kb-prose div[data-callout]::before {
+  content: "i";
+  position: absolute;
+  left: 0.95em;
+  top: 0.95em;
+  width: 1.25em;
+  height: 1.25em;
+  border-radius: 999px;
+  background: var(--callout);
+  color: var(--c-surface);
+  font-size: 0.8em;
+  font-weight: 700;
+  font-style: normal;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
+.kb-prose div[data-callout] > :last-child {
+  margin-bottom: 0;
+}
+
+.kb-prose div[data-callout="success"] {
+  --callout: var(--c-success);
+  --callout-soft: var(--c-success-soft);
+}
+
+.kb-prose div[data-callout="success"]::before {
+  content: "✓";
+}
+
+.kb-prose div[data-callout="warning"] {
+  --callout: var(--c-warning);
+  --callout-soft: var(--c-warning-soft);
+}
+
+.kb-prose div[data-callout="warning"]::before {
+  content: "!";
+}
+
+.kb-prose div[data-callout="danger"] {
+  --callout: var(--c-danger);
+  --callout-soft: var(--c-danger-soft);
+}
+
+.kb-prose div[data-callout="danger"]::before {
+  content: "!";
+}
+
+.kb-prose div[data-callout="note"] {
+  --callout: var(--c-muted);
+  --callout-soft: var(--c-surface-2);
+}
+
+.kb-prose div[data-callout="note"]::before {
+  content: "✎";
+}
+
+/* Tables */
+.kb-prose .tableWrapper,
+.kb-prose table {
+  margin: 0 0 1.1em;
+}
+
+.kb-prose .tableWrapper {
+  overflow-x: auto;
+}
+
+.kb-prose table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-card);
+  overflow: hidden;
+  font-size: 0.875rem;
+  table-layout: auto;
+}
+
+.kb-prose th,
+.kb-prose td {
+  border-bottom: 1px solid var(--c-border);
+  border-right: 1px solid var(--c-border);
+  padding: 0.55em 0.8em;
+  text-align: left;
+  vertical-align: top;
+  min-width: 4em;
+  position: relative;
+}
+
+.kb-prose tr > :last-child {
+  border-right: 0;
+}
+
+.kb-prose tr:last-child > td,
+.kb-prose tr:last-child > th {
+  border-bottom: 0;
+}
+
+.kb-prose th {
+  background: var(--c-surface-2);
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.kb-prose td > p,
+.kb-prose th > p {
+  margin: 0;
+}
+
+.kb-prose .selectedCell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--c-primary) 12%, transparent);
+  pointer-events: none;
+}
+
+/* Pictures */
+.kb-prose img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.4em 0 1.1em;
+  border-radius: var(--r-card);
+  border: 1px solid var(--c-border);
+  background: var(--c-surface-2);
+}
+
+.kb-prose img.ProseMirror-selectednode {
+  outline: 2px solid var(--c-ring);
+  outline-offset: 2px;
+}
+
+/* Editor only */
+.kb-editor .ProseMirror {
+  outline: none;
+  min-height: 360px;
+  padding-bottom: 120px;
+}
+
+.kb-editor .ProseMirror p.is-editor-empty:first-child::before,
+.kb-editor .ProseMirror .is-empty::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--c-subtle);
+  pointer-events: none;
+}
+
+.kb-editor .ProseMirror-gapcursor::after {
+  border-top-color: var(--c-text);
+}
+
+.kb-editor .ProseMirror ::selection {
+  background: color-mix(in srgb, var(--c-primary) 24%, transparent);
+}
+
+.kb-editor .ProseMirror div[data-callout] {
+  cursor: text;
+}

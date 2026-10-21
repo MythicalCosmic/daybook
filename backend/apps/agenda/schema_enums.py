@@ -5,4 +5,9 @@ Read by file path when the settings load: name choices with an import string, e.
 app label in PascalCase and must be unique (duplicates stop the settings).
 """
 
-ENUM_NAME_OVERRIDES = {}
+ENUM_NAME_OVERRIDES = {
+    "AgendaEventKindEnum": "apps.agenda.models.Event.Kind",
+    "AgendaEventVisibilityEnum": "apps.agenda.models.Event.Visibility",
+    "AgendaEventRepeatEnum": "apps.agenda.models.Event.Repeat",
+    "AgendaAttendeeResponseEnum": "apps.agenda.models.EventAttendee.Response",
+}
