@@ -15,7 +15,7 @@ import { iconForKind } from "@/components/kindIcons";
 import RelativeTime from "@/components/RelativeTime.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import WidgetCard from "@/components/WidgetCard.vue";
-import { useDelayedPending } from "@/lib/useDelayedPending";
+import { useWidgetSkeleton } from "@/components/widgetSkeleton";
 
 import { useQueue } from "../api";
 import { queueKey } from "../types";
@@ -24,7 +24,7 @@ const props = defineProps<{ companyId: number; range?: Range; compare?: Range | 
 
 const { t } = useI18n();
 const queue = useQueue(null);
-const skeleton = useDelayedPending(computed(() => queue.isPending.value));
+const skeleton = useWidgetSkeleton(() => queue.isPending.value);
 // The queue comes oldest first: the ones that have waited longest (the card scrolls past five).
 const items = computed(() => (queue.data.value?.items ?? []).slice(0, 8));
 const rest = computed(() => Math.max(0, (queue.data.value?.total ?? 0) - items.value.length));

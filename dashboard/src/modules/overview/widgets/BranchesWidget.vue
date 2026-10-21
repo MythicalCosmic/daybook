@@ -16,8 +16,8 @@ import MoneyText from "@/components/MoneyText.vue";
 import ProgressRing from "@/components/ProgressRing.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import StatusPill, { type StatusTone } from "@/components/StatusPill.vue";
+import { useWidgetSkeleton } from "@/components/widgetSkeleton";
 import { zonedNow } from "@/lib/dates";
-import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { useNow } from "@/lib/useNow";
 import { useCompanyStore } from "@/stores/company";
@@ -31,7 +31,7 @@ const fmt = useFormat();
 const company = useCompanyStore();
 const now = useNow();
 const query = useBranchesToday();
-const skeleton = useDelayedPending(computed(() => query.isPending.value));
+const skeleton = useWidgetSkeleton(() => query.isPending.value);
 const branches = computed(() => query.data.value ?? []);
 const openCount = computed(() => branches.value.filter((branch) => branch.status === "open").length);
 

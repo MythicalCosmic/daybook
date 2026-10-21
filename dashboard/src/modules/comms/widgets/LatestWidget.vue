@@ -14,7 +14,7 @@ import ErrorState from "@/components/ErrorState.vue";
 import ProgressBar from "@/components/ProgressBar.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import WidgetCard from "@/components/WidgetCard.vue";
-import { useDelayedPending } from "@/lib/useDelayedPending";
+import { useWidgetSkeleton } from "@/components/widgetSkeleton";
 import { useFormat } from "@/lib/useFormat";
 
 import { useAnnouncements } from "../api";
@@ -25,7 +25,7 @@ const { t } = useI18n();
 const fmt = useFormat();
 const sent = useAnnouncements({ status: ["sent"], page_size: 1 });
 const scheduled = useAnnouncements({ status: ["scheduled"], page_size: 1 });
-const skeleton = useDelayedPending(computed(() => sent.isPending.value));
+const skeleton = useWidgetSkeleton(() => sent.isPending.value);
 const latest = computed(() => sent.data.value?.results[0] ?? null);
 const next = computed(() => scheduled.data.value?.results[0] ?? null);
 const percent = computed(() => (latest.value?.recipients_count ? (latest.value.read_count / latest.value.recipients_count) * 100 : 0));

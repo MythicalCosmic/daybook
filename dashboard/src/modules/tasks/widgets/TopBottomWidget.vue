@@ -17,7 +17,7 @@ import ProgressBar from "@/components/ProgressBar.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import WidgetCard from "@/components/WidgetCard.vue";
-import { useDelayedPending } from "@/lib/useDelayedPending";
+import { useWidgetSkeleton } from "@/components/widgetSkeleton";
 import { useFormat } from "@/lib/useFormat";
 
 interface Row {
@@ -37,7 +37,7 @@ const query = useQuery({
   queryFn: ({ signal }) => http.get<{ breakdown: Row[] }>(ownerPath(props.companyId, "reports/team/"), { preset: "last_30" }, { signal }),
   staleTime: 5 * 60_000,
 });
-const skeleton = useDelayedPending(computed(() => query.isPending.value));
+const skeleton = useWidgetSkeleton(() => query.isPending.value);
 const ranked = computed(() =>
   (query.data.value?.breakdown ?? [])
     .filter((row) => row.total > 0 && row.on_time_percent !== null)

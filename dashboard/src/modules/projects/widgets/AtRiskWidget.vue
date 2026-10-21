@@ -11,7 +11,7 @@ import ErrorState from "@/components/ErrorState.vue";
 import ProgressBar from "@/components/ProgressBar.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import WidgetCard from "@/components/WidgetCard.vue";
-import { useDelayedPending } from "@/lib/useDelayedPending";
+import { useWidgetSkeleton } from "@/components/widgetSkeleton";
 import { useFormat } from "@/lib/useFormat";
 
 import { useProjects } from "../api";
@@ -25,7 +25,7 @@ const { t, locale } = useI18n();
 const quoted = (text: string) => (locale.value === "en" ? `“${text}”` : `«${text}»`);
 const fmt = useFormat();
 const query = useProjects(() => ({ health: ["at_risk", "off_track"], status: ["planning", "active", "on_hold"] }));
-const skeleton = useDelayedPending(computed(() => query.isPending.value));
+const skeleton = useWidgetSkeleton(() => query.isPending.value);
 const projects = computed(() =>
   [...(query.data.value?.results ?? [])].sort((a, b) => (a.health === "off_track" ? 0 : 1) - (b.health === "off_track" ? 0 : 1) || (a.due_on ?? "9").localeCompare(b.due_on ?? "9")),
 );

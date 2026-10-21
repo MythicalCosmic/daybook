@@ -15,7 +15,7 @@ import { qk } from "@/api/keys";
 import type { Range } from "@/api/types";
 import ErrorState from "@/components/ErrorState.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
-import { useDelayedPending } from "@/lib/useDelayedPending";
+import { useWidgetSkeleton } from "@/components/widgetSkeleton";
 
 const props = defineProps<{ companyId: number; range?: Range; compare?: Range | null }>();
 
@@ -28,7 +28,7 @@ const stats = useQuery({
     }),
   staleTime: 30_000,
 });
-const skeleton = useDelayedPending(computed(() => stats.isPending.value));
+const skeleton = useWidgetSkeleton(() => stats.isPending.value);
 const rows = computed(() => {
   const s = stats.data.value;
   if (!s) return [];

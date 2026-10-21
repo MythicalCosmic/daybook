@@ -14,7 +14,7 @@ import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import WidgetCard from "@/components/WidgetCard.vue";
-import { useDelayedPending } from "@/lib/useDelayedPending";
+import { useWidgetSkeleton } from "@/components/widgetSkeleton";
 
 import { useOverview } from "../api";
 import ReadProgress from "../components/ReadProgress.vue";
@@ -23,7 +23,7 @@ const props = defineProps<{ companyId: number; range?: Range; compare?: Range | 
 
 const { t } = useI18n();
 const overview = useOverview();
-const skeleton = useDelayedPending(computed(() => overview.isPending.value));
+const skeleton = useWidgetSkeleton(() => overview.isPending.value);
 const pages = computed(() => (overview.data.value?.attention ?? []).slice(0, 6));
 const base = computed(() => `/c/${props.companyId}/knowledge`);
 </script>

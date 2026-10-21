@@ -94,7 +94,7 @@ const spans = { 1: "", 2: "md:col-span-2", 3: "md:col-span-2 lg:col-span-3", 4: 
 </script>
 
 <template>
-  <div ref="grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4" :style="{ gap }">
+  <div ref="grid" :class="['grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4', editing && 'pt-3']" :style="{ columnGap: gap, rowGap: editing ? `calc(${gap} + 16px)` : gap }">
     <div
       v-for="(widget, index) in list"
       :key="widget.id"
@@ -110,7 +110,8 @@ const spans = { 1: "", 2: "md:col-span-2", 3: "md:col-span-2 lg:col-span-3", 4: 
       <div :class="['h-full', editing && 'pointer-events-none select-none']" data-widget-body>
         <slot name="widget" :widget="widget" />
       </div>
-      <div v-if="editing" class="absolute right-2 top-2 z-10 flex items-center gap-0.5 rounded-[9px] border border-line bg-surface/95 p-0.5 shadow-pop backdrop-blur">
+      <!-- On the card's top edge, not over its header: "View all" and counts stay readable while customizing. -->
+      <div v-if="editing" class="absolute -top-3.5 right-3 z-10 flex items-center gap-0.5 rounded-[9px] border border-line bg-surface p-0.5 shadow-pop">
         <button
           type="button"
           data-widget-handle

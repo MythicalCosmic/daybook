@@ -17,9 +17,9 @@ import RelativeTime from "@/components/RelativeTime.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import WidgetCard from "@/components/WidgetCard.vue";
+import { useWidgetSkeleton } from "@/components/widgetSkeleton";
 import { pulse } from "@/core/pulse";
 import { companyUrl } from "@/lib/links";
-import { useDelayedPending } from "@/lib/useDelayedPending";
 
 import { useStream } from "../api";
 
@@ -27,7 +27,7 @@ const props = defineProps<{ companyId: number; range?: Range; compare?: Range | 
 
 const { t } = useI18n();
 const query = useStream(12);
-const skeleton = useDelayedPending(computed(() => query.isPending.value));
+const skeleton = useWidgetSkeleton(() => query.isPending.value);
 const items = computed(() => query.data.value?.items ?? []);
 
 // Something changed somewhere (a version moved): the stream may have news.

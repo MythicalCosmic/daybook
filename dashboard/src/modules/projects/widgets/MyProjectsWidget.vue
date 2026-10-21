@@ -11,7 +11,7 @@ import ErrorState from "@/components/ErrorState.vue";
 import ProgressRing from "@/components/ProgressRing.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import WidgetCard from "@/components/WidgetCard.vue";
-import { useDelayedPending } from "@/lib/useDelayedPending";
+import { useWidgetSkeleton } from "@/components/widgetSkeleton";
 import { useFormat } from "@/lib/useFormat";
 
 import { useProjects } from "../api";
@@ -22,7 +22,7 @@ const props = defineProps<{ companyId: number; range?: Range; compare?: Range | 
 const { t } = useI18n();
 const fmt = useFormat();
 const query = useProjects(() => ({ mine: true, status: ["planning", "active", "on_hold"] }));
-const skeleton = useDelayedPending(computed(() => query.isPending.value));
+const skeleton = useWidgetSkeleton(() => query.isPending.value);
 const projects = computed(() => query.data.value?.results ?? []);
 </script>
 

@@ -11,9 +11,9 @@ import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import WidgetCard from "@/components/WidgetCard.vue";
+import { useWidgetSkeleton } from "@/components/widgetSkeleton";
 import { addDays, todayIn } from "@/lib/dates";
 import { companyUrl } from "@/lib/links";
-import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useCompanyStore } from "@/stores/company";
 
 import { useCalendar } from "../api";
@@ -27,7 +27,7 @@ const router = useRouter();
 const company = useCompanyStore();
 const today = computed(() => todayIn(company.timezone));
 const calendar = useCalendar(computed(() => ({ from: today.value, to: addDays(today.value, 6) })));
-const skeleton = useDelayedPending(computed(() => calendar.isPending.value));
+const skeleton = useWidgetSkeleton(() => calendar.isPending.value);
 const labels = computed(() => Object.fromEntries((calendar.data.value?.sources ?? []).map((source) => [source.key, sourceLabel(source, t)])));
 // The calendar's name only when the title doesn't already say it ("Jasur · time off" needs no "Time off").
 const items = computed(() => (calendar.data.value?.items ?? []).map((entry) => withoutEcho(toCalendarItem(entry, labels.value[entry.source]))));

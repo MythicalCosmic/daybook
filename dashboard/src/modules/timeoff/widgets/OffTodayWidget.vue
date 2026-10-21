@@ -14,8 +14,8 @@ import ErrorState from "@/components/ErrorState.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import WidgetCard from "@/components/WidgetCard.vue";
+import { useWidgetSkeleton } from "@/components/widgetSkeleton";
 import { todayIn } from "@/lib/dates";
-import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
@@ -29,7 +29,7 @@ const company = useCompanyStore();
 const today = computed(() => todayIn(company.timezone));
 const off = useTimeOffList(computed(() => ({ status: ["approved" as const], from: today.value, to: today.value, page_size: 6, ordering: "first_day" })));
 const stats = useStats();
-const skeleton = useDelayedPending(computed(() => off.isPending.value));
+const skeleton = useWidgetSkeleton(() => off.isPending.value);
 const rows = computed(() => off.data.value?.results ?? []);
 const base = computed(() => `/c/${props.companyId}/time-off`);
 </script>

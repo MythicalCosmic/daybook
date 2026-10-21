@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BranchToday, StreamItem } from "@/api/types";
 import { modules } from "@/core/modules";
 import { mergeModuleMessages } from "@/i18n";
+import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import { json } from "@/test/fixtures";
 import { mountWithProviders as mountRaw, testApp } from "@/test/plugins";
 
@@ -72,6 +73,16 @@ describe("registration", () => {
       ["overview.activity", 2, "card"],
     ]);
     expect(module.widgets?.find((w) => w.id === "overview.routines")).toMatchObject({ order: 13, perm: "tasks.view_all" });
+  });
+
+  it("shows a widget's skeleton at once while its first data loads (its cell's placeholder came just before)", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>(() => undefined)));
+    const app = await testApp("/c/1");
+    const { wrapper } = mountWithProviders(ActivityWidget, { plugins: app.plugins, props: { companyId: 1 } });
+    await flushPromises();
+    // No 150 ms wait: the card never shrinks to its header between two placeholders.
+    expect(wrapper.findComponent(SkeletonBlock).exists()).toBe(true);
   });
 
   it("counts today's routine work apart from one-off tasks", async () => {
