@@ -36,10 +36,9 @@
   font-size: 20px;
 }
 
-/* A long title must not squeeze the "Must read" badge or the chevron beside it. */
-.list-item[class*="kbm-depth-"] .list-item-value,
-.list-item[class*="kbm-depth-"] .list-item-value > svg {
-  flex: none;
+/* "How to do this" on the task screen: the title sits above the rows like the card's own head. */
+.kbm-howto .card-title {
+  padding: 14px 0 2px;
 }
 
 /* Pages inside pages step in a little, like the tree in the dashboard. */

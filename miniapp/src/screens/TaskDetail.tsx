@@ -11,6 +11,7 @@ import {
 } from "../api/hooks";
 import type { Comment, Task } from "../api/types";
 import { LateCard, ReminderNote } from "../components/Reminders";
+import { FeatureSlot } from "../features/FeatureSlot";
 import { errorText, useCompleteTask } from "../lib/actions";
 import { isLate, repeatLabel, type ViewContext } from "../lib/taskView";
 import { clock, dayMonth, daysFromToday, weekdayShort } from "../lib/time";
@@ -180,6 +181,9 @@ function Detail({ task, comments, ctx }: { task: Task; comments: Comment[]; ctx:
             ))}
           </div>
         )}
+
+        {/* Feature blocks for this task: "How to do this" (knowledge), the project timer. */}
+        <FeatureSlot name="task.actions" task={task} />
 
         {task.proof_text && (
           <div className="card" style={{ gap: 6 }}>

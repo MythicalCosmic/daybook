@@ -9,7 +9,7 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "../../api/client";
-import type { Me, Membership } from "../../api/types";
+import type { Me, Membership, Task } from "../../api/types";
 import { I18nProvider } from "../../i18n";
 import { NavigationProvider, useNavigation, type Navigation } from "../../state/navigation";
 import { SessionProvider } from "../../state/session";
@@ -19,6 +19,7 @@ import type { Board, Card, Project, Timer } from "./api";
 import { ProjectsCard, TimerCard } from "./HomeCards";
 import { elapsed, endOf, hhmm, positionBetween } from "./lib";
 import { messages } from "./messages";
+import { TaskTimer } from "./Timer";
 
 const server = vi.hoisted(() => ({
   calls: [] as { path: string; method: string; json: unknown }[],
@@ -192,6 +193,7 @@ describe("the feature", () => {
     const registered = features as Feature[];
     expect(registered[0]!.meItems?.map((item) => [item.group, item.label])).toEqual([["work", "me.projects"]]);
     expect(registered[0]!.homeCards?.map((slot) => slot.id)).toEqual(["timer", "projects"]);
+    expect(registered[0]!.taskActions?.map((slot) => [slot.id, slot.order])).toEqual([["timer", 20]]);
     expect(registered[0]!.plusActions?.map((action) => action.open)).toEqual([{ sheet: "log" }]);
     expect(routeTarget(registered, "project", "5")).toEqual({ tab: "home", stack: [{ feature: "projects", page: "board", params: { id: 5 } }] });
     // The inbox's "added to a project" notification opens `projects.board:<id>`.
@@ -382,5 +384,96 @@ describe("home cards", () => {
     expect(screen.getByText(/^2:0\d$/)).toBeTruthy();
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Stop" })));
     expect(await screen.findByText("0:02 logged")).toBeTruthy();
+  });
+});
+
+describe("the timer on the task screen", () => {
+  const slot = { member: { ...membership(), timeZone: "Asia/Tashkent", companyId: 1 }, summary: undefined };
+  const task = (id: number, overrides: Partial<Task> = {}) =>
+    ({ id, title: `Card ${id}`, status: "todo", assignee: { id: ME, name: "Alisher Valiyev", position: null }, ...overrides }) as Task;
+  const running = (taskId: number): Timer => ({
+    id: 1,
+    project: { id: 5, name: project.name },
+    project_key: "OPEN",
+    task: { id: taskId, name: `Card ${taskId}` },
+    task_key: `OPEN-${taskId}`,
+    started_at: new Date(Date.now() - 125_000).toISOString(),
+  });
+  const loaded = () =>
+    waitFor(() => {
+      expect(server.calls.some((call) => call.path === "/companies/1/projects/5/board/")).toBe(true);
+      expect(server.calls.some((call) => call.path === "/companies/1/projects/timer/")).toBe(true);
+    });
+
+  it("starts on my card, showing what's logged on it", async () => {
+    renderWith(<TaskTimer {...slot} task={task(2)} />);
+    expect(await screen.findByText("OPEN-2 · 1:35 logged")).toBeTruthy();
+    expect(screen.getByText("Timer")).toBeTruthy();
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Start timer" })));
+    expect(server.calls.find((call) => call.method === "POST")).toMatchObject({ path: "/companies/1/projects/timer/", json: { task: 2 } });
+    expect(await screen.findByText("Timer started")).toBeTruthy();
+  });
+
+  it("shows the running clock on its own task, and stops it", async () => {
+    state.timer = running(2);
+    server.handler = ((previous) => (path: string, method: string, json: unknown) => {
+      if (path === "/companies/1/projects/timer/stop/") {
+        state.timer = null;
+        return { id: 9, minutes: 2, day: "2026-10-21", note: "", project: null, project_key: null, task: null };
+      }
+      return previous(path, method, json);
+    })(server.handler);
+    renderWith(<TaskTimer {...slot} task={task(2)} />);
+    expect(await screen.findByText("Timer running · OPEN-2")).toBeTruthy();
+    expect(screen.getByText(/^2:0\d$/)).toBeTruthy();
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Stop" })));
+    expect(await screen.findByText("0:02 logged")).toBeTruthy();
+    // Stopped and refetched: the block goes back to Start.
+    expect(await screen.findByRole("button", { name: "Start timer" })).toBeTruthy();
+  });
+
+  it("keeps Stop on a finished task while the timer still runs on it", async () => {
+    state.timer = running(2);
+    renderWith(<TaskTimer {...slot} task={task(2, { status: "done" })} />);
+    expect(await screen.findByRole("button", { name: "Stop" })).toBeTruthy();
+  });
+
+  it("says where the timer runs when it's on another card", async () => {
+    state.timer = running(1);
+    renderWith(<TaskTimer {...slot} task={task(2)} />);
+    expect(await screen.findByText("Your timer is on OPEN-1 now")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Start timer" })).toBeTruthy();
+  });
+
+  it("shows nothing for a task off my boards, someone else's card, or a finished one", async () => {
+    const cases: [number, Partial<Task>][] = [
+      [99, {}],
+      [3, { assignee: { id: 3, name: "Dilnoza Karimova", position: null } }],
+      [2, { status: "done" }],
+      [2, { status: "cancelled" }],
+    ];
+    for (const [id, overrides] of cases) {
+      server.calls.splice(0);
+      const { container } = renderWith(<TaskTimer {...slot} task={task(id, overrides)} />);
+      await loaded();
+      await act(async () => {});
+      expect(container.textContent).toBe("");
+      cleanup();
+    }
+  });
+
+  it("lets a card editor time someone else's card", async () => {
+    state.board = { ...state.board, capabilities: { ...state.board.capabilities, edit_cards: true } };
+    renderWith(<TaskTimer {...slot} task={task(3, { assignee: { id: 3, name: "Dilnoza Karimova", position: null } })} />);
+    expect(await screen.findByRole("button", { name: "Start timer" })).toBeTruthy();
+  });
+
+  it("asks only for live projects' boards", async () => {
+    state.projects = [{ ...project, status: "completed" }];
+    const { container } = renderWith(<TaskTimer {...slot} task={task(2)} />);
+    await waitFor(() => expect(server.calls.some((call) => call.path === "/companies/1/projects/")).toBe(true));
+    await act(async () => {});
+    expect(server.calls.some((call) => call.path.endsWith("/board/"))).toBe(false);
+    expect(container.textContent).toBe("");
   });
 });

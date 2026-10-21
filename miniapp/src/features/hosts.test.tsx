@@ -9,7 +9,7 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { keys } from "../api/hooks";
-import type { Me, Membership, Summary } from "../api/types";
+import type { Me, Membership, Summary, Task } from "../api/types";
 import { I18nProvider } from "../i18n";
 import { Home } from "../screens/Home";
 import { Profile } from "../screens/Profile";
@@ -17,7 +17,8 @@ import { Sheets } from "../sheets/Sheets";
 import { NavigationProvider, useNavigation, type Navigation, type NavigationInit } from "../state/navigation";
 import { SessionProvider } from "../state/session";
 import { ToastProvider } from "../state/toast";
-import { defineFeature, type Feature, type PageProps, type SheetProps, type SlotProps } from "./registry";
+import { TaskDetail } from "../screens/TaskDetail";
+import { defineFeature, type Feature, type PageProps, type SheetProps, type SlotProps, type TaskSlotProps } from "./registry";
 
 const registry = vi.hoisted(() => ({ list: [] as unknown[] }));
 vi.mock("./registry", async (importOriginal) => {
@@ -47,6 +48,7 @@ const wallet: Feature = defineFeature({
   messages: { en: { me: "Pay" }, ru: { me: "Зарплата" }, uz: { me: "Maosh" } },
   pages: { home: Page },
   homeCards: [{ id: "earned", component: ({ summary }: SlotProps) => <div data-testid="card">{`Done today: ${summary?.today_done}`}</div> }],
+  taskActions: [{ id: "bonus", component: ({ task }: TaskSlotProps) => <div data-testid="task-block">{`Bonus for ${task.title}`}</div> }],
   meItems: [{ id: "pay", group: "money", label: "me", icon: HandCoins, open: { page: "home" }, useStatus: () => ({ badge: 1 }) }],
 });
 
@@ -116,9 +118,16 @@ function Probe() {
   return null;
 }
 
-function renderWith(node: ReactNode, { permissions = [] as string[], initial = undefined as NavigationInit | undefined } = {}) {
+function renderWith(
+  node: ReactNode,
+  { permissions = [] as string[], initial = undefined as NavigationInit | undefined, seed = undefined as { task: Task; comments: [] } | undefined } = {},
+) {
   const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } });
   client.setQueryData(keys.summary(1), summary);
+  if (seed) {
+    client.setQueryData(keys.task(1, seed.task.id), seed.task);
+    client.setQueryData(keys.comments(1, seed.task.id), seed.comments);
+  }
   client.setQueryData(keys.board(1), []);
   client.setQueryData(keys.activity(1), []);
   client.setQueryData(keys.timeOff(1), []);
@@ -185,6 +194,41 @@ describe("feature hosts in the real screens", () => {
     cleanup();
     renderWith(<Profile />, { permissions: [] });
     expect(screen.getByText("Ask for days off")).toBeTruthy();
+  });
+
+  it("put the task screen's blocks after the checklist, before the details", () => {
+    const task: Task = {
+      id: 42,
+      kind: "assigned",
+      title: "Open the till",
+      description: "Count the float first.",
+      status: "todo",
+      priority: "normal",
+      due_at: null,
+      for_date: null,
+      proof: "none",
+      needs_confirmation: false,
+      proof_text: "",
+      proof_photo: null,
+      assignee: { id: 7, name: "Alisher Valiyev", position: null },
+      created_by: { id: 3, name: "Dilnoza Karimova", position: null },
+      confirmed_by: null,
+      checklist: [{ id: 1, text: "Count the float", is_done: false }],
+      reminder: null,
+      repeat_weekdays: null,
+      started_at: null,
+      completed_at: null,
+      confirmed_at: null,
+      is_overdue: false,
+      actions: ["start", "complete"],
+      created_at: "2026-10-18T10:00:00Z",
+    } as Task;
+    const { container } = renderWith(<TaskDetail taskId={42} />, { seed: { task, comments: [] } });
+    expect(screen.getByTestId("task-block").textContent).toBe("Bonus for Open the till");
+    const order = [...container.querySelectorAll(".check-item, [data-testid], .detail-line")].map((node) =>
+      node.getAttribute("data-testid") ?? node.className,
+    );
+    expect(order.slice(0, 3)).toEqual(["check-item", "task-block", "detail-line"]);
   });
 
   it("show quick-add actions above the personal task form", () => {

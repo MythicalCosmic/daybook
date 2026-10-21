@@ -1,5 +1,4 @@
 import { ArrowRight, Clock3, ExternalLink, Play, Square } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
 
 import { useI18n } from "../../i18n";
 import { useFeatureT } from "../../i18n/feature";
@@ -11,14 +10,16 @@ import { useToast } from "../../state/toast";
 import { haptic } from "../../telegram";
 import { Button, Chip, SheetTitle } from "../../ui";
 import type { SheetProps } from "../registry";
-import { projectKeys, startTimer, stopTimer, useBoard, useMoveCard, useRefresh, useTimer, type Board } from "./api";
+import { useBoard, useMoveCard, useTimer, type Board } from "./api";
 import { elapsed, endOf, hhmm } from "./lib";
 import { messages } from "./messages";
+import { useCardTimer } from "./Timer";
 import "./projects.css";
 
 /**
  * A card from the board: where it is, its deadline and time, "Move to" (for my own cards), the
- * timer, "Log time", and the task itself (finishing with a photo happens there).
+ * timer (the same one the task screen shows), "Log time", and the task itself (finishing with a
+ * photo happens there).
  */
 export default function CardSheet({ params, close }: SheetProps) {
   const projectId = Number(params.project) || 0;
@@ -28,10 +29,9 @@ export default function CardSheet({ params, close }: SheetProps) {
   const { locale } = useI18n();
   const navigation = useNavigation();
   const toast = useToast();
-  const client = useQueryClient();
-  const refresh = useRefresh(member.companyId);
   const board = useBoard(member.companyId, projectId);
   const timer = useTimer(member.companyId);
+  const controls = useCardTimer(member.companyId);
   const move = useMoveCard(member.companyId, projectId);
   const now = useNow(1000);
 
@@ -54,25 +54,6 @@ export default function CardSheet({ params, close }: SheetProps) {
       haptic.notify("error");
       const code = (error as { body?: { code?: string } }).body?.code;
       toast(code === "needs_proof" ? t("card.needsProof") : ((error as { detail?: string | null }).detail ?? t("moveFailed")), { tone: "error" });
-    }
-  }
-
-  async function toggleTimer() {
-    if (!card) return;
-    try {
-      if (running) {
-        const entry = await stopTimer(member.companyId);
-        haptic.notify("success");
-        if (entry) toast(t("timerLogged", { time: hhmm(entry.minutes) }), { tone: "success" });
-      } else {
-        await startTimer(member.companyId, { task: card.id });
-        haptic.impact("light");
-        toast(t("timerStarted"), { tone: "success" });
-      }
-      await client.invalidateQueries({ queryKey: projectKeys.timer(member.companyId) });
-      void refresh();
-    } catch (error) {
-      toast((error as { detail?: string | null }).detail ?? t("moveFailed"), { tone: "error" });
     }
   }
 
@@ -116,7 +97,14 @@ export default function CardSheet({ params, close }: SheetProps) {
       )}
 
       {(mine || data.capabilities.edit_cards) && card.status !== "done" && (
-        <Button variant={running ? "primary" : "secondary"} size="lg" block icon={running ? Square : Play} onClick={() => void toggleTimer()}>
+        <Button
+          variant={running ? "primary" : "secondary"}
+          size="lg"
+          block
+          icon={running ? Square : Play}
+          loading={controls.busy}
+          onClick={() => (running ? controls.stop() : controls.start(card.id))}
+        >
           {running ? t("card.stop", { time: elapsed(running.started_at, now.getTime()) }) : t("card.start")}
         </Button>
       )}

@@ -28,6 +28,7 @@ import {
   Segmented,
   SlideToConfirm,
   Textarea,
+  useObjectUrl,
 } from "../../ui";
 import type { PageProps } from "../registry";
 import { closeShift, fetchShift, isDenied, isNetworkError, kassaKeys, tillMethods, useKassa, useShift, type Kassa, type PaymentLine, type ShiftDetail } from "./api";
@@ -528,17 +529,7 @@ function Review({
 }
 
 function PhotoChip({ label, file, t }: { label: string; file: File | null; t: KassaT }) {
-  // Made and revoked in one effect, so StrictMode's extra mount never leaves a revoked URL behind.
-  const [preview, setPreview] = useState<string | null>(null);
-  useEffect(() => {
-    if (!file) {
-      setPreview(null);
-      return;
-    }
-    const url = URL.createObjectURL(file);
-    setPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [file]);
+  const preview = useObjectUrl(file);
   return (
     <span className={cx("kassa-photo-chip", !file && "kassa-photo-chip--missing")}>
       {preview ? <img src={preview} alt="" /> : <span className="kassa-photo-none" aria-hidden />}

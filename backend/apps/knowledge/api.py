@@ -5,6 +5,7 @@ holders of its positions otherwise (`queries.reader_spaces`). Drafts never show 
 to managers, who edit pages in the dashboard.
 """
 
+from django.db.models import Q
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers
@@ -148,7 +149,9 @@ class SearchView(APIView):
 
 
 class LinkedView(APIView):
-    """Pages linked to a task or routine ("How to do this")."""
+    """Pages linked to a task or routine ("How to do this"). For a task a routine made, the
+    routine's pages come too: linking the routine covers every task it makes (which is why the
+    link search leaves those tasks out), and the mini app only knows the task."""
 
     permission_classes = (IsAuthenticated, IsCompanyMember)
 
@@ -167,15 +170,27 @@ class LinkedView(APIView):
             target_id = None
         if target_type not in PageLink.Target.values or target_id is None:
             raise ValidationError({"target_type": [_("Give a task or routine and its id.")]})
+        wanted = Q(target_type=target_type, target_id=target_id)
+        if target_type == PageLink.Target.TASK:
+            routine_id = self._routine_of(target_id)
+            if routine_id is not None:
+                wanted |= Q(target_type=PageLink.Target.ROUTINE, target_id=routine_id)
         links = (
             PageLink.objects.for_company(self.membership.company_id)
-            .filter(
-                target_type=target_type,
-                target_id=target_id,
-                page__in=queries.reader_pages(self.membership),
-            )
+            .filter(wanted, page__in=queries.reader_pages(self.membership))
             .select_related("page__space")
             .order_by("pk")
         )
         visible = targets.visible_links(self.membership, links)
         return Response(KnowledgeLinkSerializer(visible, many=True).data)
+
+    def _routine_of(self, task_id: int) -> int | None:
+        """The routine that made the task, when this person may see the task."""
+        from apps.tasks.queries import visible_tasks
+
+        return (
+            visible_tasks(self.membership)
+            .filter(pk=task_id)
+            .values_list("template_id", flat=True)
+            .first()
+        )

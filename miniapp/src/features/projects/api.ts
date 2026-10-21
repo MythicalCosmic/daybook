@@ -3,7 +3,7 @@
  * by hand from `apps/projects/serializers.py` until the regenerated schema has them. Money never
  * reaches the mini app; days are company-local "YYYY-MM-DD".
  */
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "../../api/client";
 
@@ -132,6 +132,50 @@ export function useTimer(company: number) {
 
 export function useWeek(company: number, enabled = true) {
   return useQuery({ queryKey: projectKeys.week(company), queryFn: () => getWeek(company), enabled });
+}
+
+/** Projects whose cards still take time: not completed or cancelled. */
+const takesTime = (project: Project) => project.status !== "completed" && project.status !== "cancelled";
+
+/**
+ * The card a task is, with its board, looked up in the boards of my live projects (the employee
+ * task carries no project yet). `undefined` while that loads, `null` when it's on none of them.
+ * Boards are shared with the board page's cache.
+ */
+export function useCardOfTask(company: number, taskId: number): { card: Card; board: Board } | null | undefined {
+  const projects = useMyProjects(company);
+  const live = (projects.data ?? []).filter(takesTime);
+  const boards = useQueries({
+    queries: live.map((project) => ({
+      queryKey: projectKeys.board(company, project.id),
+      queryFn: () => getBoard(company, project.id),
+      staleTime: 30_000,
+    })),
+  });
+  if (!projects.data) return projects.isError ? null : undefined;
+  for (const board of boards) {
+    const card = board.data?.cards.find((c) => c.id === taskId);
+    if (board.data && card) return { card, board: board.data };
+  }
+  return boards.some((board) => board.isPending) ? undefined : null;
+}
+
+export type TimerAction = { kind: "start"; task: number } | { kind: "stop" };
+
+/** Start my timer on a card (a running one is stopped and logged first) or stop it. */
+export function useTimerAction(company: number) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (action: TimerAction): Promise<TimeEntry | null> => {
+      if (action.kind === "start") {
+        await startTimer(company, { task: action.task });
+        return null;
+      }
+      return (await stopTimer(company)) ?? null;
+    },
+    // The timer, the cards' logged time and the week all change.
+    onSettled: () => client.invalidateQueries({ queryKey: projectKeys.all(company) }),
+  });
 }
 
 /** After any change: everything projects shows refreshes. */

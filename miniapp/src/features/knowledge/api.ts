@@ -41,6 +41,16 @@ export type KbPage = KbPageRow & {
 
 export type KbHome = { spaces: KbSpace[]; to_read: KbPageRow[]; recent: KbPageRow[] };
 
+/** A page linked to a task or routine ("How to do this"): `KnowledgeLinkSerializer`. */
+export type KbLink = {
+  id: number;
+  target_type: "task" | "routine";
+  target_id: number;
+  target_title: string;
+  page: { id: number; title: string; emoji: string; space: { id: number; name: string; icon: string } };
+  created_at: string;
+};
+
 const base = (company: number) => `/companies/${company}/knowledge`;
 
 export const kbKeys = {
@@ -49,6 +59,7 @@ export const kbKeys = {
   space: (company: number, id: number) => ["knowledge", company, "space", id] as const,
   page: (company: number, id: number) => ["knowledge", company, "page", id] as const,
   search: (company: number, q: string) => ["knowledge", company, "search", q] as const,
+  linked: (company: number, taskId: number) => ["knowledge", company, "linked", "task", taskId] as const,
 };
 
 export function useKbHome(company: number, enabled = true) {
@@ -64,6 +75,23 @@ export function useKbSpace(company: number, id: number) {
 
 export function useKbPage(company: number, id: number) {
   return useQuery({ queryKey: kbKeys.page(company, id), queryFn: () => api<KbPage>(`${base(company)}/pages/${id}/`) });
+}
+
+/** Each linked page once, in link order (a page may be linked to the task and its routine). */
+function uniquePages(links: KbLink[]): KbLink["page"][] {
+  const seen = new Set<number>();
+  return links.map((link) => link.page).filter((page) => !seen.has(page.id) && Boolean(seen.add(page.id)));
+}
+
+/** "How to do this" for a task: the pages linked to it or to the routine that made it. */
+export function useTaskPages(company: number, taskId: number) {
+  return useQuery({
+    queryKey: kbKeys.linked(company, taskId),
+    queryFn: () => api<KbLink[]>(`${base(company)}/linked/?target_type=task&target_id=${taskId}`),
+    select: uniquePages,
+    enabled: taskId > 0,
+    staleTime: 60_000,
+  });
 }
 
 export function useKbSearch(company: number, q: string) {

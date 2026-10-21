@@ -27,6 +27,7 @@ export const messages = defineMessages({
     "card.title_one": "{count} page to read",
     "card.title_other": "{count} pages to read",
     "card.body": "Your managers ask you to read and confirm it.",
+    howTo: "How to do this",
   },
   ru: {
     title: "База знаний",
@@ -58,6 +59,7 @@ export const messages = defineMessages({
     "card.title_many": "{count} страниц к прочтению",
     "card.title_other": "{count} страницы к прочтению",
     "card.body": "Руководители просят прочитать и подтвердить.",
+    howTo: "Как это сделать",
   },
   uz: {
     title: "Bilimlar bazasi",
@@ -85,5 +87,6 @@ export const messages = defineMessages({
     "card.title_one": "O‘qish kerak: {count} ta sahifa",
     "card.title_other": "O‘qish kerak: {count} ta sahifa",
     "card.body": "Rahbarlar o‘qib, tasdiqlashingizni so‘rayapti.",
+    howTo: "Buni qanday qilish kerak",
   },
 });

@@ -5,7 +5,7 @@ import { useState, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { keys } from "../api/hooks";
-import type { Me, Membership, Summary } from "../api/types";
+import type { Me, Membership, Summary, Task } from "../api/types";
 import { I18nProvider, type Lang } from "../i18n";
 import { NavigationProvider, useNavigation, type Navigation } from "../state/navigation";
 import { SessionProvider, type Member } from "../state/session";
@@ -21,11 +21,13 @@ import {
   plusActions,
   replacedEntries,
   suspendedGate,
+  taskSlots,
   visibleFeatures,
   type Feature,
   type PageProps,
   type SheetProps,
   type SlotProps,
+  type TaskSlotProps,
 } from "./registry";
 
 // The hosts read the app's feature list; tests fill it with fixtures.
@@ -48,6 +50,11 @@ const Card = (label: string) =>
 function Crash(): ReactNode {
   throw new Error("slot exploded");
 }
+const TaskBlock = (label: string) =>
+  function SlotTaskBlock({ member, task }: TaskSlotProps) {
+    return <div data-testid="task-block">{`${label}: ${task.title} for ${member.first_name}`}</div>;
+  };
+const TASK = { id: 42, title: "Open the till" } as Task;
 
 const alpha: Feature = defineFeature({
   id: "alpha",
@@ -60,6 +67,7 @@ const alpha: Feature = defineFeature({
   sheets: { advance: SheetBody },
   homeHero: [{ id: "hero", component: Hero }],
   homeCards: [{ id: "late-card", component: Card("alpha card"), order: 50 }],
+  taskActions: [{ id: "timer", component: TaskBlock("Timer"), order: 30 }],
   meItems: [
     {
       id: "pay",
@@ -82,6 +90,7 @@ const beta: Feature = defineFeature({
   visible: (member) => member.permissions.includes("reports.view"),
   pages: { leave: Page },
   homeCards: [{ id: "first", component: Card("beta card"), order: 10 }],
+  taskActions: [{ id: "howTo", component: TaskBlock("How to"), order: 10 }],
   replaces: ["timeOff"],
   meItems: [{ id: "leave", group: "work", label: "leave", icon: Receipt, open: { page: "leave" } }],
 });
@@ -99,6 +108,7 @@ const crashing: Feature = defineFeature({
   id: "crashing",
   messages: { en: {}, ru: {}, uz: {} },
   homeCards: [{ id: "boom", component: Crash, order: 20 }],
+  taskActions: [{ id: "boom", component: Crash, order: 20 }],
 });
 
 const throwsInVisible: Feature = defineFeature({
@@ -163,6 +173,13 @@ describe("registry helpers", () => {
       "alpha.late-card",
     ]);
     expect(homeSlots(all, "home.hero", context).map(({ item }) => item.id)).toEqual(["hero"]);
+  });
+
+  it("orders the task screen's blocks the same way, for the features this person sees", () => {
+    const blocks = (permissions: string[]) =>
+      taskSlots(all, { member: member(permissions), summary }).map(({ feature, item }) => `${feature.id}.${item.id}`);
+    expect(blocks(["reports.view"])).toEqual(["beta.howTo", "crashing.boom", "alpha.timer"]);
+    expect(blocks([])).toEqual(["crashing.boom", "alpha.timer"]);
   });
 
   it("groups Me rows", () => {
@@ -276,6 +293,29 @@ describe("feature slots", () => {
     expect(screen.getByTestId("alpha-hero").textContent).toBe("Hero for Alisher: 8");
     expect(screen.getAllByTestId("card").map((node) => node.textContent)).toEqual(["beta card", "alpha card"]);
     expect(errors).toHaveBeenCalled();
+  });
+
+  it("render the task screen's blocks in order, giving each the task, and contain a crash", () => {
+    registry.list.push(alpha, beta, crashing);
+    render(
+      <Providers permissions={["reports.view"]}>
+        <FeatureSlot name="task.actions" task={TASK} />
+      </Providers>,
+    );
+    expect(screen.getAllByTestId("task-block").map((node) => node.textContent)).toEqual([
+      "How to: Open the till for Alisher",
+      "Timer: Open the till for Alisher",
+    ]);
+    expect(errors).toHaveBeenCalled();
+  });
+
+  it("render no task blocks without feature folders", () => {
+    const { container } = render(
+      <Providers>
+        <FeatureSlot name="task.actions" task={TASK} />
+      </Providers>,
+    );
+    expect(container.innerHTML).toBe("");
   });
 
   it("group Me rows under headings, translated, with status, opening the feature page", () => {

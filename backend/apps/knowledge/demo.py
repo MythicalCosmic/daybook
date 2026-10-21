@@ -410,5 +410,8 @@ def seed(company, people, now) -> None:
             continue
         if "Opening" in routine.title or "Open" in routine.title:
             services.link_page(open_till, by=owner, target_type="routine", target_id=routine.id)
+        elif any(word in routine.title.lower() for word in ("customer", "mijoz")):
+            # The sales floor reads this one, so its "How to do this" shows on their tasks.
+            services.link_page(greeting, by=owner, target_type="routine", target_id=routine.id)
         elif "plants" in routine.title.lower():
             services.link_page(plants, by=owner, target_type="routine", target_id=routine.id)

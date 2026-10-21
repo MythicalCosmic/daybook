@@ -1,5 +1,5 @@
 import { Camera, Check } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 import { useCreateTask, useRequestTimeOff, useSetLanguage, useTask, useTaskAction } from "../api/hooks";
 import type { Repeat, Task } from "../api/types";
@@ -13,6 +13,7 @@ import { useMember, useSession } from "../state/session";
 import { useToast } from "../state/toast";
 import { haptic } from "../telegram";
 import { Sheet } from "../ui/Sheet";
+import { useObjectUrl } from "../ui/useObjectUrl";
 
 export function Sheets() {
   const navigation = useNavigation();
@@ -46,8 +47,7 @@ function CompleteForm({ task }: { task: Task }) {
   const [photo, setPhoto] = useState<File | null>(null);
   const [note, setNote] = useState("");
   const picker = useRef<HTMLInputElement>(null);
-  const preview = useMemo(() => (photo ? URL.createObjectURL(photo) : null), [photo]);
-  useEffect(() => () => (preview ? URL.revokeObjectURL(preview) : undefined), [preview]);
+  const preview = useObjectUrl(photo);
 
   const wantsPhoto = task.proof === "photo" || task.proof === "any";
   const missing =

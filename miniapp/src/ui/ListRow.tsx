@@ -87,7 +87,7 @@ export function ListRow({
       <span className="list-item-value">
         {value}
         <CountBadge count={badge} />
-        {showChevron && <ChevronRight size={18} strokeWidth={2.5} aria-hidden />}
+        {showChevron && <ChevronRight className="list-item-chevron" size={18} strokeWidth={2.5} aria-hidden />}
       </span>
     ) : null;
   const classes = cx("list-item", subtitle && "list-item--two-line", className);

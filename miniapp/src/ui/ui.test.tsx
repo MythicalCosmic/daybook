@@ -1,5 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { useState } from "react";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { StrictMode, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { I18nProvider, type Lang } from "../i18n";
@@ -10,12 +12,14 @@ import { Field, Input } from "./Field";
 import { ListRow } from "./ListRow";
 import { MoneyInput } from "./MoneyInput";
 import { NumberPad, pressKey } from "./NumberPad";
+import { PhotoInput } from "./PhotoInput";
 import { ProgressRing } from "./Progress";
 import { Segmented } from "./Segmented";
 import { Sheet } from "./Sheet";
 import { SkeletonList } from "./Skeleton";
 import { SlideToConfirm } from "./SlideToConfirm";
 import { Stepper } from "./Stepper";
+import { useObjectUrl } from "./useObjectUrl";
 
 const NB = " ";
 const inLang = (lang: Lang, node: React.ReactNode) => render(<I18nProvider lang={lang}>{node}</I18nProvider>);
@@ -424,5 +428,107 @@ describe("extracted building blocks", () => {
     expect(row.querySelector(".list-item-value")?.textContent).toBe("3 days2");
     fireEvent.click(row);
     expect(onClick).toHaveBeenCalledOnce();
+  });
+
+  it("keep the value, badge and chevron at their size next to a long title", () => {
+    const { container } = render(<ListRow title={"A very long page title ".repeat(6)} value="Must read" onClick={() => {}} />);
+    expect(container.querySelector(".list-item-value > svg")?.getAttribute("class")).toContain("list-item-chevron");
+    // jsdom lays nothing out, so check the rules themselves (the chevron used to shrink: Q's note).
+    const css = readFileSync(resolve(__dirname, "../styles/app.css"), "utf8");
+    const rule = (selector: string) => {
+      const at = css.indexOf(`\n${selector} {`);
+      return at < 0 ? "" : css.slice(at, css.indexOf("}", at));
+    };
+    expect(rule(".list-item-value")).toMatch(/flex: none;/);
+    expect(rule(".list-item-chevron,\n.list-item-value > svg")).toMatch(/flex: none;/);
+  });
+});
+
+describe("photo input", () => {
+  function stubObjectUrls() {
+    const made: string[] = [];
+    const revoked = new Set<string>();
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: (file: File) => {
+        const url = `blob:${file.name}#${made.length + 1}`;
+        made.push(url);
+        return url;
+      },
+    });
+    Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: (url: string) => revoked.add(url) });
+    const restore = () => {
+      delete (URL as unknown as Record<string, unknown>).createObjectURL;
+      delete (URL as unknown as Record<string, unknown>).revokeObjectURL;
+    };
+    return { made, revoked, restore };
+  }
+  const shown = (container: HTMLElement) => container.querySelector("img.ui-photo-thumb")?.getAttribute("src") ?? null;
+
+  it("keeps the preview it shows alive under StrictMode, and revokes every URL it made", () => {
+    const urls = stubObjectUrls();
+    try {
+      const first = new File(["a"], "z-report.jpg", { type: "image/jpeg" });
+      const second = new File(["b"], "terminal.jpg", { type: "image/jpeg" });
+      function Harness() {
+        const [file, setFile] = useState<File | null>(first);
+        return (
+          <>
+            <PhotoInput value={file} onChange={setFile} />
+            <button type="button" onClick={() => setFile(second)}>
+              swap
+            </button>
+          </>
+        );
+      }
+      const { container, unmount } = inLang(
+        "en",
+        <StrictMode>
+          <Harness />
+        </StrictMode>,
+      );
+      // StrictMode mounts the effect twice: the first URL is revoked, the one on screen isn't.
+      const before = shown(container);
+      expect(before).toMatch(/^blob:z-report\.jpg#/);
+      expect(urls.revoked.has(before!)).toBe(false);
+      expect(screen.getByText("z-report.jpg")).toBeTruthy();
+
+      fireEvent.click(screen.getByRole("button", { name: "swap" }));
+      const after = shown(container);
+      expect(after).toMatch(/^blob:terminal\.jpg#/);
+      expect(urls.revoked.has(after!)).toBe(false);
+      expect(urls.made.filter((url) => url.startsWith("blob:z-report")).every((url) => urls.revoked.has(url))).toBe(true);
+
+      fireEvent.click(screen.getByRole("button", { name: "Remove" }));
+      expect(shown(container)).toBeNull();
+      expect(screen.getByText("Take or choose a photo")).toBeTruthy();
+      unmount();
+      expect(urls.made.every((url) => urls.revoked.has(url))).toBe(true);
+    } finally {
+      urls.restore();
+    }
+  });
+
+  it("never hands out a URL made for another file", () => {
+    const urls = stubObjectUrls();
+    try {
+      const seen: (string | null)[] = [];
+      function Probe({ file }: { file: File | null }) {
+        seen.push(useObjectUrl(file));
+        return null;
+      }
+      const first = new File(["a"], "a.jpg");
+      const second = new File(["b"], "b.jpg");
+      const { rerender } = render(<Probe file={first} />);
+      rerender(<Probe file={second} />);
+      // The render with the new file, before its effect, gets null rather than a.jpg's URL.
+      const index = seen.lastIndexOf(seen.find((url) => url?.startsWith("blob:b.jpg")) ?? "");
+      expect(seen.slice(0, index).filter((url) => url?.startsWith("blob:a.jpg")).length).toBeGreaterThan(0);
+      expect(seen[index - 1]).toBeNull();
+      rerender(<Probe file={null} />);
+      expect(seen.at(-1)).toBeNull();
+    } finally {
+      urls.restore();
+    }
   });
 });

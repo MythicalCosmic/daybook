@@ -1,37 +1,25 @@
 import { Square, Timer } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
 
 import { useFeatureT } from "../../i18n/feature";
 import { useNow } from "../../lib/useNow";
 import { useNavigation } from "../../state/navigation";
-import { useToast } from "../../state/toast";
-import { haptic } from "../../telegram";
 import { Button, Card, CardTitle } from "../../ui";
 import type { SlotProps } from "../registry";
-import { projectKeys, stopTimer, useMyProjects, useRefresh, useTimer } from "./api";
-import { elapsed, hhmm } from "./lib";
+import { useMyProjects, useTimer } from "./api";
+import { elapsed } from "./lib";
 import { messages } from "./messages";
 import { ProjectRow } from "./ProjectRow";
+import { useCardTimer } from "./Timer";
 import "./projects.css";
 
 /** Home: the running timer, with Stop. Nothing when no timer runs. */
 export function TimerCard({ member }: SlotProps) {
   const t = useFeatureT(messages);
-  const toast = useToast();
-  const client = useQueryClient();
-  const refresh = useRefresh(member.companyId);
   const timer = useTimer(member.companyId);
+  const controls = useCardTimer(member.companyId);
   const now = useNow(1000);
   const running = timer.data;
   if (!running) return null;
-
-  async function stop() {
-    const entry = await stopTimer(member.companyId);
-    haptic.notify("success");
-    if (entry) toast(t("timerLogged", { time: hhmm(entry.minutes) }), { tone: "success" });
-    await client.invalidateQueries({ queryKey: projectKeys.timer(member.companyId) });
-    void refresh();
-  }
 
   return (
     <Card tone="accent" className="prj-timer" layout="row" padding="flush">
@@ -46,7 +34,7 @@ export function TimerCard({ member }: SlotProps) {
             : t("timerOnProject", { key: running.project_key ?? "" })}
         </span>
       </span>
-      <Button variant="primary" icon={Square} onClick={() => void stop()}>
+      <Button variant="primary" icon={Square} loading={controls.busy} onClick={controls.stop}>
         {t("timerStop")}
       </Button>
     </Card>
