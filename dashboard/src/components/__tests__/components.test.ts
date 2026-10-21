@@ -254,6 +254,35 @@ describe("small layout fixes", () => {
     expect(header.find("[data-page-actions]").classes()).toEqual(expect.arrayContaining(["max-w-full", "min-w-0", "flex-wrap", "max-sm:w-full"]));
   });
 
+  it("PageHeader moves the tab underline when a tab's count arrives and widens it", async () => {
+    // jsdom has no layout: a tab is 10 px per character, placed after the tabs before it.
+    const width = (el: HTMLElement) => (el.textContent ?? "").trim().length * 10;
+    const widthSpy = vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) {
+      return width(this);
+    });
+    const leftSpy = vi.spyOn(HTMLElement.prototype, "offsetLeft", "get").mockImplementation(function (this: HTMLElement) {
+      let left = 0;
+      for (let el = this.previousElementSibling as HTMLElement | null; el; el = el.previousElementSibling as HTMLElement | null) if (el.dataset.tab) left += width(el);
+      return left;
+    });
+    const tabs = (count?: number) => [
+      { id: "verify", label: "To verify", count },
+      { id: "all", label: "All" },
+    ];
+    const header = mount(PageHeader, { props: { title: "Shifts", tabs: tabs(), tab: "all" }, global: { plugins: plugins() } });
+    await flushPromises();
+    const underline = () => header.find("nav span[aria-hidden='true']").attributes("style");
+    expect(underline()).toContain("left: 90px");
+    await header.setProps({ tabs: tabs(4) });
+    await flushPromises();
+    // "To verify" grew a badge: "All", and its underline, start further right.
+    const first = header.find("[data-tab='verify']").element as HTMLElement;
+    expect(width(first)).toBeGreaterThan(90);
+    expect(underline()).toContain(`left: ${width(first)}px`);
+    widthSpy.mockRestore();
+    leftSpy.mockRestore();
+  });
+
   it("TextInput marks a clearable field, so a search field shows only its own clear button", async () => {
     const search = mount(TextInput, { props: { modelValue: "milk", type: "search", clearable: true }, global: { plugins: plugins() } });
     expect(search.find("input").attributes("data-clearable")).toBe("true");

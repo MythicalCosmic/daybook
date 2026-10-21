@@ -362,6 +362,7 @@
   "shell.company.role": "Ваша роль: {role}",
   "shell.company.none": "Компаний пока нет",
   "shell.company.noneBody": "Создайте первую компанию или попросите владельца дать вам доступ к своей.",
+  "shell.company.waitingElsewhere": "В других ваших компаниях ждут: {n}",
 
   "shell.palette.title": "Командная панель",
   "shell.palette.description": "Поиск страниц, записей и действий",

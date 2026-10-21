@@ -46,7 +46,7 @@ import {
   DialogTitle,
   VisuallyHidden,
 } from "reka-ui";
-import { computed, ref, watch, type Component } from "vue";
+import { computed, onBeforeUnmount, ref, watch, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
@@ -113,12 +113,34 @@ const query = ref("");
 const debounced = refDebounced(query, 150);
 const trimmed = computed(() => query.value.trim());
 
+/**
+ * Keys typed between ⌘K and the field taking focus (the dialog mounts and focuses a frame later)
+ * would be lost, and "CHL-8" would search "HL-8": while the palette is open and its field isn't
+ * focused yet, printable keys go into the query and focus moves to the field.
+ */
+function catchEarlyKeys(event: KeyboardEvent): void {
+  if (!palette.open || event.defaultPrevented || event.isComposing) return;
+  if (event.key.length !== 1 || event.ctrlKey || event.metaKey || event.altKey) return;
+  const input = document.querySelector<HTMLInputElement>("[data-palette-input]");
+  if (input && document.activeElement === input) return;
+  event.preventDefault();
+  query.value += event.key;
+  input?.focus();
+}
+
 watch(
   () => palette.open,
   (open) => {
-    if (open) query.value = palette.initialQuery;
+    if (open) {
+      query.value = palette.initialQuery;
+      window.addEventListener("keydown", catchEarlyKeys, true);
+    } else {
+      window.removeEventListener("keydown", catchEarlyKeys, true);
+    }
   },
+  { immediate: true },
 );
+onBeforeUnmount(() => window.removeEventListener("keydown", catchEarlyKeys, true));
 
 const companyId = computed(() => company.currentId);
 const base = computed(() => (companyId.value === null ? "" : `/c/${companyId.value}`));
@@ -422,6 +444,7 @@ function onOpenChange(open: boolean): void {
               <ComboboxInput
                 v-model="query"
                 auto-focus
+                data-palette-input
                 class="h-full min-w-0 flex-1 bg-transparent text-md text-fg outline-none placeholder:text-subtle focus-visible:outline-none"
                 :placeholder="t('shell.palette.placeholder')"
               />

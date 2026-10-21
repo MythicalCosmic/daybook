@@ -5,7 +5,7 @@
  * The active tab's underline slides between tabs.
  */
 import { ArrowLeft } from "@lucide/vue";
-import { computed, nextTick, onMounted, ref, watch, type Component } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type Component } from "vue";
 import { RouterLink, useRoute, useRouter, type RouteLocationRaw } from "vue-router";
 
 import UiBadge from "./UiBadge.vue";
@@ -49,12 +49,29 @@ function measure(): void {
   indicator.value = el ? { left: el.offsetLeft, width: el.offsetWidth } : null;
 }
 
-watch([current, () => props.tabs.length], () => nextTick(measure));
+// Tabs change width after the first paint: a count arrives ("To verify 4"), the language switches,
+// fonts load. Each tab is watched, so the underline never stays under the old width.
+let observer: ResizeObserver | null = null;
+function observeTabs(): void {
+  observer?.disconnect();
+  if (typeof ResizeObserver === "undefined" || !tabsEl.value) return;
+  observer ??= new ResizeObserver(() => measure());
+  for (const tab of tabsEl.value.querySelectorAll<HTMLElement>("[data-tab]")) observer.observe(tab);
+}
+
+watch([current, () => props.tabs.map((tab) => `${tab.id}:${tab.label}:${tab.count ?? ""}`).join("|")], () =>
+  nextTick(() => {
+    measure();
+    observeTabs();
+  }),
+);
 onMounted(() => {
   measure();
+  observeTabs();
   // Fonts change tab widths once they load.
   void document.fonts?.ready.then(measure);
 });
+onBeforeUnmount(() => observer?.disconnect());
 </script>
 
 <template>

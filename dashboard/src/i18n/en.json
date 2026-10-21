@@ -362,6 +362,7 @@
   "shell.company.role": "Your role: {role}",
   "shell.company.none": "No companies yet",
   "shell.company.noneBody": "Create your first company, or ask an owner to give you access to theirs.",
+  "shell.company.waitingElsewhere": "{n} waiting in your other companies",
 
   "shell.palette.title": "Command palette",
   "shell.palette.description": "Search pages, records and actions",

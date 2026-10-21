@@ -32,10 +32,11 @@ import { useUiStore } from "@/stores/ui";
 import ForbiddenPage from "./ForbiddenPage.vue";
 import MobileTabBar from "./MobileTabBar.vue";
 import SideNav from "./SideNav.vue";
+import { loadPalette, prefetchPaletteOnModifier } from "./paletteLoader";
 import { resolveStartParam, telegram } from "./TelegramBridge";
 import TopBar from "./TopBar.vue";
 
-const CommandPalette = defineAsyncComponent(() => import("./CommandPalette.vue"));
+const CommandPalette = defineAsyncComponent(loadPalette);
 const InboxDrawer = defineAsyncComponent(() => import("./InboxDrawer.vue"));
 const ShortcutsDialog = defineAsyncComponent(() => import("./ShortcutsDialog.vue"));
 const MoreSheet = defineAsyncComponent(() => import("./MoreSheet.vue"));
@@ -186,6 +187,7 @@ removers.push(
   registerHotkey("mod+j", () => aiAvailable.value && ui.askAi(), { allowInInputs: true, allowInDialogs: true, enabled: () => aiAvailable.value }),
   registerHotkey("?", () => (ui.shortcutsOpen = true)),
   registerHotkey("[", () => ui.toggleSidebar(), { enabled: () => isDesktop.value && !companyless.value }),
+  prefetchPaletteOnModifier(),
 );
 let jumpRemovers: Array<() => void> = [];
 watch(

@@ -40,6 +40,8 @@ const hasPortfolio = computed(() => router.hasRoute("portfolio"));
 const canCreate = computed(() => hasExtension("shell.company.create", company.current ?? company.companies[0]));
 const current = computed(() => (companyless.value ? null : company.current));
 const label = computed(() => current.value?.name ?? (onPortfolio.value ? t("shell.company.portfolio") : t("shell.company.switch")));
+/** What waits for the person in their other companies (this one's is the Inbox badge). */
+const elsewhere = computed(() => company.companies.filter((item) => item.id !== current.value?.id).reduce((sum, item) => sum + Math.max(0, item.pending ?? 0), 0));
 
 function open(id: number): void {
   if (id === company.currentId && !companyless.value) return;
@@ -81,7 +83,10 @@ const itemClass =
             <span class="block truncate text-base font-semibold leading-5 text-fg">{{ label }}</span>
             <span v-if="current && variant === 'sidebar'" class="block truncate text-xs text-muted">{{ current.role?.name }}</span>
           </span>
-          <UiBadge v-if="current && current.pending > 0 && variant === 'sidebar'" :count="current.pending" tone="primary" />
+          <!-- This company's queue is the Inbox badge right below; the dot says another one has work waiting. -->
+          <span v-if="elsewhere > 0" class="size-2 shrink-0 rounded-full bg-primary" :title="t('shell.company.waitingElsewhere', { n: elsewhere })" data-elsewhere>
+            <span class="sr-only">{{ t("shell.company.waitingElsewhere", { n: elsewhere }) }}</span>
+          </span>
           <ChevronsUpDown :size="15" class="shrink-0 text-subtle transition-colors group-hover:text-muted" />
         </template>
       </DropdownMenuTrigger>
