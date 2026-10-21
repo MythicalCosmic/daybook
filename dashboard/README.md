@@ -131,8 +131,9 @@ Forms: `FormField` around `TextInput`, `MoneyInput` (string values, never floats
 `KpiStrip`/`KpiCard` (`phone="grid"` or `"compact"` keeps two per row on phones; `error` + `retry`
 keep the tile and its label when the number fails), `ChartCard` around
 `LineChart`, `AreaChart`, `BarChart` (`y-max="100"` for percentages, `integer` for counts, a
-`target` named in the legend; `icon` and `to` on the Overview), `DonutChart`, `HeatmapChart`,
-`SparkLine`, `BulletBar`, `MoneyText`, `MoneyCell`, `DeltaBadge`. Overview cards: `WidgetCard`.
+`target` named in the legend, `partial` for a last point still in progress; `icon` and `to` on the
+Overview), `DonutChart`, `HeatmapChart`, `SparkLine`, `BulletBar`, `MoneyText` ("1,250,000 UZS":
+the amount first in every language), `MoneyCell`, `DeltaBadge`. Overview cards: `WidgetCard`.
 Decisions: `ApproveRejectButtons`, `ConfirmDialog` / `useConfirm()`, `ExportButton`.
 
 ### The Overview
@@ -143,8 +144,10 @@ The page arranges every registered widget into one cockpit (`modules/overview/la
 - **KPI band**: every `kind: "kpi"` widget, four to a row (two when the page is narrower than
   56rem, phones included). A short last row borrows the first `span: 1` cards (Team, Off today).
 - **Cards**: `card` and `chart` widgets packed into rows of four columns in their order; a later
-  card fills an earlier gap and a row that still isn't full widens its cards. A row is as tall as
-  its tallest card, **at most 22rem** (26rem when stacked): build cards whose body scrolls.
+  card fills an earlier gap and a row that still isn't full widens its cards. Neighbours from one
+  module that fit in a row together stay together (Projects at risk beside My projects), so a short
+  list never sits beside a tall chart. A row is as tall as its tallest card, **at most 22rem**
+  (26rem when stacked): build cards whose body scrolls.
 - People can drag and hide widgets ("Customize"); the layout is their `overview` SavedView.
 
 So a widget: a KPI tile uses `KpiCard` (or its header, `kpi-value` number and `@container`
@@ -153,6 +156,13 @@ title, count, `to` for "View all", a body that scrolls with an edge fade); a cha
 `ChartCard` with `icon` and `to`. Root `h-full`, fail inside your own frame, use container
 queries (`@md:`) rather than viewport breakpoints for the inside, and render nothing (not an empty
 card) when there is nothing to show, as Get started does once it is done.
+
+- Loading: `useWidgetSkeleton(() => query.isPending.value)` shows your skeleton at once (the cell
+  showed a placeholder of the same shape while your code loaded), not after the page's 150 ms.
+- Today is still in progress: a trend that ends today passes `partial` to `LineChart` (dashed into a
+  hollow point, "so far" in the tooltip), and a sparkline leaves today out.
+- Say what you count: the tasks tiles count one-off work (`routines=without`) and say so; routine
+  work has its own tile ("Routines today", `overview.routines`, from `routines/day/`).
 
 Money is a decimal string end to end (`lib/money.ts`, `lib/decimal.ts`); dates are company-local
 (`lib/dates.ts`, `useFormat()`); never `parseFloat` a sum.
@@ -190,10 +200,10 @@ the entry chunk and everything it imports statically, plus the shell dictionary 
 
 | | gzip |
 |---|---|
-| Initial JS (entry + static imports) | 161.0 KB |
-| + the largest shell dictionary (ru; uz 5.2, en 4.8) | 6.1 KB |
-| + the Overview page (cockpit layout, Customize) | 11.0 KB |
-| **Shell + Overview** | **178.1 KB** of 180 |
+| Initial JS (entry + static imports) | 160.7 KB |
+| + the largest shell dictionary (ru; uz 5.3, en 4.9) | 6.1 KB |
+| + the Overview page (cockpit layout, Customize) | 11.6 KB |
+| **Shell + Overview** | **178.3 KB** of 180 |
 
 **Every module's `index.ts` is in the first load**, so registries are where the budget goes: today
 a registry costs 0.5 KB (groups) to 1.3 KB (projects) to 2.6 KB (finance), measured by building
@@ -220,13 +230,16 @@ else the first load needs (shell, every registry, the icons and reka-ui pieces t
 grouped into the entry chunk by Rolldown's `$initial` tag, instead of ~60 tiny shared chunks whose
 names would repeat in every preload list. That alone took Wave 1 from 191.8 to 174 KB.
 
-`@vueuse/core` and `@vueuse/router` are pinned to the 14.x that reka-ui depends on, so one copy
-ships (the duplicate cost 0.9 KB of the first load). Bump them together with reka-ui.
+`@vueuse/core` is pinned to the 14.x that reka-ui depends on, so one copy ships (the duplicate
+cost 0.9 KB of the first load); `@vueuse/router` was never imported and is gone. Bump it together
+with reka-ui.
 
 Fonts: Figtree and Caprasimo have no Cyrillic, so `styles/fonts.css` adds Onest (body) and
 Literata Black (display, declared at weight 400 like Caprasimo) for Cyrillic letters only, each
 behind its `unicode-range`: Latin pages never download them (Russian pages add 15.5 KB, plus 10.8 KB
-where a display heading shows). Font files are never inlined into the CSS (`assetsInlineLimit`).
+where a display heading shows; the four `@font-face` rules are 0.3 KB of everyone's CSS). Font
+files are never inlined into the CSS (`assetsInlineLimit`). The mini app does the same from Google
+Fonts, in a second stylesheet that doesn't block its first paint (`miniapp/index.html`).
 
 vue-i18n runs without its message compiler (`__INTLIFY_DROP_MESSAGE_COMPILER__`);
 `src/i18n/compile.ts` compiles messages instead. It supports `{name}`, `{0}`, `{'literal'}` and
