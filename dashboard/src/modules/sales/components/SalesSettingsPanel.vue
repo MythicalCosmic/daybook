@@ -5,7 +5,6 @@
  * blind count and photo rules, and when owners hear about late openings, open tills, unconfirmed
  * handovers and big payouts. Saved together; the page warns before leaving unsaved changes.
  */
-import { Save } from "@lucide/vue";
 import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -16,6 +15,7 @@ import NumberInput from "@/components/NumberInput.vue";
 import PageSection from "@/components/PageSection.vue";
 import RadioCards from "@/components/RadioCards.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
+import StickyActionBar from "@/components/StickyActionBar.vue";
 import TimePicker from "@/components/TimePicker.vue";
 import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import UiButton from "@/components/UiButton.vue";
@@ -110,13 +110,11 @@ async function submit(): Promise<void> {
           </FormField>
         </div>
       </PageSection>
-      <Transition name="fade">
-        <div v-if="canEdit && dirty" class="sticky bottom-3 z-[2] flex items-center justify-end gap-3 rounded-card border border-line bg-surface/95 px-4 py-3 shadow-raised backdrop-blur">
-          <span class="mr-auto text-sm text-muted">{{ t("common.unsaved") }}</span>
-          <UiButton variant="ghost" @click="Object.assign(form, JSON.parse(loaded))">{{ t("common.reset") }}</UiButton>
-          <UiButton type="submit" variant="primary" :icon="Save" :loading="save.isPending.value">{{ t("common.save") }}</UiButton>
-        </div>
-      </Transition>
+      <!-- The same bar as every other settings form. -->
+      <StickyActionBar :show="canEdit && dirty" :message="t('common.unsaved')" tone="warning">
+        <UiButton variant="ghost" @click="Object.assign(form, JSON.parse(loaded))">{{ t("common.discard") }}</UiButton>
+        <UiButton type="submit" variant="primary" :loading="save.isPending.value">{{ t("common.save") }}</UiButton>
+      </StickyActionBar>
     </form>
   </div>
 </template>

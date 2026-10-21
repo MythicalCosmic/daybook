@@ -149,7 +149,7 @@
   "timeoff.holidays.emptyBody": "O‘zbekistonning davlat bayramlarini bir bosishda qo‘shing, keyin o‘zingizning dam olish kunlaringizni.",
   "timeoff.holidays.hayitNote": "Ramazon va Qurbon hayiti oy taqvimiga bog‘liq: har yili hukumat sanalarni e’lon qilgach qo‘shing.",
 
-  "timeoff.person.thisYear": "Bu yil {n} kun dam olgan | Bu yil {n} kun dam olgan | Bu yil {n} kun dam olgan",
+  "timeoff.person.thisYear": "Bu yil {n} kun tasdiqlangan | Bu yil {n} kun tasdiqlangan | Bu yil {n} kun tasdiqlangan",
   "timeoff.person.emptyTitle": "Hali ta’til yo‘q",
   "timeoff.person.emptyBody": "Ilovadan kelgan so‘rovlar va unga siz yozgan ta’tillar shu yerda ko‘rinadi.",
   "timeoff.person.noReason": "Sabab ko‘rsatilmagan",

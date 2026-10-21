@@ -30,7 +30,8 @@
   "people.kpi.lateNow": "Hozir kechikkan",
   "people.kpi.openNow": "{n} ta ochiq",
   "people.kpi.streak": "Ketma-ket",
-  "people.kpi.daysOff": "Bu yilgi dam olish kunlari",
+  "people.kpi.daysOff": "Bu yil dam olgan kunlari",
+  "people.kpi.daysBooked": "Yana {n} kun rejalashtirilgan | Yana {n} kun rejalashtirilgan | Yana {n} kun rejalashtirilgan",
 
   "people.view.current": "Hammasi",
   "people.view.active": "Faol",

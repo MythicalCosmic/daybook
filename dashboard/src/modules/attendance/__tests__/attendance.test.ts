@@ -5,7 +5,7 @@ import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { toasts } from "@/components/useToast";
-import { mergeModuleMessages } from "@/i18n";
+import { mergeModuleMessages, setLanguage } from "@/i18n";
 import { json } from "@/test/fixtures";
 import { mountWithProviders, testApp } from "@/test/plugins";
 
@@ -196,6 +196,14 @@ describe("lib", () => {
     expect(weekdayIndex("2026-10-21")).toBe(2);
     expect(formatDistance(1234, { m: "m", km: "km" })).toBe("1.2 km");
     expect(formatDistance(34, { m: "m", km: "km" })).toBe("34 m");
+    // Uzbek and Russian write the decimal comma.
+    for (const language of ["ru", "uz"] as const) {
+      void setLanguage(language);
+      expect(hours(495)).toBe("8,3");
+      expect(hours(480)).toBe("8");
+      expect(formatDistance(1234, { m: "m", km: "km" })).toBe("1,2 km");
+    }
+    void setLanguage("en");
     // Schedule cards keep the half hours.
     expect(compactTime("08:30")).toBe("8:30");
     expect(compactTime("17:30:00")).toBe("17:30");

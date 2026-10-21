@@ -7,6 +7,7 @@
 import { Archive, ArchiveRestore, Pencil, Plus, Wallet } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { RouterLink, useRoute } from "vue-router";
 
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
@@ -36,6 +37,9 @@ const options = useOptions();
 const query = useRegisters();
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const canEdit = computed(() => company.can("sales.manage"));
+const route = useRoute();
+/** "Change it in Rules": the sales rules panel next door, in Settings or on the sales setup page. */
+const rulesLink = computed(() => (route.name === "settings.page" ? `/c/${company.currentId}/settings/sales` : `/c/${company.currentId}/sales/setup?tab=rules`));
 
 const groups = computed(() => {
   const byBranch = new Map<number, { id: number; name: string; code: string; registers: Register[] }>();
@@ -143,6 +147,8 @@ async function archive(register: Register): Promise<void> {
         <UiButton variant="primary" :loading="save.isPending.value" @click="submit">{{ editing ? t("common.save") : t("sales.registers.create") }}</UiButton>
       </template>
     </UiDialog>
-    <p class="text-xs text-subtle">{{ t("sales.registers.footnote", { tolerance: fmt.money(options.data.value?.settings.cash_tolerance ?? "0") }) }}</p>
+    <RouterLink :to="rulesLink" class="w-fit text-xs text-subtle hover:text-fg hover:underline" data-rules-link>{{
+      t("sales.registers.footnote", { tolerance: fmt.money(options.data.value?.settings.cash_tolerance ?? "0") })
+    }}</RouterLink>
   </div>
 </template>

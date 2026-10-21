@@ -81,7 +81,10 @@ async function runOvertime(record: RecordRow, approve: boolean, reason = ""): Pr
   <div class="flex flex-col gap-5">
     <AttendanceHeader :title="t('attendance.corrections.title')" :description="t('attendance.corrections.description')" />
 
-    <SegmentedControl v-model="tab" :options="tabs" class="self-start" />
+    <!-- Scrolls sideways on a phone instead of widening the page. -->
+    <div class="no-scrollbar max-w-full self-start overflow-x-auto">
+      <SegmentedControl v-model="tab" :options="tabs" />
+    </div>
 
     <div v-if="skeleton" class="flex flex-col gap-3">
       <SkeletonBlock v-for="n in 3" :key="n" height="112px" radius="12px" />

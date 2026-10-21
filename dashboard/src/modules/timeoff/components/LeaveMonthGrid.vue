@@ -5,6 +5,7 @@
  * a manager), holidays and days off shaded, today marked. Names stay put while the days scroll
  * sideways on small screens. A bar opens its request.
  */
+import { useResizeObserver } from "@vueuse/core";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -46,6 +47,16 @@ function scrollToToday() {
   el.scrollLeft = todayIndex.value > 2 ? (todayIndex.value - 2) * dayWidth : 0;
 }
 onMounted(scrollToToday);
+// The days stretch with the card (the waiting list beside it arrives later), which would leave the
+// first visible day cut in half: start again on a whole day when the width changes.
+let lastWidth = 0;
+useResizeObserver(wrap, (entries) => {
+  const width = Math.round(entries[0]?.contentRect.width ?? 0);
+  if (width && width !== lastWidth) {
+    lastWidth = width;
+    scrollToToday();
+  }
+});
 watch(
   () => props.month.from,
   () => void nextTick(scrollToToday),

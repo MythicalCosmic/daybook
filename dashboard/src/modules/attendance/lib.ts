@@ -3,6 +3,7 @@
  * distances, hour arithmetic on "HH:MM" strings and naive local date-times for the API.
  */
 import type { StatusTone } from "@/components/StatusPill.vue";
+import { currentLanguage } from "@/i18n";
 import { addDays } from "@/lib/dates";
 
 import type { BoardState, CellCode, RecordFlag, ShiftStatus, SwapKind } from "./types";
@@ -69,16 +70,21 @@ export function slotColor(slot: number | null | undefined): string {
   return `var(--c-chart-${index})`;
 }
 
-/** "34 m", "1.2 km". */
+/** The UI language's decimal mark: "7.5" in English, "7,5" in Uzbek and Russian. */
+function decimal(text: string): string {
+  return currentLanguage() === "en" ? text : text.replace(".", ",");
+}
+
+/** "34 m", "1.2 km" ("1,2 km" in uz/ru). */
 export function formatDistance(meters: number | null | undefined, units: { m: string; km: string }): string {
   if (meters === null || meters === undefined) return "—";
-  if (meters >= 1000) return `${(meters / 1000).toFixed(1)} ${units.km}`;
+  if (meters >= 1000) return `${decimal((meters / 1000).toFixed(1))} ${units.km}`;
   return `${meters} ${units.m}`;
 }
 
-/** Minutes as hours with one decimal ("7.5"), without units. */
+/** Minutes as hours with one decimal ("7.5", "7,5" in uz/ru), without units. */
 export function hours(minutes: number): string {
-  return (Math.round((minutes / 60) * 10) / 10).toFixed(minutes % 60 === 0 ? 0 : 1);
+  return decimal((Math.round((minutes / 60) * 10) / 10).toFixed(minutes % 60 === 0 ? 0 : 1));
 }
 
 /** "08:30" → "8:30", "18:00" → "18:00": a wall-clock time as short as it can be without losing minutes. */

@@ -42,6 +42,7 @@ import { toast } from "@/components/useToast";
 import { allowed, isModuleVisible } from "@/core/access";
 import { hasExtension } from "@/core/extensions";
 import { modules } from "@/core/modules";
+import { todayIn } from "@/lib/dates";
 import { formatPhone } from "@/lib/format";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
@@ -52,7 +53,7 @@ import { personAction, usePerson, usePersonMutation } from "../api";
 import PersonHistory from "../components/PersonHistory.vue";
 import PersonOverviewTab from "../components/PersonOverviewTab.vue";
 import PersonTabBar from "../components/PersonTabBar.vue";
-import { rateTone, statusChip, tenureParts } from "../status";
+import { bookedDaysAhead, rateTone, statusChip, tenureParts } from "../status";
 import type { PersonDetail } from "../types";
 
 const PersonEditDialog = defineAsyncComponent(() => import("../components/PersonEditDialog.vue"));
@@ -100,6 +101,9 @@ const tenure = computed(() => {
   return t("people.tenure.days", { n: parts.days }, parts.days);
 });
 
+/** Approved days still ahead, which "days off taken this year" leaves out (it counts up to today). */
+const booked = computed(() => bookedDaysAhead(person.value?.overview.upcoming_time_off ?? [], todayIn(company.timezone)));
+
 const kpis = computed(() => {
   const o = person.value?.overview;
   return [
@@ -113,7 +117,13 @@ const kpis = computed(() => {
     { id: "done", label: t("people.kpi.done30"), value: o?.done ?? null },
     { id: "late", label: t("people.kpi.lateNow"), value: o?.late_now ?? null, hint: o?.open_now ? t("people.kpi.openNow", { n: o.open_now }) : undefined },
     { id: "streak", label: t("people.kpi.streak"), value: o?.streak ?? null, format: (value: number) => t("people.days", { n: value }, value) },
-    { id: "off", label: t("people.kpi.daysOff"), value: o?.days_off_this_year ?? null, format: (value: number) => t("people.days", { n: value }, value) },
+    {
+      id: "off",
+      label: t("people.kpi.daysOff"),
+      value: o?.days_off_this_year ?? null,
+      format: (value: number) => t("people.days", { n: value }, value),
+      hint: booked.value ? t("people.kpi.daysBooked", { n: booked.value }, booked.value) : undefined,
+    },
   ];
 });
 

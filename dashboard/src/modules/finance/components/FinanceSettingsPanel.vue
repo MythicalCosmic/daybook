@@ -26,15 +26,18 @@ const tab = ref<SettingsTab>(props.initial);
 
 <template>
   <div class="flex flex-col gap-4">
-    <SegmentedControl
-      v-model="tab"
-      :options="[
-        { value: 'preferences', label: t('finance.settings.tab.preferences'), icon: SlidersHorizontal },
-        { value: 'categories', label: t('finance.settings.tab.categories'), icon: Tags },
-        { value: 'rates', label: t('finance.settings.tab.rates'), icon: Landmark },
-        { value: 'period', label: t('finance.settings.tab.period'), icon: CalendarCheck },
-      ]"
-    />
+    <!-- Four tabs don't fit a phone: they scroll sideways inside the panel, never the page. -->
+    <div class="no-scrollbar overflow-x-auto">
+      <SegmentedControl
+        v-model="tab"
+        :options="[
+          { value: 'preferences', label: t('finance.settings.tab.preferences'), icon: SlidersHorizontal },
+          { value: 'categories', label: t('finance.settings.tab.categories'), icon: Tags },
+          { value: 'rates', label: t('finance.settings.tab.rates'), icon: Landmark },
+          { value: 'period', label: t('finance.settings.tab.period'), icon: CalendarCheck },
+        ]"
+      />
+    </div>
     <component :is="panels[tab]" />
   </div>
 </template>

@@ -30,7 +30,8 @@
   "people.kpi.lateNow": "Late right now",
   "people.kpi.openNow": "{n} open",
   "people.kpi.streak": "Streak",
-  "people.kpi.daysOff": "Days off this year",
+  "people.kpi.daysOff": "Days off taken this year",
+  "people.kpi.daysBooked": "{n} more days booked | {n} more day booked | {n} more days booked",
 
   "people.view.current": "Everyone",
   "people.view.active": "Active",

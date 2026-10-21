@@ -153,11 +153,12 @@ const columnLabel = (state: BoardState) => t(`attendance.state.${state}`);
       </template>
     </AttendanceHeader>
 
+    <!-- The same toolbar as the timesheet and the roster: the period on the left, the branch on the right. -->
     <div class="flex flex-wrap items-center gap-2">
-      <BranchSwitch v-model="branch" />
-      <span class="flex-1" />
+      <DatePicker v-model="day" size="sm" :max="today" :placeholder="t('common.today')" format="weekday" class="w-56 max-sm:w-full" />
       <UiButton v-if="!isToday" size="sm" variant="ghost" @click="day = null">{{ t("common.today") }}</UiButton>
-      <DatePicker v-model="day" size="sm" :max="today" :placeholder="t('common.today')" format="weekday" class="w-56" />
+      <span class="flex-1" />
+      <BranchSwitch v-model="branch" />
     </div>
 
     <div v-if="skeleton" class="flex flex-col gap-4">

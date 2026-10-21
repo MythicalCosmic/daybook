@@ -30,7 +30,8 @@
   "people.kpi.lateNow": "Просрочено сейчас",
   "people.kpi.openNow": "Открытых: {n}",
   "people.kpi.streak": "Серия",
-  "people.kpi.daysOff": "Дней отдыха в этом году",
+  "people.kpi.daysOff": "Отгуляно в этом году",
+  "people.kpi.daysBooked": "Впереди ещё {n} день | Впереди ещё {n} дня | Впереди ещё {n} дней",
 
   "people.view.current": "Все",
   "people.view.active": "Активные",
