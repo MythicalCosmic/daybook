@@ -1,6 +1,6 @@
 """The demo seeds believable sales without breaking any rule of the ledger."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
@@ -14,7 +14,7 @@ from apps.core.management.commands.ensure_company_defaults import ensure_company
 from apps.core.management.commands.seed_demo import Command
 from apps.finance.models import LIVE_STATUSES, MoneyAccount, Transaction
 from apps.members.permissions import Perm
-from apps.sales import demo
+from apps.sales import demo, queries
 from apps.sales.models import CashMovement, CashShift, DailySales, SalesTarget, ShiftPayment
 
 pytestmark = pytest.mark.django_db
@@ -89,3 +89,13 @@ def test_demo_seeds_shifts_and_keeps_the_ledger_in_step(pharmacy):
     closed = shifts.exclude(status=CashShift.Status.OPEN)
     receipts = closed.aggregate(r=Sum("receipts"))["r"]
     assert 45_000 < total / receipts < 66_000
+
+    # Every widget of the cash and cashier pages has something: Monday evenings the bank's
+    # collector takes the takings, Chilonzor (open from 08:00) once opened late, and the
+    # personal target belongs to someone who runs a till.
+    assert CashMovement.objects.filter(company=company, kind="to_bank").exists()
+    since = story.today - timedelta(days=demo.DAYS)
+    cashiers = queries.cashier_scorecard(company, since, story.today, branch_ids=None)
+    assert any(row["late_opens"] for row in cashiers)
+    target = SalesTarget.objects.get(company=company, membership__isnull=False)
+    assert CashShift.objects.filter(company=company, cashier=target.membership).exists()

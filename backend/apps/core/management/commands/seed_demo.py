@@ -576,19 +576,20 @@ class Command(BaseCommand):
             kind=Task.Kind.PERSONAL,
             due=at(16, day=story.next_working_day("worker", tomorrow) or tomorrow),
         )
-        plants = TaskTemplate.objects.create(
+        # His own weekly check of the hall's thermometer and hygrometer.
+        climate = TaskTemplate.objects.create(
             company=company,
-            title="Dorixonadagi gullarni sug‘orish",
+            title="Zal harorati va namligini tekshirish",
             due_time="09:00",
             weekdays=[today.weekday()],
             personal=True,
             created_by=me,
         )
-        plants.assignees.add(me)
+        climate.assignees.add(me)
         task(
-            plants.title,
+            climate.title,
             kind=Task.Kind.PERSONAL,
-            template=plants,
+            template=climate,
             for_date=today,
             due=at(9),
             **({"status": Task.Status.DONE, "completed_at": at(8, 52)} if now >= at(9) else {}),
@@ -617,7 +618,7 @@ class Command(BaseCommand):
 
         # Two weeks of three colleagues' routines, so the team results have something to show.
         history(story, owner, "madina", plan.CASH_REPORT, due=time(21, 45), late={3})
-        history(story, owner, "jasur", plan.DELIVERIES, due=time(13), late={1, 2, 5}, missed={4})
+        history(story, owner, "jasur", plan.DELIVERIES, due=time(13), late={1, 2, 4, 5})
         history(story, owner, "nigora", plan.FRIDGE_EVENING, due=time(20, 30))
 
         for row in plan.TIME_OFF:
@@ -690,7 +691,7 @@ class Command(BaseCommand):
             "Buyurtmalarni dorixonalarga yetkazish",
             due=time(14),
             days=days,
-            missed={3},
+            late={3},
         )
         picking = TaskTemplate.objects.create(
             company=company,
@@ -737,10 +738,10 @@ class Command(BaseCommand):
         return company, people
 
 
-def history(story, by, key, title, *, due=time(10, 0), days=14, late=(), missed=()):
-    """Two weeks (`days`) of one person's routine, on the days they work. `late` and `missed`
-    count their working days back (1 is the last one), so the story stays the same whatever the
-    rota."""
+def history(story, by, key, title, *, due=time(10, 0), days=14, late=()):
+    """Two weeks (`days`) of one person's routine, on the days they work, all done: `late`
+    counts their working days back (1 is the last one) when it was done after reminders, so the
+    story stays the same whatever the rota. Nothing past stays open."""
     who = story.member(key)
     if who is None:
         return None
@@ -756,9 +757,7 @@ def history(story, by, key, title, *, due=time(10, 0), days=14, late=(), missed=
             continue
         worked += 1
         due_at = story.at(day, due)
-        done_at = None if worked in missed else due_at - timedelta(minutes=15)
-        if worked in late:
-            done_at = due_at + timedelta(minutes=40)
+        done_at = due_at + timedelta(minutes=40 if worked in late else -15)
         tasks.append(
             Task(
                 company=company,
@@ -770,9 +769,9 @@ def history(story, by, key, title, *, due=time(10, 0), days=14, late=(), missed=
                 branch=who.home_branch,
                 created_by=by,
                 due_at=due_at,
-                status=Task.Status.TODO if done_at is None else Task.Status.DONE,
+                status=Task.Status.DONE,
                 completed_at=done_at,
-                reminders_sent=2 if worked in late or worked in missed else 0,
+                reminders_sent=2 if worked in late else 0,
             )
         )
     Task.objects.bulk_create(tasks)

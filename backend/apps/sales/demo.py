@@ -12,8 +12,9 @@ Everything goes through `apps.sales.services` (so the ledger, the audit log and 
 are exactly what real use would leave), with the clock set to each moment as it happens
 (`demo_time.moment`), so times in lists, timelines, alerts and the audit log read naturally. The
 last two days stay unverified (they wait in Needs you), the tills of the shifts under way are
-open, one handover still waits for the owner and one was declined; a couple of shortages, one
-disputed shift and one mismatch found by the assistant give the screens something to show.
+open, the evening takings go to the owner (on Mondays to the bank's cash collector), one handover
+still waits for the owner and one was declined; a couple of shortages, one disputed shift and
+one mismatch found by the assistant give the screens something to show.
 
 The weeks before come in as imported shifts (`CashShift.Source.IMPORT`, as when a pharmacy
 loads its earlier Z-reports): one per session from the same roster, with exactly the day's sales
@@ -353,6 +354,7 @@ def _imported(company, story, now, tills, methods) -> date:
                     transfer=moved,
                     reason="Kunlik tushum seyfga",
                     created_by=session.closer,
+                    confirmed_by=session.closer,
                 )
             )
         number += 1
@@ -373,7 +375,7 @@ def _imported(company, story, now, tills, methods) -> date:
         output_field=DateTimeField(),
     )
     CashMovement.objects.filter(shift_id__in=ids).update(
-        created_at=before_closing, updated_at=before_closing
+        created_at=before_closing, updated_at=before_closing, confirmed_at=before_closing
     )
     return first_day
 
@@ -473,8 +475,8 @@ def _lines(rng, methods, net_target: int) -> tuple[list[PaymentLine], Decimal]:
 
 def _history_shift(company, rng, *, session, register, methods, owner, bank, with_photos, kind):
     opened = session.opens + timedelta(minutes=rng.randint(0, 5))
-    if kind == "short" and not session.night and rng.random() < 0.5:
-        opened += timedelta(minutes=35)  # a late opening for the scorecard
+    if kind == "small_short" and session.code == "C":
+        opened += timedelta(minutes=35)  # a late opening for the scorecard (08:00 at Chilonzor)
     count, amount = _opening(register)
     with moment(opened):
         shift = services.open_shift(
@@ -508,7 +510,7 @@ def _history_shift(company, rng, *, session, register, methods, owner, bank, wit
             )
         moves -= amount
     # Busy days a midday drop into the safe; every evening all but the next session's change
-    # goes to the owner.
+    # goes to the owner (on Mondays to the bank's cash collector).
     if not session.night and session.day.toordinal() % 3 == 0 and cash_net > 3_000_000:
         drop = Decimal(1_500_000)
         with moment(opened + timedelta(hours=6, minutes=10)):
@@ -520,7 +522,20 @@ def _history_shift(company, rng, *, session, register, methods, owner, bank, wit
     closer = session.closer
     before_handover = shift.opening_float + cash_net + moves
     handover_amount = ((before_handover - KEEP) // 100_000) * 100_000
-    if not session.night and handover_amount > 0:
+    # Monday evenings the bank's cash collector takes the day's takings instead.
+    collected = session.day.weekday() == 0 and kind not in ("pending", "declined")
+    if not session.night and handover_amount > 0 and collected:
+        with moment(closed_at - timedelta(minutes=15)):
+            services.record_movement(
+                by=closer,
+                register=register,
+                kind="to_bank",
+                amount=handover_amount,
+                to_account=bank,
+                reason="Inkassatsiya",
+            )
+        moves -= handover_amount
+    elif not session.night and handover_amount > 0:
         receiver = owner
         if kind == "declined":
             # The owner says the envelope never reached her; it was still in the till's drawer,
@@ -740,7 +755,7 @@ def _targets(company, story, people) -> None:
             company, by=owner, month=month, amount=Decimal("370000000"), branch=story.branches["Y"]
         )
     services.set_target(
-        company, by=owner, month=month, amount=Decimal("95000000"), membership=people["madina"]
+        company, by=owner, month=month, amount=Decimal("100000000"), membership=people["worker"]
     )
     previous = (month - timedelta(days=1)).replace(day=1)
     services.set_target(company, by=owner, month=previous, amount=Decimal("540000000"))
