@@ -124,10 +124,11 @@ function open(routine: Routine): void {
   else void router.push({ name: "routines.detail", params: { id: routine.id } });
 }
 
+// The days it ran, joined: days off (a Mon–Fri routine's weekend) would cut the line into dashes.
 // A line through two points says nothing: new routines show only their percentage.
-function sparkOf(routine: Routine): Array<number | null> {
-  const points = routine.stats?.spark ?? [];
-  return points.filter((value) => value !== null).length >= 4 ? points : [];
+function sparkOf(routine: Routine): number[] {
+  const points = (routine.stats?.spark ?? []).filter((value): value is number => value !== null);
+  return points.length >= 4 ? points : [];
 }
 
 function completionTone(value: number | null): string {

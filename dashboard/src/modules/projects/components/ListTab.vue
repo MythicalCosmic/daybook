@@ -30,8 +30,9 @@ const fmt = useFormat();
 const router = useRouter();
 const now = useNow();
 const q = useRouteState("q", rs.string());
-// Priority starts hidden (most cards are "Normal"; the board flags the urgent ones), so the rest fits 1440 px.
-const table = useDataTable({ id: "projects.cards", url: true, pageSize: 500, pageSizes: [500], ordering: "", hidden: ["priority"] });
+// Status and priority start hidden (the list a card sits in already says where it is, most cards are
+// "Normal" and the board flags urgent ones), so the rest fits 1440 px; the Columns menu brings them back.
+const table = useDataTable({ id: "projects.cards", url: true, pageSize: 500, pageSizes: [500], ordering: "", hidden: ["status", "priority"] });
 const query = useCards(() => props.project.id);
 
 const listName = (id: number | null) => props.project.lists.find((l) => l.id === id)?.name ?? "—";

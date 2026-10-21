@@ -302,7 +302,7 @@ const formatAudit = (field: string, value: unknown) => {
           <!-- Finished work says when it was finished (the deadline is in the details below). -->
           <span v-if="finished" class="inline-flex min-w-0 items-center gap-1 text-sm tabular-nums text-muted" :title="fmt.instant(finished.at, 'datetime')">
             <CircleCheck :size="13" class="shrink-0" aria-hidden="true" />
-            <span class="truncate">{{ t("tasks.drawer.finishedAt", { time: fmt.instant(finished.at) }) }}</span>
+            <span class="truncate">{{ t("tasks.drawer.finishedAt", { time: fmt.instant(finished.at, "short") }) }}</span>
             <span v-if="finished.late" class="shrink-0 text-xs font-semibold text-danger">· {{ finished.late }}</span>
           </span>
           <DueLabel v-else :due="task.due_at" :overdue="task.is_overdue" icon class="text-sm" />
