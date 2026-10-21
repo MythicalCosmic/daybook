@@ -34,5 +34,12 @@
   "overview.customize.hint": "Kartalarni sudrab, o‘zingizga qulay tartibda joylang, keraksizlarini yashiring. Bu ko‘rinishni faqat siz ko‘rasiz.",
   "overview.customize.allHidden": "Barcha kartalar yashirilgan",
   "overview.customize.allHiddenBody": "Ularni qaytarish uchun sahifani sozlang.",
-  "overview.widget.failed": "Bu karta yuklanmadi"
+  "overview.widget.failed": "Bu karta yuklanmadi",
+  "overview.routines.title": "Bugungi muntazam vazifalar",
+  "overview.routines.ofTotal": "{total} tadan {done}",
+  "overview.routines.late": "{n} ta kechikkan",
+  "overview.routines.toConfirm": "{n} ta tasdiqlanishi kerak",
+  "overview.routines.onTrack": "Hozircha kechikish yo‘q",
+  "overview.routines.none": "Bugun muntazam vazifa yo‘q",
+  "overview.routines.holiday": "Bayram: muntazam vazifalar yo‘q"
 }

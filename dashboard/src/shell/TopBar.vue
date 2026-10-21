@@ -153,16 +153,17 @@ const languageMenu = computed<MenuEntry[]>(() => [
 
     <span class="min-w-0 flex-1" />
 
+    <!-- 200 to 280 px with the window: at 1024 px the breadcrumb keeps its last crumb whole. -->
     <button
       v-if="!phone"
       type="button"
-      class="pressable group hidden h-8 w-[280px] items-center gap-2 rounded-button border border-line bg-canvas/70 pl-2.5 pr-1.5 text-left text-base text-muted shadow-xs hover:border-line-strong hover:bg-surface hover:text-fg lg:flex"
+      class="pressable group hidden h-8 w-[clamp(12.5rem,19vw,17.5rem)] items-center gap-2 rounded-button border border-line bg-canvas/70 pl-2.5 pr-1.5 text-left text-base text-muted shadow-xs hover:border-line-strong hover:bg-surface hover:text-fg lg:flex"
       @pointerenter="loadPalette().catch(() => undefined)"
       @click="palette.show()"
     >
       <Search :size="15" class="shrink-0" aria-hidden="true" />
       <span class="min-w-0 flex-1 truncate">{{ t("shell.topbar.search") }}</span>
-      <KbdKey keys="mod+k" />
+      <span class="hidden xl:flex"><KbdKey keys="mod+k" /></span>
     </button>
     <IconButton v-if="!phone" class="lg:hidden" :icon="Search" :label="t('shell.topbar.searchShort')" shortcut="mod+k" @click="palette.show()" />
     <IconButton v-else :icon="Search" :label="t('shell.topbar.searchShort')" @click="palette.show()" />

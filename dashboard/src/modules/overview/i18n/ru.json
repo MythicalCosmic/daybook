@@ -34,5 +34,12 @@
   "overview.customize.hint": "Перетащите карточки в удобном порядке и скройте ненужные. Эту раскладку видите только вы.",
   "overview.customize.allHidden": "Все карточки скрыты",
   "overview.customize.allHiddenBody": "Настройте страницу, чтобы вернуть их.",
-  "overview.widget.failed": "Не удалось загрузить карточку"
+  "overview.widget.failed": "Не удалось загрузить карточку",
+  "overview.routines.title": "Регулярные задачи сегодня",
+  "overview.routines.ofTotal": "{done} из {total}",
+  "overview.routines.late": "просрочено: {n}",
+  "overview.routines.toConfirm": "на проверке: {n}",
+  "overview.routines.onTrack": "Пока без опозданий",
+  "overview.routines.none": "Сегодня регулярных задач нет",
+  "overview.routines.holiday": "Праздник: регулярных задач нет"
 }

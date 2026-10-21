@@ -85,52 +85,55 @@ function hasFacts(branch: BranchToday): boolean {
           v-for="branch in branches"
           :key="branch.id"
           :class="[
-            // A lone branch doesn't stretch its three numbers across the whole page.
-            'flex min-w-0 max-w-[40rem] flex-col rounded-[12px] border p-3.5 transition-colors',
+            '@container min-w-0 rounded-[12px] border p-3.5 transition-colors',
             branch.status === 'not_opened' ? 'border-[color-mix(in_srgb,var(--c-danger)_35%,var(--c-border))] bg-danger-soft/40' : 'border-line bg-surface hover:border-line-strong',
           ]"
+          data-branch
         >
-          <div class="flex items-start gap-3">
-            <div class="min-w-0 flex-1">
-              <div class="flex min-w-0 items-center gap-2">
-                <h4 class="truncate text-base font-semibold text-fg">{{ branch.name }}</h4>
-                <span v-if="branch.code" class="shrink-0 rounded-[5px] bg-surface-2 px-1.5 py-px text-[11px] font-semibold tracking-wide text-muted">{{ branch.code }}</span>
+          <!-- A wide card (a company with one branch) lays out in one row instead of stretching three numbers across the page. -->
+          <div class="flex flex-col @3xl:flex-row @3xl:items-center @3xl:gap-6">
+            <div class="min-w-0 @3xl:flex-1">
+              <div class="flex items-start gap-3">
+                <div class="min-w-0 flex-1">
+                  <div class="flex min-w-0 items-center gap-2">
+                    <h4 class="truncate text-base font-semibold text-fg">{{ branch.name }}</h4>
+                    <span v-if="branch.code" class="shrink-0 rounded-[5px] bg-surface-2 px-1.5 py-px text-[11px] font-semibold tracking-wide text-muted">{{ branch.code }}</span>
+                  </div>
+                  <StatusPill class="mt-2" size="sm" :tone="TONES[branch.status]" :live="branch.status === 'not_opened'" :label="statusLabel(branch)" />
+                </div>
+                <div v-if="branch.tasks && branch.tasks.total > 0" class="shrink-0 @3xl:hidden">
+                  <ProgressRing :value="branch.tasks.done" :max="branch.tasks.total" :size="44" tone="auto" show-value :label="t('overview.branches.tasks')" />
+                </div>
               </div>
-              <StatusPill class="mt-2" size="sm" :tone="TONES[branch.status]" :live="branch.status === 'not_opened'" :label="statusLabel(branch)" />
+              <p v-if="hours(branch)" class="mt-2.5 flex items-center gap-1.5 text-xs text-muted">
+                <Clock3 :size="12" aria-hidden="true" />{{ hours(branch) }}
+                <template v-if="branch.tasks?.late"> · <span class="font-medium text-danger">{{ t("overview.branches.tasksLate", { n: branch.tasks.late }) }}</span></template>
+              </p>
             </div>
-            <ProgressRing
-              v-if="branch.tasks && branch.tasks.total > 0"
-              :value="branch.tasks.done"
-              :max="branch.tasks.total"
-              :size="44"
-              tone="auto"
-              show-value
-              :label="t('overview.branches.tasks')"
-            />
+            <dl v-if="hasFacts(branch)" class="mt-3 grid grid-cols-3 gap-2 border-t border-line pt-3 @3xl:mt-0 @3xl:w-[26rem] @3xl:shrink-0 @3xl:border-l @3xl:border-t-0 @3xl:py-1 @3xl:pl-6">
+              <div v-if="branch.attendance" class="min-w-0">
+                <dt class="truncate text-[11px] text-muted">{{ t("overview.branches.staff") }}</dt>
+                <dd class="mt-0.5 text-sm font-semibold tabular-nums text-fg">{{ branch.attendance.checked_in }}<span class="font-normal text-subtle">/{{ branch.attendance.rostered }}</span></dd>
+              </div>
+              <div v-if="branch.sales" class="min-w-0">
+                <dt class="truncate text-[11px] text-muted">{{ t("overview.branches.sales") }}</dt>
+                <dd class="mt-0.5 truncate text-sm font-semibold text-fg"><MoneyText :value="branch.sales.net" compact /></dd>
+              </div>
+              <div v-if="branch.sales" class="min-w-0">
+                <dt class="truncate text-[11px] text-muted">{{ t("overview.branches.tills") }}</dt>
+                <dd class="mt-0.5 text-sm font-semibold tabular-nums text-fg">{{ branch.sales.open_tills }}</dd>
+              </div>
+              <div v-else-if="branch.finance" class="min-w-0">
+                <dt class="truncate text-[11px] text-muted">{{ t("overview.branches.cash") }}</dt>
+                <dd class="mt-0.5 truncate text-sm font-semibold text-fg"><MoneyText :value="branch.finance.cash" compact /></dd>
+              </div>
+            </dl>
+            <p v-else class="mt-3 border-t border-line pt-3 text-xs text-subtle @3xl:mt-0 @3xl:w-[26rem] @3xl:shrink-0 @3xl:border-l @3xl:border-t-0 @3xl:pl-6 @3xl:pt-0">{{ t("overview.branches.noFacts") }}</p>
+            <!-- The ring's own display would beat `hidden`: the wrapper carries it. -->
+            <div v-if="branch.tasks && branch.tasks.total > 0" class="hidden shrink-0 @3xl:block">
+              <ProgressRing :value="branch.tasks.done" :max="branch.tasks.total" :size="44" tone="auto" show-value :label="t('overview.branches.tasks')" />
+            </div>
           </div>
-          <p v-if="hours(branch)" class="mt-2.5 flex items-center gap-1.5 text-xs text-muted">
-            <Clock3 :size="12" aria-hidden="true" />{{ hours(branch) }}
-            <template v-if="branch.tasks?.late"> · <span class="font-medium text-danger">{{ t("overview.branches.tasksLate", { n: branch.tasks.late }) }}</span></template>
-          </p>
-          <dl v-if="hasFacts(branch)" class="mt-3 grid grid-cols-3 gap-2 border-t border-line pt-3">
-            <div v-if="branch.attendance" class="min-w-0">
-              <dt class="truncate text-[11px] text-muted">{{ t("overview.branches.staff") }}</dt>
-              <dd class="mt-0.5 text-sm font-semibold tabular-nums text-fg">{{ branch.attendance.checked_in }}<span class="font-normal text-subtle">/{{ branch.attendance.rostered }}</span></dd>
-            </div>
-            <div v-if="branch.sales" class="min-w-0">
-              <dt class="truncate text-[11px] text-muted">{{ t("overview.branches.sales") }}</dt>
-              <dd class="mt-0.5 truncate text-sm font-semibold text-fg"><MoneyText :value="branch.sales.net" compact /></dd>
-            </div>
-            <div v-if="branch.sales" class="min-w-0">
-              <dt class="truncate text-[11px] text-muted">{{ t("overview.branches.tills") }}</dt>
-              <dd class="mt-0.5 text-sm font-semibold tabular-nums text-fg">{{ branch.sales.open_tills }}</dd>
-            </div>
-            <div v-else-if="branch.finance" class="min-w-0">
-              <dt class="truncate text-[11px] text-muted">{{ t("overview.branches.cash") }}</dt>
-              <dd class="mt-0.5 truncate text-sm font-semibold text-fg"><MoneyText :value="branch.finance.cash" compact /></dd>
-            </div>
-          </dl>
-          <p v-else class="mt-3 border-t border-line pt-3 text-xs text-subtle">{{ t("overview.branches.noFacts") }}</p>
         </li>
       </ul>
     </div>

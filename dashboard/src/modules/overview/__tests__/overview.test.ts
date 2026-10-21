@@ -17,6 +17,7 @@ import module from "../index";
 import OverviewPage from "../pages/OverviewPage.vue";
 import ActivityWidget from "../widgets/ActivityWidget.vue";
 import BranchesWidget from "../widgets/BranchesWidget.vue";
+import RoutinesTodayWidget from "../widgets/RoutinesTodayWidget.vue";
 
 function stub(routes: Record<string, () => Response>): string[] {
   const calls: string[] = [];
@@ -61,13 +62,35 @@ afterEach(() => {
 });
 
 describe("registration", () => {
-  it("serves the company index with its two widgets and the hero slot's page", () => {
+  it("serves the company index with its widgets and the hero slot's page", () => {
     expect(module).toMatchObject({ id: "overview", group: "overview", order: 10, index: true, hotkey: "o" });
     expect(module.routes[0]).toMatchObject({ path: "", name: "overview.today" });
-    expect(module.widgets?.map((w) => [w.id, w.span])).toEqual([
-      ["overview.branches", 4],
-      ["overview.activity", 2],
+    expect(module.widgets?.map((w) => [w.id, w.span, w.kind])).toEqual([
+      ["overview.branches", 4, "card"],
+      // Beside the one-off task tiles (orders 10-12), for whoever sees everyone's work.
+      ["overview.routines", 1, "kpi"],
+      ["overview.activity", 2, "card"],
     ]);
+    expect(module.widgets?.find((w) => w.id === "overview.routines")).toMatchObject({ order: 13, perm: "tasks.view_all" });
+  });
+
+  it("counts today's routine work apart from one-off tasks", async () => {
+    const day = (totals: Partial<Record<string, number>>, holiday = false) =>
+      json({ day: "2026-10-21", holiday, idle: 1, routines: [], totals: { done: 0, review: 0, late: 0, missed: 0, open: 0, returned: 0, cancelled: 0, skipped: 0, total: 0, finished: 0, routines: 0, ...totals } });
+    const calls = stub({ "routines/day/": () => day({ done: 9, review: 3, late: 2, missed: 1, open: 3, total: 18, finished: 12, routines: 6 }) });
+    const app = await testApp("/c/1");
+    const { wrapper } = mountWithProviders(RoutinesTodayWidget, { plugins: app.plugins, props: { companyId: 1 } });
+    await flushPromises();
+    expect(calls).toEqual(["/api/v1/owner/companies/1/routines/day/"]);
+    expect(wrapper.text()).toContain(en["overview.routines.title"]);
+    expect(wrapper.text()).toContain("12 of 18");
+    expect(wrapper.text()).toContain("3 late · 3 to confirm");
+    expect(wrapper.find("a").attributes("href")).toContain("/c/1/routines");
+
+    stub({ "routines/day/": () => day({}, true) });
+    const holiday = mountWithProviders(RoutinesTodayWidget, { plugins: (await testApp("/c/1")).plugins, props: { companyId: 1 } });
+    await flushPromises();
+    expect(holiday.wrapper.text()).toContain(en["overview.routines.holiday"]);
   });
 
   it("reads the W0 console endpoints under its own keys", async () => {

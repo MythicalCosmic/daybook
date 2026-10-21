@@ -23,13 +23,29 @@ export function useSlidingIndicator(
     items: string;
     /** Re-measure (and re-watch the items) when these change: the active id, the items' labels and counts. */
     deps: WatchSource[];
+    /**
+     * The container scrolls sideways (tabs on a phone): keep the active item in view. Only the
+     * strip scrolls, never the page, so a count arriving while you read further down moves nothing.
+     */
+    reveal?: boolean;
   },
 ) {
   const indicator = ref<IndicatorBox | null>(null);
 
+  function reveal(el: HTMLElement): void {
+    const strip = container.value;
+    if (!strip || strip.scrollWidth <= strip.clientWidth) return;
+    const pad = 16;
+    const start = el.offsetLeft - pad;
+    const end = el.offsetLeft + el.offsetWidth + pad;
+    if (start < strip.scrollLeft) strip.scrollLeft = Math.max(0, start);
+    else if (end > strip.scrollLeft + strip.clientWidth) strip.scrollLeft = end - strip.clientWidth;
+  }
+
   function measure(): void {
     const el = container.value?.querySelector<HTMLElement>(options.active());
     indicator.value = el ? { left: el.offsetLeft, width: el.offsetWidth } : null;
+    if (el && options.reveal) reveal(el);
   }
 
   let observer: ResizeObserver | null = null;

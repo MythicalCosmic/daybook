@@ -66,6 +66,7 @@ const tabsEl = ref<HTMLElement | null>(null);
 const { indicator } = useSlidingIndicator(tabsEl, {
   active: () => `[data-tab="${current.value}"]`,
   items: "[data-tab]",
+  reveal: true,
   deps: [current, () => props.tabs.map((tab) => `${tab.id}:${tab.label}:${tab.count ?? ""}`).join("|")],
 });
 </script>

@@ -34,5 +34,12 @@
   "overview.customize.hint": "Drag the cards into the order you like and hide the ones you don’t need. Only you see this layout.",
   "overview.customize.allHidden": "Every card is hidden",
   "overview.customize.allHiddenBody": "Customize the page to bring them back.",
-  "overview.widget.failed": "This card couldn’t load"
+  "overview.widget.failed": "This card couldn’t load",
+  "overview.routines.title": "Routines today",
+  "overview.routines.ofTotal": "{done} of {total}",
+  "overview.routines.late": "{n} late",
+  "overview.routines.toConfirm": "{n} to confirm",
+  "overview.routines.onTrack": "Nothing late so far",
+  "overview.routines.none": "No routine is due today",
+  "overview.routines.holiday": "A holiday: no routine work"
 }

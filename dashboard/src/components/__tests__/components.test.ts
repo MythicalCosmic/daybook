@@ -287,6 +287,35 @@ describe("small layout fixes", () => {
     leftSpy.mockRestore();
   });
 
+  it("PageHeader scrolls its tab strip, and only the strip, to the active tab on a narrow screen", async () => {
+    // A 300 px strip of 120 px tabs: "Money", the fifth, starts at 480 px, out of sight.
+    const widthSpy = vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) {
+      return this.dataset.tab ? 120 : 0;
+    });
+    const leftSpy = vi.spyOn(HTMLElement.prototype, "offsetLeft", "get").mockImplementation(function (this: HTMLElement) {
+      let left = 0;
+      for (let el = this.previousElementSibling as HTMLElement | null; el; el = el.previousElementSibling as HTMLElement | null) if (el.dataset.tab) left += 120;
+      return left;
+    });
+    const scrollWidthSpy = vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockImplementation(function (this: HTMLElement) {
+      return this.tagName === "NAV" ? 720 : 0;
+    });
+    const clientWidthSpy = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(function (this: HTMLElement) {
+      return this.tagName === "NAV" ? 300 : 0;
+    });
+    const scrolled: number[] = [];
+    const scrollSpy = vi.spyOn(HTMLElement.prototype, "scrollLeft", "set").mockImplementation(function (this: HTMLElement, value: number) {
+      scrolled.push(value);
+    });
+    const tabs = ["overview", "board", "timeline", "people", "money", "files"].map((id) => ({ id, label: id }));
+    const header = mount(PageHeader, { props: { title: "Sergeli pharmacy opening", tabs, tab: "money" }, global: { plugins: plugins() } });
+    await flushPromises();
+    // Its right edge (480 + 120) plus 16 px of air, at the strip's right edge: 616 - 300.
+    expect(scrolled.at(-1)).toBe(316);
+    header.unmount();
+    for (const spy of [widthSpy, leftSpy, scrollWidthSpy, clientWidthSpy, scrollSpy]) spy.mockRestore();
+  });
+
   it("SavedViewsTabs moves the underline when a view's count arrives and widens a tab before it", async () => {
     // jsdom has no layout: a tab is 10 px per character, placed after the tabs before it.
     const width = (el: HTMLElement) => (el.textContent ?? "").trim().length * 10;

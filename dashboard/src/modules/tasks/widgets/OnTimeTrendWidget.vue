@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Overview chart `tasks.chart.on_time_trend`: on-time % and finished tasks over 14 days. */
+/** Overview chart `tasks.chart.on_time_trend`: on-time % and finished one-off tasks over 14 days. */
 import { Timer } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
@@ -15,7 +15,7 @@ import { useSummary } from "../api";
 const props = defineProps<{ companyId: number; range?: Range; compare?: Range | null }>();
 const { t } = useI18n();
 const fmt = useFormat();
-const query = useSummary();
+const query = useSummary({ routines: "without" });
 const series = computed(() => query.data.value?.series ?? []);
 const categories = computed(() => series.value.map((point) => point.date));
 // Today counts only what was due so far: its point is "so far", dashed, not a fall.
@@ -44,7 +44,7 @@ const csv = computed(() => ({
     :icon="Timer"
     :title="t('tasks.chart.onTimeTrend')"
     :to="`/c/${props.companyId}/reports/team`"
-    :subtitle="t('tasks.chart.last14')"
+    :subtitle="`${t('tasks.kpi.reviewHintOneOff')} · ${t('tasks.chart.last14').toLocaleLowerCase()}`"
     :value="value"
     :loading="query.isPending.value"
     :error="query.error.value"

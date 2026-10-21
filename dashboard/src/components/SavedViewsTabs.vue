@@ -59,6 +59,7 @@ const strip = ref<HTMLElement | null>(null);
 const { indicator } = useSlidingIndicator(strip, {
   active: () => '[data-active="true"]',
   items: "[data-active]",
+  reveal: true,
   deps: [active, () => visible.value.map((view) => `${view.id}:${view.name}:${view.count ?? ""}`).join("|"), () => props.dirty],
 });
 

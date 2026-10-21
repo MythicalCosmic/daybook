@@ -36,8 +36,11 @@ const link = computed(() => `/c/${props.companyId}/sales`);
 
 <template>
   <KpiCard
+    :error="query.isError.value ? query.error.value : undefined"
+    :retry="() => query.refetch()"
+    class="h-full"
     :label="yesterday ? t('sales.widget.yesterday') : t('sales.widget.today')"
-    :value="query.isError.value ? null : value"
+    :value="value"
     :previous="yesterday ? weekAgo : undefined"
     format="money"
     compact
@@ -46,6 +49,6 @@ const link = computed(() => `/c/${props.companyId}/sales`);
     :icon="Store"
     :to="link"
     :loading="query.isPending.value"
-    :hint="query.isError.value ? t('sales.widget.error') : yesterday ? undefined : t('sales.widget.soFar')"
+    :hint="yesterday ? undefined : t('sales.widget.soFar')"
   />
 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** Overview KPI `tasks.kpi.late_now`: open shared work past its deadline right now. */
+/** Overview KPI `tasks.kpi.late_now`: open one-off tasks past their deadline right now (routines have their own tile). */
 import { AlarmClock } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
@@ -11,7 +11,7 @@ import { useSummary } from "../api";
 
 const props = defineProps<{ companyId: number; range?: Range; compare?: Range | null }>();
 const { t } = useI18n();
-const query = useSummary();
+const query = useSummary({ routines: "without" });
 const data = computed(() => query.data.value);
 </script>
 
@@ -23,7 +23,7 @@ const data = computed(() => query.data.value);
     :icon="AlarmClock"
     :label="t('tasks.kpi.lateNow')"
     :value="data?.late_now ?? null"
-    :hint="data ? t('tasks.widget.waiting', { n: data.review }) : undefined"
+    :hint="t('tasks.kpi.lateNowHintOneOff')"
     :loading="query.isPending.value"
     :to="`/c/${props.companyId}/tasks?sv=late&overdue=true`"
   />
