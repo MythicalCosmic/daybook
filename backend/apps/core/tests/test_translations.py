@@ -25,7 +25,10 @@ def test_every_message_is_translated(language):
     assert [entry.msgid for entry in po.untranslated_entries()] == []
     assert [entry.msgid for entry in po.fuzzy_entries()] == []
     for entry in po.translated_entries():
-        assert sorted(KEPT.findall(entry.msgstr)) == sorted(KEPT.findall(entry.msgid)), entry.msgid
+        # Uzbek has one plural form, Russian four; each keeps the plural msgid's placeholders.
+        forms = entry.msgstr_plural.values() if entry.msgid_plural else [entry.msgstr]
+        expected = sorted(KEPT.findall(entry.msgid_plural or entry.msgid))
+        assert all(sorted(KEPT.findall(form)) == expected for form in forms), entry.msgid
 
 
 @pytest.mark.parametrize("language", LANGUAGES)

@@ -110,14 +110,14 @@ async def test_a_bad_deep_link_code_asks_for_one(dp, bot, settings):
 
 async def test_open_signup_needs_no_code_and_takes_a_typed_timezone(dp, bot, settings):
     settings.COMPANY_SIGNUP = "open"
-    person = updates.tg_user(7404, language_code="ru")
+    person = updates.tg_user(7404, language_code="ru")  # who is answered in Russian
 
     await dp.feed_update(bot, updates.message(person, "/new"))
-    assert "What is your company called?" in last_text(bot)
+    assert "Как называется ваша компания?" in last_text(bot)
     await dp.feed_update(bot, updates.message(person, "Samarqand Non"))
     await dp.feed_update(bot, updates.callback(person, NewCompanyStep(action="type_tz").pack()))
     await dp.feed_update(bot, updates.message(person, "Mars"))
-    assert "don't know that timezone" in last_text(bot)
+    assert "не знаю такого часового пояса" in last_text(bot)
     await dp.feed_update(bot, updates.message(person, "Samarqand"))
     confirm = bot.sent()[-1]
     assert "Asia/Samarkand" in confirm.text
