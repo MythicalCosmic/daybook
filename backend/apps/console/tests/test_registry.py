@@ -4,7 +4,6 @@ from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
 import pytest
-from django.apps import apps as django_apps
 from django.utils import timezone
 
 from apps.console import registry
@@ -23,7 +22,9 @@ from apps.console.registry import (
 )
 from apps.members.permissions import Perm
 
-pytestmark = pytest.mark.usefixtures("isolated_registries")
+# Every registry starts empty: these tests see exactly what they register, whatever the apps
+# register for real (their keys follow the rules too: test_registrations.py).
+pytestmark = pytest.mark.usefixtures("empty_registries")
 
 NOW = datetime(2026, 10, 20, 9, 0, tzinfo=UTC)
 
@@ -32,17 +33,7 @@ def at(minutes: int) -> datetime:
     return NOW + timedelta(minutes=minutes)
 
 
-# Every registry, every app: the rule-14 test ---------------------------------------------
-
-
-def test_every_registered_key_carries_its_apps_label():
-    labels = {config.label for config in django_apps.get_app_configs()}
-    for each in registry.REGISTRIES:
-        for entry in each:
-            assert entry.app in labels, f"{each.name}: {entry.key!r} has no app"
-            assert registry.key_belongs_to(entry.key, entry.app), (
-                f"{each.name}: {entry.key!r} doesn't start with {entry.app!r}"
-            )
+# Every registry --------------------------------------------------------------------------
 
 
 def test_every_registry_is_listed():
@@ -69,6 +60,19 @@ def test_every_registry_is_listed():
 
 def noop(*args):
     return []
+
+
+def test_an_isolated_registry_may_start_empty_and_gets_its_entries_back():
+    registry.register_pulse("console.real", perm=None, count=None)
+    registry.register_pulse("console.kept", perm=None, count=None)
+
+    with registry.PULSE.isolated(empty=True, keep=["console.kept"]):
+        assert registry.PULSE.keys() == ["console.kept"]
+        registry.register_pulse("console.real", perm=None, count=noop)  # a fake in its place
+        registry.register_pulse("console.extra", perm=None, count=None)
+
+    assert registry.PULSE.keys() == ["console.real", "console.kept"]
+    assert registry.PULSE.get("console.real").count is None
 
 
 REGISTRATIONS = {
@@ -353,7 +357,6 @@ def test_stream_merges_sources_newest_first_and_honours_since(company, member):
 @pytest.mark.django_db
 def test_branch_facts_that_dont_fit_their_shape_are_dropped(company, member, caplog):
     owner = member(company, "Owner")
-    registry.BRANCH_FACTS._entries.pop("tasks", None)  # apps.tasks' real provider
     entry(
         registry.BRANCH_FACTS,
         "tasks",
@@ -505,7 +508,6 @@ def test_setup_steps_report_done(company, member):
 @pytest.mark.django_db
 def test_company_facts_check_their_shape(company, member):
     owner = member(company, "Owner")
-    registry.COMPANY_FACTS._entries.pop("tasks", None)  # apps.tasks' real provider
     entry(
         registry.COMPANY_FACTS,
         "tasks",
@@ -517,13 +519,11 @@ def test_company_facts_check_their_shape(company, member):
 
     facts = registry.collect_company_facts(owner, span)
 
-    assert facts["tasks"] == {"done": 3, "total": 4, "late": 1}
-    assert "sales" not in facts  # prev_net missing
-    assert facts["inbox"] == {"waiting": 0}  # registered by apps.inbox
+    assert facts == {"tasks": {"done": 3, "total": 4, "late": 1}}  # sales: prev_net missing
 
 
 @pytest.fixture
-def copied(isolated_registries):
+def copied(empty_registries):
     calls = []
     entry(
         registry.COPY_PARTS,

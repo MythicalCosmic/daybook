@@ -6,10 +6,10 @@ from datetime import timedelta
 import pytest
 from django.utils import timezone
 
+from apps.ai.tools.testing import call_tool
 from apps.announcements import demo, services
 from apps.announcements.models import Announcement, Receipt
 from apps.console import registry
-from apps.members.tests.ai import call_tool
 from apps.members.tests.factories import PositionFactory
 
 pytestmark = pytest.mark.django_db

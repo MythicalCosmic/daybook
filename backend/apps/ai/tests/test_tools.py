@@ -20,9 +20,16 @@ pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture(autouse=True)
-def empty_registry(monkeypatch):
+def real_tools(monkeypatch):
+    """Each test registers its examples in an empty registry; the real one, with every app's
+    tools, comes back after it. The apps' tools are discovered into the real registry first: an
+    `ai_tools` module imported for the first time while the empty one is in place would
+    register there, and Python never imports it again."""
+    registry.autodiscover()
+    real = registry._tools
     monkeypatch.setattr(registry, "_tools", {})
     monkeypatch.setattr(registry, "_discovered", True)
+    return real
 
 
 class NoInput(BaseModel):
@@ -237,16 +244,35 @@ def test_the_context_belongs_to_one_company(company, other_company, manager):
         run_tool("ai_people", wrong, {})
 
 
-def test_every_installed_tool_follows_the_rules(monkeypatch):
+def test_every_installed_tool_follows_the_rules(monkeypatch, real_tools):
+    import importlib.util
+    from pathlib import Path
+
     from django.apps import apps
 
+    monkeypatch.setattr(registry, "_tools", real_tools)
     monkeypatch.setattr(registry, "_discovered", False)
 
-    tools = registry.all_tools()  # imports every app's ai_tools module
+    tools = registry.all_tools()  # every app's ai_tools module, imported once
 
     labels = {config.label for config in apps.get_app_configs()}
     assert all(tool.name.split("_")[0] in labels for tool in tools)
     assert [tool.name for tool in tools] == sorted(tool.name for tool in tools)
+    # Every app that writes tools has them in the registry, whichever tests ran before.
+    specs = [
+        importlib.util.find_spec(f"{config.name}.ai_tools")
+        for config in apps.get_app_configs()
+        if config.name.startswith("apps.")
+    ]
+    writers = {spec.name for spec in specs if spec and "@ai_tool(" in Path(spec.origin).read_text()}
+    assert {tool.fn.__module__ for tool in tools} == writers
+
+
+def test_the_examples_never_reach_the_real_registry(real_tools):
+    register_examples()
+
+    assert registry.get_tool("ai_people") is not None
+    assert "ai_people" not in real_tools
 
 
 @pytest.mark.parametrize(

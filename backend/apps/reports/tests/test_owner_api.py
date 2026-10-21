@@ -10,19 +10,13 @@ from django.utils import timezone
 from apps.ai.tools.testing import call_tool
 from apps.exports.registry import get_exporter
 from apps.tasks.models import Task
-from apps.tasks.tests.factories import (
-    TaskFactory,
-    TaskTemplateFactory,
-    ensure_ai_tools,
-    make_shop,
-)
+from apps.tasks.tests.factories import TaskFactory, TaskTemplateFactory, make_shop
 
 pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture
 def shop(company, member):
-    ensure_ai_tools("apps.reports.ai_tools")
     return make_shop(company, member)
 
 

@@ -213,8 +213,12 @@ class TestOffboarding:
         assert field.name == "transfer_to"
         assert str(safe.pk) in dict(field.choices)
         assert step.defaults["transfer_to"] == str(safe.pk)
-        wizard = registry.collect_offboard_steps(leaver, by=boss)
-        assert [entry["key"] for entry in wizard] == ["finance"]
+        [wizard] = [
+            entry
+            for entry in registry.collect_offboard_steps(leaver, by=boss)
+            if entry["key"] == "finance"
+        ]
+        assert wizard["blockers"] == step.blockers
 
     def test_leaving_moves_the_cash_and_archives_the_account(
         self, fin, boss, member, today, django_capture_on_commit_callbacks

@@ -422,7 +422,7 @@ class TestSources:
 
     def test_an_unregistered_source_is_refused(self, books, cash, day):
         with pytest.raises(ValueError, match="Register"):
-            income(books, None, cash, 100, day, source=("sales.cashshift", 1, ""))
+            income(books, None, cash, 100, day, source=("sales.example", 1, ""))
 
     def test_sources_are_per_company(self, books, cash, day, src, other_company):
         other_cash = MoneyAccountFactory(company=other_company)

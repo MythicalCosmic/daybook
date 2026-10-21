@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 from rest_framework import serializers
 
-from apps.exports.registry import Column, register_exporter
+from apps.exports.registry import EXPORTERS, Column, register_exporter
 from apps.members.permissions import Perm
 
 ROWS = [
@@ -34,7 +34,13 @@ class StatusParams(serializers.Serializer):
 
 @pytest.fixture
 def exporters(isolated_registries):
-    """Two exporters as apps.exports would register them; `seen` records each call."""
+    """Three exporters as apps.exports would register them, in place of the apps' real ones;
+    `seen` records each call."""
+    with EXPORTERS.isolated(empty=True):
+        yield register_examples()
+
+
+def register_examples() -> SimpleNamespace:
     seen = SimpleNamespace(calls=[], rows=list(ROWS))
 
     def rows(member, params):

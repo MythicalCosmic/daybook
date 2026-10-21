@@ -33,8 +33,14 @@ def at(day: date, hour: int) -> str:
 
 @pytest.fixture
 def sources(isolated_registries):
-    """Two more modules' sources: holidays for everyone, payroll dates behind a permission."""
+    """Agenda's own events, and in place of the other modules' real sources: holidays for
+    everyone, payroll dates behind a permission and a broken one."""
+    with registry.CALENDAR_SOURCES.isolated(empty=True, keep=["agenda.events"]):
+        register_fake_sources()
+        yield
 
+
+def register_fake_sources():
     def holidays(company, start, end, member):
         return [
             CalendarItem(

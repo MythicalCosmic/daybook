@@ -149,6 +149,18 @@ def isolated_registries():
 
 
 @pytest.fixture
+def empty_registries():
+    """Like `isolated_registries`, but every console, inbox and exports registry starts empty:
+    for the registries' own tests, which see exactly what they register whatever the apps add.
+    To empty a single registry (keeping, say, the real inbox kinds a notification needs), use
+    `registry.X.isolated(empty=True, keep=(...))`."""
+    with ExitStack() as stack:
+        for each in registry.REGISTRIES:
+            stack.enter_context(each.isolated(empty=True))
+        yield registry
+
+
+@pytest.fixture
 def fake_redis():
     """Every `apps.core.redis` client talks to an in-memory server for this test."""
     server = core_redis.use_fake()

@@ -30,17 +30,22 @@ def debug(settings):
 
 @pytest.fixture
 def demo_calls(monkeypatch):
-    """Records which apps' demo.py and defaults.ensure ran, and for which company."""
+    """Records which apps' demo.py (seed and finish) and defaults.ensure ran, and for which
+    company."""
     calls = []
     for label in ("sales", "finance"):
 
         def demo(company, people, now, label=label):
             calls.append(("demo", label, company.slug, sorted(people)))
 
+        def finish(company, people, now, label=label):
+            calls.append(("finish", label, company.slug, sorted(people)))
+
         def ensure(company, label=label):
             calls.append(("ensure", label, company.slug))
 
         monkeypatch.setattr(f"apps.{label}.demo.seed", demo)
+        monkeypatch.setattr(f"apps.{label}.demo.finish", finish, raising=False)
         monkeypatch.setattr(f"apps.{label}.defaults.ensure", ensure)
     return calls
 
@@ -56,7 +61,7 @@ def test_the_demo_builds_and_rebuilds(debug):
     company = Company.objects.get(slug="demo-shop")
     assert company.memberships.filter(status=Membership.Status.APPROVED).count() == 6
     today = timezone.localdate()
-    report = kpis.team(company, today - timedelta(days=14), today, timezone.now())
+    report = kpis.team(company, today - timedelta(days=14), today, timezone.now(), branch_ids=None)
     with_work = {str(person): score for person, score in report.rows if score.total}
     assert {"Alisher Valiyev", "Madina Saidova", "Jasur Tursunov", "Nigora Azimova"} <= set(
         with_work
@@ -169,6 +174,11 @@ def test_module_demos_and_defaults_run(debug, demo_calls):
     }
     first_demo = next(i for i, call in enumerate(demo_calls) if call[0] == "demo")
     assert all(demo_calls.index(call) < first_demo for call in ensured)
+    # Every demo's finish runs after every demo's seed (finance closes the books there).
+    finished = [call for call in demo_calls if call[0] == "finish"]
+    assert {call[1] for call in finished} == {"sales", "finance"}
+    last_demo = max(i for i, call in enumerate(demo_calls) if call[0] == "demo")
+    assert all(demo_calls.index(call) > last_demo for call in finished)
 
 
 def test_module_demos_never_see_the_real_owner(debug, monkeypatch):
@@ -188,6 +198,7 @@ def test_only_runs_the_listed_apps_demos(debug, demo_calls):
     output = seed(only="sales")
 
     assert demos(demo_calls) == ["sales"]
+    assert [call[1] for call in demo_calls if call[0] == "finish"] == ["sales"]
     assert "Module demo data: sales." in output
     # Defaults are not narrowed: a module's demo may rely on another module's rows.
     assert {call[1] for call in demo_calls if call[0] == "ensure"} == {"sales", "finance"}

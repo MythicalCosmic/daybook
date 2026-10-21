@@ -1,7 +1,9 @@
 """Demo companies for trying the apps and for screenshots (development only).
 
 - **Demo Shop**: two branches, six people, tasks, time off and every module switched on. Each
-  app adds its own rows through `apps/<app>/demo.py: seed(company, people, now)`.
+  app adds its own rows through `apps/<app>/demo.py: seed(company, people, now)`; an optional
+  `finish(company, people, now)` runs after every app's `seed`, for what would refuse other
+  demos' rows (finance closes the books there).
 - **Demo Café**: a smaller second company with the same owner and a few modules, so the
   company switcher and the portfolio have something to show.
 
@@ -210,7 +212,7 @@ class Command(BaseCommand):
             company.save(update_fields=["features", "updated_at"])
             ensure_company_defaults(company)
 
-        seeded = []
+        seeded, demos = [], []
         for config in django_apps.get_app_configs():
             if not config.name.startswith("apps."):
                 continue
@@ -219,8 +221,15 @@ class Command(BaseCommand):
             name = f"{config.name}.demo"
             if importlib.util.find_spec(name) is None:
                 continue
-            importlib.import_module(name).seed(shop, people, now)
+            demo = importlib.import_module(name)
+            demo.seed(shop, people, now)
             seeded.append(config.label)
+            demos.append(demo)
+        # Then each demo's optional `finish`: what would refuse other demos' rows (closing the
+        # books) waits until every demo has written its own, whatever order the apps run in.
+        for demo in demos:
+            if finish := getattr(demo, "finish", None):
+                finish(shop, people, now)
 
         # Last, so the module demos never treat a real person as one of the staff.
         if owner_tg is not None:

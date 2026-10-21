@@ -10,7 +10,8 @@ from apps.console import queries, registry
 from apps.members.permissions import Perm
 from apps.timeoff.models import Holiday
 
-pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures("isolated_registries")]
+# Every registry starts empty: a card carries exactly the facts registered here.
+pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures("empty_registries")]
 
 TASHKENT = zoneinfo.ZoneInfo("Asia/Tashkent")
 TUESDAY = date(2026, 10, 20)
@@ -21,9 +22,7 @@ def local(hour: int, minute: int = 0, day: date = TUESDAY) -> datetime:
 
 
 def add_facts(key: str, perm, facts, feature=None) -> None:
-    """Register a provider as its own app would (fixed keys belong to their apps), in place of
-    the app's real one once that app has landed (the registry is isolated per test)."""
-    registry.BRANCH_FACTS._entries.pop(key, None)
+    """Register a provider as its own app would (fixed keys belong to their apps)."""
     registry.BRANCH_FACTS.add(registry.BranchFactsProvider(key, key, perm, feature, facts))
 
 
