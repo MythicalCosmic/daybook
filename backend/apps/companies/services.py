@@ -279,6 +279,12 @@ def update_settings(company: Company, *, by: Membership, **fields) -> Company:
         evening = clean.get("evening_report_at", company.evening_report_at)
         if morning == evening:
             raise DomainError(_("The morning and evening reports need different times."))
+        if "base_currency" in clean and clean["base_currency"] != company.base_currency:
+            # Nothing is booked yet: finance moves its default cash desk and terminal along
+            # (and refuses, rolling this back, if something got booked meanwhile).
+            from apps.finance.services import rebase_default_accounts
+
+            rebase_default_accounts(company, currency=clean["base_currency"], by=by)
         before = audit.snapshot(company)
         for name, value in clean.items():
             setattr(company, name, value)

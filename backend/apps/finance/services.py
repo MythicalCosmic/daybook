@@ -58,6 +58,7 @@ from apps.finance.models import (
     Transaction,
     Transfer,
 )
+from apps.finance.queries import has_ledger_rows
 from apps.finance.rates import RateQuote, convert, quoted_currency, rate_for
 from apps.finance.sources import Source
 from apps.members.models import Membership
@@ -89,6 +90,7 @@ __all__ = [
     "open_debt",
     "pay_debt",
     "rate_for",
+    "rebase_default_accounts",
     "record_entry",
     "record_transaction",
     "reject_transaction",
@@ -1281,6 +1283,53 @@ def reopen_account(account: MoneyAccount, *, by: Membership) -> MoneyAccount:
     account.save(update_fields=["is_active", "updated_at"])
     _audit(FinanceAction.ACCOUNT_REOPENED, company, user, account)
     return account
+
+
+@transaction.atomic
+def rebase_default_accounts(company, *, currency: str, by: Membership) -> list[MoneyAccount]:
+    """Move the default accounts into a new base currency, for a company whose base currency
+    changes before anything is booked (`companies.services.update_settings` calls it, before
+    it saves the company).
+
+    The defaults are what `defaults.ensure` makes: the company-level cash desk and card
+    terminal (no branch, no holder) in the old base currency; other accounts were opened in
+    their currency on purpose and stay. Refused with a DomainError once the ledger has any row
+    (`queries.has_ledger_rows`), as the base currency then stays. Returns the changed accounts.
+    """
+    _need_actor(by)
+    user = _actor(company, by)
+    _check_currency(currency)
+    # Every ledger write takes this row FOR SHARE first, so holding it FOR UPDATE keeps anything
+    # from being booked between the check and the change.
+    FinanceSettings.objects.select_for_update().get(pk=conf.get_settings(company).pk)
+    old = type(company).objects.filter(pk=company.pk).values_list("base_currency", flat=True).get()
+    if has_ledger_rows(company):
+        raise DomainError(
+            _(
+                "The base currency stays %(currency)s: money is already booked in it. "
+                "Reports and the ledger add up in one currency."
+            )
+            % {"currency": old}
+        )
+    if old == currency:
+        return []
+    kinds = [kind for kind, _name in defaults.DEFAULT_ACCOUNTS]
+    accounts = list(
+        MoneyAccount.objects.select_for_update()
+        .filter(company=company, kind__in=kinds, branch=None, holder=None, currency=old)
+        .order_by("pk")
+    )
+    for account in accounts:
+        account.currency = currency
+        account.save(update_fields=["currency", "updated_at"])
+        _audit(
+            FinanceAction.ACCOUNT_UPDATED,
+            company,
+            user,
+            account,
+            changes={"currency": [old, currency]},
+        )
+    return accounts
 
 
 def _account_snapshot(account: MoneyAccount) -> dict:
