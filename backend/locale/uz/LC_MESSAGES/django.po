@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-21 08:52+0500\n"
+"POT-Creation-Date: 2026-10-21 13:10+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -5001,6 +5001,10 @@ msgid "📱 Open app"
 msgstr "📱 Ilovani ochish"
 
 #: backend/apps/members/bot_messages.py
+msgid "Tap the button to open the app."
+msgstr "Ilovani ochish uchun tugmani bosing."
+
+#: backend/apps/members/bot_messages.py
 #, python-format
 msgid "📝 <b>Join request</b> · %(company)s"
 msgstr "📝 <b>Qo‘shilish so‘rovi</b> · %(company)s"
@@ -9420,6 +9424,10 @@ msgstr "Mayli, bekor qilindi."
 #: employee_bot/bot/handlers/member/announcements.py
 msgid "Thank you!"
 msgstr "Rahmat!"
+
+#: employee_bot/bot/handlers/member/app.py
+msgid "The app isn't available right now."
+msgstr "Ilova hozircha mavjud emas."
 
 #: employee_bot/bot/handlers/member/tasks.py
 msgid "Started 💪"
