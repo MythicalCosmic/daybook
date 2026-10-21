@@ -134,6 +134,11 @@ const change = computed(() => {
     </template>
     <template v-else>
       <p class="kpi-value mt-1.5 truncate" :title="full ?? text" aria-live="polite">{{ text }}</p>
+      <!-- A narrow tile has no room for the trend beside its delta; in a row made tall by richer
+           tiles, it draws the trend across the free middle instead (only when there is room). -->
+      <div v-if="spark && spark.length > 1" class="kpi-spare hidden min-h-0 flex-1 @max-[15rem]:flex" aria-hidden="true" data-kpi-spare>
+        <SparkLine :data="spark" :color="sparkColor" fluid :height="40" class="kpi-spare-line" />
+      </div>
       <div class="mt-auto flex min-h-[32px] items-end justify-between gap-3 pt-2" data-kpi-foot>
         <div class="flex min-w-0 flex-col gap-1">
           <DeltaBadge v-if="change !== null || previous !== undefined || delta !== undefined" :value="change" :inverse="inverse" :points="points" :suffix="deltaLabel" />
@@ -146,3 +151,20 @@ const change = computed(() => {
     </template>
   </component>
 </template>
+
+<style scoped>
+/* Its height comes only from the free space (size containment): none in a short tile. */
+.kpi-spare {
+  container-type: size;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.kpi-spare-line {
+  display: none;
+}
+@container (min-height: 3.5rem) {
+  .kpi-spare-line {
+    display: block;
+  }
+}
+</style>
