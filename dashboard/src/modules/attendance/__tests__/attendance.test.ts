@@ -27,7 +27,7 @@ import BoardTile from "../components/BoardTile.vue";
 import ShiftGrid from "../components/ShiftGrid.vue";
 import en from "../i18n/en.json";
 import module from "../index";
-import { clockOf, formatDistance, hours, localDateTime, shiftMonth, spanMinutes, weekdayIndex } from "../lib";
+import { clockOf, compactTime, formatDistance, hours, localDateTime, shiftMonth, spanMinutes, weekdayIndex } from "../lib";
 import SwapsPage from "../pages/SwapsPage.vue";
 import type { BoardRow, Roster, Shift, Swap } from "../types";
 
@@ -196,6 +196,10 @@ describe("lib", () => {
     expect(weekdayIndex("2026-10-21")).toBe(2);
     expect(formatDistance(1234, { m: "m", km: "km" })).toBe("1.2 km");
     expect(formatDistance(34, { m: "m", km: "km" })).toBe("34 m");
+    // Schedule cards keep the half hours.
+    expect(compactTime("08:30")).toBe("8:30");
+    expect(compactTime("17:30:00")).toBe("17:30");
+    expect(compactTime("09:00")).toBe("9:00");
   });
 });
 
@@ -253,6 +257,39 @@ describe("BoardTile", () => {
     const app = await testApp("/c/1/attendance");
     const { wrapper } = mountWithProviders(BoardTile, { props: { row: row({ state: "off", reason: "leave", record: null }) }, plugins: app.plugins });
     expect(wrapper.text()).toContain("On leave");
+  });
+
+  it("leads with the shift's hours and says how late someone not here yet is", async () => {
+    const app = await testApp("/c/1/attendance");
+    const late = row({ state: "not_yet", reason: "late", record: null });
+    const { wrapper } = mountWithProviders(BoardTile, { props: { row: late, now: "2026-10-21T09:40:00+05:00" }, plugins: app.plugins });
+    const text = wrapper.text();
+    expect(text.indexOf("09:00–18:00")).toBeLessThan(text.indexOf("Sales floor"));
+    expect(text).toContain("Shift started 09:00");
+    expect(text).toContain("+40m");
+    // A past day has no "now": no lateness is made up.
+    const past = mountWithProviders(BoardTile, { props: { row: late, now: null }, plugins: app.plugins });
+    expect(past.wrapper.text()).not.toContain("+40m");
+  });
+});
+
+describe("GeoMap", () => {
+  it("puts names in as text, never as HTML", async () => {
+    const { default: GeoMap } = await import("../components/GeoMap.vue");
+    const app = await testApp("/c/1/attendance");
+    const name = '<img src=x onerror="window.__pwned = 1">';
+    const { wrapper } = mountWithProviders(GeoMap, {
+      props: {
+        branches: [{ id: 1, name, latitude: "41.285680", longitude: "69.203430", geofence_m: 150 }],
+        points: [{ id: 5, lat: "41.2857", lng: "69.2035", tone: "ok", label: name }],
+      },
+      plugins: app.plugins,
+    });
+    await flushPromises();
+    const label = document.querySelector(".att-geo-label");
+    expect(label?.textContent).toBe(name);
+    expect(label?.querySelector("img")).toBeNull();
+    wrapper.unmount();
   });
 });
 
