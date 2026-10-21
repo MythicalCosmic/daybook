@@ -15,6 +15,7 @@ import KpiStrip from "@/components/KpiStrip.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import PersonCell from "@/components/PersonCell.vue";
 import SavedViewsTabs from "@/components/SavedViewsTabs.vue";
+import SegmentedControl from "@/components/SegmentedControl.vue";
 import SparkLine from "@/components/SparkLine.vue";
 import TextInput from "@/components/TextInput.vue";
 import { syncTruncateTitle } from "@/components/truncateTitle";
@@ -315,6 +316,40 @@ describe("small layout fixes", () => {
     // Its right edge (480 + 120) plus 16 px of air, at the strip's right edge: 616 - 300.
     expect(scrolled.at(-1)).toBe(316);
     header.unmount();
+    for (const spy of [widthSpy, leftSpy, scrollWidthSpy, clientWidthSpy, scrollSpy]) spy.mockRestore();
+  });
+
+  it("SegmentedControl scrolls inside itself to the chosen option instead of running past a phone's edge", async () => {
+    // Three 120 px options in a 300 px column: "Decided", the third, starts at 240 px.
+    const widthSpy = vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) {
+      return this.getAttribute("role") === "radio" ? 120 : 0;
+    });
+    const leftSpy = vi.spyOn(HTMLElement.prototype, "offsetLeft", "get").mockImplementation(function (this: HTMLElement) {
+      let left = 0;
+      for (let el = this.previousElementSibling as HTMLElement | null; el; el = el.previousElementSibling as HTMLElement | null) if (el.getAttribute("role") === "radio") left += 120;
+      return left;
+    });
+    const scrollWidthSpy = vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockImplementation(function (this: HTMLElement) {
+      return this.getAttribute("role") === "radiogroup" ? 364 : 0;
+    });
+    const clientWidthSpy = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(function (this: HTMLElement) {
+      return this.getAttribute("role") === "radiogroup" ? 300 : 0;
+    });
+    const scrolled: number[] = [];
+    const scrollSpy = vi.spyOn(HTMLElement.prototype, "scrollLeft", "set").mockImplementation(function (this: HTMLElement, value: number) {
+      if (this.getAttribute("role") === "radiogroup") scrolled.push(value);
+    });
+    const options = [
+      { value: "you", label: "Waiting for you" },
+      { value: "colleague", label: "Waiting for a colleague" },
+      { value: "decided", label: "Decided" },
+    ];
+    const control = mount(SegmentedControl, { props: { modelValue: "decided", options }, global: { plugins: plugins() }, attachTo: document.body });
+    await flushPromises();
+    expect(control.find("[role='radiogroup']").classes()).toEqual(expect.arrayContaining(["max-w-full", "overflow-x-auto"]));
+    // Its right edge (240 + 120) plus 16 px of air, at the group's right edge: 376 - 300.
+    expect(scrolled.at(-1)).toBe(76);
+    control.unmount();
     for (const spy of [widthSpy, leftSpy, scrollWidthSpy, clientWidthSpy, scrollSpy]) spy.mockRestore();
   });
 
