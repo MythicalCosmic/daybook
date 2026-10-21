@@ -61,6 +61,8 @@ const auditLabels = computed(() => ({
   reason: t("timeoff.drawer.reason"),
   member: t("timeoff.audit.member"),
 }));
+/** The order a person reads them in (Postgres hands the keys back shortest first). */
+const AUDIT_ORDER = ["member", "first_day", "last_day", "cancelled_from", "cancelled_to"];
 function auditValue(_field: string, value: unknown): string | null {
   return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? fmt.day(value, "medium") : null;
 }
@@ -98,7 +100,7 @@ async function run(approve: boolean): Promise<void> {
       </a>
       <section class="border-t border-line pt-4">
         <h3 class="mb-3 text-sm font-semibold text-fg">{{ t("timeoff.drawer.history") }}</h3>
-        <AuditTrail target-type="timeoff" :target-id="row.id" :page-size="10" :field-labels="auditLabels" :format-value="auditValue" />
+        <AuditTrail target-type="timeoff" :target-id="row.id" :page-size="10" :field-labels="auditLabels" :field-order="AUDIT_ORDER" :format-value="auditValue" />
       </section>
     </div>
     <template v-if="row && (row.can_decide || row.can_revoke)" #footer>

@@ -9,6 +9,7 @@ import { ArrowRight, History } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
+import { inFieldOrder } from "@/components/audit";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
@@ -50,17 +51,20 @@ function text(value: unknown): string | null {
   return String(value);
 }
 
+/** Time-off rows read first day, then last (Postgres hands JSON keys back shortest first). */
+const FIELD_ORDER = ["member", "first_day", "last_day", "cancelled_from", "cancelled_to"];
+
 function changes(record: HistoryRecord) {
   const raw = record.details?.changes;
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
-  return Object.entries(raw as Record<string, unknown>).map(([field, pair]) => {
+  return inFieldOrder(Object.entries(raw as Record<string, unknown>), FIELD_ORDER).map(([field, pair]) => {
     const [before, after] = Array.isArray(pair) ? pair : [null, pair];
     return { field, label: label(field), old: text(before), new: text(after), hidden: [before, after].some((v) => typeof v === "string" && HIDDEN.test(v)) };
   });
 }
 
 function extras(record: HistoryRecord) {
-  return Object.entries(record.details ?? {})
+  return inFieldOrder(Object.entries(record.details ?? {}), FIELD_ORDER)
     .filter(([key, value]) => key !== "changes" && !NOTES.includes(key) && ["string", "number"].includes(typeof value))
     .map(([key, value]) => ({ key, label: label(key), value: text(value) ?? "" }))
     .filter((row) => row.value)

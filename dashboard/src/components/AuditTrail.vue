@@ -9,7 +9,9 @@
  * `target-type` is the record's model name as the backend audits it ("task", "membership",
  * "transaction"). A row's `details.changes` is `{field: [old, new]}`; other plain details (a
  * reason, a note) are listed under it. `field-labels` names fields in the person's language
- * (otherwise "due_at" reads "Due at"); `format-value` formats a field's values.
+ * (otherwise "due_at" reads "Due at"); `format-value` formats a field's values. `field-order`
+ * lists fields in the order to show them (Postgres stores JSON keys shortest first, so "last_day"
+ * would come before "first_day"); fields it doesn't name follow in the order they came.
  */
 import { useInfiniteQuery } from "@tanstack/vue-query";
 import { ArrowRight, History } from "@lucide/vue";
@@ -22,6 +24,7 @@ import type { Page } from "@/api/types";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
+import { inFieldOrder } from "./audit";
 import EmptyState from "./EmptyState.vue";
 import ErrorState from "./ErrorState.vue";
 import SkeletonBlock from "./SkeletonBlock.vue";
@@ -60,8 +63,9 @@ const props = withDefaults(
     pageSize?: number;
     fieldLabels?: Record<string, string>;
     formatValue?: (field: string, value: unknown) => string | null;
+    fieldOrder?: string[];
   }>(),
-  { pageSize: 30, fieldLabels: () => ({}), formatValue: undefined },
+  { pageSize: 30, fieldLabels: () => ({}), formatValue: undefined, fieldOrder: () => [] },
 );
 
 const { t } = useI18n();
@@ -106,10 +110,14 @@ function text(field: string, value: unknown): string | null {
   return String(value);
 }
 
+function inOrder<T>(entries: Array<[string, T]>): Array<[string, T]> {
+  return inFieldOrder(entries, props.fieldOrder);
+}
+
 function changesOf(record: AuditRecord): AuditChange[] {
   const changes = record.details?.changes;
   if (!changes || typeof changes !== "object" || Array.isArray(changes)) return [];
-  return Object.entries(changes as Record<string, unknown>).map(([field, pair]) => {
+  return inOrder(Object.entries(changes as Record<string, unknown>)).map(([field, pair]) => {
     const [before, after] = Array.isArray(pair) ? pair : [null, pair];
     const hidden = [before, after].some((value) => typeof value === "string" && HIDDEN.test(value));
     return { field, label: label(field), old: text(field, before), new: text(field, after), hidden };
@@ -126,7 +134,7 @@ function noteOf(record: AuditRecord): string | undefined {
 
 /** Other plain details ("Branch: Chilonzor"), at most four. */
 function extrasOf(record: AuditRecord): Array<{ key: string; label: string; value: string }> {
-  return Object.entries(record.details ?? {})
+  return inOrder(Object.entries(record.details ?? {}))
     .filter(([key, value]) => key !== "changes" && !NOTE_KEYS.includes(key) && ["string", "number", "boolean"].includes(typeof value))
     .map(([key, value]) => ({ key, label: label(key), value: typeof value === "string" && HIDDEN.test(value) ? t("common.audit.hidden") : (text(key, value) ?? "") }))
     .filter((row) => row.value)

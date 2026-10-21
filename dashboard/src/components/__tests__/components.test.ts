@@ -6,10 +6,13 @@ import { createMemoryHistory, createRouter, type Router } from "vue-router";
 
 import { ApiError } from "@/api/http";
 import AvatarStack from "@/components/AvatarStack.vue";
+import CalendarWeek from "@/components/CalendarWeek.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import KbdKey from "@/components/KbdKey.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
+import PageHeader from "@/components/PageHeader.vue";
+import TextInput from "@/components/TextInput.vue";
 import UiBadge from "@/components/UiBadge.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
@@ -224,6 +227,43 @@ describe("UiDialog", () => {
     const body = content.querySelector<HTMLElement>("[data-dialog-body]")!;
     expect(body.className).toMatch(/\bmin-h-0\b.*\boverflow-y-auto\b/);
     expect(content.querySelector("footer")!.className).toContain("shrink-0");
+    wrapper.unmount();
+  });
+});
+
+describe("small layout fixes", () => {
+  it("PageHeader keeps its actions inside the header and gives them a full row on phones", () => {
+    const header = mount(PageHeader, { props: { title: "Sales" }, slots: { actions: () => h("button", "Export") }, global: { plugins: plugins() } });
+    expect(header.find("[data-page-actions]").classes()).toEqual(expect.arrayContaining(["max-w-full", "min-w-0", "flex-wrap", "max-sm:w-full"]));
+  });
+
+  it("TextInput marks a clearable field, so a search field shows only its own clear button", async () => {
+    const search = mount(TextInput, { props: { modelValue: "milk", type: "search", clearable: true }, global: { plugins: plugins() } });
+    expect(search.find("input").attributes("data-clearable")).toBe("true");
+    expect(search.findAll("button[aria-label='Clear']")).toHaveLength(1);
+    const plain = mount(TextInput, { props: { modelValue: "milk", type: "search" }, global: { plugins: plugins() } });
+    expect(plain.find("input").attributes("data-clearable")).toBeUndefined();
+  });
+
+  it("CalendarWeek puts the first hour's label below its line, clear of the sticky day headers", () => {
+    const week = mount(CalendarWeek, { props: { items: [], week: "2026-10-19", startHour: 7, endHour: 10 }, global: { plugins: plugins() } });
+    const labels = week.findAll("[data-hour-label]");
+    expect(labels.map((label) => label.text())).toEqual(["07:00", "08:00", "09:00"]);
+    expect(labels[0]!.classes()).toContain("top-0.5");
+    expect(labels[1]!.classes()).toContain("-top-2");
+  });
+
+  it("UiDrawer lets its description run to two lines", async () => {
+    await router.push("/c/1/tasks?task=1");
+    const wrapper = mount(UiDrawer, {
+      props: { queryKey: "task", title: "Task", description: "A long description that needs a second line on a narrow drawer" },
+      global: { plugins: plugins() },
+      attachTo: document.body,
+    });
+    await flushPromises();
+    const description = document.body.querySelector<HTMLElement>("[role=dialog] header p")!;
+    expect(description.className).toContain("line-clamp-2");
+    expect(description.className).not.toContain("truncate");
     wrapper.unmount();
   });
 });

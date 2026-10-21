@@ -26,6 +26,7 @@ import { useHotkey } from "@/core/hotkeys";
 import { todayIn } from "@/lib/dates";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
+import { usePageTitle } from "@/lib/usePageTitle";
 import { useCompanyStore } from "@/stores/company";
 
 import { archiveProject, restoreProject, useProject, useRefreshProjects } from "../api";
@@ -59,6 +60,8 @@ const refresh = useRefreshProjects();
 const projectId = computed(() => Number(route.params.projectId) || 0);
 const query = useProject(projectId);
 const project = computed(() => query.data.value ?? null);
+// The breadcrumb and the browser tab say which project this is.
+usePageTitle(() => project.value?.name);
 const caps = computed(() => project.value?.capabilities);
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const notFound = computed(() => isApiError(query.error.value) && query.error.value.status === 404);

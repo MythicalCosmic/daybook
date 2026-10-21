@@ -23,6 +23,7 @@ import { LANGUAGES } from "@/api/types";
 import { findModule } from "@/core/modules";
 import { moduleNavItems } from "@/core/nav";
 import { currentLanguage } from "@/i18n";
+import { pageTitleFor } from "@/lib/usePageTitle";
 import { usePaletteStore } from "@/stores/palette";
 import { useSessionStore } from "@/stores/session";
 import { useUiStore, type Density, type ThemeMode } from "@/stores/ui";
@@ -58,7 +59,10 @@ const crumbs = computed<Crumb[]>(() => {
   const moduleTitle = t(module.title);
   list.push({ label: moduleTitle, to: first ? `${base}/${first.to}`.replace(/\/$/, "") : base });
   const pageTitle = [...route.matched].reverse().find((r) => r.meta.title)?.meta.title;
-  if (pageTitle && t(pageTitle) !== moduleTitle) list.push({ label: t(pageTitle) });
+  // A page showing one record names it (usePageTitle): "Projects › Yunusobod storage room".
+  const named = pageTitleFor(route);
+  if (named) list.push({ label: named });
+  else if (pageTitle && t(pageTitle) !== moduleTitle) list.push({ label: t(pageTitle) });
   return module.group === "overview" ? list.slice(1) : list;
 });
 

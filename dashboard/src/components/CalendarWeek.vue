@@ -134,8 +134,9 @@ const columns = "grid-cols-[52px_repeat(7,minmax(112px,1fr))]";
           <!-- Time grid -->
           <div :class="['relative grid', columns]">
             <div class="border-r border-line">
-              <div v-for="hour in hours" :key="hour" class="relative pr-2 text-right" :style="{ height: `${hourHeight}px` }">
-                <span class="absolute -top-2 right-2 text-[10px] font-medium tabular-nums text-subtle">{{ String(hour).padStart(2, "0") }}:00</span>
+              <!-- Each label sits on its hour line; the first goes just below it, where the sticky day headers can't cover it. -->
+              <div v-for="(hour, index) in hours" :key="hour" class="relative pr-2 text-right" :style="{ height: `${hourHeight}px` }">
+                <span :class="['absolute right-2 text-[10px] font-medium tabular-nums text-subtle', index === 0 ? 'top-0.5' : '-top-2']" data-hour-label>{{ String(hour).padStart(2, "0") }}:00</span>
               </div>
             </div>
             <div

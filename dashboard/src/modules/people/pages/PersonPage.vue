@@ -45,6 +45,7 @@ import { modules } from "@/core/modules";
 import { formatPhone } from "@/lib/format";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
+import { usePageTitle } from "@/lib/usePageTitle";
 import { useCompanyStore } from "@/stores/company";
 
 import { personAction, usePerson, usePersonMutation } from "../api";
@@ -67,6 +68,8 @@ const confirm = useConfirm();
 const memberId = computed(() => Number(route.params.memberId));
 const query = usePerson(memberId);
 const person = computed(() => query.data.value ?? null);
+// The breadcrumb and the browser tab say whose page this is.
+usePageTitle(() => person.value?.name);
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const base = computed(() => `/c/${company.currentId}/people/${memberId.value}`);
 

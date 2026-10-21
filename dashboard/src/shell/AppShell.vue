@@ -22,6 +22,7 @@ import { buildNav } from "@/core/nav";
 import { PULSE_INBOX_UNREAD, PULSE_QUEUE, PULSE_SAVED_VIEWS, keyMatches, pulse, usePulseCount, usePulsePolling } from "@/core/pulse";
 import { ensureAllModuleMessages } from "@/i18n";
 import { useBreakpoints } from "@/lib/useBreakpoints";
+import { pageTitleFor } from "@/lib/usePageTitle";
 import { applyQueryPatch } from "@/lib/useRouteState";
 import { useCompanyStore } from "@/stores/company";
 import { usePaletteStore } from "@/stores/palette";
@@ -149,6 +150,8 @@ watch(
 );
 
 const pageTitle = computed(() => {
+  const named = pageTitleFor(route);
+  if (named) return named;
   const key = [...route.matched].reverse().find((record) => record.meta.title)?.meta.title;
   if (key) return t(key);
   const module = findModule(route.matched.map((record) => record.meta.module).find(Boolean));

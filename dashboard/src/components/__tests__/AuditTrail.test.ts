@@ -58,4 +58,42 @@ describe("AuditTrail", () => {
     expect(text).toContain("Chilonzor");
     expect(text).toContain("Yes");
   });
+
+  it("shows fields in the order the page gives, not Postgres' shortest-key-first order", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        json({
+          count: 1,
+          next: null,
+          previous: null,
+          results: [
+            {
+              id: 5,
+              created_at: "2026-10-21T05:00:00Z",
+              action: "timeoff.recorded",
+              action_label: "Recorded time off",
+              actor: { id: 11, name: "Dilnoza Karimova" },
+              target_type: "timeoff",
+              target_id: 3,
+              target: "Time off",
+              // As jsonb returns them: keys sorted by length.
+              details: { member: "Bekzod Mirzayev", last_day: "2026-10-24", first_day: "2026-10-22", changes: { last_day: ["2026-10-23", "2026-10-24"], first_day: ["2026-10-21", "2026-10-22"] } },
+            },
+          ],
+        }),
+      ),
+    );
+    const app = await testApp("/c/1/time-off");
+    const labels = { member: "Person", first_day: "First day", last_day: "Last day" };
+    const { wrapper } = mountWithProviders(AuditTrail, { plugins: app.plugins, props: { targetType: "timeoff", targetId: 3, fieldLabels: labels, fieldOrder: ["member", "first_day", "last_day"] } });
+    await flushPromises();
+    const fields = (w: typeof wrapper) => w.findAll("li > span.text-xs.font-semibold").map((span) => span.text());
+    const rows = fields(wrapper);
+    // Changes first (first day, then last day), then the plain details in the same order.
+    expect(rows).toEqual(["First day", "Last day", "Person", "First day", "Last day"]);
+    const unordered = mountWithProviders(AuditTrail, { plugins: app.plugins, props: { targetType: "timeoff", targetId: 3, fieldLabels: labels } });
+    await flushPromises();
+    expect(fields(unordered.wrapper)).toEqual(["Last day", "First day", "Person", "Last day", "First day"]);
+  });
 });
