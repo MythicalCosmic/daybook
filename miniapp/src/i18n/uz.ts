@@ -189,6 +189,7 @@ const uz: Partial<Record<Key, string>> = {
   "detail.banner.reviewNote": "Tez orada tekshiriladi.",
   "detail.banner.reviewBy": "{name} {time} da bajardi",
   "detail.banner.reviewByNote": "Natijani ko‘rib chiqing, so‘ng tasdiqlang yoki qaytaring.",
+  "detail.banner.reviewByNoteBare": "Tasdiqlang yoki nimani tuzatish kerakligini yozib qaytaring.",
   "detail.banner.returned": "{name} vazifani qaytardi",
   "detail.banner.checked": "{name} {time} da tekshirdi",
   "detail.banner.done": "{time} da bajarildi",

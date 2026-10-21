@@ -334,6 +334,11 @@ describe("feature hosts in the real screens", () => {
     expect(checking.container.textContent).not.toContain("Photo needed");
     cleanup();
 
+    // Work that needed no proof: nothing to look at, so the note doesn't ask for it.
+    const bare = renderWith(<TaskDetail taskId={43} />, { seed: { task: { ...review, proof: "none", completed_at: "2026-10-21T04:04:00Z" } as Task, comments: [] } });
+    expect(bare.container.textContent).toContain("Confirm it, or send it back with what to fix.");
+    cleanup();
+
     const waiting = { ...base, status: "review", actions: [] } as unknown as Task;
     const sent = renderWith(<TaskDetail taskId={43} />, { seed: { task: waiting, comments: [] } });
     expect(bar(sent.container)).toEqual(["Waiting for a check"]);

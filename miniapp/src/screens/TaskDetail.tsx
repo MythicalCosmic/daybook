@@ -224,7 +224,7 @@ function StatusBanner({ task, lastComment, ctx }: { task: Task; lastComment?: Co
   if (task.status === "review") {
     // Whoever checks it hears who finished it and what to do; whoever did it, that it's on its way.
     banner = task.actions.includes("confirm")
-      ? { tone: "", icon: <Hourglass size={17} strokeWidth={2.6} />, title: t("detail.banner.reviewBy", { name: task.assignee.name, time: at(task.completed_at) }), note: t("detail.banner.reviewByNote") }
+      ? { tone: "", icon: <Hourglass size={17} strokeWidth={2.6} />, title: t("detail.banner.reviewBy", { name: task.assignee.name, time: at(task.completed_at) }), note: t(task.proof === "none" ? "detail.banner.reviewByNoteBare" : "detail.banner.reviewByNote") }
       : { tone: "", icon: <Hourglass size={17} strokeWidth={2.6} />, title: t("detail.banner.review", { time: at(task.completed_at) }), note: t("detail.banner.reviewNote") };
   } else if (task.status === "returned") {
     banner = {

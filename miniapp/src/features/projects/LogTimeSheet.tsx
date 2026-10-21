@@ -7,7 +7,7 @@ import { addDays, dayKey, weekdayShort } from "../../lib/time";
 import { useMember } from "../../state/session";
 import { useToast } from "../../state/toast";
 import { haptic } from "../../telegram";
-import { BottomBar, ChipGroup, EmptyState, Field, IconButton, Input, SheetTitle } from "../../ui";
+import { Button, ChipGroup, EmptyState, Field, IconButton, Input, SheetTitle } from "../../ui";
 import type { SheetProps } from "../registry";
 import { logTime, useBoard, useMyProjects, useRefresh, useWeek } from "./api";
 import { hhmm } from "./lib";
@@ -129,7 +129,10 @@ export default function LogTimeSheet({ params, close }: SheetProps) {
       <Field label={t("log.note")} optional>
         <Input value={note} maxLength={300} placeholder={t("log.notePlaceholder")} onChange={(event) => setNote(event.target.value)} />
       </Field>
-      <BottomBar primary={{ text: t("log.save", { time: hhmm(minutes) }), onClick: () => void save(), loading: saving, disabled: !project }} />
+      {/* In the sheet, like every sheet's action: Telegram's button belongs to the page below. */}
+      <Button variant="primary" size="lg" block loading={saving} disabled={!project} onClick={() => void save()}>
+        {t("log.save", { time: hhmm(minutes) })}
+      </Button>
     </div>
   );
 }

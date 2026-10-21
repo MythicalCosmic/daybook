@@ -187,6 +187,7 @@ const en = {
   "detail.banner.reviewNote": "It will be checked soon.",
   "detail.banner.reviewBy": "{name} finished it at {time}",
   "detail.banner.reviewByNote": "Look at the proof, then confirm it or send it back.",
+  "detail.banner.reviewByNoteBare": "Confirm it, or send it back with what to fix.",
   "detail.banner.returned": "{name} sent this back",
   "detail.banner.checked": "Checked by {name} at {time}",
   "detail.banner.done": "Done at {time}",

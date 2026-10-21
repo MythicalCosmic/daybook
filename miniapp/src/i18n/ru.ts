@@ -200,6 +200,7 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
   "detail.banner.reviewNote": "Скоро проверят.",
   "detail.banner.reviewBy": "Выполнено в {time} · {name}",
   "detail.banner.reviewByNote": "Посмотрите результат, затем подтвердите или верните.",
+  "detail.banner.reviewByNoteBare": "Подтвердите или верните, написав, что исправить.",
   "detail.banner.returned": "Задачу вернул(а) {name}",
   "detail.banner.checked": "Проверено: {name}, {time}",
   "detail.banner.done": "Готово в {time}",
