@@ -89,9 +89,9 @@ def test_open_and_off_modes(settings):
 
 def test_platform_admins_never_need_a_code(settings):
     settings.COMPANY_SIGNUP = "off"
-    settings.PLATFORM_ADMIN_TG_IDS = [6589960007]
+    settings.PLATFORM_ADMIN_TG_IDS = [7000000001]
 
-    assert signup.admit(UserFactory(telegram_id=6589960007), None) is None
+    assert signup.admit(UserFactory(telegram_id=7000000001), None) is None
 
 
 def test_the_command_prints_the_code_and_the_bot_link(settings):

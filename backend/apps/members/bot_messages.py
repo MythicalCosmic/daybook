@@ -32,16 +32,29 @@ MENU_APP = gettext_noop("📱 Open app")
 
 def main_menu(membership: Membership | None = None) -> ReplyKeyboardMarkup:
     """The persistent menu: tasks first, then the buttons modules registered for this person
-    (apps.members.bot_menu), then the app."""
+    (apps.members.bot_menu), then the app.
+
+    Every button sends its text, none opens the mini app itself: Telegram gives a Mini App
+    opened from a keyboard button no initData, so the app couldn't sign the person in. The bot
+    answers the app's buttons with `open_app` (an inline button, which does carry initData); the
+    chat's menu button (bot.commands.menu_button) opens the app as well."""
     rows = [[KeyboardButton(text=_(MENU_MY_TASKS)), KeyboardButton(text=_(MENU_NEW_TASK))]]
     extra = []
     if membership is not None:
-        extra = [_menu_button(button) for button in bot_menu.buttons_for(membership)]
+        extra = [KeyboardButton(text=_(b.msgid)) for b in bot_menu.buttons_for(membership)]
     rows += [extra[index : index + 2] for index in range(0, len(extra), 2)]
     if settings.EMPLOYEE_MINIAPP_URL:
-        app = WebAppInfo(url=settings.EMPLOYEE_MINIAPP_URL)
-        rows.append([KeyboardButton(text=_(MENU_APP), web_app=app)])
+        rows.append([KeyboardButton(text=_(MENU_APP))])
     return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True, is_persistent=True)
+
+
+def open_app(screen: str | None = None, label: str | None = None) -> BotMessage:
+    """The answer to a menu button that opens the mini app (at `screen`): an inline button,
+    which opens it signed in."""
+    button = InlineKeyboardButton(
+        text=label or _(MENU_APP), web_app=WebAppInfo(url=miniapp_url(screen))
+    )
+    return _("Tap the button to open the app."), InlineKeyboardMarkup(inline_keyboard=[[button]])
 
 
 def miniapp_url(screen: str | None = None) -> str:
@@ -51,13 +64,6 @@ def miniapp_url(screen: str | None = None) -> str:
         return url
     separator = "&" if urlsplit(url).query else "?"
     return f"{url}{separator}{urlencode({'screen': screen})}"
-
-
-def _menu_button(button: bot_menu.MenuButton) -> KeyboardButton:
-    if button.web_app_screen and settings.EMPLOYEE_MINIAPP_URL:
-        app = WebAppInfo(url=miniapp_url(button.web_app_screen))
-        return KeyboardButton(text=_(button.msgid), web_app=app)
-    return KeyboardButton(text=_(button.msgid))
 
 
 def join_request(membership: Membership) -> BotMessage:
