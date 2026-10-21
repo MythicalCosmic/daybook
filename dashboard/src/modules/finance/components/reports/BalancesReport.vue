@@ -17,7 +17,7 @@ import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
 import { useBalances } from "../../api";
-import { ACCOUNT_GROUPS, ACCOUNT_ICONS, isNegative } from "../../lib";
+import { ACCOUNT_GROUPS, ACCOUNT_ICONS, baseTotal, isNegative } from "../../lib";
 
 const props = defineProps<{ branch: number[] }>();
 
@@ -40,8 +40,12 @@ const kpis = computed(() => {
     { id: "net", label: t("finance.reports.netPosition"), value: d?.net ?? null, format: "money" as const, compact: true, icon: Scale, hint: t("finance.reports.netHint") },
   ];
 });
+// Each group carries its total in the base currency, so the cards add up to "Cash on the day".
 const groups = computed(() =>
-  ACCOUNT_GROUPS.map((group) => ({ ...group, rows: (data.value?.accounts ?? []).filter((row) => group.kinds.includes(row.kind)) })).filter((group) => group.rows.length),
+  ACCOUNT_GROUPS.map((group) => {
+    const rows = (data.value?.accounts ?? []).filter((row) => group.kinds.includes(row.kind));
+    return { ...group, rows, total: baseTotal(rows, company.currency) };
+  }).filter((group) => group.rows.length),
 );
 </script>
 
@@ -59,10 +63,13 @@ const groups = computed(() =>
       <SkeletonBlock v-if="query.isPending.value" height="320px" radius="12px" />
       <div v-else-if="data" class="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <section v-for="group in groups" :key="group.id" class="ui-card p-4">
-          <h3 class="mb-2 text-sm font-semibold text-fg">{{ t(`finance.accounts.group.${group.id}`) }}</h3>
+          <header class="mb-2 flex items-baseline justify-between gap-3">
+            <h3 class="text-sm font-semibold text-fg">{{ t(`finance.accounts.group.${group.id}`) }}</h3>
+            <span v-if="group.total !== null" class="text-sm font-semibold tabular-nums text-muted" data-testid="group-total"><MoneyText :value="group.total" compact /></span>
+          </header>
           <ul class="flex flex-col divide-y divide-line">
             <li v-for="row in group.rows" :key="row.id">
-              <RouterLink :to="`/c/${company.currentId}/finance/accounts/${row.id}`" class="flex items-center gap-3 py-2 hover:bg-highlight">
+              <RouterLink :to="`/c/${company.currentId}/finance/accounts/${row.id}`" class="-mx-2 flex items-center gap-3 rounded-[8px] px-2 py-2 transition-colors hover:bg-highlight">
                 <component :is="ACCOUNT_ICONS[row.kind]" :size="16" class="shrink-0 text-subtle" aria-hidden="true" />
                 <span class="min-w-0 flex-1">
                   <span class="block truncate text-base text-fg">{{ row.name }}</span>

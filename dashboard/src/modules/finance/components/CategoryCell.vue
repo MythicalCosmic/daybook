@@ -44,7 +44,7 @@ const value = computed({
     :placeholder="t('finance.tx.pickCategory')"
     :aria-label="t('finance.field.category')"
   />
-  <span v-else-if="row.category" class="inline-flex min-w-0 items-center gap-1.5 text-sm text-fg">
+  <span v-else-if="row.category" class="inline-flex min-w-0 items-center gap-1.5 text-sm text-fg" :title="row.category.parent_name ? `${row.category.name} · ${row.category.parent_name}` : row.category.name">
     <span class="size-2 shrink-0 rounded-full" :style="{ background: colorFor(row.category.id, row.category.color) }" aria-hidden="true" />
     <span class="truncate">{{ row.category.name }}</span>
     <span v-if="row.category.parent_name" class="truncate text-xs text-subtle">· {{ row.category.parent_name }}</span>

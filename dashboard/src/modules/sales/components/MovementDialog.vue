@@ -50,7 +50,9 @@ watch(open, (value) => {
 });
 
 const kinds = computed(() => MOVEMENT_KINDS.map((value) => ({ value, label: t(`sales.movement.kind.${value}`), icon: MOVEMENT_ICONS[value] })));
-const registerOptions = computed(() => (options.data.value?.registers ?? []).filter((r) => r.is_active).map((r) => ({ value: r.id, label: r.name, description: r.branch })));
+// "Chilonzor · Kassa 1", as the movements table writes it: every branch has a "Kassa 1", and the
+// closed picker shows only the label.
+const registerOptions = computed(() => (options.data.value?.registers ?? []).filter((r) => r.is_active).map((r) => ({ value: r.id, label: `${r.branch} · ${r.name}` })));
 const branchOf = computed(() => options.data.value?.registers.find((r) => r.id === register.value)?.branch_id ?? null);
 const receivers = computed(() =>
   (options.data.value?.receivers ?? []).map((p) => ({ value: p.id, label: p.name, avatar: { name: p.name }, description: branchOf.value && !p.branch_ids.includes(branchOf.value) ? t("sales.movement.otherBranch") : undefined })),

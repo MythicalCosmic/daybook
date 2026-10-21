@@ -10,12 +10,11 @@ import logging
 from datetime import date, timedelta
 
 from django.db.models import Q
-from django.utils import translation
 from django.utils.translation import gettext as _
 
 from apps.console.registry import CalendarItem, FieldSpec, OffboardStep, SearchHit
-from apps.core.money import format_money, quantize
-from apps.finance import access, queries
+from apps.core.money import quantize
+from apps.finance import access, display, queries
 from apps.finance.models import Debt, MoneyAccount, Receipt, Transaction
 from apps.finance.sources import Source
 from apps.members import scope
@@ -26,12 +25,10 @@ logger = logging.getLogger(__name__)
 OFFBOARD_SOURCE = "finance.offboard"
 
 
-def _lang() -> str:
-    return (translation.get_language() or "uz")[:2]
-
-
 def _money(amount, currency: str) -> str:
-    return format_money(amount, currency, _lang())
+    """Money in the texts these providers give the dashboard (calendar, offboarding), written
+    the way the dashboard writes it."""
+    return display.money(amount, currency)
 
 
 # Search ---------------------------------------------------------------------------------------
@@ -40,6 +37,9 @@ def _money(amount, currency: str) -> str:
 def search_transactions(member: Membership, q: str, limit: int) -> list[SearchHit]:
     rows = access.visible_transactions(member)
     mask = not access.sees_salary_detail(member)
+    # The subtitle reads like the dashboard's ledger: day, signed amount, account, counterparty.
+    today = queries.local_today(member.company)
+    lang = display.language()
     hits = []
     for row in queries.search_transactions(rows, q, limit, mask_sensitive=mask):
         masked = mask and access.is_sensitive_row(row)
@@ -51,7 +51,10 @@ def search_transactions(member: Membership, q: str, limit: int) -> list[SearchHi
                 or (row.category.name if row.category_id else row.get_kind_display())
             )
         )
-        parts = [row.occurred_on.strftime("%d.%m.%Y"), _money(row.amount, row.currency)]
+        parts = [
+            display.day(row.occurred_on, today, lang),
+            display.money(row.amount, row.currency, lang, signed=True),
+        ]
         if row.account_id:
             parts.append(row.account.name)
         if row.counterparty_id and not masked:
@@ -72,11 +75,12 @@ def search_counterparties(member: Membership, q: str, limit: int) -> list[Search
     rows = access.visible_counterparties(member)
     hits = []
     for party in queries.search_counterparties(rows, q, limit):
+        # "Supplier · +998 71 200 44 11 · INN 305112874", as the counterparty list writes them.
         bits = [party.get_kind_display()]
         if party.phone:
-            bits.append(party.phone)
+            bits.append(display.phone(party.phone))
         if party.tin:
-            bits.append(party.tin)
+            bits.append(_("INN %(tin)s") % {"tin": party.tin})
         hits.append(
             SearchHit(
                 type="finance.counterparty",

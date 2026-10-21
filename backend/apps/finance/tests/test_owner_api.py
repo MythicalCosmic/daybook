@@ -390,6 +390,57 @@ class TestTransactions:
             == "-900000.00"
         )
 
+    def test_a_pnl_line_lists_the_rows_the_overview_adds_up(self, client, fin, kassa, boss, today):
+        """The overview's "Income/Expenses this month" open `?pnl=income|expense`: the same rows
+        the P&L counts (a refund is income going out), so the list's sums match the tiles."""
+        income(fin, boss, kassa, "5000000", today)
+        income(fin, boss, kassa, "300000", today, category="refunds", is_contra=True)
+        expense(fin, boss, kassa, "450000", today)
+        month = client.get(url(fin, "overview/")).json()["month"]
+        start = today.replace(day=1).isoformat()
+
+        def listed(side):
+            params = {"pnl": side, "from": start, "to": today.isoformat()}
+            return client.get(url(fin, "transactions/"), params).json()
+
+        side = listed("income")
+        assert side["count"] == 2
+        assert side["summary"]["money_in"] == "5000000.00"
+        assert side["summary"]["money_out"] == "300000.00"
+        assert side["summary"]["net"] == month["income"] == "4700000.00"
+        side = listed("expense")
+        assert side["count"] == 1
+        assert side["summary"]["money_out"] == month["expense"] == "450000.00"
+        wrong = client.get(url(fin, "transactions/"), {"pnl": "profit"})
+        assert wrong.status_code == 400
+
+    def test_the_sums_follow_the_status_and_kind_filters(
+        self, client, fin, kassa, bank, boss, today
+    ):
+        income(fin, boss, kassa, "5000000", today)
+        expense(fin, boss, kassa, "450000", today, status="pending")
+        services.transfer(
+            fin,
+            by=boss,
+            from_account=kassa,
+            to_account=bank,
+            amount_out=Decimal("2000000"),
+            occurred_on=today,
+        )
+
+        def summary(**params):
+            return client.get(url(fin, "transactions/"), params).json()["summary"]
+
+        # Everything: posted rows, transfers left out (they only move money between accounts).
+        assert summary()["money_in"] == "5000000.00"
+        assert summary()["money_out"] == "0.00"
+        # The "Waiting" view sums what waits, not zero.
+        assert summary(status="pending")["money_out"] == "450000.00"
+        # The "Transfers" view shows both legs.
+        transfers = summary(kind="transfer")
+        assert transfers["money_in"] == transfers["money_out"] == "2000000.00"
+        assert transfers["net"] == "0.00"
+
     def test_the_creator_edits_within_24_hours_others_need_finance_manage(
         self, owner_api, fin, role, person, kassa, boss, today
     ):

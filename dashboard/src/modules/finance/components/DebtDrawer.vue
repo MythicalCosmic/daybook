@@ -217,7 +217,7 @@ const moreMenu = computed<MenuEntry[]>(() => {
               <HandCoins :size="20" />
             </span>
             <div class="min-w-0 flex-1">
-              <p class="truncate text-base font-semibold text-fg">{{ debt.party?.name ?? t("finance.debts.hidden") }}</p>
+              <p class="truncate text-base font-semibold text-fg" :title="debt.party?.name">{{ debt.party?.name ?? t("finance.debts.hidden") }}</p>
               <p class="text-[1.625rem] font-semibold leading-8 tracking-[-0.02em] tabular-nums text-fg"><MoneyText :value="debt.outstanding" :currency="debt.currency" /></p>
               <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
                 <StatusPill :tone="DEBT_TONES[debt.status]" size="sm" :label="t(`finance.debtStatus.${debt.status}`)" />
@@ -311,7 +311,7 @@ const moreMenu = computed<MenuEntry[]>(() => {
               <ul class="flex flex-col divide-y divide-line rounded-[10px] border border-line">
                 <li v-for="row in detail.payments" :key="row.id" :class="['flex items-center gap-3 px-3 py-2', row.status === 'void' && 'opacity-50']">
                   <span class="w-20 shrink-0 text-sm text-muted">{{ fmt.day(row.occurred_on, dayStyle(row.occurred_on)) }}</span>
-                  <span class="min-w-0 flex-1 truncate text-sm text-fg">{{ row.kind_label }}<template v-if="row.account"> · {{ row.account.name }}</template></span>
+                  <span class="min-w-0 flex-1 truncate text-sm text-fg" :title="row.account ? `${row.kind_label} · ${row.account.name}` : row.kind_label">{{ row.kind_label }}<template v-if="row.account"> · {{ row.account.name }}</template></span>
                   <span class="text-sm font-semibold tabular-nums"><MoneyText :value="row.amount" :currency="row.currency" sign="always" colored /></span>
                 </li>
               </ul>

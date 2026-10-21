@@ -17,20 +17,25 @@ import ProgressBar from "@/components/ProgressBar.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import StatusPill, { type StatusTone } from "@/components/StatusPill.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
-import { percent } from "@/lib/decimal";
+import { dec, percent } from "@/lib/decimal";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
-import { useToday } from "../api";
+import { useOptions, useToday } from "../api";
 import type { BranchTodaySales } from "../types";
 
 const { t } = useI18n();
 const fmt = useFormat();
 const company = useCompanyStore();
 const query = useToday();
+const options = useOptions();
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const branches = computed(() => query.data.value?.branches ?? []);
+/** Tills open and nothing closed yet in shift-totals mode: today's sales come with the Z-reports. */
+function awaitingTotals(branch: BranchTodaySales): boolean {
+  return options.data.value?.settings.mode === "shift_totals" && branch.open_tills.length > 0 && branch.receipts === 0 && dec(branch.net).isZero();
+}
 
 const TONES: Record<BranchTodaySales["status"], StatusTone> = { open: "success", not_opened: "danger", closed: "neutral", day_off: "info" };
 
@@ -49,10 +54,15 @@ const link = (branch: BranchTodaySales) => ({ path: `/c/${company.currentId}/sal
 <template>
   <div>
     <div v-if="skeleton" class="grid gap-3 md:grid-cols-2">
+      <!-- Shaped like a loaded card (name, status, till, cash and month bars) so nothing jumps. -->
       <div v-for="n in 2" :key="n" class="ui-card flex flex-col gap-3 p-4">
         <SkeletonBlock width="40%" height="16px" />
         <SkeletonBlock width="55%" height="22px" radius="999px" />
-        <SkeletonBlock height="44px" radius="10px" />
+        <SkeletonBlock height="50px" radius="10px" />
+        <div class="mt-1 grid grid-cols-2 gap-4 border-t border-line pt-3">
+          <SkeletonBlock height="38px" />
+          <SkeletonBlock height="38px" />
+        </div>
       </div>
     </div>
     <ErrorState v-else-if="query.isError.value" compact :error="query.error.value" :retry="() => query.refetch()" />
@@ -78,8 +88,14 @@ const link = (branch: BranchTodaySales) => ({ path: `/c/${company.currentId}/sal
           </div>
           <div class="text-right">
             <p class="text-[11px] font-medium uppercase tracking-wide text-subtle">{{ t("sales.today.soFar") }}</p>
-            <p class="text-lg font-semibold tabular-nums text-fg"><MoneyText :value="branch.net" compact /></p>
-            <p class="text-xs text-muted">{{ t("sales.today.receipts", { n: branch.receipts }, branch.receipts) }}</p>
+            <template v-if="awaitingTotals(branch)">
+              <p class="text-lg font-semibold text-subtle" data-testid="today-awaiting">—</p>
+              <p class="text-xs text-muted">{{ t("sales.shift.movedOutHint") }}</p>
+            </template>
+            <template v-else>
+              <p class="text-lg font-semibold tabular-nums text-fg"><MoneyText :value="branch.net" compact /></p>
+              <p class="text-xs text-muted">{{ t("sales.today.receipts", { n: branch.receipts }, branch.receipts) }}</p>
+            </template>
           </div>
         </div>
 
@@ -102,15 +118,19 @@ const link = (branch: BranchTodaySales) => ({ path: `/c/${company.currentId}/sal
         <div class="grid grid-cols-2 gap-3 border-t border-line pt-3">
           <div class="min-w-0" role="group" :aria-label="t('sales.today.cash')">
             <p class="flex items-baseline justify-between gap-2 text-[11px] text-muted">
-              <span class="truncate">{{ t("sales.today.cash") }}</span>
-              <span v-if="branch.cash_limit" class="shrink-0 tabular-nums text-subtle">{{ t("sales.today.limit", { amount: fmt.money(branch.cash_limit, undefined, { compact: true }) }) }}</span>
+              <span class="truncate" :title="t('sales.today.cash')">{{ t("sales.today.cash") }}</span>
+              <span v-if="branch.cash_limit" class="shrink-0 tabular-nums text-subtle" :title="t('sales.today.limit', { amount: fmt.money(branch.cash_limit) })">{{ t("sales.today.limit", { amount: fmt.money(branch.cash_limit, undefined, { compact: true, currencyDisplay: "none" }) }) }}</span>
             </p>
             <p class="truncate text-sm font-semibold text-fg"><MoneyText :value="branch.cash_in_branch" compact /></p>
             <ProgressBar v-if="limitUse(branch) !== null" class="mt-2" size="xs" :value="Math.min(limitUse(branch)!, 100)" :tone="limitUse(branch)! >= 100 ? 'danger' : limitUse(branch)! >= 80 ? 'warning' : 'primary'" />
           </div>
           <div v-if="branch.target" class="min-w-0" role="group" :aria-label="t('sales.today.pace')">
-            <p class="truncate text-[11px] text-muted">{{ t("sales.today.month", { percent: branch.target.percent }) }}</p>
-            <p class="truncate text-sm font-semibold text-fg"><MoneyText :value="branch.target.actual" compact /> <span class="font-normal text-subtle">/ <MoneyText :value="branch.target.amount" compact /></span></p>
+            <p class="truncate text-[11px] text-muted">{{ t("sales.today.month", { percent: fmt.percent(Number(branch.target.percent), 1) }) }}</p>
+            <!-- "124.3M UZS / 190M": the currency once, so the target still fits a narrow card. -->
+            <p class="truncate text-sm font-semibold text-fg" :title="`${fmt.money(branch.target.actual)} / ${fmt.money(branch.target.amount)}`">
+              <MoneyText :value="branch.target.actual" compact />
+              <span class="font-normal text-subtle"> / {{ fmt.money(branch.target.amount, undefined, { compact: true, currencyDisplay: "none" }) }}</span>
+            </p>
             <ProgressBar class="mt-2" size="xs" :value="Number(branch.target.percent)" :target="(branch.target.elapsed / branch.target.days) * 100" :tone="branch.target.ahead ? 'success' : 'warning'" />
           </div>
           <div v-else class="min-w-0">

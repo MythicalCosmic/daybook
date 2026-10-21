@@ -77,14 +77,16 @@ const tabs = computed(() => [
 
 const columns = computed<TableColumn<Debt>[]>(() => [
   { id: "party", header: direction.value === "receivable" ? t("finance.debts.whoOwes") : t("finance.debts.whomWeOwe"), minWidth: 200, sticky: true, hideable: false, value: (row) => row.party?.name ?? "" },
-  { id: "kind", header: t("finance.debts.kind"), width: 124, value: (row) => t(`finance.debtKind.${row.kind}`) },
+  // Fixed widths leave the name column room on a 1440 px screen in every language (Russian runs
+  // widest): "Аванс по зарплате" fits, and "Due" fits "42 kun kechikkan" under the date.
+  { id: "kind", header: t("finance.debts.kind"), width: 150, value: (row) => t(`finance.debtKind.${row.kind}`) },
   { id: "issued_on", header: t("finance.debts.issued"), width: 82, format: (value) => fmt.day(String(value), dayStyle(String(value))) },
   { id: "due_on", header: t("finance.debts.due"), width: 136, value: (row) => row.due_on ?? "" },
-  { id: "amount", header: t("finance.debts.amount"), numeric: true, width: 136, value: (row) => row.amount },
-  { id: "progress", header: t("finance.debts.paid"), width: 112, value: (row) => row.paid },
-  { id: "outstanding", header: t("finance.debts.left"), numeric: true, width: 136, value: (row) => row.outstanding },
-  { id: "branch", header: t("finance.field.branch"), width: 76, value: (row) => row.branch?.name ?? "" },
-  { id: "status", header: t("finance.filter.status"), width: 104, value: (row) => row.status },
+  { id: "amount", header: t("finance.debts.amount"), numeric: true, width: 128, value: (row) => row.amount },
+  { id: "progress", header: t("finance.debts.paid"), width: 100, value: (row) => row.paid },
+  { id: "outstanding", header: t("finance.debts.left"), numeric: true, width: 128, value: (row) => row.outstanding },
+  { id: "branch", header: t("finance.field.branch"), width: 84, value: (row) => row.branch?.name ?? "" },
+  { id: "status", header: t("finance.filter.status"), width: 100, value: (row) => row.status },
 ]);
 
 function open(row: Debt): void {
@@ -159,8 +161,8 @@ const exportParams = computed(() => ({ direction: direction.value, ...filters.pa
         <div class="flex min-w-0 items-center gap-2.5">
           <UserAvatar :name="row.party?.name ?? '?'" :size="28" shape="rounded" />
           <div class="min-w-0">
-            <p class="truncate text-base font-medium text-fg">{{ row.party?.name ?? t("finance.debts.hidden") }}</p>
-            <p v-if="row.description" class="truncate text-xs text-muted">{{ row.description }}</p>
+            <p class="truncate text-base font-medium text-fg" :title="row.party?.name">{{ row.party?.name ?? t("finance.debts.hidden") }}</p>
+            <p v-if="row.description" class="truncate text-xs text-muted" :title="row.description">{{ row.description }}</p>
           </div>
         </div>
       </template>
@@ -175,7 +177,7 @@ const exportParams = computed(() => ({ direction: direction.value, ...filters.pa
       <template #cell-progress="{ row }">
         <div class="flex w-full items-center gap-2">
           <ProgressBar :value="share(row.paid, row.amount)" :max="100" size="xs" tone="success" class="min-w-0 flex-1" />
-          <span class="w-9 shrink-0 text-right text-xs tabular-nums text-muted">{{ Math.round(share(row.paid, row.amount)) }}%</span>
+          <span class="w-9 shrink-0 text-right text-xs tabular-nums text-muted">{{ fmt.percent(Math.round(share(row.paid, row.amount))) }}</span>
         </div>
       </template>
       <template #cell-outstanding="{ row }"><MoneyCell :value="row.outstanding" :currency="row.currency" :colored="false" strong /></template>

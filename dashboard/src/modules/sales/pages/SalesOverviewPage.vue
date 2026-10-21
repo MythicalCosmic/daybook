@@ -12,10 +12,12 @@ import { RouterLink } from "vue-router";
 
 import BarChart from "@/components/BarChart.vue";
 import BranchPicker from "@/components/BranchPicker.vue";
+import type { ChartSeries } from "@/components/chartCard";
 import ChartCard from "@/components/ChartCard.vue";
 import DateRangePicker from "@/components/DateRangePicker.vue";
 import DonutChart from "@/components/DonutChart.vue";
 import EmptyState from "@/components/EmptyState.vue";
+import ErrorState from "@/components/ErrorState.vue";
 import ExportButton from "@/components/ExportButton.vue";
 import HeatmapChart from "@/components/HeatmapChart.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
@@ -23,6 +25,7 @@ import LineChart from "@/components/LineChart.vue";
 import MoneyText from "@/components/MoneyText.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import UiButton from "@/components/UiButton.vue";
+import { useChartTheme } from "@/components/useChartTheme";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { rangeParams } from "@/lib/dateRange";
 import { divide, isZero, sum } from "@/lib/decimal";
@@ -33,6 +36,7 @@ import { useCompanyStore } from "@/stores/company";
 
 import { useCashiers, useSummary, useTargets } from "../api";
 import TodayBranches from "../components/TodayBranches.vue";
+import { heatHours } from "../format";
 
 const { t } = useI18n();
 const fmt = useFormat();
@@ -90,32 +94,38 @@ const branchChart = computed(() => ({
 }));
 const methodRows = computed(() => byMethod.data.value?.breakdown ?? []);
 const donut = computed(() => methodRows.value.map((row) => ({ name: row.label, value: row.net })));
-/** Method share per branch, as a 100% bar per branch (top methods, the rest as "Other"). */
+/** Method share per branch, as a 100% bar per branch: the donut's five top methods in the donut's
+ * colours, the rest as a warm-gray "Other", so the two charts read alike. */
+const chartTheme = useChartTheme();
+const MIX_TOP = 5;
 const mix = computed(() => {
-  const top = methodRows.value.slice(0, 4);
+  const top = methodRows.value.slice(0, MIX_TOP);
   const topKeys = new Set(top.map((row) => row.key));
   const rows = branchRows.value;
-  const series = top.map((method) => ({
+  const series: ChartSeries[] = top.map((method) => ({
     name: method.label,
     data: rows.map((row) => row.methods?.find((m) => m.key === method.key)?.net ?? "0"),
     stack: "mix",
   }));
-  if (methodRows.value.length > 4) {
+  if (methodRows.value.length > MIX_TOP) {
     series.push({
-      name: t("sales.chart.other"),
+      name: t("common.chart.other"), // the donut's word for the rest
       data: rows.map((row) => sum((row.methods ?? []).filter((m) => !topKeys.has(m.key)).map((m) => m.net))),
       stack: "mix",
+      color: chartTheme.value.compare,
     });
   }
   return { categories: rows.map((row) => row.label), series };
 });
 
-const hourLabels = Array.from({ length: 17 }, (_, i) => String(i + 7).padStart(2, "0"));
+// 07–23, or every hour of a 24-hour pharmacy's nights too (heatHours).
+const hourSpan = computed(() => heatHours(hours.data.value?.series ?? []));
+const hourLabels = computed(() => Array.from({ length: hourSpan.value.last - hourSpan.value.first + 1 }, (_, i) => String(i + hourSpan.value.first).padStart(2, "0")));
 const weekdays = computed(() => Array.from({ length: 7 }, (_, i) => t(`common.weekday.short.${i}`)));
 const heat = computed<Array<[number, number, string]>>(() =>
   (hours.data.value?.series ?? [])
-    .filter((cell) => (cell.hour ?? 0) >= 7)
-    .map((cell) => [(cell.hour ?? 0) - 7, cell.weekday ?? 0, cell.net ?? "0"]),
+    .filter((cell) => (cell.hour ?? 0) >= hourSpan.value.first && (cell.hour ?? 0) <= hourSpan.value.last)
+    .map((cell) => [(cell.hour ?? 0) - hourSpan.value.first, cell.weekday ?? 0, cell.net ?? "0"]),
 );
 const topCashiers = computed(() => (cashiers.data.value?.results ?? []).slice(0, 5));
 const base = computed(() => `/c/${company.currentId}/sales`);
@@ -150,7 +160,9 @@ const base = computed(() => `/c/${company.currentId}/sales`);
     </div>
 
     <template v-else>
-      <KpiStrip :items="kpis" :loading="byDay.isPending.value" />
+      <!-- A failed summary says so, instead of five dashes and "0 shifts". -->
+      <ErrorState v-if="byDay.isError.value" class="ui-card" compact :error="byDay.error.value" :retry="() => byDay.refetch()" data-testid="kpi-error" />
+      <KpiStrip v-else :items="kpis" :loading="byDay.isPending.value" />
 
       <div class="grid gap-4 xl:grid-cols-3">
         <ChartCard
@@ -184,7 +196,7 @@ const base = computed(() => `/c/${company.currentId}/sales`);
           <BarChart :categories="branchChart.categories" :series="branchChart.series" value-format="money" />
         </ChartCard>
         <ChartCard :title="t('sales.chart.mix')" :subtitle="t('sales.chart.mixSub')" :loading="byDay.isPending.value || byMethod.isPending.value" :empty="!!summary && !branchRows.length">
-          <BarChart :categories="mix.categories" :series="mix.series" horizontal normalize stacked :height="`${Math.max(160, mix.categories.length * 64 + 70)}px`" />
+          <BarChart :categories="mix.categories" :series="mix.series" horizontal normalize stacked :y-max="100" :height="`${Math.max(160, mix.categories.length * 64 + 70)}px`" />
         </ChartCard>
       </div>
 
@@ -211,7 +223,7 @@ const base = computed(() => `/c/${company.currentId}/sales`);
               <UserAvatar :name="row.member.name" :size="30" />
               <span class="min-w-0 flex-1">
                 <span class="block truncate text-sm font-semibold text-fg">{{ row.member.name }}</span>
-                <span class="block truncate text-xs text-muted">{{ t("sales.cashiers.line", { shifts: row.shifts, accuracy: row.accuracy ?? "—" }, row.shifts) }}</span>
+                <span class="block truncate text-xs text-muted">{{ t("sales.cashiers.line", { shifts: row.shifts, accuracy: row.accuracy !== null && row.accuracy !== undefined ? fmt.percent(Number(row.accuracy), 1) : "—" }, row.shifts) }}</span>
               </span>
               <MoneyText :value="row.net" compact class="text-sm font-semibold text-fg" />
             </li>

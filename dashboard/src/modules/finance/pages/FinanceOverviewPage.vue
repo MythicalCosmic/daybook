@@ -33,7 +33,7 @@ import { useCompanyStore } from "@/stores/company";
 
 import { useCashFlow, useOverview } from "../api";
 import { useCssColor } from "../colors";
-import { ACCOUNT_ICONS, colorFor, isNegative, isZeroMoney, pickerOrder, share, trimLeadingEmpty } from "../lib";
+import { ACCOUNT_ICONS, comparablePrevious, distinctColors, isNegative, isZeroMoney, share, topAccounts, trimLeadingEmpty } from "../lib";
 import { openQuickAdd } from "../quickAdd";
 
 const { t } = useI18n();
@@ -52,6 +52,11 @@ const foreign = computed(() => (data.value?.cash.by_currency ?? []).filter((row)
 const kpis = computed(() => {
   const d = data.value;
   const vs = t("finance.overview.vsLastMonth");
+  // Nothing booked on the same days last month (a new company's first weeks): no comparison at
+  // all, as the P&L drops an empty one, instead of three "—" badges.
+  const lastMonth = d && !(isZeroMoney(d.month.previous.income) && isZeroMoney(d.month.previous.expense)) ? d.month.previous : null;
+  // A profit that crossed zero against last month gets last month's figure, not a percentage.
+  const profitBefore = lastMonth ? comparablePrevious(d?.month.profit, lastMonth.profit) : undefined;
   return [
     {
       id: "cash",
@@ -67,7 +72,8 @@ const kpis = computed(() => {
       id: "profit",
       label: t("finance.overview.profit"),
       value: d?.month.profit ?? null,
-      previous: d?.month.previous.profit ?? null,
+      previous: profitBefore,
+      hint: lastMonth && profitBefore === undefined ? t("finance.overview.previousAmount", { amount: fmt.money(lastMonth.profit, undefined, { compact: true, sign: "always" }) }) : undefined,
       format: "money" as const,
       compact: true,
       icon: Scale,
@@ -78,24 +84,28 @@ const kpis = computed(() => {
       id: "income",
       label: t("finance.overview.income"),
       value: d?.month.income ?? null,
-      previous: d?.month.previous.income ?? null,
+      previous: lastMonth?.income,
       format: "money" as const,
       compact: true,
       icon: ChartColumn,
       deltaLabel: vs,
-      to: { path: `${base.value}/transactions`, query: { kind: "income", from: d?.month.from, to: d?.month.to } },
+      // The P&L line, not "kind = income": refunds count against income here, so the list adds up
+      // to this tile.
+      to: { path: `${base.value}/transactions`, query: { pnl: "income", from: d?.month.from, to: d?.month.to } },
     },
     {
       id: "expense",
-      label: t("finance.overview.expenses"),
+      // "… this month" like the profit and income tiles beside it (and the Overview widget).
+      label: t("finance.overview.expensesMonth"),
       value: d?.month.expense ?? null,
-      previous: d?.month.previous.expense ?? null,
+      previous: lastMonth?.expense,
       format: "money" as const,
       compact: true,
       inverse: true,
       icon: Landmark,
       deltaLabel: vs,
-      to: { path: `${base.value}/transactions`, query: { kind: "expense", from: d?.month.from, to: d?.month.to } },
+      // Write-offs and exchange losses are expenses on the P&L too (see the income tile).
+      to: { path: `${base.value}/transactions`, query: { pnl: "expense", from: d?.month.from, to: d?.month.to } },
     },
   ];
 });
@@ -131,8 +141,18 @@ const flowCsv = computed(() => ({
 
 // Debts, top expenses, alerts -----------------------------------------------------------------
 
-const slices = computed(() => (data.value?.top_expenses ?? []).map((row) => ({ name: row.name, value: row.amount, color: css(row.color || colorFor(row.id)) })));
-const slicesTotal = computed(() => fmt.money(slices.value.reduce((sum, slice) => sum.plus(slice.value), dec(0)).toString(), undefined, { compact: true, currencyDisplay: "none" }));
+// Every expense group of the month: the donut folds the small ones into "Other", and its middle
+// shows the month's expenses, the same figure as the Expenses tile above.
+// Categories share eight palette colours, so slices get distinct ones (the biggest keep theirs).
+const slices = computed(() => {
+  const rows = data.value?.top_expenses ?? [];
+  const colors = distinctColors(rows);
+  return rows.map((row, index) => ({ name: row.name, value: row.amount, color: css(colors[index]!) }));
+});
+const slicesTotal = computed(() => {
+  const total = data.value?.month.expense ?? slices.value.reduce((sum, slice) => sum.plus(slice.value), dec(0)).toString();
+  return fmt.money(total, undefined, { compact: true, currencyDisplay: "none" });
+});
 const alerts = computed(() => {
   const d = data.value;
   if (!d) return [];
@@ -184,8 +204,9 @@ const firstRun = computed(() => !!data.value && !data.value.has_ledger);
       </div>
 
       <template v-if="!firstRun">
+        <!-- Two to a row; an odd last one takes the whole row instead of leaving half of it empty. -->
         <div v-if="alerts.length" class="grid grid-cols-1 gap-2 lg:grid-cols-2">
-          <InlineAlert v-for="alert in alerts" :key="alert.id" :tone="alert.tone" size="sm" :title="alert.title" :description="alert.body">
+          <InlineAlert v-for="(alert, index) in alerts" :key="alert.id" :class="index === alerts.length - 1 && alerts.length % 2 === 1 && 'lg:col-span-2'" :tone="alert.tone" size="sm" :title="alert.title" :description="alert.body">
             <template v-if="alert.to" #actions>
               <UiButton :to="alert.to" size="sm" variant="ghost" :icon-right="ArrowRight">{{ alert.action ?? t("finance.overview.open") }}</UiButton>
             </template>
@@ -274,7 +295,7 @@ const firstRun = computed(() => !!data.value && !data.value.has_ledger);
                     {{ debt.direction === "receivable" ? "+" : "−" }}
                   </span>
                   <div class="min-w-0 flex-1">
-                    <p class="truncate text-sm font-semibold text-fg">{{ debt.party?.name ?? t("finance.debts.hidden") }}</p>
+                    <p class="truncate text-sm font-semibold text-fg" :title="debt.party?.name">{{ debt.party?.name ?? t("finance.debts.hidden") }}</p>
                     <p class="truncate text-xs text-muted">{{ debt.due_on ? fmt.day(debt.due_on, "weekdayShort") : "" }} · {{ t(`finance.debtKind.${debt.kind}`) }}</p>
                   </div>
                   <span class="shrink-0 text-sm font-semibold tabular-nums text-fg"><MoneyText :value="debt.outstanding" :currency="debt.currency" compact /></span>
@@ -293,10 +314,10 @@ const firstRun = computed(() => !!data.value && !data.value.has_ledger);
             </header>
             <div v-if="skeleton" class="flex flex-col gap-2"><SkeletonBlock v-for="n in 5" :key="n" height="32px" /></div>
             <ul v-else-if="data" class="-mx-2 flex flex-col">
-              <li v-for="account in pickerOrder(data.cash.accounts).slice(0, 7)" :key="account.id">
+              <li v-for="account in topAccounts(data.cash.accounts, 7)" :key="account.id">
                 <RouterLink :to="`${base}/accounts/${account.id}`" class="flex items-center gap-3 rounded-[10px] px-2 py-1.5 hover:bg-highlight">
                   <component :is="ACCOUNT_ICONS[account.kind]" :size="16" class="shrink-0 text-subtle" aria-hidden="true" />
-                  <span class="min-w-0 flex-1 truncate text-sm text-fg">{{ account.name }}</span>
+                  <span class="min-w-0 flex-1 truncate text-sm text-fg" :title="account.name">{{ account.name }}</span>
                   <span :class="['shrink-0 text-sm font-semibold tabular-nums', isNegative(account.balance) ? 'text-danger' : 'text-fg']">
                     <MoneyText :value="account.balance" :currency="account.currency" :compact="account.currency === company.currency" />
                   </span>
