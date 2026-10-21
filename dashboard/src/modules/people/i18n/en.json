@@ -301,6 +301,7 @@
   "people.offboard.blocked": "Blocked",
   "people.offboard.ready": "Ready",
   "people.offboard.noSteps": "Nothing else to hand over.",
+  "people.offboard.nothing": "Nothing to hand over here.",
   "people.offboard.whatHappens": "What happens when you confirm",
   "people.offboard.blockersTitle": "Something must be settled first",
   "people.offboard.blockersCount": "{n} blockers | {n} blocker | {n} blockers",

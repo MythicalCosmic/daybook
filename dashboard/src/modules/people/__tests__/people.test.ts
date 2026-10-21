@@ -319,6 +319,7 @@ describe("OffboardPage", () => {
     steps: [
       { key: "members", label: "Access and work", order: 10, lines: ["Their access ends at once."], blockers: [], fields: [], defaults: {} },
       { key: "sales", label: "Cash", order: 30, lines: [], blockers: ["Open till CHL-1042 must be closed first."], fields: [], defaults: {}, restricted: true },
+      { key: "finance", label: "Money they hold", order: 40, lines: [], blockers: [], fields: [], defaults: {} },
     ],
   };
 
@@ -346,6 +347,8 @@ describe("OffboardPage", () => {
     expect(wrapper.text()).toContain("No access");
     expect(wrapper.text()).toContain("Open till CHL-1042 must be closed first.");
     expect(wrapper.text()).toContain("what blocks it still counts");
+    // A part with nothing to say says so, once: the blocked one shows its blocker instead.
+    expect(wrapper.findAll("[data-nothing]").map((p) => p.text())).toEqual([en["people.offboard.nothing"]]);
     await wrapper.findAll("button").find((b) => b.text() === "Continue")!.trigger("click");
     await flushPromises();
     const submit = wrapper.findAll("button").find((b) => b.text().startsWith("Offboard"))!;
