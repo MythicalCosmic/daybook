@@ -3,7 +3,7 @@
  * Person 360 › Overview: how their work went week by week, the last 30 days split into on time,
  * late and missed, their details, and the time off coming up.
  */
-import { CalendarDays, CalendarPlus, Flame } from "@lucide/vue";
+import { ArrowRight, CalendarDays, Flame } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
@@ -16,15 +16,18 @@ import ProgressBar from "@/components/ProgressBar.vue";
 import StatusPill from "@/components/StatusPill.vue";
 import { formatPhone } from "@/lib/format";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
 
 import type { PersonDetail } from "../types";
 
-const props = defineProps<{ person: PersonDetail; rateTone: "success" | "warning" | "danger" | "neutral" }>();
+const props = defineProps<{
+  person: PersonDetail;
+  rateTone: "success" | "warning" | "danger" | "neutral";
+  /** The Time off tab, when this viewer has it: the card links there ("Record time off" is in the header). */
+  timeOffTo?: string;
+}>();
 
 const { t } = useI18n();
 const fmt = useFormat();
-const company = useCompanyStore();
 
 // Weeks before their first task (new people) would only draw a flat zero, so the chart starts there.
 const trend = computed(() => {
@@ -116,12 +119,8 @@ function span(first: string, last: string): string {
       <section class="ui-card p-5">
         <div class="mb-3 flex items-center justify-between gap-2">
           <h2 class="text-md font-semibold text-fg">{{ t("people.overview.timeOff") }}</h2>
-          <RouterLink
-            v-if="person.can.record_time_off"
-            :to="{ path: `/c/${company.currentId}/time-off`, query: { record: String(person.id) } }"
-            class="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-          >
-            <CalendarPlus :size="14" aria-hidden="true" />{{ t("people.action.recordTimeOff") }}
+          <RouterLink v-if="timeOffTo" :to="timeOffTo" class="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline" data-time-off-link>
+            {{ t("common.viewAll") }}<ArrowRight :size="14" aria-hidden="true" />
           </RouterLink>
         </div>
         <ul v-if="o.upcoming_time_off.length" class="flex flex-col divide-y divide-[var(--c-border)]">
@@ -135,7 +134,6 @@ function span(first: string, last: string): string {
           </li>
         </ul>
         <p v-else class="text-sm text-muted">{{ t("people.overview.noTimeOff") }}</p>
-        <p class="mt-3 text-xs text-subtle">{{ t("people.overview.daysOffThisYear", { n: o.days_off_this_year }, o.days_off_this_year) }}</p>
       </section>
     </div>
   </div>

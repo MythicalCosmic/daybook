@@ -74,7 +74,7 @@ const detail = computed(() => {
         <span class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-surface" :style="{ background: STATE_COLORS[row.state] }" aria-hidden="true" />
       </span>
       <div class="min-w-0 flex-1">
-        <p class="truncate text-sm font-semibold text-fg">{{ row.member.name }}</p>
+        <p class="truncate text-sm font-semibold text-fg" :title="row.member.name">{{ row.member.name }}</p>
         <p class="truncate text-xs text-muted">
           <!-- The hours first: they matter most and must never be cut off. -->
           <template v-if="shift && row.state !== 'off'"><span class="font-medium tabular-nums text-fg/80">{{ shift.start }}–{{ shift.end }}</span><span v-if="row.member.position || (showBranch && row.branch)"> · </span></template>

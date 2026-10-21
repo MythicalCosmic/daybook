@@ -180,7 +180,7 @@ watch([param, panels], () => {
                   <span :class="['block truncate', isPhone ? 'text-base font-semibold text-fg' : 'text-base']" :title="isPhone ? undefined : (label(item.kind === 'panel' ? item.panel! : item) ?? '')">{{
                     label(item.kind === "panel" ? item.panel! : item)
                   }}</span>
-                  <span v-if="isPhone && hint(item.id)" class="mt-0.5 block truncate text-sm text-muted">{{ hint(item.id) }}</span>
+                  <span v-if="isPhone && hint(item.id)" class="mt-0.5 line-clamp-2 text-sm text-muted">{{ hint(item.id) }}</span>
                 </span>
                 <ArrowUpRight v-if="item.kind === 'link'" :size="15" class="shrink-0 text-subtle transition-colors group-hover:text-muted" aria-hidden="true" />
                 <ChevronRight v-else-if="isPhone" :size="16" class="shrink-0 text-subtle" aria-hidden="true" />

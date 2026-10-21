@@ -100,7 +100,7 @@
   "people.action.recordTimeOff": "Record time off",
 
   "people.overview.trendTitle": "On time, week by week",
-  "people.overview.trendSubtitle": "Daily and assigned tasks finished before their deadline",
+  "people.overview.trendSubtitle": "Daily and assigned tasks done on time",
   "people.overview.trendEmpty": "No shared tasks in the last 12 weeks",
   "people.overview.onTimeSeries": "On time",
   "people.overview.goal": "Goal 90%",
@@ -116,7 +116,6 @@
   "people.overview.details": "Details",
   "people.overview.timeOff": "Time off",
   "people.overview.noTimeOff": "Nothing planned.",
-  "people.overview.daysOffThisYear": "{n} days off taken this year | {n} day off taken this year | {n} days off taken this year",
   "people.timeOff.approved": "Approved",
   "people.timeOff.pending": "Waiting",
 

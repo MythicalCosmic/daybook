@@ -16,11 +16,11 @@
 
   "timeoff.kpi.pending": "Ждут вас",
   "timeoff.kpi.pendingHint": "Нужно одобрить или отклонить",
-  "timeoff.kpi.today": "Отсутствуют сегодня",
+  "timeoff.kpi.today": "Нет сегодня",
   "timeoff.kpi.todayHint": "В одобренном отпуске сегодня",
-  "timeoff.kpi.week": "Отсутствуют на неделе",
+  "timeoff.kpi.week": "Нет на неделе",
   "timeoff.kpi.weekHint": "Хотя бы один день на этой неделе",
-  "timeoff.kpi.month": "Дней отдыха в этом месяце",
+  "timeoff.kpi.month": "Дни отдыха за месяц",
   "timeoff.kpi.monthHint": "Одобренные дни, все вместе",
 
   "timeoff.view.calendar": "Календарь",

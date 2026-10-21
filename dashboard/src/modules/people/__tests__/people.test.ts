@@ -225,6 +225,66 @@ describe("bookedDaysAhead", () => {
   });
 });
 
+describe("PersonOverviewTab", () => {
+  it("links its time off card to the Time off tab instead of repeating Record time off", async () => {
+    const PersonOverviewTab = (await import("../components/PersonOverviewTab.vue")).default;
+    const person = {
+      id: 7,
+      name: "Alisher Valiyev",
+      position: { id: 1, name: "Sotuvchi" },
+      role: { id: 2, name: "Xodim" },
+      home_branch: { id: 1, name: "Chilonzor" },
+      branches: [{ id: 1, name: "Chilonzor" }],
+      phone: "+998901234567",
+      username: "",
+      language: "uz",
+      can: { record_time_off: true },
+      overview: {
+        trend: [],
+        on_time: 0,
+        late: 0,
+        missed: 0,
+        total: 0,
+        on_time_percent: null,
+        streak: 0,
+        joined_on: "2025-10-06",
+        days_off_this_year: 0,
+        range: { from: "2026-09-22", to: "2026-10-21" },
+        upcoming_time_off: [{ id: 1, first_day: "2026-10-25", last_day: "2026-10-27", status: "approved", reason: "Ta’til" }],
+      },
+    };
+    const app = await testApp("/c/1/people/7");
+    const { wrapper } = mountWithProviders(PersonOverviewTab, { plugins: app.plugins, props: { person, rateTone: "neutral", timeOffTo: "/c/1/people/7/time-off" } });
+    await flushPromises();
+    expect(wrapper.find("[data-time-off-link]").attributes("href")).toBe("/c/1/people/7/time-off");
+    expect(wrapper.text()).not.toContain("Record time off");
+    const without = mountWithProviders(PersonOverviewTab, { plugins: app.plugins, props: { person, rateTone: "neutral" } });
+    await flushPromises();
+    expect(without.wrapper.find("[data-time-off-link]").exists()).toBe(false);
+  });
+});
+
+describe("PersonPage", () => {
+  it("offers no retry for someone who isn't there", async () => {
+    const PersonPage = (await import("../pages/PersonPage.vue")).default;
+    stub(() => json({ detail: "Not found." }, 404));
+    const app = await testApp("/c/1/people/99999");
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: "/c/:companyId/people/:memberId(\\d+)/:tab?", component: PersonPage },
+        { path: "/:any(.*)*", component: { render: () => null } },
+      ],
+    });
+    await router.push("/c/1/people/99999");
+    const { wrapper } = mountWithProviders(PersonPage, { plugins: [app.pinia, router, i18n, [VueQueryPlugin, { queryClient: app.client }]] });
+    await flushPromises();
+    await flushPromises();
+    expect(wrapper.text()).toContain("It’s gone: it was deleted or moved.");
+    expect(wrapper.findAll("button").some((b) => b.text() === "Try again")).toBe(false);
+  });
+});
+
 describe("OffboardPage", () => {
   const person = {
     id: 7,

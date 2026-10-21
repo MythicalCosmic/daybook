@@ -100,7 +100,7 @@
   "people.action.recordTimeOff": "Записать отпуск",
 
   "people.overview.trendTitle": "Вовремя по неделям",
-  "people.overview.trendSubtitle": "Ежедневные и поручённые задачи, выполненные до срока",
+  "people.overview.trendSubtitle": "Ежедневные и поручённые задачи, сделанные в срок",
   "people.overview.trendEmpty": "За последние 12 недель общих задач не было",
   "people.overview.onTimeSeries": "Вовремя",
   "people.overview.goal": "Цель 90%",
@@ -116,7 +116,6 @@
   "people.overview.details": "Сведения",
   "people.overview.timeOff": "Отпуск",
   "people.overview.noTimeOff": "Ничего не запланировано.",
-  "people.overview.daysOffThisYear": "В этом году отдыхал {n} день | В этом году отдыхал {n} дня | В этом году отдыхал {n} дней",
   "people.timeOff.approved": "Одобрен",
   "people.timeOff.pending": "Ждёт",
 

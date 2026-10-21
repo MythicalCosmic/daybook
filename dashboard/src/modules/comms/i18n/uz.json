@@ -40,7 +40,7 @@
 
   "comms.compose.title": "Yangi e’lon",
   "comms.compose.editTitle": "Rejalashtirilgan e’lonni tahrirlash",
-  "comms.compose.description": "U Telegram’da botdan “O‘qidim” tugmasi bilan yuboriladi.",
+  "comms.compose.description": "U Telegram’da botdan «O‘qidim» tugmasi bilan yuboriladi.",
   "comms.compose.message": "Xabar",
   "comms.compose.placeholder": "Jamoangizga yozing…",
   "comms.compose.writeSomething": "Yuborish uchun biror narsa yozing.",
@@ -115,7 +115,7 @@
   "comms.detail.allReadTitle": "Hamma o‘qidi",
   "comms.detail.allReadBody": "Eslatadigan hech kim qolmadi.",
   "comms.detail.noneReadTitle": "Hali hech kim",
-  "comms.detail.noneReadBody": "Xodimlar “O‘qidim” tugmasini bosgan sari shu yerda paydo bo‘ladi.",
+  "comms.detail.noneReadBody": "Xodimlar «O‘qidim» tugmasini bosgan sari shu yerda paydo bo‘ladi.",
   "comms.detail.remind": "Eslatish",
   "comms.detail.remindN": "O‘qimagan {n} kishiga eslatish | O‘qimagan {n} kishiga eslatish | O‘qimagan {n} kishiga eslatish",
   "comms.detail.remindTitle": "{n} kishiga eslatilsinmi? | {n} kishiga eslatilsinmi? | {n} kishiga eslatilsinmi?",

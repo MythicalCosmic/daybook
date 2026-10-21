@@ -27,6 +27,7 @@ import { computed, defineAsyncComponent, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
+import { isApiError } from "@/api/http";
 import DropdownMenu, { type MenuEntry } from "@/components/DropdownMenu.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import ExtensionSlot from "@/components/ExtensionSlot.vue";
@@ -211,7 +212,8 @@ const hasProfileActions = computed(() => hasExtension("people.profile.actions", 
       </div>
       <SkeletonBlock height="72px" radius="12px" />
     </div>
-    <ErrorState v-else-if="query.isError.value" class="ui-card" :error="query.error.value" :retry="() => query.refetch()" />
+    <!-- Trying again can't bring back someone who isn't there (404): no retry then. -->
+    <ErrorState v-else-if="query.isError.value" class="ui-card" :error="query.error.value" :retry="isApiError(query.error.value) && query.error.value.status === 404 ? undefined : () => query.refetch()" />
 
     <template v-else-if="person">
       <!-- Header -->
@@ -269,7 +271,7 @@ const hasProfileActions = computed(() => hasExtension("people.profile.actions", 
 
       <!-- Tabs -->
       <PersonTabBar :tabs="tabs" :active="tab" :aria-label="t('people.tab.label')" />
-      <PersonOverviewTab v-if="tab === 'overview'" :person="person" :rate-tone="rateTone(person.overview.on_time_percent)" />
+      <PersonOverviewTab v-if="tab === 'overview'" :person="person" :rate-tone="rateTone(person.overview.on_time_percent)" :time-off-to="tabs.find((item) => item.id === 'time-off')?.to" />
       <section v-else-if="tab === 'history'" class="ui-card p-5">
         <PersonHistory :member-id="person.id" />
       </section>

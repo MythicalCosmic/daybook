@@ -121,7 +121,7 @@ const memberSubtitle = (member: RosterMember) =>
 
         <!-- Open shifts -->
         <template v-if="editable || openCount">
-          <div class="att-cell att-side flex items-center gap-2 px-3 py-2" role="rowheader">
+          <div class="att-cell att-side flex items-center gap-2 px-3 py-2" role="rowheader" :title="`${t('attendance.roster.openShifts')} · ${t('attendance.roster.openShiftsHint')}`">
             <span class="grid size-7 shrink-0 place-items-center rounded-full bg-warning-soft text-warning"><Plus :size="14" aria-hidden="true" /></span>
             <div class="min-w-0">
               <p class="truncate text-sm font-semibold text-fg">{{ t("attendance.roster.openShifts") }}</p>

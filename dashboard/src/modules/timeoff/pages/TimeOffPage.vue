@@ -241,14 +241,14 @@ const nextHoliday = computed(() => stats.data.value?.next_holiday ?? null);
               <UserAvatar :name="row.member.name" :src="row.member.photo_url" :size="32" />
               <span class="min-w-0 flex-1">
                 <span class="flex items-baseline gap-2">
-                  <span class="min-w-0 flex-1 truncate text-base font-semibold text-fg">{{ row.member.name }}</span>
+                  <span class="min-w-0 flex-1 truncate text-base font-semibold text-fg" :title="row.member.name">{{ row.member.name }}</span>
                   <RelativeTime :value="row.created_at" class="shrink-0 text-xs text-subtle" />
                 </span>
                 <span class="block text-sm text-fg">
                   {{ row.first_day === row.last_day ? fmt.day(row.first_day, "weekdayShort") : fmt.range({ from: row.first_day, to: row.last_day }) }}
                   <span class="text-muted">· {{ t("timeoff.days", { n: row.days }, row.days) }}</span>
                 </span>
-                <span v-if="row.reason" class="block truncate text-xs text-muted">{{ row.reason }}</span>
+                <span v-if="row.reason" class="block truncate text-xs text-muted" :title="row.reason">{{ row.reason }}</span>
               </span>
             </button>
             <div class="flex items-center gap-2 pl-[42px]">
@@ -305,7 +305,7 @@ const nextHoliday = computed(() => stats.data.value?.next_holiday ?? null);
           <PersonCell :person="row.member" :subtitle="row.first_day === row.last_day ? fmt.day(row.first_day, 'medium') : fmt.range({ from: row.first_day, to: row.last_day })" />
           <StatusPill size="sm" :tone="TONES[row.status]" :label="t(`timeoff.state.${row.status}`)" />
         </div>
-        <p v-if="row.reason" class="mt-1.5 truncate pl-[38px] text-xs text-muted">{{ row.reason }}</p>
+        <p v-if="row.reason" class="mt-1.5 truncate pl-[38px] text-xs text-muted" :title="row.reason">{{ row.reason }}</p>
       </template>
     </DataTable>
 
