@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
- * Routines (plan §6.2): daily work that repeats, each with its days and time, who does it, its
- * branch, and how often it got done in the last 30 days (with a 14-day sparkline), so routines
- * nobody does stand out. The Onboarding tab lists the first-days tasks new people get.
+ * Routines → All routines (plan §6.2): the routines themselves, each with its days, when its next
+ * tasks come, who does it, its branch, and how often it got done in the last 30 days (with a
+ * 14-day sparkline), so routines nobody does stand out. Onboarding (beside it) lists the
+ * first-days tasks new people get.
  */
 import { CalendarClock, ChevronRight, Clock, Ellipsis, GraduationCap, ListChecks, Pencil, Plus, Repeat, Store, Trash2, UsersRound } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
@@ -14,7 +15,6 @@ import DropdownMenu, { type MenuEntry } from "@/components/DropdownMenu.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import IconButton from "@/components/IconButton.vue";
-import PageHeader from "@/components/PageHeader.vue";
 import SegmentedControl from "@/components/SegmentedControl.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import SparkLine from "@/components/SparkLine.vue";
@@ -30,6 +30,7 @@ import { rs, useRouteState } from "@/lib/useRouteState";
 
 import { useDeleteRoutine, useRoutines, useToggleActive } from "../api";
 import RoutineEditor from "../components/RoutineEditor.vue";
+import RoutinesHeader from "../components/RoutinesHeader.vue";
 import WeekdayDots from "../components/WeekdayDots.vue";
 import { runLabel } from "../lib";
 import type { Routine } from "../types";
@@ -64,9 +65,14 @@ const counts = computed(() => {
   return { all: all.length, active: all.filter((r) => r.is_active).length, paused: all.filter((r) => !r.is_active).length };
 });
 
-const tabs = computed(() => [
-  { id: "routines", label: t("routines.tabs.routines"), icon: Repeat, to: { name: "routines.list" } },
-  { id: "onboarding", label: t("routines.tabs.onboarding"), icon: GraduationCap, to: { name: "routines.onboarding" } },
+// Routines and onboarding templates sit side by side under "All routines".
+const kind = computed({
+  get: () => (onboarding.value ? "onboarding" : "routines"),
+  set: (value: string) => void router.push({ name: value === "onboarding" ? "routines.onboarding" : "routines.list" }),
+});
+const kinds = computed(() => [
+  { value: "routines", label: t("routines.tabs.routines"), icon: Repeat },
+  { value: "onboarding", label: t("routines.tabs.onboarding"), icon: GraduationCap },
 ]);
 
 // Editor
@@ -150,14 +156,15 @@ function who(routine: Routine): string {
 
 <template>
   <div class="flex min-w-0 flex-col gap-5">
-    <PageHeader :title="t('routines.title')" :description="onboarding ? t('routines.onboardingDescription') : t('routines.description')" :tabs="tabs">
+    <RoutinesHeader :description="onboarding ? t('routines.onboardingDescription') : t('routines.description')">
       <template #actions>
         <UiButton variant="primary" :icon="Plus" kbd="N" @click="create">{{ onboarding ? t("routines.newOnboarding") : t("routines.new") }}</UiButton>
       </template>
-    </PageHeader>
+    </RoutinesHeader>
 
     <div class="flex flex-wrap items-center gap-2">
-      <TextInput v-model="search" type="search" :icon="ListChecks" clearable :placeholder="t('routines.search')" class="w-full sm:w-[300px]" />
+      <SegmentedControl v-model="kind" :options="kinds" :aria-label="t('routines.nav.all')" />
+      <TextInput v-model="search" type="search" :icon="ListChecks" clearable :placeholder="t('routines.search')" class="w-full sm:w-[260px]" />
       <span class="flex-1" />
       <SegmentedControl
         v-model="state"

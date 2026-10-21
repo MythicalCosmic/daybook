@@ -11,7 +11,7 @@
   "reminders.policies.emptyTitle": "Правил нет",
   "reminders.policies.emptyBody": "Создайте правило: как часто напоминать и когда сообщать руководителю.",
   "reminders.policies.quiet": "Тихие часы {range}",
-  "reminders.policies.routines": "{n} ежедневная задача | {n} ежедневные задачи | {n} ежедневных задач",
+  "reminders.policies.routines": "{n} регулярная задача | {n} регулярные задачи | {n} регулярных задач",
   "reminders.policies.openTasks": "{n} открытая задача | {n} открытые задачи | {n} открытых задач",
   "reminders.policies.texts": "{n} свой текст | {n} своих текста | {n} своих текстов",
   "reminders.summary.headsUp": "предупреждение за {n} мин",

@@ -12,7 +12,7 @@ import { mountWithProviders, testApp } from "@/test/plugins";
 import { filterParams, moveInColumns, taskKeys, tasksApi } from "../api";
 import TaskDrawer from "../components/TaskDrawer.vue";
 import TaskTimeline from "../components/TaskTimeline.vue";
-import { builtinTabs, builtinViews, filterDefs, viewParams } from "../filters";
+import { asksForRoutines, builtinTabs, builtinViews, filterDefs, viewParams } from "../filters";
 import en from "../i18n/en.json";
 import module from "../index";
 import { cardKey, lateness, minutesBetween, zonedIso, zonedParts } from "../meta";
@@ -336,5 +336,55 @@ describe("reviews", () => {
     const page = await tasksApi.reviews(1, { page_size: 100 });
     expect(page.results[0]!.proof_text).toBe("+4 °C");
     expect(calls[0]!.url).toContain("/tasks/reviews/?page_size=100");
+  });
+});
+
+describe("one-off tasks and routine work", () => {
+  const empty = { count: 0, next: null, previous: null, results: [] };
+  const summary = { today: "2026-10-21", done_today: 1, total_today: 2, late_now: 0, review: 0, open: 1, on_time_percent: null, on_time_previous: null, done_7d: 0, done_prev_7d: 0, series: [] };
+
+  it("asks for routine work only when a routine or the Routine kind is picked", () => {
+    expect(asksForRoutines({})).toBe(false);
+    expect(asksForRoutines({ status: ["todo"], kind: ["assigned"] })).toBe(false);
+    expect(asksForRoutines({ routine: ["4"] })).toBe(true);
+    expect(asksForRoutines({ kind: "daily" })).toBe(true);
+    expect(asksForRoutines({ kind: ["personal", "daily"] })).toBe(true);
+  });
+
+  it("the Tasks page lists and counts one-off work until routines are included", async () => {
+    const calls = stub({
+      "GET tasks/": () => json(empty),
+      "GET tasks/summary/": () => json(summary),
+      "GET tasks/options/": () => json({ people: [], positions: [], routines: [], policies: [] }),
+      "GET saved-views/": () => json([]),
+    });
+    const app = await testApp("/c/1/tasks");
+    const { default: TasksPage } = await import("../pages/TasksPage.vue");
+    const { wrapper } = mountWithProviders(TasksPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    const lists = () => calls.filter((c) => c.url.includes("/tasks/?"));
+    const summaries = () => calls.filter((c) => c.url.includes("/tasks/summary/"));
+    expect(lists().at(-1)!.url).toContain("routines=without");
+    expect(summaries().at(-1)!.url).toContain("routines=without");
+    document.body.querySelector<HTMLButtonElement>("[data-testid=include-routines]")!.click();
+    await flushPromises();
+    await flushPromises();
+    expect(app.router.currentRoute.value.query.routines).toBe("1");
+    expect(lists().at(-1)!.url).not.toContain("routines=");
+    expect(summaries().at(-1)!.url).not.toContain("routines=");
+    wrapper.unmount();
+  });
+
+  it("the review queue is one-off work; routine work waits on its own page", async () => {
+    const calls = stub({ "GET tasks/reviews/": () => json(empty) });
+    const app = await testApp("/c/1/tasks/reviews");
+    const { useReviews } = await import("../api");
+    const { defineComponent, h } = await import("vue");
+    const Probe = defineComponent({ setup: () => (useReviews(), () => h("div")) });
+    const { wrapper } = mountWithProviders(Probe, { plugins: app.plugins });
+    await flushPromises();
+    expect(calls[0]!.url).toContain("/tasks/reviews/?page_size=100&routines=without");
+    wrapper.unmount();
   });
 });

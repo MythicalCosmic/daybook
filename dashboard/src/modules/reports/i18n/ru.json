@@ -1,9 +1,9 @@
 {
   "reports.title": "Итоги команды",
   "reports.teamDescription": "Кто выполняет работу вовремя — за любой период",
-  "reports.routinesDescription": "Как на деле выполняется каждая ежедневная задача и какие не делает никто",
+  "reports.routinesDescription": "Как на деле выполняется каждая регулярная задача и какие не делает никто",
   "reports.tabs.team": "Команда",
-  "reports.tabs.routines": "Ежедневные задачи",
+  "reports.tabs.routines": "Регулярные задачи",
   "reports.allBranches": "Все филиалы",
   "reports.everyBranch": "Все филиалы",
   "reports.groupBy": "Группировать",
@@ -54,8 +54,8 @@
   "reports.card": "со сроком: {total} · с опозданием: {late} · не выполнено: {missed}",
   "reports.emptyTitle": "Итогов пока нет",
   "reports.emptyBody": "Итоги появятся, когда у общих задач наступят сроки.",
-  "reports.routinesEmptyTitle": "Ежедневных задач нет",
-  "reports.routinesEmptyBody": "Настройте ежедневные задачи — их выполнение появится здесь.",
+  "reports.routinesEmptyTitle": "Регулярных задач нет",
+  "reports.routinesEmptyBody": "Настройте регулярные задачи — их выполнение появится здесь.",
   "reports.cmd.team": "Итоги команды",
-  "reports.cmd.routines": "Выполнение ежедневных задач"
+  "reports.cmd.routines": "Выполнение регулярных задач"
 }

@@ -495,3 +495,44 @@ class GiveTodayInputSerializer(serializers.Serializer):
 
 def now_context() -> dict:
     return {"now": timezone.now()}
+
+
+# Routine work (the Routines page) ----------------------------------------------------------
+
+
+def routine_ref(template: TaskTemplate) -> dict:
+    """A routine as the Routines page's Today, History and To confirm name it."""
+    branch = template.branch
+    return {
+        "id": template.pk,
+        "title": template.title,
+        "due_time": template.due_time.strftime("%H:%M"),
+        "branch": {"id": branch.pk, "name": branch.name, "code": branch.code} if branch else None,
+        "proof": template.proof,
+        "needs_confirmation": template.needs_confirmation,
+        "is_active": template.is_active,
+    }
+
+
+def run_row(task: Task, state: str, member: Membership) -> dict:
+    """One person's run of a routine on a day: how it stands (`dashboard.run_state`), when it
+    was finished and whether in time, its proof, and whether `member` may confirm it."""
+    items = list(task.checklist.all())
+    completed = task.completed_at
+    branch = task.branch
+    return {
+        "id": task.pk,
+        "member": person(task.assignee),
+        "branch": {"id": branch.pk, "name": branch.name, "code": branch.code} if branch else None,
+        "state": state,
+        "status": task.status,
+        "due_at": task.due_at,
+        "completed_at": completed,
+        "on_time": completed <= task.due_at if completed and task.due_at else None,
+        "proof": task.proof,
+        "proof_text": task.proof_text,
+        "proof_thumb": file_url(task.proof_thumb) or file_url(task.proof_photo),
+        "proof_photo": file_url(task.proof_photo),
+        "checklist": {"done": sum(item.is_done for item in items), "total": len(items)},
+        "can_confirm": task.status == Task.Status.REVIEW and rules.can_review(task, member),
+    }

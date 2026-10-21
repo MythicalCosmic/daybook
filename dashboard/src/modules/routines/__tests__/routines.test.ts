@@ -104,8 +104,16 @@ describe("api", () => {
     expect(calls[5]!.body).toEqual({ is_active: false });
   });
 
-  it("registers in Work behind tasks.templates", () => {
-    expect(module).toMatchObject({ id: "routines", group: "work", order: 30, perm: "tasks.templates" });
+  it("registers in Work for whoever plans, sees or confirms routine work", () => {
+    expect(module).toMatchObject({ id: "routines", group: "work", order: 30, perm: ["tasks.templates", "tasks.view_all", "tasks.confirm"] });
+    // Today first (the home of routine work), then History, To confirm (with its badge) and the routines.
+    expect(module.nav!.map((item) => [item.to, item.perm])).toEqual([
+      ["routines", "tasks.view_all"],
+      ["routines/history", "tasks.view_all"],
+      ["routines/confirm", "tasks.confirm"],
+      ["routines/all", "tasks.templates"],
+    ]);
+    expect(module.nav![2]!.badge!({ counters: { "tasks.routine_review": 4, "tasks.review": 9 }, versions: {} })).toBe(4);
     expect(routineKeys.preview(1, 32, "2026-10-22")).toEqual([1, "routines", "preview", { id: 32, day: "2026-10-22" }]);
   });
 
@@ -113,7 +121,7 @@ describe("api", () => {
     const go = vi.fn();
     const commands = module.commands!({ t: (key: string) => key, go, can: () => true } as never);
     commands.find((command) => command.id === "routines.new")!.run();
-    expect(go).toHaveBeenCalledWith("routines?new=1");
+    expect(go).toHaveBeenCalledWith("routines/all?new=1");
   });
 });
 
@@ -138,9 +146,9 @@ describe("history", () => {
 describe("RoutinesPage", () => {
   it("opens a new routine from ?new=1 and drops the flag from the URL", async () => {
     stub({ "GET routines/": () => json([routine()]), "GET tasks/options/": () => json(options) });
-    const app = await testApp("/c/1/routines?new=1");
+    const app = await testApp("/c/1/routines/all?new=1");
     // The page links to its tabs and to a routine by route name.
-    for (const name of ["routines.list", "routines.onboarding", "routines.detail"]) {
+    for (const name of ["routines.today", "routines.history", "routines.confirm", "routines.list", "routines.onboarding", "routines.detail"]) {
       app.router.addRoute({ path: `/named/${name}/:id?`, name, component: { render: () => null } });
     }
     const { default: RoutinesPage } = await import("../pages/RoutinesPage.vue");
@@ -319,5 +327,180 @@ describe("a routine made after its time", () => {
       ["/api/v1/owner/companies/1/routines/32/give-today/", { due_time: "14:30" }],
       ["/api/v1/owner/companies/1/routines/32/give-today/", {}],
     ]);
+  });
+});
+
+describe("routine work", () => {
+  const PAGE_ROUTES = ["routines.today", "routines.history", "routines.confirm", "routines.list", "routines.onboarding", "routines.detail"];
+  const ref = (id: number, title: string) => ({ id, title, due_time: "09:00", branch: { id: 1, name: "Chilonzor", code: "CHL" }, proof: "photo" as const, needs_confirmation: true, is_active: true });
+  const run = (id: number, name: string, state: string, overrides: Record<string, unknown> = {}) => ({
+    id,
+    member: { id: id + 100, name, photo_url: null, position: "Farmatsevt" },
+    branch: { id: 1, name: "Chilonzor", code: "CHL" },
+    state,
+    status: state === "review" ? "review" : state === "done" ? "done" : "todo",
+    due_at: "2026-10-21T04:00:00Z",
+    completed_at: null,
+    on_time: null,
+    proof: "photo",
+    proof_text: "",
+    proof_thumb: null,
+    proof_photo: null,
+    checklist: { done: 0, total: 0 },
+    can_confirm: false,
+    ...overrides,
+  });
+  const counts = { done: 1, review: 1, late: 1, missed: 0, returned: 0, open: 0, cancelled: 0, skipped: 1 };
+
+  async function mountPage(path: string, file: "TodayPage" | "ConfirmPage" | "HistoryPage") {
+    const app = await testApp(path);
+    for (const name of PAGE_ROUTES) app.router.addRoute({ path: `/named/${name}/:id?`, name, component: { render: () => null } });
+    const pages = { TodayPage: () => import("../pages/TodayPage.vue"), ConfirmPage: () => import("../pages/ConfirmPage.vue"), HistoryPage: () => import("../pages/HistoryPage.vue") };
+    const { default: Page } = await pages[file]();
+    const mounted = mountWithProviders(Page, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    return { app, ...mounted };
+  }
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-21T07:30:00Z")); // Wednesday 12:30 in Tashkent
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it("reads a day, its history and what waits for confirmation, and confirms through the tasks bulk endpoint", async () => {
+    const calls = stub({
+      "GET routines/day/": () => json({ day: "2026-10-21", holiday: false, idle: 0, totals: {}, routines: [] }),
+      "GET routines/history/": () => json({ range: {}, days: [], routines: [], series: [], people: [], totals: {} }),
+      "GET routines/to-confirm/": () => json({ count: 0, groups: [] }),
+      "POST tasks/bulk/": () => json({ done: 2, failed: 0, results: [] }),
+    });
+    await routinesApi.day(1, { day: "2026-10-20", branch: ["2", "3"] });
+    await routinesApi.history(1, { from: "2026-09-22", to: "2026-10-21", position: ["4"] });
+    await routinesApi.toConfirm(1);
+    await routinesApi.confirm(1, [5, 6]);
+    expect(calls.map((c) => c.url)).toEqual([
+      "/api/v1/owner/companies/1/routines/day/?day=2026-10-20&branch=2&branch=3",
+      "/api/v1/owner/companies/1/routines/history/?from=2026-09-22&to=2026-10-21&position=4",
+      "/api/v1/owner/companies/1/routines/to-confirm/",
+      "/api/v1/owner/companies/1/tasks/bulk/",
+    ]);
+    expect(calls[3]!.body).toEqual({ ids: [5, 6], action: "confirm" });
+  });
+
+  it("Today shows each person's run with its proof, who was skipped and why, and confirms in place", async () => {
+    const calls = stub({
+      "GET tasks/options/": () => json(options),
+      "GET routines/day/": () =>
+        json({
+          day: "2026-10-21",
+          holiday: false,
+          idle: 1,
+          totals: { ...counts, total: 3, finished: 2, routines: 2 },
+          routines: [
+            {
+              routine: ref(4, "Kassani ochish"),
+              due_at: "2026-10-21T04:00:00Z",
+              reason: null,
+              next_run: null,
+              give: null,
+              progress: { finished: 2, total: 3, percent: 67 },
+              counts,
+              runs: [
+                run(1, "Gani Rahimov", "late"),
+                run(2, "Vali Karimov", "review", { completed_at: "2026-10-21T04:20:00Z", on_time: false, can_confirm: true }),
+                run(3, "Ali Valiyev", "done", { completed_at: "2026-10-21T03:50:00Z", on_time: true, proof_thumb: "/media/t.webp", proof_photo: "/media/p.jpg" }),
+              ],
+              skipped: [{ member: { id: 9, name: "Aziza Usmonova", photo_url: null, position: null }, reason: "time_off" }],
+            },
+            {
+              routine: ref(5, "Muddati yaqin dorilarni tekshirish"),
+              due_at: "2026-10-21T04:00:00Z",
+              reason: "made_late",
+              next_run: "2026-10-22T04:00:00Z",
+              give: { people: 2, due_at: "2026-10-21T09:30:00Z" },
+              progress: { finished: 0, total: 0, percent: null },
+              counts: { ...counts, done: 0, review: 0, late: 0, skipped: 0 },
+              runs: [],
+              skipped: [],
+            },
+          ],
+        }),
+      "POST tasks/bulk/": () => json({ done: 1, failed: 0, results: [{ id: 2, ok: true, error: "" }] }),
+    });
+    const { wrapper } = await mountPage("/c/1/routines", "TodayPage");
+    const text = document.body.textContent ?? "";
+    expect(text).toContain("Late · due 09:00");
+    expect(text).toContain("Waiting · done 09:20");
+    expect(text).toContain("Done 08:50");
+    expect(text).toContain("2/3 done");
+    expect(text).toContain("Aziza Usmonova");
+    expect(text).toContain("On time off");
+    expect(text).toContain("It starts tomorrow");
+    expect(text).toContain("Give today's task now");
+    expect(text).toContain("1 routine gives no task this day");
+    expect(document.body.querySelectorAll("[data-run-state]")).toHaveLength(3);
+    document.body.querySelector<HTMLButtonElement>("[data-run-state=review] button[aria-label=Confirm]")!.click();
+    await flushPromises();
+    expect(calls.find((c) => c.method === "POST")?.body).toEqual({ ids: [2], action: "confirm" });
+    expect(toasts.at(-1)?.title).toBe("1 confirmed");
+    wrapper.unmount();
+  });
+
+  it("To confirm confirms a whole group and brings back what was refused", async () => {
+    const calls = stub({
+      "GET routines/to-confirm/": () =>
+        json({
+          count: 2,
+          groups: [
+            {
+              routine: ref(4, "Muzlatgich haroratini yozish"),
+              day: "2026-10-20",
+              items: [
+                run(1, "Ali Valiyev", "review", { completed_at: "2026-10-20T03:55:00Z", on_time: true, can_confirm: true, proof_text: "+4 °C" }),
+                run(2, "Vali Karimov", "review", { completed_at: "2026-10-20T04:30:00Z", on_time: false, can_confirm: true }),
+              ],
+            },
+          ],
+        }),
+      "POST tasks/bulk/": () => json({ done: 1, failed: 1, results: [{ id: 1, ok: true, error: "" }, { id: 2, ok: false, error: "You can't confirm this task." }] }),
+    });
+    const { wrapper } = await mountPage("/c/1/routines/confirm", "ConfirmPage");
+    expect(document.body.textContent).toContain("“+4 °C”");
+    [...document.body.querySelectorAll("button")].find((b) => b.textContent?.trim() === "Confirm all (2)")!.click();
+    await flushPromises();
+    expect(calls.find((c) => c.method === "POST")?.body).toEqual({ ids: [1, 2], action: "confirm" });
+    expect(document.body.querySelector("[data-run='1']")).toBeNull();
+    expect(document.body.querySelector("[data-run='2']")).not.toBeNull();
+    expect(toasts.map((toast) => toast.title)).toEqual(["1 confirmed", "1 couldn't be confirmed"]);
+    wrapper.unmount();
+  });
+
+  it("History colours each routine's days and a cell opens that day's runs", async () => {
+    const cell = (finished: number, made: number) => ({ made, finished, on_time: finished, late: 0, missed: made - finished, open: 0, percent: Math.round((100 * finished) / made), on_time_percent: Math.round((100 * finished) / made) });
+    stub({
+      "GET tasks/options/": () => json(options),
+      "GET routines/history/": () =>
+        json({
+          range: { from: "2026-10-20", to: "2026-10-21" },
+          days: ["2026-10-20", "2026-10-21"],
+          routines: [{ routine: ref(4, "Kassani ochish"), cells: [cell(2, 2), null], totals: cell(2, 2) }],
+          series: [{ date: "2026-10-20", ...cell(2, 2) }, { date: "2026-10-21", made: 0, finished: 0, on_time: 0, late: 0, missed: 0, open: 0, percent: null, on_time_percent: null }],
+          people: [{ member: { id: 11, name: "Ali Valiyev", photo_url: null, position: "Farmatsevt" }, ...cell(1, 2) }],
+          totals: cell(2, 2),
+        }),
+    });
+    const { app, wrapper } = await mountPage("/c/1/routines/history", "HistoryPage");
+    const heatmap = document.body.querySelector("[data-testid=heatmap]")!;
+    const cells = heatmap.querySelectorAll<HTMLButtonElement>("tbody tr:nth-child(2) button");
+    expect(cells).toHaveLength(1);
+    expect(cells[0]!.getAttribute("title")).toContain("2 of 2 done (100");
+    cells[0]!.click();
+    await flushPromises();
+    expect(app.router.currentRoute.value.name).toBe("routines.today");
+    expect(app.router.currentRoute.value.query).toEqual({ day: "2026-10-20", routine: "4" });
+    expect(document.body.textContent).toContain("Ali Valiyev");
+    wrapper.unmount();
   });
 });

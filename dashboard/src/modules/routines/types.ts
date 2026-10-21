@@ -98,6 +98,108 @@ export interface GivenToday {
   people: RoutinePerson[];
 }
 
+/** What "Give today's task now" needs to know about a routine (a whole Routine or a day's row). */
+export type GiveTarget = Pick<Routine, "id" | "title" | "due_time" | "next_run" | "today">;
+
+// ─── Routine work (the Routines page: Today, History, To confirm) ───────────────────────────
+
+/** How one person's run of a routine stands: late is open past its deadline while the day lasts. */
+export type RunState = "done" | "review" | "late" | "missed" | "returned" | "open" | "cancelled";
+/** Why someone a routine names was left out of a day. */
+export type SkippedReason = "time_off" | "off" | "suspended" | "joined_later";
+
+export interface RoutineRef {
+  id: number;
+  title: string;
+  /** "09:00" */
+  due_time: string;
+  branch: BranchRef | null;
+  proof: ProofKind;
+  needs_confirmation: boolean;
+  is_active: boolean;
+}
+
+export interface RoutineRun {
+  /** The task's id. */
+  id: number;
+  member: RoutinePerson;
+  branch: BranchRef | null;
+  state: RunState;
+  status: string;
+  due_at: string | null;
+  completed_at: string | null;
+  on_time: boolean | null;
+  proof: ProofKind;
+  proof_text: string;
+  proof_thumb: string | null;
+  proof_photo: string | null;
+  checklist: { done: number; total: number };
+  can_confirm: boolean;
+}
+
+export type RunCounts = Record<RunState | "skipped", number>;
+
+export interface DayRoutine {
+  routine: RoutineRef;
+  due_at: string;
+  /** Why it makes no tasks that day (null when it does). */
+  reason: SkipReason | null;
+  next_run: string | null;
+  /** "Give today's task now" (today, made after its time, for whoever may plan routines). */
+  give: { people: number; due_at: string } | null;
+  progress: { finished: number; total: number; percent: number | null };
+  counts: RunCounts;
+  runs: RoutineRun[];
+  skipped: Array<{ member: RoutinePerson; reason: SkippedReason }>;
+}
+
+export interface RoutineDay {
+  day: string;
+  holiday: boolean;
+  /** Routines with nothing that day (not one of their days, paused…). */
+  idle: number;
+  totals: RunCounts & { total: number; finished: number; routines: number };
+  routines: DayRoutine[];
+}
+
+export interface HistoryCell {
+  made: number;
+  finished: number;
+  on_time: number;
+  late: number;
+  missed: number;
+  /** Not finished and its time still ahead (not counted in the rates). */
+  open: number;
+  percent: number | null;
+  on_time_percent: number | null;
+}
+
+export interface RoutineHistory {
+  range: { from: string; to: string };
+  days: string[];
+  routines: Array<{ routine: RoutineRef; cells: Array<HistoryCell | null>; totals: HistoryCell }>;
+  series: Array<HistoryCell & { date: string }>;
+  people: Array<HistoryCell & { member: RoutinePerson }>;
+  totals: HistoryCell;
+}
+
+export interface ConfirmGroup {
+  routine: RoutineRef;
+  day: string;
+  items: RoutineRun[];
+}
+
+export interface ToConfirm {
+  count: number;
+  groups: ConfirmGroup[];
+}
+
+export interface BulkResult {
+  done: number;
+  failed: number;
+  results: Array<{ id: number; ok: boolean; error: string }>;
+}
+
 export interface ComplianceDay {
   date: string;
   made: number;

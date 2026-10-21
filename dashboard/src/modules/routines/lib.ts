@@ -4,10 +4,42 @@
  * editor's live hint, without company holidays, which only the server knows.
  */
 import { TZDate } from "@date-fns/tz";
+import { AlarmClock, CircleCheck, CircleDashed, CircleSlash, Hourglass, RotateCcw, TriangleAlert } from "@lucide/vue";
+import type { Component } from "vue";
 
+import type { StatusTone } from "@/components/StatusPill.vue";
 import { addDays, diffDays, parseDay, todayIn, zonedDay } from "@/lib/dates";
 
+import type { RoutineRun, RunState } from "./types";
+
 type T = (key: string, params?: Record<string, unknown>) => string;
+
+/** How a run's state reads: its tone and icon (late and missed are the ones to act on). */
+export const RUN_LOOK: Record<RunState, { tone: StatusTone; icon: Component }> = {
+  done: { tone: "success", icon: CircleCheck },
+  review: { tone: "warning", icon: Hourglass },
+  late: { tone: "danger", icon: AlarmClock },
+  missed: { tone: "danger", icon: TriangleAlert },
+  returned: { tone: "warning", icon: RotateCcw },
+  open: { tone: "neutral", icon: CircleDashed },
+  cancelled: { tone: "neutral", icon: CircleSlash },
+};
+
+/** "Done 08:50", "Done 09:35 · late", "Waiting · done 09:20", "Late · due 09:00", "To do · due 18:00". */
+export function runText(run: RoutineRun, t: T, time: (iso: string) => string): string {
+  const due = run.due_at ? time(run.due_at) : "—";
+  const done = run.completed_at ? time(run.completed_at) : "—";
+  switch (run.state) {
+    case "done":
+      return t(run.on_time === false ? "routines.runState.doneLate" : "routines.runState.done", { time: done });
+    case "review":
+      return t("routines.runState.review", { time: done });
+    case "cancelled":
+      return t("routines.runState.cancelled");
+    default:
+      return t(`routines.runState.${run.state}`, { time: due });
+  }
+}
 
 /** Monday = 0 … Sunday = 6, of a company-local day ("2026-10-21"). */
 export function weekdayOf(day: string): number {

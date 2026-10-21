@@ -10,7 +10,16 @@ import { http, ownerPath } from "@/api/http";
 import { moduleKey, qk } from "@/api/keys";
 import { useCompanyStore } from "@/stores/company";
 
-import type { GivenToday, PlanOptions, Routine, RoutineCompliance, RoutineInput, RoutinePreview } from "./types";
+import type { BulkResult, GivenToday, PlanOptions, Routine, RoutineCompliance, RoutineDay, RoutineHistory, RoutineInput, RoutinePreview, ToConfirm } from "./types";
+
+/** Filters of Today and History, as the API names them. */
+export interface WorkParams {
+  day?: string;
+  from?: string;
+  to?: string;
+  branch?: string[];
+  position?: string[];
+}
 
 export const MODULE = "routines";
 /** The tasks module's cache prefix: routine work given now shows up in its lists too. */
@@ -31,6 +40,13 @@ export const routinesApi = {
   /** "Give today's task now" for a routine made after today's deadline; `dueTime` "HH:MM" today. */
   giveToday: (cid: number, id: number, dueTime: string | null) =>
     http.post<GivenToday>(ownerPath(cid, `routines/${id}/give-today/`), dueTime ? { due_time: dueTime } : {}),
+  /** A day of routine work: every routine due, each person's run, who was skipped. */
+  day: (cid: number, params: WorkParams, signal?: AbortSignal) => http.get<RoutineDay>(ownerPath(cid, "routines/day/"), { ...params }, { signal }),
+  history: (cid: number, params: WorkParams, signal?: AbortSignal) => http.get<RoutineHistory>(ownerPath(cid, "routines/history/"), { ...params }, { signal }),
+  toConfirm: (cid: number, signal?: AbortSignal) => http.get<ToConfirm>(ownerPath(cid, "routines/to-confirm/"), undefined, { signal }),
+  /** Confirm runs, each on its own (the tasks bulk endpoint: same rules as confirming one). */
+  confirm: (cid: number, ids: number[]) => http.post<BulkResult>(ownerPath(cid, "tasks/bulk/"), { ids, action: "confirm" }),
+  sendBack: (cid: number, id: number, reason: string) => http.post<unknown>(ownerPath(cid, `tasks/${id}/return/`), { reason }),
 };
 
 export const routineKeys = {
@@ -40,6 +56,9 @@ export const routineKeys = {
   preview: (cid: number, id: number, day: string | null) => qk(cid, MODULE, "preview", { id, day }),
   compliance: (cid: number, id: number, range: { from: string; to: string } | null) => qk(cid, MODULE, "compliance", { id, ...range }),
   options: (cid: number) => qk(cid, MODULE, "options"),
+  day: (cid: number, params: WorkParams) => qk(cid, MODULE, "day", { ...params }),
+  history: (cid: number, params: WorkParams) => qk(cid, MODULE, "history", { ...params }),
+  toConfirm: (cid: number) => qk(cid, MODULE, "to-confirm"),
 };
 
 function useCompanyId() {
@@ -138,6 +157,57 @@ export function useToggleActive() {
     },
     onSettled: refresh,
   });
+}
+
+export function useRoutineDay(params: MaybeRefOrGetter<WorkParams>) {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => routineKeys.day(cid.value, toValue(params))),
+    queryFn: ({ signal }) => routinesApi.day(cid.value, toValue(params), signal),
+    enabled: computed(() => cid.value > 0),
+    placeholderData: keepPreviousData,
+    staleTime: 15_000,
+  });
+}
+
+export function useRoutineHistory(params: MaybeRefOrGetter<WorkParams>) {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => routineKeys.history(cid.value, toValue(params))),
+    queryFn: ({ signal }) => routinesApi.history(cid.value, toValue(params), signal),
+    enabled: computed(() => cid.value > 0 && !!toValue(params).from),
+    placeholderData: keepPreviousData,
+    staleTime: 60_000,
+  });
+}
+
+export function useToConfirm() {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => routineKeys.toConfirm(cid.value)),
+    queryFn: ({ signal }) => routinesApi.toConfirm(cid.value, signal),
+    enabled: computed(() => cid.value > 0),
+    staleTime: 10_000,
+  });
+}
+
+/** Routine work decided (confirmed or sent back): routine work and every task list refetch. */
+function useRefreshWork() {
+  const cid = useCompanyId();
+  const client = useQueryClient();
+  return () => Promise.all([client.invalidateQueries({ queryKey: routineKeys.all(cid.value) }), client.invalidateQueries({ queryKey: moduleKey(cid.value, TASKS) })]);
+}
+
+export function useConfirmRuns() {
+  const cid = useCompanyId();
+  const refresh = useRefreshWork();
+  return useMutation({ mutationFn: (ids: number[]) => routinesApi.confirm(cid.value, ids), onSettled: refresh });
+}
+
+export function useSendBackRun() {
+  const cid = useCompanyId();
+  const refresh = useRefreshWork();
+  return useMutation({ mutationFn: ({ id, reason }: { id: number; reason: string }) => routinesApi.sendBack(cid.value, id, reason), onSettled: refresh });
 }
 
 /** Today's tasks of a routine given now: routines and every task list refetch. */

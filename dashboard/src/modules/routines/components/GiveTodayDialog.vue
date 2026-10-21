@@ -19,11 +19,11 @@ import { useCompanyStore } from "@/stores/company";
 
 import { useGiveToday } from "../api";
 import { capitalize, runDayWords, zonedIso } from "../lib";
-import type { Routine } from "../types";
+import type { GiveTarget } from "../types";
 import { useRunWords } from "../useRunWords";
 
 const open = defineModel<boolean>("open", { default: false });
-const props = defineProps<{ routine: Routine | null }>();
+const props = defineProps<{ routine: GiveTarget | null }>();
 const emit = defineEmits<{ given: [count: number] }>();
 
 const { t } = useI18n();

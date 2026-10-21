@@ -1,10 +1,11 @@
 <script setup lang="ts">
 /**
- * Waiting for my check (plan §6.2): finished work with large proof photos, oldest first. `A`
+ * Waiting for my check (plan §6.2): finished one-off work with large proof photos, oldest first.
+ * Routine work is confirmed on its own page (Routines → To confirm), linked from here. `A`
  * accepts the focused card, `R` sends it back (asks why), `J`/`K` move between cards. Accepting
  * waits 5 seconds with "Undo" before it reaches the server, so a slip costs nothing.
  */
-import { Check, ChevronRight, ClipboardCheck, FileText, RotateCcw } from "@lucide/vue";
+import { Check, ChevronRight, ClipboardCheck, FileText, Repeat, RotateCcw } from "@lucide/vue";
 import { computed, nextTick, onBeforeUnmount, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -21,6 +22,7 @@ import UserAvatar from "@/components/UserAvatar.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { dismissToast, toast } from "@/components/useToast";
 import { useHotkey } from "@/core/hotkeys";
+import { usePulseCount } from "@/core/pulse";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { patchQuery } from "@/lib/useRouteState";
 import { useCompanyStore } from "@/stores/company";
@@ -39,6 +41,7 @@ const confirm = useConfirm();
 const refresh = useRefreshTasks();
 
 const query = useReviews();
+const routineChecks = usePulseCount("tasks.routine_review");
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const hidden = ref<Set<number>>(new Set());
 const cards = computed(() => (query.data.value?.results ?? []).filter((task) => !hidden.value.has(task.id)));
@@ -165,6 +168,11 @@ function open(task: TaskReview): void {
         </p>
       </template>
     </PageHeader>
+
+    <p v-if="routineChecks > 0" class="-mt-2 flex flex-wrap items-center gap-1.5 text-sm text-muted" data-testid="routine-checks">
+      <Repeat :size="15" class="text-subtle" aria-hidden="true" />{{ t("tasks.reviews.routines", { n: routineChecks }, routineChecks) }}
+      <RouterLink :to="`/c/${company.currentId}/routines/confirm`" class="inline-flex items-center font-medium text-accent-fg hover:underline">{{ t("tasks.reviews.toRoutines") }}<ChevronRight :size="14" /></RouterLink>
+    </p>
 
     <div v-if="skeleton" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <div v-for="n in 6" :key="n" class="ui-card flex flex-col gap-3 p-3">
