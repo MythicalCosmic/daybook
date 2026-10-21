@@ -59,25 +59,31 @@ def create_task(
     checklist: list[str] = (),
     repeat: str = Repeat.NONE,
     reward: Decimal | None = None,
+    project=None,
+    project_list=None,
+    milestone=None,
 ) -> Task:
+    """A new task. With `project` (and optionally one of its lists and milestones) the task is
+    a card on that board: shared work even when someone gives it to themselves, and
+    `apps.projects` gives it its number and board place when it is saved (the first list when
+    no list is given). The board's own rights (who may add cards) are the caller's to check;
+    here a project only widens who may hand out the work (`_ensure_may_assign`)."""
     _ensure_registered(by)
     assignee = assignee or by
-    if assignee.pk == by.pk:
-        kind = Task.Kind.PERSONAL
+    _check_project(by, project, project_list, milestone)
+    for_self = assignee.pk == by.pk
+    if for_self:
         needs_confirmation = False
     else:
-        if not by.has_perm(Perm.TASKS_ASSIGN):
-            raise PermissionDenied(_("You can't assign tasks to others."))
-        if assignee.company_id != by.company_id or not _is_registered(assignee):
-            raise DomainError(_("Tasks can only go to registered members of your company."))
-        _ensure_in_scope(by, assignee)
-        kind = Task.Kind.ASSIGNED
+        _ensure_may_assign(by, assignee, project)
+    # Board work is shared work: a card someone gives themselves is still the project's.
+    kind = Task.Kind.PERSONAL if for_self and project is None else Task.Kind.ASSIGNED
     if repeat != Repeat.NONE:
         if kind != Task.Kind.PERSONAL:
             raise DomainError(_("Repeating tasks for others are set up as daily tasks."))
         if due_at is None:
             raise DomainError(_("Pick a time for a repeating task."))
-    if reward is not None and kind == Task.Kind.PERSONAL:
+    if reward is not None and for_self:
         raise DomainError(_("A reward is for work you give to someone else."))
 
     task = Task(
@@ -90,6 +96,9 @@ def create_task(
         needs_confirmation=needs_confirmation,
         # Where the work happens: the assignee's branch today, kept even if they move later.
         branch_id=assignee.home_branch_id,
+        project=project,
+        project_list=project_list,
+        milestone=milestone,
     )
     _apply_changes(
         task, {"title": title, "description": description, "due_at": due_at, "reward": reward}
@@ -103,7 +112,7 @@ def create_task(
     )
     if repeat != Repeat.NONE:
         _repeat_personal_task(task, repeat)
-    if kind == Task.Kind.ASSIGNED:
+    if not for_self:
         _add_to_feed(Activity.Kind.ASSIGNED, task, [assignee], by)
         _audit(AuditLog.Action.TASK_ASSIGNED, task, by, assignee=str(assignee))
         transaction.on_commit(partial(jobs.notify_task_assigned.delay, task.pk))
@@ -379,7 +388,10 @@ def reassign_task(task: Task, *, by: Membership, assignee: Membership) -> Task:
         raise DomainError(_("%(name)s already has this task.") % {"name": assignee})
     if assignee.company_id != task.company_id or not _is_registered(assignee):
         raise DomainError(_("Tasks can only go to registered members of your company."))
-    _ensure_in_scope(by, assignee)
+    if assignee.pk != by.pk:
+        # The same rule as handing it out: a lead moves a card only between their project's
+        # people, someone with tasks.assign within their branches (or the project's people).
+        _ensure_may_assign(by, assignee, task.project if task.project_id else None)
     previous = task.assignee
     task.assignee = assignee
     if task.status == Task.Status.IN_PROGRESS:
@@ -833,6 +845,46 @@ def in_scope(by: Membership, person: Membership) -> bool:
 def _ensure_in_scope(by: Membership, person: Membership) -> None:
     if not in_scope(by, person):
         raise DomainError(_("%(name)s works in a branch you don't manage.") % {"name": person})
+
+
+def _project_role(project, person: Membership) -> str | None:
+    """`lead`, `member`, `viewer` or None: what `person` is on the project (apps.projects)."""
+    from apps.projects.queries import role_of
+
+    return role_of(project, person)
+
+
+def _ensure_may_assign(by: Membership, assignee: Membership, project=None) -> None:
+    """Whether `by` may give work to someone else (docs/PLAN-OWNER.md §13.3):
+
+    - with tasks.assign, anyone registered in their branch scope, and on a project also anyone
+      already on it, wherever they work (the project brought them together);
+    - without it, a project's lead, to the people on their own project only (a lead runs their
+      project without projects.manage).
+    """
+    on_project = project is not None and _project_role(project, assignee) is not None
+    leads_it = on_project and _project_role(project, by) == "lead"
+    if not (by.has_perm(Perm.TASKS_ASSIGN) or leads_it):
+        raise PermissionDenied(_("You can't assign tasks to others."))
+    if assignee.company_id != by.company_id or not _is_registered(assignee):
+        raise DomainError(_("Tasks can only go to registered members of your company."))
+    if not on_project:
+        _ensure_in_scope(by, assignee)
+
+
+def _check_project(by: Membership, project, project_list, milestone) -> None:
+    """A task's board: a live project of `by`'s company, and a list and milestone of it."""
+    if project is None:
+        if project_list is not None or milestone is not None:
+            raise DomainError(_("That list or milestone is on another board."))
+        return
+    if project.company_id != by.company_id:
+        raise DomainError(_("That isn't part of your company."))
+    if project.archived_at is not None:
+        raise DomainError(_("This project is archived."))
+    for part in (project_list, milestone):
+        if part is not None and part.project_id != project.pk:
+            raise DomainError(_("That list or milestone is on another board."))
 
 
 def _ensure_registered(member: Membership) -> None:

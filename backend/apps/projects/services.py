@@ -685,19 +685,14 @@ def create_card(
     needs_confirmation: bool = False,
     start_on: date | None = None,
 ) -> Task:
-    """A new card: a task made through `tasks.services.create_task`, placed on the board. A
-    card is never a private personal task, even when someone gives it to themselves."""
+    """A new card: a task made through `tasks.services.create_task` on this project's board.
+    The task app decides who may hand out the work (tasks.assign, or this project's lead to its
+    people) and checks the list and milestone; `receivers.task_saved` numbers the card, puts it
+    at the end of its list (the first one by default) and adds the assignee as a member."""
     project = _lock_project(project)
     _need(queries.can_edit_cards(project, by), _("You can't add cards to this project."))
     if project.archived_at is not None:
         raise ProjectError(_("This project is archived."))
-    for obj in (project_list, milestone):
-        if obj is not None and obj.project_id != project.pk:
-            raise ProjectError(_("That list or milestone is on another board."))
-    assignee = assignee or by
-    if assignee.pk != by.pk and not by.has_perm(Perm.TASKS_ASSIGN):
-        # tasks.services.create_task decides who hands out work (tasks.assign).
-        raise PermissionDenied(_("You can only add cards for yourself."))
     task = task_services.create_task(
         by=by,
         title=title,
@@ -708,26 +703,14 @@ def create_card(
         proof=proof,
         needs_confirmation=needs_confirmation,
         checklist=list(checklist),
+        project=project,
+        project_list=project_list,
+        milestone=milestone,
     )
-    if task.kind == Task.Kind.PERSONAL:
-        # Board work is shared work: a card someone gives themselves is still the project's.
-        Task.objects.filter(pk=task.pk).update(kind=Task.Kind.ASSIGNED)
-        task.kind = Task.Kind.ASSIGNED
-    target = project_list or queries.first_list(project)
-    position = queries.end_position(target) if target is not None else 0
-    place_card(task, project, project_list=target, position=position)
-    if milestone is not None:
-        Task.objects.filter(pk=task.pk).update(milestone=milestone)
-        task.milestone = milestone
     if start_on:
         Card.objects.filter(task=task).update(start_on=start_on)
     if label_ids:
         _set_labels(task, project, label_ids)
-    if (
-        assignee.pk != project.lead_id
-        and not ProjectMember.objects.filter(project=project, membership=assignee).exists()
-    ):
-        add_member(project, assignee, by=None, notify=assignee.pk != by.pk)
     _audit(ProjectsAction.CARD_CREATED, task, by, project=project.key, title=task.title)
     _bump(project.company_id, PULSE_PROJECTS)
     return Task.objects.select_related("card", "assignee__user", "project_list").get(pk=task.pk)

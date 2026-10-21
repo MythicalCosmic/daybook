@@ -182,7 +182,7 @@ def calendar_events(company, start: date, end: date, member: Membership) -> list
         party = _("Hidden") if masked else (debt.counterparty or debt.membership)
         left = debt.amount - debt.paid
         receivable = debt.direction == Debt.Direction.RECEIVABLE
-        color = "var(--c-success)" if receivable else "var(--c-danger)"
+        color = "success" if receivable else "danger"
         kind = "finance.receivable" if receivable else "finance.payable"
         url = f"/c/{company.pk}/finance/debts?debt={debt.pk}"
         installments = [i for i in debt.installments.all() if start <= i.due_on <= end]

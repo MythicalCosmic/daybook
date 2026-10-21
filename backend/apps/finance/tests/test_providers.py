@@ -192,7 +192,7 @@ def test_calendar_shows_due_dates_and_instalments(fin, boss, today, member):
     )
     items = registry.collect_calendar(boss, today, today + timedelta(days=7))
     by_id = {item.id: item for item in items}
-    assert by_id[f"debt-{plain.pk}"].color == "var(--c-danger)"
+    assert by_id[f"debt-{plain.pk}"].color == "danger"
     assert "Pay Barakat" in by_id[f"debt-{plain.pk}"].title
     assert len([item for item in items if str(item.id).startswith("installment-")]) == 1
 

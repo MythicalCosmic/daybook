@@ -1,9 +1,8 @@
 """Tasks and routines a page can be linked to ("How to do this").
 
-The tasks app owns both. Tasks are read through its contract (`tasks.queries.visible_tasks`,
-which applies the person's visibility and branch scope); routines have no query function yet,
-so their titles are read here, read-only and company-scoped. Package B may replace that with a
-`tasks.queries` function at integration.
+The tasks app owns both, and both are read through its contract: tasks with
+`tasks.queries.visible_tasks` (the person's visibility and branch scope), routines with
+`tasks.queries.routines` / `routine` (the company's shared routines).
 """
 
 from __future__ import annotations
@@ -23,12 +22,6 @@ class Target:
     subtitle: str
 
 
-def _routines(company_id: int):
-    from apps.tasks.models import TaskTemplate
-
-    return TaskTemplate.objects.filter(company_id=company_id, personal=False)
-
-
 def title(
     company_id: int, target_type: str, target_id: int, *, by: Membership | None
 ) -> str | None:
@@ -40,7 +33,10 @@ def title(
             return None
         return visible_tasks(by).filter(pk=target_id).values_list("title", flat=True).first()
     if target_type == "routine":
-        return _routines(company_id).filter(pk=target_id).values_list("title", flat=True).first()
+        from apps.tasks.queries import routine
+
+        found = routine(company_id, target_id)
+        return found.title if found is not None else None
     return None
 
 
@@ -57,10 +53,9 @@ def search(member: Membership, q: str, *, limit: int = 8) -> list[Target]:
 
     Tasks a routine made are left out: linking the routine covers every one of them.
     """
-    from apps.tasks.queries import visible_tasks
+    from apps.tasks.queries import routines, visible_tasks
 
     q = (q or "").strip()
-    routines = _routines(member.company_id).filter(is_active=True)
     tasks = (
         visible_tasks(member)
         .exclude(kind="personal")
@@ -68,11 +63,10 @@ def search(member: Membership, q: str, *, limit: int = 8) -> list[Target]:
         .select_related("assignee")
     )
     if q:
-        routines = routines.filter(title__icontains=q)
         tasks = tasks.filter(title__icontains=q)
     found = [
         Target("routine", row.pk, row.title, row.due_time.strftime("%H:%M"))
-        for row in routines.order_by("title")[:limit]
+        for row in routines(member.company_id, q=q, active=True)[:limit]
     ]
     rest = max(0, limit - len(found))
     found += [

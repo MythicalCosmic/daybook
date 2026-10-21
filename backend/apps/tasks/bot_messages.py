@@ -47,10 +47,13 @@ def list_button(label: str) -> InlineKeyboardButton:
 
 
 def display_title(task: Task) -> str:
-    """The title as messages show it: with the project's key in front when it has one
-    ("RENO · Paint the wall")."""
-    project = task.project if task.project_id else None
-    return f"{project.key} · {task.title}" if project is not None else task.title
+    """The title as messages show it: with the card's key in front when the task is on a
+    project's board ("RENO-14 · Paint the wall"), the project's key until it has a card."""
+    if not task.project_id:
+        return task.title
+    card = getattr(task, "card", None)  # apps.projects' Card, one per task on a board
+    key = f"{task.project.key}-{card.number}" if card is not None else task.project.key
+    return f"{key} · {task.title}"
 
 
 def task_card(task: Task, member: Membership, now: datetime, header: str = "") -> BotMessage:
@@ -130,7 +133,7 @@ def onboarding_welcome(member: Membership, tasks: list[Task], now: datetime) -> 
 
 
 def proof_request(task: Task) -> BotMessage:
-    title = {"title": html.quote(task.title)}
+    title = {"title": html.quote(display_title(task))}
     if task.proof == Proof.PHOTO:
         text = _("📷 Send a photo to complete <b>%(title)s</b>.") % title
     elif task.proof == Proof.TEXT:

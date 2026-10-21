@@ -182,6 +182,47 @@ def test_revoking_from_a_day_inside_it(
     assert signals[0][2]["cancelled_from"] == today + timedelta(days=4)
 
 
+# Payroll's lock, read from package H's `payroll.queries.finalized_until` when it exists ---------
+
+
+def test_without_payrolls_finalized_until_nothing_is_locked(worker, manager, today, monkeypatch):
+    from apps.payroll import queries as payroll_queries
+
+    monkeypatch.delattr(payroll_queries, "finalized_until", raising=False)
+
+    assert services.payroll_locked_until(worker.company) is None
+    long_ago = today - timedelta(days=60)
+    services.record_time_off(worker, by=manager, first_day=long_ago, last_day=long_ago)
+    started = approved(worker, today - timedelta(days=2), today + timedelta(days=2))
+    services.revoke(started, by=manager, reason="Needed back", from_day=today - timedelta(days=1))
+
+
+def test_payrolls_finalized_until_locks_recording_and_revoking(worker, manager, today, monkeypatch):
+    from apps.payroll import queries as payroll_queries
+
+    asked = []
+
+    def finalized_until(company):
+        asked.append(company.pk)
+        return today - timedelta(days=5)
+
+    monkeypatch.setattr(payroll_queries, "finalized_until", finalized_until, raising=False)
+
+    assert services.payroll_locked_until(worker.company) == today - timedelta(days=5)
+    with pytest.raises(DomainError, match="finalized"):
+        services.record_time_off(
+            worker, by=manager, first_day=today - timedelta(days=6), last_day=today
+        )
+    services.record_time_off(
+        worker, by=manager, first_day=today - timedelta(days=4), last_day=today - timedelta(days=4)
+    )
+    started = approved(worker, today - timedelta(days=9), today + timedelta(days=2))
+    with pytest.raises(DomainError, match="finalized"):
+        services.revoke(started, by=manager, reason="x", from_day=today - timedelta(days=6))
+    services.revoke(started, by=manager, reason="Needed back", from_day=today - timedelta(days=3))
+    assert set(asked) == {worker.company_id}
+
+
 def test_only_approved_time_off_can_be_revoked_and_a_reason_is_needed(worker, manager, today):
     pending = TimeOff.objects.create(
         company=worker.company, membership=worker, first_day=today, last_day=today

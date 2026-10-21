@@ -148,6 +148,47 @@ def test_base_currency_changes_until_money_is_booked(company, owner, owner_api):
     )
 
 
+def test_a_new_base_currency_takes_the_default_accounts_along(company, owner, owner_api):
+    finance.create_defaults(company)
+    bank = MoneyAccountFactory(company=company, name="Kapitalbank", kind="bank")
+
+    response = owner_api(owner).patch(url(company), {"base_currency": "USD"}, format="json")
+
+    assert response.status_code == 200, response.content
+    accounts = dict(company.money_accounts.values_list("kind", "currency"))
+    assert accounts == {"cash": "USD", "clearing": "USD", "bank": bank.currency}
+    moved = AuditLog.objects.filter(company_id=company.pk, action="finance.account_updated")
+    assert [row.details["changes"] for row in moved] == [{"currency": ["UZS", "USD"]}] * 2
+    assert AuditLog.objects.filter(
+        company_id=company.pk, action=CompanyAction.SETTINGS_CHANGED
+    ).exists()
+
+
+def test_a_refused_base_currency_change_leaves_the_accounts_alone(company, owner, monkeypatch):
+    from apps.companies import services as company_services
+    from apps.core.exceptions import DomainError
+
+    finance.create_defaults(company)
+    # Something got booked between A's check and finance's own (under its lock).
+    monkeypatch.setattr(company_services, "base_currency_locked", lambda company: False)
+    account = company.money_accounts.get(kind="cash")
+    finance.record_transaction(
+        company,
+        by=owner,
+        kind="opening",
+        account=account,
+        amount=Decimal("1000.00"),
+        occurred_on=date.today(),
+    )
+
+    with pytest.raises(DomainError, match="stays UZS"):
+        company_services.update_settings(company, by=owner, base_currency="USD")
+
+    company.refresh_from_db()
+    assert company.base_currency == "UZS"
+    assert set(company.money_accounts.values_list("currency", flat=True)) == {"UZS"}
+
+
 def test_logo_is_reencoded_and_can_be_removed(company, owner, owner_api, settings):
     upload = SimpleUploadedFile("logo.png", jpeg(), content_type="image/png")
 

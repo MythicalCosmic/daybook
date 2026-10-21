@@ -29,7 +29,8 @@ const assignee = ref<number | null>(null);
 const due = ref<"today" | "tomorrow" | "week" | null>("week");
 const input = ref<HTMLTextAreaElement | null>(null);
 
-const canAssign = computed(() => company.can("tasks.assign"));
+/** Who else may get the card: the board's people, for tasks.assign holders and the project's lead. */
+const canAssign = computed(() => props.project.capabilities?.assign_others ?? company.can("tasks.assign"));
 const presets = computed(() => [
   { id: "today" as const, label: t("projects.quick.today") },
   { id: "tomorrow" as const, label: t("projects.quick.tomorrow") },

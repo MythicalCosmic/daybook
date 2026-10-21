@@ -5,11 +5,34 @@ import { addDays, startOfWeek } from "@/lib/dates";
 
 import type { CalendarEntry, CalendarSource, CalendarView, EventKind } from "./types";
 
-/** A source's colour token ("chart-3", "danger") as CSS; anything else (a raw colour) passes through. */
+/**
+ * The colour tokens calendar sources send (the backend's `console.registry.CALENDAR_COLORS`) and
+ * the dashboard's CSS variable for each, so every source follows the theme in light and dark.
+ */
+export const CALENDAR_TOKENS: ReadonlyMap<string, string> = new Map([
+  ...[1, 2, 3, 4, 5, 6, 7, 8].map((n) => [`chart-${n}`, `var(--c-chart-${n})`] as const),
+  ["danger", "var(--c-danger)"],
+  ["warning", "var(--c-warning)"],
+  ["success", "var(--c-success)"],
+  ["info", "var(--c-info)"],
+  ["accent", "var(--c-primary)"],
+]);
+
+const warned = new Set<string>();
+
+/**
+ * A source's colour token ("chart-3", "danger") as CSS. Anything else (a hex, a CSS variable, an
+ * unknown name) is ignored with one console warning per value, so the caller uses its default.
+ */
 export function tokenColor(color: string | null | undefined): string | null {
   if (!color) return null;
-  if (/^[a-z][a-z0-9-]*$/.test(color)) return `var(--c-${color})`;
-  return color;
+  const css = CALENDAR_TOKENS.get(color);
+  if (css) return css;
+  if (!warned.has(color)) {
+    warned.add(color);
+    console.warn(`[calendar] ${JSON.stringify(color)} isn't a colour token; using the default colour`);
+  }
+  return null;
 }
 
 export const KIND_TOKENS: Record<EventKind, string> = {

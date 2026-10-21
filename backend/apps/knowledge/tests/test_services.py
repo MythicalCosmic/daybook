@@ -309,6 +309,32 @@ def test_link_a_page_to_a_routine_of_the_company(company, other_company, owner):
     assert not page.links.exists()
 
 
+def test_routines_are_read_through_the_task_apps_contract(company, owner, monkeypatch):
+    """Knowledge never reads TaskTemplate itself: titles and search go through tasks.queries."""
+    import inspect
+    from types import SimpleNamespace
+
+    from apps.knowledge import targets
+    from apps.tasks import queries as task_queries
+    from apps.tasks.models import TaskTemplate
+
+    asked = []
+
+    def routine(company_id, routine_id):
+        asked.append((company_id, routine_id))
+        return SimpleNamespace(title="Close the till")
+
+    monkeypatch.setattr(task_queries, "routine", routine)
+    assert targets.title(company.pk, "routine", 5, by=None) == "Close the till"
+    assert asked == [(company.pk, 5)]
+    monkeypatch.undo()
+    TaskTemplate.objects.create(company=company, title="Close the till", due_time="22:00")
+    TaskTemplate.objects.create(company=company, title="Gym", due_time="07:00", personal=True)
+    found = targets.search(owner, "")
+    assert [(row.type, row.title) for row in found] == [("routine", "Close the till")]
+    assert "TaskTemplate" not in inspect.getsource(targets)
+
+
 def test_upload_image_re_encodes_into_private_storage(company, owner):
     image = services.upload_image(company, jpeg_upload("evil.svg.png"), by=owner)
 

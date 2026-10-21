@@ -96,6 +96,7 @@ describe("lib", () => {
 
   it("maps colours and finds events", () => {
     expect(colorClass("chart-6")).toBe("agm-c-chart-6");
+    expect(colorClass("accent")).toBe("agm-c-accent");
     expect(colorClass("#123456")).toBe("agm-c-chart-1");
     expect(eventIdOf(entry({ id: "agenda.events:12-20261026" }))).toBe(12);
     expect(eventIdOf(entry({ kind: "hr.birthday" }))).toBeNull();

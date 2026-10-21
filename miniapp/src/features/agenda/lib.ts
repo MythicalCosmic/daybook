@@ -2,7 +2,8 @@
 import { addDays, clock, dayKey, weekdayLong } from "../../lib/time";
 import type { CalendarEntry } from "./api";
 
-const TOKENS = new Set(["chart-1", "chart-2", "chart-3", "chart-4", "chart-5", "chart-6", "chart-7", "chart-8", "danger", "success", "primary", "warning", "info"]);
+// The backend's `console.registry.CALENDAR_COLORS` ("primary" kept for older items).
+const TOKENS = new Set(["chart-1", "chart-2", "chart-3", "chart-4", "chart-5", "chart-6", "chart-7", "chart-8", "danger", "success", "accent", "primary", "warning", "info"]);
 
 /** The colour class of a source's token ("chart-3" → "agm-c-chart-3"). */
 export function colorClass(token: string): string {

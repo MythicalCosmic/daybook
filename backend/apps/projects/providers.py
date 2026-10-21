@@ -108,7 +108,7 @@ def milestones_calendar(company, start: date, end: date, member: Membership) -> 
             start=milestone.due_on,
             end=None,
             all_day=True,
-            color=milestone.project.color,
+            color=milestone.project.color or "chart-1",
             url=_url(milestone.project, "/milestones"),
         )
         for milestone in rows

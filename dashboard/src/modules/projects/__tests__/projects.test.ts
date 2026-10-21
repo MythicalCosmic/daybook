@@ -13,6 +13,7 @@ import { mountWithProviders, testApp } from "@/test/plugins";
 import { applyMove, createCard, listProjects, logTime, moveCard, projectKeys, scheduleCard } from "../api";
 import BoardTab from "../components/BoardTab.vue";
 import ProjectCard from "../components/ProjectCard.vue";
+import QuickAddCard from "../components/QuickAddCard.vue";
 import en from "../i18n/en.json";
 import { declutterMilestones, dropPosition, dueState, hhmm, parseDuration } from "../lib";
 import ProjectsPage from "../pages/ProjectsPage.vue";
@@ -88,7 +89,7 @@ function detail(overrides: Partial<ProjectDetail> = {}): ProjectDetail {
     ],
     labels: [{ id: 5, name: "Urgent", color: "chart-1" }],
     milestones: [],
-    capabilities: { manage: true, edit_cards: true, post_update: true, see_money: true, add_expense: true, see_labour: true, see_all_time: true },
+    capabilities: { manage: true, edit_cards: true, assign_others: true, post_update: true, see_money: true, add_expense: true, see_labour: true, see_all_time: true },
     ...overrides,
   };
 }
@@ -325,6 +326,35 @@ describe("board", () => {
     await flushPromises();
     expect(wrapper.text()).toContain("Order tiles");
     expect(wrapper.text()).not.toContain("Paint the walls");
+    wrapper.unmount();
+  });
+});
+
+describe("quick add", () => {
+  async function mountQuickAdd(assignOthers: boolean) {
+    const calls = stubApi({ "POST projects/1/cards/": () => json(card({ key: "OPEN-2" }), 201) });
+    const app = await testApp("/c/1/projects/1/board");
+    const project = detail({ capabilities: { ...detail().capabilities, assign_others: assignOthers } });
+    const people = [person(13, "Alisher Valiyev"), person(14, "Madina Saidova")];
+    const { wrapper } = mountWithProviders(QuickAddCard, { props: { project, listId: 10, people }, plugins: app.plugins });
+    await flushPromises();
+    return { calls, wrapper };
+  }
+
+  it("offers the board's people when the caller may give cards to others (a lead too)", async () => {
+    const { calls, wrapper } = await mountQuickAdd(true);
+    expect(wrapper.find(`[role="radiogroup"][aria-label="${en["projects.quick.who"]}"]`).exists()).toBe(true);
+    await wrapper.find('[role="radio"][aria-label="Madina Saidova"]').trigger("click");
+    await wrapper.find("textarea").setValue("Hang the sign");
+    await wrapper.find("textarea").trigger("keydown", { key: "Enter" });
+    await flushPromises();
+    expect(calls.find((c) => c.method === "POST")?.body).toMatchObject({ title: "Hang the sign", list: 10, assignee: 14 });
+    wrapper.unmount();
+  });
+
+  it("follows the board's capability, not the company permission alone", async () => {
+    const { wrapper } = await mountQuickAdd(false);
+    expect(wrapper.find('[role="radio"][aria-label="Madina Saidova"]').exists()).toBe(false);
     wrapper.unmount();
   });
 });
