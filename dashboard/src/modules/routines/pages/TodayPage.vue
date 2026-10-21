@@ -48,9 +48,11 @@ const tap = computed(() => (isPhone.value ? "lg" : "sm"));
 
 const today = computed(() => todayIn(company.timezone));
 const dayParam = useRouteState("day", rs.string(""));
+// Routine work exists up to today: later days have no tasks yet (who will get them is on a
+// routine's own page), so a later ?day= shows today, and the arrow and the picker stop there.
 const day = computed({
-  get: () => dayParam.value || today.value,
-  set: (value: string | null) => (dayParam.value = !value || value === today.value ? "" : value),
+  get: () => (dayParam.value && dayParam.value < today.value ? dayParam.value : today.value),
+  set: (value: string | null) => (dayParam.value = !value || value >= today.value ? "" : value),
 });
 const isToday = computed(() => day.value === today.value);
 const only = useRouteState("routine", rs.string(""));
@@ -63,7 +65,7 @@ const defs = computed<FilterDef[]>(() => [
 ]);
 const filters = useUrlFilters(defs);
 const params = computed(() => ({
-  day: dayParam.value || undefined,
+  day: day.value === today.value ? undefined : day.value,
   branch: (filters.params.value.branch as string[] | undefined) ?? undefined,
   position: (filters.params.value.position as string[] | undefined) ?? undefined,
 }));
@@ -158,8 +160,8 @@ function give(target: GiveTarget): void {
       <template #actions>
         <div class="flex items-center gap-1">
           <IconButton :icon="ChevronLeft" :label="t('routines.today.previousDay')" :size="tap" variant="secondary" @click="day = addDays(day, -1)" />
-          <DatePicker v-model="day" :size="tap" format="weekday" class="w-[220px] max-sm:min-w-0 max-sm:flex-1" />
-          <IconButton :icon="ChevronRight" :label="t('routines.today.nextDay')" :size="tap" variant="secondary" @click="day = addDays(day, 1)" />
+          <DatePicker v-model="day" :size="tap" :max="today" format="weekday" class="w-[220px] max-sm:min-w-0 max-sm:flex-1" />
+          <IconButton :icon="ChevronRight" :label="t('routines.today.nextDay')" :size="tap" variant="secondary" :disabled="isToday" @click="day = addDays(day, 1)" />
         </div>
         <UiButton v-if="!isToday" :size="tap" :icon="CalendarCheck" @click="day = today">{{ t("routines.today.backToToday") }}</UiButton>
       </template>

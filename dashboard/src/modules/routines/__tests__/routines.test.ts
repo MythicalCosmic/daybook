@@ -592,6 +592,26 @@ describe("Today opened from History", () => {
   });
 });
 
+describe("Today on a later day", () => {
+  it("shows today: later days have no routine work yet, and the arrow stops", async () => {
+    const calls = stub({
+      "GET tasks/options/": () => json(options),
+      "GET routines/day/": () => json({ day: "2026-10-21", holiday: false, idle: 0, totals: { done: 0, review: 0, late: 0, missed: 0, returned: 0, open: 0, cancelled: 0, skipped: 0, total: 0, finished: 0, routines: 0 }, routines: [] }),
+    });
+    const app = await testApp("/c/1/routines?day=2099-01-01");
+    for (const name of ["routines.today", "routines.history", "routines.confirm", "routines.list", "routines.onboarding", "routines.detail"]) {
+      app.router.addRoute({ path: `/named/${name}/:id?`, name, component: { render: () => null } });
+    }
+    const { default: TodayPage } = await import("../pages/TodayPage.vue");
+    const { wrapper } = mountWithProviders(TodayPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(calls.find((c) => c.url.includes("routines/day/"))?.url).not.toContain("day=2099");
+    expect(document.body.querySelector<HTMLButtonElement>(`button[aria-label="${en["routines.today.nextDay"]}"]`)?.disabled).toBe(true);
+    wrapper.unmount();
+  });
+});
+
 describe("RoutineDetailPage", () => {
   it("says a deleted routine is gone and offers the list instead of trying again", async () => {
     stub({ "GET tasks/options/": () => json(options) });

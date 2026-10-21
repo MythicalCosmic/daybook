@@ -226,6 +226,21 @@ describe("TaskDrawer", () => {
     wrapper.unmount();
   });
 
+  it("says a deleted task is gone without offering to try again", async () => {
+    stub({
+      "GET tasks/7/": () => json({ detail: "Not found." }, 404),
+      "GET tasks/options/": () => json({ people: [], positions: [], routines: [], policies: [] }),
+    });
+    const app = await testApp("/c/1/tasks?task=7");
+    const { wrapper } = mountWithProviders(TaskDrawer, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    await vi.waitFor(() => expect(document.body.querySelector("[role=dialog]")?.textContent).toContain("gone"));
+    const buttons = [...document.body.querySelectorAll("[role=dialog] button")].map((b) => b.textContent?.trim());
+    expect(buttons).not.toContain("Try again");
+    wrapper.unmount();
+  });
+
   it("gives the drawer's extensions the task and its routine (knowledge's How to do this)", async () => {
     const link = (target_type: string, target_id: number, title: string) => ({
       id: target_id,
