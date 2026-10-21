@@ -22,7 +22,8 @@ const props = withDefaults(defineProps<{ people: StackPerson[]; max?: number; si
 
 const shown = computed(() => props.people.slice(0, props.max));
 const rest = computed(() => props.people.slice(props.max));
-const overlap = computed(() => Math.round(props.size * 0.22));
+// 15 % of the size: enough to read as a stack while the next ring stays clear of the initials.
+const overlap = computed(() => Math.round(props.size * 0.15));
 </script>
 
 <template>

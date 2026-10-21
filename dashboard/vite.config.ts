@@ -61,7 +61,16 @@ export default defineConfig({
     rolldownOptions: {
       output: {
         codeSplitting: {
-          groups: isolated.map(([name, test], index) => ({ name, test, priority: 10 + index })),
+          groups: [
+            ...isolated.map(([name, test], index) => ({ name, test, priority: 10 + index })),
+            // Everything else the first page load needs (the shell, every module's index.ts, the
+            // icons they name, the reka-ui pieces the shell uses) goes into the entry chunk instead
+            // of ~60 small shared chunks. Nothing enters the first load that wasn't in it already,
+            // and it is much smaller: one gzip stream, and every lazy import's preload list
+            // (`__vite__mapDeps`, in the first load too) names one file instead of dozens.
+            // README "Budgets" explains how to measure it.
+            { name: "app", tags: ["$initial" as const], priority: 1 },
+          ],
         },
       },
     },

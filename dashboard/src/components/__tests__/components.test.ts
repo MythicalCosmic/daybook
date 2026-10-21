@@ -5,11 +5,13 @@ import { defineComponent, h } from "vue";
 import { createMemoryHistory, createRouter, type Router } from "vue-router";
 
 import { ApiError } from "@/api/http";
+import AvatarStack from "@/components/AvatarStack.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import KbdKey from "@/components/KbdKey.vue";
 import UiBadge from "@/components/UiBadge.vue";
 import UiButton from "@/components/UiButton.vue";
+import UiDialog from "@/components/UiDialog.vue";
 import UiDrawer from "@/components/UiDrawer.vue";
 import { dismissToast, pauseToast, resumeToast, showToast, toasts } from "@/components/useToast";
 import { defineModule, registerDevModules } from "@/core/modules";
@@ -130,6 +132,67 @@ describe("ExtensionSlot", () => {
     const empty = mount(ExtensionSlot, { props: { name: "payroll.run.toolbar" }, global: { plugins: plugins() } });
     expect(empty.html()).toBe("<!--v-if-->");
     warn.mockRestore();
+  });
+
+  it("puts the host's attributes on its wrapper, or on each extension without one", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const Pill = defineComponent({ props: { context: { type: Object, required: true } }, setup: (props) => () => (props.context.hidden ? null : h("a", { class: "pill" }, "Pill")) });
+    registerDevModules([
+      defineModule({
+        id: "attrsprovider",
+        group: "insights",
+        order: 98,
+        icon: {},
+        title: "attrsprovider.title",
+        routes: [],
+        extensions: { "shell.nav.top": [Pill], "comms.composer.tools": [Pill, Pill] },
+        messages: () => Promise.resolve({ uz: {}, ru: {}, en: {} }),
+      }),
+    ]);
+    const wrapped = mount(ExtensionSlot, { props: { name: "shell.nav.top", context: {} }, attrs: { class: "px-3 pt-2 empty:hidden", "data-x": "1" }, global: { plugins: plugins() } });
+    const host = wrapped.find("[data-extension-slot='shell.nav.top']");
+    expect(host.classes()).toEqual(["px-3", "pt-2", "empty:hidden"]);
+    expect(host.attributes("data-x")).toBe("1");
+    expect(host.find(".pill").classes()).toEqual(["pill"]);
+    // An extension that renders nothing leaves only a comment, so `empty:hidden` hides the spacing.
+    const hidden = mount(ExtensionSlot, { props: { name: "shell.nav.top", context: { hidden: true } }, attrs: { class: "px-3" }, global: { plugins: plugins() } });
+    expect(hidden.find("[data-extension-slot]").element.children).toHaveLength(0);
+    const bare = mount(ExtensionSlot, { props: { name: "comms.composer.tools", as: "none" }, attrs: { class: "shrink-0" }, global: { plugins: plugins() } });
+    expect(bare.findAll("a.pill.shrink-0")).toHaveLength(2);
+    expect(warn.mock.calls.flat().join(" ")).not.toMatch(/Extraneous non-props attributes/);
+    warn.mockRestore();
+  });
+});
+
+describe("AvatarStack", () => {
+  it("overlaps by 15 % of the size, so the next ring doesn't cut the initials", () => {
+    const people = [{ name: "Dilnoza Karimova" }, { name: "Bekzod Mirzayev" }, { name: "Nigora Saidova" }, { name: "Jasur Aliyev" }];
+    const wrapper = mount(AvatarStack, { props: { people, max: 3, size: 28, tooltips: false }, global: { plugins: plugins() } });
+    const margins = wrapper.findAll("[style*='margin-left']").map((el) => (el.element as HTMLElement).style.marginLeft);
+    // Two overlapping avatars after the first, then the "+1" chip: round(28 × 0.15) = 4.
+    expect(margins).toEqual(["-4px", "-4px", "-4px"]);
+    expect(wrapper.text()).toContain("+1");
+  });
+});
+
+describe("UiDialog", () => {
+  it("fits below its top offset: the body scrolls and the footer stays visible", async () => {
+    const wrapper = mount(UiDialog, {
+      props: { open: true, title: "New account", mobile: "center" },
+      slots: { default: () => h("div", { style: "height: 2000px" }, "Tall form"), footer: () => h("button", "Save") },
+      global: { plugins: plugins() },
+      attachTo: document.body,
+    });
+    await flushPromises();
+    const content = document.body.querySelector<HTMLElement>("[role=dialog]")!;
+    // The container is `p-4 pt-[min(14vh,120px)]`: the dialog may use what is left of the screen.
+    expect(content.className).toContain("max-h-[calc(100dvh-min(14vh,120px)-16px)]");
+    expect(content.className).toContain("flex-col");
+    expect(content.parentElement!.className).toContain("pt-[min(14vh,120px)]");
+    const body = content.querySelector<HTMLElement>("[data-dialog-body]")!;
+    expect(body.className).toMatch(/\bmin-h-0\b.*\boverflow-y-auto\b/);
+    expect(content.querySelector("footer")!.className).toContain("shrink-0");
+    wrapper.unmount();
   });
 });
 

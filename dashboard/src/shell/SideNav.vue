@@ -94,7 +94,8 @@ function prefetch(path: string): void {
       <CompanySwitcher :variant="rail ? 'rail' : 'sidebar'" />
     </div>
 
-    <ExtensionSlot name="shell.nav.top" :context="{ rail }" :class="rail ? 'flex justify-center px-2 pt-2' : 'px-3 pt-2'" />
+    <!-- The slot's own spacing; empty:hidden leaves no gap when the pill hides itself. -->
+    <ExtensionSlot name="shell.nav.top" :context="{ rail }" :class="[rail ? 'flex justify-center px-2 pt-2' : 'px-3 pt-2', 'empty:hidden']" />
 
     <div ref="scroller" class="scroll-fade-y no-scrollbar min-h-0 flex-1 overflow-y-auto px-3 pb-3 pt-2">
       <div v-if="!ready" class="flex flex-col gap-2.5 px-2 pt-2">

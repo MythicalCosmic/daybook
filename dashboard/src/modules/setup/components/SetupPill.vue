@@ -31,8 +31,8 @@ const label = computed(() => (data.value ? t("setup.pill", { done: data.value.do
 </script>
 
 <template>
-  <!-- Own spacing: the slot host can't pass its padding to a component (see the hand-off). -->
-  <div v-if="visible && data" :class="props.context.rail ? 'flex justify-center px-2 pt-2' : 'px-3 pt-2'">
+  <!-- The sidebar's slot (shell.nav.top) gives the spacing and hides itself while this is empty. -->
+  <template v-if="visible && data">
     <UiTooltip v-if="props.context.rail" :content="label" side="right">
       <RouterLink :to="to" class="pressable grid size-10 place-items-center rounded-[10px] hover:bg-[var(--c-nav-hover)]" :aria-label="label">
         <span class="relative grid place-items-center">
@@ -56,5 +56,5 @@ const label = computed(() => (data.value ? t("setup.pill", { done: data.value.do
       </span>
       <ProgressBar :value="data.done" :max="data.total" size="sm" />
     </RouterLink>
-  </div>
+  </template>
 </template>

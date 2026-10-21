@@ -5,6 +5,7 @@ import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { BranchToday, StreamItem } from "@/api/types";
+import { modules } from "@/core/modules";
 import { mergeModuleMessages } from "@/i18n";
 import { json } from "@/test/fixtures";
 import { mountWithProviders as mountRaw, testApp } from "@/test/plugins";
@@ -94,9 +95,18 @@ describe("OverviewPage", () => {
     await flushPromises();
     expect(wrapper.find("h1").text()).toBe("Good morning, Dilnoza");
     expect(wrapper.text()).toContain("Demo Shop");
-    const ids = wrapper.findAll("[data-widget]").map((el) => el.attributes("data-widget"));
-    // Every module's widgets, by their order: branches (10), the inbox's Needs you (30), activity (40).
-    expect(ids).toEqual(["overview.branches", "inbox.needs", "overview.activity"]);
+    const ids = wrapper.findAll("[data-widget]").map((el) => el.attributes("data-widget")!);
+    // Other modules add widgets of their own, so this checks the rules, not one exact list:
+    // W0's own widgets are there, in their order (branches 10, the inbox's Needs you 30, activity 40)…
+    const w0 = ["overview.branches", "inbox.needs", "overview.activity"];
+    expect(ids).toEqual(expect.arrayContaining(w0));
+    expect(ids.filter((id) => w0.includes(id))).toEqual(w0);
+    // …each widget once, every one of them registered, laid out by `order` and then by id.
+    const registered = new Map(modules.flatMap((m) => m.widgets ?? []).map((w) => [w.id, w.order]));
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids.every((id) => registered.has(id))).toBe(true);
+    const byOrder = [...ids].sort((a, b) => registered.get(a)! - registered.get(b)! || a.localeCompare(b));
+    expect(ids).toEqual(byOrder);
   });
 });
 

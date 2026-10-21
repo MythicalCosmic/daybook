@@ -454,6 +454,8 @@
   "shell.searchType.crm": "Bitimlar",
   "shell.searchType.inventory": "Mahsulotlar",
   "shell.searchType.knowledge": "Bilimlar bazasi sahifalari",
+  "shell.searchType.branches": "Filiallar",
+  "shell.searchType.events": "Tadbirlar",
   "shell.searchType.other": "Boshqa",
 
   "shell.telegram.endedTitle": "Sessiya tugadi",

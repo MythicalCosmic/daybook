@@ -454,6 +454,8 @@
   "shell.searchType.crm": "Сделки",
   "shell.searchType.inventory": "Товары",
   "shell.searchType.knowledge": "Страницы базы знаний",
+  "shell.searchType.branches": "Филиалы",
+  "shell.searchType.events": "События",
   "shell.searchType.other": "Другое",
 
   "shell.telegram.endedTitle": "Сессия закончилась",

@@ -454,6 +454,8 @@
   "shell.searchType.crm": "Deals",
   "shell.searchType.inventory": "Products",
   "shell.searchType.knowledge": "Knowledge pages",
+  "shell.searchType.branches": "Branches",
+  "shell.searchType.events": "Events",
   "shell.searchType.other": "Other",
 
   "shell.telegram.endedTitle": "Session ended",

@@ -126,6 +126,52 @@ describe("KanbanBoard", () => {
     expect(wrapper.emitted("move")).toBeUndefined();
   });
 
+  it("puts quick add right after the last card and 'No cards' at the top of an empty column", async () => {
+    const app = await testApp("/c/1/projects/1");
+    const { inner } = mountWithProviders(KanbanBoard, {
+      props: { columns, items: cards, itemKey: (c: Card) => c.id, columnOf: (c: Card) => c.list, canDrop },
+      slots: {
+        card: ({ item }: { item: Card }) => h("span", { class: "card-title" }, item.title),
+        "quick-add": ({ close }: { close: () => void }) => h("button", { class: "quick-form", onClick: close }, "Add it"),
+      },
+      plugins: app.plugins,
+    });
+    await flushPromises();
+    const sections = inner.findAll("section");
+    // A column with cards: the quick add is the list's last child, right after the last card.
+    const todoList = sections[0]!.find("[data-column='todo']");
+    const children = Array.from(todoList.element.children) as HTMLElement[];
+    expect(children.map((el) => el.dataset.cardKey ?? (el.hasAttribute("data-kanban-add") ? "add" : "?"))).toEqual(["1", "2", "add"]);
+    expect(sections[0]!.find("[data-kanban-empty]").exists()).toBe(false);
+    // An empty column: "No cards" first, above the list, and the quick add opens in the list.
+    const review = sections[2]!;
+    const empty = review.find("[data-kanban-empty]");
+    expect(empty.text()).toBe("No cards");
+    expect(empty.element.compareDocumentPosition(review.find("[data-column='review']").element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    await review.find("[data-kanban-add] button").trigger("click");
+    expect(review.find("[data-column='review'] [data-kanban-add] .quick-form").exists()).toBe(true);
+    expect(review.find("[data-kanban-empty]").exists()).toBe(false);
+    expect(inner.emitted("add-open")?.[0]?.[0]).toMatchObject({ id: "review" });
+    await review.find(".quick-form").trigger("click");
+    expect(review.find("[data-kanban-empty]").exists()).toBe(true);
+  });
+
+  it("keeps the quick add out of the sortable cards and hides it while a card is dragged", async () => {
+    const app = await testApp("/c/1/projects/1");
+    const { inner } = mountWithProviders(KanbanBoard, {
+      props: { columns, items: cards, itemKey: (c: Card) => c.id, columnOf: (c: Card) => c.list, canDrop },
+      slots: { card: ({ item }: { item: Card }) => h("span", item.title), "quick-add": () => h("input") },
+      plugins: app.plugins,
+    });
+    await flushPromises();
+    const vm = inner.vm as unknown as { $: { setupState: { onStart: (e: { item: HTMLElement; from: HTMLElement }) => void } } };
+    const add = () => document.body.querySelector<HTMLElement>("[data-column='todo'] [data-kanban-add]")!;
+    expect(add().style.display).toBe("");
+    vm.$.setupState.onStart({ item: cardEl(1), from: cardEl(1).closest<HTMLElement>("[data-column]")! });
+    await flushPromises();
+    expect(add().style.display).toBe("none");
+  });
+
   it("refuses drags into columns the card may not enter", async () => {
     const wrapper = await board();
     const vm = wrapper.vm as unknown as { $: { setupState: { groupFor: (id: string) => { put: (a: unknown, b: unknown, el: HTMLElement) => boolean }; onStart: (e: { item: HTMLElement; from: HTMLElement }) => void } } };

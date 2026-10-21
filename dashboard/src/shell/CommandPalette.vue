@@ -72,6 +72,8 @@ import { useCompanyStore } from "@/stores/company";
 import { usePaletteStore } from "@/stores/palette";
 import { useUiStore } from "@/stores/ui";
 
+import { searchTypeKey } from "./searchTypes";
+
 const props = defineProps<{ groups: NavGroup[]; aiAvailable: boolean }>();
 const emit = defineEmits<{ openInbox: []; signOut: [] }>();
 
@@ -312,13 +314,9 @@ const resultItems = computed<Item[]>(() => {
 const isPersonHit = (type: string) => type === "people" || type.endsWith(".people") || type === "members";
 
 const typeLabel = (type: string) => {
-  const [prefix] = type.split(".");
-  const candidates = [type, type.split(".").pop() ?? type, prefix ?? type];
-  for (const candidate of candidates) {
-    const key = `shell.searchType.${candidate}`;
-    if (te(key)) return t(key);
-  }
-  const module = modules.find((m) => m.id === prefix);
+  const key = searchTypeKey(type, (candidate) => te(candidate));
+  if (key) return t(key);
+  const module = modules.find((m) => m.id === type.split(".")[0]);
   return module ? t(module.title) : t("shell.searchType.other");
 };
 
