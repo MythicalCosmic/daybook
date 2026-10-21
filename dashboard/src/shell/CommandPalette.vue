@@ -303,8 +303,11 @@ const fuse = computed(
       threshold: 0.3,
       ignoreLocation: true,
       minMatchCharLength: 1,
+      includeScore: true,
     }),
 );
+/** A fuzzy-only match (no word starts with the query) must be this close: "finanse" finds Finance, "Barakat" doesn't find "xarajat". */
+const LOOSE_SCORE = 0.2;
 
 const search = useQuery({
   queryKey: computed(() => keys.search(companyId.value ?? 0, debounced.value.trim())),
@@ -354,15 +357,33 @@ const typeLabel = (type: string) => {
  * Fuse scores "fin" in "Briefings" like "fin" in "Finance"; people expect the word that starts with
  * what they typed first. Stable: Fuse's order is kept inside each bucket.
  */
-function rankByPrefix(items: Item[], q: string): Item[] {
+/** 0: a title or keyword starts with the query; 1: one of their words does; 2: it only matched fuzzily. */
+function prefixBucket(texts: readonly string[], q: string): 0 | 1 | 2 {
   const needle = q.toLocaleLowerCase();
-  const bucket = (item: Item) => {
-    const words = [item.title, ...item.keywords].map((w) => w.toLocaleLowerCase());
-    if (words.some((w) => w.startsWith(needle))) return 0;
-    if (words.some((w) => w.split(/[\s·:,()/-]+/).some((part) => part.startsWith(needle)))) return 1;
-    return 2;
-  };
-  return items.map((item, index) => ({ item, index, rank: bucket(item) })).sort((a, b) => a.rank - b.rank || a.index - b.index).map((x) => x.item);
+  const words = texts.map((w) => w.toLocaleLowerCase());
+  if (words.some((w) => w.startsWith(needle))) return 0;
+  if (words.some((w) => w.split(/[\s·:,()/-]+/).some((part) => part.startsWith(needle)))) return 1;
+  return 2;
+}
+
+function rankByPrefix(items: Item[], q: string): Item[] {
+  return items
+    .map((item, index) => ({ item, index, rank: prefixBucket([item.title, ...item.keywords], q) }))
+    .sort((a, b) => a.rank - b.rank || a.index - b.index)
+    .map((x) => x.item);
+}
+
+/**
+ * Result groups, the best match first: the group whose hit is named by the query ("Barakat" →
+ * the counterparty Barakat Kafe) before groups that only mention it (its payments). Otherwise the
+ * server's order stays.
+ */
+function rankGroups<G extends { items: Item[] }>(groups: G[], q: string): G[] {
+  const best = (group: G) => Math.min(...group.items.map((item) => prefixBucket([item.title], q)));
+  return groups
+    .map((group, index) => ({ group, index, rank: best(group) }))
+    .sort((a, b) => a.rank - b.rank || a.index - b.index)
+    .map((x) => x.group);
 }
 
 
@@ -382,7 +403,11 @@ const sections = computed<SectionView[]>(() => {
     if (companyItems.value.length) out.push({ id: "companies", label: t("shell.palette.companies"), items: companyItems.value.slice(0, 4) });
     return out.filter((s) => s.items.length);
   }
-  const matched = rankByPrefix(fuse.value.search(q).map((r) => r.item), q);
+  const found = fuse.value.search(q).filter((r) => (r.score ?? 0) <= LOOSE_SCORE || prefixBucket([r.item.title, ...r.item.keywords], q) < 2);
+  const matched = rankByPrefix(
+    found.map((r) => r.item),
+    q,
+  );
   const jump = matched.filter((i) => i.section === "jump").slice(0, 6);
   const actions = matched.filter((i) => i.section === "actions").slice(0, 5);
   const companies = matched.filter((i) => i.section === "companies").slice(0, 4);
@@ -393,7 +418,7 @@ const sections = computed<SectionView[]>(() => {
     list.push(item);
     byType.set(item.hit!.type, list);
   }
-  for (const [type, items] of byType) out.push({ id: `results:${type}`, label: typeLabel(type), items });
+  out.push(...rankGroups([...byType].map(([type, items]) => ({ id: `results:${type}`, label: typeLabel(type), items })), q));
   if (actions.length) out.push({ id: "actions", label: t("shell.palette.actions"), items: actions });
   if (companies.length) out.push({ id: "companies", label: t("shell.palette.companies"), items: companies });
   if (props.aiAvailable) {

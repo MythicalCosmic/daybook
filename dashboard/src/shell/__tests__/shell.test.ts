@@ -45,6 +45,32 @@ describe("palette and switcher", () => {
     wrapper.unmount();
   });
 
+  it("leads with the group the query names, and leaves out loose fuzzy matches", async () => {
+    // The server lists payments that mention Barakat Kafe before the counterparty itself.
+    const results = [
+      { type: "finance.transaction", id: 1, title: "Debt payment", subtitle: "19.10.2026 · 1 500 000 UZS · Barakat Kafe", url: "finance/transactions?txn=1" },
+      { type: "finance.transaction", id: 2, title: "Ulgurji, nasiyaga", subtitle: "Barakat Kafe", url: "finance/transactions?txn=2" },
+      { type: "finance.counterparty", id: 3, title: "Barakat Kafe", subtitle: "Customer", url: "finance/counterparties?cp=3" },
+    ];
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => json(String(url).includes("/search/") ? { results } : {})));
+    Element.prototype.scrollIntoView ??= () => undefined;
+    const app = await testApp("/c/1");
+    const { wrapper } = mountWithProviders(CommandPalette, { plugins: app.plugins, props: { groups: [], aiAvailable: false } });
+    usePaletteStore().show();
+    await flushPromises();
+    const input = document.querySelector<HTMLInputElement>("[data-palette-input]")!;
+    input.value = "Barakat";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    await flushPromises();
+    const text = document.querySelector("[role='dialog']")!.textContent ?? "";
+    expect(text.indexOf("Counterparties")).toBeGreaterThan(-1);
+    expect(text.indexOf("Counterparties")).toBeLessThan(text.indexOf("Transactions"));
+    // "Barakat" is two letters off the Uzbek "xarajat" of Record an expense: not a match.
+    expect(text).not.toContain("Record an expense");
+    wrapper.unmount();
+  });
+
   it("the company switcher leaves this company's count to the Inbox and dots the others' waiting work", async () => {
     const app = await testApp("/c/1");
     useSessionStore().me = me([company({ pending: 23 }), manager([], { pending: 5 })]);

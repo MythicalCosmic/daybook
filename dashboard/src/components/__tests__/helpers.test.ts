@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 
 import { itemDays, itemsByDay, layoutTimed, namesItem, withoutEcho, type CalendarItem } from "@/components/calendarItems";
+import { iconForKind } from "@/components/kindIcons";
 import { matchOption, normalize } from "@/components/options";
 import { dropMove, flattenTree, keyboardMove, moveNode, zoneAt, type TreeNode } from "@/components/tree";
 import { arrange, moveWidget, toggleWidget } from "@/components/widgetLayout";
@@ -173,5 +174,14 @@ describe("small parsers", () => {
     expect(easeOutCubic(0.5)).toBeGreaterThan(0.5);
     expect(paramsDiffer({ status: ["late", "open"], q: "" }, { status: ["open", "late"] })).toBe(false);
     expect(paramsDiffer({ status: ["open"] }, { status: ["open"], branch: "1" })).toBe(true);
+  });
+});
+
+describe("kind icons", () => {
+  it("tells apart the queue kinds of one app that sit side by side in the Inbox", () => {
+    const kinds = ["sales.verify", "sales.handover", "attendance.corrections", "attendance.overtime", "attendance.swaps", "timeoff.request", "tasks.review", "members.join"];
+    expect(new Set(kinds.map((kind) => iconForKind(kind))).size).toBe(kinds.length);
+    // Unknown kinds still fall back to their app's icon.
+    expect(iconForKind("sales.something_new")).toBe(iconForKind("sales"));
   });
 });
