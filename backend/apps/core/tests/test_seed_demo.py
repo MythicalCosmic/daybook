@@ -115,12 +115,13 @@ def test_the_shop_has_two_branches_and_every_module(debug):
         AccessRole.objects.filter(company=shop).values_list("name", flat=True)
     )
     assert owner.role.name == "Egasi" and owner.role.is_owner
-    # Madina works the sales floor like Alisher, so his coming shifts have someone to swap with.
-    worker = approved.get(user__telegram_id=seed_demo.WORKER)
-    madina = approved.get(user__telegram_id=seed_demo.COLLEAGUE)
-    assert worker.position == madina.position and worker.position.name == "Sotuvchi"
-    coming = WorkShift.objects.working().filter(membership=worker, date__gt=timezone.localdate())
-    assert attendance.takeable(madina, coming.select_related("membership"))
+    # Jasur and Nigora are Yunusobod's couriers, so their shifts have someone to swap with.
+    jasur = approved.get(user__telegram_id=seed_demo.STOCKER)
+    nigora = approved.get(user__telegram_id=seed_demo.COURIER)
+    assert jasur.position == nigora.position and jasur.position.name == "Kuryer"
+    for asker, colleague in ((jasur, nigora), (nigora, jasur)):
+        coming = WorkShift.objects.working().filter(membership=asker, date__gt=timezone.localdate())
+        assert attendance.takeable(colleague, coming.select_related("membership"))
 
 
 def test_the_cafe_is_a_second_smaller_company_with_the_same_owner(debug):

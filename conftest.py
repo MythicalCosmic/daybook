@@ -98,8 +98,8 @@ DEMO_PEOPLE = {
     "owner": ("Dilnoza", "Karimova", "Owner", "Office"),
     "manager": ("Bekzod", "Mirzayev", "Manager", "Shift lead"),
     "worker": ("Alisher", "Valiyev", "Employee", "Sales floor"),
-    "madina": ("Madina", "Saidova", "Employee", "Sales floor"),
-    "jasur": ("Jasur", "Tursunov", "Employee", "Stock & warehouse"),
+    "madina": ("Madina", "Saidova", "Employee", "Cashier"),
+    "jasur": ("Jasur", "Tursunov", "Employee", "Delivery"),
     "nigora": ("Nigora", "Azimova", "Employee", "Delivery"),
 }
 

@@ -393,24 +393,24 @@ class Command(BaseCommand):
             branches=(chilonzor,),
             **registered,
         )
-        # On the sales floor like Alisher (the Cashier role runs her till), so their shifts
-        # have someone to swap with.
         madina = person(
             COLLEAGUE,
             "Madina",
             "Saidova",
             role="Cashier",
-            position="Sales floor",
+            position="Cashier",
             phone="+998901110004",
             branches=(chilonzor,),
             **registered,
         )
+        # Yunusobod's two couriers (Jasur also takes in the morning delivery), so their shifts
+        # have someone to swap with.
         jasur = person(
             STOCKER,
             "Jasur",
             "Tursunov",
             role="Employee",
-            position="Stock & warehouse",
+            position="Delivery",
             phone="+998901110005",
             branches=(yunusobod,),
             **registered,
