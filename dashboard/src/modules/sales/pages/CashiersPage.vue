@@ -180,7 +180,7 @@ function open(row: CashierScore): void {
           <PersonCell :person="row.member" size="sm" :subtitle="t('sales.cashiers.shiftsN', { n: row.shifts }, row.shifts)" class="min-w-0 flex-1" />
           <div class="text-right">
             <MoneyText :value="row.net" compact class="block text-sm font-semibold text-fg" />
-            <span class="text-xs text-muted">{{ row.accuracy !== null ? `${row.accuracy}%` : "—" }}</span>
+            <span class="text-xs text-muted">{{ row.accuracy !== null ? fmt.percent(Number(row.accuracy), 0) : "—" }}</span>
           </div>
         </div>
       </template>

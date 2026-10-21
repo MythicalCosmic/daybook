@@ -937,11 +937,9 @@ class TransactionViewSet(FinanceMixin, OwnerViewSet):
             counted = counted.exclude(kind=Transaction.Kind.TRANSFER)
         if not filters.choices(request.query_params, "status", Transaction.Status.values):
             counted = counted.filter(status=Transaction.Status.POSTED)
-        sums = (
-            counted.aggregate(
-                money_in=Sum("base_amount", filter=Q(base_amount__gt=0)),
-                money_out=Sum("base_amount", filter=Q(base_amount__lt=0)),
-            )
+        sums = counted.aggregate(
+            money_in=Sum("base_amount", filter=Q(base_amount__gt=0)),
+            money_out=Sum("base_amount", filter=Q(base_amount__lt=0)),
         )
         money_in = quantize(sums["money_in"] or 0)
         money_out = quantize(-(sums["money_out"] or 0))
@@ -1884,7 +1882,11 @@ class CategoryTrendView(FinanceMixin, OwnerAPIView):
             OpenApiParameter("branch", int, many=True),
         ],
         responses=inline_serializer(
-            "FinanceCategoryTrend", {"series": serializers.ListField(child=serializers.DictField())}
+            "FinanceCategoryTrend",
+            {
+                "series": serializers.ListField(child=serializers.DictField()),
+                "previous_same_days": serializers.DictField(),
+            },
         ),
     )
     def get(self, request, company_id):

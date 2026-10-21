@@ -120,7 +120,7 @@ const link = (branch: BranchTodaySales) => ({ path: `/c/${company.currentId}/sal
             <ProgressBar v-if="limitUse(branch) !== null" class="mt-2" size="xs" :value="Math.min(limitUse(branch)!, 100)" :tone="limitUse(branch)! >= 100 ? 'danger' : limitUse(branch)! >= 80 ? 'warning' : 'primary'" />
           </div>
           <div v-if="branch.target" class="min-w-0" role="group" :aria-label="t('sales.today.pace')">
-            <p class="truncate text-[11px] text-muted">{{ t("sales.today.month", { percent: branch.target.percent }) }}</p>
+            <p class="truncate text-[11px] text-muted">{{ t("sales.today.month", { percent: fmt.percent(Number(branch.target.percent), 1) }) }}</p>
             <p class="truncate text-sm font-semibold text-fg"><MoneyText :value="branch.target.actual" compact /> <span class="font-normal text-subtle">/ <MoneyText :value="branch.target.amount" compact /></span></p>
             <ProgressBar class="mt-2" size="xs" :value="Number(branch.target.percent)" :target="(branch.target.elapsed / branch.target.days) * 100" :tone="branch.target.ahead ? 'success' : 'warning'" />
           </div>

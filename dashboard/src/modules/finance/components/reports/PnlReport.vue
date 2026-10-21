@@ -90,7 +90,7 @@ function toggleAll(): void {
     </div>
     <ErrorState v-if="query.isError.value" :error="query.error.value" :retry="() => query.refetch()" />
     <template v-else>
-      <KpiStrip :items="kpis" :loading="query.isPending.value" :columns="4" />
+      <KpiStrip :items="kpis" :loading="query.isPending.value" :columns="4" phone="grid" />
       <ChartCard v-if="(data?.periods.length ?? 0) > 1 && !empty" :title="t('finance.reports.pnlChart')" :loading="query.isPending.value" height="220px">
         <BarChart :categories="labels" :series="series" value-format="money" height="220px" legend />
       </ChartCard>

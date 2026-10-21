@@ -189,6 +189,107 @@ describe("TodayBranches", () => {
     // The open tills count stands in for the target when there is none.
     expect(text).toContain("1 / 2");
   });
+
+  it("shows no sales yet (not zero) while tills are open in shift-totals mode, and the month in the language's percent", async () => {
+    stub({
+      "GET sales/options/": () => json(options()),
+      "GET sales/today/": () =>
+        json({
+          branches: [
+            {
+              id: 1,
+              name: "Chilonzor",
+              code: "CHL",
+              status: "open",
+              opens_at: "09:00",
+              closes_at: "21:00",
+              opened_at: "2026-10-21T08:40:00+05:00",
+              opened_by: person(16, "Madina Saidova"),
+              open_tills: [{ register: { id: 3, name: "Kassa 1" }, shift: { id: 85, code: "CHL-85", since: "2026-10-21T03:40:00Z" }, cashier: person(16, "Madina Saidova"), amount: "110000.00" }],
+              tills: 2,
+              net: "0.00",
+              receipts: 0,
+              cash_in_branch: "1110000.00",
+              cash_limit: "20000000.00",
+              target: { amount: "450000000.00", actual: "342400000.00", pace: "305000000.00", projected: "505000000.00", percent: "76.1", days: 31, elapsed: 21, per_day_needed: "10800000.00", ahead: true },
+              alerts: [],
+            },
+          ],
+        }),
+    });
+    const app = await testApp("/c/1/sales");
+    await ensureModuleMessages(salesModule);
+    mountWithProviders(TodayBranches, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    const text = document.body.textContent ?? "";
+    expect(document.querySelector('[data-testid="today-awaiting"]')?.textContent).toBe("—");
+    expect(text).toContain("sales added at close");
+    expect(text).not.toContain("0 receipts");
+    expect(text).toContain("This month · 76.1%");
+  });
+});
+
+function options(mode: "shift_totals" | "receipts" = "shift_totals") {
+  return {
+    currency: "UZS",
+    settings: { mode, blind_cash_count: true, cash_tolerance: "5000.00", business_day_ends_at: "04:00" },
+    today: "2026-10-21",
+    branches: [{ id: 1, name: "Chilonzor", code: "CHL" }],
+    registers: [],
+    methods: [],
+    cashiers: [],
+    receivers: [],
+    categories: [],
+    accounts: [],
+  };
+}
+
+describe("ShiftsPage", () => {
+  const row = (extra: Record<string, unknown>) => ({
+    id: 85,
+    code: "CHL-85",
+    number: 85,
+    branch: { id: 1, name: "Chilonzor", code: "CHL" },
+    register: { id: 3, name: "Kassa 1" },
+    cashier: person(16, "Madina Saidova"),
+    business_day: "2026-10-21",
+    status: "open",
+    opened_at: "2026-10-21T03:40:00Z",
+    closed_at: null,
+    opening_float: "110000.00",
+    net: "0.00",
+    receipts: 0,
+    expected_cash: null,
+    counted_cash: null,
+    difference: null,
+    forced: false,
+    ai_mismatch: false,
+    verified_by: null,
+    verified_at: null,
+    has_photos: false,
+    ...extra,
+  });
+
+  it("marks an open till's sales as still to come in shift-totals mode, and shows a closed one's", async () => {
+    stub({
+      "GET sales/options/": () => json(options()),
+      "GET sales/settings/": () => json({ mode: "shift_totals", cash_tolerance: "5000.00" }),
+      "GET sales/shifts/": () =>
+        json({ count: 2, next: null, previous: null, results: [row({}), row({ id: 84, code: "CHL-84", status: "closed", net: "14414000.00", receipts: 165, counted_cash: "230000.00", difference: "0.00", closed_at: "2026-10-20T16:11:00Z" })] }),
+    });
+    const ShiftsPage = (await import("../pages/ShiftsPage.vue")).default;
+    const app = await testApp("/c/1/sales/shifts?view=all");
+    await ensureModuleMessages(salesModule);
+    mountWithProviders(ShiftsPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    await flushPromises();
+    const awaiting = document.querySelectorAll('[data-testid="net-awaiting"]');
+    expect(awaiting).toHaveLength(1);
+    expect(awaiting[0]!.getAttribute("title")).toBe("sales added at close");
+    expect(document.body.textContent).toContain("14,414,000");
+  });
 });
 
 describe("ShiftDrawer on an open till", () => {
@@ -217,7 +318,7 @@ describe("ShiftDrawer on an open till", () => {
     await flushPromises();
     const text = document.body.textContent ?? "";
     expect(text).toContain("Cash out so far");
-    expect(text).toContain("sales count at close");
+    expect(text).toContain("sales added at close");
     expect(text).not.toContain("Expected cash");
   });
 });

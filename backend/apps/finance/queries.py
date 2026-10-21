@@ -1037,12 +1037,33 @@ def category_trend(company, category: Category, months: int, *, branch_ids, toda
     full = [point["amount"] for point in series[:-1] if point["date"] >= since] or [
         series[-1]["amount"]
     ]
+    # This month is still running: compare it with the same days of last month, as the overview
+    # does, not with the whole of last month.
+    month_start = date(today.year, today.month, 1)
+    last_start = _add_months(month_start, -1)
+    last_end = min(
+        last_start + timedelta(days=(today - month_start).days), month_start - timedelta(days=1)
+    )
+    same_days = (
+        posted_rows(company, branch_ids=branch_ids)
+        .filter(
+            Q(category=category) | Q(category__parent=category),
+            kind__in=PNL_KINDS,
+            occurred_on__range=(last_start, last_end),
+        )
+        .aggregate(total=Sum("base_amount"))["total"]
+    )
     return {
         "category": {"id": category.pk, "name": category.name, "kind": category.kind},
         "currency": company.base_currency,
         "series": series,
         "average": quantize(sum(full, ZERO) / len(full)),
         "total": quantize(sum((point["amount"] for point in series), ZERO)),
+        "previous_same_days": {
+            "from": last_start.isoformat(),
+            "to": last_end.isoformat(),
+            "amount": quantize(sign * (same_days or ZERO)),
+        },
     }
 
 

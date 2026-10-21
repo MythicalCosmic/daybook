@@ -380,7 +380,9 @@ class TestTransactions:
             == "-900000.00"
         )
 
-    def test_the_sums_follow_the_status_and_kind_filters(self, client, fin, kassa, bank, boss, today):
+    def test_the_sums_follow_the_status_and_kind_filters(
+        self, client, fin, kassa, bank, boss, today
+    ):
         income(fin, boss, kassa, "5000000", today)
         expense(fin, boss, kassa, "450000", today, status="pending")
         services.transfer(

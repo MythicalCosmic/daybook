@@ -4,12 +4,17 @@ import "@/core/modules";
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createPinia, setActivePinia } from "pinia";
 import { defineComponent, h } from "vue";
+import { createMemoryHistory, createRouter } from "vue-router";
 
 import { toasts } from "@/components/useToast";
-import { mergeModuleMessages } from "@/i18n";
+import { i18n, mergeModuleMessages, setLanguage } from "@/i18n";
 import { customValue, rangeValue } from "@/lib/dateRange";
-import { json } from "@/test/fixtures";
+import { pageTitleFor } from "@/lib/usePageTitle";
+import { useCompanyStore } from "@/stores/company";
+import { useSessionStore } from "@/stores/session";
+import { json, me } from "@/test/fixtures";
 import { mountWithProviders, testApp } from "@/test/plugins";
 
 import { financeApi, financeKeys, periodParams, useCategorize } from "../api";
@@ -18,7 +23,7 @@ import TransactionDrawer from "../components/TransactionDrawer.vue";
 import PnlTable from "../components/reports/PnlTable.vue";
 import en from "../i18n/en.json";
 import module from "../index";
-import { dayStyle, dropEmptyCompare, pickerOrder, trimLeadingEmpty, trimLeadingPeriods } from "../lib";
+import { baseTotal, colorFor, dayStyle, distinctColors, dropEmptyCompare, pickerOrder, topAccounts, trimLeadingEmpty, trimLeadingPeriods } from "../lib";
 import type { Options, Pnl, PnlNode, Transaction, TransactionPage } from "../types";
 
 interface Call {
@@ -228,6 +233,41 @@ describe("lib", () => {
     expect(dayStyle("2026-09-09", now)).toBe("short");
     expect(dayStyle("2027-08-23", now)).toBe("medium");
   });
+
+  it("turns a stored swatch into its theme token, so it follows dark mode", () => {
+    expect(colorFor(5, "#C67139")).toBe("var(--c-chart-1)");
+    expect(colorFor(5, "#3f8a83")).toBe("var(--c-chart-6)");
+    expect(colorFor(5, "#123456")).toBe("#123456");
+    expect(colorFor(9, "")).toBe("var(--c-chart-2)");
+  });
+
+  it("gives the slices of one chart distinct colours, the biggest keeping their own", () => {
+    // Ids 1 and 9 share chart-2, id 7 lands on the gray of "Other", 3 has its own swatch.
+    const rows = [{ id: 1 }, { id: 9 }, { id: 3, color: "#d1a040" }, { id: 7 }];
+    expect(distinctColors(rows)).toEqual(["var(--c-chart-2)", "var(--c-chart-1)", "var(--c-chart-4)", "var(--c-chart-3)"]);
+    // A swatch and the token it equals count as the same colour.
+    expect(distinctColors([{ id: 0 }, { id: 2, color: "#c67139" }])).toEqual(["var(--c-chart-1)", "var(--c-chart-3)"]);
+  });
+
+  it("lists where the money is: biggest in the base currency first, overdrawn ones by size, empty ones last", () => {
+    const accounts = [
+      { id: 1, balance: "0.00", base: "0.00" },
+      { id: 2, balance: "923000500.00", base: "923000500.00" },
+      { id: 3, balance: "8350.00", base: "101604052.50" },
+      { id: 4, balance: "-2000000.00", base: "-2000000.00" },
+      { id: 5, balance: "1360000.00", base: null },
+    ];
+    expect(topAccounts(accounts, 4).map((a) => a.id)).toEqual([2, 3, 4, 5]);
+  });
+
+  it("adds a group of accounts up in the base currency, or not at all without a value", () => {
+    const rows = [
+      { currency: "UZS", balance: "1360000.00", base: "1360000.00" },
+      { currency: "USD", balance: "8350.00", base: "101604052.50" },
+    ];
+    expect(baseTotal(rows, "UZS")).toBe("102964052.50");
+    expect(baseTotal([...rows, { currency: "USD", balance: "10.00", base: null }], "UZS")).toBeNull();
+  });
 });
 
 // ─── Components ──────────────────────────────────────────────────────────────
@@ -403,5 +443,51 @@ describe("useCategorize", () => {
     await pending;
     await flushPromises();
     expect(client.getQueryData<TransactionPage>(key)?.results[0]?.category?.id).toBe(4);
+  });
+});
+
+describe("CounterpartyDetailPage", () => {
+  it("names the breadcrumb after the counterparty and shows its kind in the list's colour", async () => {
+    const party = {
+      id: 7,
+      name: "Barakat Kafe",
+      kind: "customer",
+      kind_label: "Customer",
+      phone: "+998977001234",
+      tin: "",
+      contact_person: "Odil aka",
+      telegram_username: "",
+      address: "",
+      bank_details: "",
+      notes: "",
+      default_category: null,
+      credit_limit: null,
+      credit_blocked: false,
+      birthday: null,
+      tags: [],
+      is_active: true,
+      owes_us: "11200000.00",
+      we_owe: "0.00",
+      overdue: "6300000.00",
+      last_activity: "2026-10-19",
+      created_at: "2026-08-20T10:00:00Z",
+    };
+    stub({ "GET counterparties/7/": () => json({ counterparty: party, totals: { income: "11950000.00", expense: "0.00", money_in: "4700000.00", money_out: "0.00" }, debts: [], transactions: [] }) });
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    useSessionStore().me = me();
+    useCompanyStore().setCurrent(1);
+    setLanguage("en");
+    const router = createRouter({ history: createMemoryHistory(), routes: [{ path: "/c/:companyId/finance/counterparties/:partyId", component: { render: () => null } }] });
+    await router.push("/c/1/finance/counterparties/7");
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const CounterpartyDetailPage = (await import("../pages/CounterpartyDetailPage.vue")).default;
+    const { wrapper } = mountWithProviders(CounterpartyDetailPage, { plugins: [pinia, router, i18n, [VueQueryPlugin, { queryClient: client }]] });
+    await flushPromises();
+    await flushPromises();
+    expect(pageTitleFor(router.currentRoute.value)).toBe("Barakat Kafe");
+    const pill = wrapper.findAll("span").find((span) => span.text() === "Customer");
+    expect(pill?.classes()).toContain("text-success");
+    wrapper.unmount();
   });
 });

@@ -28,7 +28,7 @@ import { useCompanyStore } from "@/stores/company";
 
 import { useCounterparties } from "../api";
 import CounterpartyFormDialog from "../components/CounterpartyFormDialog.vue";
-import { isZeroMoney } from "../lib";
+import { isZeroMoney, PARTY_TONES } from "../lib";
 import type { Counterparty } from "../types";
 
 const { t } = useI18n();
@@ -56,11 +56,12 @@ const filtered = computed(() => kind.value !== "all" || owes.value !== "any" || 
 const columns = computed<TableColumn<Counterparty>[]>(() => [
   { id: "name", header: t("finance.parties.name"), minWidth: 230, sticky: true, hideable: false },
   { id: "kind", header: t("finance.parties.kind"), width: 120, value: (row) => row.kind_label },
-  { id: "phone", header: t("finance.parties.phone"), width: 150, format: (value) => formatPhone(String(value ?? "")) || "—" },
+  // A full "+998 90 123 45 67" fits; the widths still leave the name its 230 px on a 1440 screen.
+  { id: "phone", header: t("finance.parties.phone"), width: 168, format: (value) => formatPhone(String(value ?? "")) || "—" },
   { id: "owes_us", header: t("finance.parties.owesUs"), numeric: true, width: 150 },
   { id: "we_owe", header: t("finance.parties.weOwe"), numeric: true, width: 140 },
-  { id: "last_activity", header: t("finance.parties.lastActivity"), width: 150, format: (value) => (value ? fmt.day(String(value), "short") : "—") },
-  { id: "tags", header: t("finance.parties.tags"), width: 150, value: (row) => row.tags.join(", ") },
+  { id: "last_activity", header: t("finance.parties.lastActivity"), width: 136, format: (value) => (value ? fmt.day(String(value), "short") : "—") },
+  { id: "tags", header: t("finance.parties.tags"), width: 136, value: (row) => row.tags.join(", ") },
 ]);
 
 /** "Rustam Qodirov (ijara)" → initials of the name, not of the note in brackets. */
@@ -71,7 +72,6 @@ function open(row: Counterparty): void {
 }
 
 const formOpen = ref(false);
-const kindTone = { customer: "success", supplier: "info", both: "primary", state: "warning", other: "neutral" } as const;
 </script>
 
 <template>
@@ -141,7 +141,7 @@ const kindTone = { customer: "success", supplier: "info", both: "primary", state
           </div>
         </div>
       </template>
-      <template #cell-kind="{ row }"><StatusPill :tone="kindTone[row.kind]" size="sm" :label="row.kind_label" /></template>
+      <template #cell-kind="{ row }"><StatusPill :tone="PARTY_TONES[row.kind]" size="sm" :label="row.kind_label" /></template>
       <template #cell-owes_us="{ row }">
         <span v-if="isZeroMoney(row.owes_us)" class="text-subtle">—</span>
         <MoneyCell v-else :value="row.owes_us" :colored="false" :sub="!isZeroMoney(row.overdue) && !isZeroMoney(row.owes_us) ? t('finance.parties.overdueSub', { amount: fmt.money(row.overdue, undefined, { compact: true }) }) : undefined" :strong="!isZeroMoney(row.owes_us)" />

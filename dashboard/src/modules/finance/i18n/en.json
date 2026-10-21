@@ -552,7 +552,6 @@
   "finance.reports.trendThisMonth": "This month",
   "finance.reports.trendTotal": "Total, {n} months",
   "finance.reports.valuedAt": "Dollars valued at 1 USD = {rate} UZS ({date})",
-  "finance.reports.vsLastMonth": "vs last month",
   "finance.reports.vsPrevious": "vs the previous period",
   "finance.settings.about.categories": "The income and expense categories every entry is filed under.",
   "finance.settings.about.period": "Close finished periods so nobody can change their numbers.",

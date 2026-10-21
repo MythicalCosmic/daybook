@@ -75,7 +75,7 @@ const breakdown = computed(() => (data.value?.breakdown ?? []).filter((row) => r
     </div>
     <ErrorState v-if="query.isError.value" :error="query.error.value" :retry="() => query.refetch()" />
     <template v-else>
-      <KpiStrip :items="kpis" :loading="query.isPending.value" :columns="4" />
+      <KpiStrip :items="kpis" :loading="query.isPending.value" :columns="4" phone="grid" />
       <div class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
         <ChartCard :title="t('finance.reports.cashFlowChart')" :loading="query.isPending.value" :empty="empty" :empty-text="t('finance.overview.cashFlowEmpty')" height="360px">
           <BarChart :categories="categories" :series="series" value-format="money" :x-format="xFormat" height="360px" legend />

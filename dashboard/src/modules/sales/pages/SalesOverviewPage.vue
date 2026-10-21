@@ -107,7 +107,7 @@ const mix = computed(() => {
   }));
   if (methodRows.value.length > MIX_TOP) {
     series.push({
-      name: t("sales.chart.other"),
+      name: t("common.chart.other"), // the donut's word for the rest
       data: rows.map((row) => sum((row.methods ?? []).filter((m) => !topKeys.has(m.key)).map((m) => m.net))),
       stack: "mix",
       color: chartTheme.value.compare,
@@ -156,7 +156,7 @@ const base = computed(() => `/c/${company.currentId}/sales`);
     </div>
 
     <template v-else>
-      <KpiStrip :items="kpis" :loading="byDay.isPending.value" />
+      <KpiStrip :items="kpis" :loading="byDay.isPending.value" phone="grid" />
 
       <div class="grid gap-4 xl:grid-cols-3">
         <ChartCard
@@ -190,7 +190,7 @@ const base = computed(() => `/c/${company.currentId}/sales`);
           <BarChart :categories="branchChart.categories" :series="branchChart.series" value-format="money" />
         </ChartCard>
         <ChartCard :title="t('sales.chart.mix')" :subtitle="t('sales.chart.mixSub')" :loading="byDay.isPending.value || byMethod.isPending.value" :empty="!!summary && !branchRows.length">
-          <BarChart :categories="mix.categories" :series="mix.series" horizontal normalize stacked :height="`${Math.max(160, mix.categories.length * 64 + 70)}px`" />
+          <BarChart :categories="mix.categories" :series="mix.series" horizontal normalize stacked :y-max="100" :height="`${Math.max(160, mix.categories.length * 64 + 70)}px`" />
         </ChartCard>
       </div>
 
@@ -217,7 +217,7 @@ const base = computed(() => `/c/${company.currentId}/sales`);
               <UserAvatar :name="row.member.name" :size="30" />
               <span class="min-w-0 flex-1">
                 <span class="block truncate text-sm font-semibold text-fg">{{ row.member.name }}</span>
-                <span class="block truncate text-xs text-muted">{{ t("sales.cashiers.line", { shifts: row.shifts, accuracy: row.accuracy ?? "—" }, row.shifts) }}</span>
+                <span class="block truncate text-xs text-muted">{{ t("sales.cashiers.line", { shifts: row.shifts, accuracy: row.accuracy !== null && row.accuracy !== undefined ? fmt.percent(Number(row.accuracy), 1) : "—" }, row.shifts) }}</span>
               </span>
               <MoneyText :value="row.net" compact class="text-sm font-semibold text-fg" />
             </li>

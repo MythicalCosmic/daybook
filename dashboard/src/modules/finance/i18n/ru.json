@@ -552,7 +552,6 @@
   "finance.reports.trendThisMonth": "Этот месяц",
   "finance.reports.trendTotal": "Всего за {n} мес.",
   "finance.reports.valuedAt": "Доллары пересчитаны по курсу 1 USD = {rate} сум ({date})",
-  "finance.reports.vsLastMonth": "к прошлому месяцу",
   "finance.reports.vsPrevious": "к прошлому периоду",
   "finance.settings.about.categories": "Категории доходов и расходов, по которым раскладываются все записи.",
   "finance.settings.about.period": "Закрывайте прошедшие периоды, чтобы их цифры никто не мог изменить.",

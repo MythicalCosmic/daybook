@@ -551,6 +551,8 @@ export interface CategoryTrend {
   series: Array<{ date: string; amount: Money }>;
   average: Money;
   total: Money;
+  /** The same days of last month (1 … today's day), what this month so far is compared with. */
+  previous_same_days?: { from: string; to: string; amount: Money };
 }
 
 // Rates and settings -----------------------------------------------------------------------------

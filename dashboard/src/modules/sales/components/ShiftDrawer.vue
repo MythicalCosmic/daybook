@@ -192,7 +192,8 @@ const timeline = computed<TimelineEvent[]>(() =>
         </div>
         <div class="bg-surface p-3">
           <dt class="text-xs text-muted">{{ shift.recount_cash ? t("sales.shift.recounted") : t("sales.shift.counted") }}</dt>
-          <dd class="mt-1 text-md font-semibold text-fg"><MoneyText :value="shift.counted_cash" compact /></dd>
+          <!-- Not counted yet: a quiet dash, like the other tiles' placeholders. -->
+          <dd :class="['mt-1 text-md font-semibold', shift.counted_cash === null ? 'text-subtle' : 'text-fg']"><MoneyText :value="shift.counted_cash" compact /></dd>
           <dd v-if="shift.recount_cash" class="mt-0.5 text-[11px] text-subtle">{{ t("sales.shift.cashierCounted", { amount: fmt.money(shift.cashier_counted, undefined, { compact: true }) }) }}</dd>
           <dd v-else class="mt-0.5 text-[11px] text-subtle">{{ t("sales.shift.blind") }}</dd>
         </div>
@@ -200,7 +201,7 @@ const timeline = computed<TimelineEvent[]>(() =>
           <dt class="text-xs text-muted">{{ t("sales.shift.difference") }}</dt>
           <dd :class="['mt-1 text-md font-semibold', differenceClass(level)]">
             <MoneyText v-if="shift.difference !== null" :value="shift.difference" sign="always" compact />
-            <span v-else>—</span>
+            <span v-else class="text-subtle">—</span>
           </dd>
           <dd class="mt-0.5 text-[11px] text-subtle">
             <StatusPill v-if="level !== 'unknown'" size="sm" variant="plain" :tone="DIFFERENCE_TONES[level]" :label="t(`sales.level.${level}`, { amount: fmt.money(shift.tolerance) })" />

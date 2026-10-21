@@ -77,10 +77,11 @@ const tabs = computed(() => [
 
 const columns = computed<TableColumn<Debt>[]>(() => [
   { id: "party", header: direction.value === "receivable" ? t("finance.debts.whoOwes") : t("finance.debts.whomWeOwe"), minWidth: 200, sticky: true, hideable: false, value: (row) => row.party?.name ?? "" },
-  // Fixed widths leave the name column room on a 1440 px screen in every language (Russian runs widest).
+  // Fixed widths leave the name column room on a 1440 px screen in every language (Russian runs
+  // widest); "Due" fits "42 kun kechikkan" / "42 дня просрочки" under the date.
   { id: "kind", header: t("finance.debts.kind"), width: 132, value: (row) => t(`finance.debtKind.${row.kind}`) },
   { id: "issued_on", header: t("finance.debts.issued"), width: 82, format: (value) => fmt.day(String(value), dayStyle(String(value))) },
-  { id: "due_on", header: t("finance.debts.due"), width: 116, value: (row) => row.due_on ?? "" },
+  { id: "due_on", header: t("finance.debts.due"), width: 136, value: (row) => row.due_on ?? "" },
   { id: "amount", header: t("finance.debts.amount"), numeric: true, width: 128, value: (row) => row.amount },
   { id: "progress", header: t("finance.debts.paid"), width: 100, value: (row) => row.paid },
   { id: "outstanding", header: t("finance.debts.left"), numeric: true, width: 128, value: (row) => row.outstanding },
@@ -176,7 +177,7 @@ const exportParams = computed(() => ({ direction: direction.value, ...filters.pa
       <template #cell-progress="{ row }">
         <div class="flex w-full items-center gap-2">
           <ProgressBar :value="share(row.paid, row.amount)" :max="100" size="xs" tone="success" class="min-w-0 flex-1" />
-          <span class="w-9 shrink-0 text-right text-xs tabular-nums text-muted">{{ Math.round(share(row.paid, row.amount)) }}%</span>
+          <span class="w-9 shrink-0 text-right text-xs tabular-nums text-muted">{{ fmt.percent(Math.round(share(row.paid, row.amount))) }}</span>
         </div>
       </template>
       <template #cell-outstanding="{ row }"><MoneyCell :value="row.outstanding" :currency="row.currency" :colored="false" strong /></template>

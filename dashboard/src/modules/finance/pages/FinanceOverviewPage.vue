@@ -33,7 +33,7 @@ import { useCompanyStore } from "@/stores/company";
 
 import { useCashFlow, useOverview } from "../api";
 import { useCssColor } from "../colors";
-import { ACCOUNT_ICONS, colorFor, isNegative, isZeroMoney, pickerOrder, share, trimLeadingEmpty } from "../lib";
+import { ACCOUNT_ICONS, distinctColors, isNegative, isZeroMoney, share, topAccounts, trimLeadingEmpty } from "../lib";
 import { openQuickAdd } from "../quickAdd";
 
 const { t } = useI18n();
@@ -87,7 +87,8 @@ const kpis = computed(() => {
     },
     {
       id: "expense",
-      label: t("finance.overview.expenses"),
+      // "… this month" like the profit and income tiles beside it (and the Overview widget).
+      label: t("finance.overview.expensesMonth"),
       value: d?.month.expense ?? null,
       previous: d?.month.previous.expense ?? null,
       format: "money" as const,
@@ -133,7 +134,12 @@ const flowCsv = computed(() => ({
 
 // Every expense group of the month: the donut folds the small ones into "Other", and its middle
 // shows the month's expenses, the same figure as the Expenses tile above.
-const slices = computed(() => (data.value?.top_expenses ?? []).map((row) => ({ name: row.name, value: row.amount, color: css(row.color || colorFor(row.id)) })));
+// Categories share eight palette colours, so slices get distinct ones (the biggest keep theirs).
+const slices = computed(() => {
+  const rows = data.value?.top_expenses ?? [];
+  const colors = distinctColors(rows);
+  return rows.map((row, index) => ({ name: row.name, value: row.amount, color: css(colors[index]!) }));
+});
 const slicesTotal = computed(() => {
   const total = data.value?.month.expense ?? slices.value.reduce((sum, slice) => sum.plus(slice.value), dec(0)).toString();
   return fmt.money(total, undefined, { compact: true, currencyDisplay: "none" });
@@ -298,7 +304,7 @@ const firstRun = computed(() => !!data.value && !data.value.has_ledger);
             </header>
             <div v-if="skeleton" class="flex flex-col gap-2"><SkeletonBlock v-for="n in 5" :key="n" height="32px" /></div>
             <ul v-else-if="data" class="-mx-2 flex flex-col">
-              <li v-for="account in pickerOrder(data.cash.accounts).slice(0, 7)" :key="account.id">
+              <li v-for="account in topAccounts(data.cash.accounts, 7)" :key="account.id">
                 <RouterLink :to="`${base}/accounts/${account.id}`" class="flex items-center gap-3 rounded-[10px] px-2 py-1.5 hover:bg-highlight">
                   <component :is="ACCOUNT_ICONS[account.kind]" :size="16" class="shrink-0 text-subtle" aria-hidden="true" />
                   <span class="min-w-0 flex-1 truncate text-sm text-fg">{{ account.name }}</span>

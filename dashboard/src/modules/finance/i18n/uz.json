@@ -552,7 +552,6 @@
   "finance.reports.trendThisMonth": "Shu oy",
   "finance.reports.trendTotal": "Jami, {n} oy",
   "finance.reports.valuedAt": "Dollar 1 USD = {rate} so‘m kursida hisoblandi ({date})",
-  "finance.reports.vsLastMonth": "o‘tgan oyga nisbatan",
   "finance.reports.vsPrevious": "oldingi davrga nisbatan",
   "finance.settings.about.categories": "Har bir yozuv kiritiladigan daromad va xarajat toifalari.",
   "finance.settings.about.period": "Tugagan davrlarni yoping, shunda hech kim ularning raqamlarini o‘zgartira olmaydi.",

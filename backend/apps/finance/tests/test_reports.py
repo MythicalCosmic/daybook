@@ -162,6 +162,27 @@ def test_category_trend(books, ledger):
     assert data["average"] == D("2500000.00")
 
 
+def test_category_trend_compares_this_month_with_the_same_days_of_last_month(books, ledger):
+    """The running month is set against days 1 to N of last month (as the overview does), not
+    against a whole month it can't match yet."""
+    late = queries.category_trend(
+        books, ledger["goods"], 3, branch_ids=None, today=date(2026, 10, 21)
+    )
+    assert late["previous_same_days"] == {
+        "from": "2026-09-01",
+        "to": "2026-09-21",
+        "amount": D("2500000.00"),  # 20 September, goods and drinks under it
+    }
+    early = queries.category_trend(books, ledger["goods"], 3, branch_ids=None, today=OCT_10)
+    assert early["previous_same_days"]["to"] == "2026-09-10"
+    assert early["previous_same_days"]["amount"] == D("0.00")
+    # The 31st compares with the whole of a shorter month, never a day past its end.
+    end = queries.category_trend(
+        books, ledger["goods"], 1, branch_ids=None, today=date(2026, 10, 31)
+    )
+    assert end["previous_same_days"]["to"] == "2026-09-30"
+
+
 def test_totals_ignore_owner_money_transfers_and_openings(books, ledger):
     result = queries.totals(books, SEP_5, date(2026, 10, 31), "month", branch_ids=None)
     assert result["income"] == D("12800000.00")

@@ -200,7 +200,10 @@ onMounted(() => {
           <span v-if="awaitingTotals(row)" class="text-subtle" :title="t('sales.shift.movedOutHint')" data-testid="net-awaiting">—</span>
           <MoneyText v-else :value="row.net" class="font-semibold" />
         </template>
-        <template #cell-counted_cash="{ row }"><MoneyText :value="row.counted_cash" /></template>
+        <template #cell-counted_cash="{ row }">
+          <span v-if="row.counted_cash === null" class="text-subtle">—</span>
+          <MoneyText v-else :value="row.counted_cash" />
+        </template>
         <template #cell-difference="{ row }">
           <!-- An exact count stays quiet (a check); only real differences take colour. -->
           <span v-if="differenceLevel(row.difference, tolerance) === 'none'" class="inline-flex items-center justify-end gap-1 tabular-nums text-muted" :title="t('sales.level.none')">

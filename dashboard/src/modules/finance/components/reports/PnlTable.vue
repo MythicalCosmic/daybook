@@ -173,10 +173,10 @@ const columnCount = computed(() => props.data.periods.length + 2 + (compare.valu
           </tr>
           <tr class="margin">
             <th scope="row" class="sticky left-0 z-[1] bg-surface px-4 py-2.5 text-left text-sm text-muted">{{ t("finance.reports.margin") }}</th>
-            <td v-for="(value, index) in data.margin.amounts" :key="index" class="px-3 py-2.5 text-right text-sm tabular-nums text-muted">{{ value === null ? "—" : `${fmt.number(value, 1)}%` }}</td>
-            <td class="px-3 py-2.5 text-right text-sm font-semibold tabular-nums text-fg">{{ data.margin.total === null ? "—" : `${fmt.number(data.margin.total, 1)}%` }}</td>
+            <td v-for="(value, index) in data.margin.amounts" :key="index" class="px-3 py-2.5 text-right text-sm tabular-nums text-muted">{{ value === null ? "—" : fmt.percent(Number(value), 1) }}</td>
+            <td class="px-3 py-2.5 text-right text-sm font-semibold tabular-nums text-fg">{{ data.margin.total === null ? "—" : fmt.percent(Number(data.margin.total), 1) }}</td>
             <template v-if="compare">
-              <td class="px-3 py-2.5 text-right text-sm tabular-nums text-muted">{{ data.margin.previous === null ? "—" : `${fmt.number(data.margin.previous, 1)}%` }}</td>
+              <td class="px-3 py-2.5 text-right text-sm tabular-nums text-muted">{{ data.margin.previous === null ? "—" : fmt.percent(Number(data.margin.previous), 1) }}</td>
               <td />
             </template>
           </tr>
