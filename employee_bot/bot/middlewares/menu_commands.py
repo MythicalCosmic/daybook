@@ -9,6 +9,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, TelegramObject
 
 from apps.members.bot_menu import registered
+from apps.members.bot_messages import MENU_APP
 from bot.commands import private_commands
 from bot.filters.menu import translations
 
@@ -33,9 +34,14 @@ def is_menu_command(message: Message) -> bool:
 
 
 def is_menu_button(message: Message) -> bool:
-    """A main-menu button a module registered (apps.members.bot_menu), in any language."""
+    """A main-menu button a module registered (apps.members.bot_menu), or the app's button, in
+    any language."""
     text = message.text
-    return bool(text) and any(text in translations(button.msgid) for button in registered())
+    if not text:
+        return False
+    return text in translations(MENU_APP) or any(
+        text in translations(button.msgid) for button in registered()
+    )
 
 
 def interrupts(message: Message) -> bool:
