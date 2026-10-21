@@ -151,7 +151,17 @@ const formOpen = ref(false);
       <template #cell-kind="{ row }"><StatusPill :tone="PARTY_TONES[row.kind]" size="sm" :label="row.kind_label" /></template>
       <template #cell-owes_us="{ row }">
         <span v-if="isZeroMoney(row.owes_us)" class="text-subtle">—</span>
-        <MoneyCell v-else :value="row.owes_us" :colored="false" :sub="!isZeroMoney(row.overdue) && !isZeroMoney(row.owes_us) ? t('finance.parties.overdueSub', { amount: fmt.money(row.overdue, undefined, { compact: true }) }) : undefined" :strong="!isZeroMoney(row.owes_us)" />
+        <span v-else class="flex min-w-0 flex-col items-end">
+          <MoneyCell :value="row.owes_us" :colored="false" strong />
+          <!-- The late part stays inside its column ("200 ming kechikkan", cut with the exact
+               amount on hover), never over the phone number beside it. -->
+          <span
+            v-if="!isZeroMoney(row.overdue)"
+            class="mt-0.5 max-w-full truncate text-xs text-warning"
+            :title="t('finance.parties.overdueSub', { amount: fmt.money(row.overdue) })"
+            data-testid="party-overdue"
+          >{{ t("finance.parties.overdueSub", { amount: fmt.money(row.overdue, undefined, { compact: true, currencyDisplay: "none" }) }) }}</span>
+        </span>
       </template>
       <template #cell-we_owe="{ row }">
         <span v-if="isZeroMoney(row.we_owe)" class="text-subtle">—</span>

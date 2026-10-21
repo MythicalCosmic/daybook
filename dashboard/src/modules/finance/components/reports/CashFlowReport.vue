@@ -56,6 +56,13 @@ const series = computed(() => [
   { name: t("finance.tx.moneyOut"), data: (data.value?.series ?? []).map((p) => p.expense), color: css("var(--c-chart-1)") },
 ]);
 const empty = computed(() => !!data.value && data.value.series.every((p) => isZeroMoney(p.income) && isZeroMoney(p.expense)));
+/** "+549.6M · −537.2M" under a section: only the sides that moved. */
+function flowParts(row: { income: string; expense: string }): string[] {
+  const parts: string[] = [];
+  if (!isZeroMoney(row.income)) parts.push(fmt.money(row.income, undefined, { compact: true, sign: "always" }));
+  if (!isZeroMoney(row.expense)) parts.push(`−${fmt.money(row.expense, undefined, { compact: true })}`);
+  return parts;
+}
 /** Sections with nothing in them (no loans, no opening balances this period) are left out; operating always shows. */
 const breakdown = computed(() => (data.value?.breakdown ?? []).filter((row) => row.key === "operating" || !isZeroMoney(row.income) || !isZeroMoney(row.expense)));
 </script>
@@ -96,9 +103,8 @@ const breakdown = computed(() => (data.value?.breakdown ?? []).filter((row) => r
             <div v-for="row in breakdown" :key="row.key" class="flex items-center justify-between gap-3 border-b border-line py-2">
               <dt class="min-w-0">
                 <span class="block truncate text-fg">{{ t(`finance.reports.section.${row.key}`) }}</span>
-                <span class="block truncate text-xs text-subtle">
-                  +{{ fmt.money(row.income, undefined, { compact: true }) }} · −{{ fmt.money(row.expense, undefined, { compact: true }) }}
-                </span>
+                <!-- What came in and went out, leaving out a side with nothing ("+0 · −58.2M"). -->
+                <span v-if="flowParts(row).length" class="block truncate text-xs text-subtle">{{ flowParts(row).join(" · ") }}</span>
               </dt>
               <dd :class="['shrink-0 font-semibold tabular-nums', isNegative(row.net) ? 'text-danger' : isZeroMoney(row.net) ? 'text-subtle' : 'text-success']">
                 <MoneyText :value="row.net" sign="always" decimals="never" />

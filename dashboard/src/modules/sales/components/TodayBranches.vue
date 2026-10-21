@@ -118,15 +118,19 @@ const link = (branch: BranchTodaySales) => ({ path: `/c/${company.currentId}/sal
         <div class="grid grid-cols-2 gap-3 border-t border-line pt-3">
           <div class="min-w-0" role="group" :aria-label="t('sales.today.cash')">
             <p class="flex items-baseline justify-between gap-2 text-[11px] text-muted">
-              <span class="truncate">{{ t("sales.today.cash") }}</span>
-              <span v-if="branch.cash_limit" class="shrink-0 tabular-nums text-subtle">{{ t("sales.today.limit", { amount: fmt.money(branch.cash_limit, undefined, { compact: true }) }) }}</span>
+              <span class="truncate" :title="t('sales.today.cash')">{{ t("sales.today.cash") }}</span>
+              <span v-if="branch.cash_limit" class="shrink-0 tabular-nums text-subtle" :title="t('sales.today.limit', { amount: fmt.money(branch.cash_limit) })">{{ t("sales.today.limit", { amount: fmt.money(branch.cash_limit, undefined, { compact: true, currencyDisplay: "none" }) }) }}</span>
             </p>
             <p class="truncate text-sm font-semibold text-fg"><MoneyText :value="branch.cash_in_branch" compact /></p>
             <ProgressBar v-if="limitUse(branch) !== null" class="mt-2" size="xs" :value="Math.min(limitUse(branch)!, 100)" :tone="limitUse(branch)! >= 100 ? 'danger' : limitUse(branch)! >= 80 ? 'warning' : 'primary'" />
           </div>
           <div v-if="branch.target" class="min-w-0" role="group" :aria-label="t('sales.today.pace')">
             <p class="truncate text-[11px] text-muted">{{ t("sales.today.month", { percent: fmt.percent(Number(branch.target.percent), 1) }) }}</p>
-            <p class="truncate text-sm font-semibold text-fg"><MoneyText :value="branch.target.actual" compact /> <span class="font-normal text-subtle">/ <MoneyText :value="branch.target.amount" compact /></span></p>
+            <!-- "124.3M UZS / 190M": the currency once, so the target still fits a narrow card. -->
+            <p class="truncate text-sm font-semibold text-fg" :title="`${fmt.money(branch.target.actual)} / ${fmt.money(branch.target.amount)}`">
+              <MoneyText :value="branch.target.actual" compact />
+              <span class="font-normal text-subtle"> / {{ fmt.money(branch.target.amount, undefined, { compact: true, currencyDisplay: "none" }) }}</span>
+            </p>
             <ProgressBar class="mt-2" size="xs" :value="Number(branch.target.percent)" :target="(branch.target.elapsed / branch.target.days) * 100" :tone="branch.target.ahead ? 'success' : 'warning'" />
           </div>
           <div v-else class="min-w-0">

@@ -205,7 +205,8 @@ const timeline = computed<TimelineEvent[]>(() =>
             <span v-else class="text-subtle">—</span>
           </dd>
           <dd class="mt-0.5 text-[11px] text-subtle">
-            <StatusPill v-if="level !== 'unknown'" size="sm" variant="plain" :tone="DIFFERENCE_TONES[level]" :label="t(`sales.level.${level}`, { amount: fmt.money(shift.tolerance) })" />
+            <!-- "Within 5,000": the currency is in the figure above, and "В пределах 5 000 сум" would not fit the tile. -->
+            <StatusPill v-if="level !== 'unknown'" size="sm" variant="plain" :tone="DIFFERENCE_TONES[level]" :label="t(`sales.level.${level}`, { amount: fmt.money(shift.tolerance, undefined, { currencyDisplay: 'none' }) })" :title="t(`sales.level.${level}`, { amount: fmt.money(shift.tolerance) })" />
             <template v-else>{{ shift.status === "open" ? t("sales.shift.notClosed") : t("sales.shift.notCounted") }}</template>
           </dd>
         </div>

@@ -52,8 +52,11 @@ const foreign = computed(() => (data.value?.cash.by_currency ?? []).filter((row)
 const kpis = computed(() => {
   const d = data.value;
   const vs = t("finance.overview.vsLastMonth");
+  // Nothing booked on the same days last month (a new company's first weeks): no comparison at
+  // all, as the P&L drops an empty one, instead of three "—" badges.
+  const lastMonth = d && !(isZeroMoney(d.month.previous.income) && isZeroMoney(d.month.previous.expense)) ? d.month.previous : null;
   // A profit that crossed zero against last month gets last month's figure, not a percentage.
-  const profitBefore = comparablePrevious(d?.month.profit, d?.month.previous.profit ?? null);
+  const profitBefore = lastMonth ? comparablePrevious(d?.month.profit, lastMonth.profit) : undefined;
   return [
     {
       id: "cash",
@@ -70,7 +73,7 @@ const kpis = computed(() => {
       label: t("finance.overview.profit"),
       value: d?.month.profit ?? null,
       previous: profitBefore,
-      hint: d && profitBefore === undefined ? t("finance.overview.previousAmount", { amount: fmt.money(d.month.previous.profit, undefined, { compact: true, sign: "always" }) }) : undefined,
+      hint: lastMonth && profitBefore === undefined ? t("finance.overview.previousAmount", { amount: fmt.money(lastMonth.profit, undefined, { compact: true, sign: "always" }) }) : undefined,
       format: "money" as const,
       compact: true,
       icon: Scale,
@@ -81,7 +84,7 @@ const kpis = computed(() => {
       id: "income",
       label: t("finance.overview.income"),
       value: d?.month.income ?? null,
-      previous: d?.month.previous.income ?? null,
+      previous: lastMonth?.income,
       format: "money" as const,
       compact: true,
       icon: ChartColumn,
@@ -95,7 +98,7 @@ const kpis = computed(() => {
       // "… this month" like the profit and income tiles beside it (and the Overview widget).
       label: t("finance.overview.expensesMonth"),
       value: d?.month.expense ?? null,
-      previous: d?.month.previous.expense ?? null,
+      previous: lastMonth?.expense,
       format: "money" as const,
       compact: true,
       inverse: true,

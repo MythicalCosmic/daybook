@@ -48,18 +48,20 @@ async function submit(): Promise<void> {
 <template>
   <UiDialog v-model:open="open" :title="t('sales.verify.title', { code: shift.code })" :description="t('sales.verify.body')" size="sm">
     <div class="flex flex-col gap-4">
-      <dl class="grid grid-cols-3 gap-2 rounded-[12px] bg-surface-2/70 p-3 text-center">
-        <div>
-          <dt class="text-[11px] text-muted">{{ t("sales.shift.expected") }}</dt>
-          <dd class="mt-0.5 text-sm font-semibold text-fg"><MoneyText :value="shift.expected_cash" compact /></dd>
+      <!-- Read like a reconciliation, with exact amounts: the check is about the last thousand
+           ("1M expected, 1M counted, −1K" would hide it). -->
+      <dl class="flex flex-col rounded-[12px] bg-surface-2/70 px-3 py-1.5 text-sm" data-testid="verify-figures">
+        <div class="flex items-center justify-between gap-3 py-1">
+          <dt class="text-muted">{{ t("sales.shift.expected") }}</dt>
+          <dd class="font-semibold tabular-nums text-fg"><MoneyText :value="shift.expected_cash" /></dd>
         </div>
-        <div>
-          <dt class="text-[11px] text-muted">{{ t("sales.shift.counted") }}</dt>
-          <dd class="mt-0.5 text-sm font-semibold text-fg"><MoneyText :value="shift.cashier_counted" compact /></dd>
+        <div class="flex items-center justify-between gap-3 py-1">
+          <dt class="text-muted">{{ t("sales.shift.counted") }}</dt>
+          <dd class="font-semibold tabular-nums text-fg"><MoneyText :value="shift.cashier_counted" /></dd>
         </div>
-        <div>
-          <dt class="text-[11px] text-muted">{{ t("sales.shift.difference") }}</dt>
-          <dd class="mt-0.5 text-sm font-semibold"><MoneyText :value="preview" sign="always" colored compact /></dd>
+        <div class="flex items-center justify-between gap-3 border-t border-line py-1">
+          <dt class="text-muted">{{ t("sales.shift.difference") }}</dt>
+          <dd class="font-semibold tabular-nums"><MoneyText :value="preview" sign="always" colored /></dd>
         </div>
       </dl>
       <FormField :label="t('sales.verify.recount')" :hint="t('sales.verify.recountHint')" optional>

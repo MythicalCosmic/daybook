@@ -509,6 +509,8 @@ describe("FinanceOverviewPage", () => {
     // The accounts card starts with where the money is; the empty till comes last.
     const accounts = hrefs.filter((href) => /\/finance\/accounts\/\d+$/.test(href));
     expect(accounts).toEqual(["/c/1/finance/accounts/2", "/c/1/finance/accounts/3", "/c/1/finance/accounts/1"]);
+    // Nothing was booked on the same days last month: no "—" badges comparing with it.
+    expect(document.body.textContent).not.toContain(en["finance.overview.vsLastMonth"]);
   });
 });
 

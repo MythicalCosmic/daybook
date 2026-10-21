@@ -21,6 +21,7 @@ from django.db.models import F, OuterRef, Q, QuerySet, Subquery, Sum, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.utils.translation import gettext as _
+from django.utils.translation import pgettext
 
 from apps.companies.models import Branch
 from apps.console import contracts
@@ -1214,6 +1215,14 @@ def company_facts(company, range, member: Membership) -> dict:
     return {"net": m(net), "prev_net": m(previous)}
 
 
+def status_word(shift: CashShift) -> str:
+    """The shift's status as a word for people ("Open", "Closed", ...). An open till has its own
+    msgid: the bare "Open" is the verb on buttons, "Открыть" in Russian, not the till's state."""
+    if shift.status == Status.OPEN:
+        return pgettext("shift status", "Open")
+    return str(shift.get_status_display())
+
+
 def search(member: Membership, q: str, limit: int) -> list[SearchHit]:
     q = (q or "").strip()
     if len(q) < 2:
@@ -1244,7 +1253,7 @@ def search(member: Membership, q: str, limit: int) -> list[SearchHit]:
                 (
                     shift.branch.name,
                     display.day(shift.business_day, today, lang),
-                    str(shift.get_status_display())
+                    status_word(shift)
                     if shift.status == Status.OPEN
                     else display.money(shift.net, currency, lang),
                 )
@@ -1527,7 +1536,7 @@ def export_shifts(member: Membership, params: dict):
             "branch": shift.branch.name,
             "register": shift.register.name,
             "cashier": str(shift.cashier),
-            "status": str(shift.get_status_display()),
+            "status": status_word(shift),
             "opened_at": shift.opened_at,
             "closed_at": shift.closed_at,
             "opening_float": shift.opening_float,

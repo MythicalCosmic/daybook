@@ -618,7 +618,7 @@
   "finance.tx.removeReceipt": "Remove this receipt?",
   "finance.tx.removeReceiptBody": "The file is deleted. The entry itself stays.",
   "finance.tx.saved": "Entry saved",
-  "finance.tx.searchPlaceholder": "Search notes, counterparties, amounts…",
+  "finance.tx.searchPlaceholder": "Note, counterparty, amount…",
   "finance.tx.source": "Comes from",
   "finance.tx.view.all": "All",
   "finance.tx.view.expense": "Expenses",

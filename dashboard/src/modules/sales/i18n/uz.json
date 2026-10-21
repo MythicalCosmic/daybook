@@ -134,7 +134,7 @@
 
   "sales.shifts.title": "Smenalar",
   "sales.shifts.description": "Har bir kassir smenasi: Z-hisobot summalari, ko‘rmasdan sanalgan naqd va suratlar.",
-  "sales.shifts.search": "CHL-1042 yoki ism bo‘yicha qidiring",
+  "sales.shifts.search": "CHL-1042 yoki kassir ismi",
   "sales.shifts.emptyTitle": "Bu yerda smena yo‘q",
   "sales.shifts.emptyBody": "Kassirlar smenalarni xodimlar ilovasidagi Kassa bo‘limida ochib-yopadi. Ular darhol shu yerda chiqadi.",
   "sales.view.verify": "Tekshirish kerak",

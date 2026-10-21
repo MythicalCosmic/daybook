@@ -234,6 +234,9 @@ describe("TodayBranches", () => {
     expect(text).toContain("sales added at close");
     expect(text).not.toContain("0 receipts");
     expect(text).toContain("This month · 76.1%");
+    // The currency once, so the target still fits a narrow card: "342.4M UZS / 450M".
+    expect(text).toContain("/ 450M");
+    expect(text).not.toContain("/ 450M UZS");
   });
 });
 
@@ -406,6 +409,10 @@ describe("ShiftDrawer", () => {
     verify.click();
     await flushPromises();
     expect(body.textContent).toContain("Verify CHL-42");
+    // The dialog reconciles with exact amounts too.
+    const reconcile = body.querySelector("[data-testid=verify-figures]")?.textContent ?? "";
+    expect(reconcile).toContain("4,230,000");
+    expect(reconcile).not.toContain("4.2M");
     const submit = [...body.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Verify shift")!;
     submit.click();
     await flushPromises();

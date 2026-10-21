@@ -102,6 +102,13 @@ def test_search_and_queue_texts_read_like_the_dashboard(shop):
     with translation.override("en"):
         [hit] = queries.search(shop.owner, opened.code, 5)
         assert hit.subtitle.endswith(" · Open")
+    with translation.override("ru"):
+        # The till's state, never the verb on a button: the bare "Open" is "Открыть" there.
+        assert queries.status_word(opened) != translation.gettext("Open")
+        rows = list(queries.export_shifts(shop.owner, {}))
+        assert {row["status"] for row in rows if row["code"] == opened.code} == {
+            queries.status_word(opened)
+        }
 
 
 def test_queues_and_pulse(shop):
