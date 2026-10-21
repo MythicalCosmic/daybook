@@ -137,7 +137,7 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
               <tr>
                 <th class="sticky left-0 z-10 min-w-[132px] max-w-[260px] bg-surface px-4 py-2 text-left text-xs font-medium text-muted sm:min-w-[180px]">{{ t("routines.history.routine") }}</th>
                 <th v-for="day in data.days" :key="day" :class="['px-[1px] pb-1.5 pt-2 text-center font-medium', day === today ? 'text-accent-fg' : weekdayOf(day) >= 5 ? 'text-subtle' : 'text-muted']">
-                  <span class="block text-[10px] leading-3">{{ t(`routines.dayLetter.${weekdayOf(day)}`) }}</span>
+                  <span class="block text-[10px] leading-3">{{ t(`routines.day.${weekdayOf(day)}`) }}</span>
                   <span class="block text-[11px] tabular-nums leading-4">{{ Number(day.slice(8)) }}</span>
                 </th>
                 <th class="whitespace-nowrap px-4 py-2 text-right text-xs font-medium text-muted">{{ t("routines.history.total") }}</th>
