@@ -57,10 +57,12 @@ const fade = useScrollFade(body, content);
         v-if="to"
         :to="to"
         :title="linkLabel ?? t('common.viewAll')"
-        class="group/link -mr-1.5 -mt-1 inline-flex min-h-7 min-w-7 shrink-0 items-center justify-center gap-1 rounded-[6px] px-1.5 text-sm font-semibold text-muted transition-colors hover:bg-highlight hover:text-fg"
+        class="group/link relative -mr-1.5 -mt-1 inline-flex min-h-7 min-w-7 shrink-0 items-center justify-center gap-1 rounded-[6px] px-1.5 text-sm font-semibold text-muted transition-colors after:absolute after:-inset-2 after:content-[''] hover:bg-highlight hover:text-fg"
       >
-        <!-- A narrow card keeps its title whole: the link shrinks to its arrow (the label stays for screen readers). -->
-        <span class="@max-[19rem]:sr-only">{{ linkLabel ?? t("common.viewAll") }}</span><ArrowRight :size="14" class="transition-transform duration-150 group-hover/link:translate-x-0.5" aria-hidden="true" />
+        <!-- A narrow card (one column, or a phone) keeps its title whole, "Страницы к подтверждению"
+             included: the link shrinks to its arrow, the label stays for screen readers, and the
+             tap area is 44 px whatever it shows. -->
+        <span class="@max-[24rem]:sr-only">{{ linkLabel ?? t("common.viewAll") }}</span><ArrowRight :size="14" class="transition-transform duration-150 group-hover/link:translate-x-0.5" aria-hidden="true" />
       </RouterLink>
     </header>
     <div ref="body" class="no-scrollbar min-h-0 flex-1 overflow-y-auto" :style="fade">

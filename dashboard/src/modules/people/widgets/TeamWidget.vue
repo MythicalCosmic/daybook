@@ -44,10 +44,10 @@ const rows = computed(() => {
   <div class="ui-card group relative flex h-full min-w-0 flex-col p-4 transition-colors @container hover:border-line-strong" :aria-label="t('people.widget.title')">
     <!-- The whole tile opens the team; the join-requests button below is its own link. -->
     <RouterLink :to="`/c/${companyId}/people`" class="absolute inset-0 rounded-[inherit]" :aria-label="t('people.widget.title')" />
-    <div class="pointer-events-none flex items-center gap-2">
-      <Users :size="15" class="shrink-0 text-subtle" aria-hidden="true" />
-      <span class="min-w-0 flex-1 truncate text-sm font-medium text-muted">{{ t("people.widget.title") }}</span>
-      <ArrowUpRight :size="15" class="shrink-0 text-subtle opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true" />
+    <div class="pointer-events-none flex items-start gap-2">
+      <Users :size="15" class="mt-px shrink-0 text-subtle" aria-hidden="true" />
+      <span class="kpi-label">{{ t("people.widget.title") }}</span>
+      <ArrowUpRight :size="15" class="mt-px shrink-0 text-subtle opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true" />
     </div>
     <ErrorState v-if="stats.isError.value" class="relative mt-2.5" compact bare :error="stats.error.value" :retry="() => stats.refetch()" />
     <div v-else-if="skeleton" class="flex flex-col gap-3"><SkeletonBlock class="mt-2.5" width="40%" height="26px" /><SkeletonBlock :lines="3" /></div>

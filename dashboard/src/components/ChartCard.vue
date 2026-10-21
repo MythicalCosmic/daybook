@@ -107,7 +107,7 @@ const menu = computed<MenuEntry[]>(() => {
 
 <template>
   <section ref="root" class="ui-card flex min-w-0 flex-col" :aria-label="title" :aria-busy="loading || undefined">
-    <header :class="['flex flex-wrap items-start gap-x-3 gap-y-2 px-4 pb-2 pt-4', !icon && 'md:px-5']">
+    <header :class="['@container flex flex-wrap items-start gap-x-3 gap-y-2 px-4 pb-2 pt-4', !icon && 'md:px-5']">
       <div class="min-w-[min(100%,180px)] flex-1">
         <h3 class="flex min-h-5 min-w-0 items-center gap-2 text-sm font-semibold text-fg">
           <component :is="icon" v-if="icon" :size="16" class="shrink-0 text-subtle" aria-hidden="true" />
@@ -122,9 +122,11 @@ const menu = computed<MenuEntry[]>(() => {
         <RouterLink
           v-if="to"
           :to="to"
-          class="group/link inline-flex shrink-0 items-center gap-1 rounded-[6px] px-1.5 py-0.5 text-sm font-semibold text-muted transition-colors hover:bg-highlight hover:text-fg"
+          :title="linkLabel ?? t('common.viewAll')"
+          class="group/link relative inline-flex shrink-0 items-center gap-1 rounded-[6px] px-1.5 py-0.5 text-sm font-semibold text-muted transition-colors after:absolute after:-inset-x-1 after:-inset-y-2.5 after:content-[''] hover:bg-highlight hover:text-fg"
         >
-          {{ linkLabel ?? t("common.viewAll") }}<ArrowRight :size="14" class="transition-transform duration-150 group-hover/link:translate-x-0.5" aria-hidden="true" />
+          <!-- As on every Overview card (WidgetCard): a narrow card shows the arrow, and says the label to screen readers only. -->
+          <span class="@max-[24rem]:sr-only">{{ linkLabel ?? t("common.viewAll") }}</span><ArrowRight :size="14" class="transition-transform duration-150 group-hover/link:translate-x-0.5" aria-hidden="true" />
         </RouterLink>
         <DropdownMenu v-if="exportable" :items="menu" width="190px">
           <template #trigger>

@@ -50,10 +50,10 @@ const breakdown = computed(() => {
     :aria-label="t('attendance.kpi.presentNow')"
   >
     <!-- The same header and number as every KPI tile (KpiCard), so a row of tiles lines up. -->
-    <div class="flex items-center gap-2">
-      <Users :size="15" class="shrink-0 text-subtle" aria-hidden="true" />
-      <span class="min-w-0 flex-1 truncate text-sm font-medium text-muted">{{ t("attendance.kpi.presentNow") }}</span>
-      <ArrowUpRight :size="15" class="shrink-0 text-subtle opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true" />
+    <div class="flex items-start gap-2">
+      <Users :size="15" class="mt-px shrink-0 text-subtle" aria-hidden="true" />
+      <span class="kpi-label" :title="t('attendance.kpi.presentNow')">{{ t("attendance.kpi.presentNow") }}</span>
+      <ArrowUpRight :size="15" class="mt-px shrink-0 text-subtle opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true" />
     </div>
     <ErrorState v-if="board.isError.value" class="mt-2.5" compact bare :error="board.error.value" :retry="() => board.refetch()" @click.stop.prevent />
     <div v-else-if="board.isPending.value" class="flex flex-col gap-3">

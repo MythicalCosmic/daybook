@@ -45,10 +45,10 @@ const hint = computed(() => {
 
 <template>
   <RouterLink :to="`/c/${companyId}/finance/accounts`" class="ui-card group flex h-full min-h-[148px] min-w-0 flex-col p-4 transition-colors @container hover:border-line-strong" :aria-busy="overview.isPending.value || undefined">
-    <div class="flex items-center gap-2">
-      <Wallet :size="15" class="shrink-0 text-subtle" aria-hidden="true" />
-      <span class="min-w-0 flex-1 truncate text-sm font-medium text-muted" :title="t('finance.overview.cashNow')">{{ t("finance.overview.cashNow") }}</span>
-      <ArrowUpRight :size="15" class="shrink-0 text-subtle opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true" />
+    <div class="flex items-start gap-2">
+      <Wallet :size="15" class="mt-px shrink-0 text-subtle" aria-hidden="true" />
+      <span class="kpi-label" :title="t('finance.overview.cashNow')">{{ t("finance.overview.cashNow") }}</span>
+      <ArrowUpRight :size="15" class="mt-px shrink-0 text-subtle opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true" />
     </div>
     <!-- A failed load keeps the tile and its label, like every KPI tile (KpiCard). -->
     <ErrorState v-if="overview.isError.value" class="mt-2.5" compact bare :error="overview.error.value" :retry="() => overview.refetch()" @click.stop.prevent />

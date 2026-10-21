@@ -138,10 +138,10 @@ const change = computed(() => {
     ]"
     :aria-busy="loading || undefined"
   >
-    <div class="flex items-center gap-2">
-      <component :is="icon" v-if="icon" :size="15" class="shrink-0 text-subtle" aria-hidden="true" />
-      <span class="min-w-0 flex-1 truncate text-sm font-medium text-muted" :title="label">{{ label }}</span>
-      <ArrowUpRight v-if="to" :size="15" class="shrink-0 text-subtle opacity-0 transition-opacity group-hover:opacity-100" :aria-label="t('common.kpi.open')" />
+    <div class="flex items-start gap-2">
+      <component :is="icon" v-if="icon" :size="15" class="mt-px shrink-0 text-subtle" aria-hidden="true" />
+      <span class="kpi-label" :title="label">{{ label }}</span>
+      <ArrowUpRight v-if="to" :size="15" class="mt-px shrink-0 text-subtle opacity-0 transition-opacity group-hover:opacity-100" :aria-label="t('common.kpi.open')" />
     </div>
     <ErrorState v-if="error" class="mt-2.5" compact bare :error="error" :retry="retry" @click.stop.prevent />
     <template v-else-if="loading">
@@ -152,7 +152,7 @@ const change = computed(() => {
       <p class="kpi-value mt-1.5 truncate" :title="full ?? text" aria-live="polite">{{ text }}</p>
       <div v-if="hasSpark" ref="spare" class="kpi-spare min-h-0 flex-1" aria-hidden="true" data-kpi-spare>
         <template v-if="roomy">
-          <SparkLine :data="spark!" :color="sparkColor" fluid :height="48" class="max-h-16 min-h-0 flex-1" data-kpi-trend />
+          <SparkLine :data="spark!" :color="sparkColor" fluid :height="48" class="mt-3 max-h-16 min-h-0 flex-1" data-kpi-trend />
           <div v-if="sparkLabels" class="mt-1 flex justify-between gap-2 text-[11px] tabular-nums text-subtle">
             <span>{{ sparkLabels[0] }}</span><span>{{ sparkLabels[1] }}</span>
           </div>
@@ -172,12 +172,12 @@ const change = computed(() => {
 </template>
 
 <style scoped>
-/* Its height comes only from the free space (size containment): none in a short tile. */
+/* Its height comes only from the free space (size containment, and no padding of its own): none in
+   a short tile, so a KPI strip keeps its height. */
 .kpi-spare {
   container-type: size;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding-top: 0.75rem;
 }
 </style>
