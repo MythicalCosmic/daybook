@@ -34,7 +34,8 @@ const creating = ref(false);
 const query = ref("");
 const debounced = refDebounced(query, 180);
 const searching = computed(() => debounced.value.trim().length >= 2);
-const results = usePages(computed(() => ({ q: searching.value ? debounced.value.trim() : undefined, page_size: 12 })));
+// Asked for only while someone is searching.
+const results = usePages(computed(() => ({ q: debounced.value.trim(), page_size: 12 })), searching);
 const base = computed(() => `/c/${company.currentId}/knowledge`);
 
 const expanded = ref<number[]>([]);

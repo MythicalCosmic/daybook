@@ -54,7 +54,8 @@ const base = computed(() => `/c/${company.currentId}/knowledge`);
 const query = ref("");
 const debounced = refDebounced(query, 200);
 const searching = computed(() => debounced.value.trim().length >= 2);
-const results = usePages(computed(() => ({ q: searching.value ? debounced.value.trim() : undefined, page_size: 10 })));
+// Asked for only while someone is searching (phones).
+const results = usePages(computed(() => ({ q: debounced.value.trim(), page_size: 10 })), searching);
 
 const counts = computed(() => overview.data.value?.counts);
 const kpis = computed(() => {

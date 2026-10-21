@@ -112,10 +112,17 @@ async function cancel(): Promise<void> {
     reasonLabel: t("agenda.drawer.cancelReason"),
   });
   if (!result) return;
-  const saved = await agendaApi.cancel(company.currentId ?? 0, event.value.id, result.reason);
-  client.setQueryData(agendaKeys.event(company.currentId ?? 0, saved.id), saved);
-  void client.invalidateQueries({ queryKey: agendaKeys.all(company.currentId ?? 0) });
-  toast.success(t("agenda.drawer.cancelled"));
+  busy.value = "cancel";
+  try {
+    const saved = await agendaApi.cancel(company.currentId ?? 0, event.value.id, result.reason);
+    client.setQueryData(agendaKeys.event(company.currentId ?? 0, saved.id), saved);
+    void client.invalidateQueries({ queryKey: agendaKeys.all(company.currentId ?? 0) });
+    toast.success(t("agenda.drawer.cancelled"));
+  } catch {
+    // The HTTP layer showed why.
+  } finally {
+    busy.value = null;
+  }
 }
 
 const tones = { going: "success", pending: "neutral", declined: "danger" } as const;
@@ -195,7 +202,7 @@ const tones = { going: "success", pending: "neutral", declined: "danger" } as co
         <UiButton variant="primary" :icon="Pencil" @click="emit('edit', event)">{{ t("common.edit") }}</UiButton>
         <UiButton v-if="event.attendees.length && !event.cancelled" :icon="BellRing" :loading="busy === 'remind'" @click="remind">{{ t("agenda.drawer.remindNow") }}</UiButton>
         <span class="flex-1" />
-        <UiButton v-if="!event.cancelled" variant="ghost" :icon="Ban" class="text-danger" @click="cancel">{{ t("agenda.drawer.cancel") }}</UiButton>
+        <UiButton v-if="!event.cancelled" variant="ghost" :icon="Ban" class="text-danger" :loading="busy === 'cancel'" @click="cancel">{{ t("agenda.drawer.cancel") }}</UiButton>
       </div>
     </template>
   </UiDrawer>
