@@ -11,7 +11,7 @@ import { useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
 import { useI18n } from "../../i18n";
 import { haptic } from "../../telegram";
-import { Badge, Card, EmptyState, IconButton, ListCard, ListRow, PageHeader, Screen, SectionHead, Skeleton, Stat, StatGrid, cx } from "../../ui";
+import { Badge, Card, EmptyState, IconButton, ListCard, ListRow, LoadError, PageHeader, Screen, SectionHead, Skeleton, Stat, StatGrid, cx } from "../../ui";
 import { useCorrections, useMonth, useToday } from "./api";
 import { CheckInCard } from "./CheckInCard";
 import { FIXABLE, monthWeeks, shiftDay, shiftLine, shiftMonth, wallClock, weekOf } from "./lib";
@@ -49,6 +49,7 @@ export default function AttendancePage() {
         data={sheet.data}
         loading={sheet.isPending}
         failed={sheet.isError}
+        error={sheet.error}
         onRetry={() => sheet.refetch()}
         canGoNext={month < thisMonth}
         onMonth={(next) => {
@@ -90,6 +91,7 @@ function MonthCard({
   data,
   loading,
   failed,
+  error,
   onRetry,
   canGoNext,
   onMonth,
@@ -99,6 +101,7 @@ function MonthCard({
   data: MyMonth | undefined;
   loading: boolean;
   failed: boolean;
+  error: unknown;
   onRetry: () => void;
   canGoNext: boolean;
   onMonth: (month: string) => void;
@@ -118,7 +121,8 @@ function MonthCard({
         <IconButton icon={ChevronRight} label={t("month.next")} size={36} variant="ghost" disabled={!canGoNext} onClick={() => onMonth(shiftMonth(month, 1))} />
       </div>
       {failed && !shown ? (
-        <EmptyState compact title={t("ui.failed.title")} body={t("ui.failed.body")} action={{ label: t("common.retry"), onClick: onRetry }} />
+        // The app's own failure block: its icon and Try again, not the "all done" check mark.
+        <LoadError compact error={error} onRetry={onRetry} />
       ) : (
         <div className="att-cal" role="group" aria-label={monthTitle(t, month)} aria-busy={loading && !shown}>
           {header.map((key) => (

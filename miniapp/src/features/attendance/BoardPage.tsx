@@ -12,7 +12,7 @@ import { formatDistance } from "../../lib/location";
 import { longDate } from "../../lib/time";
 import { useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
-import { Avatar, Badge, EmptyState, ListCard, ListRow, PageHeader, Screen, SectionHead, SkeletonList, Stat, StatGrid } from "../../ui";
+import { Avatar, Badge, EmptyState, ListCard, ListRow, LoadError, PageHeader, Screen, SectionHead, SkeletonList, Stat, StatGrid } from "../../ui";
 import { useBoard } from "./api";
 import { minutesBetween, wallClock } from "./lib";
 import { codeLabel, usePageT, type PageKey, type PageT } from "./pageText";
@@ -42,7 +42,7 @@ export default function BoardPage() {
       ) : board.isPending ? (
         <SkeletonList count={6} />
       ) : board.isError || !data ? (
-        <EmptyState title={t("ui.failed.title")} body={t("ui.failed.body")} action={{ label: t("common.retry"), onClick: () => board.refetch() }} />
+        <LoadError error={board.error} onRetry={() => void board.refetch()} />
       ) : !data.people.length ? (
         <EmptyState icon={CalendarOff} tone="sage" title={t("board.empty")} body={t("board.emptyBody")} />
       ) : (

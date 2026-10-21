@@ -80,6 +80,8 @@ export function Home() {
         />
       )}
 
+      {/* Numbers that failed to load leave no card: a placeholder that never ends would say they're coming. */}
+      {(numbers || !summary.isError) && (
       <button className="card card--tap home-today" onClick={() => navigation.goTo("tasks")}>
         {numbers && numbers.today_total === 0 ? (
           <span className="circle home-today-free" aria-hidden>
@@ -106,6 +108,7 @@ export function Home() {
           )}
         </span>
       </button>
+      )}
 
       {late.length > 0 && (
         <Banner

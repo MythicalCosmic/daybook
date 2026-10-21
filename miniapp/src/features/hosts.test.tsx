@@ -3,7 +3,7 @@
  * `replaces` and `plusActions` work in place (PLAN-OWNER §9.4 item 13 keeps this green).
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { CalendarCheck, HandCoins, Receipt, Trophy } from "lucide-react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -247,6 +247,26 @@ describe("feature hosts in the real screens", () => {
       renderWith(<ActivityScreen />, { activity: null });
       expect(await screen.findByText("This part didn't open")).toBeTruthy();
       expect(screen.queryByText("You're all caught up")).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("claim no streak and keep no endless placeholder when the day's numbers fail", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new TypeError("Failed to fetch"))));
+    try {
+      const me = renderWith(<Profile />, { numbers: null });
+      // Loading: a placeholder line, not "Finish today's tasks to start a streak" to someone mid-streak.
+      expect(me.container.querySelector(".profile-streak .skeleton")).toBeTruthy();
+      expect(screen.queryByText(/start a streak/)).toBeNull();
+      // Failed: no streak card at all, rather than a claim or a placeholder that never ends.
+      await waitFor(() => expect(me.container.querySelector(".profile-streak")).toBeNull());
+      expect(screen.queryByText(/start a streak/)).toBeNull();
+      cleanup();
+
+      const home = renderWith(<Home />, { numbers: null });
+      expect(home.container.querySelector(".home-today-loading")).toBeTruthy();
+      await waitFor(() => expect(home.container.querySelector(".home-today")).toBeNull());
     } finally {
       vi.unstubAllGlobals();
     }

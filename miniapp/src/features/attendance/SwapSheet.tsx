@@ -3,14 +3,14 @@
  * eligible are offered (same position, free that day, under their weekly hours); a cover can go
  * to anyone of them, a swap names a person and the shift of theirs I take in return.
  */
-import { CalendarX2, Send, UserX } from "lucide-react";
+import { CalendarX2, SearchX, Send, UserX } from "lucide-react";
 import { useId, useState, type ReactNode } from "react";
 
 import { useI18n } from "../../i18n";
 import { errorText } from "../../lib/actions";
 import { useMember } from "../../state/session";
 import { haptic } from "../../telegram";
-import { Avatar, Button, EmptyState, Field, Segmented, SheetTitle, SkeletonList, Textarea, useToast } from "../../ui";
+import { Avatar, Button, EmptyState, Field, LoadError, Segmented, SheetTitle, SkeletonList, Textarea, useToast } from "../../ui";
 import type { SheetProps } from "../registry";
 import { useCandidates, useMyShifts, useRequestSwap } from "./api";
 import { shiftDay, shiftHours, shiftLine } from "./lib";
@@ -28,7 +28,7 @@ export default function SwapSheet({ params, close }: SheetProps) {
   const shift = shifts.data?.find((item) => item.id === shiftId);
 
   if (shifts.isPending) return <SkeletonList count={3} height={56} />;
-  if (!shift) return <EmptyState compact title={t("ui.notFound.title")} body={t("ui.notFound.body")} />;
+  if (!shift) return <EmptyState compact icon={SearchX} tone="sage" title={t("ui.notFound.title")} body={t("ui.notFound.body")} />;
   return <SwapForm shift={shift} close={close} />;
 }
 
@@ -92,7 +92,7 @@ function SwapForm({ shift, close }: { shift: Shift; close: () => void }) {
       {candidates.isPending ? (
         <SkeletonList count={3} height={56} />
       ) : candidates.isError ? (
-        <EmptyState compact title={t("ui.failed.title")} action={{ label: t("common.retry"), onClick: () => candidates.refetch() }} />
+        <LoadError compact error={candidates.error} onRetry={() => void candidates.refetch()} />
       ) : !people.length ? (
         <EmptyState compact icon={UserX} title={t("who.none")} />
       ) : kind === "cover" ? (

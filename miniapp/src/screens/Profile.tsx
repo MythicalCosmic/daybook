@@ -14,6 +14,7 @@ import { useNavigation } from "../state/navigation";
 import { initials, useMember, useSession } from "../state/session";
 import { close, haptic } from "../telegram";
 import { applyTheme, saveThemeMode, savedThemeMode, type ThemeMode } from "../theme";
+import { Skeleton } from "../ui";
 
 export function Profile() {
   const { t, lang, locale } = useI18n();
@@ -65,19 +66,24 @@ export function Profile() {
         </div>
       </div>
 
-      <div className="card" style={{ padding: 18, gap: 16, background: "var(--color-accent-100)", color: "var(--color-accent-900)" }}>
+      {/* The streak only once the numbers are here: "Finish today's tasks to start a streak" while
+          they load, or after they failed, would tell someone on a 35-day streak otherwise. */}
+      {(numbers || !summary.isError) && (
+      <div className="card profile-streak" style={{ padding: 18, gap: 16, background: "var(--color-accent-100)", color: "var(--color-accent-900)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <span className="circle" style={{ width: 44, height: 44, background: "var(--color-accent)", color: "var(--color-bg)" }}>
             <Flame size={22} strokeWidth={2.4} />
           </span>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{ fontSize: 19, fontWeight: 700 }}>
-              {numbers && numbers.streak_days > 0
-                ? t("profile.streak", { count: numbers.streak_days })
-                : t("profile.streakStart")}
-            </span>
-            {numbers && numbers.streak_days > 0 && <span style={{ fontSize: 14 }}>{t("profile.streakBody")}</span>}
-          </div>
+          {numbers ? (
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span style={{ fontSize: 19, fontWeight: 700 }}>
+                {numbers.streak_days > 0 ? t("profile.streak", { count: numbers.streak_days }) : t("profile.streakStart")}
+              </span>
+              {numbers.streak_days > 0 && <span style={{ fontSize: 14 }}>{t("profile.streakBody")}</span>}
+            </div>
+          ) : (
+            <Skeleton height={22} width="55%" radius={8} />
+          )}
         </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           {(numbers?.week ?? []).map((day) => (
@@ -85,6 +91,7 @@ export function Profile() {
           ))}
         </div>
       </div>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
         <div className="card" style={{ padding: 16, gap: 4 }}>
