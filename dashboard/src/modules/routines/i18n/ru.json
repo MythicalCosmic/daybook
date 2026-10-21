@@ -70,7 +70,7 @@
   "routines.editor.onboardingHint": "Выдаётся один раз каждому новому сотруднику при одобрении",
   "routines.editor.titlePlaceholder": "Записать температуру холодильника",
   "routines.editor.onboardingPlaceholder": "Изучить правила хранения лекарств",
-  "routines.editor.descriptionPlaceholder": "Что именно сделать и как выглядит результат (например: в журнале записано +2…+8 °C)",
+  "routines.editor.descriptionPlaceholder": "Что именно сделать и как выглядит результат (например: в журнале записано +2…⁠+8 °C)",
   "routines.editor.when": "Когда",
   "routines.editor.who": "Кто",
   "routines.editor.howDone": "Как выполняется",

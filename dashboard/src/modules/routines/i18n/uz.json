@@ -70,7 +70,7 @@
   "routines.editor.onboardingHint": "Belgilangan har bir yangi xodimga qabul qilinganda bir marta beriladi",
   "routines.editor.titlePlaceholder": "Muzlatgich haroratini yozish",
   "routines.editor.onboardingPlaceholder": "Dorilarni saqlash qoidalari bilan tanishish",
-  "routines.editor.descriptionPlaceholder": "Aniq nima qilish kerak va bajarilgach qanday ko‘rinishi kerak (masalan: jurnalga +2…+8 °C yozilgan)",
+  "routines.editor.descriptionPlaceholder": "Aniq nima qilish kerak va bajarilgach qanday ko‘rinishi kerak (masalan: jurnalga +2…⁠+8 °C yozilgan)",
   "routines.editor.when": "Qachon",
   "routines.editor.who": "Kim",
   "routines.editor.howDone": "Qanday bajariladi",

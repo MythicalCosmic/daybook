@@ -70,7 +70,7 @@
   "routines.editor.onboardingHint": "Given once to each new person it names, when they're let in",
   "routines.editor.titlePlaceholder": "Record the fridge temperature",
   "routines.editor.onboardingPlaceholder": "Read how medicines are stored",
-  "routines.editor.descriptionPlaceholder": "What exactly to do, and how it looks when it's done (for example: +2…+8 °C written in the log)",
+  "routines.editor.descriptionPlaceholder": "What exactly to do, and how it looks when it's done (for example: +2…⁠+8 °C written in the log)",
   "routines.editor.when": "When",
   "routines.editor.who": "Who",
   "routines.editor.howDone": "How it's done",
