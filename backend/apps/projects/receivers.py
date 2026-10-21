@@ -3,7 +3,8 @@
 `tasks.Task` is saved by the task app (completion from the bot, the mini app, the owner API,
 a confirmation, a reassignment). Whatever path a project's task takes, its card follows:
 
-- a task put on a project gets its board place and number;
+- a task put on a project (`tasks.services.create_task(project=…)` or later) gets its board
+  place and number: the end of its list, or of the first list when it has none;
 - a task that reaches DONE moves to the done list;
 - a task given to someone outside the project adds them as a member.
 """
@@ -44,4 +45,6 @@ def task_saved(sender, instance: Task, created: bool = False, raw: bool = False,
         and instance.assignee.status == Membership.Status.APPROVED
         and not ProjectMember.objects.filter(project=project, membership_id=assignee_id).exists()
     ):
-        services.add_member(project, instance.assignee, by=None)
+        # Someone who makes a card for themselves doesn't need telling they joined.
+        quiet = created and assignee_id == instance.created_by_id
+        services.add_member(project, instance.assignee, by=None, notify=not quiet)

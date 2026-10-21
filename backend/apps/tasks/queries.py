@@ -10,7 +10,7 @@ from apps.members.permissions import Perm
 from apps.members.queries import members_with_perm
 from apps.members.scope import allows, branch_ids
 from apps.tasks import visibility
-from apps.tasks.models import Task
+from apps.tasks.models import Task, TaskTemplate
 
 # Everything a task card or serializer touches, so rendering never queries.
 TASK_RELATIONS = (
@@ -25,6 +25,7 @@ TASK_RELATIONS = (
     "reminder_policy",
     "template__reminder_policy",
     "project",
+    "card",  # the project card (apps.projects), for its key in messages
     "branch",
 )
 
@@ -142,6 +143,30 @@ def search(
 def detail(task_id: int, *, viewer: Membership) -> Task | None:
     """One task `viewer` may see, with its checklist, comments and reminder log; else None."""
     return visible_tasks(viewer).prefetch_related("checklist").filter(pk=task_id).first()
+
+
+# Routines, for apps that point at one (knowledge's "How to do this"). A routine is company-wide
+# work, so it isn't branch-scoped here; someone's own repeating task is never one.
+
+
+def routines(company_id: int, *, q: str = "", active: bool | None = None) -> QuerySet[TaskTemplate]:
+    """The company's shared routines (onboarding ones too), by title: `q` narrows the title,
+    `active` keeps only running (True) or paused (False) ones."""
+    rows = TaskTemplate.objects.filter(company_id=company_id, personal=False)
+    if q.strip():
+        rows = rows.filter(title__icontains=q.strip())
+    if active is not None:
+        rows = rows.filter(is_active=active)
+    return rows.order_by("title", "pk")
+
+
+def routine(company_id: int, routine_id) -> TaskTemplate | None:
+    """One shared routine of the company, or None (another company's, someone's own repeating
+    task, or no such routine)."""
+    try:
+        return routines(company_id).filter(pk=int(routine_id)).first()
+    except TypeError, ValueError:
+        return None
 
 
 def _as_list(value) -> list:

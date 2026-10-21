@@ -106,6 +106,8 @@ export interface Milestone {
 export interface Capabilities {
   manage: boolean;
   edit_cards: boolean;
+  /** Cards may go to other people: with tasks.assign, or as the project's lead (to its people). */
+  assign_others: boolean;
   post_update: boolean;
   see_money: boolean;
   add_expense: boolean;

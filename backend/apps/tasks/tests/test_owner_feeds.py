@@ -181,7 +181,43 @@ def test_bot_messages_show_the_reward_and_the_project_key(shop):
         shop, shop.worker, title="Paint the wall", reward=Decimal("50000"), project=project
     )
     text, _markup = bot_messages.task_card(task, shop.worker, timezone.now())
-    assert "CHL · Paint the wall" in text
+    assert "CHL-1 · Paint the wall" in text
     assert "50 000" in text
     text, _ = bot_messages.nudge(task, shop.owner, timezone.now())
     assert str(shop.owner) in text
+
+
+def test_task_messages_carry_the_card_key(shop, django_assert_num_queries):
+    from apps.projects.models import Card, Project
+    from apps.reminders import bot_messages as reminder_messages
+    from apps.tasks.models import Proof
+    from apps.tasks.queries import TASK_RELATIONS
+
+    project = Project.objects.create(company=shop.company, name="Renovation", key="RENO")
+    shared(shop, shop.worker, title="Order tiles", project=project)
+    task = shared(
+        shop,
+        shop.worker,
+        title="Paint the wall",
+        project=project,
+        proof=Proof.PHOTO,
+        due_at=timezone.now() + timedelta(hours=2),
+    )
+    plain = shared(shop, shop.worker, title="Water the plants")
+    now = timezone.now()
+
+    task = Task.objects.select_related(*TASK_RELATIONS).get(pk=task.pk)
+    with django_assert_num_queries(0):
+        assert bot_messages.display_title(task) == "RENO-2 · Paint the wall"
+    plain = Task.objects.select_related(*TASK_RELATIONS).get(pk=plain.pk)
+    assert bot_messages.display_title(plain) == "Water the plants"
+    _text, markup = bot_messages.task_list([task, plain], now)
+    labels = [row[0].text for row in markup.inline_keyboard]
+    assert "RENO-2 · Paint the wall" in labels[0] and "RENO" not in labels[1]
+    assert "RENO-2 · Paint the wall" in bot_messages.proof_request(task)[0]
+    assert "RENO-2 · Paint the wall" in reminder_messages.heads_up(task)[0]
+    assert "RENO-2 · Paint the wall" in reminder_messages.escalation(task, now)[0]
+    # Until the board gives it a card, the project's key alone.
+    Card.objects.filter(task=task).delete()
+    task = Task.objects.select_related(*TASK_RELATIONS).get(pk=task.pk)
+    assert bot_messages.display_title(task) == "RENO · Paint the wall"

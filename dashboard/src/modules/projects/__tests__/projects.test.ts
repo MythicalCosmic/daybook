@@ -88,7 +88,7 @@ function detail(overrides: Partial<ProjectDetail> = {}): ProjectDetail {
     ],
     labels: [{ id: 5, name: "Urgent", color: "chart-1" }],
     milestones: [],
-    capabilities: { manage: true, edit_cards: true, post_update: true, see_money: true, add_expense: true, see_labour: true, see_all_time: true },
+    capabilities: { manage: true, edit_cards: true, assign_others: true, post_update: true, see_money: true, add_expense: true, see_labour: true, see_all_time: true },
     ...overrides,
   };
 }

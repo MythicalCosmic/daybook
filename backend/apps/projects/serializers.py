@@ -272,6 +272,10 @@ def milestone_row(milestone: Milestone, counts: dict | None, today) -> dict:
 class ProjectsCapabilitiesSerializer(serializers.Serializer):
     manage = serializers.BooleanField()
     edit_cards = serializers.BooleanField()
+    assign_others = serializers.BooleanField(
+        help_text="Whether cards may go to other people: with tasks.assign, or as the project's "
+        "lead (then only to the people on the project)."
+    )
     post_update = serializers.BooleanField()
     see_money = serializers.BooleanField()
     add_expense = serializers.BooleanField()

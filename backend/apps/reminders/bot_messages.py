@@ -11,14 +11,14 @@ from django.utils.translation import gettext as _
 from apps.members.bot_messages import BotMessage
 from apps.members.models import Membership
 from apps.reminders.models import ReminderPolicy
-from apps.tasks.bot_messages import format_duration
+from apps.tasks.bot_messages import display_title, format_duration
 from apps.tasks.callbacks import TaskAction, TaskCallback
 from apps.tasks.models import Task
 
 
 def heads_up(task: Task) -> BotMessage:
     text = _("⏳ Heads-up: <b>%(task)s</b> is due at %(time)s.") % {
-        "task": html.quote(task.title),
+        "task": html.quote(display_title(task)),
         "time": _clock(task),
     }
     return text, _keyboard(task, snooze_minutes=None)
@@ -28,7 +28,7 @@ def reminder(
     task: Task, step: int, policy: ReminderPolicy, now: datetime, manager: str | None
 ) -> BotMessage:
     values = {
-        "task": html.quote(task.title),
+        "task": html.quote(display_title(task)),
         "time": _clock(task),
         "late": format_duration(now - task.due_at),
         "step": step,
@@ -59,7 +59,7 @@ def escalation(task: Task, now: datetime) -> BotMessage:
     ) % {
         "name": html.quote(str(task.assignee)),
         "late": format_duration(now - task.due_at),
-        "task": html.quote(task.title),
+        "task": html.quote(display_title(task)),
         "count": task.reminders_sent,
     }
     return text, _open_keyboard(task)
@@ -69,7 +69,7 @@ def blocked(member: Membership, task: Task) -> BotMessage:
     text = _(
         "⛔ <b>%(name)s</b> blocked the bot, so reminders can't reach them. "
         "<b>%(task)s</b> is still open."
-    ) % {"name": html.quote(str(member)), "task": html.quote(task.title)}
+    ) % {"name": html.quote(str(member)), "task": html.quote(display_title(task))}
     return text, _open_keyboard(task)
 
 

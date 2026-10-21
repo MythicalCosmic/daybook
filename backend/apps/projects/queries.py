@@ -190,10 +190,14 @@ def sees_time_of_others(project: Project, member: Membership) -> bool:
 def capabilities(project: Project, member: Membership) -> dict:
     """What the client may offer `member` on this project."""
     manage = can_manage(project, member)
-    edit = manage or role_of(project, member) in EDITING_ROLES
+    role = role_of(project, member)
+    edit = manage or role in EDITING_ROLES
     return {
         "manage": manage,
         "edit_cards": edit,
+        # Give cards to others: tasks.assign, or the lead to the project's people
+        # (tasks.services.create_task decides; this only tells the client what to offer).
+        "assign_others": edit and (member.has_perm(Perm.TASKS_ASSIGN) or role == Role.LEAD),
         "post_update": edit,
         "see_money": member.has_perm(Perm.FINANCE_VIEW) or manage,
         "add_expense": member.has_perm(Perm.FINANCE_RECORD) and project.archived_at is None,

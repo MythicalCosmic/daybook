@@ -8,6 +8,7 @@ from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 
 from apps.audit.models import AuditLog
+from apps.core.exceptions import DomainError
 from apps.inbox.models import Notification
 from apps.projects import queries, services
 from apps.projects.models import (
@@ -274,6 +275,61 @@ def test_a_member_without_tasks_assign_adds_cards_only_for_themselves(company, p
         card(reno, people["aziz"], assignee=people["madina"])
     with pytest.raises(PermissionDenied):
         card(reno, people["madina"])  # not on the project
+
+
+def test_a_lead_without_tasks_assign_gives_cards_to_their_projects_people(company, people):
+    lead = people["aziz"]  # an employee: no tasks.assign, no projects.manage
+    reno = project(company, people["owner"], lead=lead)
+    services.add_member(reno, people["madina"], by=lead)
+    launch = services.create_milestone(reno, by=lead, name="Launch")
+
+    given = card(reno, lead, assignee=people["madina"], milestone=launch)
+
+    assert given.assignee == people["madina"] and given.created_by == lead
+    assert given.kind == Task.Kind.ASSIGNED
+    assert given.milestone == launch and given.card.number == 1
+    assert queries.capabilities(reno, lead)["assign_others"] is True
+    # Only the people on the project: someone else has to be added first.
+    outsider = people["manager"]
+    with pytest.raises(PermissionDenied):
+        card(reno, lead, assignee=outsider)
+    assert not ProjectMember.objects.filter(project=reno, membership=outsider).exists()
+
+
+def test_who_may_give_cards_to_others_is_on_the_board_capabilities(company, people):
+    reno = project(company, people["owner"])
+    services.add_member(reno, people["aziz"], by=people["owner"])
+
+    assert queries.capabilities(reno, people["owner"])["assign_others"] is True
+    assert queries.capabilities(reno, people["aziz"])["assign_others"] is False
+    # Seeing the board isn't editing it.
+    services.add_member(reno, people["madina"], by=people["owner"], role="viewer")
+    assert queries.capabilities(reno, people["madina"])["assign_others"] is False
+
+
+def test_a_card_given_to_someone_new_tells_them_they_joined_but_not_its_maker(company, people):
+    reno = project(company, people["owner"])
+    manager = people["manager"]  # projects.manage, not on the project
+
+    card(reno, manager, title="Mine")
+    card(reno, manager, title="Theirs", assignee=people["madina"])
+
+    assert ProjectMember.objects.filter(project=reno, membership=manager).exists()
+    assert not Notification.objects.filter(recipient=manager, kind="projects.added").exists()
+    joined = Notification.objects.filter(recipient=people["madina"], kind="projects.added")
+    assert joined.count() == 1
+
+
+def test_a_card_in_a_list_or_with_a_milestone_of_another_board_is_refused(company, people):
+    reno = project(company, people["owner"])
+    other = project(company, people["owner"], name="Other")
+    elsewhere = services.create_milestone(other, by=people["owner"], name="Elsewhere")
+
+    with pytest.raises(DomainError):
+        card(reno, people["owner"], project_list=lists(other)["Backlog"])
+    with pytest.raises(DomainError):
+        card(reno, people["owner"], milestone=elsewhere)
+    assert not Task.objects.filter(project=reno).exists()
 
 
 def test_labels_from_another_board_are_refused(company, people):
