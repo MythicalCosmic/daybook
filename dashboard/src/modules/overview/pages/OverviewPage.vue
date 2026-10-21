@@ -113,7 +113,7 @@ async function finish(): Promise<void> {
 
     <div v-else-if="shown.length" class="flex flex-col gap-3">
       <div v-for="widget in bands.lead" :key="widget.id" :data-widget="widget.id" class="min-w-0 empty:hidden">
-        <WidgetCell :widget="widget" :widget-props="widgetProps" />
+        <WidgetCell :widget="widget" :widget-props="widgetProps" :placeholder="false" />
       </div>
       <div v-if="bands.kpis.length" class="grid grid-cols-2 gap-3 lg:grid-cols-4" data-band="kpis">
         <div

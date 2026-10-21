@@ -11,7 +11,9 @@ import ErrorState from "@/components/ErrorState.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import type { Widget, WidgetProps } from "@/core/modules";
 
-defineProps<{ widget: Widget; widgetProps: WidgetProps }>();
+// `placeholder: false` for cards that may have nothing to show (Get started once it is done): a
+// skeleton that then vanishes would make the page jump.
+withDefaults(defineProps<{ widget: Widget; widgetProps: WidgetProps; placeholder?: boolean }>(), { placeholder: true });
 
 const { t } = useI18n();
 const failure = ref<unknown>(null);
@@ -27,7 +29,8 @@ onErrorCaptured((error) => {
   <Suspense v-else>
     <component :is="widget.component" v-bind="widgetProps" />
     <template #fallback>
-      <div v-if="widget.kind === 'kpi'" class="ui-card flex h-full min-h-[136px] flex-col p-4" aria-hidden="true">
+      <template v-if="!placeholder" />
+      <div v-else-if="widget.kind === 'kpi'" class="ui-card flex h-full min-h-[136px] flex-col p-4" aria-hidden="true">
         <SkeletonBlock width="45%" height="13px" />
         <SkeletonBlock class="mt-3" width="60%" height="26px" />
         <SkeletonBlock class="mt-auto" width="35%" height="12px" />

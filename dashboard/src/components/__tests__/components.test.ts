@@ -18,6 +18,8 @@ import UiBadge from "@/components/UiBadge.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import UiDrawer from "@/components/UiDrawer.vue";
+import { fadeMask, moreToTheRight } from "@/components/useScrollFade";
+import WidgetCard from "@/components/WidgetCard.vue";
 import { dismissToast, pauseToast, resumeToast, showToast, toasts } from "@/components/useToast";
 import { defineModule, registerDevModules } from "@/core/modules";
 import { i18n, setLanguage } from "@/i18n";
@@ -330,5 +332,38 @@ describe("UiDrawer", () => {
     await flushPromises();
     expect(router.currentRoute.value.fullPath).toBe("/c/1/tasks?view=board");
     wrapper.unmount();
+  });
+});
+
+describe("WidgetCard", () => {
+  it("frames a widget: title, a count only when there is one, the page link and a footer", () => {
+    const card = mount(WidgetCard, {
+      props: { title: "Projects at risk", count: 2, countTone: "warning", to: "/c/1/projects" },
+      slots: { default: () => h("ul", [h("li", "Chilonzor opening")]), footer: () => "1 more" },
+      global: { plugins: plugins() },
+    });
+    expect(card.find("h3").text()).toBe("Projects at risk");
+    expect(card.find("header").text()).toContain("2");
+    const link = card.find("a");
+    expect(link.attributes("href")).toBe("/c/1/projects");
+    expect(link.attributes("title")).toBe("View all");
+    expect(card.find("footer").text()).toBe("1 more");
+    const empty = mount(WidgetCard, { props: { title: "Off today", count: 0 }, global: { plugins: plugins() } });
+    expect(empty.find("h3").element.parentElement!.textContent!.trim()).toBe("Off today");
+    expect(empty.find("a").exists()).toBe(false);
+  });
+
+  it("fades only the edge that has more to scroll to", () => {
+    expect(fadeMask(0, 300, 300)).toBeNull();
+    expect(fadeMask(0, 300, 500)).toBe("linear-gradient(to bottom, #000 0, #000 14px, #000 calc(100% - 14px), transparent 100%)");
+    expect(fadeMask(100, 300, 500)).toContain("transparent 0");
+    expect(fadeMask(100, 300, 500)).toContain("transparent 100%");
+    expect(fadeMask(200, 300, 500)).toBe("linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 14px), #000 100%)");
+  });
+
+  it("knows when a wide table still has columns past its right edge", () => {
+    expect(moreToTheRight(0, 1000, 1000)).toBe(false);
+    expect(moreToTheRight(0, 1000, 1240)).toBe(true);
+    expect(moreToTheRight(240, 1000, 1240)).toBe(false);
   });
 });

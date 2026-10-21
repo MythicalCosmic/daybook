@@ -72,6 +72,7 @@ import { useCompanyStore } from "@/stores/company";
 import { usePaletteStore } from "@/stores/palette";
 import { useUiStore } from "@/stores/ui";
 
+import { isTextKey, markPaletteMounted } from "./paletteLoader";
 import { searchTypeKey } from "./searchTypes";
 
 const props = defineProps<{ groups: NavGroup[]; aiAvailable: boolean }>();
@@ -119,8 +120,7 @@ const trimmed = computed(() => query.value.trim());
  * focused yet, printable keys go into the query and focus moves to the field.
  */
 function catchEarlyKeys(event: KeyboardEvent): void {
-  if (!palette.open || event.defaultPrevented || event.isComposing) return;
-  if (event.key.length !== 1 || event.ctrlKey || event.metaKey || event.altKey) return;
+  if (!palette.open || !isTextKey(event)) return;
   const input = document.querySelector<HTMLInputElement>("[data-palette-input]");
   if (input && document.activeElement === input) return;
   event.preventDefault();
@@ -140,7 +140,12 @@ watch(
   },
   { immediate: true },
 );
-onBeforeUnmount(() => window.removeEventListener("keydown", catchEarlyKeys, true));
+// Until now the shell buffered keys into `palette.initialQuery` (read just above); from here on they are ours.
+markPaletteMounted(true);
+onBeforeUnmount(() => {
+  markPaletteMounted(false);
+  window.removeEventListener("keydown", catchEarlyKeys, true);
+});
 
 const companyId = computed(() => company.currentId);
 const base = computed(() => (companyId.value === null ? "" : `/c/${companyId.value}`));

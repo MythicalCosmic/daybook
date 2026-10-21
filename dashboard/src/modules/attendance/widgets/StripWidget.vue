@@ -38,8 +38,12 @@ const pct = (value: number) => `${(value / peak.value) * 100}%`;
 
 <template>
   <WidgetCard :title="t('attendance.widget.stripTitle')" :subtitle="t('attendance.widget.stripSubtitle')" :icon="CalendarDays" inset="content">
+    <!-- The rate in the language's own number format ("97,5 %" in Russian), its meaning underneath. -->
     <template v-if="onTime !== null" #aside>
-      <span class="shrink-0 text-right text-lg font-semibold leading-6 tabular-nums text-fg">{{ t("attendance.widget.onTimeValue", { p: onTime }) }}</span>
+      <span class="flex shrink-0 flex-col items-end">
+        <span class="text-lg font-semibold leading-6 tabular-nums text-fg">{{ fmt.percent(Number(onTime), 1) }}</span>
+        <span class="text-xs text-muted">{{ t("attendance.widget.onTime") }}</span>
+      </span>
     </template>
     <SkeletonBlock v-if="query.isPending.value" class="flex-1" height="150px" radius="10px" />
     <ErrorState v-else-if="query.isError.value" compact :error="query.error.value" :retry="() => query.refetch()" />

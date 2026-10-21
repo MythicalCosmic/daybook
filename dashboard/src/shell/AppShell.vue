@@ -32,7 +32,7 @@ import { useUiStore } from "@/stores/ui";
 import ForbiddenPage from "./ForbiddenPage.vue";
 import MobileTabBar from "./MobileTabBar.vue";
 import SideNav from "./SideNav.vue";
-import { loadPalette, prefetchPaletteOnModifier } from "./paletteLoader";
+import { bufferKeysUntilPaletteMounts, loadPalette, prefetchPaletteOnModifier } from "./paletteLoader";
 import { resolveStartParam, telegram } from "./TelegramBridge";
 import TopBar from "./TopBar.vue";
 
@@ -188,6 +188,10 @@ removers.push(
   registerHotkey("?", () => (ui.shortcutsOpen = true)),
   registerHotkey("[", () => ui.toggleSidebar(), { enabled: () => isDesktop.value && !companyless.value }),
   prefetchPaletteOnModifier(),
+  bufferKeysUntilPaletteMounts(
+    () => palette.open,
+    (key) => (palette.initialQuery += key),
+  ),
 );
 let jumpRemovers: Array<() => void> = [];
 watch(

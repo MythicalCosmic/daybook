@@ -100,13 +100,14 @@ const spans = { 1: "", 2: "md:col-span-2", 3: "md:col-span-2 lg:col-span-3", 4: 
       :key="widget.id"
       :data-widget="widget.id"
       :class="[
-        'relative min-w-0',
+        // A widget with nothing to show today (Get started once done) leaves no empty cell behind.
+        'relative min-w-0 has-[>[data-widget-body]:empty]:hidden',
         spans[widget.span],
         editing && 'rounded-card outline-2 outline-dashed outline-offset-2 outline-line-strong',
         editing && widget.hidden && 'opacity-45',
       ]"
     >
-      <div :class="['h-full', editing && 'pointer-events-none select-none']">
+      <div :class="['h-full', editing && 'pointer-events-none select-none']" data-widget-body>
         <slot name="widget" :widget="widget" />
       </div>
       <div v-if="editing" class="absolute right-2 top-2 z-10 flex items-center gap-0.5 rounded-[9px] border border-line bg-surface/95 p-0.5 shadow-pop backdrop-blur">

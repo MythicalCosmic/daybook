@@ -11,7 +11,7 @@ import { mountWithProviders, testApp } from "@/test/plugins";
 
 import CommandPalette from "../CommandPalette.vue";
 import CompanySwitcher from "../CompanySwitcher.vue";
-import { loadPalette, prefetchPaletteOnModifier } from "../paletteLoader";
+import { bufferKeysUntilPaletteMounts, loadPalette, markPaletteMounted, prefetchPaletteOnModifier } from "../paletteLoader";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -57,6 +57,33 @@ describe("palette and switcher", () => {
     await flushPromises();
     expect(wrapper.find("[data-elsewhere]").exists()).toBe(false);
     wrapper.unmount();
+  });
+
+  it("buffers the keys typed after ⌘K while the palette's code still loads, and leaves shortcuts alone", () => {
+    let open = false;
+    let buffered = "";
+    const target = new EventTarget() as unknown as Window;
+    const remove = bufferKeysUntilPaletteMounts(
+      () => open,
+      (key) => (buffered += key),
+      target,
+    );
+    const press = (key: string, init: KeyboardEventInit = {}) => {
+      const event = new KeyboardEvent("keydown", { key, cancelable: true, ...init });
+      target.dispatchEvent(event);
+      return event;
+    };
+    expect(press("n").defaultPrevented).toBe(false); // closed: "n" is the page's shortcut
+    open = true;
+    expect(press("C").defaultPrevented).toBe(true); // open, still loading: it is the search
+    press("H");
+    press("k", { ctrlKey: true });
+    expect(buffered).toBe("CH");
+    markPaletteMounted(true); // mounted: the palette catches its own keys from here on
+    press("L");
+    expect(buffered).toBe("CH");
+    markPaletteMounted(false);
+    remove();
   });
 
   it("starts loading as soon as Ctrl or ⌘ goes down, once", async () => {

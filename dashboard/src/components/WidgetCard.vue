@@ -56,9 +56,11 @@ const fade = useScrollFade(body, content);
       <RouterLink
         v-if="to"
         :to="to"
-        class="group/link -mr-1.5 -mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-[6px] px-1.5 py-0.5 text-sm font-semibold text-muted transition-colors hover:bg-highlight hover:text-fg"
+        :title="linkLabel ?? t('common.viewAll')"
+        class="group/link -mr-1.5 -mt-1 inline-flex min-h-7 min-w-7 shrink-0 items-center justify-center gap-1 rounded-[6px] px-1.5 text-sm font-semibold text-muted transition-colors hover:bg-highlight hover:text-fg"
       >
-        {{ linkLabel ?? t("common.viewAll") }}<ArrowRight :size="14" class="transition-transform duration-150 group-hover/link:translate-x-0.5" aria-hidden="true" />
+        <!-- A narrow card keeps its title whole: the link shrinks to its arrow (the label stays for screen readers). -->
+        <span class="@max-[19rem]:sr-only">{{ linkLabel ?? t("common.viewAll") }}</span><ArrowRight :size="14" class="transition-transform duration-150 group-hover/link:translate-x-0.5" aria-hidden="true" />
       </RouterLink>
     </header>
     <div ref="body" class="no-scrollbar min-h-0 flex-1 overflow-y-auto" :style="fade">
