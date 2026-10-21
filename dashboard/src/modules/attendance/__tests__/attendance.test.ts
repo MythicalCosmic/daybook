@@ -273,25 +273,7 @@ describe("BoardTile", () => {
   });
 });
 
-describe("GeoMap", () => {
-  it("puts names in as text, never as HTML", async () => {
-    const { default: GeoMap } = await import("../components/GeoMap.vue");
-    const app = await testApp("/c/1/attendance");
-    const name = '<img src=x onerror="window.__pwned = 1">';
-    const { wrapper } = mountWithProviders(GeoMap, {
-      props: {
-        branches: [{ id: 1, name, latitude: "41.285680", longitude: "69.203430", geofence_m: 150 }],
-        points: [{ id: 5, lat: "41.2857", lng: "69.2035", tone: "ok", label: name }],
-      },
-      plugins: app.plugins,
-    });
-    await flushPromises();
-    const label = document.querySelector(".att-geo-label");
-    expect(label?.textContent).toBe(name);
-    expect(label?.querySelector("img")).toBeNull();
-    wrapper.unmount();
-  });
-});
+// The map's own tests (names as text, picker) are in components/__tests__/MapView.test.ts.
 
 describe("ShiftGrid", () => {
   function transfer(data: Record<string, string>) {

@@ -37,7 +37,7 @@ import { editRecord, excuseRecord, useCompanyId, useOvertimeDecision, useRecord,
 import { clockOf, formatDistance, localDateTime } from "../lib";
 import type { RecordDetail } from "../types";
 
-const GeoMap = defineAsyncComponent(() => import("./GeoMap.vue"));
+const MapView = defineAsyncComponent(() => import("@/components/MapView.vue"));
 
 const { t } = useI18n();
 const fmt = useFormat();
@@ -257,7 +257,7 @@ async function decide(approve: boolean, reason = ""): Promise<void> {
         </p>
         <p v-else-if="!events.length" class="rounded-[10px] bg-surface-2 px-3 py-3 text-sm text-muted">{{ t("attendance.record.noTimes") }}</p>
 
-        <GeoMap v-if="mapPoints.length && record.branch_geo" :branches="[record.branch_geo]" :points="mapPoints" height="200px" :interactive="false" />
+        <MapView v-if="mapPoints.length && record.branch_geo" :branches="[record.branch_geo]" :points="mapPoints" height="200px" :interactive="false" />
 
         <DescriptionList v-if="facts.length" :items="facts" :columns="2" />
 

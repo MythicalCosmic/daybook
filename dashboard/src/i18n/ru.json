@@ -87,6 +87,10 @@
   "common.number.decrease": "Уменьшить",
   "common.money.currency": "Валюта",
   "common.time.pick": "Выберите время",
+  "common.map.label": "Карта",
+  "common.map.clickToPlace": "Нажмите на карту, чтобы выбрать место",
+  "common.map.myLocation": "Моё местоположение",
+  "common.map.locateFailed": "Не удалось определить местоположение. Нажмите на карту.",
 
   "common.date.placeholder": "Выберите дату",
   "common.date.prevMonth": "Предыдущий месяц",

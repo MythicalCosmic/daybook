@@ -12,6 +12,7 @@ import { z } from "zod";
 
 import EmptyState from "@/components/EmptyState.vue";
 import FormField from "@/components/FormField.vue";
+import MapView from "@/components/MapView.vue";
 import MoneyInput from "@/components/MoneyInput.vue";
 import NumberInput from "@/components/NumberInput.vue";
 import PersonPicker from "@/components/PersonPicker.vue";
@@ -31,7 +32,6 @@ import { useCompanyStore } from "@/stores/company";
 
 import { useBranchMutations, useManagers } from "../api";
 import type { Branch, BranchInput } from "../types";
-import MapPicker from "./MapPicker.vue";
 
 const AuditTrail = defineAsyncComponent(() => import("@/components/AuditTrail.vue"));
 
@@ -177,11 +177,15 @@ const company_ = computed(() => company.current);
           <p class="text-base font-semibold text-fg">{{ t("settings.branch.place") }}</p>
           <p class="text-sm text-muted">{{ t("settings.branch.placeHint") }}</p>
         </div>
-        <MapPicker
+        <MapView
+          picker
           :latitude="form.values.latitude"
           :longitude="form.values.longitude"
           :radius="form.values.geofence_m"
           :editable="canEdit"
+          :height="260"
+          :label="t('settings.map.label')"
+          :place-hint="t('settings.map.clickToPlace')"
           @pick="(at) => { form.values.latitude = at.latitude; form.values.longitude = at.longitude; }"
         />
         <div class="flex flex-wrap items-end gap-3">

@@ -174,8 +174,6 @@
   "settings.day.sun": "Вс",
   "settings.map.label": "Карта филиала",
   "settings.map.clickToPlace": "Нажмите на карту, чтобы отметить филиал",
-  "settings.map.myLocation": "Моё местоположение",
-  "settings.map.locateFailed": "Не удалось определить местоположение. Нажмите на карту.",
   "settings.invite.description": "Сотрудники присоединяются через Telegram: открывают ссылку, отправляют имя и должность, а вы подтверждаете.",
   "settings.invite.shareText": "Присоединяйтесь к команде {company} в Telegram",
   "settings.invite.copied": "Ссылка скопирована",
