@@ -45,7 +45,7 @@ def test_demo_people_are_the_six_demo_memberships(company, demo_people):
     assert not people["worker"].has_perm(Perm.DASHBOARD_ACCESS)
     assert (people["madina"].full_name, people["madina"].position.name) == (
         "Madina Saidova",
-        "Cashier",
+        "Sales floor",
     )
     branch = people["worker"].home_branch
     assert branch is not None and branch.company == company

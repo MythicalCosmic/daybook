@@ -6,9 +6,11 @@ from django.core.management import CommandError, call_command
 from django.utils import timezone
 
 from apps.accounts.models import User
+from apps.attendance import queries as attendance
+from apps.attendance.models import WorkShift
 from apps.companies.models import Company, Feature
 from apps.core.management.commands import seed_demo
-from apps.members.models import AccessRole, Membership
+from apps.members.models import AccessRole, Membership, Position
 from apps.reports import kpis
 from apps.tasks.models import Task
 
@@ -21,6 +23,12 @@ def seed(**options) -> str:
     out = StringIO()
     call_command("seed_demo", stdout=out, **options)
     return out.getvalue()
+
+
+def seed_core(**options) -> str:
+    """The core demo without any app's demo.py (apps.core has none): what seed_demo itself does
+    (reset, owners, rollback) in seconds instead of the full demo's minute."""
+    return seed(only="core", **options)
 
 
 @pytest.fixture
@@ -76,9 +84,9 @@ def test_the_demo_stays_out_of_production():
 
 
 def test_an_existing_demo_needs_reset(debug):
-    seed()
+    seed_core()
     with pytest.raises(CommandError, match="--reset"):
-        seed()
+        seed_core()
 
 
 def test_the_shop_has_two_branches_and_every_module(debug):
@@ -97,15 +105,33 @@ def test_the_shop_has_two_branches_and_every_module(debug):
     assert all(task.branch_id == task.assignee.home_branch_id for task in tasks)
     assert tasks.filter(branch__code="YNS").exists()
 
+    # An Uzbek company: its positions and roles have Uzbek names once every demo has run.
+    for model, names in seed_demo.IN_UZBEK.items():
+        assert not model.objects.filter(company=shop, name__in=list(names)).exists(), model
+    assert {"Sotuvchi", "Kassir", "Omborchi", "Kuryer"} <= set(
+        Position.objects.filter(company=shop).values_list("name", flat=True)
+    )
+    assert {"Egasi", "Rahbar", "Kassir", "Xodim"} <= set(
+        AccessRole.objects.filter(company=shop).values_list("name", flat=True)
+    )
+    assert owner.role.name == "Egasi" and owner.role.is_owner
+    # Madina works the sales floor like Alisher, so his coming shifts have someone to swap with.
+    worker = approved.get(user__telegram_id=seed_demo.WORKER)
+    madina = approved.get(user__telegram_id=seed_demo.COLLEAGUE)
+    assert worker.position == madina.position and worker.position.name == "Sotuvchi"
+    coming = WorkShift.objects.working().filter(membership=worker, date__gt=timezone.localdate())
+    assert attendance.takeable(madina, coming.select_related("membership"))
+
 
 def test_the_cafe_is_a_second_smaller_company_with_the_same_owner(debug):
-    seed()
+    seed_core()  # the apps' demos fill only the shop
 
     cafe = Company.objects.get(slug="demo-cafe")
     assert sorted(cafe.features) == sorted(seed_demo.CAFE_FEATURES)
     assert cafe.memberships.filter(status=Membership.Status.APPROVED).count() == 4
     [branch] = cafe.branches.all()
     assert branch.manager.user.telegram_id == seed_demo.CAFE_MANAGER
+    assert branch.manager.role.name == "Rahbar" and branch.manager.position.name == "Zal"
     owner = User.objects.get(telegram_id=seed_demo.OWNER)
     owned = Membership.objects.filter(user=owner, role__is_owner=True, status="approved")
     assert sorted(owned.values_list("company__slug", flat=True)) == ["demo-cafe", "demo-shop"]
@@ -113,7 +139,7 @@ def test_the_cafe_is_a_second_smaller_company_with_the_same_owner(debug):
 
 
 def test_owner_tg_makes_a_real_account_owner_of_both_companies(debug):
-    seed(owner_tg=REAL_OWNER)
+    seed_core(owner_tg=REAL_OWNER)
 
     user = User.objects.get(telegram_id=REAL_OWNER)
     memberships = Membership.objects.filter(user=user).select_related("company", "role")
@@ -128,23 +154,23 @@ def test_owner_tg_makes_a_real_account_owner_of_both_companies(debug):
     # A rebuild keeps the real account (only the demo people go) and makes it owner again.
     user.first_name = "Real"
     user.save()
-    seed(reset=True, owner_tg=REAL_OWNER)
+    seed_core(reset=True, owner_tg=REAL_OWNER)
     assert User.objects.get(telegram_id=REAL_OWNER).first_name == "Real"
     assert Membership.objects.filter(user=user).count() == 2
 
     # A rebuild without it removes the memberships but still not the account.
-    seed(reset=True)
+    seed_core(reset=True)
     assert User.objects.filter(telegram_id=REAL_OWNER).exists()
     assert not Membership.objects.filter(user=user).exists()
 
 
 def test_owner_tg_on_an_existing_demo_only_adds_the_owner(debug):
-    seed()
+    seed_core()
     shop = Company.objects.get(slug="demo-shop")
     tasks = Task.objects.for_company(shop).count()
 
-    output = seed(owner_tg=REAL_OWNER)
-    seed(owner_tg=REAL_OWNER)  # twice is fine
+    output = seed_core(owner_tg=REAL_OWNER)
+    seed_core(owner_tg=REAL_OWNER)  # twice is fine
 
     assert "Owner of Demo Café, Demo Shop" in output
     assert Company.objects.get(slug="demo-shop").pk == shop.pk
@@ -155,6 +181,20 @@ def test_owner_tg_on_an_existing_demo_only_adds_the_owner(debug):
 def test_owner_tg_cant_be_one_of_the_demo_people(debug):
     with pytest.raises(CommandError, match="demo people"):
         seed(owner_tg=seed_demo.WORKER)
+
+
+def test_owner_tg_may_be_the_demo_owner_who_owns_both_already(debug):
+    """`make demo OWNER_TG=1001` works: Dilnoza is the demo's owner of both companies."""
+    output = seed_core(owner_tg=seed_demo.OWNER)
+
+    assert "Demo Shop and Demo Café are ready." in output
+    owned = Membership.objects.filter(user__telegram_id=seed_demo.OWNER, role__is_owner=True)
+    assert sorted(owned.values_list("company__slug", flat=True)) == ["demo-cafe", "demo-shop"]
+    shop_owner = owned.get(company__slug="demo-shop")
+    assert seed_core(owner_tg=seed_demo.OWNER) == (
+        "1001 is the demo owner: an Owner of both companies.\n"
+    )
+    assert owned.get(company__slug="demo-shop").onboarded_at == shop_owner.onboarded_at
 
 
 def test_module_demos_and_defaults_run(debug, demo_calls):
@@ -188,7 +228,7 @@ def test_module_demos_never_see_the_real_owner(debug, monkeypatch):
         seen.append(Membership.objects.filter(user__telegram_id=REAL_OWNER).count())
 
     monkeypatch.setattr("apps.sales.demo.seed", demo)
-    seed(owner_tg=REAL_OWNER)
+    seed(owner_tg=REAL_OWNER, only="sales")
 
     assert seen == [0]
     assert Membership.objects.filter(user__telegram_id=REAL_OWNER).count() == 2
@@ -224,7 +264,7 @@ def test_unknown_demo_apps_are_refused(debug, monkeypatch):
 
 
 def test_a_failing_rebuild_keeps_the_previous_demo(debug, monkeypatch):
-    seed()
+    seed_core()
     shop = Company.objects.get(slug="demo-shop")
 
     def broken(company, people, now):
@@ -232,7 +272,7 @@ def test_a_failing_rebuild_keeps_the_previous_demo(debug, monkeypatch):
 
     monkeypatch.setattr("apps.sales.demo.seed", broken)
     with pytest.raises(RuntimeError):
-        seed(reset=True)
+        seed(reset=True, only="sales")
 
     assert Company.objects.get(slug="demo-shop").pk == shop.pk
     assert Company.objects.filter(slug="demo-cafe").exists()
@@ -240,10 +280,10 @@ def test_a_failing_rebuild_keeps_the_previous_demo(debug, monkeypatch):
 
 
 def test_owner_tg_finds_the_owner_role_even_renamed(debug):
-    seed()
+    seed_core()
     AccessRole.objects.filter(company__slug="demo-shop", is_owner=True).update(name="Boss")
 
-    seed(owner_tg=REAL_OWNER)
+    seed_core(owner_tg=REAL_OWNER)
 
     shop_membership = Membership.objects.get(
         user__telegram_id=REAL_OWNER, company__slug="demo-shop"

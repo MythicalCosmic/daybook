@@ -92,12 +92,13 @@ def owner_api(db):
 
 
 # The people every module's demo.py gets (docs/PLAN-OWNER.md §2.3 rule 22), as seed_demo makes
-# them: key -> (first name, last name, role, position).
+# them: key -> (first name, last name, role, position). seed_demo gives roles and positions their
+# Uzbek names (seed_demo.IN_UZBEK) only after every demo.py has run.
 DEMO_PEOPLE = {
     "owner": ("Dilnoza", "Karimova", "Owner", "Office"),
     "manager": ("Bekzod", "Mirzayev", "Manager", "Shift lead"),
     "worker": ("Alisher", "Valiyev", "Employee", "Sales floor"),
-    "madina": ("Madina", "Saidova", "Employee", "Cashier"),
+    "madina": ("Madina", "Saidova", "Employee", "Sales floor"),
     "jasur": ("Jasur", "Tursunov", "Employee", "Stock & warehouse"),
     "nigora": ("Nigora", "Azimova", "Employee", "Delivery"),
 }
