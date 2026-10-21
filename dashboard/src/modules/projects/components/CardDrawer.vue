@@ -29,10 +29,11 @@ import UiButton from "@/components/UiButton.vue";
 import UiDrawer from "@/components/UiDrawer.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { toast } from "@/components/useToast";
+import { zonedDay } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
-import { moveCard, startTimer, stopTimer, updateCard, useCard, useCompanyId, useRefreshProjects, useTimers } from "../api";
+import { moveCard, scheduleCard, startTimer, stopTimer, updateCard, useCard, useCompanyId, useRefreshProjects, useTimers } from "../api";
 import { colorVar, hhmm, TASK_TONE, tint } from "../lib";
 import type { CardDetail, ProjectDetail, TaskPriority } from "../types";
 import LogTimeDialog from "./LogTimeDialog.vue";
@@ -112,8 +113,8 @@ const listId = computed({
 async function changeList(value: number | null): Promise<void> {
   if (!card.value || value === null || value === card.value.list_id) return;
   try {
-    // A position after everything already in the list (positions are floats, about 1024 apart).
-    const result = await moveCard(companyId.value, props.project.id, card.value.id, value, Date.now() / 1000);
+    // No position: the server puts the card after everything already in the list.
+    const result = await moveCard(companyId.value, props.project.id, card.value.id, value);
     toast.success(result.message || t("projects.drawer.moved", { list: props.project.lists.find((l) => l.id === value)?.name ?? "" }));
     await query.refetch();
     void refresh();
@@ -139,14 +140,26 @@ const startOn = computed({
   get: () => card.value?.start_on ?? null,
   set: (value: string | null) => void save({ start_on: value }),
 });
+// The deadline's day in the company's calendar; changing it keeps the time of day (the server's
+// timeline reschedule does that in the company's timezone; a card without a deadline gets 18:00).
 const dueDay = computed({
-  get: () => (card.value?.due_at ? card.value.due_at.slice(0, 10) : null),
-  set: (value: string | null) => {
-    if (!value || !card.value) return;
-    const time = card.value.due_at ? card.value.due_at.slice(10) : "T18:00:00+05:00";
-    void save({ due_at: `${value}${time}` });
-  },
+  get: () => (card.value?.due_at ? zonedDay(card.value.due_at, company.timezone) : null),
+  set: (value: string | null) => void changeDue(value),
 });
+async function changeDue(value: string | null): Promise<void> {
+  if (!value || !card.value) return;
+  // Keep the bar's left end: the planned start, else the day the card was made (never after the deadline).
+  const from = card.value.start_on ?? zonedDay(card.value.created_at, company.timezone);
+  const start = from <= value ? from : value;
+  saving.value = true;
+  try {
+    await scheduleCard(companyId.value, props.project.id, card.value.id, start, value);
+    await query.refetch();
+    void refresh();
+  } finally {
+    saving.value = false;
+  }
+}
 
 const checklistDone = computed(() => card.value?.checklist.filter((i) => i.is_done).length ?? 0);
 const tasksLink = computed(() => (card.value ? `/c/${company.currentId}/tasks?task=${card.value.id}` : ""));

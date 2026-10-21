@@ -89,9 +89,9 @@ export const createCard = (companyId: number, id: number, body: CardInput) => ht
 export const getCard = (companyId: number, id: number, taskId: number, signal?: AbortSignal) =>
   http.get<CardDetail>(one(companyId, id, `cards/${taskId}/`), undefined, { signal });
 export const updateCard = (companyId: number, id: number, taskId: number, body: Partial<CardInput>) => http.patch<Card>(one(companyId, id, `cards/${taskId}/`), body);
-/** Errors here are shown by the board itself (it opens the card on `needs_proof`), not toasted. */
-export const moveCard = (companyId: number, id: number, taskId: number, list: number, position: number) =>
-  http.post<MoveResult>(one(companyId, id, `cards/${taskId}/move/`), { list, position }, { toast: false });
+/** Errors here are shown by the board itself (it opens the card on `needs_proof`), not toasted. Without a position the card goes to the end of the list. */
+export const moveCard = (companyId: number, id: number, taskId: number, list: number, position?: number) =>
+  http.post<MoveResult>(one(companyId, id, `cards/${taskId}/move/`), position === undefined ? { list } : { list, position }, { toast: false });
 export const scheduleCard = (companyId: number, id: number, taskId: number, start_on: string, end_on: string) =>
   http.post<Card>(one(companyId, id, `cards/${taskId}/schedule/`), { start_on, end_on });
 

@@ -66,7 +66,7 @@ const daysLeft = computed(() => (props.project.due_on && !done.value ? daysBetwe
         <div class="min-w-0 flex-1 text-sm">
           <p class="font-semibold text-fg">
             {{ t("projects.card.cards", { done: project.progress.done, total: project.progress.total }) }}
-            <span v-if="project.progress.overdue" class="ml-1 font-medium text-danger">· {{ t("projects.card.overdue", { n: project.progress.overdue }) }}</span>
+            <span v-if="project.progress.overdue" class="ml-1 whitespace-nowrap font-medium text-danger">· {{ t("projects.card.overdue", { n: project.progress.overdue }) }}</span>
           </p>
           <p v-if="project.next_milestone" class="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-muted">
             <Flag :size="12" class="shrink-0" />

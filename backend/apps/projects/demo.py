@@ -506,12 +506,15 @@ def _proof_photo(task: Task) -> None:
 
     from apps.core import uploads
 
-    image = Image.new("RGB", (800, 600), (214, 205, 190))
+    rng = random.Random(task.pk)
+    image = Image.new("RGB", (800, 600), (176, 168, 156))  # grout
     draw = ImageDraw.Draw(image)
-    for x in range(0, 800, 100):
-        for y in range(0, 600, 100):
-            shade = 200 + ((x + y) // 100 % 2) * 25
-            draw.rectangle((x + 3, y + 3, x + 97, y + 97), fill=(shade, shade - 8, shade - 22))
+    for x in range(0, 800, 120):
+        for y in range(0, 600, 120):
+            light = int(18 * (1 - y / 600)) + rng.randint(-6, 6)  # brighter towards the window
+            base = (222 + light, 208 + light, 186 + light)
+            draw.rectangle((x + 4, y + 4, x + 116, y + 116), fill=tuple(min(255, c) for c in base))
+            draw.line((x + 10, y + 12, x + 60, y + 12), fill=(236, 226, 208), width=2)
     buffer = io.BytesIO()
     image.save(buffer, format="JPEG")
     clean = uploads.sanitize_image(buffer.getvalue())
@@ -574,13 +577,17 @@ def _updates(opening, website, promo, people, now) -> None:
             30,
         ),
     ]
-    for project, author, health, text, days_ago in rows:
+    tz = ZoneInfo(opening.company.timezone)
+    today = timezone.localtime(now, tz).date()
+    for index, (project, author, health, text, days_ago) in enumerate(rows):
         update = ProjectUpdate.objects.create(
             project=project, author=author, health=health, text=text
         )
-        ProjectUpdate.objects.filter(pk=update.pk).update(
-            created_at=now - timedelta(days=days_ago, hours=3)
+        # Leads write them at the end of the day, a little before 18:00 company time.
+        at = datetime.combine(
+            today - timedelta(days=days_ago), time(17, 40 + (index * 13) % 20), tzinfo=tz
         )
+        ProjectUpdate.objects.filter(pk=update.pk).update(created_at=min(at, now))
 
 
 def _time(company, projects, people, *, today, rng, now) -> None:
@@ -589,20 +596,35 @@ def _time(company, projects, people, *, today, rng, now) -> None:
         projects[0].pk: ["manager", "worker", "jasur", "madina", "nigora"],
         projects[1].pk: ["owner", "madina", "nigora"],
     }
+    tz = ZoneInfo(company.timezone)
     cards = {
-        project.pk: list(Task.objects.filter(project=project).exclude(status=Task.Status.TODO))
+        project.pk: list(
+            Task.objects.filter(project=project)
+            .exclude(status=Task.Status.TODO)
+            .select_related("card")
+        )
         for project in projects
     }
+
+    def worked_on(task: Task, day: date) -> bool:
+        """Was the card being worked on that day: started and not yet finished."""
+        begun = task.card.start_on if getattr(task, "card", None) else None
+        if begun is not None and day < begun:
+            return False
+        if task.completed_at is None:
+            return True
+        return day <= timezone.localtime(task.completed_at, tz).date()
+
     day = start
     while day <= today:
         if day.weekday() < 6:
             for project in projects:
                 for who in work[project.pk]:
                     member = people[who]
-                    options = [t for t in cards[project.pk] if t.assignee_id == member.pk] or cards[
-                        project.pk
-                    ]
+                    active = [t for t in cards[project.pk] if worked_on(t, day)]
+                    options = [t for t in active if t.assignee_id == member.pk] or active
                     for _ in range(rng.choice((1, 1, 2))):
+                        # Without a card in progress, the time is on the project itself.
                         task = rng.choice(options) if options else None
                         TimeEntry.objects.create(
                             company=company,
@@ -649,15 +671,60 @@ def _files(opening, people) -> None:
     buffer = io.BytesIO()
     image.save(buffer, format="PNG")
     clean = uploads.accept_document(ContentFile(buffer.getvalue()), allowed=("image",))
-    row = ProjectFile(
-        project=opening,
-        name="Storefront mockup.jpg",
-        kind="image",
-        size=clean.size,
-        uploaded_by=people["nigora"],
+    _file(opening, "Storefront mockup.jpg", clean, "image", people["nigora"], days_ago=17)
+    lease = uploads.accept_document(ContentFile(_pdf("Lease agreement: Bunyodkor 12")))
+    _file(opening, "Lease agreement.pdf", lease, "pdf", people["owner"], days_ago=39)
+    plan = uploads.accept_document(ContentFile(_pdf("Fit-out plan and schedule")))
+    _file(opening, "Fit-out plan.pdf", plan, "pdf", people["manager"], days_ago=33)
+    budget = "Item,Supplier,Amount (UZS)\n" + "\n".join(
+        f"{item},{supplier},{amount}"
+        for item, supplier, amount in (
+            ("Demolition and partitions", "Ustalar Group", 18500000),
+            ("Electrics and plastering", "Ustalar Group", 21400000),
+            ("Shelving and checkout counters", "Mebel Lux", 16800000),
+            ("Fridges and freezer", "Artel", 9600000),
+            ("Storefront sign", "Reklama Pro", 6900000),
+            ("Floor tiles", "Kafel Market", 5600000),
+        )
     )
+    sheet = uploads.accept_document(ContentFile(budget.encode()), allowed=("csv",))
+    _file(opening, "Budget breakdown.csv", sheet, "csv", people["manager"], days_ago=26)
+
+
+def _file(project, name, clean, kind, who, *, days_ago: int) -> None:
+    row = ProjectFile(project=project, name=name, kind=kind, size=clean.size, uploaded_by=who)
     row.file.save(clean.name, clean, save=False)
     row.save()
+    ProjectFile.objects.filter(pk=row.pk).update(
+        created_at=timezone.now() - timedelta(days=days_ago, hours=days_ago % 5)
+    )
+
+
+def _pdf(title: str) -> bytes:
+    """A one-page PDF with a title line (valid enough for any viewer)."""
+    text = title.replace("\\", "").replace("(", "").replace(")", "")
+    stream = f"BT /F1 20 Tf 72 760 Td ({text}) Tj ET".encode()
+    objects = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R "
+        b"/Resources << /Font << /F1 5 0 R >> >> >>",
+        b"<< /Length %d >>\nstream\n" % len(stream) + stream + b"\nendstream",
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    ]
+    out = bytearray(b"%PDF-1.4\n")
+    offsets = []
+    for number, body in enumerate(objects, start=1):
+        offsets.append(len(out))
+        out += b"%d 0 obj\n" % number + body + b"\nendobj\n"
+    xref = len(out)
+    out += b"xref\n0 %d\n0000000000 65535 f \n" % (len(objects) + 1)
+    out += b"".join(b"%010d 00000 n \n" % offset for offset in offsets)
+    out += b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n" % (
+        len(objects) + 1,
+        xref,
+    )
+    return bytes(out)
 
 
 def _expenses(company, opening, website, promo, owner, *, today: date) -> None:

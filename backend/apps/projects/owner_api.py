@@ -39,6 +39,7 @@ from apps.projects.models import (
     ProjectMember,
     TimeEntry,
 )
+from apps.tasks import rules as task_rules
 from apps.tasks.models import Task
 
 
@@ -55,6 +56,13 @@ class ProjectsView(OwnerAPIView):
             exc = exceptions.NotFound()
         return super().handle_exception(exc)
 
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        if "project_id" in kwargs:
+            # A project the caller can't see answers 404 before anything else (a bad payload
+            # included), exactly like another company's id.
+            self.project  # noqa: B018
+
     @cached_property
     def project(self) -> Project:
         return queries.get_visible(self.membership, self.kwargs["project_id"])
@@ -65,21 +73,31 @@ class ProjectsView(OwnerAPIView):
     def item(self, project: Project) -> dict:
         return s.project_item(project, self.facts([project])[project.pk], self.membership)
 
-    def member_of_company(self, pk) -> Membership | None:
+    def member_of_company(self, pk, *, project: Project | None = None) -> Membership | None:
+        """An approved member of the company the caller may pick: someone in their branch scope
+        (§2.6), themselves, or someone already on `project`. Anyone else answers 404."""
         if pk in (None, ""):
             return None
-        return Membership.objects.select_related("user").get(
-            pk=pk, company=self.company, status=Membership.Status.APPROVED
+        people = Membership.objects.select_related("user").filter(
+            company=self.company, status=Membership.Status.APPROVED
         )
+        allowed = Q(pk__in=restrict(people, self.branch_scope, field="branches").values("pk"))
+        allowed |= Q(pk=self.membership.pk)
+        if project is not None:
+            allowed |= Q(pk__in=project.members.values("membership_id")) | Q(pk=project.lead_id)
+        return people.filter(allowed).get(pk=pk)
+
+    def branch(self, pk):
+        """A branch of the company inside the caller's scope (404 otherwise)."""
+        if pk in (None, ""):
+            return None
+        branches = self.company.branches.all()
+        if self.branch_scope is not None:
+            branches = branches.filter(pk__in=self.branch_scope)
+        return branches.get(pk=pk)
 
     def today(self) -> date:
         return queries.local_today(self.company)
-
-
-def _branch(company, pk):
-    if pk in (None, ""):
-        return None
-    return company.branches.get(pk=pk)
 
 
 def _client(company, pk):
@@ -149,11 +167,18 @@ class ProjectListView(ProjectsView):
         projects = projects.select_related("company", "lead__user", "branch", "client")
         page = Pagination()
         page.max_page_size = 500
-        rows = page.paginate_queryset(projects, request, view=self)
-        facts = self.facts(rows)
-        items = [s.project_item(p, facts[p.pk], self.membership) for p in rows]
         if health := set(_multi(params, "health")):
-            items = [item for item in items if item["health"] in health]
+            # Health is worked out, not stored: filter every match first, then page.
+            every = list(projects)
+            facts = self.facts(every)
+            rows = page.paginate_queryset(
+                [p for p in every if facts[p.pk]["health"] in health], request, view=self
+            )
+        else:
+            rows = page.paginate_queryset(projects, request, view=self)
+            facts = self.facts(rows)
+        queries.prime_access(rows, self.membership)
+        items = [s.project_item(p, facts[p.pk], self.membership) for p in rows]
         return page.get_paginated_response(items)
 
     @extend_schema(request=s.ProjectWriteSerializer, responses={201: s.ProjectDetailSerializer})
@@ -171,13 +196,13 @@ class ProjectListView(ProjectsView):
             priority=data.get("priority", Project.Priority.NORMAL),
             visibility=data.get("visibility", Project.Visibility.MEMBERS),
             lead=self.member_of_company(data.get("lead")),
-            branch=_branch(self.company, data.get("branch")),
+            branch=self.branch(data.get("branch")),
             client=_client(self.company, data.get("client")),
             start_on=data.get("start_on"),
             due_on=data.get("due_on"),
             budget=data.get("budget"),
             budget_currency=data.get("budget_currency"),
-            member_ids=data.get("member_ids", []),
+            member_ids=[self.member_of_company(pk).pk for pk in data.get("member_ids", [])],
         )
         project = queries.get_visible(self.membership, project.pk)
         return Response(_detail(self, project), status=status.HTTP_201_CREATED)
@@ -216,6 +241,7 @@ class SummaryView(ProjectsView):
             )
         )
         live = [p for p in projects if p.status in Project.LIVE_STATUSES]
+        queries.prime_access(live, self.membership)
         facts = self.facts(live)
         today = self.today()
         week_start, week_end = queries.week_bounds(today)
@@ -345,9 +371,9 @@ class ProjectDetailView(ProjectsView):
         data = dict(_valid(s.ProjectWriteSerializer, request.data, partial=True))
         data.pop("member_ids", None)
         if "lead" in data:
-            data["lead"] = self.member_of_company(data["lead"])
+            data["lead"] = self.member_of_company(data["lead"], project=self.project)
         if "branch" in data:
-            data["branch"] = _branch(self.company, data["branch"])
+            data["branch"] = self.branch(data["branch"])
         if "client" in data:
             data["client"] = _client(self.company, data["client"])
         services.update_project(self.project, by=self.membership, **data)
@@ -426,7 +452,7 @@ class CardListView(ProjectsView):
             by=self.membership,
             title=data["title"],
             project_list=project.lists.get(pk=data["list"]) if data.get("list") else None,
-            assignee=self.member_of_company(data.get("assignee")),
+            assignee=self.member_of_company(data.get("assignee"), project=project),
             due_at=data.get("due_at"),
             priority=data.get("priority", Task.Priority.NORMAL),
             description=data.get("description", ""),
@@ -500,7 +526,7 @@ class CardMoveView(CardDetailView):
         data = _valid(s.ProjectsMoveSerializer, request.data)
         before = self.get_task()
         task = services.move_card(
-            before, project.lists.get(pk=data["list"]), data["position"], by=self.membership
+            before, project.lists.get(pk=data["list"]), data.get("position"), by=self.membership
         )
         message = ""
         if before.status != task.status and task.status == Task.Status.REVIEW:
@@ -664,7 +690,7 @@ class MembersView(ProjectsView):
         data = _valid(s.ProjectsMemberAddSerializer, request.data)
         services.add_member(
             self.project,
-            self.member_of_company(data["membership"]),
+            self.member_of_company(data["membership"], project=self.project),
             by=self.membership,
             role=data.get("role", ProjectMember.Role.MEMBER),
         )
@@ -983,7 +1009,10 @@ class TimelineView(ProjectsView):
                     "end": end,
                     "has_due": task.due_at is not None,
                     "progress": _bar_progress(task),
-                    "editable": can_edit and task.is_open,
+                    # Moving the bar changes the deadline: the task app decides who may.
+                    "editable": can_edit
+                    and task.is_open
+                    and task_rules.can_manage(task, self.membership),
                     "overdue": task.is_overdue(),
                 }
             )
@@ -1022,6 +1051,7 @@ class RoadmapView(ProjectsView):
         if request.query_params.get("all") not in ("1", "true"):
             projects = projects.filter(status__in=Project.LIVE_STATUSES)
         projects = list(projects.order_by("start_on", "due_on", "name"))
+        queries.prime_access(projects, self.membership)
         facts = self.facts(projects)
         today = self.today()
         milestones: dict[int, list[dict]] = {}
@@ -1158,7 +1188,11 @@ class TimeView(ProjectsView):
             task=task,
             note=data.get("note", ""),
             billable=data.get("billable", False),
-            membership=self.member_of_company(data.get("person")) if data.get("person") else None,
+            membership=self.member_of_company(
+                data.get("person"), project=project or (task.project if task else None)
+            )
+            if data.get("person")
+            else None,
         )
         entry = TimeEntry.objects.select_related("membership__user", "project", "task").get(
             pk=entry.pk

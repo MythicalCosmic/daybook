@@ -86,11 +86,29 @@ def visible_projects(member: Membership, *, archived: bool = False) -> QuerySet[
 def get_visible(member: Membership, pk, *, archived: bool = True) -> Project:
     """The project `pk` if `member` may open it; `Project.DoesNotExist` otherwise (a 404, like
     another company's id)."""
-    return (
+    project = (
         visible_projects(member, archived=archived)
-        .select_related("lead__user", "branch", "client", "created_by__user")
+        .select_related("company", "lead__user", "branch", "client", "created_by__user")
         .get(pk=pk)
     )
+    project._visible_for = member.pk
+    return project
+
+
+def prime_access(projects: list[Project], member: Membership) -> None:
+    """Remember `member`'s role on each of `projects` (one query) and that they may see them,
+    so `role_of`, `can_view`, `can_manage` and `sees_money` cost nothing per row. Only for
+    projects that came from `visible_projects(member)` (or `my_projects`)."""
+    if not projects:
+        return
+    roles = dict(
+        ProjectMember.objects.filter(
+            project_id__in=[p.pk for p in projects], membership=member
+        ).values_list("project_id", "role")
+    )
+    for project in projects:
+        project._role_cache = {member.pk: roles.get(project.pk)}
+        project._visible_for = member.pk
 
 
 def role_of(project: Project, member: Membership) -> str | None:
@@ -108,10 +126,11 @@ def role_of(project: Project, member: Membership) -> str | None:
 
 
 def can_view(project: Project, member: Membership) -> bool:
-    return (
-        project.company_id == member.company_id
-        and visible_projects(member, archived=True).filter(pk=project.pk).exists()
-    )
+    if project.company_id != member.company_id:
+        return False
+    if getattr(project, "_visible_for", None) == member.pk:
+        return True
+    return visible_projects(member, archived=True).filter(pk=project.pk).exists()
 
 
 def can_manage(project: Project, member: Membership) -> bool:
@@ -160,6 +179,12 @@ def sees_labour(member: Membership) -> bool:
 
 def sees_all_time(member: Membership) -> bool:
     return member.has_perm(Perm.PROJECTS_TIME_VIEW)
+
+
+def sees_time_of_others(project: Project, member: Membership) -> bool:
+    """Everyone's time on this project: `projects.time_view` holders and its managers (the
+    same rule as `time_entries`)."""
+    return sees_all_time(member) or can_manage(project, member)
 
 
 def capabilities(project: Project, member: Membership) -> dict:
@@ -276,9 +301,7 @@ def budget_in_base(project: Project, *, today: date | None = None) -> Decimal | 
 
     try:
         quote = finance.rate_for(
-            project.company,
-            project.budget_currency if base == "UZS" else base,
-            today or local_today(project.company),
+            project.company, project.budget_currency, today or local_today(project.company)
         )
         return quantize(finance.convert(project.budget, project.budget_currency, base, quote.rate))
     except DomainError:
@@ -299,13 +322,15 @@ def health(
     spent: Decimal,
     budget: Decimal | None,
     overdue_milestones: int,
+    settings=None,
 ) -> str | None:
     """`off_track` when a milestone or the project itself is overdue or more than the budget is
     spent; `at_risk` when the due date is close and too little is done; else `on_track`.
-    Finished and cancelled projects have no health."""
+    Finished and cancelled projects have no health. `settings`: the company's
+    `ProjectSettings`, looked up when not given."""
     if project.status not in Project.LIVE_STATUSES:
         return None
-    settings = conf.get_settings(project.company)
+    settings = settings or conf.get_settings(project.company)
     if overdue_milestones or (budget is not None and spent > budget):
         return Health.OFF_TRACK
     if project.due_on is not None and project.due_on < today:
@@ -358,9 +383,11 @@ def summaries(projects: list[Project], *, now: datetime | None = None) -> dict[i
     prog = progress_many(ids, now=now)
     money = money_many(ids)
     late = overdue_milestones_many(ids, today)
+    settings = conf.get_settings(company)
     reported: dict[int, ProjectUpdate] = {}
     for update in (
         ProjectUpdate.objects.filter(project_id__in=ids)
+        .select_related("author__user")
         .order_by("project_id", "-created_at", "-pk")
         .distinct("project_id")
     ):
@@ -393,6 +420,7 @@ def summaries(projects: list[Project], *, now: datetime | None = None) -> dict[i
                 spent=spent,
                 budget=budget,
                 overdue_milestones=late[project.pk],
+                settings=settings,
             ),
             "overdue_milestones": late[project.pk],
             "reported": reported.get(project.pk),
@@ -433,11 +461,14 @@ def financials(project: Project, *, viewer: Membership) -> dict:
     today = local_today(project.company)
     money = money_many([project.pk])[project.pk]
     budget = budget_in_base(project, today=today)
+    from apps.finance.rates import convert
+
+    base = project.company.base_currency
     receivable = Decimal("0")
     for debt in Debt.objects.filter(
         project=project, direction=Debt.Direction.RECEIVABLE, status=Debt.Status.OPEN
     ):
-        receivable += quantize((debt.amount - debt.paid) * debt.rate)
+        receivable += convert(debt.amount - debt.paid, debt.currency, base, debt.rate)
     show_labour = sees_labour(viewer)
     labour = labour_cost(project) if show_labour else None
     margin = money.income - money.spent - (labour or Decimal("0"))

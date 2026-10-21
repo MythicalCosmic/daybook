@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -28,6 +29,7 @@ from apps.projects import conf, queries
 from apps.projects.models import Health, Milestone, Project, ProjectUpdate
 
 NUDGE_HOUR = 10
+log = logging.getLogger(__name__)
 
 
 def watchers(project: Project) -> list[Membership]:
@@ -62,17 +64,26 @@ def watch_health(now: datetime | None = None) -> int:
     by_company: dict[int, list[Project]] = {}
     for project in _live_projects():
         by_company.setdefault(project.company_id, []).append(project)
-    for projects in by_company.values():
-        facts = queries.summaries(projects, now=now)
-        for project in projects:
-            state = facts[project.pk]["health"] or ""
-            if state == project.health:
-                continue
-            with transaction.atomic():
-                Project.objects.filter(pk=project.pk).update(health=state)
-                if state == Health.OFF_TRACK:
-                    sent += _alert_off_track(project, facts[project.pk], now)
+    for company_id, projects in by_company.items():
+        try:
+            sent += _watch_company(projects, now)
+        except Exception:  # one company's bad data must not stop the others' alerts
+            log.exception("projects.watch_health failed for company %s", company_id)
     sent += _alert_missed_milestones(now)
+    return sent
+
+
+def _watch_company(projects: list[Project], now: datetime) -> int:
+    sent = 0
+    facts = queries.summaries(projects, now=now)
+    for project in projects:
+        state = facts[project.pk]["health"] or ""
+        if state == project.health:
+            continue
+        with transaction.atomic():
+            Project.objects.filter(pk=project.pk).update(health=state)
+            if state == Health.OFF_TRACK:
+                sent += _alert_off_track(project, facts[project.pk], now)
     return sent
 
 

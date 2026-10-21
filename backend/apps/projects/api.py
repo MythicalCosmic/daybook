@@ -43,6 +43,11 @@ class EmployeeView(APIView):
             exc = exceptions.NotFound()
         return super().handle_exception(exc)
 
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        if "project_id" in kwargs:
+            self.project  # noqa: B018 (a project I'm not on answers 404 before anything else)
+
     @cached_property
     def project(self) -> Project:
         return queries.get_visible(self.membership, self.kwargs["project_id"], archived=False)
@@ -60,6 +65,7 @@ class MyProjectsView(EmployeeView):
             Project.Status.CANCELLED: 4,
         }
         projects.sort(key=lambda p: (order.get(p.status, 9), p.due_on or date.max, p.name))
+        queries.prime_access(projects, self.membership)
         facts = queries.summaries(projects)
         items = [s.project_item(p, facts[p.pk], self.membership) for p in projects]
         mine = {
@@ -91,7 +97,7 @@ class EmployeeMoveView(EmployeeView):
         task = services.move_card(
             before,
             project.lists.get(pk=serializer.validated_data["list"]),
-            serializer.validated_data["position"],
+            serializer.validated_data.get("position"),
             by=self.membership,
         )
         message = ""
@@ -241,7 +247,12 @@ class MyTimerView(EmployeeView):
         return Response({"timer": self.current()})
 
     @extend_schema(
-        request=s.ProjectsTimerStartSerializer, responses={201: s.ProjectsTimerSerializer}
+        request=s.ProjectsTimerStartSerializer,
+        responses={
+            201: inline_serializer(
+                "ProjectsMyTimerStarted", {"timer": s.ProjectsTimerSerializer(allow_null=True)}
+            )
+        },
     )
     def post(self, request, company_id):
         serializer = s.ProjectsTimerStartSerializer(data=request.data)

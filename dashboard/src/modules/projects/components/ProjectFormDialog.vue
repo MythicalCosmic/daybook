@@ -41,6 +41,8 @@ const refresh = useRefreshProjects();
 const people = usePeople();
 const options = useOptions();
 const editing = computed(() => !!props.project);
+/** The budget is money: shown and sent only by people who see the project's money. */
+const showBudget = computed(() => !props.project || props.project.capabilities.see_money);
 
 const schema = z
   .object({
@@ -104,8 +106,7 @@ const form = useForm(schema, initial(), {
       client: values.client,
       start_on: values.start_on,
       due_on: values.due_on,
-      budget: values.budget,
-      budget_currency: values.budget_currency,
+      ...(showBudget.value ? { budget: values.budget, budget_currency: values.budget_currency } : {}),
     };
     try {
       if (props.project) {
@@ -159,7 +160,7 @@ function suggest(name: string): string {
 </script>
 
 <template>
-  <UiDialog v-model:open="open" :title="editing ? t('projects.form.editTitle') : t('projects.form.newTitle')" :description="editing ? undefined : t('projects.form.newHint')" size="lg">
+  <UiDialog v-model:open="open" :title="editing ? t('projects.form.editTitle') : t('projects.form.newTitle')" :description="editing ? undefined : t('projects.form.newHint')" size="xl">
     <form id="project-form" class="flex flex-col gap-5" novalidate @submit="form.submit">
       <InlineAlert v-if="form.formError.value" tone="danger" :description="form.formError.value" />
       <div class="grid gap-4 sm:grid-cols-[1fr_160px]">
@@ -172,12 +173,12 @@ function suggest(name: string): string {
       </div>
 
       <FormField :label="t('projects.form.description')" optional>
-        <TextArea v-model="form.values.description" :rows="3" :placeholder="t('projects.form.descriptionPlaceholder')" />
+        <TextArea v-model="form.values.description" :rows="2" :placeholder="t('projects.form.descriptionPlaceholder')" />
       </FormField>
 
-      <div class="grid gap-4 sm:grid-cols-2">
+      <div class="grid gap-4 sm:grid-cols-[auto_1fr] sm:gap-8">
         <FormField :label="t('projects.form.color')">
-          <div class="flex flex-wrap gap-2" role="radiogroup" :aria-label="t('projects.form.color')">
+          <div class="grid grid-cols-8 gap-2 sm:grid-cols-4" role="radiogroup" :aria-label="t('projects.form.color')">
             <button
               v-for="color in PALETTE"
               :key="color"
@@ -225,33 +226,30 @@ function suggest(name: string): string {
         </FormField>
       </div>
 
-      <div class="grid gap-4 sm:grid-cols-2">
+      <div class="grid gap-4 sm:grid-cols-3">
         <FormField :label="t('projects.form.lead')" :hint="t('projects.form.leadHint')">
           <PersonPicker v-model="form.values.lead" :people="peopleOptions" :placeholder="t('projects.form.leadPlaceholder')" />
         </FormField>
         <FormField v-if="!editing" :label="t('projects.form.team')" optional>
           <PersonPicker v-model="form.values.member_ids" multiple :people="peopleOptions" :exclude="form.values.lead ? [form.values.lead] : []" :placeholder="t('projects.form.teamPlaceholder')" />
         </FormField>
-        <FormField v-else :label="t('projects.form.priority')">
+        <FormField :label="t('projects.form.priority')">
           <SegmentedControl v-model="form.values.priority" :options="priorityOptions" block />
+        </FormField>
+        <FormField v-if="editing" :label="t('projects.form.branch')" optional>
+          <SelectBox v-model="form.values.branch" :options="branchOptions" clearable :placeholder="t('projects.form.wholeCompany')" />
         </FormField>
       </div>
 
-      <div class="grid gap-4 sm:grid-cols-2">
-        <FormField :label="t('projects.form.branch')" optional>
+      <div class="grid gap-4 sm:grid-cols-3">
+        <FormField v-if="!editing" :label="t('projects.form.branch')" optional>
           <SelectBox v-model="form.values.branch" :options="branchOptions" clearable :placeholder="t('projects.form.wholeCompany')" />
         </FormField>
         <FormField :label="t('projects.form.client')" optional>
           <SelectBox v-model="form.values.client" :options="clientOptions" clearable :placeholder="t('projects.form.noClient')" />
         </FormField>
-      </div>
-
-      <div class="grid gap-4 sm:grid-cols-2">
-        <FormField :label="t('projects.form.budget')" :hint="t('projects.form.budgetHint')" optional>
+        <FormField v-if="showBudget" :label="t('projects.form.budget')" :hint="t('projects.form.budgetHint')" optional :class="editing && 'sm:col-span-2'">
           <MoneyInput v-model="form.values.budget" v-model:currency="form.values.budget_currency" :currencies="['UZS', 'USD']" />
-        </FormField>
-        <FormField v-if="!editing" :label="t('projects.form.priority')">
-          <SegmentedControl v-model="form.values.priority" :options="priorityOptions" block />
         </FormField>
       </div>
 

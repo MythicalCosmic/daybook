@@ -89,7 +89,6 @@ function open(card: Card): void {
 
 <template>
   <div class="flex flex-col gap-3">
-    <TextInput v-model="q" :icon="Search" size="sm" clearable :placeholder="t('projects.board.search')" class="w-full sm:w-72" />
     <DataTable
       :state="table"
       :columns="columns"
@@ -109,6 +108,9 @@ function open(card: Card): void {
       @row-click="open"
       @clear-filters="q = ''"
     >
+      <template #toolbar>
+        <TextInput v-model="q" :icon="Search" size="sm" clearable :placeholder="t('projects.board.search')" class="w-full sm:w-72" />
+      </template>
       <template #cell-title="{ row }">
         <div class="flex min-w-0 items-center gap-2 py-1">
           <span class="shrink-0 font-mono text-xs text-subtle">{{ row.key }}</span>

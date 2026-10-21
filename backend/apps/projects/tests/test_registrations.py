@@ -4,6 +4,7 @@ visibility filter, the History target, the AI tools and the demo."""
 import importlib
 from datetime import timedelta
 from decimal import Decimal
+from zoneinfo import ZoneInfo
 
 import pytest
 from django.utils import timezone
@@ -160,4 +161,18 @@ def test_the_demo(company, demo_people):
     assert opening.finance_transactions.filter(kind="expense").count() == 9
     assert TimeEntry.objects.filter(company=company).count() > 20
     assert ProjectUpdate.objects.filter(project=opening).count() == 3
-    assert opening.files.count() == 1 and opening.links.count() == 3
+    assert opening.files.count() == 4 and opening.links.count() == 3
+    assert set(opening.files.values_list("kind", flat=True)) == {"image", "pdf", "csv"}
+    # Time sits on cards someone was still working on that day; updates come at day's end.
+    tz = ZoneInfo(company.timezone)
+    for entry in TimeEntry.objects.filter(
+        company=company, task__completed_at__isnull=False
+    ).select_related("task"):
+        assert entry.day <= timezone.localtime(entry.task.completed_at, tz).date()
+    hours = {
+        timezone.localtime(at, tz).hour
+        for at in ProjectUpdate.objects.filter(project__company=company).values_list(
+            "created_at", flat=True
+        )
+    }
+    assert hours == {17}

@@ -156,6 +156,11 @@ def _lock_project(project: Project) -> Project:
     return Project.objects.select_for_update().get(pk=project.pk)
 
 
+def _lock_person(membership: Membership) -> None:
+    """Serialize one person's time writes (their timer and their 24-hour day)."""
+    Membership.objects.select_for_update().filter(pk=membership.pk).first()
+
+
 # Keys -----------------------------------------------------------------------------------
 
 CYRILLIC = str.maketrans(
@@ -780,8 +785,10 @@ def _set_labels(task: Task, project: Project, label_ids) -> None:
 
 
 @transaction.atomic
-def move_card(task: Task, project_list: ProjectList, position: float, *, by: Membership) -> Task:
-    """Put a card in a list at a position (a float between its neighbours).
+def move_card(
+    task: Task, project_list: ProjectList, position: float | None, *, by: Membership
+) -> Task:
+    """Put a card in a list at a position (a float between its neighbours; None: at the end).
 
     Into the done list, an open card runs the normal completion (`tasks.services.complete_task`)
     when it needs no proof and the mover is its assignee; one waiting for a check is confirmed
@@ -799,6 +806,12 @@ def move_card(task: Task, project_list: ProjectList, position: float, *, by: Mem
     _need(queries.can_move_card(task, by), _("You can only move your own cards."))
     if project.archived_at is not None:
         raise ProjectError(_("This project is archived."))
+    if position is None:  # "Move to" a list: after its last card
+        position = (
+            task.list_position
+            if task.project_list_id == project_list.pk
+            else queries.end_position(project_list)
+        )
     try:
         position = float(position)
     except (TypeError, ValueError) as exc:
@@ -1030,6 +1043,7 @@ def start_timer(
 ) -> RunningTimer:
     """Start (or switch) the person's timer; a running one is stopped and logged first."""
     task, project = _work_target(by, task=task, project=project)
+    _lock_person(by)
     current = RunningTimer.objects.select_for_update().filter(membership=by).first()
     if current is not None:
         _stop(current, by=by)
@@ -1049,6 +1063,7 @@ def start_timer(
 def stop_timer(by: Membership, *, now: datetime | None = None) -> TimeEntry | None:
     """Stop the person's timer and log what it measured (at least a minute, at most a day).
     None when no timer was running."""
+    _lock_person(by)
     current = RunningTimer.objects.select_for_update().filter(membership=by).first()
     if current is None:
         return None
@@ -1138,11 +1153,13 @@ def log_time(
             target_project is not None and queries.can_manage(target_project, by),
             _("You can only log time for others on projects you manage."),
         )
-        task, project = _work_target(by, task=task, project=project)
-    else:
-        task, project = _work_target(by, task=task, project=project)
+        _check_member(by.company, person)
+        if queries.role_of(target_project, person) is None:
+            raise ProjectError(_("%(name)s isn't on this project.") % {"name": str(person)})
+    task, project = _work_target(by, task=task, project=project)
     minutes = _check_minutes(minutes)
     day = _check_day(by.company, day)
+    _lock_person(person)
     _check_daily_total(person, day, minutes)
     entry = TimeEntry.objects.create(
         company_id=by.company_id,
@@ -1172,6 +1189,7 @@ def update_time_entry(entry: TimeEntry, *, by: Membership, **changes) -> TimeEnt
     if unknown := changes.keys() - {"minutes", "day", "note", "billable"}:
         raise ValueError(f"Not editable: {sorted(unknown)}")
     _need(_may_edit_entry(entry, by), _("You can only change your own time."))
+    _lock_person(entry.membership)
     before = audit.snapshot(entry)
     if "minutes" in changes:
         entry.minutes = _check_minutes(changes["minutes"])

@@ -179,7 +179,8 @@ def project_item(project: Project, facts: dict, viewer: Membership) -> dict:
         else None,
         "my_role": role,
         "currency": project.company.base_currency,
-        "budget": money(project.budget),
+        # The budget is money too: only for people who see the project's money.
+        "budget": money(project.budget) if show_money else None,
         "budget_currency": project.budget_currency,
     }
     if show_money:
@@ -440,16 +441,19 @@ class ProjectsCardDetailSerializer(ProjectsCardSerializer):
 
 
 def card_detail(task: Task, project: Project, viewer: Membership, *, can_edit: bool) -> dict:
+    """A card in full. Its time entries are listed per person only for people who may see
+    everyone's time on the project (the total is part of the card for everyone)."""
+    entries = TimeEntry.objects.filter(task=task)
+    if not queries.sees_time_of_others(project, viewer):
+        entries = entries.filter(membership=viewer)
     entries = list(
-        TimeEntry.objects.filter(task=task)
-        .select_related("membership__user", "project", "task")
-        .order_by("-day", "-pk")[:20]
+        entries.select_related("membership__user", "project", "task").order_by("-day", "-pk")[:20]
     )
     row = card_row(
         task,
         project,
         viewer,
-        minutes=sum(e.minutes for e in TimeEntry.objects.filter(task=task)),
+        minutes=queries.logged_minutes([task.pk]).get(task.pk, 0),
         can_edit=can_edit,
     )
     comments = list(task.comments.select_related("author__user").order_by("-created_at")[:20])
@@ -499,7 +503,9 @@ class ProjectsCardUpdateSerializer(serializers.Serializer):
 
 class ProjectsMoveSerializer(serializers.Serializer):
     list = serializers.IntegerField()
-    position = serializers.FloatField()
+    position = serializers.FloatField(
+        required=False, allow_null=True, help_text="Leave out to put the card at the end."
+    )
 
 
 class ProjectsMoveResultSerializer(serializers.Serializer):
