@@ -460,6 +460,16 @@ describe("SparkLine", () => {
     expect(mount(SparkLine, { props: { data: [5, null] } }).find("[data-spark-line]").exists()).toBe(false);
   });
 
+  it("draws a steady series across the middle, where the bottom would read as zero", () => {
+    const steady = mount(SparkLine, { props: { data: [100, 100, null, 100], height: 32 } });
+    const ys = [...steady.find("[data-spark-line]").attributes("d")!.matchAll(/[ML][\d.]+,([\d.]+)/g)].map((match) => Number(match[1]));
+    expect(ys).toEqual([16, 16, 16]);
+    // A series that moves still spans the full height.
+    const moving = mount(SparkLine, { props: { data: [0, 50, 100], height: 32 } });
+    const yMoving = [...moving.find("[data-spark-line]").attributes("d")!.matchAll(/[ML][\d.]+,([\d.]+)/g)].map((match) => Number(match[1]));
+    expect(yMoving).toEqual([29, 16, 3]);
+  });
+
   it("KpiCard draws its trend across free height in a tall tile, and beside the delta in a short one", async () => {
     let height = 20;
     const observers: Array<() => void> = [];

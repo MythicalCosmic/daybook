@@ -13,6 +13,7 @@ import { RouterView, useRoute, useRouter } from "vue-router";
 import { keys } from "@/api/keys";
 import { shellApi } from "@/api/shell";
 import ExtensionSlot from "@/components/ExtensionSlot.vue";
+import { menuPanel, preloadWhenIdle } from "@/components/lazyPart";
 import { toast } from "@/components/useToast";
 import { canAccessRoute, visibleModules } from "@/core/access";
 import { hasExtension } from "@/core/extensions";
@@ -29,6 +30,7 @@ import { usePaletteStore } from "@/stores/palette";
 import { useSessionStore } from "@/stores/session";
 import { useUiStore } from "@/stores/ui";
 
+import { companyMenu } from "./companySwitcher";
 import ForbiddenPage from "./ForbiddenPage.vue";
 import MobileTabBar from "./MobileTabBar.vue";
 import SideNav from "./SideNav.vue";
@@ -226,6 +228,9 @@ watch(
 );
 
 onMounted(() => {
+  // The menus (reka-ui and its positioning) are not in the first load: fetched now that the page
+  // has painted, so the first menu opens at once (components/lazyPart.ts).
+  removers.push(preloadWhenIdle([menuPanel, companyMenu]));
   window.addEventListener("popstate", onPopState);
   // Opened from the owner bot with a `startapp` parameter: go there once.
   const tg = telegram();

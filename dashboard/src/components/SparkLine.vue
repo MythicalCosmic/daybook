@@ -29,9 +29,11 @@ const points = computed(() => {
   if (present.length < 2) return [];
   const min = Math.min(...present);
   const max = Math.max(...present);
-  const span = max - min || 1;
   const step = (props.width - PAD * 2) / Math.max(1, values.length - 1);
-  return values.flatMap((v, i) => (v === null ? [] : [{ x: PAD + i * step, y: props.height - PAD - ((v - min) / span) * (props.height - PAD * 2) }]));
+  // A steady series (a routine done 100 % every day) runs across the middle: drawn along the
+  // bottom, it would read as zero.
+  const y = (v: number) => (max === min ? props.height / 2 : props.height - PAD - ((v - min) / (max - min)) * (props.height - PAD * 2));
+  return values.flatMap((v, i) => (v === null ? [] : [{ x: PAD + i * step, y: y(v) }]));
 });
 
 const line = computed(() => points.value.map((point, i) => `${i ? "L" : "M"}${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" "));

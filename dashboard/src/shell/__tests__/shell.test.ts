@@ -11,6 +11,7 @@ import { mountWithProviders, testApp } from "@/test/plugins";
 
 import CommandPalette from "../CommandPalette.vue";
 import CompanySwitcher from "../CompanySwitcher.vue";
+import MobileTabBar from "../MobileTabBar.vue";
 import { bufferKeysUntilPaletteMounts, loadPalette, markPaletteMounted, prefetchPaletteOnModifier } from "../paletteLoader";
 
 afterEach(() => {
@@ -85,6 +86,19 @@ describe("palette and switcher", () => {
     wrapper.unmount();
   });
 
+  it("the company switcher's button opens its menu on first use, loading the menu then", async () => {
+    const app = await testApp("/c/1");
+    useSessionStore().me = me([company({ pending: 23 }), manager([], { pending: 5 })]);
+    const { wrapper } = mountWithProviders(CompanySwitcher, { plugins: app.plugins });
+    await flushPromises();
+    const button = wrapper.get("button[aria-label='Switch company']");
+    expect(button.attributes("aria-haspopup")).toBe("menu");
+    await button.trigger("click");
+    await vi.waitFor(() => expect(document.body.textContent).toContain("Your companies"), { timeout: 8000 });
+    expect(wrapper.get("button[aria-label='Switch company']").attributes("aria-expanded")).toBe("true");
+    wrapper.unmount();
+  });
+
   it("buffers the keys typed after ⌘K while the palette's code still loads, and leaves shortcuts alone", () => {
     let open = false;
     let buffered = "";
@@ -126,5 +140,20 @@ describe("palette and switcher", () => {
     // The same load the palette's first opening waits for.
     expect(loadPalette()).toBe(loadPalette());
     await expect(loadPalette()).resolves.toHaveProperty("default");
+  });
+});
+
+describe("phone tab bar", () => {
+  it("names the whole Work area, not just Tasks (Routines, Projects and Reminders live there too)", async () => {
+    const entry = (moduleId: string) => ({ key: moduleId, moduleId, title: `${moduleId}.title`, path: `/c/1/${moduleId}`, group: "work" as const, hotkey: undefined, children: [], badge: 0, icon: {} });
+    const groups = [{ id: "work" as const, modules: [entry("tasks"), entry("routines")], badge: 2 }];
+    for (const [language, label] of [["en", "Work"], ["uz", "Ish"], ["ru", "Работа"]] as const) {
+      const app = await testApp("/c/1/routines", language);
+      const { wrapper } = mountWithProviders(MobileTabBar, { plugins: app.plugins, props: { groups, moreOpen: false } });
+      await flushPromises();
+      const tab = wrapper.find('a[href="/c/1/tasks"]');
+      expect(tab.text()).toBe(label);
+      wrapper.unmount();
+    }
   });
 });
