@@ -48,7 +48,17 @@ def text_message(text: str | None) -> Message:
 
 def test_the_menu_commands_are_the_private_menu():
     assert menu_commands() == {command.command for command in private_commands()}
-    assert {"checkin", "expense", "pay", "kudos", "tasks", "new", "announce"} <= menu_commands()
+    assert {
+        "checkin",
+        "expense",
+        "pay",
+        "kudos",
+        "kb",
+        "calendar",
+        "tasks",
+        "new",
+        "announce",
+    } <= menu_commands()
 
 
 @pytest.mark.parametrize(
@@ -58,6 +68,8 @@ def test_the_menu_commands_are_the_private_menu():
         ("/checkin@daybook_test_bot", True),
         ("/CHECKIN", True),
         ("/pay now", True),
+        ("/kb", True),
+        ("/calendar@daybook_test_bot", True),
         ("/cancel", False),
         ("/", False),
         ("/ checkin", False),

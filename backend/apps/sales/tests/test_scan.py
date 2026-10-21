@@ -77,14 +77,18 @@ def test_an_opened_branch_a_holiday_and_a_day_off_stay_quiet(hours):
     assert not sent_for(shop.branch, 22).exists() and not sent_for(shop.other_branch, 22).exists()
 
 
-def test_attendance_check_ins_count_only_when_attendance_registered_facts(
-    hours, isolated_registries
-):
+@pytest.fixture
+def no_branch_facts(isolated_registries):
+    """No module's real branch facts: this test registers attendance's itself."""
+    with registry.BRANCH_FACTS.isolated(empty=True):
+        yield
+
+
+def test_attendance_check_ins_count_only_when_attendance_registered_facts(hours, no_branch_facts):
     shop = hours
     shop.company.features = [*shop.company.features, "attendance"]
     shop.company.save(update_fields=["features"])
-    with mock.patch.object(registry.BRANCH_FACTS, "get", return_value=None):
-        scan.scan_company(shop.company, moment(21, 9, 15))
+    scan.scan_company(shop.company, moment(21, 9, 15))
     assert alerts("sales.branch_not_opened").filter(target_id=shop.branch.pk).exists()
     Notification.objects.all().delete()
 

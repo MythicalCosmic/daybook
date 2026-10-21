@@ -18,11 +18,19 @@ from apps.timeoff.models import TimeOff
 pytestmark = pytest.mark.django_db
 
 URL = "/api/v1/owner/companies/{cid}/people/{pk}/"
+# The steps of apps.members and apps.timeoff stay; the other modules' real steps make way for the
+# fake ones these tests register.
+OWN_STEPS = ("members", "timeoff")
 
 
 @pytest.fixture
 def fake_step(isolated_registries):
     """A finance-like step with a blocker switch and a required question."""
+    with registry.OFFBOARD_STEPS.isolated(empty=True, keep=OWN_STEPS):
+        yield register_fake_step()
+
+
+def register_fake_step() -> dict:
     state = {"blocked": False}
 
     def preview(membership):
@@ -206,7 +214,7 @@ def test_a_step_the_manager_cant_see_still_blocks(
             defaults={"write_off": False},
         )
 
-    with registry.OFFBOARD_STEPS.isolated():
+    with registry.OFFBOARD_STEPS.isolated(empty=True, keep=OWN_STEPS):
         registry.OFFBOARD_STEPS.add(
             registry.OffboardStepProvider(
                 "sales", "sales", Perm.SALES_MANAGE, None, 30, "Cash", preview
@@ -256,7 +264,7 @@ def test_a_hidden_step_without_blockers_stays_out_of_the_way(
             defaults={"prepare": True},
         )
 
-    with registry.OFFBOARD_STEPS.isolated():
+    with registry.OFFBOARD_STEPS.isolated(empty=True, keep=OWN_STEPS):
         registry.OFFBOARD_STEPS.add(
             registry.OffboardStepProvider(
                 "payroll", "payroll", Perm.PAYROLL_MANAGE, None, 80, "Pay", preview

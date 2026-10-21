@@ -252,7 +252,8 @@ class TelegramLoginView(APIView):
     authentication_classes = ()
     permission_classes = (AllowAny,)
     throttle_classes = (ScopedRateThrottle,)
-    throttle_scope = "owner_auth"
+    # Its own bucket: dashboard tabs refreshing from the same office can't lock out the mini app.
+    throttle_scope = "owner_telegram"
 
     def get_authenticate_header(self, request):
         return 'Bearer realm="dashboard"'

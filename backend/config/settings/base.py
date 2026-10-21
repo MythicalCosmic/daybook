@@ -202,6 +202,7 @@ REST_FRAMEWORK = {
         "login_poll": "60/min",
         "login_claim": "10/min",
         "owner_auth": "30/min",
+        "owner_telegram": "30/min",
         "ai_turn": "20/min",
         "ai_receipt": "30/min",
         "export_create": "10/min",

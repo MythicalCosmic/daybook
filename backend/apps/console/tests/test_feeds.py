@@ -8,7 +8,8 @@ from apps.console import registry
 from apps.console.registry import QueueAction, QueueItem, SearchHit, StreamItem
 from apps.members.permissions import Perm
 
-pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures("isolated_registries")]
+# Every registry starts empty: the feeds carry exactly the providers registered here.
+pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures("empty_registries")]
 
 NOW = datetime(2026, 10, 20, 9, 0, tzinfo=UTC)
 
@@ -18,7 +19,7 @@ def url(company, path) -> str:
 
 
 @pytest.fixture
-def providers(isolated_registries):
+def providers(empty_registries):
     def people(member, q, limit):
         return [SearchHit("console.person", 1, f"Ali ({q})", "Cashier", "/people/1")]
 
@@ -117,11 +118,10 @@ def test_queue_counts_per_kind(company, member, owner_api):
     as_manager = owner_api(manager).get(url(company, "queue/counts/")).data
 
     assert as_owner["total"] == 4
-    assert as_manager["total"] == 1
-    # The apps' real queues (an empty "Tasks to check" once apps.tasks registers it) may join.
-    assert [kind for kind in as_manager["kinds"] if kind["kind"].startswith("console.")] == [
-        {"kind": "console.time_off", "label": "Time off", "count": 1}
-    ]
+    assert as_manager == {
+        "total": 1,
+        "kinds": [{"kind": "console.time_off", "label": "Time off", "count": 1}],
+    }
 
 
 @pytest.mark.usefixtures("providers")

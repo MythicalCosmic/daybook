@@ -1,9 +1,14 @@
 """Demo companies for trying the apps and for screenshots (development only).
 
 - **Demo Shop**: two branches, six people, tasks, time off and every module switched on. Each
-  app adds its own rows through `apps/<app>/demo.py: seed(company, people, now)`.
+  app adds its own rows through `apps/<app>/demo.py: seed(company, people, now)`; an optional
+  `finish(company, people, now)` runs after every app's `seed`, for what would refuse other
+  demos' rows (finance closes the books there).
 - **Demo Café**: a smaller second company with the same owner and a few modules, so the
   company switcher and the portfolio have something to show.
+
+Both are Uzbek companies: their positions and roles get Uzbek names (`IN_UZBEK`) once every
+demo has run, because the module demos look them up by the English names they are made with.
 
 `--owner-tg <id>` makes that Telegram account an Owner of both, so a real person can sign in to
 the dashboard and both bots against the demo. `--only sales,finance` (or `DEMO_APPS`) runs only
@@ -36,6 +41,27 @@ SLUG = "demo-shop"
 CAFE_SLUG = "demo-cafe"
 POSITIONS = ["Sales floor", "Cashier", "Stock & warehouse", "Shift lead", "Delivery", "Office"]
 CAFE_POSITIONS = ["Barista", "Kitchen", "Hall", "Office"]
+# What the demo companies call their positions and roles ("Branch manager" is the members demo's).
+IN_UZBEK = {
+    Position: {
+        "Sales floor": "Sotuvchi",
+        "Cashier": "Kassir",
+        "Stock & warehouse": "Omborchi",
+        "Shift lead": "Smena boshlig‘i",
+        "Delivery": "Kuryer",
+        "Office": "Ofis",
+        "Kitchen": "Oshpaz",
+        "Hall": "Zal",
+    },
+    AccessRole: {
+        "Owner": "Egasi",
+        "Manager": "Rahbar",
+        "Accountant": "Hisobchi",
+        "Cashier": "Kassir",
+        "Employee": "Xodim",
+        "Branch manager": "Filial rahbari",
+    },
+}
 
 # The shop's branches. Creating a company makes its first branch; the demo renames it.
 BRANCHES = [
@@ -131,11 +157,20 @@ class Command(BaseCommand):
         demo_apps = self._demo_apps(os.environ.get("DEMO_APPS", "") if only is None else only)
         if owner_tg is not None and owner_tg <= 0:
             raise CommandError(f"{owner_tg} isn't a Telegram user id.")
+        # The demo's own owner already owns both companies: nothing to add.
+        demo_owner = owner_tg == OWNER
+        if demo_owner:
+            owner_tg = None
         if owner_tg is not None and owner_tg in EVERYONE:
             raise CommandError(f"{owner_tg} is one of the demo people; pick another account.")
 
         exists = Company.objects.filter(slug__in=(SLUG, CAFE_SLUG)).exists()
         if exists and not reset:
+            if demo_owner:
+                self.stdout.write(
+                    self.style.SUCCESS(f"{OWNER} is the demo owner: an Owner of both companies.")
+                )
+                return
             if owner_tg is None:
                 raise CommandError(
                     "The demo already exists. Use --reset to rebuild it "
@@ -210,7 +245,7 @@ class Command(BaseCommand):
             company.save(update_fields=["features", "updated_at"])
             ensure_company_defaults(company)
 
-        seeded = []
+        seeded, demos = [], []
         for config in django_apps.get_app_configs():
             if not config.name.startswith("apps."):
                 continue
@@ -219,8 +254,19 @@ class Command(BaseCommand):
             name = f"{config.name}.demo"
             if importlib.util.find_spec(name) is None:
                 continue
-            importlib.import_module(name).seed(shop, people, now)
+            demo = importlib.import_module(name)
+            demo.seed(shop, people, now)
             seeded.append(config.label)
+            demos.append(demo)
+        # Then each demo's optional `finish`: what would refuse other demos' rows (closing the
+        # books) waits until every demo has written its own, whatever order the apps run in.
+        for demo in demos:
+            if finish := getattr(demo, "finish", None):
+                finish(shop, people, now)
+        for company in (shop, cafe):
+            for model, names in IN_UZBEK.items():
+                for english, uzbek in names.items():
+                    model.objects.filter(company=company, name=english).update(name=uzbek)
 
         # Last, so the module demos never treat a real person as one of the staff.
         if owner_tg is not None:
@@ -357,12 +403,14 @@ class Command(BaseCommand):
             branches=(chilonzor,),
             **registered,
         )
+        # Yunusobod's two couriers (Jasur also takes in the morning delivery), so their shifts
+        # have someone to swap with.
         jasur = person(
             STOCKER,
             "Jasur",
             "Tursunov",
             role="Employee",
-            position="Stock & warehouse",
+            position="Delivery",
             phone="+998901110005",
             branches=(yunusobod,),
             **registered,

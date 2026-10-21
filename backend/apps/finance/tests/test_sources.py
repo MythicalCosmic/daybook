@@ -45,13 +45,13 @@ class TestRegistry:
         assert sources.get(name) is None
 
     def test_another_app_may_register_its_types(self):
-        sources.register("sales.cashshift", label="Shift", url_template="/c/{company_id}/s/{id}")
+        sources.register("sales.example", label="Shift", url_template="/c/{company_id}/s/{id}")
         try:
-            assert sources.check(("sales.cashshift", 1, "m2")) == sources.Source(
-                "sales.cashshift", 1, "m2"
+            assert sources.check(("sales.example", 1, "m2")) == sources.Source(
+                "sales.example", 1, "m2"
             )
         finally:
-            sources.unregister("sales.cashshift")
+            sources.unregister("sales.example")
 
 
 class TestCheck:

@@ -274,7 +274,7 @@ def test_the_activity_line_shows_the_newcomer(company, member, world):
 
 
 def test_the_ai_sees_no_time_off_reasons(company, world):
-    from apps.members.tests.ai import call_tool
+    from apps.ai.tools.testing import call_tool
     from apps.timeoff.models import TimeOff
 
     ours, _theirs, _nobody = world

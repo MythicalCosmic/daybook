@@ -136,7 +136,7 @@ def team(
     end: date,
     now: datetime,
     *,
-    branch_ids: list[int] | None = None,
+    branch_ids: list[int] | None,
 ) -> TeamReport:
     """Scores for everyone registered (in `branch_ids`' people; None for the whole company),
     best first, from `start` to the day before `end`. Callers serving a person pass their

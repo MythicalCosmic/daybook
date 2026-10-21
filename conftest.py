@@ -92,13 +92,14 @@ def owner_api(db):
 
 
 # The people every module's demo.py gets (docs/PLAN-OWNER.md §2.3 rule 22), as seed_demo makes
-# them: key -> (first name, last name, role, position).
+# them: key -> (first name, last name, role, position). seed_demo gives roles and positions their
+# Uzbek names (seed_demo.IN_UZBEK) only after every demo.py has run.
 DEMO_PEOPLE = {
     "owner": ("Dilnoza", "Karimova", "Owner", "Office"),
     "manager": ("Bekzod", "Mirzayev", "Manager", "Shift lead"),
     "worker": ("Alisher", "Valiyev", "Employee", "Sales floor"),
     "madina": ("Madina", "Saidova", "Employee", "Cashier"),
-    "jasur": ("Jasur", "Tursunov", "Employee", "Stock & warehouse"),
+    "jasur": ("Jasur", "Tursunov", "Employee", "Delivery"),
     "nigora": ("Nigora", "Azimova", "Employee", "Delivery"),
 }
 
@@ -145,6 +146,18 @@ def isolated_registries():
     with ExitStack() as stack:
         for each in registry.REGISTRIES:
             stack.enter_context(each.isolated())
+        yield registry
+
+
+@pytest.fixture
+def empty_registries():
+    """Like `isolated_registries`, but every console, inbox and exports registry starts empty:
+    for the registries' own tests, which see exactly what they register whatever the apps add.
+    To empty a single registry (keeping, say, the real inbox kinds a notification needs), use
+    `registry.X.isolated(empty=True, keep=(...))`."""
+    with ExitStack() as stack:
+        for each in registry.REGISTRIES:
+            stack.enter_context(each.isolated(empty=True))
         yield registry
 
 

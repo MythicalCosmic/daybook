@@ -8,7 +8,7 @@ fridge, a bank loan with monthly repayments, an owner's contribution and draws, 
 the safe and the bank, card settlements with the bank's fee, a dollar purchase with its
 exchange difference, customers buying on credit (nasiya) with partial payments, an instalment
 plan, a write-off, a voided mistake, an entry waiting for approval and receipts with pictures.
-The period before last month is closed.
+The period before last month is closed by `finish`, once every app's demo has booked its rows.
 
 Sales and salaries are tagged with the source `finance.demo` (id = branch or person, key
 `s:<yymmdd>:<cash|card>` / `sal:<yyyymm>`): the sales and payroll demos, which run later and
@@ -38,6 +38,17 @@ def seed(company, people, now) -> None:
     and nigora to their memberships."""
     with translation.override(company.default_language):
         Ledger(company, people, now).build()
+
+
+def finish(company, people, now) -> None:
+    """Close the books up to the end of the month before last. seed_demo calls this after every
+    app's `seed`: a closed period refuses rows, and the projects and sales demos book (and void)
+    older ones."""
+    today = queries.local_today(company, now)
+    first_of_last_month = (today.replace(day=1) - timedelta(days=1)).replace(day=1)
+    locked_until = first_of_last_month - timedelta(days=1)
+    if locked_until > today - timedelta(days=DAYS):
+        services.lock_period(company, by=people["owner"], until=locked_until)
 
 
 def _round(value: float, step: int = 1000) -> Decimal:
@@ -330,8 +341,13 @@ class Ledger:
             if self.yns.pk != self.chl.pk
             else self.kassa_chl
         )
-        self.safe = create(
-            "safe", f"Seyf — {self.chl.name}", branch=self.chl, color="#8a5a7a", order=2
+        # A branch has one safe per currency, and sales' defaults may have made it already.
+        self.safe = services.update_account(
+            services.account_for_branch(self.chl, currency=self.company.base_currency),
+            by=by,
+            name=f"Seyf — {self.chl.name}",
+            color="#8a5a7a",
+            order=2,
         )
         self.bank = create(
             "bank",
@@ -1009,10 +1025,6 @@ class Ledger:
             large_expense_alert=D("10000000"),
             approval_threshold=D("500000"),
         )
-        first_of_last_month = (self.today.replace(day=1) - timedelta(days=1)).replace(day=1)
-        locked_until = first_of_last_month - timedelta(days=1)
-        if locked_until > self.start:
-            services.lock_period(self.company, by=by, until=locked_until)
 
     def receipt(self, row, shop: str, lines: list[tuple[str, str]], total: str) -> None:
         if row is None:

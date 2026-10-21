@@ -3,10 +3,10 @@
 import pytest
 from django.utils import timezone
 
+from apps.ai.tools.testing import call_tool
 from apps.audit.models import AuditLog
 from apps.members import demo
 from apps.members.models import Membership, Position
-from apps.members.tests.ai import call_tool
 from apps.members.tests.factories import PositionFactory
 
 pytestmark = pytest.mark.django_db

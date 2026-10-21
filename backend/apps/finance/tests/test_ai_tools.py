@@ -1,35 +1,19 @@
 """The finance AI tools run through the real runner (`call_tool`): permission, module, data
 switch, branch scope, salary detail and scrubbing."""
 
-import importlib
 from decimal import Decimal
 
 import pytest
 
-from apps.ai.tools import registry
 from apps.ai.tools.registry import SWITCHES
 from apps.ai.tools.testing import call_tool
 from apps.companies.models import Branch
-from apps.finance import ai_tools, queries, services
+from apps.finance import queries, services
 from apps.finance.tests.factories import CounterpartyFactory, MoneyAccountFactory
 from apps.members.permissions import Perm
 
 pytestmark = pytest.mark.django_db
 D = Decimal
-
-
-@pytest.fixture(autouse=True)
-def finance_tools(monkeypatch):
-    """apps.ai's own tests swap in an empty tool registry and may import this module into it,
-    so after them the real registry can lack these tools (the module is imported only once).
-    Put them back, for this test only, whatever ran before."""
-    registry.autodiscover()
-    if "finance_summary" not in registry._tools:
-        kept = {
-            name: tool for name, tool in registry._tools.items() if not name.startswith("finance_")
-        }
-        monkeypatch.setattr(registry, "_tools", kept)
-        importlib.reload(ai_tools)
 
 
 @pytest.fixture

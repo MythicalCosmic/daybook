@@ -1,7 +1,6 @@
 """What projects registers: search, stream, calendar, file check, the time export, the task
 visibility filter, the History target, the AI tools and the demo."""
 
-import importlib
 from datetime import timedelta
 from decimal import Decimal
 from zoneinfo import ZoneInfo
@@ -9,7 +8,6 @@ from zoneinfo import ZoneInfo
 import pytest
 from django.utils import timezone
 
-from apps.ai.tools import registry as ai_registry
 from apps.ai.tools.testing import call_tool
 from apps.console import registry
 from apps.core import files
@@ -120,11 +118,7 @@ def test_history_is_open_to_people_who_see_the_project(company, people):
 
 def test_ai_overview_and_detail(company, people):
     from apps.finance import defaults as finance_defaults
-    from apps.projects import ai_tools
 
-    # The AI suite empties the registry while modules first import; register ours again then.
-    if ai_registry.get_tool("projects_overview") is None:
-        importlib.reload(ai_tools)
     finance_defaults.ensure(company)
     reno = project(company, people["owner"], key="RENO", status="active", budget="1000000")
     card(reno, people["owner"], assignee=people["aziz"])

@@ -24,7 +24,7 @@ from __future__ import annotations
 import logging
 import re
 import sys
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field, fields, is_dataclass
 from datetime import date, datetime
@@ -123,9 +123,16 @@ class Registry[E: Entry]:
         return [entry for entry in self if usable(entry, member)]
 
     @contextmanager
-    def isolated(self) -> Iterator[Registry[E]]:
-        """Tests: register freely inside the block; the entries before it come back after."""
+    def isolated(self, *, empty: bool = False, keep: Iterable[str] = ()) -> Iterator[Registry[E]]:
+        """Tests: register freely inside the block; the entries before it come back after.
+
+        `empty=True` starts the block without the apps' real entries (except the keys in
+        `keep`), for a test that asserts exactly what is registered or stands a fake in for a
+        key a real app owns: every module registers entries, so it never depends on which."""
         saved = dict(self._entries)
+        if empty:
+            kept = set(keep)
+            self._entries = {key: entry for key, entry in saved.items() if key in kept}
         try:
             yield self
         finally:
