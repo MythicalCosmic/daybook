@@ -15,6 +15,13 @@ import module from "../index";
 import TeamReportPage from "../pages/TeamReportPage.vue";
 import type { Score, TeamReport } from "../types";
 
+// jsdom has no ResizeObserver, and the report's chart measures itself after a test can be done.
+globalThis.ResizeObserver ??= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as unknown as typeof ResizeObserver;
+
 interface Call {
   method: string;
   url: string;

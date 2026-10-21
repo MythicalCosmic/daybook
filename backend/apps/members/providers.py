@@ -243,8 +243,8 @@ def offboard_step(membership: Membership) -> OffboardStep:
     if cancelled:
         lines.append(
             ngettext(
-                "%(count)d daily or personal task is cancelled.",
-                "%(count)d daily and personal tasks are cancelled.",
+                "%(count)d routine or personal task is cancelled.",
+                "%(count)d routine and personal tasks are cancelled.",
                 cancelled,
             )
             % {"count": cancelled}

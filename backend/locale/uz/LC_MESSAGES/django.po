@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-21 13:10+0500\n"
+"POT-Creation-Date: 2026-10-21 20:08+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -3123,6 +3123,10 @@ msgstr "O‘tkazmalar va valyuta almashtirish"
 msgid "Opening balances"
 msgstr "Boshlang‘ich qoldiqlar"
 
+#: backend/apps/finance/exporters.py backend/apps/finance/owner_api.py
+msgid "Currency revaluation"
+msgstr "Valyutani qayta baholash"
+
 #: backend/apps/finance/exporters.py
 msgid "Closing cash"
 msgstr "Davr oxiridagi pul"
@@ -3707,6 +3711,11 @@ msgstr "Kim qarzdor yoki kimga qarzdormiz — kontragent yoki xodimni tanlang."
 #: backend/apps/finance/owner_serializers.py backend/apps/sales/services.py
 msgid "Pick the account."
 msgstr "Hisobni tanlang."
+
+#: backend/apps/finance/providers.py
+#, python-format
+msgid "INN %(tin)s"
+msgstr "STIR %(tin)s"
 
 #: backend/apps/finance/providers.py
 msgid "Hidden"
@@ -5141,7 +5150,7 @@ msgstr ""
 "Hisob ilovada yaratiladi, lekin u hali sozlanmagan. Rahbaringizga murojaat "
 "qiling."
 
-#: backend/apps/members/bot_messages.py
+#: backend/apps/members/bot_messages.py employee_bot/bot/handlers/contact.py
 msgid "📱 Create account"
 msgstr "📱 Hisob yaratish"
 
@@ -5241,8 +5250,9 @@ msgid "Positions"
 msgstr "Lavozimlar"
 
 #: backend/apps/members/hooks.py
-msgid "The jobs people pick when they join: Cashier, Cook, Courier…"
-msgstr "Xodimlar qo‘shilganda tanlaydigan lavozimlar: Kassir, Oshpaz, Kuryer…"
+msgid "The jobs people pick when they join: Pharmacist, Cashier, Courier…"
+msgstr ""
+"Xodimlar qo‘shilganda tanlaydigan lavozimlar: farmatsevt, kassir, kuryer…"
 
 #: backend/apps/members/hooks.py
 msgid "Roles"
@@ -5608,9 +5618,9 @@ msgstr[0] "%(count)d ta ochiq vazifa ularni bergan odamlarga qaytadi."
 
 #: backend/apps/members/providers.py
 #, python-format
-msgid "%(count)d daily or personal task is cancelled."
-msgid_plural "%(count)d daily and personal tasks are cancelled."
-msgstr[0] "%(count)d ta kundalik va shaxsiy vazifa bekor qilinadi."
+msgid "%(count)d routine or personal task is cancelled."
+msgid_plural "%(count)d routine and personal tasks are cancelled."
+msgstr[0] "%(count)d ta muntazam yoki shaxsiy vazifa bekor qilinadi."
 
 #: backend/apps/members/providers.py
 #, python-format
@@ -6025,7 +6035,7 @@ msgstr "Biroz uzun bo‘ldi: 4 000 belgidan qisqaroq yozing."
 
 #: backend/apps/projects/conf.py
 msgid "Backlog"
-msgstr "Backlog"
+msgstr "Navbatda"
 
 #: backend/apps/projects/conf.py backend/apps/tasks/models.py
 msgid "To do"
@@ -7790,6 +7800,11 @@ msgid "%(count)s tills open"
 msgstr "%(count)s ta kassa ochiq"
 
 #: backend/apps/sales/queries.py
+msgctxt "shift status"
+msgid "Open"
+msgstr "Ochiq"
+
+#: backend/apps/sales/queries.py
 #, python-format
 msgid "Closed %(shift)s at %(branch)s · %(net)s"
 msgstr "%(branch)s filialida %(shift)s smenasi yopildi · %(net)s"
@@ -8735,6 +8750,10 @@ msgid "Commented on a task"
 msgstr "Vazifaga izoh qoldirdi"
 
 #: backend/apps/tasks/owner_api.py
+msgid "Use without or only."
+msgstr "«without» yoki «only» qiymatini kiriting."
+
+#: backend/apps/tasks/owner_api.py
 msgid "Some of the people picked don't work here."
 msgstr "Tanlangan odamlarning ba’zilari bu yerda ishlamaydi."
 
@@ -8881,6 +8900,41 @@ msgstr "Bir martada ko‘pi bilan %(max)d ta vazifa tanlash mumkin."
 #: backend/apps/tasks/services.py
 msgid "This task has no deadline to move."
 msgstr "Bu vazifaning muddati yo‘q, shuning uchun uni surib bo‘lmaydi."
+
+#: backend/apps/tasks/services.py
+msgid "Pick a time later today."
+msgstr "Bugun hozirgidan keyingi vaqtni tanlang."
+
+#: backend/apps/tasks/services.py
+msgid "Nobody gets today's task: everyone it names is off or has it."
+msgstr ""
+"Bugungi vazifani hech kim olmaydi: belgilanganlarning hammasi dam olishda "
+"yoki vazifani allaqachon olgan."
+
+#: backend/apps/tasks/services.py
+msgid "This routine gives today's tasks by itself."
+msgstr "Bu muntazam vazifa bugungi vazifalarni o‘zi beradi."
+
+#: backend/apps/tasks/services.py
+msgid "This routine is paused."
+msgstr "Bu muntazam vazifa to‘xtatilgan."
+
+#: backend/apps/tasks/services.py
+msgid "Onboarding tasks go out when someone is let in."
+msgstr "Ishga kirish vazifalari xodim qabul qilinganda beriladi."
+
+#: backend/apps/tasks/services.py
+msgid "Today is a company holiday: nobody gets routine tasks."
+msgstr "Bugun bayram kuni: hech kim muntazam vazifa olmaydi."
+
+#: backend/apps/tasks/services.py
+msgid "Today isn't one of this routine's days."
+msgstr "Bugun bu muntazam vazifaning kunlaridan biri emas."
+
+#: backend/apps/tasks/services.py
+#, python-format
+msgid "This routine starts on %(day)s."
+msgstr "Bu muntazam vazifa %(day)s kuni boshlanadi."
 
 #: backend/apps/tasks/services.py
 msgid "You can't change routines."
@@ -9380,6 +9434,12 @@ msgstr "Bu yerga yozishni to‘xtatish"
 #: employee_bot/bot/handlers/admin/approvals.py
 msgid "Choose at least one branch."
 msgstr "Kamida bitta filialni tanlang."
+
+#: employee_bot/bot/handlers/contact.py
+msgid ""
+"📱 Thanks, your phone number is saved. Now finish your account in the app."
+msgstr ""
+"📱 Rahmat, telefon raqamingiz saqlandi. Endi hisobingizni ilovada yakunlang."
 
 #: employee_bot/bot/handlers/features/attendance.py
 #, python-format
