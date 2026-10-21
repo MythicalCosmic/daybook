@@ -1044,12 +1044,24 @@ class Distributor:
         code = {c.system_code: c for c in Category.objects.filter(company=company)}
         services.update_category(code["sales"], by=by, name="Ulgurji savdo")
         services.update_category(code["goods"], by=by, name="Dori xaridi")
+        # One cash desk: the warehouse's own (the company's spare one goes), and its safe.
         accounts = MoneyAccount.objects.filter(company=company)
-        desk = accounts.filter(kind=MoneyAccount.Kind.CASH).order_by("pk").first()
+        cash = list(accounts.filter(kind=MoneyAccount.Kind.CASH).order_by("pk"))
+        desk = next((account for account in cash if account.branch_id), cash[0] if cash else None)
         if desk is not None:
             desk = services.update_account(desk, by=by, name="Ombor kassasi")
         else:
             desk = services.create_account(company, by=by, kind="cash", name="Ombor kassasi")
+        for spare in cash:
+            if spare.pk != desk.pk and not spare.transactions.exists():
+                spare.delete()
+        warehouse = next(iter(self.story.branches.values()))
+        safe = services.account_for_branch(warehouse, currency="UZS")
+        safe = services.update_account(safe, by=by, name="Ombor seyfi")
+        # Buyers pay invoices by bank transfer: the card terminal's account isn't used.
+        for terminal in accounts.filter(kind=MoneyAccount.Kind.CLEARING, is_active=True):
+            if not terminal.transactions.exists():
+                services.archive_account(terminal, by=by)
         bank = services.create_account(company, by=by, kind="bank", name="Asosiy bank hisobi")
         services.update_account(bank, by=by, number_last4="7302")
 
@@ -1070,7 +1082,7 @@ class Distributor:
         ]
         landlord = party("Sherali Rahmonov (ombor ijarasi)", Counterparty.Kind.OTHER)
         day = self.start
-        for account, amount in ((bank, "240000000"), (desk, "5000000")):
+        for account, amount in ((bank, "240000000"), (desk, "5000000"), (safe, "3000000")):
             services.record_transaction(
                 company,
                 by=by,
@@ -1080,7 +1092,7 @@ class Distributor:
                 account=account,
                 description="Boshlang‘ich qoldiq",
             )
-        number = 2210
+        number, sold = 2210, D(0)
         while day < self.today:
             day += timedelta(days=1)
             if self.story.holiday(day) or day.weekday() == 6:
@@ -1102,16 +1114,21 @@ class Distributor:
                     category=code["sales"],
                     description=f"Hisob-faktura №{number}",
                 )
+                sold += amount
                 if debt.due_on < self.today - timedelta(days=2) and rng.random() < 0.8:
                     services.pay_debt(debt, by=by, amount=amount, paid_on=debt.due_on, account=bank)
+            # Twice a week the manufacturers deliver what was sold since, at cost: a
+            # distributor keeps about 14 %.
             if day.weekday() in (0, 3):
                 maker = makers[day.toordinal() % 2]
+                cost = max(float(sold) * 0.86 * rng.uniform(0.95, 1.05), 20_000_000)
+                sold = D(0)
                 services.open_debt(
                     company,
                     by=self.people["manager"],
                     direction="payable",
                     kind="trade",
-                    amount=_round(rng.uniform(40_000_000, 70_000_000), 100_000),
+                    amount=_round(cost, 100_000),
                     currency="UZS",
                     issued_on=day,
                     due_on=day + timedelta(days=30),
@@ -1142,12 +1159,13 @@ class Distributor:
                     counterparty=landlord,
                     description=f"Ombor ijarasi, {day:%m.%Y}",
                 )
-            if day.day == 5:
-                month = (day.replace(day=1) - timedelta(days=1)).strftime("%Y%m")
+            if day == _last_weekday(day):  # pay day, with the 12 % social tax
+                month, total = day.strftime("%Y%m"), D(0)
                 for key, member in self.story.members().items():
                     amount = SMALL_PAY.get(key)
                     if amount is None:
                         continue
+                    total += amount
                     services.record_transaction(
                         company,
                         by=by,
@@ -1157,9 +1175,19 @@ class Distributor:
                         account=bank,
                         category=code["salaries"],
                         membership=member,
-                        description=f"Ish haqi, {member}",
+                        description=f"Ish haqi, {member} ({day:%m.%Y})",
                         source=Source(DEMO_SOURCE, member.pk, f"sal:{month}"),
                     )
+                services.record_transaction(
+                    company,
+                    by=by,
+                    kind="expense",
+                    amount=_round(float(total) * 0.12, 1000),
+                    occurred_on=day,
+                    account=bank,
+                    category=code["payroll_taxes"],
+                    description=f"Ijtimoiy soliq (12 %), {day:%m.%Y}",
+                )
 
 
 def _receipt_picture(shop: str, day: date, lines: list[tuple[str, str]], total: str) -> bytes:
