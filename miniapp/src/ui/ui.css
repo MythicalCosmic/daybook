@@ -1253,6 +1253,10 @@
   object-fit: cover;
 }
 
+.ui-photo-thumb--empty {
+  background: var(--color-neutral-100);
+}
+
 .ui-photo-text {
   flex: 1;
   min-width: 0;

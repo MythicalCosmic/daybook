@@ -134,6 +134,24 @@ export function useWeek(company: number, enabled = true) {
   return useQuery({ queryKey: projectKeys.week(company), queryFn: () => getWeek(company), enabled });
 }
 
+export type TimerAction = { kind: "start"; task: number } | { kind: "stop" };
+
+/** Start my timer on a card (a running one is stopped and logged first) or stop it. */
+export function useTimerAction(company: number) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (action: TimerAction): Promise<TimeEntry | null> => {
+      if (action.kind === "start") {
+        await startTimer(company, { task: action.task });
+        return null;
+      }
+      return (await stopTimer(company)) ?? null;
+    },
+    // The timer, the cards' logged time and the week all change.
+    onSettled: () => client.invalidateQueries({ queryKey: projectKeys.all(company) }),
+  });
+}
+
 /** After any change: everything projects shows refreshes. */
 export function useRefresh(company: number) {
   const client = useQueryClient();

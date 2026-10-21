@@ -611,7 +611,8 @@ textarea.input {
   align-items: center;
   gap: 16px;
   min-height: 52px;
-  padding: 0;
+  /* One line is centred by the min height; a title that wraps gets air above and below. */
+  padding: 8px 0;
   background: transparent;
   border: 0;
   border-bottom: 1px solid var(--hairline);
@@ -628,10 +629,20 @@ textarea.input {
   display: flex;
   align-items: center;
   gap: 4px;
+  /* A long title wraps instead of squeezing the value, badge and chevron; a long value wraps
+     within its share. */
+  flex: none;
+  max-width: 60%;
   font-weight: 600;
   color: color-mix(in srgb, var(--color-text) 66%, transparent);
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+/* The chevron (and any icon beside the value) keeps its size next to a long value too. */
+.list-item-chevron,
+.list-item-value > svg {
+  flex: none;
 }
 
 /* — tab bar — */

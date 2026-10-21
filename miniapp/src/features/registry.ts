@@ -10,15 +10,19 @@
  *     pages: { home: lazy(() => import("./WalletPage")), payslip: lazy(() => import("./Payslip")) },
  *     sheets: { advance: lazy(() => import("./AdvanceSheet")) },
  *     homeCards: [{ id: "earned", component: EarnedCard }],
+ *     taskActions: [{ id: "bonus", component: TaskBonus }],     // on the task screen, given the task
  *     meItems: [{ id: "pay", group: "money", label: "me.pay", icon: Wallet, open: { page: "home" } }],
  *     plusActions: [{ id: "advance", label: "plus.advance", icon: HandCoins, open: { sheet: "advance" } }],
  *     routes: { payslip: { page: "payslip", tab: "profile" } },   // ?screen=payslip:12
  *   });
  *
- * Home renders `homeHero` and `homeCards`, Profile ("Me") renders `meItems` grouped by `group`,
- * the (+) sheet renders `plusActions`. `replaces` names a built-in entry the feature takes over
- * ("timeOff" for the leave feature, "teamResults" for a leaderboard that supersedes it); the
- * built-in entry is hidden while that feature is visible. Pages and sheets open through
+ * Home renders `homeHero`, `homeCards` (after its banners: things to act on today) and `homeEnd`
+ * (after the day's tasks and news: overviews), Profile ("Me") renders `meItems` grouped by `group`,
+ * the (+) sheet renders `plusActions` and the task screen renders `taskActions` (after the
+ * checklist; each block gets the task and renders nothing for a task it has nothing for).
+ * `replaces` names a built-in entry the feature takes over ("timeOff" for the leave feature,
+ * "teamResults" for a leaderboard that supersedes it); the built-in entry is hidden while that
+ * feature is visible. Pages and sheets open through
  * `useNavigation()`: `push({feature: "wallet", page: "payslip", params: {id}})` or
  * `openSheet({kind: "feature", feature: "wallet", sheet: "advance"})`.
  */
@@ -26,7 +30,7 @@
 import type { LucideIcon } from "lucide-react";
 import type { ComponentType, ReactNode } from "react";
 
-import type { Membership, Summary } from "../api/types";
+import type { Membership, Summary, Task } from "../api/types";
 import type { Dictionary } from "../i18n";
 import type { FeatureMessages } from "../i18n/feature";
 import type { NavigationInit, PageRef, Params, Tab } from "../state/navigation";
@@ -49,16 +53,29 @@ export type BuiltIn = (typeof BUILT_INS)[number];
 export const ME_GROUPS = ["money", "work", "documents", "team"] as const;
 export type MeGroup = (typeof ME_GROUPS)[number];
 
-export type SlotName = "home.hero" | "home.cards";
+/**
+ * Home's slots: `home.hero` under the greeting, `home.cards` after the banners (things to act on
+ * today), `home.end` after the day's tasks and news (overviews such as my projects).
+ */
+export type SlotName = "home.hero" | "home.cards" | "home.end";
 
-export type Slot = {
+export type Slot<Props = SlotProps> = {
   /** Unique within the feature. */
   id: string;
-  component: ComponentType<SlotProps>;
+  component: ComponentType<Props>;
   /** Lower comes first; default 100. */
   order?: number;
   visible?: Visible;
 };
+
+/** What a `task.actions` block receives: the person, today's numbers and the task on screen. */
+export type TaskSlotProps = SlotProps & { task: Task };
+
+/**
+ * A block on the task screen (the `task.actions` slot), such as the project timer or "How to do
+ * this". `visible` decides per person; the component returns null for a task it has nothing for.
+ */
+export type TaskSlot = Slot<TaskSlotProps>;
 
 /** A sheet anywhere in the app: a feature's (`{feature, sheet}`) or a built-in one (`{feature: "core", sheet: "add"}`). */
 export type SheetRef = { feature: string; sheet: string; params?: Params };
@@ -149,6 +166,10 @@ export type Feature = {
   sheets?: Partial<Record<string, ComponentType<SheetProps>>>;
   homeHero?: readonly Slot[];
   homeCards?: readonly Slot[];
+  /** At the end of Home, after the day's tasks: overviews that aren't for acting on today. */
+  homeEnd?: readonly Slot[];
+  /** Blocks on the task screen, given the task (the `task.actions` slot). */
+  taskActions?: readonly TaskSlot[];
   meItems?: readonly MeItem<string, string, string>[];
   plusActions?: readonly PlusAction<string, string, string>[];
   /** Built-in entries this feature takes over while it is visible. */
@@ -289,7 +310,13 @@ function place<T extends { id: string; order?: number; visible?: Visible }>(
 }
 
 export function homeSlots(list: readonly Feature[], name: SlotName, context: FeatureContext): Placed<Slot>[] {
-  return place(list, context, (feature) => (name === "home.hero" ? feature.homeHero : feature.homeCards));
+  const pick = { "home.hero": "homeHero", "home.cards": "homeCards", "home.end": "homeEnd" } as const;
+  return place(list, context, (feature) => feature[pick[name]]);
+}
+
+/** The task screen's feature blocks (`task.actions`), in order. */
+export function taskSlots(list: readonly Feature[], context: FeatureContext): Placed<TaskSlot>[] {
+  return place(list, context, (feature) => feature.taskActions);
 }
 
 export function meItemsByGroup(

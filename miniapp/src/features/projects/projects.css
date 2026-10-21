@@ -281,6 +281,16 @@
   letter-spacing: -0.01em;
 }
 
+/* On the task screen the line under the title says where the timer is: let it wrap, never cut
+   the card key. */
+.prj-task-timer .row-meta {
+  white-space: normal;
+}
+
+.prj-task-timer .btn {
+  flex: none;
+}
+
 .prj-pulse {
   animation: prj-pulse 1.6s ease-in-out infinite;
 }

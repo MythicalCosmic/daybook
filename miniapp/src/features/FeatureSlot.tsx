@@ -1,5 +1,6 @@
 import { Fragment, Suspense, type ReactNode } from "react";
 
+import type { Task } from "../api/types";
 import { useI18n, type Key } from "../i18n";
 import { featureText } from "../i18n/feature";
 import { useNavigation } from "../state/navigation";
@@ -13,6 +14,7 @@ import {
   meItemsByGroup,
   ME_GROUPS,
   plusActions,
+  taskSlots,
   type Feature,
   type FeatureContext,
   type MeGroup,
@@ -20,13 +22,16 @@ import {
   type MeItemStatus,
   type Placed,
   type PlusAction,
+  type SlotName,
 } from "./registry";
 
 type Props =
-  | { name: "home.hero" | "home.cards" }
+  | { name: SlotName }
   /** `builtIns`: the app's own rows for a group (Team results); feature rows follow them. */
   | { name: "me.items"; builtIns?: Partial<Record<MeGroup, ReactNode>> }
-  | { name: "plus.actions" };
+  | { name: "plus.actions" }
+  /** The task screen's blocks, each given the task. */
+  | { name: "task.actions"; task: Task };
 
 const GROUP_LABEL: Record<MeGroup, Key> = {
   money: "me.group.money",
@@ -42,8 +47,9 @@ const NO_ITEMS = Object.fromEntries(ME_GROUPS.map((group) => [group, []])) as un
 
 /**
  * Where feature folders appear: `home.hero` (top of Home), `home.cards` (after Home's banners),
- * `me.items` (grouped rows on Me) and `plus.actions` (quick actions in the + sheet). With no
- * feature folders it renders only the built-in rows it was given, exactly as before.
+ * `home.end` (after the day's tasks and news), `me.items` (grouped rows on Me), `plus.actions` (quick actions in the + sheet) and
+ * `task.actions` (blocks on the task screen). With no feature folders it renders only the
+ * built-in rows it was given, exactly as before.
  */
 export function FeatureSlot(props: Props) {
   // Branching on a module constant keeps the hook order stable.
@@ -56,6 +62,7 @@ function FeatureSlotHost(props: Props) {
   switch (props.name) {
     case "home.hero":
     case "home.cards":
+    case "home.end":
       return (
         <>
           {homeSlots(features, props.name, context).map(({ feature, item }) => (
@@ -71,6 +78,21 @@ function FeatureSlotHost(props: Props) {
       return <MeGroups builtIns={props.builtIns} placed={meItemsByGroup(features, context)} context={context} />;
     case "plus.actions":
       return <PlusActions placed={plusActions(features, context)} />;
+    case "task.actions": {
+      const { task } = props;
+      return (
+        <>
+          {taskSlots(features, context).map(({ feature, item }) => (
+            // Keyed by the task too, so a block that crashed on one task gets a fresh start on the next.
+            <FeatureBoundary key={`${feature.id}.${item.id}.${task.id}`} name={`${feature.id}.${item.id}`}>
+              <Suspense fallback={null}>
+                <item.component member={context.member} summary={context.summary} task={task} />
+              </Suspense>
+            </FeatureBoundary>
+          ))}
+        </>
+      );
+    }
   }
 }
 

@@ -4,17 +4,22 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { Me, Membership } from "../../api/types";
+import type { Me, Membership, Task } from "../../api/types";
 import { I18nProvider } from "../../i18n";
-import { NavigationProvider } from "../../state/navigation";
+import { NavigationProvider, useNavigation, type Navigation } from "../../state/navigation";
 import { SessionProvider } from "../../state/session";
 import { ToastProvider } from "../../state/toast";
-import { flattenTree, kbKeys, type KbPage } from "./api";
+import { collectFeatures, type Feature } from "../registry";
+import { flattenTree, kbKeys, type KbLink, type KbPage } from "./api";
+import { HowTo } from "./HowTo";
 import { PageReader } from "./PageReader";
 import { safeHtml } from "./safeHtml";
 
 const api = vi.hoisted(() => vi.fn());
 vi.mock("../../api/client", () => ({ api }));
+
+// The registry (imported above) loads every feature folder first; this is the same module.
+const { default: feature } = await import("./index");
 
 function membership(): Membership {
   return {
@@ -135,5 +140,59 @@ describe("PageReader", () => {
       fireEvent.click(screen.getByRole("button", { name: /I’ve read it/ }));
     });
     await waitFor(() => expect(screen.getByText("Please read it to the end and confirm.")).toBeTruthy());
+  });
+});
+
+describe("How to do this, on the task screen", () => {
+  const member = { ...membership(), timeZone: "Asia/Tashkent", companyId: 1 };
+  const task = { id: 42, title: "Kassani ochish", status: "todo" } as Task;
+  const link = (id: number, pageId: number, title: string, target: "task" | "routine" = "task"): KbLink => ({
+    id,
+    target_type: target,
+    target_id: target === "task" ? 42 : 66,
+    target_title: "Kassani ochish",
+    page: { id: pageId, title, emoji: pageId === 5 ? "🔓" : "", space: { id: 2, name: "Kassa", icon: "💰" } },
+    created_at: "2026-10-20T09:00:00Z",
+  });
+  let nav: Navigation | null = null;
+  function Probe() {
+    nav = useNavigation();
+    return null;
+  }
+
+  it("is registered first among the task screen's blocks", () => {
+    const { features, problems } = collectFeatures({ "./knowledge/index.ts": { default: feature } });
+    expect(problems).toEqual([]);
+    expect((features as Feature[])[0]!.taskActions?.map((slot) => [slot.id, slot.order])).toEqual([["howTo", 10]]);
+  });
+
+  it("lists the task's pages and its routine's, each once, and opens one in the reader", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    api.mockResolvedValue([link(1, 5, "Kassani ochish tartibi", "routine"), link(2, 9, "Terminal"), link(3, 5, "Kassani ochish tartibi")]);
+    const { container } = renderWith(
+      <>
+        <HowTo member={member} summary={undefined} task={task} />
+        <Probe />
+      </>,
+      client,
+    );
+
+    expect(await screen.findByText("How to do this")).toBeTruthy();
+    expect(api).toHaveBeenCalledWith("/companies/1/knowledge/linked/?target_type=task&target_id=42");
+    const rows = [...container.querySelectorAll(".list-item")];
+    expect(rows.map((row) => row.querySelector(".list-item-text > span")?.textContent)).toEqual(["Kassani ochish tartibi", "Terminal"]);
+    expect(rows[0]!.textContent).toContain("💰 Kassa");
+    expect(rows[1]!.querySelector(".kbm-emoji")?.textContent).toBe("📄");
+    act(() => fireEvent.click(rows[1]!));
+    expect(nav!.stack).toEqual([{ feature: "knowledge", page: "page", params: { id: 9 } }]);
+  });
+
+  it("shows nothing when no page is linked", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    api.mockResolvedValue([]);
+    const { container } = renderWith(<HowTo member={member} summary={undefined} task={task} />, client);
+    await waitFor(() => expect(api).toHaveBeenCalled());
+    await act(async () => {});
+    expect(container.textContent).toBe("");
   });
 });

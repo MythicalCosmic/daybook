@@ -1,8 +1,9 @@
 import { Camera, ImageIcon } from "lucide-react";
-import { useEffect, useMemo, useRef, type ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 
 import { useI18n } from "../i18n";
 import { haptic } from "../telegram";
+import { useObjectUrl } from "./useObjectUrl";
 
 /**
  * Add one photo (proof, receipt, Z-report, selfie, document scan). With `capture` the big button
@@ -29,8 +30,7 @@ export function PhotoInput({
   const { t } = useI18n();
   const camera = useRef<HTMLInputElement>(null);
   const gallery = useRef<HTMLInputElement>(null);
-  const preview = useMemo(() => (value ? URL.createObjectURL(value) : null), [value]);
-  useEffect(() => () => (preview ? URL.revokeObjectURL(preview) : undefined), [preview]);
+  const preview = useObjectUrl(value);
 
   const picked = (input: HTMLInputElement) => {
     const file = input.files?.[0] ?? null;
@@ -44,9 +44,10 @@ export function PhotoInput({
     <>
       <input ref={gallery} type="file" accept={accept} hidden onChange={(event) => picked(event.target)} />
       {capture && <input ref={camera} type="file" accept={accept} capture={capture} hidden onChange={(event) => picked(event.target)} />}
-      {value && preview ? (
+      {value ? (
         <div className="ui-photo">
-          <img className="ui-photo-thumb" src={preview} alt="" />
+          {/* The preview arrives an effect after the pick; a blank tile holds its place meanwhile. */}
+          {preview ? <img className="ui-photo-thumb" src={preview} alt="" /> : <span className="ui-photo-thumb ui-photo-thumb--empty" aria-hidden />}
           <div className="ui-photo-text">
             <div className="ui-photo-title">{t("ui.photo.added")}</div>
             <div className="ui-photo-name">{value.name}</div>

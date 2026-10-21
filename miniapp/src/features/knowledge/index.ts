@@ -1,7 +1,8 @@
 /**
  * The knowledge base in the mini app (plan §13.5, package Q): the spaces meant for the person,
  * their pages, search, and "I've read it" for must-read pages. Home shows a card while pages wait
- * to be confirmed; Me has the entry with the same count.
+ * to be confirmed; Me has the entry with the same count; the task screen shows "How to do this"
+ * when a page is linked to the task or its routine.
  */
 import { BookOpen } from "lucide-react";
 import { lazy } from "react";
@@ -26,6 +27,9 @@ export default defineFeature({
     page: lazy(() => import("./PageReader").then((m) => ({ default: m.PageReader }))),
   },
   homeCards: [{ id: "toRead", component: ToReadCard, order: 40 }],
+  // First on the task screen: read how, then do it (the projects timer follows at 20). Lazy:
+  // only the task screen needs it.
+  taskActions: [{ id: "howTo", component: lazy(() => import("./HowTo").then((m) => ({ default: m.HowTo }))), order: 10 }],
   meItems: [{ id: "kb", group: "documents", label: "me.kb", icon: BookOpen, open: { page: "home" }, useStatus: useToReadCount }],
   // ?screen=knowledge or knowledge.page:12 (inbox notifications), startapp=kb-12.
   routes: { knowledge: { page: "home", tab: "profile" }, kb: { page: "page", tab: "profile" } },

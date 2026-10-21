@@ -31,4 +31,5 @@ export { SlideToConfirm, type SlideState } from "./SlideToConfirm";
 export { Stat, Stat as StatCard, StatGrid, type Trend } from "./Stat";
 export { Stepper } from "./Stepper";
 export { ToastView, type ToastOptions, type ToastTone } from "./Toast";
+export { useObjectUrl } from "./useObjectUrl";
 export { useToast } from "../state/toast";
