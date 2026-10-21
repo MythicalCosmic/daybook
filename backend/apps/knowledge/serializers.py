@@ -6,7 +6,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.core.files import signed_url
-from apps.knowledge import queries, sanitize
+from apps.knowledge import queries, sanitize, targets
 from apps.knowledge.models import Page, PageImage, PageLink, PageVersion, Space
 from apps.members.models import Membership
 
@@ -306,7 +306,8 @@ class KnowledgePageDetailSerializer(KnowledgePageRowSerializer):
     @extend_schema_field(KnowledgeLinkSerializer(many=True))
     def get_links(self, page) -> list[dict]:
         links = page.links.select_related("page", "page__space").order_by("pk")
-        return KnowledgeLinkSerializer(links, many=True).data
+        visible = targets.visible_links(self.context["membership"], links)
+        return KnowledgeLinkSerializer(visible, many=True).data
 
     @extend_schema_field(KnowledgeMyAckSerializer(allow_null=True))
     def get_my_ack(self, page) -> dict | None:

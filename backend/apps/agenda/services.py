@@ -37,6 +37,7 @@ KIND_CHANGED = "agenda.event_changed"
 KIND_REMINDER = "agenda.event_reminder"
 MAX_REMIND_MINUTES = 7 * 24 * 60
 MAX_ATTENDEES = 300
+START_GRACE = timedelta(minutes=5)
 EDITABLE = (
     "title",
     "description",
@@ -144,18 +145,25 @@ def _branch(company, by: Membership | None, branch) -> Branch | None:
     return row
 
 
-def _people(company, by: Membership | None, ids) -> list[Membership]:
+def _people(company, by: Membership | None, ids, *, keep=()) -> list[Membership]:
+    """The approved members of `company` with these ids. `by` may invite only people in their
+    branch scope; `keep` (people already invited) stay whatever their branches."""
     ids = {int(pk) for pk in ids or ()}
     if len(ids) > MAX_ATTENDEES:
         raise DomainError(_("Invite at most %(n)d people.") % {"n": MAX_ATTENDEES})
+    kept = ids & {int(pk) for pk in keep}
     rows = Membership.objects.filter(
-        company=company, pk__in=ids, status=Membership.Status.APPROVED
+        company=company, pk__in=ids - kept, status=Membership.Status.APPROVED
     ).select_related("user")
     if by is not None:
         rows = scope.restrict(rows, scope.branch_ids(by), field="branches")
     found = list(rows)
-    if len(found) != len(ids):
+    if len(found) != len(ids - kept):
         raise DomainError(_("Invite people of this company you can see."))
+    if kept:
+        found += list(
+            Membership.objects.filter(company=company, pk__in=kept).select_related("user")
+        )
     return found
 
 
@@ -308,7 +316,8 @@ def update_event(event: Event, *, by: Membership | None, **changes) -> Event:
     added: list[Membership] = []
     removed = 0
     if "attendee_ids" in changes:
-        people = _people(company, by, changes["attendee_ids"])
+        invited = event.invites.values_list("membership_id", flat=True)
+        people = _people(company, by, changes["attendee_ids"], keep=invited)
         keep = {person.pk for person in people}
         removed, _deleted = event.invites.exclude(membership_id__in=keep).delete()
         added = _invite(event, people, by)
@@ -471,8 +480,12 @@ def send_due_reminders(now: datetime | None = None) -> int:
 
 
 def _grace(event: Event) -> timedelta:
-    # All-day reminders run at 09:00 of the day itself when asked for "at the start".
-    return timedelta(hours=12) if event.all_day else timedelta(0)
+    """How long after the start a late reminder still goes out. All-day reminders run at 09:00
+    of the day itself when asked for "at the start"; a timed event's reminder "at the start"
+    (0 minutes) gets a few minutes, since the job runs once a minute."""
+    if event.all_day:
+        return timedelta(hours=12)
+    return START_GRACE if not event.remind_before else timedelta(0)
 
 
 def _due_window(now: datetime) -> Q:

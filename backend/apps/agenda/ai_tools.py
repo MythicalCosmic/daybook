@@ -3,11 +3,13 @@
 Each wraps a function of `queries.py` and registers with `apps.ai.tools.registry.ai_tool`.
 """
 
+from django.db.models import Count
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from pydantic import BaseModel, Field
 
 from apps.agenda import queries
+from apps.agenda.models import EventAttendee
 from apps.ai.tools.registry import ToolContext, ToolResult, ai_tool
 from apps.members.permissions import Perm
 
@@ -25,8 +27,15 @@ class UpcomingInput(BaseModel):
 )
 def agenda_upcoming(ctx: ToolContext, args: UpcomingInput) -> ToolResult:
     zone = queries.tz_of(ctx.company)
+    found = queries.upcoming(ctx.membership, now=ctx.now, days=args.days)
+    attendees = dict(
+        EventAttendee.objects.filter(event_id__in={occurrence.event.pk for occurrence in found})
+        .values("event_id")
+        .annotate(n=Count("pk"))
+        .values_list("event_id", "n")
+    )
     rows = []
-    for occurrence in queries.upcoming(ctx.membership, now=ctx.now, days=args.days):
+    for occurrence in found:
         event = occurrence.event
         rows.append(
             {
@@ -39,7 +48,7 @@ def agenda_upcoming(ctx: ToolContext, args: UpcomingInput) -> ToolResult:
                 if occurrence.end
                 else None,
                 "place": event.place,
-                "attendees": event.invites.count(),
+                "attendees": attendees.get(event.pk, 0),
             }
         )
     return ToolResult(rows=rows, as_of=ctx.now)

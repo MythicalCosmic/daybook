@@ -97,8 +97,11 @@ class EventViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerViewSe
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return Event.objects.none()
-        events = queries.visible_events(self.membership).select_related(
-            "branch", "created_by__user", "company"
+        events = queries.with_answers(
+            queries.visible_events(self.membership).select_related(
+                "branch", "created_by__user", "company"
+            ),
+            self.membership,
         )
         if self.action != "list":
             return events
@@ -156,9 +159,10 @@ class EventViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerViewSe
         return event
 
     def _detail(self, event: Event, *, status_code=status.HTTP_200_OK) -> Response:
-        event = Event.objects.select_related("branch", "created_by__user", "company").get(
-            pk=event.pk
-        )
+        event = queries.with_answers(
+            Event.objects.select_related("branch", "created_by__user", "company"),
+            self.membership,
+        ).get(pk=event.pk)
         return Response(
             AgendaEventSerializer(event, context=self.get_serializer_context()).data,
             status=status_code,

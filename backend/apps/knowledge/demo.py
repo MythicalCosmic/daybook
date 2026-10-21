@@ -8,7 +8,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image, ImageDraw, ImageFont
 
 from apps.knowledge import services
-from apps.knowledge.models import Page, PageAck, Space
+from apps.knowledge.models import Page, PageAck, PageVersion, Space
 from apps.members.models import Position
 
 WELCOME = """
@@ -236,6 +236,33 @@ def _ack(page: Page, member, at) -> None:
     )
 
 
+def _timeline(page: Page, now, *days_ago: float) -> None:
+    """Backdate `page`'s story: version n was saved `days_ago[n - 1]` days before `now` (the
+    first is also when it was written and, for a published page, published). The author's own
+    confirmations move to the version they confirmed, and must-read pages older than a day
+    count as already reminded, so the screens read like weeks of use."""
+    page.refresh_from_db()
+    moments = [now - timedelta(days=days) for days in days_ago]
+
+    def at(version: int):
+        return moments[min(max(version, 1), len(moments)) - 1]
+
+    for number, moment in enumerate(moments, start=1):
+        PageVersion.objects.filter(page=page, version=number).update(
+            created_at=moment, updated_at=moment
+        )
+    fields = {"created_at": moments[0], "updated_at": moments[-1]}
+    if page.published:
+        fields["published_at"] = moments[0]
+        fields["ack_since"] = at(page.ack_version)
+        if page.require_ack and now - fields["ack_since"] > timedelta(days=1):
+            fields["reminded_version"] = page.ack_version
+    Page.objects.filter(pk=page.pk).update(**fields)
+    fresh = now - timedelta(minutes=10)
+    for ack in PageAck.objects.filter(page=page, membership_id=page.created_by_id, at__gte=fresh):
+        PageAck.objects.filter(pk=ack.pk).update(at=at(ack.version))
+
+
 def seed(company, people, now) -> None:
     """Add demo rows to `company`. `people` maps owner, manager, worker, madina, jasur
     and nigora to their memberships."""
@@ -309,19 +336,19 @@ def seed(company, people, now) -> None:
     except Exception:  # pictures are a nicety; the demo works without them
         pass
     schedule = page(handbook, "Ish tartibi va jadval", "🕘", SCHEDULE, ack=True)
-    page(handbook, "Kiyinish qoidalari", "👕", DRESS, parent=schedule)
-    page(handbook, "Ta’til va kasallik varaqasi", "🏖", LEAVE)
-    page(handbook, "Muhim telefon raqamlari", "📞", PHONES)
+    dress = page(handbook, "Kiyinish qoidalari", "👕", DRESS, parent=schedule)
+    leave = page(handbook, "Ta’til va kasallik varaqasi", "🏖", LEAVE)
+    phones = page(handbook, "Muhim telefon raqamlari", "📞", PHONES)
 
     typo = OPEN_TILL_V1.replace("tekshiring", "tekshring")
     open_till = page(till, "Kassani ochish tartibi", "🔓", typo, ack=True)
     open_till = services.save_page(open_till, by=owner, body=OPEN_TILL_V1, note="Imlo tuzatildi")
     close_till = page(till, "Kassani yopish va Z-hisobot", "🔒", CLOSE_TILL, ack=True)
     terminal = page(till, "Terminal ishlamasa nima qilish kerak", "💳", TERMINAL, parent=open_till)
-    page(till, "Qaytarish (vozvrat) qoidalari", "🧾", RETURNS, publish=False)
+    returns = page(till, "Qaytarish (vozvrat) qoidalari", "🧾", RETURNS, publish=False)
 
     receive = page(stock, "Tovar qabul qilish (nakladnaya)", "📥", RECEIVE, ack=True)
-    page(stock, "Yetkazib berish standartlari", "🚚", DELIVERY)
+    delivery = page(stock, "Yetkazib berish standartlari", "🚚", DELIVERY)
 
     greeting = page(floor, "Mijozni kutib olish standarti", "🙋", GREETING, ack=True)
     plants = page(floor, "Gullarni sug‘orish", "🌿", PLANTS)
@@ -347,7 +374,21 @@ def seed(company, people, now) -> None:
         notify_readers=False,
     )
     read(open_till, manager, days_ago=1)
-    Page.objects.filter(pk__in=[terminal.pk, plants.pk]).update(updated_at=now - timedelta(days=15))
+
+    # When each page was written and changed (days ago, one number per version).
+    _timeline(welcome, now, 41, 25)
+    _timeline(schedule, now, 34)
+    _timeline(dress, now, 33)
+    _timeline(leave, now, 27)
+    _timeline(phones, now, 18.4)
+    _timeline(open_till, now, 26, 24.6, 2.2)
+    _timeline(close_till, now, 21)
+    _timeline(terminal, now, 15)
+    _timeline(returns, now, 0.15)
+    _timeline(receive, now, 10)
+    _timeline(delivery, now, 8.3)
+    _timeline(greeting, now, 5)
+    _timeline(plants, now, 15.5)
 
     # Links to routines ("How to do this"), when the demo has them.
     from apps.knowledge import targets

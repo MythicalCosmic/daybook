@@ -19,7 +19,8 @@ import zoneinfo
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 
-from django.db.models import Q, QuerySet
+from django.db.models import Count, Exists, IntegerField, OuterRef, Q, QuerySet, Subquery
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from apps.agenda.models import Event, EventAttendee
@@ -233,9 +234,10 @@ def upcoming(member: Membership, *, now: datetime | None = None, days: int = 7, 
     last = first + timedelta(days=days)
     events = in_window(member, first, last)
     if mine:
-        events = events.filter(invites__membership=member).exclude(
-            invites__membership=member, invites__response=EventAttendee.Response.DECLINED
+        coming = EventAttendee.objects.filter(event=OuterRef("pk"), membership=member).exclude(
+            response=EventAttendee.Response.DECLINED
         )
+        events = events.filter(Exists(coming))
     found = occurrences_between(events, first, last)
     return [
         occurrence
@@ -246,10 +248,44 @@ def upcoming(member: Membership, *, now: datetime | None = None, days: int = 7, 
 
 
 def responses(event: Event) -> dict[str, int]:
+    """{pending, going, declined}: how many attendees gave each answer (from `with_answers`
+    when the event came through it, else one query)."""
+    if hasattr(event, "answers_going"):
+        return {
+            EventAttendee.Response.PENDING: event.answers_pending,
+            EventAttendee.Response.GOING: event.answers_going,
+            EventAttendee.Response.DECLINED: event.answers_declined,
+        }
     counts = {choice: 0 for choice in EventAttendee.Response.values}
     for row in event.invites.values_list("response", flat=True):
         counts[row] += 1
     return counts
+
+
+def _answer_count(response: str):
+    rows = (
+        EventAttendee.objects.filter(event=OuterRef("pk"), response=response)
+        .order_by()
+        .values("event")
+        .annotate(n=Count("pk"))
+        .values("n")[:1]
+    )
+    return Coalesce(Subquery(rows, output_field=IntegerField()), 0)
+
+
+def with_answers(events: QuerySet[Event], member: Membership | None) -> QuerySet[Event]:
+    """`events` with the answer counts and `member`'s own answer, so lists don't ask per row.
+
+    Subqueries, not joins: `visible_events` may already join the invites."""
+    events = events.annotate(
+        answers_pending=_answer_count(EventAttendee.Response.PENDING),
+        answers_going=_answer_count(EventAttendee.Response.GOING),
+        answers_declined=_answer_count(EventAttendee.Response.DECLINED),
+    )
+    if member is not None:
+        mine = EventAttendee.objects.filter(event=OuterRef("pk"), membership=member)
+        events = events.annotate(my_answer=Subquery(mine.values("response")[:1]))
+    return events
 
 
 def my_invite(member: Membership, event: Event) -> EventAttendee | None:

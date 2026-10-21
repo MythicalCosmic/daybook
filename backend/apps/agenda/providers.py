@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
@@ -43,7 +43,12 @@ def search(member: Membership, q: str, limit: int) -> list[SearchHit]:
 
 def today_section(company, day: date, now: datetime, branch_ids: list[int] | None) -> dict | None:
     """Briefings and the owner bot's /today: the events of the day, in the reader's scope."""
-    events = Event.objects.for_company(company).filter(cancelled_at__isnull=True)
+    # Briefings reach several people: private (invited-only) events stay out.
+    events = (
+        Event.objects.for_company(company)
+        .filter(cancelled_at__isnull=True, visibility=Event.Visibility.COMPANY)
+        .annotate(attendee_count=Count("invites"))
+    )
     if branch_ids is not None:
         events = events.filter(Q(branch__isnull=True) | Q(branch_id__in=branch_ids))
     found = queries.occurrences_between(events.select_related("company", "branch"), day, day)
@@ -62,7 +67,7 @@ def today_section(company, day: date, now: datetime, branch_ids: list[int] | Non
                 if event.all_day
                 else timezone.localtime(occurrence.start, queries.tz_of(company)).strftime("%H:%M"),
                 "place": event.place or (event.branch.name if event.branch else ""),
-                "attendees": event.invites.count(),
+                "attendees": event.attendee_count,
             }
         )
     lines = [

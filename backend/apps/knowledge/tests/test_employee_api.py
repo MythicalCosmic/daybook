@@ -5,6 +5,7 @@ import pytest
 from apps.knowledge.models import PageAck, PageLink
 from apps.knowledge.tests.factories import PageFactory, SpaceFactory
 from apps.members.models import Membership
+from apps.tasks.tests.factories import TaskFactory, TaskTemplateFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -100,14 +101,42 @@ def test_search_finds_only_my_pages(company, api_as, cook, shelves):
 def test_how_to_do_this_for_a_task(company, api_as, cashier, cook, shelves):
     _everyone, till = shelves
     open_page = PageFactory(space=till, title="Open the till")
-    PageLink.objects.create(company=company, page=open_page, target_type="task", target_id=77)
+    task = TaskFactory(assignee=cashier, title="Open the Chilonzor till")
+    PageLink.objects.create(company=company, page=open_page, target_type="task", target_id=task.pk)
+    query = {"target_type": "task", "target_id": task.pk}
 
-    mine = api_as(cashier).get(url(company, "linked/"), {"target_type": "task", "target_id": 77})
-    theirs = api_as(cook).get(url(company, "linked/"), {"target_type": "task", "target_id": 77})
+    mine = api_as(cashier).get(url(company, "linked/"), query)
+    theirs = api_as(cook).get(url(company, "linked/"), query)
 
     assert [row["page"]["title"] for row in mine.data] == ["Open the till"]
     assert theirs.data == []
     assert api_as(cook).get(url(company, "linked/"), {"target_type": "x"}).status_code == 400
+
+
+def test_links_never_show_someone_elses_task(
+    company, api_as, member, cashier, shelves, cashier_position
+):
+    """A colleague reading the same page doesn't see the title of a task that isn't theirs;
+    routines (company-wide) show to every reader."""
+    _everyone, till = shelves
+    colleague = member(company, "Employee", position=cashier_position, first_name="Nigora")
+    open_page = PageFactory(space=till, title="Open the till")
+    task = TaskFactory(assignee=cashier, title="Madina: recount the float")
+    routine = TaskTemplateFactory(company=company, title="Opening checklist")
+    PageLink.objects.create(company=company, page=open_page, target_type="task", target_id=task.pk)
+    PageLink.objects.create(
+        company=company, page=open_page, target_type="routine", target_id=routine.pk
+    )
+
+    page_for_her = api_as(colleague).get(url(company, f"pages/{open_page.pk}/")).data
+    page_for_madina = api_as(cashier).get(url(company, f"pages/{open_page.pk}/")).data
+    by_task = api_as(colleague).get(
+        url(company, "linked/"), {"target_type": "task", "target_id": task.pk}
+    )
+
+    assert [link["target_type"] for link in page_for_her["links"]] == ["routine"]
+    assert {link["target_type"] for link in page_for_madina["links"]} == {"task", "routine"}
+    assert by_task.data == []
 
 
 def test_other_companies_and_strangers_get_404(company, other_company, api_as, member, shelves):

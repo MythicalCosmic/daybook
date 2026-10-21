@@ -436,9 +436,8 @@ class PageViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerViewSet
             data.is_valid(raise_exception=True)
             link = services.link_page(page, by=self.membership, **data.validated_data)
             return Response(KnowledgeLinkSerializer(link).data, status=status.HTTP_201_CREATED)
-        return Response(
-            KnowledgeLinkSerializer(page.links.select_related("page__space"), many=True).data
-        )
+        links = targets.visible_links(self.membership, page.links.select_related("page__space"))
+        return Response(KnowledgeLinkSerializer(links, many=True).data)
 
     def check_permissions(self, request):
         super().check_permissions(request)

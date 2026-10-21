@@ -13,7 +13,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.knowledge import queries, services
+from apps.knowledge import queries, services, targets
 from apps.knowledge.models import Page, PageLink
 from apps.knowledge.serializers import (
     KnowledgeLinkSerializer,
@@ -175,5 +175,7 @@ class LinkedView(APIView):
                 page__in=queries.reader_pages(self.membership),
             )
             .select_related("page__space")
+            .order_by("pk")
         )
-        return Response(KnowledgeLinkSerializer(links, many=True).data)
+        visible = targets.visible_links(self.membership, links)
+        return Response(KnowledgeLinkSerializer(visible, many=True).data)

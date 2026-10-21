@@ -137,6 +137,17 @@ def can_read(member: Membership, page: Page) -> bool:
     return readable_pages(member).filter(pk=page.pk).exists()
 
 
+def is_live(page: Page) -> bool:
+    """Readers can open `page`: it is published and not archived, its space isn't archived,
+    and every page above it is published too. Only a live page is announced or reminded."""
+    if not page.published or page.archived_at is not None:
+        return False
+    if Space.objects.filter(pk=page.space_id, archived_at__isnull=False).exists():
+        return False
+    chain = ancestors(page)
+    return all(above.published and above.archived_at is None for above in chain)
+
+
 def get_page(member: Membership, page_id: int) -> Page | None:
     """The page if `member` may read it (managers: any page of the company, archived too)."""
     pages = Page.objects.for_company(member.company_id).select_related(
@@ -352,13 +363,16 @@ def unread_audience(page: Page) -> list[Membership]:
 
 def links_for(member: Membership, target_type: str, target_id: int) -> list[PageLink]:
     """Links from pages `member` may read to one task or routine."""
+    from apps.knowledge import targets
+
     pages = readable_pages(member)
-    return list(
+    links = (
         PageLink.objects.for_company(member.company_id)
         .filter(target_type=target_type, target_id=target_id, page__in=pages)
         .select_related("page", "page__space")
         .order_by("pk")
     )
+    return targets.visible_links(member, links)
 
 
 # Overview -------------------------------------------------------------------------------

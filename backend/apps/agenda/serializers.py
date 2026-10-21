@@ -146,6 +146,8 @@ class AgendaEventSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.CharField(allow_null=True))
     def get_my_response(self, event) -> str | None:
+        if hasattr(event, "my_answer"):
+            return event.my_answer
         member = self.context.get("membership")
         invite = queries.my_invite(member, event) if member else None
         return invite.response if invite else None

@@ -157,3 +157,16 @@ def seed(company, people, now) -> None:
             services.respond(item, by=member, response=EventAttendee.Response.GOING)
         for member in declined:
             services.respond(item, by=member, response=EventAttendee.Response.DECLINED)
+
+    # Planned a few days ahead and answered since, so nothing reads "added 2 minutes ago".
+    for index, item in enumerate(Event.objects.filter(company=company).order_by("pk")):
+        added = min(item.start - timedelta(days=5), now - timedelta(days=1, hours=3 + index * 5))
+        Event.objects.filter(pk=item.pk).update(created_at=added, updated_at=added)
+        if item.cancelled_at is not None:
+            Event.objects.filter(pk=item.pk).update(
+                cancelled_at=now - timedelta(hours=20), updated_at=now - timedelta(hours=20)
+            )
+        answered = EventAttendee.objects.filter(event=item, responded_at__isnull=False)
+        for step, invite in enumerate(answered.order_by("pk")):
+            moment = min(added + timedelta(hours=2 + step * 7), now - timedelta(hours=1 + step))
+            EventAttendee.objects.filter(pk=invite.pk).update(responded_at=moment)

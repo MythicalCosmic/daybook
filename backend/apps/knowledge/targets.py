@@ -80,3 +80,16 @@ def search(member: Membership, q: str, *, limit: int = 8) -> list[Target]:
         for row in tasks.order_by("-created_at")[:rest]
     ]
     return found
+
+
+def visible_links(member: Membership, links) -> list:
+    """The links `member` may see: routines (company-wide) always, tasks only when `member`
+    may see the task, so a link never shows the title of someone else's task."""
+    links = list(links)
+    task_ids = {link.target_id for link in links if link.target_type == "task"}
+    if not task_ids:
+        return links
+    from apps.tasks.queries import visible_tasks
+
+    seen = set(visible_tasks(member).filter(pk__in=task_ids).values_list("pk", flat=True))
+    return [link for link in links if link.target_type != "task" or link.target_id in seen]

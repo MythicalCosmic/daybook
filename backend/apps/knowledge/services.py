@@ -183,12 +183,17 @@ def restore_space(space: Space, *, by: Membership | None) -> Space:
 def reorder_spaces(company, ids: list[int], *, by: Membership | None) -> None:
     ensure_manager(by)
     spaces = {space.pk: space for space in Space.objects.filter(company=company, pk__in=ids)}
+    moved = []
     for index, pk in enumerate(ids):
         space = spaces.get(int(pk))
         if space is not None and space.position != index:
             space.position = index
             space.save(update_fields=["position", "updated_at"])
-    _bump(company.pk)
+            moved.append(space)
+    for space in moved:
+        _audit(KnowledgeAction.SPACE_CHANGED, space, by, changed=["position"])
+    if moved:
+        _bump(company.pk)
 
 
 # Pages ----------------------------------------------------------------------------------
@@ -319,6 +324,10 @@ def save_page(
     if require_ack is not None and require_ack != page.require_ack:
         page.require_ack = require_ack
         changed.append("require_ack")
+        if require_ack and page.published:
+            # Asking for confirmations on a live page starts the reminder clock now, not at
+            # the day it was first published.
+            page.ack_since = timezone.now()
     if content_changed:
         page.version += 1
     ask_again = reread and page.published and (content_changed or page.ack_version < page.version)
@@ -392,9 +401,15 @@ def move_page(
     Its pages move with it."""
     ensure_manager(by)
     page = Page.objects.select_for_update().select_related("space").get(pk=page.pk)
-    target_space = space or (parent.space if parent is not None else page.space)
+    if page.archived_at is not None:
+        raise DomainError(_("This page is archived. Restore it first."))
+    target_space = Space.objects.get(
+        pk=(space or (parent.space if parent is not None else page.space)).pk
+    )
     if target_space.company_id != page.company_id:
         raise DomainError(_("Pick a space of this company."))
+    if target_space.archived_at is not None:
+        raise DomainError(_("This space is archived."))
     if parent is not None and (parent.pk == page.pk or parent.pk in queries.descendant_ids(page)):
         raise DomainError(_("A page can't go inside itself."))
     _check_parent(target_space, parent, subtree=queries.subtree_depth(page))
@@ -516,8 +531,11 @@ def acknowledge(page: Page, *, by: Membership) -> PageAck:
 def remind_unread(page: Page, *, by: Membership | None) -> int:
     """Ask everyone who hasn't confirmed the current version to read it; returns how many."""
     ensure_manager(by)
+    page = Page.objects.select_related("space").get(pk=page.pk)
     if not page.published or page.archived_at is not None:
         raise DomainError(_("Only published pages can be read."))
+    if not queries.is_live(page):
+        raise DomainError(_("Readers can't open this page yet: publish the pages above it first."))
     people = [
         person for person in queries.unread_audience(page) if by is None or person.pk != by.pk
     ]
@@ -547,6 +565,8 @@ def _read_actions() -> list[NotificationAction]:
 def _notify_published(page: Page, by: Membership | None, *, updated: bool) -> None:
     if not get_settings(page.company).notify_on_publish:
         return
+    if not queries.is_live(page):
+        return  # under a draft or in an archived space: nobody could open it yet
     people = [
         person
         for person in queries.audience(page.space).select_related("user")
@@ -591,6 +611,8 @@ def remind_due(now=None) -> int:
         since = page.ack_since or page.published_at
         if not hours or since is None or (now - since).total_seconds() < hours * 3600:
             continue
+        if not queries.is_live(page):
+            continue  # asked again once the pages above it are published
         with transaction.atomic():
             locked = Page.objects.select_for_update(skip_locked=True).filter(pk=page.pk).first()
             if locked is None or locked.reminded_version >= locked.ack_version:
