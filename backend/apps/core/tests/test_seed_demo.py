@@ -148,6 +148,10 @@ def test_the_whole_demo_tells_one_story(debug):
     joined = {m.pk: timezone.localtime(m.decided_at).date() for m in approved if m.decided_at}
     early = [t for t in routines if t.for_date < joined.get(t.assignee_id, t.for_date)]
     assert not early
+    # No pile of old routine runs: everything before today was done, in time or late.
+    stale = routines.filter(for_date__lt=timezone.localdate())
+    open_states = (Task.Status.TODO, Task.Status.IN_PROGRESS, Task.Status.RETURNED)
+    assert stale.exists() and not stale.filter(status__in=open_states).exists()
     # A till is run by someone rostered that day.
     rostered = set(shifts.values_list("membership_id", "date"))
     assert all((c.cashier_id, c.business_day) in rostered for c in tills)

@@ -267,11 +267,13 @@ OLD_TILL = """
 uchun bu sahifa arxivda saqlanadi.</p>
 """
 
-PLANTS = """
-<p>Dorixonadagi gullar haftada ikki marta — dushanba va payshanba kunlari sug‘oriladi.</p>
+CLIMATE = """
+<p>Savdo zalida dorilar <strong>+15…+25 °C</strong> haroratda va <strong>60 %</strong> dan past
+namlikda saqlanadi.</p>
 <ul>
-<li><p>Har bir tuvakka 1 stakan suv.</p></li>
-<li><p>Dorilar javoni yonidagi gullarga suv sepmang.</p></li>
+<li><p>Termometr va gigrometr ko‘rsatkichlarini ertalab va kechqurun jurnalga yozing.</p></li>
+<li><p>Harorat +25 °C dan oshsa, konditsionerni yoqing va mudirga xabar bering.</p></li>
+<li><p>Quyosh tushadigan vitrinaga dori qo‘ymang.</p></li>
 </ul>
 """
 
@@ -415,7 +417,7 @@ def seed(company, people, now) -> None:
     leave = page(handbook, "Ta’til va kasallik varaqasi", "🏖", LEAVE)
     phones = page(handbook, "Muhim telefon raqamlari", "📞", PHONES)
     customers = page(handbook, "Xaridor bilan muloqot", "🙋", CUSTOMERS, ack=True)
-    plants = page(handbook, "Gullarni sug‘orish", "🌿", PLANTS)
+    climate = page(handbook, "Zal harorati va namligi", "🌡", CLIMATE)
 
     receiving = page(rules, "Kirim (nakladnoy): dori qabul qilish", "📥", RECEIVING, ack=True)
     cold = page(rules, "Sovuq zanjir: +2…+8 °C", "❄️", COLD_CHAIN, ack=True)
@@ -467,7 +469,7 @@ def seed(company, people, now) -> None:
     _timeline(leave, now, 27)
     _timeline(phones, now, 18.4)
     _timeline(customers, now, 5)
-    _timeline(plants, now, 15.5)
+    _timeline(climate, now, 15.5)
     _timeline(receiving, now, 10)
     _timeline(cold, now, 30)
     _timeline(rx, now, 22)
@@ -508,5 +510,5 @@ def seed(company, people, now) -> None:
             services.link_page(customers, by=owner, target_type="routine", target_id=routine.id)
         elif "kassa" in title:
             services.link_page(close_till, by=owner, target_type="routine", target_id=routine.id)
-        elif "gullar" in title:
-            services.link_page(plants, by=owner, target_type="routine", target_id=routine.id)
+        elif "zal harorati" in title:
+            services.link_page(climate, by=owner, target_type="routine", target_id=routine.id)
