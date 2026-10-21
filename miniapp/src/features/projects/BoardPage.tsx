@@ -8,7 +8,7 @@ import { useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
 import { useToast } from "../../state/toast";
 import { haptic } from "../../telegram";
-import { Avatar, Badge, Button, EmptyState, PageHeader, PullToRefresh, ScreenSkeleton, Segmented, cx } from "../../ui";
+import { Avatar, Badge, EmptyState, IconButton, PageHeader, PullToRefresh, ScreenSkeleton, Segmented, cx } from "../../ui";
 import type { PageProps } from "../registry";
 import { useBoard, useMoveCard, useTimer, type Board, type Card } from "./api";
 import { colorClass, endOf, hhmm } from "./lib";
@@ -176,9 +176,7 @@ export default function BoardPage({ params }: PageProps) {
         title={project.name}
         onBack={navigation.pop}
         actions={
-          <Button variant="secondary" icon={MessageSquare} onClick={() => navigation.push({ feature: "projects", page: "updates", params: { id: projectId } })}>
-            {t("updates")}
-          </Button>
+          <IconButton icon={MessageSquare} label={t("updates")} onClick={() => navigation.push({ feature: "projects", page: "updates", params: { id: projectId } })} />
         }
       />
       {hasMine && (
@@ -261,7 +259,7 @@ function CardFace({ card, board, timed }: { card: Card; board: Board; timed: boo
       )}
       <span className={cx("prj-tile-title", card.status === "done" && "prj-tile-title--done")}>{card.title}</span>
       {card.status === "review" && (
-        <Badge size="small" tone="accent">
+        <Badge size="small" tone="accent" className="prj-tile-badge">
           {t("movedReview")}
         </Badge>
       )}

@@ -4,7 +4,7 @@
  * done and overdue, the next milestone, budget burn (for people who see money), the team and the
  * due date. The whole card links to the board.
  */
-import { CalendarDays, Flag, Lock, Users } from "@lucide/vue";
+import { CalendarDays, Check, Flag, Lock, Users } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
@@ -60,7 +60,9 @@ const daysLeft = computed(() => (props.project.due_on && !done.value ? daysBetwe
       </header>
 
       <div class="flex items-center gap-3">
-        <ProgressRing :value="project.progress.percent" :size="48" :tone="ring" show-value :label="t('projects.card.progress')" />
+        <ProgressRing :value="project.progress.percent" :size="48" :tone="ring" :show-value="project.progress.percent < 100" :label="t('projects.card.progress')">
+          <Check v-if="project.progress.percent >= 100" class="size-5 text-success" :stroke-width="3" aria-hidden="true" />
+        </ProgressRing>
         <div class="min-w-0 flex-1 text-sm">
           <p class="font-semibold text-fg">
             {{ t("projects.card.cards", { done: project.progress.done, total: project.progress.total }) }}

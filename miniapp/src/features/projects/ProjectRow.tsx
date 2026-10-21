@@ -1,4 +1,4 @@
-import { CalendarDays, Flag } from "lucide-react";
+import { CalendarDays, Check, Flag } from "lucide-react";
 
 import { useI18n } from "../../i18n";
 import { useFeatureT } from "../../i18n/feature";
@@ -33,7 +33,7 @@ export function ProjectRow({ project, onOpen, compact = false }: { project: Proj
         ) : null}
       </span>
       <span className="prj-progress-row">
-        <ProgressRing value={project.progress.done} total={project.progress.total} size={52} stroke={6} tone={project.health === "on_track" ? "sage" : "accent"} label={`${project.progress.percent}%`} />
+        <ProgressRing value={project.progress.done} total={project.progress.total} size={52} stroke={6} tone={project.health === "on_track" ? "sage" : "accent"} label={project.progress.percent >= 100 ? <Check size={22} strokeWidth={3} className="prj-ring-check" aria-hidden /> : `${project.progress.percent}%`} />
         <span className="prj-progress-text">
           <span className="prj-strong">{t("cards", { done: project.progress.done, total: project.progress.total })}</span>
           <span className={project.my_open ? "prj-meta prj-meta--alert" : "prj-meta"}>

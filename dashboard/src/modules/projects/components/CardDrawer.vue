@@ -282,7 +282,7 @@ async function toggleTimer(): Promise<void> {
             <div class="flex items-center gap-2">
               <h3 class="section-title flex-1"><Timer :size="14" />{{ t("projects.drawer.time", { time: hhmm(card.minutes) }) }}</h3>
               <UiButton size="sm" variant="ghost" :icon="Plus" @click="logging = true">{{ t("projects.time.log") }}</UiButton>
-              <UiButton v-if="card.assignee?.id === company.current?.membership_id || canEditBoard" size="sm" :variant="timerRunning ? 'primary' : 'secondary'" :icon="timerRunning ? Square : Play" @click="toggleTimer">
+              <UiButton v-if="(card.status !== 'done' && card.status !== 'cancelled' || timerRunning) && (card.assignee?.id === company.current?.membership_id || canEditBoard)" size="sm" :variant="timerRunning ? 'primary' : 'secondary'" :icon="timerRunning ? Square : Play" @click="toggleTimer">
                 {{ timerRunning ? t("projects.time.stop") : t("projects.time.start") }}
               </UiButton>
             </div>

@@ -45,6 +45,11 @@ export default function LogTimeSheet({ params, close }: SheetProps) {
   const board = useBoard(member.companyId, Number(project) || 0);
   const myCards = (board.data?.cards ?? []).filter((card) => card.assignee?.id === member.id && card.status !== "done" && card.status !== "cancelled");
   const days = Array.from({ length: 7 }, (_, index) => addDays(today, -index));
+  // Opened from a card: that card leads, so the picked chip is in sight.
+  const opened = params.task ? String(params.task) : null;
+  const cardChips = myCards.map((card) => ({ value: String(card.id), label: `${card.key} · ${card.title}` }));
+  const first = cardChips.filter((chip) => chip.value === opened);
+  const cardOptions = [...first, { value: NONE, label: t("log.wholeProject") }, ...cardChips.filter((chip) => chip.value !== opened)];
 
   function change(delta: number) {
     haptic.select();
@@ -95,7 +100,7 @@ export default function LogTimeSheet({ params, close }: SheetProps) {
             scroll
             value={task}
             onChange={(value) => setTask(value ?? NONE)}
-            options={[{ value: NONE, label: t("log.wholeProject") }, ...myCards.map((card) => ({ value: String(card.id), label: `${card.key} · ${card.title}` }))]}
+            options={cardOptions}
             label={t("log.card")}
           />
         </Field>
