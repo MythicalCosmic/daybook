@@ -99,3 +99,12 @@ export function countRows(count: Record<string, number> | null | undefined): Arr
     .filter(([, pieces]) => pieces > 0)
     .sort((a, b) => Number(b[0]) - Number(a[0]));
 }
+
+/**
+ * The hours a "when customers buy" heatmap shows: 07–23 at least, widened to every hour with
+ * sales, so a 24-hour pharmacy's night shifts (00–06) are on the chart instead of left out.
+ */
+export function heatHours(cells: ReadonlyArray<{ hour?: number | null; net?: Money | null }>): { first: number; last: number } {
+  const busy = cells.filter((cell) => !dec(cell.net ?? "0").isZero()).map((cell) => cell.hour ?? 0);
+  return { first: Math.min(7, ...busy), last: Math.max(23, ...busy) };
+}

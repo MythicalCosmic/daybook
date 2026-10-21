@@ -54,6 +54,8 @@ export const pageMessages = defineMessages({
     "board.outside": "{distance} away",
     "board.empty": "Nobody works today",
     "board.emptyBody": "When people have shifts, you see here who came and when.",
+    "board.denied": "For managers only",
+    "board.deniedBody": "Who’s in today is open to people who look after attendance.",
 
     "stat.worked": "Worked",
     "stat.overtime": "+{time} overtime",
@@ -188,6 +190,8 @@ export const pageMessages = defineMessages({
     "board.outside": "в {distance}",
     "board.empty": "Сегодня никто не работает",
     "board.emptyBody": "Когда у людей есть смены, здесь видно, кто и когда пришёл.",
+    "board.denied": "Только для руководителей",
+    "board.deniedBody": "Кто сегодня на работе, видят те, кто отвечает за посещаемость.",
 
     "stat.worked": "Отработано",
     "stat.overtime": "+{time} переработки",
@@ -322,6 +326,8 @@ export const pageMessages = defineMessages({
     "board.outside": "{distance} uzoqda",
     "board.empty": "Bugun hech kim ishlamaydi",
     "board.emptyBody": "Odamlarning smenasi bo‘lsa, kim qachon kelgani shu yerda ko‘rinadi.",
+    "board.denied": "Faqat rahbarlar uchun",
+    "board.deniedBody": "Bugun kim ishdaligini davomatga mas’ul xodimlar ko‘radi.",
 
     "stat.worked": "Ishlangan",
     "stat.overtime": "+{time} qo‘shimcha",

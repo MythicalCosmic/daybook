@@ -11,10 +11,11 @@ import { useI18n } from "vue-i18n";
 import ProgressBar from "@/components/ProgressBar.vue";
 import UiButton from "@/components/UiButton.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
+import { todayIn } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
 import { usePermission } from "@/lib/usePermission";
 
-import { capitalize, runDayWords } from "../lib";
+import { madeLateNote } from "../lib";
 import type { DayRoutine, GiveTarget, RoutineRun } from "../types";
 import { useRunWords } from "../useRunWords";
 import RunRow from "./RunRow.vue";
@@ -45,14 +46,12 @@ const attention = computed(() =>
   ].filter((chip) => chip.n > 0),
 );
 
+// Made after the day's time: when it starts, and whether today's task already went out by hand.
 const lateNote = computed(() => {
   if (props.row.reason !== "made_late") return null;
-  const time = routine.value.due_time;
-  const day = props.row.next_run ? runDayWords(props.row.next_run, words.value) : null;
-  return {
-    title: day ? capitalize(t("routines.give.title", { day })) : t("routines.give.titleLater"),
-    body: props.row.give ? t("routines.give.detailBody", { due: time, n: props.row.give.people }, props.row.give.people) : t("routines.give.detailBodyNobody", { due: time }),
-  };
+  const given = props.row.runs.filter((run) => run.state !== "cancelled").length;
+  const past = props.day < todayIn(words.value.timeZone, words.value.now);
+  return madeLateNote({ due_time: routine.value.due_time, next_run: props.row.next_run }, { past, given, give: props.row.give }, words.value);
 });
 
 function give(): void {
@@ -96,7 +95,7 @@ function give(): void {
     <div v-if="lateNote" class="mx-4 mb-4 flex flex-wrap items-center gap-3 rounded-[10px] border border-[color-mix(in_srgb,var(--c-warning)_28%,transparent)] bg-warning-soft/70 px-3.5 py-3" data-testid="day-late">
       <div class="min-w-0 flex-1">
         <p class="text-sm font-semibold text-fg">{{ lateNote.title }}</p>
-        <p class="mt-0.5 text-sm text-muted">{{ lateNote.body }}</p>
+        <p v-if="lateNote.body" class="mt-0.5 text-sm text-muted">{{ lateNote.body }}</p>
       </div>
       <UiButton v-if="row.give" size="sm" variant="primary" :icon="Send" @click="give">{{ t("routines.give.button") }}</UiButton>
     </div>

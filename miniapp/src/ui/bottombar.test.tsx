@@ -29,7 +29,8 @@ async function setup(version = "7.10", platform = "ios") {
   const webApp = { platform, isVersionAtLeast: at, MainButton: main, SecondaryButton: secondary };
   vi.stubGlobal("Telegram", { WebApp: webApp as unknown as WebApp });
   const { BottomBar } = await import("./BottomBar");
-  return { BottomBar, main, secondary };
+  const { Sheet } = await import("./Sheet");
+  return { BottomBar, Sheet, main, secondary };
 }
 
 afterEach(() => {
@@ -38,6 +39,35 @@ afterEach(() => {
 });
 
 describe("bottom bar", () => {
+  it("steps aside for a sheet over the page, unless the sheet brings its own", async () => {
+    const { BottomBar, Sheet, main, secondary } = await setup();
+    render(<BottomBar primary={{ text: "Mark as done", onClick: () => undefined }} secondary={{ text: "Start", onClick: () => undefined }} />);
+    expect(main.show).toHaveBeenCalledTimes(1);
+
+    // A sheet with its own in-page button: the page's buttons would read as the sheet's.
+    const plain = render(
+      <Sheet onClose={() => undefined}>
+        <button type="button">Send</button>
+      </Sheet>,
+    );
+    expect(main.hide).toHaveBeenCalledTimes(1);
+    expect(secondary.hide).toHaveBeenCalledTimes(1);
+    plain.unmount();
+    expect(main.show).toHaveBeenCalledTimes(2);
+    expect(main.setParams).toHaveBeenLastCalledWith(expect.objectContaining({ text: "Mark as done" }));
+
+    // A sheet with a BottomBar drives the main button itself.
+    const own = render(
+      <Sheet onClose={() => undefined}>
+        <BottomBar primary={{ text: "Save 1:30", onClick: () => undefined }} />
+      </Sheet>,
+    );
+    expect(main.setParams).toHaveBeenLastCalledWith(expect.objectContaining({ text: "Save 1:30" }));
+    expect(secondary.hide).toHaveBeenCalledTimes(2);
+    own.unmount();
+    expect(main.setParams).toHaveBeenLastCalledWith(expect.objectContaining({ text: "Mark as done" }));
+  });
+
   it("uses Telegram's buttons when the client has them, and draws nothing in the page", async () => {
     const { BottomBar, main, secondary } = await setup();
     const send = vi.fn();

@@ -314,21 +314,28 @@ def give_now_people(
 
 
 def today_status(template: TaskTemplate, now: datetime) -> dict:
-    """Today, for a routine's page: `{"date", "reason", "give"}`. `reason` is why it makes no
-    tasks today (None when it does). When it was made after today's deadline and someone would
-    still get today's task, `give` is `{"people", "due_at"}` for "Give today's task now"."""
+    """Today, for a routine's page: `{"date", "reason", "give", "given"}`. `reason` is why it
+    makes no tasks today (None when it does). When it was made after today's deadline, `given`
+    counts today's tasks given by hand all the same, and `give` is `{"people", "due_at"}` for
+    "Give today's task now" while someone would still get one."""
     company = template.company
     tz = ZoneInfo(company.timezone)
     today = timezone.localtime(now, tz).date()
     reason = skip_reason(template, today, tz=tz, holiday=is_holiday(company, today))
     give = None
+    given = 0
     if reason == MADE_LATE:
+        given = (
+            Task.objects.filter(template=template, for_date=today)
+            .exclude(status=Task.Status.CANCELLED)
+            .count()
+        )
         due_at = suggested_deadline(now, tz)
         if due_at - now >= GIVE_NOW_MIN:
             people = give_now_people(template, today, due_at)
             if people:
                 give = {"people": len(people), "due_at": due_at}
-    return {"date": today, "reason": reason, "give": give}
+    return {"date": today, "reason": reason, "give": give, "given": given}
 
 
 def add_checklists(templates: list[TaskTemplate], day: date) -> None:

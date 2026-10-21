@@ -23,11 +23,13 @@ const empty = computed(() => !props.totals || dec(props.totals.total).isZero());
 </script>
 
 <template>
-  <div class="flex flex-col gap-2.5">
+  <!-- The legend takes as many columns as its own width allows (not the window's: beside the
+       sidebar and the total, five columns cut every amount to "UZS …" on a 1024 px screen). -->
+  <div class="@container flex flex-col gap-2.5">
     <ProgressBar v-if="!empty" :segments="segments" size="md" role="img" :aria-label="t('finance.aging.title')" />
     <div v-else class="h-2 rounded-full bg-surface-2" />
-    <ul :class="['grid gap-x-4 gap-y-1.5', compact ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5']">
-      <li v-for="bucket in AGING_BUCKETS" :key="bucket" class="flex min-w-0 items-center gap-2">
+    <ul :class="['grid grid-cols-2 gap-x-4 gap-y-1.5 @sm:grid-cols-3', compact ? '@xl:grid-cols-5' : '@2xl:grid-cols-5']" data-testid="aging-legend">
+      <li v-for="bucket in AGING_BUCKETS" :key="bucket" class="flex min-w-0 items-center gap-2" :title="t(`finance.aging.${bucket}`)">
         <span class="size-2.5 shrink-0 rounded-full" :style="{ background: AGING_COLORS[bucket] }" aria-hidden="true" />
         <span class="min-w-0">
           <span class="block truncate text-xs text-muted">{{ t(`finance.aging.${bucket}`) }}</span>

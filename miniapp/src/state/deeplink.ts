@@ -58,6 +58,26 @@ export function readScreenLink(source: Source = window.location, telegramStart: 
   return start ? parseScreen(start, "startapp") : null;
 }
 
+/**
+ * The screen a link into this very app points to (`https://<this host>/app/?screen=kb:12`; the app
+ * itself means Home), or null for any other link. Such a link must open inside the app: in a
+ * browser Telegram signs nobody in.
+ */
+export function appScreenLink(
+  href: string,
+  here: Pick<Location, "origin" | "href"> = window.location,
+  base: string = import.meta.env.BASE_URL,
+): ScreenLink | null {
+  let url: URL;
+  try {
+    url = new URL(href, here.href);
+  } catch {
+    return null;
+  }
+  if (url.origin !== here.origin || !url.pathname.startsWith(base)) return null;
+  return readScreenLink({ search: url.search, hash: url.hash }, null) ?? { name: "home", arg: null };
+}
+
 function builtIn({ name, arg }: ScreenLink): NavigationInit | null {
   const id = arg !== null && /^\d{1,15}$/.test(arg) ? Number(arg) : null;
   switch (name) {

@@ -34,11 +34,12 @@ export function useToday(company: number, enabled = true) {
 }
 
 /** Managers' "Who's in" for today (needs attendance.view); live like the card. */
-export function useBoard(company: number) {
+export function useBoard(company: number, enabled = true) {
   return useQuery({
     queryKey: attendanceKeys.board(company),
     queryFn: () => api<Board>(`${base(company)}/board/`),
     refetchInterval: 60_000,
+    enabled,
   });
 }
 

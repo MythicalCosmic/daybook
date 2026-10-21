@@ -32,7 +32,7 @@ import { useDeleteRoutine, useRoutines, useToggleActive } from "../api";
 import RoutineEditor from "../components/RoutineEditor.vue";
 import RoutinesHeader from "../components/RoutinesHeader.vue";
 import WeekdayDots from "../components/WeekdayDots.vue";
-import { runLabel } from "../lib";
+import { runLabel, wholePercent } from "../lib";
 import type { Routine } from "../types";
 import { useRunWords } from "../useRunWords";
 
@@ -134,10 +134,11 @@ function open(routine: Routine): void {
 }
 
 // The days it ran, joined: days off (a Mon–Fri routine's weekend) would cut the line into dashes.
-// A line through two points says nothing: new routines show only their percentage.
+// A line through two points says nothing: new routines show only their percentage. Neither does a
+// line that never moves (done every day: the percentage says it), which SparkLine draws at the bottom.
 function sparkOf(routine: Routine): number[] {
   const points = (routine.stats?.spark ?? []).filter((value): value is number => value !== null);
-  return points.length >= 4 ? points : [];
+  return points.length >= 4 && new Set(points).size > 1 ? points : [];
 }
 
 function completionTone(value: number | null): string {
@@ -220,7 +221,7 @@ function who(routine: Routine): string {
           <div v-if="!onboarding" class="flex items-center gap-3">
             <SparkLine :data="sparkOf(routine)" :width="96" :height="28" color="var(--c-chart-2)" :label="t('routines.sparkLabel')" />
             <div class="min-w-[68px] whitespace-nowrap text-right">
-              <p :class="['text-md font-semibold tabular-nums', completionTone(routine.stats?.completion_30d ?? null)]">{{ routine.stats?.completion_30d === null || !routine.stats ? "—" : fmt.percent(routine.stats.completion_30d, 0) }}</p>
+              <p :class="['text-md font-semibold tabular-nums', completionTone(routine.stats?.completion_30d ?? null)]">{{ routine.stats?.completion_30d === null || !routine.stats ? "—" : fmt.percent(wholePercent(routine.stats.completion_30d), 0) }}</p>
               <p class="text-xs text-subtle">{{ t("routines.done30") }}</p>
             </div>
           </div>

@@ -227,7 +227,7 @@
   "knowledge.editor.rereadNote": "Saqlaganingizda o‘quvchilardan sahifani qayta o‘qish so‘raladi va avvalgi tasdiqlar hisobga olinmaydi.",
   "knowledge.editor.note": "Nima o‘zgardi",
   "knowledge.editor.noteHint": "Versiyalar tarixida ko‘rinadi.",
-  "knowledge.editor.notePlaceholder": "Masalan: terminal bo‘yicha qadamlar qo‘shildi",
+  "knowledge.editor.notePlaceholder": "Masalan: terminal qadamlari qo‘shildi",
   "knowledge.editor.notify": "O‘quvchilarga Telegramda xabar berish",
   "knowledge.editor.notifyHint": "Ular sahifani “O‘qish” tugmasi bilan oladi.",
   "knowledge.editor.tipsTitle": "Maslahatlar",

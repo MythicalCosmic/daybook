@@ -42,7 +42,6 @@ export const messages = defineMessages({
     "reminder.days_other": "Reminder {count} days before",
     "reminder.atStart": "Reminder when it starts",
     "card.title": "{title}",
-    "card.when": "{when} · tap to answer",
     from: "From {source}",
   },
   ru: {
@@ -94,7 +93,6 @@ export const messages = defineMessages({
     "reminder.days_other": "Напомним за {count} дня",
     "reminder.atStart": "Напомним в момент начала",
     "card.title": "{title}",
-    "card.when": "{when} · нажмите, чтобы ответить",
     from: "Из календаря «{source}»",
   },
   uz: {
@@ -138,7 +136,6 @@ export const messages = defineMessages({
     "reminder.days_other": "{count} kun oldin eslatamiz",
     "reminder.atStart": "Boshlanganda eslatamiz",
     "card.title": "{title}",
-    "card.when": "{when} · javob berish uchun bosing",
     from: "“{source}” taqvimidan",
   },
 });

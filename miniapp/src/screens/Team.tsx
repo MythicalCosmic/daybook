@@ -9,6 +9,7 @@ import { nameInitials, tone, type Tone } from "../lib/team";
 import { dayMonth } from "../lib/time";
 import { useMember } from "../state/session";
 import { haptic } from "../telegram";
+import { LoadError } from "../ui";
 
 const PERIODS: Period[] = ["week", "last_week", "month"];
 const TONE_TAG: Record<Tone, string> = {
@@ -53,10 +54,14 @@ export function Team() {
         </div>
 
         {!data ? (
-          <>
-            <div className="skeleton" style={{ height: 132 }} />
-            <div className="skeleton" style={{ height: 260 }} />
-          </>
+          stats.isError ? (
+            <LoadError compact error={stats.error} onRetry={() => void stats.refetch()} />
+          ) : (
+            <>
+              <div className="skeleton" style={{ height: 132 }} />
+              <div className="skeleton" style={{ height: 260 }} />
+            </>
+          )
         ) : (
           <>
             <Totals score={data.totals} range={`${day(data.start)}–${day(data.end)}`} t={t} />

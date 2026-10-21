@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 
 import { attachNativeButton, hasNativeButton, updateNativeButton, type NativeButtonKind, type NativeButtonLook } from "../telegram";
 import { nativeButtonColors } from "../theme";
@@ -78,6 +78,29 @@ export function useNativeButton(kind: NativeButtonKind, action: BottomAction | n
   useEffect(() => {
     if (active && owners[kind].at(-1) === owner.current) refreshNative(kind);
   }, [kind, active, text, disabled, loading, shine]);
+}
+
+/**
+ * Hide Telegram's buttons while `active`, for an open sheet: the page's button would otherwise
+ * sit under the sheet and read as the sheet's own ("Close shift" under a payout form). A
+ * BottomBar inside the sheet still drives them: this is a layout effect, so it registers before
+ * the sheet content's (passive) effects and the sheet's own button ends up on top.
+ */
+export function useHideNativeButtons(active: boolean): void {
+  useLayoutEffect(() => {
+    if (!active) return;
+    const hidden: Owner = { look: () => null, press: () => undefined };
+    for (const kind of ["main", "secondary"] as const) {
+      owners[kind].push(hidden);
+      refreshNative(kind);
+    }
+    return () => {
+      for (const kind of ["main", "secondary"] as const) {
+        owners[kind] = owners[kind].filter((other) => other !== hidden);
+        refreshNative(kind);
+      }
+    };
+  }, [active]);
 }
 
 /**

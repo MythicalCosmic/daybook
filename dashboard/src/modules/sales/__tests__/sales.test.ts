@@ -3,6 +3,7 @@ import "@/core/modules";
 
 import { flushPromises } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { defineComponent, h, ref } from "vue";
 
 import { ensureModuleMessages } from "@/i18n";
 import { json } from "@/test/fixtures";
@@ -12,7 +13,7 @@ import salesModule from "..";
 import { salesApi } from "../api";
 import ShiftDrawer from "../components/ShiftDrawer.vue";
 import TodayBranches from "../components/TodayBranches.vue";
-import { countRows, differenceLevel, movementSign } from "../format";
+import { countRows, differenceLevel, heatHours, movementSign } from "../format";
 import type { ShiftDetail } from "../types";
 
 interface Call {
@@ -107,6 +108,12 @@ afterEach(() => {
 });
 
 describe("sales display rules", () => {
+  it("widens the heatmap to the night hours a 24-hour pharmacy sells in, and keeps 07–23 otherwise", () => {
+    expect(heatHours([])).toEqual({ first: 7, last: 23 });
+    expect(heatHours([{ hour: 9, net: "100.00" }, { hour: 22, net: "50.00" }, { hour: 3, net: "0.00" }])).toEqual({ first: 7, last: 23 });
+    expect(heatHours([{ hour: 2, net: "40000.00" }, { hour: 5, net: "0.00" }, { hour: 23, net: "10.00" }])).toEqual({ first: 2, last: 23 });
+  });
+
   it("reads a difference against the tolerance", () => {
     expect(differenceLevel(null, "5000")).toBe("unknown");
     expect(differenceLevel("0.00", "5000")).toBe("none");
@@ -189,6 +196,163 @@ describe("TodayBranches", () => {
     // The open tills count stands in for the target when there is none.
     expect(text).toContain("1 / 2");
   });
+
+  it("shows no sales yet (not zero) while tills are open in shift-totals mode, and the month in the language's percent", async () => {
+    stub({
+      "GET sales/options/": () => json(options()),
+      "GET sales/today/": () =>
+        json({
+          branches: [
+            {
+              id: 1,
+              name: "Chilonzor",
+              code: "CHL",
+              status: "open",
+              opens_at: "09:00",
+              closes_at: "21:00",
+              opened_at: "2026-10-21T08:40:00+05:00",
+              opened_by: person(16, "Madina Saidova"),
+              open_tills: [{ register: { id: 3, name: "Kassa 1" }, shift: { id: 85, code: "CHL-85", since: "2026-10-21T03:40:00Z" }, cashier: person(16, "Madina Saidova"), amount: "110000.00" }],
+              tills: 2,
+              net: "0.00",
+              receipts: 0,
+              cash_in_branch: "1110000.00",
+              cash_limit: "20000000.00",
+              target: { amount: "450000000.00", actual: "342400000.00", pace: "305000000.00", projected: "505000000.00", percent: "76.1", days: 31, elapsed: 21, per_day_needed: "10800000.00", ahead: true },
+              alerts: [],
+            },
+          ],
+        }),
+    });
+    const app = await testApp("/c/1/sales");
+    await ensureModuleMessages(salesModule);
+    mountWithProviders(TodayBranches, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    const text = document.body.textContent ?? "";
+    expect(document.querySelector('[data-testid="today-awaiting"]')?.textContent).toBe("—");
+    expect(text).toContain("sales added at close");
+    expect(text).not.toContain("0 receipts");
+    expect(text).toContain("This month · 76.1%");
+    // The currency once, so the target still fits a narrow card: "342.4M UZS / 450M".
+    expect(text).toContain("/ 450M");
+    expect(text).not.toContain("/ 450M UZS");
+  });
+});
+
+function options(mode: "shift_totals" | "receipts" = "shift_totals") {
+  return {
+    currency: "UZS",
+    settings: { mode, blind_cash_count: true, cash_tolerance: "5000.00", business_day_ends_at: "04:00" },
+    today: "2026-10-21",
+    branches: [{ id: 1, name: "Chilonzor", code: "CHL" }],
+    registers: [],
+    methods: [],
+    cashiers: [],
+    receivers: [],
+    categories: [],
+    accounts: [],
+  };
+}
+
+describe("SalesOverviewPage", () => {
+  it("says the summary failed instead of showing dashes and zero shifts", async () => {
+    stub({
+      "GET sales/options/": () => json(options()),
+      "GET sales/summary/": () => json({ detail: "Server error." }, 500),
+    });
+    // The charts measure themselves; jsdom has no ResizeObserver.
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe(): void {}
+        unobserve(): void {}
+        disconnect(): void {}
+      },
+    );
+    const SalesOverviewPage = (await import("../pages/SalesOverviewPage.vue")).default;
+    const app = await testApp("/c/1/sales");
+    await ensureModuleMessages(salesModule);
+    const { wrapper } = mountWithProviders(SalesOverviewPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(document.querySelector('[data-testid="kpi-error"]')).not.toBeNull();
+    expect(document.body.textContent).not.toContain("0 shifts");
+    wrapper.unmount();
+  });
+});
+
+describe("MovementDialog", () => {
+  it("names each till with its branch, since every branch has a Kassa 1", async () => {
+    stub({
+      "GET sales/options/": () =>
+        json({
+          ...options(),
+          registers: [
+            { id: 5, name: "Kassa 1", branch_id: 1, branch: "Chilonzor", is_active: true },
+            { id: 6, name: "Kassa 1", branch_id: 2, branch: "Yunusobod", is_active: true },
+          ],
+        }),
+    });
+    const MovementDialog = (await import("../components/MovementDialog.vue")).default;
+    const app = await testApp("/c/1/sales/cash");
+    await ensureModuleMessages(salesModule);
+    const open = ref(false);
+    const Host = defineComponent({ setup: () => () => h(MovementDialog, { open: open.value, "onUpdate:open": (value: boolean) => (open.value = value) }) });
+    mountWithProviders(Host, { plugins: app.plugins });
+    await flushPromises();
+    open.value = true; // opening picks the first till
+    await flushPromises();
+    await flushPromises();
+    expect(document.body.textContent).toContain("Chilonzor · Kassa 1");
+  });
+});
+
+describe("ShiftsPage", () => {
+  const row = (extra: Record<string, unknown>) => ({
+    id: 85,
+    code: "CHL-85",
+    number: 85,
+    branch: { id: 1, name: "Chilonzor", code: "CHL" },
+    register: { id: 3, name: "Kassa 1" },
+    cashier: person(16, "Madina Saidova"),
+    business_day: "2026-10-21",
+    status: "open",
+    opened_at: "2026-10-21T03:40:00Z",
+    closed_at: null,
+    opening_float: "110000.00",
+    net: "0.00",
+    receipts: 0,
+    expected_cash: null,
+    counted_cash: null,
+    difference: null,
+    forced: false,
+    ai_mismatch: false,
+    verified_by: null,
+    verified_at: null,
+    has_photos: false,
+    ...extra,
+  });
+
+  it("marks an open till's sales as still to come in shift-totals mode, and shows a closed one's", async () => {
+    stub({
+      "GET sales/options/": () => json(options()),
+      "GET sales/settings/": () => json({ mode: "shift_totals", cash_tolerance: "5000.00" }),
+      "GET sales/shifts/": () =>
+        json({ count: 2, next: null, previous: null, results: [row({}), row({ id: 84, code: "CHL-84", status: "closed", net: "14414000.00", receipts: 165, counted_cash: "230000.00", difference: "0.00", closed_at: "2026-10-20T16:11:00Z" })] }),
+    });
+    const ShiftsPage = (await import("../pages/ShiftsPage.vue")).default;
+    const app = await testApp("/c/1/sales/shifts?view=all");
+    await ensureModuleMessages(salesModule);
+    mountWithProviders(ShiftsPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    await flushPromises();
+    const awaiting = document.querySelectorAll('[data-testid="net-awaiting"]');
+    expect(awaiting).toHaveLength(1);
+    expect(awaiting[0]!.getAttribute("title")).toBe("sales added at close");
+    expect(document.body.textContent).toContain("14,414,000");
+  });
 });
 
 describe("ShiftDrawer on an open till", () => {
@@ -217,7 +381,7 @@ describe("ShiftDrawer on an open till", () => {
     await flushPromises();
     const text = document.body.textContent ?? "";
     expect(text).toContain("Cash out so far");
-    expect(text).toContain("sales count at close");
+    expect(text).toContain("sales added at close");
     expect(text).not.toContain("Expected cash");
   });
 });
@@ -237,10 +401,18 @@ describe("ShiftDrawer", () => {
     expect(body.textContent).toContain("CHL-42");
     expect(body.textContent).toContain("Madina Saidova");
     expect(body.textContent).toContain("Net sales");
+    // Exact amounts, not "4.2M expected, 4.2M counted": a cash check is about the last thousand.
+    const figures = body.querySelector("[data-testid=shift-figures]")?.textContent ?? "";
+    for (const amount of ["14,414,000", "4,230,000", "4,215,000", "15,000"]) expect(figures).toContain(amount);
+    expect(figures).not.toContain("4.2M");
     const verify = [...body.querySelectorAll("button")].find((button) => button.textContent?.trim().startsWith("Verify"))!;
     verify.click();
     await flushPromises();
     expect(body.textContent).toContain("Verify CHL-42");
+    // The dialog reconciles with exact amounts too.
+    const reconcile = body.querySelector("[data-testid=verify-figures]")?.textContent ?? "";
+    expect(reconcile).toContain("4,230,000");
+    expect(reconcile).not.toContain("4.2M");
     const submit = [...body.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Verify shift")!;
     submit.click();
     await flushPromises();

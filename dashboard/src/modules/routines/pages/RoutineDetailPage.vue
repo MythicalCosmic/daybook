@@ -15,7 +15,6 @@ import DateRangePicker from "@/components/DateRangePicker.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import InlineAlert from "@/components/InlineAlert.vue";
-import KpiCard from "@/components/KpiCard.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import PageSection from "@/components/PageSection.vue";
@@ -26,7 +25,7 @@ import UserAvatar from "@/components/UserAvatar.vue";
 import { useChartTheme } from "@/components/useChartTheme";
 import { toast } from "@/components/useToast";
 import { isApiError } from "@/api/http";
-import { useBreakpoints } from "@/lib/useBreakpoints";
+import { todayIn } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
 import { usePageTitle } from "@/lib/usePageTitle";
 import { useRangeState } from "@/lib/useRangeState";
@@ -38,11 +37,10 @@ import GiveTodayDialog from "../components/GiveTodayDialog.vue";
 import RoutineEditor from "../components/RoutineEditor.vue";
 import RoutinePreview from "../components/RoutinePreview.vue";
 import WeekdayDots from "../components/WeekdayDots.vue";
-import { capitalize, runDayWords, runLabel } from "../lib";
+import { madeLateNote, runLabel } from "../lib";
 import { useRunWords } from "../useRunWords";
 
 const { t } = useI18n();
-const { isPhone } = useBreakpoints();
 const chart = useChartTheme();
 const fmt = useFormat();
 const route = useRoute();
@@ -72,12 +70,7 @@ const giveOpen = ref(false);
 const lateToday = computed(() => {
   const routine = data.value;
   if (routine?.today?.reason !== "made_late") return null;
-  const due = routine.due_time.slice(0, 5);
-  const day = routine.next_run ? runDayWords(routine.next_run, words.value) : null;
-  return {
-    title: day ? capitalize(t("routines.give.title", { day })) : t("routines.give.titleLater"),
-    body: routine.today.give ? t("routines.give.detailBody", { due, n: routine.today.give.people }, routine.today.give.people) : t("routines.give.detailBodyNobody", { due }),
-  };
+  return madeLateNote(routine, { past: false, given: routine.today.given ?? 0, give: routine.today.give }, words.value);
 });
 const totals = computed(() => compliance.data.value?.totals);
 const kpis = computed(() => [
@@ -88,9 +81,11 @@ const kpis = computed(() => [
 ]);
 
 const series = computed(() => compliance.data.value?.series ?? []);
-// A sparkline needs a few points to say anything; a week-old routine shows the number alone.
+// A sparkline needs a few points to say anything; a week-old routine shows the number alone. Today's
+// rate counts only what was due so far, so the line stops at yesterday.
 const spark = computed(() => {
-  const points = series.value.map((d) => d.on_time_percent);
+  const today = todayIn(company.timezone);
+  const points = series.value.filter((d) => d.date !== today).map((d) => d.on_time_percent);
   return points.filter((value) => value !== null).length >= 5 ? points : [];
 });
 const chartSeries = computed(() => [
@@ -151,10 +146,7 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
         </template>
       </InlineAlert>
 
-      <div v-if="isPhone" class="grid grid-cols-2 gap-2">
-        <KpiCard v-for="(item, index) in kpis" :key="index" v-bind="{ ...item, spark: undefined, hint: undefined }" :loading="compliance.isPending.value" />
-      </div>
-      <KpiStrip v-else :items="kpis" :loading="compliance.isPending.value" :columns="4" />
+      <KpiStrip :items="kpis" :loading="compliance.isPending.value" :columns="4" phone="compact" />
 
       <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
         <ChartCard
@@ -187,7 +179,7 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
                 <th class="px-3 py-2.5 text-right font-medium">{{ t("routines.detail.onTimeShort") }}</th>
                 <th class="px-3 py-2.5 text-right font-medium">{{ t("routines.detail.late") }}</th>
                 <th class="px-3 py-2.5 text-right font-medium">{{ t("routines.detail.missed") }}</th>
-                <th class="w-[220px] px-4 py-2.5 font-medium">{{ t("routines.detail.onTime") }}</th>
+                <th class="w-[220px] px-4 py-2.5 font-medium">{{ t("routines.detail.onTimeRate") }}</th>
               </tr>
             </thead>
             <tbody>

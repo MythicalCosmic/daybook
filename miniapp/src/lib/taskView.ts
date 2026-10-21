@@ -2,7 +2,7 @@
 
 import type { Task } from "../api/types";
 import type { Translate } from "../i18n";
-import { clock, daysFromToday, weekdayLong, weekdayShort } from "./time";
+import { clock, dayMonth, daysFromToday, weekdayLong, weekdayShort } from "./time";
 
 export type Glyph = "todo" | "late" | "progress" | "review" | "done";
 
@@ -39,7 +39,10 @@ export function duration(minutes: number, t: Translate): string {
   if (minutes < 60) return t("duration.minutes", { count: minutes });
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return t("duration.hours", { hours, minutes: minutes % 60 });
-  return t("duration.days", { days: Math.floor(hours / 24), hours: hours % 24 });
+  // Past a day the hours matter less, and "14 d 0 h" reads as noise.
+  const days = Math.floor(hours / 24);
+  if (days >= 2 || hours % 24 === 0) return t("duration.daysOnly", { days });
+  return t("duration.days", { days, hours: hours % 24 });
 }
 
 /** 0 = Monday … 6 = Sunday, as the API sends them. */
@@ -82,13 +85,18 @@ export function rowMeta(task: Task, ctx: ViewContext): string {
   return repeat ?? t("meta.own");
 }
 
-/** The time chip on the right of a row: today's time, or the day it's due. */
+/**
+ * The time chip on the right of a row: today's time, "Tomorrow" or "Yesterday", the weekday
+ * within a week either way, and the date further out (a weekday alone would be ambiguous).
+ */
 export function rowRight(task: Task, ctx: ViewContext): string {
   if (!task.due_at) return "";
   const days = daysFromToday(task.due_at, ctx.now, ctx.timeZone);
   if (days === 0) return clock(task.due_at, ctx.timeZone, ctx.locale);
   if (days === 1) return ctx.t("day.tomorrow");
-  return weekdayShort(task.due_at, ctx.timeZone, ctx.locale);
+  if (days === -1) return ctx.t("day.yesterday");
+  if (Math.abs(days) < 7) return weekdayShort(task.due_at, ctx.timeZone, ctx.locale);
+  return dayMonth(task.due_at, ctx.timeZone, ctx.locale);
 }
 
 export function isDueToday(task: Task, ctx: ViewContext): boolean {

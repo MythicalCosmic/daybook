@@ -17,6 +17,8 @@ import { ToastProvider } from "../../state/toast";
 import { featureVisible, routeTarget } from "../registry";
 import attendance from ".";
 import { CheckInCard } from "./CheckInCard";
+import { HeroSlot } from "./slots";
+import type { Summary } from "../../api/types";
 import { fenceCheck, minutesBetween, monthWeeks, shiftMonth } from "./lib";
 import { messages } from "./messages";
 import { pageMessages } from "./pageMessages";
@@ -102,7 +104,7 @@ function serve(today: MyDay, result: object = { record: RECORD, created: true, o
 function membership(features: string[] = ["attendance"], status = "approved"): Membership {
   return {
     id: 7,
-    company: { id: 1, name: "Demo Shop", timezone: "Asia/Tashkent", features, owner_sees_personal_tasks: false, base_currency: "UZS", team_directory_phones: false },
+    company: { id: 1, name: "Demo Dorixona", timezone: "Asia/Tashkent", features, owner_sees_personal_tasks: false, base_currency: "UZS", team_directory_phones: false },
     status,
     first_name: "Alisher",
     last_name: "Valiyev",
@@ -119,9 +121,17 @@ function membership(features: string[] = ["attendance"], status = "approved"): M
   } as unknown as Membership;
 }
 
-function renderCard(node: ReactNode = <CheckInCard />, lang: Lang = "en") {
+function renderCard(node: ReactNode = <CheckInCard />, lang: Lang = "en", permissions: string[] = []) {
   const queries = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const me = { id: 1, telegram_id: 4242, telegram_username: "", first_name: "Alisher", last_name: "Valiyev", phone: "", memberships: [membership()] } as unknown as Me;
+  const me = {
+    id: 1,
+    telegram_id: 4242,
+    telegram_username: "",
+    first_name: "Alisher",
+    last_name: "Valiyev",
+    phone: "",
+    memberships: [{ ...membership(), permissions }],
+  } as unknown as Me;
   return render(
     <QueryClientProvider client={queries}>
       <I18nProvider lang={lang}>
@@ -308,7 +318,8 @@ describe("the check-in card", () => {
   it("speaks Uzbek", async () => {
     serve(day({ state: "off", shift: null }));
     renderCard(<CheckInCard />, "uz");
-    expect(await screen.findByText("Bugun smena yo‘q")).toBeTruthy();
+    expect(await screen.findByText("Hali smena rejalashtirilmagan")).toBeTruthy();
+    expect(screen.getByText("Smenalarni rahbaringiz rejalashtiradi, ular shu yerda ko‘rinadi.")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Smenasiz belgilash" })).toBeTruthy();
   });
 
@@ -316,6 +327,51 @@ describe("the check-in card", () => {
     serve(day({ state: "late", now: "2026-10-21T09:40:00+05:00" }));
     renderCard();
     expect(await screen.findByText("Your shift started at 09:00. Check in when you’re there")).toBeTruthy();
+  });
+});
+
+describe("the check-in card on Home", () => {
+  const next = { ...day().shift!, id: 42, date: "2026-10-25", starts_at: "2026-10-25T09:00:00+05:00", ends_at: "2026-10-25T18:00:00+05:00" };
+  const dayOff = day({ state: "off", shift: null, next_shift: null });
+  const hero = (permissions: string[] = [], summary?: Partial<Summary>) => (
+    <HeroSlot member={{ ...membership(), permissions, timeZone: "Asia/Tashkent", companyId: 1 } as never} summary={summary as Summary | undefined} />
+  );
+
+  it("is one calm row on a day off, opening the attendance page", async () => {
+    serve({ ...dayOff, next_shift: next });
+    renderCard(hero());
+    const row = await screen.findByRole("button", { name: /No shift today/ });
+    expect(row.textContent).toContain("Next shift: Sun, 25 Oct, 09:00–18:00 · Chilonzor");
+    // Checking in without a shift stays on the attendance page.
+    expect(screen.queryByRole("button", { name: /Check in without a shift/ })).toBeNull();
+  });
+
+  it("says once that nothing is planned yet, and who plans it, for someone new", async () => {
+    serve(dayOff);
+    renderCard(hero());
+    const row = await screen.findByRole("button", { name: /No shifts planned yet/ });
+    expect(row.textContent).toContain("Your manager plans them, and they show up here.");
+    expect(row.textContent).not.toContain("No shift today");
+  });
+
+  it("stays away for an owner without shifts and on a day off the person asked for", async () => {
+    serve(dayOff);
+    const owner = renderCard(hero(["dashboard.access"]));
+    await waitFor(() => expect(client.api).toHaveBeenCalled());
+    await act(async () => undefined);
+    await waitFor(() => expect(owner.container.innerHTML).toBe(""));
+    cleanup();
+
+    serve({ ...dayOff, next_shift: next });
+    const resting = renderCard(hero([], { off_today: { kind: "time_off", name: "", until: "2026-10-22" } }));
+    await act(async () => undefined);
+    await waitFor(() => expect(resting.container.innerHTML).toBe(""));
+  });
+
+  it("is still the full card when there is something to slide", async () => {
+    serve(day());
+    renderCard(hero(["dashboard.access"]));
+    expect(await screen.findByRole("button", { name: /Slide to check in/ })).toBeTruthy();
   });
 });
 
@@ -342,7 +398,7 @@ describe("who's in (managers)", () => {
       throw new Error(`unexpected ${path}`);
     });
     const { default: BoardPage } = await import("./BoardPage");
-    renderCard(<BoardPage />);
+    renderCard(<BoardPage />, "en", ["attendance.view"]);
     expect(await screen.findByText("Bekzod Mirzayev")).toBeTruthy();
     const sections = screen.getAllByRole("region").map((section) => section.getAttribute("aria-label"));
     expect(sections).toEqual(["Came late", "Not here yet", "In", "Off today"]);
@@ -352,6 +408,13 @@ describe("who's in (managers)", () => {
     expect(screen.getByText("40 m")).toBeTruthy();
     expect(screen.getByText(/Shift started 09:00/)).toBeTruthy();
     expect(screen.getByText(/Time off/)).toBeTruthy();
+  });
+
+  it("says it's for managers, without asking the server, when a link opens it for someone else", async () => {
+    const { default: BoardPage } = await import("./BoardPage");
+    renderCard(<BoardPage />);
+    expect(await screen.findByText("For managers only")).toBeTruthy();
+    expect(client.api).not.toHaveBeenCalled();
   });
 
   it("is in Me only for people who may see everyone's attendance", () => {

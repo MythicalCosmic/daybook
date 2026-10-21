@@ -37,6 +37,11 @@ WITHOUT_ROUTINES = "without"
 ONLY_ROUTINES = "only"
 
 
+def is_routine_work(task: Task) -> bool:
+    """`ROUTINE_WORK` for one task already loaded."""
+    return task.kind == Task.Kind.DAILY and task.template_id is not None
+
+
 def split(tasks: QuerySet[Task], routines: str | None) -> QuerySet[Task]:
     """`tasks` without routine work ("without"), only routine work ("only"), or all of it."""
     if routines == WITHOUT_ROUTINES:

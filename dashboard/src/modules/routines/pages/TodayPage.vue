@@ -23,6 +23,7 @@ import UiButton from "@/components/UiButton.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { addDays, todayIn } from "@/lib/dates";
+import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { usePermission } from "@/lib/usePermission";
@@ -33,6 +34,7 @@ import { useConfirmRuns, usePlanOptions, useRoutineDay, useSendBackRun } from ".
 import DayRoutineCard from "../components/DayRoutineCard.vue";
 import GiveTodayDialog from "../components/GiveTodayDialog.vue";
 import RoutinesHeader from "../components/RoutinesHeader.vue";
+import { share } from "../lib";
 import type { GiveTarget, RoutineRun } from "../types";
 
 const { t } = useI18n();
@@ -40,12 +42,17 @@ const fmt = useFormat();
 const company = useCompanyStore();
 const { can } = usePermission();
 const ask = useConfirm();
+// Phones get finger-sized day buttons (40 px); a pointer is happy with 28.
+const { isPhone } = useBreakpoints();
+const tap = computed(() => (isPhone.value ? "lg" : "sm"));
 
 const today = computed(() => todayIn(company.timezone));
 const dayParam = useRouteState("day", rs.string(""));
+// Routine work exists up to today: later days have no tasks yet (who will get them is on a
+// routine's own page), so a later ?day= shows today, and the arrow and the picker stop there.
 const day = computed({
-  get: () => dayParam.value || today.value,
-  set: (value: string | null) => (dayParam.value = !value || value === today.value ? "" : value),
+  get: () => (dayParam.value && dayParam.value < today.value ? dayParam.value : today.value),
+  set: (value: string | null) => (dayParam.value = !value || value >= today.value ? "" : value),
 });
 const isToday = computed(() => day.value === today.value);
 const only = useRouteState("routine", rs.string(""));
@@ -58,7 +65,7 @@ const defs = computed<FilterDef[]>(() => [
 ]);
 const filters = useUrlFilters(defs);
 const params = computed(() => ({
-  day: dayParam.value || undefined,
+  day: day.value === today.value ? undefined : day.value,
   branch: (filters.params.value.branch as string[] | undefined) ?? undefined,
   position: (filters.params.value.position as string[] | undefined) ?? undefined,
 }));
@@ -78,7 +85,7 @@ const totalsShown = computed(() => {
 });
 const kpis = computed(() => {
   const totals = totalsShown.value;
-  const percent = totals && totals.total ? Math.round((100 * totals.finished) / totals.total) : null;
+  const percent = totals ? share(totals.finished, totals.total) : null;
   return [
     {
       id: "finished",
@@ -87,7 +94,7 @@ const kpis = computed(() => {
       format: (value: number) => (totals ? `${value} / ${totals.total}` : String(value)),
       hint: percent === null ? t("routines.today.kpi.finishedHint") : t("routines.today.kpi.finishedPercent", { percent: fmt.percent(percent, 0) }),
     },
-    { id: "review", label: t("routines.today.kpi.review"), value: totals?.review ?? null, to: can("tasks.confirm") ? { name: "routines.confirm" } : undefined },
+    { id: "review", label: t("routines.today.kpi.review"), value: totals?.review ?? null, to: can("tasks.confirm") ? { name: "routines.confirm" } : undefined, hint: t("routines.today.kpi.reviewHint") },
     { id: "late", label: t("routines.today.kpi.late"), value: totals ? totals.late + totals.missed : null, hint: t("routines.today.kpi.lateHint") },
     { id: "skipped", label: t("routines.today.kpi.skipped"), value: totals?.skipped ?? null, hint: t("routines.today.kpi.skippedHint") },
   ];
@@ -152,11 +159,11 @@ function give(target: GiveTarget): void {
     <RoutinesHeader>
       <template #actions>
         <div class="flex items-center gap-1">
-          <IconButton :icon="ChevronLeft" :label="t('routines.today.previousDay')" size="sm" variant="secondary" @click="day = addDays(day, -1)" />
-          <DatePicker v-model="day" size="sm" format="weekday" class="w-[220px] max-sm:min-w-0 max-sm:flex-1" />
-          <IconButton :icon="ChevronRight" :label="t('routines.today.nextDay')" size="sm" variant="secondary" @click="day = addDays(day, 1)" />
+          <IconButton :icon="ChevronLeft" :label="t('routines.today.previousDay')" :size="tap" variant="secondary" @click="day = addDays(day, -1)" />
+          <DatePicker v-model="day" :size="tap" :max="today" :format="isPhone ? 'medium' : 'weekday'" class="w-[220px] max-sm:min-w-0 max-sm:flex-1" />
+          <IconButton :icon="ChevronRight" :label="t('routines.today.nextDay')" :size="tap" variant="secondary" :disabled="isToday" @click="day = addDays(day, 1)" />
         </div>
-        <UiButton v-if="!isToday" size="sm" :icon="CalendarCheck" @click="day = today">{{ t("routines.today.backToToday") }}</UiButton>
+        <UiButton v-if="!isToday" :size="tap" :icon="CalendarCheck" @click="day = today">{{ t("routines.today.backToToday") }}</UiButton>
       </template>
     </RoutinesHeader>
 

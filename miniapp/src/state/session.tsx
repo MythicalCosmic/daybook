@@ -27,6 +27,8 @@ function pickMembership(me: Me, preferred: number | null): Membership | null {
     memberships.find((m) => m.status === "pending") ??
     memberships.find((m) => m.status === "rejected") ??
     memberships.find((m) => m.status === "blocked") ??
+    // Someone who used to work here hears "thank you" rather than "you're not in a company yet".
+    memberships.find((m) => m.status === "left") ??
     null
   );
 }

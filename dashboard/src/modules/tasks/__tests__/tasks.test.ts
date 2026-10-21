@@ -226,6 +226,21 @@ describe("TaskDrawer", () => {
     wrapper.unmount();
   });
 
+  it("says a deleted task is gone without offering to try again", async () => {
+    stub({
+      "GET tasks/7/": () => json({ detail: "Not found." }, 404),
+      "GET tasks/options/": () => json({ people: [], positions: [], routines: [], policies: [] }),
+    });
+    const app = await testApp("/c/1/tasks?task=7");
+    const { wrapper } = mountWithProviders(TaskDrawer, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    await vi.waitFor(() => expect(document.body.querySelector("[role=dialog]")?.textContent).toContain("gone"));
+    const buttons = [...document.body.querySelectorAll("[role=dialog] button")].map((b) => b.textContent?.trim());
+    expect(buttons).not.toContain("Try again");
+    wrapper.unmount();
+  });
+
   it("gives the drawer's extensions the task and its routine (knowledge's How to do this)", async () => {
     const link = (target_type: string, target_id: number, title: string) => ({
       id: target_id,
@@ -239,7 +254,7 @@ describe("TaskDrawer", () => {
       "GET tasks/7/": () => json(detail({ routine: { id: 3, title: "Close the till", onboarding: false } })),
       "GET tasks/options/": () => json({ people: [], positions: [], routines: [], policies: [] }),
       "GET knowledge/pages/linked/": (call) =>
-        json(call.url.includes("target_type=routine") ? [link("routine", 3, "Closing the till")] : [link("task", 7, "Counting fridges")]),
+        json(call.url.includes("target_type=routine") ? [link("routine", 3, "Closing the till")] : [link("task", 7, "Reading the fridge thermometer")]),
     });
     const app = await testApp("/c/1/tasks?task=7");
     const { wrapper } = mountWithProviders(TaskDrawer, { plugins: app.plugins });
@@ -250,7 +265,7 @@ describe("TaskDrawer", () => {
     expect(asked.sort()).toEqual(["target_type=routine&target_id=3", "target_type=task&target_id=7"]);
     const text = document.body.textContent ?? "";
     expect(text).toContain("Closing the till");
-    expect(text).toContain("Counting fridges");
+    expect(text).toContain("Reading the fridge thermometer");
     expect(document.body.querySelector('a[href="/dashboard/c/1/knowledge/p/43"], a[href="/c/1/knowledge/p/43"]')).not.toBeNull();
     wrapper.unmount();
   });
@@ -365,14 +380,56 @@ describe("one-off tasks and routine work", () => {
     await flushPromises();
     const lists = () => calls.filter((c) => c.url.includes("/tasks/?"));
     const summaries = () => calls.filter((c) => c.url.includes("/tasks/summary/"));
+    // "Late now" opens the late list of the same work the number counts.
+    const lateLink = () => wrapper.find('a[href*="sv=late"]').attributes("href");
     expect(lists().at(-1)!.url).toContain("routines=without");
     expect(summaries().at(-1)!.url).toContain("routines=without");
+    expect(lateLink()).not.toContain("routines=1");
     document.body.querySelector<HTMLButtonElement>("[data-testid=include-routines]")!.click();
     await flushPromises();
     await flushPromises();
     expect(app.router.currentRoute.value.query.routines).toBe("1");
     expect(lists().at(-1)!.url).not.toContain("routines=");
     expect(summaries().at(-1)!.url).not.toContain("routines=");
+    expect(lateLink()).toContain("routines=1");
+    wrapper.unmount();
+  });
+
+  it("an empty one-off list offers routine work: a routine's title finds nothing otherwise", async () => {
+    stub({
+      "GET tasks/": () => json(empty),
+      "GET tasks/summary/": () => json(summary),
+      "GET tasks/options/": () => json({ people: [], positions: [], routines: [], policies: [] }),
+      "GET saved-views/": () => json([]),
+    });
+    const app = await testApp("/c/1/tasks?q=muzlatgich");
+    const { default: TasksPage } = await import("../pages/TasksPage.vue");
+    const { wrapper } = mountWithProviders(TasksPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(wrapper.text()).toContain("Routine work isn't in this list");
+    await wrapper.find("[data-testid=empty-include-routines]").trigger("click");
+    await flushPromises();
+    expect(app.router.currentRoute.value.query.routines).toBe("1");
+    expect(wrapper.find("[data-testid=empty-include-routines]").exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it("stops the on-time sparkline at yesterday: today's rate only counts what was due so far", async () => {
+    const day = (date: string, on_time_percent: number) => ({ date, on_time: 1, late: 0, missed: 0, total: 1, done: 1, on_time_percent });
+    stub({
+      "GET tasks/": () => json(empty),
+      "GET tasks/summary/": () => json({ ...summary, series: [day("2026-10-19", 90), day("2026-10-20", 80), day("2026-10-21", 10)] }),
+      "GET tasks/options/": () => json({ people: [], positions: [], routines: [], policies: [] }),
+      "GET saved-views/": () => json([]),
+    });
+    const app = await testApp("/c/1/tasks");
+    const { default: TasksPage } = await import("../pages/TasksPage.vue");
+    const { wrapper } = mountWithProviders(TasksPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    const line = wrapper.find("svg path[stroke]").attributes("d") ?? "";
+    expect(line.match(/[ML]/g)).toHaveLength(2);
     wrapper.unmount();
   });
 

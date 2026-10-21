@@ -927,13 +927,19 @@ class TransactionViewSet(FinanceMixin, OwnerViewSet):
     )
     def list(self, request, company_id):
         rows = self._filtered()
-        sums = (
-            rows.exclude(kind=Transaction.Kind.TRANSFER)
-            .filter(status=Transaction.Status.POSTED)
-            .aggregate(
-                money_in=Sum("base_amount", filter=Q(base_amount__gt=0)),
-                money_out=Sum("base_amount", filter=Q(base_amount__lt=0)),
-            )
+        # The sums follow the filters: posted rows unless a status is asked for (the "Waiting"
+        # view sums what waits), and transfers only when the list is narrowed to them (both legs,
+        # so in = out); otherwise they would only move money between our own accounts.
+        counted = rows
+        if Transaction.Kind.TRANSFER not in filters.choices(
+            request.query_params, "kind", Transaction.Kind.values
+        ):
+            counted = counted.exclude(kind=Transaction.Kind.TRANSFER)
+        if not filters.choices(request.query_params, "status", Transaction.Status.values):
+            counted = counted.filter(status=Transaction.Status.POSTED)
+        sums = counted.aggregate(
+            money_in=Sum("base_amount", filter=Q(base_amount__gt=0)),
+            money_out=Sum("base_amount", filter=Q(base_amount__lt=0)),
         )
         money_in = quantize(sums["money_in"] or 0)
         money_out = quantize(-(sums["money_out"] or 0))
@@ -1751,7 +1757,7 @@ class PnlView(FinanceMixin, RangeMixin, OwnerAPIView):
 
 class CashFlowView(FinanceMixin, RangeMixin, OwnerAPIView):
     """Cash flow in the analytics shape (`income`, `expense`, `net`) plus the operating,
-    investing, financing, owner, transfer and opening sections."""
+    investing, financing, owner, transfer, opening and currency revaluation sections."""
 
     perm = VIEW
 
@@ -1800,6 +1806,7 @@ class CashFlowView(FinanceMixin, RangeMixin, OwnerAPIView):
             "owner": _("Owner money"),
             "transfers": _("Transfers and exchange"),
             "opening": _("Opening balances"),
+            "revaluation": _("Currency revaluation"),
         }
         breakdown = [{**row, "label": labels[row["key"]]} for row in data.pop("sections")]
         return Response(_jsonable({**self.range.as_dict(), **data, "breakdown": breakdown}))
@@ -1876,7 +1883,11 @@ class CategoryTrendView(FinanceMixin, OwnerAPIView):
             OpenApiParameter("branch", int, many=True),
         ],
         responses=inline_serializer(
-            "FinanceCategoryTrend", {"series": serializers.ListField(child=serializers.DictField())}
+            "FinanceCategoryTrend",
+            {
+                "series": serializers.ListField(child=serializers.DictField()),
+                "previous_same_days": serializers.DictField(),
+            },
         ),
     )
     def get(self, request, company_id):

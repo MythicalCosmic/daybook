@@ -7,6 +7,7 @@
 import { CalendarClock, Send } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRoute, useRouter } from "vue-router";
 
 import FormField from "@/components/FormField.vue";
 import TimePicker from "@/components/TimePicker.vue";
@@ -28,6 +29,8 @@ const emit = defineEmits<{ given: [count: number] }>();
 
 const { t } = useI18n();
 const fmt = useFormat();
+const route = useRoute();
+const router = useRouter();
 const company = useCompanyStore();
 const words = useRunWords();
 const give = useGiveToday();
@@ -62,8 +65,11 @@ async function submit(): Promise<void> {
   if (!routine || !dueTime.value || tooEarly.value) return;
   try {
     const result = await give.mutateAsync({ id: routine.id, dueTime: dueTime.value });
+    // Routine work lives on Routines → Today, not in Tasks: say where today's task went.
+    const elsewhere = route.name !== "routines.today";
     toast.success(t("routines.give.done", { n: result.given }, result.given), {
       description: t("routines.give.doneBody", { title: routine.title, time: fmt.instant(result.due_at, "time") }),
+      ...(elsewhere ? { action: { label: t("routines.give.see"), onClick: () => void router.push({ name: "routines.today", query: { routine: String(routine.id) } }) } } : {}),
     });
     open.value = false;
     emit("given", result.given);

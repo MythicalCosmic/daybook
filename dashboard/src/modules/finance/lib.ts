@@ -23,9 +23,9 @@ import {
 
 import type { StatusTone } from "@/components/StatusPill.vue";
 import type { SelectOption } from "@/components/options";
-import { dec } from "@/lib/decimal";
+import { dec, toMoney } from "@/lib/decimal";
 
-import type { AccountKind, AgingBucket, CategoryKind, CategoryNode, DebtStatus, Pnl, PnlNode, Transaction, TransactionKind } from "./types";
+import type { AccountKind, AgingBucket, CategoryKind, CategoryNode, CounterpartyKind, DebtStatus, Pnl, PnlNode, Transaction, TransactionKind } from "./types";
 
 export const ACCOUNT_ICONS: Record<AccountKind, LucideIcon> = {
   cash: Banknote,
@@ -50,6 +50,26 @@ export function pickerOrder<T extends { id: number; kind: AccountKind; branch_id
   return [...accounts].sort((a, b) => Number(b.id === prefer.id) - Number(a.id === prefer.id) || local(b) - local(a) || rank(a) - rank(b));
 }
 
+/**
+ * The accounts a short list shows (the finance overview's Accounts card): where the money is,
+ * biggest first in the base currency (an overdrawn account counts by its size, so it shows), and
+ * empty desks and safes last.
+ */
+export function topAccounts<T extends { id: number; balance: string; base?: string | null }>(accounts: readonly T[], limit: number): T[] {
+  const size = (account: T) => dec(account.base ?? account.balance).abs();
+  return [...accounts].sort((a, b) => size(b).comparedTo(size(a)) || a.id - b.id).slice(0, limit);
+}
+
+/**
+ * What a group of accounts holds in the base currency: own-currency balances as they are, the
+ * others at their valued amount. Null when a foreign balance has no value yet (no rate), so a
+ * total that would be wrong is not shown.
+ */
+export function baseTotal(rows: ReadonlyArray<{ currency: string; balance: string; base?: string | null }>, base: string): string | null {
+  const parts = rows.map((row) => (row.currency === base ? row.balance : row.base ?? null));
+  return parts.some((part) => part === null) ? null : toMoney(parts.reduce((total, part) => total.plus(dec(part)), dec(0)));
+}
+
 /** How the Accounts page groups accounts, in order. */
 export const ACCOUNT_GROUPS: ReadonlyArray<{ id: string; kinds: readonly AccountKind[] }> = [
   { id: "cash", kinds: ["cash", "safe"] },
@@ -70,12 +90,14 @@ export const KIND_ICONS: Partial<Record<TransactionKind, LucideIcon>> = {
   opening: CircleDollarSign,
 };
 
+// The Status column marks entries that aren't plain income or expense: money moving between
+// balance-sheet items reads calm (a debt payment is routine, not a warning).
 export const KIND_TONES: Record<TransactionKind, StatusTone> = {
   income: "success",
   expense: "danger",
   transfer: "info",
-  debt_open: "warning",
-  debt_payment: "warning",
+  debt_open: "info",
+  debt_payment: "info",
   write_off: "neutral",
   fx: "neutral",
   owner: "primary",
@@ -114,10 +136,76 @@ export const AGING_COLORS: Record<AgingBucket, string> = {
  */
 export const ACCOUNT_SWATCHES = ["#c67139", "#7a8a5e", "#4a6a8a", "#d1a040", "#8a5a7a", "#3f8a83", "#a66a4f", "#8c857a"] as const;
 
-/** A stable chart color for something without one (categories, accounts). */
+/**
+ * A stable chart color for something without one (categories, accounts). A stored swatch becomes
+ * its palette token, so it follows the dark theme like every chart colour (the stored "#c67139"
+ * is the light theme's chart-1 and looks dull on the dark surface).
+ */
 export function colorFor(id: number, color?: string | null): string {
-  return color || `var(--c-chart-${(Math.abs(id) % 8) + 1})`;
+  if (color) {
+    const swatch = (ACCOUNT_SWATCHES as readonly string[]).indexOf(color.toLowerCase());
+    return swatch >= 0 ? `var(--c-chart-${swatch + 1})` : color;
+  }
+  return `var(--c-chart-${(Math.abs(id) % 8) + 1})`;
 }
+
+/** The palette slot a stored swatch or a chart token stands for ("chart-3"), else the colour. */
+function paletteKey(color: string): string {
+  const swatch = (ACCOUNT_SWATCHES as readonly string[]).indexOf(color.toLowerCase());
+  if (swatch >= 0) return `chart-${swatch + 1}`;
+  const token = /^var\(--c-chart-(\d)\)$/.exec(color.trim());
+  return token ? `chart-${token[1]}` : color.toLowerCase();
+}
+
+/** Free colours in the charts' colour-blind safe order, without the warm gray of "Other". */
+const FREE_SLOTS = [1, 3, 4, 5, 6, 2, 7].map((n) => `var(--c-chart-${n})`);
+
+/**
+ * Colours for a ranked list a chart shows side by side (the month's expenses by category, biggest
+ * first): each row keeps its own colour unless a bigger row already has it (with eight colours,
+ * categories often share one) or it is the gray of the "Other" slice; then it takes the next free
+ * palette colour, so no two slices of one donut look alike.
+ */
+export function distinctColors(rows: ReadonlyArray<{ id: number; color?: string | null }>): string[] {
+  const used = new Set<string>(["chart-8"]);
+  return rows.map((row) => {
+    let color = colorFor(row.id, row.color);
+    if (used.has(paletteKey(color))) color = FREE_SLOTS.find((slot) => !used.has(paletteKey(slot))) ?? color;
+    used.add(paletteKey(color));
+    return color;
+  });
+}
+
+/**
+ * What a profit or a net figure is compared with: `previous`, or undefined (no change shown) when
+ * the figure crossed zero, where a percentage misleads (a profit of 41 M after a loss of 36 M is
+ * not "+214 %", a net of −64 M after +411 M is not "−115 %"). Null (nothing to compare) stays.
+ */
+export function comparablePrevious(value: string | null | undefined, previous: string | null | undefined): string | null | undefined {
+  if (value === null || value === undefined || previous === null || previous === undefined) return previous;
+  const now = dec(value);
+  const before = dec(previous);
+  if (now.isZero() || before.isZero()) return previous;
+  return now.isNegative() === before.isNegative() ? previous : undefined;
+}
+
+/**
+ * The tags a one-line cell shows: in order while they fit about `letters` letters (the first
+ * always), and how many more there are, for a "+N".
+ */
+export function fitTags(tags: readonly string[], letters: number): { shown: string[]; more: number } {
+  const shown: string[] = [];
+  let used = 0;
+  for (const tag of tags) {
+    if (shown.length && used + tag.length > letters) break;
+    shown.push(tag);
+    used += tag.length;
+  }
+  return { shown, more: tags.length - shown.length };
+}
+
+/** Counterparty kinds as pills, the same on the list and on a counterparty's page. */
+export const PARTY_TONES: Record<CounterpartyKind, StatusTone> = { customer: "success", supplier: "info", both: "primary", state: "warning", other: "neutral" };
 
 /** Category options for a picker of one kind: parents first, their subcategories under them. */
 export function categoryOptions(tree: CategoryNode[] | undefined, kind: CategoryKind | null, opts: { activeOnly?: boolean } = {}): SelectOption<number>[] {

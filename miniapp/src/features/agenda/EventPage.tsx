@@ -8,7 +8,7 @@ import { useNavigation } from "../../state/navigation";
 import { initials, useMember } from "../../state/session";
 import { useToast } from "../../state/toast";
 import { haptic } from "../../telegram";
-import { Badge, Banner, BottomBar, Card, ListCard, ListRow, PageHeader, Screen, ScreenSkeleton, SectionHead, Segmented, cx } from "../../ui";
+import { Badge, Banner, BottomBar, Card, ListCard, ListRow, LoadError, PageHeader, Screen, ScreenSkeleton, SectionHead, Segmented, cx } from "../../ui";
 import { useAnswer, useEvent, type AgendaEvent, type Answer } from "./api";
 import "./agenda.css";
 import { colorClass, dayName } from "./lib";
@@ -30,7 +30,11 @@ export function EventPage({ params }: PageProps) {
   if (!query.data) {
     return (
       <Screen variant="detail">
-        <ScreenSkeleton variant="detail" delay={150} />
+        {query.isError ? (
+          <LoadError error={query.error} onRetry={() => void query.refetch()} onBack={navigation.pop} />
+        ) : (
+          <ScreenSkeleton variant="detail" delay={150} />
+        )}
       </Screen>
     );
   }

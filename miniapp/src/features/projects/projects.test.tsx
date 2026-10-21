@@ -55,7 +55,7 @@ function membership(): Membership {
     id: ME,
     company: {
       id: 1,
-      name: "Demo Shop",
+      name: "Demo Dorixona",
       timezone: "Asia/Tashkent",
       features: [],
       owner_sees_personal_tasks: false,
@@ -184,6 +184,27 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   nav = null;
+});
+
+describe("the Me row", () => {
+  function Status() {
+    const item = feature.meItems![0]!;
+    const member = { ...membership(), timeZone: "Asia/Tashkent", companyId: 1 };
+    const status = item.useStatus!({ member, summary: undefined });
+    return <span data-testid="status">{String(status.value ?? "")}|{String(status.badge ?? "")}</span>;
+  }
+
+  it("shows my open cards as its value, not as a bubble beside the project count", async () => {
+    state.projects = [project, { ...project, id: 6, my_open: 9 }];
+    renderWith(<Status />);
+    expect(await screen.findByText("11 open|")).toBeTruthy();
+  });
+
+  it("counts my projects when no card of mine is open", async () => {
+    state.projects = [{ ...project, my_open: 0 }];
+    renderWith(<Status />);
+    expect(await screen.findByText("1|")).toBeTruthy();
+  });
 });
 
 describe("the feature", () => {
@@ -342,7 +363,7 @@ describe("screens", () => {
     expect(await screen.findByText("This week: 2:30")).toBeTruthy();
     act(() => fireEvent.click(screen.getByRole("button", { name: "15 minutes more" })));
     act(() => fireEvent.click(screen.getByRole("button", { name: "15 minutes more" })));
-    act(() => fireEvent.change(screen.getByPlaceholderText("e.g. Painted the back wall"), { target: { value: " Sign brackets " } }));
+    act(() => fireEvent.change(screen.getByPlaceholderText("e.g. Set up the new vitamins shelf"), { target: { value: " Sign brackets " } }));
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Save 1:30" })));
     const post = server.calls.find((call) => call.method === "POST");
     expect(post?.path).toBe("/companies/1/projects/time/");
@@ -467,6 +488,8 @@ describe("the timer on the task screen", () => {
       [3, { assignee: { id: 3, name: "Dilnoza Karimova", position: null } }],
       [2, { status: "done" }],
       [2, { status: "cancelled" }],
+      // Waiting for a check: no timer to start (the reviewer sees the card, not work to time).
+      [2, { status: "review" }],
     ];
     for (const [id, overrides] of cases) {
       server.calls.splice(0);

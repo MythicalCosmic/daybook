@@ -14,7 +14,7 @@ import { formatRoutineAudit, routineFieldLabels } from "../audit";
 import RoutineEditor from "../components/RoutineEditor.vue";
 import en from "../i18n/en.json";
 import module from "../index";
-import { afterSave, missesToday, nextRunOf, runDayWords, runLabel, type RunWords } from "../lib";
+import { afterSave, madeLateNote, missesToday, nextRunOf, runDayWords, runLabel, share, wholePercent, type RunWords } from "../lib";
 import type { Routine } from "../types";
 
 interface Call {
@@ -159,6 +159,26 @@ describe("RoutinesPage", () => {
     expect(app.router.currentRoute.value.query.new).toBeUndefined();
     wrapper.unmount();
   });
+
+  it("draws a routine's last 14 days only when they move", async () => {
+    // Done every day is a flat line, which reads as nothing at the bottom of a sparkline: the
+    // percentage says it alone.
+    const stats = (spark: number[]) => ({ made_30d: 28, done_30d: 27, on_time_30d: 26, completion_30d: 96, spark });
+    const steady = routine({ id: 1, title: "Every day", stats: stats(Array(14).fill(100)) });
+    const uneven = routine({ id: 2, title: "Some days", stats: stats([100, 100, 50, 100, 100, 100, 0, 100, 100, 100, 100, 100, 100, 100]) });
+    stub({ "GET routines/": () => json([steady, uneven]), "GET tasks/options/": () => json(options) });
+    const app = await testApp("/c/1/routines/all");
+    for (const name of ["routines.today", "routines.history", "routines.confirm", "routines.list", "routines.onboarding", "routines.detail"]) {
+      app.router.addRoute({ path: `/named/${name}/:id?`, name, component: { render: () => null } });
+    }
+    const { default: RoutinesPage } = await import("../pages/RoutinesPage.vue");
+    const { wrapper } = mountWithProviders(RoutinesPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(wrapper.text()).toContain("Every day");
+    expect(wrapper.findAll(`svg[aria-label="${en["routines.sparkLabel"]}"] path[stroke]`)).toHaveLength(1);
+    wrapper.unmount();
+  });
 });
 
 describe("RoutineEditor", () => {
@@ -264,6 +284,23 @@ describe("next run", () => {
     expect(runDayWords("2026-10-23T04:00:00Z", words)).toBe("routines.runDay.weekday.4");
   });
 
+  it("reads 100 % only when everything is done, and 0 % only when nothing is", () => {
+    expect([share(537, 539), share(539, 539), share(1, 400), share(0, 400), share(2, 3), share(0, 0)]).toEqual([99, 100, 1, 0, 67, null]);
+    expect([wholePercent(99.6), wholePercent(100), wholePercent(0.3), wholePercent(0), wholePercent(96.4)]).toEqual([99, 100, 1, 0, 96]);
+  });
+
+  it("says a late-made routine's today honestly, before and after today's task went out by hand", () => {
+    const routine = { due_time: "09:00:00", next_run: "2026-10-22T04:00:00Z" };
+    const today = { past: false, given: 0, give: { people: 2 } };
+    expect(madeLateNote(routine, today, words)).toEqual({ title: 'Routines.give.title{"day":"routines.runDay.tomorrow"}', body: 'routines.give.detailBody{"due":"09:00","n":2}' });
+    // Given to everyone: no "it made no tasks today" any more.
+    expect(madeLateNote(routine, { ...today, given: 2, give: null }, words)?.body).toBe('routines.give.givenBody{"due":"09:00"}');
+    expect(madeLateNote(routine, { ...today, given: 2, give: { people: 1 } }, words)?.body).toBe('routines.give.givenMoreBody{"due":"09:00","n":1}');
+    // An earlier day: no task that day, or no note when one was given by hand.
+    expect(madeLateNote(routine, { past: true, given: 0, give: null }, words)).toEqual({ title: 'routines.preview.madeLate{"time":"09:00"}', body: "" });
+    expect(madeLateNote(routine, { past: true, given: 1, give: null }, words)).toBeNull();
+  });
+
   it("opens the give-today dialog only for a new routine that missed today", () => {
     const late = { onboarding: false, today: { reason: "made_late", give: { people: 2, due_at: "2026-10-21T09:30:00Z" } } };
     expect(afterSave(late, true)).toBe("dialog");
@@ -316,6 +353,13 @@ describe("a routine made after its time", () => {
     await flushPromises();
     expect(calls.find((c) => c.method === "POST")?.body).toEqual({ due_time: "14:30" });
     expect(toasts.at(-1)?.title).toBe("Today's task went to 2 people");
+    // Routine work isn't in Tasks: the toast leads to the routine on Today.
+    app.router.addRoute({ path: "/named/routines.today", name: "routines.today", component: { render: () => null } });
+    expect(toasts.at(-1)?.action?.label).toBe("See it in Today");
+    toasts.at(-1)!.action!.onClick();
+    await flushPromises();
+    expect(app.router.currentRoute.value.name).toBe("routines.today");
+    expect(app.router.currentRoute.value.query.routine).toBe("50");
     wrapper.unmount();
   });
 
@@ -544,6 +588,26 @@ describe("Today opened from History", () => {
     expect(text).not.toContain("Muzlatgich haroratini yozish");
     expect(text).toContain("2 / 3");
     expect(text).not.toContain("6 / 10");
+    wrapper.unmount();
+  });
+});
+
+describe("Today on a later day", () => {
+  it("shows today: later days have no routine work yet, and the arrow stops", async () => {
+    const calls = stub({
+      "GET tasks/options/": () => json(options),
+      "GET routines/day/": () => json({ day: "2026-10-21", holiday: false, idle: 0, totals: { done: 0, review: 0, late: 0, missed: 0, returned: 0, open: 0, cancelled: 0, skipped: 0, total: 0, finished: 0, routines: 0 }, routines: [] }),
+    });
+    const app = await testApp("/c/1/routines?day=2099-01-01");
+    for (const name of ["routines.today", "routines.history", "routines.confirm", "routines.list", "routines.onboarding", "routines.detail"]) {
+      app.router.addRoute({ path: `/named/${name}/:id?`, name, component: { render: () => null } });
+    }
+    const { default: TodayPage } = await import("../pages/TodayPage.vue");
+    const { wrapper } = mountWithProviders(TodayPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(calls.find((c) => c.url.includes("routines/day/"))?.url).not.toContain("day=2099");
+    expect(document.body.querySelector<HTMLButtonElement>(`button[aria-label="${en["routines.today.nextDay"]}"]`)?.disabled).toBe(true);
     wrapper.unmount();
   });
 });

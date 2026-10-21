@@ -75,12 +75,14 @@ class TaskSerializer(serializers.ModelSerializer):
     actions = serializers.SerializerMethodField()
     reward = MoneySerializerField(allow_null=True, read_only=True)
     proof_thumb = serializers.SerializerMethodField()
+    routine = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
         fields = (
             "id",
             "kind",
+            "routine",
             "title",
             "description",
             "status",
@@ -150,6 +152,12 @@ class TaskSerializer(serializers.ModelSerializer):
         """0 = Monday … 6 = Sunday, when the task repeats."""
         template = task.template
         return template.weekdays if template is not None and template.is_active else None
+
+    @extend_schema_field(serializers.IntegerField(allow_null=True))
+    def get_routine(self, task: Task) -> int | None:
+        """The routine (task template) that made this daily task, so the mini app can group a
+        routine's runs; null for one-off work and for a person's own repeating task."""
+        return task.template_id if task.kind == Task.Kind.DAILY else None
 
     def get_is_overdue(self, task: Task) -> bool:
         return task.is_overdue()
@@ -243,6 +251,24 @@ class CompleteSerializer(serializers.Serializer):
 
 class ReturnSerializer(serializers.Serializer):
     reason = serializers.CharField()
+
+
+class ConfirmManySerializer(serializers.Serializer):
+    ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1), min_length=1, max_length=100
+    )
+
+
+class ConfirmManyResultSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    ok = serializers.BooleanField()
+    error = serializers.CharField(allow_blank=True)
+
+
+class ConfirmManyResponseSerializer(serializers.Serializer):
+    done = serializers.IntegerField()
+    failed = serializers.IntegerField()
+    results = ConfirmManyResultSerializer(many=True)
 
 
 class CancelSerializer(serializers.Serializer):
@@ -380,6 +406,31 @@ class TaskViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
     @action(detail=True, methods=["post"])
     def confirm(self, request, company_id, pk):
         return self._respond(services.confirm_task(self.get_object(), by=self.membership))
+
+    # Its own operation id: the generated one is the same as confirming one task's.
+    @extend_schema(
+        operation_id="v1_companies_tasks_confirm_many",
+        request=ConfirmManySerializer,
+        responses=ConfirmManyResponseSerializer,
+    )
+    @action(detail=False, methods=["post"], url_path="confirm", url_name="confirm-many")
+    def confirm_many(self, request, company_id):
+        """Confirm several finished tasks at once (a routine's runs, from the mini app's "Confirm
+        all"). Each is confirmed on its own, by the same rules and with the same audit row as
+        confirming it alone: only someone who may check it, never the person who did it. One
+        refusal never stops the others; the result says how each went."""
+        ids = self._validated(ConfirmManySerializer)["ids"]
+        results = services.bulk(
+            by=self.membership, ids=ids, action=services.BulkAction.CONFIRM, payload={}
+        )
+        done = sum(result.ok for result in results)
+        return Response(
+            {
+                "done": done,
+                "failed": len(results) - done,
+                "results": [{"id": r.id, "ok": r.ok, "error": r.error} for r in results],
+            }
+        )
 
     @extend_schema(request=ReturnSerializer, responses=TaskSerializer)
     @action(detail=True, methods=["post"], url_path="return")

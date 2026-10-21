@@ -32,6 +32,8 @@ export interface RoutineToday {
   reason: SkipReason | null;
   /** "Give today's task now": made after today's deadline and someone would still get it. */
   give: { people: number; due_at: string } | null;
+  /** Made after today's deadline: today's tasks given by hand anyway (0 when none). */
+  given?: number;
 }
 
 export interface Routine {

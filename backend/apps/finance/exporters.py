@@ -200,6 +200,7 @@ def cash_flow_rows(member, params: dict):
         "owner": _("Owner money"),
         "transfers": _("Transfers and exchange"),
         "opening": _("Opening balances"),
+        "revaluation": _("Currency revaluation"),
     }
     for section in data["sections"]:
         yield {

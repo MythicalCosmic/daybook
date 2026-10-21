@@ -11,12 +11,12 @@ import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
 
 import DeltaBadge from "@/components/DeltaBadge.vue";
-import MoneyText from "@/components/MoneyText.vue";
 import { changePercent } from "@/lib/decimal";
+import { currencyLabel } from "@/lib/money";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
-import { colorFor, isNegative, isZeroMoney } from "../../lib";
+import { colorFor, comparablePrevious, isNegative, isZeroMoney } from "../../lib";
 import type { Pnl, PnlNode } from "../../types";
 
 const props = defineProps<{ data: Pnl }>();
@@ -26,6 +26,11 @@ const fmt = useFormat();
 const company = useCompanyStore();
 const open = ref<Set<number>>(new Set());
 const compare = computed(() => props.data.compare !== null);
+// A P&L reads as a grid of numbers: the currency is said once, in the header, not in every cell.
+const unit = computed(() => currencyLabel(props.data.currency, fmt.lang.value));
+function num(value: string | null): string {
+  return value === null ? "—" : fmt.money(value, props.data.currency, { decimals: "never", currencyDisplay: "none" });
+}
 
 function toggle(id: number): void {
   const next = new Set(open.value);
@@ -41,7 +46,9 @@ defineExpose({ expandAll });
 
 function periodLabel(key: string): string {
   if (key.includes("Q")) return key.replace("-", " ");
-  return fmt.day(`${key}-01`, "monthYear");
+  // A column heading starts with a capital in every language ("Октябрь 2026 г.", "Oktabr 2026").
+  const label = fmt.day(`${key}-01`, "monthYear");
+  return label.charAt(0).toLocaleUpperCase() + label.slice(1);
 }
 
 /** Entries behind one cell: the category (with its subcategories) in that period. */
@@ -54,7 +61,9 @@ function drill(node: PnlNode | null, index: number | "total"): Record<string, un
 }
 
 function delta(current: string, previous: string | null): number | null {
-  return previous === null ? null : changePercent(current, previous);
+  // A change across zero (a loss that became a profit) has no meaningful percentage: "—".
+  const before = comparablePrevious(current, previous);
+  return before === null || before === undefined ? null : changePercent(current, before);
 }
 
 interface Row {
@@ -90,7 +99,7 @@ const columnCount = computed(() => props.data.periods.length + 2 + (compare.valu
       <table class="w-full min-w-[640px] border-separate border-spacing-0 text-base">
         <thead>
           <tr class="bg-surface-2 text-xs font-semibold text-muted">
-            <th scope="col" class="sticky left-0 z-[1] min-w-[220px] bg-surface-2 px-4 py-2.5 text-left">{{ t("finance.reports.category") }}</th>
+            <th scope="col" class="sticky left-0 z-[1] min-w-[220px] bg-surface-2 px-4 py-2.5 text-left">{{ t("finance.reports.category") }} <span class="font-normal text-subtle" data-testid="pnl-unit">({{ unit }})</span></th>
             <th v-for="period in data.periods" :key="period.key" scope="col" class="whitespace-nowrap px-3 py-2.5 text-right">{{ periodLabel(period.key) }}</th>
             <th scope="col" class="whitespace-nowrap px-3 py-2.5 text-right text-fg">{{ t("finance.reports.total") }}</th>
             <template v-if="compare">
@@ -132,15 +141,15 @@ const columnCount = computed(() => props.data.periods.length + 2 + (compare.valu
               </th>
               <td v-for="(amount, index) in row.node.amounts" :key="index" class="px-3 py-2 text-right tabular-nums group-hover:bg-surface-2/60">
                 <RouterLink v-if="!isZeroMoney(amount)" :to="drill(row.own ? null : row.node, index)" class="rounded-[4px] text-fg hover:text-accent-fg hover:underline">
-                  <MoneyText :value="amount" decimals="never" />
+                  <span class="whitespace-nowrap">{{ num(amount) }}</span>
                 </RouterLink>
                 <span v-else class="text-subtle">—</span>
               </td>
               <td class="px-3 py-2 text-right font-semibold tabular-nums text-fg group-hover:bg-surface-2/60">
-                <RouterLink :to="drill(row.own ? null : row.node, 'total')" class="hover:text-accent-fg hover:underline"><MoneyText :value="row.node.total" decimals="never" /></RouterLink>
+                <RouterLink :to="drill(row.own ? null : row.node, 'total')" class="hover:text-accent-fg hover:underline"><span class="whitespace-nowrap">{{ num(row.node.total) }}</span></RouterLink>
               </td>
               <template v-if="compare">
-                <td class="px-3 py-2 text-right tabular-nums text-muted group-hover:bg-surface-2/60"><MoneyText :value="row.node.previous" decimals="never" /></td>
+                <td class="px-3 py-2 text-right tabular-nums text-muted group-hover:bg-surface-2/60"><span class="whitespace-nowrap">{{ num(row.node.previous) }}</span></td>
                 <td class="px-3 py-2 text-right group-hover:bg-surface-2/60">
                   <DeltaBadge v-if="row.node.previous !== null" :value="delta(row.node.total, row.node.previous)" :inverse="section === 'expense'" size="sm" />
                 </td>
@@ -151,11 +160,11 @@ const columnCount = computed(() => props.data.periods.length + 2 + (compare.valu
                 {{ section === "income" ? t("finance.reports.totalIncome") : t("finance.reports.totalExpenses") }}
               </th>
               <td v-for="(amount, index) in data[section].amounts" :key="index" class="border-t border-line px-3 py-2.5 text-right font-semibold tabular-nums text-fg">
-                <MoneyText :value="amount" decimals="never" />
+                <span class="whitespace-nowrap">{{ num(amount) }}</span>
               </td>
-              <td class="border-t border-line px-3 py-2.5 text-right font-semibold tabular-nums text-fg"><MoneyText :value="data[section].total" decimals="never" /></td>
+              <td class="border-t border-line px-3 py-2.5 text-right font-semibold tabular-nums text-fg"><span class="whitespace-nowrap">{{ num(data[section].total) }}</span></td>
               <template v-if="compare">
-                <td class="border-t border-line px-3 py-2.5 text-right tabular-nums text-muted"><MoneyText :value="data[section].previous" decimals="never" /></td>
+                <td class="border-t border-line px-3 py-2.5 text-right tabular-nums text-muted"><span class="whitespace-nowrap">{{ num(data[section].previous) }}</span></td>
                 <td class="border-t border-line px-3 py-2.5 text-right"><DeltaBadge :value="delta(data[section].total, data[section].previous)" :inverse="section === 'expense'" size="sm" /></td>
               </template>
             </tr>
@@ -163,20 +172,20 @@ const columnCount = computed(() => props.data.periods.length + 2 + (compare.valu
           <tr class="profit">
             <th scope="row" class="sticky left-0 z-[1] bg-surface-2 px-4 py-3 text-left text-md font-semibold text-fg">{{ t("finance.reports.profit") }}</th>
             <td v-for="(amount, index) in data.profit.amounts" :key="index" :class="['bg-surface-2 px-3 py-3 text-right text-md font-semibold tabular-nums', isNegative(amount) ? 'text-danger' : 'text-success']">
-              <MoneyText :value="amount" decimals="never" />
+              <span class="whitespace-nowrap">{{ num(amount) }}</span>
             </td>
-            <td :class="['bg-surface-2 px-3 py-3 text-right text-md font-semibold tabular-nums', isNegative(data.profit.total) ? 'text-danger' : 'text-success']"><MoneyText :value="data.profit.total" decimals="never" /></td>
+            <td :class="['bg-surface-2 px-3 py-3 text-right text-md font-semibold tabular-nums', isNegative(data.profit.total) ? 'text-danger' : 'text-success']"><span class="whitespace-nowrap">{{ num(data.profit.total) }}</span></td>
             <template v-if="compare">
-              <td class="bg-surface-2 px-3 py-3 text-right tabular-nums text-muted"><MoneyText :value="data.profit.previous" decimals="never" /></td>
+              <td class="bg-surface-2 px-3 py-3 text-right tabular-nums text-muted"><span class="whitespace-nowrap">{{ num(data.profit.previous) }}</span></td>
               <td class="bg-surface-2 px-3 py-3 text-right"><DeltaBadge :value="delta(data.profit.total, data.profit.previous)" size="sm" /></td>
             </template>
           </tr>
           <tr class="margin">
             <th scope="row" class="sticky left-0 z-[1] bg-surface px-4 py-2.5 text-left text-sm text-muted">{{ t("finance.reports.margin") }}</th>
-            <td v-for="(value, index) in data.margin.amounts" :key="index" class="px-3 py-2.5 text-right text-sm tabular-nums text-muted">{{ value === null ? "—" : `${fmt.number(value, 1)}%` }}</td>
-            <td class="px-3 py-2.5 text-right text-sm font-semibold tabular-nums text-fg">{{ data.margin.total === null ? "—" : `${fmt.number(data.margin.total, 1)}%` }}</td>
+            <td v-for="(value, index) in data.margin.amounts" :key="index" class="px-3 py-2.5 text-right text-sm tabular-nums text-muted">{{ value === null ? "—" : fmt.percent(Number(value), 1) }}</td>
+            <td class="px-3 py-2.5 text-right text-sm font-semibold tabular-nums text-fg">{{ data.margin.total === null ? "—" : fmt.percent(Number(data.margin.total), 1) }}</td>
             <template v-if="compare">
-              <td class="px-3 py-2.5 text-right text-sm tabular-nums text-muted">{{ data.margin.previous === null ? "—" : `${fmt.number(data.margin.previous, 1)}%` }}</td>
+              <td class="px-3 py-2.5 text-right text-sm tabular-nums text-muted">{{ data.margin.previous === null ? "—" : fmt.percent(Number(data.margin.previous), 1) }}</td>
               <td />
             </template>
           </tr>

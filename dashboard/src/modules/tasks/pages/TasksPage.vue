@@ -15,7 +15,6 @@ import { useRoute, useRouter } from "vue-router";
 import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import FilterBar from "@/components/FilterBar.vue";
 import { useUrlFilters } from "@/components/filters";
-import KpiCard from "@/components/KpiCard.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import SavedViewsTabs from "@/components/SavedViewsTabs.vue";
@@ -133,7 +132,8 @@ const kpis = computed(() => {
       format: (value: number) => (data ? `${value} / ${data.total_today}` : String(value)),
       hint: t(`tasks.kpi.doneTodayHint${counts}`),
     },
-    { id: "late", label: t("tasks.kpi.lateNow"), value: data?.late_now ?? null, to: `/c/${cid}/tasks?sv=late&overdue=true`, hint: t(`tasks.kpi.lateNowHint${counts}`) },
+    // The late list counts the same work as the number: with routine work when it's in.
+    { id: "late", label: t("tasks.kpi.lateNow"), value: data?.late_now ?? null, to: `/c/${cid}/tasks?sv=late&overdue=true${withRoutines.value ? "&routines=1" : ""}`, hint: t(`tasks.kpi.lateNowHint${counts}`) },
     { id: "review", label: t("tasks.kpi.review"), value: data?.review ?? null, to: `/c/${cid}/tasks/reviews`, hint: t(`tasks.kpi.reviewHint${counts}`) },
     {
       id: "on_time",
@@ -143,7 +143,8 @@ const kpis = computed(() => {
       format: "percent" as const,
       points: true,
       deltaLabel: t("tasks.kpi.vsWeekBefore"),
-      spark: data?.series.map((point) => point.on_time_percent) ?? [],
+      // Today's rate counts only what was due so far: the line stops at yesterday.
+      spark: (data?.series ?? []).filter((point) => point.date !== data?.today).map((point) => point.on_time_percent),
     },
   ];
 });
@@ -190,10 +191,8 @@ const viewOptions = computed(() => [
       </template>
     </PageHeader>
 
-    <div v-if="isPhone" class="grid grid-cols-2 gap-2">
-      <KpiCard v-for="(item, index) in kpis" :key="index" v-bind="{ ...item, spark: undefined, hint: undefined }" :loading="summary.isPending.value" />
-    </div>
-    <KpiStrip v-else :items="kpis" :loading="summary.isPending.value" :columns="4" />
+    <!-- Phones: two tight numbers per row, so the list starts on the first screen (as on Routines). -->
+    <KpiStrip :items="kpis" :loading="summary.isPending.value" :columns="4" phone="compact" />
 
     <div class="flex min-w-0 flex-col gap-3">
       <SavedViewsTabs
@@ -207,7 +206,7 @@ const viewOptions = computed(() => [
         @delete="(target) => (saved.remove.mutate(Number(target.id)), applyView('open'))"
       />
       <div class="flex min-w-0 flex-wrap items-start gap-2">
-        <FilterBar v-model="filters.values.value" v-model:search="search" class="min-w-0 flex-1 max-sm:basis-full" :defs="defs" searchable :search-placeholder="t('tasks.searchPlaceholder')" />
+        <FilterBar v-model="filters.values.value" v-model:search="search" class="min-w-0 flex-1 max-xl:basis-full" :defs="defs" searchable :search-placeholder="t('tasks.searchPlaceholder')" />
         <button
           type="button"
           :aria-pressed="routinesAsked"
@@ -224,7 +223,7 @@ const viewOptions = computed(() => [
         <SegmentedControl v-model="view" :options="viewOptions" :aria-label="t('tasks.view.label')" />
       </div>
 
-      <TasksTable v-if="view === 'table'" :state="table" :params="params" :filtered="filtered" :active-id="openId" @open="open" @clear-filters="filters.clear(), (search = '')" />
+      <TasksTable v-if="view === 'table'" :state="table" :params="params" :filtered="filtered" :active-id="openId" @open="open" @clear-filters="filters.clear(), (search = '')" @include-routines="withRoutines = true" />
       <TasksBoard v-else-if="view === 'board'" :params="params" @open="open" />
       <TasksCalendar v-else :params="params" @open="open" />
     </div>

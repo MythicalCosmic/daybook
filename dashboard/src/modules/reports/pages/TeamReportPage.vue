@@ -21,10 +21,12 @@ import SegmentedControl from "@/components/SegmentedControl.vue";
 import type { TableColumn } from "@/components/table";
 import { useChartTheme } from "@/components/useChartTheme";
 import { useDataTable } from "@/components/useDataTable";
+import { todayIn } from "@/lib/dates";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useFormat } from "@/lib/useFormat";
 import { useRangeState } from "@/lib/useRangeState";
 import { rs, useRouteState } from "@/lib/useRouteState";
+import { useCompanyStore } from "@/stores/company";
 
 import { periodParams, useTeamReport } from "../api";
 import ReportToolbar from "../components/ReportToolbar.vue";
@@ -33,6 +35,7 @@ import type { GroupBy, TeamRow } from "../types";
 const { t } = useI18n();
 const chart = useChartTheme();
 const fmt = useFormat();
+const company = useCompanyStore();
 const { isPhone } = useBreakpoints();
 
 const period = useRangeState({ preset: "last_30", compare: "prev" });
@@ -50,7 +53,7 @@ const kpis = computed(() => {
   const totals = data.value?.totals;
   const previous = data.value?.previous;
   return [
-    { id: "on_time", label: t("reports.kpi.onTime"), value: totals?.on_time_percent ?? null, previous: previous?.on_time_percent ?? null, format: "percent" as const, points: true, spark: data.value?.series.map((p) => p.on_time_percent) ?? [] },
+    { id: "on_time", label: t("reports.kpi.onTime"), value: totals?.on_time_percent ?? null, previous: previous?.on_time_percent ?? null, format: "percent" as const, points: true, spark: trend.value.map((p) => p.on_time_percent) },
     { id: "done", label: t("reports.kpi.done"), value: totals?.done ?? null, previous: previous?.done ?? null },
     { id: "late", label: t("reports.kpi.late"), value: totals?.late ?? null, previous: previous?.late ?? null, inverse: true },
     { id: "missed", label: t("reports.kpi.missed"), value: totals?.missed ?? null, previous: previous?.missed ?? null, inverse: true },
@@ -58,9 +61,12 @@ const kpis = computed(() => {
   ];
 });
 
-// Trend
+// Trend. Today's rate counts only what was due so far, so its point would dip: the line stops at
+// yesterday (the numbers above still count today).
 const series = computed(() => data.value?.series ?? []);
-const trendCategories = computed(() => series.value.map((p) => p.date));
+const today = computed(() => todayIn(company.timezone));
+const trend = computed(() => series.value.filter((p) => p.date !== today.value));
+const trendCategories = computed(() => trend.value.map((p) => p.date));
 
 // Spread per group (top 12 by volume)
 const spread = computed(() => [...(data.value?.breakdown ?? [])].filter((row) => row.total > 0).sort((a, b) => (groupBy.value === "day" ? a.key.localeCompare(b.key) : b.total - a.total)).slice(0, groupBy.value === "day" ? 62 : 12));
@@ -133,7 +139,7 @@ const groupOptions = computed(() => [
         :empty="!series.some((p) => p.total > 0)"
         :empty-text="t('reports.chart.empty')"
       >
-        <LineChart :categories="trendCategories" :series="[{ name: t('reports.kpi.onTime'), data: series.map((p) => p.on_time_percent) }]" value-format="percent" :x-format="series.length > 62 ? 'month' : 'day'" :y-max="100" smooth />
+        <LineChart :categories="trendCategories" :series="[{ name: t('reports.kpi.onTime'), data: trend.map((p) => p.on_time_percent) }]" value-format="percent" :x-format="series.length > 62 ? 'month' : 'day'" :y-max="100" smooth />
       </ChartCard>
       <ChartCard
         :title="t('reports.chart.spread')"

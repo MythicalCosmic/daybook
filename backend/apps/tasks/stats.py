@@ -12,6 +12,9 @@ from apps.timeoff.queries import off_today
 STREAK_LOOKBACK_DAYS = 365
 # Finished from the assignee's point of view: waiting for a check counts.
 FINISHED = (Task.Status.DONE, Task.Status.REVIEW)
+# A streak counts shared work: routine work and tasks given by hand (project cards are given
+# tasks too). Personal tasks never count (docs/PLAN-OWNER.md §3.16).
+STREAK_KINDS = (Task.Kind.DAILY, Task.Kind.ASSIGNED)
 
 
 def summary(member: Membership, now: datetime) -> dict:
@@ -53,30 +56,35 @@ def summary(member: Membership, now: datetime) -> dict:
 
 
 def streak(member: Membership, now: datetime) -> int:
-    """Days in a row on which everything due was finished that same day.
+    """The one streak, wherever it shows (the mini app's home and profile, Person 360 on the
+    dashboard): days in a row on which every shared task due that day (routine work and tasks
+    given by hand, never personal ones) was finished on time, done or waiting for a check by its
+    deadline.
 
-    Days with nothing due neither count nor break it, and today only counts once it's all done.
+    Days with nothing due (days off, holidays) neither count nor break it; today counts once all
+    of it is finished on time, and doesn't break it before the day is over.
     """
     today = timezone.localtime(now, ZoneInfo(member.company.timezone)).date()
     return _streak(_day_results(member, now, lookback=STREAK_LOOKBACK_DAYS), today)
 
 
 def _day_results(member: Membership, now: datetime, lookback: int) -> dict[date, bool]:
-    """For each day something was due: whether all of it was finished that same day."""
+    """For each day `member` had shared work due: whether all of it was finished on time."""
     tz = ZoneInfo(member.company.timezone)
     today = timezone.localtime(now, tz).date()
     since, _ = _day_bounds(today - timedelta(days=lookback), tz)
     _, until = _day_bounds(today, tz)
     tasks = (
-        Task.objects.filter(assignee=member, due_at__gte=since, due_at__lt=until)
+        Task.objects.filter(
+            assignee=member, kind__in=STREAK_KINDS, due_at__gte=since, due_at__lt=until
+        )
         .exclude(status=Task.Status.CANCELLED)
         .values_list("due_at", "status", "completed_at")
     )
     days: dict[date, bool] = {}
     for due_at, status, completed_at in tasks:
         day = timezone.localtime(due_at, tz).date()
-        _, day_end = _day_bounds(day, tz)
-        on_time = status in FINISHED and completed_at is not None and completed_at < day_end
+        on_time = status in FINISHED and completed_at is not None and completed_at <= due_at
         days[day] = days.get(day, True) and on_time
     return days
 

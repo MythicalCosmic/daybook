@@ -15,6 +15,7 @@ from django.test.utils import CaptureQueriesContext
 from apps.audit.models import AuditLog
 from apps.members.models import Membership
 from apps.members.tests.factories import PositionFactory
+from apps.tasks import dashboard
 from apps.tasks.generation import generate_daily_tasks
 from apps.tasks.models import Proof, Task
 from apps.tasks.tests.factories import TaskFactory, TaskTemplateFactory, jpeg, make_shop
@@ -232,6 +233,43 @@ def test_history_rates_each_routine_per_day_over_the_work_due(pharmacy, owner_ap
     ali = next(row for row in body["people"] if row["member"]["id"] == people["ali"].pk)
     assert (ali["made"], ali["finished"], ali["open"], ali["percent"]) == (4, 3, 1, 100)
     assert ali["on_time_percent"] == 67
+
+
+def test_a_rate_reads_100_only_when_everything_is_done():
+    """537 of 539 done is 99 %, not a rounded-up 100 % with two runs still late."""
+    assert dashboard.share(537, 539) == 99 and dashboard.share(539, 539) == 100
+    assert dashboard.share(1, 400) == 1 and dashboard.share(0, 400) == 0
+    assert dashboard.share(2, 3) == 67 and dashboard.share(0, 0) is None
+
+
+def test_open_work_past_its_time_is_late_until_its_day_is_over(pharmacy, owner_api, clock):
+    """Gani hasn't opened the till (due 09:00): at noon History and the routine's page say late,
+    as Today does, since he can still do it; once Wednesday is over it is missed."""
+    shop, at, kassa = pharmacy["shop"], pharmacy["at"], pharmacy["kassa"]
+    client = owner_api(shop.owner)
+    wednesday = {"from": WED.isoformat(), "to": WED.isoformat()}
+
+    def history():
+        body = client.get(path(shop.company, "routines/history/"), wednesday).json()
+        [cell] = next(row for row in body["routines"] if row["routine"]["id"] == kassa.pk)["cells"]
+        return cell, body["totals"]
+
+    def compliance():
+        url = path(shop.company, f"routines/{kassa.pk}/compliance/")
+        return client.get(url, wednesday).json()["totals"]
+
+    cell, totals = history()
+    # Vali finished late, Gani is late and still open; Ali was on time.
+    assert (cell["late"], cell["missed"], totals["missed"]) == (2, 0, 0)
+    assert cell["percent"] == 67  # Gani's run still counts as due
+    assert (compliance()["late"], compliance()["missed"]) == (2, 0)
+
+    clock(at(THU, 0, 30))
+    cell, totals = history()
+    # Ali's 18:00 fridge reading never came either.
+    assert (cell["late"], cell["missed"], totals["missed"]) == (1, 1, 2)
+    assert cell["percent"] == 67
+    assert (compliance()["late"], compliance()["missed"]) == (1, 1)
 
 
 def test_routine_work_waits_for_confirmation_in_its_own_queue(pharmacy, owner_api):

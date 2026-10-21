@@ -18,6 +18,7 @@ import UserAvatar from "@/components/UserAvatar.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { usePulseCount } from "@/core/pulse";
+import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
@@ -30,6 +31,9 @@ const { t } = useI18n();
 const fmt = useFormat();
 const company = useCompanyStore();
 const ask = useConfirm();
+// Confirm and send back are finger-sized on phones.
+const { isPhone } = useBreakpoints();
+const tap = computed(() => (isPhone.value ? "lg" : "sm"));
 const oneOffChecks = usePulseCount("tasks.review");
 
 const query = useToConfirm();
@@ -134,7 +138,7 @@ const photo = (run: RoutineRun, group: ConfirmGroup) => ({
               <span v-if="group.items.length > 1">{{ t("routines.confirm.waiting", { n: group.items.length }, group.items.length) }}</span>
             </p>
           </div>
-          <UiButton v-if="group.items.length > 1" variant="primary" size="sm" :icon="CheckCheck" :loading="confirmRuns.isPending.value" class="max-sm:w-full" @click="confirm(group.items, group.routine.title)">
+          <UiButton v-if="group.items.length > 1" variant="primary" :size="tap" :icon="CheckCheck" :loading="confirmRuns.isPending.value" class="max-sm:w-full" @click="confirm(group.items, group.routine.title)">
             {{ t("routines.confirm.all", { n: group.items.length }, group.items.length) }}
           </UiButton>
         </header>
@@ -163,8 +167,8 @@ const photo = (run: RoutineRun, group: ConfirmGroup) => ({
               <p v-if="run.proof_photo && run.proof_text" class="line-clamp-2 rounded-[8px] bg-surface-2 px-2.5 py-1.5 text-sm text-fg">{{ run.proof_text }}</p>
               <p v-if="run.checklist.total" class="inline-flex items-center gap-1 text-xs text-muted"><ListChecks :size="13" aria-hidden="true" />{{ t("routines.confirm.checklist", { done: run.checklist.done, total: run.checklist.total }) }}</p>
               <div class="mt-auto flex gap-2 pt-1">
-                <UiButton size="sm" :icon="Check" class="flex-1" @click="confirm([run], `${run.member.name} · ${group.routine.title}`)">{{ t("routines.confirm.one") }}</UiButton>
-                <UiButton size="sm" variant="ghost" :icon="RotateCcw" class="flex-1" @click="sendBack(run, group)">{{ t("routines.confirm.sendBack") }}</UiButton>
+                <UiButton :size="tap" :icon="Check" class="flex-1" @click="confirm([run], `${run.member.name} · ${group.routine.title}`)">{{ t("routines.confirm.one") }}</UiButton>
+                <UiButton :size="tap" variant="ghost" :icon="RotateCcw" class="flex-1" @click="sendBack(run, group)">{{ t("routines.confirm.sendBack") }}</UiButton>
               </div>
             </div>
           </li>

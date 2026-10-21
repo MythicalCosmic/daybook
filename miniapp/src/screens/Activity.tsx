@@ -1,3 +1,5 @@
+import { Bell } from "lucide-react";
+
 import { useActivity, useMarkFeedRead } from "../api/hooks";
 import { ActivityRow } from "../components/ActivityRow";
 import { RowSkeleton } from "../components/TaskRow";
@@ -5,6 +7,7 @@ import { useViewContext } from "../lib/useNow";
 import { useNavigation } from "../state/navigation";
 import { useMember } from "../state/session";
 import { haptic } from "../telegram";
+import { EmptyState, LoadError } from "../ui";
 
 export function ActivityScreen() {
   const ctx = useViewContext();
@@ -27,8 +30,9 @@ export function ActivityScreen() {
       <div className="page-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12 }}>
         <div>
           <h1 className="heading title-lg">{t("activity.title")}</h1>
+          {/* "All caught up" only once the feed is here: not while it loads, not when it failed. */}
           <div className="subline">
-            {unread.length ? t("activity.new", { count: unread.length }) : t("activity.caughtUp")}
+            {!activity.data ? "\u00a0" : unread.length ? t("activity.new", { count: unread.length }) : t("activity.caughtUp")}
           </div>
         </div>
         {unread.length > 0 && (
@@ -47,8 +51,9 @@ export function ActivityScreen() {
       </div>
 
       {activity.isPending && <RowSkeleton count={4} />}
-      {!activity.isPending && !items.length && (
-        <div className="muted" style={{ padding: "var(--space-6) 4px", fontSize: 16 }}>{t("activity.empty")}</div>
+      {activity.isError && !activity.data && <LoadError compact error={activity.error} onRetry={() => void activity.refetch()} />}
+      {!activity.isPending && !activity.isError && !items.length && (
+        <EmptyState compact tone="sage" icon={Bell} title={t("activity.empty")} body={t("activity.emptyBody")} />
       )}
       {groups.map((group) => (
         <div key={group.title} style={{ display: "contents" }}>

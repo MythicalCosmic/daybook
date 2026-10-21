@@ -95,9 +95,14 @@ export type BannerTone = "plain" | "accent" | "sage";
 /**
  * A full-width notice. "lg" is the Home style (42 px circle, bold title, one-line body, chevron
  * when it opens something); "md" is the detail style (small icon, wrapping note).
+ *
+ * Home's rule: a tinted `tone` is for what can't wait (late work, cash to confirm: accent) or the
+ * shape of the day (off today: sage); requests and reminders stay on the plain surface and get
+ * their colour from the circle (`iconTone`), so a busy Home stays calm.
  */
 export function Banner({
   tone = "plain",
+  iconTone,
   size = "md",
   icon,
   title,
@@ -108,6 +113,8 @@ export function Banner({
   className,
 }: {
   tone?: BannerTone;
+  /** The lg circle's colour on a plain banner (a tinted banner's circle follows its tone). */
+  iconTone?: "accent" | "sage";
   size?: "md" | "lg";
   icon?: IconLike;
   title: ReactNode;
@@ -129,7 +136,7 @@ export function Banner({
   const content =
     size === "lg" ? (
       <>
-        {icon && <span className="circle banner-circle">{renderIcon(icon, 21)}</span>}
+        {icon && <span className={cx("circle banner-circle", iconTone && `banner-circle--${iconTone}`)}>{renderIcon(icon, 21)}</span>}
         <span className="row-main">
           <span className="banner-title">{title}</span>
           {body && <span className={cx("row-meta banner-body", wrap && "row-meta--wrap")}>{body}</span>}

@@ -279,7 +279,7 @@ const fieldLabels = computed(() => ({
               <p :class="['text-[1.625rem] font-semibold leading-8 tracking-[-0.02em] tabular-nums', row.status === 'void' && 'text-subtle line-through']">
                 <MoneyText :value="row.amount" :currency="row.currency" sign="always" :colored="row.status !== 'void'" :decimals="row.currency === 'USD' ? 'always' : 'auto'" />
               </p>
-              <p v-if="foreign" class="text-sm text-muted">≈ <MoneyText :value="row.base_amount" /></p>
+              <p v-if="foreign" class="text-sm text-muted">≈ <MoneyText :value="row.base_amount" :decimals="company.currency === 'USD' ? 'always' : 'never'" /></p>
               <div v-if="row.status !== 'posted'" class="mt-1.5 flex flex-wrap items-center gap-1.5">
                 <StatusPill :tone="STATUS_TONES[row.status]" size="sm" :label="row.status_label" />
               </div>
@@ -308,7 +308,15 @@ const fieldLabels = computed(() => ({
 
             <template v-if="!editing">
               <p v-if="row.description" class="rounded-[10px] bg-surface-2 px-3 py-2.5 text-base text-fg">{{ row.description }}</p>
-              <DescriptionList :items="items" :columns="2" />
+              <!-- Names wrap here instead of cutting off: a drawer has the height for
+                   "Transport va yetkazish › Kuryer yoqilg‘i" or a person's cash-on-hand account. -->
+              <DescriptionList :items="items" :columns="2">
+                <template #value-account="{ item }"><span class="min-w-0 break-words" data-testid="wrap-value">{{ item.value }}</span></template>
+                <template #value-category="{ item }"><span class="min-w-0 break-words">{{ item.value }}</span></template>
+                <template #value-counterparty="{ item }"><span class="min-w-0 break-words">{{ item.value }}</span></template>
+                <template #value-member="{ item }"><span class="min-w-0 break-words">{{ item.value }}</span></template>
+                <template #value-project="{ item }"><span class="min-w-0 break-words">{{ item.value }}</span></template>
+              </DescriptionList>
               <RouterLink v-if="row.source && sourceUrl" :to="sourceUrl" class="inline-flex w-fit items-center gap-1.5 rounded-[8px] border border-line px-2.5 py-1.5 text-sm font-medium text-fg hover:bg-surface-2">
                 <ExternalLink :size="14" class="text-subtle" />{{ t("finance.tx.openSource", { source: row.source.label, id: row.source.id }) }}
               </RouterLink>

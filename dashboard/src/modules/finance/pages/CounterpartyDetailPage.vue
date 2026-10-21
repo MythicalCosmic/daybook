@@ -22,6 +22,7 @@ import { useDataTable } from "@/components/useDataTable";
 import { formatPhone } from "@/lib/format";
 import { rs, useRouteState } from "@/lib/useRouteState";
 import { useFormat } from "@/lib/useFormat";
+import { usePageTitle } from "@/lib/usePageTitle";
 import { useCompanyStore } from "@/stores/company";
 
 import { useCounterparty } from "../api";
@@ -29,7 +30,7 @@ import CounterpartyFormDialog from "../components/CounterpartyFormDialog.vue";
 import DebtDrawer from "../components/DebtDrawer.vue";
 import DebtFormDialog from "../components/DebtFormDialog.vue";
 import TransactionDrawer from "../components/TransactionDrawer.vue";
-import { dayStyle, DEBT_TONES } from "../lib";
+import { dayStyle, DEBT_TONES, isZeroMoney, PARTY_TONES } from "../lib";
 import { openQuickAdd } from "../quickAdd";
 import type { Debt, Transaction } from "../types";
 
@@ -44,6 +45,8 @@ const partyId = computed(() => Number(route.params.partyId));
 const query = useCounterparty(partyId);
 const detail = computed(() => query.data.value);
 const party = computed(() => detail.value?.counterparty ?? null);
+// The breadcrumb and the browser tab read the counterparty's name, not "Counterparty".
+usePageTitle(() => party.value?.name);
 const tab = useRouteState("tab", rs.enum(["debts", "entries"] as const, "debts"));
 const editOpen = ref(false);
 const debtOpen = ref(false);
@@ -53,10 +56,13 @@ const entryTable = useDataTable({ id: "finance.party.entries", pageSize: 200 });
 const kpis = computed(() => {
   const d = detail.value;
   return [
-    { id: "owes", label: t("finance.parties.owesUs"), value: d?.counterparty.owes_us ?? null, format: "money" as const, hint: d && d.counterparty.overdue !== "0.00" ? t("finance.parties.overdueSub", { amount: fmt.money(d.counterparty.overdue) }) : undefined },
-    { id: "we", label: t("finance.parties.weOwe"), value: d?.counterparty.we_owe ?? null, format: "money" as const },
-    { id: "income", label: t("finance.parties.incomeTotal"), value: d?.totals.income ?? null, format: "money" as const },
-    { id: "expense", label: t("finance.parties.expenseTotal"), value: d?.totals.expense ?? null, format: "money" as const },
+    // Compact like the finance overview's tiles (the exact amount in the tooltip and in the debts
+    // below), so they fit the two-column phone grid.
+    // "… overdue" only when something is (the API may send "0" as well as "0.00").
+    { id: "owes", label: t("finance.parties.owesUs"), value: d?.counterparty.owes_us ?? null, format: "money" as const, compact: true, hint: d && !isZeroMoney(d.counterparty.overdue) ? t("finance.parties.overdueSub", { amount: fmt.money(d.counterparty.overdue, undefined, { compact: true }) }) : undefined },
+    { id: "we", label: t("finance.parties.weOwe"), value: d?.counterparty.we_owe ?? null, format: "money" as const, compact: true },
+    { id: "income", label: t("finance.parties.incomeTotal"), value: d?.totals.income ?? null, format: "money" as const, compact: true },
+    { id: "expense", label: t("finance.parties.expenseTotal"), value: d?.totals.expense ?? null, format: "money" as const, compact: true },
   ];
 });
 
@@ -123,7 +129,7 @@ const tabs = computed(() => [
         </UiButton>
       </template>
       <template v-if="party" #meta>
-        <StatusPill tone="primary" size="sm" :label="party.kind_label" />
+        <StatusPill :tone="PARTY_TONES[party.kind]" size="sm" :label="party.kind_label" />
         <StatusPill v-if="party.credit_blocked" tone="danger" size="sm" :label="t('finance.parties.blockedPill')" />
         <span v-for="tag in party.tags" :key="tag" class="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-muted">{{ tag }}</span>
       </template>
@@ -159,6 +165,23 @@ const tabs = computed(() => [
             </template>
             <template #cell-outstanding="{ row }"><MoneyCell :value="row.outstanding" :currency="row.currency" :colored="false" strong /></template>
             <template #cell-status="{ row }"><StatusPill :tone="DEBT_TONES[row.status]" size="sm" :label="t(`finance.debtStatus.${row.status}`)" /></template>
+            <!-- Phones: one card per debt, with what is left and how late, instead of a sideways table. -->
+            <template #card="{ row }">
+              <div class="flex items-start justify-between gap-3" data-testid="party-debt-card">
+                <div class="min-w-0">
+                  <p :class="['text-sm font-semibold', row.direction === 'receivable' ? 'text-success' : 'text-danger']">{{ row.direction_label }}</p>
+                  <p class="truncate text-xs text-muted">
+                    {{ t(`finance.debtKind.${row.kind}`) }} · {{ fmt.day(row.issued_on, dayStyle(row.issued_on)) }}
+                    <template v-if="row.due_on"> → {{ fmt.day(row.due_on, dayStyle(row.due_on)) }}</template>
+                  </p>
+                  <p v-if="row.days_overdue" class="mt-0.5 text-xs font-semibold text-danger">{{ t("finance.debts.late", { n: row.days_overdue }, row.days_overdue) }}</p>
+                </div>
+                <div class="flex shrink-0 flex-col items-end gap-1">
+                  <MoneyCell :value="row.outstanding" :currency="row.currency" :colored="false" strong />
+                  <StatusPill :tone="DEBT_TONES[row.status]" size="sm" :label="t(`finance.debtStatus.${row.status}`)" />
+                </div>
+              </div>
+            </template>
           </DataTable>
           <DataTable
             v-else
@@ -173,11 +196,25 @@ const tabs = computed(() => [
             @row-click="openEntry"
           >
             <template #cell-amount="{ row }"><MoneyCell :value="row.amount" :currency="row.currency" sign="always" /></template>
+            <template #card="{ row }">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-semibold text-fg">{{ row.description || row.category?.name || row.kind_label }}</p>
+                  <p class="truncate text-xs text-muted">{{ fmt.day(row.occurred_on, dayStyle(row.occurred_on)) }} · {{ row.category?.name ?? row.kind_label }} · {{ row.account?.name ?? "—" }}</p>
+                </div>
+                <MoneyCell :value="row.amount" :currency="row.currency" sign="always" strong />
+              </div>
+            </template>
           </DataTable>
         </div>
         <aside class="ui-card h-fit p-4 xl:order-2">
           <h2 class="mb-3 text-sm font-semibold text-fg">{{ t("finance.parties.about") }}</h2>
-          <DescriptionList v-if="info.length" :items="info" :columns="1" layout="rows" />
+          <!-- Notes, the address and bank details are read whole, on as many lines as they need. -->
+          <DescriptionList v-if="info.length" :items="info" :columns="1" layout="rows">
+            <template #value-notes="{ item }"><span class="min-w-0 whitespace-pre-line break-words text-left" data-testid="party-notes">{{ item.value }}</span></template>
+            <template #value-address="{ item }"><span class="min-w-0 break-words text-left">{{ item.value }}</span></template>
+            <template #value-bank="{ item }"><span class="min-w-0 whitespace-pre-line break-words text-left">{{ item.value }}</span></template>
+          </DescriptionList>
           <p v-else class="text-sm text-muted">{{ t("finance.parties.noDetails") }}</p>
         </aside>
       </div>

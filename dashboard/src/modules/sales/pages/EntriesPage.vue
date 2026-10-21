@@ -97,7 +97,7 @@ const shiftMode = computed(() => options.data.value?.settings.mode === "shift_to
       <template #toolbar><FilterBar v-model="filters.values.value" v-model:search="search" :defs="defs" searchable /></template>
       <template #cell-note="{ row }">
         <span class="flex min-w-0 flex-col">
-          <span class="truncate font-medium text-fg">{{ row.note || t("sales.entries.receipt", { n: row.number || row.id }) }}</span>
+          <span class="truncate font-medium text-fg" :title="row.note || undefined">{{ row.note || t("sales.entries.receipt", { n: row.number || row.id }) }}</span>
           <span class="truncate text-xs text-muted">{{ [row.number, row.performed_by?.name, row.shift?.code].filter(Boolean).join(" · ") }}</span>
         </span>
       </template>

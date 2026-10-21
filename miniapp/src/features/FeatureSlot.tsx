@@ -155,7 +155,8 @@ function PlusActions({ placed }: { placed: Placed<PlusAction<string, string, str
   const navigation = useNavigation();
   if (!placed.length) return null;
   return (
-    <div className="field">
+    // A hairline below sets the quick actions apart from the new-task form that follows.
+    <div className="field ui-plus-block">
       <span className="field-label">{t("plus.title")}</span>
       <div className="ui-plus-actions">
         {placed.map(({ feature, item }) => (

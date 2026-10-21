@@ -33,7 +33,8 @@ export function useCardOfTask(company: number, task: Pick<Task, "id" | "card">):
   return card ? { card, board: board.data } : null;
 }
 
-const CLOSED = ["done", "cancelled"];
+/** Cards still being worked on: to do, in progress or sent back; not one waiting for a check. */
+const OPEN = ["todo", "in_progress", "returned"];
 
 /**
  * On the task screen: the timer for a project card. Running on this task: the clock and Stop
@@ -50,7 +51,7 @@ export default function TaskTimer({ member, task }: TaskSlotProps) {
   if (!found || timer.isPending) return null;
   const { card, board } = found;
   const mine = task.assignee.id === member.id;
-  if (CLOSED.includes(task.status) || !(mine || board.capabilities.edit_cards)) return null;
+  if (!OPEN.includes(task.status) || !(mine || board.capabilities.edit_cards)) return null;
   return <StartHere cardKey={card.key} minutes={card.minutes} elsewhere={timer.data ?? null} onStart={() => controls.start(task.id)} busy={controls.busy} />;
 }
 

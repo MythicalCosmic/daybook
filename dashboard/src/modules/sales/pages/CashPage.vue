@@ -104,10 +104,11 @@ const movements = useMovements(computed(() => ({ ...filters.params.value, ...tab
 const columns = computed<TableColumn<Movement>[]>(() => [
   { id: "created_at", header: t("sales.col.when"), width: 140, format: (v) => fmt.instant(String(v), "short") },
   { id: "kind", header: t("sales.col.kind"), minWidth: 200 },
+  // The amount next to the movement, as in the finance ledger: still on screen at 1024 px.
+  { id: "amount", header: t("sales.col.amount"), numeric: true, width: 150, csv: (row) => row.amount },
   { id: "created_by", header: t("sales.col.by"), width: 190, value: (row) => row.created_by.name },
   { id: "register", header: t("sales.col.till"), width: 170, value: (row) => `${row.branch.name} · ${row.register.name}` },
   { id: "status", header: t("sales.col.status"), width: 130 },
-  { id: "amount", header: t("sales.col.amount"), numeric: true, width: 150, csv: (row) => row.amount },
   ...(canManage.value ? [{ id: "actions", header: "", width: 56, hideable: false, align: "end" as const }] : []),
 ]);
 
@@ -291,7 +292,7 @@ const limitUse = (total: string, limit: string | null) => (limit ? percent(total
             <component :is="MOVEMENT_ICONS[row.kind]" :size="15" class="shrink-0 text-subtle" aria-hidden="true" />
             <span class="min-w-0">
               <span class="block truncate font-medium text-fg">{{ t(`sales.movement.kind.${row.kind}`) }}<template v-if="row.receiver"> · {{ row.receiver.name }}</template></span>
-              <span v-if="row.reason || row.category" class="block truncate text-xs text-muted">{{ [row.category?.name, row.reason].filter(Boolean).join(" · ") }}</span>
+              <span v-if="row.reason || row.category" class="block truncate text-xs text-muted" :title="[row.category?.name, row.reason].filter(Boolean).join(' · ')">{{ [row.category?.name, row.reason].filter(Boolean).join(" · ") }}</span>
             </span>
           </span>
         </template>

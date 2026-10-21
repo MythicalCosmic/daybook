@@ -12,7 +12,7 @@ import { addDays, diffDays, parseDay, todayIn, zonedDay } from "@/lib/dates";
 
 import type { RoutineRun, RunState } from "./types";
 
-type T = (key: string, params?: Record<string, unknown>) => string;
+type T = (key: string, params?: Record<string, unknown>, plural?: number) => string;
 
 /** How a run's state reads: its tone and icon (late and missed are the ones to act on). */
 export const RUN_LOOK: Record<RunState, { tone: StatusTone; icon: Component }> = {
@@ -39,6 +39,24 @@ export function runText(run: RoutineRun, t: T, time: (iso: string) => string): s
     default:
       return t(`routines.runState.${run.state}`, { time: due });
   }
+}
+
+/** A whole percent of `whole` that reads 100 only when all of it is done and 0 only when none is
+ * (537 of 539 is 99, not a rounded-up 100), as the server rounds Today's and History's rates. */
+export function share(part: number, whole: number): number | null {
+  if (!whole) return null;
+  let value = Math.round((100 * part) / whole);
+  if (part < whole) value = Math.min(value, 99);
+  if (part > 0) value = Math.max(value, 1);
+  return value;
+}
+
+/** A percent with decimals shown whole by the same rule: 99.6 reads 99, 0.3 reads 1. */
+export function wholePercent(value: number): number {
+  const rounded = Math.round(value);
+  if (value < 100 && rounded >= 100) return 99;
+  if (value > 0 && rounded <= 0) return 1;
+  return rounded;
 }
 
 /** Monday = 0 … Sunday = 6, of a company-local day ("2026-10-21"). */
@@ -136,6 +154,27 @@ export function afterSave(
   if (created && routine.today?.reason === "made_late") return "dialog";
   if (routine.today?.give) return "offer";
   return "plain";
+}
+
+/**
+ * The note on a day a routine skipped because it was made after that day's deadline. Today: when it
+ * starts by itself, and whether today's task already went out by hand (`given`) or can still be
+ * given (`give`, "Give today's task now"). An earlier day: no task that day, unless one was given
+ * by hand (then its runs say enough and there is no note).
+ */
+export function madeLateNote(
+  routine: { due_time: string; next_run: string | null },
+  day: { past: boolean; given: number; give: { people: number } | null },
+  words: RunWords,
+): { title: string; body: string } | null {
+  const { t } = words;
+  const due = routine.due_time.slice(0, 5);
+  if (day.past) return day.given > 0 ? null : { title: t("routines.preview.madeLate", { time: due }), body: "" };
+  const starts = routine.next_run ? runDayWords(routine.next_run, words) : null;
+  const title = starts ? capitalize(t("routines.give.title", { day: starts })) : t("routines.give.titleLater");
+  const more = day.give?.people ?? 0;
+  if (day.given > 0) return { title, body: more ? t("routines.give.givenMoreBody", { due, n: more }, more) : t("routines.give.givenBody", { due }) };
+  return { title, body: more ? t("routines.give.detailBody", { due, n: more }, more) : t("routines.give.detailBodyNobody", { due }) };
 }
 
 /** "dushanba kuni boshlanadi" → "Dushanba kuni boshlanadi": a phrase that starts with run words. */

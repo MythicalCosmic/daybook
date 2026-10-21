@@ -221,7 +221,7 @@ useHotkey("n", () => create(), { description: "agenda.hotkey.new", group: "page"
 
       <!-- Week and agenda already list what is coming, and need the width: the rail goes with the month only
            (beside it from 1536 px, where the grid still has room for readable chips; under it below). -->
-      <aside v-if="view === 'month'" class="grid min-w-0 content-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)] lg:items-start 2xl:grid-cols-1">
+      <aside v-if="view === 'month'" class="grid min-w-0 grid-cols-1 content-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,320px)] lg:items-start 2xl:grid-cols-1">
         <section class="ui-card p-3" :aria-label="t('agenda.upcoming.title')">
           <h2 class="mb-2 px-2 pt-1 text-sm font-semibold text-fg">{{ t("agenda.upcoming.title") }}</h2>
           <div v-if="upcoming.isPending.value" class="flex flex-col gap-2 px-2"><SkeletonBlock v-for="n in 4" :key="n" height="34px" radius="8px" /></div>

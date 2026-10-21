@@ -22,6 +22,7 @@ import UiButton from "@/components/UiButton.vue";
 import { useDataTable } from "@/components/useDataTable";
 import { useRangeState } from "@/lib/useRangeState";
 import { useFormat } from "@/lib/useFormat";
+import { usePageTitle } from "@/lib/usePageTitle";
 import { useCompanyStore } from "@/stores/company";
 
 import { useStatement } from "../api";
@@ -41,6 +42,8 @@ const period = useRangeState({ preset: "last_30" });
 const statement = useStatement(accountId, computed(() => ({ from: period.value.range.from, to: period.value.range.to })));
 const data = computed(() => statement.data.value);
 const account = computed(() => data.value?.account ?? null);
+// The breadcrumb and the browser tab read the account's name, not "Statement".
+usePageTitle(() => account.value?.name);
 const table = useDataTable({ id: "finance.statement", pageSize: 200 });
 
 const kpis = computed(() => {

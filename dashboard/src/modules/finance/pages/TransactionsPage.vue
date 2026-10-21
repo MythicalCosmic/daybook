@@ -4,7 +4,7 @@
  * table with inline category edits, receipt thumbnails, bulk categorize and void, phone cards, the
  * sums of whatever the filters match, Excel export, and the entry drawer on `?txn=`.
  */
-import { ArrowLeftRight, Building2, CircleDot, FolderTree, Landmark, Paperclip, Plus, Receipt, Rows3, Tags, UserRound, Wallet } from "@lucide/vue";
+import { ArrowLeftRight, Building2, CircleDot, FolderTree, Landmark, Paperclip, Plus, Receipt, Rows3, Scale, Tags, UserRound, Wallet } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
@@ -35,7 +35,7 @@ import { useCompanyStore } from "@/stores/company";
 import { financeApi, searchCounterparties, useAccounts, useCategories, useRefresh, useTransactions } from "../api";
 import CategoryCell from "../components/CategoryCell.vue";
 import TransactionDrawer from "../components/TransactionDrawer.vue";
-import { ACCOUNT_ICONS, categoryOptions, KIND_ICONS, KIND_TONES, STATUS_TONES } from "../lib";
+import { ACCOUNT_ICONS, categoryOptions, isZeroMoney, KIND_ICONS, KIND_TONES, STATUS_TONES } from "../lib";
 import { openQuickAdd } from "../quickAdd";
 import type { Transaction, TransactionKind } from "../types";
 
@@ -84,6 +84,17 @@ const defs = computed<FilterDef[]>(() => {
     },
     { key: "has_receipt", label: t("finance.filter.receipt"), type: "boolean", icon: Paperclip, trueLabel: t("finance.filter.withReceipt"), falseLabel: t("finance.filter.withoutReceipt") },
     { key: "amount", label: t("finance.filter.amount"), type: "number-range", params: ["min", "max"] },
+    // The rows behind a P&L line, as the overview's income and expense tiles count them.
+    {
+      key: "pnl",
+      label: t("finance.filter.pnl"),
+      type: "select",
+      icon: Scale,
+      options: [
+        { value: "income", label: t("finance.filter.pnlIncome") },
+        { value: "expense", label: t("finance.filter.pnlExpense") },
+      ],
+    },
   ];
   if (branches.value.length > 1) {
     list.splice(4, 0, { key: "branch", label: t("finance.field.branch"), type: "multi", icon: Building2, options: branches.value.map((b) => ({ value: String(b.id), label: b.name, description: b.code })) });
@@ -161,12 +172,16 @@ function saveView(input: { name: string; shared: boolean }): void {
 const columns = computed<TableColumn<Transaction>[]>(() => [
   { id: "occurred_on", header: t("finance.field.date"), sortable: true, width: 96, format: (value) => fmt.day(String(value), "short") },
   { id: "description", header: t("finance.tx.what"), minWidth: 220, hideable: false, sticky: true, value: (row) => row.description || row.category?.name || row.kind_label },
-  { id: "category", header: t("finance.field.category"), width: 190, value: (row) => row.category?.name ?? "" },
-  { id: "account", header: t("finance.field.account"), width: 170, value: (row) => row.account?.name ?? "" },
-  { id: "amount", header: t("finance.field.amount"), sortable: true, numeric: true, width: 168, value: (row) => row.amount, csv: (row) => row.amount },
-  { id: "receipts", header: "", width: 48, hideable: false, align: "center", value: (row) => row.receipts.length || "", csv: (row) => row.receipts.length },
-  { id: "branch", header: t("finance.field.branch"), width: 88, value: (row) => row.branch?.name ?? "" },
-  { id: "status", header: t("finance.filter.status"), width: 136, value: (row) => row.status_label, csv: (row) => row.status_label },
+  // The amount comes right after "What", like a bank statement, so a 1024 px screen (or a narrow
+  // window) still shows date, entry and amount before the table scrolls sideways. Widths add up to
+  // the content width of a 1440 px screen with the sidebar open, in every language ("Filial",
+  // "Филиал", "Hisobdan chiqarish" fit); "What" takes whatever is left.
+  { id: "amount", header: t("finance.field.amount"), sortable: true, numeric: true, width: 152, value: (row) => row.amount, csv: (row) => row.amount },
+  { id: "category", header: t("finance.field.category"), width: 170, value: (row) => row.category?.name ?? "" },
+  { id: "account", header: t("finance.field.account"), width: 160, value: (row) => row.account?.name ?? "" },
+  { id: "receipts", header: "", width: 44, hideable: false, align: "center", value: (row) => row.receipts.length || "", csv: (row) => row.receipts.length },
+  { id: "branch", header: t("finance.field.branch"), width: 84, value: (row) => row.branch?.name ?? "" },
+  { id: "status", header: t("finance.filter.status"), width: 144, value: (row) => row.status_label, csv: (row) => row.status_label },
 ]);
 
 function open(row: Transaction): void {
@@ -239,18 +254,19 @@ const kindIcon = (kind: TransactionKind) => KIND_ICONS[kind] ?? Receipt;
     <div class="flex flex-col gap-3">
       <SavedViewsTabs v-model="activeTab" :views="tabs" :dirty="dirty" @save="saveView" @update="(view) => views.update.mutate({ id: Number(view.id), state: currentState })" @rename="(view, name) => views.update.mutate({ id: Number(view.id), name })" @share="(view, shared) => views.update.mutate({ id: Number(view.id), is_shared: shared })" @delete="(view) => { views.remove.mutate(Number(view.id)); viewId = 'all'; }" />
 
-      <div v-if="page?.summary" class="grid grid-cols-3 gap-2 sm:max-w-[640px]">
+      <!-- Compact sums with the exact amount on hover; a side with nothing in it stays quiet. -->
+      <div v-if="page?.summary" class="grid grid-cols-3 gap-2 sm:max-w-[640px]" data-testid="tx-sums">
         <div class="ui-card px-2.5 py-2 sm:px-3">
           <p class="text-xs font-medium text-muted">{{ t("finance.tx.moneyIn") }}</p>
-          <p class="truncate text-sm font-semibold tabular-nums sm:text-md text-success"><MoneyText :value="page.summary.money_in" compact /></p>
+          <p :class="['truncate text-sm font-semibold tabular-nums sm:text-md', isZeroMoney(page.summary.money_in) ? 'text-subtle' : 'text-success']" :title="fmt.money(page.summary.money_in)"><MoneyText :value="page.summary.money_in" compact /></p>
         </div>
         <div class="ui-card px-2.5 py-2 sm:px-3">
           <p class="text-xs font-medium text-muted">{{ t("finance.tx.moneyOut") }}</p>
-          <p class="truncate text-sm font-semibold tabular-nums sm:text-md text-danger"><MoneyText :value="page.summary.money_out" compact /></p>
+          <p :class="['truncate text-sm font-semibold tabular-nums sm:text-md', isZeroMoney(page.summary.money_out) ? 'text-subtle' : 'text-danger']" :title="fmt.money(page.summary.money_out)"><MoneyText :value="page.summary.money_out" compact /></p>
         </div>
         <div class="ui-card px-2.5 py-2 sm:px-3">
           <p class="text-xs font-medium text-muted">{{ t("finance.tx.net") }}</p>
-          <p class="truncate text-sm font-semibold tabular-nums sm:text-md text-fg"><MoneyText :value="page.summary.net" compact sign="always" /></p>
+          <p :class="['truncate text-sm font-semibold tabular-nums sm:text-md', isZeroMoney(page.summary.net) ? 'text-subtle' : 'text-fg']" :title="fmt.money(page.summary.net, undefined, { sign: 'always' })"><MoneyText :value="page.summary.net" compact sign="always" /></p>
         </div>
       </div>
 
@@ -307,8 +323,8 @@ const kindIcon = (kind: TransactionKind) => KIND_ICONS[kind] ?? Receipt;
               <component :is="kindIcon(row.kind)" :size="14" />
             </span>
             <div class="min-w-0">
-              <p class="truncate text-base font-medium text-fg">{{ row.masked ? row.category?.name : row.description || row.category?.name || row.kind_label }}</p>
-              <p class="truncate text-xs text-muted">
+              <p class="truncate text-base font-medium text-fg" :title="row.masked ? row.category?.name : row.description || row.category?.name || row.kind_label">{{ row.masked ? row.category?.name : row.description || row.category?.name || row.kind_label }}</p>
+              <p class="truncate text-xs text-muted" :title="row.counterparty?.name ?? row.membership?.name ?? row.source?.label ?? undefined">
                 <template v-if="row.counterparty">{{ row.counterparty.name }}</template>
                 <template v-else-if="row.membership">{{ row.membership.name }}</template>
                 <template v-else-if="row.source">{{ row.source.label }}</template>
@@ -321,7 +337,7 @@ const kindIcon = (kind: TransactionKind) => KIND_ICONS[kind] ?? Receipt;
         <template #cell-account="{ row }">
           <span v-if="row.account" class="inline-flex min-w-0 items-center gap-1.5 text-sm text-fg">
             <component :is="ACCOUNT_ICONS[row.account.kind]" :size="14" class="shrink-0 text-subtle" aria-hidden="true" />
-            <span class="truncate">{{ row.account.name }}</span>
+            <span class="truncate" :title="row.account.name">{{ row.account.name }}</span>
           </span>
           <span v-else class="text-sm text-subtle">{{ t("finance.tx.noAccount") }}</span>
         </template>

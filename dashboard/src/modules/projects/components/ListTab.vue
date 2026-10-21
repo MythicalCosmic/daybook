@@ -81,7 +81,7 @@ const columns = computed<TableColumn<Card>[]>(() => [
   { id: "priority", header: t("projects.col.priority"), width: 110, sortable: true, value: (c) => t(`projects.taskPriority.${c.priority}`) },
   { id: "milestone", header: t("projects.col.milestone"), width: 140, value: (c) => milestoneName(c.milestone_id) },
   { id: "labels", header: t("projects.col.labels"), width: 150, value: (c) => c.label_ids.map((id) => props.project.labels.find((l) => l.id === id)?.name).join(", ") },
-  { id: "minutes", header: t("projects.col.time"), width: 72, numeric: true, sortable: true, value: (c) => hhmm(c.minutes) },
+  { id: "minutes", header: t("projects.col.time"), width: 84, numeric: true, sortable: true, value: (c) => hhmm(c.minutes) },
 ]);
 
 function open(card: Card): void {

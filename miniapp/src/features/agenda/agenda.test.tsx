@@ -12,10 +12,13 @@ import { ToastProvider } from "../../state/toast";
 import { agendaKeys, eventIdOf, type AgendaEvent, type CalendarEntry } from "./api";
 import { CalendarHome } from "./CalendarHome";
 import { EventPage } from "./EventPage";
+import { NextEventCard } from "./NextEventCard";
+import { ApiError } from "../../api/client";
+import type { Member } from "../../state/session";
 import { byDay, colorClass, mondayOf, weekDays } from "./lib";
 
 const api = vi.hoisted(() => vi.fn());
-vi.mock("../../api/client", () => ({ api }));
+vi.mock("../../api/client", async (importOriginal) => ({ ...(await importOriginal<typeof import("../../api/client")>()), api }));
 
 const entry = (overrides: Partial<CalendarEntry> = {}): CalendarEntry => ({
   id: "agenda.events:12",
@@ -56,7 +59,7 @@ const event = (overrides: Partial<AgendaEvent> = {}): AgendaEvent => ({
 function renderWith(node: ReactNode, client: QueryClient) {
   const membership = {
     id: 7,
-    company: { id: 1, name: "Demo Shop", timezone: "Asia/Tashkent", features: [], owner_sees_personal_tasks: false, base_currency: "UZS", team_directory_phones: false },
+    company: { id: 1, name: "Demo Dorixona", timezone: "Asia/Tashkent", features: [], owner_sees_personal_tasks: false, base_currency: "UZS", team_directory_phones: false },
     status: "approved",
     first_name: "Madina",
     last_name: "Saidova",
@@ -123,6 +126,22 @@ describe("EventPage", () => {
     expect(screen.getByRole("radiogroup", { name: "Are you coming?" })).toBeTruthy();
   });
 
+  it("says an event isn't there instead of loading forever", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    api.mockRejectedValue(new ApiError(404, { detail: "Not found." }));
+    renderWith(<EventPage params={{ id: 99 }} />, client);
+    expect(await screen.findByText("This page isn't here")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Go back" })).toBeTruthy();
+  });
+
+  it("offers to try again when the event didn't load for another reason", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    api.mockRejectedValueOnce(new TypeError("Failed to fetch")).mockResolvedValue(event());
+    renderWith(<EventPage params={{ id: 12 }} />, client);
+    fireEvent.click(await screen.findByRole("button", { name: "Try again" }));
+    expect(await screen.findByText("Chilonzor")).toBeTruthy();
+  });
+
   it("says when an event was cancelled and asks nothing", () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
     client.setQueryData(agendaKeys.event(1, 12), event({ cancelled: true, cancel_reason: "Moved" }));
@@ -151,5 +170,42 @@ describe("CalendarHome", () => {
     await waitFor(() => expect(screen.getAllByText("Weekly planning").length).toBeGreaterThan(0));
     expect(screen.getAllByText("Answer?").length).toBeGreaterThan(0);
     expect(screen.queryByText("You’re invited")).toBeNull();
+  });
+
+  it("lists the chosen day once: Coming up starts after it", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-21T09:00:00+05:00"));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const briefing = entry({ id: "agenda.events:15", title: "Morning briefing", start: "2026-10-21T10:00:00+05:00", end: "2026-10-21T10:30:00+05:00" });
+    api.mockResolvedValue({ range: { from: "2026-10-19", to: "2026-11-03" }, sources: [], items: [briefing, entry()], mine: [], answers: {} });
+    renderWith(<CalendarHome />, client);
+
+    await waitFor(() => expect(screen.getAllByText("Kassa trening").length).toBeGreaterThan(0));
+    expect(screen.getAllByText("Morning briefing")).toHaveLength(1);
+    expect(screen.getAllByText("Kassa trening")).toHaveLength(1);
+  });
+});
+
+describe("NextEventCard", () => {
+  const member = { id: 7, company: { id: 1, timezone: "Asia/Tashkent" }, companyId: 1, timeZone: "Asia/Tashkent" } as unknown as Member;
+
+  it("asks for an answer while there is none, and says where once there is", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-21T09:00:00+05:00"));
+    const calendar = (answer: string) => ({
+      range: { from: "2026-10-21", to: "2026-10-22" },
+      sources: [],
+      items: [entry({ subtitle: "Chilonzor" })],
+      mine: ["agenda.events:12"],
+      answers: { "agenda.events:12": answer },
+    });
+    api.mockResolvedValue(calendar("pending"));
+    renderWith(<NextEventCard member={member} summary={undefined} />, new QueryClient({ defaultOptions: { queries: { retry: false } } }));
+    expect(await screen.findByText("Tomorrow 15:00 – 17:00 · Are you coming?")).toBeTruthy();
+    cleanup();
+
+    api.mockResolvedValue(calendar("going"));
+    renderWith(<NextEventCard member={member} summary={undefined} />, new QueryClient({ defaultOptions: { queries: { retry: false } } }));
+    expect(await screen.findByText("Tomorrow 15:00 – 17:00 · Chilonzor")).toBeTruthy();
   });
 });

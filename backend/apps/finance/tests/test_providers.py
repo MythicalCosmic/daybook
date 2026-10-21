@@ -6,12 +6,12 @@ from datetime import timedelta
 from decimal import Decimal
 
 import pytest
-from django.utils import timezone
+from django.utils import timezone, translation
 
 from apps.companies.models import Branch
 from apps.console import contracts, registry
 from apps.core.files import signed_url
-from apps.finance import providers, queries, services
+from apps.finance import display, providers, queries, services
 from apps.finance.models import MoneyAccount, Transaction
 from apps.finance.tests.factories import CounterpartyFactory, MoneyAccountFactory
 from apps.members import services as member_services
@@ -48,7 +48,7 @@ def test_every_registration_is_in_place():
 def test_search_finds_entries_and_parties_and_hides_salary_detail(
     fin, boss, cash, today, role, person, member
 ):
-    party = CounterpartyFactory(company=fin, name="Agromir Savdo", phone="+998901234567")
+    party = CounterpartyFactory(company=fin, name="Oqtosh Med Ta’minot", phone="+998901234567")
     services.record_transaction(
         fin, by=boss, kind="opening", amount=D("9000000"), occurred_on=today, account=cash
     )
@@ -61,7 +61,7 @@ def test_search_finds_entries_and_parties_and_hides_salary_detail(
         account=cash,
         category="goods",
         counterparty=party,
-        description="Rice and oil",
+        description="Paratsetamol 500 mg, 50 quti",
     )
     worker = member(fin, "Employee", first_name="Alisher")
     services.record_transaction(
@@ -75,17 +75,60 @@ def test_search_finds_entries_and_parties_and_hides_salary_detail(
         membership=worker,
         description="Alisher salary",
     )
-    hits = registry.run_search(boss, "rice")
+    hits = registry.run_search(boss, "paratsetamol")
     assert [hit.type for hit in hits] == ["finance.transaction"]
-    rice = Transaction.objects.get(description="Rice and oil")
-    assert hits[0].url == f"/c/{fin.pk}/finance/transactions?txn={rice.pk}"
+    purchase = Transaction.objects.get(description="Paratsetamol 500 mg, 50 quti")
+    assert hits[0].url == f"/c/{fin.pk}/finance/transactions?txn={purchase.pk}"
     assert [
-        hit.title for hit in registry.run_search(boss, "agromir", types=["finance.counterparty"])
-    ] == ["Agromir Savdo"]
+        hit.title for hit in registry.run_search(boss, "oqtosh", types=["finance.counterparty"])
+    ] == ["Oqtosh Med Ta’minot"]
     assert registry.run_search(boss, "1234567", types=["finance.counterparty"])
     viewer = person(fin, role(fin, "Books", [Perm.FINANCE_VIEW, Perm.BRANCHES_ALL]))
     assert registry.run_search(viewer, "Alisher salary", types=["finance.transaction"]) == []
     assert registry.run_search(boss, "Alisher salary", types=["finance.transaction"])
+
+
+def test_search_subtitles_read_like_the_dashboard_in_each_language(fin, boss, cash, today):
+    """Days and money in a hit's subtitle are written the way the dashboard writes them in the
+    person's language, never as "05.10.2026 · -4 600 000 UZS" in every language."""
+    party = CounterpartyFactory(
+        company=fin,
+        name="Oqtosh Med Ta’minot",
+        kind="supplier",
+        phone="998712004455",
+        tin="305112874",
+    )
+    services.record_transaction(
+        fin, by=boss, kind="opening", amount=D("9000000"), occurred_on=today, account=cash
+    )
+    services.record_transaction(
+        fin,
+        by=boss,
+        kind="expense",
+        amount=D("4600000"),
+        occurred_on=today,
+        account=cash,
+        category="goods",
+        counterparty=party,
+        description="Nakladnoy №OQ-1075",
+    )
+    entries = ["finance.transaction"]
+    with translation.override("en"):
+        [hit] = registry.run_search(boss, "OQ-1075", types=entries)
+        day = display.day(today, today, "en")
+        assert hit.subtitle == (
+            f"{day} · \u22124,600,000\u00a0UZS · {cash.name} · Oqtosh Med Ta’minot"
+        )
+        [party_hit] = registry.run_search(boss, "oqtosh", types=["finance.counterparty"])
+        assert party_hit.subtitle == "Supplier · +998 71 200 44 55 · INN 305112874"
+    with translation.override("ru"):
+        [hit] = registry.run_search(boss, "OQ-1075", types=entries)
+        day = display.day(today, today, "ru")
+        assert hit.subtitle.startswith(f"{day} · \u22124\u00a0600\u00a0000\u00a0сум")
+    with translation.override("uz"):
+        [hit] = registry.run_search(boss, "OQ-1075", types=entries)
+        assert hit.subtitle.startswith(f"{today.day}-")
+        assert "\u22124\u00a0600\u00a0000\u00a0so‘m" in hit.subtitle
 
 
 def test_the_overdue_badge_counts_open_debts_past_due(fin, boss, today):
@@ -161,7 +204,7 @@ def test_the_brief_section_is_silent_without_a_ledger(fin, boss, cash, today):
 
 
 def test_calendar_shows_due_dates_and_instalments(fin, boss, today, member):
-    party = CounterpartyFactory(company=fin, name="Barakat")
+    party = CounterpartyFactory(company=fin, name="Tolzor Farm Savdo")
     plain = services.open_debt(
         fin,
         by=boss,
@@ -190,10 +233,12 @@ def test_calendar_shows_due_dates_and_instalments(fin, boss, today, member):
         by=boss,
         rows=[(today + timedelta(days=1), D("100")), (today + timedelta(days=40), D("100"))],
     )
-    items = registry.collect_calendar(boss, today, today + timedelta(days=7))
+    with translation.override("en"):
+        items = registry.collect_calendar(boss, today, today + timedelta(days=7))
     by_id = {item.id: item for item in items}
     assert by_id[f"debt-{plain.pk}"].color == "danger"
-    assert "Pay Barakat" in by_id[f"debt-{plain.pk}"].title
+    # Written like the dashboard's money: the amount first, English grouping.
+    assert by_id[f"debt-{plain.pk}"].title == "Pay Tolzor Farm Savdo 1,000\u00a0UZS"
     assert len([item for item in items if str(item.id).startswith("installment-")]) == 1
 
 

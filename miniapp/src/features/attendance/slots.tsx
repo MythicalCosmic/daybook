@@ -4,6 +4,7 @@
  */
 import { Repeat2 } from "lucide-react";
 
+import { can } from "../../api/permissions";
 import { useI18n } from "../../i18n";
 import { useNavigation } from "../../state/navigation";
 import { Banner } from "../../ui";
@@ -14,9 +15,20 @@ import { wallClock } from "./lib";
 import { useT } from "./text";
 import { weekdayShort } from "../../lib/time";
 
-export function HeroSlot(_: SlotProps) {
+/**
+ * Home's check-in. Nothing on a day off the person asked for (Home's "You're off today" says it),
+ * and nothing for someone who runs the business from the dashboard and has no shifts (an owner):
+ * "No shift today" would only be noise there. The attendance page still has the full card.
+ */
+export function HeroSlot({ member, summary }: SlotProps) {
   const navigation = useNavigation();
-  return <CheckInCard onOpen={() => navigation.push({ feature: "attendance", page: "home" })} />;
+  const today = useToday(member.companyId);
+  const day = today.data;
+  if (day && day.state === "off" && !day.record) {
+    if (summary?.off_today) return null;
+    if (!day.next_shift && can(member, "dashboard.access")) return null;
+  }
+  return <CheckInCard compact onOpen={() => navigation.push({ feature: "attendance", page: "home" })} />;
 }
 
 export function WaitingSlot({ member }: SlotProps) {
@@ -28,7 +40,7 @@ export function WaitingSlot({ member }: SlotProps) {
   return (
     <Banner
       size="lg"
-      tone="sage"
+      iconTone="sage"
       icon={Repeat2}
       title={day.requests ? t("home.requests", { count: day.requests }) : t("home.openShifts", { count: day.open_shifts })}
       body={day.requests ? t("home.requestsBody") : t("home.openShiftsBody")}

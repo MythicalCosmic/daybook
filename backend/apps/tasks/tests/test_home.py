@@ -73,34 +73,67 @@ def test_summary_counts_todays_work(company, worker):
     assert numbers["late"] >= 1
 
 
-def test_streak_counts_days_finished_in_time(worker):
+# The streak (one definition, `stats.streak`, for the mini app and Person 360, §3.16): days in a
+# row on which every shared task due was finished on time; personal tasks never count.
+
+
+def test_streak_counts_days_with_everything_done_on_time(worker, manager):
     now = timezone.now()
     for days_ago in (1, 2, 3):
         due = at(-days_ago, 10, now)
-        finished(worker, due, due + timedelta(hours=1))
-    # Five days ago: done, but only the day after. That breaks the streak.
-    late_due = at(-5, 10, now)
-    finished(worker, late_due, late_due + timedelta(days=1))
+        finished(worker, due, due - timedelta(minutes=30), created_by=manager)
+    # Four days ago: done that day, but after its deadline. That breaks the streak.
+    late_due = at(-4, 10, now)
+    finished(worker, late_due, late_due + timedelta(hours=1), created_by=manager)
+    finished(worker, at(-5, 10, now), at(-5, 9, now), created_by=manager)
 
     assert stats.streak(worker, now) == 3
 
 
-def test_streak_skips_empty_days_and_waits_for_today(worker):
+def test_personal_tasks_never_count_in_the_streak(worker, manager):
     now = timezone.now()
-    finished(worker, at(-1, 9, now), at(-1, 10, now))
-    finished(worker, at(-4, 9, now), at(-4, 10, now))  # nothing due on days 2-3
-    TaskFactory(assignee=worker, due_at=at(0, 23, now))  # today, still open
+    finished(worker, at(-1, 10, now), at(-1, 9, now), created_by=manager)
+    finished(worker, at(-1, 12, now), at(-1, 18, now))  # their own task, done late: no matter
+    finished(worker, at(-2, 12, now), at(-2, 11, now))  # only their own work that day: no day
+    TaskFactory(assignee=worker, created_by=manager, due_at=at(-3, 9, now))  # never done
+
+    assert stats.streak(worker, now) == 1
+
+
+def test_streak_skips_empty_days_and_waits_for_today(worker, manager):
+    now = timezone.now()
+    finished(worker, at(-1, 9, now), at(-1, 8, now), created_by=manager)
+    finished(worker, at(-4, 9, now), at(-4, 8, now), created_by=manager)  # nothing due on 2-3
+    TaskFactory(assignee=worker, created_by=manager, due_at=at(0, 23, now))  # today, still open
 
     assert stats.streak(worker, now) == 2
 
 
-def test_streak_breaks_on_an_unfinished_day(worker):
+def test_streak_breaks_on_an_unfinished_day(worker, manager):
     now = timezone.now()
-    finished(worker, at(-1, 9, now), at(-1, 10, now))
-    TaskFactory(assignee=worker, due_at=at(-2, 9, now))  # never done
-    finished(worker, at(-3, 9, now), at(-3, 10, now))
+    finished(worker, at(-1, 9, now), at(-1, 8, now), created_by=manager)
+    TaskFactory(assignee=worker, created_by=manager, due_at=at(-2, 9, now))  # never done
+    finished(worker, at(-3, 9, now), at(-3, 8, now), created_by=manager)
 
     assert stats.streak(worker, now) == 1
+
+
+def test_the_mini_app_and_person_360_show_the_same_streak(
+    company, member, worker, manager, owner_api
+):
+    """Alisher's home said 35 days while his Person 360 said 1: both now read one query."""
+    now = timezone.now()
+    for days_ago in (1, 2):
+        finished(worker, at(-days_ago, 10, now), at(-days_ago, 9, now), created_by=manager)
+    finished(worker, at(-3, 10, now), at(-3, 11, now), created_by=manager)  # late: breaks
+    finished(worker, now, now - timedelta(minutes=1), created_by=manager)  # today, on time
+    owner = member.registered(company, "Owner")
+
+    home = client_for(worker).get(f"/api/v1/companies/{company.pk}/summary/").data
+    person = (
+        owner_api(owner).get(f"/api/v1/owner/companies/{company.pk}/people/{worker.pk}/").json()
+    )
+    assert home["streak_days"] == person["overview"]["streak"] == stats.streak(worker, now) == 3
 
 
 def test_summary_endpoint(company, worker):
@@ -125,14 +158,17 @@ def test_summary_endpoint(company, worker):
     assert response.data["off_today"] is None
 
 
-def test_week_shows_each_of_the_last_seven_days(worker):
+def test_week_shows_each_of_the_last_seven_days(worker, manager):
+    """The streak's days: done (all shared work on time), missed, free (nothing shared due)."""
     now = timezone.now()
-    finished(worker, at(-1, 9, now), at(-1, 10, now))
-    TaskFactory(assignee=worker, due_at=at(-2, 9, now))  # missed
+    finished(worker, at(-1, 9, now), at(-1, 8, now), created_by=manager)
+    TaskFactory(assignee=worker, created_by=manager, due_at=at(-2, 9, now))  # missed
+    finished(worker, at(-3, 9, now), at(-3, 10, now), created_by=manager)  # done late
+    finished(worker, at(-4, 9, now), at(-4, 10, now))  # their own task: the day stays free
 
     week = stats.summary(worker, now)["week"]
 
-    assert [day["state"] for day in week[-3:]] == ["missed", "done", "today"]
+    assert [day["state"] for day in week[-5:]] == ["free", "missed", "missed", "done", "today"]
     assert week[0]["state"] == "free"
 
 

@@ -335,7 +335,8 @@ def routine_stats(
 
 
 def routine_compliance(template: TaskTemplate, start: date, end: date, now: datetime) -> dict:
-    """One routine over a range: per day and per person, made / on time / late / missed."""
+    """One routine over a range: per day and per person, made / on time / late / missed. Work
+    still open past its deadline is late while its day lasts and missed once the day is over."""
     company = template.company
     tz = ZoneInfo(company.timezone)
     first, _unused = queries.day_bounds(company, start)
@@ -347,9 +348,11 @@ def routine_compliance(template: TaskTemplate, start: date, end: date, now: date
     )
     days: dict[date, dict] = defaultdict(lambda: {"made": 0, "on_time": 0, "late": 0, "missed": 0})
     people: dict[int, dict] = {}
+    over = _day_over(company, now)
     for task in rows:
-        outcome = _outcome(task)
-        day = days[timezone.localtime(task.due_at, tz).date()]
+        local_day = timezone.localtime(task.due_at, tz).date()
+        outcome = _outcome(task, day_over=over(local_day))
+        day = days[local_day]
         day["made"] += 1
         day[outcome] += 1
         row = people.setdefault(
@@ -384,10 +387,26 @@ def routine_compliance(template: TaskTemplate, start: date, end: date, now: date
     return {"totals": totals, "series": series, "people": rows_out}
 
 
-def _outcome(task: Task) -> str:
+def _outcome(task: Task, *, day_over: bool = True) -> str:
+    """on_time or late when finished; not finished past its deadline: late while its day lasts,
+    missed once it is over."""
     if task.status in FINISHED and task.completed_at is not None:
         return "on_time" if task.completed_at <= task.due_at else "late"
-    return "missed"
+    return "missed" if day_over else "late"
+
+
+def _day_over(company, now: datetime):
+    """`over(day)`: whether the company's `day` has ended by `now` (each end worked out once)."""
+    ends: dict[date, datetime] = {}
+
+    def over(day: date | None) -> bool:
+        if day is None:
+            return True
+        if day not in ends:
+            ends[day] = queries.day_bounds(company, day)[1]
+        return now >= ends[day]
+
+    return over
 
 
 def _percent(part: int, whole: int) -> float | None:
@@ -572,7 +591,7 @@ def routine_day(
                 "progress": {
                     "finished": finished,
                     "total": total,
-                    "percent": round(100 * finished / total) if total else None,
+                    "percent": share(finished, total),
                 },
                 "counts": counts,
                 "runs": [{"task": task, "state": state} for task, state in rows],
@@ -587,6 +606,19 @@ def routine_day(
     return {"day": day, "holiday": holiday, "routines": listed, "totals": totals, "idle": idle}
 
 
+def share(part: int, whole: int) -> int | None:
+    """A whole percent of `whole` that reads 100 only when all of it is done and 0 only when
+    none of it is (537 of 539 is 99, not a rounded-up 100); None when there is nothing."""
+    if not whole:
+        return None
+    value = round(100 * part / whole)
+    if part < whole:
+        value = min(value, 99)
+    if part > 0:
+        value = max(value, 1)
+    return value
+
+
 def _cell() -> dict:
     return {"made": 0, "finished": 0, "on_time": 0, "late": 0, "missed": 0, "open": 0}
 
@@ -595,8 +627,8 @@ def _rated(cell: dict) -> dict:
     """A cell with its rates over the work whose time has come (not what's still ahead)."""
     due = cell["made"] - cell["open"]
     return cell | {
-        "percent": round(100 * cell["finished"] / due) if due else None,
-        "on_time_percent": round(100 * cell["on_time"] / due) if due else None,
+        "percent": share(cell["finished"], due),
+        "on_time_percent": share(cell["on_time"], due),
     }
 
 
@@ -611,8 +643,10 @@ def routine_history(
 ) -> dict:
     """Routine work from `start` to `end`: per routine per day (the completion heatmap), per
     day, and per person. A run counts as finished when done or waiting for confirmation, on
-    time when finished by its deadline, missed when open past it, open while its time is still
-    ahead; rates are over the work whose time has come."""
+    time when finished by its deadline, late when finished after it or still open past it while
+    its day lasts, missed when its day ended without it (the Today page's words), open while its
+    time is still ahead; rates are over the work whose time has come."""
+    over = _day_over(member.company, now)
     runs = (
         queries.visible_tasks(member)
         .filter(queries.ROUTINE_WORK, for_date__range=(start, end))
@@ -633,7 +667,7 @@ def routine_history(
             on_time = due_at is None or completed_at <= due_at
             outcome = ("finished", "on_time" if on_time else "late")
         elif due_at is not None and due_at < now:
-            outcome = ("missed",)
+            outcome = ("missed",) if over(day) else ("late",)
         else:
             outcome = ("open",)
         for entry in (cells[(template_id, day)], days[day], people[assignee_id]):

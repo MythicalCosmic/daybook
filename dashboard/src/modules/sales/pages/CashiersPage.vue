@@ -82,7 +82,8 @@ const highlights = computed(() => {
 
 const columns = computed<TableColumn<CashierScore>[]>(() => [
   { id: "member", header: t("sales.col.cashier"), minWidth: 196, hideable: false, sticky: true, value: (row) => row.member.name },
-  { id: "shifts", header: t("sales.col.shifts"), sortable: true, numeric: true, width: 100 },
+  // Wide enough for "Smenalar" next to its sort arrow.
+  { id: "shifts", header: t("sales.col.shifts"), sortable: true, numeric: true, width: 112 },
   { id: "net", header: t("sales.col.net"), sortable: true, numeric: true, width: 150, csv: (row) => row.net },
   { id: "avg_per_shift", header: t("sales.col.perShift"), sortable: true, numeric: true, width: 140, csv: (row) => row.avg_per_shift },
   { id: "avg_check", header: t("sales.col.avgCheck"), sortable: true, numeric: true, width: 124, csv: (row) => row.avg_check },
@@ -110,22 +111,26 @@ function open(row: CashierScore): void {
 
     <div v-if="skeleton" class="grid gap-3 sm:grid-cols-3"><SkeletonBlock v-for="n in 3" :key="n" height="92px" radius="12px" /></div>
     <div v-else-if="highlights.length" class="grid gap-3 sm:grid-cols-3">
-      <article v-for="card in highlights" :key="card.key" class="ui-card flex items-center gap-3 p-4">
-        <span
-          :class="[
-            'grid size-10 shrink-0 place-items-center rounded-[11px]',
-            card.tone === 'success' ? 'bg-success-soft text-success' : card.tone === 'danger' ? 'bg-danger-soft text-danger' : 'bg-accent-soft text-accent-fg',
-          ]"
-          aria-hidden="true"
-        >
-          <component :is="card.icon" :size="19" />
-        </span>
-        <div class="min-w-0 flex-1">
-          <p class="text-xs font-medium text-muted">{{ card.label }}</p>
-          <p class="truncate text-base font-semibold text-fg">{{ card.member.name }}</p>
-          <p class="truncate text-xs text-subtle">{{ card.detail }}</p>
+      <!-- A narrow tile (three across beside the sidebar at 1024 px) puts its figure under the name,
+           so the name isn't cut to "Sha…". -->
+      <article v-for="card in highlights" :key="card.key" class="@container ui-card p-4" data-testid="cashier-highlight">
+        <div class="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 @[18rem]:grid-cols-[auto_minmax(0,1fr)_auto]">
+          <span
+            :class="[
+              'grid size-10 shrink-0 place-items-center rounded-[11px]',
+              card.tone === 'success' ? 'bg-success-soft text-success' : card.tone === 'danger' ? 'bg-danger-soft text-danger' : 'bg-accent-soft text-accent-fg',
+            ]"
+            aria-hidden="true"
+          >
+            <component :is="card.icon" :size="19" />
+          </span>
+          <div class="min-w-0">
+            <p class="truncate text-xs font-medium text-muted">{{ card.label }}</p>
+            <p class="truncate text-base font-semibold text-fg" :title="card.member.name">{{ card.member.name }}</p>
+            <p class="truncate text-xs text-subtle" :title="card.detail">{{ card.detail }}</p>
+          </div>
+          <p class="col-start-2 text-md font-semibold tabular-nums text-fg @[18rem]:col-start-auto">{{ card.value }}</p>
         </div>
-        <p class="shrink-0 text-md font-semibold tabular-nums text-fg">{{ card.value }}</p>
       </article>
     </div>
 
@@ -180,7 +185,7 @@ function open(row: CashierScore): void {
           <PersonCell :person="row.member" size="sm" :subtitle="t('sales.cashiers.shiftsN', { n: row.shifts }, row.shifts)" class="min-w-0 flex-1" />
           <div class="text-right">
             <MoneyText :value="row.net" compact class="block text-sm font-semibold text-fg" />
-            <span class="text-xs text-muted">{{ row.accuracy !== null ? `${row.accuracy}%` : "—" }}</span>
+            <span class="text-xs text-muted">{{ row.accuracy !== null ? fmt.percent(Number(row.accuracy), 0) : "—" }}</span>
           </div>
         </div>
       </template>

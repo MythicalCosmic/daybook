@@ -81,6 +81,19 @@ button {
   gap: var(--space-4);
 }
 
+/* Inside Telegram a page's action is Telegram's own button, under the page: with no bar in the
+   page to clear, the page ends near the bottom, and so does what sticks to it (Kassa's total,
+   which otherwise floated 150 px up over the notes being counted). */
+.detail-layer:not(:has(.action-bar)) .screen--detail {
+  padding-bottom: calc(var(--bottom-inset) + 40px);
+}
+
+/* Sticky offsets count from inside that padding: rest 12 px above the edge, not 40 px with notes
+   showing through below. */
+.detail-layer:not(:has(.action-bar)) .ui-denoms--sticky .ui-denoms-total {
+  bottom: calc(var(--space-3) - 40px);
+}
+
 :root {
   --top-inset: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px));
   --bottom-inset: var(--tg-safe-area-inset-bottom, 0px);
@@ -176,6 +189,11 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+/* A date or an amount that must not break across lines ("27-okt", "26 окт."). */
+.nowrap {
+  white-space: nowrap;
+}
+
 /* — buttons — */
 
 .btn {
@@ -225,7 +243,8 @@ button {
   font-family: var(--font-body);
   font-weight: 700;
   font-size: 14.5px;
-  min-height: 36px;
+  /* A finger's width: "See all", "Mark all read" and the like are tapped on the go. */
+  min-height: 40px;
   padding: 0 10px;
   color: var(--color-accent-700);
 }
@@ -275,6 +294,14 @@ button {
   border: 1px solid var(--color-divider);
   border-radius: 999px;
   appearance: none;
+}
+
+/* Dates and times often sit two to a line ("From | Until", "Arrived | Left"): less side padding
+   keeps "22.10.2026" whole beside the picker's icon on a 360 px phone. */
+.input[type="date"],
+.input[type="time"] {
+  padding-left: 14px;
+  padding-right: 12px;
 }
 
 .input:hover {
@@ -369,6 +396,39 @@ textarea.input {
   padding: 0 10px;
 }
 
+/* A strip of tabs that may not fit: options fill the row when they can and scroll when not. */
+.seg--scroll {
+  /* A scroll container may shrink to nothing in the screen's column: keep its height. */
+  flex: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+
+.seg--scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* The side that hides more tabs fades out (ui/useScrollEdges), so a cut-off tab reads as "more". */
+.seg--scroll[data-more="left"] {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 32px);
+  mask-image: linear-gradient(to right, transparent 0, #000 32px);
+}
+
+.seg--scroll[data-more="right"] {
+  -webkit-mask-image: linear-gradient(to left, transparent 0, #000 32px);
+  mask-image: linear-gradient(to left, transparent 0, #000 32px);
+}
+
+.seg--scroll[data-more="both"] {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 32px, #000 calc(100% - 32px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 32px, #000 calc(100% - 32px), transparent 100%);
+}
+
+.seg--scroll .seg-opt {
+  flex: 1 0 auto;
+}
+
 .seg--small {
   background: var(--color-bg);
   padding: 3px;
@@ -376,7 +436,7 @@ textarea.input {
 }
 
 .seg--small .seg-opt {
-  min-height: 0;
+  min-height: 40px;
   font-size: 13.5px;
   padding: 6px 11px;
   flex: none;
@@ -535,6 +595,11 @@ textarea.input {
   color: var(--color-neutral-800);
 }
 
+/* In dark the lightest neutral is the surface itself: a step up keeps chips visible on cards. */
+:root[data-theme="dark"] .tag-neutral {
+  background: var(--color-neutral-200);
+}
+
 .tag-small {
   font-size: 12.5px;
   padding: 2px 9px;
@@ -625,6 +690,19 @@ textarea.input {
   border-bottom: 0;
 }
 
+/* A one-line row with a value: the title wraps in the room the value leaves (the value at most
+   60%), and a title that can't wrap any further (one long word: "Посещаемость") makes the value
+   wrap instead of the two overlapping. */
+.list-item:not(.list-item--two-line):has(> .list-item-value) {
+  display: grid;
+  grid-template-columns: minmax(min-content, 1fr) fit-content(60%);
+}
+
+.list-item:not(.list-item--two-line):has(> .list-item-value) > .list-item-value {
+  justify-self: end;
+  max-width: none;
+}
+
 .list-item-value {
   display: flex;
   align-items: center;
@@ -675,6 +753,14 @@ textarea.input {
   font-weight: 700;
 }
 
+/* Narrow phones: "Активность" is wider than its fifth of the bar and all but met "Профиль". */
+@media (max-width: 379px) {
+  .tab {
+    font-size: 11.5px;
+    letter-spacing: -0.01em;
+  }
+}
+
 .tab-pill {
   position: relative;
   width: 58px;
@@ -720,6 +806,26 @@ textarea.input {
 }
 
 /* — sheet, toast — */
+
+/* The (+) sheet's "Today | Tomorrow" and the time share a line where they fit; where they don't
+   (Russian on a 360 px phone) the time takes the next line instead of running off the sheet. */
+.plus-when {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.plus-when > .seg {
+  flex: 1 1 auto;
+}
+
+.plus-when > .input {
+  flex: 1 0 auto;
+  width: auto;
+  min-width: 128px;
+  min-height: 52px;
+  font-size: 16px;
+}
 
 .sheet-layer {
   position: absolute;
@@ -955,6 +1061,69 @@ textarea.input {
   }
 }
 
+/* — home — */
+
+.home-today {
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+}
+
+/* Nothing due today: a sun where the ring would read 0/0. */
+.home-today-free {
+  width: 66px;
+  height: 66px;
+  background: var(--color-accent-2-100);
+  color: var(--color-accent-2-700);
+}
+
+.home-today-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.home-today-loading {
+  width: 62%;
+  height: 20px;
+  border-radius: 8px;
+}
+
+.home-today-title {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.home-today-streak {
+  align-self: flex-start;
+  font-size: 13px;
+  padding: 4px 10px 4px 8px;
+}
+
+.home-quiet {
+  padding: 4px;
+  font-size: 15px;
+}
+
+/* — me — */
+
+.profile-setting {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.profile-setting-note {
+  font-size: 13.5px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
 /* — task detail — */
 
 .detail-layer {
@@ -1033,6 +1202,657 @@ textarea.input {
 
 .photo-drop:hover {
   border-color: var(--color-accent);
+}
+
+/* — joining: creating the account, the waiting room, and the "can't get in" screens — */
+
+.signup {
+  padding: calc(var(--top-inset) + 24px) 24px calc(var(--bottom-inset) + 120px);
+  gap: 0;
+}
+
+.signup-head {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.signup-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.signup-brand > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.signup-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.signup-step {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-accent-700);
+}
+
+.signup-bars {
+  display: flex;
+  gap: 6px;
+}
+
+.signup-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+  transition: background 0.3s ease;
+}
+
+.signup-bar--on {
+  background: var(--color-accent);
+}
+
+.signup-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+
+.signup-title {
+  margin-bottom: 2px;
+}
+
+/* The phone's state: not shared yet, on its way, verified (sage). */
+.signup-phone {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 22px;
+  background: var(--color-surface);
+}
+
+.signup-phone-icon {
+  width: 44px;
+  height: 44px;
+  background: var(--color-accent-100);
+  color: var(--color-accent-700);
+}
+
+.signup-phone--done {
+  background: var(--color-accent-2-100);
+  color: var(--color-accent-2-800);
+}
+
+.signup-phone--done .signup-phone-icon {
+  background: var(--color-accent-2);
+  color: var(--color-bg);
+  animation: pop 0.45s cubic-bezier(0.34, 1.45, 0.55, 1) both;
+}
+
+.signup-phone-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.signup-phone-title {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.signup-phone-note {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.signup-phone--done .signup-phone-note {
+  color: inherit;
+  opacity: 0.8;
+}
+
+.signup-note {
+  margin: 0;
+  padding: 0 4px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--color-accent-700);
+  text-wrap: pretty;
+}
+
+.signup-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.signup-choice-skeleton {
+  height: 56px;
+}
+
+.enter-back {
+  animation: enter-back 340ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes enter-back {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+
+.waiting {
+  gap: var(--space-6);
+}
+
+.waiting-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.waiting-hero .lede {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.waiting-badge-wrap {
+  position: relative;
+  width: 76px;
+  height: 76px;
+}
+
+.waiting-badge-wrap .pulse {
+  background: var(--color-accent-200);
+}
+
+.waiting-badge {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  background: var(--color-accent-100);
+  color: var(--color-accent-700);
+}
+
+.waiting-badge--done {
+  background: var(--color-accent-2);
+  color: var(--color-bg);
+  animation: pop 0.6s cubic-bezier(0.34, 1.45, 0.55, 1) both;
+}
+
+.waiting-request {
+  gap: 12px;
+}
+
+.waiting-facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: baseline;
+  gap: 10px 16px;
+  margin: 0;
+  font-size: 16px;
+}
+
+.waiting-facts dt {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.waiting-facts dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.waiting-steps {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.waiting-step {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 0 14px;
+}
+
+.waiting-step-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.waiting-step-line {
+  flex: 1;
+  width: 3px;
+  min-height: 22px;
+  margin: 4px 0;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--color-text) 12%, transparent);
+}
+
+.waiting--approved .waiting-step-line {
+  background: color-mix(in srgb, var(--color-accent-2) 45%, transparent);
+}
+
+.waiting-step-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 3px 0 var(--space-4);
+}
+
+.waiting-step-title {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 22px;
+}
+
+.waiting-step-sub {
+  font-size: 14px;
+}
+
+.waiting-dot {
+  flex: none;
+  width: 30px;
+  height: 30px;
+}
+
+.waiting-dot--done {
+  background: var(--color-accent-2);
+  color: var(--color-bg);
+}
+
+.waiting-dot--current {
+  position: relative;
+}
+
+.waiting-dot--current .pulse {
+  background: var(--color-accent-300);
+}
+
+.waiting-dot-ring {
+  position: absolute;
+  inset: 0;
+  background: var(--color-bg);
+  box-shadow: inset 0 0 0 3px var(--color-accent);
+}
+
+.waiting-dot-core {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+.waiting-dot--future {
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2.5px color-mix(in srgb, var(--color-text) 20%, transparent);
+}
+
+.waiting-locked {
+  font-size: 14.5px;
+}
+
+.gate {
+  padding-inline: 28px;
+}
+
+.gate-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding-bottom: 5vh;
+  text-align: center;
+}
+
+.gate-art {
+  margin-bottom: 10px;
+}
+
+.gate-title {
+  font-size: 28px;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+.gate-body {
+  margin: 0;
+  max-width: 340px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--color-text) 66%, transparent);
+  text-wrap: pretty;
+}
+
+.gate-action {
+  max-width: 360px;
+  margin-top: 14px;
+}
+
+.gate-action--next {
+  margin-top: 0;
+}
+
+.gate-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding-top: 20px;
+  opacity: 0.7;
+}
+
+.gate-brand .heading {
+  font-size: 17px;
+}
+
+/* The chat's message bar, drawn small: the app's menu button on the left, lit up. It takes
+   Telegram's own button colours, so it looks like the button the person will see. */
+.gate-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 340px;
+  margin-top: 14px;
+  padding: 7px 14px 7px 7px;
+  border-radius: 999px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.gate-hint-app {
+  position: relative;
+  flex: none;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: var(--tg-theme-button-color, #2481cc);
+  color: var(--tg-theme-button-text-color, #ffffff);
+  font-size: 13.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.gate-hint-ring {
+  position: absolute;
+  inset: -5px;
+  border: 2px solid var(--tg-theme-button-color, #2481cc);
+  border-radius: 999px;
+  animation: hint-ring 1.8s ease-out infinite;
+}
+
+@keyframes hint-ring {
+  from {
+    transform: scale(0.94);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(1.14);
+    opacity: 0;
+  }
+}
+
+.gate-hint-field {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 15px;
+  color: var(--muted);
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gate-hint-mic {
+  flex: none;
+  color: var(--muted);
+}
+
+/* — routines: my Routines tab and a manager's checks, apart from one-off work — */
+
+.routine-summary {
+  gap: 12px;
+  padding: 16px 18px;
+}
+
+.routine-summary-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.routine-summary-icon {
+  width: 44px;
+  height: 44px;
+  background: var(--color-accent-100);
+  color: var(--color-accent-700);
+}
+
+.routine-summary-icon--done {
+  background: var(--color-accent-2);
+  color: var(--color-bg);
+}
+
+.routine-summary-title {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+/* "Done today": a section heading that folds the day's finished runs away. */
+.routine-done-toggle {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.routine-done-chevron {
+  margin-left: auto;
+  color: var(--muted);
+  transition: transform 0.2s ease;
+}
+
+.routine-done-toggle[aria-expanded="true"] .routine-done-chevron {
+  transform: rotate(180deg);
+}
+
+/* A finished run's proof photo at the end of its row. */
+.row-thumb {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: var(--color-bg);
+}
+
+.routine-hint {
+  margin: -4px 4px 2px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.routine-check {
+  gap: 14px;
+  padding: 16px;
+}
+
+.routine-check-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.routine-check-icon {
+  width: 38px;
+  height: 38px;
+  background: var(--color-accent-2-100);
+  color: var(--color-accent-2-700);
+}
+
+.routine-check-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+/* A routine with one run waiting: the run takes the whole width, its photo in a wide frame. */
+.routine-check-grid--one {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.routine-check-grid--one .run-tile-proof {
+  aspect-ratio: 16 / 9;
+}
+
+/* Without a photo, a note or nothing at all needs no picture's height. */
+.routine-check-grid--one .run-tile-proof:not(:has(img)) {
+  aspect-ratio: auto;
+  min-height: 92px;
+}
+
+.run-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.run-tile-proof {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 16px;
+  background: var(--color-bg);
+  color: inherit;
+}
+
+.run-tile-proof img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.run-tile-note {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+  /* Margin, not padding: a clamped box's padding shows the top of the fifth line. */
+  margin: 10px 12px;
+  font-size: 14px;
+  line-height: 1.35;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.run-tile-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  font-size: 12.5px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.run-tile-foot {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.run-tile-who {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-left: 2px;
+}
+
+.run-tile-name {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.run-tile-time {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.run-tile-back {
+  flex: none;
+}
+
+.routine-check-confirm {
+  min-height: 46px;
+  font-size: 15px;
+}
+
+/* Routines in any list: a small repeat mark before the line under the title. */
+.row-meta-routine {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+}
+
+.row-meta-routine > svg {
+  flex: none;
+  color: var(--color-accent-2-700);
+}
+
+.row-meta-routine > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-today-split {
+  font-size: 14px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The chat-bar hint on a narrow phone: the menu button's label needs the room more than the mic. */
+@media (max-width: 380px) {
+  .gate-hint-mic {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

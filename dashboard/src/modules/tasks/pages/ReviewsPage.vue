@@ -23,6 +23,7 @@ import { useConfirm } from "@/components/useConfirm";
 import { dismissToast, toast } from "@/components/useToast";
 import { useHotkey } from "@/core/hotkeys";
 import { usePulseCount } from "@/core/pulse";
+import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { patchQuery } from "@/lib/useRouteState";
 import { useCompanyStore } from "@/stores/company";
@@ -38,6 +39,9 @@ const { t } = useI18n();
 const router = useRouter();
 const company = useCompanyStore();
 const confirm = useConfirm();
+// Accept and send back are finger-sized on phones.
+const { isPhone } = useBreakpoints();
+const tap = computed(() => (isPhone.value ? "lg" : "sm"));
 const refresh = useRefreshTasks();
 
 const query = useReviews();
@@ -229,8 +233,8 @@ function open(task: TaskReview): void {
           <p v-if="task.checklist.total" class="text-xs text-muted">{{ t("tasks.reviews.checklist", { done: task.checklist.done, total: task.checklist.total }) }}</p>
           <p v-if="task.proof_photo && task.proof_text" class="line-clamp-2 rounded-[8px] bg-surface-2 px-2.5 py-1.5 text-sm text-fg">{{ task.proof_text }}</p>
           <div class="mt-auto flex gap-2 pt-1">
-            <UiButton variant="primary" size="sm" :icon="Check" class="flex-1" @click="accept(task)">{{ t("tasks.action.confirm") }}</UiButton>
-            <UiButton size="sm" :icon="RotateCcw" class="flex-1" @click="sendBack(task)">{{ t("tasks.action.return") }}</UiButton>
+            <UiButton variant="primary" :size="tap" :icon="Check" class="flex-1" @click="accept(task)">{{ t("tasks.action.confirm") }}</UiButton>
+            <UiButton :size="tap" :icon="RotateCcw" class="flex-1" @click="sendBack(task)">{{ t("tasks.action.return") }}</UiButton>
           </div>
         </div>
       </article>

@@ -122,7 +122,8 @@ describe("lib", () => {
   it("colours each calendar's chip by its own colour, else by most of its dates", () => {
     const debts = [entry({ source: "finance.debts_due", color: "danger" }), entry({ source: "finance.debts_due", color: "danger" }), entry({ source: "finance.debts_due", color: "success" })];
     expect(sourceColor("finance.debts_due", debts)).toBe("var(--c-danger)");
-    expect(sourceColor("tasks.due", [entry({ source: "tasks.due", color: "danger" })])).toBe("var(--c-primary)");
+    // Tasks keep their own plum even when most days in view are late (red).
+    expect(sourceColor("tasks.due", [entry({ source: "tasks.due", color: "danger" })])).toBe("var(--c-chart-5)");
     expect(sourceColor("projects.milestones", [])).toBeNull();
   });
 

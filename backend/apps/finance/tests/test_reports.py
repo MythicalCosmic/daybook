@@ -137,6 +137,24 @@ def test_cash_flow_in_the_analytics_shape(books, ledger):
     # Start + every section = end: the statement reconciles.
     assert data["start_cash"] == D("6700000.00")
     assert data["end_cash"] == D("9000000.00")
+    assert sections["revaluation"]["net"] == D("0.00")  # the rate never moved
+
+
+def test_cash_flow_revalues_dollars_so_the_closing_matches_the_balances(books, ledger):
+    """Dollar rows keep the rate they were booked at; holding dollars while the rate moves is a
+    revaluation line, so the closing cash is the balances valued at that day's rate, as on the
+    accounts page and in "cash now", and the statement still adds up."""
+    later = date(2026, 10, 20)
+    ExchangeRateFactory(date=later, rate=D("12500"))
+    data = queries.cash_flow(books, OCT_3, later, "week", branch_ids=None)
+    sections = {row["key"]: row for row in data["sections"]}
+    assert sections["revaluation"]["income"] == D("25000.00")  # $50 held, 500 more per dollar
+    assert sections["revaluation"]["expense"] == D("0.00")
+    assert data["start_cash"] == D("6700000.00")
+    position = queries.cash_position(books, later, branch_ids=None, today=date(2026, 10, 21))
+    assert data["end_cash"] == position["total"] == D("9025000.00")
+    moved = sum((row["net"] for row in data["sections"]), D(0))
+    assert data["start_cash"] + moved == data["end_cash"]
 
 
 def test_balances_on_a_date(books, ledger):
@@ -162,6 +180,27 @@ def test_category_trend(books, ledger):
     assert [point["amount"] for point in data["series"]] == [D("0.00"), D("2500000.00"), D("0.00")]
     # The average counts the full months since the books began (September), not empty August.
     assert data["average"] == D("2500000.00")
+
+
+def test_category_trend_compares_this_month_with_the_same_days_of_last_month(books, ledger):
+    """The running month is set against days 1 to N of last month (as the overview does), not
+    against a whole month it can't match yet."""
+    late = queries.category_trend(
+        books, ledger["goods"], 3, branch_ids=None, today=date(2026, 10, 21)
+    )
+    assert late["previous_same_days"] == {
+        "from": "2026-09-01",
+        "to": "2026-09-21",
+        "amount": D("2500000.00"),  # 20 September, goods and drinks under it
+    }
+    early = queries.category_trend(books, ledger["goods"], 3, branch_ids=None, today=OCT_10)
+    assert early["previous_same_days"]["to"] == "2026-09-10"
+    assert early["previous_same_days"]["amount"] == D("0.00")
+    # The 31st compares with the whole of a shorter month, never a day past its end.
+    end = queries.category_trend(
+        books, ledger["goods"], 1, branch_ids=None, today=date(2026, 10, 31)
+    )
+    assert end["previous_same_days"]["to"] == "2026-09-30"
 
 
 def test_totals_ignore_owner_money_transfers_and_openings(books, ledger):
@@ -196,3 +235,29 @@ def test_branch_scope_narrows_every_report(books, owner, member):
         "100.00"
     )
     assert queries.pnl(books, OCT_3, OCT_3, "month", branch_ids=[])["income"]["total"] == D("0.00")
+
+
+def test_overview_lists_every_expense_group_of_the_month(books, owner, cash):
+    """The overview's expense breakdown covers the whole month, so a chart of it adds up to the
+    month's expenses (it used to stop at six groups and lose the rest)."""
+    for day in (OCT_3, OCT_10):
+        ExchangeRateFactory(date=day, rate=D("12000"))
+    services.record_transaction(
+        books, by=owner, kind="opening", amount=D("100000000"), occurred_on=OCT_3, account=cash
+    )
+    for index in range(9):
+        category = services.create_category(books, by=owner, name=f"Cost {index}", kind="expense")
+        services.record_transaction(
+            books,
+            by=owner,
+            kind="expense",
+            amount=D(1_000_000 * (index + 1)),
+            occurred_on=OCT_10,
+            account=cash,
+            category=category,
+        )
+    data = queries.overview(books, branch_ids=None, today=date(2026, 10, 21))
+    groups = data["top_expenses"]
+    assert len(groups) == 9
+    assert [row["name"] for row in groups[:2]] == ["Cost 8", "Cost 7"]  # biggest first
+    assert sum(row["amount"] for row in groups) == data["month"]["expense"] == D("45000000.00")

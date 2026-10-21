@@ -11,6 +11,7 @@ import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, useRouter } from "vue-router";
 
+import { isApiError } from "@/api/http";
 import AuditTrail from "@/components/AuditTrail.vue";
 import DatePicker from "@/components/DatePicker.vue";
 import DropdownMenu, { type MenuEntry } from "@/components/DropdownMenu.vue";
@@ -287,7 +288,8 @@ const formatAudit = (field: string, value: unknown) => {
       <SkeletonBlock height="180px" radius="12px" />
       <div v-for="n in 4" :key="n" class="flex gap-4"><SkeletonBlock width="30%" /><SkeletonBlock width="50%" /></div>
     </div>
-    <ErrorState v-else-if="query.isError.value" class="m-5" :error="query.error.value" :retry="() => query.refetch()" />
+    <!-- A deleted task won't come back by trying again. -->
+    <ErrorState v-else-if="query.isError.value" class="m-5" :error="query.error.value" :retry="isApiError(query.error.value) && query.error.value.status === 404 ? undefined : () => query.refetch()" />
 
     <div v-else-if="task" class="flex flex-col">
       <!-- Status and actions -->
