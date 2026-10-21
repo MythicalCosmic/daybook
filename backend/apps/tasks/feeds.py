@@ -21,6 +21,8 @@ from apps.tasks import dashboard, queries
 from apps.tasks.models import Task, TaskTemplate
 
 SHARED = (Task.Kind.DAILY, Task.Kind.ASSIGNED)
+# The `tasks.due` calendar's colour on a day without late work (the dashboard's chip uses it too).
+CALENDAR_COLOR = "chart-5"
 
 
 def _person(member: Membership | None) -> Person | None:
@@ -63,6 +65,12 @@ def review_count(member: Membership) -> int:
     return queries.awaiting_review_by(member).count()
 
 
+def review_url(task: Task) -> str:
+    """Where a check waits on the dashboard: routine work on Routines → To confirm (by routine and
+    day), one-off work in Tasks → Waiting for check."""
+    return "routines/confirm" if queries.is_routine_work(task) else f"tasks/reviews?task={task.pk}"
+
+
 def review_items(member: Membership, limit: int) -> list[QueueItem]:
     tasks = queries.awaiting_review_by(member).order_by("completed_at", "pk")[:limit]
     return [
@@ -74,7 +82,7 @@ def review_items(member: Membership, limit: int) -> list[QueueItem]:
                 filter(None, [str(task.assignee), task.branch.name if task.branch_id else ""])
             ),
             created_at=task.completed_at,
-            url=f"tasks/reviews?task={task.pk}",
+            url=review_url(task),
             actions=(
                 QueueAction("confirm", _("Accept"), "primary", "POST", f"tasks/{task.pk}/confirm/"),
                 QueueAction(
@@ -213,13 +221,16 @@ def company_facts(company, period, member: Membership) -> dict:
 
 
 def calendar_events(company, start: date, end: date, member: Membership) -> list[CalendarItem]:
-    """One all-day entry per day with shared tasks due: "12 tasks due" (§13.5 `tasks.due`)."""
+    """One all-day entry per day with one-off tasks due: "3 tasks due" (§13.5 `tasks.due`), red
+    when some of them are late. Routine work stays out: it comes every day for everyone (the
+    Routines page has it), and the entry opens the Tasks calendar, which lists one-off work."""
     first, _unused = queries.day_bounds(company, start)
     _unused, last = queries.day_bounds(company, end)
-    tasks = (
+    tasks = queries.split(
         queries.visible_tasks(member)
         .filter(kind__in=SHARED, due_at__gte=first, due_at__lt=last)
-        .exclude(status=Task.Status.CANCELLED)
+        .exclude(status=Task.Status.CANCELLED),
+        queries.WITHOUT_ROUTINES,
     )
     data = dashboard.calendar(tasks, company, start, end, timezone.now())
     return [
@@ -231,7 +242,8 @@ def calendar_events(company, start: date, end: date, member: Membership) -> list
             start=day["date"],
             end=None,
             all_day=True,
-            color="danger" if day["late"] else "accent",
+            # Plum: apart from holidays and milestones (orange), time off (slate) and shifts (teal).
+            color="danger" if day["late"] else CALENDAR_COLOR,
             url=f"tasks?view=calendar&month={day['date'].isoformat()[:7]}",
         )
         for day in data["days"]

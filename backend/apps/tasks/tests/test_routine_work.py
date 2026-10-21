@@ -234,6 +234,36 @@ def test_history_rates_each_routine_per_day_over_the_work_due(pharmacy, owner_ap
     assert ali["on_time_percent"] == 67
 
 
+def test_open_work_past_its_time_is_late_until_its_day_is_over(pharmacy, owner_api, clock):
+    """Gani hasn't opened the till (due 09:00): at noon History and the routine's page say late,
+    as Today does, since he can still do it; once Wednesday is over it is missed."""
+    shop, at, kassa = pharmacy["shop"], pharmacy["at"], pharmacy["kassa"]
+    client = owner_api(shop.owner)
+    wednesday = {"from": WED.isoformat(), "to": WED.isoformat()}
+
+    def history():
+        body = client.get(path(shop.company, "routines/history/"), wednesday).json()
+        [cell] = next(row for row in body["routines"] if row["routine"]["id"] == kassa.pk)["cells"]
+        return cell, body["totals"]
+
+    def compliance():
+        url = path(shop.company, f"routines/{kassa.pk}/compliance/")
+        return client.get(url, wednesday).json()["totals"]
+
+    cell, totals = history()
+    # Vali finished late, Gani is late and still open; Ali was on time.
+    assert (cell["late"], cell["missed"], totals["missed"]) == (2, 0, 0)
+    assert cell["percent"] == 67  # Gani's run still counts as due
+    assert (compliance()["late"], compliance()["missed"]) == (2, 0)
+
+    clock(at(THU, 0, 30))
+    cell, totals = history()
+    # Ali's 18:00 fridge reading never came either.
+    assert (cell["late"], cell["missed"], totals["missed"]) == (1, 1, 2)
+    assert cell["percent"] == 67
+    assert (compliance()["late"], compliance()["missed"]) == (1, 1)
+
+
 def test_routine_work_waits_for_confirmation_in_its_own_queue(pharmacy, owner_api):
     shop, people, at = pharmacy["shop"], pharmacy["people"], pharmacy["at"]
     kassa, fridge = pharmacy["kassa"], pharmacy["fridge"]

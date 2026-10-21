@@ -12,7 +12,7 @@ from apps.console import contracts, registry
 from apps.exports.registry import get_exporter
 from apps.tasks import bot_messages, feeds
 from apps.tasks.models import Task
-from apps.tasks.tests.factories import TaskFactory, jpeg, make_shop
+from apps.tasks.tests.factories import TaskFactory, TaskTemplateFactory, jpeg, make_shop
 
 pytestmark = pytest.mark.django_db
 
@@ -113,13 +113,47 @@ def test_company_facts_and_the_brief_section(shop):
     assert quiet is None
 
 
-def test_the_calendar_source_counts_tasks_per_day(shop):
+def test_routine_work_waits_for_its_check_on_the_routines_page(shop, owner_api):
+    """Needs you sends a routine run to Routines → To confirm, one-off work to Tasks' reviews."""
+    routine = TaskTemplateFactory(
+        company=shop.company, assignees=[shop.worker], created_by=shop.owner
+    )
+    finished = {"status": Task.Status.REVIEW, "needs_confirmation": True}
+    run = shared(
+        shop,
+        shop.worker,
+        kind=Task.Kind.DAILY,
+        template=routine,
+        for_date=timezone.localdate(),
+        completed_at=timezone.now(),
+        **finished,
+    )
+    one_off = shared(shop, shop.worker, completed_at=timezone.now(), **finished)
+    items = owner_api(shop.owner).get(owner_path(shop.company, "queue/")).json()["items"]
+    urls = {item["id"]: item["url"] for item in items if item["kind"] == "tasks.review"}
+    assert urls == {run.pk: "routines/confirm", one_off.pk: f"tasks/reviews?task={one_off.pk}"}
+
+
+def test_the_calendar_source_counts_one_off_tasks_per_day(shop):
+    """Routine work (every day, for everyone) stays off the calendar: it counts the deadlines the
+    Tasks calendar it opens lists, plum on a quiet day and red when some are late."""
     now = timezone.now()
     shared(shop, shop.worker, due_at=now + timedelta(days=1))
     shared(shop, shop.worker, due_at=now + timedelta(days=1, minutes=5))
-    start, end = timezone.localtime(now).date(), timezone.localtime(now).date() + timedelta(days=7)
-    items = registry.collect_calendar(shop.owner, start, end, sources=["tasks.due"])
-    assert len(items) == 1 and items[0].kind == "tasks.due" and "2" in items[0].title
+    routine = TaskTemplateFactory(
+        company=shop.company, assignees=[shop.worker], created_by=shop.owner
+    )
+    tomorrow_run = {"kind": Task.Kind.DAILY, "template": routine, "due_at": now + timedelta(days=1)}
+    shared(shop, shop.worker, **tomorrow_run)
+    late = shared(shop, shop.colleague, due_at=now - timedelta(minutes=1))
+    first = timezone.localtime(late.due_at).date()
+    tomorrow = timezone.localtime(now + timedelta(days=1)).date()
+    items = registry.collect_calendar(
+        shop.owner, first, first + timedelta(days=7), sources=["tasks.due"]
+    )
+    by_day = {item.start: item for item in items if item.kind == "tasks.due"}
+    assert "2" in by_day[tomorrow].title and by_day[tomorrow].color == "chart-5"
+    assert by_day[first].color == "danger"
 
 
 def test_the_exporter_uses_the_tables_filters(shop):

@@ -90,21 +90,28 @@ export function audienceText(space: Pick<Space, "audience_all" | "positions">, e
  * The server cleaned the body against its allow-list; the browser cleans it again before showing it
  * (defence in depth), makes checklists read-only in the reading view and puts each table in the
  * editor's scrolling wrapper, so a wide table scrolls on a phone instead of widening the page.
+ * Both changes are made on the cleaned elements, never on the HTML text: "<table" may sit inside
+ * an attribute, where rewriting the text would turn the rest of the value into markup.
  */
 export async function safeBody(html: string): Promise<string> {
   const { default: DOMPurify } = await import("dompurify");
-  const clean = DOMPurify.sanitize(html, {
+  const body = DOMPurify.sanitize(html, {
     ALLOWED_TAGS: [
       "p", "h1", "h2", "h3", "h4", "strong", "b", "em", "i", "u", "s", "strike", "code", "pre", "blockquote", "br", "hr",
       "ul", "ol", "li", "label", "input", "span", "div", "a", "img", "table", "thead", "tbody", "tr", "th", "td", "colgroup", "col",
     ],
     ALLOWED_ATTR: ["href", "target", "rel", "src", "alt", "data-image-id", "data-type", "data-checked", "data-callout", "type", "checked", "disabled", "colspan", "rowspan", "start"],
     ALLOW_DATA_ATTR: false,
+    RETURN_DOM: true,
   });
-  return clean
-    .replace(/<input type="checkbox"/g, '<input type="checkbox" disabled')
-    .replace(/<table\b/g, '<div class="tableWrapper"><table')
-    .replace(/<\/table>/g, "</table></div>");
+  for (const box of body.querySelectorAll('input[type="checkbox"]')) box.setAttribute("disabled", "");
+  for (const table of body.querySelectorAll("table")) {
+    const wrapper = body.ownerDocument.createElement("div");
+    wrapper.className = "tableWrapper";
+    table.replaceWith(wrapper);
+    wrapper.append(table);
+  }
+  return body.innerHTML;
 }
 
 /** A short emoji set for pages and spaces: rules, money, goods, medicines, people, time, safety. */

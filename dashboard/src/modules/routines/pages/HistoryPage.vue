@@ -129,6 +129,7 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
             <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px]" style="background: color-mix(in srgb, var(--c-warning) 70%, var(--c-surface))" />50–79 %</span>
             <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px]" style="background: color-mix(in srgb, var(--c-danger) 75%, var(--c-surface))" />&lt; 50 %</span>
             <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px] border border-dashed border-line-strong" />{{ t("routines.history.legendAhead") }}</span>
+            <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px] bg-surface-2/60 ring-1 ring-inset ring-line" />{{ t("routines.history.legendNone") }}</span>
           </div>
         </header>
         <div ref="scroller" class="overflow-x-auto">
@@ -156,7 +157,7 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
                     :aria-label="tip(cell, data.days[index]!, t('routines.history.allRoutines'))"
                     @click="open(cell.date)"
                   />
-                  <span v-else class="block h-7 min-w-[22px] rounded-[5px] bg-surface-2/60" />
+                  <span v-else class="block h-7 min-w-[22px] rounded-[5px] bg-surface-2/60" :title="t('routines.history.legendNone')" />
                 </td>
                 <td class="px-4 text-right tabular-nums text-fg">{{ percentText(data.totals.percent) }}</td>
               </tr>
@@ -174,7 +175,7 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
                     :aria-label="tip(cell, data.days[index]!, row.routine.title)"
                     @click="open(data.days[index]!, row.routine.id)"
                   />
-                  <span v-else class="block h-7 min-w-[22px] rounded-[5px] bg-surface-2/60" />
+                  <span v-else class="block h-7 min-w-[22px] rounded-[5px] bg-surface-2/60" :title="t('routines.history.legendNone')" />
                 </td>
                 <td class="px-4 text-right font-semibold tabular-nums text-fg">{{ percentText(row.totals.percent) }}</td>
               </tr>

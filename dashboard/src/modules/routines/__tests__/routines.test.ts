@@ -159,6 +159,26 @@ describe("RoutinesPage", () => {
     expect(app.router.currentRoute.value.query.new).toBeUndefined();
     wrapper.unmount();
   });
+
+  it("draws a routine's last 14 days only when they move", async () => {
+    // Done every day is a flat line, which reads as nothing at the bottom of a sparkline: the
+    // percentage says it alone.
+    const stats = (spark: number[]) => ({ made_30d: 28, done_30d: 27, on_time_30d: 26, completion_30d: 96, spark });
+    const steady = routine({ id: 1, title: "Every day", stats: stats(Array(14).fill(100)) });
+    const uneven = routine({ id: 2, title: "Some days", stats: stats([100, 100, 50, 100, 100, 100, 0, 100, 100, 100, 100, 100, 100, 100]) });
+    stub({ "GET routines/": () => json([steady, uneven]), "GET tasks/options/": () => json(options) });
+    const app = await testApp("/c/1/routines/all");
+    for (const name of ["routines.today", "routines.history", "routines.confirm", "routines.list", "routines.onboarding", "routines.detail"]) {
+      app.router.addRoute({ path: `/named/${name}/:id?`, name, component: { render: () => null } });
+    }
+    const { default: RoutinesPage } = await import("../pages/RoutinesPage.vue");
+    const { wrapper } = mountWithProviders(RoutinesPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(wrapper.text()).toContain("Every day");
+    expect(wrapper.findAll(`svg[aria-label="${en["routines.sparkLabel"]}"] path[stroke]`)).toHaveLength(1);
+    wrapper.unmount();
+  });
 });
 
 describe("RoutineEditor", () => {

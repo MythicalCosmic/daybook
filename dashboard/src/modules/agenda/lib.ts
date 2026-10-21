@@ -157,7 +157,8 @@ export function monthChips(
  * where it has one, else the colour most of its dates in view have.
  */
 const SOURCE_TOKENS: Readonly<Record<string, string>> = {
-  "tasks.due": "accent",
+  // apps.tasks' quiet-day colour (feeds.CALENDAR_COLOR): plum, apart from holidays and milestones.
+  "tasks.due": "chart-5",
   "timeoff.time_off": "chart-3",
   "timeoff.holidays": "chart-1",
   "attendance.shifts": "chart-6",

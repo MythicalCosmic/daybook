@@ -365,14 +365,18 @@ describe("one-off tasks and routine work", () => {
     await flushPromises();
     const lists = () => calls.filter((c) => c.url.includes("/tasks/?"));
     const summaries = () => calls.filter((c) => c.url.includes("/tasks/summary/"));
+    // "Late now" opens the late list of the same work the number counts.
+    const lateLink = () => wrapper.find('a[href*="sv=late"]').attributes("href");
     expect(lists().at(-1)!.url).toContain("routines=without");
     expect(summaries().at(-1)!.url).toContain("routines=without");
+    expect(lateLink()).not.toContain("routines=1");
     document.body.querySelector<HTMLButtonElement>("[data-testid=include-routines]")!.click();
     await flushPromises();
     await flushPromises();
     expect(app.router.currentRoute.value.query.routines).toBe("1");
     expect(lists().at(-1)!.url).not.toContain("routines=");
     expect(summaries().at(-1)!.url).not.toContain("routines=");
+    expect(lateLink()).toContain("routines=1");
     wrapper.unmount();
   });
 

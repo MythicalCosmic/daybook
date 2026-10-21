@@ -134,10 +134,11 @@ function open(routine: Routine): void {
 }
 
 // The days it ran, joined: days off (a Mon–Fri routine's weekend) would cut the line into dashes.
-// A line through two points says nothing: new routines show only their percentage.
+// A line through two points says nothing: new routines show only their percentage. Neither does a
+// line that never moves (done every day: the percentage says it), which SparkLine draws at the bottom.
 function sparkOf(routine: Routine): number[] {
   const points = (routine.stats?.spark ?? []).filter((value): value is number => value !== null);
-  return points.length >= 4 ? points : [];
+  return points.length >= 4 && new Set(points).size > 1 ? points : [];
 }
 
 function completionTone(value: number | null): string {
