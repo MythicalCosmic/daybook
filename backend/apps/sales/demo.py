@@ -728,12 +728,15 @@ def _extras(company, story, rng, now, methods) -> None:
         (25, "C", [("payme", 380_000)], "Yetkazib berish buyurtmasi"),
     ]
     for back, code, pays, note in entries:
+        # The pharmacy's head enters them in office hours, on a day they work.
+        key = "manager" if code == "C" or story.member("farrux") is None else "farrux"
         day = story.today - timedelta(days=back)
-        at = story.at(day, time(rng.randint(11, 17), rng.randint(0, 59)))
-        head = story.member("manager") if code == "C" else story.member("farrux")
+        if not story.works(key, day):
+            day = story.last_working_day(key, day) or day
+        at = story.at(day, time(rng.randint(10, 16), rng.randint(0, 59)))
         with moment(at):
             services.record_sale(
-                by=head or story.member("manager"),
+                by=story.member(key),
                 payments=[(methods[method], amount) for method, amount in pays],
                 branch=story.branches[code],
                 source="dashboard",
