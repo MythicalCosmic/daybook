@@ -31,7 +31,7 @@ make bot               # employee bot, separate terminal
 make app               # mini app at http://127.0.0.1:28173/app/, separate terminal
 ```
 
-`make demo` builds a Demo Shop company with people and tasks in every state, so the bot and the app have something to show.
+`make demo` builds two demo companies, Demo Dorixona (two pharmacies, one open 24 hours) and Demo Distribyutor (a medicine distributor), with people, tasks, routines, money and history in every state, so the bots, the mini app and the dashboard have something to show.
 
 To run the whole stack in Docker (backend and mini app on :28000, worker, beat, bot), use `make stack`. To put it on a server behind HTTPS, follow [docs/DEPLOY.md](docs/DEPLOY.md).
 
