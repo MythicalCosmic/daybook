@@ -1,9 +1,15 @@
 // The registry first, as in the app.
 import "@/core/modules";
 
-import { flushPromises } from "@vue/test-utils";
+import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+import { flushPromises, mount as mountRaw } from "@vue/test-utils";
+import { createPinia, setActivePinia } from "pinia";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createMemoryHistory, createRouter } from "vue-router";
 
+import { findModule } from "@/core/modules";
+import { ensureModuleMessages, i18n, setLanguage } from "@/i18n";
+import { useCompanyStore } from "@/stores/company";
 import { usePaletteStore } from "@/stores/palette";
 import { useSessionStore } from "@/stores/session";
 import { company, json, manager, me } from "@/test/fixtures";
@@ -11,6 +17,7 @@ import { mountWithProviders, testApp } from "@/test/plugins";
 
 import CommandPalette from "../CommandPalette.vue";
 import CompanySwitcher from "../CompanySwitcher.vue";
+import ForbiddenPage from "../ForbiddenPage.vue";
 import MobileTabBar from "../MobileTabBar.vue";
 import { bufferKeysUntilPaletteMounts, loadPalette, markPaletteMounted, prefetchPaletteOnModifier } from "../paletteLoader";
 
@@ -143,12 +150,53 @@ describe("palette and switcher", () => {
   });
 });
 
+describe("a page that won't open", () => {
+  async function forbidden(companies: ReturnType<typeof company>[], path: string, meta: Record<string, unknown>) {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    useSessionStore().me = me(companies);
+    useCompanyStore().setCurrent(companies[0]!.id);
+    const router = createRouter({ history: createMemoryHistory(), routes: [{ path: "/c/:companyId/:rest(.*)*", component: { render: () => null }, meta }] });
+    await router.push(path);
+    // The module's name comes from its own dictionary, as the shell loads it in the app.
+    const module = findModule(String(meta.module));
+    if (module) await ensureModuleMessages(module, "en");
+    const client = new QueryClient();
+    const wrapper = mountRaw(ForbiddenPage, { global: { plugins: [pinia, router, i18n, [VueQueryPlugin, { queryClient: client }]] } });
+    await flushPromises();
+    return wrapper;
+  }
+
+  it("says the company has the module switched off, and offers Settings › Modules to whoever may switch it on", async () => {
+    // Sales is off for this company; the owner may change modules.
+    const owner = await forbidden([company({ features: ["finance"] })], "/c/1/sales", { module: "sales" });
+    expect(owner.text()).toContain("Sales is off in Demo Dorixona");
+    expect(owner.text()).not.toContain("Your role");
+    expect(owner.get("a[href='/c/1/settings/features']").text()).toBe("Open Settings › Modules");
+    owner.unmount();
+    // A manager can't change modules: told who can, no link to a page they can't open.
+    const staff = await forbidden([manager([], { id: 1, name: "Demo Distribyutor", features: [] })], "/c/1/sales", { module: "sales" });
+    expect(staff.text()).toContain("The owner can switch it on");
+    expect(staff.find("a[href='/c/1/settings/features']").exists()).toBe(false);
+    staff.unmount();
+  });
+
+  it("still says the role is the reason when the module is on", async () => {
+    const page = await forbidden([manager([], { id: 1 })], "/c/1/finance", { module: "finance" });
+    expect(page.text()).toContain("This page isn’t open to you");
+    expect(page.find("[data-switched-off]").exists()).toBe(false);
+    page.unmount();
+  });
+});
+
 describe("phone tab bar", () => {
   it("names the whole Work area, not just Tasks (Routines, Projects and Reminders live there too)", async () => {
     const entry = (moduleId: string) => ({ key: moduleId, moduleId, title: `${moduleId}.title`, path: `/c/1/${moduleId}`, group: "work" as const, hotkey: undefined, children: [], badge: 0, icon: {} });
     const groups = [{ id: "work" as const, modules: [entry("tasks"), entry("routines")], badge: 2 }];
     for (const [language, label] of [["en", "Work"], ["uz", "Ish"], ["ru", "Работа"]] as const) {
       const app = await testApp("/c/1/routines", language);
+      // A module dictionary loaded by an earlier test must arrive in this language first.
+      await setLanguage(language);
       const { wrapper } = mountWithProviders(MobileTabBar, { plugins: app.plugins, props: { groups, moreOpen: false } });
       await flushPromises();
       const tab = wrapper.find('a[href="/c/1/tasks"]');

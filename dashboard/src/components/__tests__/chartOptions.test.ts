@@ -1,7 +1,19 @@
 import { describe, expect, it } from "vitest";
 
+import { shareText } from "@/components/chartCard";
 import { cartesianOption, type CartesianInput } from "@/components/chartOptions";
 import type { ChartTheme } from "@/components/useChartTheme";
+
+describe("shareText", () => {
+  it("never rounds a sliver to 0 % or a part to the whole", () => {
+    expect(shareText(0.3, "en")).toBe("<1%");
+    expect(shareText(0.3, "ru")).toBe("<1 %");
+    expect(shareText(0, "en")).toBe("0%");
+    expect(shareText(42.4, "uz")).toBe("42%");
+    expect(shareText(99.7, "en")).toBe(">99%");
+    expect(shareText(100, "en")).toBe("100%");
+  });
+});
 
 const theme: ChartTheme = {
   text: "#201e1d",

@@ -426,6 +426,11 @@
   "shell.forbidden.title": "Bu sahifa siz uchun yopiq",
   "shell.forbidden.body": "{company} dagi rolingizga bu sahifa kirmaydi. Kerak bo‘lsa, egasidan ruxsat so‘rang.",
   "shell.forbidden.home": "Umumiy ko‘rinishga",
+  "shell.forbidden.offTitle": "{company} uchun «{module}» o‘chirilgan",
+  "shell.forbidden.offTitleAny": "{company} uchun bu modul o‘chirilgan",
+  "shell.forbidden.offBodyOwner": "Bu yerda ishlatish uchun uni Sozlamalar › Modullar bo‘limida yoqing.",
+  "shell.forbidden.offBody": "Uni egasi Sozlamalar › Modullar bo‘limida yoqishi mumkin.",
+  "shell.forbidden.openModules": "Sozlamalar › Modullar",
 
   "shell.notFound.title": "Sahifa topilmadi",
   "shell.notFound.body": "Havola eskirgan yoki sahifa boshqa joyga ko‘chgan.",

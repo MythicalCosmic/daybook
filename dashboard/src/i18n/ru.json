@@ -426,6 +426,11 @@
   "shell.forbidden.title": "Эта страница вам недоступна",
   "shell.forbidden.body": "Ваша роль в «{company}» её не включает. Попросите владельца, если нужен доступ.",
   "shell.forbidden.home": "К обзору",
+  "shell.forbidden.offTitle": "Модуль «{module}» выключен в «{company}»",
+  "shell.forbidden.offTitleAny": "Этот модуль выключен в «{company}»",
+  "shell.forbidden.offBodyOwner": "Включите его в Настройках › Модули, чтобы пользоваться им здесь.",
+  "shell.forbidden.offBody": "Владелец может включить его в Настройках › Модули.",
+  "shell.forbidden.openModules": "Открыть Настройки › Модули",
 
   "shell.notFound.title": "Страница не найдена",
   "shell.notFound.body": "Ссылка устарела или страница переехала.",

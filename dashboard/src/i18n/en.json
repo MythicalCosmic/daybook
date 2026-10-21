@@ -426,6 +426,11 @@
   "shell.forbidden.title": "This page isn’t open to you",
   "shell.forbidden.body": "Your role in {company} doesn’t include it. Ask the owner if you need access.",
   "shell.forbidden.home": "Go to the overview",
+  "shell.forbidden.offTitle": "{module} is off in {company}",
+  "shell.forbidden.offTitleAny": "This module is off in {company}",
+  "shell.forbidden.offBodyOwner": "Switch it on in Settings › Modules to use it here.",
+  "shell.forbidden.offBody": "The owner can switch it on in Settings › Modules.",
+  "shell.forbidden.openModules": "Open Settings › Modules",
 
   "shell.notFound.title": "Page not found",
   "shell.notFound.body": "The link may be old, or the page has moved.",

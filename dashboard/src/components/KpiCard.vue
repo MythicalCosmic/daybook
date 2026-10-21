@@ -17,6 +17,7 @@ import type { Currency, Money } from "@/api/types";
 import { changePercent } from "@/lib/decimal";
 import { useFormat } from "@/lib/useFormat";
 import { useTween } from "@/lib/useTween";
+import { useCompanyStore } from "@/stores/company";
 
 import { toNumber } from "./chartCard";
 import DeltaBadge from "./DeltaBadge.vue";
@@ -78,6 +79,7 @@ const props = withDefaults(
 
 const { t } = useI18n();
 const fmt = useFormat();
+const company = useCompanyStore();
 
 const numeric = computed(() => toNumber(props.value));
 const tween = useTween(numeric);
@@ -86,9 +88,14 @@ function render(value: number | null, exact: boolean): string {
   if (value === null) return "—";
   if (typeof props.format === "function") return props.format(value);
   switch (props.format) {
-    case "money":
-      // The exact API string at rest; tween frames are rounded display only.
-      return fmt.money(exact && props.value !== null && props.value !== undefined ? props.value : Math.round(value), props.currency, { compact: props.compact, decimals: "never" });
+    case "money": {
+      // The exact API string at rest; tween frames are rounded display only. Cents where the
+      // currency has them ("$1,600.00" beside "$1,500.00" rows), never for so‘m.
+      const currency = props.currency ?? company.currency;
+      const cents = currency === "USD";
+      const shown = exact && props.value !== null && props.value !== undefined ? props.value : cents ? value.toFixed(2) : Math.round(value);
+      return fmt.money(shown, props.currency, { compact: props.compact, decimals: cents && !props.compact ? "always" : "never" });
+    }
     case "percent":
       return fmt.percent(value, 1);
     case "duration":

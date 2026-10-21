@@ -472,6 +472,14 @@ describe("WidgetCard", () => {
     expect(router.currentRoute.value.fullPath).toBe(before);
   });
 
+  it("KpiCard keeps cents for dollars and none for so‘m", async () => {
+    const dollars = mount(KpiCard, { props: { label: "Dollar safe", value: "1600.00", format: "money", currency: "USD" }, global: { plugins: plugins() } });
+    const soum = mount(KpiCard, { props: { label: "Cash now", value: "4100000.40", format: "money", currency: "UZS" }, global: { plugins: plugins() } });
+    await flushPromises();
+    expect(dollars.find(".kpi-value").text()).toBe("$1,600.00");
+    expect(soum.find(".kpi-value").text()).toBe("4,100,000 UZS");
+  });
+
   it("knows when a wide table still has columns past its right edge", () => {
     expect(moreToTheRight(0, 1000, 1000)).toBe(false);
     expect(moreToTheRight(0, 1000, 1240)).toBe(true);

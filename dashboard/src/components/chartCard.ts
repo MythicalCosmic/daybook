@@ -1,9 +1,20 @@
 /** Wiring between ChartCard and the chart inside it (for "Download PNG"), and the shared chart props. */
 import { defineAsyncComponent, h, type InjectionKey } from "vue";
 
-import type { Currency } from "@/api/types";
+import type { Currency, Language } from "@/api/types";
+import { formatPercent } from "@/lib/format";
 
 import SkeletonBlock from "./SkeletonBlock.vue";
+
+/**
+ * A part's share of a whole, in whole percent, never rounded to a claim it isn't: a sliver reads
+ * "<1%" (not "0%", which says it isn't there), and a part that isn't the whole never reads "100%".
+ */
+export function shareText(percent: number, lang: Language): string {
+  if (percent > 0 && percent < 0.5) return `<${formatPercent(1, lang)}`;
+  if (percent < 100 && percent >= 99.5) return `>${formatPercent(99, lang)}`;
+  return formatPercent(percent, lang);
+}
 
 export interface ChartCardContext {
   register: (toPng: ((background: string) => string | null) | null) => void;
