@@ -59,6 +59,7 @@ def test_feature_routers_sit_between_the_state_bound_routers_and_home(dp):
     inside = [name for name in names(member) if name != "feature_inbox_actions"]
 
     assert inside == [
+        "member-app",  # the menu's app buttons answer before a module handles its button's text
         "member_tasks",
         "member_announcements",
         *(f"feature_{area}" for area in AREAS),
