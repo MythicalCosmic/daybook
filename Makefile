@@ -15,7 +15,7 @@ DEV_DB := DB_CONN_MAX_AGE=0
 
 .PHONY: help up down install migrate makemigrations superuser shell messages demo run worker \
 	ai-worker beat stream bot owner-bot app app-build dashboard dashboard-test dashboard-build \
-	api-types owner-schema perms-ts guard pkg-db pkg-env test-app stack stack-down test lint fmt \
+	api-types owner-schema schema-check perms-ts guard pkg-db pkg-env test-app stack stack-down test lint fmt \
 	check prod-up prod-logs prod-manage prod-backup
 
 help: ## Show this help
@@ -103,6 +103,12 @@ api-types: ## Regenerate the mini app's API types from the employee schema
 owner-schema: ## Write the owner schema to dashboard/openapi.owner.yaml (integration)
 	SCHEMA_AUDIENCE=owner $(MANAGE) spectacular --file dashboard/openapi.owner.yaml
 
+# Both schemas, validated; any warning fails (a component name two serializers share, a view
+# without a serializer, an enum named by a hash). core/tests/test_schema.py checks the same.
+schema-check: ## Generate the employee and owner schemas and fail on any warning
+	SCHEMA_AUDIENCE=employee $(MANAGE) spectacular --fail-on-warn --validate --file /dev/null
+	SCHEMA_AUDIENCE=owner $(MANAGE) spectacular --fail-on-warn --validate --file /dev/null
+
 perms-ts: ## Regenerate dashboard/src/core/perms.generated.ts from the Perm registry
 	$(MANAGE) perms_ts
 
@@ -161,7 +167,7 @@ fmt: ## Auto-fix lint and format
 	uv run ruff check --fix .
 	uv run ruff format .
 
-check: lint test ## Lint, Django checks, migrations, type checks, tests [PKG]
+check: lint test schema-check ## Lint, Django checks, migrations, schemas, type checks, tests [PKG]
 	$(PKG_ENV) $(MANAGE) check
 	$(PKG_ENV) $(MANAGE) makemigrations --check --dry-run
 	cd miniapp && npm run typecheck

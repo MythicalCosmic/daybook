@@ -1,18 +1,23 @@
-"""Demo data of the finance ledger: two months of a believable shop's books.
+"""Demo data of the finance ledger (docs/PLAN-OWNER.md §14.3, apps/core/demo_plan.py): two
+months of Demo Dorixona's books and three weeks of the distributor's. Every company and person
+in it is invented.
 
-Demo Shop sells food and household goods in Chilonzor and Yunusobod (Tashkent). The ledger
-starts 62 days ago with opening balances and opening debts, then books every day: cash and
-card sales per branch, goods bought from suppliers (from the bank, in cash or on credit), rent
-(Yunusobod's in dollars), utilities, salaries, turnover tax, marketing, fuel, packaging, a new
-fridge, a bank loan with monthly repayments, an owner's contribution and draws, cash moved to
-the safe and the bank, card settlements with the bank's fee, a dollar purchase with its
-exchange difference, customers buying on credit (nasiya) with partial payments, an instalment
-plan, a write-off, a voided mistake, an entry waiting for approval and receipts with pictures.
-The period before last month is closed by `finish`, once every app's demo has booked its rows.
+Demo Dorixona sells medicines in Chilonzor (about 6 mln so‘m a day) and Yunusobod (12 mln,
+open around the clock). The ledger starts 62 days ago with opening balances and debts. Until the
+tills' weeks begin (`demo_plan.SALES_DAYS` ago, when the sales demo runs) it books each day's
+sales per pharmacy (cash into the pharmacy's till, cards and QR payments into the terminal
+account), takes the cash to the safe and the safe to the bank, and settles the terminal into
+the bank; from then on the sales demo books every shift itself, so no day is counted twice.
+Every working day a distributor delivers medicines: on credit with its own terms (payables due
+on dates the calendar shows) or paid ahead. Rent (Yunusobod's in dollars), salaries (night hours
+paid 1.5 times), utilities, disinfection, the bank loan, the owner's draws, nasiya for three
+regular customers and a clinic, a bad debt, a voided mistake, an entry waiting for approval and
+receipts with pictures fill the rest. `finish`, once every app has booked its rows, settles the
+terminal into the bank for the tills' weeks, pays the month's turnover tax and closes the books
+up to the end of the month before last.
 
-Sales and salaries are tagged with the source `finance.demo` (id = branch or person, key
-`s:<yymmdd>:<cash|card>` / `sal:<yyyymm>`): the sales and payroll demos, which run later and
-book the same things through their own sources, can void these rows for the days they cover.
+Daily sales and salaries carry the source `finance.demo` (id = branch or person, key
+`s:<yymmdd>:<cash|card>` / `sal:<yyyymm>`).
 """
 
 import io
@@ -23,14 +28,46 @@ from decimal import Decimal
 from django.core.files.base import ContentFile
 from django.utils import translation
 
+from apps.core import demo_plan
 from apps.finance import alerts, defaults, queries, services
-from apps.finance.models import Category, Counterparty, ExchangeRate, MoneyAccount, RateSource
+from apps.finance.models import (
+    Category,
+    Counterparty,
+    ExchangeRate,
+    MoneyAccount,
+    RateSource,
+)
 from apps.finance.sources import Source
 
-DAYS = 62
-CHANNELS = {"cash": "naqd", "card": "karta"}
+DAYS = demo_plan.LEDGER_DAYS
 DEMO_SOURCE = "finance.demo"
 D = Decimal
+# Expected sales a day (so‘m) and the share paid in cash (the rest is cards and QR payments).
+DAILY_SALES = {"C": 6_000_000, "Y": 12_000_000}
+CASH_SHARE = 0.40
+CARD_FEE = 0.007  # what the bank keeps of card and QR payments when it settles them
+FLOAT = D("300000")  # the change a till keeps overnight
+# A month's pay (so‘m): pharmacists 4.5-6.5 mln, night pharmacists 6-7.5 mln (their night hours
+# at 1.5 times), heads 10-12 mln, the courier 3.5 mln.
+PAY = {
+    "manager": 10_500_000,
+    "farrux": 10_000_000,
+    "madina": 5_800_000,
+    "sardor": 5_600_000,
+    "malika": 5_500_000,
+    "worker": 4_900_000,
+    "gulnora": 4_800_000,
+    "shahzoda": 4_700_000,
+    "kamola": 4_500_000,
+    "nigora": 7_000_000,
+    "dilshod": 6_800_000,
+    "jasur": 3_500_000,
+    "otabek": 4_500_000,
+    "aziza": 6_000_000,
+    "bobur": 4_600_000,
+}
+NIGHT = ("nigora", "dilshod")
+SMALL_PAY = {"manager": 9_000_000, "worker": 5_000_000, "cashier": 7_000_000, "driver": 4_500_000}
 
 
 def seed(company, people, now) -> None:
@@ -40,10 +77,22 @@ def seed(company, people, now) -> None:
         Ledger(company, people, now).build()
 
 
+def seed_small(company, people, now) -> None:
+    """The distributor's books: three weeks of invoices to pharmacies and clinics, purchases
+    from manufacturers, rent and pay. `people`: owner, manager, worker and cashier."""
+    with translation.override(company.default_language):
+        Distributor(company, people, now).build()
+
+
 def finish(company, people, now) -> None:
-    """Close the books up to the end of the month before last. seed_demo calls this after every
-    app's `seed`: a closed period refuses rows, and the projects and sales demos book (and void)
-    older ones."""
+    """Once every app has booked its rows: settle the card terminal into the bank for the days
+    the tills booked, pay the turnover tax on the sales the ledger now holds, and close the
+    books up to the end of the month before last (a closed period refuses rows, and the
+    projects and sales demos book older ones)."""
+    if company.slug == demo_plan.DISTRIBUTOR:
+        return
+    with translation.override(company.default_language):
+        Ledger(company, people, now).finish()
     today = queries.local_today(company, now)
     first_of_last_month = (today.replace(day=1) - timedelta(days=1)).replace(day=1)
     locked_until = first_of_last_month - timedelta(days=1)
@@ -59,14 +108,19 @@ class Ledger:
     def __init__(self, company, people, now):
         self.company = company
         self.people = people
+        self.story = demo_plan.Plan(company, people, now)
         self.owner = people["owner"]
         self.manager = people["manager"]
         self.today = queries.local_today(company, now)
         self.start = self.today - timedelta(days=DAYS)
+        # The sales demo books the tills' weeks; without it (another module's own test, or
+        # `--only finance`) the ledger books every day's sales itself.
+        self.tills_from = self.today - timedelta(days=demo_plan.SALES_DAYS)
         self.rng = random.Random(911)
-        branches = list(company.branches.order_by("order", "pk"))
-        self.chl = branches[0]
-        self.yns = branches[1] if len(branches) > 1 else branches[0]
+        self.chl, self.yns = self.story.branches["C"], self.story.branches["Y"]
+
+    def books_sales(self, day: date) -> bool:
+        return day < self.tills_from or not self.company.has_feature("sales")
 
     # Setup --------------------------------------------------------------------------------
 
@@ -101,16 +155,16 @@ class Ledger:
         }
         names = {
             "sales": "Savdo",
-            "refunds": "Qaytarilgan tovarlar",
+            "refunds": "Qaytarishlar",
             "cash_surplus": "Kassa ortiqchasi",
             "other_income": "Boshqa daromad",
-            "goods": "Tovar xaridi",
+            "goods": "Dori va tovar xaridi",
             "rent": "Ijara",
             "utilities": "Kommunal to‘lovlar",
             "salaries": "Ish haqi",
             "payroll_taxes": "Ish haqi soliqlari",
             "bank_fees": "Bank xizmatlari",
-            "taxes": "Soliqlar",
+            "taxes": "Soliqlar va yig‘imlar",
             "marketing": "Marketing",
             "transport": "Transport va yetkazish",
             "repairs": "Ta’mirlash",
@@ -120,11 +174,11 @@ class Ledger:
             "other_expense": "Boshqa xarajatlar",
         }
         colors = {
-            "sales": "#5f7a45",
-            "goods": "#c67139",
-            "rent": "#4a6a8a",
+            "sales": "#2e7d6b",
+            "goods": "#4a6a8a",
+            "rent": "#8a5a7a",
             "utilities": "#d1a040",
-            "salaries": "#8a5a7a",
+            "salaries": "#c67139",
             "taxes": "#a66a4f",
             "marketing": "#3f8a83",
             "transport": "#7a8a5e",
@@ -152,49 +206,39 @@ class Ledger:
 
         self.cat = {
             "retail": child("sales", "Chakana savdo"),
-            "wholesale": child("sales", "Ulgurji savdo"),
+            "corporate": child("sales", "Klinika va tashkilotlarga savdo"),
             "delivery_income": child("sales", "Yetkazib berish xizmati"),
-            "drinks": child("goods", "Ichimliklar"),
-            "groceries": child("goods", "Oziq-ovqat"),
-            "chemicals": child("goods", "Maishiy kimyo"),
-            "bread": child("goods", "Non mahsulotlari"),
+            "medicines": child("goods", "Dori vositalari"),
+            "devices": child("goods", "Tibbiy buyumlar"),
+            "vitamins": child("goods", "Vitaminlar va gigiyena"),
             "electricity": child("utilities", "Elektr energiyasi"),
-            "gas": child("utilities", "Gaz"),
             "water": child("utilities", "Suv"),
             "internet": child("utilities", "Internet va aloqa"),
-            "rent_chl": child("rent", f"Ijara — {self.chl.name}"),
-            "rent_yns": child("rent", f"Ijara — {self.yns.name}")
+            "rent_chl": child("rent", f"Ijara: {self.chl.name}"),
+            "rent_yns": child("rent", f"Ijara: {self.yns.name}")
             if self.yns.pk != self.chl.pk
             else None,
-            "instagram": child("marketing", "Instagram reklama"),
-            "banners": child("marketing", "Banner va bosma"),
-            "fuel": child("transport", "Yoqilg‘i"),
-            "turnover_tax": child("taxes", "Aylanmadan soliq"),
+            "ads": child("marketing", "Ijtimoiy tarmoqlarda reklama"),
+            "print": child("marketing", "Narx yorliqlari va bosma"),
+            "fuel": child("transport", "Kuryer yoqilg‘isi"),
+            "turnover_tax": child("taxes", "Aylanmadan olinadigan soliq"),
+            "licences": child("taxes", "Litsenziya va ruxsatnomalar"),
             "salaries": code["salaries"],
             "bank_fees": code["bank_fees"],
             "repairs": code["repairs"],
             "other_income": code["other_income"],
-            "cash_surplus": code["cash_surplus"],
-            "cash_shortage": code["cash_shortage"],
         }
         supplies = services.create_category(
+            self.company, by=by, name="Xo‘jalik xarajatlari", kind=Category.Kind.EXPENSE
+        )
+        self.cat["disinfection"] = services.create_category(
             self.company,
             by=by,
-            name="Xo‘jalik mollari",
-            kind=Category.Kind.EXPENSE,
-            color="#8c857a",
-        )
-        self.cat["packaging"] = services.create_category(
-            self.company, by=by, name="Paket va qadoq", kind=Category.Kind.EXPENSE, parent=supplies
-        )
-        self.cat["cleaning"] = services.create_category(
-            self.company,
-            by=by,
-            name="Tozalash vositalari",
+            name="Dezinfeksiya va tozalash",
             kind=Category.Kind.EXPENSE,
             parent=supplies,
         )
-        equipment = services.create_category(
+        self.cat["equipment"] = services.create_category(
             self.company,
             by=by,
             name="Uskunalar",
@@ -202,7 +246,6 @@ class Ledger:
             is_capex=True,
             color="#4a6a8a",
         )
-        self.cat["equipment"] = equipment
         self.cat["interest"] = services.create_category(
             self.company, by=by, name="Kredit foizlari", kind=Category.Kind.EXPENSE, color="#a8701c"
         )
@@ -213,99 +256,89 @@ class Ledger:
         def party(name, kind, **fields):
             return services.create_counterparty(self.company, by=by, name=name, kind=kind, **fields)
 
-        supplier, customer, state = (
+        supplier, customer, state, other = (
             Counterparty.Kind.SUPPLIER,
             Counterparty.Kind.CUSTOMER,
             Counterparty.Kind.STATE,
+            Counterparty.Kind.OTHER,
         )
+        medicines = self.cat["medicines"]
         self.party = {
-            "cola": party(
-                "Coca-Cola Ichimligi O‘zbekiston",
+            "kokterak": party(
+                "Ko‘kterak Farm Distribyutor",
                 supplier,
-                tin="200857142",
-                phone="+998712007700",
+                phone="+998712004411",
                 contact_person="Azamat Yo‘ldoshev",
-                default_category=self.cat["drinks"],
-                tags=["ichimlik", "har hafta"],
+                default_category=medicines,
+                tags=["distribyutor", "30 kun"],
+                notes="To‘lov muddati yetkazilgandan keyin 30 kun.",
             ),
-            "agromir": party(
-                "Agromir Savdo MChJ",
+            "oqtosh": party(
+                "Oqtosh Med Ta’minot",
                 supplier,
-                tin="305112874",
-                phone="+998909871122",
+                phone="+998712004455",
                 contact_person="Shuhrat Karimov",
-                default_category=self.cat["groceries"],
-                address="Sergeli, Yangi Sergeli 14",
+                default_category=medicines,
+                tags=["distribyutor", "45 kun"],
+                notes="To‘lov muddati 45 kun. Antibiotiklar va gormonlar.",
             ),
-            "bread": party(
-                "Toshkent Non Kombinati",
+            "tolzor": party(
+                "Tolzor Farm Savdo",
                 supplier,
-                tin="201447905",
-                phone="+998712345090",
-                default_category=self.cat["bread"],
+                phone="+998712004477",
+                default_category=self.cat["vitamins"],
+                tags=["distribyutor", "14 kun"],
+                notes="Vitaminlar, gigiyena va tibbiy buyumlar. To‘lov 14 kun ichida.",
             ),
-            "musaffo": party(
-                "Musaffo Kimyo MChJ",
+            "chinorbek": party(
+                "Chinorbek Pharma Logistika",
                 supplier,
-                tin="306998121",
-                phone="+998935556677",
-                default_category=self.cat["chemicals"],
+                phone="+998712004499",
+                default_category=medicines,
+                tags=["distribyutor", "oldindan to‘lov"],
+                notes="Faqat oldindan to‘lov bilan yetkazadi.",
             ),
             "landlord_chl": party(
                 "Rustam Qodirov (ijara)",
-                Counterparty.Kind.OTHER,
+                other,
                 phone="+998901237788",
-                notes="Chilonzor do‘koni egasi. Ijara har oy 5-sanagacha naqd.",
+                notes="Chilonzordagi dorixona binosi egasi. Ijara har oy 3-sanagacha, naqd.",
             ),
             "landlord_yns": party(
-                "Yunusobod Savdo Markazi MChJ",
-                supplier,
-                tin="302556190",
-                notes="Ijara dollarda, har oy boshida.",
+                "Akmal Hasanov (ijara)",
+                other,
+                phone="+998935557744",
+                notes="Yunusoboddagi bino egasi. Ijara dollarda, har oy boshida.",
             ),
-            "electric": party("Hududiy elektr tarmoqlari", state, tin="200011201"),
-            "gas": party("Hududgaz ta’minot", state, tin="200011318"),
-            "internet": party("Uzonline", supplier, tin="203660021", phone="+998712000505"),
-            "tax": party("Davlat soliq qo‘mitasi", state, tin="200100100"),
-            "bank": party(
-                "Kapitalbank", Counterparty.Kind.OTHER, tin="200531224", phone="+998781500000"
+            "electric": party("Elektr ta’minoti", state),
+            "water": party("Suv ta’minoti", state),
+            "internet": party("Internet provayderi", supplier),
+            "tax": party("Soliq inspeksiyasi", state),
+            "sanitary": party(
+                "Dezinfeksiya xizmati", supplier, notes="Har oy dezinfeksiya va deratizatsiya."
             ),
-            "barakat": party(
-                "Barakat Kafe",
+            "bank": party("Bank (aylanma kredit)", other),
+            "clinic": party(
+                "Tonggi Shabnam klinikasi",
                 customer,
-                phone="+998977001234",
-                contact_person="Odil aka",
-                credit_limit=D("15000000"),
-                tags=["ulgurji", "nasiya"],
-                address="Chilonzor 9-kvartal",
-            ),
-            "sardor": party("Sardor Rahimov", customer, phone="+998901114455", tags=["nasiya"]),
-            "gulnora": party("Gulnora Yusupova", customer, phone="+998998887766", tags=["nasiya"]),
-            "ofis": party(
-                "Ofis Plyus MChJ",
-                customer,
-                tin="307441029",
-                phone="+998712223344",
+                phone="+998712226633",
                 contact_person="Malika Ergasheva",
-                tags=["korporativ"],
+                credit_limit=D("15000000"),
+                tags=["klinika", "nasiya"],
+                address="Chilonzor, 9-mavze",
             ),
-            "bogcha": party("Mehribon bog‘chasi", customer, phone="+998951239900"),
-            "javlon": party("Javlon Nurmatov", customer, phone="+998933332211"),
-            "samarqand": party(
-                "Samarqand Delivery", customer, phone="+998662334455", notes="Dollarda hisob-kitob."
-            ),
+            "rahima": party("Rahima Yo‘ldosheva", customer, phone="+998901114455", tags=["nasiya"]),
+            "botir": party("Botir Qosimov", customer, phone="+998998887700", tags=["nasiya"]),
+            "zuhra": party("Zuhra Ahmedova", customer, phone="+998933332211", tags=["nasiya"]),
         }
+        self.suppliers = ["kokterak", "oqtosh", "tolzor", "chinorbek"]
+        self.terms = {"kokterak": 30, "oqtosh": 45, "tolzor": 14, "chinorbek": 0}
 
     def accounts(self) -> None:
         by = self.owner
-        cash = MoneyAccount.objects.filter(
-            company=self.company, kind=MoneyAccount.Kind.CASH
-        ).first()
-        clearing = MoneyAccount.objects.filter(
-            company=self.company, kind=MoneyAccount.Kind.CLEARING
-        ).first()
-        if cash is None:
-            cash = services.create_account(self.company, by=by, kind="cash", name="Kassa")
+        accounts = MoneyAccount.objects.filter(company=self.company)
+        desk = accounts.filter(kind=MoneyAccount.Kind.CASH, branch=None).order_by("pk").first()
+        clearing = accounts.filter(kind=MoneyAccount.Kind.CLEARING).order_by("pk").first()
         if clearing is None:
             clearing = services.create_account(
                 self.company, by=by, kind="clearing", name="Terminal"
@@ -317,71 +350,65 @@ class Ledger:
             )
             return services.update_account(account, by=by, **extra) if extra else account
 
-        self.kassa_chl = services.update_account(
-            cash,
-            by=by,
-            name=f"Kassa — {self.chl.name}",
-            branch=self.chl,
-            color="#c67139",
-            order=0,
-            operators=[self.people["madina"], self.manager],
-        )
+        # A pharmacy's cash is its till's (the sales module makes one per branch); without the
+        # sales module, the company's cash desk becomes Chilonzor's and Yunusobod gets one.
+        self.till = {}
+        for code, branch in (("C", self.chl), ("Y", self.yns)):
+            till = accounts.filter(kind=MoneyAccount.Kind.CASH, branch=branch).order_by("pk")
+            account = till.first()
+            if account is None and desk is not None:
+                account, desk = (
+                    services.update_account(
+                        desk, by=by, name=f"Kassa: {branch.name}", branch=branch
+                    ),
+                    None,
+                )
+            if account is None:
+                account = create("cash", f"Kassa: {branch.name}", branch=branch)
+            self.till[code] = account
+            if self.yns.pk == self.chl.pk:
+                self.till["Y"] = account
+                break
+        if desk is not None and not desk.transactions.exists():
+            desk.delete()  # nothing uses the company's own cash desk: the tills hold the cash
         self.terminal = services.update_account(
-            clearing, by=by, name="Terminal (Uzcard, Humo)", color="#7a8a5e", order=4
-        )
-        self.kassa_yns = (
-            create(
-                "cash",
-                f"Kassa — {self.yns.name}",
-                branch=self.yns,
-                color="#d1a040",
-                order=1,
-                operators=[self.people["jasur"]],
-            )
-            if self.yns.pk != self.chl.pk
-            else self.kassa_chl
+            clearing, by=by, name="Terminal (karta va QR)", color="#7a8a5e", order=4
         )
         # A branch has one safe per currency, and sales' defaults may have made it already.
-        self.safe = services.update_account(
-            services.account_for_branch(self.chl, currency=self.company.base_currency),
-            by=by,
-            name=f"Seyf — {self.chl.name}",
-            color="#8a5a7a",
-            order=2,
-        )
+        self.safe = {}
+        for order, (code, branch) in enumerate((("C", self.chl), ("Y", self.yns))):
+            safe = services.account_for_branch(branch, currency=self.company.base_currency)
+            self.safe[code] = services.update_account(
+                safe, by=by, name=f"Seyf: {branch.name}", color="#8a5a7a", order=2 + order
+            )
         self.bank = create(
             "bank",
-            "Kapitalbank hisob raqami",
-            bank_name="Kapitalbank",
+            "Asosiy bank hisobi",
             number_last4="4417",
             color="#4a6a8a",
-            order=3,
+            order=0,
+            # Allowed below zero only while the demo books: the tills' income arrives after the
+            # expenses of the same days are booked (`finish` turns it off).
+            allow_negative=True,
         )
-        self.card = create(
-            "card",
-            "Humo biznes karta",
-            bank_name="Kapitalbank",
-            number_last4="8812",
-            color="#3f8a83",
-            order=5,
-        )
-        self.wallet = create("wallet", "Payme / Click", color="#a66a4f", order=6)
-        self.dollars = create("safe", "Dollar seyf", currency="USD", color="#5f7a45", order=7)
+        self.card = create("card", "Biznes karta", number_last4="8812", color="#3f8a83", order=5)
+        self.dollars = create("safe", "Dollar seyf", currency="USD", color="#5f7a45", order=6)
         self.petty = services.account_for_holder(self.company, self.manager)
 
     def openings(self) -> None:
         day = self.start
         by = self.owner
-        for account, amount in (
-            (self.kassa_chl, "6200000"),
-            (self.kassa_yns, "4100000"),
-            (self.safe, "38500000"),
-            (self.bank, "214750000"),
-            (self.card, "12300000"),
-            (self.wallet, "3450000"),
-            (self.dollars, "8500"),
-            (self.petty, "500000"),
-        ):
+        opening = {
+            self.till["C"]: str(FLOAT),
+            self.till["Y"]: str(FLOAT),  # the same till when there's one branch: booked once
+            self.safe["C"]: "4500000",
+            self.safe["Y"]: "7800000",
+            self.bank: "168000000",
+            self.card: "3500000",
+            self.dollars: "3000",
+            self.petty: "500000",
+        }
+        for account, amount in opening.items():
             services.record_transaction(
                 self.company,
                 by=by,
@@ -391,39 +418,40 @@ class Ledger:
                 account=account,
                 description="Boshlang‘ich qoldiq",
             )
+        for key, amount, due_in in (("kokterak", "38400000", 18), ("oqtosh", "52700000", 34)):
+            services.open_debt(
+                self.company,
+                by=by,
+                direction="payable",
+                kind="trade",
+                amount=D(amount),
+                currency="UZS",
+                issued_on=day,
+                due_on=day + timedelta(days=due_in),
+                counterparty=self.party[key],
+                is_opening=True,
+                description="Hisob boshlanishidagi nakladnoylar",
+            )
         services.open_debt(
             self.company,
             by=by,
             direction="receivable",
             kind="trade",
-            amount=D("4800000"),
+            amount=D("6500000"),
             currency="UZS",
             issued_on=day,
-            due_on=day + timedelta(days=20),
-            counterparty=self.party["barakat"],
+            due_on=day + timedelta(days=15),
+            counterparty=self.party["clinic"],
             branch=self.chl,
             is_opening=True,
-            description="Avvalgi daftardan nasiya",
-        )
-        self.agromir_opening = services.open_debt(
-            self.company,
-            by=by,
-            direction="payable",
-            kind="trade",
-            amount=D("11200000"),
-            currency="UZS",
-            issued_on=day,
-            due_on=day + timedelta(days=25),
-            counterparty=self.party["agromir"],
-            is_opening=True,
-            description="Ochilish kunidagi qarz",
+            description="Klinikaning avvalgi nasiyasi",
         )
         self.loan = services.open_debt(
             self.company,
             by=by,
             direction="payable",
             kind="loan",
-            amount=D("60000000"),
+            amount=D("80000000"),
             currency="UZS",
             issued_on=day + timedelta(days=3),
             due_on=day + timedelta(days=3 + 365),
@@ -431,20 +459,11 @@ class Ledger:
             account=self.bank,
             description="Aylanma mablag‘ uchun kredit, 12 oy",
         )
-        services.record_transaction(
-            self.company,
-            by=by,
-            kind="owner",
-            amount=D("50000000"),
-            occurred_on=day + timedelta(days=10),
-            account=self.bank,
-            description="Ta’sischi qo‘shimcha mablag‘ kiritdi",
-        )
 
     # A day of business ---------------------------------------------------------------------------
 
-    def balance(self, account) -> Decimal:
-        return queries.balance(account)
+    def balance(self, account, on=None) -> Decimal:
+        return queries.balance(account, on)
 
     def expense(self, day, account, amount, category, *, by=None, **fields):
         amount = D(amount)
@@ -461,242 +480,240 @@ class Ledger:
             **fields,
         )
 
+    def pharmacies(self):
+        rows = [("C", self.chl)]
+        if self.yns.pk != self.chl.pk:
+            rows.append(("Y", self.yns))
+        return rows
+
     def day(self, day: date, offset: int) -> None:
         rng = self.rng
-        weekend = day.weekday() >= 5
-        lift = 1.15 if weekend else 1.0
-        trend = 1 + offset / 400
-        branches = [(self.chl, self.kassa_chl, 8_200_000, 6_100_000)]
-        if self.yns.pk != self.chl.pk:
-            branches.append((self.yns, self.kassa_yns, 6_000_000, 4_900_000))
-        for branch, kassa, cash_mean, card_mean in branches:
-            for channel, account, mean in (
-                ("cash", kassa, cash_mean),
-                ("card", self.terminal, card_mean),
-            ):
-                amount = _round(rng.gauss(mean, mean * 0.16) * lift * trend)
-                services.record_transaction(
-                    self.company,
-                    by=self.people["madina"] if branch.pk == self.chl.pk else self.people["jasur"],
-                    kind="income",
-                    amount=amount,
-                    occurred_on=day,
-                    account=account,
-                    category=self.cat["retail"],
-                    branch=branch,
-                    description=f"Kunlik savdo, {branch.name} ({CHANNELS[channel]})",
-                    source=Source(DEMO_SOURCE, branch.pk, f"s:{day:%y%m%d}:{channel}"),
-                )
-            # Goods: most days a delivery from a supplier.
-            if rng.random() < 0.72:
-                supplier, category = rng.choice(
-                    [
-                        (self.party["cola"], self.cat["drinks"]),
-                        (self.party["agromir"], self.cat["groceries"]),
-                        (self.party["agromir"], self.cat["groceries"]),
-                        (self.party["musaffo"], self.cat["chemicals"]),
-                    ]
-                )
-                amount = _round(rng.uniform(9_000_000, 19_000_000) * trend, 10_000)
-                if rng.random() < 0.22:
-                    services.open_debt(
+        trend = 1 + offset / 500
+        for code, branch in self.pharmacies():
+            mean = DAILY_SALES[code] * trend * (1.06 if day.weekday() == 0 else 1.0)
+            if self.books_sales(day):
+                total = rng.gauss(mean, mean * 0.12)
+                cash = _round(total * CASH_SHARE)
+                card = _round(total * (1 - CASH_SHARE))
+                for channel, account, amount in (
+                    ("cash", self.till[code], cash),
+                    ("card", self.terminal, card),
+                ):
+                    services.record_transaction(
                         self.company,
-                        by=self.manager,
-                        direction="payable",
-                        kind="trade",
+                        by=self.owner,
+                        kind="income",
                         amount=amount,
-                        currency="UZS",
-                        issued_on=day,
-                        due_on=day + timedelta(days=14),
-                        counterparty=supplier,
-                        category=category,
+                        occurred_on=day,
+                        account=account,
+                        category=self.cat["retail"],
                         branch=branch,
-                        description=f"Nakladnaya №{1000 + offset * 3 + branch.pk}",
+                        description=f"Kunlik savdo, {branch.name} "
+                        f"({'naqd' if channel == 'cash' else 'karta va QR'})",
+                        source=Source(DEMO_SOURCE, branch.pk, f"s:{day:%y%m%d}:{channel}"),
                     )
-                else:
-                    self.expense(
-                        day,
-                        self.bank,
-                        amount,
-                        category,
-                        counterparty=supplier,
-                        branch=branch,
-                        description=f"Tovar: nakladnaya №{1000 + offset * 3 + branch.pk}",
-                    )
-            # Bread every morning, in cash.
-            self.expense(
-                day,
-                kassa,
-                _round(rng.uniform(380_000, 620_000)),
-                self.cat["bread"],
-                counterparty=self.party["bread"],
-                branch=branch,
-                by=self.manager,
-                description="Non va bulochkalar",
-            )
-            # Cash to the safe (Chilonzor) or to the bank (the other branch) every few days.
-            if offset % 3 == 0:
-                keep = D("2000000")
-                excess = self.balance(kassa) - keep
-                if excess > 1_000_000:
-                    target = self.safe if branch.pk == self.chl.pk else self.bank
+                # Every other evening (and before the tills' weeks) the cash goes to the
+                # safe; the till keeps its change.
+                last = day + timedelta(days=1) == self.tills_from
+                left = self.balance(self.till[code]) - FLOAT
+                if left > 0 and (offset % 2 == 0 or last):
                     services.transfer(
                         self.company,
                         by=self.manager,
-                        from_account=kassa,
-                        to_account=target,
-                        amount_out=_round(float(excess), 100_000),
+                        from_account=self.till[code],
+                        to_account=self.safe[code],
+                        amount_out=left,
                         occurred_on=day,
-                        description="Inkassatsiya" if target == self.bank else "Kassadan seyfga",
+                        description="Kunlik tushum seyfga",
                     )
-        # Card settlements reach the bank every two days, minus the bank's 1% fee.
-        if offset % 2 == 0:
-            settled = self.balance(self.terminal)
-            if settled > 0:
-                fee = _round(float(settled) * 0.01, 100)
-                services.transfer(
-                    self.company,
-                    by=self.owner,
-                    from_account=self.terminal,
-                    to_account=self.bank,
-                    amount_out=settled - fee,
-                    fee=fee,
-                    occurred_on=day,
-                    description="Terminal tushumi (Uzcard, Humo)",
-                )
-        # The safe goes to the bank once a week.
-        if day.weekday() == 0 and self.balance(self.safe) > 30_000_000:
-            services.transfer(
-                self.company,
-                by=self.manager,
-                from_account=self.safe,
-                to_account=self.bank,
-                amount_out=_round(float(self.balance(self.safe)) - 10_000_000, 1_000_000),
-                occurred_on=day,
-                description="Seyfdan bankka topshirildi",
-            )
+            # A distributor delivers every working day: to Chilonzor on Mondays, Wednesdays
+            # and Fridays, to Yunusobod on the other three.
+            if day.weekday() < 6 and (day.weekday() % 2 == 0) == (code == "C"):
+                self.delivery(day, offset, code, branch, mean)
+        if self.books_sales(day):
+            if day.weekday() == 0:
+                for code, _branch in self.pharmacies():
+                    banked = self.balance(self.safe[code]) - D(1_000_000)
+                    if banked > D(1_000_000):
+                        services.transfer(
+                            self.company,
+                            by=self.manager,
+                            from_account=self.safe[code],
+                            to_account=self.bank,
+                            amount_out=_round(float(banked), 100_000),
+                            occurred_on=day,
+                            description="Inkassatsiya: seyfdan bankka",
+                        )
+            # The bank settles card and QR payments every two days, less its fee.
+            if offset % 2 == 0:
+                settled = self.balance(self.terminal)
+                if settled > 0:
+                    fee = _round(float(settled) * CARD_FEE, 100)
+                    services.transfer(
+                        self.company,
+                        by=self.owner,
+                        from_account=self.terminal,
+                        to_account=self.bank,
+                        amount_out=settled - fee,
+                        fee=fee,
+                        occurred_on=day,
+                        description="Terminal tushumi (karta va QR)",
+                    )
         if day.weekday() in (1, 4):
-            self.expense(
+            self.petty_expense(
                 day,
-                self.petty,
-                _round(rng.uniform(280_000, 520_000)),
+                _round(rng.uniform(150_000, 260_000)),
                 self.cat["fuel"],
-                by=self.people["nigora"],
-                description="Yetkazib berish mashinasiga benzin",
-            ) or self.refill_petty(day)
-        if day.weekday() == 2:
-            self.expense(
-                day,
-                self.kassa_chl,
-                _round(rng.uniform(240_000, 410_000)),
-                self.cat["packaging"],
-                by=self.manager,
-                branch=self.chl,
-                description="Paketlar va qadoq",
+                by=self.people["jasur"],
+                description="Kuryer mashinasiga benzin",
             )
-        if day.weekday() == 5 and rng.random() < 0.6:
-            services.record_transaction(
-                self.company,
-                by=self.owner,
-                kind="income",
-                amount=_round(rng.uniform(180_000, 420_000)),
-                occurred_on=day,
-                account=self.wallet,
-                category=self.cat["delivery_income"],
-                description="Yetkazib berish to‘lovlari (Payme)",
+        if day == self.today - timedelta(days=13):
+            repair = self.petty_expense(
+                day,
+                "380000",
+                self.cat["repairs"],
+                branch=self.chl,
+                by=self.manager,
+                description="Termometr va gigrometrni almashtirish",
+            )
+            self.receipt(
+                repair, "USTAXONA", [("Termometr", "180 000"), ("Gigrometr", "200 000")], "380 000"
+            )
+        if day == self.today - timedelta(days=6):
+            supplies = self.petty_expense(
+                day,
+                "290000",
+                self.cat["disinfection"],
+                branch=self.yns,
+                by=self.manager,
+                description="Dezinfeksiyalovchi vositalar, salfetkalar",
+            )
+            self.receipt(
+                supplies,
+                "XO'JALIK MOLLARI",
+                [("Dezinfeksiyalovchi 5 l", "160 000"), ("Salfetkalar", "130 000")],
+                "290 000",
             )
         self.month_day(day)
+
+    def petty_expense(self, day, amount, category, **fields):
+        """Bekzod pays a small expense from the cash he holds, topped up from the bank first
+        when it runs low."""
+        if self.balance(self.petty) < D(amount) + D(200_000):
+            self.refill_petty(day)
+        return self.expense(day, self.petty, amount, category, **fields)
+
+    def delivery(self, day, offset, code, branch, mean) -> None:
+        """A distributor's delivery: about two days of the pharmacy's sales at cost (70 %)."""
+        rng = self.rng
+        key = self.suppliers[(offset + (0 if code == "C" else 1)) % len(self.suppliers)]
+        category = self.party[key].default_category or self.cat["medicines"]
+        amount = _round(DAILY_SALES[code] * 2.33 * 0.70 * rng.uniform(0.88, 1.12), 10_000)
+        number = f"{key[:2].upper()}-{1000 + offset * 3 + (1 if code == 'Y' else 0)}"
+        if self.terms[key]:
+            services.open_debt(
+                self.company,
+                by=self.manager,
+                direction="payable",
+                kind="trade",
+                amount=amount,
+                currency="UZS",
+                issued_on=day,
+                due_on=day + timedelta(days=self.terms[key]),
+                counterparty=self.party[key],
+                category=category,
+                branch=branch,
+                description=f"Nakladnoy №{number}",
+            )
+        else:  # paid ahead from the bank
+            self.expense(
+                day,
+                self.bank,
+                amount,
+                category,
+                counterparty=self.party[key],
+                branch=branch,
+                description=f"Nakladnoy №{number} (oldindan to‘langan)",
+            )
 
     def refill_petty(self, day) -> None:
         services.transfer(
             self.company,
             by=self.owner,
-            from_account=self.safe,
+            from_account=self.bank,
             to_account=self.petty,
-            amount_out=D("1500000"),
+            amount_out=D("1000000"),
             occurred_on=day,
-            description="Bekzodga xarajatlar uchun naqd",
+            description="Bekzodga mayda xarajatlar uchun naqd",
         )
 
     def month_day(self, day: date) -> None:
         """What happens on fixed days of the month."""
         rng = self.rng
         if day.day == 1:
+            services.transfer(
+                self.company,
+                by=self.owner,
+                from_account=self.bank,
+                to_account=self.card,
+                amount_out=D("2000000"),
+                occurred_on=day,
+                description="Biznes kartani to‘ldirish",
+            )
             services.record_transaction(
                 self.company,
                 by=self.owner,
                 kind="owner",
-                amount=D("-15000000"),
+                amount=D("-12000000"),
                 occurred_on=day,
                 account=self.bank,
-                description="Ta’sischi oylik olgan mablag‘i",
+                description="Ta’sischi olgan mablag‘",
             )
             if self.yns.pk != self.chl.pk:
                 self.expense(
                     day,
                     self.dollars,
-                    "1200",
+                    "1400",
                     self.cat["rent_yns"],
                     counterparty=self.party["landlord_yns"],
                     branch=self.yns,
-                    description=f"{self.yns.name} do‘koni ijarasi, {day:%m.%Y}",
+                    description=f"{self.yns.name} dorixonasi ijarasi, {day:%m.%Y}",
                 )
         if day.day == 3:
             row = self.expense(
                 day,
-                self.safe,
-                "14000000",
+                self.safe["C"],
+                "9000000",
                 self.cat["rent_chl"],
                 counterparty=self.party["landlord_chl"],
                 branch=self.chl,
-                description=f"{self.chl.name} do‘koni ijarasi, {day:%m.%Y}",
+                description=f"{self.chl.name} dorixonasi ijarasi, {day:%m.%Y}",
             )
-            self.receipt(row, "IJARA SHARTNOMASI", [("Oylik ijara", "14 000 000")], "14 000 000")
+            self.receipt(row, "IJARA SHARTNOMASI", [("Oylik ijara", "9 000 000")], "9 000 000")
         if day.day == 5:
-            for key, amount in (
-                ("manager", "7200000"),
-                ("worker", "4300000"),
-                ("madina", "4600000"),
-                ("jasur", "4100000"),
-                ("nigora", "3900000"),
-            ):
-                person = self.people[key]
-                month = (day.replace(day=1) - timedelta(days=1)).strftime("%Y%m")
-                services.record_transaction(
-                    self.company,
-                    by=self.owner,
-                    kind="expense",
-                    amount=D(amount),
-                    occurred_on=day,
-                    account=self.bank,
-                    category=self.cat["salaries"],
-                    membership=person,
-                    branch=person.home_branch,
-                    description=f"Ish haqi, {person}",
-                    source=Source(DEMO_SOURCE, person.pk, f"sal:{month}"),
-                )
+            self.salaries(day)
             if self.loan.status == "open":
                 services.pay_debt(
-                    self.loan, by=self.owner, amount=D("5000000"), paid_on=day, account=self.bank
+                    self.loan, by=self.owner, amount=D("6700000"), paid_on=day, account=self.bank
                 )
                 self.expense(
                     day,
                     self.bank,
-                    "1100000",
+                    "1400000",
                     self.cat["interest"],
                     counterparty=self.party["bank"],
                     description="Kredit foizi",
                 )
         if day.day == 10:
-            for branch, account in ((self.chl, self.kassa_chl), (self.yns, self.kassa_yns)):
+            for code, branch in self.pharmacies():
                 electricity = self.expense(
                     day,
                     self.bank,
-                    _round(rng.uniform(1_900_000, 2_700_000)),
+                    _round(rng.uniform(1_600_000, 2_100_000) * (1.4 if code == "Y" else 1)),
                     self.cat["electricity"],
                     counterparty=self.party["electric"],
                     branch=branch,
-                    description=f"Elektr, {branch.name}",
+                    description=f"Elektr energiyasi, {branch.name}",
                 )
                 self.receipt(
                     electricity,
@@ -707,55 +724,67 @@ class Ledger:
                 self.expense(
                     day,
                     self.bank,
-                    _round(rng.uniform(520_000, 760_000)),
-                    self.cat["gas"],
-                    counterparty=self.party["gas"],
-                    branch=branch,
-                    description=f"Gaz, {branch.name}",
-                )
-                self.expense(
-                    day,
-                    account,
-                    _round(rng.uniform(150_000, 230_000)),
+                    _round(rng.uniform(120_000, 190_000)),
                     self.cat["water"],
+                    counterparty=self.party["water"],
                     branch=branch,
                     description=f"Suv, {branch.name}",
                 )
-                if self.yns.pk == self.chl.pk:
-                    break
             self.expense(
                 day,
                 self.card,
-                "450000",
+                "420000",
                 self.cat["internet"],
                 counterparty=self.party["internet"],
-                description="Internet, ikki do‘kon",
+                description="Internet, ikki dorixona",
             )
         if day.day == 12:
             self.expense(
                 day,
                 self.card,
-                _round(rng.uniform(1_400_000, 2_200_000)),
-                self.cat["instagram"],
-                description="Instagram reklama (aksiya)",
+                _round(rng.uniform(900_000, 1_500_000)),
+                self.cat["ads"],
+                description="Ijtimoiy tarmoqlarda reklama: onlayn buyurtmalar",
             )
-        if day.day == 20:
-            month_start = day.replace(day=1) - timedelta(days=1)
-            month_start = month_start.replace(day=1)
-            sales = queries.totals(
-                self.company, month_start, day.replace(day=1) - timedelta(days=1), branch_ids=None
-            )["income"]
-            if sales > 0:
+        if day.day == 15:
+            for _code, branch in self.pharmacies():
                 self.expense(
                     day,
                     self.bank,
-                    _round(float(sales) * 0.04, 1000),
-                    self.cat["turnover_tax"],
-                    counterparty=self.party["tax"],
-                    description=f"Aylanmadan soliq, {month_start:%m.%Y}",
+                    "450000",
+                    self.cat["disinfection"],
+                    counterparty=self.party["sanitary"],
+                    branch=branch,
+                    description=f"Oylik dezinfeksiya, {branch.name}",
                 )
         if day.day == 28:
             self.expense(day, self.bank, "85000", self.cat["bank_fees"], description="Bank xizmati")
+
+    def salaries(self, day: date) -> None:
+        """Last month's pay for everyone who worked in it (night hours at 1.5 times)."""
+        month_end = day.replace(day=1) - timedelta(days=1)
+        month_start = month_end.replace(day=1)
+        month = month_end.strftime("%Y%m")
+        for key, member in self.story.members().items():
+            amount = PAY.get(key)
+            if amount is None or self.story.joined(key) > month_end:
+                continue
+            if self.story.away(key, month_start) in ("left", "blocked"):
+                continue
+            note = ", tungi soatlar 1,5 baravar" if key in NIGHT else ""
+            services.record_transaction(
+                self.company,
+                by=self.owner,
+                kind="expense",
+                amount=D(amount),
+                occurred_on=day,
+                account=self.bank,
+                category=self.cat["salaries"],
+                membership=member,
+                branch=member.home_branch,
+                description=f"Ish haqi, {member} ({month_end:%m.%Y}{note})",
+                source=Source(DEMO_SOURCE, member.pk, f"sal:{month}"),
+            )
 
     # Debts, one-offs and settings ---------------------------------------------------------------
 
@@ -763,113 +792,66 @@ class Ledger:
         by = self.owner
         today = self.today
 
-        def sold_on_credit(party, amount, ago, due_in, *, currency="UZS", category=None):
+        def on_credit(party, amount, ago, due_in, category=None):
             return services.open_debt(
                 self.company,
                 by=by,
                 direction="receivable",
                 kind="trade",
                 amount=D(amount),
-                currency=currency,
-                issued_on=today - timedelta(days=ago),
-                due_on=today + timedelta(days=due_in),
-                counterparty=self.party[party],
-                category=category or self.cat["wholesale"],
-                branch=self.chl,
-                responsible=self.manager,
-                description="Ulgurji, nasiyaga",
-            )
-
-        barakat = sold_on_credit("barakat", "9600000", 30, 15)
-        services.set_installments(
-            barakat,
-            by=by,
-            rows=[
-                (today - timedelta(days=10), D("3200000")),
-                (today + timedelta(days=5), D("3200000")),
-                (today + timedelta(days=15), D("3200000")),
-            ],
-        )
-        services.pay_debt(
-            barakat,
-            by=by,
-            amount=D("3200000"),
-            paid_on=today - timedelta(days=11),
-            account=self.kassa_chl,
-        )
-        services.pay_debt(
-            barakat,
-            by=by,
-            amount=D("1500000"),
-            paid_on=today - timedelta(days=2),
-            account=self.kassa_chl,
-        )
-        older = sold_on_credit("barakat", "2350000", 26, -12)
-        services.pay_debt(
-            older,
-            by=by,
-            amount=D("850000"),
-            paid_on=today - timedelta(days=15),
-            account=self.kassa_chl,
-        )
-        sold_on_credit("sardor", "1250000", 19, -5, category=self.cat["retail"])
-        sold_on_credit("gulnora", "780000", 9, 3, category=self.cat["retail"])
-        sold_on_credit("ofis", "6400000", 12, 6)
-        bogcha = sold_on_credit("bogcha", "2900000", 40, -20)
-        services.pay_debt(
-            bogcha,
-            by=by,
-            amount=D("2900000"),
-            paid_on=today - timedelta(days=21),
-            account=self.bank,
-        )
-        javlon = sold_on_credit("javlon", "150000", 55, -40, category=self.cat["retail"])
-        services.write_off(
-            javlon, by=by, reason="Mijoz boshqa shaharga ko‘chib ketdi, bog‘lanib bo‘lmayapti"
-        )
-        samarqand = sold_on_credit("samarqand", "650", 16, 9, currency="USD")
-        services.pay_debt(
-            samarqand,
-            by=by,
-            amount=D("250"),
-            paid_on=today - timedelta(days=4),
-            account=self.dollars,
-        )
-
-        def bought_on_credit(party, amount, ago, due_in, category):
-            return services.open_debt(
-                self.company,
-                by=self.manager,
-                direction="payable",
-                kind="trade",
-                amount=D(amount),
                 currency="UZS",
                 issued_on=today - timedelta(days=ago),
                 due_on=today + timedelta(days=due_in),
                 counterparty=self.party[party],
-                category=category,
-                branch=self.yns,
-                description="Tovar nasiyaga olindi",
+                category=category or self.cat["corporate"],
+                branch=self.chl,
+                responsible=self.manager,
+                description="Nasiya",
             )
 
-        bought_on_credit("cola", "18600000", 10, 4, self.cat["drinks"])
-        overdue = bought_on_credit("musaffo", "3100000", 22, -8, self.cat["chemicals"])
-        bought_on_credit("bread", "2200000", 6, 1, self.cat["bread"])
-        services.pay_debt(
-            self.agromir_opening,
+        clinic = on_credit("clinic", "4200000", 26, 4)
+        services.set_installments(
+            clinic,
             by=by,
-            amount=D("6000000"),
-            paid_on=self.start + timedelta(days=12),
+            rows=[
+                (today - timedelta(days=11), D("1400000")),
+                (today + timedelta(days=4), D("1400000")),
+                (today + timedelta(days=19), D("1400000")),
+            ],
+        )
+        services.pay_debt(
+            clinic,
+            by=by,
+            amount=D("1400000"),
+            paid_on=today - timedelta(days=11),
             account=self.bank,
         )
-        # Older payables bought on credit during the window get paid when they fall due.
+        on_credit("rahima", "620000", 17, -3, category=self.cat["retail"])
+        botir = on_credit("botir", "380000", 16, -2, category=self.cat["retail"])
+        services.pay_debt(
+            botir, by=by, amount=D("180000"), paid_on=today - timedelta(days=3), account=self.bank
+        )
+        zuhra = on_credit("zuhra", "240000", 55, -40, category=self.cat["retail"])
+        services.write_off(
+            zuhra, by=by, reason="Mijoz boshqa shaharga ko‘chib ketgan, bog‘lanib bo‘lmayapti"
+        )
+        # Payables fall due on their terms: paid from the bank, except one Tolzor invoice that
+        # is a week overdue (the head is sorting out a short delivery on it).
+        overdue = None
+        late_window = (today - timedelta(days=10), today - timedelta(days=4))
         for debt in queries.open_debts(self.company, direction="payable", kind="trade"):
-            if debt.due_on and debt.due_on < today - timedelta(days=1) and debt.pk != overdue.pk:
-                left = debt.amount - debt.paid
-                if self.balance(self.bank) > left:
-                    services.pay_debt(
-                        debt, by=by, amount=left, paid_on=debt.due_on, account=self.bank
-                    )
+            if debt.due_on is None or debt.due_on >= today:
+                continue
+            if (
+                overdue is None
+                and debt.counterparty_id == self.party["tolzor"].pk
+                and late_window[0] <= debt.due_on <= late_window[1]
+            ):
+                overdue = debt
+                continue
+            services.pay_debt(
+                debt, by=by, amount=debt.amount - debt.paid, paid_on=debt.due_on, account=self.bank
+            )
         services.open_debt(
             self.company,
             by=self.owner,
@@ -879,9 +861,9 @@ class Ledger:
             currency="UZS",
             issued_on=today - timedelta(days=8),
             membership=self.people["worker"],
-            account=self.kassa_chl,
+            account=self.bank,
             branch=self.chl,
-            description="Ish haqi avansi",
+            description="Ish haqi avansi (kartaga)",
         )
 
     def extras(self) -> None:
@@ -890,62 +872,42 @@ class Ledger:
         fridge = self.expense(
             today - timedelta(days=24),
             self.bank,
-            "18500000",
+            "14500000",
             self.cat["equipment"],
             branch=self.yns,
-            description="Ichimliklar uchun yangi muzlatgich (Artel)",
+            description="Yunusobod uchun ikkinchi farmatsevtik muzlatgich (+2…+8 °C)",
             by=self.manager,
         )
         self.receipt(
             fridge,
-            "ARTEL BRAND STORE",
-            [("Muzlatgich Artel HS-430", "17 900 000"), ("Yetkazib berish", "600 000")],
-            "18 500 000",
+            "TIBBIY USKUNALAR DO'KONI",
+            [("Farmatsevtik muzlatgich 400 l", "13 900 000"), ("Yetkazib berish", "600 000")],
+            "14 500 000",
         )
         if fridge is not None:
             alerts.send_large_expense(fridge.pk)
-        repair = self.expense(
-            today - timedelta(days=13),
-            self.kassa_chl,
-            "2400000",
-            self.cat["repairs"],
-            branch=self.chl,
-            by=self.manager,
-            description="Sovutkich kompressorini ta’mirlash",
-        )
-        self.receipt(
-            repair,
-            "SOVUQ SERVIS",
-            [("Kompressor ta'miri", "1 800 000"), ("Freon", "600 000")],
-            "2 400 000",
-        )
-        clean = self.expense(
-            today - timedelta(days=6),
-            self.kassa_yns,
-            "365000",
-            self.cat["cleaning"],
-            branch=self.yns,
-            by=self.people["jasur"],
-            description="Pol yuvish vositalari, latta",
-        )
-        self.receipt(
-            clean,
-            "KORZINKA",
-            [("Fairy 1L", "38 000"), ("Domestos", "45 000"), ("Latta x10", "120 000")],
-            "365 000",
-        )
-        banners = self.expense(
+        tags = self.expense(
             today - timedelta(days=18),
             self.card,
-            "1750000",
-            self.cat["banners"],
-            description="Vitrina uchun banner",
+            "640000",
+            self.cat["print"],
+            description="Narx yorliqlari va «Gripp mavsumi» e’loni",
         )
         self.receipt(
-            banners,
-            "PRINT CITY",
-            [("Banner 3x1 m", "1 250 000"), ("O'rnatish", "500 000")],
-            "1 750 000",
+            tags,
+            "BOSMAXONA",
+            [("Narx yorliqlari, 2000 dona", "440 000"), ("E'lon, A1", "200 000")],
+            "640 000",
+        )
+        services.record_transaction(
+            self.company,
+            by=by,
+            kind="expense",
+            amount=D("1650000"),
+            occurred_on=today - timedelta(days=20),
+            account=self.bank,
+            category=self.cat["licences"],
+            description="GPP sertifikati: kuzatuv tashrifi to‘lovi",
         )
         # A dollar purchase: the bank's rate differs from the Central Bank's.
         quote = queries.valuation(self.company, today - timedelta(days=17)).rate or D("12100")
@@ -954,37 +916,15 @@ class Ledger:
             by=by,
             from_account=self.bank,
             to_account=self.dollars,
-            amount_out=_round(float(quote) * 2000 * 1.006, 1000),
-            amount_in=D("2000"),
+            amount_out=_round(float(quote) * 1500 * 1.006, 1000),
+            amount_in=D("1500"),
             occurred_on=today - timedelta(days=17),
             description="Ijara uchun dollar sotib olindi",
-        )
-        services.record_transaction(
-            self.company,
-            by=self.manager,
-            kind="income",
-            amount=D("64000"),
-            occurred_on=today - timedelta(days=9),
-            account=self.kassa_chl,
-            category=self.cat["cash_surplus"],
-            branch=self.chl,
-            description="Smena oxirida kassa ortiqchasi",
-        )
-        services.record_transaction(
-            self.company,
-            by=self.manager,
-            kind="expense",
-            amount=D("42000"),
-            occurred_on=today - timedelta(days=4),
-            account=self.kassa_yns,
-            category=self.cat["cash_shortage"],
-            branch=self.yns,
-            description="Kassa kamomadi, smena №47",
         )
         mistake = self.expense(
             today - timedelta(days=3),
             self.bank,
-            "1100000",
+            "420000",
             self.cat["internet"],
             counterparty=self.party["internet"],
             description="Internet (ikki marta kiritilgan)",
@@ -995,9 +935,9 @@ class Ledger:
             )
         services.record_transaction(
             self.company,
-            by=self.people["nigora"],
+            by=self.people["jasur"],
             kind="expense",
-            amount=D("450000"),
+            amount=D("240000"),
             occurred_on=today - timedelta(days=1),
             account=self.petty,
             category=self.cat["fuel"],
@@ -1008,22 +948,21 @@ class Ledger:
             self.company,
             by=self.owner,
             kind="income",
-            amount=D("2400000"),
+            amount=D("1800000"),
             occurred_on=today - timedelta(days=7),
             account=self.bank,
             category=self.cat["other_income"],
-            counterparty=self.party["cola"],
-            description="Coca-Cola bonus: reja bajarilgani uchun",
+            counterparty=self.party["kokterak"],
+            description="Ko‘kterak Farm Distribyutor: chorak rejasi bajarilgani uchun bonus",
         )
 
     def settings(self) -> None:
-        by = self.owner
         services.update_settings(
             self.company,
-            by=by,
-            receipt_required_over=D("5000000"),
+            by=self.owner,
+            receipt_required_over=D("3000000"),
             large_expense_alert=D("10000000"),
-            approval_threshold=D("500000"),
+            approval_threshold=D("200000"),
         )
 
     def receipt(self, row, shop: str, lines: list[tuple[str, str]], total: str) -> None:
@@ -1037,6 +976,198 @@ class Ledger:
             ),
             txn=row,
         )
+
+    # After every app's demo ----------------------------------------------------------------
+
+    def finish(self) -> None:
+        self.terminal = MoneyAccount.objects.get(
+            company=self.company, kind=MoneyAccount.Kind.CLEARING, branch=None, currency="UZS"
+        )
+        self.bank = MoneyAccount.objects.get(company=self.company, name="Asosiy bank hisobi")
+        self.cat = {
+            "turnover_tax": Category.objects.get(
+                company=self.company, name="Aylanmadan olinadigan soliq"
+            )
+        }
+        self.party = {
+            "tax": Counterparty.objects.get(company=self.company, name="Soliq inspeksiyasi")
+        }
+        # The tills' weeks: the bank settles what reached the terminal every two days (the
+        # sales module booked each provider's fee with the shift).
+        day = self.tills_from
+        while day < self.today:
+            if (day - self.tills_from).days % 2 == 1:
+                settled = self.balance(self.terminal, day)
+                if settled > 0:
+                    services.transfer(
+                        self.company,
+                        by=self.owner,
+                        from_account=self.terminal,
+                        to_account=self.bank,
+                        amount_out=settled,
+                        occurred_on=day,
+                        description="Terminal tushumi (karta va QR)",
+                    )
+            day += timedelta(days=1)
+        # Turnover tax on the 20th for the month before, now that every sale is booked.
+        day = self.start + timedelta(days=1)
+        while day < self.today:
+            if day.day == 20:
+                month_end = day.replace(day=1) - timedelta(days=1)
+                month_start = month_end.replace(day=1)
+                income = queries.totals(self.company, month_start, month_end, branch_ids=None)[
+                    "income"
+                ]
+                if income > 0:
+                    services.record_transaction(
+                        self.company,
+                        by=self.owner,
+                        kind="expense",
+                        amount=_round(float(income) * 0.04, 1000),
+                        occurred_on=day,
+                        account=self.bank,
+                        category=self.cat["turnover_tax"],
+                        counterparty=self.party["tax"],
+                        description=f"Aylanmadan olinadigan soliq, {month_start:%m.%Y}",
+                    )
+            day += timedelta(days=1)
+        services.update_account(self.bank, by=self.owner, allow_negative=False)
+
+
+class Distributor:
+    """Three weeks of a small pharmaceutical distributor's books."""
+
+    def __init__(self, company, people, now):
+        self.company = company
+        self.people = people
+        self.story = demo_plan.Plan(company, people, now)
+        self.owner = people["owner"]
+        self.today = queries.local_today(company, now)
+        self.start = self.today - timedelta(days=demo_plan.SMALL_DAYS + 9)
+        self.rng = random.Random(912)
+
+    def build(self) -> None:
+        defaults.ensure(self.company)
+        by, company, rng = self.owner, self.company, self.rng
+        code = {c.system_code: c for c in Category.objects.filter(company=company)}
+        services.update_category(code["sales"], by=by, name="Ulgurji savdo")
+        services.update_category(code["goods"], by=by, name="Dori xaridi")
+        accounts = MoneyAccount.objects.filter(company=company)
+        desk = accounts.filter(kind=MoneyAccount.Kind.CASH).order_by("pk").first()
+        if desk is not None:
+            desk = services.update_account(desk, by=by, name="Ombor kassasi")
+        else:
+            desk = services.create_account(company, by=by, kind="cash", name="Ombor kassasi")
+        bank = services.create_account(company, by=by, kind="bank", name="Asosiy bank hisobi")
+        services.update_account(bank, by=by, number_last4="7302")
+
+        def party(name, kind, **fields):
+            return services.create_counterparty(company, by=by, name=name, kind=kind, **fields)
+
+        buyers = [
+            party("Oqqayin Dorixonasi", Counterparty.Kind.CUSTOMER, tags=["dorixona"]),
+            party("Yashilbog‘ Dorixona", Counterparty.Kind.CUSTOMER, tags=["dorixona"]),
+            party("Tonggi Shabnam klinikasi", Counterparty.Kind.CUSTOMER, tags=["klinika"]),
+            party("Bodomgul Dorixonasi", Counterparty.Kind.CUSTOMER, tags=["dorixona"]),
+        ]
+        makers = [
+            party(
+                "Zarbuloq Farmatsevtika", Counterparty.Kind.SUPPLIER, tags=["ishlab chiqaruvchi"]
+            ),
+            party("Qorasuv Med Import", Counterparty.Kind.SUPPLIER, tags=["import"]),
+        ]
+        landlord = party("Sherali Rahmonov (ombor ijarasi)", Counterparty.Kind.OTHER)
+        day = self.start
+        for account, amount in ((bank, "240000000"), (desk, "5000000")):
+            services.record_transaction(
+                company,
+                by=by,
+                kind="opening",
+                amount=D(amount),
+                occurred_on=day,
+                account=account,
+                description="Boshlang‘ich qoldiq",
+            )
+        number = 2210
+        while day < self.today:
+            day += timedelta(days=1)
+            if self.story.holiday(day) or day.weekday() == 6:
+                continue
+            # Invoices to buyers on 14 to 30 days' terms; the older ones paid when due.
+            for buyer in rng.sample(buyers, 2):
+                number += 1
+                amount = _round(rng.uniform(9_000_000, 28_000_000), 10_000)
+                debt = services.open_debt(
+                    company,
+                    by=self.people["cashier"],
+                    direction="receivable",
+                    kind="trade",
+                    amount=amount,
+                    currency="UZS",
+                    issued_on=day,
+                    due_on=day + timedelta(days=rng.choice((14, 21, 30))),
+                    counterparty=buyer,
+                    category=code["sales"],
+                    description=f"Hisob-faktura №{number}",
+                )
+                if debt.due_on < self.today - timedelta(days=2) and rng.random() < 0.8:
+                    services.pay_debt(debt, by=by, amount=amount, paid_on=debt.due_on, account=bank)
+            if day.weekday() in (0, 3):
+                maker = makers[day.toordinal() % 2]
+                services.open_debt(
+                    company,
+                    by=self.people["manager"],
+                    direction="payable",
+                    kind="trade",
+                    amount=_round(rng.uniform(40_000_000, 70_000_000), 100_000),
+                    currency="UZS",
+                    issued_on=day,
+                    due_on=day + timedelta(days=30),
+                    counterparty=maker,
+                    category=code["goods"],
+                    description="Kirim: dori partiyasi",
+                )
+            if day.weekday() == 1:
+                services.record_transaction(
+                    company,
+                    by=self.people["manager"],
+                    kind="expense",
+                    amount=_round(rng.uniform(700_000, 1_100_000)),
+                    occurred_on=day,
+                    account=desk,
+                    category=code["transport"],
+                    description="Yetkazish mashinasiga yoqilg‘i",
+                )
+            if day.day == 2:
+                services.record_transaction(
+                    company,
+                    by=by,
+                    kind="expense",
+                    amount=D("12000000"),
+                    occurred_on=day,
+                    account=bank,
+                    category=code["rent"],
+                    counterparty=landlord,
+                    description=f"Ombor ijarasi, {day:%m.%Y}",
+                )
+            if day.day == 5:
+                month = (day.replace(day=1) - timedelta(days=1)).strftime("%Y%m")
+                for key, member in self.story.members().items():
+                    amount = SMALL_PAY.get(key)
+                    if amount is None:
+                        continue
+                    services.record_transaction(
+                        company,
+                        by=by,
+                        kind="expense",
+                        amount=D(amount),
+                        occurred_on=day,
+                        account=bank,
+                        category=code["salaries"],
+                        membership=member,
+                        description=f"Ish haqi, {member}",
+                        source=Source(DEMO_SOURCE, member.pk, f"sal:{month}"),
+                    )
 
 
 def _receipt_picture(shop: str, day: date, lines: list[tuple[str, str]], total: str) -> bytes:
@@ -1072,7 +1203,7 @@ def _receipt_picture(shop: str, day: date, lines: list[tuple[str, str]], total: 
         draw.text((width - 34, y), total, fill=(20, 18, 16), font=title, anchor="ra")
     draw.text(
         (width / 2, height - 36),
-        "Xaridingiz uchun rahmat!",
+        "Rahmat!",
         fill=(130, 124, 116),
         font=small,
         anchor="mm",

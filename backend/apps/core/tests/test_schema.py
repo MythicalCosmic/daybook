@@ -3,6 +3,7 @@
 import pytest
 from django.core.exceptions import ImproperlyConfigured
 from django.urls import path
+from drf_spectacular.drainage import GENERATOR_STATS
 from drf_spectacular.generators import SchemaGenerator
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
@@ -87,3 +88,58 @@ def test_the_real_api_splits_cleanly(settings):
     assert everything == employee | owner
     # The mini app gets access tokens only; its refresh route is gone.
     assert "/api/v1/auth/refresh/" not in everything
+
+
+def generate(settings, audience: str) -> tuple[dict, list[str]]:
+    """The audience's schema and every warning and error drf-spectacular raised making it."""
+    settings.SCHEMA_AUDIENCE = audience
+    GENERATOR_STATS.reset()
+    try:
+        with GENERATOR_STATS.silence():
+            schema = SchemaGenerator().get_schema(request=None, public=True)
+        return schema, sorted({*GENERATOR_STATS._warn_cache, *GENERATOR_STATS._error_cache})
+    finally:
+        GENERATOR_STATS.reset()
+
+
+@pytest.mark.parametrize("audience", ["employee", "owner"])
+def test_each_schema_generates_without_warnings(settings, audience):
+    """Two serializers sharing a component name, a view without a serializer, an enum named by
+    a hash or a field the generator can't read: each makes a wrong schema, none is allowed.
+    `make schema-check` (part of `make check`) runs the same through `spectacular
+    --fail-on-warn`. Fix a clash with an app-prefixed `Meta.ref_name` ("SalesReason")."""
+    _schema, problems = generate(settings, audience)
+
+    assert problems == []
+
+
+def test_the_mini_app_keeps_its_component_and_enum_names(settings):
+    """`miniapp/src/api/types.ts` and `permissions.ts` read these by name."""
+    schema, _problems = generate(settings, "employee")
+
+    assert {
+        "Me",
+        "Membership",
+        "Position",
+        "Task",
+        "TaskStatusEnum",
+        "ActionsEnum",
+        "Comment",
+        "Activity",
+        "Summary",
+        "ReminderInfo",
+        "Day",
+        "MemberBrief",
+        "LanguageEnum",
+        "RepeatEnum",
+        "ProofEnum",
+        "PeriodEnum",
+        "Score",
+        "TeamRow",
+        "TeamStats",
+        "TimeOff",
+        "TimeOffStatusEnum",
+        "Holiday",
+        "OffToday",
+        "PermissionsEnum",
+    } <= set(schema["components"]["schemas"])

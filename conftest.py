@@ -96,11 +96,11 @@ def owner_api(db):
 # Uzbek names (seed_demo.IN_UZBEK) only after every demo.py has run.
 DEMO_PEOPLE = {
     "owner": ("Dilnoza", "Karimova", "Owner", "Office"),
-    "manager": ("Bekzod", "Mirzayev", "Manager", "Shift lead"),
-    "worker": ("Alisher", "Valiyev", "Employee", "Sales floor"),
-    "madina": ("Madina", "Saidova", "Employee", "Cashier"),
-    "jasur": ("Jasur", "Tursunov", "Employee", "Delivery"),
-    "nigora": ("Nigora", "Azimova", "Employee", "Delivery"),
+    "manager": ("Bekzod", "Mirzayev", "Manager", "Head of pharmacy"),
+    "worker": ("Alisher", "Valiyev", "Employee", "Pharmacist"),
+    "madina": ("Madina", "Saidova", "Employee", "Senior pharmacist"),
+    "jasur": ("Jasur", "Tursunov", "Employee", "Courier"),
+    "nigora": ("Nigora", "Azimova", "Employee", "Pharmacist"),
 }
 
 

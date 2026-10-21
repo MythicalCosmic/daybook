@@ -36,11 +36,17 @@ class PersonRefSerializer(serializers.Serializer):
     photo_url = serializers.CharField(allow_null=True)
     position = serializers.CharField(allow_null=True)
 
+    class Meta:
+        ref_name = "TasksPersonRef"
+
 
 class BranchRefSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     code = serializers.CharField()
+
+    class Meta:
+        ref_name = "TasksBranchRef"
 
 
 class NamedRefSerializer(serializers.Serializer):
@@ -308,6 +314,9 @@ class TaskUpdateSerializer(serializers.Serializer):
 class ReasonSerializer(serializers.Serializer):
     reason = serializers.CharField(max_length=1000)
 
+    class Meta:
+        ref_name = "TasksReason"
+
 
 class ReassignSerializer(serializers.Serializer):
     assignee_id = serializers.IntegerField()
@@ -336,6 +345,9 @@ class BulkSerializer(serializers.Serializer):
     )
     payload = BulkPayloadSerializer(default=dict)
 
+    class Meta:
+        ref_name = "TasksBulk"
+
     def validate(self, attrs):
         payload, action = attrs["payload"], attrs["action"]
         needs = {
@@ -356,6 +368,9 @@ class BulkResultSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     ok = serializers.BooleanField()
     error = serializers.CharField(allow_blank=True)
+
+    class Meta:
+        ref_name = "TasksBulkResult"
 
 
 class BulkResponseSerializer(serializers.Serializer):

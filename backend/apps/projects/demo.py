@@ -1,12 +1,14 @@
-"""Demo data of projects (docs/PLAN-OWNER.md §13.3): four projects with boards, labels,
-milestones, 30 cards each (12 on the finished one), a week and a half of time, updates, links,
-a running timer, and expenses on the ledger for the branch opening and the website.
+"""Demo data of projects (docs/PLAN-OWNER.md §13.3, §14.3): Demo Dorixona's four projects
+with boards, labels, milestones, cards, time on the days people work, updates, links, files, a
+running timer and expenses on the ledger.
 
-- "Chilonzor branch opening" (OPEN): active, at risk (due in 6 days, about half done), budget
-  120 000 000 so‘m with about 86 million spent.
-- "Website relaunch" (WEB): active, on track.
-- "Q4 stock audit" (AUDIT): planning.
-- "Back-to-school promo" (PROMO): completed last month.
+- "Sergeli dorixonasini ochish" (SRG): a third pharmacy; licence, fit-out and the fridge;
+  active and at risk (opening in 6 days, about half done), budget 150 000 000 so‘m.
+- "GPP tekshiruviga tayyorgarlik" (GPP): ready for the GPP surveillance visit in three weeks;
+  active, on track.
+- "IV chorak: to‘liq inventarizatsiya" (INV): both pharmacies counted before the year closes;
+  planning.
+- "Diabet haftaligi" (DIA): a week of free blood sugar checks; completed last month.
 """
 
 from __future__ import annotations
@@ -20,6 +22,7 @@ from zoneinfo import ZoneInfo
 from django.core.files.base import ContentFile
 from django.utils import timezone
 
+from apps.core import demo_plan
 from apps.projects import queries
 from apps.projects.models import (
     Card,
@@ -39,169 +42,171 @@ from apps.tasks.models import ChecklistItem, Proof, Task, TaskComment
 
 TODO, DOING, REVIEW, DONE = "todo", "doing", "review", "done"
 BACKLOG = "backlog"
+URGENT = "Shoshilinch"
+DOCS = "https://disk.demo-dorixona.example"
 
 # (title, person, list, labels, due offset in days, extra)
-OPENING_CARDS = [
-    ("Sign the lease with the landlord", "owner", DONE, ["Legal"], -38, {}),
-    ("Register the branch with the tax office", "owner", DONE, ["Legal"], -33, {}),
-    ("Measure the space and draw the floor plan", "manager", DONE, [], -35, {}),
-    ("Pick the fit-out contractor", "manager", DONE, ["Construction"], -31, {}),
-    ("Order shelving from Mebel Lux", "jasur", DONE, ["Equipment"], -27, {}),
-    ("Dismantle the old partitions", "worker", DONE, ["Construction"], -26, {}),
-    ("Electrical rough-in", "worker", DONE, ["Construction"], -21, {}),
-    ("Order POS terminals (Uzcard, Humo)", "madina", DONE, ["Equipment"], -19, {}),
-    ("Post cashier vacancies on OLX and hh.uz", "nigora", DONE, ["Hiring"], -24, {}),
-    ("Interview cashier candidates", "manager", DONE, ["Hiring"], -14, {}),
-    ("Order the storefront sign from Reklama Pro", "nigora", DONE, ["Marketing"], -16, {}),
-    ("Paint walls and ceiling", "worker", DONE, ["Construction"], -12, {}),
-    ("Install air conditioners", "jasur", DONE, ["Equipment"], -9, {}),
-    ("Fire safety inspection", "manager", DONE, ["Legal", "Urgent"], -6, {}),
-    ("Set up the Uzonline fibre internet", "jasur", DONE, ["Equipment"], -5, {}),
-    ("Design the opening flyers", "nigora", DONE, ["Marketing"], -3, {}),
+SERGELI_CARDS = [
+    ("Ijara shartnomasini imzolash", "owner", DONE, ["Hujjatlar"], -38, {}),
+    ("Litsenziya uchun hujjatlar ro‘yxatini tuzish", "madina", DONE, ["Litsenziya"], -36, {}),
+    ("Binoni o‘lchab, reja chizish", "manager", DONE, [], -35, {}),
+    ("Ta’mir pudratchisini tanlash", "manager", DONE, ["Ta’mir"], -31, {}),
+    ("Dori shkaflari va javonlarga buyurtma berish", "manager", DONE, ["Uskunalar"], -27, {}),
+    ("Eski peshtaxtani olib tashlash", "jasur", DONE, ["Ta’mir"], -26, {}),
+    ("Elektr simlarini yangilash", "manager", DONE, ["Ta’mir"], -21, {}),
+    ("Kassa apparati va terminalga buyurtma", "madina", DONE, ["Uskunalar"], -19, {}),
+    ("Provizor va farmatsevt vakansiyasini e’lon qilish", "owner", DONE, ["Xodimlar"], -24, {}),
+    ("Nomzodlar bilan suhbat", "manager", DONE, ["Xodimlar"], -14, {}),
+    ("Yashil xochli peshlavhaga buyurtma", "nigora", DONE, ["Marketing"], -16, {}),
+    ("Devor va shiftni bo‘yash", "jasur", DONE, ["Ta’mir"], -12, {}),
+    ("Konditsioner o‘rnatish (xona 25 °C dan oshmasin)", "manager", DONE, ["Uskunalar"], -9, {}),
+    ("Yong‘in xavfsizligi tekshiruvi", "manager", DONE, ["Hujjatlar", URGENT], -6, {}),
+    ("Internet va kassa dasturini ulash", "madina", DONE, ["Uskunalar"], -5, {}),
+    ("Ochilish e’lonini tayyorlash", "nigora", DONE, ["Marketing"], -3, {}),
     (
-        "Lay floor tiles in the sales area",
-        "worker",
+        "Pollarga plitka yotqizish",
+        "jasur",
         REVIEW,
-        ["Construction"],
+        ["Ta’mir"],
         1,
         {"proof": Proof.PHOTO, "needs_confirmation": True},
     ),
-    ("Install security cameras", "jasur", REVIEW, ["Equipment"], 2, {"needs_confirmation": True}),
     (
-        "Install shelving and fridges",
-        "jasur",
+        "Kuzatuv kameralarini o‘rnatish",
+        "manager",
+        REVIEW,
+        ["Uskunalar"],
+        2,
+        {"needs_confirmation": True},
+    ),
+    (
+        "Farmatsevtik muzlatgichni o‘rnatish va tekshirish",
+        "madina",
         DOING,
-        ["Equipment"],
+        ["Uskunalar"],
         2,
         {
             "checklist": [
-                ("Shelving, aisles 1–6", True),
-                ("Two drink fridges", True),
-                ("Freezer", False),
+                ("Muzlatgich keldi", True),
+                ("Termometr o‘rnatildi", True),
+                ("24 soatlik sinov: +2…+8 °C", False),
             ]
         },
     ),
-    ("Connect the POS to the 1C database", "madina", DOING, ["Equipment"], 3, {}),
+    ("Litsenziya arizasini topshirish", "owner", DOING, ["Litsenziya", URGENT], -1, {}),
     (
-        "Train new cashiers on the till",
+        "Yangi xodimlarni kassa dasturiga o‘rgatish",
         "madina",
         DOING,
-        ["Hiring"],
+        ["Xodimlar"],
         4,
-        {"checklist": [("Gulnoza", True), ("Sardor", True), ("Shahzoda", False)]},
+        {"checklist": [("Gulnoza", True), ("Sardorbek", True), ("Shahnoza", False)]},
     ),
-    ("Mount the storefront sign", "madina", DOING, ["Marketing", "Urgent"], -1, {}),
-    ("Final electrical check", "worker", DOING, ["Construction"], 2, {}),
-    ("First stock delivery from the warehouse", "jasur", TODO, [], 4, {}),
-    ("Launch the Instagram countdown", "nigora", TODO, ["Marketing"], 3, {}),
-    ("Print price tags", "madina", TODO, [], 5, {}),
-    ("Clean up after the builders", "worker", TODO, ["Construction"], 4, {}),
-    ("Balloons and music for the grand opening", "nigora", BACKLOG, ["Marketing"], 6, {}),
-    ("Invite neighbours with 10% coupons", "nigora", BACKLOG, ["Marketing"], 6, {}),
-    ("Plan opening day shifts", "manager", BACKLOG, ["Hiring"], 5, {}),
+    ("Peshlavhani o‘rnatish", "jasur", DOING, ["Marketing", URGENT], -1, {}),
+    ("Elektr tarmog‘ini yakuniy tekshirish", "manager", DOING, ["Ta’mir"], 2, {}),
+    ("Dori shkaflarini joylashtirish rejasi", "worker", DOING, ["Uskunalar"], 3, {}),
+    ("Distribyutorlardan birinchi kirim", "manager", TODO, [], 4, {}),
+    ("Narx yorliqlarini chop etish", "worker", TODO, [], 5, {}),
+    ("Ustalardan keyin tozalash", "jasur", TODO, ["Ta’mir"], 4, {}),
+    ("Ochilish kuni: bepul qon bosimi o‘lchash", "nigora", BACKLOG, ["Marketing"], 6, {}),
+    ("Qo‘shni uylarga ochilish e’loni", "jasur", BACKLOG, ["Marketing"], 6, {}),
+    ("Birinchi hafta smenalarini rejalash", "manager", BACKLOG, ["Xodimlar"], 5, {}),
 ]
 
-WEBSITE_CARDS = [
-    ("Collect requirements from the managers", "owner", DONE, ["Content"], -30, {}),
-    ("Pick a CMS: Tilda or custom", "owner", DONE, ["Tech"], -28, {}),
-    ("Moodboard and brand colours", "nigora", DONE, ["Design"], -26, {}),
-    ("Homepage design", "nigora", DONE, ["Design"], -22, {}),
-    ("Product page design", "nigora", DONE, ["Design"], -19, {}),
-    ("Renew the demoshop.uz domain", "owner", DONE, ["Tech"], -18, {}),
-    ("Hosting in a Tashkent data centre", "owner", DONE, ["Tech"], -16, {}),
-    ("Photograph the top 50 products", "madina", DONE, ["Content"], -13, {}),
-    ("Write About us in Uzbek and Russian", "nigora", DONE, ["Content", "SEO"], -11, {}),
-    ("Set up Google Analytics", "owner", DONE, ["Tech", "SEO"], -9, {}),
-    ("Design the mobile menu", "nigora", DONE, ["Design"], -7, {}),
-    ("Approve the final design", "owner", DONE, ["Design"], -5, {}),
-    ("Prepare product categories", "madina", DONE, ["Content"], -4, {}),
-    (
-        "Upload the first 200 products",
-        "madina",
-        REVIEW,
-        ["Content"],
-        3,
-        {"needs_confirmation": True},
-    ),
-    (
-        "Translate the catalog to Russian",
-        "nigora",
-        REVIEW,
-        ["Content"],
-        4,
-        {"needs_confirmation": True},
-    ),
-    ("Connect Click payments", "owner", DOING, ["Tech"], 9, {}),
-    ("Connect Payme payments", "owner", DOING, ["Tech"], 10, {}),
-    ("Delivery zones and prices", "manager", DOING, [], 8, {}),
-    ("SEO titles for every category", "nigora", DOING, ["SEO"], 12, {}),
-    ("Photograph the remaining 150 products", "madina", DOING, ["Content"], 14, {}),
-    ("Order notifications to the Telegram group", "owner", TODO, ["Tech"], 18, {}),
-    ("Cookie and privacy page", "nigora", TODO, ["Content"], 20, {}),
-    ("Speed test on a 3G connection", "owner", TODO, ["Tech"], 22, {}),
-    ("Test checkout on iPhone and Android", "madina", TODO, ["Tech"], 24, {}),
-    ("Train staff to handle web orders", "manager", TODO, [], 28, {}),
-    ("Redirects from the old site", "owner", TODO, ["SEO", "Tech"], 30, {}),
-    ("Loyalty points on the site", "owner", BACKLOG, [], 34, {}),
-    ("Blog: a weekly recipe", "nigora", BACKLOG, ["Content", "SEO"], 34, {}),
-    ("Customer reviews widget", "nigora", BACKLOG, ["Design"], 34, {}),
-    ("Wishlist", "owner", BACKLOG, ["Design"], 34, {}),
+GPP_CARDS = [
+    ("Oxirgi tekshiruv dalolatnomasini ko‘rib chiqish", "owner", DONE, ["Hujjatlar"], -30, {}),
+    ("GPP talablari bo‘yicha o‘z-o‘zini tekshirish", "madina", DONE, ["Audit"], -28, {}),
+    ("Termometr va gigrometrlarni kalibrlash", "manager", DONE, ["Saqlash"], -26, {}),
+    ("Harorat jurnallarini yig‘ish (3 oy)", "worker", DONE, ["Saqlash"], -22, {}),
+    ("Muzlatgich termometri hisobotini chiqarish", "nigora", DONE, ["Saqlash"], -20, {}),
+    ("Xodimlar diplom va sertifikatlari nusxalari", "owner", DONE, ["Hujjatlar"], -19, {}),
+    ("Sanitariya jurnalini tartibga solish", "worker", DONE, ["Hujjatlar"], -16, {}),
+    ("Retseptlar jurnalini tekshirish", "madina", DONE, ["Audit"], -13, {}),
+    ("Hisobdan chiqarish dalolatnomalarini yig‘ish", "manager", DONE, ["Hujjatlar"], -11, {}),
+    ("O‘t o‘chirgichlar muddatini tekshirish", "manager", DONE, [], -9, {}),
+    ("Xodimlar uchun GPP treningi", "madina", DONE, ["Audit"], -7, {}),
+    ("Dezinfeksiya shartnomasini yangilash", "owner", DONE, ["Hujjatlar"], -5, {}),
+    ("Omborda qutilarni poldan ko‘tarish (taglik)", "worker", DONE, ["Saqlash"], -4, {}),
+    ("SOP: dori qabul qilish tartibi", "madina", REVIEW, ["SOP"], 3, {"needs_confirmation": True}),
+    ("SOP: sovuq zanjir", "nigora", REVIEW, ["SOP", "Saqlash"], 4, {"needs_confirmation": True}),
+    ("SOP: muddati o‘tgan dorilarni hisobdan chiqarish", "madina", DOING, ["SOP"], 9, {}),
+    ("Kamera yozuvlari 30 kun saqlanishini tekshirish", "manager", DOING, ["Audit"], 10, {}),
+    ("Yunusobod: ikkinchi muzlatgichga termometr", "nigora", DOING, ["Saqlash", URGENT], 8, {}),
+    ("Narx yorliqlarida mas’ul shaxs imzosi", "worker", DOING, [], 12, {}),
+    ("Xodimlarning tibbiy daftarchalari", "owner", DOING, ["Hujjatlar"], 14, {}),
+    ("Ichki audit: Chilonzor", "madina", TODO, ["Audit"], 15, {}),
+    ("Ichki audit: Yunusobod", "nigora", TODO, ["Audit"], 16, {}),
+    ("Tekshiruv uchun hujjatlar papkasi", "owner", TODO, ["Hujjatlar"], 18, {}),
+    ("Majburiy assortiment ro‘yxatini tekshirish", "worker", TODO, ["Audit"], 17, {}),
+    ("Nazoratdagi dorilar kitobini tekshirish", "madina", TODO, ["Audit"], 19, {}),
+    ("Dorixona ichidagi yo‘l ko‘rsatkichlar", "manager", TODO, [], 20, {}),
+    ("Tekshiruvdan keyingi kamchiliklar rejasi", "madina", BACKLOG, ["Audit"], 24, {}),
+    ("Kalibrlash jadvalini kalendarga qo‘shish", "manager", BACKLOG, ["Saqlash"], 25, {}),
+    ("Yangi xodimlar uchun GPP yo‘riqnomasi", "madina", BACKLOG, ["SOP"], 26, {}),
+    ("Mijozlar fikri qutisi", "nigora", BACKLOG, [], 28, {}),
 ]
 
-AUDIT_AREAS = [
-    "aisle 1 (drinks)",
-    "aisle 2 (snacks)",
-    "aisle 3 (dairy)",
-    "aisle 4 (groceries)",
-    "aisle 5 (household)",
-    "aisle 6 (personal care)",
-    "the cold room",
-    "the freezers",
-    "the back store",
-    "cigarettes and the till area",
-    "Yunusobod: front shelves",
-    "Yunusobod: back store",
-    "Yunusobod: freezers",
-    "returns and damaged goods",
+COUNT_AREAS = [
+    "Chilonzor: antibiotiklar",
+    "Chilonzor: og‘riq qoldiruvchi va isitma tushiruvchilar",
+    "Chilonzor: yurak-qon tomir dorilari",
+    "Chilonzor: vitaminlar",
+    "Chilonzor: tibbiy buyumlar",
+    "Chilonzor: muzlatgich",
+    "Chilonzor: retseptli dorilar shkafi",
+    "Yunusobod: antibiotiklar",
+    "Yunusobod: og‘riq qoldiruvchilar",
+    "Yunusobod: nazoratdagi dorilar seyfi",
+    "Yunusobod: muzlatgichlar",
+    "Yunusobod: gigiyena va chaqaloqlar uchun",
+    "Yunusobod: ombor",
+    "muddati o‘tgan va qaytariladigan dorilar",
 ]
 
-PROMO_CARDS = [
-    ("Pick 40 school items for the promo", "owner", ["Marketing"]),
-    ("Negotiate supplier discounts", "manager", ["Marketing"]),
-    ("Design the promo posters", "nigora", ["Design"]),
-    ("Print posters and price toppers", "nigora", ["Design"]),
-    ("Set promo prices in 1C", "madina", []),
-    ("Build the school-bag display", "jasur", []),
-    ("Instagram reels with the kids' corner", "nigora", ["Marketing"]),
-    ("Brief cashiers on the bundle offer", "madina", []),
-    ("Extra stock of notebooks", "jasur", []),
-    ("Count promo results by branch", "manager", []),
-    ("Return unsold stock to suppliers", "jasur", []),
-    ("Write the promo report", "owner", ["Marketing"]),
+DIABETES_CARDS = [
+    ("Bepul qand o‘lchash uchun glyukometr tayyorlash", "madina", ["Tadbir"]),
+    ("Test-chiziqlarga buyurtma", "manager", []),
+    ("Plakat va varaqalar dizayni", "nigora", ["Dizayn"]),
+    ("Plakatlarni chop etish", "nigora", ["Dizayn"]),
+    ("Glyukometr va test-chiziq zaxirasini tekshirish", "worker", []),
+    ("Farmatsevtlarga yo‘riqnoma: maslahat chegaralari", "madina", ["Tadbir"]),
+    ("Ijtimoiy tarmoqlarda e’lon", "nigora", ["Dizayn"]),
+    ("Haftalik o‘lchash jadvali", "manager", ["Tadbir"]),
+    ("Endokrinolog bilan kelishuv (ma’ruza)", "owner", ["Tadbir"]),
+    ("Natijalarni sanash", "worker", []),
+    ("Hisobot: qatnashchilar soni", "owner", []),
+    ("Qolgan test-chiziqlarni omborga qaytarish", "worker", []),
+]
+
+COMMENTS = [
+    "Qalay ketyapti? Mendan biror narsa kerakmi?",
+    "Distribyutor payshanbaga yetkazishni tasdiqladi.",
+    "Tugagach, suratini yuboring.",
+    "Yaxshi, ertaga ertalab tekshiraman.",
+    "Usta yana ikki kun so‘radi.",
 ]
 
 
 def seed(company, people, now) -> None:
+    story = demo_plan.Plan(company, people, now)
     rng = random.Random(911)
     tz = ZoneInfo(company.timezone)
-    today = timezone.localtime(now, tz).date()
-    branches = {branch.name: branch for branch in company.branches.all()}
-    first_branch = company.branches.order_by("order", "pk").first()
-    chilonzor = branches.get("Chilonzor", first_branch)
-    yunusobod = branches.get("Yunusobod", first_branch)
+    today = story.today
     owner, manager = people["owner"], people["manager"]
+    chilonzor, yunusobod = story.branches["C"], story.branches["Y"]
 
-    opening = _project(
+    sergeli = _project(
         company,
         people,
-        name="Chilonzor branch opening",
-        key="OPEN",
+        name="Sergeli dorixonasini ochish",
+        key="SRG",
         color="chart-1",
         icon="store",
         description=(
-            "Our second shop on Bunyodkor street, Chilonzor. Fit-out, equipment, hiring three "
-            "cashiers and a **grand opening** with a 10% coupon for the neighbourhood.\n\n"
-            "- Contractor: Ustalar Group\n- Shelving: Mebel Lux\n- Signage: Reklama Pro"
+            "Uchinchi dorixonamiz: Sergeli, Yangi Sergeli ko‘chasi 18. Litsenziya, ta’mir, "
+            "farmatsevtik muzlatgich, ikki farmatsevt va bitta provizor, ochilish kuni esa "
+            "**bepul qon bosimi o‘lchash**.\n\n- Ta’mir: pudratchi bilan shartnoma\n"
+            "- Shkaflar: mebel ustaxonasi\n- Peshlavha: yashil xoch, kechasi yonadi"
         ),
         status=Project.Status.ACTIVE,
         priority=Project.Priority.HIGH,
@@ -209,135 +214,141 @@ def seed(company, people, now) -> None:
         branch=chilonzor,
         start_on=today - timedelta(days=40),
         due_on=today + timedelta(days=6),
-        budget=Decimal("120000000"),
+        budget=Decimal("150000000"),
         visibility=Project.Visibility.MEMBERS,
         members=["owner", "worker", "madina", "jasur", "nigora"],
         labels=[
-            ("Construction", "chart-2"),
-            ("Equipment", "chart-3"),
-            ("Hiring", "chart-6"),
+            ("Ta’mir", "chart-2"),
+            ("Uskunalar", "chart-3"),
+            ("Xodimlar", "chart-6"),
             ("Marketing", "chart-4"),
-            ("Legal", "chart-5"),
-            ("Urgent", "chart-1"),
+            ("Litsenziya", "chart-5"),
+            ("Hujjatlar", "chart-5"),
+            (URGENT, "chart-1"),
         ],
         milestones=[
-            ("Lease signed", -38, True),
-            ("Fit-out complete", 2, False),
-            ("Staff hired and trained", 4, False),
-            ("Grand opening", 6, False),
+            ("Ijara shartnomasi", -38, True),
+            ("Ta’mir tugadi", 2, False),
+            ("Litsenziya olindi", 4, False),
+            ("Ochilish", 6, False),
         ],
         now=now,
     )
-    _cards(opening, people, OPENING_CARDS, today=today, tz=tz, now=now, rng=rng, start=-42)
-    website = _project(
+    _cards(sergeli, people, SERGELI_CARDS, today=today, tz=tz, now=now, rng=rng, start=-42)
+    gpp = _project(
         company,
         people,
-        name="Website relaunch",
-        key="WEB",
+        name="GPP tekshiruviga tayyorgarlik",
+        key="GPP",
         color="chart-3",
-        icon="globe",
+        icon="shield-check",
         description=(
-            "A new demoshop.uz with the full catalog, Click and Payme payments, delivery across "
-            "Tashkent and order alerts in our Telegram group."
+            "Uch haftadan keyin GPP sertifikati bo‘yicha kuzatuv tashrifi. Saqlash sharoitlari, "
+            "jurnallar, SOPlar va xodimlar hujjatlari tayyor bo‘lishi kerak."
         ),
         status=Project.Status.ACTIVE,
         priority=Project.Priority.NORMAL,
-        lead=owner,
+        lead=people["madina"],
         branch=None,
         start_on=today - timedelta(days=32),
-        due_on=today + timedelta(days=35),
-        budget=Decimal("35000000"),
+        due_on=today + timedelta(days=21),
+        budget=Decimal("12000000"),
         visibility=Project.Visibility.COMPANY,
-        members=["manager", "madina", "nigora"],
+        members=["owner", "manager", "worker", "nigora"],
         labels=[
-            ("Design", "chart-5"),
-            ("Content", "chart-2"),
-            ("Tech", "chart-3"),
-            ("SEO", "chart-6"),
+            ("Saqlash", "chart-2"),
+            ("Hujjatlar", "chart-5"),
+            ("SOP", "chart-3"),
+            ("Audit", "chart-6"),
+            (URGENT, "chart-1"),
         ],
         milestones=[
-            ("Design approved", -5, True),
-            ("Catalog and photos", 12, False),
-            ("Payments live (Click, Payme)", 25, False),
-            ("Launch", 35, False),
+            ("O‘z-o‘zini tekshirish", -28, True),
+            ("SOPlar tayyor", 10, False),
+            ("Ichki audit", 16, False),
+            ("Kuzatuv tashrifi", 21, False),
         ],
         now=now,
     )
-    _cards(website, people, WEBSITE_CARDS, today=today, tz=tz, now=now, rng=rng, start=-32)
-    audit = _project(
+    _cards(gpp, people, GPP_CARDS, today=today, tz=tz, now=now, rng=rng, start=-32)
+    count = _project(
         company,
         people,
-        name="Q4 stock audit",
-        key="AUDIT",
+        name="IV chorak: to‘liq inventarizatsiya",
+        key="INV",
         color="chart-6",
         icon="clipboard-list",
         description=(
-            "Full count of both shops before the year closes, reconciled with 1C and the ledger."
+            "Yil yopilishidan oldin ikkala dorixonani to‘liq sanash, seriya va yaroqlilik "
+            "muddatlari bilan, hisob dasturi va buxgalteriya bilan solishtirish."
         ),
         status=Project.Status.PLANNING,
         priority=Project.Priority.NORMAL,
-        lead=people["jasur"],
+        lead=manager,
         branch=yunusobod,
         start_on=today + timedelta(days=10),
         due_on=today + timedelta(days=45),
-        budget=Decimal("8000000"),
+        budget=Decimal("6000000"),
         visibility=Project.Visibility.MEMBERS,
-        members=["worker", "manager", "madina"],
-        labels=[("Counting", "chart-2"), ("Warehouse", "chart-3"), ("Reconciliation", "chart-4")],
+        members=["worker", "madina", "nigora"],
+        labels=[("Sanash", "chart-2"), ("Ombor", "chart-3"), ("Solishtirish", "chart-4")],
         milestones=[
-            ("Count plan agreed", 9, False),
-            ("Yunusobod counted", 24, False),
-            ("Chilonzor counted", 34, False),
-            ("Reconciled with the ledger", 45, False),
+            ("Sanash rejasi kelishildi", 9, False),
+            ("Yunusobod sanaldi", 24, False),
+            ("Chilonzor sanaldi", 34, False),
+            ("Buxgalteriya bilan solishtirildi", 45, False),
         ],
         now=now,
     )
-    _cards(audit, people, _audit_cards(), today=today, tz=tz, now=now, rng=rng, start=-6)
-    promo = _project(
+    _cards(count, people, _count_cards(), today=today, tz=tz, now=now, rng=rng, start=-6)
+    diabetes = _project(
         company,
         people,
-        name="Back-to-school promo",
-        key="PROMO",
+        name="Diabet haftaligi",
+        key="DIA",
         color="chart-4",
-        icon="backpack",
+        icon="heart-pulse",
         description=(
-            "August–September promo on school goods in both shops. "
-            "Closed with +18% on the category."
+            "Ikkala dorixonada bir hafta bepul qand o‘lchash va endokrinolog ma’ruzasi. "
+            "Yakunlandi: 316 kishi qatnashdi."
         ),
         status=Project.Status.COMPLETED,
         priority=Project.Priority.NORMAL,
         lead=owner,
         branch=None,
-        start_on=today - timedelta(days=75),
+        start_on=today - timedelta(days=50),
         due_on=today - timedelta(days=30),
-        budget=Decimal("15000000"),
+        budget=Decimal("5000000"),
         visibility=Project.Visibility.COMPANY,
-        members=["manager", "madina", "jasur", "nigora"],
-        labels=[("Marketing", "chart-4"), ("Design", "chart-5")],
-        milestones=[("Promo live", -62, True), ("Report", -30, True)],
+        members=["manager", "madina", "worker", "nigora"],
+        labels=[("Tadbir", "chart-4"), ("Dizayn", "chart-5")],
+        milestones=[("Tadbir boshlandi", -37, True), ("Hisobot", -30, True)],
         now=now,
     )
-    promo_cards = [
-        (title, who, DONE, labels, -70 + i * 4, {})
-        for i, (title, who, labels) in enumerate(PROMO_CARDS)
+    diabetes_cards = [
+        (title, who, DONE, labels, -48 + i * 2, {})
+        for i, (title, who, labels) in enumerate(DIABETES_CARDS)
     ]
-    _cards(promo, people, promo_cards, today=today, tz=tz, now=now, rng=rng, start=-74)
-    Project.objects.filter(pk=promo.pk).update(completed_at=now - timedelta(days=30))
+    _cards(diabetes, people, diabetes_cards, today=today, tz=tz, now=now, rng=rng, start=-50)
+    Project.objects.filter(pk=diabetes.pk).update(completed_at=now - timedelta(days=30))
 
-    _updates(opening, website, promo, people, now)
-    _time(company, [opening, website], people, today=today, rng=rng, now=now)
-    _links(opening, website, people)
-    _files(opening, people)
-    _expenses(company, opening, website, promo, owner, today=today)
-    timer_card = Task.objects.filter(project=opening, title="Final electrical check").first()
-    RunningTimer.objects.create(
-        company=company,
-        membership=people["worker"],
-        task=timer_card,
-        project=opening,
-        started_at=now - timedelta(minutes=47),
-    )
-    for project in (opening, website, audit, promo):
+    _updates(sergeli, gpp, diabetes, people, now)
+    _time(company, story, [sergeli, gpp], people, rng=rng)
+    _links(sergeli, gpp, people)
+    _files(sergeli, people, now)
+    _expenses(company, sergeli, gpp, diabetes, owner, today=today)
+    timer_card = Task.objects.filter(project=sergeli, assignee=people["worker"]).first()
+    shift = story.shift("worker", today)
+    if timer_card is not None and shift is not None and shift.starts + timedelta(hours=1) < now:
+        # Alisher is at work and timing his card right now.
+        RunningTimer.objects.create(
+            company=company,
+            membership=people["worker"],
+            task=timer_card,
+            project=sergeli,
+            started_at=max(shift.starts + timedelta(minutes=30), now - timedelta(minutes=47)),
+        )
+    for project in (sergeli, gpp, count, diabetes):
         Project.objects.filter(pk=project.pk).update(
             health=queries.health_of(project, now=now) or ""
         )
@@ -348,14 +359,14 @@ def _project(company, people, *, members, labels, milestones, now, **fields) -> 
         company=company, created_by=people["owner"], budget_currency="UZS", **fields
     )
     Project.objects.filter(pk=project.pk).update(created_at=now - timedelta(days=45))
-    names = ["Backlog", "To do", "In progress", "Review", "Done"]
-    wip = {"In progress": 6, "Review": 3}
+    names = ["Navbatda", "Bajarish kerak", "Jarayonda", "Tekshiruvda", "Tayyor"]
+    wip = {"Jarayonda": 6, "Tekshiruvda": 3}
     for index, name in enumerate(names):
         ProjectList.objects.create(
             project=project,
             name=name,
             position=(index + 1) * 1024,
-            is_done=name == "Done",
+            is_done=name == "Tayyor",
             wip_limit=wip.get(name),
         )
     ProjectMember.objects.create(
@@ -381,38 +392,52 @@ def _project(company, people, *, members, labels, milestones, now, **fields) -> 
     return project
 
 
-def _audit_cards() -> list[tuple]:
+def _count_cards() -> list[tuple]:
     cards = [
-        ("Agree the audit dates with the accountant", "jasur", DONE, ["Reconciliation"], -4, {}),
-        ("Export the stock list from 1C", "madina", DONE, ["Reconciliation"], -2, {}),
-        ("Print count sheets with barcodes", "jasur", DOING, ["Counting"], 6, {}),
-        ("Borrow two scanners from the supplier", "manager", DOING, ["Warehouse"], 8, {}),
-        ("Plan the night shifts for counting", "manager", TODO, ["Counting"], 9, {}),
-        ("Freeze deliveries on count days", "jasur", TODO, ["Warehouse"], 12, {}),
-        ("Brief the counting teams", "jasur", TODO, ["Counting"], 13, {}),
-        ("Label every shelf with its location code", "worker", TODO, ["Warehouse"], 14, {}),
+        ("Sanash sanalarini hisobchi bilan kelishish", "manager", DONE, ["Solishtirish"], -4, {}),
+        (
+            "Hisob dasturidan qoldiqlar ro‘yxatini chiqarish",
+            "madina",
+            DONE,
+            ["Solishtirish"],
+            -2,
+            {},
+        ),
+        ("Shtrix-kodli sanash varaqalarini chop etish", "worker", DOING, ["Sanash"], 6, {}),
+        ("Distribyutordan ikkita skaner so‘rash", "manager", DOING, ["Ombor"], 8, {}),
+        ("Sanash kunlarining smenalarini rejalash", "manager", TODO, ["Sanash"], 9, {}),
+        ("Sanash kunlari kirimni to‘xtatish", "madina", TODO, ["Ombor"], 12, {}),
+        ("Sanash guruhlariga yo‘riqnoma", "madina", TODO, ["Sanash"], 13, {}),
+        ("Har bir javonga joy kodini yopishtirish", "worker", TODO, ["Ombor"], 14, {}),
     ]
-    people = ["worker", "jasur", "madina", "manager"]
-    for index, area in enumerate(AUDIT_AREAS):
+    people = ["worker", "madina", "nigora", "manager"]
+    for index, area in enumerate(COUNT_AREAS):
         cards.append(
             (
-                f"Count {area}",
+                f"Sanash: {area}",
                 people[index % len(people)],
                 BACKLOG if index > 1 else TODO,
-                ["Counting"],
+                ["Sanash"],
                 18 + index,
                 {},
             )
         )
     cards += [
-        ("Recount items with a difference over 2%", "jasur", BACKLOG, ["Counting"], 38, {}),
-        ("Write off expired goods", "manager", BACKLOG, ["Reconciliation"], 40, {}),
-        ("Post differences to the ledger", "madina", BACKLOG, ["Reconciliation"], 42, {}),
-        ("Audit report for Dilnoza", "jasur", BACKLOG, ["Reconciliation"], 44, {}),
-        ("Lessons learned for next year", "jasur", BACKLOG, [], 45, {}),
-        ("Archive the count sheets", "madina", BACKLOG, [], 45, {}),
-        ("Update minimum stock levels", "jasur", BACKLOG, ["Warehouse"], 45, {}),
-        ("Thank-you lunch for the counters", "manager", BACKLOG, [], 45, {}),
+        ("2 % dan ortiq farqli dorilarni qayta sanash", "madina", BACKLOG, ["Sanash"], 38, {}),
+        (
+            "Muddati o‘tgan dorilarni hisobdan chiqarish",
+            "manager",
+            BACKLOG,
+            ["Solishtirish"],
+            40,
+            {},
+        ),
+        ("Farqlarni buxgalteriyaga topshirish", "madina", BACKLOG, ["Solishtirish"], 42, {}),
+        ("Dilnoza uchun inventarizatsiya hisoboti", "manager", BACKLOG, ["Solishtirish"], 44, {}),
+        ("Keyingi yil uchun xulosalar", "manager", BACKLOG, [], 45, {}),
+        ("Sanash varaqalarini arxivlash", "worker", BACKLOG, [], 45, {}),
+        ("Minimal qoldiqlarni yangilash", "madina", BACKLOG, ["Ombor"], 45, {}),
+        ("Sanovchilarga rahmatnoma va mukofot", "manager", BACKLOG, [], 45, {}),
     ]
     return cards
 
@@ -423,14 +448,8 @@ def _due(today: date, offset: int, tz: ZoneInfo, rng: random.Random) -> datetime
 
 
 def _cards(project: Project, people, rows, *, today, tz, now, rng, start: int) -> None:
-    lists = {row.name: row for row in project.lists.all()}
-    by_status = {
-        BACKLOG: lists["Backlog"],
-        TODO: lists["To do"],
-        DOING: lists["In progress"],
-        REVIEW: lists["Review"],
-        DONE: lists["Done"],
-    }
+    lists = list(project.lists.order_by("position"))
+    by_status = dict(zip((BACKLOG, TODO, DOING, REVIEW, DONE), lists, strict=True))
     labels = {label.name: label for label in project.labels.all()}
     milestones = list(project.milestones.order_by("due_on"))
     positions: dict[int, float] = {}
@@ -457,7 +476,7 @@ def _cards(project: Project, people, rows, *, today, tz, now, rng, start: int) -
             created_by=project.lead,
             branch=assignee.home_branch,
             status=status,
-            priority=Task.Priority.HIGH if "Urgent" in label_names else Task.Priority.NORMAL,
+            priority=Task.Priority.HIGH if URGENT in label_names else Task.Priority.NORMAL,
             due_at=due_at,
             proof=extra.get("proof", Proof.NONE),
             needs_confirmation=extra.get("needs_confirmation", False),
@@ -478,7 +497,9 @@ def _cards(project: Project, people, rows, *, today, tz, now, rng, start: int) -
                 completed_at=now - timedelta(hours=rng.randint(1, 20))
             )
         Task.objects.filter(pk=task.pk).update(
-            created_at=created, project_list=project_list, list_position=positions[project_list.pk]
+            created_at=min(created, now),
+            project_list=project_list,
+            list_position=positions[project_list.pk],
         )
         start_on = (due_at - timedelta(days=rng.randint(2, 6))).date()
         Card.objects.update_or_create(
@@ -497,7 +518,12 @@ def _cards(project: Project, people, rows, *, today, tz, now, rng, start: int) -
         if extra.get("proof") == Proof.PHOTO and status in (Task.Status.REVIEW, Task.Status.DONE):
             _proof_photo(task)
         if column in (DOING, REVIEW) and rng.random() < 0.5:
-            TaskComment.objects.create(task=task, author=project.lead, text=rng.choice(COMMENTS))
+            comment = TaskComment.objects.create(
+                task=task, author=project.lead, text=rng.choice(COMMENTS)
+            )
+            TaskComment.objects.filter(pk=comment.pk).update(
+                created_at=min(now - timedelta(hours=1), created + timedelta(days=1))
+            )
 
 
 def _proof_photo(task: Task) -> None:
@@ -512,9 +538,9 @@ def _proof_photo(task: Task) -> None:
     for x in range(0, 800, 120):
         for y in range(0, 600, 120):
             light = int(18 * (1 - y / 600)) + rng.randint(-6, 6)  # brighter towards the window
-            base = (222 + light, 208 + light, 186 + light)
+            base = (226 + light, 228 + light, 224 + light)
             draw.rectangle((x + 4, y + 4, x + 116, y + 116), fill=tuple(min(255, c) for c in base))
-            draw.line((x + 10, y + 12, x + 60, y + 12), fill=(236, 226, 208), width=2)
+            draw.line((x + 10, y + 12, x + 60, y + 12), fill=(240, 242, 238), width=2)
     buffer = io.BytesIO()
     image.save(buffer, format="JPEG")
     clean = uploads.sanitize_image(buffer.getvalue())
@@ -522,62 +548,54 @@ def _proof_photo(task: Task) -> None:
     Task.objects.filter(pk=task.pk).update(proof_photo=task.proof_photo.name)
 
 
-COMMENTS = [
-    "How is it going? Need anything from me?",
-    "Supplier confirmed delivery for Thursday.",
-    "Please send a photo when it's done.",
-    "Ok, I'll check it tomorrow morning.",
-    "Ustalar said two more days.",
-]
-
-
-def _updates(opening, website, promo, people, now) -> None:
+def _updates(sergeli, gpp, diabetes, people, now) -> None:
     rows = [
         (
-            opening,
+            sergeli,
             people["manager"],
             "on_track",
-            "Fit-out started on time. Shelving ordered, contractor on site every day.",
+            "Ta’mir o‘z vaqtida boshlandi. Dori shkaflari buyurtma qilindi, usta har kuni keladi.",
             20,
         ),
         (
-            opening,
+            sergeli,
             people["manager"],
             "on_track",
-            "Electrics and painting done. Air conditioners installed, internet is live.",
+            "Elektr va bo‘yoq ishlari tugadi. Konditsioner o‘rnatildi, internet ulandi.",
             9,
         ),
         (
-            opening,
+            sergeli,
             people["manager"],
             "at_risk",
-            "Floor tiles took three days longer than planned and the sign is still not up. "
-            "Opening on Saturday is possible if the electrical check passes on Thursday.",
+            "Plitka uch kun kechikdi, peshlavha hali o‘rnatilmagan, litsenziya arizasi esa "
+            "topshirilmagan. Shanba kuni ochilish payshanbadagi elektr tekshiruviga bog‘liq.",
             1,
         ),
         (
-            website,
-            people["owner"],
+            gpp,
+            people["madina"],
             "on_track",
-            "Design approved. Photographer booked for the remaining products.",
+            "O‘z-o‘zini tekshirish tugadi: 42 banddan 37 tasi joyida. Qolgani SOP va jurnallar.",
             12,
         ),
         (
-            website,
-            people["owner"],
+            gpp,
+            people["madina"],
             "on_track",
-            "200 products uploaded, Click integration in testing. On track for launch.",
+            "Termometrlar kalibrlandi, harorat jurnallari yig‘ildi. Ikki SOP tekshiruvda.",
             2,
         ),
         (
-            promo,
+            diabetes,
             people["owner"],
             "on_track",
-            "Promo closed: school goods +18% vs last year, 14.2 mln spent of 15 mln.",
+            "Hafta yakunlandi: 316 kishining qandi bepul o‘lchandi, 48 kishi shifokorga "
+            "yo‘naltirildi. 5 mln dan 4,8 mln sarflandi.",
             30,
         ),
     ]
-    tz = ZoneInfo(opening.company.timezone)
+    tz = ZoneInfo(sergeli.company.timezone)
     today = timezone.localtime(now, tz).date()
     for index, (project, author, health, text, days_ago) in enumerate(rows):
         update = ProjectUpdate.objects.create(
@@ -590,11 +608,13 @@ def _updates(opening, website, promo, people, now) -> None:
         ProjectUpdate.objects.filter(pk=update.pk).update(created_at=min(at, now))
 
 
-def _time(company, projects, people, *, today, rng, now) -> None:
+def _time(company, story, projects, people, *, rng) -> None:
+    """Time logged over the last week and a half, on the days each person works."""
+    today = story.today
     start = today - timedelta(days=today.weekday() + 7)  # last week's Monday
     work = {
         projects[0].pk: ["manager", "worker", "jasur", "madina", "nigora"],
-        projects[1].pk: ["owner", "madina", "nigora"],
+        projects[1].pk: ["owner", "madina", "worker", "nigora"],
     }
     tz = ZoneInfo(company.timezone)
     cards = {
@@ -615,95 +635,98 @@ def _time(company, projects, people, *, today, rng, now) -> None:
             return True
         return day <= timezone.localtime(task.completed_at, tz).date()
 
+    entries = []
     day = start
     while day <= today:
-        if day.weekday() < 6:
-            for project in projects:
-                for who in work[project.pk]:
-                    member = people[who]
-                    active = [t for t in cards[project.pk] if worked_on(t, day)]
-                    options = [t for t in active if t.assignee_id == member.pk]
-                    for _ in range(rng.choice((1, 1, 2))):
-                        # Without a card of their own in progress, the time is on the project.
-                        task = rng.choice(options) if options else None
-                        TimeEntry.objects.create(
+        for project in projects:
+            for who in work[project.pk]:
+                if not story.works(who, day):
+                    continue
+                member = people[who]
+                active = [t for t in cards[project.pk] if worked_on(t, day)]
+                options = [t for t in active if t.assignee_id == member.pk]
+                for _ in range(rng.choice((1, 1, 2))):
+                    # Without a card of their own in progress, the time is on the project.
+                    task = rng.choice(options) if options else None
+                    entries.append(
+                        TimeEntry(
                             company=company,
                             membership=member,
                             project=project,
                             task=task,
                             day=day,
-                            minutes=rng.choice((45, 60, 90, 120, 150, 180)),
-                            note=rng.choice(("", "", "On site", "Calls with suppliers", "Testing")),
+                            minutes=rng.choice((30, 45, 60, 90, 120)),
+                            note=rng.choice(("", "", "Obyektda", "Qo‘ng‘iroqlar", "Hujjatlar")),
                             source=rng.choice((TimeEntry.Source.MANUAL, TimeEntry.Source.TIMER)),
                             created_by=member,
                         )
+                    )
         day += timedelta(days=1)
+    TimeEntry.objects.bulk_create(entries)
 
 
-def _links(opening, website, people) -> None:
+def _links(sergeli, gpp, people) -> None:
     for project, title, url, who in (
-        (opening, "Floor plan (Figma)", "https://www.figma.com/file/chilonzor-fit-out", "manager"),
-        (
-            opening,
-            "Lease contract (Google Drive)",
-            "https://drive.google.com/drive/chilonzor-lease",
-            "owner",
-        ),
-        (opening, "Contractor chat", "https://t.me/ustalar_group", "manager"),
-        (website, "Staging site", "https://staging.demoshop.uz", "owner"),
-        (website, "Design system (Figma)", "https://www.figma.com/file/demoshop-web", "nigora"),
+        (sergeli, "Pol rejasi (PDF)", f"{DOCS}/sergeli/pol-rejasi.pdf", "manager"),
+        (sergeli, "Ijara shartnomasi", f"{DOCS}/sergeli/ijara.pdf", "owner"),
+        (sergeli, "Litsenziya arizasi holati", f"{DOCS}/sergeli/litsenziya", "madina"),
+        (gpp, "GPP talablari ro‘yxati", f"{DOCS}/gpp/talablar.pdf", "madina"),
+        (gpp, "Harorat jurnallari (3 oy)", f"{DOCS}/gpp/harorat.xlsx", "worker"),
     ):
         ProjectLink.objects.create(project=project, title=title, url=url, added_by=people[who])
 
 
-def _files(opening, people) -> None:
-    """A storefront mockup picture, drawn here (no files ship with the demo)."""
+def _files(sergeli, people, now) -> None:
+    """A storefront mockup picture, drawn here (no files ship with the demo), and documents."""
     from PIL import Image, ImageDraw
 
     from apps.core import uploads
 
-    image = Image.new("RGB", (960, 600), (247, 243, 236))
+    image = Image.new("RGB", (960, 600), (244, 247, 245))
     draw = ImageDraw.Draw(image)
-    draw.rectangle((80, 120, 880, 520), fill=(255, 255, 255), outline=(168, 90, 39), width=6)
-    draw.rectangle((80, 120, 880, 200), fill=(168, 90, 39))
-    draw.rectangle((180, 260, 420, 520), fill=(241, 235, 225), outline=(95, 122, 69), width=4)
-    draw.rectangle((520, 260, 780, 420), fill=(241, 235, 225), outline=(74, 106, 138), width=4)
+    draw.rectangle((80, 120, 880, 520), fill=(255, 255, 255), outline=(46, 125, 107), width=6)
+    draw.rectangle((80, 120, 880, 200), fill=(46, 125, 107))
+    draw.rectangle((450, 135, 510, 185), fill=(255, 255, 255))  # a green cross
+    draw.rectangle((465, 140, 495, 180), fill=(46, 125, 107))
+    draw.rectangle((455, 150, 505, 170), fill=(46, 125, 107))
+    draw.rectangle((180, 260, 420, 520), fill=(232, 240, 236), outline=(95, 122, 69), width=4)
+    draw.rectangle((520, 260, 780, 420), fill=(232, 240, 236), outline=(74, 106, 138), width=4)
     buffer = io.BytesIO()
     image.save(buffer, format="PNG")
     clean = uploads.accept_document(ContentFile(buffer.getvalue()), allowed=("image",))
-    _file(opening, "Storefront mockup.jpg", clean, "image", people["nigora"], days_ago=17)
-    lease = uploads.accept_document(ContentFile(_pdf("Lease agreement: Bunyodkor 12")))
-    _file(opening, "Lease agreement.pdf", lease, "pdf", people["owner"], days_ago=39)
-    plan = uploads.accept_document(ContentFile(_pdf("Fit-out plan and schedule")))
-    _file(opening, "Fit-out plan.pdf", plan, "pdf", people["manager"], days_ago=33)
-    budget = "Item,Supplier,Amount (UZS)\n" + "\n".join(
-        f"{item},{supplier},{amount}"
-        for item, supplier, amount in (
-            ("Demolition and partitions", "Ustalar Group", 18500000),
-            ("Electrics and plastering", "Ustalar Group", 21400000),
-            ("Shelving and checkout counters", "Mebel Lux", 16800000),
-            ("Fridges and freezer", "Artel", 9600000),
-            ("Storefront sign", "Reklama Pro", 6900000),
-            ("Floor tiles", "Kafel Market", 5600000),
+    _file(sergeli, "Peshlavha maketi.jpg", clean, "image", people["nigora"], now, days_ago=17)
+    lease = uploads.accept_document(ContentFile(_pdf("Ijara shartnomasi: Sergeli")))
+    _file(sergeli, "Ijara shartnomasi.pdf", lease, "pdf", people["owner"], now, days_ago=39)
+    plan = uploads.accept_document(ContentFile(_pdf("Ta'mir rejasi va jadvali")))
+    _file(sergeli, "Ta’mir rejasi.pdf", plan, "pdf", people["manager"], now, days_ago=33)
+    budget = "Xarajat,Kimga,Summa (so‘m)\n" + "\n".join(
+        f"{item},{who},{amount}"
+        for item, who, amount in (
+            ("Ta’mir: buzish va devorlar", "Ta’mir pudratchisi", 19500000),
+            ("Elektr va suvoq", "Ta’mir pudratchisi", 12600000),
+            ("Dori shkaflari va javonlar", "Mebel ustaxonasi", 21400000),
+            ("Farmatsevtik muzlatgich", "Tibbiy uskunalar do‘koni", 13900000),
+            ("Yashil xochli peshlavha", "Reklama ustaxonasi", 5200000),
+            ("Pol plitkasi", "Qurilish mollari do‘koni", 4800000),
         )
     )
     sheet = uploads.accept_document(ContentFile(budget.encode()), allowed=("csv",))
-    _file(opening, "Budget breakdown.csv", sheet, "csv", people["manager"], days_ago=26)
+    _file(sergeli, "Byudjet.csv", sheet, "csv", people["manager"], now, days_ago=26)
 
 
-def _file(project, name, clean, kind, who, *, days_ago: int) -> None:
+def _file(project, name, clean, kind, who, now, *, days_ago: int) -> None:
     row = ProjectFile(project=project, name=name, kind=kind, size=clean.size, uploaded_by=who)
     row.file.save(clean.name, clean, save=False)
     row.save()
     ProjectFile.objects.filter(pk=row.pk).update(
-        created_at=timezone.now() - timedelta(days=days_ago, hours=days_ago % 5)
+        created_at=now - timedelta(days=days_ago, hours=days_ago % 5)
     )
 
 
 def _pdf(title: str) -> bytes:
     """A one-page PDF with a title line (valid enough for any viewer)."""
     text = title.replace("\\", "").replace("(", "").replace(")", "")
-    stream = f"BT /F1 20 Tf 72 760 Td ({text}) Tj ET".encode()
+    stream = f"BT /F1 20 Tf 72 760 Td ({text}) Tj ET".encode("latin-1", "replace")
     objects = [
         b"<< /Type /Catalog /Pages 2 0 R >>",
         b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
@@ -727,52 +750,62 @@ def _pdf(title: str) -> bytes:
     return bytes(out)
 
 
-def _expenses(company, opening, website, promo, owner, *, today: date) -> None:
-    """Fund a project account from the owner, then book the projects' expenses on it."""
+def _expenses(company, sergeli, gpp, diabetes, owner, *, today: date) -> None:
+    """The owner puts money for the new pharmacy into the bank; the projects' expenses are
+    booked on it."""
     from apps.finance import services as finance
     from apps.finance.models import Category, MoneyAccount
 
     if not Category.objects.filter(company=company, system_code="repairs").exists():
         return  # the finance defaults aren't there (finance switched off in this demo)
-    account = MoneyAccount.objects.filter(company=company, name="Kapitalbank · projects").first()
+    account = (
+        MoneyAccount.objects.filter(company=company, kind=MoneyAccount.Kind.BANK, is_active=True)
+        .order_by("order", "pk")
+        .first()
+    )
     if account is None:
-        account = finance.create_account(
-            company, by=owner, kind="bank", name="Kapitalbank · projects"
-        )
+        account = finance.create_account(company, by=owner, kind="bank", name="Asosiy bank hisobi")
+    equipment = (
+        Category.objects.filter(company=company, name="Uskunalar").first() or "other_expense"
+    )
+    licences = (
+        Category.objects.filter(company=company, name="Litsenziya va ruxsatnomalar").first()
+        or "taxes"
+    )
     finance.record_transaction(
         company,
         by=owner,
         kind="owner",
-        amount=Decimal("160000000"),
+        amount=Decimal("150000000"),
         account=account,
-        occurred_on=today - timedelta(days=80),
-        description="Owner funding for the Chilonzor opening, the website and the promo",
+        occurred_on=today - timedelta(days=50),
+        description="Ta’sischi Sergeli dorixonasi va tadbirlar uchun mablag‘ kiritdi",
     )
     rows = [
-        (opening, "repairs", "18500000", -36, "Ustalar Group: demolition and partitions"),
-        (opening, "repairs", "21400000", -25, "Ustalar Group: electrics and plastering"),
-        (opening, "other_expense", "16800000", -24, "Mebel Lux: shelving and checkout counters"),
-        (opening, "other_expense", "9600000", -15, "Two drink fridges and a freezer"),
-        (opening, "other_expense", "4200000", -17, "POS terminals and receipt printers"),
-        (opening, "marketing", "6900000", -14, "Reklama Pro: storefront sign"),
-        (opening, "repairs", "5600000", -8, "Floor tiles and glue"),
-        (opening, "utilities", "1150000", -5, "Uzonline fibre: connection and first month"),
-        (opening, "marketing", "2250000", -3, "Opening flyers, 5 000 pcs"),
-        (website, "other_expense", "6000000", -25, "Web studio: design stage"),
-        (website, "other_expense", "1800000", -16, "Hosting and domain for a year"),
-        (website, "marketing", "3200000", -12, "Product photography, day 1"),
-        (website, "other_expense", "1600000", -6, "Payment gateway setup"),
-        (promo, "marketing", "8400000", -64, "Posters, toppers and the display"),
-        (promo, "marketing", "5800000", -55, "Instagram ads"),
+        (sergeli, "other_expense", "18000000", -37, "Sergeli: ijara depoziti, 2 oy"),
+        (sergeli, "repairs", "19500000", -30, "Ta’mir pudratchisi: buzish va devorlar"),
+        (sergeli, "repairs", "12600000", -22, "Ta’mir pudratchisi: elektr va suvoq"),
+        (sergeli, equipment, "21400000", -24, "Mebel ustaxonasi: dori shkaflari va javonlar"),
+        (sergeli, equipment, "13900000", -11, "Farmatsevtik muzlatgich, +2…+8 °C"),
+        (sergeli, equipment, "4600000", -17, "Kassa apparati va terminal"),
+        (sergeli, "marketing", "5200000", -14, "Yashil xochli peshlavha"),
+        (sergeli, "repairs", "4800000", -8, "Pol plitkasi va yelim"),
+        (sergeli, licences, "3400000", -4, "Litsenziya arizasi: davlat boji"),
+        (gpp, "other_expense", "1200000", -26, "Termometr va gigrometrlarni kalibrlash"),
+        (gpp, equipment, "3800000", -15, "Harorat yozib boradigan qurilma (data logger)"),
+        (gpp, "other_expense", "2500000", -7, "Xodimlar uchun GPP treningi"),
+        (diabetes, "other_expense", "2200000", -47, "Bepul o‘lchash uchun test-chiziqlar"),
+        (diabetes, "marketing", "1100000", -45, "Plakat va varaqalar"),
+        (diabetes, "marketing", "1500000", -42, "Ijtimoiy tarmoqlarda e’lon"),
     ]
-    for project, code, amount, offset, description in rows:
+    for project, category, amount, offset, description in rows:
         finance.record_transaction(
             company,
             by=owner,
             kind="expense",
             amount=Decimal(amount),
             account=account,
-            category=code,
+            category=category,
             occurred_on=today + timedelta(days=offset),
             description=description,
             project=project,

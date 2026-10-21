@@ -20,7 +20,7 @@ def cashier_position(company):
 
 
 @pytest.fixture
-def courier_position(company):
+def cook_position(company):
     return Position.objects.create(company=company, name="Courier")
 
 
@@ -30,5 +30,5 @@ def cashier(company, member, cashier_position):
 
 
 @pytest.fixture
-def courier(company, member, courier_position):
-    return member(company, "Employee", position=courier_position, first_name="Jasur")
+def cook(company, member, cook_position):
+    return member(company, "Employee", position=cook_position, first_name="Jasur")

@@ -90,3 +90,6 @@ class UpdatedSerializer(serializers.Serializer):
 class CountSerializer(serializers.Serializer):
     count = serializers.IntegerField()
     critical = serializers.IntegerField(help_text="How many of the unread ones are critical.")
+
+    class Meta:
+        ref_name = "InboxCount"

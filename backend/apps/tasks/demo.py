@@ -1,82 +1,81 @@
-"""Demo data for the owner console's task pages (docs/PLAN-OWNER.md §2.3 rule 22): routines per
-branch and position with a month of history, onboarding templates, reminder policies with
-Uzbek texts, today's work in every state (waiting for a check with proof photos, sent back,
-late, with rewards), comments, reminder logs and one person who blocked the bot.
+"""Demo data of the task pages (apps/core/demo_plan.py): Demo Dorixona's routines (shift
+handovers, fridge readings twice a day, receiving from distributors, expiry checks, price tags,
+defektura, cleaning, the till) with two months of history on the days each person works,
+onboarding templates, reminder policies with Uzbek texts, today's work in every state (waiting
+for a check with proof photos, sent back, late, with rewards), comments, reminder logs and one
+person who blocked the bot.
 
 `seed(company, people, now)`; `people` has owner, manager, worker, madina, jasur, nigora.
 """
 
 import io
 import random
-from datetime import date, datetime, time, timedelta
+from datetime import datetime, time, timedelta
 from decimal import Decimal
-from zoneinfo import ZoneInfo
 
 from django.core.files.base import ContentFile
-from django.utils import timezone
+from django.db.models import DateTimeField, ExpressionWrapper, F, OuterRef, Subquery
 from PIL import Image, ImageDraw, ImageFilter
 
 from apps.audit import services as audit
 from apps.audit.models import AuditLog
-from apps.core import uploads
-from apps.members.models import Membership, Position
+from apps.core import demo_plan, uploads
+from apps.members.models import Membership
 from apps.reminders.models import ReminderLog, ReminderPolicy, ReminderText
 from apps.tasks.models import Activity, ChecklistItem, Proof, Task, TaskComment, TaskTemplate
 
 HISTORY_DAYS = 60  # two months: the reports compare a month with the one before
+EVERY_DAY = [0, 1, 2, 3, 4, 5, 6]
 PALETTES = [
-    ((242, 236, 224), [(198, 113, 57), (122, 138, 94), (74, 106, 138), (209, 160, 64)]),
-    ((232, 238, 242), [(63, 138, 131), (166, 106, 79), (138, 90, 122), (122, 138, 94)]),
-    ((246, 240, 232), [(209, 160, 64), (198, 113, 57), (74, 106, 138), (63, 138, 131)]),
+    ((240, 244, 242), [(46, 125, 107), (226, 236, 233), (64, 112, 160), (198, 70, 64)]),
+    ((244, 242, 238), [(255, 255, 255), (63, 138, 131), (209, 160, 64), (74, 106, 138)]),
+    ((236, 241, 246), [(250, 250, 250), (90, 150, 110), (210, 90, 80), (70, 110, 170)]),
 ]
+COLD_CHAIN = (
+    "Sovuq zanjir: muzlatgichda +2…+8 °C bo‘lishi kerak. Termometrdagi raqamni yozing; "
+    "chegaradan chiqsa, darhol mudirga xabar bering va dorilarni zaxira muzlatgichga o‘tkazing."
+)
 
 
 def seed(company, people: dict[str, Membership], now: datetime) -> None:
+    story = demo_plan.Plan(company, people, now)
     rng = random.Random(911)
-    tz = ZoneInfo(company.timezone)
-    today = timezone.localtime(now, tz).date()
-    branches = list(company.branches.order_by("order", "pk"))
-    chilonzor = branches[0]
-    yunusobod = branches[1] if len(branches) > 1 else branches[0]
+    today = story.today
     owner, manager = people["owner"], people["manager"]
-    positions = {p.name: p for p in Position.objects.for_company(company)}
-
+    chilonzor, yunusobod = story.branches["C"], story.branches["Y"]
     strict, gentle = _policies(company)
 
-    def position(name: str) -> list[Position]:
-        return [positions[name]] if name in positions else []
+    def members(keys):
+        return [story.member(key) for key in keys if story.member(key) is not None]
 
-    def routine(title, due, *, who=(), roles=(), branch=None, weekdays=None, **fields):
+    def routine(title, due, *, who=(), weekdays=None, **fields):
         template = TaskTemplate.objects.create(
             company=company,
             title=title,
             due_time=due,
-            weekdays=weekdays if weekdays is not None else [0, 1, 2, 3, 4, 5, 6],
+            weekdays=weekdays if weekdays is not None else EVERY_DAY,
             created_by=owner,
-            branch=branch,
             **fields,
         )
-        template.assignees.set(who)
-        template.positions.set([p for name in roles for p in position(name)])
+        template.assignees.set(members(who))
         TaskTemplate.objects.filter(pk=template.pk).update(created_at=now - timedelta(days=90))
         _history(AuditLog.Action.TEMPLATE_CREATED, template, owner, now - timedelta(days=90))
         return template
 
-    def adopt(core_title, fallback, due, *, who=(), english=None, **fields):
-        """The core demo's routine of the same work, made richer (branch, checklist, proof,
-        policy), so the Routines page never lists the same work twice for one person. The core
-        demo writes English, so its routines get the `english` description and checklist.
-        Without the core demo (the `demo_people` fixture) the routine is made as `fallback`."""
+    def adopt(title, due, *, who=(), **fields):
+        """The core demo's routine of the same work, made richer (checklist, proof, policy),
+        so the Routines page never lists the same work twice. Without the core demo (the
+        `demo_people` fixture) the routine is made here."""
         template = TaskTemplate.objects.filter(
-            company=company, title=core_title, personal=False, onboarding=False
+            company=company, title=title, personal=False, onboarding=False
         ).first()
         if template is None:
-            return routine(fallback, due, who=who, **fields)
+            return routine(title, due, who=who, **fields)
         before = audit.snapshot(template)
-        for name, value in (fields | (english or {})).items():
+        for name, value in fields.items():
             setattr(template, name, value)
         template.save()
-        template.assignees.add(*who)
+        template.assignees.add(*members(who))
         TaskTemplate.objects.filter(pk=template.pk).update(created_at=now - timedelta(days=90))
         if changes := audit.diff(before, audit.snapshot(template)):
             _history(
@@ -88,210 +87,336 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
             )
         return template
 
-    opening = adopt(
-        "Opening checklist",
-        "Do‘konni ochish: tekshiruv ro‘yxati",
-        time(8, 30),
-        who=[people["worker"]],
-        branch=chilonzor,
-        proof=Proof.PHOTO,
+    openers = ["worker", "gulnora"]  # Chilonzor, 08:00 to 20:00
+    closers = ["madina", "sardor"]  # Chilonzor, 10:00 to 22:00
+    days = ["shahzoda", "kamola"]  # Yunusobod, 08:00 to 20:00
+    nights = ["nigora", "dilshod"]  # Yunusobod, 20:00 to 08:00
+
+    handover = adopt(
+        demo_plan.HANDOVER,
+        time(8, 15),
+        who=openers + days,
         needs_confirmation=True,
         reminder_policy=strict,
         escalate_to=manager,
         description=(
-            "Chiroqlar, kassa qoldig‘i, vitrina va eshik. Oxirida do‘kon ichidan bitta rasm."
+            "Dorixonani oldingi smenadan qabul qiling: kassa, muzlatgich, retseptli dorilar "
+            "shkafi va navbatchilik jurnali."
         ),
         checklist=[
-            "Chiroqlar va musiqani yoqish",
-            "Kassa boshlang‘ich qoldig‘ini sanash",
-            "Vitrina va eshikni tekshirish",
-            "Pol tozaligini ko‘zdan kechirish",
+            "Kassa qoldig‘ini sanash",
+            "Muzlatgich haroratini tekshirish",
+            "Retseptli dorilar shkafini tekshirish",
+            "Navbatchilik jurnaliga imzo",
         ],
-        english={
-            "description": (
-                "Lights, till float, shop window and door. One photo from inside the shop at "
-                "the end."
-            ),
-            "checklist": [
-                "Lights and music on",
-                "Count the till float",
-                "Check the window and the door",
-                "Floor is clean",
-            ],
-        },
     )
-    closing = routine(
-        "Kassani yopish va Z-hisobot",
-        time(21, 15),
-        who=[people["madina"]],
+    night_handover = routine(
+        "Tungi navbatni qabul qilish",
+        time(20, 15),
+        who=nights,
+        branch=yunusobod,
+        needs_confirmation=True,
+        reminder_policy=strict,
+        description="Kunduzgi farmatsevtdan kassani, muzlatgichni va retseptlar jurnalini oling.",
+        checklist=["Kassa qoldig‘i", "Muzlatgich harorati", "Retseptlar jurnali"],
+    )
+    fridge_morning = adopt(
+        demo_plan.FRIDGE_MORNING,
+        time(9, 0),
+        who=openers + days,
+        proof=Proof.TEXT,
+        reminder_policy=strict,
+        description=COLD_CHAIN,
+    )
+    fridge_evening = adopt(
+        demo_plan.FRIDGE_EVENING,
+        time(20, 30),
+        who=closers + nights,
+        proof=Proof.TEXT,
+        reminder_policy=strict,
+        description=COLD_CHAIN,
+    )
+    cash_report = adopt(
+        demo_plan.CASH_REPORT,
+        time(21, 45),
+        who=closers,
         branch=chilonzor,
         proof=Proof.PHOTO,
         needs_confirmation=True,
         reminder_policy=strict,
-        description="Z-hisobotni chiqarib, terminal cheki bilan birga suratga oling.",
-        checklist=["Z-hisobot", "Terminal yakuniy cheki", "Naqd pulni seyfga qo‘yish"],
+        description="Z-hisobotni chiqaring va terminal sverkasi bilan birga suratga oling.",
+        checklist=["Z-hisobot", "Terminal sverkasi", "Naqd pulni seyfga qo‘yish"],
     )
-    fridge = routine(
-        "Muzlatgich haroratini yozish",
-        time(9, 30),
-        who=[people["worker"], people["madina"]],
-        branch=chilonzor,
+    day_cash = routine(
+        "Kunduzgi kassani topshirish",
+        time(19, 45),
+        who=days,
+        branch=yunusobod,
+        proof=Proof.PHOTO,
+        reminder_policy=strict,
+        description="Kassani sanab, tungi farmatsevtga topshiring. Farqni izohda yozing.",
+    )
+    night_cash = routine(
+        "Tungi kassa tekshiruvi",
+        time(23, 30),
+        who=nights,
+        branch=yunusobod,
         proof=Proof.TEXT,
-        description="Ichimliklar muzlatgichi: +2…+6 °C bo‘lishi kerak. Raqamni yozing.",
+        description="Kassadagi naqd pulni sanang va summani yozing.",
     )
-    delivery = adopt(
-        "Receive the morning delivery",
-        "Ertalabki yukni qabul qilish",
-        time(10, 0),
-        who=[people["jasur"]],
-        branch=yunusobod,
-        proof=Proof.PHOTO,
-        description="Nakladnaya bo‘yicha sanab oling, kamchilik bo‘lsa Bekzodga yozing.",
-        checklist=["Qutilar soni", "Muddatini tekshirish", "Nakladnayaga imzo"],
-        escalate_to=manager,
-        english={
-            "description": "Count it against the waybill; tell Bekzod if anything is short.",
-            "checklist": ["Number of boxes", "Expiry dates", "Sign the waybill"],
-        },
-    )
-    orders = adopt(
-        "Deliver online orders",
-        "Onlayn buyurtmalarni yetkazish",
-        time(13, 0),
-        who=[people["nigora"]],
-        branch=yunusobod,
+    receiving = routine(
+        demo_plan.RECEIVING,
+        time(11, 0),
+        who=["otabek"],
         weekdays=[0, 1, 2, 3, 4, 5],
-        reminder_policy=gentle,
-        description="Payme va Click orqali kelgan buyurtmalar. Mijozga yetkazilgach belgilang.",
-        english={
-            "description": "Orders paid through Payme and Click. Tick it once they're delivered."
-        },
-    )
-    shelves = routine(
-        "Javonlarni to‘ldirish va narx yorliqlari",
-        time(16, 0),
-        who=[people["jasur"], people["nigora"]],
-        branch=yunusobod,
         proof=Proof.PHOTO,
-        checklist=["Ichimliklar", "Shirinliklar", "Kosmetika", "Narx yorliqlari"],
+        escalate_to=manager,
+        description=(
+            "Nakladnoy bo‘yicha sanab oling. Seriya va yaroqlilik muddatini tekshiring; "
+            "muddati 6 oydan kam qolganini qabul qilmang, mudirga yozing."
+        ),
+        checklist=[
+            "Nakladnoy bo‘yicha sanash",
+            "Seriya va yaroqlilik muddati",
+            "Sovuq zanjir dorilari: harorat yorlig‘i",
+            "Nakladnoyga imzo",
+        ],
     )
-    inventory = routine(
-        "Haftalik inventarizatsiya: kosmetika bo‘limi",
-        time(18, 0),
-        who=[people["worker"]],
-        branch=chilonzor,
-        weekdays=[5],
+    expiry = routine(
+        "Muddati yaqin dorilarni tekshirish",
+        time(12, 0),
+        who=["otabek", "malika"],
+        weekdays=[0],
         proof=Proof.ANY,
         needs_confirmation=True,
+        checklist=[
+            "90 kundan kam qolganlarini ajratish",
+            "Ro‘yxatni mudirga yuborish",
+            "Muddati yaqinlarini oldinga qo‘yish",
+        ],
     )
-    routine(
-        "Kechki vitrina yoritilishini tekshirish",
-        time(20, 30),
-        who=[people["madina"]],
-        branch=chilonzor,
-        is_active=False,
+    tags = routine(
+        "Narx yorliqlarini yangilash",
+        time(14, 0),
+        who=[*closers, "malika"],
+        weekdays=[1, 4],
+        proof=Proof.PHOTO,
+        description="Yangi kirimdagi narxlar bo‘yicha. Retseptli dorilar vitrinaga qo‘yilmaydi.",
+    )
+    defektura = routine(
+        "Defektura ro‘yxatini yozish",
+        time(19, 0),
+        who=openers + days,
+        proof=Proof.TEXT,
+        description="Bugun so‘ralgan, lekin dorixonada bo‘lmagan dorilarni yozing.",
+    )
+    cleaning = routine(
+        "Nam tozalash va kvarslash",
+        time(21, 30),
+        who=closers + nights,
+        proof=Proof.PHOTO,
+        checklist=[
+            "Pollarni dezinfeksiyalovchi bilan yuvish",
+            "Peshtaxta va vitrinani artish",
+            "Kvars lampasini 30 daqiqaga yoqish",
+            "Jurnalga yozish",
+        ],
     )
     evening_report = routine(
-        "Kechki savdo hisobotini tekshirish",
+        "Kechki savdo hisobotini ko‘rib chiqish",
         time(21, 30),
-        who=[people["manager"]],
+        who=["manager"],
+        weekdays=[0, 1, 2, 3, 4],
         reminder_policy=gentle,
-        weekdays=[0, 1, 2, 3, 4, 5],
-        description="Ikkala filialning kunlik savdosi va kassa farqini ko‘rib chiqing.",
+        description="Ikkala dorixonaning kunlik savdosi va kassa farqini ko‘rib chiqing.",
     )
-    replies = TaskTemplate.objects.filter(
-        company=company, title="Reply to customer messages", personal=False
-    ).first()
+    orders = adopt(
+        demo_plan.TELEGRAM_ORDERS,
+        time(12, 0),
+        who=openers,
+        branch=chilonzor,
+        description=(
+            "Telegramdagi buyurtmalarga javob bering. Retseptli dori so‘rashsa, retsept bilan "
+            "dorixonaga kelishini ayting: retseptli dorilar yetkazib berilmaydi."
+        ),
+    )
+    deliveries = adopt(
+        demo_plan.DELIVERIES,
+        time(13, 0),
+        who=["jasur"],
+        reminder_policy=gentle,
+        description=(
+            "Click, Payme va Uzum orqali to‘langan buyurtmalar. Sovuq zanjir dorilari faqat "
+            "termosumkada. Mijozga topshirgach belgilang."
+        ),
+    )
+    rx_log = routine(
+        "Retseptlar jurnalini tekshirish",
+        time(16, 0),
+        who=["manager", "farrux"],
+        weekdays=[4],
+        needs_confirmation=False,
+        description="Haftaning retseptlarini jurnal bilan solishtiring.",
+    )
+    routine(
+        "Kassa apparatini haftalik tozalash",
+        time(21, 0),
+        who=["madina"],
+        branch=chilonzor,
+        weekdays=[6],
+        is_active=False,
+    )
 
-    # Onboarding: what every new person (or a new cashier) gets on the first days.
-    for title, days, due, roles, extra in [
+    # Onboarding: what every new person (or a new pharmacist) gets in the first days.
+    pharmacist = story.member("worker").position if story.member("worker") else None
+    for title, days_after, due, positions, extra in [
         (
-            "Xavfsizlik qoidalari bilan tanishish",
+            "Dorixonaning ichki tartibi bilan tanishish",
             1,
             time(12, 0),
-            (),
-            {"checklist": ["Yong‘in chiqishlari", "Birinchi yordam qutisi", "Signalizatsiya kodi"]},
+            [],
+            {"checklist": ["Yong‘in chiqishlari", "Birinchi yordam qutisi", "Signalizatsiya"]},
         ),
-        ("Ish formasi va bejikni olish", 1, time(10, 0), (), {"proof": Proof.PHOTO}),
+        ("Oq xalat va bejikni olish", 1, time(10, 0), [], {"proof": Proof.PHOTO}),
         (
             "Kassa dasturini o‘rganish",
             2,
             time(17, 0),
-            ("Cashier",),
+            [pharmacist] if pharmacist else [],
             {
-                "checklist": ["Sotuvni ochish", "Qaytarish", "Smena yopish"],
+                "checklist": ["Sotuv va to‘lov turlari", "Smenani ochish va yopish", "Z-hisobot"],
                 "needs_confirmation": True,
             },
         ),
-        ("Menejer bilan tanishuv suhbati", 3, time(15, 0), (), {"escalate_to": manager}),
+        ("Mudir bilan tanishuv suhbati", 3, time(15, 0), [], {"escalate_to": manager}),
     ]:
         template = TaskTemplate.objects.create(
             company=company,
             title=title,
             due_time=due,
             onboarding=True,
-            due_after_days=days,
+            due_after_days=days_after,
             created_by=owner,
             **extra,
         )
-        template.positions.set([p for name in roles for p in position(name)])
+        template.positions.set(positions)
 
-    # A month of routine work, so reports, trends and compliance have something to show. It
-    # keeps the core demo's story: Nigora is never late, Jasur is often late but his only
-    # missed tasks are the core demo's two.
-    history = [
-        (opening, people["worker"], 0.86, 0.02),
-        (closing, people["madina"], 0.9, 0.0),
-        (fridge, people["worker"], 0.8, 0.04),
-        (fridge, people["madina"], 0.93, 0.0),
-        (delivery, people["jasur"], 0.62, 0.0),
-        (orders, people["nigora"], 1.0, 0.0),
-        (shelves, people["jasur"], 0.7, 0.0),
-        (shelves, people["nigora"], 1.0, 0.0),
-        (inventory, people["worker"], 0.75, 0.0),
-        (evening_report, manager, 0.88, 0.0),
+    # Two months of routine work, so reports, trends and compliance have something to show:
+    # (routine, person, share on time, share missed in the last three weeks).
+    plan = [
+        (handover, "worker", 0.86, 0.02),
+        (handover, "gulnora", 0.9, 0.0),
+        (handover, "shahzoda", 0.92, 0.0),
+        (handover, "kamola", 0.8, 0.0),
+        (night_handover, "nigora", 0.95, 0.0),
+        (night_handover, "dilshod", 0.9, 0.0),
+        (fridge_morning, "worker", 0.8, 0.04),
+        (fridge_morning, "gulnora", 0.9, 0.0),
+        (fridge_morning, "shahzoda", 0.93, 0.0),
+        (fridge_morning, "kamola", 0.85, 0.03),
+        (fridge_evening, "madina", 0.93, 0.0),
+        (fridge_evening, "sardor", 0.88, 0.0),
+        (fridge_evening, "nigora", 1.0, 0.0),
+        (fridge_evening, "dilshod", 0.9, 0.0),
+        (cash_report, "madina", 0.9, 0.0),
+        (cash_report, "sardor", 0.85, 0.0),
+        (day_cash, "shahzoda", 0.9, 0.0),
+        (day_cash, "kamola", 0.85, 0.0),
+        (night_cash, "nigora", 0.95, 0.0),
+        (night_cash, "dilshod", 0.9, 0.0),
+        (receiving, "otabek", 0.7, 0.0),
+        (expiry, "otabek", 0.8, 0.0),
+        (expiry, "malika", 0.95, 0.0),
+        (tags, "madina", 0.85, 0.0),
+        (tags, "sardor", 0.8, 0.0),
+        (tags, "malika", 0.9, 0.0),
+        (defektura, "worker", 0.82, 0.0),
+        (defektura, "gulnora", 0.88, 0.0),
+        (defektura, "shahzoda", 0.9, 0.0),
+        (defektura, "kamola", 0.8, 0.0),
+        (cleaning, "madina", 0.9, 0.0),
+        (cleaning, "sardor", 0.85, 0.0),
+        (cleaning, "nigora", 0.95, 0.0),
+        (cleaning, "dilshod", 0.9, 0.0),
+        (evening_report, "manager", 0.88, 0.0),
+        (orders, "worker", 0.82, 0.0),
+        (orders, "gulnora", 0.9, 0.0),
+        (deliveries, "jasur", 0.62, 0.0),
+        (rx_log, "manager", 0.9, 0.0),
+        (rx_log, "farrux", 0.95, 0.0),
     ]
-    if replies is not None:  # the core demo's routine: give it a history too
-        history.append((replies, people["worker"], 0.82, 0.0))
-    # Days somebody already has the routine's task (the core demo's own history, some of it
-    # without `for_date`): never a second task for the same person on the same day.
-    taken = {
-        (template_id, assignee_id, for_date or timezone.localtime(due_at, tz).date())
-        for template_id, assignee_id, for_date, due_at in Task.objects.filter(
-            company=company, template__isnull=False
-        ).values_list("template_id", "assignee_id", "for_date", "due_at")
-        if for_date or due_at
-    }
-    for template, person, on_time, missed in history:
+    plan = [row for row in plan if story.member(row[1]) is not None]
+    # Days somebody already has the routine's task (the core demo's own history): never a
+    # second task for the same person on the same day.
+    taken = set(
+        Task.objects.filter(company=company, template__isnull=False).values_list(
+            "template_id", "assignee_id", "for_date"
+        )
+    )
+    rows, logs = [], []
+    for template, key, on_time, missed in plan:
+        member = story.member(key)
         for days_ago in range(HISTORY_DAYS, 0, -1):
             day = today - timedelta(days=days_ago)
-            if not template.is_due_on(day) or (template.pk, person.pk, day) in taken:
+            if not template.is_due_on(day) or not story.works(key, day):
+                continue
+            if (template.pk, member.pk, day) in taken:
                 continue
             # Misses only in the last three weeks: older open routine work would read as a
             # neglected list rather than a team's recent slips.
             chance = missed if days_ago <= 21 else 0.0
-            _history_task(company, template, person, day, tz, rng, on_time, chance)
+            task, steps = _history_task(company, story, template, member, day, rng, on_time, chance)
+            rows.append(task)
+            logs.extend((task, step) for step in steps)
+    Task.objects.bulk_create(rows)
+    # Made the evening before, like daily generation does.
+    Task.objects.filter(pk__in=[task.pk for task in rows]).update(
+        created_at=F("due_at") - timedelta(hours=8)
+    )
+    _bulk_logs(logs)
+    # The last two days keep their proof photos, so the photo wall has something to page back to.
+    for task in rows:
+        if (
+            task.completed_at
+            and task.proof == Proof.PHOTO
+            and (today - task.for_date).days <= 1
+            and rng.random() < 0.6
+        ):
+            _photo(task, SCENES.get(task.title, "shelf"), rng)
 
-    # Today: routine tasks in every state, made at midnight like daily generation. The core
-    # demo may already have given someone today's task of a routine: theirs stays.
-    start_of_day = datetime.combine(today, time(0, 5), tzinfo=tz)
+    _today(company, story, plan, now, rng)
+    _given(company, story, people, now, rng, strict)
 
-    def earlier_today(**delta) -> datetime:
-        """A deadline that has passed, but today: late work stays today's (yesterday's numbers
-        are history, and the core demo's 14-day story counts only its own misses)."""
-        return max(now - timedelta(**delta), min(start_of_day, now))
 
-    def today_task(template, person, **fields):
-        already = Task.objects.filter(
-            company=company,
-            template=template,
-            assignee=person,
-            due_at__gte=start_of_day - timedelta(minutes=5),
-            due_at__lt=start_of_day + timedelta(days=1),
-        ).first()
-        if already is not None:
-            return already
-        due = datetime.combine(today, template.due_time, tzinfo=tz)
+# Today -------------------------------------------------------------------------------------
+
+
+def _today(company, story, plan, now, rng) -> None:
+    """Today's routine tasks of the people working today, made at midnight like daily
+    generation: done by now when their time has passed, except Alisher's morning fridge reading
+    and the courier's deliveries, which run late. The core demo's own tasks stay as they are."""
+    today = story.today
+    start_of_day = min(now - timedelta(minutes=10), story.at(today, time(0, 5)))
+    for template, key, _on_time, _missed in plan:
+        member = story.member(key)
+        if not template.is_due_on(today) or not story.works(key, today):
+            continue
+        if Task.objects.filter(template=template, assignee=member, for_date=today).exists():
+            continue
+        due = story.at(today, template.due_time)
+        status, completed, fields = Task.Status.TODO, None, {}
+        late = (template.title, key) in (
+            (demo_plan.FRIDGE_MORNING, "worker"),
+            (demo_plan.DELIVERIES, "jasur"),
+        )
+        if due < now and late:
+            fields = {"reminders_sent": 3, "escalated_at": due + timedelta(minutes=50)}
+            if fields["escalated_at"] > now:
+                fields = {"reminders_sent": 1}
+        elif due < now:
+            completed = due - timedelta(minutes=rng.randint(4, 35))
+            review = template.needs_confirmation or template.title == demo_plan.RECEIVING
+            status = Task.Status.REVIEW if review else Task.Status.DONE
         task = Task.objects.create(
             company=company,
             kind=Task.Kind.DAILY,
@@ -299,76 +424,60 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
             for_date=today,
             title=template.title,
             description=template.description,
-            assignee=person,
+            assignee=member,
             created_by=template.created_by,
             due_at=due,
+            status=status,
+            completed_at=completed,
             proof=template.proof,
+            proof_text=_reading(rng) if completed and template.proof == Proof.TEXT else "",
             needs_confirmation=template.needs_confirmation,
             reminder_policy=template.reminder_policy,
             escalate_to=template.escalate_to,
-            branch=person.home_branch,
+            branch=member.home_branch,
             **fields,
         )
         for index, text in enumerate(template.checklist):
             ChecklistItem.objects.create(
-                task=task, text=text, is_done=task.status != Task.Status.TODO, order=index
+                task=task, text=text, is_done=status != Task.Status.TODO, order=index
             )
-        Task.objects.filter(pk=task.pk).update(created_at=min(start_of_day, now))
-        return task
+        Task.objects.filter(pk=task.pk).update(created_at=start_of_day)
+        if status == Task.Status.REVIEW and template.proof == Proof.PHOTO:
+            _photo(task, SCENES.get(template.title, "boxes"), rng)
+        if fields.get("reminders_sent"):
+            for step in range(1, fields["reminders_sent"] + 1):
+                _log(
+                    task,
+                    ReminderLog.Kind.REMINDER,
+                    step,
+                    member,
+                    due + timedelta(minutes=15 * step),
+                )
+            if fields.get("escalated_at"):
+                escalate = task.escalate_to or story.member("manager")
+                _log(task, ReminderLog.Kind.ESCALATION, 3, escalate, fields["escalated_at"])
 
-    morning = datetime.combine(today, time(8, 45), tzinfo=tz)
-    early = now < morning + timedelta(hours=2)
-    opened = today_task(
-        opening,
-        people["worker"],
-        status=Task.Status.REVIEW,
-        completed_at=min(now, morning - timedelta(minutes=6)),
-    )
-    if opened.status == Task.Status.REVIEW and not opened.proof_photo:
-        _photo(opened, "store", rng)
-    received = today_task(
-        delivery,
-        people["jasur"],
-        status=Task.Status.REVIEW if not early else Task.Status.TODO,
-        completed_at=min(now, datetime.combine(today, time(10, 12), tzinfo=tz))
-        if not early
-        else None,
-    )
-    if received.status == Task.Status.REVIEW:
-        _photo(received, "boxes", rng)
-    shelf = today_task(
-        shelves, people["nigora"], status=Task.Status.DONE, completed_at=now - timedelta(minutes=35)
-    )
-    _photo(shelf, "shelf", rng)
-    late_shelf = today_task(
-        shelves, people["jasur"], reminders_sent=3, escalated_at=now - timedelta(minutes=20)
-    )
-    Task.objects.filter(pk=late_shelf.pk).update(due_at=earlier_today(hours=1, minutes=10))
-    fridge_task = today_task(
-        fridge,
-        people["madina"],
-        status=Task.Status.DONE,
-        completed_at=now - timedelta(hours=2),
-        proof_text="+4 °C",
-    )
-    today_task(fridge, people["worker"], reminders_sent=2)
-    Task.objects.filter(template=fridge, for_date=today, assignee=people["worker"]).update(
-        due_at=earlier_today(minutes=50)
-    )
-    today_task(closing, people["madina"])
-    Task.objects.filter(template=closing, for_date=today).update(due_at=now + timedelta(hours=5))
-    today_task(
-        orders,
-        people["nigora"],
-        status=Task.Status.IN_PROGRESS,
-        started_at=now - timedelta(minutes=40),
-    )
-    Task.objects.filter(template=orders, for_date=today).update(
-        due_at=now + timedelta(hours=1, minutes=30)
-    )
 
-    # Work given by hand, some with rewards.
-    def given(title, person, due, *, by=owner, status=Task.Status.TODO, **fields):
+# Given by hand -----------------------------------------------------------------------------
+
+
+def _given(company, story, people, now, rng, strict) -> None:
+    owner, manager = people["owner"], people["manager"]
+    today = story.today
+
+    def on_day(key, day, hour, minute=0):
+        return story.at(day, time(hour, minute))
+
+    def next_day(key, after=None):
+        return story.next_working_day(key, after or today) or today + timedelta(days=1)
+
+    def last_day(key):
+        return story.last_working_day(key, today) or today - timedelta(days=1)
+
+    def given(title, key, due, *, by=owner, status=Task.Status.TODO, **fields):
+        person = story.member(key)
+        if person is None:
+            return None
         checklist = fields.pop("checklist", ())
         task = Task.objects.create(
             company=company,
@@ -395,193 +504,210 @@ def seed(company, people: dict[str, Membership], now: datetime) -> None:
             _history(AuditLog.Action.TASK_CONFIRMED, task, task.confirmed_by, task.confirmed_at)
         return task
 
-    window = given(
-        "Kuzgi vitrinani yangilash",
-        people["worker"],
-        now + timedelta(days=1, hours=3),
-        status=Task.Status.IN_PROGRESS,
-        started_at=now - timedelta(hours=2),
-        priority=Task.Priority.HIGH,
-        proof=Proof.PHOTO,
-        needs_confirmation=True,
-        reward=Decimal("150000.00"),
-        description=(
-            "Yangi kolleksiya: chap tomonda chegirma relsi, o‘ngda yangi kelganlar. "
-            "Narx kartochkalarini unutmang."
-        ),
-        checklist=[
-            ("Eski vitrinani yig‘ish", True),
-            ("Kiyimlarni dazmollash", True),
-            ("Manekenlarni kiyintirish", False),
-            ("Ko‘chadan rasm", False),
-        ],
-    )
-    _comment(window, owner, "Manekenlar omborda, yuqori javonda.", now - timedelta(hours=3))
-    _comment(
-        window,
-        people["worker"],
-        "Soat 15:00 gacha tugataman, chiroqlarni ham almashtiraman.",
-        now - timedelta(hours=2, minutes=40),
-    )
+    # The storekeeper (or, without him, the head) missed calling a distributor about a late
+    # delivery: overdue since the last working day, chased four times, escalated.
+    caller = "otabek" if story.member("otabek") else "manager"
+    called = last_day(caller)
     supplier = given(
-        "Yetkazib beruvchiga qo‘ng‘iroq: kechikkan buyurtma №4471",
-        people["jasur"],
-        earlier_today(hours=3),
-        by=manager,
+        "Distribyutorga qo‘ng‘iroq: kechikkan nakladnoy №4471",
+        caller,
+        on_day(caller, called, 15),
+        by=manager if caller != "manager" else owner,
         proof=Proof.TEXT,
         priority=Task.Priority.URGENT,
         reminders_sent=4,
-        escalated_at=now - timedelta(hours=1, minutes=40),
-        description="Juma kuni kelishi kerak edi. Yangi sanani so‘rab, izohga yozing.",
+        escalated_at=on_day(caller, called, 16, 40),
+        description=(
+            "«Oqtosh Med Ta’minot»dan Amoksitsillin 500 mg kapsula №16 va Omeprazol 20 mg "
+            "kapsula №30 kelmadi. Yangi sanani so‘rab, izohga yozing."
+        ),
     )
-    _comment(supplier, manager, "Telefon: Sharq Savdo, Akmal aka.", now - timedelta(hours=4))
-    _history(
-        AuditLog.Action.TASK_CHANGED,
-        supplier,
-        manager,
-        now - timedelta(hours=3, minutes=50),
-        changes={"priority": ["high", "urgent"]},
-    )
-    tags = given(
-        "Qishki kolleksiya uchun narx yorliqlari",
-        people["madina"],
-        now + timedelta(hours=2),
+    if supplier is not None:
+        _comment(
+            supplier,
+            manager if caller != "manager" else owner,
+            "Telefon: «Oqtosh Med Ta’minot» savdo bo‘limi, +998 71 200 44 55.",
+            on_day(caller, called, 11),
+        )
+        _history(
+            AuditLog.Action.TASK_CHANGED,
+            supplier,
+            manager,
+            on_day(caller, called, 12, 10),
+            changes={"priority": ["high", "urgent"]},
+        )
+        for step in (1, 2, 3, 4):
+            _log(
+                supplier,
+                ReminderLog.Kind.REMINDER,
+                step,
+                supplier.assignee,
+                supplier.due_at + timedelta(minutes=20 * step),
+            )
+        _log(
+            supplier,
+            ReminderLog.Kind.ESCALATION,
+            3,
+            manager if caller != "manager" else owner,
+            supplier.due_at + timedelta(hours=1, minutes=40),
+        )
+
+    # Madina's price tags wait for the head's check since her last shift.
+    tagged_on = last_day("madina")
+    price_tags = given(
+        "Narx yorliqlari: vitaminlar va retseptsiz dorilar javoni",
+        "madina",
+        on_day("madina", tagged_on, 21),
         status=Task.Status.REVIEW,
-        completed_at=now - timedelta(minutes=18),
+        completed_at=on_day("madina", tagged_on, 20, 35),
         proof=Proof.PHOTO,
         needs_confirmation=True,
         reward=Decimal("50000.00"),
-        checklist=[("3-relis", True), ("4-relis", True), ("Kassa oldi", True)],
+        checklist=[("Vitaminlar", True), ("Yo‘tal va shamollash", True), ("Kassa oldi", True)],
     )
-    _photo(tags, "tags", rng)
+    if price_tags is not None:
+        _photo(price_tags, "tags", rng)
+
+    # Nigora's catalogue photos came back: retake in daylight.
     photos = given(
-        "Yangi kelgan mahsulotlarni suratga olish",
-        people["nigora"],
-        now + timedelta(hours=4),
+        "Onlayn katalog uchun yangi dorilarni suratga olish",
+        "nigora",
+        on_day("nigora", next_day("nigora"), 23),
         status=Task.Status.RETURNED,
         proof=Proof.PHOTO,
         needs_confirmation=True,
-        description="Instagram uchun 12 ta mahsulot, oq fonda, har biridan bittadan.",
+        description="Katalog uchun 12 ta qadoq, oq fonda, har biridan bittadan.",
     )
-    _comment(
-        photos,
-        owner,
-        "Kunduzgi yorug‘likda qayta oling, ranglar xira chiqqan.",
-        now - timedelta(hours=1, minutes=15),
-    )
-    _history(
-        AuditLog.Action.TASK_RETURNED,
-        photos,
-        owner,
-        now - timedelta(hours=1, minutes=15),
-        reason="Kunduzgi yorug‘likda qayta oling, ranglar xira chiqqan.",
-    )
+    returned_at = now - timedelta(hours=1, minutes=15)
+    if photos is not None:
+        _comment(photos, owner, "Qadoqlar yaltirab chiqqan, yorug‘ joyda qayta oling.", returned_at)
+        _history(
+            AuditLog.Action.TASK_RETURNED,
+            photos,
+            owner,
+            returned_at,
+            reason="Qadoqlar yaltirab chiqqan, yorug‘ joyda qayta oling.",
+        )
     given(
-        "Chilonzor: konditsionerni ta’mirlash ustasini chaqirish",
-        manager,
-        now + timedelta(days=2),
+        "Ombordagi konditsionerni ta’mirlatish (xona harorati 25 °C dan oshmasin)",
+        "manager",
+        on_day("manager", next_day("manager"), 17),
         priority=Task.Priority.HIGH,
-        description="Sotuv zalidagi konditsioner shovqin qilyapti. Kafolat talonini oling.",
+        description="Dori saqlash xonasida harorat 24 °C ga yetdi. Usta chaqiring.",
     )
+    back = next_day("madina", story.day(1))
     given(
         "Oylik hisobot uchun kassa daftarini topshirish",
-        people["madina"],
-        now + timedelta(days=3),
+        "madina",
+        on_day("madina", back, 20),
         by=manager,
         reward=Decimal("30000.00"),
     )
     given(
-        "Yunusobod: ombor javonlarini qayta tartiblash",
-        people["jasur"],
-        now + timedelta(days=4),
+        "Ombor javonlarini qayta tartiblash",
+        "otabek",
+        on_day("otabek", next_day("otabek", story.day(1)), 17),
         priority=Task.Priority.LOW,
-        checklist=[("Ichimliklar bo‘limi", False), ("Maishiy kimyo", False)],
+        checklist=[("Antibiotiklar bo‘limi", False), ("Vitaminlar va gigiyena", False)],
     )
-    done_given = given(
-        "Bayramona aksiya bannerini osish",
-        people["nigora"],
-        now - timedelta(days=1, hours=2),
+    banner_day = last_day("nigora")
+    banner = given(
+        "«Gripp mavsumi» e’lonini vitrinaga osish",
+        "nigora",
+        on_day("nigora", banner_day, 22, 30),
         status=Task.Status.DONE,
-        completed_at=now - timedelta(days=1, hours=3),
-        confirmed_at=now - timedelta(days=1),
+        completed_at=on_day("nigora", banner_day, 21, 50),
+        confirmed_at=on_day("nigora", banner_day + timedelta(days=1), 9, 20),
         confirmed_by=owner,
         proof=Proof.PHOTO,
         reward=Decimal("75000.00"),
     )
-    _photo(done_given, "window", rng)
-    glass = given(
-        "Vitrina oynalarini artish",
-        people["worker"],
-        now - timedelta(minutes=20),
-        status=Task.Status.DONE,
-        completed_at=now - timedelta(minutes=28),
-        proof=Proof.PHOTO,
-    )
-    _photo(glass, "window", rng)
+    if banner is not None:
+        _photo(banner, "window", rng)
+    if story.works("worker", today) and now >= story.at(today, time(11, 0)):
+        glass = given(
+            "Vitrina oynalarini artish",
+            "worker",
+            story.at(today, time(11, 0)),
+            status=Task.Status.DONE,
+            completed_at=story.at(today, time(10, 40)),
+            proof=Proof.PHOTO,
+        )
+        _photo(glass, "window", rng)
     given(
-        "Kassir uchun yangi terminalni sozlash",
-        people["madina"],
-        now + timedelta(hours=6),
+        "Kassa uchun yangi terminalni sozlash",
+        "madina",
+        on_day("madina", back, 12),
         by=manager,
         status=Task.Status.CANCELLED,
     )
+    given(
+        "Muddati o‘tgan dorilarni hisobdan chiqarish dalolatnomasi",
+        "otabek",
+        on_day("otabek", next_day("otabek"), 15),
+        by=manager,
+        checklist=[("Ro‘yxat", True), ("Dalolatnoma", False), ("Mudir imzosi", False)],
+    )
+    given(
+        "Litsenziyani uzaytirish uchun hujjatlarni tayyorlash",
+        "owner",
+        story.at(story.day(10), time(17, 0)),
+        by=owner,
+        priority=Task.Priority.HIGH,
+    )
 
-    # The manager's own to-do list: personal, so only owners (with the setting on) see it.
+    # The head's own to-do list: personal, so only owners (with the setting on) see it.
+    own_day = today if story.works("manager", today) else next_day("manager")
     own = Task.objects.create(
         company=company,
         kind=Task.Kind.PERSONAL,
         title="Bankdagi to‘lovlarni tekshirish",
         assignee=manager,
         created_by=manager,
-        due_at=now + timedelta(hours=5),
+        due_at=story.at(own_day, time(17, 0)),
         branch=manager.home_branch,
     )
-    Task.objects.filter(pk=own.pk).update(created_at=now - timedelta(hours=6))
+    noted = min(now - timedelta(hours=2), story.at(own_day, time(9, 10)))
+    Task.objects.filter(pk=own.pk).update(created_at=noted)
 
-    # Reminders: today's late work, an escalation and a blocked bot.
-    for step in (1, 2, 3, 4):
-        _log(
-            supplier,
-            ReminderLog.Kind.REMINDER,
-            step,
-            people["jasur"],
-            supplier.due_at + timedelta(minutes=20 * step),
+    # A heads-up before a fridge reading, and the person who blocked the bot two days ago.
+    first_reading = (
+        Task.objects.filter(
+            company=company, for_date=today, template__title=demo_plan.FRIDGE_MORNING
         )
-    _log(supplier, ReminderLog.Kind.ESCALATION, 3, manager, supplier.due_at + timedelta(hours=1))
-    for step in (1, 2, 3):
-        _log(
-            late_shelf,
-            ReminderLog.Kind.REMINDER,
-            step,
-            people["jasur"],
-            now - timedelta(minutes=70) + timedelta(minutes=20 * step),
-        )
-    _log(late_shelf, ReminderLog.Kind.ESCALATION, 3, manager, now - timedelta(minutes=20))
-    _log(fridge_task, ReminderLog.Kind.HEADS_UP, 0, people["madina"], now - timedelta(hours=3))
-    blocked_user = people["nigora"].user
-    blocked_user.employee_bot_blocked_at = now - timedelta(days=2, hours=4)
-    blocked_user.save(update_fields=["employee_bot_blocked_at"])
-    _log(
-        photos,
-        ReminderLog.Kind.REMINDER,
-        1,
-        people["nigora"],
-        now - timedelta(days=2, hours=4),
-        error="blocked the bot",
+        .order_by("pk")
+        .first()
     )
-    _log(photos, ReminderLog.Kind.BLOCKED, 1, manager, now - timedelta(days=2, hours=4))
+    if first_reading is not None:
+        _log(
+            first_reading,
+            ReminderLog.Kind.HEADS_UP,
+            0,
+            first_reading.assignee,
+            first_reading.due_at - timedelta(minutes=15),
+        )
+    blocked_at = now - timedelta(days=2, hours=4)
+    nigora = people["nigora"].user
+    nigora.employee_bot_blocked_at = blocked_at
+    nigora.save(update_fields=["employee_bot_blocked_at"])
+    if photos is not None:
+        _log(photos, ReminderLog.Kind.REMINDER, 1, people["nigora"], blocked_at, "blocked the bot")
+        _log(photos, ReminderLog.Kind.BLOCKED, 1, manager, blocked_at)
+
+
+# Pieces ------------------------------------------------------------------------------------
 
 
 def _policies(company) -> tuple[ReminderPolicy, ReminderPolicy]:
     strict = ReminderPolicy.objects.create(
         company=company,
-        name="Kassa va ochilish (qattiq)",
+        name="Kassa va sovuq zanjir (qattiq)",
         heads_up_minutes=15,
         repeat_every_minutes=10,
         max_reminders=8,
         escalate_after=2,
-        quiet_from=time(23, 0),
-        quiet_until=time(7, 0),
+        quiet_from=time(23, 50),
+        quiet_until=time(6, 0),
         snooze_minutes=10,
         max_snoozes=1,
         replace_previous=True,
@@ -596,12 +722,12 @@ def _policies(company) -> tuple[ReminderPolicy, ReminderPolicy]:
             ReminderText(
                 policy=strict,
                 from_step=2,
-                text="⚠️ {task} {late} kechikdi. Menejerga xabar berildi.",
+                text="⚠️ {task} {late} kechikdi. Mudirga xabar berildi.",
             ),
             ReminderText(
                 policy=strict,
                 from_step=5,
-                text="🚨 {name}, {task} hali ham bajarilmagan. Bu kassa tartibiga ta’sir qiladi.",
+                text="🚨 {name}, {task} hali ham bajarilmagan. Mudir kutyapti.",
             ),
         ]
     )
@@ -624,10 +750,14 @@ def _policies(company) -> tuple[ReminderPolicy, ReminderPolicy]:
     return strict, gentle
 
 
-def _history_task(
-    company, template, person, day: date, tz, rng: random.Random, on_time: float, missed: float
-):
-    due = datetime.combine(day, template.due_time, tzinfo=tz)
+def _reading(rng: random.Random) -> str:
+    """A fridge reading inside the cold chain's 2 to 8 °C."""
+    return f"+{rng.choice([3, 4, 4, 5, 5, 6])} °C"
+
+
+def _history_task(company, story, template, person, day, rng, on_time: float, missed: float):
+    """One past day's task (not saved) and the reminder steps it got."""
+    due = story.at(day, template.due_time)
     roll = rng.random()
     if roll < missed:
         status, completed = Task.Status.TODO, None
@@ -635,7 +765,8 @@ def _history_task(
         status, completed = Task.Status.DONE, due - timedelta(minutes=rng.randint(4, 55))
     else:
         status, completed = Task.Status.DONE, due + timedelta(minutes=rng.randint(12, 140))
-    task = Task.objects.create(
+    late = completed is None or completed > due
+    task = Task(
         company=company,
         kind=Task.Kind.DAILY,
         template=template,
@@ -650,33 +781,37 @@ def _history_task(
         if completed and template.needs_confirmation
         else None,
         proof=template.proof,
-        proof_text="+5 °C" if template.proof == Proof.TEXT and completed else "",
+        proof_text=_reading(rng) if template.proof == Proof.TEXT and completed else "",
         needs_confirmation=template.needs_confirmation,
         reminder_policy=template.reminder_policy,
         branch=person.home_branch,
-        reminders_sent=0 if completed is None or completed <= due else rng.randint(1, 3),
+        reminders_sent=0 if not late else (3 if completed is None else rng.randint(1, 3)),
     )
-    if completed is None or completed > due:
-        for step in range(1, (3 if completed is None else task.reminders_sent) + 1):
-            _log(task, ReminderLog.Kind.REMINDER, step, person, due + timedelta(minutes=20 * step))
-    Task.objects.filter(pk=task.pk).update(created_at=due - timedelta(hours=8))
-    # The last two days keep their proof photos, so the photo wall has something to page back to.
-    if (
-        completed
-        and template.proof == Proof.PHOTO
-        and (timezone.localdate(timezone=tz) - day).days <= 2
-    ):
-        _photo(task, PHOTO_SCENES.get(template.title, "shelf"), rng)
-    return task
+    return task, list(range(1, task.reminders_sent + 1))
 
 
-PHOTO_SCENES = {
-    "Opening checklist": "store",
-    "Receive the morning delivery": "boxes",
-    "Do‘konni ochish: tekshiruv ro‘yxati": "store",
-    "Kassani yopish va Z-hisobot": "tags",
-    "Ertalabki yukni qabul qilish": "boxes",
-    "Javonlarni to‘ldirish va narx yorliqlari": "shelf",
+def _bulk_logs(logs) -> None:
+    """Reminder logs for many tasks in a few queries: sent 20 minutes apart after the deadline."""
+    made = ReminderLog.objects.bulk_create(
+        ReminderLog(task=task, kind=ReminderLog.Kind.REMINDER, step=step, recipient=task.assignee)
+        for task, step in logs
+    )
+    due = Subquery(Task.objects.filter(pk=OuterRef("task_id")).values("due_at")[:1])
+    for step in {step for _task, step in logs}:
+        ReminderLog.objects.filter(pk__in=[log.pk for log in made if log.step == step]).update(
+            sent_at=ExpressionWrapper(
+                due + timedelta(minutes=20 * step), output_field=DateTimeField()
+            )
+        )
+
+
+# Proof photos by routine.
+SCENES = {
+    demo_plan.RECEIVING: "boxes",
+    demo_plan.CASH_REPORT: "tags",
+    "Kunduzgi kassani topshirish": "tags",
+    "Narx yorliqlarini yangilash": "tags",
+    "Nam tozalash va kvarslash": "store",
 }
 
 
@@ -711,47 +846,45 @@ def _photo(task: Task, scene: str, rng: random.Random) -> None:
 
 
 def _scene(kind: str, rng: random.Random) -> bytes:
-    """A 1200 by 900 picture of shelves, boxes, a storefront, price tags or a window display."""
+    """A 1200 by 900 picture of pharmacy shelves, delivery boxes, price tags or a window."""
     background, colors = rng.choice(PALETTES)
     image = Image.new("RGB", (1200, 900), background)
     draw = ImageDraw.Draw(image)
     if kind in ("shelf", "tags", "store"):
         for row in range(4):
             top = 120 + row * 190
-            draw.rectangle((60, top + 150, 1140, top + 166), fill=(150, 120, 90))
+            draw.rectangle((60, top + 150, 1140, top + 166), fill=(200, 205, 205))
             x = 80
             while x < 1100:
-                width = rng.randint(50, 110)
-                height = rng.randint(80, 145)
+                width = rng.randint(40, 90)
+                height = rng.randint(70, 140)
                 draw.rounded_rectangle(
-                    (x, top + 150 - height, x + width, top + 148), radius=8, fill=rng.choice(colors)
+                    (x, top + 150 - height, x + width, top + 148), radius=4, fill=rng.choice(colors)
                 )
                 if kind == "tags":
-                    draw.rectangle((x + 6, top + 152, x + 46, top + 164), fill=(255, 255, 255))
-                x += width + rng.randint(6, 18)
+                    draw.rectangle((x + 4, top + 152, x + 40, top + 164), fill=(255, 236, 120))
+                x += width + rng.randint(4, 12)
         if kind == "store":
-            draw.rectangle((0, 0, 1200, 90), fill=(60, 54, 48))
-            for lamp in range(6):
-                draw.ellipse((90 + lamp * 190, 30, 150 + lamp * 190, 70), fill=(255, 236, 190))
+            draw.rectangle((0, 0, 1200, 90), fill=(46, 125, 107))
+            draw.rectangle((570, 18, 630, 72), fill=(255, 255, 255))
+            draw.rectangle((582, 30, 618, 60), fill=(46, 125, 107))
     elif kind == "boxes":
-        draw.rectangle((0, 640, 1200, 900), fill=(170, 160, 150))
+        draw.rectangle((0, 640, 1200, 900), fill=(190, 190, 186))
         for _ in range(9):
             x, y = rng.randint(40, 980), rng.randint(330, 560)
             w, h = rng.randint(160, 240), rng.randint(140, 220)
             draw.rectangle(
-                (x, y, x + w, y + h), fill=(196, 160, 112), outline=(140, 108, 70), width=6
+                (x, y, x + w, y + h), fill=(214, 196, 160), outline=(150, 126, 90), width=6
             )
-            draw.line((x, y + h // 2, x + w, y + h // 2), fill=(222, 196, 150), width=10)
+            draw.rectangle((x + 20, y + 20, x + 90, y + 60), fill=(255, 255, 255))
     else:  # window
-        draw.rectangle((80, 80, 1120, 820), fill=(214, 226, 236), outline=(90, 80, 70), width=24)
-        for index in range(3):
-            cx = 280 + index * 320
-            draw.ellipse((cx - 50, 220, cx + 50, 320), fill=(232, 200, 170))
-            draw.rounded_rectangle(
-                (cx - 90, 320, cx + 90, 700), radius=40, fill=colors[index % len(colors)]
-            )
-        draw.rectangle((80, 80, 1120, 170), fill=colors[-1])
-    image = image.filter(ImageFilter.GaussianBlur(1.2))
+        draw.rectangle((80, 80, 1120, 820), fill=(222, 234, 240), outline=(90, 100, 100), width=24)
+        draw.rectangle((80, 80, 1120, 170), fill=(46, 125, 107))
+        for index in range(4):
+            x = 180 + index * 230
+            draw.rounded_rectangle((x, 380, x + 150, 640), radius=10, fill=colors[index % 4])
+            draw.rectangle((x + 20, 420, x + 130, 470), fill=(255, 255, 255))
+    image = image.filter(ImageFilter.GaussianBlur(1.0))
     out = io.BytesIO()
     image.save(out, "JPEG", quality=82)
     return out.getvalue()

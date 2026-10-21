@@ -343,13 +343,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PublishRequest'
+              $ref: '#/components/schemas/AnnouncementsPublishRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PublishRequest'
+              $ref: '#/components/schemas/AnnouncementsPublishRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PublishRequest'
+              $ref: '#/components/schemas/AnnouncementsPublishRequest'
         required: true
       security:
       - ownerJwtAuth: []
@@ -410,13 +410,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedUpdateRequest'
+              $ref: '#/components/schemas/PatchedAnnouncementsUpdateRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedUpdateRequest'
+              $ref: '#/components/schemas/PatchedAnnouncementsUpdateRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedUpdateRequest'
+              $ref: '#/components/schemas/PatchedAnnouncementsUpdateRequest'
       security:
       - ownerJwtAuth: []
       responses:
@@ -541,7 +541,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedReceiptList'
+                $ref: '#/components/schemas/PaginatedAnnouncementsReceiptList'
           description: ''
   /api/v1/owner/companies/{company_id}/announcements/{id}/remind/:
     post:
@@ -1011,13 +1011,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/AttendanceReasonRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/AttendanceReasonRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/AttendanceReasonRequest'
         required: true
       security:
       - ownerJwtAuth: []
@@ -1324,7 +1324,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Count'
+                $ref: '#/components/schemas/AttendanceCount'
           description: ''
   /api/v1/owner/companies/{company_id}/attendance/schedules/unassign/:
     post:
@@ -1358,7 +1358,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Count'
+                $ref: '#/components/schemas/AttendanceCount'
           description: ''
   /api/v1/owner/companies/{company_id}/attendance/settings/:
     get:
@@ -1379,7 +1379,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Settings'
+                $ref: '#/components/schemas/AttendanceSettings'
           description: ''
     patch:
       operationId: companies_attendance_settings_partial_update
@@ -1396,13 +1396,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedSettingsRequest'
+              $ref: '#/components/schemas/PatchedAttendanceSettingsRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedSettingsRequest'
+              $ref: '#/components/schemas/PatchedAttendanceSettingsRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedSettingsRequest'
+              $ref: '#/components/schemas/PatchedAttendanceSettingsRequest'
       security:
       - ownerJwtAuth: []
       responses:
@@ -1410,7 +1410,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Settings'
+                $ref: '#/components/schemas/AttendanceSettings'
           description: ''
   /api/v1/owner/companies/{company_id}/attendance/shifts/:
     get:
@@ -1571,13 +1571,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BulkRequest'
+              $ref: '#/components/schemas/AttendanceBulkRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/BulkRequest'
+              $ref: '#/components/schemas/AttendanceBulkRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/BulkRequest'
+              $ref: '#/components/schemas/AttendanceBulkRequest'
         required: true
       security:
       - ownerJwtAuth: []
@@ -1586,7 +1586,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Count'
+                $ref: '#/components/schemas/AttendanceCount'
           description: ''
   /api/v1/owner/companies/{company_id}/attendance/shifts/publish/:
     post:
@@ -1606,13 +1606,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PublishRequest'
+              $ref: '#/components/schemas/AttendancePublishRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PublishRequest'
+              $ref: '#/components/schemas/AttendancePublishRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PublishRequest'
+              $ref: '#/components/schemas/AttendancePublishRequest'
         required: true
       security:
       - ownerJwtAuth: []
@@ -1621,7 +1621,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Count'
+                $ref: '#/components/schemas/AttendanceCount'
           description: ''
   /api/v1/owner/companies/{company_id}/attendance/staff/:
     get:
@@ -1802,13 +1802,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/AttendanceReasonRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/AttendanceReasonRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/AttendanceReasonRequest'
         required: true
       security:
       - ownerJwtAuth: []
@@ -2300,13 +2300,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReorderRequest'
+              $ref: '#/components/schemas/CompaniesReorderRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ReorderRequest'
+              $ref: '#/components/schemas/CompaniesReorderRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ReorderRequest'
+              $ref: '#/components/schemas/CompaniesReorderRequest'
         required: true
       security:
       - ownerJwtAuth: []
@@ -3716,13 +3716,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/FinanceReasonRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/FinanceReasonRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/FinanceReasonRequest'
         required: true
       security:
       - ownerJwtAuth: []
@@ -4074,7 +4074,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Receipt'
+                $ref: '#/components/schemas/FinanceReceipt'
           description: ''
   /api/v1/owner/companies/{company_id}/finance/reports/balances/:
     get:
@@ -4296,7 +4296,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Settings'
+                $ref: '#/components/schemas/FinanceSettings'
           description: ''
     patch:
       operationId: companies_finance_settings_partial_update
@@ -4328,7 +4328,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Settings'
+                $ref: '#/components/schemas/FinanceSettings'
           description: ''
   /api/v1/owner/companies/{company_id}/finance/settings/lock/:
     post:
@@ -4361,7 +4361,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Settings'
+                $ref: '#/components/schemas/FinanceSettings'
           description: ''
   /api/v1/owner/companies/{company_id}/finance/transactions/:
     get:
@@ -4643,7 +4643,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Receipt'
+                $ref: '#/components/schemas/FinanceReceipt'
           description: ''
   /api/v1/owner/companies/{company_id}/finance/transactions/{id}/receipts/{receipt_id}/:
     delete:
@@ -4697,13 +4697,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/FinanceReasonRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/FinanceReasonRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/FinanceReasonRequest'
         required: true
       security:
       - ownerJwtAuth: []
@@ -4737,13 +4737,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/FinanceReasonRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/FinanceReasonRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/FinanceReasonRequest'
         required: true
       security:
       - ownerJwtAuth: []
@@ -4771,13 +4771,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BulkRequest'
+              $ref: '#/components/schemas/FinanceBulkRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/BulkRequest'
+              $ref: '#/components/schemas/FinanceBulkRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/BulkRequest'
+              $ref: '#/components/schemas/FinanceBulkRequest'
         required: true
       security:
       - ownerJwtAuth: []
@@ -4875,13 +4875,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/FinanceReasonRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/FinanceReasonRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/FinanceReasonRequest'
         required: true
       security:
       - ownerJwtAuth: []
@@ -5341,7 +5341,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Count'
+                $ref: '#/components/schemas/InboxCount'
           description: ''
   /api/v1/owner/companies/{company_id}/invite/:
     get:
@@ -6729,7 +6729,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedPersonList'
+                $ref: '#/components/schemas/PaginatedMembersPersonList'
           description: ''
   /api/v1/owner/companies/{company_id}/people/{id}/:
     get:
@@ -10177,13 +10177,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/SalesReasonRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/SalesReasonRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/SalesReasonRequest'
         required: true
       security:
       - ownerJwtAuth: []
@@ -10432,13 +10432,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/SalesReasonRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/SalesReasonRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/SalesReasonRequest'
         required: true
       security:
       - ownerJwtAuth: []
@@ -10718,13 +10718,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReorderRequest'
+              $ref: '#/components/schemas/SalesReorderRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ReorderRequest'
+              $ref: '#/components/schemas/SalesReorderRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ReorderRequest'
+              $ref: '#/components/schemas/SalesReorderRequest'
         required: true
       security:
       - ownerJwtAuth: []
@@ -10931,7 +10931,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Settings'
+                $ref: '#/components/schemas/SalesSettings'
           description: ''
     patch:
       operationId: companies_sales_settings_partial_update
@@ -10950,13 +10950,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedSettingsRequest'
+              $ref: '#/components/schemas/PatchedSalesSettingsRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedSettingsRequest'
+              $ref: '#/components/schemas/PatchedSalesSettingsRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedSettingsRequest'
+              $ref: '#/components/schemas/PatchedSalesSettingsRequest'
       security:
       - ownerJwtAuth: []
       responses:
@@ -10964,7 +10964,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Settings'
+                $ref: '#/components/schemas/SalesSettings'
           description: ''
   /api/v1/owner/companies/{company_id}/sales/shifts/:
     get:
@@ -11100,13 +11100,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/SalesReasonRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/SalesReasonRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/SalesReasonRequest'
         required: true
       security:
       - ownerJwtAuth: []
@@ -12305,13 +12305,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/TasksReasonRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/TasksReasonRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ReasonRequest'
+              $ref: '#/components/schemas/TasksReasonRequest'
         required: true
       security:
       - ownerJwtAuth: []
@@ -12476,13 +12476,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BulkRequest'
+              $ref: '#/components/schemas/TasksBulkRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/BulkRequest'
+              $ref: '#/components/schemas/TasksBulkRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/BulkRequest'
+              $ref: '#/components/schemas/TasksBulkRequest'
         required: true
       security:
       - ownerJwtAuth: []
@@ -13087,7 +13087,7 @@ components:
           type: string
           readOnly: true
         currency:
-          $ref: '#/components/schemas/Currency35aEnum'
+          $ref: '#/components/schemas/CurrencyEnum'
         branch:
           allOf:
           - $ref: '#/components/schemas/FinanceBranchRef'
@@ -13175,7 +13175,7 @@ components:
           $ref: '#/components/schemas/FinanceAccountKindEnum'
         currency:
           allOf:
-          - $ref: '#/components/schemas/Currency2f7Enum'
+          - $ref: '#/components/schemas/CurrencyCodeEnum'
           default: UZS
         branch:
           type: integer
@@ -13213,16 +13213,6 @@ components:
       required:
       - kind
       - name
-    ActionEnum:
-      enum:
-      - copy_week
-      - apply_schedule
-      - clear
-      type: string
-      description: |-
-        * `copy_week` - copy_week
-        * `apply_schedule` - apply_schedule
-        * `clear` - clear
     ActionRequest:
       type: object
       properties:
@@ -13618,10 +13608,99 @@ components:
         sample:
           type: array
           items:
-            $ref: '#/components/schemas/Named'
+            $ref: '#/components/schemas/AnnouncementsNamed'
       required:
       - count
       - sample
+    AnnouncementsNamed:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    AnnouncementsPersonRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        photo_url:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+      - photo_url
+    AnnouncementsPublishRequest:
+      type: object
+      properties:
+        text_html:
+          type: string
+          minLength: 1
+          description: The composer's HTML; stored as Telegram HTML.
+        position_ids:
+          type: array
+          items:
+            type: integer
+        branch_ids:
+          type: array
+          items:
+            type: integer
+        scheduled_for:
+          type: string
+          format: date-time
+          nullable: true
+        pinned_until:
+          type: string
+          format: date-time
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - text_html
+    AnnouncementsReceipt:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        member:
+          allOf:
+          - $ref: '#/components/schemas/AnnouncementsPersonRef'
+          readOnly: true
+        position:
+          type: string
+          nullable: true
+          readOnly: true
+        home_branch:
+          allOf:
+          - $ref: '#/components/schemas/AnnouncementsNamed'
+          nullable: true
+          readOnly: true
+        read_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        reminded_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - home_branch
+      - id
+      - member
+      - position
+      - read_at
+      - reminded_at
     AnnouncementsReminded:
       type: object
       properties:
@@ -13679,6 +13758,49 @@ components:
           nullable: true
       required:
       - member_ids
+    AttendanceBranchRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+      required:
+      - code
+      - id
+      - name
+    AttendanceBulkActionEnum:
+      enum:
+      - copy_week
+      - apply_schedule
+      - clear
+      type: string
+      description: |-
+        * `copy_week` - copy_week
+        * `apply_schedule` - apply_schedule
+        * `clear` - clear
+    AttendanceBulkRequest:
+      type: object
+      properties:
+        action:
+          $ref: '#/components/schemas/AttendanceBulkActionEnum'
+        week:
+          type: string
+          format: date
+          description: Any day of the week; it starts on Monday.
+        branch_id:
+          type: integer
+          nullable: true
+        member_ids:
+          type: array
+          items:
+            type: integer
+          nullable: true
+      required:
+      - action
+      - week
     AttendanceCorrectionStatusEnum:
       enum:
       - pending
@@ -13689,6 +13811,13 @@ components:
         * `pending` - Waiting for approval
         * `approved` - Approved
         * `rejected` - Rejected
+    AttendanceCount:
+      type: object
+      properties:
+        count:
+          type: integer
+      required:
+      - count
     AttendanceOutsideActionEnum:
       enum:
       - flag
@@ -13709,6 +13838,30 @@ components:
         * `pending` - Waiting for approval
         * `approved` - Approved
         * `rejected` - Rejected
+    AttendancePublishRequest:
+      type: object
+      properties:
+        start:
+          type: string
+          format: date
+        end:
+          type: string
+          format: date
+        branch_id:
+          type: integer
+          nullable: true
+      required:
+      - end
+      - start
+    AttendanceReasonRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+      required:
+      - reason
     AttendanceRecordFlagEnum:
       enum:
       - outside_geofence
@@ -13739,6 +13892,16 @@ components:
         * `auto_closed` - Closed automatically
         * `absent` - Absent
         * `excused` - Excused
+    AttendanceRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
     AttendanceScheduleKindEnum:
       enum:
       - weekly
@@ -13749,6 +13912,78 @@ components:
         * `weekly` - Weekly
         * `rotating` - Rotating
         * `flexible` - Flexible
+    AttendanceSettings:
+      type: object
+      properties:
+        require_location:
+          type: boolean
+          description: People share their location when they check in or out.
+        require_photo:
+          type: boolean
+          description: People take a selfie when they check in.
+        outside_action:
+          allOf:
+          - $ref: '#/components/schemas/AttendanceOutsideActionEnum'
+          description: |-
+            What happens when someone checks in outside the branch's geofence.
+
+            * `flag` - Allow and mark it
+            * `reject` - Refuse the check-in
+        grace_minutes:
+          type: integer
+          maximum: 240
+          minimum: 0
+          description: Minutes after the shift starts that still count as on time.
+        early_leave_grace_minutes:
+          type: integer
+          maximum: 240
+          minimum: 0
+          description: Minutes before the shift ends that still count as a full day.
+        remind_after_minutes:
+          type: integer
+          maximum: 240
+          minimum: 0
+          description: Remind someone who hasn't checked in this long after start.
+        no_show_alert_minutes:
+          type: integer
+          maximum: 480
+          minimum: 0
+          description: Tell managers when someone hasn't checked in by then.
+        auto_close_after_hours:
+          type: integer
+          maximum: 24
+          minimum: 1
+          description: Close a forgotten check-out this many hours after the shift
+            ends.
+        max_accuracy_m:
+          type: integer
+          maximum: 5000
+          minimum: 10
+          description: Locations less precise than this are marked as low accuracy.
+        tasks_follow_shifts:
+          type: boolean
+          description: No daily tasks on a rostered day off.
+        swaps_need_approval:
+          type: boolean
+          description: A manager approves swaps and covers after the colleague agrees.
+        open_shift_claim_needs_approval:
+          type: boolean
+          description: A manager approves who takes an open shift.
+        pre_shift_reminder_minutes:
+          type: integer
+          maximum: 240
+          minimum: 0
+          description: 'Remind people this long before their shift. 0: no reminder.'
+        early_check_in_minutes:
+          type: integer
+          maximum: 480
+          minimum: 0
+          description: How early a check-in still belongs to the coming shift.
+        overtime_after_minutes:
+          type: integer
+          maximum: 240
+          minimum: 0
+          description: Extra time shorter than this isn't overtime.
     AttendanceShiftSourceEnum:
       enum:
       - schedule
@@ -13840,14 +14075,6 @@ components:
       - target
       - target_id
       - target_type
-    BaseCurrencyEnum:
-      enum:
-      - UZS
-      - USD
-      type: string
-      description: |-
-        * `UZS` - Uzbek som
-        * `USD` - US dollar
     Board:
       type: object
       properties:
@@ -13924,7 +14151,7 @@ components:
           $ref: '#/components/schemas/PersonCard'
         branch:
           allOf:
-          - $ref: '#/components/schemas/BranchRef'
+          - $ref: '#/components/schemas/AttendanceBranchRef'
           nullable: true
         state:
           $ref: '#/components/schemas/StateEnum'
@@ -14060,19 +14287,6 @@ components:
       - latitude
       - longitude
       - name
-    BranchRef:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        code:
-          type: string
-      required:
-      - code
-      - id
-      - name
     BranchRequest:
       type: object
       properties:
@@ -14172,34 +14386,20 @@ components:
       - name
       - opens_at
       - status
-    BudgetCurrencyEnum:
-      enum:
-      - UZS
-      - USD
-      type: string
-      description: |-
-        * `UZS` - UZS
-        * `USD` - USD
-    BulkRequest:
+    BulkPayloadRequest:
       type: object
       properties:
-        action:
-          $ref: '#/components/schemas/ActionEnum'
-        week:
-          type: string
-          format: date
-          description: Any day of the week; it starts on Monday.
-        branch_id:
+        assignee_id:
           type: integer
-          nullable: true
-        member_ids:
-          type: array
-          items:
-            type: integer
-          nullable: true
-      required:
-      - action
-      - week
+        due_at:
+          type: string
+          format: date-time
+        shift_days:
+          type: integer
+          maximum: 60
+          minimum: -60
+        priority:
+          $ref: '#/components/schemas/PriorityEnum'
     BulkResponse:
       type: object
       properties:
@@ -14210,23 +14410,11 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/BulkResult'
+            $ref: '#/components/schemas/TasksBulkResult'
       required:
       - done
       - failed
       - results
-    BulkResult:
-      type: object
-      properties:
-        id:
-          type: integer
-        ok:
-          type: boolean
-        error:
-          type: string
-      required:
-      - id
-      - ok
     CalendarItem:
       type: object
       properties:
@@ -14239,7 +14427,7 @@ components:
           type: string
           format: date
         status:
-          $ref: '#/components/schemas/Status053Enum'
+          $ref: '#/components/schemas/TimeOffStatusEnum'
         reason:
           type: string
         recorded:
@@ -14258,13 +14446,13 @@ components:
       type: object
       properties:
         member:
-          $ref: '#/components/schemas/PersonRef'
+          $ref: '#/components/schemas/TimeoffPersonRef'
         position:
           type: string
           nullable: true
         home_branch:
           allOf:
-          - $ref: '#/components/schemas/BranchRef'
+          - $ref: '#/components/schemas/TimeoffBranchRef'
           nullable: true
         items:
           type: array
@@ -14468,7 +14656,7 @@ components:
           readOnly: true
         author:
           allOf:
-          - $ref: '#/components/schemas/PersonRef'
+          - $ref: '#/components/schemas/TasksPersonRef'
           nullable: true
           readOnly: true
         text:
@@ -14532,6 +14720,16 @@ components:
           format: binary
       required:
       - logo
+    CompaniesReorderRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+          minItems: 1
+      required:
+      - ids
     CompanySettings:
       type: object
       properties:
@@ -14554,7 +14752,7 @@ components:
         default_language:
           $ref: '#/components/schemas/DefaultLanguageEnum'
         base_currency:
-          $ref: '#/components/schemas/BaseCurrencyEnum'
+          $ref: '#/components/schemas/CurrencyEnum'
         base_currency_locked:
           type: boolean
           readOnly: true
@@ -14765,13 +14963,6 @@ components:
       - reason
       - record
       - status
-    Count:
-      type: object
-      properties:
-        count:
-          type: integer
-      required:
-      - count
     Counterparty:
       type: object
       properties:
@@ -14934,7 +15125,7 @@ components:
       - id
       - name
       - slug
-    Currency2f7Enum:
+    CurrencyCodeEnum:
       enum:
       - UZS
       - USD
@@ -14942,7 +15133,7 @@ components:
       description: |-
         * `UZS` - UZS
         * `USD` - USD
-    Currency35aEnum:
+    CurrencyEnum:
       enum:
       - UZS
       - USD
@@ -15033,7 +15224,7 @@ components:
           nullable: true
           readOnly: true
         currency:
-          $ref: '#/components/schemas/Currency35aEnum'
+          $ref: '#/components/schemas/CurrencyEnum'
         amount:
           type: string
           format: decimal
@@ -15157,7 +15348,7 @@ components:
           format: decimal
           pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
         currency:
-          $ref: '#/components/schemas/Currency2f7Enum'
+          $ref: '#/components/schemas/CurrencyCodeEnum'
         issued_on:
           type: string
           format: date
@@ -15555,13 +15746,52 @@ components:
       - code
       - id
       - name
+    FinanceBulkActionEnum:
+      enum:
+      - categorize
+      - void
+      type: string
+      description: |-
+        * `categorize` - categorize
+        * `void` - void
+    FinanceBulkRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+          maxItems: 200
+          minItems: 1
+        action:
+          $ref: '#/components/schemas/FinanceBulkActionEnum'
+        category:
+          type: integer
+        reason:
+          type: string
+          maxLength: 300
+      required:
+      - action
+      - ids
+    FinanceBulkResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        ok:
+          type: boolean
+        error:
+          type: string
+      required:
+      - id
+      - ok
     FinanceBulkResults:
       type: object
       properties:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/BulkResult'
+            $ref: '#/components/schemas/FinanceBulkResult'
       required:
       - results
     FinanceCashFlow:
@@ -15903,6 +16133,49 @@ components:
       - current
       - rate_source
       - rows
+    FinanceReasonRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+      required:
+      - reason
+    FinanceReceipt:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        url:
+          type: string
+          readOnly: true
+        thumb_url:
+          type: string
+          nullable: true
+          readOnly: true
+        content_type:
+          type: string
+          maxLength: 64
+        size:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        is_image:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - content_type
+      - created_at
+      - id
+      - is_image
+      - thumb_url
+      - url
     FinanceRef:
       type: object
       properties:
@@ -15921,6 +16194,61 @@ components:
       description: |-
         * `payroll` - With the next payroll
         * `cash` - In cash by whoever approves
+    FinanceSettings:
+      type: object
+      properties:
+        locked_until:
+          type: string
+          format: date
+          nullable: true
+          description: Nothing dated on or before this day can be added, edited or
+            voided.
+        rate_source:
+          allOf:
+          - $ref: '#/components/schemas/FinanceRateSourceEnum'
+          description: |-
+            Where exchange rates come from when nobody entered one for the day.
+
+            * `cbu` - Central Bank of Uzbekistan
+            * `manual` - Entered by hand
+        approval_threshold:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        receipt_required_over:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        large_expense_alert:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        reimburse_via:
+          allOf:
+          - $ref: '#/components/schemas/FinanceReimburseViaEnum'
+          description: |-
+            How approved "paid from my own money" claims are paid back.
+
+            * `payroll` - With the next payroll
+            * `cash` - In cash by whoever approves
+        base_currency:
+          type: string
+          readOnly: true
+        can_reopen:
+          type: boolean
+          readOnly: true
+      required:
+      - approval_threshold
+      - base_currency
+      - can_reopen
+      - large_expense_alert
+      - receipt_required_over
     FinanceStatement:
       type: object
       properties:
@@ -16114,11 +16442,11 @@ components:
         positions:
           type: array
           items:
-            $ref: '#/components/schemas/Ref'
+            $ref: '#/components/schemas/GroupsRef'
         branches:
           type: array
           items:
-            $ref: '#/components/schemas/Ref'
+            $ref: '#/components/schemas/GroupsRef'
       required:
       - branches
       - positions
@@ -16146,6 +16474,16 @@ components:
       - options
       - person_events
       - results
+    GroupsRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
     HistoryRecord:
       type: object
       properties:
@@ -16163,7 +16501,7 @@ components:
           type: string
         actor:
           allOf:
-          - $ref: '#/components/schemas/Named'
+          - $ref: '#/components/schemas/MembersNamed'
           nullable: true
           readOnly: true
         target_type:
@@ -16237,6 +16575,17 @@ components:
       required:
       - message
       - notification
+    InboxCount:
+      type: object
+      properties:
+        count:
+          type: integer
+        critical:
+          type: integer
+          description: How many of the unread ones are critical.
+      required:
+      - count
+      - critical
     InboxPerson:
       type: object
       properties:
@@ -16363,7 +16712,7 @@ components:
           readOnly: true
         position:
           allOf:
-          - $ref: '#/components/schemas/Named'
+          - $ref: '#/components/schemas/MembersNamed'
           nullable: true
           readOnly: true
         onboarded:
@@ -16371,6 +16720,7 @@ components:
           readOnly: true
         requested_at:
           type: string
+          format: date-time
           readOnly: true
         former:
           allOf:
@@ -17234,6 +17584,19 @@ components:
         all:
           type: boolean
           default: false
+    MembersBranchRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+      required:
+      - code
+      - id
+      - name
     MembersFormer:
       type: object
       properties:
@@ -17245,6 +17608,16 @@ components:
       required:
       - how
       - left_on
+    MembersNamed:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
     MembersOffboardPreview:
       type: object
       properties:
@@ -17270,6 +17643,114 @@ components:
       - reasons
       - steps
       - today
+    MembersPerson:
+      type: object
+      description: A row of the team directory.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        full_name:
+          type: string
+          readOnly: true
+        first_name:
+          type: string
+          readOnly: true
+        last_name:
+          type: string
+          readOnly: true
+        photo_url:
+          type: string
+          nullable: true
+          readOnly: true
+        phone:
+          type: string
+          readOnly: true
+        username:
+          type: string
+          readOnly: true
+        position:
+          allOf:
+          - $ref: '#/components/schemas/MembersNamed'
+          nullable: true
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleRef'
+          nullable: true
+          readOnly: true
+        home_branch:
+          allOf:
+          - $ref: '#/components/schemas/MembersBranchRef'
+          nullable: true
+          readOnly: true
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/MembersBranchRef'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/MembershipStatusEnum'
+          readOnly: true
+        suspended_until:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+          description: 'While suspended: the last day of the suspension. Empty: until
+            reinstated.'
+        joined_on:
+          type: string
+          nullable: true
+          description: Their first day (the employment-dates contract); when they
+            asked, for a request.
+          readOnly: true
+        left_on:
+          type: string
+          nullable: true
+          description: Their last day, for someone who left or was blocked.
+          readOnly: true
+        onboarded:
+          type: boolean
+          readOnly: true
+        bot_blocked:
+          type: boolean
+          readOnly: true
+        work:
+          allOf:
+          - $ref: '#/components/schemas/MembersWork'
+          readOnly: true
+        fields:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+          description: Fields other modules add (attendance_today, attendance_30d,
+            salary with payroll.view, time_off_today…); absent without their permission.
+      required:
+      - bot_blocked
+      - branches
+      - fields
+      - first_name
+      - full_name
+      - home_branch
+      - id
+      - joined_on
+      - last_name
+      - left_on
+      - name
+      - onboarded
+      - phone
+      - photo_url
+      - position
+      - role
+      - status
+      - suspended_until
+      - username
+      - work
     MembersPositionsOrderRequest:
       type: object
       properties:
@@ -17371,7 +17852,7 @@ components:
       type: object
       properties:
         to:
-          $ref: '#/components/schemas/ToEnum'
+          $ref: '#/components/schemas/TaskMoveEnum'
         reason:
           type: string
           default: ''
@@ -17397,15 +17878,15 @@ components:
           pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
         currency:
           allOf:
-          - $ref: '#/components/schemas/Currency35aEnum'
+          - $ref: '#/components/schemas/CurrencyEnum'
           readOnly: true
         branch:
           allOf:
-          - $ref: '#/components/schemas/BranchRef'
+          - $ref: '#/components/schemas/SalesBranchRef'
           readOnly: true
         register:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/SalesRef'
           readOnly: true
         shift:
           type: object
@@ -17414,17 +17895,17 @@ components:
           readOnly: true
         receiver:
           allOf:
-          - $ref: '#/components/schemas/Person'
+          - $ref: '#/components/schemas/SalesPerson'
           nullable: true
           readOnly: true
         to_account:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/SalesRef'
           nullable: true
           readOnly: true
         category:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/SalesRef'
           nullable: true
           readOnly: true
         reason:
@@ -17437,7 +17918,7 @@ components:
           readOnly: true
         created_by:
           allOf:
-          - $ref: '#/components/schemas/Person'
+          - $ref: '#/components/schemas/SalesPerson'
           readOnly: true
         created_at:
           type: string
@@ -17450,7 +17931,7 @@ components:
           nullable: true
         confirmed_by:
           allOf:
-          - $ref: '#/components/schemas/Person'
+          - $ref: '#/components/schemas/SalesPerson'
           nullable: true
           readOnly: true
         declined_at:
@@ -17522,20 +18003,6 @@ components:
       required:
       - amount
       - kind
-    MovesEnum:
-      enum:
-      - todo
-      - in_progress
-      - review
-      - returned
-      - done
-      type: string
-      description: |-
-        * `todo` - todo
-        * `in_progress` - in_progress
-        * `review` - review
-        * `returned` - returned
-        * `done` - done
     MyMonth:
       type: object
       properties:
@@ -17566,16 +18033,6 @@ components:
       - month
       - today
       - totals
-    Named:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-      required:
-      - id
-      - name
     NamedRef:
       type: object
       properties:
@@ -17648,7 +18105,7 @@ components:
           default: uz
         base_currency:
           allOf:
-          - $ref: '#/components/schemas/BaseCurrencyEnum'
+          - $ref: '#/components/schemas/CurrencyEnum'
           default: UZS
         signup_code:
           type: string
@@ -17812,18 +18269,18 @@ components:
           readOnly: true
         author:
           allOf:
-          - $ref: '#/components/schemas/PersonRef'
+          - $ref: '#/components/schemas/AnnouncementsPersonRef'
           nullable: true
           readOnly: true
         positions:
           type: array
           items:
-            $ref: '#/components/schemas/Named'
+            $ref: '#/components/schemas/AnnouncementsNamed'
           readOnly: true
         branches:
           type: array
           items:
-            $ref: '#/components/schemas/Named'
+            $ref: '#/components/schemas/AnnouncementsNamed'
           readOnly: true
         created_at:
           type: string
@@ -18015,7 +18472,7 @@ components:
           readOnly: true
         member:
           allOf:
-          - $ref: '#/components/schemas/PersonRef'
+          - $ref: '#/components/schemas/TimeoffPersonRef'
           readOnly: true
         position:
           type: string
@@ -18023,7 +18480,7 @@ components:
           readOnly: true
         home_branch:
           allOf:
-          - $ref: '#/components/schemas/BranchRef'
+          - $ref: '#/components/schemas/TimeoffBranchRef'
           nullable: true
           readOnly: true
         first_day:
@@ -18042,7 +18499,7 @@ components:
           readOnly: true
         status:
           allOf:
-          - $ref: '#/components/schemas/Status053Enum'
+          - $ref: '#/components/schemas/TimeOffStatusEnum'
           readOnly: true
         created_at:
           type: string
@@ -18059,7 +18516,7 @@ components:
           readOnly: true
         recorded_by:
           allOf:
-          - $ref: '#/components/schemas/PersonRef'
+          - $ref: '#/components/schemas/TimeoffPersonRef'
           nullable: true
           readOnly: true
         revoked_at:
@@ -18128,6 +18585,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AgendaEvent'
+    PaginatedAnnouncementsReceiptList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnnouncementsReceipt'
     PaginatedAuditRecordList:
       type: object
       required:
@@ -18404,6 +18884,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/KnowledgeVersion'
+    PaginatedMembersPersonList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MembersPerson'
     PaginatedMovementList:
       type: object
       required:
@@ -18496,52 +18999,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/OwnerTimeOff'
-    PaginatedPersonList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Person'
-    PaginatedReceiptList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Receipt'
     PaginatedRecordRowList:
       type: object
       required:
@@ -18856,6 +19313,104 @@ components:
           nullable: true
         notify_invites:
           type: boolean
+    PatchedAnnouncementsUpdateRequest:
+      type: object
+      properties:
+        text_html:
+          type: string
+          minLength: 1
+        position_ids:
+          type: array
+          items:
+            type: integer
+        branch_ids:
+          type: array
+          items:
+            type: integer
+        scheduled_for:
+          type: string
+          format: date-time
+          nullable: true
+        pinned_until:
+          type: string
+          format: date-time
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+    PatchedAttendanceSettingsRequest:
+      type: object
+      properties:
+        require_location:
+          type: boolean
+          description: People share their location when they check in or out.
+        require_photo:
+          type: boolean
+          description: People take a selfie when they check in.
+        outside_action:
+          allOf:
+          - $ref: '#/components/schemas/AttendanceOutsideActionEnum'
+          description: |-
+            What happens when someone checks in outside the branch's geofence.
+
+            * `flag` - Allow and mark it
+            * `reject` - Refuse the check-in
+        grace_minutes:
+          type: integer
+          maximum: 240
+          minimum: 0
+          description: Minutes after the shift starts that still count as on time.
+        early_leave_grace_minutes:
+          type: integer
+          maximum: 240
+          minimum: 0
+          description: Minutes before the shift ends that still count as a full day.
+        remind_after_minutes:
+          type: integer
+          maximum: 240
+          minimum: 0
+          description: Remind someone who hasn't checked in this long after start.
+        no_show_alert_minutes:
+          type: integer
+          maximum: 480
+          minimum: 0
+          description: Tell managers when someone hasn't checked in by then.
+        auto_close_after_hours:
+          type: integer
+          maximum: 24
+          minimum: 1
+          description: Close a forgotten check-out this many hours after the shift
+            ends.
+        max_accuracy_m:
+          type: integer
+          maximum: 5000
+          minimum: 10
+          description: Locations less precise than this are marked as low accuracy.
+        tasks_follow_shifts:
+          type: boolean
+          description: No daily tasks on a rostered day off.
+        swaps_need_approval:
+          type: boolean
+          description: A manager approves swaps and covers after the colleague agrees.
+        open_shift_claim_needs_approval:
+          type: boolean
+          description: A manager approves who takes an open shift.
+        pre_shift_reminder_minutes:
+          type: integer
+          maximum: 240
+          minimum: 0
+          description: 'Remind people this long before their shift. 0: no reminder.'
+        early_check_in_minutes:
+          type: integer
+          maximum: 480
+          minimum: 0
+          description: How early a check-in still belongs to the coming shift.
+        overtime_after_minutes:
+          type: integer
+          maximum: 240
+          minimum: 0
+          description: Extra time shorter than this isn't overtime.
     PatchedBranchRequest:
       type: object
       properties:
@@ -18945,7 +19500,7 @@ components:
         default_language:
           $ref: '#/components/schemas/DefaultLanguageEnum'
         base_currency:
-          $ref: '#/components/schemas/BaseCurrencyEnum'
+          $ref: '#/components/schemas/CurrencyEnum'
         workdays:
           type: array
           items:
@@ -19295,7 +19850,7 @@ components:
           pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
           nullable: true
         budget_currency:
-          $ref: '#/components/schemas/BudgetCurrencyEnum'
+          $ref: '#/components/schemas/CurrencyCodeEnum'
         member_ids:
           type: array
           items:
@@ -19514,6 +20069,50 @@ components:
         escalate_to_id:
           type: integer
           nullable: true
+    PatchedSalesSettingsRequest:
+      type: object
+      properties:
+        business_day_ends_at:
+          type: string
+          format: time
+        cash_tolerance:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        blind_cash_count:
+          type: boolean
+          description: Cashiers count the cash without seeing how much there should
+            be.
+        require_z_photo:
+          type: boolean
+          description: A photo of the Z-report is required to close a shift.
+        require_terminal_photo:
+          type: boolean
+          description: A photo of the terminal slip is required when the shift took
+            card payments.
+        mode:
+          $ref: '#/components/schemas/SalesModeEnum'
+        handover_confirm_hours:
+          type: integer
+          maximum: 72
+          minimum: 0
+          description: Owners hear about a handover nobody confirmed after this long.
+        big_payout_alert:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        late_open_minutes:
+          type: integer
+          maximum: 240
+          minimum: 1
+          description: A branch with no open till this long after opening raises an
+            alert.
+        close_alert_minutes:
+          type: integer
+          maximum: 720
+          minimum: 1
+          description: A till still open this long after closing time raises an alert.
     PatchedSavedViewRequest:
       type: object
       properties:
@@ -19577,78 +20176,6 @@ components:
           type: integer
           maximum: 480
           minimum: 0
-    PatchedSettingsRequest:
-      type: object
-      properties:
-        require_location:
-          type: boolean
-          description: People share their location when they check in or out.
-        require_photo:
-          type: boolean
-          description: People take a selfie when they check in.
-        outside_action:
-          allOf:
-          - $ref: '#/components/schemas/AttendanceOutsideActionEnum'
-          description: |-
-            What happens when someone checks in outside the branch's geofence.
-
-            * `flag` - Allow and mark it
-            * `reject` - Refuse the check-in
-        grace_minutes:
-          type: integer
-          maximum: 240
-          minimum: 0
-          description: Minutes after the shift starts that still count as on time.
-        early_leave_grace_minutes:
-          type: integer
-          maximum: 240
-          minimum: 0
-          description: Minutes before the shift ends that still count as a full day.
-        remind_after_minutes:
-          type: integer
-          maximum: 240
-          minimum: 0
-          description: Remind someone who hasn't checked in this long after start.
-        no_show_alert_minutes:
-          type: integer
-          maximum: 480
-          minimum: 0
-          description: Tell managers when someone hasn't checked in by then.
-        auto_close_after_hours:
-          type: integer
-          maximum: 24
-          minimum: 1
-          description: Close a forgotten check-out this many hours after the shift
-            ends.
-        max_accuracy_m:
-          type: integer
-          maximum: 5000
-          minimum: 10
-          description: Locations less precise than this are marked as low accuracy.
-        tasks_follow_shifts:
-          type: boolean
-          description: No daily tasks on a rostered day off.
-        swaps_need_approval:
-          type: boolean
-          description: A manager approves swaps and covers after the colleague agrees.
-        open_shift_claim_needs_approval:
-          type: boolean
-          description: A manager approves who takes an open shift.
-        pre_shift_reminder_minutes:
-          type: integer
-          maximum: 240
-          minimum: 0
-          description: 'Remind people this long before their shift. 0: no reminder.'
-        early_check_in_minutes:
-          type: integer
-          maximum: 480
-          minimum: 0
-          description: How early a check-in still belongs to the coming shift.
-        overtime_after_minutes:
-          type: integer
-          maximum: 240
-          minimum: 0
-          description: Extra time shorter than this isn't overtime.
     PatchedSettingsUpdateRequest:
       type: object
       properties:
@@ -19784,32 +20311,6 @@ components:
           pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
         account:
           type: integer
-    PatchedUpdateRequest:
-      type: object
-      properties:
-        text_html:
-          type: string
-          minLength: 1
-        position_ids:
-          type: array
-          items:
-            type: integer
-        branch_ids:
-          type: array
-          items:
-            type: integer
-        scheduled_for:
-          type: string
-          format: date-time
-          nullable: true
-        pinned_until:
-          type: string
-          format: date-time
-          nullable: true
-        expires_at:
-          type: string
-          format: date-time
-          nullable: true
     PaymentLineRequest:
       type: object
       properties:
@@ -19845,7 +20346,7 @@ components:
           $ref: '#/components/schemas/SalesPaymentMethodKindEnum'
         account:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/SalesRef'
           nullable: true
           readOnly: true
         fee_percent:
@@ -20080,114 +20581,6 @@ components:
         * `agenda.manage` - Add company events to the calendar
         * `crm.view` - See CRM deals
         * `crm.manage` - Manage CRM deals and pipelines
-    Person:
-      type: object
-      description: A row of the team directory.
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        name:
-          type: string
-          readOnly: true
-        full_name:
-          type: string
-          readOnly: true
-        first_name:
-          type: string
-          readOnly: true
-        last_name:
-          type: string
-          readOnly: true
-        photo_url:
-          type: string
-          nullable: true
-          readOnly: true
-        phone:
-          type: string
-          readOnly: true
-        username:
-          type: string
-          readOnly: true
-        position:
-          allOf:
-          - $ref: '#/components/schemas/Named'
-          nullable: true
-          readOnly: true
-        role:
-          allOf:
-          - $ref: '#/components/schemas/RoleRef'
-          nullable: true
-          readOnly: true
-        home_branch:
-          allOf:
-          - $ref: '#/components/schemas/BranchRef'
-          nullable: true
-          readOnly: true
-        branches:
-          type: array
-          items:
-            $ref: '#/components/schemas/BranchRef'
-          readOnly: true
-        status:
-          allOf:
-          - $ref: '#/components/schemas/MembershipStatusEnum'
-          readOnly: true
-        suspended_until:
-          type: string
-          format: date
-          readOnly: true
-          nullable: true
-          description: 'While suspended: the last day of the suspension. Empty: until
-            reinstated.'
-        joined_on:
-          type: string
-          nullable: true
-          description: Their first day (the employment-dates contract); when they
-            asked, for a request.
-          readOnly: true
-        left_on:
-          type: string
-          nullable: true
-          description: Their last day, for someone who left or was blocked.
-          readOnly: true
-        onboarded:
-          type: boolean
-          readOnly: true
-        bot_blocked:
-          type: boolean
-          readOnly: true
-        work:
-          allOf:
-          - $ref: '#/components/schemas/MembersWork'
-          readOnly: true
-        fields:
-          type: object
-          additionalProperties: {}
-          readOnly: true
-          description: Fields other modules add (attendance_today, attendance_30d,
-            salary with payroll.view, time_off_today…); absent without their permission.
-      required:
-      - bot_blocked
-      - branches
-      - fields
-      - first_name
-      - full_name
-      - home_branch
-      - id
-      - joined_on
-      - last_name
-      - left_on
-      - name
-      - onboarded
-      - phone
-      - photo_url
-      - position
-      - role
-      - status
-      - suspended_until
-      - username
-      - work
     PersonCard:
       type: object
       properties:
@@ -20200,11 +20593,11 @@ components:
           nullable: true
         position:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/AttendanceRef'
           nullable: true
         home_branch:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/AttendanceRef'
           nullable: true
         status:
           type: string
@@ -20246,7 +20639,7 @@ components:
           readOnly: true
         position:
           allOf:
-          - $ref: '#/components/schemas/Named'
+          - $ref: '#/components/schemas/MembersNamed'
           nullable: true
           readOnly: true
         role:
@@ -20256,13 +20649,13 @@ components:
           readOnly: true
         home_branch:
           allOf:
-          - $ref: '#/components/schemas/BranchRef'
+          - $ref: '#/components/schemas/MembersBranchRef'
           nullable: true
           readOnly: true
         branches:
           type: array
           items:
-            $ref: '#/components/schemas/BranchRef'
+            $ref: '#/components/schemas/MembersBranchRef'
           readOnly: true
         status:
           allOf:
@@ -20338,20 +20731,6 @@ components:
       - suspended_until
       - username
       - work
-    PersonRef:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        photo_url:
-          type: string
-          nullable: true
-      required:
-      - id
-      - name
-      - photo_url
     PinRequest:
       type: object
       properties:
@@ -20922,7 +21301,7 @@ components:
           pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
           nullable: true
         budget_currency:
-          $ref: '#/components/schemas/BudgetCurrencyEnum'
+          $ref: '#/components/schemas/CurrencyCodeEnum'
         member_ids:
           type: array
           items:
@@ -22184,35 +22563,6 @@ components:
         * `photo` - Photo
         * `text` - Text report
         * `any` - Photo or text report
-    PublishRequest:
-      type: object
-      properties:
-        text_html:
-          type: string
-          minLength: 1
-          description: The composer's HTML; stored as Telegram HTML.
-        position_ids:
-          type: array
-          items:
-            type: integer
-        branch_ids:
-          type: array
-          items:
-            type: integer
-        scheduled_for:
-          type: string
-          format: date-time
-          nullable: true
-        pinned_until:
-          type: string
-          format: date-time
-          nullable: true
-        expires_at:
-          type: string
-          format: date-time
-          nullable: true
-      required:
-      - text_html
     Pulse:
       type: object
       properties:
@@ -22374,15 +22724,6 @@ components:
         * `probation_failed` - probation_failed
         * `redundancy` - redundancy
         * `other` - other
-    ReasonRequest:
-      type: object
-      properties:
-        reason:
-          type: string
-          minLength: 1
-          maxLength: 300
-      required:
-      - reason
     ReassignRequest:
       type: object
       properties:
@@ -22390,42 +22731,6 @@ components:
           type: integer
       required:
       - assignee_id
-    Receipt:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        member:
-          allOf:
-          - $ref: '#/components/schemas/PersonRef'
-          readOnly: true
-        position:
-          type: string
-          nullable: true
-          readOnly: true
-        home_branch:
-          allOf:
-          - $ref: '#/components/schemas/Named'
-          nullable: true
-          readOnly: true
-        read_at:
-          type: string
-          format: date-time
-          readOnly: true
-          nullable: true
-        reminded_at:
-          type: string
-          format: date-time
-          readOnly: true
-          nullable: true
-      required:
-      - home_branch
-      - id
-      - member
-      - position
-      - read_at
-      - reminded_at
     ReceiptUploadRequest:
       type: object
       properties:
@@ -22511,7 +22816,7 @@ components:
           nullable: true
         branch:
           allOf:
-          - $ref: '#/components/schemas/BranchRef'
+          - $ref: '#/components/schemas/AttendanceBranchRef'
           nullable: true
         in_source:
           type: string
@@ -22635,7 +22940,7 @@ components:
           nullable: true
         branch:
           allOf:
-          - $ref: '#/components/schemas/BranchRef'
+          - $ref: '#/components/schemas/AttendanceBranchRef'
           nullable: true
         in_source:
           type: string
@@ -22761,7 +23066,7 @@ components:
           nullable: true
         branch:
           allOf:
-          - $ref: '#/components/schemas/BranchRef'
+          - $ref: '#/components/schemas/AttendanceBranchRef'
           nullable: true
         in_source:
           type: string
@@ -22823,16 +23128,6 @@ components:
       - shift_id
       - status
       - worked_minutes
-    Ref:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-      required:
-      - id
-      - name
     Register:
       type: object
       properties:
@@ -22844,7 +23139,7 @@ components:
           maxLength: 50
         branch:
           allOf:
-          - $ref: '#/components/schemas/BranchRef'
+          - $ref: '#/components/schemas/SalesBranchRef'
           readOnly: true
         fiscal_serial:
           type: string
@@ -22856,7 +23151,7 @@ components:
           readOnly: true
         cash_account:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/SalesRef'
           readOnly: true
         cash_now:
           type: string
@@ -22969,7 +23264,7 @@ components:
         escalate_to:
           type: array
           items:
-            $ref: '#/components/schemas/PersonRef'
+            $ref: '#/components/schemas/TasksPersonRef'
         snoozed_until:
           type: string
           format: date-time
@@ -23025,16 +23320,6 @@ components:
       required:
       - from_step
       - text
-    ReorderRequest:
-      type: object
-      properties:
-        ids:
-          type: array
-          items:
-            type: integer
-          minItems: 1
-      required:
-      - ids
     ReportsRoutines:
       type: object
       properties:
@@ -23295,17 +23580,17 @@ components:
           nullable: true
         position:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/AttendanceRef'
           nullable: true
         home_branch:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/AttendanceRef'
           nullable: true
         status:
           type: string
         schedule:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/AttendanceRef'
           nullable: true
         minutes:
           type: integer
@@ -23383,13 +23668,13 @@ components:
           description: Steps copied into every task it makes.
         branch:
           allOf:
-          - $ref: '#/components/schemas/BranchRef'
+          - $ref: '#/components/schemas/TasksBranchRef'
           nullable: true
           readOnly: true
         assignees:
           type: array
           items:
-            $ref: '#/components/schemas/PersonRef'
+            $ref: '#/components/schemas/TasksPersonRef'
           readOnly: true
         positions:
           type: array
@@ -23403,7 +23688,7 @@ components:
           readOnly: true
         escalate_to:
           allOf:
-          - $ref: '#/components/schemas/PersonRef'
+          - $ref: '#/components/schemas/TasksPersonRef'
           nullable: true
           readOnly: true
         stats:
@@ -23558,11 +23843,11 @@ components:
           pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
         branch:
           allOf:
-          - $ref: '#/components/schemas/BranchRef'
+          - $ref: '#/components/schemas/SalesBranchRef'
           readOnly: true
         register:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/SalesRef'
           nullable: true
           readOnly: true
         shift:
@@ -23572,12 +23857,12 @@ components:
           readOnly: true
         cashier:
           allOf:
-          - $ref: '#/components/schemas/Person'
+          - $ref: '#/components/schemas/SalesPerson'
           nullable: true
           readOnly: true
         performed_by:
           allOf:
-          - $ref: '#/components/schemas/Person'
+          - $ref: '#/components/schemas/SalesPerson'
           nullable: true
           readOnly: true
         sold_at:
@@ -23673,6 +23958,19 @@ components:
           format: date-time
       required:
       - payments
+    SalesBranchRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+      required:
+      - code
+      - id
+      - name
     SalesCashMovementKindEnum:
       enum:
       - payout
@@ -23729,6 +24027,16 @@ components:
       required:
       - range
       - results
+    SalesModeEnum:
+      enum:
+      - shift_totals
+      - receipts
+      - invoices
+      type: string
+      description: |-
+        * `shift_totals` - Shift totals from the Z-report
+        * `receipts` - Single receipts
+        * `invoices` - Invoices
     SalesOptions:
       type: object
       properties:
@@ -23757,6 +24065,44 @@ components:
         * `credit` - Credit (nasiya)
         * `installment` - Instalments
         * `other` - Other
+    SalesPerson:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    SalesReasonRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+      required:
+      - reason
+    SalesRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    SalesReorderRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+      required:
+      - ids
     SalesSaleKindEnum:
       enum:
       - sale
@@ -23777,6 +24123,53 @@ components:
         * `dashboard` - Dashboard
         * `bot` - Bot
         * `import` - Import
+    SalesSettings:
+      type: object
+      properties:
+        business_day_ends_at:
+          type: string
+          format: time
+        cash_tolerance:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        blind_cash_count:
+          type: boolean
+          description: Cashiers count the cash without seeing how much there should
+            be.
+        require_z_photo:
+          type: boolean
+          description: A photo of the Z-report is required to close a shift.
+        require_terminal_photo:
+          type: boolean
+          description: A photo of the terminal slip is required when the shift took
+            card payments.
+        mode:
+          $ref: '#/components/schemas/SalesModeEnum'
+        handover_confirm_hours:
+          type: integer
+          maximum: 72
+          minimum: 0
+          description: Owners hear about a handover nobody confirmed after this long.
+        big_payout_alert:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        late_open_minutes:
+          type: integer
+          maximum: 240
+          minimum: 1
+          description: A branch with no open till this long after opening raises an
+            alert.
+        close_alert_minutes:
+          type: integer
+          maximum: 720
+          minimum: 1
+          description: A till still open this long after closing time raises an alert.
+      required:
+      - business_day_ends_at
+      - cash_tolerance
     SalesSummary:
       type: object
       properties:
@@ -24089,78 +24482,6 @@ components:
       - title
       - type
       - url
-    Settings:
-      type: object
-      properties:
-        require_location:
-          type: boolean
-          description: People share their location when they check in or out.
-        require_photo:
-          type: boolean
-          description: People take a selfie when they check in.
-        outside_action:
-          allOf:
-          - $ref: '#/components/schemas/AttendanceOutsideActionEnum'
-          description: |-
-            What happens when someone checks in outside the branch's geofence.
-
-            * `flag` - Allow and mark it
-            * `reject` - Refuse the check-in
-        grace_minutes:
-          type: integer
-          maximum: 240
-          minimum: 0
-          description: Minutes after the shift starts that still count as on time.
-        early_leave_grace_minutes:
-          type: integer
-          maximum: 240
-          minimum: 0
-          description: Minutes before the shift ends that still count as a full day.
-        remind_after_minutes:
-          type: integer
-          maximum: 240
-          minimum: 0
-          description: Remind someone who hasn't checked in this long after start.
-        no_show_alert_minutes:
-          type: integer
-          maximum: 480
-          minimum: 0
-          description: Tell managers when someone hasn't checked in by then.
-        auto_close_after_hours:
-          type: integer
-          maximum: 24
-          minimum: 1
-          description: Close a forgotten check-out this many hours after the shift
-            ends.
-        max_accuracy_m:
-          type: integer
-          maximum: 5000
-          minimum: 10
-          description: Locations less precise than this are marked as low accuracy.
-        tasks_follow_shifts:
-          type: boolean
-          description: No daily tasks on a rostered day off.
-        swaps_need_approval:
-          type: boolean
-          description: A manager approves swaps and covers after the colleague agrees.
-        open_shift_claim_needs_approval:
-          type: boolean
-          description: A manager approves who takes an open shift.
-        pre_shift_reminder_minutes:
-          type: integer
-          maximum: 240
-          minimum: 0
-          description: 'Remind people this long before their shift. 0: no reminder.'
-        early_check_in_minutes:
-          type: integer
-          maximum: 480
-          minimum: 0
-          description: How early a check-in still belongs to the coming shift.
-        overtime_after_minutes:
-          type: integer
-          maximum: 240
-          minimum: 0
-          description: Extra time shorter than this isn't overtime.
     Setup:
       type: object
       properties:
@@ -24223,15 +24544,15 @@ components:
           readOnly: true
         branch:
           allOf:
-          - $ref: '#/components/schemas/BranchRef'
+          - $ref: '#/components/schemas/SalesBranchRef'
           readOnly: true
         register:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/SalesRef'
           readOnly: true
         cashier:
           allOf:
-          - $ref: '#/components/schemas/Person'
+          - $ref: '#/components/schemas/SalesPerson'
           readOnly: true
         business_day:
           type: string
@@ -24284,7 +24605,7 @@ components:
           readOnly: true
         verified_by:
           allOf:
-          - $ref: '#/components/schemas/Person'
+          - $ref: '#/components/schemas/SalesPerson'
           nullable: true
           readOnly: true
         verified_at:
@@ -24360,7 +24681,7 @@ components:
           description: The manager's note or dispute reason.
         closed_by:
           allOf:
-          - $ref: '#/components/schemas/Person'
+          - $ref: '#/components/schemas/SalesPerson'
           nullable: true
           readOnly: true
         movements:
@@ -24442,15 +24763,15 @@ components:
           readOnly: true
         branch:
           allOf:
-          - $ref: '#/components/schemas/BranchRef'
+          - $ref: '#/components/schemas/SalesBranchRef'
           readOnly: true
         register:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/SalesRef'
           readOnly: true
         cashier:
           allOf:
-          - $ref: '#/components/schemas/Person'
+          - $ref: '#/components/schemas/SalesPerson'
           readOnly: true
         business_day:
           type: string
@@ -24503,7 +24824,7 @@ components:
           readOnly: true
         verified_by:
           allOf:
-          - $ref: '#/components/schemas/Person'
+          - $ref: '#/components/schemas/SalesPerson'
           nullable: true
           readOnly: true
         verified_at:
@@ -24566,11 +24887,11 @@ components:
           description: Planned working minutes, the break left out.
         branch:
           allOf:
-          - $ref: '#/components/schemas/BranchRef'
+          - $ref: '#/components/schemas/AttendanceBranchRef'
           nullable: true
         position:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/AttendanceRef'
           nullable: true
         status:
           $ref: '#/components/schemas/AttendanceShiftStatusEnum'
@@ -24693,18 +25014,6 @@ components:
         * `not_yet` - not_yet
         * `absent` - absent
         * `off` - off
-    Status053Enum:
-      enum:
-      - pending
-      - approved
-      - rejected
-      - cancelled
-      type: string
-      description: |-
-        * `pending` - Waiting for approval
-        * `approved` - Approved
-        * `rejected` - Rejected
-        * `cancelled` - Cancelled
     StreamItem:
       type: object
       properties:
@@ -24801,14 +25110,14 @@ components:
           - $ref: '#/components/schemas/ShiftOut'
           nullable: true
         requested_by:
-          $ref: '#/components/schemas/Ref'
+          $ref: '#/components/schemas/AttendanceRef'
         target:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/AttendanceRef'
           nullable: true
         accepted_by:
           allOf:
-          - $ref: '#/components/schemas/Ref'
+          - $ref: '#/components/schemas/AttendanceRef'
           nullable: true
         note:
           type: string
@@ -25010,16 +25319,16 @@ components:
           readOnly: true
         assignee:
           allOf:
-          - $ref: '#/components/schemas/PersonRef'
+          - $ref: '#/components/schemas/TasksPersonRef'
           readOnly: true
         created_by:
           allOf:
-          - $ref: '#/components/schemas/PersonRef'
+          - $ref: '#/components/schemas/TasksPersonRef'
           nullable: true
           readOnly: true
         branch:
           allOf:
-          - $ref: '#/components/schemas/BranchRef'
+          - $ref: '#/components/schemas/TasksBranchRef'
           nullable: true
           readOnly: true
         routine:
@@ -25081,7 +25390,7 @@ components:
         moves:
           type: array
           items:
-            $ref: '#/components/schemas/MovesEnum'
+            $ref: '#/components/schemas/TaskMoveEnum'
           readOnly: true
         description:
           type: string
@@ -25091,7 +25400,7 @@ components:
           readOnly: true
         confirmed_by:
           allOf:
-          - $ref: '#/components/schemas/PersonRef'
+          - $ref: '#/components/schemas/TasksPersonRef'
           nullable: true
           readOnly: true
         checklist_items:
@@ -25164,6 +25473,20 @@ components:
         * `daily` - Daily
         * `assigned` - Assigned
         * `personal` - Personal
+    TaskMoveEnum:
+      enum:
+      - todo
+      - in_progress
+      - review
+      - returned
+      - done
+      type: string
+      description: |-
+        * `todo` - todo
+        * `in_progress` - in_progress
+        * `review` - review
+        * `returned` - returned
+        * `done` - done
     TaskNudgeResponse:
       type: object
       properties:
@@ -25253,16 +25576,16 @@ components:
           readOnly: true
         assignee:
           allOf:
-          - $ref: '#/components/schemas/PersonRef'
+          - $ref: '#/components/schemas/TasksPersonRef'
           readOnly: true
         created_by:
           allOf:
-          - $ref: '#/components/schemas/PersonRef'
+          - $ref: '#/components/schemas/TasksPersonRef'
           nullable: true
           readOnly: true
         branch:
           allOf:
-          - $ref: '#/components/schemas/BranchRef'
+          - $ref: '#/components/schemas/TasksBranchRef'
           nullable: true
           readOnly: true
         routine:
@@ -25324,7 +25647,7 @@ components:
         moves:
           type: array
           items:
-            $ref: '#/components/schemas/MovesEnum'
+            $ref: '#/components/schemas/TaskMoveEnum'
           readOnly: true
         description:
           type: string
@@ -25398,16 +25721,16 @@ components:
           readOnly: true
         assignee:
           allOf:
-          - $ref: '#/components/schemas/PersonRef'
+          - $ref: '#/components/schemas/TasksPersonRef'
           readOnly: true
         created_by:
           allOf:
-          - $ref: '#/components/schemas/PersonRef'
+          - $ref: '#/components/schemas/TasksPersonRef'
           nullable: true
           readOnly: true
         branch:
           allOf:
-          - $ref: '#/components/schemas/BranchRef'
+          - $ref: '#/components/schemas/TasksBranchRef'
           nullable: true
           readOnly: true
         routine:
@@ -25469,7 +25792,7 @@ components:
         moves:
           type: array
           items:
-            $ref: '#/components/schemas/MovesEnum'
+            $ref: '#/components/schemas/TaskMoveEnum'
           readOnly: true
       required:
       - assignee
@@ -25584,6 +25907,64 @@ components:
       - kind
       - meta
       - text
+    TasksBranchRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+      required:
+      - code
+      - id
+      - name
+    TasksBulkActionEnum:
+      enum:
+      - reassign
+      - reschedule
+      - priority
+      - cancel
+      - confirm
+      - nudge
+      type: string
+      description: |-
+        * `reassign` - reassign
+        * `reschedule` - reschedule
+        * `priority` - priority
+        * `cancel` - cancel
+        * `confirm` - confirm
+        * `nudge` - nudge
+    TasksBulkRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+          maxItems: 200
+          minItems: 1
+        action:
+          $ref: '#/components/schemas/TasksBulkActionEnum'
+        payload:
+          $ref: '#/components/schemas/BulkPayloadRequest'
+      required:
+      - action
+      - ids
+    TasksBulkResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        ok:
+          type: boolean
+        error:
+          type: string
+      required:
+      - error
+      - id
+      - ok
     TasksCreatedResponse:
       type: object
       properties:
@@ -25596,6 +25977,33 @@ components:
       required:
       - created
       - ids
+    TasksPersonRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        photo_url:
+          type: string
+          nullable: true
+        position:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+      - photo_url
+      - position
+    TasksReasonRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 1000
+      required:
+      - reason
     TelegramLoginRequest:
       type: object
       properties:
@@ -25676,6 +26084,31 @@ components:
       - ends_at
       - name
       - starts_at
+    TimeOffStatusEnum:
+      enum:
+      - pending
+      - approved
+      - rejected
+      - cancelled
+      type: string
+      description: |-
+        * `pending` - Waiting for approval
+        * `approved` - Approved
+        * `rejected` - Rejected
+        * `cancelled` - Cancelled
+    TimeoffBranchRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+      required:
+      - code
+      - id
+      - name
     TimeoffCalendar:
       type: object
       properties:
@@ -25710,6 +26143,20 @@ components:
       - to
       - today
       - workdays
+    TimeoffPersonRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        photo_url:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+      - photo_url
     TimeoffPublicHolidaysRequest:
       type: object
       properties:
@@ -25780,20 +26227,6 @@ components:
       - cells
       - member
       - totals
-    ToEnum:
-      enum:
-      - todo
-      - in_progress
-      - review
-      - returned
-      - done
-      type: string
-      description: |-
-        * `todo` - todo
-        * `in_progress` - in_progress
-        * `review` - review
-        * `returned` - returned
-        * `done` - done
     Transaction:
       type: object
       description: |-
@@ -25828,7 +26261,7 @@ components:
           pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
           readOnly: true
         currency:
-          $ref: '#/components/schemas/Currency35aEnum'
+          $ref: '#/components/schemas/CurrencyEnum'
         rate:
           type: string
           format: decimal
@@ -25915,7 +26348,7 @@ components:
         receipts:
           type: array
           items:
-            $ref: '#/components/schemas/Receipt'
+            $ref: '#/components/schemas/FinanceReceipt'
           readOnly: true
         masked:
           type: boolean

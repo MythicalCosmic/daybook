@@ -23,26 +23,26 @@ def shelves(company, cashier_position):
     return everyone, till
 
 
-def test_home_shows_my_spaces_and_what_to_read(company, api_as, cashier, courier, shelves):
+def test_home_shows_my_spaces_and_what_to_read(company, api_as, cashier, cook, shelves):
     everyone, till = shelves
     rules = PageFactory(space=everyone, title="Rules", require_ack=True)
     PageFactory(space=till, title="Close the till", require_ack=True)
     PageFactory(space=everyone, title="Draft", published=False)
 
     as_cashier = api_as(cashier).get(url(company)).data
-    as_courier = api_as(courier).get(url(company)).data
+    as_cook = api_as(cook).get(url(company)).data
 
     assert [space["name"] for space in as_cashier["spaces"]] == ["Handbook", "Till"]
     assert {page["title"] for page in as_cashier["to_read"]} == {"Rules", "Close the till"}
-    assert [space["name"] for space in as_courier["spaces"]] == ["Handbook"]
-    assert [page["id"] for page in as_courier["to_read"]] == [rules.pk]
+    assert [space["name"] for space in as_cook["spaces"]] == ["Handbook"]
+    assert [page["id"] for page in as_cook["to_read"]] == [rules.pk]
     assert "Draft" not in {page["title"] for page in as_cashier["recent"]}
 
 
-def test_a_space_meant_for_others_is_404(company, api_as, courier, shelves):
+def test_a_space_meant_for_others_is_404(company, api_as, cook, shelves):
     _everyone, till = shelves
 
-    assert api_as(courier).get(url(company, f"spaces/{till.pk}/")).status_code == 404
+    assert api_as(cook).get(url(company, f"spaces/{till.pk}/")).status_code == 404
 
 
 def test_space_tree_has_only_published_pages(company, api_as, cashier, shelves):
@@ -80,25 +80,25 @@ def test_read_a_page_and_confirm(company, api_as, cashier, shelves):
     assert client.get(url(company)).data["to_read"] == []
 
 
-def test_cant_confirm_a_page_meant_for_others(company, api_as, courier, shelves):
+def test_cant_confirm_a_page_meant_for_others(company, api_as, cook, shelves):
     _everyone, till = shelves
     page = PageFactory(space=till, require_ack=True)
 
-    assert api_as(courier).post(url(company, f"pages/{page.pk}/ack/")).status_code == 404
+    assert api_as(cook).post(url(company, f"pages/{page.pk}/ack/")).status_code == 404
 
 
-def test_search_finds_only_my_pages(company, api_as, courier, shelves):
+def test_search_finds_only_my_pages(company, api_as, cook, shelves):
     everyone, till = shelves
     PageFactory(space=everyone, title="Kassa qoidalari")
     PageFactory(space=till, title="Kassani yopish")
 
-    found = api_as(courier).get(url(company, "search/"), {"q": "kassa"}).data
+    found = api_as(cook).get(url(company, "search/"), {"q": "kassa"}).data
 
     assert [row["title"] for row in found] == ["Kassa qoidalari"]
-    assert api_as(courier).get(url(company, "search/"), {"q": "k"}).data == []
+    assert api_as(cook).get(url(company, "search/"), {"q": "k"}).data == []
 
 
-def test_how_to_do_this_for_a_task(company, api_as, cashier, courier, shelves):
+def test_how_to_do_this_for_a_task(company, api_as, cashier, cook, shelves):
     _everyone, till = shelves
     open_page = PageFactory(space=till, title="Open the till")
     task = TaskFactory(assignee=cashier, title="Open the Chilonzor till")
@@ -106,11 +106,11 @@ def test_how_to_do_this_for_a_task(company, api_as, cashier, courier, shelves):
     query = {"target_type": "task", "target_id": task.pk}
 
     mine = api_as(cashier).get(url(company, "linked/"), query)
-    theirs = api_as(courier).get(url(company, "linked/"), query)
+    theirs = api_as(cook).get(url(company, "linked/"), query)
 
     assert [row["page"]["title"] for row in mine.data] == ["Open the till"]
     assert theirs.data == []
-    assert api_as(courier).get(url(company, "linked/"), {"target_type": "x"}).status_code == 400
+    assert api_as(cook).get(url(company, "linked/"), {"target_type": "x"}).status_code == 400
 
 
 def test_links_never_show_someone_elses_task(

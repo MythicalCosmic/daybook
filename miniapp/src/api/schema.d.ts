@@ -274,7 +274,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description accept · decline · cancel one request. */
-        post: operations["v1_companies_attendance_swaps_create_2"];
+        post: operations["v1_companies_attendance_swaps_answer"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1442,6 +1442,11 @@ export interface components {
             /** @default  */
             number: string;
         };
+        AttendanceBranchRef: {
+            id: number;
+            name: string;
+            code: string;
+        };
         /**
          * @description * `pending` - Waiting for approval
          *     * `approved` - Approved
@@ -1476,6 +1481,10 @@ export interface components {
          * @enum {string}
          */
         AttendanceRecordStatusEnum: "open" | "closed" | "auto_closed" | "absent" | "excused";
+        AttendanceRef: {
+            id: number;
+            name: string;
+        };
         /**
          * @description * `schedule` - From the schedule
          *     * `manual` - Added by hand
@@ -1508,12 +1517,6 @@ export interface components {
          * @enum {string}
          */
         AttendanceSwapStatusEnum: "requested" | "accepted" | "approved" | "rejected" | "cancelled" | "expired";
-        /**
-         * @description * `UZS` - Uzbek som
-         *     * `USD` - US dollar
-         * @enum {string}
-         */
-        BaseCurrencyEnum: "UZS" | "USD";
         Board: {
             /** Format: date */
             date: string;
@@ -1541,7 +1544,7 @@ export interface components {
         };
         BoardRow: {
             member: components["schemas"]["PersonCard"];
-            branch: components["schemas"]["BranchRef"] | null;
+            branch: components["schemas"]["AttendanceBranchRef"] | null;
             state: components["schemas"]["BoardRowStateEnum"];
             /** @description Why: late (not here yet), leave, day_off, holiday, suspended, no_shift, excused. */
             reason: string | null;
@@ -1568,11 +1571,6 @@ export interface components {
             latitude: string | null;
             longitude: string | null;
             geofence_m: number;
-        };
-        BranchRef: {
-            id: number;
-            name: string;
-            code: string;
         };
         Calendar: {
             /** @description Only days with something due. */
@@ -1638,8 +1636,8 @@ export interface components {
             is_done: boolean;
         };
         CloseRequest: {
-            payments: string;
-            closing_count?: string;
+            payments: unknown;
+            closing_count?: unknown;
             /** Format: decimal */
             counted_cash?: string | null;
             receipts?: number | null;
@@ -1707,7 +1705,7 @@ export interface components {
              *     * `UZS` - Uzbek som
              *     * `USD` - US dollar
              */
-            readonly base_currency: components["schemas"]["BaseCurrencyEnum"];
+            readonly base_currency: components["schemas"]["CurrencyEnum"];
             /** @description Colleagues see each other's phone numbers in the app. */
             readonly team_directory_phones: boolean;
         };
@@ -2087,23 +2085,23 @@ export interface components {
             /** Format: decimal */
             amount: string;
             readonly currency: components["schemas"]["CurrencyEnum"];
-            readonly branch: components["schemas"]["BranchRef"];
-            readonly register: components["schemas"]["Ref"];
+            readonly branch: components["schemas"]["SalesBranchRef"];
+            readonly register: components["schemas"]["SalesRef"];
             readonly shift: {
                 [key: string]: unknown;
             } | null;
-            readonly receiver: components["schemas"]["Person"] | null;
-            readonly to_account: components["schemas"]["Ref"] | null;
-            readonly category: components["schemas"]["Ref"] | null;
+            readonly receiver: components["schemas"]["SalesPerson"] | null;
+            readonly to_account: components["schemas"]["SalesRef"] | null;
+            readonly category: components["schemas"]["SalesRef"] | null;
             readonly reason: string;
             /** @description Signed download link. */
             readonly photo: string | null;
-            readonly created_by: components["schemas"]["Person"];
+            readonly created_by: components["schemas"]["SalesPerson"];
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
             readonly confirmed_at: string | null;
-            readonly confirmed_by: components["schemas"]["Person"] | null;
+            readonly confirmed_by: components["schemas"]["SalesPerson"] | null;
             /** Format: date-time */
             readonly declined_at: string | null;
             readonly decline_reason: string;
@@ -2210,7 +2208,7 @@ export interface components {
         };
         OpenRequest: {
             register_id: number;
-            opening_count?: string;
+            opening_count?: unknown;
             /** Format: decimal */
             opening_float?: string | null;
         };
@@ -2230,8 +2228,8 @@ export interface components {
             break_minutes: number;
             /** @description Planned working minutes, the break left out. */
             minutes: number;
-            branch: components["schemas"]["BranchRef"] | null;
-            position: components["schemas"]["Ref"] | null;
+            branch: components["schemas"]["AttendanceBranchRef"] | null;
+            position: components["schemas"]["AttendanceRef"] | null;
             status: components["schemas"]["AttendanceShiftStatusEnum"];
             source: components["schemas"]["AttendanceShiftSourceEnum"];
             published: boolean;
@@ -2469,16 +2467,12 @@ export interface components {
          * @enum {string}
          */
         PermissionsEnum: "members.view" | "members.approve" | "members.manage" | "roles.manage" | "positions.manage" | "tasks.view_all" | "tasks.assign" | "tasks.templates" | "tasks.confirm" | "reminders.configure" | "groups.manage" | "reports.view" | "time_off.approve" | "announcements.send" | "dashboard.access" | "company.settings" | "audit.view" | "data.export" | "branches.all" | "sales.view" | "sales.operate" | "sales.manage" | "sales.invoices" | "stock.manage" | "finance.view" | "finance.record" | "finance.manage" | "finance.approve" | "finance.claim" | "hr.view" | "hr.manage" | "hr.sensitive" | "hr.hiring" | "attendance.view" | "attendance.manage" | "time_off.manage" | "payroll.view" | "payroll.propose" | "payroll.manage" | "payroll.finalize" | "payroll.pay" | "ai.use" | "ai.configure" | "projects.view_all" | "projects.manage" | "projects.time_view" | "hr.discipline" | "hr.suspend" | "hr.terminate" | "assets.manage" | "reviews.manage" | "knowledge.manage" | "agenda.manage" | "crm.view" | "crm.manage";
-        Person: {
-            id: number;
-            name: string;
-        };
         PersonCard: {
             id: number;
             name: string;
             photo_url: string | null;
-            position: components["schemas"]["Ref"] | null;
-            home_branch: components["schemas"]["Ref"] | null;
+            position: components["schemas"]["AttendanceRef"] | null;
+            home_branch: components["schemas"]["AttendanceRef"] | null;
             status: string;
         };
         Position: {
@@ -2759,9 +2753,6 @@ export interface components {
          * @enum {string}
          */
         ProofEnum: "none" | "photo" | "text" | "any";
-        ReasonRequest: {
-            reason: string;
-        };
         RecordOut: {
             id: number;
             member_id: number;
@@ -2781,7 +2772,7 @@ export interface components {
             out_lng: string | null;
             out_accuracy_m: number | null;
             out_distance_m: number | null;
-            branch: components["schemas"]["BranchRef"] | null;
+            branch: components["schemas"]["AttendanceBranchRef"] | null;
             in_source: string;
             out_source: string;
             late_minutes: number;
@@ -2793,10 +2784,6 @@ export interface components {
             flags: components["schemas"]["AttendanceRecordFlagEnum"][];
             note: string;
             has_photo: boolean;
-        };
-        Ref: {
-            id: number;
-            name: string;
         };
         ReminderInfo: {
             every_minutes: number;
@@ -2890,6 +2877,11 @@ export interface components {
             /** Format: decimal */
             amount: string;
         };
+        SalesBranchRef: {
+            id: number;
+            name: string;
+            code: string;
+        };
         /**
          * @description * `payout` - Payout
          *     * `deposit` - Deposit
@@ -2900,6 +2892,17 @@ export interface components {
          * @enum {string}
          */
         SalesCashMovementKindEnum: "payout" | "deposit" | "handover" | "to_safe" | "from_safe" | "to_bank";
+        SalesPerson: {
+            id: number;
+            name: string;
+        };
+        SalesReasonRequest: {
+            reason: string;
+        };
+        SalesRef: {
+            id: number;
+            name: string;
+        };
         /**
          * @description * `sale` - Sale
          *     * `refund` - Refund
@@ -2938,8 +2941,8 @@ export interface components {
             break_minutes: number;
             /** @description Planned working minutes, the break left out. */
             minutes: number;
-            branch: components["schemas"]["BranchRef"] | null;
-            position: components["schemas"]["Ref"] | null;
+            branch: components["schemas"]["AttendanceBranchRef"] | null;
+            position: components["schemas"]["AttendanceRef"] | null;
             status: components["schemas"]["AttendanceShiftStatusEnum"];
             source: components["schemas"]["AttendanceShiftSourceEnum"];
             published: boolean;
@@ -2980,9 +2983,9 @@ export interface components {
             status: components["schemas"]["AttendanceSwapStatusEnum"];
             shift: components["schemas"]["ShiftOut"];
             other_shift: components["schemas"]["ShiftOut"] | null;
-            requested_by: components["schemas"]["Ref"];
-            target: components["schemas"]["Ref"] | null;
-            accepted_by: components["schemas"]["Ref"] | null;
+            requested_by: components["schemas"]["AttendanceRef"];
+            target: components["schemas"]["AttendanceRef"] | null;
+            accepted_by: components["schemas"]["AttendanceRef"] | null;
             note: string;
             decision_note: string;
             /** Format: date-time */
@@ -3031,6 +3034,7 @@ export interface components {
             assignee: components["schemas"]["MemberBrief"];
             created_by: components["schemas"]["MemberBrief"] | null;
             checklist: components["schemas"]["ChecklistItem"][];
+            readonly card: components["schemas"]["TaskCard"] | null;
             readonly reminder: components["schemas"]["ReminderInfo"] | null;
             readonly repeat_weekdays: number[] | null;
             /** Format: date-time */
@@ -3049,6 +3053,14 @@ export interface components {
             readonly id: number;
             readonly title: string;
             readonly status: components["schemas"]["TaskStatusEnum"];
+        };
+        TaskCard: {
+            project_id: number;
+            /** @description "RENO" */
+            project_key: string;
+            number: number;
+            /** @description The card's key, "RENO-14". */
+            key: string;
         };
         TaskCreateRequest: {
             title: string;
@@ -3622,7 +3634,7 @@ export interface operations {
             };
         };
     };
-    v1_companies_attendance_swaps_create_2: {
+    v1_companies_attendance_swaps_answer: {
         parameters: {
             query?: never;
             header?: never;
@@ -4499,9 +4511,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ReasonRequest"];
-                "application/x-www-form-urlencoded": components["schemas"]["ReasonRequest"];
-                "multipart/form-data": components["schemas"]["ReasonRequest"];
+                "application/json": components["schemas"]["SalesReasonRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["SalesReasonRequest"];
+                "multipart/form-data": components["schemas"]["SalesReasonRequest"];
             };
         };
         responses: {

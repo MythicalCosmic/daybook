@@ -71,10 +71,10 @@ def test_the_routine_link_is_listed_as_the_routines(company, api_as, cashier, op
     assert [(row["target_type"], row["target_id"]) for row in rows] == [("routine", routine.pk)]
 
 
-def test_someone_who_cant_see_the_task_gets_nothing(company, api_as, courier, opening):
+def test_someone_who_cant_see_the_task_gets_nothing(company, api_as, cook, opening):
     _routine, task = opening
 
-    assert linked(api_as(courier), company, task) == []
+    assert linked(api_as(cook), company, task) == []
 
 
 def test_a_task_without_a_routine_shows_only_its_own(company, api_as, cashier, handbook, opening):
@@ -94,12 +94,14 @@ def test_asking_for_the_routine_itself_still_works(company, api_as, cashier, ope
     assert [row["page"]["title"] for row in response.data] == ["How we open the till"]
 
 
-def test_the_demo_shows_how_to_on_a_sales_floor_routine(company, demo_people, api_as):
+def test_the_demo_shows_how_to_on_a_pharmacists_routine(company, demo_people, api_as):
     """The demo links a page its routine's people can read, so the mini app shows it."""
+    from apps.core import demo_plan
+
     people = demo_people(company)
     worker = people["worker"]
     routine = TaskTemplateFactory(
-        company=company, title="Reply to customer messages", assignees=[worker]
+        company=company, title=demo_plan.TELEGRAM_ORDERS, assignees=[worker]
     )
     task = TaskFactory(
         assignee=worker,
@@ -111,4 +113,4 @@ def test_the_demo_shows_how_to_on_a_sales_floor_routine(company, demo_people, ap
 
     demo.seed(company, people, timezone.now())
 
-    assert linked(api_as(worker), company, task) == ["Mijozni kutib olish standarti"]
+    assert linked(api_as(worker), company, task) == ["Xaridor bilan muloqot"]

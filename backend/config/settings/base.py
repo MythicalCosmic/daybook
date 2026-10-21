@@ -253,8 +253,16 @@ SPECTACULAR_SETTINGS = {
             "ActivityKindEnum": "apps.tasks.models.Activity.Kind",
             "WeekdayEnum": "apps.tasks.models.Weekday",
             "RepeatEnum": "apps.tasks.models.Repeat",
+            "TaskMoveEnum": ["todo", "in_progress", "review", "returned", "done"],
+            "TimeOffStatusEnum": "apps.timeoff.models.TimeOff.Status",
+            # Currencies with their names, and the bare codes some write serializers accept.
+            "CurrencyEnum": "apps.core.money.Currency",
+            "CurrencyCodeEnum": ["UZS", "USD"],
         }
     ),
+    # `make check` generates both schemas with --fail-on-warn: a component name used twice or
+    # an enum named by a hash fails it. Give a generic serializer an app-prefixed
+    # `Meta.ref_name` ("SalesReason") and name new enums here or in apps/<app>/schema_enums.py.
     "PREPROCESSING_HOOKS": ["apps.core.schema.split_by_audience"],
 }
 

@@ -31,9 +31,9 @@ def test_a_new_company_starts_with_roles_policy_and_a_branch(
     announced, django_capture_on_commit_callbacks
 ):
     with django_capture_on_commit_callbacks(execute=True):
-        company = create_company(name="Demo Café", timezone="Asia/Samarkand", language="ru")
+        company = create_company(name="Oqqayin Dorixona", timezone="Asia/Samarkand", language="ru")
 
-    assert company.slug == "demo-cafe"
+    assert company.slug == "oqqayin-dorixona"
     assert (company.timezone, company.default_language, company.base_currency) == (
         "Asia/Samarkand",
         "ru",
@@ -48,7 +48,7 @@ def test_a_new_company_starts_with_roles_policy_and_a_branch(
         "Employee",
     }
     assert ReminderPolicy.objects.filter(company=company, is_default=True).count() == 1
-    assert [branch.name for branch in company.branches.all()] == ["Demo Café"]
+    assert [branch.name for branch in company.branches.all()] == ["Oqqayin Dorixona"]
     assert announced == [(company, None)]
 
 
@@ -96,7 +96,7 @@ def test_by_is_passed_on(announced, company, member, django_capture_on_commit_ca
         ("Acme", "acme"),
         ("Ромашка", "romashka"),
         ("Oʻzbekiston Gʻalla", "ozbekiston-galla"),
-        ("Чойхона «Ўрта»", "choyxona-orta"),
+        ("Дорихона «Ўрта»", "dorixona-orta"),
         ("!!!", "company"),
     ],
 )

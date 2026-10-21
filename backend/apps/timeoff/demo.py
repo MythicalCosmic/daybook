@@ -1,230 +1,108 @@
-"""Demo data of time off: the year's public holidays, leave around today across both branches
-(approved, waiting, recorded sick leave, a revoked day, a refusal) so the month calendar and
-"Needs you" look like a real shop's."""
+"""Demo data of time off (apps/core/demo_plan.py): leave around today across both pharmacies
+(approved, waiting, sick leave written down afterwards, a revoked day and refusals), so the
+month calendar and "Needs you" look like a real pharmacy's.
+
+The pharmacies work on public holidays (Yunusobod never closes), so Demo Dorixona has no company
+holidays; the distributor's warehouse closes on them.
+"""
 
 from datetime import date, timedelta
 
-from django.utils import timezone
-
 from apps.audit import services as audit
 from apps.audit.models import AuditLog
-from apps.members.models import Membership
+from apps.core import demo_plan
 from apps.timeoff.audit_actions import TimeOffAuditAction
 from apps.timeoff.models import Holiday, TimeOff
-from apps.timeoff.services import PUBLIC_HOLIDAYS
-
-# Holiday names in the shop's own words (the demo company writes in Uzbek).
-UZ_NAMES = {
-    (1, 1): "Yangi yil",
-    (3, 8): "Xalqaro xotin-qizlar kuni",
-    (3, 21): "Navro‘z bayrami",
-    (5, 9): "Xotira va qadrlash kuni",
-    (9, 1): "Mustaqillik kuni",
-    (10, 1): "O‘qituvchi va murabbiylar kuni",
-    (12, 8): "Konstitutsiya kuni",
-}
-LUNAR = {2026: ((3, 20, "Ramazon hayiti"), (5, 27, "Qurbon hayiti"))}
 
 
 def seed(company, people, now) -> None:
-    owner, manager = people["owner"], people["manager"]
-    today = timezone.localdate()
-    for year in (today.year, today.year + 1):
-        for month, day, _name in PUBLIC_HOLIDAYS:
-            # update_or_create: the core demo may have named one in English already.
-            Holiday.objects.update_or_create(
-                company=company,
-                date=date(year, month, day),
-                defaults={"name": UZ_NAMES[(month, day)]},
-            )
-        for month, day, name in LUNAR.get(year, ()):
-            Holiday.objects.get_or_create(
-                company=company, date=date(year, month, day), defaults={"name": name}
-            )
+    """Add demo rows to `company`. `people` maps owner, manager, worker, madina, jasur
+    and nigora to their memberships."""
+    _seed(company, people, now)
 
-    staff = {
-        f"{m.first_name} {m.last_name}": m
-        for m in Membership.objects.filter(
-            company=company, status=Membership.Status.APPROVED, onboarded_at__isnull=False
-        )
-    }
 
-    def who(name, fallback):
-        return staff.get(name) or people[fallback]
+def seed_small(company, people, now) -> None:
+    """The distributor's holidays and a little leave. `people`: owner, manager, worker and
+    cashier."""
+    _seed(company, people, now)
 
-    def leave(
-        member,
-        start,
-        end,
-        *,
-        status=TimeOff.Status.APPROVED,
-        reason="",
-        decided_by=None,
-        recorded_by=None,
-        created_days_ago=3,
-    ):
+
+def _seed(company, people, now) -> None:
+    story = demo_plan.Plan(company, people, now)
+    if story.small:
+        for year in (story.today.year, story.today.year + 1):
+            for (month, day), name in demo_plan.PUBLIC_HOLIDAYS.items():
+                Holiday.objects.get_or_create(
+                    company=company, date=date(year, month, day), defaults={"name": name}
+                )
+        for day, name in demo_plan.LUNAR_HOLIDAYS.items():
+            Holiday.objects.get_or_create(company=company, date=day, defaults={"name": name})
+
+    for row in story.time_off:
+        member = story.member(row.who)
         if member is None:
-            return None
+            continue  # someone the module's own tests don't have
+        start, end = story.day(row.first), story.day(row.last)
         clash = TimeOff.objects.filter(
             membership=member,
             status__in=(TimeOff.Status.PENDING, TimeOff.Status.APPROVED),
             first_day__lte=end,
             last_day__gte=start,
         )
-        if status in (TimeOff.Status.PENDING, TimeOff.Status.APPROVED) and clash.exists():
-            return None
-        row = TimeOff.objects.create(
+        if row.status in ("approved", "pending") and clash.exists():
+            continue  # the core demo already made it
+        decider = story.member(row.decided_by) if row.decided_by else None
+        if row.decided_by and decider is None:
+            decider = people["manager"]
+        asked = now - timedelta(days=row.asked, hours=3)
+        decided = asked + timedelta(hours=20) if row.status != "pending" else None
+        recorded = decider if row.recorded else None
+        if row.recorded:  # written down afterwards, the day they came back
+            asked = decided = min(now, story.at(end + timedelta(days=1), demo_plan.H(9, 10)))
+        time_off = TimeOff.objects.create(
             company=company,
             membership=member,
             first_day=start,
             last_day=end,
-            status=status,
-            reason=reason,
-            decided_by=decided_by.user if decided_by else None,
-            decided_at=now - timedelta(days=max(created_days_ago - 1, 0))
-            if status != TimeOff.Status.PENDING
-            else None,
-            recorded_by=recorded_by,
+            status=row.status,
+            reason=row.reason,
+            decided_by=decider.user if decider and row.status != "pending" else None,
+            decided_at=min(decided, now) if decided else None,
+            recorded_by=recorded,
         )
-        TimeOff.objects.filter(pk=row.pk).update(created_at=now - timedelta(days=created_days_ago))
-        if status == TimeOff.Status.APPROVED and decided_by is not None:
-            action = (
-                TimeOffAuditAction.RECORDED if recorded_by else AuditLog.Action.TIME_OFF_APPROVED
-            )
-            entry = audit.record(
+        TimeOff.objects.filter(pk=time_off.pk).update(created_at=min(asked, now))
+        if row.status == "approved" and decider is not None:
+            action = TimeOffAuditAction.RECORDED if recorded else AuditLog.Action.TIME_OFF_APPROVED
+            _audit_at(
                 action,
-                company_id=company.pk,
-                actor=decided_by.user,
-                target=row,
+                company,
+                decider.user,
+                time_off,
+                min(decided, now),
                 first_day=start.isoformat(),
                 last_day=end.isoformat(),
             )
-            AuditLog.objects.filter(pk=entry.pk).update(
-                created_at=now - timedelta(days=created_days_ago)
+        if row.revoked_from is not None:
+            revoked_at = now - timedelta(days=1, hours=2)
+            owner = people["owner"]
+            TimeOff.objects.filter(pk=time_off.pk).update(
+                last_day=story.day(row.revoked_from - 1),
+                revoked_at=revoked_at,
+                revoked_by=owner.user,
+                revoke_reason=row.revoke_reason,
             )
-        return row
+            _audit_at(
+                TimeOffAuditAction.REVOKED,
+                company,
+                owner.user,
+                time_off,
+                revoked_at,
+                cancelled_from=story.day(row.revoked_from).isoformat(),
+                cancelled_to=end.isoformat(),
+                reason=row.revoke_reason,
+            )
 
-    d = lambda offset: today + timedelta(days=offset)  # noqa: E731
 
-    # Approved leave around today.
-    leave(
-        who("Dilshod Karimov", "jasur"),
-        d(-3),
-        d(1),
-        reason="Oilaviy to‘y, Samarqand",
-        decided_by=manager,
-        created_days_ago=9,
-    )
-    leave(
-        who("Shahzoda Yusupova", "worker"),
-        d(4),
-        d(6),
-        reason="Ta’til",
-        decided_by=owner,
-        created_days_ago=6,
-    )
-    leave(
-        who("Aziza Rasulova", "owner"),
-        d(10),
-        d(16),
-        reason="Yillik ta’til",
-        decided_by=owner,
-        created_days_ago=12,
-    )
-    leave(
-        who("Malika Tosheva", "madina"),
-        d(-12),
-        d(-8),
-        reason="Ta’til",
-        decided_by=manager,
-        created_days_ago=20,
-    )
-    leave(
-        who("Sherzod Umarov", "nigora"),
-        d(13),
-        d(14),
-        reason="Universitet imtihoni",
-        decided_by=manager,
-        created_days_ago=2,
-    )
-    # Sick leave recorded after the fact, with the doctor's note on paper.
-    leave(
-        who("Otabek Nazarov", "jasur"),
-        d(-6),
-        d(-4),
-        reason="Kasallik varaqasi (shamollash)",
-        decided_by=manager,
-        recorded_by=manager,
-        created_days_ago=3,
-    )
-    leave(
-        who("Ulug‘bek Qodirov", "nigora"),
-        d(-1),
-        d(0),
-        reason="Isitma, shifokor ko‘rigi",
-        decided_by=manager,
-        recorded_by=manager,
-        created_days_ago=1,
-    )
-
-    # Requests waiting for a decision.
-    leave(
-        who("Gulnora Ismoilova", "worker"),
-        d(8),
-        d(10),
-        status=TimeOff.Status.PENDING,
-        reason="Singlimning to‘yi",
-        created_days_ago=1,
-    )
-    leave(
-        who("Kamola Ergasheva", "madina"),
-        d(3),
-        d(3),
-        status=TimeOff.Status.PENDING,
-        reason="Shifokor qabuli",
-        created_days_ago=0,
-    )
-    leave(
-        who("Zarina Abdullayeva", "jasur"),
-        d(18),
-        d(21),
-        status=TimeOff.Status.PENDING,
-        reason="Toshkentdan tashqariga safar",
-        created_days_ago=0,
-    )
-
-    # A refusal and a revoked day, for the history.
-    leave(
-        who("Sardor Rahimov", "madina"),
-        d(2),
-        d(4),
-        status=TimeOff.Status.REJECTED,
-        reason="Dam olish",
-        decided_by=manager,
-        created_days_ago=5,
-    )
-    revoked = leave(
-        who("Farrux Aliyev", "manager"),
-        d(5),
-        d(7),
-        reason="Ta’til",
-        decided_by=owner,
-        created_days_ago=8,
-    )
-    if revoked is not None:
-        TimeOff.objects.filter(pk=revoked.pk).update(
-            last_day=d(6),
-            revoked_at=now - timedelta(days=1),
-            revoked_by=owner.user,
-            revoke_reason="Shanba kuni inventarizatsiya, Farrux kerak",
-        )
-        entry = audit.record(
-            TimeOffAuditAction.REVOKED,
-            company_id=company.pk,
-            actor=owner.user,
-            target=revoked,
-            cancelled_from=d(7).isoformat(),
-            cancelled_to=d(7).isoformat(),
-            reason="Shanba kuni inventarizatsiya, Farrux kerak",
-        )
-        AuditLog.objects.filter(pk=entry.pk).update(created_at=now - timedelta(days=1))
+def _audit_at(action, company, actor, target, when, **details) -> None:
+    entry = audit.record(action, company_id=company.pk, actor=actor, target=target, **details)
+    AuditLog.objects.filter(pk=entry.pk).update(created_at=when)
