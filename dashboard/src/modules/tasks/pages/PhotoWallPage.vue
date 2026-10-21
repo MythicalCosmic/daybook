@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Photo wall (plan §1.3): a day's proof photos, grouped by branch or by routine. Shop owners check
+ * Photo wall (plan §1.3): a day's proof photos, grouped by branch or by routine. Owners check
  * photos first; a photo opens large, its caption opens the task.
  */
 import { Camera, ChevronLeft, ChevronRight, Repeat, Store } from "@lucide/vue";

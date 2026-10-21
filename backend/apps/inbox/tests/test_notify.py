@@ -46,6 +46,32 @@ def test_texts_and_labels_are_in_each_recipients_language(owners, telegram):
     ]
 
 
+def test_each_reader_gets_translated_texts_whatever_the_active_language(company, member, telegram):
+    """Rendered once per recipient in their own language: an Uzbek reader gets Uzbek even when
+    the code sending it runs in English (a job, the demo, another person's request)."""
+    from django.utils import translation
+    from django.utils.translation import gettext as gettext_now
+
+    uzbek = member(company, "Owner", user__language="uz")
+    russian = member(company, "Owner", user__language="ru")
+
+    def title(person):
+        return gettext_now("Cash difference at %(shift)s: %(difference)s") % {
+            "shift": "YNS-78",
+            "difference": "-25 000",
+        }
+
+    with translation.override("en"):
+        notify([uzbek, russian], "inbox.claim", title=title, body=_("Approve"), actions=[APPROVE])
+
+    by_reader = {n.recipient_id: n for n in Notification.objects.all()}
+    assert by_reader[uzbek.pk].title == "YNS-78 smenasida naqd farqi: -25 000"
+    assert by_reader[uzbek.pk].body == "Tasdiqlash"
+    assert by_reader[uzbek.pk].actions[0]["label"] == "Tasdiqlash"
+    assert by_reader[russian.pk].title == "Расхождение в смене YNS-78: -25 000"
+    assert by_reader[russian.pk].body == "Одобрить"
+
+
 def test_target_actor_and_data_are_kept(company, member, owners, telegram):
     actor = member(company)
 

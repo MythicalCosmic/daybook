@@ -35,6 +35,9 @@ class RefSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
 
+    class Meta:
+        ref_name = "GroupsRef"
+
 
 class GroupSerializer(serializers.ModelSerializer):
     events = serializers.SerializerMethodField()

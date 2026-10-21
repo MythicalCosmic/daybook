@@ -46,11 +46,17 @@ class PersonRefSerializer(serializers.Serializer):
     name = serializers.CharField()
     photo_url = serializers.CharField(allow_null=True)
 
+    class Meta:
+        ref_name = "TimeoffPersonRef"
+
 
 class BranchRefSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     code = serializers.CharField()
+
+    class Meta:
+        ref_name = "TimeoffBranchRef"
 
 
 class OwnerTimeOffSerializer(serializers.ModelSerializer):

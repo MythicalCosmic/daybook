@@ -5,12 +5,13 @@
  * title and description), the checklist, how the bot chases it, and comments, the merged timeline
  * and the audited history in tabs. Other modules add buttons through `tasks.drawer.actions`.
  */
-import { BellRing, Check, Ellipsis, Flag, Gift, Link2, MessageSquare, Pencil, Repeat, RotateCcw, Send, UserRoundCog, X } from "@lucide/vue";
+import { BellRing, Check, CircleCheck, Ellipsis, Flag, FolderKanban, Gift, Link2, MessageSquare, Pencil, Repeat, RotateCcw, Send, UserRoundCog, X } from "@lucide/vue";
 import { useQueryClient } from "@tanstack/vue-query";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, useRouter } from "vue-router";
 
+import { isApiError } from "@/api/http";
 import AuditTrail from "@/components/AuditTrail.vue";
 import DatePicker from "@/components/DatePicker.vue";
 import DropdownMenu, { type MenuEntry } from "@/components/DropdownMenu.vue";
@@ -42,7 +43,7 @@ import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
 import { tasksApi, taskKeys, useRefreshTasks, useTaskDetail, useTaskMutation, useTaskOptions } from "../api";
-import { zonedIso, zonedParts } from "../meta";
+import { cardKey, lateness, minutesBetween, zonedIso, zonedParts } from "../meta";
 import type { TaskDetail, TaskPriority, TaskUpdateInput } from "../types";
 import { PRIORITIES } from "../types";
 import DueLabel from "./DueLabel.vue";
@@ -205,6 +206,24 @@ async function sendComment(): Promise<void> {
   }
 }
 
+/** When finished work was handed in (waiting for a check counts), and how late, if it was. */
+const finished = computed(() => {
+  const current = task.value;
+  if (!current?.completed_at || (current.status !== "done" && current.status !== "review")) return null;
+  const minutes = current.due_at ? minutesBetween(current.due_at, current.completed_at) : 0;
+  const words = { min: t("tasks.unit.min"), h: t("tasks.unit.h"), d: t("tasks.unit.d") };
+  return { at: current.completed_at, late: minutes > 0 ? t("tasks.due.lateBy", { time: lateness(minutes, words) }) : null };
+});
+
+/** Under the title: the board card ("OPEN-14 · Chilonzor branch opening") or the kind, then the branch. */
+const subtitle = computed(() => {
+  const current = task.value;
+  if (!current) return undefined;
+  const kind = current.routine?.onboarding ? "onboarding" : current.routine ? "routine" : current.kind;
+  const first = current.project ? `${cardKey(current.project)} · ${current.project.name}` : t(`tasks.kind.${kind}`);
+  return [first, current.branch?.name].filter(Boolean).join(" · ");
+});
+
 const proofImages = computed(() => (task.value?.proof_photo ? [{ src: task.value.proof_photo, caption: task.value.title }] : []));
 const checklistDone = computed(() => task.value?.checklist_items.filter((item) => item.is_done).length ?? 0);
 
@@ -257,7 +276,7 @@ const formatAudit = (field: string, value: unknown) => {
 </script>
 
 <template>
-  <UiDrawer query-key="task" size="lg" :title="task?.title ?? t('tasks.drawer.loading')" :description="task ? [t(`tasks.kind.${task.routine?.onboarding ? 'onboarding' : task.routine ? 'routine' : task.kind}`), task.branch?.name].filter(Boolean).join(' · ') : undefined">
+  <UiDrawer query-key="task" size="lg" :title="task?.title ?? t('tasks.drawer.loading')" :description="subtitle">
     <template #header-actions>
       <DropdownMenu v-if="task" :items="menu" align="end">
         <template #trigger><IconButton :icon="Ellipsis" :label="t('common.more')" /></template>
@@ -269,7 +288,8 @@ const formatAudit = (field: string, value: unknown) => {
       <SkeletonBlock height="180px" radius="12px" />
       <div v-for="n in 4" :key="n" class="flex gap-4"><SkeletonBlock width="30%" /><SkeletonBlock width="50%" /></div>
     </div>
-    <ErrorState v-else-if="query.isError.value" class="m-5" :error="query.error.value" :retry="() => query.refetch()" />
+    <!-- A deleted task won't come back by trying again. -->
+    <ErrorState v-else-if="query.isError.value" class="m-5" :error="query.error.value" :retry="isApiError(query.error.value) && query.error.value.status === 404 ? undefined : () => query.refetch()" />
 
     <div v-else-if="task" class="flex flex-col">
       <!-- Status and actions -->
@@ -281,9 +301,15 @@ const formatAudit = (field: string, value: unknown) => {
           </span>
           <span v-if="task.reward" class="inline-flex items-center gap-1 rounded-full bg-success-soft px-2 py-0.5 text-sm font-semibold text-success"><Gift :size="13" /><MoneyText :value="task.reward" sign="always" /></span>
           <span class="flex-1" />
-          <DueLabel :due="task.due_at" :overdue="task.is_overdue" icon class="text-sm" />
+          <!-- Finished work says when it was finished (the deadline is in the details below). -->
+          <span v-if="finished" class="inline-flex min-w-0 items-center gap-1 text-sm tabular-nums text-muted" :title="fmt.instant(finished.at, 'datetime')">
+            <CircleCheck :size="13" class="shrink-0" aria-hidden="true" />
+            <span class="truncate">{{ t("tasks.drawer.finishedAt", { time: fmt.instant(finished.at, "short") }) }}</span>
+            <span v-if="finished.late" class="shrink-0 text-xs font-semibold text-danger">· {{ finished.late }}</span>
+          </span>
+          <DueLabel v-else :due="task.due_at" :overdue="task.is_overdue" icon class="text-sm" />
         </div>
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2 empty:hidden">
           <UiButton v-if="can('confirm')" variant="primary" :icon="Check" :loading="busy === 'confirm'" @click="onConfirm">{{ t("tasks.action.confirm") }}</UiButton>
           <UiButton v-if="can('return')" :icon="RotateCcw" :loading="busy === 'return'" @click="onSendBack">{{ t("tasks.action.return") }}</UiButton>
           <UiPopover v-if="can('reassign')" v-model:open="reassignOpen" width="300px">
@@ -309,7 +335,6 @@ const formatAudit = (field: string, value: unknown) => {
           <ProofThumb :src="task.proof_photo" :images="proofImages" size="fill" :label="task.completed_at ? fmt.instant(task.completed_at, 'time') : undefined" />
         </div>
         <blockquote v-if="task.proof_text" class="rounded-[10px] border-l-[3px] border-primary bg-surface-2 px-3 py-2 text-sm text-fg">{{ task.proof_text }}</blockquote>
-        <p v-if="task.completed_at" class="text-xs text-muted">{{ t("tasks.drawer.finishedAt", { time: fmt.instant(task.completed_at) }) }}</p>
       </section>
 
       <!-- Details -->
@@ -376,6 +401,16 @@ const formatAudit = (field: string, value: unknown) => {
           <template v-if="task.branch">
             <dt class="text-muted">{{ t("tasks.field.branch") }}</dt>
             <dd class="min-w-0 truncate text-fg">{{ task.branch.name }}</dd>
+          </template>
+          <template v-if="task.project">
+            <dt class="text-muted">{{ t("tasks.field.project") }}</dt>
+            <dd class="min-w-0">
+              <RouterLink :to="`/c/${company.currentId}/projects/${task.project.id}/board?card=${task.id}`" class="inline-flex min-w-0 items-center gap-1.5 text-primary hover:underline">
+                <FolderKanban :size="13" class="shrink-0" aria-hidden="true" />
+                <span class="shrink-0 font-mono text-xs font-semibold">{{ cardKey(task.project) }}</span>
+                <span class="truncate">{{ task.project.name }}</span>
+              </RouterLink>
+            </dd>
           </template>
           <template v-if="task.routine">
             <dt class="text-muted">{{ t("tasks.field.routine") }}</dt>

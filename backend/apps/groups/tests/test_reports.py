@@ -10,6 +10,7 @@ from apps.groups.tasks import post_daily_reports
 from apps.groups.tests.factories import TelegramGroupFactory
 from apps.members.models import Membership
 from apps.members.tests.factories import PositionFactory
+from apps.projects.tests.factories import card, project, team
 from apps.tasks.models import Task
 from apps.tasks.tests.factories import TaskFactory
 
@@ -85,6 +86,17 @@ def test_the_day_is_counted_as_on_time_late_and_not_done(company, manager, ali, 
     assert stats.total == 4
 
 
+def test_unfinished_cards_are_listed_with_their_key(company, member, today):
+    people = team(company, member)
+    reno = project(company, people["owner"], key="RENO")
+    tiles = card(reno, people["owner"], title="Order tiles", assignee=people["aziz"])
+    Task.objects.filter(pk=tiles.pk).update(due_at=at(today, 10))
+
+    stats = reports.day_stats(company, today)
+
+    assert stats.not_done == [(str(people["aziz"]), "RENO-1 · Order tiles")]
+
+
 def test_the_morning_plan_goes_out_once_after_its_time(
     company, other_company, manager, ali, today, sent_messages
 ):
@@ -151,7 +163,7 @@ def test_each_group_gets_the_report_for_its_positions(
 ):
     cashier = PositionFactory(company=company)
     work(member.registered(company, first_name="Kassir", position=cashier), manager, at(today, 10))
-    work(member.registered(company, first_name="Oshpaz"), manager, at(today, 11))
+    work(member.registered(company, first_name="Botir"), manager, at(today, 11))
     cashiers = TelegramGroupFactory(company=company, events=[GroupEvent.MORNING])
     cashiers.positions.add(cashier)
     everyone = TelegramGroupFactory(company=company, events=[GroupEvent.MORNING])
@@ -160,9 +172,9 @@ def test_each_group_gets_the_report_for_its_positions(
 
     by_group = {message["chat_id"]: message["text"] for message in sent_messages}
     assert "Kassir" in by_group[cashiers.chat_id]
-    assert "Oshpaz" not in by_group[cashiers.chat_id]
+    assert "Botir" not in by_group[cashiers.chat_id]
     assert "Kassir" in by_group[everyone.chat_id]
-    assert "Oshpaz" in by_group[everyone.chat_id]
+    assert "Botir" in by_group[everyone.chat_id]
 
 
 def test_a_group_whose_people_have_nothing_today_gets_no_plan(

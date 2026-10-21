@@ -15,7 +15,7 @@ from apps.groups.models import GroupEvent, TelegramGroup, available_events
 from apps.groups.reports import DayStats, PlanRow
 from apps.members.bot_messages import BotMessage
 from apps.members.models import Membership, Position
-from apps.tasks.bot_messages import format_duration
+from apps.tasks.bot_messages import display_title, format_duration
 from apps.tasks.models import Task
 
 NOT_DONE_LIMIT = 15
@@ -26,7 +26,11 @@ WHO_LIMIT = 40
 def task_done(task: Task) -> BotMessage:
     zone = ZoneInfo(task.company.timezone)
     at = timezone.localtime(task.completed_at, zone).strftime("%H:%M")
-    values = {"name": html.quote(str(task.assignee)), "task": html.quote(task.title), "time": at}
+    values = {
+        "name": html.quote(str(task.assignee)),
+        "task": html.quote(display_title(task)),
+        "time": at,
+    }
     lines = [_("✅ <b>%(name)s</b> finished <b>%(task)s</b>") % values]
     if task.due_at is None or task.completed_at <= task.due_at:
         lines.append(_("At %(time)s, on time.") % values)
@@ -46,7 +50,7 @@ def late(task: Task, now: datetime) -> BotMessage:
     text = _("🚨 <b>%(name)s</b> is %(late)s late with <b>%(task)s</b>.") % {
         "name": html.quote(str(task.assignee)),
         "late": format_duration(now - task.due_at),
-        "task": html.quote(task.title),
+        "task": html.quote(display_title(task)),
     }
     return text, None
 

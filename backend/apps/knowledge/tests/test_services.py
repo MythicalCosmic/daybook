@@ -60,10 +60,10 @@ def test_only_knowledge_managers_change_the_knowledge_base(company, manager, cas
 def test_positions_of_another_company_are_refused(company, other_company, owner):
     from apps.members.models import Position
 
-    foreign = Position.objects.create(company=other_company, name="Cook")
+    foreign = Position.objects.create(company=other_company, name="Courier")
     with pytest.raises(DomainError):
         services.create_space(
-            company, by=owner, name="Kitchen", audience_all=False, position_ids=[foreign.pk]
+            company, by=owner, name="Delivery", audience_all=False, position_ids=[foreign.pk]
         )
 
 

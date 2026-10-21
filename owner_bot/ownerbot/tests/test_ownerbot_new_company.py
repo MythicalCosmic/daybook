@@ -114,7 +114,7 @@ async def test_open_signup_needs_no_code_and_takes_a_typed_timezone(dp, bot, set
 
     await dp.feed_update(bot, updates.message(person, "/new"))
     assert "Как называется ваша компания?" in last_text(bot)
-    await dp.feed_update(bot, updates.message(person, "Samarqand Non"))
+    await dp.feed_update(bot, updates.message(person, "Oqqayin Dorixona"))
     await dp.feed_update(bot, updates.callback(person, NewCompanyStep(action="type_tz").pack()))
     await dp.feed_update(bot, updates.message(person, "Mars"))
     assert "не знаю такого часового пояса" in last_text(bot)
@@ -123,7 +123,7 @@ async def test_open_signup_needs_no_code_and_takes_a_typed_timezone(dp, bot, set
     assert "Asia/Samarkand" in confirm.text
     await dp.feed_update(bot, updates.callback(person, button(confirm, "create").callback_data))
 
-    made = await company_named("Samarqand Non")
+    made = await company_named("Oqqayin Dorixona")
     assert made["company"].timezone == "Asia/Samarkand"
     assert made["company"].default_language == "ru"
 

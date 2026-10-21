@@ -31,7 +31,7 @@ def test_a_payout_is_an_expense_on_the_till_even_below_zero(shop, shift):
         register=shop.register,
         kind=CashMovement.Kind.PAYOUT,
         amount="800000",
-        reason="Bread from Non uyi",
+        reason="Drinking water for the staff",
         category="goods",
         photo=jpeg(),
     )

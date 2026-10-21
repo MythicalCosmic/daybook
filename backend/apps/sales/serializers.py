@@ -31,16 +31,25 @@ class PersonSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
 
+    class Meta:
+        ref_name = "SalesPerson"
+
 
 class RefSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
+
+    class Meta:
+        ref_name = "SalesRef"
 
 
 class BranchRefSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     code = serializers.CharField()
+
+    class Meta:
+        ref_name = "SalesBranchRef"
 
 
 def branch_ref(branch) -> dict | None:
@@ -66,6 +75,7 @@ class SettingsSerializer(serializers.ModelSerializer):
     business_day_ends_at = serializers.TimeField(format="%H:%M")
 
     class Meta:
+        ref_name = "SalesSettings"
         model = SalesSettings
         fields = (
             "business_day_ends_at",
@@ -136,6 +146,9 @@ class PaymentMethodSerializer(serializers.ModelSerializer):
 
 class ReorderSerializer(serializers.Serializer):
     ids = serializers.ListField(child=serializers.IntegerField(), allow_empty=False)
+
+    class Meta:
+        ref_name = "SalesReorder"
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -574,6 +587,9 @@ class VerifySerializer(serializers.Serializer):
 
 class ReasonSerializer(serializers.Serializer):
     reason = serializers.CharField(max_length=300)
+
+    class Meta:
+        ref_name = "SalesReason"
 
 
 class OptionalReasonSerializer(serializers.Serializer):

@@ -4,12 +4,13 @@
  * bulk bar (reassign, move the deadline, priority, nudge, confirm, cancel), cards on phones. Rows
  * open the drawer (`?task=`).
  */
-import { BellRing, CalendarClock, CheckCheck, Flag, Gift, Repeat, UserRoundCog, X } from "@lucide/vue";
+import { BellRing, CalendarClock, CheckCheck, Flag, FolderKanban, Gift, Inbox, Repeat, UserRoundCog, X } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import DataTable from "@/components/DataTable.vue";
 import DropdownMenu, { type MenuEntry } from "@/components/DropdownMenu.vue";
+import EmptyState from "@/components/EmptyState.vue";
 import MoneyCell from "@/components/MoneyCell.vue";
 import PersonCell from "@/components/PersonCell.vue";
 import PersonPicker from "@/components/PersonPicker.vue";
@@ -23,7 +24,7 @@ import { useFormat } from "@/lib/useFormat";
 import { usePermission } from "@/lib/usePermission";
 
 import { useBulk, useTaskList, useTaskOptions } from "../api";
-import { PRIORITY_TONE } from "../meta";
+import { cardKey, PRIORITY_TONE } from "../meta";
 import type { BulkAction, BulkInput, TaskPriority, TaskRow } from "../types";
 import { PRIORITIES } from "../types";
 import DueLabel from "./DueLabel.vue";
@@ -37,7 +38,7 @@ const props = defineProps<{
   activeId: number | null;
 }>();
 
-const emit = defineEmits<{ open: [task: TaskRow]; "clear-filters": [] }>();
+const emit = defineEmits<{ open: [task: TaskRow]; "clear-filters": []; "include-routines": [] }>();
 
 const { t } = useI18n();
 const fmt = useFormat();
@@ -45,6 +46,13 @@ const { can } = usePermission();
 const confirm = useConfirm();
 
 const query = useTaskList(computed(() => ({ ...props.params, ...props.state.params.value })));
+// The list leaves routine work out (the Tasks page's one-off work): an empty list says so and
+// offers it, since a routine's title finds nothing here otherwise.
+const withoutRoutines = computed(() => props.params.routines === "without");
+const emptyBody = computed(() => {
+  if (props.filtered) return t(withoutRoutines.value ? "tasks.empty.filteredRoutinesBody" : "tasks.empty.filteredBody");
+  return t("tasks.empty.body");
+});
 const options = useTaskOptions();
 const people = computed(() => (options.data.value?.people ?? []).map((p) => ({ id: p.id, name: p.name, photo_url: p.photo_url, subtitle: [p.position, p.branch].filter(Boolean).join(" · ") })));
 
@@ -57,7 +65,7 @@ const columns = computed<TableColumn<TaskRow>[]>(() => [
   { id: "title", header: t("tasks.col.task"), sortable: true, minWidth: 260, hideable: false, sticky: true, csv: (row) => row.title },
   { id: "assignee", header: t("tasks.col.assignee"), sortable: true, width: 210, value: (row) => row.assignee.name },
   { id: "status", header: t("tasks.col.status"), sortable: true, width: 150, value: (row) => t(`tasks.status.${row.status}`) },
-  { id: "due_at", header: t("tasks.col.due"), sortable: true, width: 240, value: (row) => row.due_at, csv: (row) => (row.due_at ? fmt.instant(row.due_at) : "") },
+  { id: "due_at", header: t("tasks.col.due"), sortable: true, width: 260, value: (row) => row.due_at, csv: (row) => (row.due_at ? fmt.instant(row.due_at) : "") },
   { id: "priority", header: t("tasks.col.priority"), sortable: true, width: 120, value: (row) => t(`tasks.priority.${row.priority}`) },
   { id: "branch", header: t("tasks.col.branch"), width: 130, value: (row) => row.branch?.name ?? "" },
   { id: "routine", header: t("tasks.col.routine"), width: 190, value: (row) => row.routine?.title ?? "" },
@@ -144,13 +152,22 @@ async function reassignMany(selected: string[], clear: () => void): Promise<void
     @row-click="(row) => emit('open', row)"
     @clear-filters="emit('clear-filters')"
   >
+    <template #empty>
+      <EmptyState size="sm" :icon="Inbox" tone="neutral" :title="filtered ? t('tasks.empty.filteredTitle') : t('tasks.empty.title')" :description="emptyBody">
+        <div v-if="filtered || withoutRoutines" class="flex flex-wrap justify-center gap-2">
+          <UiButton v-if="filtered" size="sm" @click="emit('clear-filters')">{{ t("common.filter.clearAll") }}</UiButton>
+          <UiButton v-if="withoutRoutines" size="sm" :icon="Repeat" data-testid="empty-include-routines" @click="emit('include-routines')">{{ t("tasks.filter.includeRoutines") }}</UiButton>
+        </div>
+      </EmptyState>
+    </template>
     <template #cell-title="{ row }">
       <div class="min-w-0 py-0.5">
-        <p :class="['truncate font-medium', row.status === 'done' || row.status === 'cancelled' ? 'text-muted' : 'text-fg']">
-          <span v-if="row.project" class="mr-1 font-mono text-xs font-semibold text-subtle">{{ row.project.key }}</span>{{ row.title }}
+        <p :class="['truncate font-medium', row.status === 'done' || row.status === 'cancelled' ? 'text-muted' : 'text-fg']" :title="row.project ? `${cardKey(row.project)} · ${row.title}` : row.title">
+          <span v-if="row.project" class="mr-1 font-mono text-xs font-semibold text-subtle">{{ cardKey(row.project) }}</span>{{ row.title }}
         </p>
         <p class="flex min-w-0 items-center gap-2 text-xs text-subtle">
           <span v-if="row.routine" class="inline-flex min-w-0 items-center gap-1"><Repeat :size="11" aria-hidden="true" /><span class="truncate">{{ row.routine.onboarding ? t("tasks.kind.onboarding") : t("tasks.kind.routine") }}</span></span>
+          <span v-else-if="row.project" class="inline-flex min-w-0 items-center gap-1"><FolderKanban :size="11" aria-hidden="true" /><span class="truncate">{{ row.project.name }}</span></span>
           <span v-else>{{ t(`tasks.kind.${row.kind}`) }}</span>
           <span v-if="row.checklist.total" :class="['inline-flex items-center gap-0.5 tabular-nums', row.checklist.done === row.checklist.total && 'text-success']"><CheckCheck :size="11" />{{ row.checklist.done }}/{{ row.checklist.total }}</span>
           <span v-if="row.reward" class="inline-flex items-center gap-0.5 text-success"><Gift :size="11" />{{ t("tasks.reward.short") }}</span>

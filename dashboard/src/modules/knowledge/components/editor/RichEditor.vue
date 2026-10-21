@@ -40,6 +40,7 @@ import UiButton from "@/components/UiButton.vue";
 import UiPopover from "@/components/UiPopover.vue";
 import UiSpinner from "@/components/UiSpinner.vue";
 import { toast } from "@/components/useToast";
+import { useBreakpoints } from "@/lib/useBreakpoints";
 
 import "../../prose.css";
 import { buildExtensions, CALLOUT_TONES, inTable, type CalloutTone, type TableCommand } from "./extensions";
@@ -58,6 +59,10 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const uploading = ref(0);
 const fileInput = ref<HTMLInputElement | null>(null);
+// Phones get 40 px toolbar buttons (a finger, not a pointer); the toolbar wraps one more row.
+const { isPhone } = useBreakpoints();
+const tool = computed(() => (isPhone.value ? "lg" : "sm"));
+
 // Bumped on every transaction, so the toolbar's active states follow the cursor.
 const tick = shallowRef(0);
 
@@ -206,7 +211,7 @@ defineExpose({ focus: () => editor.value?.commands.focus("end") });
     >
       <DropdownMenu :items="blockMenu" align="start" width="200px">
         <template #trigger>
-          <button type="button" class="pressable inline-flex h-7 items-center gap-1 rounded-[7px] px-2 text-sm font-medium text-fg hover:bg-highlight" :aria-label="t('knowledge.editor.textStyle')">
+          <button type="button" :class="['pressable inline-flex items-center gap-1 rounded-[7px] px-2 text-sm font-medium text-fg hover:bg-highlight', isPhone ? 'h-10' : 'h-7']" :aria-label="t('knowledge.editor.textStyle')">
             <Heading2 :size="15" class="text-muted" />
             <span class="max-w-[110px] truncate">{{ blockLabel }}</span>
             <ChevronDown :size="13" class="text-subtle" />
@@ -214,14 +219,14 @@ defineExpose({ focus: () => editor.value?.commands.focus("end") });
         </template>
       </DropdownMenu>
       <span class="mx-1 h-5 w-px bg-line" aria-hidden="true" />
-      <IconButton :icon="Bold" :label="t('knowledge.editor.bold')" shortcut="mod+b" size="sm" :active="is('bold')" @click="editor?.chain().focus().toggleBold().run()" />
-      <IconButton :icon="Italic" :label="t('knowledge.editor.italic')" shortcut="mod+i" size="sm" :active="is('italic')" @click="editor?.chain().focus().toggleItalic().run()" />
-      <IconButton :icon="Underline" :label="t('knowledge.editor.underline')" shortcut="mod+u" size="sm" :active="is('underline')" @click="editor?.chain().focus().toggleUnderline().run()" />
-      <IconButton :icon="Strikethrough" :label="t('knowledge.editor.strike')" size="sm" :active="is('strike')" @click="editor?.chain().focus().toggleStrike().run()" />
-      <IconButton :icon="Code" :label="t('knowledge.editor.code')" size="sm" :active="is('code')" @click="editor?.chain().focus().toggleCode().run()" />
+      <IconButton :icon="Bold" :label="t('knowledge.editor.bold')" shortcut="mod+b" :size="tool" :active="is('bold')" @click="editor?.chain().focus().toggleBold().run()" />
+      <IconButton :icon="Italic" :label="t('knowledge.editor.italic')" shortcut="mod+i" :size="tool" :active="is('italic')" @click="editor?.chain().focus().toggleItalic().run()" />
+      <IconButton :icon="Underline" :label="t('knowledge.editor.underline')" shortcut="mod+u" :size="tool" :active="is('underline')" @click="editor?.chain().focus().toggleUnderline().run()" />
+      <IconButton :icon="Strikethrough" :label="t('knowledge.editor.strike')" :size="tool" :active="is('strike')" @click="editor?.chain().focus().toggleStrike().run()" />
+      <IconButton :icon="Code" :label="t('knowledge.editor.code')" :size="tool" :active="is('code')" @click="editor?.chain().focus().toggleCode().run()" />
       <UiPopover v-model:open="linkOpen" width="300px" align="start">
         <template #trigger>
-          <IconButton :icon="Link2" :label="t('knowledge.editor.link')" shortcut="mod+k" size="sm" :active="is('link')" />
+          <IconButton :icon="Link2" :label="t('knowledge.editor.link')" shortcut="mod+k" :size="tool" :active="is('link')" />
         </template>
         <form class="flex flex-col gap-2" @submit.prevent="applyLink">
           <label class="text-xs font-semibold text-muted" for="kb-link-url">{{ t("knowledge.editor.linkUrl") }}</label>
@@ -233,23 +238,23 @@ defineExpose({ focus: () => editor.value?.commands.focus("end") });
         </form>
       </UiPopover>
       <span class="mx-1 h-5 w-px bg-line" aria-hidden="true" />
-      <IconButton :icon="List" :label="t('knowledge.editor.bullets')" size="sm" :active="is('bulletList')" @click="editor?.chain().focus().toggleBulletList().run()" />
-      <IconButton :icon="ListOrdered" :label="t('knowledge.editor.numbers')" size="sm" :active="is('orderedList')" @click="editor?.chain().focus().toggleOrderedList().run()" />
-      <IconButton :icon="ListChecks" :label="t('knowledge.editor.checklist')" size="sm" :active="is('taskList')" @click="editor?.chain().focus().toggleTaskList().run()" />
-      <IconButton :icon="TextQuote" :label="t('knowledge.editor.quote')" size="sm" :active="is('blockquote')" @click="editor?.chain().focus().toggleBlockquote().run()" />
+      <IconButton :icon="List" :label="t('knowledge.editor.bullets')" :size="tool" :active="is('bulletList')" @click="editor?.chain().focus().toggleBulletList().run()" />
+      <IconButton :icon="ListOrdered" :label="t('knowledge.editor.numbers')" :size="tool" :active="is('orderedList')" @click="editor?.chain().focus().toggleOrderedList().run()" />
+      <IconButton :icon="ListChecks" :label="t('knowledge.editor.checklist')" :size="tool" :active="is('taskList')" @click="editor?.chain().focus().toggleTaskList().run()" />
+      <IconButton :icon="TextQuote" :label="t('knowledge.editor.quote')" :size="tool" :active="is('blockquote')" @click="editor?.chain().focus().toggleBlockquote().run()" />
       <DropdownMenu :items="calloutMenu" align="start" width="200px">
         <template #trigger>
-          <IconButton :icon="Lightbulb" :label="t('knowledge.editor.callout')" size="sm" :active="is('callout')" />
+          <IconButton :icon="Lightbulb" :label="t('knowledge.editor.callout')" :size="tool" :active="is('callout')" />
         </template>
       </DropdownMenu>
       <span class="mx-1 h-5 w-px bg-line" aria-hidden="true" />
-      <IconButton :icon="Table2" :label="t('knowledge.editor.table')" size="sm" :active="tableActive" @click="editor?.chain().focus().insertTable(3, 3).run()" />
-      <IconButton :icon="ImagePlus" :label="t('knowledge.editor.image')" size="sm" :loading="uploading > 0" @click="fileInput?.click()" />
-      <IconButton :icon="Minus" :label="t('knowledge.editor.divider')" size="sm" @click="editor?.chain().focus().setHorizontalRule().run()" />
+      <IconButton :icon="Table2" :label="t('knowledge.editor.table')" :size="tool" :active="tableActive" @click="editor?.chain().focus().insertTable(3, 3).run()" />
+      <IconButton :icon="ImagePlus" :label="t('knowledge.editor.image')" :size="tool" :loading="uploading > 0" @click="fileInput?.click()" />
+      <IconButton :icon="Minus" :label="t('knowledge.editor.divider')" :size="tool" @click="editor?.chain().focus().setHorizontalRule().run()" />
       <span class="flex-1" />
       <template v-if="tableActive">
-        <IconButton :icon="Rows3" :label="t('knowledge.editor.addRow')" size="sm" @click="table('addRow')" />
-        <IconButton :icon="Columns3" :label="t('knowledge.editor.addColumn')" size="sm" @click="table('addColumn')" />
+        <IconButton :icon="Rows3" :label="t('knowledge.editor.addRow')" :size="tool" @click="table('addRow')" />
+        <IconButton :icon="Columns3" :label="t('knowledge.editor.addColumn')" :size="tool" @click="table('addColumn')" />
         <DropdownMenu
           :items="[
             { label: t('knowledge.editor.toggleHeader'), onSelect: () => table('toggleHeader') },
@@ -260,13 +265,13 @@ defineExpose({ focus: () => editor.value?.commands.focus("end") });
           width="200px"
         >
           <template #trigger>
-            <IconButton :icon="Trash2" :label="t('knowledge.editor.tableMore')" size="sm" />
+            <IconButton :icon="Trash2" :label="t('knowledge.editor.tableMore')" :size="tool" />
           </template>
         </DropdownMenu>
         <span class="mx-1 h-5 w-px bg-line" aria-hidden="true" />
       </template>
-      <IconButton :icon="Undo2" :label="t('knowledge.editor.undo')" shortcut="mod+z" size="sm" :disabled="!editor?.can().undo()" @click="editor?.chain().focus().undo().run()" />
-      <IconButton :icon="Redo2" :label="t('knowledge.editor.redo')" shortcut="mod+shift+z" size="sm" :disabled="!editor?.can().redo()" @click="editor?.chain().focus().redo().run()" />
+      <IconButton :icon="Undo2" :label="t('knowledge.editor.undo')" shortcut="mod+z" :size="tool" :disabled="!editor?.can().undo()" @click="editor?.chain().focus().undo().run()" />
+      <IconButton :icon="Redo2" :label="t('knowledge.editor.redo')" shortcut="mod+shift+z" :size="tool" :disabled="!editor?.can().redo()" @click="editor?.chain().focus().redo().run()" />
       <input ref="fileInput" type="file" accept="image/*" class="hidden" multiple @change="onFile" />
     </div>
     <div v-if="uploading" class="mb-3 flex items-center gap-2 text-sm text-muted" aria-live="polite"><UiSpinner :size="14" />{{ t("knowledge.editor.uploading") }}</div>

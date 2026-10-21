@@ -30,7 +30,7 @@ def customer(books):
 
 @pytest.fixture
 def supplier(books):
-    return CounterpartyFactory(company=books, name="Coca-Cola", kind="supplier")
+    return CounterpartyFactory(company=books, name="Tolzor Farm Savdo", kind="supplier")
 
 
 @pytest.fixture

@@ -55,6 +55,15 @@ export function builtinTabs(t: T, views: BuiltinView[], isOwner: boolean): Saved
   return views.filter((view) => isOwner || !view.ownerOnly).map((view) => ({ id: view.id, name: t(`tasks.views.${view.id}`), builtin: true }));
 }
 
+/**
+ * Whether the filters ask for routine work themselves: a routine picked, or the Routine kind. The
+ * Tasks page lists one-off work otherwise (`routines=without`), unless "Include routines" is on.
+ */
+export function asksForRoutines(params: Record<string, string | string[] | undefined>): boolean {
+  const list = (value: string | string[] | undefined) => (value === undefined ? [] : Array.isArray(value) ? value : [value]);
+  return list(params.routine).length > 0 || list(params.kind).includes("daily");
+}
+
 /** The URL/API params a saved view stores, from whatever shape it was saved in. */
 export function viewParams(state: Record<string, unknown>): Record<string, string | string[]> {
   const source = (state.params as Record<string, unknown> | undefined) ?? state;

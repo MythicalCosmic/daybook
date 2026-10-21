@@ -30,7 +30,9 @@ const fmt = useFormat();
 const router = useRouter();
 const now = useNow();
 const q = useRouteState("q", rs.string());
-const table = useDataTable({ id: "projects.cards", url: true, pageSize: 500, pageSizes: [500], ordering: "" });
+// Status and priority start hidden (the list a card sits in already says where it is, most cards are
+// "Normal" and the board flags urgent ones), so the rest fits 1440 px; the Columns menu brings them back.
+const table = useDataTable({ id: "projects.cards", url: true, pageSize: 500, pageSizes: [500], ordering: "", hidden: ["status", "priority"] });
 const query = useCards(() => props.project.id);
 
 const listName = (id: number | null) => props.project.lists.find((l) => l.id === id)?.name ?? "—";
@@ -71,15 +73,15 @@ const rows = computed(() => {
 });
 
 const columns = computed<TableColumn<Card>[]>(() => [
-  { id: "title", header: t("projects.col.card"), minWidth: 300, sortable: true, hideable: false, sticky: true },
-  { id: "list", header: t("projects.col.list"), width: 140, sortable: true, value: (c) => listName(c.list_id) },
-  { id: "status", header: t("projects.col.status"), width: 160, value: (c) => t(`projects.taskStatus.${c.status}`) },
-  { id: "assignee", header: t("projects.col.assignee"), width: 190, sortable: true, value: (c) => c.assignee?.name ?? "" },
-  { id: "due_at", header: t("projects.col.due"), width: 140, sortable: true },
+  { id: "title", header: t("projects.col.card"), minWidth: 240, sortable: true, hideable: false, sticky: true },
+  { id: "list", header: t("projects.col.list"), width: 116, sortable: true, value: (c) => listName(c.list_id) },
+  { id: "status", header: t("projects.col.status"), width: 136, value: (c) => t(`projects.taskStatus.${c.status}`) },
+  { id: "assignee", header: t("projects.col.assignee"), width: 168, sortable: true, value: (c) => c.assignee?.name ?? "" },
+  { id: "due_at", header: t("projects.col.due"), width: 116, sortable: true },
   { id: "priority", header: t("projects.col.priority"), width: 110, sortable: true, value: (c) => t(`projects.taskPriority.${c.priority}`) },
-  { id: "milestone", header: t("projects.col.milestone"), width: 170, value: (c) => milestoneName(c.milestone_id) },
-  { id: "labels", header: t("projects.col.labels"), width: 200, value: (c) => c.label_ids.map((id) => props.project.labels.find((l) => l.id === id)?.name).join(", ") },
-  { id: "minutes", header: t("projects.col.time"), width: 90, numeric: true, sortable: true, value: (c) => hhmm(c.minutes) },
+  { id: "milestone", header: t("projects.col.milestone"), width: 140, value: (c) => milestoneName(c.milestone_id) },
+  { id: "labels", header: t("projects.col.labels"), width: 150, value: (c) => c.label_ids.map((id) => props.project.labels.find((l) => l.id === id)?.name).join(", ") },
+  { id: "minutes", header: t("projects.col.time"), width: 84, numeric: true, sortable: true, value: (c) => hhmm(c.minutes) },
 ]);
 
 function open(card: Card): void {
@@ -114,7 +116,7 @@ function open(card: Card): void {
       <template #cell-title="{ row }">
         <div class="flex min-w-0 items-center gap-2 py-1">
           <span class="shrink-0 font-mono text-xs text-subtle">{{ row.key }}</span>
-          <span class="truncate font-medium" :class="row.status === 'done' ? 'text-muted line-through' : 'text-fg'">{{ row.title }}</span>
+          <span class="truncate font-medium" :class="row.status === 'done' ? 'text-muted line-through' : 'text-fg'" :title="row.title">{{ row.title }}</span>
         </div>
       </template>
       <template #cell-status="{ row }"><StatusPill size="sm" :tone="TASK_TONE[row.status]" :label="t(`projects.taskStatus.${row.status}`)" /></template>
