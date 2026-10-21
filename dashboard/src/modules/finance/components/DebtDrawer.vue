@@ -59,7 +59,6 @@ const payOpen = ref(false);
 const editing = ref(false);
 const planning = ref(false);
 const saving = ref(false);
-const canManage = computed(() => company.can("finance.manage"));
 const canRecord = computed(() => company.can("finance.record"));
 const options = useOptions(editing);
 
@@ -197,7 +196,7 @@ const moreMenu = computed<MenuEntry[]>(() => {
   const list: MenuEntry[] = [];
   if (!debt.value || !detail.value) return list;
   if (detail.value.can_write_off) list.push({ label: t("finance.debts.writeOff"), icon: Undo2, onSelect: writeOff });
-  if (canManage.value && !debt.value.is_locked) list.push({ label: t("finance.debts.cancel"), icon: Ban, danger: true, onSelect: cancel });
+  if (detail.value.can_cancel) list.push({ label: t("finance.debts.cancel"), icon: Ban, danger: true, onSelect: cancel });
   return list;
 });
 

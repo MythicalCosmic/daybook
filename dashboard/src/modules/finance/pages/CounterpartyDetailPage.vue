@@ -80,7 +80,7 @@ const debtColumns = computed<TableColumn<Debt>[]>(() => [
   { id: "direction", header: t("finance.debts.direction"), width: 120, value: (row) => row.direction_label },
   { id: "kind", header: t("finance.debts.kind"), width: 130, value: (row) => t(`finance.debtKind.${row.kind}`) },
   { id: "issued_on", header: t("finance.debts.issued"), width: 96, format: (value) => fmt.day(String(value), dayStyle(String(value))) },
-  { id: "due_on", header: t("finance.debts.due"), width: 110, format: (value) => (value ? fmt.day(String(value), dayStyle(String(value))) : "—") },
+  { id: "due_on", header: t("finance.debts.due"), width: 130, format: (value) => (value ? fmt.day(String(value), dayStyle(String(value))) : "—") },
   { id: "outstanding", header: t("finance.debts.left"), numeric: true, minWidth: 130 },
   { id: "status", header: t("finance.filter.status"), width: 110 },
 ]);
@@ -149,6 +149,13 @@ const tabs = computed(() => [
           >
             <template #cell-direction="{ row }">
               <span :class="['text-sm font-medium', row.direction === 'receivable' ? 'text-success' : 'text-danger']">{{ row.direction_label }}</span>
+            </template>
+            <template #cell-due_on="{ row }">
+              <div v-if="row.due_on" class="flex min-w-0 flex-col">
+                <span class="text-sm text-fg">{{ fmt.day(row.due_on, dayStyle(row.due_on)) }}</span>
+                <span v-if="row.days_overdue" class="truncate text-xs font-semibold text-danger">{{ t("finance.debts.late", { n: row.days_overdue }, row.days_overdue) }}</span>
+              </div>
+              <span v-else class="text-sm text-subtle">{{ t("finance.debts.noDue") }}</span>
             </template>
             <template #cell-outstanding="{ row }"><MoneyCell :value="row.outstanding" :currency="row.currency" :colored="false" strong /></template>
             <template #cell-status="{ row }"><StatusPill :tone="DEBT_TONES[row.status]" size="sm" :label="t(`finance.debtStatus.${row.status}`)" /></template>

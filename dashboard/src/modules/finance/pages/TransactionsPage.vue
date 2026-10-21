@@ -131,6 +131,24 @@ const activeTab = computed<ViewTab["id"]>({
   },
 });
 
+// A link that names a view alone (`?view=pending`, a bookmark of a saved view) opens it with its
+// filters; a link that carries its own filters keeps them. Saved views arrive a moment later, so
+// this waits for the view's state once.
+let viewApplied = false;
+watch(
+  activeState,
+  (state) => {
+    if (viewApplied) return;
+    if (!Object.keys(state).length) {
+      viewApplied = BUILTIN.some((view) => view.id === viewId.value);
+      return;
+    }
+    viewApplied = true;
+    if (!Object.keys(currentState.value).length) activeTab.value = activeTab.value;
+  },
+  { immediate: true },
+);
+
 function saveView(input: { name: string; shared: boolean }): void {
   views.create.mutate(
     { name: input.name, is_shared: input.shared, state: currentState.value },
@@ -148,7 +166,7 @@ const columns = computed<TableColumn<Transaction>[]>(() => [
   { id: "amount", header: t("finance.field.amount"), sortable: true, numeric: true, width: 168, value: (row) => row.amount, csv: (row) => row.amount },
   { id: "receipts", header: "", width: 48, hideable: false, align: "center", value: (row) => row.receipts.length || "", csv: (row) => row.receipts.length },
   { id: "branch", header: t("finance.field.branch"), width: 88, value: (row) => row.branch?.name ?? "" },
-  { id: "status", header: t("finance.filter.status"), width: 112, value: (row) => row.status_label, csv: (row) => row.status_label },
+  { id: "status", header: t("finance.filter.status"), width: 136, value: (row) => row.status_label, csv: (row) => row.status_label },
 ]);
 
 function open(row: Transaction): void {
@@ -320,7 +338,7 @@ const kindIcon = (kind: TransactionKind) => KIND_ICONS[kind] ?? Receipt;
         </template>
         <template #cell-status="{ row }">
           <StatusPill v-if="row.status !== 'posted'" :tone="STATUS_TONES[row.status]" size="sm" :label="row.status_label" />
-          <StatusPill v-else-if="!['income', 'expense'].includes(row.kind)" :tone="KIND_TONES[row.kind]" size="sm" variant="plain" :label="row.kind_label" />
+          <StatusPill v-else-if="!['income', 'expense'].includes(row.kind)" :tone="KIND_TONES[row.kind]" size="sm" variant="plain" :label="t(`finance.kind.${row.kind}`)" />
           <span v-else class="sr-only">{{ row.status_label }}</span>
         </template>
         <template #cell-amount="{ row }">

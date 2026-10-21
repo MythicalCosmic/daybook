@@ -46,11 +46,21 @@ const table = useDataTable({ id: "finance.statement", pageSize: 200 });
 const kpis = computed(() => {
   const d = data.value;
   const currency = d?.account.currency;
+  // The period reads left to right: what was there, what came in, what went out, what was left.
+  // The balance now shows under the closing one when the period ends before today.
+  const endsEarlier = !!d && d.to < d.today;
   return [
-    { id: "balance", label: t("finance.accounts.balanceNow"), value: d?.account.balance ?? null, format: "money" as const, currency, icon: Wallet },
+    { id: "opening", label: t("finance.accounts.startOf", { date: d ? fmt.day(d.from, "short") : "" }), value: d?.opening ?? null, format: "money" as const, currency, icon: Wallet },
     { id: "in", label: t("finance.tx.moneyIn"), value: d?.money_in ?? null, format: "money" as const, currency },
     { id: "out", label: t("finance.tx.moneyOut"), value: d?.money_out ?? null, format: "money" as const, currency },
-    { id: "closing", label: t("finance.accounts.closing", { date: d ? fmt.day(d.to, "short") : "" }), value: d?.closing ?? null, format: "money" as const, currency, hint: d ? t("finance.accounts.openingWas", { amount: fmt.money(d.opening, currency) }) : undefined },
+    {
+      id: "closing",
+      label: t("finance.accounts.closing", { date: d ? fmt.day(d.to, "short") : "" }),
+      value: d?.closing ?? null,
+      format: "money" as const,
+      currency,
+      hint: d && endsEarlier ? t("finance.accounts.nowHint", { amount: fmt.money(d.account.balance, currency) }) : undefined,
+    },
   ];
 });
 
@@ -71,7 +81,6 @@ function open(row: Transaction): void {
   <div>
     <PageHeader :title="account?.name ?? t('finance.accounts.statement')" :back="`/c/${company.currentId}/finance/accounts`" :back-label="t('finance.nav.accounts')" :description="account ? [account.kind_label, account.branch?.name, account.bank_name].filter(Boolean).join(' · ') : undefined">
       <template #actions>
-        <DateRangePicker v-model="period" :compare="false" align="end" />
         <UiButton v-if="account?.can_record && account.is_active" variant="secondary" :icon="ArrowLeftRight" @click="openQuickAdd({ mode: 'transfer', account: account.id })">{{ t("finance.cmd.transferShort") }}</UiButton>
         <UiButton v-if="account?.can_record && account.is_active" variant="primary" :icon="Plus" @click="openQuickAdd({ mode: 'expense', account: account.id })">{{ t("finance.cmd.record") }}</UiButton>
       </template>
@@ -86,6 +95,9 @@ function open(row: Transaction): void {
 
     <ErrorState v-if="statement.isError.value" :error="statement.error.value" :retry="() => statement.refetch()" />
     <div v-else class="flex flex-col gap-4">
+      <div class="flex flex-wrap items-center gap-2">
+        <DateRangePicker v-model="period" :compare="false" />
+      </div>
       <KpiStrip :items="kpis" :loading="statement.isPending.value" :columns="4" />
 
       <PageSection v-if="data?.pending.length" :title="t('finance.accounts.pending')" :count="data.pending.length" variant="card">

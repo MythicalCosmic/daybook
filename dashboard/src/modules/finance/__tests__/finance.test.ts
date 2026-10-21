@@ -14,10 +14,11 @@ import { mountWithProviders, testApp } from "@/test/plugins";
 
 import { financeApi, financeKeys, periodParams, useCategorize } from "../api";
 import QuickAddDialog from "../components/QuickAddDialog.vue";
+import TransactionDrawer from "../components/TransactionDrawer.vue";
 import PnlTable from "../components/reports/PnlTable.vue";
 import en from "../i18n/en.json";
 import module from "../index";
-import { dayStyle, pickerOrder, trimLeadingPeriods } from "../lib";
+import { dayStyle, dropEmptyCompare, pickerOrder, trimLeadingEmpty, trimLeadingPeriods } from "../lib";
 import type { Options, Pnl, PnlNode, Transaction, TransactionPage } from "../types";
 
 interface Call {
@@ -110,9 +111,27 @@ describe("api", () => {
     expect(calls[8]!.body).toEqual({ until: "2026-09-30" });
   });
 
+  it("approves and rejects a waiting entry", async () => {
+    const calls = stub({
+      "POST transactions/5/approve/": () => json({ id: 5, status: "posted" }),
+      "POST transactions/6/reject/": () => json({ id: 6, status: "rejected" }),
+    });
+    await financeApi.approveTransaction(1, 5);
+    await financeApi.rejectTransaction(1, 6, "No receipt");
+    expect(calls.map((c) => `${c.method} ${c.url.replace(PREFIX, "")}`)).toEqual(["POST transactions/5/approve/", "POST transactions/6/reject/"]);
+    expect(calls[1]!.body).toEqual({ reason: "No receipt" });
+  });
+
   it("registers in the money group with the finance pulse keys, widgets and deep links", () => {
     expect(module).toMatchObject({ id: "finance", group: "money", order: 30, feature: "finance", hotkey: "f", invalidates: ["finance"] });
     expect(module.widgets?.map((w) => w.id)).toEqual(["finance.kpi.cash_now", "finance.kpi.expenses_mtd", "finance.chart.cash_flow_30d"]);
+    // The two KPI tiles fill the row of the inbox's "Needs you" (order 30, two columns) and the
+    // chart pairs with the activity stream (40): a four-column grid without holes.
+    expect(module.widgets?.map((w) => [w.order, w.span])).toEqual([
+      [31, 1],
+      [32, 1],
+      [42, 2],
+    ]);
     expect(module.deepLinks?.txn?.("12")).toBe("finance/transactions?txn=12");
     expect(module.deepLinks?.debt?.("x")).toBeNull();
     expect(financeKeys.of(1, "transactions", { page: 2 })).toEqual([1, "finance", "transactions", { page: 2 }]);
@@ -175,6 +194,33 @@ describe("lib", () => {
     expect(trimmed.income.total).toBe(data.income.total);
     const empty = pnl(["2026-01", "2026-02"], [node(1, ["0.00", "0.00"])], []);
     expect(trimLeadingPeriods(empty).periods.map((p) => p.key)).toEqual(["2026-02"]);
+  });
+
+  it("hides a comparison with a period that had nothing booked, and keeps a real one", () => {
+    const data = pnl(["2026-09", "2026-10"], [node(1, ["900.00", "700.00"])], [node(2, ["400.00", "300.00"])]);
+    const empty: Pnl = {
+      ...data,
+      compare: { from: "2025-09-01", to: "2025-10-21" },
+      income: { ...data.income, previous: "0.00", nodes: data.income.nodes.map((n) => ({ ...n, previous: "0.00" })) },
+      expense: { ...data.expense, previous: "0.00" },
+      profit: { ...data.profit, previous: "0.00" },
+    };
+    const dropped = dropEmptyCompare(empty);
+    expect(dropped.compare).toBeNull();
+    expect(dropped.income.previous).toBeNull();
+    expect(dropped.income.nodes[0]!.previous).toBeNull();
+    expect(dropped.profit.previous).toBeNull();
+    const real: Pnl = { ...empty, expense: { ...empty.expense, previous: "120.00" } };
+    expect(dropEmptyCompare(real)).toBe(real);
+  });
+
+  it("starts a series where the money started, keeping at least a week", () => {
+    const zero = { income: "0.00", expense: "0.00" };
+    const days = [zero, zero, zero, ...Array.from({ length: 8 }, (_, i) => ({ income: `${i + 1}.00`, expense: "0.00" }))];
+    const series = days.map((point, i) => ({ ...point, date: String(i) }));
+    expect(trimLeadingEmpty(series).map((p) => p.date)).toEqual(["3", "4", "5", "6", "7", "8", "9", "10"]);
+    const quiet = Array.from({ length: 9 }, (_, i) => ({ ...zero, date: String(i) }));
+    expect(trimLeadingEmpty(quiet)).toHaveLength(7);
   });
 
   it("writes the year only for days outside this year", () => {
@@ -253,6 +299,78 @@ describe("QuickAddDialog", () => {
     document.querySelector<HTMLButtonElement>('[data-testid="quick-save"]')!.click();
     await flushPromises();
     expect(document.body.textContent).toContain("Attach a receipt: expenses over 5,000,000 need one.");
+  });
+});
+
+const waiting = (overrides: Partial<Transaction> = {}): Transaction =>
+  ({
+    id: 5,
+    kind: "expense",
+    kind_label: "Expense",
+    status: "pending",
+    status_label: "Waiting for approval",
+    occurred_on: "2026-10-20",
+    account: { id: 8, name: "Bekzod's purse", kind: "employee", currency: "UZS" },
+    amount: "-450000.00",
+    currency: "UZS",
+    rate: "1.000000",
+    rate_stale: false,
+    base_amount: "-450000.00",
+    category: { id: 4, name: "Fuel", kind: "expense", color: "", parent_name: "Transport" },
+    counterparty: null,
+    membership: null,
+    branch: null,
+    project: null,
+    debt_id: null,
+    transfer_id: null,
+    is_contra: false,
+    description: "Benzin",
+    source: null,
+    created_by: "Nigora Azimova",
+    created_at: "2026-10-20T10:00:00+05:00",
+    approved_by: null,
+    approved_at: null,
+    voided_by: null,
+    voided_at: null,
+    void_reason: "",
+    receipts: [],
+    masked: false,
+    is_manual: true,
+    can_edit: true,
+    can_void: true,
+    can_approve: true,
+    ...overrides,
+  }) as Transaction;
+
+describe("TransactionDrawer", () => {
+  it("offers approve and reject on an entry waiting for approval, and approves it", async () => {
+    const calls = stub({
+      "GET transactions/5/": () => json(waiting()),
+      "POST transactions/5/approve/": () => json(waiting({ status: "posted", can_approve: false })),
+    });
+    const app = await testApp("/c/1/finance/transactions?txn=5");
+    mountWithProviders(TransactionDrawer, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(document.body.textContent).toContain(en["finance.tx.waitingTitle"]);
+    const buttons = [...document.querySelectorAll<HTMLButtonElement>("button")];
+    expect(buttons.some((b) => b.textContent?.includes(en["finance.tx.reject"]))).toBe(true);
+    expect(buttons.some((b) => b.textContent?.includes(en["finance.tx.void"]))).toBe(false);
+    buttons.find((b) => b.textContent?.trim() === en["finance.tx.approve"])!.click();
+    await flushPromises();
+    expect(calls.some((c) => c.method === "POST" && c.url.endsWith("transactions/5/approve/"))).toBe(true);
+    expect(toasts.at(-1)?.title).toBe(en["finance.tx.approved"]);
+  });
+
+  it("shows no decision buttons to someone who may not decide", async () => {
+    stub({ "GET transactions/5/": () => json(waiting({ can_approve: false })) });
+    const app = await testApp("/c/1/finance/transactions?txn=5");
+    mountWithProviders(TransactionDrawer, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(document.body.textContent).toContain(en["finance.tx.waitingOther"]);
+    const labels = [...document.querySelectorAll<HTMLButtonElement>("button")].map((b) => b.textContent?.trim());
+    expect(labels).not.toContain(en["finance.tx.approve"]);
   });
 });
 

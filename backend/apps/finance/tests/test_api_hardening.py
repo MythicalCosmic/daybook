@@ -106,9 +106,7 @@ class TestBranchScopedWrites:
         assert response.status_code == 201
         assert response.json()["branch"]["id"] == main.pk
 
-    def test_with_several_branches_one_must_be_picked(
-        self, owner_api, fin, role, person, branches
-    ):
+    def test_with_several_branches_one_must_be_picked(self, owner_api, fin, role, person, branches):
         member = self.manager(fin, role, person, list(branches), [Perm.FINANCE_MANAGE])
         response = owner_api(member).post(
             url(fin, "accounts/"), {"name": "Kassa 2", "kind": "cash"}, format="json"
@@ -386,9 +384,8 @@ class TestScopedPartyBalances:
         assert [row["owes_us"] for row in listed if row["id"] == party.pk] == ["100000.00"]
         detail = api.get(url(fin, f"counterparties/{party.pk}/")).json()
         assert detail["counterparty"]["owes_us"] == "100000.00"
-        assert owner_api(boss).get(url(fin, f"counterparties/{party.pk}/")).json()[
-            "counterparty"
-        ]["owes_us"] == ("1000000.00")
+        everything = owner_api(boss).get(url(fin, f"counterparties/{party.pk}/")).json()
+        assert everything["counterparty"]["owes_us"] == "1000000.00"
 
     def test_owes_filter_follows_the_scope(
         self, owner_api, fin, role, person, boss, branches, today
@@ -416,9 +413,7 @@ class TestScopedPartyBalances:
 
 class TestSalaryDetail:
     def salary(self, fin, boss, kassa, today, worker):
-        row = expense(
-            fin, boss, kassa, "4300000", today, category="salaries", membership=worker
-        )
+        row = expense(fin, boss, kassa, "4300000", today, category="salaries", membership=worker)
         services.upload_receipt(fin, by=boss, file=jpeg(), txn=row)
         return row
 

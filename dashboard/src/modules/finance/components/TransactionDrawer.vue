@@ -5,7 +5,7 @@
  * lightbox, PDFs in a new tab, new ones dropped in), the record it came from, and the corrections
  * the person may make: edit (an entry made by hand changes fully; others only their note) and void.
  */
-import { Ban, ExternalLink, EyeOff, FileText, History, Pencil, Receipt as ReceiptIcon } from "@lucide/vue";
+import { Ban, Check, ExternalLink, EyeOff, FileText, History, Pencil, Receipt as ReceiptIcon, X } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, useRoute } from "vue-router";
@@ -68,6 +68,7 @@ watch(id, () => {
 
 const KindIcon = computed(() => (row.value ? (KIND_ICONS[row.value.kind] ?? ReceiptIcon) : ReceiptIcon));
 const foreign = computed(() => !!row.value && row.value.currency !== company.currency);
+const canRecord = computed(() => company.can("finance.record"));
 const sourceUrl = computed(() => (row.value?.source?.url ? companyUrl(company.currentId ?? 0, row.value.source.url) : null));
 
 const items = computed<DescriptionItem[]>(() => {
@@ -188,6 +189,37 @@ async function saveEdit(): Promise<void> {
   }
 }
 
+// Waiting entries --------------------------------------------------------------------------
+
+const deciding = ref(false);
+
+async function approve(target: Transaction): Promise<void> {
+  deciding.value = true;
+  try {
+    await financeApi.approveTransaction(company.currentId ?? 0, target.id);
+    toast.success(t("finance.tx.approved"));
+    refresh();
+  } finally {
+    deciding.value = false;
+  }
+}
+
+async function reject(target: Transaction): Promise<void> {
+  const answer = await confirm({
+    title: t("finance.tx.rejectTitle"),
+    message: t("finance.tx.rejectBody"),
+    tone: "danger",
+    reason: "required",
+    reasonLabel: t("finance.tx.rejectReason"),
+    confirmLabel: t("finance.tx.reject"),
+    onConfirm: (reason) => financeApi.rejectTransaction(company.currentId ?? 0, target.id, reason),
+  });
+  if (answer) {
+    toast.success(t("finance.tx.rejected"));
+    refresh();
+  }
+}
+
 async function voidRow(target: Transaction): Promise<void> {
   const answer = await confirm({
     title: t("finance.tx.voidTitle"),
@@ -261,6 +293,7 @@ const fieldLabels = computed(() => ({
 
           <template v-if="tab === 'details'">
             <InlineAlert v-if="row.masked" tone="info" size="sm" :icon="EyeOff" :title="t('finance.tx.maskedTitle')" :description="t('finance.tx.maskedBody')" />
+            <InlineAlert v-if="row.status === 'pending'" tone="warning" size="sm" :title="t('finance.tx.waitingTitle')" :description="row.can_approve ? t('finance.tx.waitingBody') : t('finance.tx.waitingOther')" />
             <InlineAlert
               v-if="row.status === 'void' || row.status === 'rejected'"
               tone="neutral"
@@ -327,7 +360,7 @@ const fieldLabels = computed(() => ({
                 </li>
               </ul>
               <p v-else class="text-sm text-muted">{{ t("finance.tx.noReceipts") }}</p>
-              <FileDrop v-if="row.status === 'posted' || row.status === 'pending'" v-model="files" compact multiple accept="image/*,application/pdf" :disabled="uploading" :title="t('finance.tx.attach')" :hint="t('finance.quick.dropHint')" />
+              <FileDrop v-if="canRecord && (row.status === 'posted' || row.status === 'pending')" v-model="files" compact multiple accept="image/*,application/pdf" :disabled="uploading" :title="t('finance.tx.attach')" :hint="t('finance.quick.dropHint')" />
             </section>
           </template>
 
@@ -337,7 +370,13 @@ const fieldLabels = computed(() => ({
       </div>
     </template>
     <template #footer>
-      <div v-if="row && !editing && (row.can_edit || row.can_void)" class="flex w-full items-center gap-2">
+      <div v-if="row && !editing && row.can_approve" class="flex w-full items-center gap-2">
+        <UiButton v-if="row.can_edit" variant="ghost" :icon="Pencil" @click="startEdit">{{ t("common.edit") }}</UiButton>
+        <span class="flex-1" />
+        <UiButton variant="secondary" :icon="X" :disabled="deciding" @click="reject(row)">{{ t("finance.tx.reject") }}</UiButton>
+        <UiButton variant="primary" :icon="Check" :loading="deciding" @click="approve(row)">{{ t("finance.tx.approve") }}</UiButton>
+      </div>
+      <div v-else-if="row && !editing && (row.can_edit || row.can_void)" class="flex w-full items-center gap-2">
         <UiButton v-if="row.can_void" variant="ghost" :icon="Ban" class="text-danger" @click="voidRow(row)">{{ t("finance.tx.void") }}</UiButton>
         <span class="flex-1" />
         <UiButton v-if="row.can_edit" :icon="Pencil" @click="startEdit">{{ row.is_manual ? t("common.edit") : t("finance.tx.editNote") }}</UiButton>

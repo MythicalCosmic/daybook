@@ -19,7 +19,7 @@ import { useFormat } from "@/lib/useFormat";
 
 import { periodParams, usePnl } from "../../api";
 import { useCssColor } from "../../colors";
-import { trimLeadingPeriods } from "../../lib";
+import { dropEmptyCompare, trimLeadingPeriods } from "../../lib";
 import PnlTable from "./PnlTable.vue";
 
 const props = defineProps<{ branch: number[] }>();
@@ -31,7 +31,7 @@ const period = useRangeState({ preset: "year", compare: "prev" });
 const group = useRouteState("group", rs.enum(["month", "quarter"] as const, "month"));
 const params = computed(() => ({ ...periodParams(period.value), group: group.value, ...(props.branch.length ? { branch: props.branch } : {}) }));
 const query = usePnl(params);
-const data = computed(() => (query.data.value ? trimLeadingPeriods(query.data.value) : undefined));
+const data = computed(() => (query.data.value ? dropEmptyCompare(trimLeadingPeriods(query.data.value)) : undefined));
 const table = ref<InstanceType<typeof PnlTable> | null>(null);
 const expanded = ref(false);
 

@@ -100,9 +100,11 @@ export default defineModule({
       run: () => ctx.go("finance/accounts?setup=opening"),
     },
   ],
+  // Ordered so the two KPI tiles fill the row of "Needs you" (30, span 2) and the chart pairs with
+  // the activity stream (40, span 2): no holes in the four-column grid.
   widgets: [
-    { id: "finance.kpi.cash_now", span: 1, order: 40, kind: "kpi", perm: VIEW, component: defineAsyncComponent(() => import("./widgets/CashNowWidget.vue")) },
-    { id: "finance.kpi.expenses_mtd", span: 1, order: 41, kind: "kpi", perm: VIEW, component: defineAsyncComponent(() => import("./widgets/ExpensesWidget.vue")) },
+    { id: "finance.kpi.cash_now", span: 1, order: 31, kind: "kpi", perm: VIEW, component: defineAsyncComponent(() => import("./widgets/CashNowWidget.vue")) },
+    { id: "finance.kpi.expenses_mtd", span: 1, order: 32, kind: "kpi", perm: VIEW, component: defineAsyncComponent(() => import("./widgets/ExpensesWidget.vue")) },
     { id: "finance.chart.cash_flow_30d", span: 2, order: 42, kind: "chart", perm: VIEW, component: defineAsyncComponent(() => import("./widgets/CashFlowWidget.vue")) },
   ],
   settings: [

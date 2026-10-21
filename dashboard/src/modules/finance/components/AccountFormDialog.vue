@@ -13,7 +13,6 @@ import DatePicker from "@/components/DatePicker.vue";
 import FormField from "@/components/FormField.vue";
 import MoneyInput from "@/components/MoneyInput.vue";
 import MultiSelect from "@/components/MultiSelect.vue";
-import RadioCards from "@/components/RadioCards.vue";
 import SegmentedControl from "@/components/SegmentedControl.vue";
 import SelectBox from "@/components/SelectBox.vue";
 import TextInput from "@/components/TextInput.vue";
@@ -24,7 +23,8 @@ import { toast } from "@/components/useToast";
 import { useCompanyStore } from "@/stores/company";
 
 import { financeApi, useOptions, useRefresh } from "../api";
-import { ACCOUNT_ICONS, ACCOUNT_KINDS, ACCOUNT_SWATCHES } from "../lib";
+import { ACCOUNT_SWATCHES } from "../lib";
+import AccountKindPicker from "./AccountKindPicker.vue";
 import type { Account, AccountKind } from "../types";
 
 const open = defineModel<boolean>("open", { default: false });
@@ -83,7 +83,6 @@ watch(
   },
 );
 
-const kindOptions = computed(() => ACCOUNT_KINDS.map((kind) => ({ value: kind, label: t(`finance.accountKind.${kind}`), icon: ACCOUNT_ICONS[kind] })));
 const needsHolder = computed(() => form.kind === "employee" || form.kind === "owner");
 const isBanky = computed(() => form.kind === "bank" || form.kind === "card");
 const people = computed(() => (options.data.value?.members ?? []).map((m) => ({ value: m.id, label: m.name, description: m.position, avatar: { name: m.name } })));
@@ -133,7 +132,7 @@ async function save(): Promise<void> {
   <UiDialog v-model:open="open" :title="editing ? t('finance.accounts.editTitle') : t('finance.accounts.newTitle')" :description="editing ? undefined : t('finance.accounts.newDescription')" size="lg">
     <div class="flex flex-col gap-4">
       <FormField v-if="!editing" :label="t('finance.accounts.kind')" required>
-        <RadioCards v-model="form.kind" :options="kindOptions" :columns="2" />
+        <AccountKindPicker v-model="form.kind" />
         <p class="mt-1.5 text-xs text-muted">{{ t(`finance.accountKindHint.${form.kind}`) }}</p>
       </FormField>
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
@@ -151,7 +150,13 @@ async function save(): Promise<void> {
         <FormField v-if="needsHolder && !editing" :label="t('finance.accounts.holder')" :error="errors.holder" required>
           <SelectBox v-model="form.holder" :options="people" :placeholder="t('finance.accounts.pickPerson')" />
         </FormField>
+        <FormField v-else :label="t('finance.accounts.operators')" :hint="t('finance.accounts.operatorsHint')" optional>
+          <MultiSelect v-model="form.operators" :options="people" :placeholder="t('finance.accounts.pickPeople')" />
+        </FormField>
       </div>
+      <FormField v-if="needsHolder && !editing" :label="t('finance.accounts.operators')" :hint="t('finance.accounts.operatorsHint')" optional>
+        <MultiSelect v-model="form.operators" :options="people" :placeholder="t('finance.accounts.pickPeople')" />
+      </FormField>
       <div v-if="isBanky" class="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_140px]">
         <FormField :label="t('finance.accounts.bank')" optional>
           <TextInput v-model="form.bank_name" :maxlength="100" placeholder="Kapitalbank" />
@@ -160,27 +165,26 @@ async function save(): Promise<void> {
           <TextInput v-model="form.number_last4" :maxlength="4" inputmode="numeric" mono placeholder="4417" />
         </FormField>
       </div>
-      <FormField :label="t('finance.accounts.operators')" :hint="t('finance.accounts.operatorsHint')" optional>
-        <MultiSelect v-model="form.operators" :options="people" :placeholder="t('finance.accounts.pickPeople')" />
-      </FormField>
-      <FormField :label="t('finance.accounts.color')" optional>
-        <div class="flex flex-wrap items-center gap-2">
-          <button
-            v-for="swatch in ACCOUNT_SWATCHES"
-            :key="swatch"
-            type="button"
-            :class="['size-7 rounded-full border-2 transition-transform hover:scale-110', form.color === swatch ? 'border-fg' : 'border-transparent']"
-            :style="{ background: swatch }"
-            :aria-label="swatch"
-            :aria-pressed="form.color === swatch"
-            @click="form.color = swatch"
-          />
-          <button type="button" :class="['h-7 rounded-full border px-2.5 text-xs font-medium', form.color === '' ? 'border-fg text-fg' : 'border-line text-muted']" @click="form.color = ''">
-            {{ t("finance.accounts.autoColor") }}
-          </button>
-        </div>
-      </FormField>
-      <ToggleSwitch v-model="form.allow_negative" :label="t('finance.accounts.allowNegative')" :description="t('finance.accounts.allowNegativeHint')" layout="row" />
+      <div class="grid grid-cols-1 items-start gap-3 sm:grid-cols-2">
+        <FormField :label="t('finance.accounts.color')" optional>
+          <div class="flex flex-wrap items-center gap-1.5">
+            <button
+              v-for="swatch in ACCOUNT_SWATCHES"
+              :key="swatch"
+              type="button"
+              :class="['size-6 rounded-full border-2 transition-transform hover:scale-110', form.color === swatch ? 'border-fg' : 'border-transparent']"
+              :style="{ background: swatch }"
+              :aria-label="swatch"
+              :aria-pressed="form.color === swatch"
+              @click="form.color = swatch"
+            />
+            <button type="button" :class="['h-6 rounded-full border px-2 text-xs font-medium', form.color === '' ? 'border-fg text-fg' : 'border-line text-muted']" @click="form.color = ''">
+              {{ t("finance.accounts.autoColor") }}
+            </button>
+          </div>
+        </FormField>
+        <ToggleSwitch v-model="form.allow_negative" class="sm:pt-6" :label="t('finance.accounts.allowNegative')" :description="t('finance.accounts.allowNegativeHint')" layout="row" />
+      </div>
       <div v-if="!editing" class="grid grid-cols-1 gap-3 rounded-[12px] bg-surface-2 p-3 sm:grid-cols-2">
         <FormField :label="t('finance.accounts.opening')" :hint="t('finance.accounts.openingHint')" optional>
           <MoneyInput v-model="form.opening_balance" :currencies="[form.currency]" negative />

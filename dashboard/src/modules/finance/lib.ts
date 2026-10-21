@@ -180,6 +180,37 @@ export function dayStyle(day: string, now: Date = new Date()): "short" | "medium
  * August to October for "this year", not seven columns of zeros). Totals are unchanged: the
  * dropped columns are all zero. At least one period is always kept.
  */
+/**
+ * The P&L without its comparison when the compared period has nothing booked at all (a business
+ * whose books began this year compared with last year): a "Previous 0" column and "—" deltas on
+ * every row would only be noise.
+ */
+export function dropEmptyCompare(data: Pnl): Pnl {
+  if (!data.compare) return data;
+  const empty = (value: string | null) => value === null || isZeroMoney(value);
+  if (!empty(data.income.previous) || !empty(data.expense.previous)) return data;
+  const node = (n: PnlNode): PnlNode => ({ ...n, previous: null, children: n.children.map(node) });
+  const section = (part: Pnl["income"]): Pnl["income"] => ({ ...part, previous: null, nodes: part.nodes.map(node) });
+  return {
+    ...data,
+    compare: null,
+    income: section(data.income),
+    expense: section(data.expense),
+    profit: { ...data.profit, previous: null },
+    margin: { ...data.margin, previous: null },
+  };
+}
+
+/**
+ * A series without the empty buckets before the first money moved (a young ledger shown over 90
+ * days or 12 months would otherwise start with an empty stretch). At least `keep` points stay.
+ */
+export function trimLeadingEmpty<T extends { income: string; expense: string }>(series: T[], keep = 7): T[] {
+  let skip = 0;
+  while (skip < series.length - keep && isZeroMoney(series[skip]!.income) && isZeroMoney(series[skip]!.expense)) skip += 1;
+  return skip ? series.slice(skip) : series;
+}
+
 export function trimLeadingPeriods(data: Pnl): Pnl {
   const last = data.periods.length - 1;
   let skip = 0;

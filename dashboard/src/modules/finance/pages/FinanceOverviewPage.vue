@@ -33,7 +33,7 @@ import { useCompanyStore } from "@/stores/company";
 
 import { useCashFlow, useOverview } from "../api";
 import { useCssColor } from "../colors";
-import { ACCOUNT_ICONS, colorFor, isNegative, isZeroMoney, pickerOrder, share } from "../lib";
+import { ACCOUNT_ICONS, colorFor, isNegative, isZeroMoney, pickerOrder, share, trimLeadingEmpty } from "../lib";
 import { openQuickAdd } from "../quickAdd";
 
 const { t } = useI18n();
@@ -110,10 +110,12 @@ const flowParams = computed(() => {
   return { from: addDays(today, -(days - 1)), to: today, group: days <= 31 ? "day" : days <= 120 ? "week" : "month" };
 });
 const flow = useCashFlow(flowParams, computed(() => !!data.value));
-const categories = computed(() => (flow.data.value?.series ?? []).map((point) => point.date));
+// A ledger younger than the span starts where the money started, not with weeks of nothing.
+const points = computed(() => trimLeadingEmpty(flow.data.value?.series ?? []));
+const categories = computed(() => points.value.map((point) => point.date));
 const flowSeries = computed(() => [
-  { name: t("finance.overview.moneyIn"), data: (flow.data.value?.series ?? []).map((p) => p.income), color: css("var(--c-success)") },
-  { name: t("finance.overview.moneyOut"), data: (flow.data.value?.series ?? []).map((p) => p.expense), color: css("var(--c-chart-1)") },
+  { name: t("finance.overview.moneyIn"), data: points.value.map((p) => p.income), color: css("var(--c-success)") },
+  { name: t("finance.overview.moneyOut"), data: points.value.map((p) => p.expense), color: css("var(--c-chart-1)") },
 ]);
 const flowEmpty = computed(() => !!flow.data.value && flow.data.value.series.every((p) => isZeroMoney(p.income) && isZeroMoney(p.expense)));
 const flowCsv = computed(() => ({

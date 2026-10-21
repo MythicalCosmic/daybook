@@ -111,6 +111,8 @@ export interface Statement {
   account: Account;
   from: string;
   to: string;
+  /** Today in the company's calendar. */
+  today: string;
   opening: Money;
   closing: Money;
   money_in: Money;
@@ -247,6 +249,8 @@ export interface Transaction {
   is_manual: boolean;
   can_edit: boolean;
   can_void: boolean;
+  /** A waiting entry recorded here that the viewer may approve or reject (not their own). */
+  can_approve: boolean;
 }
 
 export interface TransactionSummary {
@@ -370,6 +374,8 @@ export interface DebtDetail {
   payments: Transaction[];
   can_pay: boolean;
   can_write_off: boolean;
+  /** Not booked by another module, not reserved, and the viewer has finance.manage. */
+  can_cancel: boolean;
 }
 
 export interface DebtSideTotals {

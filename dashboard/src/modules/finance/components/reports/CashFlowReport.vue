@@ -91,7 +91,7 @@ const breakdown = computed(() => (data.value?.breakdown ?? []).filter((row) => r
             </div>
             <div v-for="row in breakdown" :key="row.key" class="flex items-center justify-between gap-3 border-b border-line py-2">
               <dt class="min-w-0">
-                <span class="block truncate text-fg">{{ row.label }}</span>
+                <span class="block truncate text-fg">{{ t(`finance.reports.section.${row.key}`) }}</span>
                 <span class="block truncate text-xs text-subtle">
                   +{{ fmt.money(row.income, undefined, { compact: true }) }} · −{{ fmt.money(row.expense, undefined, { compact: true }) }}
                 </span>

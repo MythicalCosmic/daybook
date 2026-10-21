@@ -95,6 +95,8 @@ export const financeApi = {
   createTransaction: (cid: number, input: TransactionInput) => http.post<Transaction>(path(cid, "transactions/"), input),
   updateTransaction: (cid: number, id: number, patch: TransactionPatch) => http.patch<Transaction>(path(cid, `transactions/${id}/`), patch),
   voidTransaction: (cid: number, id: number, reason: string) => http.post<Transaction>(path(cid, `transactions/${id}/void/`), { reason }),
+  approveTransaction: (cid: number, id: number) => http.post<Transaction>(path(cid, `transactions/${id}/approve/`)),
+  rejectTransaction: (cid: number, id: number, reason: string) => http.post<Transaction>(path(cid, `transactions/${id}/reject/`), { reason }),
   bulk: (cid: number, ids: number[], action: "categorize" | "void", extra: { category?: number; reason?: string }) =>
     http.post<{ results: BulkResult[] }>(path(cid, "transactions/bulk/"), { ids, action, ...extra }),
   uploadReceipt: (cid: number, file: File, transactionId?: number) => {
