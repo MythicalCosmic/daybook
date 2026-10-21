@@ -39,7 +39,7 @@ function stub(routes: Record<string, (call: Call) => Response>): Call[] {
 
 const routine = (overrides: Partial<Routine> = {}): Routine => ({
   id: 32,
-  title: "Open the shop: checklist",
+  title: "Open the pharmacy: checklist",
   description: "",
   weekdays: [0, 1, 2, 3, 4],
   due_time: "08:45:00",
@@ -190,7 +190,7 @@ describe("RoutineEditor", () => {
     await flushPromises();
     const patch = calls.find((c) => c.method === "PATCH");
     expect(patch?.body).toMatchObject({
-      title: "Open the shop: checklist",
+      title: "Open the pharmacy: checklist",
       weekdays: [0, 1, 2, 3, 4],
       due_time: "08:45",
       assignee_ids: [11],

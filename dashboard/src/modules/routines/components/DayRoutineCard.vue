@@ -85,7 +85,7 @@ function give(): void {
         </p>
       </div>
       <div v-if="row.progress.total" class="flex w-full items-center gap-3 sm:w-[280px]">
-        <ProgressBar :value="row.progress.finished" :max="row.progress.total" :tone="tone" size="md" class="flex-1" :label="t('routines.today.progressLabel')" />
+        <ProgressBar :value="row.progress.finished" :max="row.progress.total" :tone="tone" size="md" class="flex-1" :aria-label="t('routines.today.progressLabel')" />
         <p class="shrink-0 whitespace-nowrap text-sm">
           <span class="font-semibold tabular-nums text-fg">{{ t("routines.today.progress", { done: row.progress.finished, total: row.progress.total }) }}</span>
           <span class="text-muted"> · {{ percent }}</span>

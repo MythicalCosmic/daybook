@@ -41,7 +41,7 @@ const caption = computed(() => `${props.run.member.name} · ${props.title}${prop
   <li
     :class="[
       'flex min-w-0 items-center gap-3 rounded-[10px] border bg-surface px-3 py-2.5 transition-colors',
-      run.state === 'late' || run.state === 'missed' ? 'border-[color-mix(in_srgb,var(--c-danger)_28%,var(--c-line))]' : 'border-line',
+      run.state === 'late' || run.state === 'missed' ? 'border-[color-mix(in_srgb,var(--c-danger)_35%,transparent)]' : 'border-line',
       run.state === 'cancelled' && 'opacity-60',
     ]"
     :data-run-state="run.state"

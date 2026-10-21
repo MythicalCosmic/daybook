@@ -77,7 +77,7 @@ const kpis = computed(() => {
       id: "finished",
       label: t("routines.today.kpi.finished"),
       value: totals ? totals.finished : null,
-      format: (value: number) => (totals ? t("routines.today.progress", { done: value, total: totals.total }) : String(value)),
+      format: (value: number) => (totals ? `${value} / ${totals.total}` : String(value)),
       hint: percent === null ? t("routines.today.kpi.finishedHint") : t("routines.today.kpi.finishedPercent", { percent: fmt.percent(percent, 0) }),
     },
     { id: "review", label: t("routines.today.kpi.review"), value: totals?.review ?? null, to: can("tasks.confirm") ? { name: "routines.confirm" } : undefined },

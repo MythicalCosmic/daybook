@@ -103,12 +103,12 @@ export async function safeBody(html: string): Promise<string> {
   return clean.replace(/<input type="checkbox"/g, '<input type="checkbox" disabled');
 }
 
-/** A short emoji set for pages and spaces: rules, money, goods, people, time, food, safety. */
+/** A short emoji set for pages and spaces: rules, money, goods, medicines, people, time, safety. */
 export const EMOJIS = [
   "📘", "📗", "📕", "📙", "📒", "📚", "📖", "📝", "✅", "☑️", "⚠️", "❗",
   "💡", "📌", "🔒", "🔓", "💰", "💳", "🧾", "🏦", "📦", "🚚", "🛒", "🛍",
   "🏪", "🏬", "🧹", "🧼", "👕", "👔", "👋", "🙋", "🤝", "📞", "📱", "💬",
-  "📣", "📅", "🕘", "⏰", "🏖", "🎉", "🎂", "🍽", "☕", "🥖", "🍎", "🧊",
+  "📣", "📅", "🕘", "⏰", "🏖", "🎉", "🎂", "💊", "🩺", "🌡️", "🧴", "🧊",
   "🔥", "🧯", "🚨", "🔧", "🛠", "⚙️", "📈", "📊", "🗂", "🏷", "🎯", "⭐",
-  "🌿", "🧑‍🍳", "👩‍💼", "🧑‍🔧",
+  "🌿", "🧑‍⚕️", "👩‍💼", "🧑‍🔧",
 ];

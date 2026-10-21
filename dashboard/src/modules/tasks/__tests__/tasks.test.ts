@@ -43,7 +43,7 @@ const person = (id: number, name: string) => ({ id, name, photo_url: null, posit
 const row = (overrides: Partial<TaskRow> = {}): TaskRow => ({
   id: 7,
   kind: "assigned",
-  title: "Count the drinks fridge",
+  title: "Check the expiry dates on shelf 3",
   status: "review",
   priority: "normal",
   due_at: "2026-10-21T13:00:00Z",
@@ -213,7 +213,7 @@ describe("TaskDrawer", () => {
     await flushPromises();
     await flushPromises();
     const text = document.body.textContent ?? "";
-    expect(text).toContain("Count the drinks fridge");
+    expect(text).toContain("Check the expiry dates on shelf 3");
     expect(text).toContain("Madina Saidova");
     expect(text).toContain("Middle shelf");
     expect(document.body.querySelector('img[src="/media/proofs/thumbs/1/a.webp"], img[src="/media/proofs/1/a.jpg"]')).not.toBeNull();
@@ -232,7 +232,7 @@ describe("TaskDrawer", () => {
       target_type,
       target_id,
       target_title: "",
-      page: { id: 40 + target_id, title, emoji: "📄", space: { id: 1, name: "Shop", emoji: "🏪" } },
+      page: { id: 40 + target_id, title, emoji: "📄", space: { id: 1, name: "Dorixona", emoji: "💊" } },
       created_at: "2026-10-01T09:00:00Z",
     });
     const calls = stub({
@@ -311,7 +311,7 @@ describe("TaskTimeline", () => {
       "GET tasks/7/timeline/": () =>
         json([
           { at: "2026-10-21T08:00:00Z", kind: "created", action: "created", actor: person(1, "Dilnoza Karimova"), text: "", meta: {} },
-          { at: "2026-10-21T09:00:00Z", kind: "comment", action: "comment", actor: person(2, "Bekzod Mirzayev"), text: "Phone: Sharq Savdo", meta: {} },
+          { at: "2026-10-21T09:00:00Z", kind: "comment", action: "comment", actor: person(2, "Bekzod Mirzayev"), text: "Phone: the distributor", meta: {} },
           { at: "2026-10-21T10:00:00Z", kind: "reminder", action: "reminder", actor: person(11, "Madina Saidova"), text: "", meta: { step: 2, delivered: true } },
         ]),
     });
@@ -322,7 +322,7 @@ describe("TaskTimeline", () => {
     const text = wrapper.text();
     expect(text).toContain("Bekzod Mirzayev commented");
     expect(text.match(/Bekzod Mirzayev/g)).toHaveLength(1);
-    expect(text).toContain("Phone: Sharq Savdo");
+    expect(text).toContain("Phone: the distributor");
     expect(text).toContain("Reminder 2 sent to Madina Saidova");
     wrapper.unmount();
   });

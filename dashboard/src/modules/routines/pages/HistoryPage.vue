@@ -68,7 +68,7 @@ const kpis = computed(() => {
 
 /** A cell's colour: full green when all done, then lighter, amber, red; grey while nothing was due. */
 function shade(cell: HistoryCell): string {
-  if (cell.percent === null) return "var(--c-surface-3)";
+  if (cell.percent === null) return "transparent";
   if (cell.percent >= 100) return "var(--c-success)";
   if (cell.percent >= 80) return "color-mix(in srgb, var(--c-success) 55%, var(--c-surface))";
   if (cell.percent >= 50) return "color-mix(in srgb, var(--c-warning) 70%, var(--c-surface))";
@@ -121,7 +121,7 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
             <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px]" style="background: color-mix(in srgb, var(--c-success) 55%, var(--c-surface))" />80–99 %</span>
             <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px]" style="background: color-mix(in srgb, var(--c-warning) 70%, var(--c-surface))" />50–79 %</span>
             <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px]" style="background: color-mix(in srgb, var(--c-danger) 75%, var(--c-surface))" />&lt; 50 %</span>
-            <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px] bg-surface-3" />{{ t("routines.history.legendAhead") }}</span>
+            <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px] border border-dashed border-line-strong" />{{ t("routines.history.legendAhead") }}</span>
           </div>
         </header>
         <div class="overflow-x-auto">
@@ -143,7 +143,7 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
                   <button
                     v-if="cell.made"
                     type="button"
-                    class="pressable block h-7 w-full min-w-[22px] rounded-[5px] outline-offset-1"
+                    :class="['pressable block h-7 w-full min-w-[22px] rounded-[5px] outline-offset-1', cell.percent === null && 'border border-dashed border-line-strong']"
                     :style="{ background: shade(cell) }"
                     :title="tip(cell, data.days[index]!, t('routines.history.allRoutines'))"
                     :aria-label="tip(cell, data.days[index]!, t('routines.history.allRoutines'))"
@@ -161,7 +161,7 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
                   <button
                     v-if="cell"
                     type="button"
-                    class="pressable block h-7 w-full min-w-[22px] rounded-[5px] outline-offset-1"
+                    :class="['pressable block h-7 w-full min-w-[22px] rounded-[5px] outline-offset-1', cell.percent === null && 'border border-dashed border-line-strong']"
                     :style="{ background: shade(cell) }"
                     :title="tip(cell, data.days[index]!, row.routine.title)"
                     :aria-label="tip(cell, data.days[index]!, row.routine.title)"

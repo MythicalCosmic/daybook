@@ -89,8 +89,10 @@ async function sendBack(run: RoutineRun, group: ConfirmGroup): Promise<void> {
   }
 }
 
-const photos = (group: ConfirmGroup) =>
-  group.items.filter((run) => run.proof_photo).map((run) => ({ src: run.proof_photo!, caption: `${run.member.name} · ${group.routine.title} · ${run.completed_at ? fmt.instant(run.completed_at, "short") : ""}` }));
+const photo = (run: RoutineRun, group: ConfirmGroup) => ({
+  src: run.proof_photo ?? run.proof_thumb!,
+  caption: [run.member.name, group.routine.title, run.completed_at ? fmt.instant(run.completed_at, "short") : ""].filter(Boolean).join(" · "),
+});
 </script>
 
 <template>
@@ -105,7 +107,7 @@ const photos = (group: ConfirmGroup) =>
     <div v-if="skeleton" class="flex flex-col gap-4">
       <div v-for="n in 2" :key="n" class="ui-card flex flex-col gap-3 p-4">
         <SkeletonBlock width="30%" height="18px" />
-        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"><SkeletonBlock v-for="m in 4" :key="m" height="220px" radius="12px" /></div>
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"><SkeletonBlock v-for="m in 4" :key="m" height="220px" radius="12px" /></div>
       </div>
     </div>
     <ErrorState v-else-if="query.isError.value" class="ui-card" :error="query.error.value" :retry="() => query.refetch()" />
@@ -114,8 +116,14 @@ const photos = (group: ConfirmGroup) =>
         <UiButton :to="{ name: 'routines.today' }" :icon-right="ChevronRight">{{ t("routines.nav.today") }}</UiButton>
       </EmptyState>
     </div>
-    <TransitionGroup v-else name="list" tag="div" class="relative flex flex-col gap-4">
-      <section v-for="group in groups" :key="`${group.routine.id}-${group.day}`" class="ui-card min-w-0 overflow-hidden" :data-group="`${group.routine.id}-${group.day}`">
+    <!-- A group of one run takes one column, so small groups sit side by side; bigger ones take the row. -->
+    <TransitionGroup v-else name="list" tag="div" class="relative grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <section
+        v-for="group in groups"
+        :key="`${group.routine.id}-${group.day}`"
+        :class="['ui-card min-w-0 overflow-hidden', group.items.length > 1 && 'md:col-span-full']"
+        :data-group="`${group.routine.id}-${group.day}`"
+      >
         <header class="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line px-4 py-3">
           <div class="min-w-[min(100%,220px)] flex-1">
             <h2 class="truncate text-base font-semibold text-fg" :title="group.routine.title">{{ group.routine.title }}</h2>
@@ -123,17 +131,17 @@ const photos = (group: ConfirmGroup) =>
               <span class="font-medium text-fg">{{ fmt.day(group.day, "weekday") }}</span>
               <span class="inline-flex items-center gap-1 tabular-nums"><Clock :size="14" aria-hidden="true" />{{ group.routine.due_time }}</span>
               <span v-if="group.routine.branch" class="inline-flex items-center gap-1"><Store :size="14" aria-hidden="true" />{{ group.routine.branch.name }}</span>
-              <span>{{ t("routines.confirm.waiting", { n: group.items.length }, group.items.length) }}</span>
+              <span v-if="group.items.length > 1">{{ t("routines.confirm.waiting", { n: group.items.length }, group.items.length) }}</span>
             </p>
           </div>
-          <UiButton variant="primary" size="sm" :icon="CheckCheck" :loading="confirmRuns.isPending.value" class="max-sm:w-full" @click="confirm(group.items, group.routine.title)">
+          <UiButton v-if="group.items.length > 1" variant="primary" size="sm" :icon="CheckCheck" :loading="confirmRuns.isPending.value" class="max-sm:w-full" @click="confirm(group.items, group.routine.title)">
             {{ t("routines.confirm.all", { n: group.items.length }, group.items.length) }}
           </UiButton>
         </header>
-        <TransitionGroup name="list" tag="ul" class="relative grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+        <TransitionGroup name="list" tag="ul" :class="['relative grid gap-3 p-4', group.items.length > 1 && 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5']">
           <li v-for="run in group.items" :key="run.id" class="flex min-w-0 flex-col overflow-hidden rounded-[12px] border border-line bg-surface" :data-run="run.id">
             <div :class="['relative w-full overflow-hidden bg-surface-2', run.proof_photo ? 'aspect-[4/3]' : 'h-28']">
-              <ProofThumb v-if="run.proof_thumb" :src="run.proof_thumb" :images="photos(group)" :alt="run.member.name" size="fill" class="!rounded-none" />
+              <ProofThumb v-if="run.proof_thumb" :src="run.proof_thumb" :images="[photo(run, group)]" :alt="run.member.name" size="fill" class="!rounded-none" />
               <div v-else class="flex h-full flex-col justify-center gap-1.5 p-4">
                 <template v-if="run.proof_text">
                   <FileText :size="16" class="text-subtle" aria-hidden="true" />

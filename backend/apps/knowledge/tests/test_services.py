@@ -60,10 +60,10 @@ def test_only_knowledge_managers_change_the_knowledge_base(company, manager, cas
 def test_positions_of_another_company_are_refused(company, other_company, owner):
     from apps.members.models import Position
 
-    foreign = Position.objects.create(company=other_company, name="Cook")
+    foreign = Position.objects.create(company=other_company, name="Courier")
     with pytest.raises(DomainError):
         services.create_space(
-            company, by=owner, name="Kitchen", audience_all=False, position_ids=[foreign.pk]
+            company, by=owner, name="Warehouse", audience_all=False, position_ids=[foreign.pk]
         )
 
 
@@ -176,14 +176,14 @@ def test_archive_takes_the_subtree_and_restore_brings_it_back(company, owner):
 # Publishing and reading -----------------------------------------------------------------
 
 
-def test_publishing_tells_the_readers_with_a_read_button(company, owner, cashier, cook):
+def test_publishing_tells_the_readers_with_a_read_button(company, owner, cashier, courier):
     space = SpaceFactory(company=company, audience_all=False, positions=[cashier.position])
     page = services.create_page(space, by=owner, title="Close the till", body="<p>Z report</p>")
 
     services.publish_page(page, by=owner)
 
     [note] = Notification.objects.filter(kind="knowledge.page_published")
-    assert note.recipient == cashier  # the cook doesn't read the till space; the owner wrote it
+    assert note.recipient == cashier  # the courier doesn't read the till space; the owner wrote it
     assert "Close the till" in note.title
     assert note.app_screen == f"knowledge.page:{page.pk}"
     assert [action["key"] for action in note.actions] == ["read"]
@@ -237,12 +237,12 @@ def test_acknowledge_once_per_version_and_reread_asks_again(company, owner, cash
     assert PageAck.objects.filter(page=page, membership=cashier).count() == 2
 
 
-def test_people_cant_acknowledge_pages_they_dont_read(company, owner, cook, cashier_position):
+def test_people_cant_acknowledge_pages_they_dont_read(company, owner, courier, cashier_position):
     space = SpaceFactory(company=company, audience_all=False, positions=[cashier_position])
     page = PageFactory(space=space)
 
     with pytest.raises(PermissionDenied):
-        services.acknowledge(page, by=cook)
+        services.acknowledge(page, by=courier)
 
 
 def test_drafts_and_pages_under_drafts_are_hidden_from_readers(company, owner, cashier):
@@ -255,9 +255,9 @@ def test_drafts_and_pages_under_drafts_are_hidden_from_readers(company, owner, c
     assert {draft, under, live} <= set(queries.readable_pages(owner))
 
 
-def test_remind_unread_reaches_only_who_hasnt_read(company, owner, cashier, cook):
+def test_remind_unread_reaches_only_who_hasnt_read(company, owner, cashier, courier):
     page = PageFactory(space__company=company, require_ack=True)
-    services.acknowledge(page, by=cook)
+    services.acknowledge(page, by=courier)
 
     count = services.remind_unread(page, by=owner)
 
