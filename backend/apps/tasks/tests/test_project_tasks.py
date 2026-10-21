@@ -201,3 +201,22 @@ def test_a_card_for_yourself_doesnt_let_you_hand_it_to_others(company, people):
 
     with pytest.raises(PermissionDenied):
         services.reassign_task(own, by=people["aziz"], assignee=people["madina"])
+
+
+def test_the_owners_rows_and_drawer_name_the_card(company, people, owner_api):
+    """The dashboard shows a board card as "RENO-1 · Order tiles", like the board and the bot."""
+    reno = project(company, people["owner"], key="RENO")
+    card = services.create_task(
+        by=people["owner"], title="Order tiles", assignee=people["aziz"], project=reno
+    )
+    loose = services.create_task(by=people["owner"], title="Sweep", assignee=people["aziz"])
+    client = owner_api(people["owner"])
+    base = f"/api/v1/owner/companies/{company.pk}/tasks/"
+
+    rows = {row["id"]: row for row in client.get(base).json()["results"]}
+    drawer = client.get(f"{base}{card.pk}/").json()
+
+    ref = {"id": reno.pk, "key": "RENO", "name": reno.name, "number": 1}
+    assert rows[card.pk]["project"] == ref
+    assert rows[loose.pk]["project"] is None
+    assert drawer["project"]["number"] == 1

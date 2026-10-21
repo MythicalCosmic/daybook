@@ -238,36 +238,11 @@ def on_time_trend(membership: Membership, now: datetime, *, weeks: int = 12) -> 
     ]
 
 
-def streak(membership: Membership, now: datetime, *, limit: int = 90) -> int:
-    """Days in a row, up to yesterday, on which every shared task due that day was finished
-    on time (days without such work don't break the run)."""
-    from apps.tasks.models import Task
+def streak(membership: Membership, now: datetime) -> int:
+    """The person's streak: the same number their mini app shows (`apps.tasks.stats.streak`)."""
+    from apps.tasks.stats import streak as task_streak
 
-    tz = ZoneInfo(membership.company.timezone)
-    today = timezone.localtime(now, tz).date()
-    since = datetime.combine(today - timedelta(days=limit), time.min, tzinfo=tz)
-    until = datetime.combine(today, time.min, tzinfo=tz)
-    finished = (Task.Status.DONE, Task.Status.REVIEW)
-    days: dict[date, bool] = {}
-    for due_at, status, completed_at in (
-        Task.objects.filter(
-            assignee=membership,
-            kind__in=(Task.Kind.DAILY, Task.Kind.ASSIGNED),
-            due_at__gte=since,
-            due_at__lt=until,
-        )
-        .exclude(status=Task.Status.CANCELLED)
-        .values_list("due_at", "status", "completed_at")
-    ):
-        day = timezone.localtime(due_at, tz).date()
-        good = status in finished and completed_at is not None and completed_at <= due_at
-        days[day] = days.get(day, True) and good
-    count = 0
-    for day in sorted(days, reverse=True):
-        if not days[day]:
-            break
-        count += 1
-    return count
+    return task_streak(membership, now)
 
 
 def person_overview(membership: Membership, start: date, end: date, now: datetime) -> dict:

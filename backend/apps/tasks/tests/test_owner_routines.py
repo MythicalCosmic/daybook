@@ -174,7 +174,7 @@ def test_the_preview_matches_daily_generation(shop, owner_api, member):
     )
     rows = {row["member"]["id"]: row for row in preview["people"]}
     assert rows[shop.worker.pk]["gets"] is True
-    assert rows[away.pk] == rows[away.pk] | {"gets": False, "reason": "off"}
+    assert rows[away.pk] == rows[away.pk] | {"gets": False, "reason": "time_off"}
     assert rows[elsewhere.pk]["reason"] == "branch"
 
     generate_daily_tasks(shop.company, day)
@@ -275,3 +275,68 @@ def test_preview_defaults_to_tomorrow(shop, owner_api):
     tomorrow = timezone.localdate(timezone=ZoneInfo(shop.company.timezone)) + timedelta(days=1)
     assert body["day"] == tomorrow.isoformat() and body["due"] is True
     assert date.fromisoformat(body["day"]) == tomorrow
+
+
+WED = date(2030, 10, 23)  # a Wednesday, far enough ahead
+
+
+def _at(company, day: date, hour: int, minute: int = 0) -> datetime:
+    return datetime.combine(day, time(hour, minute), tzinfo=ZoneInfo(company.timezone))
+
+
+def _moment(value: str) -> datetime:
+    return datetime.fromisoformat(value)
+
+
+def test_a_routine_made_after_its_time_starts_tomorrow_unless_given_today(
+    shop, owner_api, monkeypatch
+):
+    company = shop.company
+    monkeypatch.setattr("django.utils.timezone.now", lambda: _at(company, WED, 12, 30))
+    client = owner_api(shop.owner)
+    created = client.post(
+        url(company),
+        {
+            "title": "Muddati yaqin dorilarni tekshirish",
+            "due_time": "09:00",
+            "assignee_ids": [shop.worker.pk, shop.owner.pk],
+        },
+        format="json",
+    )
+    assert created.status_code == 201, created.content
+    body = created.json()
+    assert _moment(body["next_run"]) == _at(company, WED + timedelta(days=1), 9)
+    assert body["today"]["reason"] == "made_late"
+    assert body["today"]["give"]["people"] == 2
+    assert _moment(body["today"]["give"]["due_at"]) == _at(company, WED, 14, 30)
+    routine = body["id"]
+
+    listed = client.get(url(company)).json()
+    assert _moment(listed[0]["next_run"]) == _at(company, WED + timedelta(days=1), 9)
+    assert listed[0]["today"] is None  # only a routine's own page asks about today
+    preview = client.get(url(company, f"{routine}/preview/"), {"day": WED.isoformat()}).json()
+    assert preview["reason"] == "made_late" and not any(row["gets"] for row in preview["people"])
+    assert _moment(preview["next_run"]) == _at(company, WED + timedelta(days=1), 9)
+
+    give = url(company, f"{routine}/give-today/")
+    assert client.post(give, {"due_time": "10:00"}, format="json").status_code == 400  # gone
+    given = client.post(give, {"due_time": "13:15"}, format="json")
+    assert given.status_code == 201, given.content
+    assert given.json()["given"] == 2
+    assert _moment(given.json()["due_at"]) == _at(company, WED, 13, 15)
+    tasks = client.get(f"/api/v1/owner/companies/{company.pk}/tasks/", {"routine": routine})
+    assert tasks.json()["count"] == 2
+    assert client.post(give, {}, format="json").status_code == 400  # everyone has it now
+    assert client.get(url(company, f"{routine}/")).json()["today"]["give"] is None
+
+
+def test_paused_routines_have_no_next_run_and_giving_needs_routine_rights(shop, owner_api):
+    routine = TaskTemplateFactory(
+        company=shop.company, assignees=[shop.worker], is_active=False, created_by=shop.owner
+    )
+    body = owner_api(shop.owner).get(url(shop.company, f"{routine.pk}/")).json()
+    assert body["next_run"] is None and body["today"]["reason"] == "paused"
+    assert body["today"]["give"] is None
+    give = url(shop.company, f"{routine.pk}/give-today/")
+    assert owner_api(shop.owner).post(give, {}, format="json").status_code == 400
+    assert owner_api(shop.worker).post(give, {}, format="json").status_code == 403

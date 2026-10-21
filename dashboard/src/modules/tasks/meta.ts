@@ -43,6 +43,11 @@ export const PRIORITY_TONE: Record<TaskPriority, StatusTone> = {
 
 export const DUE_ICON = CalendarClock;
 
+/** A board card's key as the project board and the bot write it ("OPEN-14"; "OPEN" until numbered). */
+export function cardKey(project: { key: string; number?: number | null }): string {
+  return project.number ? `${project.key}-${project.number}` : project.key;
+}
+
 /** Minutes between two instants (positive when `later` is after `earlier`). */
 export function minutesBetween(earlier: string | Date, later: string | Date): number {
   return Math.round((new Date(later).getTime() - new Date(earlier).getTime()) / 60_000);

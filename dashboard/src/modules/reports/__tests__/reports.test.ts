@@ -110,4 +110,22 @@ describe("TeamReportPage", () => {
     expect(text).toContain("96%");
     wrapper.unmount();
   });
+
+  it("stops the on-time line at yesterday: today's rate only counts what was due so far", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-21T10:00:00Z")); // 15:00 in Tashkent
+    const day = (date: string, on_time_percent: number) => ({ date, total: 10, done: 10, on_time: on_time_percent / 10, late: 0, missed: 0, on_time_percent });
+    stub({ "GET reports/team/": () => json({ ...report(), series: [day("2026-10-19", 90), day("2026-10-20", 80), day("2026-10-21", 10)] }) });
+    const app = await testApp("/c/1");
+    for (const name of ["reports.team", "reports.routines"]) app.router.addRoute({ name, path: `/c/:companyId/${name.replace(".", "/")}`, component: { render: () => null } });
+    await app.router.push("/c/1/reports/team?preset=last_30");
+    const { wrapper } = mountWithProviders(TeamReportPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    // The On time tile's sparkline: two points (the 19th and the 20th), not today's dip.
+    const line = wrapper.find("svg path[stroke]").attributes("d") ?? "";
+    expect(line.match(/[ML]/g)).toHaveLength(2);
+    wrapper.unmount();
+    vi.useRealTimers();
+  });
 });

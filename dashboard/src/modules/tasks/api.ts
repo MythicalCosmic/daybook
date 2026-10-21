@@ -135,11 +135,12 @@ export function useSummary(params: MaybeRefOrGetter<Params> = {}) {
   });
 }
 
+/** One-off work waiting for my check; routine work has its own queue (Routines → To confirm). */
 export function useReviews() {
   const cid = useCompanyId();
   return useQuery({
     queryKey: computed(() => taskKeys.reviews(cid.value)),
-    queryFn: ({ signal }) => tasksApi.reviews(cid.value, { page_size: 100 }, signal),
+    queryFn: ({ signal }) => tasksApi.reviews(cid.value, { page_size: 100, routines: "without" }, signal),
     enabled: computed(() => cid.value > 0),
     staleTime: 10_000,
   });
