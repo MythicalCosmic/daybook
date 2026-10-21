@@ -60,6 +60,310 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/announcements/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The announcements I received, newest first with pinned ones on top. */
+        get: operations["v1_companies_announcements_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/announcements/{id}/read/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description The announcements I received, newest first with pinned ones on top. */
+        post: operations["v1_companies_announcements_read_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/attendance/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description My month: a coded day each and the totals. */
+        get: operations["v1_companies_attendance_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/attendance/board/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Who's in now (managers in the app). */
+        get: operations["v1_companies_attendance_board_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/attendance/check-in/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Check in with the location of the tap (and a selfie when the company asks). */
+        post: operations["v1_companies_attendance_check_in_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/attendance/check-out/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_attendance_check_out_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/attendance/corrections/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description My correction requests, and a new one. */
+        get: operations["v1_companies_attendance_corrections_list"];
+        put?: never;
+        /** @description My correction requests, and a new one. */
+        post: operations["v1_companies_attendance_corrections_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/attendance/open-shifts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Open shifts I may claim. */
+        get: operations["v1_companies_attendance_open_shifts_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/attendance/open-shifts/{id}/claim/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_attendance_open_shifts_claim_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/attendance/records/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description One of my own records (the correction sheet opened from a notification). */
+        get: operations["v1_companies_attendance_records_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/attendance/shifts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description My published shifts in a period (two weeks from today by default). */
+        get: operations["v1_companies_attendance_shifts_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/attendance/swaps/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description My requests and the ones waiting for my answer; ask for cover or a swap. */
+        get: operations["v1_companies_attendance_swaps_retrieve"];
+        put?: never;
+        /** @description My requests and the ones waiting for my answer; ask for cover or a swap. */
+        post: operations["v1_companies_attendance_swaps_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/attendance/swaps/{id}/{verb}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description accept · decline · cancel one request. */
+        post: operations["v1_companies_attendance_swaps_create_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/attendance/swaps/candidates/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Who could cover one of my shifts, with their coming shifts I could swap for. */
+        get: operations["v1_companies_attendance_swaps_candidates_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/attendance/today/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The check-in card: today's shift, the open or latest record, where to check in. */
+        get: operations["v1_companies_attendance_today_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/calendar/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description My calendar between two days: my events, company events and team dates. */
+        get: operations["v1_companies_calendar_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/calendar/events/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_calendar_events_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/calendar/events/{id}/respond/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_calendar_events_respond_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/holidays/": {
         parameters: {
             query?: never;
@@ -108,6 +412,111 @@ export interface paths {
         put?: never;
         /** @description Mark some (`ids`) or all (`all: true`) of my notifications read. */
         post: operations["v1_companies_inbox_read_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/knowledge/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The knowledge base in the app: my spaces, what I still have to read, recent pages. */
+        get: operations["v1_companies_knowledge_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/knowledge/linked/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Pages linked to a task or routine ("How to do this"). For a task a routine made, the
+         *     routine's pages come too: linking the routine covers every task it makes (which is why the
+         *     link search leaves those tasks out), and the mini app only knows the task.
+         */
+        get: operations["v1_companies_knowledge_linked_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/knowledge/pages/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A page to read, with my acknowledgement. */
+        get: operations["v1_companies_knowledge_pages_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/knowledge/pages/{id}/ack/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description I've read it: confirms the current version. */
+        post: operations["v1_companies_knowledge_pages_ack_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/knowledge/search/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_knowledge_search_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/knowledge/spaces/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description One space and its published pages as a tree. */
+        get: operations["v1_companies_knowledge_spaces_retrieve"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -172,6 +581,138 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/projects/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_projects_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/projects/{project_id}/board/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_projects_board_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/projects/{project_id}/cards/{task_id}/move/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_projects_cards_move_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/projects/{project_id}/updates/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_projects_updates_list"];
+        put?: never;
+        post: operations["v1_companies_projects_updates_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/projects/time/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description My time for a week (default this week): entries, per-day totals, and logging. */
+        get: operations["v1_companies_projects_time_retrieve"];
+        put?: never;
+        /** @description My time for a week (default this week): entries, per-day totals, and logging. */
+        post: operations["v1_companies_projects_time_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/projects/time/{entry_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["v1_companies_projects_time_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/projects/timer/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description My running timer (`{"timer": null}` when none), and starting it on a task or project. */
+        get: operations["v1_companies_projects_timer_retrieve"];
+        put?: never;
+        /** @description My running timer (`{"timer": null}` when none), and starting it on a task or project. */
+        post: operations["v1_companies_projects_timer_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/projects/timer/stop/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_projects_timer_stop_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/reminder-policies/": {
         parameters: {
             query?: never;
@@ -208,6 +749,189 @@ export interface paths {
         head?: never;
         /** @description How hard the bot chases late work. Needs reminders.configure. */
         patch: operations["v1_companies_reminder_policies_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/sales/entries/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description A single receipt on my open shift (receipts mode). */
+        post: operations["v1_companies_sales_entries_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/sales/entries/{id}/void/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_sales_entries_void_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/sales/handovers/{id}/confirm/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_sales_handovers_confirm_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/sales/handovers/{id}/decline/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_sales_handovers_decline_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/sales/handovers/pending/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Cash handed to me that I haven't answered yet. */
+        get: operations["v1_companies_sales_handovers_pending_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/sales/shifts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description My shifts, newest first (POST opens one). The difference shows once a manager verified
+         *     it.
+         */
+        get: operations["v1_companies_sales_shifts_list"];
+        put?: never;
+        /**
+         * @description My shifts, newest first (POST opens one). The difference shows once a manager verified
+         *     it.
+         */
+        post: operations["v1_companies_sales_shifts_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/sales/shifts/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_sales_shifts_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/sales/shifts/{id}/close/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Close my shift: totals per method from the Z-report, the cash I counted, photos.
+         *     Never answers with the expected cash while the blind count is on.
+         */
+        post: operations["v1_companies_sales_shifts_close_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/sales/shifts/{id}/movements/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description A payout (with a receipt photo), a handover to a named person, or cash to or from the
+         *     safe, on my open shift.
+         */
+        post: operations["v1_companies_sales_shifts_movements_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/sales/shifts/current/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Everything Kassa needs: my open shift (or the tills I can open), how the company records
+         *     sales, the payment methods, who can receive cash, payout categories, handovers waiting for
+         *     me and my last shifts.
+         */
+        get: operations["v1_companies_sales_shifts_current_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/companies/{company_id}/summary/": {
@@ -438,6 +1162,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/tasks/calendar/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The signed-in member's own tasks due between two days, with counts per day (the
+         *     mini app's week calendar).
+         */
+        get: operations["v1_companies_tasks_calendar_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/team-stats/": {
         parameters: {
             query?: never;
@@ -546,19 +1290,344 @@ export interface components {
          * @enum {string}
          */
         ActivityKindEnum: "assigned" | "review" | "completed" | "confirmed" | "returned" | "commented";
+        AgendaAttendee: {
+            /** @description {id, name, photo_url, position} */
+            readonly member: {
+                [key: string]: unknown;
+            };
+            response?: components["schemas"]["AgendaAttendeeResponseEnum"];
+            /** Format: date-time */
+            responded_at?: string | null;
+        };
+        /**
+         * @description * `pending` - Not answered
+         *     * `going` - Going
+         *     * `declined` - Can't come
+         * @enum {string}
+         */
+        AgendaAttendeeResponseEnum: "pending" | "going" | "declined";
+        /**
+         * @description One date on the calendar. `id` is unique across sources ("agenda.events:12-20261027");
+         *     all-day items carry days (`end` inclusive), timed ones ISO instants. `color` is a design
+         *     token name ("chart-3", "success") the client turns into a colour.
+         */
+        AgendaCalendarItem: {
+            id: string;
+            source: string;
+            kind: string;
+            title: string;
+            start: string;
+            end: string | null;
+            all_day: boolean;
+            color: string;
+            url: string;
+            /** @description Where a company event happens; empty otherwise. */
+            subtitle: string;
+        };
+        AgendaEmployeeCalendar: {
+            range: {
+                [key: string]: string;
+            };
+            sources: components["schemas"]["AgendaSource"][];
+            items: components["schemas"]["AgendaCalendarItem"][];
+            mine: string[];
+            answers: {
+                [key: string]: string;
+            };
+        };
+        AgendaEvent: {
+            readonly id: number;
+            title: string;
+            description?: string;
+            kind?: components["schemas"]["AgendaEventKindEnum"];
+            readonly color: string;
+            readonly start: string;
+            readonly end: string | null;
+            /** @description All-day events use the company's calendar days. */
+            all_day?: boolean;
+            place?: string;
+            /** @description {id, name} */
+            readonly branch: {
+                [key: string]: unknown;
+            } | null;
+            visibility?: components["schemas"]["AgendaEventVisibilityEnum"];
+            /** @description Minutes before the start the attendees get a reminder. Empty: none. */
+            remind_before?: number | null;
+            repeat?: components["schemas"]["AgendaEventRepeatEnum"];
+            /**
+             * Format: date
+             * @description The last day it may repeat on (company calendar).
+             */
+            repeat_until?: string | null;
+            readonly created_by: components["schemas"]["AgendaPerson"] | null;
+            readonly attendees: components["schemas"]["AgendaAttendee"][];
+            readonly responses: {
+                [key: string]: number;
+            };
+            readonly my_response: string | null;
+            readonly cancelled: boolean;
+            cancel_reason?: string;
+            readonly can_edit: boolean;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        /**
+         * @description * `meeting` - Meeting
+         *     * `training` - Training
+         *     * `inventory` - Inventory
+         *     * `celebration` - Celebration
+         *     * `deadline` - Deadline
+         *     * `other` - Other
+         * @enum {string}
+         */
+        AgendaEventKindEnum: "meeting" | "training" | "inventory" | "celebration" | "deadline" | "other";
+        /**
+         * @description * `none` - Doesn't repeat
+         *     * `weekly` - Every week
+         *     * `monthly` - Every month
+         * @enum {string}
+         */
+        AgendaEventRepeatEnum: "none" | "weekly" | "monthly";
+        /**
+         * @description * `company` - Everyone in the company
+         *     * `attendees` - Only the people invited
+         * @enum {string}
+         */
+        AgendaEventVisibilityEnum: "company" | "attendees";
+        AgendaPerson: {
+            id: number;
+            name: string;
+            photo_url: string | null;
+        };
+        AgendaRespondRequest: {
+            response: components["schemas"]["AgendaRespondResponseEnum"];
+        };
+        /**
+         * @description * `going` - going
+         *     * `declined` - declined
+         * @enum {string}
+         */
+        AgendaRespondResponseEnum: "going" | "declined";
+        AgendaSource: {
+            key: string;
+            label: string;
+        };
+        /**
+         * @description * `payout` - payout
+         *     * `handover` - handover
+         *     * `to_safe` - to_safe
+         *     * `from_safe` - from_safe
+         * @enum {string}
+         */
+        AppMovementKindEnum: "payout" | "handover" | "to_safe" | "from_safe";
+        AppMovementRequest: {
+            kind: components["schemas"]["AppMovementKindEnum"];
+            /** Format: decimal */
+            amount: string;
+            receiver_id?: number | null;
+            category_id?: number | null;
+            /** @default  */
+            reason: string;
+            /** Format: binary */
+            photo?: string | null;
+        };
+        AppSaleRequest: {
+            /** @default sale */
+            kind: components["schemas"]["SalesSaleKindEnum"];
+            payments: components["schemas"]["SalePaymentRequest"][];
+            /** @default  */
+            note: string;
+            /** @default  */
+            number: string;
+        };
+        /**
+         * @description * `pending` - Waiting for approval
+         *     * `approved` - Approved
+         *     * `rejected` - Rejected
+         * @enum {string}
+         */
+        AttendanceCorrectionStatusEnum: "pending" | "approved" | "rejected";
+        /**
+         * @description * `none` - None
+         *     * `pending` - Waiting for approval
+         *     * `approved` - Approved
+         *     * `rejected` - Rejected
+         * @enum {string}
+         */
+        AttendanceOvertimeStatusEnum: "none" | "pending" | "approved" | "rejected";
+        /**
+         * @description * `outside_geofence` - Outside the branch
+         *     * `low_accuracy` - Imprecise location
+         *     * `no_location` - No location
+         *     * `unscheduled` - No shift planned
+         *     * `auto_closed` - Check-out forgotten
+         *     * `edited` - Edited by a manager
+         * @enum {string}
+         */
+        AttendanceRecordFlagEnum: "outside_geofence" | "low_accuracy" | "no_location" | "unscheduled" | "auto_closed" | "edited";
+        /**
+         * @description * `open` - Checked in
+         *     * `closed` - Checked out
+         *     * `auto_closed` - Closed automatically
+         *     * `absent` - Absent
+         *     * `excused` - Excused
+         * @enum {string}
+         */
+        AttendanceRecordStatusEnum: "open" | "closed" | "auto_closed" | "absent" | "excused";
+        /**
+         * @description * `schedule` - From the schedule
+         *     * `manual` - Added by hand
+         *     * `swap` - Swapped or covered
+         * @enum {string}
+         */
+        AttendanceShiftSourceEnum: "schedule" | "manual" | "swap";
+        /**
+         * @description * `planned` - Planned
+         *     * `open` - Open
+         *     * `leave` - On leave
+         *     * `cancelled` - Cancelled
+         * @enum {string}
+         */
+        AttendanceShiftStatusEnum: "planned" | "open" | "leave" | "cancelled";
+        /**
+         * @description * `cover` - Cover
+         *     * `swap` - Swap
+         *     * `claim` - Claim an open shift
+         * @enum {string}
+         */
+        AttendanceSwapKindEnum: "cover" | "swap" | "claim";
+        /**
+         * @description * `requested` - Waiting for a colleague
+         *     * `accepted` - Waiting for approval
+         *     * `approved` - Approved
+         *     * `rejected` - Rejected
+         *     * `cancelled` - Cancelled
+         *     * `expired` - Expired
+         * @enum {string}
+         */
+        AttendanceSwapStatusEnum: "requested" | "accepted" | "approved" | "rejected" | "cancelled" | "expired";
         /**
          * @description * `UZS` - Uzbek som
          *     * `USD` - US dollar
          * @enum {string}
          */
         BaseCurrencyEnum: "UZS" | "USD";
+        Board: {
+            /** Format: date */
+            date: string;
+            is_today: boolean;
+            /** Format: date-time */
+            now: string;
+            holiday: string | null;
+            totals: {
+                [key: string]: number;
+            };
+            branches: components["schemas"]["BoardBranch"][];
+            people: components["schemas"]["BoardRow"][];
+        };
+        BoardBranch: {
+            id: number;
+            name: string;
+            code: string;
+            latitude: string | null;
+            longitude: string | null;
+            geofence_m: number;
+            rostered: number;
+            checked_in: number;
+            /** Format: date-time */
+            first_check_in: string | null;
+        };
+        BoardRow: {
+            member: components["schemas"]["PersonCard"];
+            branch: components["schemas"]["BranchRef"] | null;
+            state: components["schemas"]["BoardRowStateEnum"];
+            /** @description Why: late (not here yet), leave, day_off, holiday, suspended, no_shift, excused. */
+            reason: string | null;
+            shift: components["schemas"]["ShiftOut"] | null;
+            record: components["schemas"]["RecordOut"] | null;
+        };
+        /**
+         * @description * `in` - in
+         *     * `late` - late
+         *     * `not_yet` - not_yet
+         *     * `absent` - absent
+         *     * `off` - off
+         * @enum {string}
+         */
+        BoardRowStateEnum: "in" | "late" | "not_yet" | "absent" | "off";
         BranchBrief: {
             readonly id: number;
             readonly name: string;
         };
+        BranchGeo: {
+            id: number;
+            name: string;
+            code: string;
+            latitude: string | null;
+            longitude: string | null;
+            geofence_m: number;
+        };
+        BranchRef: {
+            id: number;
+            name: string;
+            code: string;
+        };
+        Calendar: {
+            /** @description Only days with something due. */
+            days: components["schemas"]["CalendarDay"][];
+            tasks: components["schemas"]["Task"][];
+        };
+        CalendarDay: {
+            /** Format: date */
+            date: string;
+            total: number;
+            done: number;
+            review: number;
+            open: number;
+            late: number;
+        };
         CancelRequest: {
             /** @default false */
             stop_repeating: boolean;
+        };
+        Candidate: {
+            member: components["schemas"]["PersonCard"];
+            /** @description Their coming shifts you could swap for. */
+            shifts: components["schemas"]["ShiftOut"][];
+        };
+        Cell: {
+            code: components["schemas"]["CodeEnum"];
+            minutes: number;
+            late: number;
+            record_id: number | null;
+            shift_id: number | null;
+            flags: string[];
+        };
+        CheckInRequest: {
+            /** Format: decimal */
+            lat?: string | null;
+            /** Format: decimal */
+            lng?: string | null;
+            /** Format: double */
+            accuracy?: number | null;
+            /** Format: binary */
+            photo?: string | null;
+        };
+        CheckOutRequest: {
+            /** Format: decimal */
+            lat?: string | null;
+            /** Format: decimal */
+            lng?: string | null;
+            /** Format: double */
+            accuracy?: number | null;
+        };
+        CheckResult: {
+            record: components["schemas"]["RecordOut"];
+            created: boolean;
+            outside: boolean;
+            distance_m: number | null;
         };
         ChecklistItem: {
             readonly id: number;
@@ -568,6 +1637,40 @@ export interface components {
         ChecklistToggleRequest: {
             is_done: boolean;
         };
+        CloseRequest: {
+            payments: string;
+            closing_count?: string;
+            /** Format: decimal */
+            counted_cash?: string | null;
+            receipts?: number | null;
+            /** @default  */
+            z_number: string;
+            /** Format: decimal */
+            fiscal_cash_total?: string | null;
+            /** Format: decimal */
+            fiscal_card_total?: string | null;
+            /** @default  */
+            note: string;
+            /** Format: binary */
+            z_photo?: string | null;
+            /** Format: binary */
+            terminal_photo?: string | null;
+        };
+        /**
+         * @description * `present` - present
+         *     * `late` - late
+         *     * `absent` - absent
+         *     * `leave` - leave
+         *     * `off` - off
+         *     * `holiday` - holiday
+         *     * `excused` - excused
+         *     * `open` - open
+         *     * `auto` - auto
+         *     * `planned` - planned
+         *     * `unscheduled` - unscheduled
+         * @enum {string}
+         */
+        CodeEnum: "present" | "late" | "absent" | "leave" | "off" | "holiday" | "excused" | "open" | "auto" | "planned" | "unscheduled";
         Comment: {
             readonly id: number;
             readonly author: components["schemas"]["MemberBrief"] | null;
@@ -578,12 +1681,24 @@ export interface components {
         CommentRequest: {
             text: string;
         };
+        /**
+         * @description * `finance` - Finance
+         *     * `sales` - Sales and cash
+         *     * `stock` - Stock
+         *     * `attendance` - Attendance
+         *     * `hr` - HR
+         *     * `payroll` - Payroll
+         *     * `ai` - AI assistant
+         *     * `recognition` - Recognition
+         * @enum {string}
+         */
+        CompaniesFeatureEnum: "finance" | "sales" | "stock" | "attendance" | "hr" | "payroll" | "ai" | "recognition";
         Company: {
             readonly id: number;
             readonly name: string;
             readonly timezone: string;
             /** @description Modules switched on. */
-            features: components["schemas"]["FeaturesEnum"][];
+            features: components["schemas"]["CompaniesFeatureEnum"][];
             /** @description Owners see the personal tasks employees make for themselves. */
             readonly owner_sees_personal_tasks: boolean;
             /**
@@ -609,6 +1724,40 @@ export interface components {
          * @enum {string}
          */
         ConsoleActionStyleEnum: "primary" | "danger" | "default";
+        CorrectionOut: {
+            id: number;
+            member: components["schemas"]["PersonCard"];
+            /** Format: date */
+            date: string;
+            /** Format: date-time */
+            check_in_at: string | null;
+            /** Format: date-time */
+            check_out_at: string | null;
+            reason: string;
+            status: components["schemas"]["AttendanceCorrectionStatusEnum"];
+            decision_note: string;
+            record: components["schemas"]["RecordOut"] | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            decided_at: string | null;
+        };
+        CorrectionRequestRequest: {
+            /** Format: date */
+            date: string;
+            /** Format: date-time */
+            check_in_at?: string | null;
+            /** Format: date-time */
+            check_out_at?: string | null;
+            record_id?: number | null;
+            reason: string;
+        };
+        /**
+         * @description * `UZS` - Uzbek som
+         *     * `USD` - US dollar
+         * @enum {string}
+         */
+        CurrencyEnum: "UZS" | "USD";
         Day: {
             /** Format: date */
             date: string;
@@ -620,20 +1769,34 @@ export interface components {
              *     * `free` - free
              *     * `today` - today
              */
-            state: components["schemas"]["StateEnum"];
+            state: components["schemas"]["DayStateEnum"];
         };
         /**
-         * @description * `finance` - Finance
-         *     * `sales` - Sales and cash
-         *     * `stock` - Stock
-         *     * `attendance` - Attendance
-         *     * `hr` - HR
-         *     * `payroll` - Payroll
-         *     * `ai` - AI assistant
-         *     * `recognition` - Recognition
+         * @description * `done` - done
+         *     * `missed` - missed
+         *     * `free` - free
+         *     * `today` - today
          * @enum {string}
          */
-        FeaturesEnum: "finance" | "sales" | "stock" | "attendance" | "hr" | "payroll" | "ai" | "recognition";
+        DayStateEnum: "done" | "missed" | "free" | "today";
+        FeedAnnouncement: {
+            readonly id: number;
+            readonly title: string;
+            /** @description Telegram HTML: b, i, u, s, a, code, tg-spoiler. */
+            text: string;
+            readonly author: components["schemas"]["FeedAuthor"] | null;
+            /** Format: date-time */
+            readonly sent_at: string | null;
+            readonly is_pinned: boolean;
+            /** Format: date-time */
+            readonly expires_at: string | null;
+            /** Format: date-time */
+            readonly read_at: string | null;
+        };
+        FeedAuthor: {
+            id: number;
+            name: string;
+        };
         Holiday: {
             readonly id: number;
             /** Format: date */
@@ -651,6 +1814,199 @@ export interface components {
          * @enum {string}
          */
         InboxSeverityEnum: "info" | "warning" | "critical";
+        KassaClosed: {
+            id: number;
+        };
+        KassaCurrent: {
+            shift: {
+                [key: string]: unknown;
+            } | null;
+        };
+        KassaHandoverAnswer: {
+            id: number;
+            status: string;
+        };
+        KassaHandovers: {
+            results: {
+                [key: string]: unknown;
+            }[];
+        };
+        KassaSale: {
+            id: number;
+        };
+        KassaSaleVoided: {
+            id: number;
+        };
+        KassaShift: {
+            id: number;
+        };
+        KassaShiftDetail: {
+            id: number;
+        };
+        KassaShiftPage: {
+            results: {
+                [key: string]: unknown;
+            }[];
+        };
+        KnowledgeChild: {
+            id: number;
+            title: string;
+            emoji: string;
+            published: boolean;
+        };
+        KnowledgeCrumb: {
+            id: number;
+            title: string;
+            emoji: string;
+        };
+        KnowledgeEmployeeAck: {
+            version: number;
+            /** Format: date-time */
+            at: string;
+        };
+        KnowledgeHome: {
+            spaces: components["schemas"]["KnowledgeSpace"][];
+            to_read: components["schemas"]["KnowledgePageRow"][];
+            recent: components["schemas"]["KnowledgePageRow"][];
+        };
+        KnowledgeLink: {
+            readonly id: number;
+            target_type: components["schemas"]["KnowledgeLinkTargetEnum"];
+            /** Format: int64 */
+            target_id: number;
+            /** @description The task's or routine's title when linked. */
+            target_title?: string;
+            /** @description {id, title, emoji, space: {id, name, icon}} */
+            readonly page: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        /**
+         * @description * `task` - Task
+         *     * `routine` - Routine
+         * @enum {string}
+         */
+        KnowledgeLinkTargetEnum: "task" | "routine";
+        KnowledgeMyAck: {
+            version: number;
+            /** Format: date-time */
+            at: string;
+            current: boolean;
+        };
+        /** @description A page in lists and search results. */
+        KnowledgePageDetail: {
+            readonly id: number;
+            title: string;
+            emoji?: string;
+            readonly space: components["schemas"]["KnowledgeSpaceRef"];
+            readonly parent_id: number | null;
+            published?: boolean;
+            /** Format: date-time */
+            published_at?: string | null;
+            /** @description Everyone who reads it confirms they have read it. */
+            require_ack?: boolean;
+            version?: number;
+            readonly archived: boolean;
+            /** Format: date-time */
+            archived_at?: string | null;
+            /** Format: date-time */
+            readonly updated_at: string;
+            readonly updated_by: components["schemas"]["KnowledgePerson"] | null;
+            readonly excerpt: string;
+            readonly read: components["schemas"]["KnowledgeReadCount"] | null;
+            readonly body: string;
+            /** @description Acknowledgements of this version or later count as read. */
+            ack_version?: number;
+            readonly breadcrumbs: components["schemas"]["KnowledgeCrumb"][];
+            readonly children: components["schemas"]["KnowledgeChild"][];
+            readonly links: components["schemas"]["KnowledgeLink"][];
+            readonly my_ack: components["schemas"]["KnowledgeMyAck"] | null;
+            /** Format: date-time */
+            readonly created_at: string;
+            readonly created_by: components["schemas"]["KnowledgePerson"] | null;
+            readonly can_edit: boolean;
+        };
+        /** @description A page in lists and search results. */
+        KnowledgePageRow: {
+            readonly id: number;
+            title: string;
+            emoji?: string;
+            readonly space: components["schemas"]["KnowledgeSpaceRef"];
+            readonly parent_id: number | null;
+            published?: boolean;
+            /** Format: date-time */
+            published_at?: string | null;
+            /** @description Everyone who reads it confirms they have read it. */
+            require_ack?: boolean;
+            version?: number;
+            readonly archived: boolean;
+            /** Format: date-time */
+            archived_at?: string | null;
+            /** Format: date-time */
+            readonly updated_at: string;
+            readonly updated_by: components["schemas"]["KnowledgePerson"] | null;
+            readonly excerpt: string;
+            readonly read: components["schemas"]["KnowledgeReadCount"] | null;
+        };
+        KnowledgePerson: {
+            id: number;
+            name: string;
+            photo_url: string | null;
+        };
+        KnowledgeReadCount: {
+            read: number;
+            total: number;
+        };
+        KnowledgeRef: {
+            id: number;
+            name: string;
+        };
+        KnowledgeSpace: {
+            readonly id: number;
+            name: string;
+            /** @description An emoji shown next to the name. */
+            icon?: string;
+            description?: string;
+            /** @description Everyone in the company reads it. Otherwise only `positions`. */
+            audience_all?: boolean;
+            readonly positions: components["schemas"]["KnowledgeRef"][];
+            position?: number;
+            readonly archived: boolean;
+            /** Format: date-time */
+            archived_at?: string | null;
+            readonly counts: components["schemas"]["KnowledgeSpaceCounts"];
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        KnowledgeSpaceCounts: {
+            pages: number;
+            published: number;
+            drafts: number;
+        };
+        KnowledgeSpaceRef: {
+            id: number;
+            name: string;
+            icon: string;
+        };
+        KnowledgeSpaceTree: {
+            space: components["schemas"]["KnowledgeSpace"];
+            pages: components["schemas"]["KnowledgeTreeNode"][];
+        };
+        KnowledgeTreeNode: {
+            id: number;
+            title: string;
+            emoji: string;
+            published: boolean;
+            require_ack: boolean;
+            position: number;
+            children: {
+                [key: string]: unknown;
+            }[];
+        };
         /**
          * @description * `uz` - O'zbekcha
          *     * `ru` - Русский
@@ -724,6 +2080,80 @@ export interface components {
          * @enum {string}
          */
         MembershipStatusEnum: "pending" | "approved" | "rejected" | "blocked" | "left" | "suspended";
+        Movement: {
+            readonly id: number;
+            readonly kind: components["schemas"]["SalesCashMovementKindEnum"];
+            readonly status: string;
+            /** Format: decimal */
+            amount: string;
+            readonly currency: components["schemas"]["CurrencyEnum"];
+            readonly branch: components["schemas"]["BranchRef"];
+            readonly register: components["schemas"]["Ref"];
+            readonly shift: {
+                [key: string]: unknown;
+            } | null;
+            readonly receiver: components["schemas"]["Person"] | null;
+            readonly to_account: components["schemas"]["Ref"] | null;
+            readonly category: components["schemas"]["Ref"] | null;
+            readonly reason: string;
+            /** @description Signed download link. */
+            readonly photo: string | null;
+            readonly created_by: components["schemas"]["Person"];
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly confirmed_at: string | null;
+            readonly confirmed_by: components["schemas"]["Person"] | null;
+            /** Format: date-time */
+            readonly declined_at: string | null;
+            readonly decline_reason: string;
+            /** Format: date-time */
+            readonly voided_at: string | null;
+            readonly void_reason: string;
+        };
+        MyDay: {
+            /** Format: date-time */
+            now: string;
+            /** Format: date */
+            date: string;
+            state: components["schemas"]["MyDayStateEnum"];
+            settings: {
+                [key: string]: unknown;
+            };
+            shift: components["schemas"]["ShiftOut"] | null;
+            branch: components["schemas"]["BranchGeo"] | null;
+            record: components["schemas"]["RecordOut"] | null;
+            next_shift: components["schemas"]["ShiftOut"] | null;
+            open_shifts: number;
+            requests: number;
+        };
+        /**
+         * @description * `off` - off
+         *     * `upcoming` - upcoming
+         *     * `due` - due
+         *     * `late` - late
+         *     * `in` - in
+         *     * `done` - done
+         * @enum {string}
+         */
+        MyDayStateEnum: "off" | "upcoming" | "due" | "late" | "in" | "done";
+        MyMonth: {
+            month: string;
+            days: string[];
+            /** Format: date */
+            today: string;
+            holidays: {
+                [key: string]: string;
+            };
+            cells: {
+                [key: string]: components["schemas"]["Cell"];
+            };
+            totals: components["schemas"]["Period"];
+        };
+        MySwaps: {
+            mine: components["schemas"]["SwapOut"][];
+            requests: components["schemas"]["SwapOut"][];
+        };
         Notification: {
             readonly id: number;
             /** @description Registered kind, e.g. sales.cash_difference. */
@@ -754,6 +2184,8 @@ export interface components {
             style: components["schemas"]["ConsoleActionStyleEnum"];
             needs_reason: boolean;
         };
+        /** @enum {unknown} */
+        NullEnum: null;
         OffToday: {
             kind: components["schemas"]["OffTodayKindEnum"];
             /** @description The holiday's name; empty for time off. */
@@ -775,6 +2207,43 @@ export interface components {
             last_name: string;
             /** @description Required when the company has positions. */
             position_id?: number | null;
+        };
+        OpenRequest: {
+            register_id: number;
+            opening_count?: string;
+            /** Format: decimal */
+            opening_float?: string | null;
+        };
+        OpenShift: {
+            id: number;
+            member_id: number | null;
+            /** Format: date */
+            date: string;
+            /** Format: date-time */
+            starts_at: string;
+            /** Format: date-time */
+            ends_at: string;
+            /** @description Local start time, HH:MM. */
+            start: string;
+            /** @description Local end time, HH:MM. */
+            end: string;
+            break_minutes: number;
+            /** @description Planned working minutes, the break left out. */
+            minutes: number;
+            branch: components["schemas"]["BranchRef"] | null;
+            position: components["schemas"]["Ref"] | null;
+            status: components["schemas"]["AttendanceShiftStatusEnum"];
+            source: components["schemas"]["AttendanceShiftSourceEnum"];
+            published: boolean;
+            note: string;
+            time_off_id: number | null;
+            swap_pending: boolean;
+            has_record: boolean;
+            claimed: boolean;
+        };
+        OptionalReasonRequest: {
+            /** @default  */
+            reason: string;
         };
         PaginatedActivityList: {
             /** @example 123 */
@@ -805,6 +2274,36 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Comment"][];
+        };
+        PaginatedFeedAnnouncementList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["FeedAnnouncement"][];
+        };
+        PaginatedKassaShiftPageList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["KassaShiftPage"][];
         };
         PaginatedNotificationList: {
             /** @example 123 */
@@ -889,6 +2388,20 @@ export interface components {
             due_at?: string | null;
             priority?: components["schemas"]["PriorityEnum"];
         };
+        Period: {
+            scheduled_days: number;
+            attended_days: number;
+            leave_days: number;
+            leave_time_off_ids: number[];
+            absent_days: number;
+            worked_minutes: number;
+            approved_overtime_minutes: number;
+            late_arrivals: number;
+            late_minutes: number;
+            holiday_worked_days: number;
+            has_schedule: boolean;
+            overtime_minutes?: number;
+        };
         /**
          * @description * `week` - This week
          *     * `last_week` - Last week
@@ -956,6 +2469,18 @@ export interface components {
          * @enum {string}
          */
         PermissionsEnum: "members.view" | "members.approve" | "members.manage" | "roles.manage" | "positions.manage" | "tasks.view_all" | "tasks.assign" | "tasks.templates" | "tasks.confirm" | "reminders.configure" | "groups.manage" | "reports.view" | "time_off.approve" | "announcements.send" | "dashboard.access" | "company.settings" | "audit.view" | "data.export" | "branches.all" | "sales.view" | "sales.operate" | "sales.manage" | "sales.invoices" | "stock.manage" | "finance.view" | "finance.record" | "finance.manage" | "finance.approve" | "finance.claim" | "hr.view" | "hr.manage" | "hr.sensitive" | "hr.hiring" | "attendance.view" | "attendance.manage" | "time_off.manage" | "payroll.view" | "payroll.propose" | "payroll.manage" | "payroll.finalize" | "payroll.pay" | "ai.use" | "ai.configure" | "projects.view_all" | "projects.manage" | "projects.time_view" | "hr.discipline" | "hr.suspend" | "hr.terminate" | "assets.manage" | "reviews.manage" | "knowledge.manage" | "agenda.manage" | "crm.view" | "crm.manage";
+        Person: {
+            id: number;
+            name: string;
+        };
+        PersonCard: {
+            id: number;
+            name: string;
+            photo_url: string | null;
+            position: components["schemas"]["Ref"] | null;
+            home_branch: components["schemas"]["Ref"] | null;
+            status: string;
+        };
         Position: {
             readonly id: number;
             readonly name: string;
@@ -968,6 +2493,264 @@ export interface components {
          * @enum {string}
          */
         PriorityEnum: "low" | "normal" | "high" | "urgent";
+        /** @description A project on the index (cards or table). */
+        ProjectItem: {
+            id: number;
+            key: string;
+            name: string;
+            color: string;
+            icon: string;
+            status: components["schemas"]["ProjectsProjectStatusEnum"];
+            priority: string;
+            visibility: components["schemas"]["ProjectsProjectVisibilityEnum"];
+            lead: components["schemas"]["ProjectsPerson"] | null;
+            branch: components["schemas"]["ProjectsRef"] | null;
+            client: components["schemas"]["ProjectsRef"] | null;
+            /** Format: date */
+            start_on: string | null;
+            /** Format: date */
+            due_on: string | null;
+            /** Format: date-time */
+            completed_at: string | null;
+            /** Format: date-time */
+            archived_at: string | null;
+            progress: components["schemas"]["ProjectsProgress"];
+            health: (components["schemas"]["ProjectsHealthEnum"] | components["schemas"]["NullEnum"]) | null;
+            reported: components["schemas"]["ProjectsReported"] | null;
+            members: components["schemas"]["ProjectsPerson"][];
+            member_count: number;
+            next_milestone: components["schemas"]["ProjectsNextMilestone"] | null;
+            my_role: string | null;
+            currency: string;
+            /** Format: decimal */
+            budget: string | null;
+            budget_currency: string;
+            /** Format: decimal */
+            spent?: string | null;
+            burn?: number | null;
+        };
+        ProjectsBoard: {
+            project: components["schemas"]["ProjectItem"];
+            lists: components["schemas"]["ProjectsList"][];
+            cards: components["schemas"]["ProjectsCard"][];
+            labels: components["schemas"]["ProjectsLabel"][];
+            milestones: components["schemas"]["ProjectsMilestone"][];
+            people: components["schemas"]["ProjectsPerson"][];
+            capabilities: components["schemas"]["ProjectsCapabilities"];
+        };
+        ProjectsCapabilities: {
+            manage: boolean;
+            edit_cards: boolean;
+            /** @description Whether cards may go to other people: with tasks.assign, or as the project's lead (then only to the people on the project). */
+            assign_others: boolean;
+            post_update: boolean;
+            see_money: boolean;
+            add_expense: boolean;
+            see_labour: boolean;
+            see_all_time: boolean;
+        };
+        /** @description A card on the board, the list view or the mini app. */
+        ProjectsCard: {
+            id: number;
+            number: number | null;
+            key: string;
+            title: string;
+            list_id: number | null;
+            /** Format: double */
+            position: number;
+            status: components["schemas"]["TaskStatusEnum"];
+            priority: string;
+            /** Format: date-time */
+            due_at: string | null;
+            /** Format: date */
+            start_on: string | null;
+            assignee: components["schemas"]["ProjectsPerson"] | null;
+            label_ids: number[];
+            milestone_id: number | null;
+            checklist_done: number;
+            checklist_total: number;
+            comments: number;
+            proof: components["schemas"]["ProofEnum"];
+            proof_thumb: string | null;
+            needs_confirmation: boolean;
+            overdue: boolean;
+            /** Format: date-time */
+            completed_at: string | null;
+            minutes: number;
+            can_move: boolean;
+        };
+        /**
+         * @description * `on_track` - On track
+         *     * `at_risk` - At risk
+         *     * `off_track` - Off track
+         * @enum {string}
+         */
+        ProjectsHealthEnum: "on_track" | "at_risk" | "off_track";
+        ProjectsLabel: {
+            id: number;
+            name: string;
+            color: string;
+        };
+        ProjectsList: {
+            id: number;
+            name: string;
+            /** Format: double */
+            position: number;
+            is_done: boolean;
+            wip_limit: number | null;
+        };
+        ProjectsMilestone: {
+            id: number;
+            name: string;
+            description: string;
+            /** Format: date */
+            due_on: string | null;
+            status: components["schemas"]["ProjectsMilestoneStatusEnum"];
+            /** Format: date-time */
+            completed_at: string | null;
+            /** Format: double */
+            position: number;
+            done: number;
+            total: number;
+            percent: number;
+            overdue: boolean;
+        };
+        /**
+         * @description * `open` - Open
+         *     * `done` - Done
+         * @enum {string}
+         */
+        ProjectsMilestoneStatusEnum: "open" | "done";
+        ProjectsMoveRequest: {
+            list: number;
+            /**
+             * Format: double
+             * @description Leave out to put the card at the end.
+             */
+            position?: number | null;
+        };
+        ProjectsMoveResult: {
+            card: components["schemas"]["ProjectsCard"];
+            message: string;
+        };
+        ProjectsMyTimer: {
+            timer: components["schemas"]["ProjectsTimer"] | null;
+        };
+        ProjectsMyTimerStarted: {
+            timer: components["schemas"]["ProjectsTimer"] | null;
+        };
+        ProjectsMyWeek: {
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            end: string;
+            days: number[];
+            total: number;
+            entries: components["schemas"]["ProjectsTimeEntry"][];
+        };
+        ProjectsNextMilestone: {
+            id: number;
+            name: string;
+            /** Format: date */
+            due_on: string | null;
+        };
+        ProjectsPerson: {
+            id: number;
+            name: string;
+            photo_url: string | null;
+        };
+        ProjectsProgress: {
+            done: number;
+            total: number;
+            overdue: number;
+            percent: number;
+        };
+        /**
+         * @description * `planning` - Planning
+         *     * `active` - Active
+         *     * `on_hold` - On hold
+         *     * `completed` - Completed
+         *     * `cancelled` - Cancelled
+         * @enum {string}
+         */
+        ProjectsProjectStatusEnum: "planning" | "active" | "on_hold" | "completed" | "cancelled";
+        /**
+         * @description * `members` - Project members
+         *     * `company` - Everyone in the company
+         * @enum {string}
+         */
+        ProjectsProjectVisibilityEnum: "members" | "company";
+        ProjectsRef: {
+            id: number;
+            name: string;
+        };
+        ProjectsReported: {
+            health: components["schemas"]["ProjectsHealthEnum"];
+            text: string;
+            /** Format: date-time */
+            at: string;
+            author: components["schemas"]["ProjectsPerson"] | null;
+        };
+        ProjectsTimeEntry: {
+            id: number;
+            person: components["schemas"]["ProjectsPerson"];
+            project: components["schemas"]["ProjectsRef"] | null;
+            project_key: string | null;
+            task: components["schemas"]["ProjectsRef"] | null;
+            /** Format: date */
+            day: string;
+            minutes: number;
+            note: string;
+            billable: boolean;
+            source: components["schemas"]["ProjectsTimeSourceEnum"];
+            /** Format: date-time */
+            created_at: string;
+            can_edit: boolean;
+        };
+        /**
+         * @description * `manual` - Logged by hand
+         *     * `timer` - Timer
+         * @enum {string}
+         */
+        ProjectsTimeSourceEnum: "manual" | "timer";
+        ProjectsTimeWriteRequest: {
+            /** Format: date */
+            day: string;
+            minutes: number;
+            project?: number | null;
+            task?: number | null;
+            note?: string;
+            billable?: boolean;
+            person?: number | null;
+        };
+        ProjectsTimer: {
+            id: number;
+            person: components["schemas"]["ProjectsPerson"];
+            project: components["schemas"]["ProjectsRef"] | null;
+            project_key: string | null;
+            task: components["schemas"]["ProjectsRef"] | null;
+            task_key: string | null;
+            /** Format: date-time */
+            started_at: string;
+            note: string;
+        };
+        ProjectsTimerStartRequest: {
+            project?: number | null;
+            task?: number | null;
+            note?: string;
+        };
+        ProjectsUpdate: {
+            id: number;
+            health: components["schemas"]["ProjectsHealthEnum"];
+            text: string;
+            author: components["schemas"]["ProjectsPerson"] | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        ProjectsUpdateWriteRequest: {
+            health: components["schemas"]["ProjectsHealthEnum"];
+            text?: string;
+        };
         /**
          * @description * `none` - Not needed
          *     * `photo` - Photo
@@ -976,6 +2759,45 @@ export interface components {
          * @enum {string}
          */
         ProofEnum: "none" | "photo" | "text" | "any";
+        ReasonRequest: {
+            reason: string;
+        };
+        RecordOut: {
+            id: number;
+            member_id: number;
+            shift_id: number | null;
+            /** Format: date */
+            date: string;
+            status: components["schemas"]["AttendanceRecordStatusEnum"];
+            /** Format: date-time */
+            check_in_at: string | null;
+            /** Format: date-time */
+            check_out_at: string | null;
+            in_lat: string | null;
+            in_lng: string | null;
+            in_accuracy_m: number | null;
+            in_distance_m: number | null;
+            out_lat: string | null;
+            out_lng: string | null;
+            out_accuracy_m: number | null;
+            out_distance_m: number | null;
+            branch: components["schemas"]["BranchRef"] | null;
+            in_source: string;
+            out_source: string;
+            late_minutes: number;
+            early_leave_minutes: number;
+            worked_minutes: number;
+            overtime_minutes: number;
+            overtime_status: components["schemas"]["AttendanceOvertimeStatusEnum"];
+            is_late: boolean;
+            flags: components["schemas"]["AttendanceRecordFlagEnum"][];
+            note: string;
+            has_photo: boolean;
+        };
+        Ref: {
+            id: number;
+            name: string;
+        };
         ReminderInfo: {
             every_minutes: number;
             sent: number;
@@ -1063,6 +2885,27 @@ export interface components {
         ReturnRequest: {
             reason: string;
         };
+        SalePaymentRequest: {
+            method_id: number;
+            /** Format: decimal */
+            amount: string;
+        };
+        /**
+         * @description * `payout` - Payout
+         *     * `deposit` - Deposit
+         *     * `handover` - Handover
+         *     * `to_safe` - To the safe
+         *     * `from_safe` - From the safe
+         *     * `to_bank` - To the bank
+         * @enum {string}
+         */
+        SalesCashMovementKindEnum: "payout" | "deposit" | "handover" | "to_safe" | "from_safe" | "to_bank";
+        /**
+         * @description * `sale` - Sale
+         *     * `refund` - Refund
+         * @enum {string}
+         */
+        SalesSaleKindEnum: "sale" | "refund";
         Score: {
             /** @description Shared tasks whose deadline passed in the period. */
             total: number;
@@ -1079,14 +2922,32 @@ export interface components {
             /** @description Reminders the bot had to send. */
             reminders: number;
         };
-        /**
-         * @description * `done` - done
-         *     * `missed` - missed
-         *     * `free` - free
-         *     * `today` - today
-         * @enum {string}
-         */
-        StateEnum: "done" | "missed" | "free" | "today";
+        ShiftOut: {
+            id: number;
+            member_id: number | null;
+            /** Format: date */
+            date: string;
+            /** Format: date-time */
+            starts_at: string;
+            /** Format: date-time */
+            ends_at: string;
+            /** @description Local start time, HH:MM. */
+            start: string;
+            /** @description Local end time, HH:MM. */
+            end: string;
+            break_minutes: number;
+            /** @description Planned working minutes, the break left out. */
+            minutes: number;
+            branch: components["schemas"]["BranchRef"] | null;
+            position: components["schemas"]["Ref"] | null;
+            status: components["schemas"]["AttendanceShiftStatusEnum"];
+            source: components["schemas"]["AttendanceShiftSourceEnum"];
+            published: boolean;
+            note: string;
+            time_off_id: number | null;
+            swap_pending: boolean;
+            has_record: boolean;
+        };
         Summary: {
             today_total: number;
             today_done: number;
@@ -1113,6 +2974,38 @@ export interface components {
             /** @description Set when today is a holiday or the person's time off. */
             off_today: components["schemas"]["OffToday"] | null;
         };
+        SwapOut: {
+            id: number;
+            kind: components["schemas"]["AttendanceSwapKindEnum"];
+            status: components["schemas"]["AttendanceSwapStatusEnum"];
+            shift: components["schemas"]["ShiftOut"];
+            other_shift: components["schemas"]["ShiftOut"] | null;
+            requested_by: components["schemas"]["Ref"];
+            target: components["schemas"]["Ref"] | null;
+            accepted_by: components["schemas"]["Ref"] | null;
+            note: string;
+            decision_note: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            decided_at: string | null;
+        };
+        /**
+         * @description * `cover` - cover
+         *     * `swap` - swap
+         * @enum {string}
+         */
+        SwapRequestKindEnum: "cover" | "swap";
+        SwapRequestRequest: {
+            shift_id: number;
+            kind: components["schemas"]["SwapRequestKindEnum"];
+            other_shift_id?: number | null;
+            target_id?: number | null;
+            /** @default  */
+            note: string;
+        };
         Task: {
             readonly id: number;
             readonly kind: components["schemas"]["TaskKindEnum"];
@@ -1132,6 +3025,9 @@ export interface components {
             readonly proof_text: string;
             /** Format: uri */
             readonly proof_photo: string | null;
+            readonly proof_thumb: string | null;
+            /** Format: decimal */
+            readonly reward: string | null;
             assignee: components["schemas"]["MemberBrief"];
             created_by: components["schemas"]["MemberBrief"] | null;
             checklist: components["schemas"]["ChecklistItem"][];
@@ -1385,6 +3281,488 @@ export interface operations {
             };
         };
     };
+    v1_companies_announcements_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                pinned?: boolean;
+            };
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedFeedAnnouncementList"];
+                };
+            };
+        };
+    };
+    v1_companies_announcements_read_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedAnnouncement"];
+                };
+            };
+        };
+    };
+    v1_companies_attendance_retrieve: {
+        parameters: {
+            query?: {
+                /** @description YYYY-MM */
+                month?: string;
+            };
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyMonth"];
+                };
+            };
+        };
+    };
+    v1_companies_attendance_board_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Board"];
+                };
+            };
+        };
+    };
+    v1_companies_attendance_check_in_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CheckInRequest"];
+                "multipart/form-data": components["schemas"]["CheckInRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["CheckInRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CheckResult"];
+                };
+            };
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CheckResult"];
+                };
+            };
+        };
+    };
+    v1_companies_attendance_check_out_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CheckOutRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["CheckOutRequest"];
+                "multipart/form-data": components["schemas"]["CheckOutRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CheckResult"];
+                };
+            };
+        };
+    };
+    v1_companies_attendance_corrections_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CorrectionOut"][];
+                };
+            };
+        };
+    };
+    v1_companies_attendance_corrections_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CorrectionRequestRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["CorrectionRequestRequest"];
+                "multipart/form-data": components["schemas"]["CorrectionRequestRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CorrectionOut"];
+                };
+            };
+        };
+    };
+    v1_companies_attendance_open_shifts_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpenShift"][];
+                };
+            };
+        };
+    };
+    v1_companies_attendance_open_shifts_claim_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwapOut"];
+                };
+            };
+        };
+    };
+    v1_companies_attendance_records_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordOut"];
+                };
+            };
+        };
+    };
+    v1_companies_attendance_shifts_list: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftOut"][];
+                };
+            };
+        };
+    };
+    v1_companies_attendance_swaps_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MySwaps"];
+                };
+            };
+        };
+    };
+    v1_companies_attendance_swaps_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SwapRequestRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["SwapRequestRequest"];
+                "multipart/form-data": components["schemas"]["SwapRequestRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwapOut"];
+                };
+            };
+        };
+    };
+    v1_companies_attendance_swaps_create_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+                verb: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwapOut"];
+                };
+            };
+        };
+    };
+    v1_companies_attendance_swaps_candidates_list: {
+        parameters: {
+            query: {
+                shift_id: number;
+            };
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Candidate"][];
+                };
+            };
+        };
+    };
+    v1_companies_attendance_today_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyDay"];
+                };
+            };
+        };
+    };
+    v1_companies_calendar_retrieve: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgendaEmployeeCalendar"];
+                };
+            };
+        };
+    };
+    v1_companies_calendar_events_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgendaEvent"];
+                };
+            };
+        };
+    };
+    v1_companies_calendar_events_respond_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgendaRespondRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["AgendaRespondRequest"];
+                "multipart/form-data": components["schemas"]["AgendaRespondRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgendaAttendee"];
+                };
+            };
+        };
+    };
     v1_companies_holidays_list: {
         parameters: {
             query?: never;
@@ -1459,6 +3837,140 @@ export interface operations {
             };
         };
     };
+    v1_companies_knowledge_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeHome"];
+                };
+            };
+        };
+    };
+    v1_companies_knowledge_linked_list: {
+        parameters: {
+            query: {
+                target_id: number;
+                target_type: "routine" | "task";
+            };
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeLink"][];
+                };
+            };
+        };
+    };
+    v1_companies_knowledge_pages_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgePageDetail"];
+                };
+            };
+        };
+    };
+    v1_companies_knowledge_pages_ack_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeEmployeeAck"];
+                };
+            };
+        };
+    };
+    v1_companies_knowledge_search_list: {
+        parameters: {
+            query?: {
+                q?: string;
+            };
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgePageRow"][];
+                };
+            };
+        };
+    };
+    v1_companies_knowledge_spaces_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeSpaceTree"];
+                };
+            };
+        };
+    };
     v1_companies_members_list: {
         parameters: {
             query?: never;
@@ -1525,6 +4037,275 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Position"][];
                 };
+            };
+        };
+    };
+    v1_companies_projects_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectItem"][];
+                };
+            };
+        };
+    };
+    v1_companies_projects_board_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                project_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectsBoard"];
+                };
+            };
+        };
+    };
+    v1_companies_projects_cards_move_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                project_id: number;
+                task_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectsMoveRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ProjectsMoveRequest"];
+                "multipart/form-data": components["schemas"]["ProjectsMoveRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectsMoveResult"];
+                };
+            };
+        };
+    };
+    v1_companies_projects_updates_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                project_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectsUpdate"][];
+                };
+            };
+        };
+    };
+    v1_companies_projects_updates_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                project_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectsUpdateWriteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ProjectsUpdateWriteRequest"];
+                "multipart/form-data": components["schemas"]["ProjectsUpdateWriteRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectsUpdate"];
+                };
+            };
+        };
+    };
+    v1_companies_projects_time_retrieve: {
+        parameters: {
+            query?: {
+                week?: string;
+            };
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectsMyWeek"];
+                };
+            };
+        };
+    };
+    v1_companies_projects_time_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectsTimeWriteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ProjectsTimeWriteRequest"];
+                "multipart/form-data": components["schemas"]["ProjectsTimeWriteRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectsTimeEntry"];
+                };
+            };
+        };
+    };
+    v1_companies_projects_time_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                entry_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_companies_projects_timer_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectsMyTimer"];
+                };
+            };
+        };
+    };
+    v1_companies_projects_timer_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ProjectsTimerStartRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ProjectsTimerStartRequest"];
+                "multipart/form-data": components["schemas"]["ProjectsTimerStartRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectsMyTimerStarted"];
+                };
+            };
+        };
+    };
+    v1_companies_projects_timer_stop_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectsTimeEntry"];
+                };
+            };
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -1675,6 +4456,290 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReminderPolicy"];
+                };
+            };
+        };
+    };
+    v1_companies_sales_entries_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppSaleRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["AppSaleRequest"];
+                "multipart/form-data": components["schemas"]["AppSaleRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KassaSale"];
+                };
+            };
+        };
+    };
+    v1_companies_sales_entries_void_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ReasonRequest"];
+                "multipart/form-data": components["schemas"]["ReasonRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KassaSaleVoided"];
+                };
+            };
+        };
+    };
+    v1_companies_sales_handovers_confirm_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["OptionalReasonRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["OptionalReasonRequest"];
+                "multipart/form-data": components["schemas"]["OptionalReasonRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KassaHandoverAnswer"];
+                };
+            };
+        };
+    };
+    v1_companies_sales_handovers_decline_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["OptionalReasonRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["OptionalReasonRequest"];
+                "multipart/form-data": components["schemas"]["OptionalReasonRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KassaHandoverAnswer"];
+                };
+            };
+        };
+    };
+    v1_companies_sales_handovers_pending_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KassaHandovers"];
+                };
+            };
+        };
+    };
+    v1_companies_sales_shifts_list: {
+        parameters: {
+            query?: {
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedKassaShiftPageList"];
+                };
+            };
+        };
+    };
+    v1_companies_sales_shifts_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["OpenRequest"];
+                "multipart/form-data": components["schemas"]["OpenRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KassaShift"];
+                };
+            };
+        };
+    };
+    v1_companies_sales_shifts_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KassaShiftDetail"];
+                };
+            };
+        };
+    };
+    v1_companies_sales_shifts_close_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["CloseRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["CloseRequest"];
+                "application/json": components["schemas"]["CloseRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KassaClosed"];
+                };
+            };
+        };
+    };
+    v1_companies_sales_shifts_movements_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["AppMovementRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["AppMovementRequest"];
+                "application/json": components["schemas"]["AppMovementRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Movement"];
+                };
+            };
+        };
+    };
+    v1_companies_sales_shifts_current_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KassaCurrent"];
                 };
             };
         };
@@ -1859,6 +4924,8 @@ export interface operations {
                 page?: number;
                 /** @description Number of results to return per page. */
                 page_size?: number;
+                /** @description Words in the title or description. */
+                q?: string;
                 /** @description today: open tasks due today or late; board: your open tasks plus today's finished; review: waiting for you to check. */
                 scope?: "board" | "created" | "mine" | "review" | "today";
                 /** @description Comma-separated statuses. */
@@ -2200,6 +5267,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Task"];
+                };
+            };
+        };
+    };
+    v1_companies_tasks_calendar_retrieve: {
+        parameters: {
+            query: {
+                /** @description First day, YYYY-MM-DD. */
+                from: string;
+                /** @description Last day, YYYY-MM-DD (≤ 42 days). */
+                to: string;
+            };
+            header?: never;
+            path: {
+                company_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Calendar"];
                 };
             };
         };

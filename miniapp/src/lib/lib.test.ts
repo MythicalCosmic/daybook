@@ -46,6 +46,8 @@ function task(overrides: Partial<Task> = {}): Task {
     needs_confirmation: false,
     proof_text: "",
     proof_photo: null,
+    proof_thumb: null,
+    reward: null,
     assignee: { id: 1, name: "Ali Valiyev", position: null },
     created_by: { id: 1, name: "Ali Valiyev", position: null },
     confirmed_by: null,

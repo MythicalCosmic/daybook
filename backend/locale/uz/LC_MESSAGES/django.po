@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-21 07:32+0500\n"
+"POT-Creation-Date: 2026-10-21 08:52+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -40,7 +40,9 @@ msgstr "Telegram’dan profil rasmi oxirgi marta olingan vaqt."
 
 #: backend/apps/agenda/ai_tools.py
 msgid "Company events (meetings, trainings, inventories) in the next days"
-msgstr "Yaqin kunlardagi kompaniya tadbirlari (yig‘ilishlar, treninglar, inventarizatsiyalar)"
+msgstr ""
+"Yaqin kunlardagi kompaniya tadbirlari (yig‘ilishlar, treninglar, "
+"inventarizatsiyalar)"
 
 #: backend/apps/agenda/audit_actions.py
 msgid "Added an event to the calendar"
@@ -188,7 +190,8 @@ msgstr "Bayram"
 msgid "Deadline"
 msgstr "Oxirgi muddat"
 
-#: backend/apps/agenda/models.py backend/apps/finance/models.py backend/apps/sales/models.py
+#: backend/apps/agenda/models.py backend/apps/finance/models.py
+#: backend/apps/sales/models.py
 msgid "Other"
 msgstr "Boshqa"
 
@@ -214,7 +217,9 @@ msgstr "Har oy"
 
 #: backend/apps/agenda/models.py
 msgid "All-day events use the company's calendar days."
-msgstr "Kun bo‘yi davom etadigan tadbirlar kompaniya taqvimidagi kunlar bo‘yicha belgilanadi."
+msgstr ""
+"Kun bo‘yi davom etadigan tadbirlar kompaniya taqvimidagi kunlar bo‘yicha "
+"belgilanadi."
 
 #: backend/apps/agenda/models.py
 msgid "Where it happens. Empty: the whole company."
@@ -222,7 +227,9 @@ msgstr "Qayerda o‘tadi. Bo‘sh: butun kompaniya."
 
 #: backend/apps/agenda/models.py
 msgid "Minutes before the start the attendees get a reminder. Empty: none."
-msgstr "Boshlanishidan necha daqiqa oldin qatnashchilarga eslatma boradi. Bo‘sh: eslatmasiz."
+msgstr ""
+"Boshlanishidan necha daqiqa oldin qatnashchilarga eslatma boradi. Bo‘sh: "
+"eslatmasiz."
 
 #: backend/apps/agenda/models.py
 msgid "The last day it may repeat on (company calendar)."
@@ -287,7 +294,8 @@ msgstr "Tadbir boshlanishidan oldin tugay olmaydi."
 
 #: backend/apps/agenda/services.py
 msgid "Give the time it starts, or make it an all-day event."
-msgstr "Boshlanish vaqtini kiriting yoki uni kun bo‘yi davom etadigan tadbir qiling."
+msgstr ""
+"Boshlanish vaqtini kiriting yoki uni kun bo‘yi davom etadigan tadbir qiling."
 
 #: backend/apps/agenda/services.py
 msgid "Give the time it ends."
@@ -300,8 +308,8 @@ msgstr "Tadbir boshlangandan keyin tugashi kerak."
 #: backend/apps/agenda/services.py
 msgid "A timed event can last two weeks at most. Make it all-day."
 msgstr ""
-"Vaqti belgilangan tadbir ko‘pi bilan ikki hafta davom etishi mumkin. Uni kun bo‘yi davom etadigan "
-"tadbir qiling."
+"Vaqti belgilangan tadbir ko‘pi bilan ikki hafta davom etishi mumkin. Uni kun "
+"bo‘yi davom etadigan tadbir qiling."
 
 #: backend/apps/agenda/services.py
 msgid "Pick how it repeats."
@@ -398,8 +406,11 @@ msgid "Unpinned an announcement"
 msgstr "E’lonni qadalganlardan olib tashladi"
 
 #: backend/apps/announcements/bot_messages.py
-msgid "📣 Send the announcement as one message. Bold, italics and links are kept."
-msgstr "📣 E’lonni bitta xabar qilib yuboring. Qalin, kursiv matn va havolalar saqlanadi."
+msgid ""
+"📣 Send the announcement as one message. Bold, italics and links are kept."
+msgstr ""
+"📣 E’lonni bitta xabar qilib yuboring. Qalin, kursiv matn va havolalar "
+"saqlanadi."
 
 #: backend/apps/announcements/bot_messages.py
 msgid "📤 Send to the chosen positions"
@@ -421,8 +432,8 @@ msgstr "📣 <b>Oldindan ko‘rish</b>"
 #, python-format
 msgid "📣 Sent. Recipients: %(count)d. Tap below to see who has read it."
 msgstr ""
-"📣 Yuborildi. Qabul qiluvchilar: %(count)d ta. Kim o‘qiganini ko‘rish uchun pastdagi tugmani "
-"bosing."
+"📣 Yuborildi. Qabul qiluvchilar: %(count)d ta. Kim o‘qiganini ko‘rish uchun "
+"pastdagi tugmani bosing."
 
 #: backend/apps/announcements/bot_messages.py
 #, python-format
@@ -434,7 +445,8 @@ msgstr "📣 <b>Eslatma</b>: iltimos, %(name)s yuborgan e’lonni o‘qing."
 msgid "📣 <b>Announcement</b> · %(name)s"
 msgstr "📣 <b>E’lon</b> · %(name)s"
 
-#: backend/apps/announcements/bot_messages.py backend/apps/knowledge/bot_messages.py
+#: backend/apps/announcements/bot_messages.py
+#: backend/apps/knowledge/bot_messages.py
 msgid "✅ I've read it"
 msgstr "✅ O‘qidim"
 
@@ -455,14 +467,14 @@ msgstr "Hali o‘qimaganlar: %(names)s"
 #: backend/apps/announcements/bot_messages.py
 #, python-format
 msgid ""
-"📣 A day later, %(unread)d of %(total)d people still haven't read your announcement “%(title)s”: "
-"%(names)s"
+"📣 A day later, %(unread)d of %(total)d people still haven't read your "
+"announcement “%(title)s”: %(names)s"
 msgstr ""
-"📣 Bir kun o‘tdi, lekin %(total)d kishidan %(unread)d tasi hali “%(title)s” e’loningizni o‘qimadi: "
-"%(names)s"
+"📣 Bir kun o‘tdi, lekin %(total)d kishidan %(unread)d tasi hali “%(title)s” "
+"e’loningizni o‘qimadi: %(names)s"
 
-#: backend/apps/announcements/bot_messages.py backend/apps/groups/bot_messages.py
-#: backend/apps/reports/bot_messages.py
+#: backend/apps/announcements/bot_messages.py
+#: backend/apps/groups/bot_messages.py backend/apps/reports/bot_messages.py
 #, python-format
 msgid "…and %(count)d more"
 msgstr "…va yana %(count)d ta"
@@ -471,8 +483,8 @@ msgstr "…va yana %(count)d ta"
 msgid "👀 Who has read it?"
 msgstr "👀 Kim o‘qidi?"
 
-#: backend/apps/announcements/bot_messages.py backend/apps/attendance/bot_messages.py
-#: backend/apps/tasks/bot_messages.py
+#: backend/apps/announcements/bot_messages.py
+#: backend/apps/attendance/bot_messages.py backend/apps/tasks/bot_messages.py
 msgid "✖️ Cancel"
 msgstr "✖️ Bekor qilish"
 
@@ -500,8 +512,9 @@ msgstr "Yuborilgan"
 
 #: backend/apps/announcements/models.py backend/apps/attendance/models.py
 #: backend/apps/attendance/services.py backend/apps/finance/models.py
-#: backend/apps/projects/models.py backend/apps/sales/services.py backend/apps/tasks/models.py
-#: backend/apps/timeoff/models.py backend/apps/timeoff/services.py
+#: backend/apps/projects/models.py backend/apps/sales/services.py
+#: backend/apps/tasks/models.py backend/apps/timeoff/models.py
+#: backend/apps/timeoff/services.py
 msgid "Cancelled"
 msgstr "Bekor qilindi"
 
@@ -537,7 +550,8 @@ msgstr "Shu kompaniyaning filiallarini tanlang."
 msgid "Must be a whole number."
 msgstr "Butun son bo‘lishi kerak."
 
-#: backend/apps/announcements/services.py employee_bot/bot/handlers/member/announcements.py
+#: backend/apps/announcements/services.py
+#: employee_bot/bot/handlers/member/announcements.py
 msgid "Only managers can send announcements."
 msgstr "E’lonni faqat rahbarlar yubora oladi."
 
@@ -581,7 +595,8 @@ msgstr "Bu e’lon endi mavjud emas."
 msgid "Write something to send."
 msgstr "Yuborish uchun nimadir yozing."
 
-#: backend/apps/announcements/services.py employee_bot/bot/handlers/member/announcements.py
+#: backend/apps/announcements/services.py
+#: employee_bot/bot/handlers/member/announcements.py
 #, python-format
 msgid "That's too long for one message: %(limit)d characters at most."
 msgstr "Bitta xabar uchun juda uzun: ko‘pi bilan %(limit)d belgi."
@@ -592,7 +607,8 @@ msgstr "Faqat o‘zingiz boshqaradigan filiallarga e’lon yubora olasiz."
 
 #: backend/apps/announcements/services.py
 msgid "You don't manage any branch to announce to."
-msgstr "Siz birorta ham filialni boshqarmaysiz, shuning uchun e’lon yubora olmaysiz."
+msgstr ""
+"Siz birorta ham filialni boshqarmaysiz, shuning uchun e’lon yubora olmaysiz."
 
 #: backend/apps/announcements/services.py
 msgid "Schedule it at least a minute from now."
@@ -607,9 +623,10 @@ msgid "It must expire after it goes out."
 msgstr "E’lonning amal qilish muddati u yuborilgandan keyin tugashi kerak."
 
 #: backend/apps/announcements/services.py backend/apps/attendance/api.py
-#: backend/apps/attendance/services.py backend/apps/console/base.py backend/apps/inbox/services.py
-#: backend/apps/knowledge/owner_api.py backend/apps/members/services.py
-#: backend/apps/sales/handlers.py backend/apps/timeoff/services.py
+#: backend/apps/attendance/services.py backend/apps/console/base.py
+#: backend/apps/inbox/services.py backend/apps/knowledge/owner_api.py
+#: backend/apps/members/services.py backend/apps/sales/handlers.py
+#: backend/apps/timeoff/services.py
 #: employee_bot/bot/handlers/admin/approvals.py
 msgid "You don't have permission to do this."
 msgstr "Bunga ruxsatingiz yo‘q."
@@ -660,12 +677,14 @@ msgstr "So‘rov yuborildi! Rahbar tasdiqlaydi."
 
 #: backend/apps/attendance/ai_tools.py
 msgid ""
-"Attendance between two days: totals (present, late, absent, on-time %, worked hours) and per "
-"person scheduled, attended, absent and late days with worked hours"
+"Attendance between two days: totals (present, late, absent, on-time %, "
+"worked hours) and per person scheduled, attended, absent and late days with "
+"worked hours"
 msgstr ""
-"Ikki sana orasidagi davomat: jami ko‘rsatkichlar (kelganlar, kechikkanlar, kelmaganlar, o‘z "
-"vaqtida kelish %, ishlangan soatlar) va har bir xodim bo‘yicha rejadagi, kelgan, kelmagan va "
-"kechikkan kunlar hamda ishlangan soatlar"
+"Ikki sana orasidagi davomat: jami ko‘rsatkichlar (kelganlar, kechikkanlar, "
+"kelmaganlar, o‘z vaqtida kelish %, ishlangan soatlar) va har bir xodim "
+"bo‘yicha rejadagi, kelgan, kelmagan va kechikkan kunlar hamda ishlangan "
+"soatlar"
 
 #: backend/apps/attendance/api.py backend/apps/attendance/owner_api.py
 #: backend/apps/attendance/services.py
@@ -856,7 +875,8 @@ msgid ""
 "No shift is planned for you today; it will be marked as an extra day."
 msgstr ""
 "📍 <b>Ishga kelish</b>\n"
-"Bugun sizga smena rejalashtirilmagan, shuning uchun bu kun qo‘shimcha ish kuni deb belgilanadi."
+"Bugun sizga smena rejalashtirilmagan, shuning uchun bu kun qo‘shimcha ish "
+"kuni deb belgilanadi."
 
 #: backend/apps/attendance/bot_messages.py
 msgid "Send your location with the button below."
@@ -869,7 +889,8 @@ msgid ""
 "You're in since %(time)s. Send your location to check out."
 msgstr ""
 "👋 <b>Ishdan ketish</b>\n"
-"Siz soat %(time)s dan beri ishdasiz. Ketganingizni belgilash uchun joylashuvingizni yuboring."
+"Siz soat %(time)s dan beri ishdasiz. Ketganingizni belgilash uchun "
+"joylashuvingizni yuboring."
 
 #: backend/apps/attendance/bot_messages.py
 msgid "📸 Now a quick selfie to finish checking in."
@@ -888,11 +909,15 @@ msgstr "⏰ %(late)s kechikdingiz. Keyingi safar biroz ertaroq keling!"
 #: backend/apps/attendance/bot_messages.py
 #, python-format
 msgid "📌 You were %(distance)s from the branch, so this check-in is marked."
-msgstr "📌 Siz filialdan %(distance)s uzoqlikda edingiz, shuning uchun bu kelishga belgi qo‘yildi."
+msgstr ""
+"📌 Siz filialdan %(distance)s uzoqlikda edingiz, shuning uchun bu kelishga "
+"belgi qo‘yildi."
 
 #: backend/apps/attendance/bot_messages.py
 msgid "No shift was planned, so it's recorded as an extra day."
-msgstr "Smena rejalashtirilmagan edi, shuning uchun bu kun qo‘shimcha ish kuni sifatida yozildi."
+msgstr ""
+"Smena rejalashtirilmagan edi, shuning uchun bu kun qo‘shimcha ish kuni "
+"sifatida yozildi."
 
 #: backend/apps/attendance/bot_messages.py
 msgid "Have a good shift!"
@@ -901,7 +926,8 @@ msgstr "Smenangiz yaxshi o‘tsin!"
 #: backend/apps/attendance/bot_messages.py
 #, python-format
 msgid "👋 Checked out at %(time)s. You worked %(worked)s today. Thank you!"
-msgstr "👋 Ketganingiz belgilandi: %(time)s. Bugun %(worked)s ishladingiz. Rahmat!"
+msgstr ""
+"👋 Ketganingiz belgilandi: %(time)s. Bugun %(worked)s ishladingiz. Rahmat!"
 
 #: backend/apps/attendance/bot_messages.py
 #, python-format
@@ -924,7 +950,9 @@ msgstr "🔔 Smenangiz boshlanadi: %(time)s%(where)s."
 #: backend/apps/attendance/bot_messages.py
 #, python-format
 msgid "⏰ Your shift started at %(time)s%(where)s. Check in when you arrive."
-msgstr "⏰ Smenangiz boshlandi: %(time)s%(where)s. Yetib kelgach, kelganingizni belgilang."
+msgstr ""
+"⏰ Smenangiz boshlandi: %(time)s%(where)s. Yetib kelgach, kelganingizni "
+"belgilang."
 
 #: backend/apps/attendance/bot_messages.py
 msgid "🏠 I'm off today"
@@ -959,7 +987,8 @@ msgstr "👋 Ketganingiz belgilandi: %(time)s. Bugungi mehnatingiz uchun rahmat!
 #: backend/apps/attendance/bot_messages.py
 #, python-format
 msgid "⏰ <b>%(name)s</b> came %(late)s late (shift %(time)s, %(branch)s)."
-msgstr "⏰ <b>%(name)s</b> %(late)s kechikib keldi (smena %(time)s, %(branch)s)."
+msgstr ""
+"⏰ <b>%(name)s</b> %(late)s kechikib keldi (smena %(time)s, %(branch)s)."
 
 #: backend/apps/attendance/bot_messages.py
 #, python-format
@@ -1024,7 +1053,8 @@ msgstr "Ish jadvallari"
 
 #: backend/apps/attendance/hooks.py
 msgid "Set working hours so attendance knows who is expected when."
-msgstr "Davomat kim qachon kelishi kerakligini bilishi uchun ish vaqtini belgilang."
+msgstr ""
+"Davomat kim qachon kelishi kerakligini bilishi uchun ish vaqtini belgilang."
 
 #: backend/apps/attendance/hooks.py backend/apps/sales/hooks.py
 msgid "Shifts"
@@ -1096,7 +1126,8 @@ msgstr "Kimdir filial hududidan tashqarida kelganini belgilasa, nima bo‘ladi."
 
 #: backend/apps/attendance/models.py
 msgid "Minutes after the shift starts that still count as on time."
-msgstr "Smena boshlanganidan keyin necha daqiqagacha kelish o‘z vaqtida hisoblanadi."
+msgstr ""
+"Smena boshlanganidan keyin necha daqiqagacha kelish o‘z vaqtida hisoblanadi."
 
 #: backend/apps/attendance/models.py
 msgid "Minutes before the shift ends that still count as a full day."
@@ -1104,7 +1135,9 @@ msgstr "Smena tugashidan necha daqiqa oldin ketish ham to‘liq kun hisoblanadi.
 
 #: backend/apps/attendance/models.py
 msgid "Remind someone who hasn't checked in this long after start."
-msgstr "Smena boshlanganidan shuncha vaqt o‘tib ham kelganini belgilamagan xodimga eslatish."
+msgstr ""
+"Smena boshlanganidan shuncha vaqt o‘tib ham kelganini belgilamagan xodimga "
+"eslatish."
 
 #: backend/apps/attendance/models.py
 msgid "Tell managers when someone hasn't checked in by then."
@@ -1112,7 +1145,9 @@ msgstr "Shu vaqtgacha kimdir kelganini belgilamasa, rahbarlarga xabar berish."
 
 #: backend/apps/attendance/models.py
 msgid "Close a forgotten check-out this many hours after the shift ends."
-msgstr "Ketish belgilanmagan bo‘lsa, smena tugaganidan shuncha soat o‘tib uni avtomatik yopish."
+msgstr ""
+"Ketish belgilanmagan bo‘lsa, smena tugaganidan shuncha soat o‘tib uni "
+"avtomatik yopish."
 
 #: backend/apps/attendance/models.py
 msgid "Locations less precise than this are marked as low accuracy."
@@ -1124,7 +1159,9 @@ msgstr "Jadval bo‘yicha dam olish kunida kundalik vazifalar berilmaydi."
 
 #: backend/apps/attendance/models.py
 msgid "A manager approves swaps and covers after the colleague agrees."
-msgstr "Hamkasb rozi bo‘lgach, smena almashuvi va o‘rniga chiqishni rahbar tasdiqlaydi."
+msgstr ""
+"Hamkasb rozi bo‘lgach, smena almashuvi va o‘rniga chiqishni rahbar "
+"tasdiqlaydi."
 
 #: backend/apps/attendance/models.py
 msgid "A manager approves who takes an open shift."
@@ -1136,7 +1173,9 @@ msgstr "Smenadan shuncha vaqt oldin eslatish. 0: eslatmasiz."
 
 #: backend/apps/attendance/models.py
 msgid "How early a check-in still belongs to the coming shift."
-msgstr "Smena boshlanishidan qancha oldin belgilangan kelish shu smenaga tegishli bo‘ladi."
+msgstr ""
+"Smena boshlanishidan qancha oldin belgilangan kelish shu smenaga tegishli "
+"bo‘ladi."
 
 #: backend/apps/attendance/models.py
 msgid "Extra time shorter than this isn't overtime."
@@ -1168,7 +1207,9 @@ msgstr "Ish kuni uchun W, dam olish kuni uchun O harfini yozing."
 
 #: backend/apps/attendance/models.py
 msgid "Rotating schedules: W for a work day, O for a day off, e.g. \"WWOO\"."
-msgstr "Navbatma-navbat jadval uchun: W — ish kuni, O — dam olish kuni, masalan, «WWOO»."
+msgstr ""
+"Navbatma-navbat jadval uchun: W — ish kuni, O — dam olish kuni, masalan, "
+"«WWOO»."
 
 #: backend/apps/attendance/models.py
 msgid "The day the rotation's first letter falls on."
@@ -1179,7 +1220,8 @@ msgid "Planned"
 msgstr "Rejalashtirilgan"
 
 #: backend/apps/attendance/models.py backend/apps/finance/models.py
-#: backend/apps/inbox/bot_messages.py backend/apps/projects/models.py backend/apps/sales/models.py
+#: backend/apps/inbox/bot_messages.py backend/apps/projects/models.py
+#: backend/apps/sales/models.py
 msgid "Open"
 msgstr "Ochish"
 
@@ -1227,21 +1269,26 @@ msgstr "Bo‘sh smenani olish"
 msgid "Waiting for a colleague"
 msgstr "Hamkasb javobi kutilmoqda"
 
-#: backend/apps/attendance/models.py backend/apps/finance/models.py backend/apps/timeoff/models.py
+#: backend/apps/attendance/models.py backend/apps/finance/models.py
+#: backend/apps/timeoff/models.py
 msgid "Waiting for approval"
 msgstr "Tasdiq kutilmoqda"
 
 #: backend/apps/attendance/models.py backend/apps/attendance/services.py
-#: backend/apps/members/models.py backend/apps/members/providers.py backend/apps/members/services.py
-#: backend/apps/signin/models.py backend/apps/timeoff/models.py backend/apps/timeoff/providers.py
-#: backend/apps/timeoff/services.py employee_bot/bot/handlers/admin/approvals.py
+#: backend/apps/members/models.py backend/apps/members/providers.py
+#: backend/apps/members/services.py backend/apps/signin/models.py
+#: backend/apps/timeoff/models.py backend/apps/timeoff/providers.py
+#: backend/apps/timeoff/services.py
+#: employee_bot/bot/handlers/admin/approvals.py
 msgid "Approved"
 msgstr "Tasdiqlangan"
 
 #: backend/apps/attendance/models.py backend/apps/attendance/services.py
-#: backend/apps/finance/models.py backend/apps/members/models.py backend/apps/members/providers.py
-#: backend/apps/members/services.py backend/apps/timeoff/models.py backend/apps/timeoff/providers.py
-#: backend/apps/timeoff/services.py employee_bot/bot/handlers/admin/approvals.py
+#: backend/apps/finance/models.py backend/apps/members/models.py
+#: backend/apps/members/providers.py backend/apps/members/services.py
+#: backend/apps/timeoff/models.py backend/apps/timeoff/providers.py
+#: backend/apps/timeoff/services.py
+#: employee_bot/bot/handlers/admin/approvals.py
 msgid "Rejected"
 msgstr "Rad etilgan"
 
@@ -1420,23 +1467,27 @@ msgstr "%(count)s ta smenangiz olib tashlandi"
 #: backend/apps/attendance/notify.py
 #, python-format
 msgid "We closed your shift at %(time)s because you didn't check out"
-msgstr "Ketganingizni belgilamaganingiz uchun smenangizni soat %(time)s da yopdik"
+msgstr ""
+"Ketganingizni belgilamaganingiz uchun smenangizni soat %(time)s da yopdik"
 
 #: backend/apps/attendance/notify.py
 #, python-format
 msgid "We closed your check-in of %(date)s because you didn't check out"
-msgstr "Ketganingizni belgilamaganingiz uchun %(date)s kungi kelish belgingizni yopdik"
+msgstr ""
+"Ketganingizni belgilamaganingiz uchun %(date)s kungi kelish belgingizni "
+"yopdik"
 
 #: backend/apps/attendance/notify.py
 msgid "If you left at another time, send a correction in the app."
-msgstr "Agar boshqa vaqtda ketgan bo‘lsangiz, ilovada tuzatish so‘rovini yuboring."
+msgstr ""
+"Agar boshqa vaqtda ketgan bo‘lsangiz, ilovada tuzatish so‘rovini yuboring."
 
 #: backend/apps/attendance/notify.py
 #, python-format
 msgid "%(name)s offers a swap: your %(theirs)s for their %(mine)s"
 msgstr ""
-"%(name)s smena almashishni taklif qilmoqda: sizning smenangiz (%(theirs)s) uning smenasiga "
-"(%(mine)s)"
+"%(name)s smena almashishni taklif qilmoqda: sizning smenangiz (%(theirs)s) "
+"uning smenasiga (%(mine)s)"
 
 #: backend/apps/attendance/notify.py
 #, python-format
@@ -1508,7 +1559,8 @@ msgstr "%(name)s hali kelganini belgilamadi (smena %(time)s, %(branch)s)"
 #: backend/apps/attendance/notify.py
 #, python-format
 msgid "%(name)s checked in %(distance)s from %(branch)s"
-msgstr "%(name)s %(branch)s filialidan %(distance)s uzoqda turib kelganini belgiladi"
+msgstr ""
+"%(name)s %(branch)s filialidan %(distance)s uzoqda turib kelganini belgiladi"
 
 #: backend/apps/attendance/owner_api.py
 msgid "Give branch ids."
@@ -1586,7 +1638,8 @@ msgid "%(branch)s: %(count)s on shift"
 msgstr "%(branch)s: smenada %(count)s kishi"
 
 #: backend/apps/attendance/providers.py backend/apps/attendance/serializers.py
-#: backend/apps/console/ranges.py backend/apps/finance/owner_api.py backend/apps/tasks/owner_api.py
+#: backend/apps/console/ranges.py backend/apps/finance/owner_api.py
+#: backend/apps/tasks/owner_api.py
 msgid "The last day can't be before the first."
 msgstr "Oxirgi kun birinchi kundan oldin bo‘lishi mumkin emas."
 
@@ -1613,8 +1666,12 @@ msgid "Planned working minutes, the break left out."
 msgstr "Rejadagi ish vaqti daqiqalarda, tanaffussiz."
 
 #: backend/apps/attendance/serializers.py
-msgid "Why: late (not here yet), leave, day_off, holiday, suspended, no_shift, excused."
-msgstr "Sabab: late (hali kelmagan), leave, day_off, holiday, suspended, no_shift, excused."
+msgid ""
+"Why: late (not here yet), leave, day_off, holiday, suspended, no_shift, "
+"excused."
+msgstr ""
+"Sabab: late (hali kelmagan), leave, day_off, holiday, suspended, no_shift, "
+"excused."
 
 #: backend/apps/attendance/serializers.py
 msgid "Any day of the week; it starts on Monday."
@@ -1651,7 +1708,9 @@ msgstr "Kamida bitta ish kunini tanlang."
 
 #: backend/apps/attendance/services.py
 msgid "Describe the rotation with W and O, e.g. \"WWOO\"."
-msgstr "Navbat tartibini W (ish kuni) va O (dam olish kuni) harflari bilan yozing, masalan «WWOO»."
+msgstr ""
+"Navbat tartibini W (ish kuni) va O (dam olish kuni) harflari bilan yozing, "
+"masalan «WWOO»."
 
 #: backend/apps/attendance/services.py
 msgid "A rotation needs its first day and its hours."
@@ -1701,12 +1760,15 @@ msgstr "Bu smena olib tashlangan."
 
 #: backend/apps/attendance/services.py
 msgid "Someone already checked in on this shift, so it can't be moved."
-msgstr "Bu smenada kimdir allaqachon kelganini belgilagan, shuning uchun uni ko‘chirib bo‘lmaydi."
+msgstr ""
+"Bu smenada kimdir allaqachon kelganini belgilagan, shuning uchun uni "
+"ko‘chirib bo‘lmaydi."
 
 #: backend/apps/attendance/services.py
 msgid "Someone already checked in on this shift, so it can't be removed."
 msgstr ""
-"Bu smenada kimdir allaqachon kelganini belgilagan, shuning uchun uni olib tashlab bo‘lmaydi."
+"Bu smenada kimdir allaqachon kelganini belgilagan, shuning uchun uni olib "
+"tashlab bo‘lmaydi."
 
 #: backend/apps/attendance/services.py
 msgid "Unknown roster action."
@@ -1726,7 +1788,9 @@ msgstr "Kelganingizni belgilash uchun selfi tushing."
 
 #: backend/apps/attendance/services.py
 msgid "Your access is paused, so you can't check in."
-msgstr "Kirish huquqingiz to‘xtatilgan, shuning uchun kelganingizni belgilay olmaysiz."
+msgstr ""
+"Kirish huquqingiz to‘xtatilgan, shuning uchun kelganingizni belgilay "
+"olmaysiz."
 
 #: backend/apps/attendance/services.py
 #, python-format
@@ -1737,7 +1801,8 @@ msgstr "Siz soat %(time)s da kelganingizni allaqachon belgilagansiz."
 #, python-format
 msgid "You're %(distance)s from %(branch)s. Check in when you get there."
 msgstr ""
-"Siz %(branch)s filialidan %(distance)s uzoqdasiz. Yetib borganingizda kelganingizni belgilang."
+"Siz %(branch)s filialidan %(distance)s uzoqdasiz. Yetib borganingizda "
+"kelganingizni belgilang."
 
 #: backend/apps/attendance/services.py
 msgid "Share your location to check out."
@@ -2039,8 +2104,11 @@ msgid "Its name at the time."
 msgstr "O‘sha paytdagi nomi."
 
 #: backend/apps/audit/models.py
-msgid "Only people holding this permission see the row (it touched secret fields)."
-msgstr "Bu yozuvni faqat shu ruxsati bor odamlar ko‘radi (u maxfiy maydonlarga tegishli)."
+msgid ""
+"Only people holding this permission see the row (it touched secret fields)."
+msgstr ""
+"Bu yozuvni faqat shu ruxsati bor odamlar ko‘radi (u maxfiy maydonlarga "
+"tegishli)."
 
 #: backend/apps/audit/owner_api.py backend/apps/reminders/owner_api.py
 #: backend/apps/tasks/owner_api.py
@@ -2128,8 +2196,11 @@ msgid "Set up your branches"
 msgstr "Filiallarni sozlang"
 
 #: backend/apps/companies/hooks.py
-msgid "Address, opening hours and the check-in circle on the map for each shop."
-msgstr "Har bir do‘kon uchun manzil, ish vaqti va xaritadagi kelishni belgilash doirasi."
+msgid ""
+"Address, opening hours and the check-in circle on the map for each shop."
+msgstr ""
+"Har bir do‘kon uchun manzil, ish vaqti va xaritadagi kelishni belgilash "
+"doirasi."
 
 #: backend/apps/companies/hooks.py
 msgid "Invite your staff"
@@ -2138,16 +2209,18 @@ msgstr "Xodimlarni taklif qiling"
 #: backend/apps/companies/hooks.py
 msgid "Share the invite link or hang the QR poster: people join from Telegram."
 msgstr ""
-"Taklif havolasini ulashing yoki QR kodli plakatni osib qo‘ying: xodimlar Telegram orqali "
-"qo‘shiladi."
+"Taklif havolasini ulashing yoki QR kodli plakatni osib qo‘ying: xodimlar "
+"Telegram orqali qo‘shiladi."
 
 #: backend/apps/companies/hooks.py
 msgid "Choose your modules"
 msgstr "Modullarni tanlang"
 
 #: backend/apps/companies/hooks.py
-msgid "Switch on only what you need: finance, sales, attendance, payroll and more."
-msgstr "Faqat keraklisini yoqing: moliya, savdo, davomat, ish haqi va boshqalar."
+msgid ""
+"Switch on only what you need: finance, sales, attendance, payroll and more."
+msgstr ""
+"Faqat keraklisini yoqing: moliya, savdo, davomat, ish haqi va boshqalar."
 
 #: backend/apps/companies/hooks.py
 msgid "Get started"
@@ -2216,22 +2289,29 @@ msgid "When groups get the end-of-day summary."
 msgstr "Guruhlar kun yakunini qachon oladi."
 
 #: backend/apps/companies/models.py
-msgid "At the morning report time, everyone gets their tasks for the day from the bot."
-msgstr "Ertalabki hisobot vaqtida har kim botdan o‘sha kungi vazifalarini oladi."
+msgid ""
+"At the morning report time, everyone gets their tasks for the day from the "
+"bot."
+msgstr ""
+"Ertalabki hisobot vaqtida har kim botdan o‘sha kungi vazifalarini oladi."
 
 #: backend/apps/companies/models.py
-msgid "The currency reports and the ledger add up in. Locked once money is booked."
+msgid ""
+"The currency reports and the ledger add up in. Locked once money is booked."
 msgstr ""
-"Hisobotlar va buxgalteriya yozuvlari hisoblanadigan valyuta. Birinchi buxgalteriya yozuvidan keyin"
-" uni o‘zgartirib bo‘lmaydi."
+"Hisobotlar va buxgalteriya yozuvlari hisoblanadigan valyuta. Birinchi "
+"buxgalteriya yozuvidan keyin uni o‘zgartirib bo‘lmaydi."
 
 #: backend/apps/companies/models.py
 msgid "Days people work unless their shifts say otherwise (0 = Monday)."
-msgstr "Smenalarda boshqacha ko‘rsatilmagan bo‘lsa, odamlar ishlaydigan kunlar (0 = dushanba)."
+msgstr ""
+"Smenalarda boshqacha ko‘rsatilmagan bo‘lsa, odamlar ishlaydigan kunlar (0 = "
+"dushanba)."
 
 #: backend/apps/companies/models.py
 msgid "Owners see the personal tasks employees make for themselves."
-msgstr "Egalar xodimlarning o‘zlari uchun yaratgan shaxsiy vazifalarini ko‘radi."
+msgstr ""
+"Egalar xodimlarning o‘zlari uchun yaratgan shaxsiy vazifalarini ko‘radi."
 
 #: backend/apps/companies/models.py
 msgid "Modules switched on for this company."
@@ -2257,7 +2337,8 @@ msgstr "Kelganini belgilashda filialgacha ruxsat etilgan masofa, metrda."
 msgid "Cash above this in the branch raises an alert."
 msgstr "Filialda naqd pul shundan oshsa, ogohlantirish keladi."
 
-#: backend/apps/companies/models.py backend/apps/finance/models.py backend/apps/members/models.py
+#: backend/apps/companies/models.py backend/apps/finance/models.py
+#: backend/apps/members/models.py
 msgid "Must belong to the same company."
 msgstr "Xuddi shu kompaniyaga tegishli bo‘lishi kerak."
 
@@ -2270,7 +2351,8 @@ msgstr "Rasm tanlang."
 #, python-format
 msgid "You already own %(count)d companies, the most one person can."
 msgstr ""
-"Sizda allaqachon %(count)d ta kompaniya bor. Bir kishiga bundan ko‘p kompaniya ochib bo‘lmaydi."
+"Sizda allaqachon %(count)d ta kompaniya bor. Bir kishiga bundan ko‘p "
+"kompaniya ochib bo‘lmaydi."
 
 #: backend/apps/companies/owner_api.py
 msgid "Pick one of your companies."
@@ -2293,31 +2375,35 @@ msgid "Pick one of the currencies offered."
 msgstr "Taklif qilingan valyutalardan birini tanlang."
 
 #: backend/apps/companies/services.py
-msgid "This invite link is invalid or has expired. Ask your manager for a new one."
-msgstr "Bu taklif havolasi noto‘g‘ri yoki eskirgan. Rahbaringizdan yangisini so‘rang."
+msgid ""
+"This invite link is invalid or has expired. Ask your manager for a new one."
+msgstr ""
+"Bu taklif havolasi noto‘g‘ri yoki eskirgan. Rahbaringizdan yangisini so‘rang."
 
 #: backend/apps/companies/services.py
 msgid "Couldn't find a free web address for this name. Try another name."
-msgstr "Bu nom uchun bo‘sh veb-manzil topilmadi. Boshqa nom bilan urinib ko‘ring."
+msgstr ""
+"Bu nom uchun bo‘sh veb-manzil topilmadi. Boshqa nom bilan urinib ko‘ring."
 
 #: backend/apps/companies/services.py
 #, python-format
 msgid "Some of that setup can't be copied from %(company)s."
-msgstr "Bu sozlamalarning ba’zilarini %(company)s kompaniyasidan ko‘chirib bo‘lmaydi."
+msgstr ""
+"Bu sozlamalarning ba’zilarini %(company)s kompaniyasidan ko‘chirib bo‘lmaydi."
 
 #: backend/apps/companies/services.py
 #, python-format
 msgid "These settings can't be changed here: %(names)s."
 msgstr "Bu sozlamalarni bu yerda o‘zgartirib bo‘lmaydi: %(names)s."
 
-#: backend/apps/companies/services.py
+#: backend/apps/companies/services.py backend/apps/finance/services.py
 #, python-format
 msgid ""
-"The base currency stays %(currency)s: money is already booked in it. Reports and the ledger add up"
-" in one currency."
+"The base currency stays %(currency)s: money is already booked in it. Reports "
+"and the ledger add up in one currency."
 msgstr ""
-"Asosiy valyuta %(currency)s bo‘lib qoladi: unda allaqachon buxgalteriya yozuvlari bor. Hisobotlar "
-"va buxgalteriya hisobi bitta valyutada yuritiladi."
+"Asosiy valyuta %(currency)s bo‘lib qoladi: unda allaqachon buxgalteriya "
+"yozuvlari bor. Hisobotlar va buxgalteriya hisobi bitta valyutada yuritiladi."
 
 #: backend/apps/companies/services.py
 msgid "The morning and evening reports need different times."
@@ -2355,11 +2441,14 @@ msgstr "Bu maydonlarni bu yerda o‘zgartirib bo‘lmaydi: %(names)s."
 
 #: backend/apps/companies/services.py
 msgid "Set both the latitude and the longitude, or neither."
-msgstr "Kenglik va uzunlikni birga kiriting yoki ikkalasini ham bo‘sh qoldiring."
+msgstr ""
+"Kenglik va uzunlikni birga kiriting yoki ikkalasini ham bo‘sh qoldiring."
 
 #: backend/apps/companies/services.py
 msgid "Set both the opening and the closing time, or neither."
-msgstr "Ochilish va yopilish vaqtini birga kiriting yoki ikkalasini ham bo‘sh qoldiring."
+msgstr ""
+"Ochilish va yopilish vaqtini birga kiriting yoki ikkalasini ham bo‘sh "
+"qoldiring."
 
 #: backend/apps/companies/services.py
 #, python-format
@@ -2372,7 +2461,8 @@ msgstr "Filialga nom bering."
 
 #: backend/apps/companies/services.py
 msgid "A branch code is up to 8 Latin letters or digits, like CHL."
-msgstr "Filial kodi 8 tagacha lotin harfi yoki raqamdan iborat bo‘ladi, masalan, CHL."
+msgstr ""
+"Filial kodi 8 tagacha lotin harfi yoki raqamdan iborat bo‘ladi, masalan, CHL."
 
 #: backend/apps/companies/services.py
 msgid "That point isn't on the map."
@@ -2420,7 +2510,9 @@ msgstr "Boshqaruv paneli moduli ID’si, masalan, tasks."
 
 #: backend/apps/console/models.py
 msgid "Everyone with dashboard access in the company can use it."
-msgstr "Kompaniyada boshqaruv paneliga kirish huquqi bor har kim undan foydalana oladi."
+msgstr ""
+"Kompaniyada boshqaruv paneliga kirish huquqi bor har kim undan foydalana "
+"oladi."
 
 #: backend/apps/console/owner_api.py backend/apps/console/services.py
 msgid "A saved view's state must be an object."
@@ -2432,7 +2524,8 @@ msgstr "Sana va vaqt 2026-10-20T09:00:00Z ko‘rinishida bo‘lishi kerak."
 
 #: backend/apps/console/ranges.py
 msgid "Give either a preset or from/to, not both."
-msgstr "Yoki tayyor davrni (preset), yoki from/to ni kiriting, ikkalasini birga emas."
+msgstr ""
+"Yoki tayyor davrni (preset), yoki from/to ni kiriting, ikkalasini birga emas."
 
 #: backend/apps/console/ranges.py
 msgid "Give the first day (from)."
@@ -2513,7 +2606,8 @@ msgstr "rasm"
 #: backend/apps/core/uploads.py
 #, python-format
 msgid "This type of file isn't accepted. Send one of: %(kinds)s."
-msgstr "Bu turdagi fayl qabul qilinmaydi. Quyidagilardan birini yuboring: %(kinds)s."
+msgstr ""
+"Bu turdagi fayl qabul qilinmaydi. Quyidagilardan birini yuboring: %(kinds)s."
 
 #: backend/apps/exports/audit_actions.py
 msgid "Exported data"
@@ -2584,7 +2678,8 @@ msgstr "Faylni so‘ragan odamga Telegram’da ham yuborish."
 #: backend/apps/exports/models.py
 msgid "Salaries, IDs or per-person money: copied from the exporter."
 msgstr ""
-"Ish haqi, hujjat raqamlari yoki alohida odamlarga oid pul summalari. Eksport turidan ko‘chiriladi."
+"Ish haqi, hujjat raqamlari yoki alohida odamlarga oid pul summalari. Eksport "
+"turidan ko‘chiriladi."
 
 #: backend/apps/exports/services.py
 msgid "This export doesn't exist."
@@ -2604,13 +2699,15 @@ msgstr "Buxgalteriya yozuvlari: daromad, xarajat va boshqa pul harakatlari"
 
 #: backend/apps/finance/ai_tools.py
 msgid "Money on every account (cash desks, bank, cards, safes) and the total"
-msgstr "Har bir hisobdagi pul (kassalar, bank, kartalar, seyflar) va jami summa"
+msgstr ""
+"Har bir hisobdagi pul (kassalar, bank, kartalar, seyflar) va jami summa"
 
 #: backend/apps/finance/ai_tools.py
-msgid "Open debts (nasiya): who owes us, whom we owe, due dates and overdue days"
+msgid ""
+"Open debts (nasiya): who owes us, whom we owe, due dates and overdue days"
 msgstr ""
-"Ochiq qarzlar (nasiya): kim bizga qarzdor, biz kimga qarzdormiz, to‘lov muddatlari va kechikkan "
-"kunlar"
+"Ochiq qarzlar (nasiya): kim bizga qarzdor, biz kimga qarzdormiz, to‘lov "
+"muddatlari va kechikkan kunlar"
 
 #: backend/apps/finance/audit_actions.py
 msgid "Added a money account"
@@ -2757,13 +2854,14 @@ msgstr "Qoldiqlar buxgalteriya yozuvlari bo‘yicha tuzatildi"
 #: backend/apps/finance/bot_messages.py
 #, python-format
 msgid ""
-"The nightly check found %(accounts)s account balance(s) and %(debts)s debt total(s) that didn't "
-"match their entries, and corrected them."
+"The nightly check found %(accounts)s account balance(s) and %(debts)s debt "
+"total(s) that didn't match their entries, and corrected them."
 msgstr ""
-"Tungi tekshiruvda yozuvlarga mos kelmagan %(accounts)s ta hisob qoldig‘i va %(debts)s ta qarz "
-"summasi topildi va tuzatildi."
+"Tungi tekshiruvda yozuvlarga mos kelmagan %(accounts)s ta hisob qoldig‘i va "
+"%(debts)s ta qarz summasi topildi va tuzatildi."
 
-#: backend/apps/finance/defaults.py backend/apps/groups/models.py backend/apps/sales/hooks.py
+#: backend/apps/finance/defaults.py backend/apps/groups/models.py
+#: backend/apps/sales/hooks.py
 msgid "Sales"
 msgstr "Savdo"
 
@@ -2851,8 +2949,9 @@ msgstr "Sana"
 msgid "Kind"
 msgstr "Turi"
 
-#: backend/apps/finance/exporters.py backend/apps/members/providers.py backend/apps/sales/hooks.py
-#: backend/apps/tasks/hooks.py backend/apps/timeoff/providers.py
+#: backend/apps/finance/exporters.py backend/apps/members/providers.py
+#: backend/apps/sales/hooks.py backend/apps/tasks/hooks.py
+#: backend/apps/timeoff/providers.py
 msgid "Status"
 msgstr "Holati"
 
@@ -2873,7 +2972,8 @@ msgstr "Kontragent"
 msgid "Person"
 msgstr "Xodim"
 
-#: backend/apps/finance/exporters.py backend/apps/sales/hooks.py backend/apps/tasks/hooks.py
+#: backend/apps/finance/exporters.py backend/apps/sales/hooks.py
+#: backend/apps/tasks/hooks.py
 msgid "Branch"
 msgstr "Filial"
 
@@ -2961,7 +3061,8 @@ msgstr "Kim"
 msgid "Issued"
 msgstr "Qarz sanasi"
 
-#: backend/apps/finance/exporters.py backend/apps/reports/hooks.py backend/apps/tasks/hooks.py
+#: backend/apps/finance/exporters.py backend/apps/reports/hooks.py
+#: backend/apps/tasks/hooks.py
 msgid "Due"
 msgstr "Muddat"
 
@@ -3017,7 +3118,8 @@ msgstr "Egasining puli"
 msgid "Transfers and exchange"
 msgstr "O‘tkazmalar va valyuta almashtirish"
 
-#: backend/apps/finance/exporters.py backend/apps/finance/hooks.py backend/apps/finance/owner_api.py
+#: backend/apps/finance/exporters.py backend/apps/finance/hooks.py
+#: backend/apps/finance/owner_api.py
 msgid "Opening balances"
 msgstr "Boshlang‘ich qoldiqlar"
 
@@ -3080,11 +3182,12 @@ msgstr "Xodim qo‘lidagi pul"
 
 #: backend/apps/finance/hooks.py
 msgid ""
-"Enter what each cash desk, bank account and card holds today, and who owes what, so every report "
-"starts from the truth."
+"Enter what each cash desk, bank account and card holds today, and who owes "
+"what, so every report starts from the truth."
 msgstr ""
-"Har bir kassa, bank hisobi va kartada bugun qancha pul borligini hamda kim kimga qancha "
-"qarzdorligini kiriting, shunda barcha hisobotlar to‘g‘ri raqamlardan boshlanadi."
+"Har bir kassa, bank hisobi va kartada bugun qancha pul borligini hamda kim "
+"kimga qancha qarzdorligini kiriting, shunda barcha hisobotlar to‘g‘ri "
+"raqamlardan boshlanadi."
 
 #: backend/apps/finance/hooks.py
 msgid "Finance categories"
@@ -3141,17 +3244,21 @@ msgstr "Naqd pulda, tasdiqlagan odam beradi"
 #: backend/apps/finance/models.py
 msgid "Nothing dated on or before this day can be added, edited or voided."
 msgstr ""
-"Shu kun va undan oldingi kunlardagi yozuvlarni qo‘shish, tahrirlash yoki bekor qilish mumkin emas."
+"Shu kun va undan oldingi kunlardagi yozuvlarni qo‘shish, tahrirlash yoki "
+"bekor qilish mumkin emas."
 
 #: backend/apps/finance/models.py
 msgid "Where exchange rates come from when nobody entered one for the day."
-msgstr "O‘sha kunga hech kim kurs kiritmagan bo‘lsa, valyuta kurslari qayerdan olinadi."
+msgstr ""
+"O‘sha kunga hech kim kurs kiritmagan bo‘lsa, valyuta kurslari qayerdan "
+"olinadi."
 
 #: backend/apps/finance/models.py
-msgid "Expense claims at or above this wait for approval. Empty: every claim waits."
+msgid ""
+"Expense claims at or above this wait for approval. Empty: every claim waits."
 msgstr ""
-"Shu summa va undan yuqori xarajat so‘rovlari tasdiqlanishini kutadi. Bo‘sh: barcha so‘rovlar "
-"tasdiq kutadi."
+"Shu summa va undan yuqori xarajat so‘rovlari tasdiqlanishini kutadi. Bo‘sh: "
+"barcha so‘rovlar tasdiq kutadi."
 
 #: backend/apps/finance/models.py
 msgid "Expenses above this need a receipt."
@@ -3163,7 +3270,9 @@ msgstr "Boshqa birov bundan yuqori xarajatni qayd etsa, egalarga xabar boradi."
 
 #: backend/apps/finance/models.py
 msgid "How approved \"paid from my own money\" claims are paid back."
-msgstr "Tasdiqlangan «o‘z pulimdan to‘ladim» so‘rovlari bo‘yicha pul qanday qaytariladi."
+msgstr ""
+"Tasdiqlangan «o‘z pulimdan to‘ladim» so‘rovlari bo‘yicha pul qanday "
+"qaytariladi."
 
 #: backend/apps/finance/models.py
 msgid "UZS per 1 unit of the currency."
@@ -3198,10 +3307,11 @@ msgid "Owner's money"
 msgstr "Egasining puli"
 
 #: backend/apps/finance/models.py
-msgid "Empty for company-level accounts, which only people who see every branch see."
+msgid ""
+"Empty for company-level accounts, which only people who see every branch see."
 msgstr ""
-"Kompaniya darajasidagi hisoblar uchun bo‘sh qoldiring: ularni faqat barcha filiallarni ko‘ra "
-"oladiganlar ko‘radi."
+"Kompaniya darajasidagi hisoblar uchun bo‘sh qoldiring: ularni faqat barcha "
+"filiallarni ko‘ra oladiganlar ko‘radi."
 
 #: backend/apps/finance/models.py
 msgid "The person holding the money. Required for employee and owner accounts."
@@ -3209,7 +3319,8 @@ msgstr "Pulni saqlayotgan odam. Xodim va ega hisoblari uchun majburiy."
 
 #: backend/apps/finance/models.py
 msgid "People who may record on this account with finance.record."
-msgstr "finance.record ruxsati bilan shu hisobga yozuv kirita oladigan odamlar."
+msgstr ""
+"finance.record ruxsati bilan shu hisobga yozuv kirita oladigan odamlar."
 
 #: backend/apps/finance/models.py backend/apps/finance/services.py
 msgid "Only the last 4 digits."
@@ -3221,7 +3332,8 @@ msgstr "To‘liq raqamni hech qachon kiritmang."
 
 #: backend/apps/finance/models.py
 msgid "Sum of the posted rows, kept up to date by the ledger services."
-msgstr "Hisobga olingan yozuvlar yig‘indisi; tizim uni avtomatik yangilab boradi."
+msgstr ""
+"Hisobga olingan yozuvlar yig‘indisi; tizim uni avtomatik yangilab boradi."
 
 #: backend/apps/finance/models.py backend/apps/finance/services.py
 msgid "Pick the person who holds this money."
@@ -3233,11 +3345,15 @@ msgstr "Xarajat"
 
 #: backend/apps/finance/models.py
 msgid "Set on the categories the system books into; they can't be deleted."
-msgstr "Tizim yozuv kiritadigan kategoriyalarda belgilanadi; ularni o‘chirib bo‘lmaydi."
+msgstr ""
+"Tizim yozuv kiritadigan kategoriyalarda belgilanadi; ularni o‘chirib "
+"bo‘lmaydi."
 
 #: backend/apps/finance/models.py
 msgid "Per-person detail needs payroll.view (salaries)."
-msgstr "Har bir xodim bo‘yicha tafsilotlar uchun payroll.view (ish haqi) ruxsati kerak."
+msgstr ""
+"Har bir xodim bo‘yicha tafsilotlar uchun payroll.view (ish haqi) ruxsati "
+"kerak."
 
 #: backend/apps/finance/models.py
 msgid "Equipment and other long-term purchases."
@@ -3321,15 +3437,18 @@ msgstr "Qarz summasi, qarz valyutasida."
 
 #: backend/apps/finance/models.py
 msgid "Settled so far by payments and write-offs, in the debt's currency."
-msgstr "Hozirgacha to‘lovlar va hisobdan chiqarishlar bilan yopilgan summa, qarz valyutasida."
+msgstr ""
+"Hozirgacha to‘lovlar va hisobdan chiqarishlar bilan yopilgan summa, qarz "
+"valyutasida."
 
 #: backend/apps/finance/models.py
 msgid ""
-"UZS per 1 USD when the debt was opened (1 in the base currency). Values what is settled, so a "
-"payment at another rate books the exchange difference."
+"UZS per 1 USD when the debt was opened (1 in the base currency). Values what "
+"is settled, so a payment at another rate books the exchange difference."
 msgstr ""
-"Qarz ochilgan kundagi kurs: 1 USD uchun UZS (asosiy valyutadagi qarz uchun 1). Yopilgan summa shu "
-"kurs bo‘yicha baholanadi, shuning uchun boshqa kursdagi to‘lovda kurs farqi qayd etiladi."
+"Qarz ochilgan kundagi kurs: 1 USD uchun UZS (asosiy valyutadagi qarz uchun "
+"1). Yopilgan summa shu kurs bo‘yicha baholanadi, shuning uchun boshqa "
+"kursdagi to‘lovda kurs farqi qayd etiladi."
 
 #: backend/apps/finance/models.py
 msgid "Who chases it."
@@ -3342,8 +3461,8 @@ msgstr "Kompaniya bu yerda hisob yuritishni boshlashidan oldingi qarz."
 #: backend/apps/finance/models.py
 msgid "Reserved by this source (e.g. a finalized payslip); only it may pay."
 msgstr ""
-"Bu qarzni shu manba band qilgan (masalan, yakunlangan ish haqi varaqasi); faqat u orqali to‘lash "
-"mumkin."
+"Bu qarzni shu manba band qilgan (masalan, yakunlangan ish haqi varaqasi); "
+"faqat u orqali to‘lash mumkin."
 
 #: backend/apps/finance/models.py
 msgid "Posted"
@@ -3367,7 +3486,8 @@ msgstr "1 USD uchun UZS, valyutalar har xil bo‘lsa."
 
 #: backend/apps/finance/models.py
 msgid "Charged on the first account, booked as a bank fee expense."
-msgstr "Birinchi hisobdan yechiladi va bank komissiyasi xarajati sifatida yoziladi."
+msgstr ""
+"Birinchi hisobdan yechiladi va bank komissiyasi xarajati sifatida yoziladi."
 
 #: backend/apps/finance/models.py
 msgid "Transfer"
@@ -3399,7 +3519,9 @@ msgstr "Boshlang‘ich qoldiq"
 
 #: backend/apps/finance/models.py
 msgid "Company-local day; every report groups by it."
-msgstr "Kompaniya vaqt mintaqasidagi kun; barcha hisobotlar shu kun bo‘yicha guruhlanadi."
+msgstr ""
+"Kompaniya vaqt mintaqasidagi kun; barcha hisobotlar shu kun bo‘yicha "
+"guruhlanadi."
 
 #: backend/apps/finance/models.py
 msgid "Signed, in the row's currency: + in, - out."
@@ -3411,13 +3533,14 @@ msgstr "Qo‘llanilgan kurs: 1 USD uchun UZS (asosiy valyutada 1)."
 
 #: backend/apps/finance/models.py
 msgid "No rate for the day; an older or later one was used."
-msgstr "Shu kun uchun kurs yo‘q edi, shuning uchun oldingi yoki keyingi kurs olindi."
+msgstr ""
+"Shu kun uchun kurs yo‘q edi, shuning uchun oldingi yoki keyingi kurs olindi."
 
 #: backend/apps/finance/models.py
 msgid "Signed, in the base currency, frozen at posting. Reports add this up."
 msgstr ""
-"Ishorasi bilan, asosiy valyutada; yozuv kiritilganda hisoblanadi va keyin o‘zgarmaydi. Hisobotlar "
-"shu summani jamlaydi."
+"Ishorasi bilan, asosiy valyutada; yozuv kiritilganda hisoblanadi va keyin "
+"o‘zgarmaydi. Hisobotlar shu summani jamlaydi."
 
 #: backend/apps/finance/models.py
 msgid "The employee it concerns."
@@ -3429,7 +3552,9 @@ msgstr "Yopiladigan yoki yangi yoziladigan qarz summasi, qarz valyutasida."
 
 #: backend/apps/finance/models.py
 msgid "Reduces its own kind: a refund reduces income."
-msgstr "O‘z turidagi summani kamaytiradi: masalan, qaytarilgan pul daromadni kamaytiradi."
+msgstr ""
+"O‘z turidagi summani kamaytiradi: masalan, qaytarilgan pul daromadni "
+"kamaytiradi."
 
 #: backend/apps/finance/models.py
 msgid "Not read"
@@ -3491,7 +3616,9 @@ msgstr "Bu yozuv «%(source)s» orqali yaratilgan: uni o‘sha yerda tuzating."
 
 #: backend/apps/finance/owner_api.py
 msgid "Only people with payroll access mark salary categories."
-msgstr "Toifani ish haqi toifasi deb faqat ish haqiga ruxsati bor odamlar belgilay oladi."
+msgstr ""
+"Toifani ish haqi toifasi deb faqat ish haqiga ruxsati bor odamlar belgilay "
+"oladi."
 
 #: backend/apps/finance/owner_api.py backend/apps/finance/services.py
 msgid "Give the counterparty a name."
@@ -3503,17 +3630,20 @@ msgstr "Noma’lum saralash tartibi."
 
 #: backend/apps/finance/owner_api.py
 msgid "Owner money and opening balances need finance.manage."
-msgstr "Egasi kiritgan yoki olgan pul va boshlang‘ich qoldiqlar uchun finance.manage ruxsati kerak."
+msgstr ""
+"Egasi kiritgan yoki olgan pul va boshlang‘ich qoldiqlar uchun finance.manage "
+"ruxsati kerak."
 
 #: backend/apps/finance/owner_api.py
 msgid "Upload the receipt again."
 msgstr "Chekni qayta yuklang."
 
 #: backend/apps/finance/owner_api.py
-msgid "Only finance managers change entries, or whoever made one within 24 hours."
+msgid ""
+"Only finance managers change entries, or whoever made one within 24 hours."
 msgstr ""
-"Yozuvlarni faqat moliya bo‘yicha mas’ullar o‘zgartira oladi, yozuvni kiritgan odam esa 24 soat "
-"ichida o‘zgartirishi mumkin."
+"Yozuvlarni faqat moliya bo‘yicha mas’ullar o‘zgartira oladi, yozuvni "
+"kiritgan odam esa 24 soat ichida o‘zgartirishi mumkin."
 
 #: backend/apps/finance/owner_api.py backend/apps/finance/services.py
 msgid "This entry isn't waiting for approval."
@@ -3522,7 +3652,9 @@ msgstr "Bu yozuv tasdiqni kutmayapti."
 #: backend/apps/finance/owner_api.py
 #, python-format
 msgid "This entry comes from %(source)s: decide it there."
-msgstr "Bu yozuv «%(source)s» orqali yaratilgan: uni o‘sha yerda tasdiqlang yoki rad eting."
+msgstr ""
+"Bu yozuv «%(source)s» orqali yaratilgan: uni o‘sha yerda tasdiqlang yoki rad "
+"eting."
 
 #: backend/apps/finance/owner_api.py
 msgid "Someone else approves the entries you made."
@@ -3599,19 +3731,24 @@ msgstr "%(account)s: %(balance)s"
 #, python-format
 msgid "%(person)s holds %(amount)s. Choose where to move it, or move it first."
 msgstr ""
-"%(person)s qo‘lida %(amount)s bor. Pulni qayerga o‘tkazishni tanlang yoki avval uni o‘tkazing."
+"%(person)s qo‘lida %(amount)s bor. Pulni qayerga o‘tkazishni tanlang yoki "
+"avval uni o‘tkazing."
 
 #: backend/apps/finance/providers.py
 #, python-format
 msgid "%(count)s open advance(s) or loan(s): the final payslip deducts them."
-msgstr "Yopilmagan avans yoki kreditlar: %(count)s ta. Ular yakuniy hisob-varaqdan ushlab qolinadi."
+msgstr ""
+"Yopilmagan avans yoki kreditlar: %(count)s ta. Ular yakuniy hisob-varaqdan "
+"ushlab qolinadi."
 
 #: backend/apps/finance/providers.py
 #, python-format
-msgid "%(count)s amount(s) we still owe them (reimbursements, pay): paid on the final payslip."
+msgid ""
+"%(count)s amount(s) we still owe them (reimbursements, pay): paid on the "
+"final payslip."
 msgstr ""
-"Biz unga hali to‘lamagan summalar (xarajatni qoplash, ish haqi): %(count)s ta. Ular yakuniy hisob-"
-"varaq bo‘yicha to‘lanadi."
+"Biz unga hali to‘lamagan summalar (xarajatni qoplash, ish haqi): %(count)s "
+"ta. Ular yakuniy hisob-varaq bo‘yicha to‘lanadi."
 
 #: backend/apps/finance/providers.py
 msgid "Holds no company money and owes nothing."
@@ -3631,8 +3768,10 @@ msgstr "Ishdan ketishda topshirildi"
 
 #: backend/apps/finance/rates.py
 #, python-format
-msgid "There is no exchange rate for %(currency)s yet. Enter today's rate first."
-msgstr "%(currency)s uchun hali valyuta kursi yo‘q. Avval bugungi kursni kiriting."
+msgid ""
+"There is no exchange rate for %(currency)s yet. Enter today's rate first."
+msgstr ""
+"%(currency)s uchun hali valyuta kursi yo‘q. Avval bugungi kursni kiriting."
 
 #: backend/apps/finance/services.py
 msgid "Give the account a name."
@@ -3651,7 +3790,8 @@ msgstr "%(branch)s filialida %(currency)s uchun seyf allaqachon bor."
 #: backend/apps/finance/services.py
 #, python-format
 msgid "%(person)s already has an account like this in %(currency)s."
-msgstr "%(person)s uchun %(currency)s valyutasidagi shunday hisob allaqachon bor."
+msgstr ""
+"%(person)s uchun %(currency)s valyutasidagi shunday hisob allaqachon bor."
 
 #: backend/apps/finance/services.py
 msgid "An account like this already exists."
@@ -3682,11 +3822,14 @@ msgstr "Bu qarz bekor qilingan."
 
 #: backend/apps/finance/services.py
 msgid "Owner and opening entries have no category."
-msgstr "Egasi kiritgan yoki olgan pul va boshlang‘ich qoldiq yozuvlarida toifa bo‘lmaydi."
+msgstr ""
+"Egasi kiritgan yoki olgan pul va boshlang‘ich qoldiq yozuvlarida toifa "
+"bo‘lmaydi."
 
 #: backend/apps/finance/services.py
 msgid "This entry is part of a transfer: void the transfer instead."
-msgstr "Bu yozuv o‘tkazmaning bir qismi: o‘rniga butun o‘tkazmani bekor qiling."
+msgstr ""
+"Bu yozuv o‘tkazmaning bir qismi: o‘rniga butun o‘tkazmani bekor qiling."
 
 #: backend/apps/finance/services.py
 msgid "This entry opened a debt: cancel the debt instead."
@@ -3709,8 +3852,11 @@ msgid "A transfer in one currency has no exchange rate."
 msgstr "Bir xil valyutadagi o‘tkazmada kurs ko‘rsatilmaydi."
 
 #: backend/apps/finance/services.py
-msgid "In one currency the whole amount arrives. Record a fee for the difference."
-msgstr "Bir xil valyutadagi o‘tkazmada summa to‘liq yetib boradi. Farqni komissiya sifatida yozing."
+msgid ""
+"In one currency the whole amount arrives. Record a fee for the difference."
+msgstr ""
+"Bir xil valyutadagi o‘tkazmada summa to‘liq yetib boradi. Farqni komissiya "
+"sifatida yozing."
 
 #: backend/apps/finance/services.py
 msgid "That's too little to exchange."
@@ -3729,22 +3875,25 @@ msgid "The due date can't be before the day it was issued."
 msgstr "To‘lov muddati qarz paydo bo‘lgan kundan oldin bo‘lishi mumkin emas."
 
 #: backend/apps/finance/services.py
-msgid "Pick an account (money moved now) or a category (earned or spent on credit)."
+msgid ""
+"Pick an account (money moved now) or a category (earned or spent on credit)."
 msgstr ""
-"Hisobni (pul hozir berilgan yoki olingan bo‘lsa) yoki toifani (daromad yoki xarajat nasiyaga "
-"bo‘lsa) tanlang."
+"Hisobni (pul hozir berilgan yoki olingan bo‘lsa) yoki toifani (daromad yoki "
+"xarajat nasiyaga bo‘lsa) tanlang."
 
 #: backend/apps/finance/services.py
 msgid "An opening debt moves no money and books no income or expense."
-msgstr "Boshlang‘ich qarzda pul harakatlanmaydi, daromad yoki xarajat ham yozilmaydi."
+msgstr ""
+"Boshlang‘ich qarzda pul harakatlanmaydi, daromad yoki xarajat ham yozilmaydi."
 
 #: backend/apps/finance/services.py
 msgid ""
-"Pick an account (money moved now) or a category (earned or spent on credit), or record it as an "
-"opening debt."
+"Pick an account (money moved now) or a category (earned or spent on credit), "
+"or record it as an opening debt."
 msgstr ""
-"Hisobni (pul hozir berilgan yoki olingan bo‘lsa) yoki toifani (daromad yoki xarajat nasiyaga "
-"bo‘lsa) tanlang, yoki buni boshlang‘ich qarz sifatida yozing."
+"Hisobni (pul hozir berilgan yoki olingan bo‘lsa) yoki toifani (daromad yoki "
+"xarajat nasiyaga bo‘lsa) tanlang, yoki buni boshlang‘ich qarz sifatida "
+"yozing."
 
 #: backend/apps/finance/services.py
 msgid "This debt is already settled or cancelled."
@@ -3756,7 +3905,8 @@ msgstr "Qarzni u paydo bo‘lgan kundan oldin to‘lab bo‘lmaydi."
 
 #: backend/apps/finance/services.py
 msgid "An offset is in the debt's currency: the amounts must match."
-msgstr "O‘zaro hisob-kitob qarz valyutasida bo‘ladi: summalar bir xil bo‘lishi kerak."
+msgstr ""
+"O‘zaro hisob-kitob qarz valyutasida bo‘ladi: summalar bir xil bo‘lishi kerak."
 
 #: backend/apps/finance/services.py
 msgid "In the debt's own currency the two amounts must match."
@@ -3781,12 +3931,17 @@ msgstr "Bu qarz allaqachon bekor qilingan."
 
 #: backend/apps/finance/services.py
 #, python-format
-msgid "%(account)s still holds %(balance)s. Move the money to another account first."
-msgstr "«%(account)s» hisobida hali %(balance)s bor. Avval pulni boshqa hisobga o‘tkazing."
+msgid ""
+"%(account)s still holds %(balance)s. Move the money to another account first."
+msgstr ""
+"«%(account)s» hisobida hali %(balance)s bor. Avval pulni boshqa hisobga "
+"o‘tkazing."
 
 #: backend/apps/finance/services.py
 msgid "Entries on this account wait for approval: decide them first."
-msgstr "Bu hisobdagi yozuvlar tasdiqni kutmoqda: avval ularni tasdiqlang yoki rad eting."
+msgstr ""
+"Bu hisobdagi yozuvlar tasdiqni kutmoqda: avval ularni tasdiqlang yoki rad "
+"eting."
 
 #: backend/apps/finance/services.py
 #, python-format
@@ -3795,11 +3950,14 @@ msgstr "Bu yerda «%(name)s» nomli toifa allaqachon bor."
 
 #: backend/apps/finance/services.py
 msgid "Salaries always stay hidden from people without payroll access."
-msgstr "Ish haqi ma’lumotlari ish haqiga ruxsati yo‘q odamlardan doim yashiriladi."
+msgstr ""
+"Ish haqi ma’lumotlari ish haqiga ruxsati yo‘q odamlardan doim yashiriladi."
 
 #: backend/apps/finance/services.py
 msgid "System categories can be renamed, but not archived or deleted."
-msgstr "Tizim toifalarini qayta nomlash mumkin, lekin arxivlash yoki o‘chirish mumkin emas."
+msgstr ""
+"Tizim toifalarini qayta nomlash mumkin, lekin arxivlash yoki o‘chirish "
+"mumkin emas."
 
 #: backend/apps/finance/services.py
 msgid "A system category sits under this one: move it out first."
@@ -3814,12 +3972,17 @@ msgid "Pick another category to merge into."
 msgstr "Birlashtirish uchun boshqa toifani tanlang."
 
 #: backend/apps/finance/services.py
-msgid "Merge an income category into an income one, an expense into an expense."
-msgstr "Daromad toifasini daromad toifasiga, xarajat toifasini xarajat toifasiga birlashtiring."
+msgid ""
+"Merge an income category into an income one, an expense into an expense."
+msgstr ""
+"Daromad toifasini daromad toifasiga, xarajat toifasini xarajat toifasiga "
+"birlashtiring."
 
 #: backend/apps/finance/services.py
 msgid "System categories can be renamed, but not merged away."
-msgstr "Tizim toifalarini qayta nomlash mumkin, lekin boshqa toifaga birlashtirib bo‘lmaydi."
+msgstr ""
+"Tizim toifalarini qayta nomlash mumkin, lekin boshqa toifaga birlashtirib "
+"bo‘lmaydi."
 
 #: backend/apps/finance/services.py
 msgid "Pick a category outside this one."
@@ -3833,17 +3996,21 @@ msgstr "«%(category)s» toifasi arxivlangan."
 #: backend/apps/finance/services.py
 msgid "This category hides salary detail: merge it into another one that does."
 msgstr ""
-"Bu toifa ish haqi tafsilotlarini yashiradi: uni ham shunday qiladigan boshqa toifaga "
-"birlashtiring."
+"Bu toifa ish haqi tafsilotlarini yashiradi: uni ham shunday qiladigan boshqa "
+"toifaga birlashtiring."
 
 #: backend/apps/finance/services.py
 msgid "This category has subcategories: merge it into a top-level one."
-msgstr "Bu toifada ichki toifalar bor: uni yuqori darajadagi toifaga birlashtiring."
+msgstr ""
+"Bu toifada ichki toifalar bor: uni yuqori darajadagi toifaga birlashtiring."
 
 #: backend/apps/finance/services.py
 #, python-format
-msgid "Entries up to %(date)s use this category and the books are closed for them."
-msgstr "Bu toifa %(date)s va undan oldingi yozuvlarda ishlatilgan, bu davr esa yopilgan."
+msgid ""
+"Entries up to %(date)s use this category and the books are closed for them."
+msgstr ""
+"Bu toifa %(date)s va undan oldingi yozuvlarda ishlatilgan, bu davr esa "
+"yopilgan."
 
 #: backend/apps/finance/services.py
 #, python-format
@@ -3856,7 +4023,8 @@ msgstr "Avval uning ichki toifalarini ko‘chiring yoki o‘chiring."
 
 #: backend/apps/finance/services.py
 msgid "This category has entries: merge it into another or archive it."
-msgstr "Bu toifada yozuvlar bor: uni boshqa toifaga birlashtiring yoki arxivlang."
+msgstr ""
+"Bu toifada yozuvlar bor: uni boshqa toifaga birlashtiring yoki arxivlang."
 
 #: backend/apps/finance/services.py
 msgid "This category is still in use: archive it instead."
@@ -3894,7 +4062,8 @@ msgstr "Ko‘pi bilan %(n)s ta chek biriktiring."
 #: backend/apps/finance/services.py
 #, python-format
 msgid "Expenses over %(limit)s need a receipt: attach a photo or a PDF."
-msgstr "%(limit)s dan ortiq xarajatlar uchun chek kerak: rasm yoki PDF biriktiring."
+msgstr ""
+"%(limit)s dan ortiq xarajatlar uchun chek kerak: rasm yoki PDF biriktiring."
 
 #: backend/apps/finance/services.py
 msgid "A void or rejected entry can't be changed."
@@ -3903,11 +4072,14 @@ msgstr "Bekor qilingan yoki rad etilgan yozuvni o‘zgartirib bo‘lmaydi."
 #: backend/apps/finance/services.py
 #, python-format
 msgid "%(account)s holds %(currency)s: enter the amount in %(currency)s too."
-msgstr "«%(account)s» hisobining valyutasi — %(currency)s: summani ham %(currency)s da kiriting."
+msgstr ""
+"«%(account)s» hisobining valyutasi — %(currency)s: summani ham %(currency)s "
+"da kiriting."
 
 #: backend/apps/finance/services.py
 msgid "This entry is part of a transfer: only its description can change here."
-msgstr "Bu yozuv o‘tkazmaning bir qismi: bu yerda faqat izohini o‘zgartirish mumkin."
+msgstr ""
+"Bu yozuv o‘tkazmaning bir qismi: bu yerda faqat izohini o‘zgartirish mumkin."
 
 #: backend/apps/finance/services.py
 msgid "This entry belongs to a debt: only its description can change here."
@@ -3932,7 +4104,9 @@ msgstr "Jadvalda ko‘pi bilan %(n)s ta to‘lov bo‘lishi mumkin."
 
 #: backend/apps/finance/services.py
 msgid "An instalment can't be due before the day the debt was issued."
-msgstr "Jadvaldagi to‘lov muddati qarz paydo bo‘lgan kundan oldin bo‘lishi mumkin emas."
+msgstr ""
+"Jadvaldagi to‘lov muddati qarz paydo bo‘lgan kundan oldin bo‘lishi mumkin "
+"emas."
 
 #: backend/apps/finance/services.py
 #, python-format
@@ -3941,7 +4115,9 @@ msgstr "Jadvaldagi to‘lovlar jami %(total)s, qarz esa %(amount)s."
 
 #: backend/apps/finance/services.py
 msgid "Rates are set for foreign currencies, in so‘m per unit."
-msgstr "Kurslar xorijiy valyutalar uchun belgilanadi: valyutaning 1 birligi uchun so‘mda."
+msgstr ""
+"Kurslar xorijiy valyutalar uchun belgilanadi: valyutaning 1 birligi uchun "
+"so‘mda."
 
 #: backend/apps/finance/services.py
 msgid "The books can be closed up to today at most."
@@ -3953,7 +4129,9 @@ msgstr "Yopilgan davrni faqat kompaniya egasi qayta ocha oladi."
 
 #: backend/apps/finance/services.py
 msgid "Everything in a ledger entry must belong to the same company."
-msgstr "Buxgalteriya yozuvidagi hamma narsa bitta kompaniyaga tegishli bo‘lishi kerak."
+msgstr ""
+"Buxgalteriya yozuvidagi hamma narsa bitta kompaniyaga tegishli bo‘lishi "
+"kerak."
 
 #: backend/apps/finance/services.py backend/apps/sales/services.py
 #, python-format
@@ -3986,9 +4164,11 @@ msgstr "Sababini yozing."
 
 #: backend/apps/finance/services.py
 #, python-format
-msgid "The books are closed up to %(date)s. Pick a later date or reopen the period."
+msgid ""
+"The books are closed up to %(date)s. Pick a later date or reopen the period."
 msgstr ""
-"%(date)s kuni va undan oldingi davr yopilgan. Keyinroq sana tanlang yoki davrni qayta oching."
+"%(date)s kuni va undan oldingi davr yopilgan. Keyinroq sana tanlang yoki "
+"davrni qayta oching."
 
 #: backend/apps/finance/services.py
 msgid "Amounts in the base currency need no exchange rate."
@@ -4100,10 +4280,11 @@ msgstr "⬅️ Orqaga"
 
 #: backend/apps/groups/bot_messages.py
 msgid ""
-"👥 <b>Whose news should this group get?</b> Pick positions, or leave them all off for everyone."
+"👥 <b>Whose news should this group get?</b> Pick positions, or leave them "
+"all off for everyone."
 msgstr ""
-"👥 <b>Bu guruh kimlarning yangiliklarini olsin?</b> Lavozimlarni tanlang yoki hamma uchun "
-"birortasini ham belgilamang."
+"👥 <b>Bu guruh kimlarning yangiliklarini olsin?</b> Lavozimlarni tanlang "
+"yoki hamma uchun birortasini ham belgilamang."
 
 #: backend/apps/groups/bot_messages.py
 msgid "This company has no positions yet."
@@ -4115,29 +4296,34 @@ msgstr "hamma"
 
 #: backend/apps/groups/bot_messages.py
 msgid ""
-"👋 Hi! I post this team's task news here: finished work, late tasks and daily summaries.\n"
+"👋 Hi! I post this team's task news here: finished work, late tasks and "
+"daily summaries.\n"
 "A manager can link me to the company by sending /connect."
 msgstr ""
-"👋 Salom! Men bu yerga jamoaning vazifalar bo‘yicha yangiliklarini yozaman: bajarilgan ishlar, kechikkan vazifalar va kunlik hisobotlar.\n"
+"👋 Salom! Men bu yerga jamoaning vazifalar bo‘yicha yangiliklarini yozaman: "
+"bajarilgan ishlar, kechikkan vazifalar va kunlik hisobotlar.\n"
 "Rahbar /connect yuborib, meni kompaniyaga ulashi mumkin."
 
 #: backend/apps/groups/bot_messages.py
-msgid "This group isn't connected to a company yet. A manager can send /connect."
+msgid ""
+"This group isn't connected to a company yet. A manager can send /connect."
 msgstr "Bu guruh hali kompaniyaga ulanmagan. Rahbar /connect yuborishi mumkin."
 
 #: backend/apps/groups/bot_messages.py
 msgid ""
-"I can't tell who you are while you post anonymously. Turn off “Remain anonymous” in your admin "
-"rights and try again."
+"I can't tell who you are while you post anonymously. Turn off “Remain "
+"anonymous” in your admin rights and try again."
 msgstr ""
-"Anonim yozayotganingizda kimligingizni bila olmayman. Admin huquqlaringizda “Anonim qolish”ni "
-"o‘chirib, qayta urinib ko‘ring."
+"Anonim yozayotganingizda kimligingizni bila olmayman. Admin huquqlaringizda "
+"“Anonim qolish”ni o‘chirib, qayta urinib ko‘ring."
 
 #: backend/apps/groups/bot_messages.py
 msgid ""
-"🔌 Disconnected. I won't post here any more. A manager can send /connect to link this group again."
+"🔌 Disconnected. I won't post here any more. A manager can send /connect to "
+"link this group again."
 msgstr ""
-"🔌 Uzildi. Endi bu yerga yozmayman. Rahbar guruhni qayta ulash uchun /connect yuborishi mumkin."
+"🔌 Uzildi. Endi bu yerga yozmayman. Rahbar guruhni qayta ulash uchun /"
+"connect yuborishi mumkin."
 
 #: backend/apps/groups/bot_messages.py
 msgid "Nothing will be posted here. Send /settings to change that."
@@ -4171,7 +4357,8 @@ msgstr "Telegram guruhini ulash"
 
 #: backend/apps/groups/hooks.py
 msgid "The bot posts finished tasks, late ones and the evening summary there."
-msgstr "Bot u yerga bajarilgan va kechikkan vazifalar hamda kun yakunini yozadi."
+msgstr ""
+"Bot u yerga bajarilgan va kechikkan vazifalar hamda kun yakunini yozadi."
 
 #: backend/apps/groups/models.py
 msgid "Daily tasks done"
@@ -4230,9 +4417,11 @@ msgid "Off once the bot is removed or the group is disconnected."
 msgstr "Bot chiqarilsa yoki guruh uzilsa, o‘chadi."
 
 #: backend/apps/groups/services.py
-msgid "Only a company manager can connect this group. Ask one to send /connect here."
+msgid ""
+"Only a company manager can connect this group. Ask one to send /connect here."
 msgstr ""
-"Bu guruhni faqat kompaniya rahbari ulay oladi. Rahbardan bu yerda /connect yuborishini so‘rang."
+"Bu guruhni faqat kompaniya rahbari ulay oladi. Rahbardan bu yerda /connect "
+"yuborishini so‘rang."
 
 #: backend/apps/groups/services.py
 msgid "This group is already connected to another company."
@@ -4254,7 +4443,9 @@ msgstr "Bot «%(group)s» guruhidan chiqarildi"
 #: backend/apps/groups/services.py
 #, python-format
 msgid "Removed by %(name)s. Add the bot again to keep the group posted."
-msgstr "%(name)s chiqardi. Guruh yangiliklarni olib turishi uchun botni qayta qo‘shing."
+msgstr ""
+"%(name)s chiqardi. Guruh yangiliklarni olib turishi uchun botni qayta "
+"qo‘shing."
 
 #: backend/apps/groups/services.py
 msgid "Add the bot again to keep the group posted."
@@ -4269,7 +4460,8 @@ msgid "That event isn't available for this company."
 msgstr "Bu kompaniya uchun bunday xabar turi mavjud emas."
 
 #: backend/apps/inbox/bot_handlers.py backend/apps/inbox/services.py
-#: employee_bot/bot/handlers/admin/approvals.py employee_bot/bot/middlewares/access.py
+#: employee_bot/bot/handlers/admin/approvals.py
+#: employee_bot/bot/middlewares/access.py
 msgid "You don't have access to this."
 msgstr "Bunga kirish huquqingiz yo‘q."
 
@@ -4314,14 +4506,15 @@ msgstr "Mini ilovadagi ekran havolasi."
 #: backend/apps/inbox/models.py
 msgid "False for kinds that live in Needs you: a Telegram copy only."
 msgstr ""
-"«Sizni kutmoqda» bo‘limidagi turlar uchun belgilanmaydi: faqat Telegram’ga nusxa yuboriladi."
+"«Sizni kutmoqda» bo‘limidagi turlar uchun belgilanmaydi: faqat Telegram’ga "
+"nusxa yuboriladi."
 
 #: backend/apps/inbox/owner_api.py
 msgid "Use unread or all."
 msgstr "Qiymat unread yoki all bo‘lishi kerak."
 
-#: backend/apps/inbox/owner_api.py backend/apps/inbox/services.py backend/apps/projects/api.py
-#: backend/apps/projects/owner_api.py
+#: backend/apps/inbox/owner_api.py backend/apps/inbox/services.py
+#: backend/apps/projects/api.py backend/apps/projects/owner_api.py
 msgid "Done."
 msgstr "Bajarildi."
 
@@ -4346,10 +4539,11 @@ msgid "Please give a reason."
 msgstr "Iltimos, sababini yozing."
 
 #: backend/apps/knowledge/ai_tools.py
-msgid "Search the company's knowledge base pages (how-tos, rules) the asker may read"
+msgid ""
+"Search the company's knowledge base pages (how-tos, rules) the asker may read"
 msgstr ""
-"Kompaniya bilimlar bazasidan savol bergan odam o‘qiy oladigan sahifalarni (yo‘riqnomalar, "
-"qoidalar) qidirish"
+"Kompaniya bilimlar bazasidan savol bergan odam o‘qiy oladigan sahifalarni "
+"(yo‘riqnomalar, qoidalar) qidirish"
 
 #: backend/apps/knowledge/ai_tools.py
 msgid "Read one knowledge base page as text"
@@ -4462,7 +4656,9 @@ msgstr "📚 <b>O‘qish kerak bo‘lgan sahifalar</b>: %(count)d"
 
 #: backend/apps/knowledge/bot_messages.py
 msgid "Tap a page to read it here, then confirm with “I've read it”."
-msgstr "Shu yerda o‘qish uchun sahifani bosing, keyin «O‘qidim» tugmasi bilan tasdiqlang."
+msgstr ""
+"Shu yerda o‘qish uchun sahifani bosing, keyin «O‘qidim» tugmasi bilan "
+"tasdiqlang."
 
 #: backend/apps/knowledge/bot_messages.py
 #, python-format
@@ -4488,7 +4684,8 @@ msgstr "Kompaniya qo‘llanmasi"
 #: backend/apps/knowledge/defaults.py
 msgid "Rules, how-tos and everything a new colleague should read first."
 msgstr ""
-"Qoidalar, yo‘riqnomalar va yangi hamkasb birinchi navbatda o‘qishi kerak bo‘lgan hamma narsa."
+"Qoidalar, yo‘riqnomalar va yangi hamkasb birinchi navbatda o‘qishi kerak "
+"bo‘lgan hamma narsa."
 
 #: backend/apps/knowledge/hooks.py
 msgid "Knowledge base: spaces and published pages"
@@ -4508,7 +4705,8 @@ msgstr "Nomi yonida ko‘rsatiladigan emoji."
 
 #: backend/apps/knowledge/models.py
 msgid "Everyone in the company reads it. Otherwise only `positions`."
-msgstr "Kompaniyadagi hamma o‘qiydi. Aks holda faqat `positions` dagi lavozimlar."
+msgstr ""
+"Kompaniyadagi hamma o‘qiydi. Aks holda faqat `positions` dagi lavozimlar."
 
 #: backend/apps/knowledge/models.py
 msgid "Sanitized HTML from the dashboard editor."
@@ -4524,7 +4722,9 @@ msgstr "Uni o‘qigan har bir kishi o‘qiganini tasdiqlaydi."
 
 #: backend/apps/knowledge/models.py
 msgid "Acknowledgements of this version or later count as read."
-msgstr "Shu yoki undan keyingi versiya tasdiqlangan bo‘lsa, sahifa o‘qilgan hisoblanadi."
+msgstr ""
+"Shu yoki undan keyingi versiya tasdiqlangan bo‘lsa, sahifa o‘qilgan "
+"hisoblanadi."
 
 #: backend/apps/knowledge/models.py
 msgid "When readers were asked to read `ack_version`."
@@ -4532,13 +4732,15 @@ msgstr "O‘quvchilardan `ack_version` ni o‘qish so‘ralgan vaqt."
 
 #: backend/apps/knowledge/models.py
 msgid "The ack version the unread reminder was last sent for."
-msgstr "O‘qilmagan sahifa haqidagi eslatma oxirgi marta yuborilgan tasdiq versiyasi."
+msgstr ""
+"O‘qilmagan sahifa haqidagi eslatma oxirgi marta yuborilgan tasdiq versiyasi."
 
 #: backend/apps/knowledge/models.py
 msgid "What changed."
 msgstr "Nima o‘zgargani."
 
-#: backend/apps/knowledge/models.py backend/apps/projects/hooks.py backend/apps/tasks/hooks.py
+#: backend/apps/knowledge/models.py backend/apps/projects/hooks.py
+#: backend/apps/tasks/hooks.py
 msgid "Task"
 msgstr "Vazifa"
 
@@ -4555,8 +4757,10 @@ msgid "Tell the readers in Telegram when a page is published."
 msgstr "Sahifa e’lon qilinganda o‘quvchilarga Telegram’da xabar berish."
 
 #: backend/apps/knowledge/models.py
-msgid "Remind people who haven't confirmed a page after this many hours (0: never)."
-msgstr "Sahifani tasdiqlamaganlarga necha soatdan keyin eslatish (0: hech qachon)."
+msgid ""
+"Remind people who haven't confirmed a page after this many hours (0: never)."
+msgstr ""
+"Sahifani tasdiqlamaganlarga necha soatdan keyin eslatish (0: hech qachon)."
 
 #: backend/apps/knowledge/providers.py
 #, python-format
@@ -4618,10 +4822,12 @@ msgid "This page is archived. Restore it first."
 msgstr "Bu sahifa arxivda. Avval uni tiklang."
 
 #: backend/apps/knowledge/services.py
-msgid "Someone saved a newer version of this page. Reload it and make your change again."
+msgid ""
+"Someone saved a newer version of this page. Reload it and make your change "
+"again."
 msgstr ""
-"Kimdir bu sahifaning yangiroq versiyasini saqladi. Sahifani qayta yuklang va o‘zgarishingizni yana"
-" kiriting."
+"Kimdir bu sahifaning yangiroq versiyasini saqladi. Sahifani qayta yuklang va "
+"o‘zgarishingizni yana kiriting."
 
 #: backend/apps/knowledge/services.py
 msgid "Write something on the page before publishing it."
@@ -4655,7 +4861,8 @@ msgstr "Faqat e’lon qilingan sahifalarni o‘qish mumkin."
 #: backend/apps/knowledge/services.py
 msgid "Readers can't open this page yet: publish the pages above it first."
 msgstr ""
-"O‘quvchilar bu sahifani hali ocha olmaydi: avval u joylashgan yuqori sahifalarni e’lon qiling."
+"O‘quvchilar bu sahifani hali ocha olmaydi: avval u joylashgan yuqori "
+"sahifalarni e’lon qiling."
 
 #: backend/apps/knowledge/services.py
 msgid "Link a task or a routine."
@@ -4710,7 +4917,8 @@ msgstr "Bloklandi: %(count)d"
 
 #: backend/apps/members/admin.py
 msgid "Offboard selected members (their work goes back to whoever gave it)"
-msgstr "Tanlangan xodimlarni ishdan bo‘shatish (vazifalari bergan odamga qaytadi)"
+msgstr ""
+"Tanlangan xodimlarni ishdan bo‘shatish (vazifalari bergan odamga qaytadi)"
 
 #: backend/apps/members/admin.py
 #, python-format
@@ -4718,16 +4926,19 @@ msgid "Offboarded: %(count)d"
 msgstr "Ishdan bo‘shatildi: %(count)d"
 
 #: backend/apps/members/ai_tools.py
-msgid "Team directory: who works here, their position, role, branch and on-time rate"
+msgid ""
+"Team directory: who works here, their position, role, branch and on-time rate"
 msgstr ""
-"Jamoa ro‘yxati: kimlar ishlaydi, ularning lavozimi, roli, filiali va vazifalarni o‘z vaqtida "
-"bajarish ulushi"
+"Jamoa ro‘yxati: kimlar ishlaydi, ularning lavozimi, roli, filiali va "
+"vazifalarni o‘z vaqtida bajarish ulushi"
 
 #: backend/apps/members/ai_tools.py
-msgid "One person's numbers: tenure, on-time rate and trend, open and late work, time off"
+msgid ""
+"One person's numbers: tenure, on-time rate and trend, open and late work, "
+"time off"
 msgstr ""
-"Bitta xodim ko‘rsatkichlari: ish staji, o‘z vaqtida bajarish ulushi va uning o‘zgarishi, ochiq va "
-"kechikkan ishlar, dam olishlar"
+"Bitta xodim ko‘rsatkichlari: ish staji, o‘z vaqtida bajarish ulushi va uning "
+"o‘zgarishi, ochiq va kechikkan ishlar, dam olishlar"
 
 #: backend/apps/members/audit_actions.py
 msgid "Suspended a member"
@@ -4830,8 +5041,11 @@ msgid "❌ Reject"
 msgstr "❌ Rad etish"
 
 #: backend/apps/members/bot_messages.py
-msgid "👋 Hi! To join your company, open the invite link your manager sent you."
-msgstr "👋 Salom! Kompaniyangizga qo‘shilish uchun rahbaringiz yuborgan taklif havolasini oching."
+msgid ""
+"👋 Hi! To join your company, open the invite link your manager sent you."
+msgstr ""
+"👋 Salom! Kompaniyangizga qo‘shilish uchun rahbaringiz yuborgan taklif "
+"havolasini oching."
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -4841,21 +5055,25 @@ msgstr "👋 Xush kelibsiz! Siz <b>%(company)s</b> kompaniyasiga qo‘shilyapsiz
 #: backend/apps/members/bot_messages.py
 #, python-format
 msgid ""
-"⏳ Your request to join <b>%(company)s</b> is waiting for approval. I'll message you as soon as "
-"it's decided."
+"⏳ Your request to join <b>%(company)s</b> is waiting for approval. I'll "
+"message you as soon as it's decided."
 msgstr ""
-"⏳ <b>%(company)s</b> kompaniyasiga qo‘shilish so‘rovingiz tasdiqlanishini kutmoqda. Qaror chiqishi"
-" bilan sizga yozaman."
+"⏳ <b>%(company)s</b> kompaniyasiga qo‘shilish so‘rovingiz tasdiqlanishini "
+"kutmoqda. Qaror chiqishi bilan sizga yozaman."
 
 #: backend/apps/members/bot_messages.py
 #, python-format
 msgid "Your access to %(company)s is paused until further notice."
-msgstr "%(company)s kompaniyasiga kirish huquqingiz keyingi xabargacha to‘xtatib qo‘yildi."
+msgstr ""
+"%(company)s kompaniyasiga kirish huquqingiz keyingi xabargacha to‘xtatib "
+"qo‘yildi."
 
 #: backend/apps/members/bot_messages.py
 #, python-format
 msgid "Your access to %(company)s is paused until %(date)s."
-msgstr "%(company)s kompaniyasiga kirish huquqingiz %(date)s kuni oxirigacha to‘xtatib qo‘yildi."
+msgstr ""
+"%(company)s kompaniyasiga kirish huquqingiz %(date)s kuni oxirigacha "
+"to‘xtatib qo‘yildi."
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -4865,7 +5083,8 @@ msgstr "▶️ <b>%(company)s</b> kompaniyasiga kirish huquqingiz tiklandi."
 #: backend/apps/members/bot_messages.py
 #, python-format
 msgid "🎉 Your request to join <b>%(company)s</b> was approved!"
-msgstr "🎉 <b>%(company)s</b> kompaniyasiga qo‘shilish so‘rovingiz tasdiqlandi!"
+msgstr ""
+"🎉 <b>%(company)s</b> kompaniyasiga qo‘shilish so‘rovingiz tasdiqlandi!"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -4879,8 +5098,11 @@ msgstr "👋 <b>%(company)s</b> jamoasiga xush kelibsiz!"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
-msgid "👋 You're no longer on the team at <b>%(company)s</b>. Thank you for your work!"
-msgstr "👋 Siz endi <b>%(company)s</b> jamoasida emassiz. Mehnatingiz uchun rahmat!"
+msgid ""
+"👋 You're no longer on the team at <b>%(company)s</b>. Thank you for your "
+"work!"
+msgstr ""
+"👋 Siz endi <b>%(company)s</b> jamoasida emassiz. Mehnatingiz uchun rahmat!"
 
 #: backend/apps/members/bot_messages.py
 msgid "📱 Thanks, your phone number is saved."
@@ -4896,16 +5118,24 @@ msgid "🎉 Registration complete! Welcome aboard, %(name)s."
 msgstr "🎉 Ro‘yxatdan o‘tish yakunlandi! Jamoaga xush kelibsiz, %(name)s."
 
 #: backend/apps/members/bot_messages.py
-msgid "Your request is waiting for approval. I'll message you as soon as it's decided."
-msgstr "So‘rovingiz tasdiqlanishini kutmoqda. Qaror chiqishi bilan sizga yozaman."
+msgid ""
+"Your request is waiting for approval. I'll message you as soon as it's "
+"decided."
+msgstr ""
+"So‘rovingiz tasdiqlanishini kutmoqda. Qaror chiqishi bilan sizga yozaman."
 
 #: backend/apps/members/bot_messages.py
 msgid "Use the menu below to see your tasks or add one."
-msgstr "Vazifalaringizni ko‘rish yoki yangisini qo‘shish uchun quyidagi menyudan foydalaning."
+msgstr ""
+"Vazifalaringizni ko‘rish yoki yangisini qo‘shish uchun quyidagi menyudan "
+"foydalaning."
 
 #: backend/apps/members/bot_messages.py
-msgid "Accounts are created in the app, which isn't set up yet. Ask your manager."
-msgstr "Hisob ilovada yaratiladi, lekin u hali sozlanmagan. Rahbaringizga murojaat qiling."
+msgid ""
+"Accounts are created in the app, which isn't set up yet. Ask your manager."
+msgstr ""
+"Hisob ilovada yaratiladi, lekin u hali sozlanmagan. Rahbaringizga murojaat "
+"qiling."
 
 #: backend/apps/members/bot_messages.py
 msgid "📱 Create account"
@@ -4913,7 +5143,9 @@ msgstr "📱 Hisob yaratish"
 
 #: backend/apps/members/bot_messages.py
 msgid "Open the app to create your account: your name, phone and position."
-msgstr "Hisobingizni yaratish uchun ilovani oching: ismingiz, telefoningiz va lavozimingiz."
+msgstr ""
+"Hisobingizni yaratish uchun ilovani oching: ismingiz, telefoningiz va "
+"lavozimingiz."
 
 #: backend/apps/members/bot_messages.py
 msgid "📱 Share my phone number"
@@ -4961,7 +5193,8 @@ msgstr "Kompaniya: %(company)s"
 #: backend/apps/members/bot_messages.py
 #, python-format
 msgid "<b>Where will %(name)s work?</b> Tap the branches, then approve."
-msgstr "<b>%(name)s qayerda ishlaydi?</b> Filiallarni tanlang, keyin tasdiqlang."
+msgstr ""
+"<b>%(name)s qayerda ishlaydi?</b> Filiallarni tanlang, keyin tasdiqlang."
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -4975,7 +5208,9 @@ msgstr "‹ Orqaga"
 #: backend/apps/members/bot_messages.py
 #, python-format
 msgid "<b>Which is %(name)s's home branch?</b> New tasks will belong to it."
-msgstr "<b>%(name)s uchun asosiy filial qaysi?</b> Yangi vazifalar shu filialga tegishli bo‘ladi."
+msgstr ""
+"<b>%(name)s uchun asosiy filial qaysi?</b> Yangi vazifalar shu filialga "
+"tegishli bo‘ladi."
 
 #: backend/apps/members/bot_messages.py
 msgid "<b>Which role?</b> It decides what they may do."
@@ -5040,15 +5275,20 @@ msgstr "Vaqtincha chetlatilgan"
 #: backend/apps/members/models.py
 msgid "Branches whose data they see (unless their role sees every branch)."
 msgstr ""
-"Xodim ma’lumotlarini ko‘radigan filiallar (agar roli barcha filiallarni ko‘rishga ruxsat bermasa)."
+"Xodim ma’lumotlarini ko‘radigan filiallar (agar roli barcha filiallarni "
+"ko‘rishga ruxsat bermasa)."
 
 #: backend/apps/members/models.py
 msgid "Where they work. New tasks belong to this branch."
-msgstr "Xodim ishlaydigan filial. Yangi vazifalar shu filialga tegishli bo‘ladi."
+msgstr ""
+"Xodim ishlaydigan filial. Yangi vazifalar shu filialga tegishli bo‘ladi."
 
 #: backend/apps/members/models.py
-msgid "While suspended: the last day of the suspension. Empty: until reinstated."
-msgstr "Vaqtincha chetlatilganda: chetlatishning oxirgi kuni. Bo‘sh: ishga qaytarilguncha."
+msgid ""
+"While suspended: the last day of the suspension. Empty: until reinstated."
+msgstr ""
+"Vaqtincha chetlatilganda: chetlatishning oxirgi kuni. Bo‘sh: ishga "
+"qaytarilguncha."
 
 #: backend/apps/members/models.py
 msgid "Must be one of the branches they work in."
@@ -5151,40 +5391,51 @@ msgid "See sales, shifts, cash and stock"
 msgstr "Savdo, smenalar, kassa va ombor qoldiqlarini ko‘rish"
 
 #: backend/apps/members/permissions.py
-msgid "Run their own till: open and close shifts, record sales, payouts and handovers"
+msgid ""
+"Run their own till: open and close shifts, record sales, payouts and "
+"handovers"
 msgstr ""
-"O‘z kassasida ishlash: smenalarni ochish va yopish, savdolar, kassadan chiqimlar va naqd pul "
-"topshirishlarini qayd etish"
+"O‘z kassasida ishlash: smenalarni ochish va yopish, savdolar, kassadan "
+"chiqimlar va naqd pul topshirishlarini qayd etish"
 
 #: backend/apps/members/permissions.py
-msgid "Verify, correct and void shifts; registers, payment methods, targets, customers"
+msgid ""
+"Verify, correct and void shifts; registers, payment methods, targets, "
+"customers"
 msgstr ""
-"Smenalarni tekshirish, tuzatish va bekor qilish; kassalar, to‘lov usullari, savdo rejalari, "
-"mijozlar"
+"Smenalarni tekshirish, tuzatish va bekor qilish; kassalar, to‘lov usullari, "
+"savdo rejalari, mijozlar"
 
 #: backend/apps/members/permissions.py
 msgid "Create, issue and void invoices"
 msgstr "Hisob-fakturalarni yaratish, chiqarish va bekor qilish"
 
 #: backend/apps/members/permissions.py
-msgid "Manage products, goods receipts, stock counts and write-offs (includes reading stock)"
+msgid ""
+"Manage products, goods receipts, stock counts and write-offs (includes "
+"reading stock)"
 msgstr ""
-"Mahsulotlar, tovar kirimi, inventarizatsiya va hisobdan chiqarishlarni boshqarish (qoldiqlarni "
-"ko‘rish ham kiradi)"
+"Mahsulotlar, tovar kirimi, inventarizatsiya va hisobdan chiqarishlarni "
+"boshqarish (qoldiqlarni ko‘rish ham kiradi)"
 
 #: backend/apps/members/permissions.py
 msgid "See accounts, transactions, debts, profit and cost prices"
 msgstr "Hisoblar, operatsiyalar, qarzlar, foyda va tannarxni ko‘rish"
 
 #: backend/apps/members/permissions.py
-msgid "Record income, expenses, transfers and payments on accounts they operate"
-msgstr "O‘zi yuritadigan hisoblar bo‘yicha daromad, xarajat, o‘tkazma va to‘lovlarni qayd etish"
+msgid ""
+"Record income, expenses, transfers and payments on accounts they operate"
+msgstr ""
+"O‘zi yuritadigan hisoblar bo‘yicha daromad, xarajat, o‘tkazma va to‘lovlarni "
+"qayd etish"
 
 #: backend/apps/members/permissions.py
-msgid "Manage accounts, categories, budgets and rates; fix or void entries; lock periods"
+msgid ""
+"Manage accounts, categories, budgets and rates; fix or void entries; lock "
+"periods"
 msgstr ""
-"Hisoblar, toifalar, byudjetlar va valyuta kurslarini boshqarish; yozuvlarni tuzatish yoki bekor "
-"qilish; davrlarni yopish"
+"Hisoblar, toifalar, byudjetlar va valyuta kurslarini boshqarish; yozuvlarni "
+"tuzatish yoki bekor qilish; davrlarni yopish"
 
 #: backend/apps/members/permissions.py
 msgid "Approve expense claims"
@@ -5196,17 +5447,20 @@ msgstr "O‘z xarajatlarini cheklar bilan yuborish"
 
 #: backend/apps/members/permissions.py
 msgid "See profiles, documents and contracts (IDs and ID scans hidden)"
-msgstr "Profillar, hujjatlar va shartnomalarni ko‘rish (hujjat raqamlari va skanlari yashirilgan)"
+msgstr ""
+"Profillar, hujjatlar va shartnomalarni ko‘rish (hujjat raqamlari va skanlari "
+"yashirilgan)"
 
 #: backend/apps/members/permissions.py
 msgid "Edit profiles, documents, contracts, policies and equipment"
 msgstr "Profillar, hujjatlar, shartnomalar, qoidalar va jihozlarni tahrirlash"
 
 #: backend/apps/members/permissions.py
-msgid "See passport, PINFL and card numbers and ID scans (every view is audited)"
+msgid ""
+"See passport, PINFL and card numbers and ID scans (every view is audited)"
 msgstr ""
-"Pasport, PINFL va bank kartasi raqamlarini hamda hujjat skanlarini ko‘rish (har bir ko‘rish "
-"jurnalga yoziladi)"
+"Pasport, PINFL va bank kartasi raqamlarini hamda hujjat skanlarini ko‘rish "
+"(har bir ko‘rish jurnalga yoziladi)"
 
 #: backend/apps/members/permissions.py
 msgid "Manage vacancies and applicants"
@@ -5217,10 +5471,12 @@ msgid "See everyone's attendance and the roster"
 msgstr "Hammaning davomati va smenalar jadvalini ko‘rish"
 
 #: backend/apps/members/permissions.py
-msgid "Manage schedules and the roster; correct attendance; approve overtime and swaps"
+msgid ""
+"Manage schedules and the roster; correct attendance; approve overtime and "
+"swaps"
 msgstr ""
-"Ish jadvallari va smenalar jadvalini boshqarish; davomatni tuzatish; qo‘shimcha ish soatlari va "
-"smena almashuvlarini tasdiqlash"
+"Ish jadvallari va smenalar jadvalini boshqarish; davomatni tuzatish; "
+"qo‘shimcha ish soatlari va smena almashuvlarini tasdiqlash"
 
 #: backend/apps/members/permissions.py
 msgid "Manage leave types and adjust balances"
@@ -5237,7 +5493,8 @@ msgstr "Boshqalar uchun bonus va jarimalarni taklif qilish"
 #: backend/apps/members/permissions.py
 msgid "Set pay, rules, approve adjustments and advances, calculate runs"
 msgstr ""
-"Ish haqi va qoidalarni belgilash, tuzatishlar va avanslarni tasdiqlash, ish haqini hisoblash"
+"Ish haqi va qoidalarni belgilash, tuzatishlar va avanslarni tasdiqlash, ish "
+"haqini hisoblash"
 
 #: backend/apps/members/permissions.py
 msgid "Finalize and publish payroll runs"
@@ -5249,7 +5506,8 @@ msgstr "Hisob-varaqlar va avanslarni to‘langan deb belgilash"
 
 #: backend/apps/members/permissions.py
 msgid "Use the AI assistant, task drafts and writing help"
-msgstr "AI yordamchisi, vazifa qoralamalari va matn yozishda yordamdan foydalanish"
+msgstr ""
+"AI yordamchisi, vazifa qoralamalari va matn yozishda yordamdan foydalanish"
 
 #: backend/apps/members/permissions.py
 msgid "Configure AI, its budget and what data it may see"
@@ -5321,7 +5579,8 @@ msgstr "Bu so‘rov endi mavjud emas."
 
 #: backend/apps/members/providers.py
 msgid "Choose their branches in the dashboard's Requests page."
-msgstr "Filiallarini boshqaruv panelidagi «Qo‘shilish so‘rovlari» sahifasida tanlang."
+msgstr ""
+"Filiallarini boshqaruv panelidagi «Qo‘shilish so‘rovlari» sahifasida tanlang."
 
 #: backend/apps/members/providers.py
 #, python-format
@@ -5334,7 +5593,8 @@ msgstr "Jamoaga qo‘shildi"
 
 #: backend/apps/members/providers.py
 msgid "Their access to the bot, the app and the dashboard ends at once."
-msgstr "Uning botga, ilovaga va boshqaruv paneliga kirish huquqi darhol tugaydi."
+msgstr ""
+"Uning botga, ilovaga va boshqaruv paneliga kirish huquqi darhol tugaydi."
 
 #: backend/apps/members/providers.py
 #, python-format
@@ -5356,14 +5616,15 @@ msgstr[0] "Xodim %(count)d ta muntazam vazifadan chiqariladi."
 
 #: backend/apps/members/providers.py backend/apps/members/services.py
 msgid "This is the company's only owner. Make someone else an owner first."
-msgstr "Bu — kompaniyaning yagona egasi. Avval boshqa kishini ega qilib tayinlang."
+msgstr ""
+"Bu — kompaniyaning yagona egasi. Avval boshqa kishini ega qilib tayinlang."
 
 #: backend/apps/members/providers.py backend/apps/reports/hooks.py
 msgid "Name"
 msgstr "Ism"
 
-#: backend/apps/members/providers.py backend/apps/reports/hooks.py backend/apps/tasks/hooks.py
-#: backend/apps/timeoff/providers.py
+#: backend/apps/members/providers.py backend/apps/reports/hooks.py
+#: backend/apps/tasks/hooks.py backend/apps/timeoff/providers.py
 msgid "Position"
 msgstr "Lavozim"
 
@@ -5476,8 +5737,10 @@ msgid "The home branch must be one of their branches."
 msgstr "Asosiy filial xodimning filiallaridan biri bo‘lishi kerak."
 
 #: backend/apps/members/services.py
-msgid "You can only change the role of someone whose role you could give yourself."
-msgstr "Faqat o‘zingiz bera oladigan roldagi odamning rolini o‘zgartira olasiz."
+msgid ""
+"You can only change the role of someone whose role you could give yourself."
+msgstr ""
+"Faqat o‘zingiz bera oladigan roldagi odamning rolini o‘zgartira olasiz."
 
 #: backend/apps/members/services.py
 msgid "Name the role."
@@ -5534,7 +5797,8 @@ msgstr "Bu lavozimda odamlar ishlaydi: uni o‘chirish o‘rniga yashiring."
 
 #: backend/apps/members/services.py
 msgid "This position is still used elsewhere: hide it instead of deleting it."
-msgstr "Bu lavozim hali boshqa joylarda ishlatiladi: uni o‘chirish o‘rniga yashiring."
+msgstr ""
+"Bu lavozim hali boshqa joylarda ishlatiladi: uni o‘chirish o‘rniga yashiring."
 
 #: backend/apps/members/services.py
 msgid "Send each of the company's positions once."
@@ -5574,18 +5838,20 @@ msgstr "Egani faqat egalar chetlata yoki ishga qaytara oladi."
 
 #: backend/apps/projects/ai_tools.py
 msgid ""
-"Projects: every project the asker sees, with progress, health, due date, lead and budget burn."
+"Projects: every project the asker sees, with progress, health, due date, "
+"lead and budget burn."
 msgstr ""
-"Loyihalar: so‘ragan odam ko‘radigan barcha loyihalar, bajarilishi, ahvoli, muddati, rahbari va "
-"byudjet sarfi bilan."
+"Loyihalar: so‘ragan odam ko‘radigan barcha loyihalar, bajarilishi, ahvoli, "
+"muddati, rahbari va byudjet sarfi bilan."
 
 #: backend/apps/projects/ai_tools.py
 msgid ""
-"One project in detail: milestones with progress, overdue cards, the people on it, the latest "
-"update, and its money when the asker may see it."
+"One project in detail: milestones with progress, overdue cards, the people "
+"on it, the latest update, and its money when the asker may see it."
 msgstr ""
-"Bitta loyiha batafsil: bosqichlar va ularning bajarilishi, muddati o‘tgan kartalar, loyihadagi "
-"odamlar, so‘nggi holat yozuvi, so‘ragan odamga ruxsat bo‘lsa, loyiha moliyasi ham."
+"Bitta loyiha batafsil: bosqichlar va ularning bajarilishi, muddati o‘tgan "
+"kartalar, loyihadagi odamlar, so‘nggi holat yozuvi, so‘ragan odamga ruxsat "
+"bo‘lsa, loyiha moliyasi ham."
 
 #: backend/apps/projects/api.py backend/apps/projects/owner_api.py
 msgid "Sent for a check."
@@ -5718,9 +5984,11 @@ msgstr "✖️ Hozir emas"
 
 #: backend/apps/projects/bot_messages.py
 #, python-format
-msgid "%(health)s. Now one or two lines for the team: what's done, what's blocking?"
+msgid ""
+"%(health)s. Now one or two lines for the team: what's done, what's blocking?"
 msgstr ""
-"%(health)s. Endi jamoa uchun bir-ikki qator yozing: nima bajarildi, nima to‘sqinlik qilyapti?"
+"%(health)s. Endi jamoa uchun bir-ikki qator yozing: nima bajarildi, nima "
+"to‘sqinlik qilyapti?"
 
 #: backend/apps/projects/bot_messages.py
 msgid "⏭ Post without text"
@@ -5767,7 +6035,8 @@ msgstr "Jarayonda"
 msgid "Review"
 msgstr "Tekshiruv"
 
-#: backend/apps/projects/conf.py backend/apps/projects/models.py backend/apps/tasks/models.py
+#: backend/apps/projects/conf.py backend/apps/projects/models.py
+#: backend/apps/tasks/models.py
 msgid "Done"
 msgstr "Bajarildi"
 
@@ -5872,7 +6141,8 @@ msgstr "🔴 Rejadan chetda"
 #, python-format
 msgid "%(name)s: post this week's update. Tap a status, or write a fuller one."
 msgstr ""
-"%(name)s: bu hafta uchun holatni yozing. Variantlardan birini bosing yoki batafsilroq yozing."
+"%(name)s: bu hafta uchun holatni yozing. Variantlardan birini bosing yoki "
+"batafsilroq yozing."
 
 #: backend/apps/projects/jobs.py
 #, python-format
@@ -5933,7 +6203,8 @@ msgstr "2 tadan 6 tagacha lotincha bosh harf, masalan, RENO."
 
 #: backend/apps/projects/models.py
 msgid "Cards show it with their number, e.g. RENO-14."
-msgstr "Vazifa kartochkalarida raqam bilan birga ko‘rsatiladi, masalan, RENO-14."
+msgstr ""
+"Vazifa kartochkalarida raqam bilan birga ko‘rsatiladi, masalan, RENO-14."
 
 #: backend/apps/projects/models.py
 msgid "Markdown."
@@ -5978,7 +6249,8 @@ msgstr "pdf, xlsx, csv yoki rasm."
 #: backend/apps/projects/models.py
 msgid "Names of the lists a new project starts with; the last one is Done."
 msgstr ""
-"Yangi loyiha doskasi boshlanadigan ro‘yxatlar nomlari; oxirgisi «Bajarildi» ro‘yxati hisoblanadi."
+"Yangi loyiha doskasi boshlanadigan ro‘yxatlar nomlari; oxirgisi «Bajarildi» "
+"ro‘yxati hisoblanadi."
 
 #: backend/apps/projects/models.py
 msgid "Remind leads every week to post an update."
@@ -5991,14 +6263,15 @@ msgstr "0 — dushanba."
 #: backend/apps/projects/models.py
 msgid "A project due within this many days is at risk when too little is done."
 msgstr ""
-"Muddatiga shuncha kun yoki undan kam qolgan loyihada ish kam bajarilgan bo‘lsa, u xavf ostida "
-"hisoblanadi."
+"Muddatiga shuncha kun yoki undan kam qolgan loyihada ish kam bajarilgan "
+"bo‘lsa, u xavf ostida hisoblanadi."
 
 #: backend/apps/projects/models.py
-msgid "Below this share of done cards a project close to its due date is at risk."
+msgid ""
+"Below this share of done cards a project close to its due date is at risk."
 msgstr ""
-"Muddati yaqin loyihada bajarilgan kartalar ulushi bundan kam bo‘lsa, loyiha xavf ostida "
-"hisoblanadi."
+"Muddati yaqin loyihada bajarilgan kartalar ulushi bundan kam bo‘lsa, loyiha "
+"xavf ostida hisoblanadi."
 
 #: backend/apps/projects/owner_api.py
 msgid "Attach a file."
@@ -6158,17 +6431,9 @@ msgstr "Doskadagi har bir ro‘yxatni bir martadan yuboring."
 msgid "You can't add cards to this project."
 msgstr "Bu loyihaga karta qo‘sha olmaysiz."
 
-#: backend/apps/projects/services.py
+#: backend/apps/projects/services.py backend/apps/tasks/services.py
 msgid "This project is archived."
 msgstr "Bu loyiha arxivlangan."
-
-#: backend/apps/projects/services.py
-msgid "That list or milestone is on another board."
-msgstr "Bu ro‘yxat yoki bosqich boshqa doskada."
-
-#: backend/apps/projects/services.py
-msgid "You can only add cards for yourself."
-msgstr "Faqat o‘zingiz uchun karta qo‘sha olasiz."
 
 #: backend/apps/projects/services.py
 msgid "This task isn't on a board."
@@ -6211,8 +6476,11 @@ msgid "This card is waiting for a check by whoever assigned it."
 msgstr "Bu karta uni bergan odamning tekshiruvini kutmoqda."
 
 #: backend/apps/projects/services.py
-msgid "This card needs a photo or a report to be finished. Open it to complete it."
-msgstr "Bu kartani yakunlash uchun rasm yoki hisobot kerak. Uni ochib, o‘sha yerda yakunlang."
+msgid ""
+"This card needs a photo or a report to be finished. Open it to complete it."
+msgstr ""
+"Bu kartani yakunlash uchun rasm yoki hisobot kerak. Uni ochib, o‘sha yerda "
+"yakunlang."
 
 #: backend/apps/projects/services.py
 #, python-format
@@ -6269,7 +6537,8 @@ msgstr "Bu odam ushbu kompaniyada ishlamaydi."
 
 #: backend/apps/projects/services.py
 msgid "You can only log time for others on projects you manage."
-msgstr "Boshqalar uchun vaqtni faqat o‘zingiz boshqaradigan loyihalarda yoza olasiz."
+msgstr ""
+"Boshqalar uchun vaqtni faqat o‘zingiz boshqaradigan loyihalarda yoza olasiz."
 
 #: backend/apps/projects/services.py
 #, python-format
@@ -6286,7 +6555,9 @@ msgstr "Faqat o‘z vaqt yozuvlaringizni o‘chira olasiz."
 
 #: backend/apps/projects/services.py
 msgid "Say how the project is going: on track, at risk or off track."
-msgstr "Loyiha qanday ketayotganini belgilang: «Rejada», «Xavf ostida» yoki «Rejadan chetda»."
+msgstr ""
+"Loyiha qanday ketayotganini belgilang: «Rejada», «Xavf ostida» yoki «Rejadan "
+"chetda»."
 
 #: backend/apps/projects/services.py
 msgid "Links start with http:// or https://."
@@ -6302,7 +6573,8 @@ msgstr "Bu hisobga yozuv kirita olmaysiz."
 
 #: backend/apps/projects/services.py
 msgid "A board starts with at least two lists, the last one is Done."
-msgstr "Yangi doskada kamida ikkita ro‘yxat bo‘lishi kerak, oxirgisi — «Bajarildi»."
+msgstr ""
+"Yangi doskada kamida ikkita ro‘yxat bo‘lishi kerak, oxirgisi — «Bajarildi»."
 
 #: backend/apps/projects/services.py
 msgid "A board starts with at most 12 lists."
@@ -6336,7 +6608,8 @@ msgstr "Rahbaringiz"
 #: backend/apps/reminders/bot_messages.py
 #, python-format
 msgid "⏰ <b>%(task)s</b> was due at %(time)s. Please do it now."
-msgstr "⏰ <b>%(task)s</b> muddati soat %(time)s da edi. Iltimos, hozir bajaring."
+msgstr ""
+"⏰ <b>%(task)s</b> muddati soat %(time)s da edi. Iltimos, hozir bajaring."
 
 #: backend/apps/reminders/bot_messages.py
 #, python-format
@@ -6345,8 +6618,11 @@ msgstr "🚨 <b>%(task)s</b> %(late)s kechikdi. %(manager)s xabardor qilindi."
 
 #: backend/apps/reminders/bot_messages.py
 #, python-format
-msgid "😤 Still not done: <b>%(task)s</b>, %(late)s late. Finish it now, please."
-msgstr "😤 Hali bajarilmadi: <b>%(task)s</b>, %(late)s kechikdi. Iltimos, hoziroq tugating."
+msgid ""
+"😤 Still not done: <b>%(task)s</b>, %(late)s late. Finish it now, please."
+msgstr ""
+"😤 Hali bajarilmadi: <b>%(task)s</b>, %(late)s kechikdi. Iltimos, hoziroq "
+"tugating."
 
 #: backend/apps/reminders/bot_messages.py
 #, python-format
@@ -6355,18 +6631,21 @@ msgstr "🔔 %(step)d-eslatma: <b>%(task)s</b> %(late)s kechikdi."
 
 #: backend/apps/reminders/bot_messages.py
 #, python-format
-msgid "🚨 <b>%(name)s</b> is %(late)s late with <b>%(task)s</b>. Reminders sent: %(count)d."
-msgstr ""
-"🚨 <b>%(name)s</b> <b>%(task)s</b> vazifasini %(late)s kechiktirmoqda. Yuborilgan eslatmalar: "
+msgid ""
+"🚨 <b>%(name)s</b> is %(late)s late with <b>%(task)s</b>. Reminders sent: "
 "%(count)d."
+msgstr ""
+"🚨 <b>%(name)s</b> <b>%(task)s</b> vazifasini %(late)s kechiktirmoqda. "
+"Yuborilgan eslatmalar: %(count)d."
 
 #: backend/apps/reminders/bot_messages.py
 #, python-format
 msgid ""
-"⛔ <b>%(name)s</b> blocked the bot, so reminders can't reach them. <b>%(task)s</b> is still open."
+"⛔ <b>%(name)s</b> blocked the bot, so reminders can't reach them. "
+"<b>%(task)s</b> is still open."
 msgstr ""
-"⛔ <b>%(name)s</b> botni bloklagan, shuning uchun eslatmalar unga yetib bormaydi. <b>%(task)s</b> "
-"hali ochiq."
+"⛔ <b>%(name)s</b> botni bloklagan, shuning uchun eslatmalar unga yetib "
+"bormaydi. <b>%(task)s</b> hali ochiq."
 
 #: backend/apps/reminders/bot_messages.py backend/apps/tasks/bot_messages.py
 msgid "✅ Done"
@@ -6418,8 +6697,10 @@ msgid "Snoozes allowed per task. 0 = none."
 msgstr "Bitta vazifani necha marta keyinga surish mumkin. 0 = mumkin emas."
 
 #: backend/apps/reminders/models.py
-msgid "Delete the last reminder when sending the next, instead of stacking them."
-msgstr "Keyingisini yuborganda oldingi eslatmani o‘chirish, to‘plab qo‘ymaslik."
+msgid ""
+"Delete the last reminder when sending the next, instead of stacking them."
+msgstr ""
+"Keyingisini yuborganda oldingi eslatmani o‘chirish, to‘plab qo‘ymaslik."
 
 #: backend/apps/reminders/models.py
 msgid "Used from this reminder on (1 = the first one)."
@@ -6466,11 +6747,14 @@ msgstr "Qoidaga nom bering."
 #: backend/apps/reminders/services.py
 #, python-format
 msgid "%(value)d is out of range: use %(low)d to %(high)d."
-msgstr "%(value)d ruxsat etilgan oraliqda emas: %(low)d dan %(high)d gacha son kiriting."
+msgstr ""
+"%(value)d ruxsat etilgan oraliqda emas: %(low)d dan %(high)d gacha son "
+"kiriting."
 
 #: backend/apps/reminders/services.py
 msgid "Quiet days are 0 (Monday) to 6 (Sunday)."
-msgstr "Sokin kunlar 0 dan 6 gacha raqam bilan beriladi: 0 — dushanba, 6 — yakshanba."
+msgstr ""
+"Sokin kunlar 0 dan 6 gacha raqam bilan beriladi: 0 — dushanba, 6 — yakshanba."
 
 #: backend/apps/reminders/services.py
 msgid "Leave at least one day for reminders."
@@ -6483,7 +6767,8 @@ msgstr "Vaqtni tanlang."
 #: backend/apps/reminders/services.py
 msgid "Give both ends of the quiet hours, or neither."
 msgstr ""
-"Sokin soatlarning boshlanishi va tugashini birga kiriting yoki ikkalasini ham bo‘sh qoldiring."
+"Sokin soatlarning boshlanishi va tugashini birga kiriting yoki ikkalasini "
+"ham bo‘sh qoldiring."
 
 #: backend/apps/reminders/services.py
 msgid "Steps start at 1."
@@ -6505,7 +6790,9 @@ msgstr "Eslatma matni %(max)d belgidan oshmasligi kerak."
 #: backend/apps/reminders/services.py
 #, python-format, python-brace-format
 msgid "Unknown placeholder %(names)s. Use {name}, {task}, {due} or {late}."
-msgstr "Noma’lum o‘rinbosar: %(names)s. {name}, {task}, {due} yoki {late} dan foydalaning."
+msgstr ""
+"Noma’lum o‘rinbosar: %(names)s. {name}, {task}, {due} yoki {late} dan "
+"foydalaning."
 
 #: backend/apps/reminders/services.py
 #, python-format
@@ -6513,22 +6800,28 @@ msgid "At most %(max)d texts per policy."
 msgstr "Bitta qoidada ko‘pi bilan %(max)d ta matn bo‘lishi mumkin."
 
 #: backend/apps/reports/ai_tools.py
-msgid "Who did their tasks on time over a period, by person, position, routine, branch or day."
+msgid ""
+"Who did their tasks on time over a period, by person, position, routine, "
+"branch or day."
 msgstr ""
-"Tanlangan davrda kim vazifalarini o‘z vaqtida bajargani: xodimlar, lavozimlar, kundalik vazifalar,"
-" filiallar yoki kunlar bo‘yicha."
+"Tanlangan davrda kim vazifalarini o‘z vaqtida bajargani: xodimlar, "
+"lavozimlar, kundalik vazifalar, filiallar yoki kunlar bo‘yicha."
 
 #: backend/apps/reports/ai_tools.py
-msgid "How the team's on-time rate or finished tasks changed per day, week or month."
+msgid ""
+"How the team's on-time rate or finished tasks changed per day, week or month."
 msgstr ""
-"Jamoaning vazifalarni o‘z vaqtida bajarish ulushi yoki bajarilgan vazifalar soni kun, hafta yoki "
-"oy bo‘yicha qanday o‘zgargani."
+"Jamoaning vazifalarni o‘z vaqtida bajarish ulushi yoki bajarilgan vazifalar "
+"soni kun, hafta yoki oy bo‘yicha qanday o‘zgargani."
 
 #: backend/apps/reports/ai_tools.py
-msgid "Each daily routine: tasks made, done on time, late and missed, and routines nobody does."
+msgid ""
+"Each daily routine: tasks made, done on time, late and missed, and routines "
+"nobody does."
 msgstr ""
-"Har bir kundalik vazifa bo‘yicha: nechta vazifa berilgani, nechtasi o‘z vaqtida, kechikib "
-"bajarilgani yoki bajarilmagani, hamda hech kim bajarmaydigan kundalik vazifalar."
+"Har bir kundalik vazifa bo‘yicha: nechta vazifa berilgani, nechtasi o‘z "
+"vaqtida, kechikib bajarilgani yoki bajarilmagani, hamda hech kim "
+"bajarmaydigan kundalik vazifalar."
 
 #: backend/apps/reports/bot_messages.py
 #, python-format
@@ -6538,12 +6831,15 @@ msgstr "📊 <b>O‘tgan hafta</b> · %(start)s–%(end)s"
 #: backend/apps/reports/bot_messages.py
 #, python-format
 msgid "On time: <b>%(percent)s</b>, %(on_time)d of %(total)d tasks."
-msgstr "O‘z vaqtida: <b>%(percent)s</b>, %(total)d ta vazifadan %(on_time)d tasi."
+msgstr ""
+"O‘z vaqtida: <b>%(percent)s</b>, %(total)d ta vazifadan %(on_time)d tasi."
 
 #: backend/apps/reports/bot_messages.py
 #, python-format
 msgid "Late: %(late)d · not done: %(missed)d · reminders sent: %(reminders)d"
-msgstr "Kechikkan: %(late)d · bajarilmagan: %(missed)d · yuborilgan eslatmalar: %(reminders)d"
+msgstr ""
+"Kechikkan: %(late)d · bajarilmagan: %(missed)d · yuborilgan eslatmalar: "
+"%(reminders)d"
 
 #: backend/apps/reports/bot_messages.py
 #, python-format
@@ -6628,32 +6924,36 @@ msgstr "O‘tgan oy"
 
 #: backend/apps/sales/ai_tools.py
 msgid ""
-"Sales for a range of days: net sales, receipts, average check and cash share, with a series over "
-"time or a breakdown by branch, cashier, payment method or hour."
+"Sales for a range of days: net sales, receipts, average check and cash "
+"share, with a series over time or a breakdown by branch, cashier, payment "
+"method or hour."
 msgstr ""
-"Tanlangan kunlar uchun savdo: sof savdo, cheklar, o‘rtacha chek va naqd pul ulushi — vaqt bo‘yicha"
-" o‘zgarishi yoki filial, kassir, to‘lov usuli yoxud soat bo‘yicha taqsimoti bilan."
+"Tanlangan kunlar uchun savdo: sof savdo, cheklar, o‘rtacha chek va naqd pul "
+"ulushi — vaqt bo‘yicha o‘zgarishi yoki filial, kassir, to‘lov usuli yoxud "
+"soat bo‘yicha taqsimoti bilan."
 
 #: backend/apps/sales/ai_tools.py
 msgid ""
-"Each cashier's shifts, sales, average check, how often their cash count matched, shortages and "
-"surpluses, late openings and verification for a range of days."
+"Each cashier's shifts, sales, average check, how often their cash count "
+"matched, shortages and surpluses, late openings and verification for a range "
+"of days."
 msgstr ""
-"Tanlangan kunlar uchun har bir kassir ko‘rsatkichlari: smenalar, savdo, o‘rtacha chek, naqd pul "
-"sanog‘i qanchalik tez-tez to‘g‘ri chiqqani, kamomad va ortiqchalar, kassani kech ochish holatlari "
-"va tasdiqlashlar."
+"Tanlangan kunlar uchun har bir kassir ko‘rsatkichlari: smenalar, savdo, "
+"o‘rtacha chek, naqd pul sanog‘i qanchalik tez-tez to‘g‘ri chiqqani, kamomad "
+"va ortiqchalar, kassani kech ochish holatlari va tasdiqlashlar."
 
-#: backend/apps/sales/alerts.py backend/apps/sales/bot_messages.py backend/apps/sales/queries.py
-#: backend/apps/sales/services.py
+#: backend/apps/sales/alerts.py backend/apps/sales/bot_messages.py
+#: backend/apps/sales/queries.py backend/apps/sales/services.py
 msgid "Received"
 msgstr "Olindi"
 
-#: backend/apps/sales/alerts.py backend/apps/sales/bot_messages.py backend/apps/sales/queries.py
-#: backend/apps/sales/services.py
+#: backend/apps/sales/alerts.py backend/apps/sales/bot_messages.py
+#: backend/apps/sales/queries.py backend/apps/sales/services.py
 msgid "Not received"
 msgstr "Olinmadi"
 
-#: backend/apps/sales/alerts.py backend/apps/sales/bot_messages.py backend/apps/sales/queries.py
+#: backend/apps/sales/alerts.py backend/apps/sales/bot_messages.py
+#: backend/apps/sales/queries.py
 msgid "Verify"
 msgstr "Tasdiqlash"
 
@@ -6782,9 +7082,11 @@ msgstr "⚠️ Topshirilgan pul olinmadi: %(amount)s"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
-msgid "%(receiver)s says the cash %(cashier)s handed over at %(till)s never arrived."
+msgid ""
+"%(receiver)s says the cash %(cashier)s handed over at %(till)s never arrived."
 msgstr ""
-"%(receiver)s aytishicha, %(cashier)s topshirgan naqd pul (kassa: %(till)s) unga yetib kelmagan."
+"%(receiver)s aytishicha, %(cashier)s topshirgan naqd pul (kassa: %(till)s) "
+"unga yetib kelmagan."
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -6804,7 +7106,8 @@ msgstr "%(shift)s smenasida naqd farqi: %(difference)s"
 #: backend/apps/sales/bot_messages.py
 #, python-format
 msgid "%(cashier)s · %(branch)s. Counted %(counted)s, expected %(expected)s."
-msgstr "%(cashier)s · %(branch)s. Sanalgan: %(counted)s, kutilgan: %(expected)s."
+msgstr ""
+"%(cashier)s · %(branch)s. Sanalgan: %(counted)s, kutilgan: %(expected)s."
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -6813,10 +7116,12 @@ msgstr "%(shift)s smenasida boshlang‘ich naqd pul %(difference)s farq qiladi"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
-msgid "%(cashier)s counted %(counted)s when opening %(till)s; the last shift left %(expected)s."
+msgid ""
+"%(cashier)s counted %(counted)s when opening %(till)s; the last shift left "
+"%(expected)s."
 msgstr ""
-"%(cashier)s kassani (%(till)s) ochishda %(counted)s sanadi, oldingi smena esa %(expected)s "
-"qoldirgan."
+"%(cashier)s kassani (%(till)s) ochishda %(counted)s sanadi, oldingi smena "
+"esa %(expected)s qoldirgan."
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -6858,9 +7163,12 @@ msgid "The photos of %(shift)s don't match the typed totals"
 msgstr "%(shift)s smenasi suratlari kiritilgan summalarga mos kelmaydi"
 
 #: backend/apps/sales/bot_messages.py
-msgid "AI read other numbers on the Z-report or the terminal slip. Check before verifying."
+msgid ""
+"AI read other numbers on the Z-report or the terminal slip. Check before "
+"verifying."
 msgstr ""
-"AI Z-hisobot yoki terminal chekida boshqa raqamlarni o‘qidi. Tasdiqlashdan oldin tekshiring."
+"AI Z-hisobot yoki terminal chekida boshqa raqamlarni o‘qidi. Tasdiqlashdan "
+"oldin tekshiring."
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -6871,7 +7179,8 @@ msgstr "%(branch)s filiali hali ochilmadi"
 #, python-format
 msgid "It opens at %(time)s; no till was open %(minutes)s minutes later."
 msgstr ""
-"Filial soat %(time)s da ochiladi, lekin %(minutes)s daqiqa o‘tib ham birorta kassa ochilmadi."
+"Filial soat %(time)s da ochiladi, lekin %(minutes)s daqiqa o‘tib ham birorta "
+"kassa ochilmadi."
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -6881,7 +7190,9 @@ msgstr "%(shift)s smenasi hali ochiq"
 #: backend/apps/sales/bot_messages.py
 #, python-format
 msgid "%(cashier)s hasn't closed the till at %(branch)s (closes at %(time)s)."
-msgstr "%(cashier)s %(branch)s filialidagi kassani yopmadi (yopilish vaqti — %(time)s)."
+msgstr ""
+"%(cashier)s %(branch)s filialidagi kassani yopmadi (yopilish vaqti — "
+"%(time)s)."
 
 #: backend/apps/sales/bot_messages.py
 msgid "🧾 Your till is still open"
@@ -6910,7 +7221,8 @@ msgstr "%(branch)s filialida %(amount)s naqd pul bor"
 #: backend/apps/sales/bot_messages.py
 #, python-format
 msgid "That's above its limit of %(limit)s after closing. Move it to the bank."
-msgstr "Yopilgandan keyin bu limitdan (%(limit)s) ko‘p. Pulni bankka topshiring."
+msgstr ""
+"Yopilgandan keyin bu limitdan (%(limit)s) ko‘p. Pulni bankka topshiring."
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -6992,7 +7304,9 @@ msgstr "🧾 Ochiq kassa yo‘q."
 
 #: backend/apps/sales/bot_messages.py
 msgid "Open a shift in Kassa: count the float and start."
-msgstr "Smenani «Kassa» bo‘limida oching: boshlang‘ich naqd pulni sanang va ishni boshlang."
+msgstr ""
+"Smenani «Kassa» bo‘limida oching: boshlang‘ich naqd pulni sanang va ishni "
+"boshlang."
 
 #: backend/apps/sales/bot_messages.py
 msgid "Open Kassa"
@@ -7018,7 +7332,9 @@ msgstr "❌ Olmadim"
 
 #: backend/apps/sales/bot_messages.py
 msgid "Kassa is for the people who run a till. Nothing waits for you here."
-msgstr "«Kassa» bo‘limi kassada ishlaydiganlar uchun. Bu yerda siz uchun hozircha hech narsa yo‘q."
+msgstr ""
+"«Kassa» bo‘limi kassada ishlaydiganlar uchun. Bu yerda siz uchun hozircha "
+"hech narsa yo‘q."
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -7103,10 +7419,11 @@ msgid "Tills and payment methods"
 msgstr "Kassalar va to‘lov usullari"
 
 #: backend/apps/sales/hooks.py
-msgid "Check each branch's till and how customers pay, then open a shift in Kassa."
+msgid ""
+"Check each branch's till and how customers pay, then open a shift in Kassa."
 msgstr ""
-"Har bir filialdagi kassani va mijozlar qanday to‘lashini tekshiring, so‘ng «Kassa» bo‘limida smena"
-" oching."
+"Har bir filialdagi kassani va mijozlar qanday to‘lashini tekshiring, so‘ng "
+"«Kassa» bo‘limida smena oching."
 
 #: backend/apps/sales/hooks.py
 msgid "Shift closed, to verify"
@@ -7265,12 +7582,15 @@ msgid "A photo of the Z-report is required to close a shift."
 msgstr "Smenani yopish uchun Z-hisobot rasmi kerak."
 
 #: backend/apps/sales/models.py
-msgid "A photo of the terminal slip is required when the shift took card payments."
+msgid ""
+"A photo of the terminal slip is required when the shift took card payments."
 msgstr "Smenada karta orqali to‘lovlar bo‘lsa, terminal chekining rasmi kerak."
 
 #: backend/apps/sales/models.py
 msgid "Owners hear about a handover nobody confirmed after this long."
-msgstr "Topshirilgan pulni shuncha vaqt ichida hech kim tasdiqlamasa, egalarga xabar boradi."
+msgstr ""
+"Topshirilgan pulni shuncha vaqt ichida hech kim tasdiqlamasa, egalarga xabar "
+"boradi."
 
 #: backend/apps/sales/models.py
 msgid "Owners hear about payouts from a till above this."
@@ -7279,12 +7599,14 @@ msgstr "Kassadan bundan katta summa chiqarilsa, egalarga xabar boradi."
 #: backend/apps/sales/models.py
 msgid "A branch with no open till this long after opening raises an alert."
 msgstr ""
-"Filial ochilganidan keyin shuncha vaqt o‘tib ham birorta kassa ochilmagan bo‘lsa, ogohlantirish "
-"keladi."
+"Filial ochilganidan keyin shuncha vaqt o‘tib ham birorta kassa ochilmagan "
+"bo‘lsa, ogohlantirish keladi."
 
 #: backend/apps/sales/models.py
 msgid "A till still open this long after closing time raises an alert."
-msgstr "Yopilish vaqtidan keyin shuncha vaqt o‘tib ham kassa ochiq tursa, ogohlantirish keladi."
+msgstr ""
+"Yopilish vaqtidan keyin shuncha vaqt o‘tib ham kassa ochiq tursa, "
+"ogohlantirish keladi."
 
 #: backend/apps/sales/models.py
 msgid "Taken under a row lock when a shift opens."
@@ -7312,12 +7634,16 @@ msgstr "Muddatli to‘lov"
 
 #: backend/apps/sales/models.py
 msgid "Where non-cash money lands, e.g. the card terminal's clearing account."
-msgstr "Naqd bo‘lmagan pul tushadigan hisob, masalan, karta terminalining tranzit hisobi."
+msgstr ""
+"Naqd bo‘lmagan pul tushadigan hisob, masalan, karta terminalining tranzit "
+"hisobi."
 
 #: backend/apps/sales/models.py
-msgid "What the bank or provider keeps, booked as a bank fee when a shift closes."
+msgid ""
+"What the bank or provider keeps, booked as a bank fee when a shift closes."
 msgstr ""
-"Bank yoki to‘lov xizmati oladigan ulush; smena yopilganda bank komissiyasi sifatida yoziladi."
+"Bank yoki to‘lov xizmati oladigan ulush; smena yopilganda bank komissiyasi "
+"sifatida yoziladi."
 
 #: backend/apps/sales/models.py
 msgid "Set on the default methods; never shown."
@@ -7341,7 +7667,9 @@ msgstr "Import qilingan"
 
 #: backend/apps/sales/models.py
 msgid "What the till should have held at opening (what the last shift left)."
-msgstr "Ochilishda kassada bo‘lishi kerak bo‘lgan summa (oldingi smena qoldirgan pul)."
+msgstr ""
+"Ochilishda kassada bo‘lishi kerak bo‘lgan summa (oldingi smena qoldirgan "
+"pul)."
 
 #: backend/apps/sales/models.py
 msgid "Closed by a manager, not the cashier."
@@ -7396,8 +7724,11 @@ msgid "To the bank"
 msgstr "Bankka"
 
 #: backend/apps/sales/models.py
-msgid "The other account: where the money went (to bank) or came from (deposit)."
-msgstr "Ikkinchi hisob: pul qayerga ketgan (bankka) yoki qayerdan kelgan (kassaga kirim)."
+msgid ""
+"The other account: where the money went (to bank) or came from (deposit)."
+msgstr ""
+"Ikkinchi hisob: pul qayerga ketgan (bankka) yoki qayerdan kelgan (kassaga "
+"kirim)."
 
 #: backend/apps/sales/models.py
 msgid "The first day of the month."
@@ -7484,25 +7815,35 @@ msgstr "Avval %(branch)s filialidagi ochiq %(shift)s smenasini yopish kerak."
 
 #: backend/apps/sales/queries.py
 #, python-format
-msgid "%(count)s cash handovers (%(amount)s) are waiting for them to confirm or decline."
-msgstr "Unga %(count)s marta pul topshirilgan (%(amount)s): u hali tasdiqlamagan yoki rad etmagan."
-
-#: backend/apps/sales/queries.py
-#, python-format
-msgid "%(count)s handovers they made (%(amount)s) aren't confirmed by the receiver yet."
-msgstr "U %(count)s marta pul topshirgan (%(amount)s), lekin oluvchi hali tasdiqlamagan."
-
-#: backend/apps/sales/queries.py
-#, python-format
-msgid "They hold %(amount)s in cash handed to them: settle it before they leave."
+msgid ""
+"%(count)s cash handovers (%(amount)s) are waiting for them to confirm or "
+"decline."
 msgstr ""
-"Uning qo‘lida unga topshirilgan %(amount)s naqd pul bor: ishdan ketishidan oldin hisob-kitob "
-"qiling."
+"Unga %(count)s marta pul topshirilgan (%(amount)s): u hali tasdiqlamagan "
+"yoki rad etmagan."
+
+#: backend/apps/sales/queries.py
+#, python-format
+msgid ""
+"%(count)s handovers they made (%(amount)s) aren't confirmed by the receiver "
+"yet."
+msgstr ""
+"U %(count)s marta pul topshirgan (%(amount)s), lekin oluvchi hali "
+"tasdiqlamagan."
+
+#: backend/apps/sales/queries.py
+#, python-format
+msgid ""
+"They hold %(amount)s in cash handed to them: settle it before they leave."
+msgstr ""
+"Uning qo‘lida unga topshirilgan %(amount)s naqd pul bor: ishdan ketishidan "
+"oldin hisob-kitob qiling."
 
 #: backend/apps/sales/queries.py
 #, python-format
 msgid "%(count)s shifts on record, %(unverified)s not verified yet."
-msgstr "Jami %(count)s ta smena, ulardan %(unverified)s tasi hali tekshirilmagan."
+msgstr ""
+"Jami %(count)s ta smena, ulardan %(unverified)s tasi hali tekshirilmagan."
 
 #: backend/apps/sales/serializers.py
 msgid "Unknown payment method."
@@ -7538,12 +7879,15 @@ msgstr "Savdoni qayd etish usulini tanlang."
 
 #: backend/apps/sales/services.py
 msgid "Invoices mode arrives with the invoices module."
-msgstr "Hisob-fakturalar rejimi hisob-fakturalar moduli bilan birga paydo bo‘ladi."
+msgstr ""
+"Hisob-fakturalar rejimi hisob-fakturalar moduli bilan birga paydo bo‘ladi."
 
 #: backend/apps/sales/services.py
 #, python-format
 msgid "Sales are in %(currency)s: pick an account in %(currency)s."
-msgstr "Savdo %(currency)s valyutasida yuritiladi: %(currency)s valyutasidagi hisobni tanlang."
+msgstr ""
+"Savdo %(currency)s valyutasida yuritiladi: %(currency)s valyutasidagi "
+"hisobni tanlang."
 
 #: backend/apps/sales/services.py
 msgid "The fee is a percentage from 0 to 100."
@@ -7564,7 +7908,9 @@ msgstr "«%(name)s» nomli to‘lov usuli allaqachon bor."
 
 #: backend/apps/sales/services.py
 msgid "Keep at least one cash method: every till takes cash."
-msgstr "Kamida bitta naqd to‘lov usulini qoldiring: har bir kassa naqd pul qabul qiladi."
+msgstr ""
+"Kamida bitta naqd to‘lov usulini qoldiring: har bir kassa naqd pul qabul "
+"qiladi."
 
 #: backend/apps/sales/services.py
 msgid "Some of these payment methods don't exist."
@@ -7599,7 +7945,8 @@ msgstr "Bu kassa yopilgan."
 #: backend/apps/sales/services.py
 #, python-format
 msgid "%(till)s already has an open shift (%(shift)s, %(person)s)."
-msgstr "«%(till)s» kassasida allaqachon ochiq smena bor (%(shift)s, %(person)s)."
+msgstr ""
+"«%(till)s» kassasida allaqachon ochiq smena bor (%(shift)s, %(person)s)."
 
 #: backend/apps/sales/services.py
 #, python-format
@@ -7662,7 +8009,9 @@ msgstr "Kassaning o‘zini emas, boshqa hisobni tanlang."
 #: backend/apps/sales/services.py
 #, python-format
 msgid "The till holds %(currency)s: pick an account in %(currency)s."
-msgstr "Kassa %(currency)s valyutasida yuritiladi: %(currency)s valyutasidagi hisobni tanlang."
+msgstr ""
+"Kassa %(currency)s valyutasida yuritiladi: %(currency)s valyutasidagi "
+"hisobni tanlang."
 
 #: backend/apps/sales/services.py
 msgid "Pick what kind of movement this is."
@@ -7733,8 +8082,12 @@ msgstr "Bu chek allaqachon bekor qilingan."
 
 #: backend/apps/sales/services.py
 #, python-format
-msgid "This receipt is part of the closed shift %(shift)s: correct the shift instead."
-msgstr "Bu chek yopilgan %(shift)s smenasiga tegishli: buning o‘rniga smenani tuzating."
+msgid ""
+"This receipt is part of the closed shift %(shift)s: correct the shift "
+"instead."
+msgstr ""
+"Bu chek yopilgan %(shift)s smenasiga tegishli: buning o‘rniga smenani "
+"tuzating."
 
 #: backend/apps/signin/admin.py
 msgid "End the selected sessions"
@@ -7744,7 +8097,8 @@ msgstr "Tanlangan seanslarni tugatish"
 #, python-brace-format
 msgid "Signup code <b>{code}</b>. Copy it now: it is shown only once."
 msgstr ""
-"Ro‘yxatdan o‘tish kodi: <b>{code}</b>. Uni hozir nusxalab oling: u faqat bir marta ko‘rsatiladi."
+"Ro‘yxatdan o‘tish kodi: <b>{code}</b>. Uni hozir nusxalab oling: u faqat bir "
+"marta ko‘rsatiladi."
 
 #: backend/apps/signin/auth.py
 msgid "Sign in to the dashboard again."
@@ -7784,10 +8138,11 @@ msgstr "Kirish bekor qilingan. Brauzerda yangi kod oling."
 
 #: backend/apps/signin/bot_messages.py
 msgid ""
-"You don't have access to the dashboard. Ask the company owner to give your role dashboard access."
+"You don't have access to the dashboard. Ask the company owner to give your "
+"role dashboard access."
 msgstr ""
-"Boshqaruv paneliga kirish huquqingiz yo‘q. Kompaniya egasidan rolingizga boshqaruv paneliga kirish"
-" huquqini berishni so‘rang."
+"Boshqaruv paneliga kirish huquqingiz yo‘q. Kompaniya egasidan rolingizga "
+"boshqaruv paneliga kirish huquqini berishni so‘rang."
 
 #: backend/apps/signin/bot_messages.py
 msgid "This sign-in link isn't valid. Get a new one in your browser."
@@ -7799,11 +8154,11 @@ msgstr "✅ Tasdiqlandi. Brauzerga qayting: kirish amalga oshirilmoqda."
 
 #: backend/apps/signin/bot_messages.py
 msgid ""
-"❌ That wasn't the number on the screen, so this sign-in was cancelled. If it was you, start again "
-"in your browser."
+"❌ That wasn't the number on the screen, so this sign-in was cancelled. If "
+"it was you, start again in your browser."
 msgstr ""
-"❌ Bu ekrandagi raqam emas edi, shuning uchun kirish bekor qilindi. Agar bu siz bo‘lsangiz, "
-"brauzerda qaytadan boshlang."
+"❌ Bu ekrandagi raqam emas edi, shuning uchun kirish bekor qilindi. Agar bu "
+"siz bo‘lsangiz, brauzerda qaytadan boshlang."
 
 #: backend/apps/signin/bot_messages.py
 msgid "🛡 Cancelled. Nobody was signed in."
@@ -7815,7 +8170,9 @@ msgstr "Boshqaruv paneliga kirildi"
 
 #: backend/apps/signin/bot_messages.py
 msgid "Not you? Log out everywhere and nobody stays signed in."
-msgstr "Bu siz emasmisiz? Barcha qurilmalardan chiqing, shunda hech kim tizimda qolmaydi."
+msgstr ""
+"Bu siz emasmisiz? Barcha qurilmalardan chiqing, shunda hech kim tizimda "
+"qolmaydi."
 
 #: backend/apps/signin/bot_messages.py
 msgid "Log out everywhere"
@@ -7827,7 +8184,8 @@ msgstr "✅ Siz allaqachon barcha qurilmalardan chiqqansiz."
 
 #: backend/apps/signin/bot_messages.py
 msgid "✅ Done: signed out on every device. Sign in again whenever you need."
-msgstr "✅ Tayyor: barcha qurilmalardan chiqildi. Kerak bo‘lganda qaytadan kiring."
+msgstr ""
+"✅ Tayyor: barcha qurilmalardan chiqildi. Kerak bo‘lganda qaytadan kiring."
 
 #: backend/apps/signin/devices.py
 msgid "Browser"
@@ -7899,11 +8257,14 @@ msgstr "Seans tugadi. Boshqaruv panelini botdan qayta oching."
 
 #: backend/apps/signin/signup.py
 msgid "A signup code needs at least one use."
-msgstr "Ro‘yxatdan o‘tish kodi kamida bir marta ishlatishga mo‘ljallangan bo‘lishi kerak."
+msgstr ""
+"Ro‘yxatdan o‘tish kodi kamida bir marta ishlatishga mo‘ljallangan bo‘lishi "
+"kerak."
 
 #: backend/apps/signin/signup.py
 msgid "This signup code isn't valid. Check it, or ask for a new one."
-msgstr "Bu ro‘yxatdan o‘tish kodi yaroqsiz. Uni tekshiring yoki yangisini so‘rang."
+msgstr ""
+"Bu ro‘yxatdan o‘tish kodi yaroqsiz. Uni tekshiring yoki yangisini so‘rang."
 
 #: backend/apps/signin/signup.py
 msgid "New companies are created by the platform team for now."
@@ -7914,21 +8275,29 @@ msgid "Enter the signup code you were given."
 msgstr "Sizga berilgan ro‘yxatdan o‘tish kodini kiriting."
 
 #: backend/apps/tasks/ai_tools.py
-msgid "Find tasks by status, person, position, due dates or words in the title."
-msgstr "Vazifalarni holat, xodim, lavozim, muddat yoki nomidagi so‘zlar bo‘yicha qidirish."
+msgid ""
+"Find tasks by status, person, position, due dates or words in the title."
+msgstr ""
+"Vazifalarni holat, xodim, lavozim, muddat yoki nomidagi so‘zlar bo‘yicha "
+"qidirish."
 
 #: backend/apps/tasks/ai_tools.py
-msgid "One task in detail: checklist progress, reminders sent, latest comments."
+msgid ""
+"One task in detail: checklist progress, reminders sent, latest comments."
 msgstr ""
-"Bitta vazifa batafsil: ro‘yxat bandlarining bajarilishi, yuborilgan eslatmalar, so‘nggi izohlar."
+"Bitta vazifa batafsil: ro‘yxat bandlarining bajarilishi, yuborilgan "
+"eslatmalar, so‘nggi izohlar."
 
 #: backend/apps/tasks/api.py
 msgid "Give from and to as YYYY-MM-DD."
-msgstr "Boshlanish (from) va tugash (to) sanalarini YYYY-MM-DD ko‘rinishida kiriting."
+msgstr ""
+"Boshlanish (from) va tugash (to) sanalarini YYYY-MM-DD ko‘rinishida kiriting."
 
 #: backend/apps/tasks/api.py
 msgid "Pick up to 42 days, the last after the first."
-msgstr "Ko‘pi bilan 42 kunlik davr tanlang, oxirgi kun birinchi kundan oldin bo‘lmasin."
+msgstr ""
+"Ko‘pi bilan 42 kunlik davr tanlang, oxirgi kun birinchi kundan oldin "
+"bo‘lmasin."
 
 #: backend/apps/tasks/api.py
 msgid "That checklist item doesn't exist."
@@ -8044,7 +8413,9 @@ msgstr "👋 %(company)s jamoasiga xush kelibsiz, %(name)s!"
 
 #: backend/apps/tasks/bot_messages.py
 msgid "Here are your first tasks to get started. Tap one to open it."
-msgstr "Mana, ishni boshlash uchun birinchi vazifalaringiz. Ochish uchun birini bosing."
+msgstr ""
+"Mana, ishni boshlash uchun birinchi vazifalaringiz. Ochish uchun birini "
+"bosing."
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
@@ -8059,7 +8430,9 @@ msgstr "✍️ <b>%(title)s</b> vazifasini yakunlash uchun qisqa hisobot yuborin
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "📷 Send a photo or a short report to complete <b>%(title)s</b>."
-msgstr "📷 <b>%(title)s</b> vazifasini yakunlash uchun rasm yoki qisqa hisobot yuboring."
+msgstr ""
+"📷 <b>%(title)s</b> vazifasini yakunlash uchun rasm yoki qisqa hisobot "
+"yuboring."
 
 #: backend/apps/tasks/bot_messages.py
 msgid "What needs to be fixed? Send a short comment."
@@ -8087,7 +8460,9 @@ msgstr "♾ Muddatsiz"
 
 #: backend/apps/tasks/bot_messages.py
 msgid "⏰ When is it due? Pick one or send a time like 18:30 or 25.10 18:30."
-msgstr "⏰ Muddati qachon? Birini tanlang yoki vaqtni 18:30 yoki 25.10 18:30 ko‘rinishida yuboring."
+msgstr ""
+"⏰ Muddati qachon? Birini tanlang yoki vaqtni 18:30 yoki 25.10 18:30 "
+"ko‘rinishida yuboring."
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
@@ -8266,27 +8641,33 @@ msgstr "Kompaniyaning asosiy sozlamasi uchun bo‘sh qoldiring."
 
 #: backend/apps/tasks/models.py
 msgid "Who hears when it's late. Empty: everyone who can confirm tasks."
-msgstr "Kechiksa, kim xabar oladi. Bo‘sh: vazifalarni qabul qila oladigan hamma."
+msgstr ""
+"Kechiksa, kim xabar oladi. Bo‘sh: vazifalarni qabul qila oladigan hamma."
 
 #: backend/apps/tasks/models.py
 msgid "Only people whose home branch this is get it. Empty: everyone it names."
-msgstr "Faqat asosiy filiali shu bo‘lgan xodimlar oladi. Bo‘sh: shablonda ko‘rsatilgan hamma oladi."
+msgstr ""
+"Faqat asosiy filiali shu bo‘lgan xodimlar oladi. Bo‘sh: shablonda "
+"ko‘rsatilgan hamma oladi."
 
 #: backend/apps/tasks/models.py
 msgid "Steps copied into every task it makes."
-msgstr "Shu shablon asosida yaratiladigan har bir vazifaga ko‘chiriladigan qadamlar."
+msgstr ""
+"Shu shablon asosida yaratiladigan har bir vazifaga ko‘chiriladigan qadamlar."
 
 #: backend/apps/tasks/models.py
 msgid ""
-"An onboarding task: given once to each new person it names when they are approved, instead of "
-"every day."
+"An onboarding task: given once to each new person it names when they are "
+"approved, instead of every day."
 msgstr ""
-"Yangi xodimlar uchun vazifa: har kuni emas, balki ko‘rsatilgan har bir yangi xodimga u "
-"tasdiqlanganda bir marta beriladi."
+"Yangi xodimlar uchun vazifa: har kuni emas, balki ko‘rsatilgan har bir yangi "
+"xodimga u tasdiqlanganda bir marta beriladi."
 
 #: backend/apps/tasks/models.py
 msgid "Onboarding tasks: due this many days after the approval."
-msgstr "Yangi xodimlar uchun vazifalar: muddati tasdiqlangandan keyin shuncha kun o‘tib tugaydi."
+msgstr ""
+"Yangi xodimlar uchun vazifalar: muddati tasdiqlangandan keyin shuncha kun "
+"o‘tib tugaydi."
 
 #: backend/apps/tasks/models.py
 msgid "Daily"
@@ -8326,7 +8707,8 @@ msgstr "Rahbar oxirgi marta «Hozir eslatish» tugmasini bosgan vaqt."
 
 #: backend/apps/tasks/models.py
 msgid "The assignee's home branch when the task was made; never moves after."
-msgstr "Vazifa yaratilgan paytdagi ijrochining asosiy filiali; keyin o‘zgarmaydi."
+msgstr ""
+"Vazifa yaratilgan paytdagi ijrochining asosiy filiali; keyin o‘zgarmaydi."
 
 #: backend/apps/tasks/models.py
 msgid "Gave you a task"
@@ -8359,8 +8741,8 @@ msgstr "Bu sizning kompaniyangizga tegishli emas."
 #: backend/apps/tasks/owner_api.py
 msgid "Nobody you may give work to holds those positions or works there."
 msgstr ""
-"Siz vazifa bera oladigan odamlar orasida bu lavozimlarda yoki bu filiallarda ishlaydigan hech kim "
-"yo‘q."
+"Siz vazifa bera oladigan odamlar orasida bu lavozimlarda yoki bu filiallarda "
+"ishlaydigan hech kim yo‘q."
 
 #: backend/apps/tasks/owner_api.py
 msgid "Give from and to."
@@ -8385,16 +8767,9 @@ msgid "Give due_at or shift_days."
 msgstr "due_at yoki shift_days maydonini to‘ldiring."
 
 #: backend/apps/tasks/services.py
-msgid "You can't assign tasks to others."
-msgstr "Siz boshqalarga vazifa bera olmaysiz."
-
-#: backend/apps/tasks/services.py
-msgid "Tasks can only go to registered members of your company."
-msgstr "Vazifani faqat kompaniyangizning ro‘yxatdan o‘tgan xodimlariga berish mumkin."
-
-#: backend/apps/tasks/services.py
 msgid "Repeating tasks for others are set up as daily tasks."
-msgstr "Boshqalar uchun takrorlanuvchi vazifalar kundalik vazifa sifatida sozlanadi."
+msgstr ""
+"Boshqalar uchun takrorlanuvchi vazifalar kundalik vazifa sifatida sozlanadi."
 
 #: backend/apps/tasks/services.py
 msgid "Pick a time for a repeating task."
@@ -8453,6 +8828,11 @@ msgstr "Bu vazifani boshqa odamga bera olmaysiz."
 #, python-format
 msgid "%(name)s already has this task."
 msgstr "Bu vazifa allaqachon %(name)s zimmasida."
+
+#: backend/apps/tasks/services.py
+msgid "Tasks can only go to registered members of your company."
+msgstr ""
+"Vazifani faqat kompaniyangizning ro‘yxatdan o‘tgan xodimlariga berish mumkin."
 
 #: backend/apps/tasks/services.py
 #, python-format
@@ -8585,6 +8965,14 @@ msgstr "Bu vazifa tekshiruvni kutmayapti."
 msgid "%(name)s works in a branch you don't manage."
 msgstr "%(name)s siz boshqarmaydigan filialda ishlaydi."
 
+#: backend/apps/tasks/services.py
+msgid "You can't assign tasks to others."
+msgstr "Siz boshqalarga vazifa bera olmaysiz."
+
+#: backend/apps/tasks/services.py
+msgid "That list or milestone is on another board."
+msgstr "Bu ro‘yxat yoki bosqich boshqa doskada."
+
 #: backend/apps/tasks/services.py backend/apps/timeoff/services.py
 msgid "Finish registration first."
 msgstr "Avval ro‘yxatdan o‘tishni yakunlang."
@@ -8603,10 +8991,12 @@ msgid "Decided: %(count)d"
 msgstr "Qaror qabul qilindi: %(count)d"
 
 #: backend/apps/timeoff/ai_tools.py
-msgid "Time off and holidays in a period: who is off when, and requests still waiting"
+msgid ""
+"Time off and holidays in a period: who is off when, and requests still "
+"waiting"
 msgstr ""
-"Tanlangan davrdagi dam olishlar va bayramlar: kim qachon dam oladi va qaysi so‘rovlar hali qaror "
-"kutmoqda"
+"Tanlangan davrdagi dam olishlar va bayramlar: kim qachon dam oladi va qaysi "
+"so‘rovlar hali qaror kutmoqda"
 
 #: backend/apps/timeoff/audit_actions.py
 msgid "Recorded time off for someone"
@@ -8646,11 +9036,11 @@ msgstr "Sabab: %(reason)s"
 #: backend/apps/timeoff/bot_messages.py
 #, python-format
 msgid ""
-"🌴 Your time off is approved: %(dates)s. No tasks or reminders from me on those days. Have a good "
-"rest!"
+"🌴 Your time off is approved: %(dates)s. No tasks or reminders from me on "
+"those days. Have a good rest!"
 msgstr ""
-"🌴 Dam olish kunlaringiz tasdiqlandi: %(dates)s. Bu kunlarda sizga vazifa ham, eslatma ham "
-"yubormayman. Yaxshi dam oling!"
+"🌴 Dam olish kunlaringiz tasdiqlandi: %(dates)s. Bu kunlarda sizga vazifa "
+"ham, eslatma ham yubormayman. Yaxshi dam oling!"
 
 #: backend/apps/timeoff/bot_messages.py
 #, python-format
@@ -8677,13 +9067,18 @@ msgstr "Dam olish so‘rovingiz rad etildi"
 
 #: backend/apps/timeoff/bot_messages.py
 #, python-format
-msgid "%(dates)s. No tasks or reminders from me on those days. Have a good rest!"
-msgstr "%(dates)s. Bu kunlarda sizga vazifa ham, eslatma ham yubormayman. Yaxshi dam oling!"
+msgid ""
+"%(dates)s. No tasks or reminders from me on those days. Have a good rest!"
+msgstr ""
+"%(dates)s. Bu kunlarda sizga vazifa ham, eslatma ham yubormayman. Yaxshi dam "
+"oling!"
 
 #: backend/apps/timeoff/bot_messages.py
 #, python-format
 msgid "%(dates)s. Talk to your manager if you need these days."
-msgstr "%(dates)s. Bu kunlarda dam olishingiz zarur bo‘lsa, rahbaringiz bilan gaplashing."
+msgstr ""
+"%(dates)s. Bu kunlarda dam olishingiz zarur bo‘lsa, rahbaringiz bilan "
+"gaplashing."
 
 #: backend/apps/timeoff/bot_messages.py
 msgid "🌴 Time off recorded for you"
@@ -8892,13 +9287,15 @@ msgstr "Dam olishni ko‘pi bilan bir yil oldingacha qayd etish mumkin."
 #, python-format
 msgid "Payroll is already finalized up to %(date)s; pick days after it."
 msgstr ""
-"%(date)s kuni va undan oldingi kunlar uchun ish haqi allaqachon yakunlangan; keyingi kunlarni "
-"tanlang."
+"%(date)s kuni va undan oldingi kunlar uchun ish haqi allaqachon yakunlangan; "
+"keyingi kunlarni tanlang."
 
 #: backend/apps/timeoff/services.py
 #, python-format
 msgid "%(name)s already has time off on some of these days (%(dates)s)."
-msgstr "%(name)s uchun bu kunlarning bir qismiga dam olish allaqachon belgilangan (%(dates)s)."
+msgstr ""
+"%(name)s uchun bu kunlarning bir qismiga dam olish allaqachon belgilangan "
+"(%(dates)s)."
 
 #: backend/apps/timeoff/services.py
 msgid "Only approved time off can be revoked."
@@ -8953,6 +9350,14 @@ msgid "Thank a colleague"
 msgstr "Hamkasbga rahmat aytish"
 
 #: employee_bot/bot/commands.py
+msgid "Knowledge base: pages to read"
+msgstr "Bilimlar bazasi: o‘qish kerak bo‘lgan sahifalar"
+
+#: employee_bot/bot/commands.py
+msgid "Company calendar: the next 7 days"
+msgstr "Kompaniya taqvimi: keyingi 7 kun"
+
+#: employee_bot/bot/commands.py
 msgid "Send an announcement (managers)"
 msgstr "E’lon yuborish (rahbarlar uchun)"
 
@@ -8974,15 +9379,18 @@ msgstr "Kamida bitta filialni tanlang."
 
 #: employee_bot/bot/handlers/features/attendance.py
 #, python-format
-msgid "That location was forwarded. Tap «%(button)s» below to share where you are now."
+msgid ""
+"That location was forwarded. Tap «%(button)s» below to share where you are "
+"now."
 msgstr ""
-"Bu joylashuv boshqa xabardan uzatilgan. Hozir qayerda ekaningizni yuborish uchun pastdagi "
-"«%(button)s» tugmasini bosing."
+"Bu joylashuv boshqa xabardan uzatilgan. Hozir qayerda ekaningizni yuborish "
+"uchun pastdagi «%(button)s» tugmasini bosing."
 
 #: employee_bot/bot/handlers/features/attendance.py
 #, python-format
 msgid "Tap «%(button)s» below to share where you are."
-msgstr "Qayerda ekaningizni yuborish uchun pastdagi «%(button)s» tugmasini bosing."
+msgstr ""
+"Qayerda ekaningizni yuborish uchun pastdagi «%(button)s» tugmasini bosing."
 
 #: employee_bot/bot/handlers/features/attendance.py
 msgid "This shift isn't yours any more."
@@ -9004,7 +9412,8 @@ msgstr "Bu kompaniyada savdo yoqilmagan."
 msgid "This draft has expired. Send /announce to start again."
 msgstr "Bu qoralama eskirdi. Qaytadan boshlash uchun /announce yuboring."
 
-#: employee_bot/bot/handlers/member/announcements.py employee_bot/bot/handlers/member/tasks.py
+#: employee_bot/bot/handlers/member/announcements.py
+#: employee_bot/bot/handlers/member/tasks.py
 msgid "Okay, cancelled."
 msgstr "Mayli, bekor qilindi."
 
@@ -9102,11 +9511,11 @@ msgstr "/new: yana bir kompaniya yaratish"
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid ""
-"Here you create your company, confirm dashboard sign-ins and get approvals and alerts from your "
-"business."
+"Here you create your company, confirm dashboard sign-ins and get approvals "
+"and alerts from your business."
 msgstr ""
-"Bu yerda kompaniyangizni yaratasiz, boshqaruv paneliga kirishni tasdiqlaysiz hamda biznesingizdan "
-"tasdiqlash so‘rovlari va ogohlantirishlarni olasiz."
+"Bu yerda kompaniyangizni yaratasiz, boshqaruv paneliga kirishni tasdiqlaysiz "
+"hamda biznesingizdan tasdiqlash so‘rovlari va ogohlantirishlarni olasiz."
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Start with /new to create your company."
@@ -9114,7 +9523,9 @@ msgstr "Kompaniyangizni yaratish uchun /new dan boshlang."
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Your dashboard: every task, sale, payment and person in one place."
-msgstr "Boshqaruv panelingiz: barcha vazifalar, savdolar, to‘lovlar va xodimlar bir joyda."
+msgstr ""
+"Boshqaruv panelingiz: barcha vazifalar, savdolar, to‘lovlar va xodimlar bir "
+"joyda."
 
 #: owner_bot/ownerbot/bot_messages.py
 #, python-format
@@ -9138,8 +9549,12 @@ msgid "Send the signup code you were given (like K7M2-QX9P)."
 msgstr "Sizga berilgan ro‘yxatdan o‘tish kodini yuboring (masalan, K7M2-QX9P)."
 
 #: owner_bot/ownerbot/bot_messages.py
-msgid "This signup code isn't valid. Check it and send it again, or ask for a new one."
-msgstr "Bu ro‘yxatdan o‘tish kodi yaroqsiz. Tekshirib, qayta yuboring yoki yangisini so‘rang."
+msgid ""
+"This signup code isn't valid. Check it and send it again, or ask for a new "
+"one."
+msgstr ""
+"Bu ro‘yxatdan o‘tish kodi yaroqsiz. Tekshirib, qayta yuboring yoki yangisini "
+"so‘rang."
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "What is your company called? Send its name, as staff know it."
@@ -9163,12 +9578,16 @@ msgstr "⌨️ Boshqasini yozish"
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Send the timezone or city, like Asia/Samarkand or Bishkek."
-msgstr "Vaqt mintaqasi yoki shahar nomini yuboring, masalan, Asia/Samarkand yoki Bishkek."
+msgstr ""
+"Vaqt mintaqasi yoki shahar nomini yuboring, masalan, Asia/Samarkand yoki "
+"Bishkek."
 
 #: owner_bot/ownerbot/bot_messages.py
-msgid "I don't know that timezone. Try a city name, like Almaty or Asia/Bishkek."
+msgid ""
+"I don't know that timezone. Try a city name, like Almaty or Asia/Bishkek."
 msgstr ""
-"Bunday vaqt mintaqasini bilmayman. Shahar nomini yozib ko‘ring, masalan, Almaty yoki Asia/Bishkek."
+"Bunday vaqt mintaqasini bilmayman. Shahar nomini yozib ko‘ring, masalan, "
+"Almaty yoki Asia/Bishkek."
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Create this company?"
@@ -9191,7 +9610,9 @@ msgstr "Asosiy valyuta: %(currency)s"
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "You can change all of this later in the dashboard settings."
-msgstr "Bularning hammasini keyinroq boshqaruv paneli sozlamalarida o‘zgartirishingiz mumkin."
+msgstr ""
+"Bularning hammasini keyinroq boshqaruv paneli sozlamalarida "
+"o‘zgartirishingiz mumkin."
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "✅ Create"
@@ -9209,7 +9630,8 @@ msgstr "%(name)s tayyor."
 #: owner_bot/ownerbot/bot_messages.py
 msgid "You are its owner. Next: add your branches and invite your staff."
 msgstr ""
-"Siz uning egasisiz. Keyingi qadam: filiallaringizni qo‘shing va xodimlaringizni taklif qiling."
+"Siz uning egasisiz. Keyingi qadam: filiallaringizni qo‘shing va "
+"xodimlaringizni taklif qiling."
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "🚀 Open Get started"
@@ -9225,9 +9647,11 @@ msgid "Cancelled. Nothing was created."
 msgstr "Bekor qilindi. Hech narsa yaratilmadi."
 
 #: owner_bot/ownerbot/bot_messages.py
-msgid "You don't have a company with dashboard access yet. Create one with /new."
+msgid ""
+"You don't have a company with dashboard access yet. Create one with /new."
 msgstr ""
-"Sizda hali boshqaruv paneliga kirish huquqi bor kompaniya yo‘q. /new orqali kompaniya yarating."
+"Sizda hali boshqaruv paneliga kirish huquqi bor kompaniya yo‘q. /new orqali "
+"kompaniya yarating."
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Which company?"

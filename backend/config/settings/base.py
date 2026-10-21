@@ -252,6 +252,7 @@ SPECTACULAR_SETTINGS = {
             "TaskKindEnum": "apps.tasks.models.Task.Kind",
             "ActivityKindEnum": "apps.tasks.models.Activity.Kind",
             "WeekdayEnum": "apps.tasks.models.Weekday",
+            "RepeatEnum": "apps.tasks.models.Repeat",
         }
     ),
     "PREPROCESSING_HOOKS": ["apps.core.schema.split_by_audience"],
