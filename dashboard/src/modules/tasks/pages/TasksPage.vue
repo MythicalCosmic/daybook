@@ -15,7 +15,6 @@ import { useRoute, useRouter } from "vue-router";
 import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import FilterBar from "@/components/FilterBar.vue";
 import { useUrlFilters } from "@/components/filters";
-import KpiCard from "@/components/KpiCard.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import SavedViewsTabs from "@/components/SavedViewsTabs.vue";
@@ -144,7 +143,8 @@ const kpis = computed(() => {
       format: "percent" as const,
       points: true,
       deltaLabel: t("tasks.kpi.vsWeekBefore"),
-      spark: data?.series.map((point) => point.on_time_percent) ?? [],
+      // Today's rate counts only what was due so far: the line stops at yesterday.
+      spark: (data?.series ?? []).filter((point) => point.date !== data?.today).map((point) => point.on_time_percent),
     },
   ];
 });
@@ -191,10 +191,8 @@ const viewOptions = computed(() => [
       </template>
     </PageHeader>
 
-    <div v-if="isPhone" class="grid grid-cols-2 gap-2">
-      <KpiCard v-for="(item, index) in kpis" :key="index" v-bind="{ ...item, spark: undefined, hint: undefined }" :loading="summary.isPending.value" />
-    </div>
-    <KpiStrip v-else :items="kpis" :loading="summary.isPending.value" :columns="4" />
+    <!-- Phones: two tight numbers per row, so the list starts on the first screen (as on Routines). -->
+    <KpiStrip :items="kpis" :loading="summary.isPending.value" :columns="4" phone="compact" />
 
     <div class="flex min-w-0 flex-col gap-3">
       <SavedViewsTabs

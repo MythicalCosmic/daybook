@@ -4,6 +4,7 @@ facts, calendar dates, "copy setup" parts and the Excel/CSV exporter. Each provi
 caller's branch scope; personal tasks never count in numbers."""
 
 from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from django.db.models import Count, Q
 from django.utils import timezone
@@ -37,6 +38,8 @@ def task_url(task_id: int, view: str = "") -> str:
 
 
 def search(member: Membership, q: str, limit: int) -> list[SearchHit]:
+    """Tasks by title or description, newest first. The subtitle says who, by when and how it
+    stands: a routine gives the same title every day, and the date tells its days apart."""
     q = q.strip()
     if len(q) < 2:
         return []
@@ -46,12 +49,19 @@ def search(member: Membership, q: str, limit: int) -> list[SearchHit]:
         .exclude(status=Task.Status.CANCELLED)
         .order_by("-created_at")[:limit]
     )
+    tz = ZoneInfo(member.company.timezone)
+
+    def due(task: Task) -> str:
+        return timezone.localtime(task.due_at, tz).strftime("%d.%m.%Y") if task.due_at else ""
+
     return [
         SearchHit(
             type="tasks.task",
             id=task.pk,
             title=task.title,
-            subtitle=" · ".join(filter(None, [str(task.assignee), task.get_status_display()])),
+            subtitle=" · ".join(
+                filter(None, [str(task.assignee), due(task), task.get_status_display()])
+            ),
             url=task_url(task.pk),
         )
         for task in tasks

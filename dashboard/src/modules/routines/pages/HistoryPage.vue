@@ -89,12 +89,17 @@ function open(day: string, routineId?: number): void {
   void router.push({ name: "routines.today", query: { ...(day === today.value ? {} : { day }), ...(routineId ? { routine: String(routineId) } : {}) } });
 }
 
-// Narrow screens see the latest days first: the grid opens scrolled to its end.
+// Narrow screens see the latest days first: the grid opens scrolled to its end, when it appears
+// (after the skeleton) and when other days arrive.
 const scroller = ref<HTMLElement | null>(null);
-watch(data, async () => {
-  await nextTick();
-  if (scroller.value) scroller.value.scrollLeft = scroller.value.scrollWidth;
-});
+watch(
+  [scroller, data],
+  async () => {
+    await nextTick();
+    if (scroller.value) scroller.value.scrollLeft = scroller.value.scrollWidth;
+  },
+  { flush: "post" },
+);
 
 const percentText = (value: number | null) => (value === null ? "—" : fmt.percent(value, 0));
 const tone = (value: number | null) => (value === null ? "neutral" : value >= 90 ? "success" : value >= 70 ? "warning" : "danger");
@@ -186,15 +191,15 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
 
       <PageSection :title="t('routines.history.people')" :description="t('routines.history.peopleHint')" variant="card" flush>
         <div class="overflow-x-auto">
-          <table class="w-full min-w-[620px] text-sm">
+          <table class="w-full text-sm sm:min-w-[620px]">
             <thead class="bg-surface-2 text-left text-xs font-medium text-muted">
               <tr>
                 <th class="px-4 py-2.5 font-medium">{{ t("routines.detail.person") }}</th>
-                <th class="px-3 py-2.5 text-right font-medium">{{ t("routines.history.colMade") }}</th>
-                <th class="px-3 py-2.5 text-right font-medium">{{ t("routines.history.colDone") }}</th>
+                <th class="px-3 py-2.5 text-right font-medium max-sm:hidden">{{ t("routines.history.colMade") }}</th>
+                <th class="px-3 py-2.5 text-right font-medium max-sm:hidden">{{ t("routines.history.colDone") }}</th>
                 <th class="px-3 py-2.5 text-right font-medium">{{ t("routines.history.colOnTime") }}</th>
-                <th class="px-3 py-2.5 text-right font-medium">{{ t("routines.detail.missed") }}</th>
-                <th class="w-[240px] px-4 py-2.5 font-medium">{{ t("routines.history.colRate") }}</th>
+                <th class="px-3 py-2.5 text-right font-medium max-sm:hidden">{{ t("routines.detail.missed") }}</th>
+                <th class="px-4 py-2.5 font-medium max-sm:w-[132px] sm:w-[240px]">{{ t("routines.history.colRate") }}</th>
               </tr>
             </thead>
             <tbody>
@@ -208,10 +213,10 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
                     </span>
                   </span>
                 </td>
-                <td class="px-3 py-2.5 text-right tabular-nums">{{ row.made }}</td>
-                <td class="px-3 py-2.5 text-right tabular-nums">{{ row.finished }}</td>
+                <td class="px-3 py-2.5 text-right tabular-nums max-sm:hidden">{{ row.made }}</td>
+                <td class="px-3 py-2.5 text-right tabular-nums max-sm:hidden">{{ row.finished }}</td>
                 <td class="px-3 py-2.5 text-right tabular-nums text-success">{{ percentText(row.on_time_percent) }}</td>
-                <td :class="['px-3 py-2.5 text-right tabular-nums', row.missed ? 'text-danger' : 'text-muted']">{{ row.missed }}</td>
+                <td :class="['px-3 py-2.5 text-right tabular-nums max-sm:hidden', row.missed ? 'text-danger' : 'text-muted']">{{ row.missed }}</td>
                 <td class="px-4 py-2.5">
                   <span class="flex items-center gap-2">
                     <ProgressBar class="flex-1" :value="row.percent ?? 0" :tone="tone(row.percent)" />

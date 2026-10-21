@@ -2,8 +2,9 @@
 branch and company facts, the brief section, the calendar source, the exporter, History and
 the employee endpoints for search and the week calendar; plus the bot touchpoints."""
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
+from zoneinfo import ZoneInfo
 
 import pytest
 from django.utils import timezone
@@ -111,6 +112,28 @@ def test_company_facts_and_the_brief_section(shop):
     assert brief["late"] == 1 and brief["late_tasks"][0]["assignee"]["id"] == shop.worker.pk
     quiet = feeds.brief(shop.company, timezone.localtime(now).date(), now, [shop.there.pk])
     assert quiet is None
+
+
+def test_search_tells_a_routines_days_apart(shop):
+    """A routine gives the same title every day: each hit says its day."""
+    routine = TaskTemplateFactory(
+        company=shop.company, assignees=[shop.worker], created_by=shop.owner
+    )
+    tz = ZoneInfo(shop.company.timezone)
+    days = [datetime(2026, 10, 20, 9, 0, tzinfo=tz), datetime(2026, 10, 21, 9, 0, tzinfo=tz)]
+    for due_at in days:
+        shared(
+            shop,
+            shop.worker,
+            title="Muzlatgich haroratini yozish",
+            kind=Task.Kind.DAILY,
+            template=routine,
+            for_date=due_at.date(),
+            due_at=due_at,
+        )
+    subtitles = {hit.subtitle for hit in feeds.search(shop.owner, "muzlatgich", 10)}
+    assert len(subtitles) == 2
+    assert any("20.10.2026" in s for s in subtitles) and any("21.10.2026" in s for s in subtitles)
 
 
 def test_routine_work_waits_for_its_check_on_the_routines_page(shop, owner_api):
