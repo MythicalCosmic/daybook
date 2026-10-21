@@ -44,7 +44,7 @@ export const messages = defineMessages({
     "empty.body": "Руководители ещё не опубликовали для вас страниц.",
     "space.empty": "В этом разделе пока нет страниц.",
     mustRead: "Обязательно",
-    "read.button": "Прочитал(а)",
+    "read.button": "Прочитано",
     "read.done": "Спасибо! Отмечено как прочитанное.",
     "read.confirmed": "Вы прочитали версию {version}.",
     "read.ask": "Прочитайте до конца и подтвердите.",

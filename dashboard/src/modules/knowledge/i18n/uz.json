@@ -250,7 +250,7 @@
   "knowledge.space.inside": "{title} ichida",
   "knowledge.cmd.archive": "Bilimlar bazasi arxivi",
   "knowledge.archive.title": "Arxiv",
-  "knowledge.archive.description": "Arxivlangan bo‘lim va sahifalar. Qayta tiklasangiz, o‘quvchilar yana ko‘radi.",
+  "knowledge.archive.description": "Tiklangan bo‘lim va sahifalarni o‘quvchilar yana ko‘radi.",
   "knowledge.archive.spaces": "Bo‘limlar",
   "knowledge.archive.pages": "Sahifalar",
   "knowledge.archive.restore": "Tiklash",
