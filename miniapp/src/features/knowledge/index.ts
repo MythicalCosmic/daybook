@@ -9,7 +9,6 @@ import { lazy } from "react";
 
 import { defineFeature, type SlotProps } from "../registry";
 import { useKbHome } from "./api";
-import { HowTo } from "./HowTo";
 import { messages } from "./messages";
 import { ToReadCard } from "./ToReadCard";
 
@@ -28,8 +27,9 @@ export default defineFeature({
     page: lazy(() => import("./PageReader").then((m) => ({ default: m.PageReader }))),
   },
   homeCards: [{ id: "toRead", component: ToReadCard, order: 40 }],
-  // First on the task screen: read how, then do it (the projects timer follows at 20).
-  taskActions: [{ id: "howTo", component: HowTo, order: 10 }],
+  // First on the task screen: read how, then do it (the projects timer follows at 20). Lazy:
+  // only the task screen needs it.
+  taskActions: [{ id: "howTo", component: lazy(() => import("./HowTo").then((m) => ({ default: m.HowTo }))), order: 10 }],
   meItems: [{ id: "kb", group: "documents", label: "me.kb", icon: BookOpen, open: { page: "home" }, useStatus: useToReadCount }],
   // ?screen=knowledge or knowledge.page:12 (inbox notifications), startapp=kb-12.
   routes: { knowledge: { page: "home", tab: "profile" }, kb: { page: "page", tab: "profile" } },

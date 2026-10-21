@@ -2,7 +2,7 @@
  * Projects in the mini app (PLAN-OWNER §13.3, package T): my projects, a phone-shaped board where
  * I drag my own cards between lists, the updates feed, a timer (on the task screen through
  * `task.actions`, in the card sheet, and on Home while it runs) and a "Log time" sheet (also in
- * the (+) sheet). Me → Projects; Home shows my projects and the running timer.
+ * the (+) sheet). Me → Projects; Home shows the running timer, and my projects at its end.
  * Deep links: `?screen=project:12`, `projects.board:12`, `projects.updates:12`.
  */
 import { Clock3, FolderKanban } from "lucide-react";
@@ -13,7 +13,6 @@ import { defineFeature } from "../registry";
 import { useMyProjects } from "./api";
 import { ProjectsCard, TimerCard } from "./HomeCards";
 import { messages } from "./messages";
-import { TaskTimer } from "./Timer";
 
 export default defineFeature({
   id: "projects",
@@ -29,12 +28,12 @@ export default defineFeature({
     log: lazy(() => import("./LogTimeSheet")),
     update: lazy(() => import("./UpdateSheet")),
   },
-  homeCards: [
-    { id: "timer", component: TimerCard, order: 10 },
-    { id: "projects", component: ProjectsCard, order: 60 },
-  ],
-  // After "How to do this" (knowledge, 10): read how, then time the work.
-  taskActions: [{ id: "timer", component: TaskTimer, order: 20 }],
+  homeCards: [{ id: "timer", component: TimerCard, order: 10 }],
+  // An overview, not today's work: after Home's "Up next" rather than above it.
+  homeEnd: [{ id: "projects", component: ProjectsCard, order: 60 }],
+  // After "How to do this" (knowledge, 10): read how, then time the work. Lazy: only the task
+  // screen needs it.
+  taskActions: [{ id: "timer", component: lazy(() => import("./TaskTimer")), order: 20 }],
   meItems: [
     {
       id: "projects",

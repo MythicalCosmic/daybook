@@ -19,7 +19,7 @@ import type { Board, Card, Project, Timer } from "./api";
 import { ProjectsCard, TimerCard } from "./HomeCards";
 import { elapsed, endOf, hhmm, positionBetween } from "./lib";
 import { messages } from "./messages";
-import { TaskTimer } from "./Timer";
+import TaskTimer from "./TaskTimer";
 
 const server = vi.hoisted(() => ({
   calls: [] as { path: string; method: string; json: unknown }[],
@@ -192,7 +192,8 @@ describe("the feature", () => {
     expect(problems).toEqual([]);
     const registered = features as Feature[];
     expect(registered[0]!.meItems?.map((item) => [item.group, item.label])).toEqual([["work", "me.projects"]]);
-    expect(registered[0]!.homeCards?.map((slot) => slot.id)).toEqual(["timer", "projects"]);
+    expect(registered[0]!.homeCards?.map((slot) => slot.id)).toEqual(["timer"]);
+    expect(registered[0]!.homeEnd?.map((slot) => slot.id)).toEqual(["projects"]);
     expect(registered[0]!.taskActions?.map((slot) => [slot.id, slot.order])).toEqual([["timer", 20]]);
     expect(registered[0]!.plusActions?.map((action) => action.open)).toEqual([{ sheet: "log" }]);
     expect(routeTarget(registered, "project", "5")).toEqual({ tab: "home", stack: [{ feature: "projects", page: "board", params: { id: 5 } }] });

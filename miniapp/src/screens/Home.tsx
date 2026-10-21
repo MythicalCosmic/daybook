@@ -136,6 +136,9 @@ export function Home() {
           ))}
         </>
       )}
+
+      {/* Overviews from feature folders (my projects): after the day's own work. */}
+      <FeatureSlot name="home.end" />
     </div>
   );
 }

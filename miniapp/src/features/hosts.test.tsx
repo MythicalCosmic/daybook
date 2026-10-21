@@ -48,6 +48,7 @@ const wallet: Feature = defineFeature({
   messages: { en: { me: "Pay" }, ru: { me: "Зарплата" }, uz: { me: "Maosh" } },
   pages: { home: Page },
   homeCards: [{ id: "earned", component: ({ summary }: SlotProps) => <div data-testid="card">{`Done today: ${summary?.today_done}`}</div> }],
+  homeEnd: [{ id: "history", component: () => <div data-testid="end">Pay history</div> }],
   taskActions: [{ id: "bonus", component: ({ task }: TaskSlotProps) => <div data-testid="task-block">{`Bonus for ${task.title}`}</div> }],
   meItems: [{ id: "pay", group: "money", label: "me", icon: HandCoins, open: { page: "home" }, useStatus: () => ({ badge: 1 }) }],
 });
@@ -169,6 +170,9 @@ describe("feature hosts in the real screens", () => {
       node.getAttribute("data-testid") ?? node.className,
     );
     expect(order.slice(0, 4)).toEqual(["page-head", "hero", "card", "section-head"]);
+    // Overviews come last, after the day's tasks ("Up next").
+    expect(order.at(-1)).toBe("end");
+    expect(order.indexOf("end")).toBeGreaterThan(order.indexOf("section-head"));
   });
 
   it("group feature rows on Me and let features take over time off and team results", () => {

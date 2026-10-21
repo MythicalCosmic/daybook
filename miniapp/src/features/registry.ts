@@ -16,7 +16,8 @@
  *     routes: { payslip: { page: "payslip", tab: "profile" } },   // ?screen=payslip:12
  *   });
  *
- * Home renders `homeHero` and `homeCards`, Profile ("Me") renders `meItems` grouped by `group`,
+ * Home renders `homeHero`, `homeCards` (after its banners: things to act on today) and `homeEnd`
+ * (after the day's tasks and news: overviews), Profile ("Me") renders `meItems` grouped by `group`,
  * the (+) sheet renders `plusActions` and the task screen renders `taskActions` (after the
  * checklist; each block gets the task and renders nothing for a task it has nothing for).
  * `replaces` names a built-in entry the feature takes over ("timeOff" for the leave feature,
@@ -52,7 +53,11 @@ export type BuiltIn = (typeof BUILT_INS)[number];
 export const ME_GROUPS = ["money", "work", "documents", "team"] as const;
 export type MeGroup = (typeof ME_GROUPS)[number];
 
-export type SlotName = "home.hero" | "home.cards";
+/**
+ * Home's slots: `home.hero` under the greeting, `home.cards` after the banners (things to act on
+ * today), `home.end` after the day's tasks and news (overviews such as my projects).
+ */
+export type SlotName = "home.hero" | "home.cards" | "home.end";
 
 export type Slot<Props = SlotProps> = {
   /** Unique within the feature. */
@@ -161,6 +166,8 @@ export type Feature = {
   sheets?: Partial<Record<string, ComponentType<SheetProps>>>;
   homeHero?: readonly Slot[];
   homeCards?: readonly Slot[];
+  /** At the end of Home, after the day's tasks: overviews that aren't for acting on today. */
+  homeEnd?: readonly Slot[];
   /** Blocks on the task screen, given the task (the `task.actions` slot). */
   taskActions?: readonly TaskSlot[];
   meItems?: readonly MeItem<string, string, string>[];
@@ -303,7 +310,8 @@ function place<T extends { id: string; order?: number; visible?: Visible }>(
 }
 
 export function homeSlots(list: readonly Feature[], name: SlotName, context: FeatureContext): Placed<Slot>[] {
-  return place(list, context, (feature) => (name === "home.hero" ? feature.homeHero : feature.homeCards));
+  const pick = { "home.hero": "homeHero", "home.cards": "homeCards", "home.end": "homeEnd" } as const;
+  return place(list, context, (feature) => feature[pick[name]]);
 }
 
 /** The task screen's feature blocks (`task.actions`), in order. */

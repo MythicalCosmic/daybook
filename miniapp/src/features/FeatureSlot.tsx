@@ -22,10 +22,11 @@ import {
   type MeItemStatus,
   type Placed,
   type PlusAction,
+  type SlotName,
 } from "./registry";
 
 type Props =
-  | { name: "home.hero" | "home.cards" }
+  | { name: SlotName }
   /** `builtIns`: the app's own rows for a group (Team results); feature rows follow them. */
   | { name: "me.items"; builtIns?: Partial<Record<MeGroup, ReactNode>> }
   | { name: "plus.actions" }
@@ -46,7 +47,7 @@ const NO_ITEMS = Object.fromEntries(ME_GROUPS.map((group) => [group, []])) as un
 
 /**
  * Where feature folders appear: `home.hero` (top of Home), `home.cards` (after Home's banners),
- * `me.items` (grouped rows on Me), `plus.actions` (quick actions in the + sheet) and
+ * `home.end` (after the day's tasks and news), `me.items` (grouped rows on Me), `plus.actions` (quick actions in the + sheet) and
  * `task.actions` (blocks on the task screen). With no feature folders it renders only the
  * built-in rows it was given, exactly as before.
  */
@@ -61,6 +62,7 @@ function FeatureSlotHost(props: Props) {
   switch (props.name) {
     case "home.hero":
     case "home.cards":
+    case "home.end":
       return (
         <>
           {homeSlots(features, props.name, context).map(({ feature, item }) => (

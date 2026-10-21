@@ -611,7 +611,8 @@ textarea.input {
   align-items: center;
   gap: 16px;
   min-height: 52px;
-  padding: 0;
+  /* One line is centred by the min height; a title that wraps gets air above and below. */
+  padding: 8px 0;
   background: transparent;
   border: 0;
   border-bottom: 1px solid var(--hairline);

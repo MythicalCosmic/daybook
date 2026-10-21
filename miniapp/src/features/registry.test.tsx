@@ -67,6 +67,7 @@ const alpha: Feature = defineFeature({
   sheets: { advance: SheetBody },
   homeHero: [{ id: "hero", component: Hero }],
   homeCards: [{ id: "late-card", component: Card("alpha card"), order: 50 }],
+  homeEnd: [{ id: "overview", component: Card("alpha overview") }],
   taskActions: [{ id: "timer", component: TaskBlock("Timer"), order: 30 }],
   meItems: [
     {
@@ -173,6 +174,7 @@ describe("registry helpers", () => {
       "alpha.late-card",
     ]);
     expect(homeSlots(all, "home.hero", context).map(({ item }) => item.id)).toEqual(["hero"]);
+    expect(homeSlots(all, "home.end", context).map(({ feature, item }) => `${feature.id}.${item.id}`)).toEqual(["alpha.overview"]);
   });
 
   it("orders the task screen's blocks the same way, for the features this person sees", () => {

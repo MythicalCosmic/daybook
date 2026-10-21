@@ -13,7 +13,7 @@ import type { SheetProps } from "../registry";
 import { useBoard, useMoveCard, useTimer, type Board } from "./api";
 import { elapsed, endOf, hhmm } from "./lib";
 import { messages } from "./messages";
-import { useCardTimer } from "./Timer";
+import { useCardTimer } from "./useCardTimer";
 import "./projects.css";
 
 /**

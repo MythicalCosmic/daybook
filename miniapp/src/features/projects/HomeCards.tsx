@@ -3,13 +3,13 @@ import { Square, Timer } from "lucide-react";
 import { useFeatureT } from "../../i18n/feature";
 import { useNow } from "../../lib/useNow";
 import { useNavigation } from "../../state/navigation";
-import { Button, Card, CardTitle } from "../../ui";
+import { Button, Card, SectionHead } from "../../ui";
 import type { SlotProps } from "../registry";
 import { useMyProjects, useTimer } from "./api";
 import { elapsed } from "./lib";
 import { messages } from "./messages";
 import { ProjectRow } from "./ProjectRow";
-import { useCardTimer } from "./Timer";
+import { useCardTimer } from "./useCardTimer";
 import "./projects.css";
 
 /** Home: the running timer, with Stop. Nothing when no timer runs. */
@@ -41,7 +41,7 @@ export function TimerCard({ member }: SlotProps) {
   );
 }
 
-/** Home: my live projects (up to two), when I'm on any. */
+/** The end of Home: my live projects (up to two), when I'm on any, headed like Home's sections. */
 export function ProjectsCard({ member }: SlotProps) {
   const t = useFeatureT(messages);
   const navigation = useNavigation();
@@ -50,15 +50,7 @@ export function ProjectsCard({ member }: SlotProps) {
   if (live.length === 0) return null;
   return (
     <>
-      <CardTitle
-        action={
-          <button type="button" className="btn btn-ghost section-head-action" onClick={() => navigation.push({ feature: "projects", page: "list" })}>
-            {t("homeAll")}
-          </button>
-        }
-      >
-        {t("home")}
-      </CardTitle>
+      <SectionHead action={{ label: t("homeAll"), onClick: () => navigation.push({ feature: "projects", page: "list" }) }}>{t("home")}</SectionHead>
       {live.slice(0, 2).map((project) => (
         <ProjectRow key={project.id} project={project} compact onOpen={() => navigation.push({ feature: "projects", page: "board", params: { id: project.id } })} />
       ))}
