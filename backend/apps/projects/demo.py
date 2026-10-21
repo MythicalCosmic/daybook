@@ -90,7 +90,7 @@ OPENING_CARDS = [
         4,
         {"checklist": [("Gulnoza", True), ("Sardor", True), ("Shahzoda", False)]},
     ),
-    ("Mount the storefront sign", "nigora", DOING, ["Marketing", "Urgent"], -1, {}),
+    ("Mount the storefront sign", "madina", DOING, ["Marketing", "Urgent"], -1, {}),
     ("Final electrical check", "worker", DOING, ["Construction"], 2, {}),
     ("First stock delivery from the warehouse", "jasur", TODO, [], 4, {}),
     ("Launch the Instagram countdown", "nigora", TODO, ["Marketing"], 3, {}),
