@@ -12,6 +12,7 @@ import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import KbdKey from "@/components/KbdKey.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import PersonCell from "@/components/PersonCell.vue";
 import TextInput from "@/components/TextInput.vue";
 import UiBadge from "@/components/UiBadge.vue";
 import UiButton from "@/components/UiButton.vue";
@@ -228,6 +229,22 @@ describe("UiDialog", () => {
     expect(body.className).toMatch(/\bmin-h-0\b.*\boverflow-y-auto\b/);
     expect(content.querySelector("footer")!.className).toContain("shrink-0");
     wrapper.unmount();
+  });
+});
+
+describe("PersonCell", () => {
+  it("lets a tap on a plain name reach the row (phone cards), while a linked name opens the person", async () => {
+    const rowClick = vi.fn();
+    const Row = (link: boolean) =>
+      defineComponent({ setup: () => () => h("li", { onClick: rowClick }, [h(PersonCell, { person: { id: 7, name: "Alisher Valiyev" }, link })]) });
+    const plain = mount(Row(false), { global: { plugins: plugins() } });
+    await plain.find("span.font-medium").trigger("click");
+    expect(rowClick).toHaveBeenCalledTimes(1);
+    const linked = mount(Row(true), { global: { plugins: plugins() } });
+    const anchor = linked.find("a");
+    expect(anchor.attributes("href")).toBe("/c/1/people/7");
+    await anchor.trigger("click");
+    expect(rowClick).toHaveBeenCalledTimes(1);
   });
 });
 
