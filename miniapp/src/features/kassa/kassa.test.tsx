@@ -20,6 +20,10 @@ import { KassaHero } from "./KassaHero";
 import KassaPage from "./KassaPage";
 import { ReceivedCards } from "./Received";
 import { PayoutSheet } from "./sheets";
+import { features, findFeature } from "../registry";
+
+// Through the registry, as the app loads it (the folder's index imports the registry).
+const kassaFeature = findFeature(features, "kassa")!;
 
 const client = vi.hoisted(() => ({ api: vi.fn(), apiForm: vi.fn() }));
 vi.mock("../../api/client", async (importOriginal) => {
@@ -115,12 +119,12 @@ function serve(gets: Record<string, unknown>, post: (path: string, options: { me
   });
 }
 
-function wrap(children: ReactNode) {
+function wrap(children: ReactNode, person: Me = me) {
   const queries = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity }, mutations: { retry: false } } });
   return render(
     <QueryClientProvider client={queries}>
       <I18nProvider lang="en">
-        <SessionProvider me={me}>
+        <SessionProvider me={person}>
           <NavigationProvider>
             <ToastProvider>
               <div className="app">{children}</div>
@@ -313,6 +317,54 @@ describe("handovers", () => {
     await waitFor(() =>
       expect(client.api).toHaveBeenCalledWith("/companies/1/sales/handovers/9/confirm/", { method: "POST", json: { reason: "" } }),
     );
+  });
+});
+
+describe("without till access", () => {
+  const worker = { ...membership, permissions: [] } as unknown as Membership;
+  const workerMe = { ...me, memberships: [worker] } as Me;
+  const handover = {
+    id: 9,
+    amount: "1300000.00",
+    currency: "UZS",
+    from: { id: 4, name: "Madina Saidova" },
+    branch,
+    register: { id: 1, name: "Kassa 1" },
+    reason: "",
+    created_at: new Date(Date.now() - 30 * 60_000).toISOString(),
+  };
+
+  it("says so on the Kassa page without asking for the till, and keeps cash handed to me", async () => {
+    serve({ "/sales/handovers/pending/": { results: [handover] } });
+    const Page = kassaFeature.pages!.home!;
+    wrap(<Page params={{}} />, workerMe);
+    expect(await screen.findByText("The till isn’t open to you")).toBeTruthy();
+    expect(await screen.findByText("Did you get 1,300,000 UZS?")).toBeTruthy();
+    expect(client.api.mock.calls.map(([path]) => path)).toEqual(["/companies/1/sales/handovers/pending/"]);
+  });
+
+  it("never loads a shift, the history or a till sheet", async () => {
+    serve({});
+    const ShiftView = kassaFeature.pages!.shift!;
+    const History = kassaFeature.pages!.history!;
+    const Payout = kassaFeature.sheets!.payout!;
+    wrap(
+      <>
+        <ShiftView params={{ id: 5 }} />
+        <History params={{}} />
+        <Payout params={{}} close={() => undefined} />
+      </>,
+      workerMe,
+    );
+    expect(await screen.findAllByText("The till isn’t open to you")).toHaveLength(3);
+    expect(client.api).not.toHaveBeenCalled();
+  });
+
+  it("still opens for a cashier", async () => {
+    serve({ "/sales/shifts/current/": kassa(), "/sales/handovers/pending/": { results: [] } });
+    const Page = kassaFeature.pages!.home!;
+    wrap(<Page params={{}} />);
+    expect(await screen.findByRole("heading", { name: "Open a shift" })).toBeTruthy();
   });
 });
 

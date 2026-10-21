@@ -1133,6 +1133,8 @@
 .banner--lg {
   padding: 14px 16px;
   gap: 14px;
+  /* Between a row (16 px) and a card (32 px): Home's banners sit among both. */
+  border-radius: 22px;
 }
 
 .banner-circle {
@@ -1147,8 +1149,14 @@
   color: var(--color-bg);
 }
 
-.banner--sage .banner-circle {
+.banner--sage .banner-circle,
+.banner-circle--sage {
   background: var(--color-accent-2);
+  color: var(--color-bg);
+}
+
+.banner-circle--accent {
+  background: var(--color-accent);
   color: var(--color-bg);
 }
 
@@ -1515,6 +1523,11 @@
 }
 
 /* — feature hosts — */
+
+.ui-plus-block {
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--hairline);
+}
 
 .ui-plus-actions {
   display: grid;

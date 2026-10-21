@@ -92,21 +92,6 @@ export function Profile() {
         </div>
       </div>
 
-      {numbers?.quiet_from && numbers.quiet_until && (
-        <>
-          <div className="section-head section-head--small">{t("profile.work")}</div>
-          <div className="card list-card">
-            <div className="list-item">
-              <span>{t("profile.quietHours")}</span>
-              <span className="list-item-value">
-                {numbers.quiet_from.slice(0, 5)}–{numbers.quiet_until.slice(0, 5)}
-              </span>
-            </div>
-          </div>
-          <div className="muted" style={{ fontSize: 14, padding: "0 4px" }}>{t("profile.quietNote")}</div>
-        </>
-      )}
-
       {!replaced.has("timeOff") && (
         <>
           <div className="section-head section-head--small">{t("timeOff.section")}</div>
@@ -195,6 +180,18 @@ export function Profile() {
             <ChevronRight size={18} strokeWidth={2.5} />
           </span>
         </button>
+        {/* Quiet hours sit with the settings: a "My work" group above the features' "Work" read as two. */}
+        {numbers?.quiet_from && numbers.quiet_until && (
+          <div className="list-item">
+            <span className="profile-setting">
+              <span>{t("profile.quietHours")}</span>
+              <span className="profile-setting-note">{t("profile.quietNote")}</span>
+            </span>
+            <span className="list-item-value num">
+              {numbers.quiet_from.slice(0, 5)}–{numbers.quiet_until.slice(0, 5)}
+            </span>
+          </div>
+        )}
         <div className="list-item" style={{ minHeight: 58 }}>
           <span>{t("profile.theme")}</span>
           <div className="seg seg--small">

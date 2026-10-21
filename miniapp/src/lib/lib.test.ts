@@ -109,6 +109,13 @@ describe("task view", () => {
     expect(rowRight(task(), ctx())).toBe("");
   });
 
+  it("dates a chip more than a week away instead of naming a weekday that could be either", () => {
+    expect(rowRight(task({ due_at: "2026-10-18T09:00:00Z" }), ctx())).toBe("Yesterday");
+    expect(rowRight(task({ due_at: "2026-10-15T09:00:00Z" }), ctx())).toBe("Thu");
+    expect(rowRight(task({ due_at: "2026-10-05T09:00:00Z" }), ctx())).toBe("5 Oct");
+    expect(rowRight(task({ due_at: "2026-10-05T09:00:00Z" }), ctx("ru"))).toBe("5 окт.");
+  });
+
   it("names repeats in the person's language", () => {
     expect(repeatLabel([0, 1, 2, 3, 4, 5, 6], ctx())).toBe("Every day");
     expect(repeatLabel([0], ctx())).toBe("Every Monday");

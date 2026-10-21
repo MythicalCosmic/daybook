@@ -7,7 +7,7 @@ import { addDays, dayKey, dayMonth, weekdayShort } from "../../lib/time";
 import { useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
 import { haptic } from "../../telegram";
-import { Badge, Card, EmptyState, ListRow, PageHeader, Screen, ScreenSkeleton, SectionHead, cx } from "../../ui";
+import { Badge, Card, EmptyState, ListRow, LoadError, PageHeader, Screen, ScreenSkeleton, SectionHead, cx } from "../../ui";
 import { eventIdOf, useCalendar, type CalendarEntry } from "./api";
 import "./agenda.css";
 import { byDay, colorClass, dayName, mondayOf, timeLabel, weekDays } from "./lib";
@@ -69,7 +69,8 @@ export function CalendarHome() {
   };
 
   const dayItems = weekByDay.get(selected) ?? [];
-  const nextDays = upcomingDays.filter((day) => (nextByDay.get(day) ?? []).length > 0);
+  // The selected day is listed above, so "Coming up" doesn't repeat it.
+  const nextDays = upcomingDays.filter((day) => day !== selected && (nextByDay.get(day) ?? []).length > 0);
 
   return (
     <Screen variant="detail">
@@ -116,7 +117,11 @@ export function CalendarHome() {
         {dayName(selected, today, member.timeZone, locale, words)} · {dayMonth(`${selected}T12:00:00Z`, member.timeZone, locale)}
       </SectionHead>
       {!week.data ? (
-        <ScreenSkeleton variant="list" delay={150} rows={2} />
+        week.isError ? (
+          <LoadError compact error={week.error} onRetry={() => void week.refetch()} />
+        ) : (
+          <ScreenSkeleton variant="list" delay={150} rows={2} />
+        )
       ) : dayItems.length === 0 ? (
         <p className="agm-hint">{t("day.empty")}</p>
       ) : (
@@ -125,7 +130,9 @@ export function CalendarHome() {
 
       <SectionHead>{t("upcoming")}</SectionHead>
       {!upcoming.data ? (
-        <ScreenSkeleton variant="list" delay={150} rows={3} />
+        upcoming.isError ? null : (
+          <ScreenSkeleton variant="list" delay={150} rows={3} />
+        )
       ) : nextDays.length === 0 ? (
         <EmptyState compact tone="sage" icon={CalendarCheck2} title={t("upcoming.empty")} />
       ) : (

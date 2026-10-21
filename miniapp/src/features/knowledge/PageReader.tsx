@@ -9,7 +9,7 @@ import { useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
 import { useToast } from "../../state/toast";
 import { haptic } from "../../telegram";
-import { Badge, Banner, BottomBar, ListCard, ListRow, PageHeader, Screen, ScreenSkeleton, SectionHead } from "../../ui";
+import { Badge, Banner, BottomBar, ListCard, ListRow, LoadError, PageHeader, Screen, ScreenSkeleton, SectionHead } from "../../ui";
 import { useAcknowledge, useKbPage } from "./api";
 import "./knowledge.css";
 import { messages } from "./messages";
@@ -30,7 +30,11 @@ export function PageReader({ params }: PageProps) {
   if (!page.data) {
     return (
       <Screen variant="detail">
-        <ScreenSkeleton variant="detail" delay={150} />
+        {page.isError ? (
+          <LoadError error={page.error} onRetry={() => void page.refetch()} onBack={navigation.pop} />
+        ) : (
+          <ScreenSkeleton variant="detail" delay={150} />
+        )}
       </Screen>
     );
   }

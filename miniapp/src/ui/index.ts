@@ -12,7 +12,7 @@ export { Card, CardButton, CardTitle, type CardTone } from "./Card";
 export { Chip, ChipGroup, type ChipOption } from "./Chip";
 export { cx } from "./cx";
 export { DenominationCounter, UZS_NOTES, countedNotes, countedTotal, type NoteCounts } from "./DenominationCounter";
-export { EmptyState } from "./EmptyState";
+export { EmptyState, LoadError } from "./EmptyState";
 export { Field, Input, Select, Textarea, useFieldControl } from "./Field";
 export type { IconLike } from "./icon";
 export { Banner, PageHeader, Screen, SectionHead, type BannerTone } from "./Layout";

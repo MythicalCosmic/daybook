@@ -2,7 +2,7 @@
 
 import type { Task } from "../api/types";
 import type { Translate } from "../i18n";
-import { clock, daysFromToday, weekdayLong, weekdayShort } from "./time";
+import { clock, dayMonth, daysFromToday, weekdayLong, weekdayShort } from "./time";
 
 export type Glyph = "todo" | "late" | "progress" | "review" | "done";
 
@@ -82,13 +82,18 @@ export function rowMeta(task: Task, ctx: ViewContext): string {
   return repeat ?? t("meta.own");
 }
 
-/** The time chip on the right of a row: today's time, or the day it's due. */
+/**
+ * The time chip on the right of a row: today's time, "Tomorrow" or "Yesterday", the weekday
+ * within a week either way, and the date further out (a weekday alone would be ambiguous).
+ */
 export function rowRight(task: Task, ctx: ViewContext): string {
   if (!task.due_at) return "";
   const days = daysFromToday(task.due_at, ctx.now, ctx.timeZone);
   if (days === 0) return clock(task.due_at, ctx.timeZone, ctx.locale);
   if (days === 1) return ctx.t("day.tomorrow");
-  return weekdayShort(task.due_at, ctx.timeZone, ctx.locale);
+  if (days === -1) return ctx.t("day.yesterday");
+  if (Math.abs(days) < 7) return weekdayShort(task.due_at, ctx.timeZone, ctx.locale);
+  return dayMonth(task.due_at, ctx.timeZone, ctx.locale);
 }
 
 export function isDueToday(task: Task, ctx: ViewContext): boolean {

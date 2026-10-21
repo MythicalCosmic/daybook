@@ -119,9 +119,17 @@ function membership(features: string[] = ["attendance"], status = "approved"): M
   } as unknown as Membership;
 }
 
-function renderCard(node: ReactNode = <CheckInCard />, lang: Lang = "en") {
+function renderCard(node: ReactNode = <CheckInCard />, lang: Lang = "en", permissions: string[] = []) {
   const queries = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const me = { id: 1, telegram_id: 4242, telegram_username: "", first_name: "Alisher", last_name: "Valiyev", phone: "", memberships: [membership()] } as unknown as Me;
+  const me = {
+    id: 1,
+    telegram_id: 4242,
+    telegram_username: "",
+    first_name: "Alisher",
+    last_name: "Valiyev",
+    phone: "",
+    memberships: [{ ...membership(), permissions }],
+  } as unknown as Me;
   return render(
     <QueryClientProvider client={queries}>
       <I18nProvider lang={lang}>
@@ -342,7 +350,7 @@ describe("who's in (managers)", () => {
       throw new Error(`unexpected ${path}`);
     });
     const { default: BoardPage } = await import("./BoardPage");
-    renderCard(<BoardPage />);
+    renderCard(<BoardPage />, "en", ["attendance.view"]);
     expect(await screen.findByText("Bekzod Mirzayev")).toBeTruthy();
     const sections = screen.getAllByRole("region").map((section) => section.getAttribute("aria-label"));
     expect(sections).toEqual(["Came late", "Not here yet", "In", "Off today"]);
@@ -352,6 +360,13 @@ describe("who's in (managers)", () => {
     expect(screen.getByText("40 m")).toBeTruthy();
     expect(screen.getByText(/Shift started 09:00/)).toBeTruthy();
     expect(screen.getByText(/Time off/)).toBeTruthy();
+  });
+
+  it("says it's for managers, without asking the server, when a link opens it for someone else", async () => {
+    const { default: BoardPage } = await import("./BoardPage");
+    renderCard(<BoardPage />);
+    expect(await screen.findByText("For managers only")).toBeTruthy();
+    expect(client.api).not.toHaveBeenCalled();
   });
 
   it("is in Me only for people who may see everyone's attendance", () => {

@@ -4,8 +4,9 @@
  * who didn't come, who is in, and who is off. Each row shows the shift, the check-in and how far
  * from the branch it was. Read-only; corrections stay in the dashboard. Live every minute.
  */
-import { CalendarOff, MapPin } from "lucide-react";
+import { CalendarOff, Lock, MapPin } from "lucide-react";
 
+import { can } from "../../api/permissions";
 import { useI18n } from "../../i18n";
 import { formatDistance } from "../../lib/location";
 import { longDate } from "../../lib/time";
@@ -27,14 +28,18 @@ export default function BoardPage() {
   const { locale } = useI18n();
   const member = useMember();
   const navigation = useNavigation();
-  const board = useBoard(member.companyId);
+  // A link opened without attendance.view says so instead of asking the server for a refusal.
+  const allowed = can(member, "attendance.view");
+  const board = useBoard(member.companyId, allowed);
   const data = board.data;
   const subtitle = data ? [longDate(new Date(data.now), member.timeZone, locale), data.holiday].filter(Boolean).join(" · ") : undefined;
 
   return (
     <Screen variant="detail">
       <PageHeader kicker={t("me.attendance")} title={t("board.title")} subtitle={subtitle} onBack={navigation.pop} />
-      {board.isPending ? (
+      {!allowed ? (
+        <EmptyState icon={Lock} tone="sage" title={t("board.denied")} body={t("board.deniedBody")} />
+      ) : board.isPending ? (
         <SkeletonList count={6} />
       ) : board.isError || !data ? (
         <EmptyState title={t("ui.failed.title")} body={t("ui.failed.body")} action={{ label: t("common.retry"), onClick: () => board.refetch() }} />

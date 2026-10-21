@@ -1,3 +1,5 @@
+import { CheckCheck, Eye, ListPlus } from "lucide-react";
+
 import { useBoard, useReviewQueue } from "../api/hooks";
 import type { Task } from "../api/types";
 import { RowSkeleton, TaskRow } from "../components/TaskRow";
@@ -8,6 +10,17 @@ import { useViewContext } from "../lib/useNow";
 import { useNavigation, type TasksTab } from "../state/navigation";
 import { useMember } from "../state/session";
 import { haptic } from "../telegram";
+import { EmptyState } from "../ui";
+
+/** Scroll the tab strip just enough to show the chosen tab (no page jump). */
+function keepInView(node: HTMLButtonElement | null) {
+  const strip = node?.parentElement;
+  if (!node || !strip || strip.scrollWidth <= strip.clientWidth) return;
+  const left = node.offsetLeft - 8;
+  const right = node.offsetLeft + node.offsetWidth + 8 - strip.clientWidth;
+  if (strip.scrollLeft > left) strip.scrollTo({ left, behavior: "smooth" });
+  else if (strip.scrollLeft < right) strip.scrollTo({ left: right, behavior: "smooth" });
+}
 
 const KIND: Record<Exclude<TasksTab, "review">, Task["kind"]> = {
   daily: "daily",
@@ -44,10 +57,13 @@ export function Tasks() {
         <div className="subline">{t("tasks.left", { count: leftToday })}</div>
       </div>
 
-      <div className="seg" role="tablist">
+      {/* Four tabs with counts don't fit a phone in every language: the strip scrolls sideways
+          then, keeping the chosen tab in view. */}
+      <div className="seg seg--scroll" role="tablist">
         {tabs.map(({ key, count }) => (
           <button
             key={key}
+            ref={tab === key ? keepInView : undefined}
             className="seg-opt"
             role="tab"
             aria-pressed={tab === key}
@@ -82,10 +98,10 @@ function Groups({ tasks, tab, onOpen, onTick, ctx }: {
 }) {
   const groups = groupTasks(tasks, ctx.now);
   if (!groups.length) {
-    return (
-      <div className="muted" style={{ padding: "var(--space-6) 4px", fontSize: 16 }}>
-        {tab === "personal" ? ctx.t("tasks.empty.personal") : ctx.t("tasks.empty.other")}
-      </div>
+    return tab === "personal" ? (
+      <EmptyState compact icon={ListPlus} title={ctx.t("tasks.empty.personal")} body={ctx.t("tasks.empty.personalBody")} />
+    ) : (
+      <EmptyState compact tone="sage" icon={CheckCheck} title={ctx.t("tasks.empty.other")} body={ctx.t("tasks.empty.otherBody")} />
     );
   }
   return (
@@ -113,7 +129,7 @@ function ReviewList({ tasks, loading, onOpen, ctx }: {
 }) {
   if (loading) return <RowSkeleton count={3} />;
   if (!tasks?.length) {
-    return <div className="muted" style={{ padding: "var(--space-6) 4px", fontSize: 16 }}>{ctx.t("tasks.empty.review")}</div>;
+    return <EmptyState compact tone="sage" icon={Eye} title={ctx.t("tasks.empty.review")} body={ctx.t("tasks.empty.reviewBody")} />;
   }
   return (
     <>

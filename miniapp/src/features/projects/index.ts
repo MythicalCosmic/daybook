@@ -9,6 +9,7 @@ import { Clock3, FolderKanban } from "lucide-react";
 import { lazy } from "react";
 
 import { isSuspended } from "../../api/membership";
+import { useFeatureT } from "../../i18n/feature";
 import { defineFeature } from "../registry";
 import { useMyProjects } from "./api";
 import { ProjectsCard, TimerCard } from "./HomeCards";
@@ -42,10 +43,14 @@ export default defineFeature({
       icon: FolderKanban,
       open: { page: "list" },
       order: 30,
+      // "11 open": my open cards, the number that asks something of me (a bubble beside a
+      // project count read as two unrelated numbers).
       useStatus: ({ member }) => {
+        const t = useFeatureT(messages);
         const projects = useMyProjects(member.companyId);
-        const open = (projects.data ?? []).reduce((sum, project) => sum + project.my_open, 0);
-        return { value: projects.data ? String(projects.data.length) : undefined, badge: open || null };
+        if (!projects.data) return {};
+        const open = projects.data.reduce((sum, project) => sum + project.my_open, 0);
+        return { value: open ? t("me.open", { count: open }) : String(projects.data.length) };
       },
     },
   ],

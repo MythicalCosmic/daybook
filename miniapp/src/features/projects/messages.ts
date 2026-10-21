@@ -3,6 +3,7 @@ import { defineMessages } from "../../i18n/feature";
 export const messages = defineMessages({
   en: {
     "me.projects": "Projects",
+    "me.open": "{count} open",
     "plus.log": "Log time",
     title: "My projects",
     kicker: "Projects",
@@ -86,6 +87,7 @@ export const messages = defineMessages({
   },
   ru: {
     "me.projects": "Проекты",
+    "me.open": "открыто: {count}",
     "plus.log": "Записать время",
     title: "Мои проекты",
     kicker: "Проекты",
@@ -171,6 +173,7 @@ export const messages = defineMessages({
   },
   uz: {
     "me.projects": "Loyihalar",
+    "me.open": "{count} ta ochiq",
     "plus.log": "Vaqt yozish",
     title: "Mening loyihalarim",
     kicker: "Loyihalar",

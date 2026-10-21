@@ -22,7 +22,7 @@ export function ToReadCard({ member }: SlotProps) {
   };
   return (
     <Banner
-      tone="accent"
+      iconTone="accent"
       size="lg"
       icon={BookOpenCheck}
       title={t("card.title", { count: pages.length })}
