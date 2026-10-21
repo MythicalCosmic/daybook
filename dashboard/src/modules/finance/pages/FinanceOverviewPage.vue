@@ -206,7 +206,7 @@ const firstRun = computed(() => !!data.value && !data.value.has_ledger);
           </InlineAlert>
         </div>
 
-        <KpiStrip :items="kpis" :loading="overview.isPending.value" :columns="4" phone="grid" />
+        <KpiStrip :items="kpis" :loading="overview.isPending.value" :columns="4" />
 
         <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
           <ChartCard

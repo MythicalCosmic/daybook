@@ -246,6 +246,33 @@ function options(mode: "shift_totals" | "receipts" = "shift_totals") {
   };
 }
 
+describe("SalesOverviewPage", () => {
+  it("says the summary failed instead of showing dashes and zero shifts", async () => {
+    stub({
+      "GET sales/options/": () => json(options()),
+      "GET sales/summary/": () => json({ detail: "Server error." }, 500),
+    });
+    // The charts measure themselves; jsdom has no ResizeObserver.
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe(): void {}
+        unobserve(): void {}
+        disconnect(): void {}
+      },
+    );
+    const SalesOverviewPage = (await import("../pages/SalesOverviewPage.vue")).default;
+    const app = await testApp("/c/1/sales");
+    await ensureModuleMessages(salesModule);
+    const { wrapper } = mountWithProviders(SalesOverviewPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(document.querySelector('[data-testid="kpi-error"]')).not.toBeNull();
+    expect(document.body.textContent).not.toContain("0 shifts");
+    wrapper.unmount();
+  });
+});
+
 describe("MovementDialog", () => {
   it("names each till with its branch, since every branch has a Kassa 1", async () => {
     stub({

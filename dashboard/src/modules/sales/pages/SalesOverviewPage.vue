@@ -17,6 +17,7 @@ import ChartCard from "@/components/ChartCard.vue";
 import DateRangePicker from "@/components/DateRangePicker.vue";
 import DonutChart from "@/components/DonutChart.vue";
 import EmptyState from "@/components/EmptyState.vue";
+import ErrorState from "@/components/ErrorState.vue";
 import ExportButton from "@/components/ExportButton.vue";
 import HeatmapChart from "@/components/HeatmapChart.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
@@ -156,7 +157,9 @@ const base = computed(() => `/c/${company.currentId}/sales`);
     </div>
 
     <template v-else>
-      <KpiStrip :items="kpis" :loading="byDay.isPending.value" phone="grid" />
+      <!-- A failed summary says so, instead of five dashes and "0 shifts". -->
+      <ErrorState v-if="byDay.isError.value" class="ui-card" compact :error="byDay.error.value" :retry="() => byDay.refetch()" data-testid="kpi-error" />
+      <KpiStrip v-else :items="kpis" :loading="byDay.isPending.value" />
 
       <div class="grid gap-4 xl:grid-cols-3">
         <ChartCard

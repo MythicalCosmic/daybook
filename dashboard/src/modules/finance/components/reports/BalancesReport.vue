@@ -59,7 +59,7 @@ const groups = computed(() =>
     </div>
     <ErrorState v-if="query.isError.value" :error="query.error.value" :retry="() => query.refetch()" />
     <template v-else>
-      <KpiStrip :items="kpis" :loading="query.isPending.value" :columns="4" phone="grid" />
+      <KpiStrip :items="kpis" :loading="query.isPending.value" :columns="4" />
       <SkeletonBlock v-if="query.isPending.value" height="320px" radius="12px" />
       <div v-else-if="data" class="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <section v-for="group in groups" :key="group.id" class="ui-card p-4">

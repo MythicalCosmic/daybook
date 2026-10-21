@@ -56,10 +56,12 @@ const entryTable = useDataTable({ id: "finance.party.entries", pageSize: 200 });
 const kpis = computed(() => {
   const d = detail.value;
   return [
-    { id: "owes", label: t("finance.parties.owesUs"), value: d?.counterparty.owes_us ?? null, format: "money" as const, hint: d && d.counterparty.overdue !== "0.00" ? t("finance.parties.overdueSub", { amount: fmt.money(d.counterparty.overdue) }) : undefined },
-    { id: "we", label: t("finance.parties.weOwe"), value: d?.counterparty.we_owe ?? null, format: "money" as const },
-    { id: "income", label: t("finance.parties.incomeTotal"), value: d?.totals.income ?? null, format: "money" as const },
-    { id: "expense", label: t("finance.parties.expenseTotal"), value: d?.totals.expense ?? null, format: "money" as const },
+    // Compact like the finance overview's tiles (the exact amount in the tooltip and in the debts
+    // below), so they fit the two-column phone grid.
+    { id: "owes", label: t("finance.parties.owesUs"), value: d?.counterparty.owes_us ?? null, format: "money" as const, compact: true, hint: d && d.counterparty.overdue !== "0.00" ? t("finance.parties.overdueSub", { amount: fmt.money(d.counterparty.overdue, undefined, { compact: true }) }) : undefined },
+    { id: "we", label: t("finance.parties.weOwe"), value: d?.counterparty.we_owe ?? null, format: "money" as const, compact: true },
+    { id: "income", label: t("finance.parties.incomeTotal"), value: d?.totals.income ?? null, format: "money" as const, compact: true },
+    { id: "expense", label: t("finance.parties.expenseTotal"), value: d?.totals.expense ?? null, format: "money" as const, compact: true },
   ];
 });
 
@@ -134,7 +136,7 @@ const tabs = computed(() => [
 
     <ErrorState v-if="query.isError.value" :error="query.error.value" :retry="() => query.refetch()" />
     <div v-else class="flex flex-col gap-4">
-      <KpiStrip :items="kpis" :loading="query.isPending.value" :columns="4" phone="grid" />
+      <KpiStrip :items="kpis" :loading="query.isPending.value" :columns="4" />
       <div class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div class="min-w-0 xl:order-1">
           <DataTable

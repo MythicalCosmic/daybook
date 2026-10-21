@@ -101,7 +101,7 @@ function open(row: Transaction): void {
       <div class="flex flex-wrap items-center gap-2">
         <DateRangePicker v-model="period" :compare="false" />
       </div>
-      <KpiStrip :items="kpis" :loading="statement.isPending.value" :columns="4" phone="grid" />
+      <KpiStrip :items="kpis" :loading="statement.isPending.value" :columns="4" />
 
       <PageSection v-if="data?.pending.length" :title="t('finance.accounts.pending')" :count="data.pending.length" variant="card">
         <ul class="flex flex-col divide-y divide-line">
