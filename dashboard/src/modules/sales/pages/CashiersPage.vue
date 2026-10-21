@@ -89,8 +89,8 @@ const columns = computed<TableColumn<CashierScore>[]>(() => [
   { id: "accuracy", header: t("sales.col.accuracy"), sortable: true, width: 140, hint: t("sales.cashiers.accuracyHint") },
   { id: "shortages", header: t("sales.col.shortages"), sortable: "shortage_total", numeric: true, width: 140, csv: (row) => row.shortage_total },
   { id: "surpluses", header: t("sales.col.surpluses"), numeric: true, width: 110 },
-  { id: "late_opens", header: t("sales.col.lateOpens"), sortable: true, numeric: true, width: 120 },
-  { id: "verified", header: t("sales.col.checks"), width: 132 },
+  { id: "late_opens", header: t("sales.col.lateOpens"), sortable: true, numeric: true, width: 132 },
+  { id: "verified", header: t("sales.col.checks"), width: 124 },
   { id: "avg_hours", header: t("sales.col.hours"), numeric: true, width: 100, format: (v) => t("sales.cashiers.hours", { n: String(v) }) },
 ]);
 
