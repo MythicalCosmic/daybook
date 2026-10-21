@@ -18,7 +18,7 @@ pytestmark = pytest.mark.django_db(transaction=True)
 
 @pytest.fixture
 def owner(company, member):
-    company.name = "Demo Shop"
+    company.name = "Demo Dorixona"
     company.save()
     branch = company.branches.get()
     branch.name = "Chilonzor"
@@ -45,7 +45,7 @@ async def test_today_shows_branches_sections_and_approvals(
     await dp.feed_update(bot, updates.message(updates.tg_user(7501), "/today"))
 
     [reply] = bot.sent()
-    assert "Demo Shop" in reply.text
+    assert "Demo Dorixona" in reply.text
     assert "Chilonzor" in reply.text
     assert "Tasks" in reply.text and "18 of 24 done" in reply.text
     assert "Nothing waits for your decision." in reply.text
@@ -54,18 +54,18 @@ async def test_today_shows_branches_sections_and_approvals(
 
 
 async def test_with_several_companies_today_asks_which(dp, bot, owner, member):
-    cafe = await sync_to_async(CompanyFactory)(name="Demo Café")
+    cafe = await sync_to_async(CompanyFactory)(name="Demo Distribyutor")
     await sync_to_async(member)(cafe, "Owner", user=owner.user)
 
     await dp.feed_update(bot, updates.message(updates.tg_user(7501), "/today"))
     question = bot.sent()[0]
     names = [row[0].text for row in question.reply_markup.inline_keyboard]
-    assert names == ["Demo Café", "Demo Shop"]
+    assert names == ["Demo Distribyutor", "Demo Dorixona"]
 
     await dp.feed_update(
         bot, updates.callback(updates.tg_user(7501), TodayPick(company=cafe.pk).pack())
     )
-    assert "Demo Café" in bot.sent()[-1].text
+    assert "Demo Distribyutor" in bot.sent()[-1].text
 
 
 async def test_today_without_companies(dp, bot):
@@ -86,7 +86,7 @@ async def test_welcome_lists_companies_and_what_waits(dp, bot, owner, isolated_r
     await dp.feed_update(bot, updates.message(updates.tg_user(7501), "/start"))
 
     text = bot.sent()[0].text
-    assert "Dilnoza" in text and "Demo Shop" in text and "3 waiting for you" in text
+    assert "Dilnoza" in text and "Demo Dorixona" in text and "3 waiting for you" in text
     assert "/today" in text
 
 

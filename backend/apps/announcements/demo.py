@@ -1,6 +1,7 @@
-"""Demo data of announcements: what a Tashkent shop owner actually sends (in Uzbek, one in
-Russian), with read receipts, a pinned rule, a scheduled reminder, an expired notice and a
-cancelled one, so the list, the read-rate bars and the receipts page have something real."""
+"""Demo data of announcements (docs/PLAN-OWNER.md §14.3): what Demo Dorixona's owner and heads
+send (in Uzbek, one in Russian), with read receipts, a pinned rule, a scheduled reminder of the
+sanitary day, an expired notice and a cancelled one, so the list, the read-rate bars and the
+receipts page have something real."""
 
 from datetime import timedelta
 
@@ -11,6 +12,7 @@ from apps.announcements.models import Announcement, Receipt
 from apps.announcements.services import audience
 from apps.audit import services as audit
 from apps.audit.models import AuditLog
+from apps.core import demo_plan
 from apps.members.models import Position
 
 ITEMS = [
@@ -18,11 +20,10 @@ ITEMS = [
         "days_ago": 1,
         "author": "owner",
         "text": (
-            "<b>Yangi kassa tartibi</b> 💳\n\n"
-            "Ertadan boshlab har bir smena oxirida <b>Z-hisobot</b> va terminal chekini "
-            "suratga olib, ilovada smenani yoping. "
-            "Naqd pulni sanashda ikki kishi bo‘lishi shart.\n\n"
-            "Savollar bo‘lsa, Bekzodga yozing."
+            "<b>Ertadan yangi referent narxlar</b> 💊\n\n"
+            "Retseptli dorilarning referent narxlari yangilandi. Ertalab smenani ochishda narx "
+            "yorliqlarini yangi ro‘yxat bo‘yicha tekshiring: ustama xarid narxidan "
+            "<b>20 %</b> dan oshmasin.\n\nSavollar bo‘lsa, mudiringizga yozing."
         ),
         "pinned_days": 6,
         "read_share": 0.72,
@@ -31,18 +32,18 @@ ITEMS = [
         "days_ago": 3,
         "author": "manager",
         "text": (
-            "Hurmatli jamoa! Shanba kuni soat <b>08:00</b> da <u>inventarizatsiya</u> bo‘ladi. "
-            "Yunusobod filiali soat 11:00 gacha yopiq. Hammaga omad! 📦"
+            "Hurmatli jamoa! Shanba kuni Chilonzorda <b>sanitariya kuni</b>: soat 07:00 da "
+            "dezinfeksiya, dorixona 08:00 da ochiladi. Muzlatgichlarni oldindan bo‘shatmang. 🧼"
         ),
-        "branches": ["Yunusobod"],
+        "branches": ["Chilonzor"],
         "read_share": 0.86,
     },
     {
         "days_ago": 6,
         "author": "owner",
         "text": (
-            "🎉 Oktabr oyi natijalari: Chilonzor rejani <b>108%</b> bajardi! Eng yaxshi kassir — "
-            "Sardor Rahimov. Rahmat, jamoa!"
+            "🎉 Sentabr natijalari: Yunusobod rejani <b>104%</b> bajardi, tungi smenada "
+            "birorta kassa farqi bo‘lmadi! Rahmat, jamoa!"
         ),
         "read_share": 0.95,
     },
@@ -50,18 +51,19 @@ ITEMS = [
         "days_ago": 9,
         "author": "manager",
         "text": (
-            "Kuryerlar diqqatiga: yangi buyurtmalar endi botga keladi. Yetkazib bo‘lgach "
-            "<b>«Bajarildi»</b> tugmasini bosing va mijozning imzosi bilan chekni suratga oling."
+            "Kuryer diqqatiga: onlayn buyurtmalarda retseptli dorilar yetkazilmaydi. Insulin va "
+            "boshqa sovuq zanjir dorilari faqat termosumkada. Topshirgach "
+            "<b>«Bajarildi»</b> tugmasini bosing."
         ),
-        "positions": ["Delivery"],
+        "positions": [demo_plan.COURIER],
         "read_share": 1.0,
     },
     {
         "days_ago": 14,
         "author": "owner",
         "text": (
-            "Коллеги, напоминаю: униформа обязательна с первого дня смены. "
-            "Новые футболки можно получить у Азизы в офисе."
+            "Коллеги, напоминаю: белый халат и бейдж обязательны с первого дня смены. "
+            "Новые халаты можно получить у Азизы в офисе."
         ),
         "read_share": 0.64,
         "expired_days": 4,
@@ -70,6 +72,7 @@ ITEMS = [
 
 
 def seed(company, people, now) -> None:
+    story = demo_plan.Plan(company, people, now)
     branches = {b.name: b for b in company.branches.all()}
     positions = {p.name: p for p in Position.objects.for_company(company)}
     for item in ITEMS:
@@ -120,17 +123,22 @@ def seed(company, people, now) -> None:
         )
         AuditLog.objects.filter(pk=entry.pk).update(created_at=sent_at)
 
-    # Tomorrow morning's reminder, written today and sent by the scheduler.
-    tomorrow = timezone.localtime(now).replace(hour=9, minute=0, second=0, microsecond=0)
+    # The evening before Chilonzor's sanitary day, a reminder the scheduler will send.
+    today = story.today
+    sanitary_day = today + timedelta(days=(5 - today.weekday()) % 7 or 7)
+    evening = timezone.localtime(now).replace(hour=18, minute=0, second=0, microsecond=0)
+    send_at = evening + timedelta(days=(sanitary_day - today).days - 1)
+    if send_at <= now:
+        send_at = now + timedelta(hours=2)
     scheduled = Announcement.objects.create(
         company=company,
         author=people["manager"],
         text=(
-            "⏰ Eslatma: ertaga <b>Chilonzor</b> filialida sanitariya kuni. "
-            "Smena soat 08:30 da boshlanadi, kechikmang!"
+            "⏰ Eslatma: ertaga <b>Chilonzor</b> dorixonasida sanitariya kuni. "
+            "Smena soat 07:00 da boshlanadi, kechikmang!"
         ),
         status=Announcement.Status.SCHEDULED,
-        scheduled_for=tomorrow + timedelta(days=1),
+        scheduled_for=send_at,
     )
     chilonzor = [branches[name] for name in ("Chilonzor",) if name in branches]
     scheduled.branches.set(chilonzor)
@@ -143,11 +151,11 @@ def seed(company, people, now) -> None:
         positions=[],
         branches=[branch.name for branch in chilonzor],
     )
-    # A notice the owner called off.
+    # A notice the owner called off (the team day moved to next month).
     called_off = Announcement.objects.create(
         company=company,
         author=people["owner"],
-        text="Juma kuni korporativ kechki ovqat — tafsilotlar keyinroq.",
+        text="Juma kuni jamoa bilan dam olish kuni — tafsilotlar keyinroq.",
         status=Announcement.Status.CANCELLED,
         scheduled_for=now + timedelta(days=2),
     )

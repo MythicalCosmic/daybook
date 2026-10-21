@@ -48,7 +48,7 @@ def opened(monkeypatch):
 
 
 def company():
-    return SimpleNamespace(name="Demo Shop")
+    return SimpleNamespace(name="Demo Dorixona")
 
 
 def font_names(data: bytes) -> set[bytes]:

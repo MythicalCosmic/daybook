@@ -412,7 +412,14 @@ describe("home cards", () => {
 describe("the timer on the task screen", () => {
   const slot = { member: { ...membership(), timeZone: "Asia/Tashkent", companyId: 1 }, summary: undefined };
   const task = (id: number, overrides: Partial<Task> = {}) =>
-    ({ id, title: `Card ${id}`, status: "todo", assignee: { id: ME, name: "Alisher Valiyev", position: null }, ...overrides }) as Task;
+    ({
+      id,
+      title: `Card ${id}`,
+      status: "todo",
+      assignee: { id: ME, name: "Alisher Valiyev", position: null },
+      card: { project_id: 5, project_key: "OPEN", number: id, key: `OPEN-${id}` },
+      ...overrides,
+    }) as Task;
   const running = (taskId: number): Timer => ({
     id: 1,
     project: { id: 5, name: project.name },
@@ -467,7 +474,15 @@ describe("the timer on the task screen", () => {
     expect(screen.getByRole("button", { name: "Start timer" })).toBeTruthy();
   });
 
-  it("shows nothing for a task off my boards, someone else's card, or a finished one", async () => {
+  it("asks for nothing on a task that isn't a card", async () => {
+    const { container } = renderWith(<TaskTimer {...slot} task={task(8, { card: null })} />);
+    await act(async () => {});
+
+    expect(server.calls).toEqual([]);
+    expect(container.textContent).toBe("");
+  });
+
+  it("shows nothing for a card the board doesn't show me, someone else's card, or a finished one", async () => {
     const cases: [number, Partial<Task>][] = [
       [99, {}],
       [3, { assignee: { id: 3, name: "Dilnoza Karimova", position: null } }],
@@ -490,12 +505,18 @@ describe("the timer on the task screen", () => {
     expect(await screen.findByRole("button", { name: "Start timer" })).toBeTruthy();
   });
 
-  it("asks only for live projects' boards", async () => {
-    state.projects = [{ ...project, status: "completed" }];
+  it("loads only the card's own board, never the list of projects", async () => {
+    renderWith(<TaskTimer {...slot} task={task(2)} />);
+    await screen.findByRole("button", { name: "Start timer" });
+
+    expect(server.calls.map((call) => call.path).sort()).toEqual(["/companies/1/projects/5/board/", "/companies/1/projects/timer/"]);
+  });
+
+  it("offers no timer on a finished project's card", async () => {
+    state.board = { ...state.board, project: { ...state.board.project, status: "completed" } };
     const { container } = renderWith(<TaskTimer {...slot} task={task(2)} />);
-    await waitFor(() => expect(server.calls.some((call) => call.path === "/companies/1/projects/")).toBe(true));
+    await loaded();
     await act(async () => {});
-    expect(server.calls.some((call) => call.path.endsWith("/board/"))).toBe(false);
     expect(container.textContent).toBe("");
   });
 });

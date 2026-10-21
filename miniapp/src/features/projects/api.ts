@@ -118,16 +118,17 @@ export function useMyProjects(company: number, enabled = true) {
   return useQuery({ queryKey: projectKeys.mine(company), queryFn: () => listMine(company), enabled, staleTime: 30_000 });
 }
 
-export function useBoard(company: number, id: number) {
-  return useQuery({ queryKey: projectKeys.board(company, id), queryFn: () => getBoard(company, id), enabled: id > 0 });
+/** One project's board (`id` 0: nothing loads). `staleTime` lets a glance reuse a fresh copy. */
+export function useBoard(company: number, id: number, { staleTime }: { staleTime?: number } = {}) {
+  return useQuery({ queryKey: projectKeys.board(company, id), queryFn: () => getBoard(company, id), enabled: id > 0, staleTime });
 }
 
 export function useUpdates(company: number, id: number) {
   return useQuery({ queryKey: projectKeys.updates(company, id), queryFn: () => listUpdates(company, id), enabled: id > 0 });
 }
 
-export function useTimer(company: number) {
-  return useQuery({ queryKey: projectKeys.timer(company), queryFn: () => getTimer(company).then((r) => r.timer), staleTime: 15_000 });
+export function useTimer(company: number, enabled = true) {
+  return useQuery({ queryKey: projectKeys.timer(company), queryFn: () => getTimer(company).then((r) => r.timer), staleTime: 15_000, enabled });
 }
 
 export function useWeek(company: number, enabled = true) {

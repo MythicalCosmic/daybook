@@ -1,8 +1,8 @@
-"""Demo data of Telegram groups: the chats a two-branch shop really keeps.
+"""Demo data of Telegram groups: the chats Demo Dorixona really keeps.
 
-A private management chat that gets money news, one team chat per branch, and a "Kassa" chat
-for the cashiers. The chat ids are made up (negative, like real supergroups) and never reached
-in development (`TELEGRAM_DRY_RUN`).
+A private chat of the owner and the heads that gets money news, one team chat per pharmacy, and
+a "Kassa" chat for the pharmacists who run Chilonzor's till. The chat ids are made up (negative,
+like real supergroups) and never reached in development (`TELEGRAM_DRY_RUN`).
 """
 
 from apps.groups.models import GroupEvent, TelegramGroup
@@ -14,7 +14,7 @@ GROUPS = (
     # (chat id, title, events, branch name or None, position names)
     (
         -1001900000101,
-        "Demo Shop · Rahbariyat",
+        "Demo Dorixona · Rahbariyat",
         [E.LATE, E.MEMBERS, E.EVENING, E.CASH, E.SALES, E.SHIFTS, E.CELEBRATIONS],
         None,
         (),
@@ -38,7 +38,7 @@ GROUPS = (
         "Kassa · Chilonzor",
         [E.CASH, E.SHIFTS, E.SALES],
         "Chilonzor",
-        ("Cashier",),
+        ("Pharmacist", "Senior pharmacist"),
     ),
 )
 

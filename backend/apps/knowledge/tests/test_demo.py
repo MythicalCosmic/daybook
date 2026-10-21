@@ -15,7 +15,8 @@ def test_demo_builds_a_lived_in_knowledge_base(company, demo_people):
     demo.seed(company, people, timezone.now())
 
     spaces = list(Space.objects.filter(company=company).values_list("name", flat=True))
-    assert spaces[0] == "Kompaniya qo‘llanmasi" and "Kassa" in spaces
+    assert spaces[0] == "Kompaniya qo‘llanmasi"
+    assert {"Kassa", "Dorixona qoidalari", "Yetkazib berish"} <= set(spaces)
     assert Page.objects.filter(company=company, published=True).count() >= 10
     assert Page.objects.filter(company=company, published=False).exists()  # a draft
     assert (
@@ -26,7 +27,10 @@ def test_demo_builds_a_lived_in_knowledge_base(company, demo_people):
     # Madina read the till page before it changed: she has to read it again.
     madina = people["madina"]
     assert "Kassani ochish tartibi" in {page.title for page in queries.to_read(madina)}
-    # The courier doesn't read the till space.
+    # The courier doesn't read the till space; a pharmacist does.
     assert "Kassani ochish tartibi" not in {
+        page.title for page in queries.reader_pages(people["jasur"])
+    }
+    assert "Kassani ochish tartibi" in {
         page.title for page in queries.reader_pages(people["nigora"])
     }

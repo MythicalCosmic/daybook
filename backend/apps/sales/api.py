@@ -12,7 +12,8 @@ from datetime import timedelta
 
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from drf_spectacular.utils import extend_schema, inline_serializer
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, extend_schema_field, inline_serializer
 from rest_framework import serializers, status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.generics import ListAPIView
@@ -62,6 +63,7 @@ OPERATE = (IsAuthenticated, IsCompanyMember, SalesOn, requires(Perm.SALES_OPERAT
 SELF = (IsAuthenticated, IsCompanyMember, SalesOn)
 
 
+@extend_schema_field(OpenApiTypes.ANY)
 class JSONValueField(serializers.Field):
     """A list or object, also as a JSON string (multipart forms send everything as text)."""
 

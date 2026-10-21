@@ -21,7 +21,7 @@ def cashier_position(company):
 
 @pytest.fixture
 def cook_position(company):
-    return Position.objects.create(company=company, name="Cook")
+    return Position.objects.create(company=company, name="Courier")
 
 
 @pytest.fixture

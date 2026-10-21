@@ -56,11 +56,19 @@ class ReminderInfoSerializer(serializers.Serializer):
     snoozed_until = serializers.DateTimeField(allow_null=True)
 
 
+class TaskCardSerializer(serializers.Serializer):
+    project_id = serializers.IntegerField()
+    project_key = serializers.CharField(help_text='"RENO"')
+    number = serializers.IntegerField()
+    key = serializers.CharField(help_text='The card\'s key, "RENO-14".')
+
+
 class TaskSerializer(serializers.ModelSerializer):
     assignee = MemberBriefSerializer()
     created_by = MemberBriefSerializer(allow_null=True)
     confirmed_by = MemberBriefSerializer(allow_null=True)
     checklist = ChecklistItemSerializer(many=True)
+    card = serializers.SerializerMethodField()
     reminder = serializers.SerializerMethodField()
     repeat_weekdays = serializers.SerializerMethodField()
     is_overdue = serializers.SerializerMethodField()
@@ -90,6 +98,7 @@ class TaskSerializer(serializers.ModelSerializer):
             "assignee",
             "created_by",
             "checklist",
+            "card",
             "reminder",
             "repeat_weekdays",
             "started_at",
@@ -101,6 +110,21 @@ class TaskSerializer(serializers.ModelSerializer):
             "created_at",
         )
         read_only_fields = fields
+
+    @extend_schema_field(TaskCardSerializer(allow_null=True))
+    def get_card(self, task: Task) -> dict | None:
+        """The project card this task is (apps.projects), or null. Lists load it with
+        `queries.TASK_RELATIONS`, so it costs no query."""
+        card = getattr(task, "card", None) if task.project_id else None
+        if card is None:
+            return None
+        key = task.project.key
+        return {
+            "project_id": task.project_id,
+            "project_key": key,
+            "number": card.number,
+            "key": f"{key}-{card.number}",
+        }
 
     @extend_schema_field(ReminderInfoSerializer(allow_null=True))
     def get_reminder(self, task: Task) -> dict | None:

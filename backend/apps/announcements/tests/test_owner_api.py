@@ -122,7 +122,7 @@ def test_receipts_remind_and_pins(
 
 def test_audience_count(owner_api, company, team):
     owner, people = team
-    cook = PositionFactory(company=company, name="Cook")
+    cook = PositionFactory(company=company, name="Courier")
     people[0].position = cook
     people[0].save()
 
