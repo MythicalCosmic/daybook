@@ -147,6 +147,15 @@ function fire(binding: Binding, event: KeyboardEvent): void {
   binding.handler(event);
 }
 
+/**
+ * The binding that answers: a page's own shortcut (`group: "page"`) before a shell-wide one with
+ * the same keys, whichever registered last, so the Tasks page's N makes a task even though the top
+ * bar's quick add (N for an expense) loads after the page; the newest first within each.
+ */
+function findBinding(matches: (binding: Binding) => boolean): Binding | undefined {
+  return bindings.find((b) => b.options.group === "page" && matches(b)) ?? bindings.find((b) => b.options.group !== "page" && matches(b));
+}
+
 export function handleKeydown(event: KeyboardEvent): void {
   if (event.isComposing || event.repeat) return;
   const typing = isTypingTarget(event.target);
@@ -156,7 +165,7 @@ export function handleKeydown(event: KeyboardEvent): void {
   if (pending && now - pending.at <= SEQUENCE_TIMEOUT) {
     const first = pending.key;
     pending = null;
-    const hit = bindings.find(
+    const hit = findBinding(
       (b) => b.strokes.length === 2 && b.strokes[0]!.key === first && strokeMatches(b.strokes[1]!, event) && eligible(b, event, typing, inDialog),
     );
     if (hit) {
@@ -166,7 +175,7 @@ export function handleKeydown(event: KeyboardEvent): void {
   }
   pending = null;
 
-  const single = bindings.find((b) => b.strokes.length === 1 && strokeMatches(b.strokes[0]!, event) && eligible(b, event, typing, inDialog));
+  const single = findBinding((b) => b.strokes.length === 1 && strokeMatches(b.strokes[0]!, event) && eligible(b, event, typing, inDialog));
   if (single) {
     fire(single, event);
     return;
@@ -188,7 +197,7 @@ function ensureListening(): void {
 export function registerHotkey(combo: string, handler: (event: KeyboardEvent) => void, options: HotkeyOptions = {}): () => void {
   ensureListening();
   const binding: Binding = { id: nextId++, combo, strokes: parseCombo(combo), handler, options };
-  bindings.unshift(binding); // the newest registration wins (a page overrides a global)
+  bindings.unshift(binding); // the newest registration wins within its group; a page's beats a global (findBinding)
   if (options.description) {
     registeredHotkeys.push({ id: binding.id, combo, description: options.description, group: options.group ?? "page" });
   }

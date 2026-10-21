@@ -26,6 +26,7 @@ import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { isModuleVisible } from "@/core/access";
 import { modules } from "@/core/modules";
+import { PULSE_INBOX_UNREAD, usePulseCount } from "@/core/pulse";
 import { companyUrl as linkInCompany } from "@/lib/links";
 import { applyQueryPatch, closeQueryKey } from "@/lib/useRouteState";
 import { useDelayedPending } from "@/lib/useDelayedPending";
@@ -175,6 +176,9 @@ const severityTone: Record<Severity, string> = {
 
 const inboxPage = computed(() => router.resolve(`/c/${companyId.value}/inbox`).name !== "company-not-found");
 const unreadCount = computed(() => (notesFilter.value === "unread" ? (notes.data.value?.count ?? 0) : 0));
+// The tab says how many are unread before its list has loaded: the pulse's count, as the bell's.
+const unreadPulse = usePulseCount(PULSE_INBOX_UNREAD);
+const unreadBadge = computed(() => (notes.data.value && notesFilter.value === "unread" ? unreadCount.value : unreadPulse.value));
 </script>
 
 <template>
@@ -215,7 +219,7 @@ const unreadCount = computed(() => (notesFilter.value === "unread" ? (notes.data
           >
             {{ item === "needs" ? t("shell.inbox.needsYou") : t("shell.inbox.notifications") }}
             <UiBadge v-if="item === 'needs' && queue.data.value?.total" :count="queue.data.value.total" :tone="tab === item ? 'primary' : 'neutral'" />
-            <UiBadge v-if="item === 'notifications' && unreadCount" :count="unreadCount" :tone="tab === item ? 'primary' : 'neutral'" />
+            <UiBadge v-if="item === 'notifications' && unreadBadge" :count="unreadBadge" :tone="tab === item ? 'primary' : 'neutral'" />
             <span v-if="tab === item" class="absolute inset-x-1 -bottom-px h-[2px] rounded-full bg-primary" />
           </button>
         </div>

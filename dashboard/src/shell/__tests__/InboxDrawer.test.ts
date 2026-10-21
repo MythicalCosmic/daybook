@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Notification, QueueItem } from "@/api/types";
 import { confirmQueue, settleConfirm } from "@/components/useConfirm";
+import { pulse } from "@/core/pulse";
 import { toasts } from "@/components/useToast";
 import { json } from "@/test/fixtures";
 import { mountWithProviders, testApp } from "@/test/plugins";
@@ -96,11 +97,16 @@ describe("InboxDrawer", () => {
     expect(post?.body).toEqual({ source: "dashboard" });
   });
 
-  it("closes from the button in its own header, like every other drawer", async () => {
+  it("closes from the button in its own header, like every other drawer, and counts unread notifications on their tab", async () => {
     stub({ "GET queue/counts/": () => json({ total: 0, kinds: [] }), "GET queue/": () => json({ items: [] }) });
+    // The bell's count (the pulse): the tab says it before its list loads.
+    pulse.value = { counters: { "inbox.unread": 4 }, versions: {} };
     const app = await testApp("/c/1?inbox=needs");
     mountWithProviders(InboxDrawer, { plugins: app.plugins });
     await flushPromises();
+    const notificationsTab = [...document.body.querySelectorAll("[role='tab']")].find((tab) => tab.textContent?.includes("Notifications"))!;
+    expect(notificationsTab.textContent).toContain("4");
+    pulse.value = { counters: {}, versions: {} };
     const close = document.body.querySelector<HTMLButtonElement>("[data-inbox-close]")!;
     expect(close.getAttribute("aria-label")).toBe("Close");
     close.click();

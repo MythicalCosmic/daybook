@@ -9,12 +9,15 @@
  * (README "Budgets"). It behaves the same: it opens after a pause on hover (at once when another
  * tooltip just closed), at once on keyboard focus, never on touch, closes on leaving, a press,
  * Escape or a scroll, flips to the other side when there is no room, and stays in the window.
+ * Attributes given to it (a `class` from a component whose root it is) go to the trigger.
  */
-import { cloneVNode, nextTick, onBeforeUnmount, ref, useId, useSlots } from "vue";
+import { cloneVNode, computed, nextTick, onBeforeUnmount, ref, useAttrs, useId, useSlots, watch, type VNode } from "vue";
 
 import KbdKey from "./KbdKey.vue";
 import { firstSlotNode } from "./slotNode";
 import { placeTooltip, tooltipTiming, type TooltipPlacement, type TooltipSide } from "./tooltip";
+
+defineOptions({ inheritAttrs: false });
 
 const props = withDefaults(
   defineProps<{
@@ -102,19 +105,31 @@ const handlers = {
   },
 };
 
-/** The trigger: the slot's first element, with the tooltip's listeners and its description. */
+const attrs = useAttrs();
+const active = computed(() => !props.disabled && (!!props.content || !!slots.content));
+watch(active, (on) => {
+  if (!on) hide();
+});
+
+/**
+ * The trigger: the slot's first element, with the attributes given to the tooltip and, while it
+ * is on, the tooltip's listeners and its description. Other nodes of the slot render as they are.
+ */
 function Trigger() {
-  const node = firstSlotNode(slots.default?.() ?? []);
-  return node ? cloneVNode(node, { ...handlers, "aria-describedby": open.value ? id : undefined }, true) : null;
+  const nodes = slots.default?.() ?? [];
+  const first = firstSlotNode(nodes);
+  const extra = active.value ? { ...attrs, ...handlers, "aria-describedby": open.value ? id : undefined } : attrs;
+  if (!first || !Object.keys(extra).length) return nodes;
+  const trigger = cloneVNode(first, extra, true);
+  return nodes.includes(first) ? nodes.map((node: VNode) => (node === first ? trigger : node)) : trigger;
 }
 
 onBeforeUnmount(hide);
 </script>
 
 <template>
-  <slot v-if="disabled || (!content && !$slots.content)" />
-  <template v-else>
-    <Trigger />
+  <Trigger />
+  <template v-if="active">
     <Teleport v-if="open" to="body">
       <div
         :id="id"

@@ -109,6 +109,13 @@ describe("UiTooltip", () => {
     wrapper.unmount();
   });
 
+  it("gives its trigger the attributes it gets (a component whose root it is passes its class)", () => {
+    const Dot = defineComponent({ render: () => h(UiTooltip, { content: "At risk" }, { default: () => h("span", { "data-dot": "" }) }) });
+    const wrapper = mount(defineComponent({ render: () => h(Dot, { class: "mt-1.5" }) }), { attachTo: document.body });
+    expect(wrapper.get("[data-dot]").classes()).toContain("mt-1.5");
+    wrapper.unmount();
+  });
+
   it("places itself on the asked side, flips when there is no room, and stays inside the window", () => {
     const viewport = { width: 1000, height: 800 };
     const size = { width: 120, height: 28 };
