@@ -28,8 +28,9 @@ from rest_framework.response import Response
 
 from apps.companies.models import Branch
 from apps.console import pulse
-from apps.console.base import AnyOf, OwnerAPIView, OwnerViewSet, RangeMixin
+from apps.console.base import AllOf, AnyOf, OwnerAPIView, OwnerViewSet, RangeMixin
 from apps.core.api import Pagination
+from apps.core.exceptions import DomainError
 from apps.core.money import Currency, quantize
 from apps.finance import access, cbu, conf, filters, queries, services
 from apps.finance import owner_serializers as out
@@ -50,7 +51,12 @@ from apps.members.permissions import Perm
 VIEW = Perm.FINANCE_VIEW
 RECORD = Perm.FINANCE_RECORD
 MANAGE = Perm.FINANCE_MANAGE
+APPROVE = Perm.FINANCE_APPROVE
 VIEW_OR_RECORD = AnyOf(Perm.FINANCE_VIEW, Perm.FINANCE_RECORD)
+# Debts are only visible with finance.view, so writing one needs both (a recorder who can't see
+# debts would make one and get it back as "not found").
+VIEW_AND_RECORD = AllOf(Perm.FINANCE_VIEW, Perm.FINANCE_RECORD)
+VIEW_AND_MANAGE = AllOf(Perm.FINANCE_VIEW, Perm.FINANCE_MANAGE)
 LEDGER = "finance.ledger"
 OVERDUE = "finance.overdue"
 OVERVIEW_TTL = 60
@@ -146,6 +152,21 @@ class FinanceMixin:
             raise exceptions.ValidationError({"branch": [_("Pick one of your branches.")]})
         return found
 
+    def write_branch(self, pk, *, default: bool = True) -> Branch | None:
+        """The branch of an account or debt someone makes or moves (§2.6).
+
+        A member limited to some branches can't leave a row without one: it would vanish from
+        their own view (rows with no branch are for people who see every branch). With `default`
+        (a new row) the only branch they have is taken; otherwise they pick one.
+        """
+        found = self.branch(pk)
+        member_scope = self.branch_scope
+        if found is not None or member_scope is None:
+            return found
+        if default and len(member_scope) == 1:
+            return Branch.objects.get(company=self.company, pk=member_scope[0])
+        raise exceptions.ValidationError({"branch": [_("Pick one of your branches.")]})
+
     def project(self, pk):
         if pk is None:
             return None
@@ -167,6 +188,15 @@ def domain(call):
     """Run a service call. A broken rule (`DomainError`) becomes a 400 with its message in
     `apps.core.api.exception_handler`, so the dashboard shows it as a toast."""
     return call()
+
+
+def refuse_foreign(row) -> None:
+    """Entries, transfers and debts another module booked (a shift's sales, a payslip) are
+    corrected in that module: voiding or cancelling them here would leave it out of step."""
+    label = out.foreign_source(row)
+    if label is not None:
+        message = _("This entry comes from %(source)s: correct it there.")
+        raise DomainError(message % {"source": label})
 
 
 # Overview and options -------------------------------------------------------------------------
@@ -200,15 +230,19 @@ class OverviewView(FinanceMixin, OwnerAPIView):
     )
     def get(self, request, company_id):
         version = pulse.versions(self.company.pk, [LEDGER])[LEDGER]
-        key = f"finance:overview:{self.membership.pk}:{version}:{self.today.isoformat()}"
+        member_scope = self.branch_scope
+        masked = not access.sees_salary_detail(self.membership)
+        # What the member may see is part of the key: a role or branch change shows at once.
+        seen = "all" if member_scope is None else ".".join(map(str, member_scope)) or "none"
+        key = (
+            f"finance:overview:{self.membership.pk}:{version}:{self.today.isoformat()}"
+            f":{seen}:{int(masked)}"
+        )
         cached = cache.get(key)
         if cached is not None:
             return Response(cached)
         data = queries.overview(
-            self.company,
-            branch_ids=self.branch_scope,
-            today=self.today,
-            mask_sensitive=not access.sees_salary_detail(self.membership),
+            self.company, branch_ids=member_scope, today=self.today, mask_sensitive=masked
         )
         payload = _jsonable(
             {
@@ -400,8 +434,13 @@ class AccountViewSet(FinanceMixin, OwnerViewSet):
     def create(self, request, company_id):
         data = self._valid(out.AccountWriteSerializer)
         holder = self.member(data.get("holder"), "holder")
-        branch = self.branch(data.get("branch"))
+        branch = self.write_branch(data.get("branch"))
         operators = [self.member(pk, "operators") for pk in data.get("operators", [])]
+        opening = data.get("opening_balance")
+        if opening is not None and opening < 0:
+            # A card or account that starts in the red can only hold that balance with an
+            # overdraft allowed.
+            data["allow_negative"] = True
 
         def make():
             with transaction.atomic():
@@ -423,10 +462,7 @@ class AccountViewSet(FinanceMixin, OwnerViewSet):
                     extra["operators"] = operators
                 if extra:
                     account = services.update_account(account, by=self.membership, **extra)
-                opening = data.get("opening_balance")
                 if opening:
-                    if opening < 0:
-                        account.allow_negative = True
                     services.record_entry(
                         self.company,
                         by=self.membership,
@@ -452,7 +488,7 @@ class AccountViewSet(FinanceMixin, OwnerViewSet):
         account = self.get_object()
         data = self._valid(out.AccountUpdateSerializer)
         if "branch" in data:
-            data["branch"] = self.branch(data["branch"])
+            data["branch"] = self.write_branch(data["branch"], default=False)
         if "operators" in data:
             data["operators"] = [self.member(pk, "operators") for pk in data["operators"]]
         domain(lambda: services.update_account(account, by=self.membership, **data))
@@ -521,7 +557,7 @@ class AccountViewSet(FinanceMixin, OwnerViewSet):
                 "money_out": money(data["money_out"]),
                 "lines": lines,
                 "pending": out.TransactionSerializer(
-                    data["pending"], many=True, context=context
+                    _with_receipts(data["pending"]), many=True, context=context
                 ).data,
             }
         )
@@ -715,14 +751,15 @@ class CounterpartyViewSet(FinanceMixin, OwnerViewSet):
         owes = params.get("owes")
         if owes in ("us", "we"):
             direction = Debt.Direction.RECEIVABLE if owes == "us" else Debt.Direction.PAYABLE
-            parties = parties.filter(
-                debts__status=Debt.Status.OPEN, debts__direction=direction
-            ).distinct()
+            open_debts = access.visible_debts(self.membership).filter(
+                status=Debt.Status.OPEN, direction=direction, counterparty__isnull=False
+            )
+            parties = parties.filter(pk__in=open_debts.values("counterparty_id"))
         ordering = {"name": ("name",), "-name": ("-name",), "-created_at": ("-created_at",)}.get(
             params.get("ordering") or "name", ("name",)
         )
         page = self.paginate_queryset(parties.order_by(*ordering, "pk"))
-        context = self.context(balances=queries.party_balances(page, self.today))
+        context = self.context(balances=self._balances(page))
         return self.get_paginated_response(
             out.CounterpartySerializer(page, many=True, context=context).data
         )
@@ -738,9 +775,16 @@ class CounterpartyViewSet(FinanceMixin, OwnerViewSet):
             },
         )
     )
+    def _balances(self, parties) -> dict:
+        """What each party owes and is owed, counting only debts of the member's branches
+        (and none for a member without `finance.view`, who sees no debts at all)."""
+        if not access.can_view(self.membership):
+            return {}
+        return queries.party_balances(list(parties), self.today, branch_ids=self.branch_scope)
+
     def retrieve(self, request, company_id, pk=None):
         party = self.get_object()
-        context = self.context(balances=queries.party_balances([party], self.today))
+        context = self.context(balances=self._balances([party]))
         debts_ = (
             access.visible_debts(self.membership)
             .filter(counterparty=party)
@@ -796,7 +840,7 @@ class CounterpartyViewSet(FinanceMixin, OwnerViewSet):
         data = self._write_data(partial=True)
         party = domain(lambda: services.update_counterparty(party, by=self.membership, **data))
         self.changed()
-        context = self.context(balances=queries.party_balances([party], self.today))
+        context = self.context(balances=self._balances([party]))
         return Response(out.CounterpartySerializer(party, context=context).data)
 
 
@@ -828,6 +872,8 @@ class TransactionViewSet(FinanceMixin, OwnerViewSet):
         "partial_update": RECORD,
         "void": MANAGE,
         "bulk": MANAGE,
+        "approve": APPROVE,
+        "reject": APPROVE,
         "receipts": RECORD,
         "remove_receipt": RECORD,
     }
@@ -969,7 +1015,7 @@ class TransactionViewSet(FinanceMixin, OwnerViewSet):
                 case "member":
                     changes["membership"] = self.member(value)
                 case "branch":
-                    changes["branch"] = self.branch(value)
+                    changes["branch"] = self.write_branch(value, default=False)
                 case "project":
                     changes["project"] = self.project(value)
                 case "account":
@@ -996,12 +1042,52 @@ class TransactionViewSet(FinanceMixin, OwnerViewSet):
         row = self.get_object()
         serializer = out.ReasonSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        refuse_foreign(row)
         domain(
             lambda: services.void_transaction(
                 row, by=self.membership, reason=serializer.validated_data["reason"]
             )
         )
         self.changed(OVERDUE)
+        return self.retrieve(request, company_id, pk)
+
+    def _check_decision(self, row) -> None:
+        """Entries waiting for approval that were recorded here are decided here; a claim's
+        entry is decided with its claim, and nobody but an owner decides their own entry."""
+        if row.status != Transaction.Status.PENDING:
+            raise DomainError(_("This entry isn't waiting for approval."))
+        if row.source_type:
+            raise DomainError(
+                _("This entry comes from %(source)s: decide it there.")
+                % {"source": out.source_label(row)}
+            )
+        if row.created_by_id == self.membership.user_id and not access.is_owner(self.membership):
+            raise exceptions.PermissionDenied(_("Someone else approves the entries you made."))
+
+    @extend_schema(request=None, responses=out.TransactionSerializer)
+    @action(detail=True, methods=["post"])
+    def approve(self, request, company_id, pk=None):
+        """Post an entry that waits for approval: from now on it moves its account."""
+        row = self.get_object()
+        self._check_decision(row)
+        domain(lambda: services.approve_transaction(row, by=self.membership))
+        self.changed()
+        return self.retrieve(request, company_id, pk)
+
+    @extend_schema(request=out.ReasonSerializer, responses=out.TransactionSerializer)
+    @action(detail=True, methods=["post"])
+    def reject(self, request, company_id, pk=None):
+        """Turn down an entry that waits for approval, with the reason."""
+        row = self.get_object()
+        serializer = out.ReasonSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self._check_decision(row)
+        domain(
+            lambda: services.reject_transaction(
+                row, by=self.membership, reason=serializer.validated_data["reason"]
+            )
+        )
+        self.changed()
         return self.retrieve(request, company_id, pk)
 
     @extend_schema(
@@ -1020,11 +1106,24 @@ class TransactionViewSet(FinanceMixin, OwnerViewSet):
         payload = {"reason": data.get("reason", "")}
         if data["action"] == "categorize":
             payload["category"] = self.category(data.get("category"))
-        results = domain(
-            lambda: services.bulk_transactions(
-                rows, by=self.membership, action=data["action"], payload=payload
+        refused = []
+        if data["action"] == "void":
+            for row in rows:
+                if (label := out.foreign_source(row)) is not None:
+                    error = _("This entry comes from %(source)s: correct it there.")
+                    refused.append({"id": row.pk, "ok": False, "error": error % {"source": label}})
+            refused_ids = {item["id"] for item in refused}
+            rows = [row for row in rows if row.pk not in refused_ids]
+        results = (
+            domain(
+                lambda: services.bulk_transactions(
+                    rows, by=self.membership, action=data["action"], payload=payload
+                )
             )
+            if rows
+            else []
         )
+        results += refused
         results += [{"id": pk, "ok": False, "error": _("Not found.")} for pk in missing]
         self.changed(OVERDUE)
         return Response({"results": results})
@@ -1152,6 +1251,7 @@ class TransferViewSet(FinanceMixin, mixins.ListModelMixin, OwnerViewSet):
         moved = get_object_or_404(self.get_queryset(), pk=pk)
         serializer = out.ReasonSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        refuse_foreign(moved)
         domain(
             lambda: services.void_transfer(
                 moved, by=self.membership, reason=serializer.validated_data["reason"]
@@ -1171,12 +1271,12 @@ class DebtViewSet(FinanceMixin, OwnerViewSet):
 
     perm = VIEW
     perms_by_action = {
-        "create": RECORD,
-        "partial_update": RECORD,
-        "payments": RECORD,
-        "installments": RECORD,
-        "write_off": MANAGE,
-        "cancel": MANAGE,
+        "create": VIEW_AND_RECORD,
+        "partial_update": VIEW_AND_RECORD,
+        "payments": VIEW_AND_RECORD,
+        "installments": VIEW_AND_RECORD,
+        "write_off": VIEW_AND_MANAGE,
+        "cancel": VIEW_AND_MANAGE,
     }
     serializer_class = out.DebtSerializer
 
@@ -1296,6 +1396,7 @@ class DebtViewSet(FinanceMixin, OwnerViewSet):
                 "payments": out.TransactionSerializer(many=True),
                 "can_pay": serializers.BooleanField(),
                 "can_write_off": serializers.BooleanField(),
+                "can_cancel": serializers.BooleanField(),
             },
         )
     )
@@ -1324,6 +1425,10 @@ class DebtViewSet(FinanceMixin, OwnerViewSet):
                 else [],
                 "can_pay": is_open and access.can_record(self.membership),
                 "can_write_off": is_open and access.can_manage(self.membership),
+                "can_cancel": debt.status != Debt.Status.CANCELLED
+                and not debt.is_locked
+                and out.foreign_source(debt) is None
+                and access.can_manage(self.membership),
             }
         )
 
@@ -1355,7 +1460,7 @@ class DebtViewSet(FinanceMixin, OwnerViewSet):
                 membership=self.member(data.get("member")),
                 account=account,
                 category=category,
-                branch=self.branch(data.get("branch")),
+                branch=self.write_branch(data.get("branch")),
                 responsible=self.member(data.get("responsible"), "responsible"),
                 description=data.get("description", ""),
                 is_opening=mode == "opening",
@@ -1376,7 +1481,7 @@ class DebtViewSet(FinanceMixin, OwnerViewSet):
         if "responsible" in data:
             data["responsible"] = self.member(data["responsible"], "responsible")
         if "branch" in data:
-            data["branch"] = self.branch(data["branch"])
+            data["branch"] = self.write_branch(data["branch"], default=False)
         domain(lambda: services.update_debt(debt, by=self.membership, **data))
         self.changed(OVERDUE)
         return Response(out.DebtSerializer(self.get_object(), context=self.context()).data)
@@ -1439,6 +1544,7 @@ class DebtViewSet(FinanceMixin, OwnerViewSet):
         debt = self.get_object()
         serializer = out.ReasonSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        refuse_foreign(debt)
         domain(
             lambda: services.cancel_debt(
                 debt, by=self.membership, reason=serializer.validated_data["reason"]

@@ -27,6 +27,7 @@ from apps.finance.models import (
     Transaction,
     Transfer,
 )
+from apps.members.permissions import Perm
 
 RECEIPT_TTL = 3600
 EDIT_WINDOW = timedelta(hours=24)
@@ -395,6 +396,18 @@ class SourceRefSerializer(serializers.Serializer):
     url = serializers.CharField()
 
 
+def source_label(row) -> str:
+    return str(sources.label(row.source_type)) if row.source_type else ""
+
+
+def foreign_source(row) -> str | None:
+    """The label of the module that booked `row` (an entry, transfer or debt) when it isn't the
+    finance ledger itself: such rows are corrected in their module (§2.3 rule 3)."""
+    if row.source_type and not row.source_type.startswith("finance."):
+        return source_label(row)
+    return None
+
+
 def source_ref(row, company_id: int) -> dict | None:
     if not row.source_type:
         return None
@@ -431,6 +444,7 @@ class TransactionSerializer(serializers.ModelSerializer):
     is_manual = serializers.SerializerMethodField()
     can_edit = serializers.SerializerMethodField()
     can_void = serializers.SerializerMethodField()
+    can_approve = serializers.SerializerMethodField()
 
     class Meta:
         model = Transaction
@@ -469,6 +483,7 @@ class TransactionSerializer(serializers.ModelSerializer):
             "is_manual",
             "can_edit",
             "can_void",
+            "can_approve",
         )
 
     @property
@@ -512,7 +527,8 @@ class TransactionSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(SourceRefSerializer(allow_null=True))
     def get_source(self, row):
-        return source_ref(row, row.company_id)
+        # A payslip's number leads to the person: hidden with the rest of the detail.
+        return None if self._masked(row) else source_ref(row, row.company_id)
 
     @extend_schema_field(serializers.CharField(allow_null=True))
     def get_created_by(self, row):
@@ -562,7 +578,18 @@ class TransactionSerializer(serializers.ModelSerializer):
             return False
         if row.kind in ("income", "expense") and row.account_id is None and row.debt_id:
             return False
+        if foreign_source(row) is not None:
+            return False
         return not (row.kind == "fx" and row.source_type == "finance.transaction")
+
+    def get_can_approve(self, row) -> bool:
+        """A pending entry recorded here (a claim's entry is decided with its claim), by someone
+        else than the viewer unless the viewer is an owner."""
+        if row.status != "pending" or row.source_type or not self._open(row):
+            return False
+        if not self.viewer.has_perm(Perm.FINANCE_APPROVE):
+            return False
+        return row.created_by_id != self.viewer.user_id or access.is_owner(self.viewer)
 
 
 class TransactionCreateSerializer(serializers.Serializer):
@@ -916,8 +943,7 @@ class SettingsSerializer(serializers.ModelSerializer):
         )
 
     def get_can_reopen(self, row) -> bool:
-        member = self.context["membership"]
-        return bool(member.role and member.role.is_owner)
+        return access.is_owner(self.context["membership"])
 
 
 class SettingsUpdateSerializer(serializers.Serializer):

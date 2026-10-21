@@ -1460,6 +1460,13 @@ def merge_category(source: Category, *, into: Category, by: Membership) -> Categ
         raise DomainError(_("System categories can be renamed, but not merged away."))
     if into.parent_id == source.pk:
         raise DomainError(_("Pick a category outside this one."))
+    if not into.is_active:
+        raise DomainError(_("The category %(category)s is archived.") % {"category": into})
+    if source.is_sensitive and not into.is_sensitive:
+        # Its entries would show who was paid to everyone with finance.view (§5).
+        raise DomainError(
+            _("This category hides salary detail: merge it into another one that does.")
+        )
     children = list(source.children.all())
     if children and into.parent_id is not None:
         raise DomainError(_("This category has subcategories: merge it into a top-level one."))

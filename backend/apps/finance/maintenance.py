@@ -6,9 +6,11 @@ bug) under the same locks, audits the correction and tells the owners. It never 
 """
 
 import logging
+from datetime import timedelta
 
 from django.db import transaction
 from django.db.models import Q, Sum
+from django.utils import timezone
 
 from apps.audit import services as audit
 from apps.companies.models import Company
@@ -16,10 +18,14 @@ from apps.console import pulse
 from apps.core.money import quantize
 from apps.finance import alerts, services
 from apps.finance.audit_actions import FinanceAction
-from apps.finance.models import Debt, MoneyAccount, Transaction
+from apps.finance.models import Debt, MoneyAccount, Receipt, Transaction
 from apps.members.permissions import Perm
 
 logger = logging.getLogger(__name__)
+
+# A receipt uploaded for an entry that was never recorded (a quick add closed half-way) is kept
+# this long, then deleted with its files.
+ORPHAN_RECEIPT_AGE = timedelta(days=2)
 
 Kind = Transaction.Kind
 SETTLING = (Kind.DEBT_PAYMENT, Kind.WRITE_OFF)
@@ -51,17 +57,37 @@ def _status_for(debt: Debt, paid) -> str:
 
 
 def verify_company(company: Company, *, fix: bool = True) -> dict:
-    """{"accounts": [...], "debts": [...]}: what drifted (and was fixed when `fix`)."""
+    """{"accounts": [...], "debts": [...]}: what drifted (and was fixed when `fix`).
+
+    The first pass reads every cache against one grouped sum per table (a few queries however
+    big the ledger is); only the suspects are re-read under the row locks and fixed.
+    """
     report: dict = {"accounts": [], "debts": []}
+    posted = Transaction.objects.filter(company=company, status=Transaction.Status.POSTED)
+    account_sums = dict(
+        posted.filter(account__isnull=False)
+        .values("account_id")
+        .annotate(total=Sum("amount"))
+        .order_by()
+        .values_list("account_id", "total")
+    )
     suspects = [
         account.pk
         for account in MoneyAccount.objects.filter(company=company).only("pk", "balance")
-        if account.balance != _account_truth(account.pk)
+        if account.balance != quantize(account_sums.get(account.pk) or 0)
     ]
+    debt_sums = dict(
+        posted.filter(kind__in=SETTLING, debt__isnull=False)
+        .values("debt_id")
+        .annotate(total=Sum("debt_amount"))
+        .order_by()
+        .values_list("debt_id", "total")
+    )
     debt_suspects = [
         debt.pk
         for debt in Debt.objects.filter(company=company).exclude(status=Debt.Status.CANCELLED)
-        if debt.paid != _debt_truth(debt.pk) or debt.status != _status_for(debt, debt.paid)
+        if debt.paid != quantize(debt_sums.get(debt.pk) or 0)
+        or debt.status != _status_for(debt, debt.paid)
     ]
     if not suspects and not debt_suspects:
         return report
@@ -115,11 +141,14 @@ def verify_company(company: Company, *, fix: bool = True) -> dict:
 
 
 def verify_balances(*, fix: bool = True) -> dict[int, dict]:
-    """Check every company with a ledger; {company id: report} for those that drifted."""
+    """Check every company with a ledger and the finance module on (jobs skip switched-off
+    modules, §10.1); {company id: report} for those that drifted."""
     found = {}
-    companies = Company.objects.filter(
-        Q(money_accounts__isnull=False) | Q(debts__isnull=False)
-    ).distinct()
+    companies = (
+        Company.objects.filter(features__contains=["finance"])
+        .filter(Q(money_accounts__isnull=False) | Q(debts__isnull=False))
+        .distinct()
+    )
     for company in companies:
         try:
             report = verify_company(company, fix=fix)
@@ -129,3 +158,27 @@ def verify_balances(*, fix: bool = True) -> dict[int, dict]:
         if report["accounts"] or report["debts"]:
             found[company.pk] = report
     return found
+
+
+def purge_orphan_receipts(*, now=None) -> int:
+    """Delete receipts uploaded on their own and never linked to an entry, with their files
+    (after the delete commits). Returns how many were deleted."""
+    cutoff = (now or timezone.now()) - ORPHAN_RECEIPT_AGE
+    stale = list(Receipt.objects.filter(transaction__isnull=True, created_at__lt=cutoff)[:500])
+    for receipt in stale:
+        names = [name for name in (receipt.file.name, receipt.thumb.name) if name]
+        storage = receipt.file.storage
+        with transaction.atomic():
+            receipt.delete()
+            transaction.on_commit(
+                lambda names=names, storage=storage: _delete_files(storage, names)
+            )
+    return len(stale)
+
+
+def _delete_files(storage, names) -> None:
+    for name in names:
+        try:
+            storage.delete(name)
+        except OSError:
+            logger.warning("could not delete the receipt file %s", name)

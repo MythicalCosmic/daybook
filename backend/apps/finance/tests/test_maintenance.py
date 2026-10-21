@@ -14,6 +14,13 @@ from apps.inbox.models import Notification
 pytestmark = pytest.mark.django_db
 
 
+@pytest.fixture(autouse=True)
+def finance_on(books):
+    """The nightly job only looks at companies with the finance module on (§10.1)."""
+    books.features = ["finance"]
+    books.save(update_fields=["features"])
+
+
 def test_injected_drift_is_fixed(books, owner, cash, day):
     services.record_transaction(
         books,
@@ -65,3 +72,38 @@ def test_a_clean_ledger_changes_nothing(books, owner, cash, day):
     )
     assert tasks.verify_balances() == 0
     assert not AuditLog.objects.filter(action="finance.balances_fixed").exists()
+
+
+def test_a_company_with_finance_off_is_skipped(books, owner, cash, day):
+    services.record_transaction(
+        books,
+        by=owner,
+        kind="income",
+        amount=Decimal("5"),
+        occurred_on=day,
+        account=cash,
+        category="sales",
+    )
+    MoneyAccount.objects.filter(pk=cash.pk).update(balance=Decimal("1"))
+    books.features = []
+    books.save(update_fields=["features"])
+    assert tasks.verify_balances() == 0
+    cash.refresh_from_db()
+    assert cash.balance == Decimal("1.00")
+
+
+def test_the_check_reads_the_whole_ledger_in_a_few_queries(
+    books, owner, cash, day, django_assert_max_num_queries
+):
+    for amount in range(1, 30):
+        services.record_transaction(
+            books,
+            by=owner,
+            kind="income",
+            amount=Decimal(amount),
+            occurred_on=day,
+            account=cash,
+            category="sales",
+        )
+    with django_assert_max_num_queries(5):
+        assert maintenance.verify_company(books) == {"accounts": [], "debts": []}

@@ -376,10 +376,11 @@ def _member(user, company_id: int) -> Membership | None:
 
 
 def receipt_check(user, company_id: int, object_id) -> bool:
-    """A signed receipt link opens for whoever may still see its entry (or uploaded it)."""
+    """A signed receipt link opens for whoever uploaded it, or may still see its entry with its
+    detail: a salary-type entry's receipts need payroll.view (§5), like the entry's person."""
     receipt = (
         Receipt.objects.filter(company_id=company_id, pk=object_id)
-        .select_related("transaction")
+        .select_related("transaction__category", "transaction__debt")
         .first()
     )
     if receipt is None:
@@ -388,6 +389,8 @@ def receipt_check(user, company_id: int, object_id) -> bool:
         return True
     member = _member(user, company_id)
     if member is None or receipt.transaction_id is None:
+        return False
+    if access.masks_row(member, receipt.transaction):
         return False
     return access.visible_transactions(member).filter(pk=receipt.transaction_id).exists()
 

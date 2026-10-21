@@ -35,6 +35,10 @@ def sees_salary_detail(member: Membership) -> bool:
     return member.has_perm(Perm.PAYROLL_VIEW)
 
 
+def is_owner(member: Membership) -> bool:
+    return member.role is not None and member.role.is_owner
+
+
 def own_accounts_q(member: Membership) -> Q:
     """Accounts the member holds or operates."""
     return Q(holder=member) | Q(operators=member)

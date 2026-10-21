@@ -29,10 +29,13 @@ def fetch_exchange_rates() -> dict:
 
 @shared_task
 def verify_balances() -> int:
-    """Daily 03:00: recompute account balances and debt totals from the ledger and fix drift."""
+    """Daily 03:00: recompute account balances and debt totals from the ledger and fix drift,
+    and drop receipts uploaded for entries that were never recorded."""
     from apps.finance import maintenance
 
-    return len(maintenance.verify_balances())
+    drifted = len(maintenance.verify_balances())
+    maintenance.purge_orphan_receipts()
+    return drifted
 
 
 @shared_task

@@ -599,6 +599,23 @@ def account_figures(accounts: list[MoneyAccount], today: date, value: Valuation)
     return figures
 
 
+# Everything a statement line shows (the account's own name and category parents included), so a
+# long statement costs the same few queries as a short one.
+STATEMENT_RELATIONS = (
+    "account",
+    "category__parent",
+    "counterparty",
+    "membership",
+    "branch",
+    "project",
+    "debt",
+    "transfer",
+    "created_by",
+    "approved_by",
+    "voided_by",
+)
+
+
 def statement(account: MoneyAccount, start: date, end: date) -> dict:
     """An account's posted rows from `start` to `end` with the running balance, the opening
     and closing balance, and entries waiting for approval."""
@@ -607,9 +624,7 @@ def statement(account: MoneyAccount, start: date, end: date) -> dict:
         Transaction.objects.filter(
             account=account, status=Status.POSTED, occurred_on__range=(start, end)
         )
-        .select_related(
-            "category", "counterparty", "membership", "branch", "debt", "transfer", "created_by"
-        )
+        .select_related(*STATEMENT_RELATIONS)
         .order_by("occurred_on", "pk")
     )
     running = opening
@@ -624,7 +639,7 @@ def statement(account: MoneyAccount, start: date, end: date) -> dict:
         lines.append((row, quantize(running)))
     pending = list(
         Transaction.objects.filter(account=account, status=Status.PENDING)
-        .select_related("category", "counterparty", "membership", "created_by")
+        .select_related(*STATEMENT_RELATIONS)
         .order_by("occurred_on", "pk")
     )
     return {
@@ -1051,7 +1066,7 @@ def overview(company, *, branch_ids, today: date, mask_sensitive: bool = False) 
     soon = list(
         debts(company, None, branch_ids=branch_ids, today=today)
         .filter(due_on__range=(today, today + timedelta(days=7)))
-        .select_related("company", "counterparty", "membership")[:8]
+        .select_related("company", "counterparty", "membership", "branch", "responsible")[:8]
     )
     pending = scope.restrict(
         Transaction.objects.for_company(company).filter(status=Status.PENDING), branch_ids
@@ -1121,24 +1136,28 @@ def overview(company, *, branch_ids, today: date, mask_sensitive: bool = False) 
 # Counterparties --------------------------------------------------------------------------------
 
 
-def party_balances(parties: list[Counterparty], today: date) -> dict[int, dict]:
-    """{counterparty id: {"owes_us", "we_owe", "overdue", "last_activity"}} at book value."""
+def party_balances(parties: list[Counterparty], today: date, *, branch_ids) -> dict[int, dict]:
+    """{counterparty id: {"owes_us", "we_owe", "overdue", "last_activity"}} at book value,
+    from the debts and entries in `branch_ids` (the directory is company-wide, debts are not)."""
     if not parties:
         return {}
     ids = [party.pk for party in parties]
     figures = {
         pk: {"owes_us": ZERO, "we_owe": ZERO, "overdue": ZERO, "last_activity": None} for pk in ids
     }
-    for debt in Debt.objects.filter(
+    company = parties[0].company_id  # `filter(company=…)` takes the id as well
+    open_debts = scoped_debts(company, branch_ids=branch_ids).filter(
         counterparty_id__in=ids, status=Debt.Status.OPEN
-    ).select_related("company"):
+    )
+    for debt in open_debts.select_related("company"):
         value = book_value(debt, debt.amount - debt.paid)
         entry = figures[debt.counterparty_id]
         entry["owes_us" if debt.direction == Debt.Direction.RECEIVABLE else "we_owe"] += value
         if days_overdue(debt, today):
             entry["overdue"] += value
     for entry in (
-        Transaction.objects.filter(counterparty_id__in=ids, status=Status.POSTED)
+        posted_rows(company, branch_ids=branch_ids)
+        .filter(counterparty_id__in=ids)
         .values("counterparty_id")
         .annotate(day=Max("occurred_on"))
         .order_by()
