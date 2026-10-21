@@ -142,6 +142,25 @@ describe("ExportsPage", () => {
     expect(toasts.at(-1)?.title).toBe("Building “Transactions”");
   });
 
+  it("says what each file holds in words, never the API's parameter names", async () => {
+    stub({
+      "GET exports/": () =>
+        page([
+          job({ id: 1, params: { due_from: "2026-10-14", due_to: "2026-10-20", overdue: true } }),
+          job({ id: 2, label: "Attendance timesheet", kind: "attendance.timesheet", params: { month: "2026-09" } }),
+          job({ id: 3, label: "Transactions", kind: "finance.transactions", params: { from: "2026-10-01", branch: [30, 31], category: 4 } }),
+        ]),
+    });
+    const app = await testApp("/c/1/exports");
+    const { wrapper } = mountWithProviders(ExportsPage, { plugins: app.plugins });
+    await flushPromises();
+    const text = wrapper.text();
+    expect(text).toContain("14–20 Oct 2026 · Late only");
+    expect(text).toContain("September 2026");
+    expect(text).toContain("From 1 Oct 2026 · 2 branches · With filters");
+    expect(text).not.toMatch(/due_from|overdue:|month:|branch:/);
+  });
+
   it("explains an empty list and offers a new export instead of an empty table", async () => {
     stub({ "GET exports/": () => page([]) });
     const app = await testApp("/c/1/exports");

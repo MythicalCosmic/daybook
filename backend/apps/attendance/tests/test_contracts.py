@@ -164,6 +164,24 @@ def test_day_board_states(staff, freeze):
     assert "Sara" not in {row["member"]["name"] for row in scoped["people"]}
 
 
+def test_day_board_tells_who_is_still_here_from_who_left(staff, freeze):
+    # "Present now" on the board: people who checked out stay in their column, but not here.
+    now = freeze(local(DAY, 18, 30))
+    company = staff.ali.company
+    services.update_settings(company, by=staff.manager, require_location=False)
+    shift_at(staff.ali, DAY)
+    shift_at(staff.sara, DAY, time(9, 0), time(18))
+    services.check_in(staff.ali, now=local(DAY, 8, 58))
+    services.check_in(staff.sara, now=local(DAY, 9, 25))
+    services.check_out(staff.sara, now=local(DAY, 18, 5))
+    totals = queries.day_board(company, DAY, branch_ids=None, now=now)["totals"]
+    assert (totals["in"], totals["late"]) == (1, 1)
+    assert (totals["present"], totals["left"]) == (1, 1)
+    # A day nobody came still says so.
+    empty = queries.day_board(company, DAY - timedelta(days=7), branch_ids=None, now=now)["totals"]
+    assert (empty["present"], empty["left"]) == (0, 0)
+
+
 def test_branch_company_and_person_facts_fit_their_shapes(staff, freeze):
     now = freeze(local(DAY, 10))
     company = staff.ali.company

@@ -21,6 +21,7 @@ import SegmentedControl from "@/components/SegmentedControl.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import TextInput from "@/components/TextInput.vue";
 import TimePicker from "@/components/TimePicker.vue";
+import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDrawer from "@/components/UiDrawer.vue";
 import WeekdayPicker from "@/components/WeekdayPicker.vue";
@@ -84,8 +85,10 @@ function valuesOf(source: Branch | null): Values {
     latitude: source?.latitude ?? null,
     longitude: source?.longitude ?? null,
     geofence_m: source?.geofence_m ?? 150,
-    opens_at: source?.opens_at ?? "09:00",
-    closes_at: source?.closes_at ?? "21:00",
+    // A branch without hours is open around the clock: never invent hours for it (saving them
+    // would close a 24-hour pharmacy at night). Only a new branch starts with 09:00–21:00.
+    opens_at: source ? source.opens_at : "09:00",
+    closes_at: source ? source.closes_at : "21:00",
     open_weekdays: [...(source?.open_weekdays ?? [0, 1, 2, 3, 4, 5, 6])],
     manager_id: source?.manager?.id ?? null,
     cash_limit: source?.cash_limit ?? null,
@@ -106,16 +109,35 @@ const form = useForm(schema, valuesOf(null), {
   },
 });
 
+/** The times "Open around the clock" switched off brings back. */
+let lastHours = { opens: "09:00", closes: "21:00" };
+
 watch(
   [value, branch],
   ([next, current], [previous]) => {
     if (next !== previous || (current && !form.dirty.value)) {
       form.reset(valuesOf(current));
+      lastHours = { opens: current?.opens_at ?? "09:00", closes: current?.closes_at ?? "21:00" };
       showHistory.value = false;
     }
   },
   { immediate: true },
 );
+
+/** "Open around the clock" clears both times; switching it off brings back the last ones. */
+const aroundTheClock = computed({
+  get: () => form.values.opens_at === null && form.values.closes_at === null,
+  set: (on: boolean) => {
+    if (on) {
+      lastHours = { opens: form.values.opens_at ?? lastHours.opens, closes: form.values.closes_at ?? lastHours.closes };
+      form.values.opens_at = null;
+      form.values.closes_at = null;
+    } else {
+      form.values.opens_at = lastHours.opens;
+      form.values.closes_at = lastHours.closes;
+    }
+  },
+});
 
 const radii = [50, 100, 150, 300, 500];
 const radiusOptions = computed(() => radii.map((m) => ({ value: m, label: t("settings.branch.metres", { m }) })));
@@ -199,7 +221,8 @@ const company_ = computed(() => company.current);
 
       <section class="flex flex-col gap-4">
         <p class="text-base font-semibold text-fg">{{ t("settings.branch.hours") }}</p>
-        <div class="grid gap-4 sm:grid-cols-2">
+        <ToggleSwitch v-model="aroundTheClock" layout="row" :label="t('settings.branch.allDay')" :description="t('settings.branch.allDayHint')" :disabled="!canEdit" data-around-the-clock />
+        <div v-if="!aroundTheClock" class="grid gap-4 sm:grid-cols-2">
           <FormField :label="t('settings.branch.opens')" :error="form.errors.opens_at">
             <TimePicker v-model="form.values.opens_at" :step="15" :disabled="!canEdit" />
           </FormField>

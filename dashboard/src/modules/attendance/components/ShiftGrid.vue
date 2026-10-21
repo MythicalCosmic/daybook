@@ -197,11 +197,12 @@ const memberSubtitle = (member: RosterMember) =>
                 <span class="font-semibold">{{ t("attendance.roster.onLeave") }}</span>
               </template>
               <template v-else>
-                <span class="flex items-center gap-1 tabular-nums">
-                  {{ shift.start }}–{{ shift.end }}
-                  <Repeat2 v-if="shift.swap_pending" :size="11" class="text-warning" :aria-label="t('attendance.roster.swapPending')" />
-                  <Check v-if="shift.has_record" :size="11" class="text-success" :aria-label="t('attendance.roster.happened')" />
-                  <StickyNote v-if="shift.note" :size="10" class="opacity-60" aria-hidden="true" />
+                <!-- The hours stay on one line; in a narrow day the marks give way first. -->
+                <span class="flex w-full min-w-0 items-center gap-1 overflow-hidden tabular-nums">
+                  <span class="whitespace-nowrap">{{ shift.start }}–{{ shift.end }}</span>
+                  <Repeat2 v-if="shift.swap_pending" :size="11" class="shrink-0 text-warning" :aria-label="t('attendance.roster.swapPending')" />
+                  <Check v-if="shift.has_record" :size="11" class="shrink-0 text-success" :aria-label="t('attendance.roster.happened')" />
+                  <StickyNote v-if="shift.note" :size="10" class="shrink-0 opacity-60" aria-hidden="true" />
                 </span>
                 <span class="att-chip-sub">
                   <template v-if="!shift.published">{{ t("attendance.roster.draft") }} · </template>

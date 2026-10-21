@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The A4 poster for the shop wall: the company, a big QR code of the invite link and three steps,
+ * The A4 poster for the wall at work: the company, a big QR code of the invite link and three steps,
  * in the company's language plus Russian (or Uzbek). Printed alone: everything else on the page is
  * hidden while it prints.
  */

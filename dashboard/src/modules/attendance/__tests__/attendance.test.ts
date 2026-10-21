@@ -93,10 +93,10 @@ const roster = (): Roster => ({
       id: 7,
       name: "Alisher Valiyev",
       photo_url: null,
-      position: { id: 1, name: "Sales floor" },
+      position: { id: 1, name: "Farmatsevt" },
       home_branch: { id: 1, name: "Chilonzor" },
       status: "approved",
-      schedule: { id: 3, name: "Savdo zali 6/1" },
+      schedule: { id: 3, name: "Chilonzor 2/2" },
       minutes: 960,
       leave: ["2026-10-23"],
     },
@@ -225,7 +225,7 @@ describe("lib", () => {
 
 describe("BoardTile", () => {
   const row = (extra: Partial<BoardRow> = {}): BoardRow => ({
-    member: { id: 7, name: "Alisher Valiyev", photo_url: null, position: { id: 1, name: "Sales floor" }, home_branch: null, status: "approved" },
+    member: { id: 7, name: "Alisher Valiyev", photo_url: null, position: { id: 1, name: "Farmatsevt" }, home_branch: null, status: "approved" },
     branch: { id: 1, name: "Chilonzor", code: "CHL" },
     state: "late",
     reason: null,
@@ -284,7 +284,7 @@ describe("BoardTile", () => {
     const late = row({ state: "not_yet", reason: "late", record: null });
     const { wrapper } = mountWithProviders(BoardTile, { props: { row: late, now: "2026-10-21T09:40:00+05:00" }, plugins: app.plugins });
     const text = wrapper.text();
-    expect(text.indexOf("09:00–18:00")).toBeLessThan(text.indexOf("Sales floor"));
+    expect(text.indexOf("09:00–18:00")).toBeLessThan(text.indexOf("Farmatsevt"));
     expect(text).toContain("Shift started 09:00");
     expect(text).toContain("+40m");
     // A past day has no "now": no lateness is made up.
@@ -376,6 +376,66 @@ describe("TodayPage", () => {
     await flushPromises();
     expect(wrapper.text()).toContain("No one is working here yet");
     expect(wrapper.text()).not.toContain("Present now");
+  });
+
+  it("counts who is still here as present now, not who already went home", async () => {
+    const came = (id: number, state: "in" | "late", out: string | null): BoardRow => ({
+      member: { id, name: `Person ${id}`, photo_url: null, position: null, home_branch: null, status: "approved" },
+      branch: null,
+      state,
+      reason: null,
+      shift: shift(id, id, "2026-10-21"),
+      record: {
+        id: 100 + id,
+        member_id: id,
+        shift_id: id,
+        date: "2026-10-21",
+        status: out ? "closed" : "open",
+        check_in_at: "2026-10-21T08:55:00+05:00",
+        check_out_at: out,
+        in_lat: null,
+        in_lng: null,
+        in_accuracy_m: null,
+        in_distance_m: null,
+        out_lat: null,
+        out_lng: null,
+        out_accuracy_m: null,
+        out_distance_m: null,
+        branch: null,
+        in_source: "app",
+        out_source: out ? "app" : "",
+        late_minutes: state === "late" ? 20 : 0,
+        early_leave_minutes: 0,
+        worked_minutes: 0,
+        overtime_minutes: 0,
+        overtime_status: "none",
+        is_late: state === "late",
+        flags: [],
+        note: "",
+        has_photo: false,
+      },
+    });
+    stubApi({
+      "GET attendance/board/": () =>
+        json({
+          date: "2026-10-21",
+          is_today: true,
+          now: "2026-10-21T18:30:00+05:00",
+          holiday: null,
+          totals: { in: 2, late: 1, not_yet: 0, absent: 0, off: 0, rostered: 3, late_missing: 0, present: 1, left: 2 },
+          branches: [],
+          people: [came(1, "in", null), came(2, "in", "2026-10-21T18:02:00+05:00"), came(3, "late", "2026-10-21T18:10:00+05:00")],
+        }),
+    });
+    const { default: TodayPage } = await import("../pages/TodayPage.vue");
+    const app = await testApp("/c/1/attendance");
+    const { wrapper } = mountWithProviders(TodayPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    // The first number: 1 still here (3 came, 2 of them checked out).
+    expect(wrapper.find(".kpi-strip > *").text()).toMatch(/^Present now\s*1\s*3 of 3 came · 2 left$/);
+    // Who left still shows in the column of those who came, with their check-out.
+    expect(wrapper.text()).toContain("Came in");
   });
 });
 

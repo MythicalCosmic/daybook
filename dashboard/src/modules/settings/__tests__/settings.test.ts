@@ -44,8 +44,8 @@ function stub(routes: Record<string, (call: Call) => Response | Promise<Response
 
 const SETTINGS: CompanySettings = {
   id: 1,
-  name: "Demo Shop",
-  slug: "demo-shop",
+  name: "Demo Dorixona",
+  slug: "demo-pharmacy",
   logo: null,
   timezone: "Asia/Tashkent",
   default_language: "uz",
@@ -123,14 +123,14 @@ describe("CompanyPanel", () => {
     expect(wrapper.text()).toContain("Locked: money is already booked in it.");
     expect(wrapper.text()).not.toContain("Unsaved changes");
 
-    await wrapper.find('input[maxlength="200"]').setValue("Baraka Market");
+    await wrapper.find('input[maxlength="200"]').setValue("Yashilbog‘ Dorixona");
     await flushPromises();
     expect(document.body.textContent).toContain("Discard");
     await wrapper.find("form").trigger("submit");
     await flushPromises();
 
     const patch = calls.find((c) => c.method === "PATCH");
-    expect(patch?.body).toMatchObject({ name: "Baraka Market", workdays: [0, 1, 2, 3, 4, 5], morning_report_at: "09:00" });
+    expect(patch?.body).toMatchObject({ name: "Yashilbog‘ Dorixona", workdays: [0, 1, 2, 3, 4, 5], morning_report_at: "09:00" });
     expect(calls.some((c) => c.url.endsWith("/owner/me/"))).toBe(true);
   });
 

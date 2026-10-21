@@ -166,6 +166,15 @@ function countIn(role: Role, group: PermissionGroup): number {
 .corner {
   min-width: 280px;
 }
+/* A finger-sized target: the middle of the cell toggles the box, not just its 16 px. */
+td :deep(label) {
+  position: relative;
+}
+td :deep(label)::after {
+  content: "";
+  position: absolute;
+  inset: -12px -24px;
+}
 /* Phones show one role at a time: the permission column takes what the role column leaves. */
 @media (max-width: 639px) {
   .corner {

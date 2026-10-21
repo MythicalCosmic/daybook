@@ -134,7 +134,8 @@ const personUrl = computed(() => `/c/${company.currentId}/people/${memberId.valu
 </script>
 
 <template>
-  <div class="mx-auto flex w-full max-w-[880px] flex-col gap-5">
+  <div class="flex w-full max-w-[880px] flex-col gap-5">
+    <!-- Left-aligned like every other page; the wizard keeps a readable width. -->
     <PageHeader class="!mb-0" :title="t('people.offboard.title')" :description="t('people.offboard.description')" :back="personUrl" :back-label="person.data.value?.name ?? t('people.title')" />
 
     <div v-if="skeleton" class="ui-card flex flex-col gap-4 p-5"><SkeletonBlock height="40px" /><SkeletonBlock :lines="4" /><SkeletonBlock height="120px" radius="12px" /></div>

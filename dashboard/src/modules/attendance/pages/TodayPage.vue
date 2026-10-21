@@ -71,18 +71,26 @@ const restDay = computed(() => quiet.value && !unplanned.value);
 /** People not here yet whose shift has already started (past the grace minutes). */
 const overdue = computed(() => (data.value?.people ?? []).filter((row) => row.state === "not_yet" && row.reason === "late").length);
 
+/** Today: who came and has already checked out (the "In" column keeps them, "present now" doesn't). */
+const leftAlready = computed(() => {
+  if (!isToday.value || !data.value) return 0;
+  return data.value.totals.left ?? data.value.people.filter((row) => (row.state === "in" || row.state === "late") && !!row.record?.check_out_at).length;
+});
+
 const kpis = computed(() => {
   const totals = data.value?.totals;
   if (!totals) return [];
-  const present = totals.in + totals.late;
-  // On a phone the KPI is half the width: the number and its line of context need the room.
-  const spark = isPhone.value ? undefined : (week.data.value?.series ?? []).slice(-14).map((point) => point.present);
+  const came = totals.in + totals.late;
+  const left = leftAlready.value;
+  // On a phone the KPI is half the width, and once people start leaving the line says who came and
+  // who left: the number and its line of context need the room more than the sparkline.
+  const spark = isPhone.value || left ? undefined : (week.data.value?.series ?? []).slice(-14).map((point) => point.present);
   return [
     {
       id: "present",
       label: isToday.value ? t("attendance.kpi.presentNow") : t("attendance.kpi.present"),
-      value: present,
-      hint: t("attendance.kpi.ofRostered", { n: totals.rostered }),
+      value: came - left,
+      hint: left ? t("attendance.kpi.cameLeft", { came, n: totals.rostered, left }) : t("attendance.kpi.ofRostered", { n: totals.rostered }),
       icon: Users,
       spark,
       sparkColor: "var(--c-chart-2)",

@@ -9,6 +9,7 @@ import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
 import DataTable from "@/components/DataTable.vue";
+import EmptyState from "@/components/EmptyState.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import ProgressBar from "@/components/ProgressBar.vue";
@@ -43,6 +44,8 @@ const params = computed(() => {
   return { status, pinned: tab.value === "pinned" ? "true" : undefined, q: search.value || undefined, ...table.params.value };
 });
 const query = useAnnouncements(params);
+/** None sent or planned yet: the reason and the way to write one, without zeros and an empty table. */
+const nothingYet = computed(() => tab.value === "all" && !search.value && query.data.value?.count === 0);
 
 const tabs = computed(() => [
   { id: "all", label: t("comms.tab.all") },
@@ -97,9 +100,15 @@ function open(row: Announcement): void {
       </template>
     </PageHeader>
 
-    <KpiStrip :items="kpis" :loading="stats.isPending.value" :columns="4" phone="compact" />
+    <div v-if="nothingYet" class="ui-card" data-comms-empty>
+      <EmptyState :icon="Megaphone" :title="t('comms.list.emptyTitle')" :description="t('comms.list.emptyBody')">
+        <UiButton variant="secondary" :icon="SquarePen" :to="`/c/${company.currentId}/announcements/new`">{{ t("comms.cmd.new") }}</UiButton>
+      </EmptyState>
+    </div>
+    <KpiStrip v-else :items="kpis" :loading="stats.isPending.value" :columns="4" phone="compact" />
 
     <DataTable
+      v-if="!nothingYet"
       :state="table"
       :columns="columns"
       :rows="query.data.value?.results"

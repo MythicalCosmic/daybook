@@ -21,12 +21,14 @@ import UiButton from "@/components/UiButton.vue";
 import UiTooltip from "@/components/UiTooltip.vue";
 import { useDataTable } from "@/components/useDataTable";
 import { toast } from "@/components/useToast";
+import { currentLanguage } from "@/i18n";
 import { downloadExport } from "@/lib/useExport";
 import { useFormat } from "@/lib/useFormat";
 import { useNow } from "@/lib/useNow";
 import { useCompanyStore } from "@/stores/company";
 
 import { getExport, isBuilding, useCreateExport, useExports } from "../api";
+import { describeParams } from "../describe";
 import NewExportDialog from "../components/NewExportDialog.vue";
 
 const { t } = useI18n();
@@ -45,11 +47,9 @@ const TONES: Record<ExportJob["status"], StatusTone> = { pending: "info", runnin
 
 const expired = (job: ExportJob) => new Date(job.expires_at).getTime() <= now.value;
 
+/** What the file holds, in words ("14–20 Oct · Late only"), never the API's keys. */
 function paramsText(job: ExportJob): string {
-  return Object.entries(job.params ?? {})
-    .filter(([, value]) => value !== null && value !== "" && !(Array.isArray(value) && !value.length))
-    .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(", ") : String(value)}`)
-    .join(" · ");
+  return describeParams(job.params, (key, named = {}, plural) => (plural === undefined ? t(key, named) : t(key, named, plural)), currentLanguage());
 }
 
 async function download(job: ExportJob): Promise<void> {

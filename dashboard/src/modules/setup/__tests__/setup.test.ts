@@ -137,22 +137,22 @@ describe("NewCompanyForm", () => {
       { key: "companies.settings", label: "Working days, report times and staff settings" },
       { key: "companies.modules", label: "Modules switched on" },
     ],
-    sources: [{ id: 1, name: "Demo Shop", parts: ["companies.settings", "companies.modules"] }],
+    sources: [{ id: 1, name: "Demo Dorixona", parts: ["companies.settings", "companies.modules"] }],
   };
 
   it("asks for a code when needed, copies the chosen setup and opens Get started", async () => {
     const close = vi.fn();
     const calls = stub({
       "GET /owner/companies/new/": () => json(info),
-      "POST /owner/companies/": () => json({ id: 9, name: "Baraka Café", slug: "baraka-cafe", copied: { "companies.settings": 1 } }, 201),
-      "GET /owner/me/": () => json(me([company(), company({ id: 9, name: "Baraka Café" })])),
+      "POST /owner/companies/": () => json({ id: 9, name: "Bodomgul Dorixonasi", slug: "bodomgul-dorixonasi", copied: { "companies.settings": 1 } }, 201),
+      "GET /owner/me/": () => json(me([company(), company({ id: 9, name: "Bodomgul Dorixonasi" })])),
     });
     const app = await testApp("/c/1");
     const { wrapper } = mountWithProviders(NewCompanyForm, { props: { context: { close } }, plugins: app.plugins });
     await flushPromises();
 
     expect(wrapper.text()).toContain("Signup code");
-    await wrapper.find('input[maxlength="200"]').setValue("Baraka Café");
+    await wrapper.find('input[maxlength="200"]').setValue("Bodomgul Dorixonasi");
     await wrapper.find("form").trigger("submit");
     await flushPromises();
     expect(wrapper.text()).toContain("Enter the signup code you were given.");
@@ -163,7 +163,7 @@ describe("NewCompanyForm", () => {
     await flushPromises();
 
     const post = calls.find((c) => c.method === "POST");
-    expect(post?.body).toMatchObject({ name: "Baraka Café", timezone: "Asia/Tashkent", base_currency: "UZS", signup_code: "k7m2-qx9p", copy_from: null, parts: [] });
+    expect(post?.body).toMatchObject({ name: "Bodomgul Dorixonasi", timezone: "Asia/Tashkent", base_currency: "UZS", signup_code: "k7m2-qx9p", copy_from: null, parts: [] });
     expect(close).toHaveBeenCalled();
     expect(app.router.currentRoute.value.fullPath).toBe("/c/9/get-started");
   });

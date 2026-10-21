@@ -36,7 +36,7 @@ import {
   Wallet,
   type LucideIcon,
 } from "@lucide/vue";
-import { computed, onMounted, ref, watch, type Component } from "vue";
+import { computed, nextTick, onMounted, ref, watch, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
@@ -136,6 +136,22 @@ const iconOf = (icon: Component | undefined) => icon ?? Settings2;
 watch([param, panels], () => {
   if (param.value && panels.value.length && !active.value) void router.replace(base.value);
 });
+
+/**
+ * The list scrolls on its own when it is taller than the window: a panel opened from a link
+ * ("settings/knowledge") brings its row into view instead of leaving it below the fold.
+ */
+const navEl = ref<HTMLElement | null>(null);
+function revealActive(): void {
+  const nav = navEl.value;
+  const row = nav?.querySelector<HTMLElement>('[aria-current="page"]');
+  if (!nav || !row || nav.scrollHeight <= nav.clientHeight) return;
+  const box = nav.getBoundingClientRect();
+  const at = row.getBoundingClientRect();
+  if (at.top >= box.top && at.bottom <= box.bottom) return;
+  nav.scrollTop += at.top - box.top - (nav.clientHeight - at.height) / 2;
+}
+watch([() => shown.value?.id, messagesReady], () => void nextTick(revealActive), { flush: "post" });
 </script>
 
 <template>
@@ -146,6 +162,7 @@ watch([param, panels], () => {
       <!-- On a desktop the list stays in view and scrolls on its own when it is taller than the window. -->
       <nav
         v-if="!isPhone || !shown"
+        ref="navEl"
         :aria-label="t('settings.title')"
         class="flex flex-col gap-5 lg:sticky lg:top-[calc(var(--topbar-h)+20px)] lg:-mx-1.5 lg:max-h-[calc(100dvh-var(--topbar-h)-44px)] lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:px-1.5 lg:pb-2"
         data-settings-nav

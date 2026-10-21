@@ -92,7 +92,7 @@ describe("LeaveMonthGrid", () => {
     rows: [
       {
         member: { id: 11, name: "Dilshod Karimov", photo_url: null },
-        position: "Sales floor",
+        position: "Farmatsevt",
         home_branch: { id: 2, name: "Yunusobod", code: "YNS" },
         items: [
           { id: 101, first_day: "2026-10-19", last_day: "2026-10-23", status: "approved", reason: "Oilaviy to‘y", recorded: false, days: 5 },
@@ -101,7 +101,7 @@ describe("LeaveMonthGrid", () => {
       },
       {
         member: { id: 12, name: "Madina Saidova", photo_url: null },
-        position: "Cashier",
+        position: "Provizor",
         home_branch: { id: 1, name: "Chilonzor", code: "CHL" },
         items: [{ id: 103, first_day: "2026-09-29", last_day: "2026-10-02", status: "approved", reason: "", recorded: true, days: 3 }],
       },
@@ -147,6 +147,37 @@ describe("LeaveMonthGrid", () => {
     mountWithProviders(LeaveMonthGrid, { plugins: app.plugins, props: { month } });
     await flushPromises();
     expect(scrolled.at(-1)).toBe(15 * 34);
+  });
+
+  it("moves the label of a bar that starts under the names into view", async () => {
+    const has = (el: Element, name: string) => el.classList.contains(name);
+    vi.spyOn(Element.prototype, "scrollWidth", "get").mockImplementation(function (this: Element) {
+      return has(this, "grid-wrap") ? 228 + 31 * 34 : 0;
+    });
+    vi.spyOn(Element.prototype, "clientWidth", "get").mockImplementation(function (this: Element) {
+      return has(this, "grid-wrap") ? 756 : 0;
+    });
+    vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) {
+      return has(this, "name") ? 228 : 0;
+    });
+    // Scrolled so the 20th is the first day next to the names.
+    vi.spyOn(Element.prototype, "scrollLeft", "get").mockReturnValue(19 * 34);
+    vi.spyOn(Element.prototype, "scrollLeft", "set").mockImplementation(() => undefined);
+    const row = month.rows[0]!;
+    const scrolledMonth: CalendarMonth = {
+      ...month,
+      rows: [{ ...row, items: [{ id: 201, first_day: "2026-10-15", last_day: "2026-10-21", status: "approved", reason: "Kasallik varaqasi", recorded: false, days: 7 }, row.items[0]!] }],
+    };
+    const app = await testApp("/c/1/time-off");
+    const { wrapper } = mountWithProviders(LeaveMonthGrid, { plugins: app.plugins, props: { month: scrolledMonth } });
+    await flushPromises();
+    const bars = wrapper.findAll("button.leave");
+    // Only two of its days are in view: no cut label (the tooltip names it).
+    expect(bars[0]!.text()).toBe("");
+    // It starts a day under the names: the label begins at the first visible day.
+    const label = bars[1]!.find("span");
+    expect(label.text()).toBe("Oilaviy to‘y");
+    expect(label.attributes("style")).toContain("padding-left: 32px");
   });
 });
 

@@ -231,7 +231,7 @@ describe("PersonOverviewTab", () => {
     const person = {
       id: 7,
       name: "Alisher Valiyev",
-      position: { id: 1, name: "Sotuvchi" },
+      position: { id: 1, name: "Farmatsevt" },
       role: { id: 2, name: "Xodim" },
       home_branch: { id: 1, name: "Chilonzor" },
       branches: [{ id: 1, name: "Chilonzor" }],

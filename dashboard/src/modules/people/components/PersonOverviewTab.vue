@@ -76,8 +76,9 @@ function span(first: string, last: string): string {
 </script>
 
 <template>
-  <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
-    <div class="flex min-w-0 flex-col gap-5 lg:col-span-2">
+  <div class="grid grid-cols-1 gap-5 xl:grid-cols-3">
+    <!-- Side by side from 1280 px: at 1024 a third of the page is too narrow for the details' values. -->
+    <div class="flex min-w-0 flex-col gap-5 xl:col-span-2">
       <ChartCard
         :title="t('people.overview.trendTitle')"
         :subtitle="t('people.overview.trendSubtitle')"
@@ -110,7 +111,8 @@ function span(first: string, last: string): string {
       </section>
     </div>
 
-    <div class="flex min-w-0 flex-col gap-5">
+    <!-- Below 1280 px the details and the time off sit side by side under the charts. -->
+    <div class="flex min-w-0 flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start xl:flex xl:items-stretch">
       <section class="ui-card p-5">
         <h2 class="mb-1 text-md font-semibold text-fg">{{ t("people.overview.details") }}</h2>
         <DescriptionList :items="details" layout="rows" />

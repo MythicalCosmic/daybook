@@ -151,7 +151,7 @@ class TenantModel(TimeStampedModel):
 
 
 class Branch(TenantModel):
-    """A shop, office or kitchen of the company. Data that happens somewhere carries one."""
+    """A pharmacy, warehouse or office of the company. Data that happens somewhere carries one."""
 
     company = models.ForeignKey(Company, on_delete=models.PROTECT, related_name="branches")
     name = models.CharField(max_length=100)
