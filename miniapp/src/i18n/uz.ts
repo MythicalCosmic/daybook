@@ -227,6 +227,7 @@ const uz: Partial<Record<Key, string>> = {
   "detail.proof": "Tasdiq",
   "detail.check": "Tekshiradi",
   "detail.checkYes": "Rahbaringiz",
+  "detail.checkYou": "Siz",
   "detail.checkNo": "Tekshiruv kerak emas",
   "detail.for": "Ijrochi",
   "detail.comments": "Izohlar",

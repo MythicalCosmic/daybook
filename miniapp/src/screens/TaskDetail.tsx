@@ -106,14 +106,7 @@ function Detail({ task, comments, ctx }: { task: Task; comments: Comment[]; ctx:
     [t("detail.due"), dueLabel(task, ctx)],
     [t("detail.repeats"), repeat ?? t("detail.no")],
     [t("detail.proof"), t(`proof.${task.proof}`)],
-    [
-      t("detail.check"),
-      task.needs_confirmation
-        ? task.kind === "assigned" && task.created_by
-          ? task.created_by.name
-          : t("detail.checkYes")
-        : t("detail.checkNo"),
-    ],
+    [t("detail.check"), checker(task, member.id, t)],
   ];
   if (!isMine) details.push([t("detail.for"), task.assignee.name]);
 
@@ -396,6 +389,19 @@ function ActionBar({ task, isMine }: { task: Task; isMine: boolean }) {
   }
   if (!primary && secondary) [primary, secondary] = [secondary, undefined];
   return primary ? <BottomBar primary={primary} secondary={secondary} /> : null;
+}
+
+/**
+ * Who checks the task, as the person looking reads it: whoever confirmed it once it's checked,
+ * "You" for the one who checks it (not "Your manager" to the manager), the giver of assigned work,
+ * else "Your manager".
+ */
+export function checker(task: Task, me: number, t: ViewContext["t"]): string {
+  if (!task.needs_confirmation) return t("detail.checkNo");
+  if (task.confirmed_by) return task.confirmed_by.id === me ? t("detail.checkYou") : task.confirmed_by.name;
+  if (task.actions.includes("confirm") || task.created_by?.id === me) return t("detail.checkYou");
+  if (task.kind === "assigned" && task.created_by) return task.created_by.name;
+  return t("detail.checkYes");
 }
 
 function dueLabel(task: Task, ctx: ViewContext): string {

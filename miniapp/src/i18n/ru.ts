@@ -238,6 +238,7 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
   "detail.proof": "Подтверждение",
   "detail.check": "Проверяет",
   "detail.checkYes": "Руководитель",
+  "detail.checkYou": "Вы",
   "detail.checkNo": "Проверка не нужна",
   "detail.for": "Исполнитель",
   "detail.comments": "Комментарии",
