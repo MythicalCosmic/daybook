@@ -1024,6 +1024,12 @@ textarea.input {
   gap: 8px;
 }
 
+.home-today-loading {
+  width: 62%;
+  height: 20px;
+  border-radius: 8px;
+}
+
 .home-today-title {
   font-size: 17px;
   font-weight: 700;

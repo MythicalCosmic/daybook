@@ -30,8 +30,9 @@ export function ActivityScreen() {
       <div className="page-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12 }}>
         <div>
           <h1 className="heading title-lg">{t("activity.title")}</h1>
+          {/* "All caught up" only once the feed is here: not while it loads, not when it failed. */}
           <div className="subline">
-            {unread.length ? t("activity.new", { count: unread.length }) : t("activity.caughtUp")}
+            {!activity.data ? "\u00a0" : unread.length ? t("activity.new", { count: unread.length }) : t("activity.caughtUp")}
           </div>
         </div>
         {unread.length > 0 && (

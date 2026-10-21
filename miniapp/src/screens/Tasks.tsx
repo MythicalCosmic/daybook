@@ -59,7 +59,8 @@ export function Tasks() {
     <div className="screen fade-in" style={{ gap: 10 }}>
       <div className="page-head">
         <h1 className="heading title-lg">{t("tasks.title")}</h1>
-        <div className="subline">{t("tasks.left", { count: leftToday })}</div>
+        {/* Counted once the list is here: "0 tasks left" while it loads would be a guess. */}
+        <div className="subline">{board.data ? t("tasks.left", { count: leftToday }) : "\u00a0"}</div>
       </div>
 
       {/* Four tabs with counts don't fit a phone in every language: the strip scrolls sideways

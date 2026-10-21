@@ -12,7 +12,7 @@ import { dayKey, dayMonth, hourIn, longDate } from "../lib/time";
 import { useViewContext } from "../lib/useNow";
 import { useNavigation } from "../state/navigation";
 import { useMember } from "../state/session";
-import { Banner } from "../ui";
+import { Banner, LoadError } from "../ui";
 
 /**
  * Home, most urgent first: what to do right now (the hero: check in or out, the till), the shape
@@ -86,14 +86,17 @@ export function Home() {
             <Sun size={28} strokeWidth={2.2} />
           </span>
         ) : (
-          <Ring done={numbers?.today_done ?? 0} total={numbers?.today_total ?? 0} />
+          <Ring done={numbers?.today_done ?? 0} total={numbers?.today_total ?? 0} loading={!numbers} />
         )}
         <span className="home-today-text">
-          <span className="home-today-title">
-            {numbers && numbers.today_total > 0
-              ? t("home.progress", { done: numbers.today_done, total: numbers.today_total })
-              : t("home.nothingToday")}
-          </span>
+          {/* Before the numbers come, a placeholder line: "Nothing due today" would be a guess. */}
+          {numbers ? (
+            <span className="home-today-title">
+              {numbers.today_total > 0 ? t("home.progress", { done: numbers.today_done, total: numbers.today_total }) : t("home.nothingToday")}
+            </span>
+          ) : (
+            <span className="skeleton home-today-loading" aria-hidden />
+          )}
           {split && numbers && numbers.today_total > 0 && <span className="home-today-split">{split}</span>}
           {numbers && numbers.streak_days > 0 && (
             <span className="tag tag-sage home-today-streak">
@@ -138,6 +141,9 @@ export function Home() {
           </div>
           {board.isPending ? (
             <RowSkeleton />
+          ) : board.isError && !board.data ? (
+            // Not "Nothing else due today": the list didn't load.
+            <LoadError compact error={board.error} onRetry={() => void board.refetch()} />
           ) : upNext.length ? (
             upNext.map((task) => (
               <TaskRow key={task.id} task={task} ctx={ctx} onOpen={() => navigation.openTask(task.id)} onTick={() => complete(task)} />

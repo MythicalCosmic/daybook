@@ -12,6 +12,8 @@ import { keys } from "../api/hooks";
 import type { Me, Membership, Summary, Task } from "../api/types";
 import { I18nProvider } from "../i18n";
 import { Home } from "../screens/Home";
+import { Tasks } from "../screens/Tasks";
+import { ActivityScreen } from "../screens/Activity";
 import { Profile } from "../screens/Profile";
 import { Sheets } from "../sheets/Sheets";
 import { NavigationProvider, useNavigation, type Navigation, type NavigationInit } from "../state/navigation";
@@ -125,18 +127,19 @@ function renderWith(
     permissions = [] as string[],
     initial = undefined as NavigationInit | undefined,
     seed = undefined as { task: Task; comments: [] } | undefined,
-    numbers = summary,
-    board = [] as Task[],
+    numbers = summary as Summary | null,
+    board = [] as Task[] | null,
+    activity = [] as unknown[] | null,
   } = {},
 ) {
   const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } });
-  client.setQueryData(keys.summary(1), numbers);
+  if (numbers) client.setQueryData(keys.summary(1), numbers);
   if (seed) {
     client.setQueryData(keys.task(1, seed.task.id), seed.task);
     client.setQueryData(keys.comments(1, seed.task.id), seed.comments);
   }
-  client.setQueryData(keys.board(1), board);
-  client.setQueryData(keys.activity(1), []);
+  if (board) client.setQueryData(keys.board(1), board);
+  if (activity) client.setQueryData(keys.activity(1), activity);
   client.setQueryData(keys.timeOff(1), []);
   client.setQueryData(keys.holidays(1), []);
   const me = { id: 1, telegram_id: 4242, telegram_username: "", first_name: "Alisher", last_name: "Valiyev", phone: "", memberships: [membership(permissions)] } as Me;
@@ -219,6 +222,33 @@ describe("feature hosts in the real screens", () => {
       expect(document.querySelector(".home-today-split")).toBeNull();
     } finally {
       vi.useRealTimers();
+    }
+  });
+
+  it("say nothing they don't know yet: no guesses while loading, and a list that failed says so", async () => {
+    // The summary and the board never arrive (no network in tests).
+    vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new TypeError("Failed to fetch"))));
+    try {
+      const home = renderWith(<Home />, { numbers: null, board: null });
+      expect(screen.queryByText("Nothing due today")).toBeNull();
+      expect(home.container.querySelector(".home-today-loading")).toBeTruthy();
+      expect(home.container.querySelector(".ui-ring-label")?.textContent).toBe("");
+      // Up next doesn't claim "Nothing else due today" about a list it couldn't load.
+      expect(await screen.findByText("This part didn't open")).toBeTruthy();
+      expect(screen.queryByText("Nothing else due today.")).toBeNull();
+      cleanup();
+
+      renderWith(<Tasks />, { board: null });
+      expect(screen.queryByText(/tasks? left for today/)).toBeNull();
+      expect(await screen.findByText("This part didn't open")).toBeTruthy();
+      expect(screen.queryByText("All done here")).toBeNull();
+      cleanup();
+
+      renderWith(<ActivityScreen />, { activity: null });
+      expect(await screen.findByText("This part didn't open")).toBeTruthy();
+      expect(screen.queryByText("You're all caught up")).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
     }
   });
 
