@@ -407,7 +407,12 @@ class TaskViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
     def confirm(self, request, company_id, pk):
         return self._respond(services.confirm_task(self.get_object(), by=self.membership))
 
-    @extend_schema(request=ConfirmManySerializer, responses=ConfirmManyResponseSerializer)
+    # Its own operation id: the generated one is the same as confirming one task's.
+    @extend_schema(
+        operation_id="v1_companies_tasks_confirm_many",
+        request=ConfirmManySerializer,
+        responses=ConfirmManyResponseSerializer,
+    )
     @action(detail=False, methods=["post"], url_path="confirm", url_name="confirm-many")
     def confirm_many(self, request, company_id):
         """Confirm several finished tasks at once (a routine's runs, from the mini app's "Confirm
