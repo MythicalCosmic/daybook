@@ -26,7 +26,7 @@ import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
 import { useForm } from "@/lib/useForm";
 
-import { createProject, updateProject, useCompanyId, useOptions, usePeople, useRefreshProjects } from "../api";
+import { createProject, updateProject, useCompanyId, useOptions, usePeople, useRefreshProjects, useSettings } from "../api";
 import { colorVar, ICON_NAMES, projectIcon } from "../lib";
 import { PALETTE, PROJECT_STATUSES, type PaletteColor, type ProjectDetail, type ProjectInput, type ProjectPriority, type ProjectStatus, type Visibility } from "../types";
 
@@ -145,6 +145,12 @@ const visibilityOptions = computed(() => [
   { value: "members", label: t("projects.visibility.members"), description: t("projects.visibility.membersTip"), icon: Lock },
   { value: "company", label: t("projects.visibility.company"), description: t("projects.visibility.companyTip"), icon: Users },
 ]);
+// The company's own starting lists (projects settings), so the hint never promises other ones.
+const settings = useSettings();
+const newHint = computed(() => {
+  const lists = settings.data.value?.default_lists ?? [];
+  return lists.length ? t("projects.form.newHintLists", { lists: lists.join(", ") }) : t("projects.form.newHint");
+});
 const keyPreview = computed(() => (form.values.key || suggest(form.values.name)).toUpperCase());
 
 /** The key the server will most likely pick (initials, else the first letters). */
@@ -160,7 +166,7 @@ function suggest(name: string): string {
 </script>
 
 <template>
-  <UiDialog v-model:open="open" :title="editing ? t('projects.form.editTitle') : t('projects.form.newTitle')" :description="editing ? undefined : t('projects.form.newHint')" size="xl">
+  <UiDialog v-model:open="open" :title="editing ? t('projects.form.editTitle') : t('projects.form.newTitle')" :description="editing ? undefined : newHint" size="xl">
     <form id="project-form" class="flex flex-col gap-5" novalidate @submit="form.submit">
       <InlineAlert v-if="form.formError.value" tone="danger" :description="form.formError.value" />
       <div class="grid gap-4 sm:grid-cols-[1fr_160px]">

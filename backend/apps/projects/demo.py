@@ -622,9 +622,9 @@ def _time(company, projects, people, *, today, rng, now) -> None:
                 for who in work[project.pk]:
                     member = people[who]
                     active = [t for t in cards[project.pk] if worked_on(t, day)]
-                    options = [t for t in active if t.assignee_id == member.pk] or active
+                    options = [t for t in active if t.assignee_id == member.pk]
                     for _ in range(rng.choice((1, 1, 2))):
-                        # Without a card in progress, the time is on the project itself.
+                        # Without a card of their own in progress, the time is on the project.
                         task = rng.choice(options) if options else None
                         TimeEntry.objects.create(
                             company=company,

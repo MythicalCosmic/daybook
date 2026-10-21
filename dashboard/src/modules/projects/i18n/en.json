@@ -201,6 +201,7 @@
   "projects.drawer.openTask": "Open in Tasks",
   "projects.form.newTitle": "New project",
   "projects.form.newHint": "It starts with the lists Backlog, To do, In progress, Review and Done.",
+  "projects.form.newHintLists": "Its board starts with the lists {lists}.",
   "projects.form.editTitle": "Edit project",
   "projects.form.name": "Name",
   "projects.form.namePlaceholder": "e.g. Chilonzor branch opening",

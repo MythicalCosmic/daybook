@@ -201,6 +201,7 @@
   "projects.drawer.openTask": "Vazifalarda ochish",
   "projects.form.newTitle": "Yangi loyiha",
   "projects.form.newHint": "U Backlog, Bajarilishi kerak, Jarayonda, Tekshiruv va Bajarildi ro‘yxatlari bilan boshlanadi.",
+  "projects.form.newHintLists": "Doskasi {lists} ro‘yxatlari bilan boshlanadi.",
   "projects.form.editTitle": "Loyihani tahrirlash",
   "projects.form.name": "Nomi",
   "projects.form.namePlaceholder": "Masalan, Chilonzor filialini ochish",

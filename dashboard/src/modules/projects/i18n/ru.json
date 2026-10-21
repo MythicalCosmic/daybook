@@ -201,6 +201,7 @@
   "projects.drawer.openTask": "Открыть в задачах",
   "projects.form.newTitle": "Новый проект",
   "projects.form.newHint": "Начнётся с колонок: Бэклог, К выполнению, В работе, Проверка и Готово.",
+  "projects.form.newHintLists": "Доска начнётся с колонок: {lists}.",
   "projects.form.editTitle": "Изменить проект",
   "projects.form.name": "Название",
   "projects.form.namePlaceholder": "Например, Открытие филиала в Чиланзаре",
