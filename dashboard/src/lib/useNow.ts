@@ -12,8 +12,9 @@ export const NOW_TICK_MS = 30_000;
 
 export function useNow(): Readonly<Ref<number>> {
   users += 1;
+  // Every new listener starts from the time it is now, not the last tick (up to 30 s old).
+  now.value = Date.now();
   if (timer === undefined) {
-    now.value = Date.now();
     timer = setInterval(() => (now.value = Date.now()), NOW_TICK_MS);
   }
   if (getCurrentScope()) {
