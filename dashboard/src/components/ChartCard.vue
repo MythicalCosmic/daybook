@@ -23,6 +23,7 @@ import EmptyState from "./EmptyState.vue";
 import ErrorState from "./ErrorState.vue";
 import IconButton from "./IconButton.vue";
 import SkeletonBlock from "./SkeletonBlock.vue";
+import { vTruncateTitle } from "./truncateTitle";
 
 export interface ChartCsv<Row = Record<string, unknown>> {
   filename: string;
@@ -111,11 +112,11 @@ const menu = computed<MenuEntry[]>(() => {
       <div class="min-w-[min(100%,180px)] flex-1">
         <h3 class="flex min-h-5 min-w-0 items-center gap-2 text-sm font-semibold text-fg">
           <component :is="icon" v-if="icon" :size="16" class="shrink-0 text-subtle" aria-hidden="true" />
-          <span class="truncate">{{ title }}</span>
+          <span v-truncate-title class="truncate">{{ title }}</span>
         </h3>
         <p v-if="value && !loading" class="mt-1 truncate text-xl font-semibold tracking-[-0.015em] tabular-nums text-fg">{{ value }}</p>
         <SkeletonBlock v-else-if="value !== undefined && skeleton" class="mt-1.5" width="140px" height="24px" />
-        <p v-if="subtitle" class="mt-0.5 truncate text-xs text-muted">{{ subtitle }}</p>
+        <p v-if="subtitle" v-truncate-title class="mt-0.5 truncate text-xs text-muted">{{ subtitle }}</p>
       </div>
       <div class="-mt-0.5 flex min-w-0 max-w-full items-center gap-1">
         <slot name="actions" />

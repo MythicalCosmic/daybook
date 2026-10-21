@@ -72,9 +72,10 @@ const lastDot = computed(() => {
     </defs>
     <path v-if="area && fill" :d="fill" :fill="`url(#${gradientId})`" data-spark-fill />
     <path v-if="line" :d="line" fill="none" :stroke="color" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" data-spark-line />
+    <!-- The dot's colours as style, not attributes: `path[stroke]` stays the line alone. -->
     <template v-if="dot && lastDot">
-      <path :d="lastDot" stroke="var(--c-surface)" stroke-width="8.5" stroke-linecap="round" vector-effect="non-scaling-stroke" />
-      <path :d="lastDot" :stroke="color" stroke-width="5.5" stroke-linecap="round" vector-effect="non-scaling-stroke" data-spark-dot />
+      <path :d="lastDot" :style="{ stroke: 'var(--c-surface)', strokeWidth: 8.5 }" stroke-linecap="round" vector-effect="non-scaling-stroke" />
+      <path :d="lastDot" :style="{ stroke: color, strokeWidth: 5.5 }" stroke-linecap="round" vector-effect="non-scaling-stroke" data-spark-dot />
     </template>
   </svg>
 </template>

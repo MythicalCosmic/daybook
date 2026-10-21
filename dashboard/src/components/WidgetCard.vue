@@ -16,6 +16,7 @@ import { useI18n } from "vue-i18n";
 import { RouterLink, type RouteLocationRaw } from "vue-router";
 
 import UiBadge, { type BadgeTone } from "./UiBadge.vue";
+import { vTruncateTitle } from "./truncateTitle";
 import { useScrollFade } from "./useScrollFade";
 
 withDefaults(
@@ -47,10 +48,10 @@ const fade = useScrollFade(body, content);
       <div class="min-w-0 flex-1">
         <div class="flex min-h-5 min-w-0 items-center gap-2">
           <component :is="icon" v-if="icon" :size="16" class="shrink-0 text-subtle" aria-hidden="true" />
-          <h3 class="truncate text-sm font-semibold text-fg">{{ title }}</h3>
+          <h3 v-truncate-title class="truncate text-sm font-semibold text-fg">{{ title }}</h3>
           <UiBadge v-if="count" :count="count" :tone="countTone" />
         </div>
-        <p v-if="subtitle" class="mt-0.5 truncate text-xs text-muted">{{ subtitle }}</p>
+        <p v-if="subtitle" v-truncate-title class="mt-0.5 truncate text-xs text-muted">{{ subtitle }}</p>
       </div>
       <slot name="aside" />
       <RouterLink

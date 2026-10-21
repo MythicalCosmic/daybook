@@ -197,12 +197,15 @@ onBeforeUnmount(cancelDrag);
         >
           <span class="absolute -left-1 -top-[3px] size-2 rounded-full border-2 border-primary bg-surface" />
         </span>
+        <!-- On touch screens: always shown (nothing hovers there), wider, and the finger's drag is
+             ours (touch-none), not a page scroll that cancels it. -->
         <button
           v-if="draggable && !row.node.locked"
           type="button"
           tabindex="-1"
-          class="-ml-0.5 grid h-6 w-4 shrink-0 cursor-grab place-items-center rounded-[4px] text-subtle opacity-0 transition-opacity hover:text-fg group-hover/row:opacity-100 active:cursor-grabbing"
+          class="-ml-0.5 grid h-6 w-4 shrink-0 cursor-grab touch-none place-items-center rounded-[4px] text-subtle opacity-0 transition-opacity hover:text-fg group-hover/row:opacity-100 active:cursor-grabbing pointer-coarse:h-8 pointer-coarse:w-7 pointer-coarse:opacity-100"
           :aria-label="t('common.tree.drag')"
+          data-tree-handle
           @pointerdown="onHandleDown($event, row)"
           @click.stop
         >

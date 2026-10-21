@@ -39,7 +39,8 @@ const grid = computed(() => {
       2: "sm:grid-cols-2",
       3: "sm:grid-cols-3",
       4: "sm:grid-cols-2 xl:grid-cols-4",
-      5: "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5",
+      // Six tracks between 1024 and 1279 px: three numbers over two, each row full (styles below).
+      5: "sm:grid-cols-2 lg:grid-cols-6 xl:grid-cols-5",
     } as Record<number, string>)[count.value] ?? "";
   return `${base} ${wider}`.trim();
 });
@@ -47,7 +48,7 @@ const grid = computed(() => {
 
 <template>
   <div class="ui-card overflow-hidden">
-    <div :class="['kpi-strip grid', grid]" :data-phone="phone" :data-phone-columns="phoneColumns">
+    <div :class="['kpi-strip grid', grid]" :data-phone="phone" :data-phone-columns="phoneColumns" :data-count="count">
       <slot>
         <KpiCard v-for="(item, index) in items" :key="item.id ?? index" v-bind="item" :loading="loading || item.loading" variant="plain" />
       </slot>
@@ -64,6 +65,21 @@ const grid = computed(() => {
   border-top: 1px solid var(--c-border);
   border-left: 1px solid var(--c-border);
   border-radius: 0;
+}
+/* Five numbers never leave an empty cell: on tablets the odd last one takes its row (2 + 2 + 1);
+   from 1024 to 1279 px the six tracks hold three numbers over two (2 tracks each, then 3 each). */
+@media (40rem <= width < 64rem) {
+  .kpi-strip[data-count="5"] > :deep(*:last-child:nth-child(odd)) {
+    grid-column: 1 / -1;
+  }
+}
+@media (64rem <= width < 80rem) {
+  .kpi-strip[data-count="5"] > :deep(*) {
+    grid-column: span 2;
+  }
+  .kpi-strip[data-count="5"] > :deep(*:nth-child(n + 4)) {
+    grid-column: span 3;
+  }
 }
 /* Phone layouts (`phone`): below Tailwind's sm, where the grid classes switch. */
 @media (width < 40rem) {

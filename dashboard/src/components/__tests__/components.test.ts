@@ -7,6 +7,7 @@ import { createMemoryHistory, createRouter, type Router } from "vue-router";
 import { ApiError } from "@/api/http";
 import AvatarStack from "@/components/AvatarStack.vue";
 import CalendarWeek from "@/components/CalendarWeek.vue";
+import ChartCard from "@/components/ChartCard.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import KbdKey from "@/components/KbdKey.vue";
@@ -18,6 +19,7 @@ import SavedViewsTabs from "@/components/SavedViewsTabs.vue";
 import SegmentedControl from "@/components/SegmentedControl.vue";
 import SparkLine from "@/components/SparkLine.vue";
 import TextInput from "@/components/TextInput.vue";
+import TreeList from "@/components/TreeList.vue";
 import { syncTruncateTitle } from "@/components/truncateTitle";
 import UiBadge from "@/components/UiBadge.vue";
 import UiButton from "@/components/UiButton.vue";
@@ -196,7 +198,9 @@ describe("KpiStrip", () => {
 
   it("opts into two numbers per row on phones (three for a strip of three)", () => {
     const five = strip({ items: items(5), columns: 5, phone: "compact" });
-    expect(five.classes()).toEqual(expect.arrayContaining(["grid-cols-2", "sm:grid-cols-2", "lg:grid-cols-3", "xl:grid-cols-5"]));
+    // Six tracks from 1024 px (three numbers over two, no empty cell), five across from 1280 px.
+    expect(five.classes()).toEqual(expect.arrayContaining(["grid-cols-2", "sm:grid-cols-2", "lg:grid-cols-6", "xl:grid-cols-5"]));
+    expect(five.attributes("data-count")).toBe("5");
     expect(five.classes()).not.toContain("grid-cols-1");
     expect(five.attributes()).toMatchObject({ "data-phone": "compact", "data-phone-columns": "2" });
     // Compact hides each number's footer on phones; KpiCard marks it for that.
@@ -544,6 +548,38 @@ describe("SparkLine", () => {
     expect(tile.find("[data-kpi-foot] svg").exists()).toBe(false);
     expect(tile.find("[data-kpi-spare]").text()).toBe("8 OctYesterday");
     vi.unstubAllGlobals();
+  });
+});
+
+describe("names cut short", () => {
+  it("PersonCell and ChartCard show a cut name, position or subtitle whole on hover", async () => {
+    const widthSpy = vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockReturnValue(300);
+    const clientSpy = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(120);
+    const person = mount(PersonCell, { props: { person: { id: 7, name: "Gulnora Ismoilova-Rahimberdiyeva" }, subtitle: "Farmatsevt · Chilonzor dorixonasi" }, global: { plugins: plugins() } });
+    for (const text of ["Gulnora Ismoilova-Rahimberdiyeva", "Farmatsevt · Chilonzor dorixonasi"]) {
+      const el = person.findAll("span").find((span) => span.text() === text)!;
+      await el.trigger("pointerenter");
+      expect(el.attributes("title")).toBe(text);
+    }
+    const chart = mount(ChartCard, { props: { title: "Payment mix by branch", subtitle: "Share of each method in every branch" }, global: { plugins: plugins() } });
+    const subtitle = chart.find("header p");
+    await subtitle.trigger("pointerenter");
+    expect(subtitle.attributes("title")).toBe("Share of each method in every branch");
+    widthSpy.mockRestore();
+    clientSpy.mockRestore();
+  });
+});
+
+describe("TreeList on touch", () => {
+  it("shows its drag handles and keeps the finger's drag from scrolling the page", () => {
+    const tree = mount(TreeList, {
+      props: { nodes: [{ id: 1, label: "Dorixona qoidalari" }, { id: 2, label: "Kassa" }], draggable: true },
+      global: { plugins: plugins() },
+    });
+    const handles = tree.findAll("[data-tree-handle]");
+    expect(handles).toHaveLength(2);
+    for (const handle of handles) expect(handle.classes()).toEqual(expect.arrayContaining(["touch-none", "pointer-coarse:opacity-100"]));
+    tree.unmount();
   });
 });
 
