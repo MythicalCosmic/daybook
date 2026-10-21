@@ -222,6 +222,15 @@ const nudgedRecently = computed(() => {
   return !!at && Date.now() - new Date(at).getTime() < 10 * 60_000;
 });
 
+/**
+ * What `tasks.drawer.actions` extensions get: the task's id and its routine's (`template_id`, null
+ * for one-off work), e.g. knowledge's "How to do this" looks up pages linked to either.
+ */
+const slotContext = computed(() => ({
+  task: { id: task.value?.id ?? null, template_id: task.value?.routine?.id ?? null },
+  companyId: company.currentId,
+}));
+
 const reminderLine = computed(() => {
   const plan = task.value?.reminders;
   if (!plan) return null;
@@ -289,7 +298,7 @@ const formatAudit = (field: string, value: unknown) => {
           <UiButton v-if="can('nudge')" :icon="BellRing" :loading="busy === 'nudge'" :disabled="nudgedRecently" :title="nudgedRecently ? t('tasks.nudge.wait') : t('tasks.nudge.hint')" @click="onNudge">
             {{ nudgedRecently ? t("tasks.nudge.sent") : t("tasks.action.nudge") }}
           </UiButton>
-          <ExtensionSlot name="tasks.drawer.actions" as="none" :context="{ task, companyId: company.currentId }" />
+          <ExtensionSlot name="tasks.drawer.actions" as="none" :context="slotContext" />
         </div>
       </section>
 

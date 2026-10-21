@@ -226,6 +226,35 @@ describe("TaskDrawer", () => {
     wrapper.unmount();
   });
 
+  it("gives the drawer's extensions the task and its routine (knowledge's How to do this)", async () => {
+    const link = (target_type: string, target_id: number, title: string) => ({
+      id: target_id,
+      target_type,
+      target_id,
+      target_title: "",
+      page: { id: 40 + target_id, title, emoji: "📄", space: { id: 1, name: "Shop", emoji: "🏪" } },
+      created_at: "2026-10-01T09:00:00Z",
+    });
+    const calls = stub({
+      "GET tasks/7/": () => json(detail({ routine: { id: 3, title: "Close the till", onboarding: false } })),
+      "GET tasks/options/": () => json({ people: [], positions: [], routines: [], policies: [] }),
+      "GET knowledge/pages/linked/": (call) =>
+        json(call.url.includes("target_type=routine") ? [link("routine", 3, "Closing the till")] : [link("task", 7, "Counting fridges")]),
+    });
+    const app = await testApp("/c/1/tasks?task=7");
+    const { wrapper } = mountWithProviders(TaskDrawer, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    await flushPromises();
+    const asked = calls.filter((c) => c.url.includes("knowledge/pages/linked/")).map((c) => new URL(c.url, "http://x").searchParams.toString());
+    expect(asked.sort()).toEqual(["target_type=routine&target_id=3", "target_type=task&target_id=7"]);
+    const text = document.body.textContent ?? "";
+    expect(text).toContain("Closing the till");
+    expect(text).toContain("Counting fridges");
+    expect(document.body.querySelector('a[href="/dashboard/c/1/knowledge/p/43"], a[href="/c/1/knowledge/p/43"]')).not.toBeNull();
+    wrapper.unmount();
+  });
+
   it("hides the actions the caller may not take", async () => {
     stub({
       "GET tasks/7/": () => json(detail({ status: "todo", actions: ["comment"] })),

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
  * In the task drawer (extension point `tasks.drawer.actions`): "How to do this", the knowledge base
- * pages linked to this task or its routine. Shows nothing when there are none. The host passes the
- * task in `context` (`{ task: { id, template_id? } }`, or `{ taskId }`); both shapes are read.
+ * pages linked to this task or its routine. Shows nothing when there are none. The tasks drawer
+ * passes `{ task: { id, template_id } }` (`template_id`: the routine, null for one-off work);
+ * `{ taskId, routineId }` is read too.
  */
 import { BookOpen } from "@lucide/vue";
 import { computed } from "vue";
