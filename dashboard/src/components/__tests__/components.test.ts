@@ -134,7 +134,7 @@ describe("ExtensionSlot", () => {
         title: "slotprovider.title",
         routes: [],
         extensions: { "tasks.toolbar": [Good, Bad] },
-        messages: () => Promise.resolve({ uz: {}, ru: {}, en: {} }),
+        messages: () => Promise.resolve({}),
       }),
     ]);
     const wrapper = mount(ExtensionSlot, { props: { name: "tasks.toolbar", context: { count: 3 } }, global: { plugins: plugins() } });
@@ -159,7 +159,7 @@ describe("ExtensionSlot", () => {
         title: "attrsprovider.title",
         routes: [],
         extensions: { "shell.nav.top": [Pill], "comms.composer.tools": [Pill, Pill] },
-        messages: () => Promise.resolve({ uz: {}, ru: {}, en: {} }),
+        messages: () => Promise.resolve({}),
       }),
     ]);
     const wrapped = mount(ExtensionSlot, { props: { name: "shell.nav.top", context: {} }, attrs: { class: "px-3 pt-2 empty:hidden", "data-x": "1" }, global: { plugins: plugins() } });

@@ -66,7 +66,7 @@ import { allowed, isModuleVisible } from "@/core/access";
 import { hasExtension } from "@/core/extensions";
 import { modules, type Command, type CommandCtx } from "@/core/modules";
 import type { NavGroup } from "@/core/nav";
-import { allLanguages, loadAllLanguages } from "@/i18n";
+import { allLanguages, loadAllLanguages, loadModuleTitles } from "@/i18n";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useCompanyStore } from "@/stores/company";
 import { usePaletteStore } from "@/stores/palette";
@@ -78,8 +78,9 @@ const props = defineProps<{ groups: NavGroup[]; aiAvailable: boolean }>();
 const emit = defineEmits<{ openInbox: []; signOut: [] }>();
 
 const { t, te, locale } = useI18n();
-// Titles match in any of the three languages, so the other two shell dictionaries load now.
-void loadAllLanguages().catch(() => undefined);
+// Titles match in any of the three languages: the other two shell dictionaries and every module's
+// titles (one small chunk, not their whole dictionaries) load now.
+void Promise.all([loadAllLanguages(), loadModuleTitles()]).catch(() => undefined);
 const { isPhone } = useBreakpoints();
 const route = useRoute();
 const router = useRouter();

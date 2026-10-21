@@ -9,7 +9,7 @@ import { createMemoryHistory, createRouter, type RouteRecordRaw } from "vue-rout
 import { buildRoutes } from "@/app/router";
 import { CATALOG, CATALOG_HEADLESS, catalogEntry } from "@/core/catalog";
 import { FEATURES } from "@/core/features";
-import { EXTENSION_POINTS, MODULE_GROUPS, modules, type DashboardModule } from "@/core/modules";
+import { EXTENSION_POINTS, MODULE_GROUPS, modules, type DashboardModule, type Messages } from "@/core/modules";
 import { moduleNavItems } from "@/core/nav";
 import { PERMS, isPerm, type PermRequirement } from "@/core/perms";
 import { devStubModules } from "@/dev/stubModules";
@@ -84,10 +84,11 @@ export function moduleProblems(module: DashboardModule, folder?: string): string
 }
 
 async function messageProblems(module: DashboardModule): Promise<string[]> {
-  const messages = await module.messages();
   const problems: string[] = [];
   for (const lang of ["uz", "ru", "en"] as const) {
-    const dict = messages[lang] ?? {};
+    // One language per call (the first load fetches only the language shown).
+    const loaded = (await module.messages(lang)) as Messages | { default: Messages };
+    const dict: Messages = "default" in loaded && typeof loaded.default === "object" ? (loaded.default as Messages) : (loaded as Messages);
     for (const key of Object.keys(dict)) if (!key.startsWith(`${module.id}.`)) problems.push(`${module.id}: ${lang} key "${key}" is outside the namespace`);
     if (!dict[module.title]) problems.push(`${module.id}: ${lang} has no text for its title "${module.title}"`);
   }

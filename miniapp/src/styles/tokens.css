@@ -39,8 +39,9 @@
   --color-accent-2-800: #3d472b;
   --color-accent-2-900: #272e1b;
 
-  --font-heading: "Caprasimo", system-ui, sans-serif;
-  --font-body: "Figtree", system-ui, sans-serif;
+  /* Latin from Caprasimo and Figtree, Cyrillic from Literata Black and Onest (index.html). */
+  --font-heading: "Caprasimo", "Literata", system-ui, sans-serif;
+  --font-body: "Figtree", "Onest", system-ui, sans-serif;
 
   --space-1: 4.4px;
   --space-2: 8.8px;

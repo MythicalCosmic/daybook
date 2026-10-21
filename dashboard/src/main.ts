@@ -1,5 +1,6 @@
 import "@fontsource-variable/figtree";
 import "@fontsource/caprasimo/400.css";
+import "./styles/fonts.css";
 import "./styles/index.css";
 
 import { createApp } from "vue";

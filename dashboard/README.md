@@ -38,8 +38,9 @@ src/modules/<id>/
    `feature`, `hotkey`, the badge counter and the page paths. `registry.test.ts` fails if your
    module drifts from it (ask W0 to change the catalog instead).
 2. **`index.ts`**: `defineModule({ id, group, order, icon, title: "<id>.title", routes, messages })`
-   plus what you need from the table below. Import only light things here; pages, widgets and the
-   API load lazily (`() => import(...)`, `defineAsyncComponent`).
+   with `` messages: (language) => import(`./i18n/${language}.json`) `` (one dictionary per language,
+   loaded only when that language is shown), plus what you need from the table below. Import only
+   light things here; pages, widgets and the API load lazily (`() => import(...)`, `defineAsyncComponent`).
 3. **`routes.ts`**: paths are relative (`"finance/accounts"`), names start with `"<id>."`, every
    route has `meta.title` (breadcrumb and tab title) and `meta.perm` / `meta.feature` when the page
    needs more than the module does. `meta.layout: "full"` for boards and maps that scroll themselves.
@@ -76,7 +77,7 @@ src/modules/<id>/
 | `deepLinks` | Telegram `startapp` prefixes → route (`shift: (id) => "sales/shifts/" + id`) |
 | `rootRoutes` | Signed-in pages outside a company (the portfolio) |
 | `publicRoutes` | The auth module only |
-| `messages` | `() => import` of the three JSON dictionaries |
+| `messages` | `` (language) => import(`./i18n/${language}.json`) ``: one language's dictionary. The shell loads the language shown for every visible module, a page waits for its module's, and a language switch loads the new one first. The palette matches titles in all three languages through `virtual:module-titles` (every key of your namespace written in `index.ts`, built by `scripts/moduleTitles.mjs`), so keep sidebar and palette titles as string keys there |
 
 ### W0 modules and the API they read
 
@@ -189,8 +190,9 @@ without it. Waves 2–3 add about ten modules, so:
   into the first load (~0.1–0.15 KB each). Reuse the module's icon or a common one (`Plus`) for
   commands rather than a new icon per command.
 - Palette commands: `ctx.t` titles and 3–5 short `keywords`, not long lists.
-- Module dictionaries load with the module (never in the first load); the shell's own dictionaries
-  load one language at a time (`src/i18n/index.ts`).
+- Dictionaries load one language at a time (`src/i18n/index.ts`): the shell's before the first
+  paint, every visible module's right after (about 20 small requests, ~65 KB gzipped for the
+  largest language). The other two languages load only when the person switches.
 
 How the build keeps it small (`vite.config.ts`): framework code is one `vendor` chunk; everything
 else the first load needs (shell, every registry, the icons and reka-ui pieces they use) is

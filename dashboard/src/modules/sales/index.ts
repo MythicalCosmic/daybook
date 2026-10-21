@@ -105,8 +105,5 @@ export default defineModule({
   deepLinks: {
     shift: (id) => (/^\d+$/.test(id) ? `sales/shifts?shift=${id}` : "sales/shifts"),
   },
-  messages: async () => {
-    const [uz, ru, en] = await Promise.all([import("./i18n/uz.json"), import("./i18n/ru.json"), import("./i18n/en.json")]);
-    return { uz: uz.default, ru: ru.default, en: en.default };
-  },
+  messages: (language) => import(`./i18n/${language}.json`),
 });

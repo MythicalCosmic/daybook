@@ -1,12 +1,16 @@
 /**
  * vue-i18n setup (plan §6.5). Messages are flat ("tasks.board.empty": "…"): the shell's own
- * dictionaries here, merged with each module's `messages()` when that module is first needed.
- * Keys are namespaced by module id; shell keys use "common." and "shell.".
+ * dictionaries here, merged with each module's `messages(language)` when that module is first
+ * needed. Keys are namespaced by module id; shell keys use "common." and "shell.".
  *
- * The shell dictionaries load per language (each is its own chunk, ~5–6 KB gzipped): main.ts
- * loads the person's language before mounting, `setLanguage` loads another one before switching,
- * and the palette loads all three to match titles in any language. Tests have all three loaded
- * up front (src/test/setup.ts).
+ * Everything loads one language at a time. The shell dictionaries (~5–6 KB gzipped each): main.ts
+ * loads the person's language before mounting. Module dictionaries: the shell asks for every
+ * visible module's in the language being shown, and a module's page waits for its own.
+ * `setLanguage` loads the new language of the shell and of every module asked for so far, then
+ * switches, so a switch never shows keys. The palette matches page titles in all three languages:
+ * it loads the other shell dictionaries and `virtual:module-titles` (every module's titles, one
+ * small chunk built by scripts/moduleTitles.mjs) instead of every module's whole dictionaries.
+ * Tests have all three shell dictionaries loaded up front (src/test/setup.ts).
  */
 import { ref } from "vue";
 import { createI18n } from "vue-i18n";
@@ -86,6 +90,13 @@ const shellPending = new Map<Language, Promise<void>>();
 /** Bumped when a shell dictionary arrives, so `allLanguages` readers recompute. */
 const shellVersion = ref(0);
 
+/** Every module whose messages were asked for: a language switch loads theirs first. */
+const requested = new Map<string, DashboardModule>();
+/** Module dictionaries by "<module>:<language>": in flight, and merged. */
+const modulePending = new Map<string, Promise<void>>();
+const moduleLoaded = new Set<string>();
+const loadKey = (moduleId: string, language: Language) => `${moduleId}:${language}`;
+
 /** Adds a language's shell dictionary (merged: module keys already there stay). */
 export function addShellMessages(language: Language, messages: Messages): void {
   i18n.global.mergeLocaleMessage(language, messages);
@@ -111,18 +122,28 @@ export function loadAllLanguages(): Promise<void> {
   return Promise.all(LANGUAGES.map(loadLanguage)).then(() => undefined);
 }
 
-/** Switches the UI language, at once when its dictionary is already here, else once it has loaded. */
+/** The language a switch is loading (or the last one switched to): module dictionaries load in it. */
+let target: Language | null = null;
+
+/**
+ * Switches the UI language: at once when its dictionaries are already here, else once the shell's
+ * and every requested module's have loaded (a module that fails to load doesn't block the switch).
+ */
 export function setLanguage(language: Language): Promise<void> {
+  target = language;
   const apply = () => {
+    // A later switch won the race: that one applies its own language.
+    if (target !== language) return;
     i18n.global.locale.value = language;
     writeStored("language", language);
     if (typeof document !== "undefined") document.documentElement.lang = language;
   };
-  if (shellLoaded.has(language)) {
+  const missing = [...requested.values()].filter((module) => !moduleLoaded.has(loadKey(module.id, language)));
+  if (shellLoaded.has(language) && !missing.length) {
     apply();
     return Promise.resolve();
   }
-  return loadLanguage(language).then(apply);
+  return Promise.all([loadLanguage(language), ensureAllModuleMessages(missing, language)]).then(apply);
 }
 
 /** Text of `key` in every language, for searching titles in uz, ru and en at once. */
@@ -139,40 +160,74 @@ export function allLanguages(key: string): Record<Language, string> {
 
 const SHELL_PREFIXES = ["common.", "shell."];
 
-/** Merges a module's dictionaries; keys outside its namespace are dropped (and reported in dev). */
+/**
+ * Merges a module's dictionaries (any of the three languages); keys outside its namespace are
+ * dropped (and reported in dev). A language merged here counts as loaded for that module.
+ */
 export function mergeModuleMessages(moduleId: string, messages: Partial<Record<Language, Messages>>): void {
   const prefix = `${moduleId}.`;
   for (const language of LANGUAGES) {
-    const source = messages[language] ?? {};
+    const source = messages[language];
+    if (!source) continue;
     const accepted: Messages = {};
     for (const [key, value] of Object.entries(source)) {
       if (key.startsWith(prefix)) accepted[key] = value;
       else if (import.meta.env.DEV) console.warn(`[i18n] ${moduleId}: key "${key}" is outside the "${prefix}" namespace`);
     }
     i18n.global.mergeLocaleMessage(language, accepted);
+    moduleLoaded.add(loadKey(moduleId, language));
   }
 }
 
-const loaded = new Map<string, Promise<void>>();
+/** A JSON module (`{ default }`) or a plain dictionary. */
+function unwrap(loaded: Messages | { default: Messages }): Messages {
+  const inner = (loaded as { default?: unknown }).default;
+  return inner && typeof inner === "object" ? (inner as Messages) : (loaded as Messages);
+}
 
-/** Loads a module's messages once; later calls share the same promise. */
-export function ensureModuleMessages(module: DashboardModule): Promise<void> {
-  let pending = loaded.get(module.id);
+/**
+ * Loads a module's dictionary in one language (by default the one shown, or the one a switch is
+ * loading) once; later calls share the same promise.
+ */
+export function ensureModuleMessages(module: DashboardModule, language: Language = target ?? currentLanguage()): Promise<void> {
+  requested.set(module.id, module);
+  const key = loadKey(module.id, language);
+  let pending = modulePending.get(key);
   if (!pending) {
     pending = module
-      .messages()
-      .then((messages) => mergeModuleMessages(module.id, messages))
+      .messages(language)
+      .then((messages) => mergeModuleMessages(module.id, { [language]: unwrap(messages) }))
       .catch((error: unknown) => {
-        loaded.delete(module.id);
+        modulePending.delete(key);
         throw error;
       });
-    loaded.set(module.id, pending);
+    modulePending.set(key, pending);
   }
   return pending;
 }
 
-export function ensureAllModuleMessages(list: readonly DashboardModule[]): Promise<void> {
-  return Promise.allSettled(list.map(ensureModuleMessages)).then(() => undefined);
+export function ensureAllModuleMessages(list: readonly DashboardModule[], language: Language = target ?? currentLanguage()): Promise<void> {
+  return Promise.allSettled(list.map((module) => ensureModuleMessages(module, language))).then(() => undefined);
+}
+
+let titlesPending: Promise<void> | null = null;
+
+/**
+ * Every module's page and action titles in all three languages (one small chunk), so the palette
+ * matches a title typed in any language without loading every module's whole dictionaries.
+ */
+export function loadModuleTitles(): Promise<void> {
+  titlesPending ??= import("virtual:module-titles")
+    .then(({ default: titles }) => {
+      // Same texts as the full dictionaries, so merging over a loaded language changes nothing.
+      for (const language of LANGUAGES) i18n.global.mergeLocaleMessage(language, titles[language] ?? {});
+      shellVersion.value++;
+    })
+    .catch((error: unknown) => {
+      titlesPending = null;
+      throw error;
+    });
+  return titlesPending;
 }
 
 export function isShellKey(key: string): boolean {

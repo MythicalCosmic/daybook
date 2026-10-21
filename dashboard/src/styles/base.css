@@ -106,14 +106,6 @@
   }
 }
 
-/* Caprasimo and Figtree have no Cyrillic: Russian headlines use the bold system sans instead of a
-   browser-picked serif. Outside the layer, so it beats the `font-display` utility. */
-:root:lang(ru) .font-display {
-  font-family: var(--font-sans);
-  font-weight: 700;
-  letter-spacing: -0.015em;
-}
-
 /* Theme switch: View Transitions circular reveal (the animation itself runs from app/theme.ts). */
 ::view-transition-old(root),
 ::view-transition-new(root) {

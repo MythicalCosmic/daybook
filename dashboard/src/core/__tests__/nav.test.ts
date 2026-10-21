@@ -13,7 +13,7 @@ import { company, manager } from "@/test/fixtures";
 const Icon = defineComponent({ render: () => h("svg") });
 const Page = defineComponent({ render: () => h("div") });
 const Slot = defineComponent({ render: () => h("span") });
-const messages = () => Promise.resolve({ uz: {}, ru: {}, en: {} });
+const messages = () => Promise.resolve({});
 
 const tasks = defineModule({
   id: "tasks",

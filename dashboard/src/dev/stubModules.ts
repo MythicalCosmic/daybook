@@ -113,7 +113,7 @@ export function devStubModules(): DashboardModule[] {
       rootRoutes: entry.id === "insights" ? [{ path: "portfolio", name: "portfolio", component: PortfolioStub, meta: { title: "dev.portfolio.title" } }] : undefined,
       extensions: entry.id === "settings" ? { "shell.company.create": [NewCompanyStub] } : undefined,
       deepLinks: entry.id === "sales" ? { shift: (id) => `sales/shifts?shift=${id}` } : undefined,
-      messages: () => Promise.resolve(stubMessages(entry.id)),
+      messages: (language) => Promise.resolve(stubMessages(entry.id)[language]),
     }),
   );
 }
