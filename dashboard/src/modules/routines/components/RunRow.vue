@@ -58,7 +58,7 @@ const caption = computed(() => `${props.run.member.name} · ${props.title}${prop
       <RouterLink :to="`/c/${company.currentId}/tasks?task=${run.id}&routines=1`" class="block truncate text-sm font-medium text-fg hover:underline" :title="t('routines.today.openTask', { name: run.member.name })">{{ run.member.name }}</RouterLink>
       <p :class="['mt-0.5 flex min-w-0 items-center gap-1 text-xs font-medium tabular-nums', tone]">
         <component :is="look.icon" :size="12" class="shrink-0" aria-hidden="true" />
-        <span class="truncate" :title="text">{{ text }}</span>
+        <span class="truncate max-sm:whitespace-normal" :title="text">{{ text }}</span>
       </p>
     </div>
     <ProofThumb

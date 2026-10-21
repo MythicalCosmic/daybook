@@ -219,7 +219,7 @@
   "tasks.reviews.keyReturn": "вернуть",
   "tasks.reviews.keyMove": "переход",
   "tasks.reviews.accepted": "Принята",
-  "tasks.reviews.noProof": "Подтверждение не требовалось",
+  "tasks.reviews.noProof": "Фото или отчёт не просили",
   "tasks.reviews.checklist": "Чек-лист: {done} из {total}",
   "tasks.reviews.emptyTitle": "Всё проверено",
   "tasks.reviews.emptyBody": "Нет разовых задач, ждущих вашей проверки. Задачи с проверкой появятся здесь после выполнения.",
