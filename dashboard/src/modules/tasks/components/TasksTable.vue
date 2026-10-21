@@ -4,12 +4,13 @@
  * bulk bar (reassign, move the deadline, priority, nudge, confirm, cancel), cards on phones. Rows
  * open the drawer (`?task=`).
  */
-import { BellRing, CalendarClock, CheckCheck, Flag, FolderKanban, Gift, Repeat, UserRoundCog, X } from "@lucide/vue";
+import { BellRing, CalendarClock, CheckCheck, Flag, FolderKanban, Gift, Inbox, Repeat, UserRoundCog, X } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import DataTable from "@/components/DataTable.vue";
 import DropdownMenu, { type MenuEntry } from "@/components/DropdownMenu.vue";
+import EmptyState from "@/components/EmptyState.vue";
 import MoneyCell from "@/components/MoneyCell.vue";
 import PersonCell from "@/components/PersonCell.vue";
 import PersonPicker from "@/components/PersonPicker.vue";
@@ -37,7 +38,7 @@ const props = defineProps<{
   activeId: number | null;
 }>();
 
-const emit = defineEmits<{ open: [task: TaskRow]; "clear-filters": [] }>();
+const emit = defineEmits<{ open: [task: TaskRow]; "clear-filters": []; "include-routines": [] }>();
 
 const { t } = useI18n();
 const fmt = useFormat();
@@ -45,6 +46,13 @@ const { can } = usePermission();
 const confirm = useConfirm();
 
 const query = useTaskList(computed(() => ({ ...props.params, ...props.state.params.value })));
+// The list leaves routine work out (the Tasks page's one-off work): an empty list says so and
+// offers it, since a routine's title finds nothing here otherwise.
+const withoutRoutines = computed(() => props.params.routines === "without");
+const emptyBody = computed(() => {
+  if (props.filtered) return t(withoutRoutines.value ? "tasks.empty.filteredRoutinesBody" : "tasks.empty.filteredBody");
+  return t("tasks.empty.body");
+});
 const options = useTaskOptions();
 const people = computed(() => (options.data.value?.people ?? []).map((p) => ({ id: p.id, name: p.name, photo_url: p.photo_url, subtitle: [p.position, p.branch].filter(Boolean).join(" · ") })));
 
@@ -144,6 +152,14 @@ async function reassignMany(selected: string[], clear: () => void): Promise<void
     @row-click="(row) => emit('open', row)"
     @clear-filters="emit('clear-filters')"
   >
+    <template #empty>
+      <EmptyState size="sm" :icon="Inbox" tone="neutral" :title="filtered ? t('tasks.empty.filteredTitle') : t('tasks.empty.title')" :description="emptyBody">
+        <div v-if="filtered || withoutRoutines" class="flex flex-wrap justify-center gap-2">
+          <UiButton v-if="filtered" size="sm" @click="emit('clear-filters')">{{ t("common.filter.clearAll") }}</UiButton>
+          <UiButton v-if="withoutRoutines" size="sm" :icon="Repeat" data-testid="empty-include-routines" @click="emit('include-routines')">{{ t("tasks.filter.includeRoutines") }}</UiButton>
+        </div>
+      </EmptyState>
+    </template>
     <template #cell-title="{ row }">
       <div class="min-w-0 py-0.5">
         <p :class="['truncate font-medium', row.status === 'done' || row.status === 'cancelled' ? 'text-muted' : 'text-fg']" :title="row.project ? `${cardKey(row.project)} · ${row.title}` : row.title">

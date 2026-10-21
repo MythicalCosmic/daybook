@@ -223,7 +223,7 @@ const viewOptions = computed(() => [
         <SegmentedControl v-model="view" :options="viewOptions" :aria-label="t('tasks.view.label')" />
       </div>
 
-      <TasksTable v-if="view === 'table'" :state="table" :params="params" :filtered="filtered" :active-id="openId" @open="open" @clear-filters="filters.clear(), (search = '')" />
+      <TasksTable v-if="view === 'table'" :state="table" :params="params" :filtered="filtered" :active-id="openId" @open="open" @clear-filters="filters.clear(), (search = '')" @include-routines="withRoutines = true" />
       <TasksBoard v-else-if="view === 'board'" :params="params" @open="open" />
       <TasksCalendar v-else :params="params" @open="open" />
     </div>

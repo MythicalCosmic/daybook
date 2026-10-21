@@ -117,6 +117,7 @@
   "tasks.empty.body": "Give someone a task. Work that repeats every day is set up as a routine.",
   "tasks.empty.filteredTitle": "No tasks match",
   "tasks.empty.filteredBody": "Try fewer filters or another view.",
+  "tasks.empty.filteredRoutinesBody": "Routine work isn't in this list: include routines, or try fewer filters.",
   "tasks.action.confirm": "Accept",
   "tasks.action.return": "Send back",
   "tasks.action.cancel": "Cancel task",

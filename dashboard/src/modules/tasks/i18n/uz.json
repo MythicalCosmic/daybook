@@ -117,6 +117,7 @@
   "tasks.empty.body": "Kimgadir vazifa bering. Har kuni takrorlanadigan ish muntazam vazifa sifatida sozlanadi.",
   "tasks.empty.filteredTitle": "Mos vazifa topilmadi",
   "tasks.empty.filteredBody": "Filtrlarni kamaytiring yoki boshqa ko‘rinishni tanlang.",
+  "tasks.empty.filteredRoutinesBody": "Muntazam vazifalar bu ro‘yxatda yo‘q: ularni qo‘shing yoki filtrlarni kamaytiring.",
   "tasks.action.confirm": "Qabul qilish",
   "tasks.action.return": "Qaytarish",
   "tasks.action.cancel": "Bekor qilish",

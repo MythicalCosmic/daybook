@@ -395,6 +395,26 @@ describe("one-off tasks and routine work", () => {
     wrapper.unmount();
   });
 
+  it("an empty one-off list offers routine work: a routine's title finds nothing otherwise", async () => {
+    stub({
+      "GET tasks/": () => json(empty),
+      "GET tasks/summary/": () => json(summary),
+      "GET tasks/options/": () => json({ people: [], positions: [], routines: [], policies: [] }),
+      "GET saved-views/": () => json([]),
+    });
+    const app = await testApp("/c/1/tasks?q=muzlatgich");
+    const { default: TasksPage } = await import("../pages/TasksPage.vue");
+    const { wrapper } = mountWithProviders(TasksPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(wrapper.text()).toContain("Routine work isn't in this list");
+    await wrapper.find("[data-testid=empty-include-routines]").trigger("click");
+    await flushPromises();
+    expect(app.router.currentRoute.value.query.routines).toBe("1");
+    expect(wrapper.find("[data-testid=empty-include-routines]").exists()).toBe(false);
+    wrapper.unmount();
+  });
+
   it("stops the on-time sparkline at yesterday: today's rate only counts what was due so far", async () => {
     const day = (date: string, on_time_percent: number) => ({ date, on_time: 1, late: 0, missed: 0, total: 1, done: 1, on_time_percent });
     stub({

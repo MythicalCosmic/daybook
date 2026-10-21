@@ -117,6 +117,7 @@
   "tasks.empty.body": "Поручите кому-нибудь задачу. То, что повторяется каждый день, настраивается как регулярная задача.",
   "tasks.empty.filteredTitle": "Ничего не найдено",
   "tasks.empty.filteredBody": "Уберите часть фильтров или выберите другой вид.",
+  "tasks.empty.filteredRoutinesBody": "Регулярных задач в этом списке нет: включите их или уберите часть фильтров.",
   "tasks.action.confirm": "Принять",
   "tasks.action.return": "Вернуть",
   "tasks.action.cancel": "Отменить задачу",
