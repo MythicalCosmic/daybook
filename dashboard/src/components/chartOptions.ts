@@ -276,8 +276,17 @@ export function cartesianOption(theme: ChartTheme, input: CartesianInput, style:
     grid: { top: showLegend ? 40 : 14, right: 12, bottom: 4, left: 4, containLabel: true },
     legend: showLegend
       ? {
+          // One line that pages with small arrows when the names don't fit (six payment methods
+          // on a phone), never a second line running into the plot under it.
+          type: "scroll",
           top: 0,
           left: 0,
+          right: 0,
+          pageIconSize: 9,
+          pageIconColor: theme.muted,
+          pageIconInactiveColor: theme.border,
+          pageTextStyle: { color: theme.muted, fontFamily: theme.fontFamily, fontSize: CHART_TYPE.label },
+          pageButtonItemGap: 4,
           icon: "roundRect",
           itemWidth: 10,
           itemHeight: 10,

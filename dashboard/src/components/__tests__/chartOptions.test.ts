@@ -53,6 +53,14 @@ describe("cartesianOption", () => {
     expect(sideways.yAxis.type).toBe("category");
   });
 
+  it("keeps a long legend on one line that pages, never wrapping into the plot", () => {
+    const methods = ["Naqd", "Terminal", "Click", "Payme", "Uzum", "Humo"].map((name) => ({ name, data: [10, 20, 30], stack: "mix" }));
+    const legend = build({ series: methods }, { type: "bar", horizontal: true, normalize: true, stacked: true }).legend;
+    expect(legend).toMatchObject({ type: "scroll", top: 0, left: 0, right: 0 });
+    // One series: no legend at all.
+    expect(build({}).legend).toEqual({ show: false });
+  });
+
   it("gives counts whole-number ticks", () => {
     expect(build({ integer: true }, { type: "bar", stacked: true }).yAxis.minInterval).toBe(1);
     expect(build({}).yAxis.minInterval).toBeUndefined();

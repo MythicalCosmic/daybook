@@ -10,6 +10,7 @@ import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
 
 import type { Range } from "@/api/types";
+import { shareText } from "@/components/chartCard";
 import DeltaBadge from "@/components/DeltaBadge.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
@@ -17,7 +18,7 @@ import { changePercent } from "@/lib/decimal";
 import { useFormat } from "@/lib/useFormat";
 
 import { useOverview } from "../api";
-import { colorFor, isZeroMoney, share } from "../lib";
+import { distinctColors, isZeroMoney, share } from "../lib";
 
 const props = defineProps<{ companyId: number; range?: Range; compare?: Range | null }>();
 
@@ -28,9 +29,13 @@ const month = computed(() => overview.data.value?.month);
 const change = computed(() => (month.value && !isZeroMoney(month.value.previous.expense) ? changePercent(month.value.expense, month.value.previous.expense) : null));
 const parts = computed(() => {
   const total = month.value?.expense ?? "0";
-  return (overview.data.value?.top_expenses ?? []).slice(0, 3).map((row) => ({ ...row, color: colorFor(row.id, row.color), percent: share(row.amount, total) }));
+  const rows = (overview.data.value?.top_expenses ?? []).slice(0, 3);
+  // No two parts of one bar in the same colour (categories often share one of eight).
+  const colors = distinctColors(rows);
+  return rows.map((row, index) => ({ ...row, color: colors[index]!, percent: share(row.amount, total) }));
 });
-const to = computed(() => ({ path: `/c/${props.companyId}/finance/transactions`, query: { kind: "expense", from: month.value?.from, to: month.value?.to } }));
+// The rows the number counts: the transactions list's P&L filter, as the finance overview links them.
+const to = computed(() => ({ path: `/c/${props.companyId}/finance/transactions`, query: { pnl: "expense", from: month.value?.from, to: month.value?.to } }));
 </script>
 
 <template>
@@ -59,7 +64,7 @@ const to = computed(() => ({ path: `/c/${props.companyId}/finance/transactions`,
           <li v-for="part in parts" :key="part.id" class="flex items-center gap-2 text-xs">
             <span class="size-2 shrink-0 rounded-full" :style="{ background: part.color }" aria-hidden="true" />
             <span class="min-w-0 flex-1 truncate text-muted">{{ part.name }}</span>
-            <span class="shrink-0 font-semibold tabular-nums text-fg">{{ fmt.number(part.percent, 0) }}%</span>
+            <span class="shrink-0 font-semibold tabular-nums text-fg">{{ shareText(part.percent, fmt.lang.value) }}</span>
           </li>
         </ul>
       </div>
