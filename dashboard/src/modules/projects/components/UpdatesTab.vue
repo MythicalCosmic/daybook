@@ -38,17 +38,19 @@ const trend = computed(() => [...updates.value].slice(0, 12).reverse());
   <div class="mx-auto flex max-w-[820px] flex-col gap-4">
     <!-- Before the first update the empty state below does the inviting. -->
     <section v-if="updates.length" class="ui-card flex flex-wrap items-center gap-4 p-4">
-      <span class="grid size-10 shrink-0 place-items-center rounded-[12px] bg-accent-soft text-accent-fg"><HeartPulse :size="19" /></span>
-      <div class="min-w-0 flex-1">
-        <p class="text-sm font-semibold text-fg">{{ t("projects.updates.headline") }}</p>
-        <p class="text-sm text-muted">{{ t("projects.updates.headlineBody") }}</p>
+      <div class="flex min-w-0 flex-1 basis-72 items-center gap-4">
+        <span class="grid size-10 shrink-0 place-items-center rounded-[12px] bg-accent-soft text-accent-fg"><HeartPulse :size="19" /></span>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold text-fg">{{ t("projects.updates.headline") }}</p>
+          <p class="text-sm text-muted">{{ t("projects.updates.headlineBody") }}</p>
+        </div>
       </div>
       <div v-if="trend.length > 1" class="flex items-center gap-1" :aria-label="t('projects.updates.trend')">
         <UiTooltip v-for="update in trend" :key="update.id" :content="`${t(`projects.health.${update.health}`)} · ${fmt.instant(update.created_at, 'date')}`">
           <span class="h-6 w-2 rounded-full" :style="{ background: healthVar(update.health) }" />
         </UiTooltip>
       </div>
-      <UiButton v-if="project.capabilities.post_update" variant="primary" :icon="MessageSquarePlus" @click="emit('post')">{{ t("projects.action.postUpdate") }}</UiButton>
+      <UiButton v-if="project.capabilities.post_update" variant="primary" :icon="MessageSquarePlus" class="max-sm:flex-1" @click="emit('post')">{{ t("projects.action.postUpdate") }}</UiButton>
     </section>
 
     <div v-if="skeleton" class="flex flex-col gap-3">

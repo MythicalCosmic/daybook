@@ -237,12 +237,14 @@ useHotkey("m", () => (mine.value = !mine.value), { description: "projects.keys.m
         :description="t('projects.board.emptyReadOnly')"
       />
       <div v-if="emptyBoard" class="flex flex-wrap items-center gap-3 rounded-[12px] border border-dashed border-line-strong bg-surface px-4 py-3">
-        <span class="grid size-9 shrink-0 place-items-center rounded-full bg-accent-soft text-accent-fg"><Rocket :size="17" /></span>
-        <div class="min-w-0 flex-1">
-          <p class="text-sm font-semibold text-fg">{{ t("projects.board.startTitle") }}</p>
-          <p class="text-sm text-muted">{{ t("projects.board.startBody", { list: starter?.name ?? "" }) }}</p>
+        <div class="flex min-w-0 flex-1 basis-72 items-center gap-3">
+          <span class="grid size-9 shrink-0 place-items-center rounded-full bg-accent-soft text-accent-fg"><Rocket :size="17" /></span>
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-semibold text-fg">{{ t("projects.board.startTitle") }}</p>
+            <p class="text-sm text-muted">{{ t("projects.board.startBody", { list: starter?.name ?? "" }) }}</p>
+          </div>
         </div>
-        <UiButton variant="primary" size="sm" :icon="Plus" @click="addFirstCard">{{ t("projects.board.startAction") }}</UiButton>
+        <UiButton variant="primary" size="sm" :icon="Plus" class="max-sm:w-full" @click="addFirstCard">{{ t("projects.board.startAction") }}</UiButton>
       </div>
       <KanbanBoard
         :columns="columns"

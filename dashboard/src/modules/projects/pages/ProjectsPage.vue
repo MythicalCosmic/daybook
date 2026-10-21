@@ -135,8 +135,8 @@ const columns = computed<TableColumn<ProjectItem>[]>(() => [
   { id: "status", header: t("projects.col.status"), width: 120, value: (r) => t(`projects.status.${r.status}`) },
   { id: "health", header: t("projects.col.health"), width: 130, value: (r) => (r.health ? t(`projects.health.${r.health}`) : "") },
   { id: "progress", header: t("projects.col.progress"), width: 150, value: (r) => r.progress.percent },
-  { id: "lead", header: t("projects.col.lead"), width: 180, value: (r) => r.lead?.name ?? "" },
-  { id: "due_on", header: t("projects.col.due"), width: 110, sortable: true, value: (r) => r.due_on },
+  { id: "lead", header: t("projects.col.lead"), width: 170, value: (r) => r.lead?.name ?? "" },
+  { id: "due_on", header: t("projects.col.due"), width: 124, sortable: true, value: (r) => r.due_on },
   { id: "budget", header: t("projects.col.budget"), width: 180, numeric: true, value: (r) => r.spent ?? null },
 ]);
 
