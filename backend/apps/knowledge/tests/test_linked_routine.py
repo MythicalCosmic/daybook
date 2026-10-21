@@ -71,10 +71,10 @@ def test_the_routine_link_is_listed_as_the_routines(company, api_as, cashier, op
     assert [(row["target_type"], row["target_id"]) for row in rows] == [("routine", routine.pk)]
 
 
-def test_someone_who_cant_see_the_task_gets_nothing(company, api_as, courier, opening):
+def test_someone_who_cant_see_the_task_gets_nothing(company, api_as, cook, opening):
     _routine, task = opening
 
-    assert linked(api_as(courier), company, task) == []
+    assert linked(api_as(cook), company, task) == []
 
 
 def test_a_task_without_a_routine_shows_only_its_own(company, api_as, cashier, handbook, opening):
