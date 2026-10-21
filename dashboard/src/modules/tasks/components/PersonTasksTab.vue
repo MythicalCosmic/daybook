@@ -41,7 +41,10 @@ const person = computed(() => [String(props.memberId)]);
 // One-off tasks.
 const summary = useSummary(computed(() => ({ assignee: props.memberId, routines: "without" })));
 const open = useTaskList(computed(() => ({ assignee: person.value, routines: "without", status: OPEN, ordering: "due_at", page_size: 20 })));
-const recent = useTaskList(computed(() => ({ assignee: person.value, routines: "without", status: ["done"], ordering: "-completed_at", page_size: 8 })));
+const recent = useTaskList(computed(() => ({ assignee: person.value, routines: "without", status: ["done"], ordering: "-completed_at", page_size: 4 })));
+/** The soonest open tasks; the rest are one click away on the Tasks page, so routine work stays in view. */
+const OPEN_SHOWN = 6;
+const openShown = computed(() => open.data.value?.results.slice(0, OPEN_SHOWN) ?? []);
 
 // Routine work.
 const today = computed(() => todayIn(company.timezone));
@@ -155,10 +158,13 @@ function openTask(task: TaskRow): void {
         <ErrorState v-else-if="open.isError.value" compact :error="open.error.value" :retry="() => open.refetch()" />
         <div v-else-if="!open.data.value?.results.length" class="ui-card"><EmptyState size="sm" tone="success" :icon="ListTodo" :title="t('tasks.person.nothingOpen')" /></div>
         <div v-else class="grid gap-2 md:grid-cols-2">
-          <button v-for="task in open.data.value.results" :key="task.id" type="button" class="ui-card p-3 text-left transition-colors hover:border-line-strong" @click="openTask(task)">
+          <button v-for="task in openShown" :key="task.id" type="button" class="ui-card p-3 text-left transition-colors hover:border-line-strong" @click="openTask(task)">
             <TaskCard :task="task" show-status :show-assignee="false" />
           </button>
         </div>
+        <UiButton v-if="(open.data.value?.count ?? 0) > OPEN_SHOWN" size="sm" variant="ghost" class="self-start" :icon-right="ArrowUpRight" :to="tasksLink" data-view-all>{{
+          t("common.viewAll")
+        }}</UiButton>
       </div>
       <div v-if="recent.data.value?.results.length" class="flex flex-col gap-2">
         <h3 class="text-sm font-semibold text-fg">{{ t("tasks.person.recent") }}</h3>

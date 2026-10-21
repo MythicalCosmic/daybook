@@ -111,8 +111,8 @@ async function archive(register: Register): Promise<void> {
         <li v-for="register in group.registers" :key="register.id" :class="['flex items-center gap-3 px-4 py-3', !register.is_active && 'opacity-55']">
           <span class="grid size-9 shrink-0 place-items-center rounded-[10px] bg-accent-soft text-accent-fg"><Wallet :size="16" /></span>
           <div class="min-w-0 flex-1">
-            <p class="truncate text-sm font-semibold text-fg">{{ register.name }}</p>
-            <p class="text-xs text-muted sm:truncate">
+            <p class="truncate text-sm font-semibold text-fg" :title="register.name">{{ register.name }}</p>
+            <p class="text-xs text-muted sm:truncate" :title="`${register.fiscal_serial || t('sales.registers.noSerial')} · ${register.cash_account.name}`">
               {{ register.fiscal_serial || t("sales.registers.noSerial") }} · {{ register.cash_account.name }}
             </p>
             <!-- On a phone the open shift and the cash go under the name instead of being dropped. -->

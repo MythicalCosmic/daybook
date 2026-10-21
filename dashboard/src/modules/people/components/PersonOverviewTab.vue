@@ -130,7 +130,7 @@ function span(first: string, last: string): string {
             <span class="grid size-9 shrink-0 place-items-center rounded-[10px] bg-info-soft text-info"><CalendarDays :size="16" aria-hidden="true" /></span>
             <div class="min-w-0 flex-1">
               <p class="truncate text-base font-medium text-fg">{{ span(item.first_day, item.last_day) }}</p>
-              <p v-if="item.reason" class="truncate text-xs text-muted">{{ item.reason }}</p>
+              <p v-if="item.reason" class="truncate text-xs text-muted" :title="item.reason">{{ item.reason }}</p>
             </div>
             <StatusPill size="sm" :tone="item.status === 'approved' ? 'success' : 'warning'" :label="t(`people.timeOff.${item.status}`)" />
           </li>

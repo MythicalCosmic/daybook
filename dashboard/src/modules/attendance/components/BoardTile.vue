@@ -27,6 +27,13 @@ const outside = computed(() => record.value?.flags.includes("outside_geofence") 
 const imprecise = computed(() => record.value?.flags.includes("low_accuracy") ?? false);
 const noLocation = computed(() => record.value?.flags.includes("no_location") ?? false);
 const unscheduled = computed(() => record.value?.flags.includes("unscheduled") ?? false);
+/** The second line in full, for the tooltip when a long position or branch is cut. */
+const subtitle = computed(() => {
+  const hours = shift.value && props.row.state !== "off" ? `${shift.value.start}–${shift.value.end}` : null;
+  return [hours, props.row.member.position?.name, props.showBranch ? props.row.branch?.name : null].filter(Boolean).join(" · ") || undefined;
+});
+/** Came and already checked out: the dot goes grey, they are not here any more. */
+const gone = computed(() => !!record.value?.check_out_at && (props.row.state === "in" || props.row.state === "late"));
 
 const sourceIcon = computed(() => {
   switch (record.value?.in_source) {
@@ -71,11 +78,11 @@ const detail = computed(() => {
     <div class="flex min-w-0 items-center gap-2.5">
       <span class="relative shrink-0">
         <UserAvatar :name="row.member.name" :src="row.member.photo_url" :size="32" />
-        <span class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-surface" :style="{ background: STATE_COLORS[row.state] }" aria-hidden="true" />
+        <span class="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-surface" :style="{ background: gone ? 'var(--c-subtle)' : STATE_COLORS[row.state] }" aria-hidden="true" />
       </span>
       <div class="min-w-0 flex-1">
         <p class="truncate text-sm font-semibold text-fg" :title="row.member.name">{{ row.member.name }}</p>
-        <p class="truncate text-xs text-muted">
+        <p class="truncate text-xs text-muted" :title="subtitle">
           <!-- The hours first: they matter most and must never be cut off. -->
           <template v-if="shift && row.state !== 'off'"><span class="font-medium tabular-nums text-fg/80">{{ shift.start }}–{{ shift.end }}</span><span v-if="row.member.position || (showBranch && row.branch)"> · </span></template>
           <template v-if="row.member.position">{{ row.member.position.name }}</template>

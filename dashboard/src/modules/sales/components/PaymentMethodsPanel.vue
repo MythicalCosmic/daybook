@@ -42,6 +42,14 @@ const fmt = useFormat();
 const route = useRoute();
 const inSettings = computed(() => route.name === "settings.page");
 
+/** The line under a method's name: its kind, where its money lands and its fee ("0,6%" in uz). */
+function detail(method: PaymentMethod): string {
+  const parts = [t(`sales.methods.kind.${method.kind}`)];
+  if (method.kind !== "cash" && method.kind !== "credit") parts.push(method.account?.name ?? t("sales.methods.branchClearing"));
+  if (Number(method.fee_percent)) parts.push(t("sales.methods.fee", { n: fmt.percent(Number(method.fee_percent), 2) }));
+  return parts.join(" · ");
+}
+
 const KINDS: MethodKind[] = ["cash", "card", "qr", "transfer", "credit", "installment", "other"];
 const kinds = computed(() => KINDS.map((value) => ({ value, label: t(`sales.methods.kind.${value}`), icon: METHOD_ICONS[value] })));
 const accounts = computed(() => (options.data.value?.accounts ?? []).map((a) => ({ value: a.id, label: a.name })));
@@ -107,12 +115,8 @@ async function submit(): Promise<void> {
               <span class="truncate">{{ method.name }}</span>
               <UiBadge v-if="method.kind === 'credit'" size="sm" tone="info">{{ t("sales.methods.creditBadge") }}</UiBadge>
             </p>
-            <!-- Wraps on a phone rather than cutting the account and the fee off. -->
-            <p class="text-xs text-muted sm:truncate">
-              {{ t(`sales.methods.kind.${method.kind}`) }}
-              <template v-if="method.kind !== 'cash' && method.kind !== 'credit'"> · {{ method.account?.name ?? t("sales.methods.branchClearing") }}</template>
-              <template v-if="Number(method.fee_percent)"> · {{ t("sales.methods.fee", { n: fmt.number(method.fee_percent, 2) }) }}</template>
-            </p>
+            <!-- Wraps on a phone rather than cutting the account and the fee off; in full on hover. -->
+            <p class="text-xs text-muted sm:truncate" :title="detail(method)">{{ detail(method) }}</p>
           </div>
           <template v-if="canEdit">
             <div class="flex max-sm:hidden">

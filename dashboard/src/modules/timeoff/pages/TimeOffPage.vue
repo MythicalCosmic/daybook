@@ -295,6 +295,10 @@ const nextHoliday = computed(() => stats.data.value?.next_holiday ?? null);
       <template #cell-status="{ row }">
         <StatusPill size="sm" :tone="TONES[row.status]" :label="t(`timeoff.state.${row.status}`)" />
       </template>
+      <template #cell-reason="{ row }">
+        <span v-if="row.reason" class="block truncate" :title="row.reason">{{ row.reason }}</span>
+        <span v-else class="text-subtle">—</span>
+      </template>
       <template #cell-decided="{ row }">
         <span v-if="row.recorded_by" class="text-sm text-fg">{{ t("timeoff.list.recordedBy", { name: row.recorded_by.name }) }}</span>
         <span v-else-if="row.decided_by" class="text-sm text-fg">{{ row.decided_by }}</span>

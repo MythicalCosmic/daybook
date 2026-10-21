@@ -57,8 +57,11 @@ async function mountTab(summaries: Record<string, TaskSummary>, lists: Record<st
     "fetch",
     vi.fn(async (input: string) => {
       urls.push(input);
-      const routines = new URL(input, "http://x").searchParams.get("routines") ?? "";
+      const params = new URL(input, "http://x").searchParams;
+      const routines = params.get("routines") ?? "";
       if (input.includes("tasks/summary/")) return json(summaries[routines] ?? summary({}));
+      // "Finished lately" (done only) stays empty: the lists given are open work.
+      if (params.getAll("status").join() === "done") return json(page([]));
       return json(page(lists[routines] ?? []));
     }),
   );
@@ -127,6 +130,15 @@ describe("PersonTasksTab", () => {
     expect(blocks[0]!.text()).not.toContain("Muzlatgich");
     expect(blocks[1]!.text()).toContain(en["tasks.person.routinesTitle"]);
     expect(blocks[1]!.text()).toContain("Muzlatgich harorati");
+  });
+
+  it("shows the six soonest open tasks and links to the rest, so routine work stays in view", async () => {
+    const titles = Array.from({ length: 9 }, (_, i) => `Vazifa ${i + 1}`);
+    const { wrapper } = await mountTab({}, { without: titles });
+    const tasks = wrapper.find('[data-block="tasks"]');
+    expect(tasks.text()).toContain("Vazifa 6");
+    expect(tasks.text()).not.toContain("Vazifa 7");
+    expect(tasks.find("[data-view-all]").attributes("href")).toBe("/c/1/tasks?assignee=7&sv=all");
   });
 
   it("says in one line when someone has no one-off tasks, keeping their routine work in view", async () => {

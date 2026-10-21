@@ -467,7 +467,7 @@
   "sales.methods.branchClearing": "Filialning tranzit hisobi",
   "sales.methods.feeLabel": "Provayder komissiyasi",
   "sales.methods.feeHint": "Smena yopilganda bank xarajati sifatida yoziladi.",
-  "sales.methods.fee": "komissiya {n}%",
+  "sales.methods.fee": "komissiya {n}",
   "sales.methods.creditBadge": "Har bir nasiya alohida yoziladi",
   "sales.methods.up": "Yuqoriga",
   "sales.methods.down": "Pastga",

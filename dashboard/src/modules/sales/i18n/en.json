@@ -467,7 +467,7 @@
   "sales.methods.branchClearing": "The branch's clearing account",
   "sales.methods.feeLabel": "Provider fee",
   "sales.methods.feeHint": "Booked as a bank fee when a shift closes.",
-  "sales.methods.fee": "fee {n}%",
+  "sales.methods.fee": "fee {n}",
   "sales.methods.creditBadge": "Booked per credit sale",
   "sales.methods.up": "Move up",
   "sales.methods.down": "Move down",

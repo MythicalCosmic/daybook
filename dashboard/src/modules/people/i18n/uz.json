@@ -100,7 +100,7 @@
   "people.action.recordTimeOff": "Ta’til yozish",
 
   "people.overview.trendTitle": "Haftalar bo‘yicha o‘z vaqtida",
-  "people.overview.trendSubtitle": "Vaqtida bajarilgan muntazam vazifalar va vazifalar",
+  "people.overview.trendSubtitle": "Muntazam va boshqa vazifalar, vaqtida",
   "people.overview.trendEmpty": "Oxirgi 12 haftada muntazam vazifa ham, vazifa ham bo‘lmagan",
   "people.overview.onTimeSeries": "O‘z vaqtida",
   "people.overview.goal": "Maqsad 90%",

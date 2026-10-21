@@ -467,7 +467,7 @@
   "sales.methods.branchClearing": "Транзитный счёт филиала",
   "sales.methods.feeLabel": "Комиссия провайдера",
   "sales.methods.feeHint": "Проводится как банковский расход при закрытии смены.",
-  "sales.methods.fee": "комиссия {n}%",
+  "sales.methods.fee": "комиссия {n}",
   "sales.methods.creditBadge": "Проводится по каждой продаже в долг",
   "sales.methods.up": "Выше",
   "sales.methods.down": "Ниже",

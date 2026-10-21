@@ -180,7 +180,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
+  <div class="flex flex-col gap-5">
     <AttendanceHeader :title="t('attendance.roster.title')" :description="t('attendance.roster.description')">
       <template v-if="canManage" #actions>
         <DropdownMenu :items="menu">
