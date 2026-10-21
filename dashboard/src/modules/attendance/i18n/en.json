@@ -66,6 +66,7 @@
   "attendance.kpi.present": "Present",
   "attendance.kpi.ofRostered": "of {n} on shift",
   "attendance.kpi.cameLeft": "{came} of {n} came · {left} left",
+  "attendance.quote": "“{text}”",
   "attendance.kpi.late": "Late",
   "attendance.kpi.lateHint": "past the grace minutes",
   "attendance.kpi.notIn": "Not in yet",

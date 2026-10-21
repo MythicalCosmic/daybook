@@ -104,7 +104,7 @@ async function runOvertime(record: RecordRow, approve: boolean, reason = ""): Pr
                 <ArrowRight :size="14" class="text-subtle" aria-hidden="true" />
                 <span class="rounded-[6px] bg-accent-soft px-2 py-0.5 font-medium tabular-nums text-accent-fg">{{ asked(correction) }}</span>
               </div>
-              <p class="mt-1.5 text-sm text-fg">“{{ correction.reason }}”</p>
+              <p class="mt-1.5 text-sm text-fg">{{ t("attendance.quote", { text: correction.reason }) }}</p>
               <p class="mt-1 text-xs text-subtle"><RelativeTime :value="correction.created_at" /></p>
             </div>
           </div>

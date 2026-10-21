@@ -66,6 +66,7 @@
   "attendance.kpi.present": "Kelganlar",
   "attendance.kpi.ofRostered": "{n} kishidan",
   "attendance.kpi.cameLeft": "{came}/{n} keldi · {left} tasi ketdi",
+  "attendance.quote": "«{text}»",
   "attendance.kpi.late": "Kechikkanlar",
   "attendance.kpi.lateHint": "imtiyozli daqiqalardan keyin",
   "attendance.kpi.notIn": "Hali kelmaganlar",

@@ -439,6 +439,30 @@ describe("TodayPage", () => {
   });
 });
 
+describe("PresentWidget", () => {
+  it("counts who is still checked in, like the board's present now", async () => {
+    stubApi({
+      "GET attendance/board/": () =>
+        json({
+          date: "2026-10-21",
+          is_today: true,
+          now: "2026-10-21T18:30:00+05:00",
+          holiday: null,
+          totals: { in: 7, late: 2, not_yet: 1, absent: 0, off: 6, rostered: 10, late_missing: 0, present: 4, left: 5 },
+          branches: [],
+          people: [],
+        }),
+    });
+    const { default: PresentWidget } = await import("../widgets/PresentWidget.vue");
+    const app = await testApp("/c/1");
+    const { wrapper } = mountWithProviders(PresentWidget, { plugins: app.plugins, props: { companyId: 1 } });
+    await flushPromises();
+    await flushPromises();
+    expect(wrapper.text()).toMatch(/Present now\s*4\b/);
+    expect(wrapper.text()).toContain("40%");
+  });
+});
+
 describe("SwapsPage", () => {
   const swap = (id: number): Swap => ({
     id,

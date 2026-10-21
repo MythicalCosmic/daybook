@@ -66,6 +66,7 @@
   "attendance.kpi.present": "Пришли",
   "attendance.kpi.ofRostered": "из {n}",
   "attendance.kpi.cameLeft": "Пришли {came} из {n} · ушли {left}",
+  "attendance.quote": "«{text}»",
   "attendance.kpi.late": "Опоздали",
   "attendance.kpi.lateHint": "сверх допустимых минут",
   "attendance.kpi.notIn": "Ещё не пришли",
