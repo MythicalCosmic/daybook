@@ -86,7 +86,7 @@ function cellTitle(day: string, cell: Cell): string {
             v-for="day in data.days"
             :key="day"
             :class="[
-              'flex aspect-[5/4] min-w-0 flex-col items-center justify-center rounded-[8px] text-xs lg:aspect-[16/9]',
+              'flex aspect-[5/4] min-w-0 flex-col items-center justify-center rounded-[8px] text-xs lg:aspect-auto lg:h-[60px]',
               CELL_CLASSES[data.cells[day]?.code ?? 'off'],
               day === data.today && 'outline outline-2 outline-offset-1 outline-[var(--c-primary)]',
             ]"
