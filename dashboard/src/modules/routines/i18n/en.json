@@ -198,7 +198,7 @@
   "routines.today.kpi.finished": "Done",
   "routines.today.kpi.finishedHint": "Done or waiting for confirmation",
   "routines.today.kpi.finishedPercent": "{percent} of the day's routine work is finished",
-  "routines.today.kpi.review": "Waiting for confirmation",
+  "routines.today.kpi.review": "To confirm",
   "routines.today.kpi.late": "Late",
   "routines.today.kpi.lateHint": "Not done, and its time has passed",
   "routines.today.kpi.skipped": "Skipped",
@@ -262,5 +262,6 @@
   "routines.history.colMade": "Given",
   "routines.history.colDone": "Done",
   "routines.history.colOnTime": "On time",
-  "routines.history.colRate": "Completion"
+  "routines.history.colRate": "Completion",
+  "routines.navTitle": "Routines"
 }

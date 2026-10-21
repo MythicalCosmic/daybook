@@ -16,7 +16,8 @@ export default defineModule({
   group: "work",
   order: 30,
   icon: Repeat,
-  title: "routines.title",
+  // The sidebar row is short ("Muntazam", "Регулярные"); page headers say "routines.title" in full.
+  title: "routines.navTitle",
   perm: ["tasks.templates", "tasks.view_all", "tasks.confirm"],
   hotkey: "r",
   routes,

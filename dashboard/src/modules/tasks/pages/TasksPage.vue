@@ -207,7 +207,7 @@ const viewOptions = computed(() => [
         @delete="(target) => (saved.remove.mutate(Number(target.id)), applyView('open'))"
       />
       <div class="flex min-w-0 flex-wrap items-start gap-2">
-        <FilterBar v-model="filters.values.value" v-model:search="search" class="min-w-0 flex-1" :defs="defs" searchable :search-placeholder="t('tasks.searchPlaceholder')" />
+        <FilterBar v-model="filters.values.value" v-model:search="search" class="min-w-0 flex-1 max-sm:basis-full" :defs="defs" searchable :search-placeholder="t('tasks.searchPlaceholder')" />
         <button
           type="button"
           :aria-pressed="routinesAsked"

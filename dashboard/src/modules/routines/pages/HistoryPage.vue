@@ -6,7 +6,7 @@
  * come; what's still ahead today isn't held against anyone.
  */
 import { CalendarRange, Store, Users } from "@lucide/vue";
-import { computed } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
@@ -89,6 +89,13 @@ function open(day: string, routineId?: number): void {
   void router.push({ name: "routines.today", query: { ...(day === today.value ? {} : { day }), ...(routineId ? { routine: String(routineId) } : {}) } });
 }
 
+// Narrow screens see the latest days first: the grid opens scrolled to its end.
+const scroller = ref<HTMLElement | null>(null);
+watch(data, async () => {
+  await nextTick();
+  if (scroller.value) scroller.value.scrollLeft = scroller.value.scrollWidth;
+});
+
 const percentText = (value: number | null) => (value === null ? "—" : fmt.percent(value, 0));
 const tone = (value: number | null) => (value === null ? "neutral" : value >= 90 ? "success" : value >= 70 ? "warning" : "danger");
 </script>
@@ -101,7 +108,7 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
       </template>
     </RoutinesHeader>
 
-    <KpiStrip :items="kpis" :loading="query.isPending.value" :columns="4" phone="grid" />
+    <KpiStrip :items="kpis" :loading="query.isPending.value" :columns="4" phone="compact" />
     <FilterBar v-model="filters.values.value" :defs="defs" />
 
     <div v-if="skeleton" class="ui-card flex flex-col gap-2 p-4"><SkeletonBlock v-for="n in 5" :key="n" height="28px" /></div>
@@ -124,11 +131,11 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
             <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px] border border-dashed border-line-strong" />{{ t("routines.history.legendAhead") }}</span>
           </div>
         </header>
-        <div class="overflow-x-auto">
+        <div ref="scroller" class="overflow-x-auto">
           <table class="w-full border-separate border-spacing-0 text-sm">
             <thead>
               <tr>
-                <th class="sticky left-0 z-10 min-w-[180px] max-w-[260px] bg-surface px-4 py-2 text-left text-xs font-medium text-muted">{{ t("routines.history.routine") }}</th>
+                <th class="sticky left-0 z-10 min-w-[132px] max-w-[260px] bg-surface px-4 py-2 text-left text-xs font-medium text-muted sm:min-w-[180px]">{{ t("routines.history.routine") }}</th>
                 <th v-for="day in data.days" :key="day" :class="['px-[1px] pb-1.5 pt-2 text-center font-medium', day === today ? 'text-accent-fg' : weekdayOf(day) >= 5 ? 'text-subtle' : 'text-muted']">
                   <span class="block text-[10px] leading-3">{{ t(`routines.dayLetter.${weekdayOf(day)}`) }}</span>
                   <span class="block text-[11px] tabular-nums leading-4">{{ Number(day.slice(8)) }}</span>
@@ -154,7 +161,7 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
                 <td class="px-4 text-right tabular-nums text-fg">{{ percentText(data.totals.percent) }}</td>
               </tr>
               <tr v-for="row in data.routines" :key="row.routine.id">
-                <th class="sticky left-0 z-10 max-w-[260px] bg-surface px-4 py-1 text-left font-normal">
+                <th class="sticky left-0 z-10 max-w-[150px] bg-surface px-4 py-1 text-left font-normal sm:max-w-[260px]">
                   <span class="block truncate text-sm text-fg" :title="row.routine.title">{{ row.routine.title }}</span>
                 </th>
                 <td v-for="(cell, index) in row.cells" :key="data.days[index]" class="p-[1px]">

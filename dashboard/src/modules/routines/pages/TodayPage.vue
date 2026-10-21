@@ -69,8 +69,15 @@ const data = computed(() => query.data.value ?? null);
 const rows = computed(() => (data.value?.routines ?? []).filter((row) => !only.value || String(row.routine.id) === only.value));
 const focused = computed(() => (only.value ? (data.value?.routines.find((row) => String(row.routine.id) === only.value)?.routine ?? null) : null));
 
+// The numbers count what the list shows: the whole day, or the one routine History opened.
+const totalsShown = computed(() => {
+  if (!data.value) return null;
+  if (!only.value) return data.value.totals;
+  const row = rows.value[0];
+  return row ? { ...row.counts, total: row.progress.total, finished: row.progress.finished, routines: 1 } : null;
+});
 const kpis = computed(() => {
-  const totals = data.value?.totals;
+  const totals = totalsShown.value;
   const percent = totals && totals.total ? Math.round((100 * totals.finished) / totals.total) : null;
   return [
     {
@@ -153,7 +160,7 @@ function give(target: GiveTarget): void {
       </template>
     </RoutinesHeader>
 
-    <KpiStrip :items="kpis" :loading="query.isPending.value" :columns="4" phone="grid" />
+    <KpiStrip :items="kpis" :loading="query.isPending.value" :columns="4" phone="compact" />
 
     <div class="flex min-w-0 flex-wrap items-center gap-2">
       <FilterBar v-model="filters.values.value" class="min-w-0 flex-1" :defs="defs" />

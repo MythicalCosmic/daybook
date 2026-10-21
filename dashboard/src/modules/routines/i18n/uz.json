@@ -198,7 +198,7 @@
   "routines.today.kpi.finished": "Bajarildi",
   "routines.today.kpi.finishedHint": "Bajarilgan yoki tasdiq kutayotgan",
   "routines.today.kpi.finishedPercent": "Kunlik muntazam vazifalarning {percent} bajarildi",
-  "routines.today.kpi.review": "Tasdiq kutmoqda",
+  "routines.today.kpi.review": "Tasdiqlash kerak",
   "routines.today.kpi.late": "Kechikkan",
   "routines.today.kpi.lateHint": "Bajarilmagan, vaqti o‘tgan",
   "routines.today.kpi.skipped": "Berilmadi",
@@ -262,5 +262,6 @@
   "routines.history.colMade": "Berilgan",
   "routines.history.colDone": "Bajarilgan",
   "routines.history.colOnTime": "O‘z vaqtida",
-  "routines.history.colRate": "Bajarilish"
+  "routines.history.colRate": "Bajarilish",
+  "routines.navTitle": "Muntazam"
 }

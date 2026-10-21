@@ -151,12 +151,14 @@ const photo = (run: RoutineRun, group: ConfirmGroup) => ({
               </div>
             </div>
             <div class="flex flex-1 flex-col gap-2 p-3">
-              <div class="flex min-w-0 items-center gap-2">
-                <UserAvatar :name="run.member.name" :src="run.member.photo_url" :size="24" />
-                <span class="min-w-0 flex-1 truncate text-sm font-medium text-fg" :title="run.member.name">{{ run.member.name }}</span>
-                <span v-if="run.completed_at" :class="['shrink-0 rounded-full px-2 py-px text-xs font-semibold tabular-nums', run.on_time === false ? 'bg-warning-soft text-warning' : 'bg-success-soft text-success']">
-                  {{ t(run.on_time === false ? "routines.confirm.late" : "routines.confirm.onTime", { time: fmt.instant(run.completed_at, "time") }) }}
-                </span>
+              <div class="flex min-w-0 items-center gap-2.5">
+                <UserAvatar :name="run.member.name" :src="run.member.photo_url" :size="28" />
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-sm font-medium text-fg" :title="run.member.name">{{ run.member.name }}</p>
+                  <p v-if="run.completed_at" :class="['truncate text-xs font-semibold tabular-nums', run.on_time === false ? 'text-warning' : 'text-success']">
+                    {{ t(run.on_time === false ? "routines.confirm.late" : "routines.confirm.onTime", { time: fmt.instant(run.completed_at, "time") }) }}
+                  </p>
+                </div>
               </div>
               <p v-if="run.proof_photo && run.proof_text" class="line-clamp-2 rounded-[8px] bg-surface-2 px-2.5 py-1.5 text-sm text-fg">{{ run.proof_text }}</p>
               <p v-if="run.checklist.total" class="inline-flex items-center gap-1 text-xs text-muted"><ListChecks :size="13" aria-hidden="true" />{{ t("routines.confirm.checklist", { done: run.checklist.done, total: run.checklist.total }) }}</p>

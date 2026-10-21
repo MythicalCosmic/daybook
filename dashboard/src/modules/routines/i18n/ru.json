@@ -198,11 +198,11 @@
   "routines.today.kpi.finished": "Выполнено",
   "routines.today.kpi.finishedHint": "Выполнено или ждёт подтверждения",
   "routines.today.kpi.finishedPercent": "Выполнено {percent} регулярных задач дня",
-  "routines.today.kpi.review": "Ждут подтверждения",
+  "routines.today.kpi.review": "На подтверждении",
   "routines.today.kpi.late": "Просрочено",
   "routines.today.kpi.lateHint": "Не выполнено, срок прошёл",
   "routines.today.kpi.skipped": "Пропущено",
-  "routines.today.kpi.skippedHint": "Отпуск, выходной, отстранён, пришёл позже",
+  "routines.today.kpi.skippedHint": "Отпуск, выходной и другие причины",
   "routines.today.checked": "С проверкой",
   "routines.today.chip.late": "{n} просрочена | {n} просрочены | {n} просрочено",
   "routines.today.chip.review": "{n} на подтверждении | {n} на подтверждении | {n} на подтверждении",
@@ -262,5 +262,6 @@
   "routines.history.colMade": "Выдано",
   "routines.history.colDone": "Выполнено",
   "routines.history.colOnTime": "Вовремя",
-  "routines.history.colRate": "Выполнение"
+  "routines.history.colRate": "Выполнение",
+  "routines.navTitle": "Регулярные"
 }
