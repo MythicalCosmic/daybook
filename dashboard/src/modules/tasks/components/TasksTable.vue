@@ -4,7 +4,7 @@
  * bulk bar (reassign, move the deadline, priority, nudge, confirm, cancel), cards on phones. Rows
  * open the drawer (`?task=`).
  */
-import { BellRing, CalendarClock, CheckCheck, Flag, Gift, Repeat, UserRoundCog, X } from "@lucide/vue";
+import { BellRing, CalendarClock, CheckCheck, Flag, FolderKanban, Gift, Repeat, UserRoundCog, X } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -23,7 +23,7 @@ import { useFormat } from "@/lib/useFormat";
 import { usePermission } from "@/lib/usePermission";
 
 import { useBulk, useTaskList, useTaskOptions } from "../api";
-import { PRIORITY_TONE } from "../meta";
+import { cardKey, PRIORITY_TONE } from "../meta";
 import type { BulkAction, BulkInput, TaskPriority, TaskRow } from "../types";
 import { PRIORITIES } from "../types";
 import DueLabel from "./DueLabel.vue";
@@ -146,11 +146,12 @@ async function reassignMany(selected: string[], clear: () => void): Promise<void
   >
     <template #cell-title="{ row }">
       <div class="min-w-0 py-0.5">
-        <p :class="['truncate font-medium', row.status === 'done' || row.status === 'cancelled' ? 'text-muted' : 'text-fg']">
-          <span v-if="row.project" class="mr-1 font-mono text-xs font-semibold text-subtle">{{ row.project.key }}</span>{{ row.title }}
+        <p :class="['truncate font-medium', row.status === 'done' || row.status === 'cancelled' ? 'text-muted' : 'text-fg']" :title="row.project ? `${cardKey(row.project)} · ${row.title}` : row.title">
+          <span v-if="row.project" class="mr-1 font-mono text-xs font-semibold text-subtle">{{ cardKey(row.project) }}</span>{{ row.title }}
         </p>
         <p class="flex min-w-0 items-center gap-2 text-xs text-subtle">
           <span v-if="row.routine" class="inline-flex min-w-0 items-center gap-1"><Repeat :size="11" aria-hidden="true" /><span class="truncate">{{ row.routine.onboarding ? t("tasks.kind.onboarding") : t("tasks.kind.routine") }}</span></span>
+          <span v-else-if="row.project" class="inline-flex min-w-0 items-center gap-1"><FolderKanban :size="11" aria-hidden="true" /><span class="truncate">{{ row.project.name }}</span></span>
           <span v-else>{{ t(`tasks.kind.${row.kind}`) }}</span>
           <span v-if="row.checklist.total" :class="['inline-flex items-center gap-0.5 tabular-nums', row.checklist.done === row.checklist.total && 'text-success']"><CheckCheck :size="11" />{{ row.checklist.done }}/{{ row.checklist.total }}</span>
           <span v-if="row.reward" class="inline-flex items-center gap-0.5 text-success"><Gift :size="11" />{{ t("tasks.reward.short") }}</span>

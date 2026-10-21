@@ -52,6 +52,9 @@ class ProjectRefSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     key = serializers.CharField()
     name = serializers.CharField()
+    # The card's number on the project's board ("OPEN-14" is key and number); null until the
+    # board has numbered it.
+    number = serializers.IntegerField(allow_null=True)
 
 
 class ProgressSerializer(serializers.Serializer):
@@ -129,7 +132,11 @@ class TaskRowSerializer(serializers.ModelSerializer):
     @extend_schema_field(ProjectRefSerializer(allow_null=True))
     def get_project(self, task: Task) -> dict | None:
         project = task.project if task.project_id else None
-        return {"id": project.pk, "key": project.key, "name": project.name} if project else None
+        if project is None:
+            return None
+        card = getattr(task, "card", None)  # apps.projects' Card, loaded with the task
+        number = card.number if card is not None else None
+        return {"id": project.pk, "key": project.key, "name": project.name, "number": number}
 
     @extend_schema_field(ProgressSerializer)
     def get_checklist(self, task: Task) -> dict:

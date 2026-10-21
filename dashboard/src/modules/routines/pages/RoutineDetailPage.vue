@@ -25,6 +25,7 @@ import { useChartTheme } from "@/components/useChartTheme";
 import { toast } from "@/components/useToast";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useFormat } from "@/lib/useFormat";
+import { usePageTitle } from "@/lib/usePageTitle";
 import { useRangeState } from "@/lib/useRangeState";
 import { useCompanyStore } from "@/stores/company";
 
@@ -55,6 +56,7 @@ const auditLabels = computed(() => routineFieldLabels(t));
 const auditFormat = computed(() => formatRoutineAudit(t, { options: planOptions.data.value, branches: company.current?.branches ?? [] }));
 
 const data = computed(() => routine.data.value ?? null);
+usePageTitle(() => data.value?.title);
 const totals = computed(() => compliance.data.value?.totals);
 const kpis = computed(() => [
   { id: "made", label: t("routines.detail.made"), value: totals.value?.made ?? null },

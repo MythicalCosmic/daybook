@@ -256,5 +256,7 @@
   "tasks.keys.sendBack": "Vazifani qaytarish",
   "tasks.keys.next": "Keyingi vazifa",
   "tasks.keys.previous": "Oldingi vazifa",
-  "tasks.reviews.noPhoto": "Rasm yuborilmagan"
+  "tasks.reviews.noPhoto": "Rasm yuborilmagan",
+  "tasks.field.project": "Loyiha",
+  "tasks.reviews.asked": "Nima so‘ralgan"
 }

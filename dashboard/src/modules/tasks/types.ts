@@ -38,7 +38,8 @@ export interface TaskRow {
   created_by: TaskPerson | null;
   branch: BranchRef | null;
   routine: { id: number; title: string; onboarding: boolean } | null;
-  project: { id: number; key: string; name: string } | null;
+  /** The project board the task is a card on; `number` makes its key ("OPEN-14"), null until numbered. */
+  project: { id: number; key: string; name: string; number: number | null } | null;
   proof: ProofKind;
   needs_confirmation: boolean;
   has_proof: boolean;

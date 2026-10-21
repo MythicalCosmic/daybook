@@ -256,5 +256,7 @@
   "tasks.keys.sendBack": "Send the task back",
   "tasks.keys.next": "Next task",
   "tasks.keys.previous": "Previous task",
-  "tasks.reviews.noPhoto": "No photo was sent"
+  "tasks.reviews.noPhoto": "No photo was sent",
+  "tasks.field.project": "Project",
+  "tasks.reviews.asked": "What was asked"
 }

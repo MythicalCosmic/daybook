@@ -27,6 +27,7 @@ import { useCompanyStore } from "@/stores/company";
 
 import { tasksApi, useRefreshTasks, useReviews } from "../api";
 import TaskDrawer from "../components/TaskDrawer.vue";
+import { cardKey } from "../meta";
 import type { TaskReview } from "../types";
 
 const UNDO_MS = 5000;
@@ -190,15 +191,27 @@ function open(task: TaskReview): void {
       >
         <div :class="['relative w-full overflow-hidden bg-surface-2', task.proof_photo ? 'aspect-[4/3]' : 'h-32 sm:h-auto sm:aspect-[4/3]']">
           <ProofThumb v-if="task.proof_photo" :src="task.proof_photo" :images="[{ src: task.proof_photo, caption: task.title }]" size="fill" class="!rounded-none" />
-          <div v-else class="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
-            <FileText :size="22" class="text-subtle" />
-            <p v-if="task.proof_text" class="line-clamp-5 text-sm text-fg">“{{ task.proof_text }}”</p>
-            <p v-else class="text-sm text-muted">{{ task.proof === "none" ? t("tasks.reviews.noProof") : t("tasks.reviews.noPhoto") }}</p>
+          <!-- No photo: what was reported, else what was asked, so the card still says something. -->
+          <div v-else class="flex h-full flex-col justify-center gap-2 p-5">
+            <template v-if="task.proof_text">
+              <FileText :size="18" class="text-subtle" aria-hidden="true" />
+              <p class="line-clamp-5 text-sm text-fg">“{{ task.proof_text }}”</p>
+            </template>
+            <template v-else-if="task.description">
+              <p class="text-[11px] font-semibold uppercase tracking-[0.05em] text-subtle">{{ t("tasks.reviews.asked") }}</p>
+              <p class="line-clamp-5 whitespace-pre-line text-sm text-muted">{{ task.description }}</p>
+            </template>
+            <p v-else class="flex flex-col items-center gap-2 text-center text-sm text-muted">
+              <FileText :size="22" class="text-subtle" aria-hidden="true" />{{ task.proof === "none" ? t("tasks.reviews.noProof") : t("tasks.reviews.noPhoto") }}
+            </p>
+            <p v-if="(task.proof_text || task.description) && !task.proof_photo" class="mt-auto text-xs text-subtle">{{ task.proof === "none" ? t("tasks.reviews.noProof") : t("tasks.reviews.noPhoto") }}</p>
           </div>
           <span v-if="task.reward" class="absolute left-2 top-2 rounded-full bg-surface/90 px-2 py-0.5 text-xs font-semibold text-success shadow-xs">{{ t("tasks.reward.short") }}</span>
         </div>
         <div class="flex flex-1 flex-col gap-2 p-3.5">
-          <button type="button" class="line-clamp-2 text-left text-base font-semibold leading-5 text-fg hover:underline" @click="open(task)">{{ task.title }}</button>
+          <button type="button" class="line-clamp-2 text-left text-base font-semibold leading-5 text-fg hover:underline" :title="task.project?.name" @click="open(task)">
+            <span v-if="task.project" class="mr-1 font-mono text-xs font-semibold text-subtle">{{ cardKey(task.project) }}</span>{{ task.title }}
+          </button>
           <div class="flex min-w-0 items-center gap-2 text-sm text-muted">
             <UserAvatar :name="task.assignee.name" :src="task.assignee.photo_url" :size="22" />
             <span class="min-w-0 truncate"><span class="font-medium text-fg">{{ task.assignee.name }}</span><template v-if="task.branch"> · {{ task.branch.name }}</template></span>

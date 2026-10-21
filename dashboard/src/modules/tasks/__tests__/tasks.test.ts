@@ -15,7 +15,7 @@ import TaskTimeline from "../components/TaskTimeline.vue";
 import { builtinTabs, builtinViews, filterDefs, viewParams } from "../filters";
 import en from "../i18n/en.json";
 import module from "../index";
-import { lateness, minutesBetween, zonedIso, zonedParts } from "../meta";
+import { cardKey, lateness, minutesBetween, zonedIso, zonedParts } from "../meta";
 import type { BoardColumn, TaskDetail, TaskRow } from "../types";
 
 interface Call {
@@ -252,6 +252,40 @@ describe("TaskDrawer", () => {
     expect(text).toContain("Closing the till");
     expect(text).toContain("Counting fridges");
     expect(document.body.querySelector('a[href="/dashboard/c/1/knowledge/p/43"], a[href="/c/1/knowledge/p/43"]')).not.toBeNull();
+    wrapper.unmount();
+  });
+
+  it("names a board card by its key and links to it, and says when finished work came in and how late", async () => {
+    stub({
+      "GET tasks/7/": () =>
+        json(
+          detail({
+            status: "done",
+            actions: ["comment"],
+            project: { id: 13, key: "OPEN", name: "Chilonzor branch opening", number: 22 },
+            due_at: "2026-10-21T13:00:00Z",
+            completed_at: "2026-10-21T15:10:00Z",
+          }),
+        ),
+      "GET tasks/options/": () => json({ people: [], positions: [], routines: [], policies: [] }),
+    });
+    const app = await testApp("/c/1/tasks?task=7");
+    const { wrapper } = mountWithProviders(TaskDrawer, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    const text = document.body.textContent ?? "";
+    // Under the title: the card instead of "Given by hand".
+    expect(text).toContain("OPEN-22 · Chilonzor branch opening · Chilonzor");
+    expect(text).not.toContain("Given by hand");
+    const link = document.body.querySelector<HTMLAnchorElement>('a[href$="/c/1/projects/13/board?card=7"]');
+    expect(link?.textContent).toContain("OPEN-22");
+    // Finished 2 h 10 min after the deadline: the header says so instead of repeating the deadline.
+    expect(text).toContain("late 2 h");
+    // Nothing left to do: no empty actions row.
+    const pill = [...document.body.querySelectorAll("section")][0]!;
+    expect(pill.querySelectorAll("div.empty\\:hidden button").length).toBe(0);
+    expect(cardKey({ key: "OPEN", number: 22 })).toBe("OPEN-22");
+    expect(cardKey({ key: "OPEN", number: null })).toBe("OPEN");
     wrapper.unmount();
   });
 

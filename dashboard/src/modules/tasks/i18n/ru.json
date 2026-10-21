@@ -256,5 +256,7 @@
   "tasks.keys.sendBack": "Вернуть задачу",
   "tasks.keys.next": "Следующая задача",
   "tasks.keys.previous": "Предыдущая задача",
-  "tasks.reviews.noPhoto": "Фото не прислали"
+  "tasks.reviews.noPhoto": "Фото не прислали",
+  "tasks.field.project": "Проект",
+  "tasks.reviews.asked": "Что просили"
 }
