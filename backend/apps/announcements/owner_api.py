@@ -41,10 +41,16 @@ class PersonRefSerializer(serializers.Serializer):
     name = serializers.CharField()
     photo_url = serializers.CharField(allow_null=True)
 
+    class Meta:
+        ref_name = "AnnouncementsPersonRef"
+
 
 class NamedSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
+
+    class Meta:
+        ref_name = "AnnouncementsNamed"
 
 
 class OwnerAnnouncementSerializer(serializers.ModelSerializer):
@@ -115,9 +121,15 @@ class PublishSerializer(serializers.Serializer):
     pinned_until = serializers.DateTimeField(required=False, allow_null=True)
     expires_at = serializers.DateTimeField(required=False, allow_null=True)
 
+    class Meta:
+        ref_name = "AnnouncementsPublish"
+
 
 class UpdateSerializer(PublishSerializer):
     text_html = serializers.CharField(required=False)
+
+    class Meta:
+        ref_name = "AnnouncementsUpdate"
 
 
 class PinSerializer(serializers.Serializer):
@@ -130,6 +142,7 @@ class ReceiptSerializer(serializers.ModelSerializer):
     home_branch = serializers.SerializerMethodField()
 
     class Meta:
+        ref_name = "AnnouncementsReceipt"
         model = Receipt
         fields = ("id", "member", "position", "home_branch", "read_at", "reminded_at")
         read_only_fields = fields

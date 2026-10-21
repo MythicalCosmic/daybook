@@ -29,10 +29,12 @@ def ledger(books, owner, cash, bank):
     for day in (SEP_5, SEP_20, OCT_3, OCT_10):
         ExchangeRateFactory(date=day, rate=D("12000"))
     goods = Category.objects.get(company=books, system_code="goods")
-    drinks = services.create_category(books, by=owner, name="Drinks", kind="expense", parent=goods)
+    drinks = services.create_category(
+        books, by=owner, name="Medicines", kind="expense", parent=goods
+    )
     fridge = services.create_category(books, by=owner, name="Fridge", kind="expense", is_capex=True)
     dollars = MoneyAccountFactory(company=books, name="Dollars", kind="safe", currency="USD")
-    party = CounterpartyFactory(company=books, name="Barakat Kafe")
+    party = CounterpartyFactory(company=books, name="Tonggi Shabnam klinikasi")
 
     def book(kind, amount, day, account, category=None, **extra):
         return services.record_transaction(
@@ -102,7 +104,7 @@ def test_pnl_by_month_with_drill_down(books, ledger):
     goods = next(node for node in data["expense"]["nodes"] if node["id"] == ledger["goods"].pk)
     assert goods["amounts"] == [D("2500000.00"), D("0.00")]
     assert goods["own"] == [D("2000000.00"), D("0.00")]
-    assert [child["name"] for child in goods["children"]] == ["Drinks"]
+    assert [child["name"] for child in goods["children"]] == ["Medicines"]
     names = {node["name"] for node in data["expense"]["nodes"]}
     assert "Fridge" in names  # the P&L counts equipment; the cash flow puts it under investing
 
@@ -151,7 +153,7 @@ def test_balances_on_a_date(books, ledger):
 def test_debt_aging(books, ledger):
     data = queries.debts_aging(books, "receivable", branch_ids=None, today=date(2026, 10, 21))
     assert data["totals"]["d1_30"] == D("500000.00")
-    assert data["parties"][0]["name"] == "Barakat Kafe"
+    assert data["parties"][0]["name"] == "Tonggi Shabnam klinikasi"
     assert data["parties"][0]["oldest_due"] == date(2026, 10, 8)
 
 

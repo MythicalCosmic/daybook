@@ -357,15 +357,25 @@ class TestTransactions:
 
     def test_filters(self, client, fin, kassa, boss, today):
         goods = Category.objects.get(company=fin, system_code="goods")
-        drinks = services.create_category(fin, by=boss, name="Drinks", kind="expense", parent=goods)
+        drinks = services.create_category(
+            fin, by=boss, name="Medicines", kind="expense", parent=goods
+        )
         income(fin, boss, kassa, "5000000", today)
-        expense(fin, boss, kassa, "120000", today, category=drinks, description="Cola crates")
+        expense(
+            fin,
+            boss,
+            kassa,
+            "120000",
+            today,
+            category=drinks,
+            description="Paratsetamol 500 mg, 20 boxes",
+        )
         expense(fin, boss, kassa, "900000", today, category="rent")
         rows = client.get(url(fin, "transactions/"), {"category": goods.pk}).json()["results"]
-        assert [row["description"] for row in rows] == ["Cola crates"]
+        assert [row["description"] for row in rows] == ["Paratsetamol 500 mg, 20 boxes"]
         rows = client.get(url(fin, "transactions/"), {"kind": "expense", "min": "500000"}).json()
         assert [row["amount"] for row in rows["results"]] == ["-900000.00"]
-        assert client.get(url(fin, "transactions/"), {"q": "cola"}).json()["count"] == 1
+        assert client.get(url(fin, "transactions/"), {"q": "paratsetamol"}).json()["count"] == 1
         page = client.get(url(fin, "transactions/")).json()
         assert page["summary"] == {
             "money_in": "5000000.00",
@@ -442,7 +452,7 @@ class TestTransactions:
         api = owner_api(recorder)
         assert (
             api.patch(
-                url(fin, f"transactions/{own.pk}/"), {"description": "Tea"}, format="json"
+                url(fin, f"transactions/{own.pk}/"), {"description": "Stationery"}, format="json"
             ).status_code
             == 200
         )
@@ -681,7 +691,7 @@ class TestTransfers:
 
 class TestDebts:
     def test_sell_on_credit_get_paid_and_see_the_summary(self, client, fin, kassa, today):
-        party = CounterpartyFactory(company=fin, name="Barakat Kafe")
+        party = CounterpartyFactory(company=fin, name="Tonggi Shabnam klinikasi")
         response = client.post(
             url(fin, "debts/"),
             {
@@ -822,7 +832,7 @@ class TestCategories:
         assert goods["is_system"] is True
         child = client.post(
             url(fin, "categories/"),
-            {"name": "Drinks", "kind": "expense", "parent": goods["id"], "color": "#c67139"},
+            {"name": "Medicines", "kind": "expense", "parent": goods["id"], "color": "#c67139"},
             format="json",
         )
         assert child.status_code == 201

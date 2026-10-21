@@ -3,11 +3,14 @@ from datetime import timedelta
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.members.models import Membership
+from apps.projects.tests.factories import card, project, team
 from apps.tasks.models import Proof, Task, TaskTemplate
 from apps.tasks.tests.factories import TaskFactory, jpeg_bytes
 
@@ -80,6 +83,49 @@ def test_owners_see_personal_tasks_while_the_company_allows_it(company, member, 
 
     assert client_for(owner).get(tasks_url(company, personal.pk)).status_code == 404
     assert client_for(worker).get(tasks_url(company, personal.pk)).status_code == 200
+
+
+def test_a_task_on_a_project_board_names_its_card(company, member):
+    """The mini app's task screen finds the card's project from the task itself (no board
+    lookups); a plain task has no card."""
+    people = team(company, member)
+    reno = project(company, people["owner"], key="RENO")
+    first = card(reno, people["owner"], title="Order tiles", assignee=people["aziz"])
+    second = card(reno, people["owner"], title="Paint the wall", assignee=people["aziz"])
+    plain = TaskFactory(
+        assignee=people["aziz"], created_by=people["owner"], kind=Task.Kind.ASSIGNED
+    )
+    api = client_for(people["aziz"])
+
+    listed = {row["id"]: row["card"] for row in api.get(tasks_url(company)).data["results"]}
+    opened = api.get(tasks_url(company, second.pk)).data
+
+    assert listed[first.pk] == {
+        "project_id": reno.pk,
+        "project_key": "RENO",
+        "number": 1,
+        "key": "RENO-1",
+    }
+    assert listed[plain.pk] is None
+    assert opened["card"]["key"] == "RENO-2"
+
+
+def test_cards_cost_no_extra_queries_in_lists(company, member, django_assert_max_num_queries):
+    people = team(company, member)
+    reno = project(company, people["owner"], key="RENO")
+    card(reno, people["owner"], assignee=people["aziz"])
+    api = client_for(people["aziz"])
+    api.get(tasks_url(company))  # warm caches (company, membership)
+    with CaptureQueriesContext(connection) as one:
+        api.get(tasks_url(company))
+    for title in ("Hang the sign", "Order shelves", "Fix the door"):
+        card(reno, people["owner"], title=title, assignee=people["aziz"])
+
+    with django_assert_max_num_queries(len(one.captured_queries)):
+        response = api.get(tasks_url(company))
+
+    assert len(response.data["results"]) == 4
+    assert all(row["card"] for row in response.data["results"])
 
 
 def test_today_scope(company, worker):

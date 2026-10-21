@@ -12,6 +12,7 @@ from django.db.models import Count, Min
 
 from apps.companies.models import Company
 from apps.members.models import Membership
+from apps.tasks.bot_messages import display_title
 from apps.tasks.models import Task
 
 FINISHED = (Task.Status.DONE, Task.Status.REVIEW)
@@ -78,7 +79,11 @@ def day_stats(
 ) -> DayStats:
     """How the day's work went; with `until`, only work that was due by then counts."""
     stats = DayStats()
-    tasks = _due_on(company, day, positions).select_related("assignee__user").order_by("due_at")
+    tasks = (
+        _due_on(company, day, positions)
+        .select_related("assignee__user", "project", "card")
+        .order_by("due_at")
+    )
     if until is not None:
         tasks = tasks.filter(due_at__lte=until)
     for task in tasks:
@@ -88,5 +93,5 @@ def day_stats(
             else:
                 stats.late += 1
         else:
-            stats.not_done.append((str(task.assignee), task.title))
+            stats.not_done.append((str(task.assignee), display_title(task)))
     return stats

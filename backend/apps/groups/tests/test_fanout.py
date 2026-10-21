@@ -12,12 +12,13 @@ from django.utils import timezone
 
 from apps.companies.tests.factories import CompanyFactory
 from apps.groups.models import GroupEvent
-from apps.groups.tasks import POST_GAP, announce_task_done, post_to_group
+from apps.groups.tasks import POST_GAP, announce_late, announce_task_done, post_to_group
 from apps.groups.tests.factories import TelegramGroupFactory
 from apps.members import services as member_services
 from apps.members.models import Membership
 from apps.members.tests.factories import MembershipFactory, PositionFactory
 from apps.notifications import telegram
+from apps.projects.tests.factories import card, project, team
 from apps.reminders.engine import send_due_reminders
 from apps.reminders.policies import default_policy
 from apps.tasks import services as task_services
@@ -101,6 +102,24 @@ def test_finished_assigned_work_goes_to_groups_that_chose_it(
 
     assert len(posts(sent_messages, wants)) == 1
     assert not posts(sent_messages, daily_only)
+
+
+def test_a_project_card_is_posted_with_its_key(company, member, sent_messages):
+    """Groups name a card as the bot's task messages do: "RENO-1 · Order tiles"."""
+    people = team(company, member)
+    group = TelegramGroupFactory(company=company, events=[GroupEvent.TASKS_DONE, GroupEvent.LATE])
+    reno = project(company, people["owner"], key="RENO")
+    done = card(reno, people["owner"], title="Order tiles", assignee=people["aziz"])
+    Task.objects.filter(pk=done.pk).update(status=Task.Status.DONE, completed_at=timezone.now())
+    behind = card(reno, people["owner"], title="Paint the wall", assignee=people["aziz"])
+    Task.objects.filter(pk=behind.pk).update(due_at=timezone.now() - timedelta(hours=2))
+
+    announce_task_done(done.pk)
+    announce_late(behind.pk)
+
+    finished_post, late_post = posts(sent_messages, group)
+    assert "<b>RENO-1 · Order tiles</b>" in finished_post["text"]
+    assert "<b>RENO-2 · Paint the wall</b>" in late_post["text"]
 
 
 def test_late_work_says_how_late(company, worker, manager, sent_messages):
