@@ -36,7 +36,8 @@ const trend = computed(() => [...updates.value].slice(0, 12).reverse());
 
 <template>
   <div class="mx-auto flex max-w-[820px] flex-col gap-4">
-    <section class="ui-card flex flex-wrap items-center gap-4 p-4">
+    <!-- Before the first update the empty state below does the inviting. -->
+    <section v-if="updates.length" class="ui-card flex flex-wrap items-center gap-4 p-4">
       <span class="grid size-10 shrink-0 place-items-center rounded-[12px] bg-accent-soft text-accent-fg"><HeartPulse :size="19" /></span>
       <div class="min-w-0 flex-1">
         <p class="text-sm font-semibold text-fg">{{ t("projects.updates.headline") }}</p>

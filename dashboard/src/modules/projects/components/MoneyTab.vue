@@ -104,7 +104,8 @@ const slices = computed(() => (money.value?.by_category ?? []).map((row) => ({ n
         <p v-if="expected !== null" class="text-xs text-muted">{{ t("projects.money.expectedHint", { n: Math.round(expected * 100) }) }}</p>
       </section>
 
-      <div class="grid gap-3 lg:grid-cols-[3fr_2fr]">
+      <!-- Charts once there is something to chart; before that the ledger's empty state invites the first expense. -->
+      <div v-if="money.transactions.length" class="grid gap-3 lg:grid-cols-[3fr_2fr]">
         <ChartCard :title="t('projects.money.byMonth')" :empty="!months.length" :empty-text="t('projects.money.noRows')" height="260px">
           <BarChart :categories="months" :series="monthSeries" value-format="money" :currency="money.currency" x-format="month" height="260px" legend />
         </ChartCard>

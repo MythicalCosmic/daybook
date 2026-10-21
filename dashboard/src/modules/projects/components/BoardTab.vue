@@ -6,7 +6,7 @@
  * Dropping an open card in Done completes it; a card that needs proof (or someone else's) opens
  * instead, so it can be finished properly.
  */
-import { Ellipsis, Eye, EyeOff, ListPlus, Pencil, Plus, Search, Trash2, UserRound, X } from "@lucide/vue";
+import { Ellipsis, Eye, EyeOff, ListPlus, Pencil, Plus, Rocket, Search, Trash2, UserRound, X } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -58,6 +58,7 @@ const milestone = useRouteState("milestone", rs.optionalNumber());
 const hideDone = useRouteState("hide_done", rs.boolean(false));
 const mine = useRouteState("mine", rs.boolean(false));
 const searchEl = ref<InstanceType<typeof TextInput> | null>(null);
+const boardEl = ref<HTMLElement | null>(null);
 const listDialog = ref(false);
 const editingList = ref<BoardList | null>(null);
 
@@ -85,6 +86,19 @@ const cards = computed<Card[]>(() => {
     .sort((a, b) => a.position - b.position || a.id - b.id);
 });
 const filtering = computed(() => !!q.value || people.value.length > 0 || labels.value.length > 0 || !!milestone.value || mine.value);
+
+// A board without cards: where the first ones go (the second list, "To do", when there is one).
+const starter = computed(() => {
+  const open = (board.data.value?.lists ?? []).filter((list) => !list.is_done);
+  return open[1] ?? open[0] ?? null;
+});
+const emptyBoard = computed(() => !!board.data.value && !board.data.value.cards.length && caps.value.edit_cards && !!starter.value);
+function addFirstCard(): void {
+  const index = columns.value.findIndex((column) => column.id === String(starter.value?.id));
+  // The board's own "+" in that list's header opens its quick add.
+  const buttons = boardEl.value?.querySelectorAll<HTMLButtonElement>(`header button[aria-label="${t("common.kanban.add")}"]`);
+  buttons?.[index]?.click();
+}
 
 function canDrop(card: Card, _from: string, to: string): boolean {
   if (!card.can_move) return false;
@@ -168,7 +182,7 @@ useHotkey("m", () => (mine.value = !mine.value), { description: "projects.keys.m
 </script>
 
 <template>
-  <section class="flex min-w-0 flex-col gap-3" @keydown="onBoardKey">
+  <section ref="boardEl" class="flex min-w-0 flex-col gap-3" @keydown="onBoardKey">
     <div class="flex flex-wrap items-center gap-2">
       <TextInput ref="searchEl" v-model="q" :icon="Search" size="sm" clearable :placeholder="t('projects.board.search')" class="w-full sm:w-56" />
       <div v-if="board.data.value?.people.length" class="flex items-center -space-x-1.5 rounded-full py-0.5 pl-0.5 pr-1">
@@ -222,6 +236,14 @@ useHotkey("m", () => (mine.value = !mine.value), { description: "projects.keys.m
         :title="t('projects.board.emptyTitle')"
         :description="t('projects.board.emptyReadOnly')"
       />
+      <div v-if="emptyBoard" class="flex flex-wrap items-center gap-3 rounded-[12px] border border-dashed border-line-strong bg-surface px-4 py-3">
+        <span class="grid size-9 shrink-0 place-items-center rounded-full bg-accent-soft text-accent-fg"><Rocket :size="17" /></span>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold text-fg">{{ t("projects.board.startTitle") }}</p>
+          <p class="text-sm text-muted">{{ t("projects.board.startBody", { list: starter?.name ?? "" }) }}</p>
+        </div>
+        <UiButton variant="primary" size="sm" :icon="Plus" @click="addFirstCard">{{ t("projects.board.startAction") }}</UiButton>
+      </div>
       <KanbanBoard
         :columns="columns"
         :items="cards"

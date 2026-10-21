@@ -192,15 +192,18 @@ export default function BoardPage({ params }: PageProps) {
       )}
       {board.lists.map((list) => {
         const inList = cards.filter((card) => card.list_id === list.id);
-        const over = list.wip_limit !== null && inList.length > list.wip_limit;
+        // The WIP limit is about the whole list, so "My cards" shows a plain count.
+        const total = board.cards.filter((card) => card.list_id === list.id).length;
+        const over = list.wip_limit !== null && total > list.wip_limit;
+        const limit = mine === "all" && list.wip_limit ? ` / ${list.wip_limit}` : "";
         return (
           <section key={list.id} className={cx("prj-list", drag && drag.over === list.id && drag.from !== list.id && "prj-list--target")} data-list-id={list.id} aria-label={list.name}>
             <div className={cx("prj-list-head", list.is_done && "prj-list-done")}>
               {list.is_done && <CircleCheck size={16} strokeWidth={2.5} aria-hidden />}
               <span>{list.name}</span>
-              <span className={cx("tag tag-neutral tag-small", over && "prj-wip--over")}>
+              <span className={cx("tag tag-neutral tag-small", over && mine === "all" && "prj-wip--over")}>
                 {inList.length}
-                {list.wip_limit ? ` / ${list.wip_limit}` : ""}
+                {limit}
               </span>
             </div>
             {inList.length === 0 ? (

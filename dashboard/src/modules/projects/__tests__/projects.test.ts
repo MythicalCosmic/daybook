@@ -163,6 +163,12 @@ describe("api", () => {
     expect(calls[3]!.body).toEqual({ day: "2026-10-21", minutes: 90, project: 1, note: "On site" });
     expect(calls[4]!.body).toEqual({ start_on: "2026-10-20", end_on: "2026-10-24" });
   });
+
+  it("moves a card to the end of a list when no position is given", async () => {
+    const calls = stubApi({ "POST projects/1/cards/100/move/": () => json({ card: card(), message: "" }) });
+    await moveCard(1, 1, 100, 12);
+    expect(calls[0]!.body).toEqual({ list: 12 });
+  });
 });
 
 describe("helpers", () => {
@@ -260,6 +266,12 @@ describe("board", () => {
     await flushPromises();
     return { calls, app, wrapper };
   }
+
+  it("invites the first card on an empty board", async () => {
+    const { wrapper } = await mountBoard([], () => json({}));
+    expect(wrapper.text()).toContain(en["projects.board.startTitle"]);
+    expect(wrapper.text()).toContain(en["projects.board.startAction"]);
+  });
 
   it("renders lists with WIP limits and cards with their key, labels and counts", async () => {
     const { wrapper } = await mountBoard([card()], () => json({}));

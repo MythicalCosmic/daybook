@@ -142,7 +142,7 @@ const host = (url: string) => {
         <p v-if="linkError" class="text-xs text-danger">{{ linkError }}</p>
       </form>
       <div v-if="links.isPending.value" class="flex flex-col gap-2"><SkeletonBlock v-for="n in 2" :key="n" height="48px" radius="10px" /></div>
-      <EmptyState v-else-if="!(links.data.value ?? []).length" size="sm" tone="neutral" :icon="Link2" :title="t('projects.files.noLinks')" />
+      <EmptyState v-else-if="!(links.data.value ?? []).length" size="sm" tone="neutral" :icon="Link2" :title="t('projects.files.noLinks')" :description="t('projects.files.noLinksBody')" />
       <ul v-else class="ui-card divide-y divide-line overflow-hidden">
         <li v-for="link in links.data.value" :key="link.id" class="flex items-center gap-3 px-4 py-2.5">
           <span class="grid size-8 shrink-0 place-items-center rounded-[8px] bg-surface-2 text-muted"><Link2 :size="15" /></span>

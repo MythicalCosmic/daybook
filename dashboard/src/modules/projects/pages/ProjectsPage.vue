@@ -131,13 +131,13 @@ const viewOptions = computed(() => [
 ]);
 
 const columns = computed<TableColumn<ProjectItem>[]>(() => [
-  { id: "name", header: t("projects.col.project"), minWidth: 280, hideable: false, sortable: true, sticky: true, value: (r) => `${r.key} ${r.name}` },
-  { id: "status", header: t("projects.col.status"), width: 130, value: (r) => t(`projects.status.${r.status}`) },
+  { id: "name", header: t("projects.col.project"), minWidth: 240, hideable: false, sortable: true, sticky: true, value: (r) => `${r.key} ${r.name}` },
+  { id: "status", header: t("projects.col.status"), width: 120, value: (r) => t(`projects.status.${r.status}`) },
   { id: "health", header: t("projects.col.health"), width: 130, value: (r) => (r.health ? t(`projects.health.${r.health}`) : "") },
-  { id: "progress", header: t("projects.col.progress"), width: 170, value: (r) => r.progress.percent },
-  { id: "lead", header: t("projects.col.lead"), width: 200, value: (r) => r.lead?.name ?? "" },
-  { id: "due_on", header: t("projects.col.due"), width: 120, sortable: true, value: (r) => r.due_on },
-  { id: "budget", header: t("projects.col.budget"), width: 190, numeric: true, value: (r) => r.spent ?? null },
+  { id: "progress", header: t("projects.col.progress"), width: 150, value: (r) => r.progress.percent },
+  { id: "lead", header: t("projects.col.lead"), width: 180, value: (r) => r.lead?.name ?? "" },
+  { id: "due_on", header: t("projects.col.due"), width: 110, sortable: true, value: (r) => r.due_on },
+  { id: "budget", header: t("projects.col.budget"), width: 180, numeric: true, value: (r) => r.spent ?? null },
 ]);
 
 function open(row: ProjectItem): void {
@@ -226,8 +226,8 @@ function open(row: ProjectItem): void {
       <template #cell-status="{ row }"><StatusPill size="sm" :tone="STATUS_TONE[row.status]" :label="t(`projects.status.${row.status}`)" /></template>
       <template #cell-health="{ row }"><HealthDot :health="row.health" :reported="row.reported?.health ?? null" label /></template>
       <template #cell-progress="{ row }">
-        <div class="flex items-center gap-2">
-          <ProgressBar :value="row.progress.percent" size="xs" class="flex-1" :tone="row.status === 'completed' ? 'success' : 'primary'" />
+        <div class="flex w-full items-center gap-2">
+          <ProgressBar :value="row.progress.percent" size="xs" class="min-w-16 flex-1" :tone="row.status === 'completed' ? 'success' : 'primary'" />
           <span class="w-9 text-right text-xs tabular-nums text-muted">{{ row.progress.percent }}%</span>
         </div>
       </template>
