@@ -308,7 +308,15 @@ const fieldLabels = computed(() => ({
 
             <template v-if="!editing">
               <p v-if="row.description" class="rounded-[10px] bg-surface-2 px-3 py-2.5 text-base text-fg">{{ row.description }}</p>
-              <DescriptionList :items="items" :columns="2" />
+              <!-- Names wrap here instead of cutting off: a drawer has the height for
+                   "Transport va yetkazish › Kuryer yoqilg‘i" or a person's cash-on-hand account. -->
+              <DescriptionList :items="items" :columns="2">
+                <template #value-account="{ item }"><span class="min-w-0 break-words" data-testid="wrap-value">{{ item.value }}</span></template>
+                <template #value-category="{ item }"><span class="min-w-0 break-words">{{ item.value }}</span></template>
+                <template #value-counterparty="{ item }"><span class="min-w-0 break-words">{{ item.value }}</span></template>
+                <template #value-member="{ item }"><span class="min-w-0 break-words">{{ item.value }}</span></template>
+                <template #value-project="{ item }"><span class="min-w-0 break-words">{{ item.value }}</span></template>
+              </DescriptionList>
               <RouterLink v-if="row.source && sourceUrl" :to="sourceUrl" class="inline-flex w-fit items-center gap-1.5 rounded-[8px] border border-line px-2.5 py-1.5 text-sm font-medium text-fg hover:bg-surface-2">
                 <ExternalLink :size="14" class="text-subtle" />{{ t("finance.tx.openSource", { source: row.source.label, id: row.source.id }) }}
               </RouterLink>

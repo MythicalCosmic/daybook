@@ -33,7 +33,7 @@ import { useCompanyStore } from "@/stores/company";
 
 import { useCashFlow, useOverview } from "../api";
 import { useCssColor } from "../colors";
-import { ACCOUNT_ICONS, distinctColors, isNegative, isZeroMoney, share, topAccounts, trimLeadingEmpty } from "../lib";
+import { ACCOUNT_ICONS, comparablePrevious, distinctColors, isNegative, isZeroMoney, share, topAccounts, trimLeadingEmpty } from "../lib";
 import { openQuickAdd } from "../quickAdd";
 
 const { t } = useI18n();
@@ -52,6 +52,8 @@ const foreign = computed(() => (data.value?.cash.by_currency ?? []).filter((row)
 const kpis = computed(() => {
   const d = data.value;
   const vs = t("finance.overview.vsLastMonth");
+  // A profit that crossed zero against last month gets last month's figure, not a percentage.
+  const profitBefore = comparablePrevious(d?.month.profit, d?.month.previous.profit ?? null);
   return [
     {
       id: "cash",
@@ -67,7 +69,8 @@ const kpis = computed(() => {
       id: "profit",
       label: t("finance.overview.profit"),
       value: d?.month.profit ?? null,
-      previous: d?.month.previous.profit ?? null,
+      previous: profitBefore,
+      hint: d && profitBefore === undefined ? t("finance.overview.previousAmount", { amount: fmt.money(d.month.previous.profit, undefined, { compact: true, sign: "always" }) }) : undefined,
       format: "money" as const,
       compact: true,
       icon: Scale,
@@ -198,8 +201,9 @@ const firstRun = computed(() => !!data.value && !data.value.has_ledger);
       </div>
 
       <template v-if="!firstRun">
+        <!-- Two to a row; an odd last one takes the whole row instead of leaving half of it empty. -->
         <div v-if="alerts.length" class="grid grid-cols-1 gap-2 lg:grid-cols-2">
-          <InlineAlert v-for="alert in alerts" :key="alert.id" :tone="alert.tone" size="sm" :title="alert.title" :description="alert.body">
+          <InlineAlert v-for="(alert, index) in alerts" :key="alert.id" :class="index === alerts.length - 1 && alerts.length % 2 === 1 && 'lg:col-span-2'" :tone="alert.tone" size="sm" :title="alert.title" :description="alert.body">
             <template v-if="alert.to" #actions>
               <UiButton :to="alert.to" size="sm" variant="ghost" :icon-right="ArrowRight">{{ alert.action ?? t("finance.overview.open") }}</UiButton>
             </template>

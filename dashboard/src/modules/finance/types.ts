@@ -501,7 +501,7 @@ export interface Pnl {
   margin: { amounts: Array<string | null>; total: string | null; previous: string | null };
 }
 
-export type CashFlowSectionKey = "operating" | "investing" | "financing" | "owner" | "transfers" | "opening";
+export type CashFlowSectionKey = "operating" | "investing" | "financing" | "owner" | "transfers" | "opening" | "revaluation";
 
 export interface CashFlow {
   range: Range;

@@ -36,6 +36,7 @@ import { useCompanyStore } from "@/stores/company";
 
 import { useCashiers, useSummary, useTargets } from "../api";
 import TodayBranches from "../components/TodayBranches.vue";
+import { heatHours } from "../format";
 
 const { t } = useI18n();
 const fmt = useFormat();
@@ -117,12 +118,14 @@ const mix = computed(() => {
   return { categories: rows.map((row) => row.label), series };
 });
 
-const hourLabels = Array.from({ length: 17 }, (_, i) => String(i + 7).padStart(2, "0"));
+// 07–23, or every hour of a 24-hour pharmacy's nights too (heatHours).
+const hourSpan = computed(() => heatHours(hours.data.value?.series ?? []));
+const hourLabels = computed(() => Array.from({ length: hourSpan.value.last - hourSpan.value.first + 1 }, (_, i) => String(i + hourSpan.value.first).padStart(2, "0")));
 const weekdays = computed(() => Array.from({ length: 7 }, (_, i) => t(`common.weekday.short.${i}`)));
 const heat = computed<Array<[number, number, string]>>(() =>
   (hours.data.value?.series ?? [])
-    .filter((cell) => (cell.hour ?? 0) >= 7)
-    .map((cell) => [(cell.hour ?? 0) - 7, cell.weekday ?? 0, cell.net ?? "0"]),
+    .filter((cell) => (cell.hour ?? 0) >= hourSpan.value.first && (cell.hour ?? 0) <= hourSpan.value.last)
+    .map((cell) => [(cell.hour ?? 0) - hourSpan.value.first, cell.weekday ?? 0, cell.net ?? "0"]),
 );
 const topCashiers = computed(() => (cashiers.data.value?.results ?? []).slice(0, 5));
 const base = computed(() => `/c/${company.currentId}/sales`);

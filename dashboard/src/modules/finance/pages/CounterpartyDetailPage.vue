@@ -30,7 +30,7 @@ import CounterpartyFormDialog from "../components/CounterpartyFormDialog.vue";
 import DebtDrawer from "../components/DebtDrawer.vue";
 import DebtFormDialog from "../components/DebtFormDialog.vue";
 import TransactionDrawer from "../components/TransactionDrawer.vue";
-import { dayStyle, DEBT_TONES, PARTY_TONES } from "../lib";
+import { dayStyle, DEBT_TONES, isZeroMoney, PARTY_TONES } from "../lib";
 import { openQuickAdd } from "../quickAdd";
 import type { Debt, Transaction } from "../types";
 
@@ -58,7 +58,8 @@ const kpis = computed(() => {
   return [
     // Compact like the finance overview's tiles (the exact amount in the tooltip and in the debts
     // below), so they fit the two-column phone grid.
-    { id: "owes", label: t("finance.parties.owesUs"), value: d?.counterparty.owes_us ?? null, format: "money" as const, compact: true, hint: d && d.counterparty.overdue !== "0.00" ? t("finance.parties.overdueSub", { amount: fmt.money(d.counterparty.overdue, undefined, { compact: true }) }) : undefined },
+    // "… overdue" only when something is (the API may send "0" as well as "0.00").
+    { id: "owes", label: t("finance.parties.owesUs"), value: d?.counterparty.owes_us ?? null, format: "money" as const, compact: true, hint: d && !isZeroMoney(d.counterparty.overdue) ? t("finance.parties.overdueSub", { amount: fmt.money(d.counterparty.overdue, undefined, { compact: true }) }) : undefined },
     { id: "we", label: t("finance.parties.weOwe"), value: d?.counterparty.we_owe ?? null, format: "money" as const, compact: true },
     { id: "income", label: t("finance.parties.incomeTotal"), value: d?.totals.income ?? null, format: "money" as const, compact: true },
     { id: "expense", label: t("finance.parties.expenseTotal"), value: d?.totals.expense ?? null, format: "money" as const, compact: true },
@@ -208,7 +209,12 @@ const tabs = computed(() => [
         </div>
         <aside class="ui-card h-fit p-4 xl:order-2">
           <h2 class="mb-3 text-sm font-semibold text-fg">{{ t("finance.parties.about") }}</h2>
-          <DescriptionList v-if="info.length" :items="info" :columns="1" layout="rows" />
+          <!-- Notes, the address and bank details are read whole, on as many lines as they need. -->
+          <DescriptionList v-if="info.length" :items="info" :columns="1" layout="rows">
+            <template #value-notes="{ item }"><span class="min-w-0 whitespace-pre-line break-words text-left" data-testid="party-notes">{{ item.value }}</span></template>
+            <template #value-address="{ item }"><span class="min-w-0 break-words text-left">{{ item.value }}</span></template>
+            <template #value-bank="{ item }"><span class="min-w-0 whitespace-pre-line break-words text-left">{{ item.value }}</span></template>
+          </DescriptionList>
           <p v-else class="text-sm text-muted">{{ t("finance.parties.noDetails") }}</p>
         </aside>
       </div>

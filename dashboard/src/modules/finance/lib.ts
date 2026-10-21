@@ -90,12 +90,14 @@ export const KIND_ICONS: Partial<Record<TransactionKind, LucideIcon>> = {
   opening: CircleDollarSign,
 };
 
+// The Status column marks entries that aren't plain income or expense: money moving between
+// balance-sheet items reads calm (a debt payment is routine, not a warning).
 export const KIND_TONES: Record<TransactionKind, StatusTone> = {
   income: "success",
   expense: "danger",
   transfer: "info",
-  debt_open: "warning",
-  debt_payment: "warning",
+  debt_open: "info",
+  debt_payment: "info",
   write_off: "neutral",
   fx: "neutral",
   owner: "primary",
@@ -172,6 +174,19 @@ export function distinctColors(rows: ReadonlyArray<{ id: number; color?: string 
     used.add(paletteKey(color));
     return color;
   });
+}
+
+/**
+ * What a profit or a net figure is compared with: `previous`, or undefined (no change shown) when
+ * the figure crossed zero, where a percentage misleads (a profit of 41 M after a loss of 36 M is
+ * not "+214 %", a net of −64 M after +411 M is not "−115 %"). Null (nothing to compare) stays.
+ */
+export function comparablePrevious(value: string | null | undefined, previous: string | null | undefined): string | null | undefined {
+  if (value === null || value === undefined || previous === null || previous === undefined) return previous;
+  const now = dec(value);
+  const before = dec(previous);
+  if (now.isZero() || before.isZero()) return previous;
+  return now.isNegative() === before.isNegative() ? previous : undefined;
 }
 
 /**

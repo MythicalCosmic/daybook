@@ -26,6 +26,7 @@ from apps.companies.models import Branch
 from apps.console import contracts
 from apps.console.registry import OffboardStep, QueueAction, QueueItem, SearchHit, StreamItem
 from apps.core.money import MoneyField, quantize
+from apps.finance import display
 from apps.finance.models import MoneyAccount
 from apps.members import scope
 from apps.members.models import Membership
@@ -1229,13 +1230,24 @@ def search(member: Membership, q: str, limit: int) -> list[SearchHit]:
         found = shifts(member.company, {}, None, branch_ids=branch_ids).filter(exact).first()
         if found is not None:
             rows = [found, *[row for row in rows if row.pk != found.pk]][:limit]
+    # "Yunusobod · 20 Oct · 1,876,000 UZS", written as the dashboard writes days and money; an
+    # open shift has no sales yet (they come with the Z-report), so it says so instead of "0".
+    lang = display.language()
+    today = business_day(member.company)
+    currency = member.company.base_currency
     return [
         SearchHit(
             type="sales.shift",
             id=shift.pk,
             title=f"{shift.code} · {shift.cashier}",
-            subtitle=(
-                f"{shift.branch.name} · {shift.business_day:%d.%m.%Y} · {msg.money(shift.net)}"
+            subtitle=" · ".join(
+                (
+                    shift.branch.name,
+                    display.day(shift.business_day, today, lang),
+                    str(shift.get_status_display())
+                    if shift.status == Status.OPEN
+                    else display.money(shift.net, currency, lang),
+                )
             ),
             url=f"/c/{member.company_id}/sales/shifts?shift={shift.pk}",
         )
@@ -1260,7 +1272,11 @@ def stream(member: Membership, since: datetime | None, limit: int) -> list[Strea
             kind="sales.shift_closed",
             actor={"id": shift.cashier_id, "name": str(shift.cashier)},
             title=_("Closed %(shift)s at %(branch)s · %(net)s")
-            % {"shift": shift.code, "branch": shift.branch.name, "net": msg.money(shift.net)},
+            % {
+                "shift": shift.code,
+                "branch": shift.branch.name,
+                "net": display.money(shift.net, member.company.base_currency),
+            },
             url=f"/c/{member.company_id}/sales/shifts?shift={shift.pk}",
         )
         for shift in rows.order_by("-closed_at")[:limit]
@@ -1282,20 +1298,24 @@ def verify_items(member: Membership, limit: int) -> list[QueueItem]:
         .select_related("cashier", "branch")
         .order_by("closed_at")[:limit]
     )
+    currency = member.company.base_currency
     items = []
     for shift in rows:
         own = shift.cashier_id == member.pk and not (member.role and member.role.is_owner)
         difference = (
             _("no count")
             if shift.difference is None
-            else _("difference %(d)s") % {"d": msg.signed(shift.difference)}
+            else _("difference %(d)s")
+            % {"d": display.money(shift.difference, currency, signed=True)}
         )
         items.append(
             QueueItem(
                 kind="sales.verify",
                 id=shift.pk,
                 title=f"{shift.code} · {shift.cashier}",
-                subtitle=f"{shift.branch.name} · {msg.money(shift.net)} · {difference}",
+                subtitle=" · ".join(
+                    (shift.branch.name, display.money(shift.net, currency), difference)
+                ),
                 created_at=shift.closed_at,
                 url=f"/c/{member.company_id}/sales/shifts?shift={shift.pk}",
                 actions=()
@@ -1341,7 +1361,7 @@ def handover_items(member: Membership, limit: int) -> list[QueueItem]:
             title=_("%(person)s handed you %(amount)s")
             % {
                 "person": movement.created_by,
-                "amount": msg.money(movement.amount, movement.currency),
+                "amount": display.money(movement.amount, movement.currency),
             },
             subtitle=f"{movement.branch.name} · {movement.register.name}"
             + (f" · {movement.reason}" if movement.reason else ""),
@@ -1382,6 +1402,7 @@ def offboard_preview(membership: Membership) -> OffboardStep:
     """Sales' step in the offboarding wizard: an open till blocks; handovers waiting on the
     person (either way) are listed, and the ones they must still answer block too."""
     lines, blockers = [], []
+    currency = membership.company.base_currency
     shift = (
         CashShift.objects.filter(cashier=membership, status=Status.OPEN)
         .select_related("branch")
@@ -1397,14 +1418,14 @@ def offboard_preview(membership: Membership) -> OffboardStep:
         total = waiting.aggregate(t=Sum("amount"))["t"]
         blockers.append(
             _("%(count)s cash handovers (%(amount)s) are waiting for them to confirm or decline.")
-            % {"count": waiting.count(), "amount": msg.money(total)}
+            % {"count": waiting.count(), "amount": display.money(total, currency)}
         )
     sent = CashMovement.objects.filter(cash.in_transit_filter(), created_by=membership)
     if sent.exists():
         total = sent.aggregate(t=Sum("amount"))["t"]
         lines.append(
             _("%(count)s handovers they made (%(amount)s) aren't confirmed by the receiver yet.")
-            % {"count": sent.count(), "amount": msg.money(total)}
+            % {"count": sent.count(), "amount": display.money(total, currency)}
         )
     held = (
         MoneyAccount.objects.filter(
@@ -1419,7 +1440,7 @@ def offboard_preview(membership: Membership) -> OffboardStep:
     for account in held:
         lines.append(
             _("They hold %(amount)s in cash handed to them: settle it before they leave.")
-            % {"amount": msg.money(account.balance, account.currency)}
+            % {"amount": display.money(account.balance, account.currency)}
         )
     closed = CashShift.objects.filter(cashier=membership).exclude(status=Status.OPEN)
     unverified = closed.filter(status=Status.CLOSED).count()

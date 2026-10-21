@@ -16,7 +16,7 @@ import { currencyLabel } from "@/lib/money";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
-import { colorFor, isNegative, isZeroMoney } from "../../lib";
+import { colorFor, comparablePrevious, isNegative, isZeroMoney } from "../../lib";
 import type { Pnl, PnlNode } from "../../types";
 
 const props = defineProps<{ data: Pnl }>();
@@ -61,7 +61,9 @@ function drill(node: PnlNode | null, index: number | "total"): Record<string, un
 }
 
 function delta(current: string, previous: string | null): number | null {
-  return previous === null ? null : changePercent(current, previous);
+  // A change across zero (a loss that became a profit) has no meaningful percentage: "—".
+  const before = comparablePrevious(current, previous);
+  return before === null || before === undefined ? null : changePercent(current, before);
 }
 
 interface Row {

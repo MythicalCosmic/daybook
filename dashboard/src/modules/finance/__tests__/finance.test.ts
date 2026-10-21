@@ -23,7 +23,7 @@ import TransactionDrawer from "../components/TransactionDrawer.vue";
 import PnlTable from "../components/reports/PnlTable.vue";
 import en from "../i18n/en.json";
 import module from "../index";
-import { baseTotal, colorFor, dayStyle, distinctColors, dropEmptyCompare, fitTags, pickerOrder, topAccounts, trimLeadingEmpty, trimLeadingPeriods } from "../lib";
+import { baseTotal, colorFor, comparablePrevious, dayStyle, distinctColors, dropEmptyCompare, fitTags, pickerOrder, topAccounts, trimLeadingEmpty, trimLeadingPeriods } from "../lib";
 import type { Options, Pnl, PnlNode, Transaction, TransactionPage } from "../types";
 
 interface Call {
@@ -267,6 +267,16 @@ describe("lib", () => {
     expect(fitTags([], 14)).toEqual({ shown: [], more: 0 });
   });
 
+  it("compares a profit or net only while it keeps its sign: across zero a percentage misleads", () => {
+    expect(comparablePrevious("41049275.00", "50000000.00")).toBe("50000000.00");
+    expect(comparablePrevious("-64400000.00", "-10000000.00")).toBe("-10000000.00");
+    expect(comparablePrevious("41049275.00", "-36202225.00")).toBeUndefined();
+    expect(comparablePrevious("-64400000.00", "411100000.00")).toBeUndefined();
+    expect(comparablePrevious("1000.00", "0.00")).toBe("0.00");
+    expect(comparablePrevious("1000.00", null)).toBeNull();
+    expect(comparablePrevious(null, "5.00")).toBe("5.00");
+  });
+
   it("adds a group of accounts up in the base currency, or not at all without a value", () => {
     const rows = [
       { currency: "UZS", balance: "1360000.00", base: "1360000.00" },
@@ -321,7 +331,7 @@ describe("QuickAddDialog", () => {
   it("records an expense on the cash desk (not a person's purse) with the picked category", async () => {
     const calls = stub({
       "GET options/": () => json(options()),
-      "GET categories/": () => json([{ id: 4, name: "Bread", kind: "expense", color: "", icon: "", is_system: false, system_code: "", is_active: true, is_capex: false, is_sensitive: false, parent: null, children: [] }]),
+      "GET categories/": () => json([{ id: 4, name: "Dori vositalari", kind: "expense", color: "", icon: "", is_system: false, system_code: "", is_active: true, is_capex: false, is_sensitive: false, parent: null, children: [] }]),
       "POST transactions/": () => json({ id: 77, amount: "-185000.00", currency: "UZS" }, 201),
     });
     const app = await testApp("/c/1/finance/transactions");
@@ -436,7 +446,7 @@ describe("useCategorize", () => {
     );
     const app = await testApp("/c/1/finance/transactions");
     const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
-    const row = { id: 5, category: { id: 4, name: "Bread", kind: "expense", color: "", parent_name: null } } as unknown as Transaction;
+    const row = { id: 5, category: { id: 4, name: "Dori vositalari", kind: "expense", color: "", parent_name: null } } as unknown as Transaction;
     const key = financeKeys.of(1, "transactions", { page: 1 });
     client.setQueryData<TransactionPage>(key, { count: 1, next: null, previous: null, results: [row] } as TransactionPage);
     let mutation: ReturnType<typeof useCategorize> | null = null;
@@ -472,7 +482,7 @@ describe("FinanceOverviewPage", () => {
             total: "924360000.00",
             complete: true,
             by_currency: [{ currency: "UZS", amount: "924360000.00", base: "924360000.00" }],
-            accounts: [account(1, "Empty till", "0.00"), account(2, "Kapitalbank", "923000000.00"), account(3, "Kassa", "1360000.00")],
+            accounts: [account(1, "Empty till", "0.00"), account(2, "Asosiy bank hisobi", "923000000.00"), account(3, "Kassa", "1360000.00")],
             rate: { rate: "12168.15", stale: false, source: "cbu" },
           },
           month: { from: "2026-10-01", to: "2026-10-21", income: "1231997387.50", expense: "673475930.00", profit: "558521457.50", previous: { from: "2026-09-01", to: "2026-09-21", income: "0.00", expense: "0.00", profit: "0.00" } },
@@ -506,7 +516,7 @@ describe("CounterpartyDetailPage", () => {
   it("names the breadcrumb after the counterparty and shows its kind in the list's colour", async () => {
     const party = {
       id: 7,
-      name: "Barakat Kafe",
+      name: "Tonggi Shabnam klinikasi",
       kind: "customer",
       kind_label: "Customer",
       phone: "+998977001234",
@@ -541,9 +551,90 @@ describe("CounterpartyDetailPage", () => {
     const { wrapper } = mountWithProviders(CounterpartyDetailPage, { plugins: [pinia, router, i18n, [VueQueryPlugin, { queryClient: client }]] });
     await flushPromises();
     await flushPromises();
-    expect(pageTitleFor(router.currentRoute.value)).toBe("Barakat Kafe");
+    expect(pageTitleFor(router.currentRoute.value)).toBe("Tonggi Shabnam klinikasi");
     const pill = wrapper.findAll("span").find((span) => span.text() === "Customer");
     expect(pill?.classes()).toContain("text-success");
     wrapper.unmount();
+  });
+});
+
+describe("CounterpartyDetailPage details", () => {
+  it("says nothing is overdue by leaving the hint out, and shows a long note whole", async () => {
+    const note = "To‘lov muddati yetkazilgandan keyin 30 kun; qaytarish faqat yaroqlilik muddati 6 oydan ko‘p bo‘lsa";
+    const party = {
+      id: 9,
+      name: "Ko‘kterak Farm Distribyutor",
+      kind: "supplier",
+      kind_label: "Supplier",
+      phone: "+998712004411",
+      tin: "305112874",
+      contact_person: "Azamat Yo‘ldoshev",
+      telegram_username: "",
+      address: "",
+      bank_details: "",
+      notes: note,
+      default_category: null,
+      credit_limit: null,
+      credit_blocked: false,
+      birthday: null,
+      tags: ["distribyutor"],
+      is_active: true,
+      owes_us: "0.00",
+      we_owe: "97410000.00",
+      overdue: "0",
+      last_activity: "2026-10-19",
+      created_at: "2026-08-20T10:00:00Z",
+    };
+    stub({ "GET counterparties/9/": () => json({ counterparty: party, totals: { income: "1800000.00", expense: "185000000.00", money_in: "0.00", money_out: "0.00" }, debts: [], transactions: [] }) });
+    const CounterpartyDetailPage = (await import("../pages/CounterpartyDetailPage.vue")).default;
+    const app = await testApp("/c/1/finance/counterparties/9");
+    const routes = [{ path: "/c/:companyId/finance/counterparties/:partyId", component: { render: () => null } }];
+    const router = createRouter({ history: createMemoryHistory(), routes });
+    await router.push("/c/1/finance/counterparties/9");
+    const { wrapper } = mountWithProviders(CounterpartyDetailPage, { plugins: [app.pinia, router, i18n, [VueQueryPlugin, { queryClient: app.client }]] });
+    await flushPromises();
+    await flushPromises();
+    expect(document.body.textContent).not.toContain("overdue");
+    const notes = wrapper.find("[data-testid=party-notes]");
+    expect(notes.text()).toBe(note);
+    expect(notes.classes()).not.toContain("truncate");
+    wrapper.unmount();
+  });
+});
+
+describe("CashFlowReport", () => {
+  it("reconciles with a revaluation line and gives a net that crossed zero the previous figure, not a percentage", async () => {
+    const row = (key: string, income: string, expense: string, net: string) => ({ key, label: key, income, expense, net });
+    stub({
+      "GET reports/cash-flow/": () =>
+        json({
+          range: { from: "2026-09-22", to: "2026-10-21", preset: "last_30" },
+          compare: { from: "2026-08-23", to: "2026-09-21" },
+          currency: "UZS",
+          group: "day",
+          totals: { income: "549600000.00", expense: "614000000.00", net: "-64400000.00" },
+          previous: { income: "794200000.00", expense: "383100000.00", net: "411100000.00" },
+          series: [],
+          breakdown: [
+            row("operating", "549600000.00", "537200000.00", "12400000.00"),
+            row("transfers", "733200000.00", "733300000.00", "-100000.00"),
+            row("revaluation", "167935.00", "0.00", "167935.00"),
+          ],
+          start_cash: "651500000.00",
+          end_cash: "586986235.00",
+        }),
+    });
+    const CashFlowReport = (await import("../components/reports/CashFlowReport.vue")).default;
+    const app = await testApp("/c/1/finance/reports/cash-flow");
+    mountWithProviders(CashFlowReport, { props: { branch: [] }, plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    const text = document.body.textContent ?? "";
+    expect(text).toContain(en["finance.reports.section.revaluation"]);
+    expect(text).toContain("586,986,235");
+    // The net turned negative: no "−115.7 %", but what it was before.
+    expect(text).not.toContain("115");
+    expect(text).toContain(en["finance.reports.previousAmount"].replace("{amount}", "").trim());
+    expect(text).toContain("411.1M");
   });
 });

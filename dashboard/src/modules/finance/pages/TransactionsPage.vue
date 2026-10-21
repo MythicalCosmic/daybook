@@ -35,7 +35,7 @@ import { useCompanyStore } from "@/stores/company";
 import { financeApi, searchCounterparties, useAccounts, useCategories, useRefresh, useTransactions } from "../api";
 import CategoryCell from "../components/CategoryCell.vue";
 import TransactionDrawer from "../components/TransactionDrawer.vue";
-import { ACCOUNT_ICONS, categoryOptions, KIND_ICONS, KIND_TONES, STATUS_TONES } from "../lib";
+import { ACCOUNT_ICONS, categoryOptions, isZeroMoney, KIND_ICONS, KIND_TONES, STATUS_TONES } from "../lib";
 import { openQuickAdd } from "../quickAdd";
 import type { Transaction, TransactionKind } from "../types";
 
@@ -254,18 +254,19 @@ const kindIcon = (kind: TransactionKind) => KIND_ICONS[kind] ?? Receipt;
     <div class="flex flex-col gap-3">
       <SavedViewsTabs v-model="activeTab" :views="tabs" :dirty="dirty" @save="saveView" @update="(view) => views.update.mutate({ id: Number(view.id), state: currentState })" @rename="(view, name) => views.update.mutate({ id: Number(view.id), name })" @share="(view, shared) => views.update.mutate({ id: Number(view.id), is_shared: shared })" @delete="(view) => { views.remove.mutate(Number(view.id)); viewId = 'all'; }" />
 
-      <div v-if="page?.summary" class="grid grid-cols-3 gap-2 sm:max-w-[640px]">
+      <!-- Compact sums with the exact amount on hover; a side with nothing in it stays quiet. -->
+      <div v-if="page?.summary" class="grid grid-cols-3 gap-2 sm:max-w-[640px]" data-testid="tx-sums">
         <div class="ui-card px-2.5 py-2 sm:px-3">
           <p class="text-xs font-medium text-muted">{{ t("finance.tx.moneyIn") }}</p>
-          <p class="truncate text-sm font-semibold tabular-nums sm:text-md text-success"><MoneyText :value="page.summary.money_in" compact /></p>
+          <p :class="['truncate text-sm font-semibold tabular-nums sm:text-md', isZeroMoney(page.summary.money_in) ? 'text-subtle' : 'text-success']" :title="fmt.money(page.summary.money_in)"><MoneyText :value="page.summary.money_in" compact /></p>
         </div>
         <div class="ui-card px-2.5 py-2 sm:px-3">
           <p class="text-xs font-medium text-muted">{{ t("finance.tx.moneyOut") }}</p>
-          <p class="truncate text-sm font-semibold tabular-nums sm:text-md text-danger"><MoneyText :value="page.summary.money_out" compact /></p>
+          <p :class="['truncate text-sm font-semibold tabular-nums sm:text-md', isZeroMoney(page.summary.money_out) ? 'text-subtle' : 'text-danger']" :title="fmt.money(page.summary.money_out)"><MoneyText :value="page.summary.money_out" compact /></p>
         </div>
         <div class="ui-card px-2.5 py-2 sm:px-3">
           <p class="text-xs font-medium text-muted">{{ t("finance.tx.net") }}</p>
-          <p class="truncate text-sm font-semibold tabular-nums sm:text-md text-fg"><MoneyText :value="page.summary.net" compact sign="always" /></p>
+          <p :class="['truncate text-sm font-semibold tabular-nums sm:text-md', isZeroMoney(page.summary.net) ? 'text-subtle' : 'text-fg']" :title="fmt.money(page.summary.net, undefined, { sign: 'always' })"><MoneyText :value="page.summary.net" compact sign="always" /></p>
         </div>
       </div>
 

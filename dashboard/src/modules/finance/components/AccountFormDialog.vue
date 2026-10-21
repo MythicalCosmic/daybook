@@ -159,7 +159,7 @@ async function save(): Promise<void> {
       </FormField>
       <div v-if="isBanky" class="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_140px]">
         <FormField :label="t('finance.accounts.bank')" optional>
-          <TextInput v-model="form.bank_name" :maxlength="100" placeholder="Kapitalbank" />
+          <TextInput v-model="form.bank_name" :maxlength="100" :placeholder="t('finance.accounts.bankPlaceholder')" />
         </FormField>
         <FormField :label="t('finance.accounts.last4')" :error="errors.number_last4" :hint="t('finance.accounts.last4Hint')" optional>
           <TextInput v-model="form.number_last4" :maxlength="4" inputmode="numeric" mono placeholder="4417" />

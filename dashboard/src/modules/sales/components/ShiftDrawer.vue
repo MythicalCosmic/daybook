@@ -164,8 +164,9 @@ const timeline = computed<TimelineEvent[]>(() =>
     </div>
     <ErrorState v-else-if="query.isError.value" class="m-5" :error="query.error.value" :retry="() => query.refetch()" />
     <div v-else-if="shift" class="flex flex-col gap-4 p-5 max-sm:p-4">
-      <!-- The four numbers -->
-      <dl class="grid grid-cols-2 gap-px overflow-hidden rounded-[12px] border border-line bg-line sm:grid-cols-4">
+      <!-- The four numbers, exact: a cash check is about the last thousand ("1M expected, 1M
+           counted, 1K short" hides it). -->
+      <dl class="grid grid-cols-2 gap-px overflow-hidden rounded-[12px] border border-line bg-line sm:grid-cols-4" data-testid="shift-figures">
         <div class="bg-surface p-3">
           <dt class="text-xs text-muted">{{ t("sales.shift.net") }}</dt>
           <!-- Shift totals arrive with the Z-report: an open till has no sales to show yet, not zero. -->
@@ -174,7 +175,7 @@ const timeline = computed<TimelineEvent[]>(() =>
             <dd class="mt-0.5 text-[11px] text-subtle">{{ t("sales.shift.movedOutHint") }}</dd>
           </template>
           <template v-else>
-            <dd class="mt-1 text-md font-semibold text-fg"><MoneyText :value="shift.net" compact /></dd>
+            <dd class="mt-1 text-md font-semibold tabular-nums text-fg"><MoneyText :value="shift.net" /></dd>
             <dd class="mt-0.5 text-[11px] text-subtle">{{ t("sales.shift.receipts", { n: shift.receipts }, shift.receipts) }}</dd>
           </template>
         </div>
@@ -182,25 +183,25 @@ const timeline = computed<TimelineEvent[]>(() =>
              so "expected" would read float minus cash out, often below zero: show the cash out. -->
         <div v-if="awaitingTotals" class="bg-surface p-3">
           <dt class="text-xs text-muted">{{ t("sales.shift.movedOut") }}</dt>
-          <dd class="mt-1 text-md font-semibold text-fg"><MoneyText :value="movedOut" compact /></dd>
+          <dd class="mt-1 text-md font-semibold tabular-nums text-fg"><MoneyText :value="movedOut" /></dd>
           <dd class="mt-0.5 text-[11px] text-subtle">{{ t("sales.shift.movedOutSub") }}</dd>
         </div>
         <div v-else class="bg-surface p-3">
           <dt class="text-xs text-muted">{{ t("sales.shift.expected") }}</dt>
-          <dd class="mt-1 text-md font-semibold text-fg"><MoneyText :value="shift.expected_cash ?? shift.cash_flow.expected" compact /></dd>
+          <dd class="mt-1 text-md font-semibold tabular-nums text-fg"><MoneyText :value="shift.expected_cash ?? shift.cash_flow.expected" /></dd>
           <dd class="mt-0.5 text-[11px] text-subtle">{{ shift.status === "open" ? t("sales.shift.soFar") : t("sales.shift.inTill") }}</dd>
         </div>
         <div class="bg-surface p-3">
           <dt class="text-xs text-muted">{{ shift.recount_cash ? t("sales.shift.recounted") : t("sales.shift.counted") }}</dt>
           <!-- Not counted yet: a quiet dash, like the other tiles' placeholders. -->
-          <dd :class="['mt-1 text-md font-semibold', shift.counted_cash === null ? 'text-subtle' : 'text-fg']"><MoneyText :value="shift.counted_cash" compact /></dd>
-          <dd v-if="shift.recount_cash" class="mt-0.5 text-[11px] text-subtle">{{ t("sales.shift.cashierCounted", { amount: fmt.money(shift.cashier_counted, undefined, { compact: true }) }) }}</dd>
+          <dd :class="['mt-1 text-md font-semibold tabular-nums', shift.counted_cash === null ? 'text-subtle' : 'text-fg']"><MoneyText :value="shift.counted_cash" /></dd>
+          <dd v-if="shift.recount_cash" class="mt-0.5 text-[11px] text-subtle">{{ t("sales.shift.cashierCounted", { amount: fmt.money(shift.cashier_counted) }) }}</dd>
           <dd v-else class="mt-0.5 text-[11px] text-subtle">{{ t("sales.shift.blind") }}</dd>
         </div>
         <div :class="['p-3', level === 'short' ? 'bg-danger-soft/50' : level === 'over' ? 'bg-warning-soft/50' : 'bg-surface']">
           <dt class="text-xs text-muted">{{ t("sales.shift.difference") }}</dt>
           <dd :class="['mt-1 text-md font-semibold', differenceClass(level)]">
-            <MoneyText v-if="shift.difference !== null" :value="shift.difference" sign="always" compact />
+            <MoneyText v-if="shift.difference !== null" class="tabular-nums" :value="shift.difference" sign="always" />
             <span v-else class="text-subtle">—</span>
           </dd>
           <dd class="mt-0.5 text-[11px] text-subtle">

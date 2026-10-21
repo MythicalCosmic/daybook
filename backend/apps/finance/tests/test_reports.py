@@ -137,6 +137,24 @@ def test_cash_flow_in_the_analytics_shape(books, ledger):
     # Start + every section = end: the statement reconciles.
     assert data["start_cash"] == D("6700000.00")
     assert data["end_cash"] == D("9000000.00")
+    assert sections["revaluation"]["net"] == D("0.00")  # the rate never moved
+
+
+def test_cash_flow_revalues_dollars_so_the_closing_matches_the_balances(books, ledger):
+    """Dollar rows keep the rate they were booked at; holding dollars while the rate moves is a
+    revaluation line, so the closing cash is the balances valued at that day's rate, as on the
+    accounts page and in "cash now", and the statement still adds up."""
+    later = date(2026, 10, 20)
+    ExchangeRateFactory(date=later, rate=D("12500"))
+    data = queries.cash_flow(books, OCT_3, later, "week", branch_ids=None)
+    sections = {row["key"]: row for row in data["sections"]}
+    assert sections["revaluation"]["income"] == D("25000.00")  # $50 held, 500 more per dollar
+    assert sections["revaluation"]["expense"] == D("0.00")
+    assert data["start_cash"] == D("6700000.00")
+    position = queries.cash_position(books, later, branch_ids=None, today=date(2026, 10, 21))
+    assert data["end_cash"] == position["total"] == D("9025000.00")
+    moved = sum((row["net"] for row in data["sections"]), D(0))
+    assert data["start_cash"] + moved == data["end_cash"]
 
 
 def test_balances_on_a_date(books, ledger):

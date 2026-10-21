@@ -1757,7 +1757,7 @@ class PnlView(FinanceMixin, RangeMixin, OwnerAPIView):
 
 class CashFlowView(FinanceMixin, RangeMixin, OwnerAPIView):
     """Cash flow in the analytics shape (`income`, `expense`, `net`) plus the operating,
-    investing, financing, owner, transfer and opening sections."""
+    investing, financing, owner, transfer, opening and currency revaluation sections."""
 
     perm = VIEW
 
@@ -1806,6 +1806,7 @@ class CashFlowView(FinanceMixin, RangeMixin, OwnerAPIView):
             "owner": _("Owner money"),
             "transfers": _("Transfers and exchange"),
             "opening": _("Opening balances"),
+            "revaluation": _("Currency revaluation"),
         }
         breakdown = [{**row, "label": labels[row["key"]]} for row in data.pop("sections")]
         return Response(_jsonable({**self.range.as_dict(), **data, "breakdown": breakdown}))

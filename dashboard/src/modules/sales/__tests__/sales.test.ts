@@ -13,7 +13,7 @@ import salesModule from "..";
 import { salesApi } from "../api";
 import ShiftDrawer from "../components/ShiftDrawer.vue";
 import TodayBranches from "../components/TodayBranches.vue";
-import { countRows, differenceLevel, movementSign } from "../format";
+import { countRows, differenceLevel, heatHours, movementSign } from "../format";
 import type { ShiftDetail } from "../types";
 
 interface Call {
@@ -108,6 +108,12 @@ afterEach(() => {
 });
 
 describe("sales display rules", () => {
+  it("widens the heatmap to the night hours a 24-hour pharmacy sells in, and keeps 07–23 otherwise", () => {
+    expect(heatHours([])).toEqual({ first: 7, last: 23 });
+    expect(heatHours([{ hour: 9, net: "100.00" }, { hour: 22, net: "50.00" }, { hour: 3, net: "0.00" }])).toEqual({ first: 7, last: 23 });
+    expect(heatHours([{ hour: 2, net: "40000.00" }, { hour: 5, net: "0.00" }, { hour: 23, net: "10.00" }])).toEqual({ first: 2, last: 23 });
+  });
+
   it("reads a difference against the tolerance", () => {
     expect(differenceLevel(null, "5000")).toBe("unknown");
     expect(differenceLevel("0.00", "5000")).toBe("none");
@@ -392,6 +398,10 @@ describe("ShiftDrawer", () => {
     expect(body.textContent).toContain("CHL-42");
     expect(body.textContent).toContain("Madina Saidova");
     expect(body.textContent).toContain("Net sales");
+    // Exact amounts, not "4.2M expected, 4.2M counted": a cash check is about the last thousand.
+    const figures = body.querySelector("[data-testid=shift-figures]")?.textContent ?? "";
+    for (const amount of ["14,414,000", "4,230,000", "4,215,000", "15,000"]) expect(figures).toContain(amount);
+    expect(figures).not.toContain("4.2M");
     const verify = [...body.querySelectorAll("button")].find((button) => button.textContent?.trim().startsWith("Verify"))!;
     verify.click();
     await flushPromises();

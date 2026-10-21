@@ -2,7 +2,8 @@
 /**
  * Cash flow (plan §4.7 `reports/cash-flow/`): money in and out of the accounts per day, week or
  * month, and a statement from the opening cash through operating, equipment, loans, owner money,
- * transfers and opening balances to the closing cash.
+ * transfers, opening balances and the revaluation of dollars held to the closing cash, which is
+ * the accounts' balance at that day's rate (the same as "Cash now").
  */
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
@@ -22,7 +23,7 @@ import { useFormat } from "@/lib/useFormat";
 
 import { periodParams, useCashFlow } from "../../api";
 import { useCssColor } from "../../colors";
-import { isNegative, isZeroMoney } from "../../lib";
+import { comparablePrevious, isNegative, isZeroMoney } from "../../lib";
 
 const props = defineProps<{ branch: number[] }>();
 
@@ -38,10 +39,13 @@ const data = computed(() => query.data.value);
 const kpis = computed(() => {
   const d = data.value;
   const vs = d?.compare ? t("finance.reports.vsPrevious") : undefined;
+  // A net that crossed zero shows the previous period's net, not "−115 %".
+  const netBefore = comparablePrevious(d?.totals.net, d?.previous?.net);
+  const netHint = d?.previous && netBefore === undefined ? t("finance.reports.previousAmount", { amount: fmt.money(d.previous.net, undefined, { compact: true, sign: "always" }) }) : undefined;
   return [
     { id: "in", label: t("finance.tx.moneyIn"), value: d?.totals.income ?? null, previous: d?.previous?.income, format: "money" as const, compact: true, deltaLabel: vs },
     { id: "out", label: t("finance.tx.moneyOut"), value: d?.totals.expense ?? null, previous: d?.previous?.expense, format: "money" as const, compact: true, inverse: true, deltaLabel: vs },
-    { id: "net", label: t("finance.tx.net"), value: d?.totals.net ?? null, previous: d?.previous?.net, format: "money" as const, compact: true, deltaLabel: vs },
+    { id: "net", label: t("finance.tx.net"), value: d?.totals.net ?? null, previous: netBefore ?? undefined, hint: netHint, format: "money" as const, compact: true, deltaLabel: vs },
     { id: "end", label: t("finance.reports.closingCash"), value: d?.end_cash ?? null, format: "money" as const, compact: true, hint: d ? t("finance.reports.openingCash", { amount: fmt.money(d.start_cash, undefined, { compact: true }) }) : undefined },
   ];
 });

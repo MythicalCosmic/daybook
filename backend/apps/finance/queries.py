@@ -58,7 +58,15 @@ Status = Transaction.Status
 PNL_KINDS = Transaction.PNL_KINDS
 # Kinds of money account whose balance is cash on hand in a branch (branch facts).
 CASH_KINDS = (MoneyAccount.Kind.CASH, MoneyAccount.Kind.SAFE, MoneyAccount.Kind.EMPLOYEE)
-CASH_FLOW_SECTIONS = ("operating", "investing", "financing", "owner", "transfers", "opening")
+CASH_FLOW_SECTIONS = (
+    "operating",
+    "investing",
+    "financing",
+    "owner",
+    "transfers",
+    "opening",
+    "revaluation",
+)
 # Sections that are real money in or out (transfers move money between our own accounts, and
 # opening entries are what was there before the books started).
 FLOW_SECTIONS = ("operating", "investing", "financing", "owner")
@@ -487,7 +495,12 @@ def cash_flow(
     `series` (zero-filled per `group_by` bucket) and `totals` count real flows: operating,
     investing (equipment categories), financing (loans) and owner money; `income` is money in,
     `expense` money out (positive), `net` the difference. `sections` add the transfers between
-    our own accounts and opening balances, so `start_cash + Σ sections = end_cash`.
+    our own accounts, opening balances and the revaluation of foreign money, so
+    `start_cash + Σ sections = end_cash`.
+
+    `start_cash` and `end_cash` value foreign money at the rate of the day before `start` and of
+    `end`, as the accounts page and "cash now" do; the rows themselves stay at their own rates,
+    and the difference between the two is the `revaluation` section.
     """
     rows = posted_rows(company, branch_ids=branch_ids).filter(account__isnull=False)
     in_range = rows.filter(occurred_on__range=(start, end)).annotate(section=_section_case())
@@ -511,9 +524,12 @@ def cash_flow(
             if key in buckets:
                 buckets[key]["income"] += inflow
                 buckets[key]["expense"] += outflow
-    start_cash = quantize(
-        rows.filter(occurred_on__lt=start).aggregate(total=Sum("base_amount"))["total"] or 0
-    )
+    before = rows.filter(occurred_on__lt=start)
+    opening_gain = _revaluation(company, before, start - timedelta(days=1))
+    revaluation = _revaluation(company, rows.filter(occurred_on__lte=end), end) - opening_gain
+    sections["revaluation"]["income"] = max(revaluation, ZERO)
+    sections["revaluation"]["expense"] = max(-revaluation, ZERO)
+    start_cash = quantize((before.aggregate(total=Sum("base_amount"))["total"] or 0) + opening_gain)
     movement = sum((values["income"] - values["expense"] for values in sections.values()), ZERO)
     income = sum((sections[key]["income"] for key in FLOW_SECTIONS), ZERO)
     expense = sum((sections[key]["expense"] for key in FLOW_SECTIONS), ZERO)
@@ -551,6 +567,27 @@ def cash_flow(
         previous = cash_flow(company, compare[0], compare[1], group_by, branch_ids=branch_ids)
         result["previous"] = previous["totals"]
     return result
+
+
+def _revaluation(company, rows: QuerySet[Transaction], day: date) -> Decimal:
+    """What the foreign money in `rows` (posted rows with an account) is worth at `day`'s rate,
+    less what it was booked at: the revaluation gain (or loss, below zero) up to that day. Zero
+    without foreign money or without any rate to value it at."""
+    held = list(
+        rows.exclude(currency=company.base_currency)
+        .values("currency")
+        .annotate(amount=Sum("amount"), booked=Sum("base_amount"))
+        .order_by()
+    )
+    if not held:
+        return ZERO
+    value = valuation(company, day)
+    gain = ZERO
+    for entry in held:
+        worth = value.to_base(entry["amount"] or ZERO, entry["currency"])
+        if worth is not None:
+            gain += worth - (entry["booked"] or ZERO)
+    return quantize(gain)
 
 
 # Accounts ------------------------------------------------------------------------------------

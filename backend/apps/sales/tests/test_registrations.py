@@ -5,17 +5,19 @@ notification buttons and file checks."""
 from datetime import timedelta
 from decimal import Decimal
 
-from django.utils import timezone
+from django.utils import timezone, translation
 
 from apps.ai.tools.testing import call_tool
 from apps.console import contracts, registry
 from apps.console.ranges import Range
 from apps.core.files import signed_url
 from apps.exports.registry import get_exporter
+from apps.finance import display
 from apps.inbox import services as inbox
 from apps.inbox.models import Notification
 from apps.members.permissions import Perm
 from apps.sales import queries, services
+from apps.sales.days import business_day
 from apps.sales.models import CashShift
 from apps.sales.tests.factories import make_member, open_and_close, scoped_role
 
@@ -76,6 +78,30 @@ def test_search_and_stream_respect_branch_scope(shop):
     assert queries.search(lead, closed.code, 5) == []
     assert [item.kind for item in queries.stream(shop.owner, None, 10)] == ["sales.shift_closed"]
     assert queries.stream(lead, None, 10) == []
+
+
+def test_search_and_queue_texts_read_like_the_dashboard(shop):
+    """A shift hit and a "Needs you" item write days and money the way the dashboard does in the
+    person's language (not "05.10.2026 · 1 500 000 UZS" in every language), and an open till
+    says it is open instead of showing "0"."""
+    closed = open_and_close(shop)  # 1,000,000 in cash and 500,000 by card
+    day = display.day(closed.business_day, business_day(shop.company), "en")
+    with translation.override("en"):
+        [hit] = queries.search(shop.owner, closed.code, 5)
+        assert hit.subtitle == f"{closed.branch.name} · {day} · 1,500,000\u00a0UZS"
+        [item] = [row for row in queries.verify_items(shop.owner, 10) if row.id == closed.pk]
+        assert item.subtitle == (
+            f"{closed.branch.name} · 1,500,000\u00a0UZS · difference 0\u00a0UZS"
+        )
+        [line] = queries.stream(shop.owner, None, 10)
+        assert line.title.endswith(" · 1,500,000\u00a0UZS")
+    with translation.override("ru"):
+        [hit] = queries.search(shop.owner, closed.code, 5)
+        assert hit.subtitle.endswith(" · 1\u00a0500\u00a0000\u00a0сум")
+    opened = services.open_shift(by=shop.cashier, register=shop.register, opening_float="0")
+    with translation.override("en"):
+        [hit] = queries.search(shop.owner, opened.code, 5)
+        assert hit.subtitle.endswith(" · Open")
 
 
 def test_queues_and_pulse(shop):

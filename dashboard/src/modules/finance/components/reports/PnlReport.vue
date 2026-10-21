@@ -21,7 +21,7 @@ import { useCompanyStore } from "@/stores/company";
 
 import { periodParams, usePnl } from "../../api";
 import { useCssColor } from "../../colors";
-import { dropEmptyCompare, trimLeadingPeriods } from "../../lib";
+import { comparablePrevious, dropEmptyCompare, trimLeadingPeriods } from "../../lib";
 import { openQuickAdd } from "../../quickAdd";
 import PnlTable from "./PnlTable.vue";
 
@@ -43,10 +43,13 @@ const expanded = ref(false);
 const kpis = computed(() => {
   const d = data.value;
   const vs = d?.compare ? t("finance.reports.vsPrevious") : undefined;
+  // A profit that crossed zero shows the previous figure instead of a misleading percentage.
+  const profitBefore = comparablePrevious(d?.profit.total, d?.profit.previous ?? undefined);
+  const profitHint = d?.profit.previous != null && profitBefore === undefined ? t("finance.reports.previousAmount", { amount: fmt.money(d.profit.previous, undefined, { compact: true, sign: "always" }) }) : undefined;
   return [
     { id: "income", label: t("finance.reports.income"), value: d?.income.total ?? null, previous: d?.income.previous ?? undefined, format: "money" as const, compact: true, deltaLabel: vs },
     { id: "expense", label: t("finance.reports.expenses"), value: d?.expense.total ?? null, previous: d?.expense.previous ?? undefined, format: "money" as const, compact: true, inverse: true, deltaLabel: vs },
-    { id: "profit", label: t("finance.reports.profit"), value: d?.profit.total ?? null, previous: d?.profit.previous ?? undefined, format: "money" as const, compact: true, deltaLabel: vs },
+    { id: "profit", label: t("finance.reports.profit"), value: d?.profit.total ?? null, previous: profitBefore ?? undefined, hint: profitHint, format: "money" as const, compact: true, deltaLabel: vs },
     {
       id: "margin",
       label: t("finance.reports.margin"),
