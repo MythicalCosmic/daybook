@@ -113,3 +113,42 @@ describe("TelegramBubble", () => {
     expect(wrapper.text()).toContain("I’ve read it");
   });
 });
+
+describe("AnnouncementsPage", () => {
+  const page = (count: number) => ({ count, next: null, previous: null, results: [] });
+  function stubList(count: number) {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string) => {
+        if (input.includes("announcements/stats/")) return json({ sent_30d: 0, read_rate_30d: null, scheduled: 0, pinned: 0, unread_people_30d: 0 });
+        return json(page(count));
+      }),
+    );
+  }
+
+  it("explains an empty company and offers the first announcement, without zeros and an empty table", async () => {
+    stubList(0);
+    const { default: AnnouncementsPage } = await import("../pages/AnnouncementsPage.vue");
+    const app = await testApp("/c/1/announcements");
+    const { wrapper } = mountWithProviders(AnnouncementsPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    const empty = wrapper.find("[data-comms-empty]");
+    expect(empty.exists()).toBe(true);
+    expect(empty.text()).toContain(en["comms.list.emptyBody"]);
+    expect(empty.find("a").attributes("href")).toBe("/c/1/announcements/new");
+    expect(wrapper.find(".kpi-strip").exists()).toBe(false);
+    expect(wrapper.find("table").exists()).toBe(false);
+  });
+
+  it("keeps the numbers and the table for a search with no match", async () => {
+    stubList(0);
+    const { default: AnnouncementsPage } = await import("../pages/AnnouncementsPage.vue");
+    const app = await testApp("/c/1/announcements?q=zzz");
+    const { wrapper } = mountWithProviders(AnnouncementsPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(wrapper.find("[data-comms-empty]").exists()).toBe(false);
+    expect(wrapper.find(".kpi-strip").exists()).toBe(true);
+  });
+});

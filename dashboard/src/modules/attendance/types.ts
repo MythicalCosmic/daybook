@@ -127,7 +127,8 @@ export interface Board {
   is_today: boolean;
   now: string;
   holiday: string | null;
-  totals: Record<BoardState | "rostered" | "late_missing", number>;
+  /** Per state, plus `rostered`, `late_missing`, and of those who came `present` (still checked in) and `left`. */
+  totals: Record<BoardState | "rostered" | "late_missing", number> & { present?: number; left?: number };
   branches: BoardBranch[];
   people: BoardRow[];
 }

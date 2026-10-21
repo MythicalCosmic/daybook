@@ -26,7 +26,8 @@ const board = useBoard({ date: null, branch: [] });
 const trend = useSummary({ preset: "last_30" });
 
 const totals = computed(() => board.data.value?.totals);
-const present = computed(() => (totals.value ? totals.value.in + totals.value.late : 0));
+// Still checked in: who came and already went home is not "present now" (the board says how many left).
+const present = computed(() => (totals.value ? (totals.value.present ?? totals.value.in + totals.value.late) : 0));
 const days = computed(() => (trend.data.value?.series ?? []).slice(-14));
 const peak = computed(() => Math.max(1, ...days.value.map((day) => day.rostered || day.present)));
 const share = computed(() => (totals.value?.rostered ? Math.round((present.value / totals.value.rostered) * 100) : null));

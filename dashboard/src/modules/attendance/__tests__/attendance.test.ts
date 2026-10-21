@@ -5,7 +5,7 @@ import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { toasts } from "@/components/useToast";
-import { mergeModuleMessages } from "@/i18n";
+import { mergeModuleMessages, setLanguage } from "@/i18n";
 import { json } from "@/test/fixtures";
 import { mountWithProviders, testApp } from "@/test/plugins";
 
@@ -27,7 +27,7 @@ import BoardTile from "../components/BoardTile.vue";
 import ShiftGrid from "../components/ShiftGrid.vue";
 import en from "../i18n/en.json";
 import module from "../index";
-import { clockOf, compactTime, formatDistance, hours, localDateTime, shiftMonth, spanMinutes, weekdayIndex } from "../lib";
+import { clockOf, compactTime, formatDistance, hours, localDateTime, shiftMonth, spanMinutes, weekdayIndex, wholeDayScroll } from "../lib";
 import SwapsPage from "../pages/SwapsPage.vue";
 import type { BoardRow, Roster, Shift, Swap } from "../types";
 
@@ -93,10 +93,10 @@ const roster = (): Roster => ({
       id: 7,
       name: "Alisher Valiyev",
       photo_url: null,
-      position: { id: 1, name: "Sales floor" },
+      position: { id: 1, name: "Farmatsevt" },
       home_branch: { id: 1, name: "Chilonzor" },
       status: "approved",
-      schedule: { id: 3, name: "Savdo zali 6/1" },
+      schedule: { id: 3, name: "Chilonzor 2/2" },
       minutes: 960,
       leave: ["2026-10-23"],
     },
@@ -196,16 +196,36 @@ describe("lib", () => {
     expect(weekdayIndex("2026-10-21")).toBe(2);
     expect(formatDistance(1234, { m: "m", km: "km" })).toBe("1.2 km");
     expect(formatDistance(34, { m: "m", km: "km" })).toBe("34 m");
+    // Uzbek and Russian write the decimal comma.
+    for (const language of ["ru", "uz"] as const) {
+      void setLanguage(language);
+      expect(hours(495)).toBe("8,3");
+      expect(hours(480)).toBe("8");
+      expect(formatDistance(1234, { m: "m", km: "km" })).toBe("1,2 km");
+    }
+    void setLanguage("en");
     // Schedule cards keep the half hours.
     expect(compactTime("08:30")).toBe("8:30");
     expect(compactTime("17:30:00")).toBe("17:30");
     expect(compactTime("09:00")).toBe("9:00");
   });
+
+  it("scrolls the month to whole days next to the pinned names", () => {
+    // Days of 32 px; the first day sits after the names at scroll 0.
+    expect(wholeDayScroll({ target: 300, start: 0, width: 32, max: 800 })).toBe(320);
+    expect(wholeDayScroll({ target: 320, start: 0, width: 32, max: 800 })).toBe(320);
+    // Early in the month nothing to scroll.
+    expect(wholeDayScroll({ target: -120, start: 0, width: 32, max: 800 })).toBe(0);
+    // At the end the furthest whole day, not the very end (which would cut a day in half).
+    expect(wholeDayScroll({ target: 790, start: 0, width: 32, max: 780 })).toBe(768);
+    // An offset start (padding before the first day) keeps the alignment.
+    expect(wholeDayScroll({ target: 300, start: 10, width: 32, max: 800 })).toBe(330);
+  });
 });
 
 describe("BoardTile", () => {
   const row = (extra: Partial<BoardRow> = {}): BoardRow => ({
-    member: { id: 7, name: "Alisher Valiyev", photo_url: null, position: { id: 1, name: "Sales floor" }, home_branch: null, status: "approved" },
+    member: { id: 7, name: "Alisher Valiyev", photo_url: null, position: { id: 1, name: "Farmatsevt" }, home_branch: null, status: "approved" },
     branch: { id: 1, name: "Chilonzor", code: "CHL" },
     state: "late",
     reason: null,
@@ -264,7 +284,7 @@ describe("BoardTile", () => {
     const late = row({ state: "not_yet", reason: "late", record: null });
     const { wrapper } = mountWithProviders(BoardTile, { props: { row: late, now: "2026-10-21T09:40:00+05:00" }, plugins: app.plugins });
     const text = wrapper.text();
-    expect(text.indexOf("09:00–18:00")).toBeLessThan(text.indexOf("Sales floor"));
+    expect(text.indexOf("09:00–18:00")).toBeLessThan(text.indexOf("Farmatsevt"));
     expect(text).toContain("Shift started 09:00");
     expect(text).toContain("+40m");
     // A past day has no "now": no lateness is made up.
@@ -324,6 +344,122 @@ describe("ShiftGrid", () => {
     expect(inner.emitted("edit")).toHaveLength(1);
     const readonly = await grid(false);
     expect(readonly.wrapper.find(".att-add").exists()).toBe(false);
+  });
+});
+
+describe("TodayPage", () => {
+  it("shows the empty state without five zeros when nobody has a schedule yet", async () => {
+    const off = (id: number): BoardRow => ({
+      member: { id, name: `Person ${id}`, photo_url: null, position: null, home_branch: null, status: "approved" },
+      branch: null,
+      state: "off",
+      reason: "no_shift",
+      shift: null,
+      record: null,
+    });
+    stubApi({
+      "GET attendance/board/": () =>
+        json({
+          date: "2026-10-21",
+          is_today: true,
+          now: "2026-10-21T10:00:00+05:00",
+          holiday: null,
+          totals: { in: 0, late: 0, not_yet: 0, absent: 0, off: 2, rostered: 0, late_missing: 0 },
+          branches: [],
+          people: [off(1), off(2)],
+        }),
+    });
+    const { default: TodayPage } = await import("../pages/TodayPage.vue");
+    const app = await testApp("/c/1/attendance");
+    const { wrapper } = mountWithProviders(TodayPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(wrapper.text()).toContain("No one is working here yet");
+    expect(wrapper.text()).not.toContain("Present now");
+  });
+
+  it("counts who is still here as present now, not who already went home", async () => {
+    const came = (id: number, state: "in" | "late", out: string | null): BoardRow => ({
+      member: { id, name: `Person ${id}`, photo_url: null, position: null, home_branch: null, status: "approved" },
+      branch: null,
+      state,
+      reason: null,
+      shift: shift(id, id, "2026-10-21"),
+      record: {
+        id: 100 + id,
+        member_id: id,
+        shift_id: id,
+        date: "2026-10-21",
+        status: out ? "closed" : "open",
+        check_in_at: "2026-10-21T08:55:00+05:00",
+        check_out_at: out,
+        in_lat: null,
+        in_lng: null,
+        in_accuracy_m: null,
+        in_distance_m: null,
+        out_lat: null,
+        out_lng: null,
+        out_accuracy_m: null,
+        out_distance_m: null,
+        branch: null,
+        in_source: "app",
+        out_source: out ? "app" : "",
+        late_minutes: state === "late" ? 20 : 0,
+        early_leave_minutes: 0,
+        worked_minutes: 0,
+        overtime_minutes: 0,
+        overtime_status: "none",
+        is_late: state === "late",
+        flags: [],
+        note: "",
+        has_photo: false,
+      },
+    });
+    stubApi({
+      "GET attendance/board/": () =>
+        json({
+          date: "2026-10-21",
+          is_today: true,
+          now: "2026-10-21T18:30:00+05:00",
+          holiday: null,
+          totals: { in: 2, late: 1, not_yet: 0, absent: 0, off: 0, rostered: 3, late_missing: 0, present: 1, left: 2 },
+          branches: [],
+          people: [came(1, "in", null), came(2, "in", "2026-10-21T18:02:00+05:00"), came(3, "late", "2026-10-21T18:10:00+05:00")],
+        }),
+    });
+    const { default: TodayPage } = await import("../pages/TodayPage.vue");
+    const app = await testApp("/c/1/attendance");
+    const { wrapper } = mountWithProviders(TodayPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    // The first number: 1 still here (3 came, 2 of them checked out).
+    expect(wrapper.find(".kpi-strip > *").text()).toMatch(/^Present now\s*1\s*3 of 3 came · 2 left$/);
+    // Who left still shows in the column of those who came, with their check-out.
+    expect(wrapper.text()).toContain("Came in");
+  });
+});
+
+describe("PresentWidget", () => {
+  it("counts who is still checked in, like the board's present now", async () => {
+    stubApi({
+      "GET attendance/board/": () =>
+        json({
+          date: "2026-10-21",
+          is_today: true,
+          now: "2026-10-21T18:30:00+05:00",
+          holiday: null,
+          totals: { in: 7, late: 2, not_yet: 1, absent: 0, off: 6, rostered: 10, late_missing: 0, present: 4, left: 5 },
+          branches: [],
+          people: [],
+        }),
+    });
+    const { default: PresentWidget } = await import("../widgets/PresentWidget.vue");
+    const app = await testApp("/c/1");
+    const { wrapper } = mountWithProviders(PresentWidget, { plugins: app.plugins, props: { companyId: 1 } });
+    await flushPromises();
+    await flushPromises();
+    expect(wrapper.text()).toMatch(/Present now\s*4\b/);
+    expect(wrapper.text()).toContain("40%");
   });
 });
 

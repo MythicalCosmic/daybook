@@ -1,11 +1,13 @@
 """O setup/ ("Get started") and O invite/ (§4.4, §6.2)."""
 
 import pytest
+from django.utils import timezone
 
 from apps.audit.models import AuditLog
 from apps.companies import services
 from apps.companies.audit_actions import CompanyAction
 from apps.groups.models import TelegramGroup
+from apps.members import queries as members_queries
 
 pytestmark = pytest.mark.django_db
 
@@ -126,7 +128,9 @@ def test_only_company_settings_may_dismiss(company, member, owner_api, other_com
 def test_invite_page_data(company, owner, owner_api, member, settings):
     settings.EMPLOYEE_BOT_USERNAME = "daybook_test_bot"
     member(company, "Employee")
-    member(company, "Employee", status="pending")
+    member(company, "Employee", status="pending", onboarded_at=timezone.now())
+    # Still filling in their details: nothing to decide yet, like the Join requests badge.
+    member(company, "Employee", status="pending", onboarded_at=None)
 
     response = owner_api(owner).get(url(company, "invite/"))
 
@@ -136,6 +140,7 @@ def test_invite_page_data(company, owner, owner_api, member, settings):
     assert data["start_param"] == f"c_{company.invite_code}"
     assert data["company"]["name"] == company.name
     assert data["members"] == {"approved": 2, "pending": 1}
+    assert data["members"]["pending"] == members_queries.pending_count(company)
     assert data["branches"] == [company.branches.get().name]
 
 

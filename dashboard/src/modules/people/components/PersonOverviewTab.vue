@@ -3,7 +3,7 @@
  * Person 360 › Overview: how their work went week by week, the last 30 days split into on time,
  * late and missed, their details, and the time off coming up.
  */
-import { CalendarDays, CalendarPlus, Flame } from "@lucide/vue";
+import { ArrowRight, CalendarDays, Flame } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
@@ -16,15 +16,18 @@ import ProgressBar from "@/components/ProgressBar.vue";
 import StatusPill from "@/components/StatusPill.vue";
 import { formatPhone } from "@/lib/format";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
 
 import type { PersonDetail } from "../types";
 
-const props = defineProps<{ person: PersonDetail; rateTone: "success" | "warning" | "danger" | "neutral" }>();
+const props = defineProps<{
+  person: PersonDetail;
+  rateTone: "success" | "warning" | "danger" | "neutral";
+  /** The Time off tab, when this viewer has it: the card links there ("Record time off" is in the header). */
+  timeOffTo?: string;
+}>();
 
 const { t } = useI18n();
 const fmt = useFormat();
-const company = useCompanyStore();
 
 // Weeks before their first task (new people) would only draw a flat zero, so the chart starts there.
 const trend = computed(() => {
@@ -73,8 +76,9 @@ function span(first: string, last: string): string {
 </script>
 
 <template>
-  <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
-    <div class="flex min-w-0 flex-col gap-5 lg:col-span-2">
+  <div class="grid grid-cols-1 gap-5 xl:grid-cols-3">
+    <!-- Side by side from 1280 px: at 1024 a third of the page is too narrow for the details' values. -->
+    <div class="flex min-w-0 flex-col gap-5 xl:col-span-2">
       <ChartCard
         :title="t('people.overview.trendTitle')"
         :subtitle="t('people.overview.trendSubtitle')"
@@ -107,7 +111,8 @@ function span(first: string, last: string): string {
       </section>
     </div>
 
-    <div class="flex min-w-0 flex-col gap-5">
+    <!-- Below 1280 px the details and the time off sit side by side under the charts. -->
+    <div class="flex min-w-0 flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start xl:flex xl:items-stretch">
       <section class="ui-card p-5">
         <h2 class="mb-1 text-md font-semibold text-fg">{{ t("people.overview.details") }}</h2>
         <DescriptionList :items="details" layout="rows" />
@@ -116,12 +121,8 @@ function span(first: string, last: string): string {
       <section class="ui-card p-5">
         <div class="mb-3 flex items-center justify-between gap-2">
           <h2 class="text-md font-semibold text-fg">{{ t("people.overview.timeOff") }}</h2>
-          <RouterLink
-            v-if="person.can.record_time_off"
-            :to="{ path: `/c/${company.currentId}/time-off`, query: { record: String(person.id) } }"
-            class="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-          >
-            <CalendarPlus :size="14" aria-hidden="true" />{{ t("people.action.recordTimeOff") }}
+          <RouterLink v-if="timeOffTo" :to="timeOffTo" class="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline" data-time-off-link>
+            {{ t("common.viewAll") }}<ArrowRight :size="14" aria-hidden="true" />
           </RouterLink>
         </div>
         <ul v-if="o.upcoming_time_off.length" class="flex flex-col divide-y divide-[var(--c-border)]">
@@ -129,13 +130,12 @@ function span(first: string, last: string): string {
             <span class="grid size-9 shrink-0 place-items-center rounded-[10px] bg-info-soft text-info"><CalendarDays :size="16" aria-hidden="true" /></span>
             <div class="min-w-0 flex-1">
               <p class="truncate text-base font-medium text-fg">{{ span(item.first_day, item.last_day) }}</p>
-              <p v-if="item.reason" class="truncate text-xs text-muted">{{ item.reason }}</p>
+              <p v-if="item.reason" class="truncate text-xs text-muted" :title="item.reason">{{ item.reason }}</p>
             </div>
             <StatusPill size="sm" :tone="item.status === 'approved' ? 'success' : 'warning'" :label="t(`people.timeOff.${item.status}`)" />
           </li>
         </ul>
         <p v-else class="text-sm text-muted">{{ t("people.overview.noTimeOff") }}</p>
-        <p class="mt-3 text-xs text-subtle">{{ t("people.overview.daysOffThisYear", { n: o.days_off_this_year }, o.days_off_this_year) }}</p>
       </section>
     </div>
   </div>

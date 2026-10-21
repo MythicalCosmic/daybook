@@ -118,7 +118,7 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
   "tasks.tab.personal": "Мои",
   "tasks.tab.review": "Проверка",
   "tasks.group.attention": "Требует внимания",
-  "tasks.group.todo": "Сделать",
+  "tasks.group.todo": "К выполнению",
   "tasks.group.review": "На проверке",
   "tasks.group.done": "Готово",
   "tasks.group.doneToday": "Выполнено сегодня",
@@ -175,7 +175,7 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
   "day.tomorrow": "Завтра",
   "day.yesterday": "Вчера",
 
-  "status.todo": "Сделать",
+  "status.todo": "К выполнению",
   "status.in_progress": "В работе",
   "status.review": "На проверке",
   "status.returned": "Возвращена",

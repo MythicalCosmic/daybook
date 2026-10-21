@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * Settings › Invite staff (plan §1.4, §4.4): the employee bot's invite link as a big QR code,
- * copy and share, a printable poster for the shop wall, and "Make a new link" (the old link and
+ * copy and share, a printable poster for the wall at work, and "Make a new link" (the old link and
  * printed posters stop working). People who use it appear in join requests.
  */
 import { Check, Copy, Link2, Printer, RefreshCw, Send, ShieldAlert, UserCheck, UserPlus, Users } from "@lucide/vue";

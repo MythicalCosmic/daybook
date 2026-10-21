@@ -68,7 +68,7 @@ registry.register_setup_step(
     perm=Perm.POSITIONS_MANAGE,
     order=30,
     label=_("Positions"),
-    description=_("The jobs people pick when they join: Cashier, Cook, Courier…"),
+    description=_("The jobs people pick when they join: Pharmacist, Cashier, Courier…"),
     url="people/positions",
     done=providers.positions_done,
 )

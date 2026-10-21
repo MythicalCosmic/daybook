@@ -14,7 +14,7 @@ const hintId = `${id}-hint`;
 </script>
 
 <template>
-  <div class="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:gap-6">
+  <div class="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-6 md:px-5">
     <div class="min-w-0 flex-1">
       <label :for="id" class="text-sm font-medium text-fg">{{ label }}</label>
       <p v-if="hint" :id="hintId" class="mt-0.5 text-xs text-muted">{{ hint }}</p>

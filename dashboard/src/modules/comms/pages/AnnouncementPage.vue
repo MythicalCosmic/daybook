@@ -9,6 +9,7 @@ import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
+import { isApiError } from "@/api/http";
 import AuditTrail from "@/components/AuditTrail.vue";
 import DataTable from "@/components/DataTable.vue";
 import DatePicker from "@/components/DatePicker.vue";
@@ -153,7 +154,8 @@ async function savePin(): Promise<void> {
 <template>
   <div class="flex flex-col gap-5">
     <div v-if="skeleton && !row" class="flex flex-col gap-4"><SkeletonBlock width="40%" height="28px" /><SkeletonBlock height="96px" radius="12px" /><SkeletonBlock height="240px" radius="12px" /></div>
-    <ErrorState v-else-if="query.isError.value" class="ui-card" :error="query.error.value" :retry="() => query.refetch()" />
+    <!-- Trying again can't bring back someone who isn't there (404): no retry then. -->
+    <ErrorState v-else-if="query.isError.value" class="ui-card" :error="query.error.value" :retry="isApiError(query.error.value) && query.error.value.status === 404 ? undefined : () => query.refetch()" />
     <template v-else-if="row">
       <PageHeader class="!mb-0" :title="row.title" :back="`/c/${company.currentId}/announcements`" :back-label="t('comms.nav.announcements')">
         <template #actions>

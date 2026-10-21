@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-21 13:10+0500\n"
+"POT-Creation-Date: 2026-10-21 20:08+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -3084,6 +3084,10 @@ msgstr "Переводы и обмен валюты"
 msgid "Opening balances"
 msgstr "Начальные остатки"
 
+#: backend/apps/finance/exporters.py backend/apps/finance/owner_api.py
+msgid "Currency revaluation"
+msgstr "Переоценка валюты"
+
 #: backend/apps/finance/exporters.py
 msgid "Closing cash"
 msgstr "Деньги на конец периода"
@@ -3654,6 +3658,11 @@ msgstr "Выберите, кто должен или кому должны: ко
 #: backend/apps/finance/owner_serializers.py backend/apps/sales/services.py
 msgid "Pick the account."
 msgstr "Выберите счёт."
+
+#: backend/apps/finance/providers.py
+#, python-format
+msgid "INN %(tin)s"
+msgstr "ИНН %(tin)s"
 
 #: backend/apps/finance/providers.py
 msgid "Hidden"
@@ -5062,7 +5071,7 @@ msgstr ""
 "Аккаунт создаётся в приложении, но оно ещё не настроено. Обратитесь к "
 "руководителю."
 
-#: backend/apps/members/bot_messages.py
+#: backend/apps/members/bot_messages.py employee_bot/bot/handlers/contact.py
 msgid "📱 Create account"
 msgstr "📱 Создать аккаунт"
 
@@ -5159,9 +5168,8 @@ msgid "Positions"
 msgstr "Должности"
 
 #: backend/apps/members/hooks.py
-msgid "The jobs people pick when they join: Cashier, Cook, Courier…"
-msgstr ""
-"Должности, которые люди выбирают при вступлении: Кассир, Повар, Курьер…"
+msgid "The jobs people pick when they join: Pharmacist, Cashier, Courier…"
+msgstr "Должности, которые выбирают при вступлении: фармацевт, кассир, курьер…"
 
 #: backend/apps/members/hooks.py
 msgid "Roles"
@@ -5528,12 +5536,12 @@ msgstr[3] "%(count)d открытые задачи вернутся тем, кт
 
 #: backend/apps/members/providers.py
 #, python-format
-msgid "%(count)d daily or personal task is cancelled."
-msgid_plural "%(count)d daily and personal tasks are cancelled."
-msgstr[0] "%(count)d ежедневная или личная задача будет отменена."
-msgstr[1] "%(count)d ежедневные и личные задачи будут отменены."
-msgstr[2] "%(count)d ежедневных и личных задач будет отменено."
-msgstr[3] "%(count)d ежедневные и личные задачи будут отменены."
+msgid "%(count)d routine or personal task is cancelled."
+msgid_plural "%(count)d routine and personal tasks are cancelled."
+msgstr[0] "%(count)d регулярная или личная задача отменяется."
+msgstr[1] "%(count)d регулярные или личные задачи отменяются."
+msgstr[2] "%(count)d регулярных или личных задач отменяются."
+msgstr[3] "%(count)d регулярные или личные задачи отменяются."
 
 #: backend/apps/members/providers.py
 #, python-format
@@ -5947,11 +5955,11 @@ msgstr "Длинновато: уложитесь в 4 000 символов."
 
 #: backend/apps/projects/conf.py
 msgid "Backlog"
-msgstr "Бэклог"
+msgstr "В очереди"
 
 #: backend/apps/projects/conf.py backend/apps/tasks/models.py
 msgid "To do"
-msgstr "Сделать"
+msgstr "К выполнению"
 
 #: backend/apps/projects/conf.py backend/apps/tasks/models.py
 msgid "In progress"
@@ -7698,6 +7706,11 @@ msgid "%(count)s tills open"
 msgstr "Открытых касс: %(count)s"
 
 #: backend/apps/sales/queries.py
+msgctxt "shift status"
+msgid "Open"
+msgstr "Открыта"
+
+#: backend/apps/sales/queries.py
 #, python-format
 msgid "Closed %(shift)s at %(branch)s · %(net)s"
 msgstr "Закрыта смена %(shift)s в филиале %(branch)s · %(net)s"
@@ -8624,6 +8637,10 @@ msgid "Commented on a task"
 msgstr "Новый комментарий к задаче"
 
 #: backend/apps/tasks/owner_api.py
+msgid "Use without or only."
+msgstr "Используйте «without» или «only»."
+
+#: backend/apps/tasks/owner_api.py
 msgid "Some of the people picked don't work here."
 msgstr "Некоторые из выбранных людей здесь не работают."
 
@@ -8771,6 +8788,41 @@ msgstr "За раз можно выбрать не больше %(max)d зада
 #: backend/apps/tasks/services.py
 msgid "This task has no deadline to move."
 msgstr "У этой задачи нет срока, сдвигать нечего."
+
+#: backend/apps/tasks/services.py
+msgid "Pick a time later today."
+msgstr "Выберите время позже текущего."
+
+#: backend/apps/tasks/services.py
+msgid "Nobody gets today's task: everyone it names is off or has it."
+msgstr ""
+"Сегодняшнюю задачу никто не получит: все, кому она назначена, отдыхают или "
+"уже её получили."
+
+#: backend/apps/tasks/services.py
+msgid "This routine gives today's tasks by itself."
+msgstr "Эта регулярная задача сама выдаст сегодняшние задачи."
+
+#: backend/apps/tasks/services.py
+msgid "This routine is paused."
+msgstr "Эта регулярная задача на паузе."
+
+#: backend/apps/tasks/services.py
+msgid "Onboarding tasks go out when someone is let in."
+msgstr "Задачи адаптации выдаются, когда человека принимают в команду."
+
+#: backend/apps/tasks/services.py
+msgid "Today is a company holiday: nobody gets routine tasks."
+msgstr "Сегодня праздник: регулярные задачи никто не получит."
+
+#: backend/apps/tasks/services.py
+msgid "Today isn't one of this routine's days."
+msgstr "Сегодня не входит в дни этой регулярной задачи."
+
+#: backend/apps/tasks/services.py
+#, python-format
+msgid "This routine starts on %(day)s."
+msgstr "Эта регулярная задача начинается %(day)s."
 
 #: backend/apps/tasks/services.py
 msgid "You can't change routines."
@@ -9265,6 +9317,13 @@ msgstr "Перестать сюда писать"
 #: employee_bot/bot/handlers/admin/approvals.py
 msgid "Choose at least one branch."
 msgstr "Выберите хотя бы один филиал."
+
+#: employee_bot/bot/handlers/contact.py
+msgid ""
+"📱 Thanks, your phone number is saved. Now finish your account in the app."
+msgstr ""
+"📱 Спасибо, ваш номер телефона сохранён. Теперь завершите регистрацию в "
+"приложении."
 
 #: employee_bot/bot/handlers/features/attendance.py
 #, python-format

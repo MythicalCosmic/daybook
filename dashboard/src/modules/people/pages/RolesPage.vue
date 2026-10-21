@@ -31,6 +31,7 @@ import { useCompanyStore } from "@/stores/company";
 
 import { useDeleteRole, usePermissionRegistry, useRoles, useSaveRole } from "../api";
 import PermissionMatrix from "../components/PermissionMatrix.vue";
+import { groupByArea } from "../permissionAreas";
 import type { Role } from "../types";
 
 const { t, te } = useI18n();
@@ -51,7 +52,10 @@ const area = ref<string | null>(null);
 const phoneRole = ref<number | null>(null);
 
 const list = computed(() => roles.data.value ?? []);
-const areas = computed(() => [...new Set((registry.data.value ?? []).map((p) => p.group))].map((value) => ({ value, label: te(`people.area.${value}`) ? t(`people.area.${value}`) : value })));
+/** The matrix's areas (permissionAreas.ts), in its order. */
+const areas = computed(() =>
+  groupByArea(registry.data.value ?? []).map(({ area: value }) => ({ value, label: te(`people.permArea.${value}`) ? t(`people.permArea.${value}`) : value })),
+);
 const changedRoles = computed(() => list.value.filter((role) => draft.value[role.id]));
 // Phones edit one role at a time, the first one besides Owner until another is picked.
 watch(

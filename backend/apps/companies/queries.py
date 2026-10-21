@@ -55,10 +55,14 @@ def modules_chosen(company: Company) -> bool:
 
 
 def invite(company: Company) -> dict:
-    """What the invite page and the poster show."""
+    """What the invite page and the poster show. "Pending" counts the join requests ready for a
+    decision, like the Join requests badge (someone who hasn't filled in their details yet has
+    nothing to decide on)."""
     counts = Membership.objects.for_company(company).aggregate(
         approved=Count("pk", filter=Q(status=Membership.Status.APPROVED)),
-        pending=Count("pk", filter=Q(status=Membership.Status.PENDING)),
+        pending=Count(
+            "pk", filter=Q(status=Membership.Status.PENDING, onboarded_at__isnull=False)
+        ),
     )
     return {
         "link": company.invite_link,

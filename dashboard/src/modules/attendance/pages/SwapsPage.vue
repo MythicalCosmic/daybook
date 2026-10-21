@@ -87,7 +87,10 @@ const kindIcon = (swap: Swap) => (swap.kind === "claim" ? Hand : swap.kind === "
   <div class="flex flex-col gap-5">
     <AttendanceHeader :title="t('attendance.swaps.title')" :description="t('attendance.swaps.description')" />
 
-    <SegmentedControl v-model="tab" :options="tabs" class="self-start" />
+    <!-- Scrolls sideways on a phone instead of widening the page. -->
+    <div class="no-scrollbar max-w-full self-start overflow-x-auto">
+      <SegmentedControl v-model="tab" :options="tabs" />
+    </div>
 
     <div v-if="skeleton" class="flex flex-col gap-3">
       <SkeletonBlock v-for="n in 3" :key="n" height="104px" radius="12px" />
@@ -113,7 +116,7 @@ const kindIcon = (swap: Swap) => (swap.kind === "claim" ? Hand : swap.kind === "
           <p class="mt-1 text-sm tabular-nums text-muted">
             {{ shiftLine(swap.shift) }}<template v-if="swap.other_shift"> <ArrowLeftRight :size="12" class="mx-1 inline" /> {{ shiftLine(swap.other_shift) }}</template>
           </p>
-          <p v-if="swap.note" class="mt-1.5 text-sm text-fg">“{{ swap.note }}”</p>
+          <p v-if="swap.note" class="mt-1.5 text-sm text-fg">{{ t("attendance.quote", { text: swap.note }) }}</p>
           <p v-if="swap.decision_note && tab === 'history'" class="mt-1 text-xs text-muted">{{ swap.decision_note }}</p>
           <p class="mt-1.5 text-xs text-subtle">
             <RelativeTime :value="swap.created_at" />

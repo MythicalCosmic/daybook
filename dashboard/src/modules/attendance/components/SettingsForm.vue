@@ -4,12 +4,12 @@
  * how people check in, the grace and alert timings, swaps and the "tasks follow shifts" switch.
  * Saves only what changed; the server audits it.
  */
-import { Clock3, MapPin, Repeat2, ListChecks } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import ErrorState from "@/components/ErrorState.vue";
 import NumberInput from "@/components/NumberInput.vue";
+import PageSection from "@/components/PageSection.vue";
 import RadioCards from "@/components/RadioCards.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import StickyActionBar from "@/components/StickyActionBar.vue";
@@ -75,12 +75,11 @@ function reset(): void {
     </div>
     <ErrorState v-else-if="query.isError.value" :error="query.error.value" :retry="() => query.refetch()" />
     <template v-else-if="draft">
-      <section class="flex flex-col gap-3">
-        <h3 class="flex items-center gap-2 text-sm font-semibold text-fg"><MapPin :size="15" class="text-subtle" />{{ t("attendance.settings.checkIn") }}</h3>
-        <div class="ui-card flex flex-col divide-y divide-line">
-          <ToggleSwitch v-model="draft.require_location" layout="row" class="p-3" :label="t('attendance.settings.requireLocation')" :description="t('attendance.settings.requireLocationHint')" />
-          <ToggleSwitch v-model="draft.require_photo" layout="row" class="p-3" :label="t('attendance.settings.requirePhoto')" :description="t('attendance.settings.requirePhotoHint')" />
-          <div class="flex flex-col gap-2 p-3">
+      <PageSection variant="card" flush :heading-level="3" :title="t('attendance.settings.checkIn')" :description="t('attendance.settings.checkInHint')">
+        <div class="flex flex-col divide-y divide-line">
+          <ToggleSwitch v-model="draft.require_location" layout="row" class="px-4 py-3 md:px-5" :label="t('attendance.settings.requireLocation')" :description="t('attendance.settings.requireLocationHint')" />
+          <ToggleSwitch v-model="draft.require_photo" layout="row" class="px-4 py-3 md:px-5" :label="t('attendance.settings.requirePhoto')" :description="t('attendance.settings.requirePhotoHint')" />
+          <div class="flex flex-col gap-2 px-4 py-3 md:px-5">
             <p class="text-sm font-medium text-fg">{{ t("attendance.settings.outside") }}</p>
             <RadioCards
               v-model="draft.outside_action"
@@ -95,11 +94,10 @@ function reset(): void {
             <NumberInput :id="id" v-model="draft.max_accuracy_m" :min="10" :max="5000" :step="10" :suffix="t('attendance.unit.m')" class="w-full" />
           </SettingRow>
         </div>
-      </section>
+      </PageSection>
 
-      <section class="flex flex-col gap-3">
-        <h3 class="flex items-center gap-2 text-sm font-semibold text-fg"><Clock3 :size="15" class="text-subtle" />{{ t("attendance.settings.timing") }}</h3>
-        <div class="ui-card flex flex-col divide-y divide-line">
+      <PageSection variant="card" flush :heading-level="3" :title="t('attendance.settings.timing')" :description="t('attendance.settings.timingHint')">
+        <div class="flex flex-col divide-y divide-line">
           <SettingRow v-slot="{ id }" :label="t('attendance.settings.grace')" :hint="t('attendance.settings.graceHint')">
             <NumberInput :id="id" v-model="draft.grace_minutes" :min="0" :max="240" :suffix="t('attendance.unit.min')" class="w-full" />
           </SettingRow>
@@ -125,26 +123,24 @@ function reset(): void {
             <NumberInput :id="id" v-model="draft.overtime_after_minutes" :min="0" :max="240" :step="5" :suffix="t('attendance.unit.min')" class="w-full" />
           </SettingRow>
         </div>
-      </section>
+      </PageSection>
 
-      <section class="flex flex-col gap-3">
-        <h3 class="flex items-center gap-2 text-sm font-semibold text-fg"><Repeat2 :size="15" class="text-subtle" />{{ t("attendance.settings.swaps") }}</h3>
-        <div class="ui-card flex flex-col divide-y divide-line">
-          <ToggleSwitch v-model="draft.swaps_need_approval" layout="row" class="p-3" :label="t('attendance.settings.swapsApproval')" :description="t('attendance.settings.swapsApprovalHint')" />
-          <ToggleSwitch v-model="draft.open_shift_claim_needs_approval" layout="row" class="p-3" :label="t('attendance.settings.claimApproval')" :description="t('attendance.settings.claimApprovalHint')" />
+      <PageSection variant="card" flush :heading-level="3" :title="t('attendance.settings.swaps')" :description="t('attendance.settings.swapsHint')">
+        <div class="flex flex-col divide-y divide-line">
+          <ToggleSwitch v-model="draft.swaps_need_approval" layout="row" class="px-4 py-3 md:px-5" :label="t('attendance.settings.swapsApproval')" :description="t('attendance.settings.swapsApprovalHint')" />
+          <ToggleSwitch v-model="draft.open_shift_claim_needs_approval" layout="row" class="px-4 py-3 md:px-5" :label="t('attendance.settings.claimApproval')" :description="t('attendance.settings.claimApprovalHint')" />
         </div>
-      </section>
+      </PageSection>
 
-      <section class="flex flex-col gap-3">
-        <h3 class="flex items-center gap-2 text-sm font-semibold text-fg"><ListChecks :size="15" class="text-subtle" />{{ t("attendance.settings.tasks") }}</h3>
-        <div class="ui-card">
-          <ToggleSwitch v-model="draft.tasks_follow_shifts" layout="row" class="p-3" :label="t('attendance.settings.tasksFollow')" :description="t('attendance.settings.tasksFollowHint')" />
+      <PageSection variant="card" flush :heading-level="3" :title="t('attendance.settings.tasks')" :description="t('attendance.settings.tasksHint')">
+        <div>
+          <ToggleSwitch v-model="draft.tasks_follow_shifts" layout="row" class="px-4 py-3 md:px-5" :label="t('attendance.settings.tasksFollow')" :description="t('attendance.settings.tasksFollowHint')" />
         </div>
-      </section>
+      </PageSection>
 
       <StickyActionBar :show="dirty" :message="t('common.unsaved')" tone="warning">
-        <UiButton size="sm" variant="ghost" @click="reset">{{ t("common.discard") }}</UiButton>
-        <UiButton size="sm" variant="primary" :loading="saving" @click="save">{{ t("common.save") }}</UiButton>
+        <UiButton variant="ghost" @click="reset">{{ t("common.discard") }}</UiButton>
+        <UiButton variant="primary" :loading="saving" @click="save">{{ t("common.save") }}</UiButton>
       </StickyActionBar>
     </template>
   </div>

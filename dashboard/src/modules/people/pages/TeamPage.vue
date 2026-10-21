@@ -81,7 +81,9 @@ const defs = computed<FilterDef[]>(() => [
 ]);
 const filters = useUrlFilters(defs);
 
-const table = useDataTable({ id: "people.team", ordering: "name", pageSize: 50, url: true, hidden: ["phone"] });
+// Joined and phone start hidden so the rest fits a laptop screen without sideways scrolling
+// (both are one click away in the column picker, and on every Person 360).
+const table = useDataTable({ id: "people.team", ordering: "name", pageSize: 50, url: true, hidden: ["phone", "joined"] });
 const params = computed(() => ({
   ...filters.params.value,
   q: search.value || undefined,

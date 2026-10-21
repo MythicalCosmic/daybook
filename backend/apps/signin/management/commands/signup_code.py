@@ -1,6 +1,6 @@
 """Make a signup code for someone who will create a company in the owner bot.
 
-    manage.py signup_code --uses 1 --days 14 --note "Malika, Chorsu bakery"
+    manage.py signup_code --uses 1 --days 14 --note "Malika, Bodomgul Dorixonasi"
 
 Prints the code and the owner bot link that fills it in (`/start new_<code>`). The code is
 shown only here; the database keeps its hash.

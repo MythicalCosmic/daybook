@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** A branch in the command palette's results ("companies.branches"): name, address, a shop icon. */
+/** A branch in the command palette’s results ("companies.branches"): name, address, a branch icon. */
 import { Store } from "@lucide/vue";
 
 import type { SearchHit } from "@/api/types";

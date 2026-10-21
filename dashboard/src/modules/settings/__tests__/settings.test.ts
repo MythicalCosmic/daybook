@@ -44,8 +44,8 @@ function stub(routes: Record<string, (call: Call) => Response | Promise<Response
 
 const SETTINGS: CompanySettings = {
   id: 1,
-  name: "Demo Shop",
-  slug: "demo-shop",
+  name: "Demo Dorixona",
+  slug: "demo-pharmacy",
   logo: null,
   timezone: "Asia/Tashkent",
   default_language: "uz",
@@ -123,14 +123,14 @@ describe("CompanyPanel", () => {
     expect(wrapper.text()).toContain("Locked: money is already booked in it.");
     expect(wrapper.text()).not.toContain("Unsaved changes");
 
-    await wrapper.find('input[maxlength="200"]').setValue("Baraka Market");
+    await wrapper.find('input[maxlength="200"]').setValue("Yashilbog‘ Dorixona");
     await flushPromises();
     expect(document.body.textContent).toContain("Discard");
     await wrapper.find("form").trigger("submit");
     await flushPromises();
 
     const patch = calls.find((c) => c.method === "PATCH");
-    expect(patch?.body).toMatchObject({ name: "Baraka Market", workdays: [0, 1, 2, 3, 4, 5], morning_report_at: "09:00" });
+    expect(patch?.body).toMatchObject({ name: "Yashilbog‘ Dorixona", workdays: [0, 1, 2, 3, 4, 5], morning_report_at: "09:00" });
     expect(calls.some((c) => c.url.endsWith("/owner/me/"))).toBe(true);
   });
 
@@ -179,6 +179,44 @@ describe("BranchesPanel", () => {
     expect(document.body.textContent).toContain("This branch isn’t here");
     // Nothing to save in that state.
     expect([...document.querySelectorAll("button")].some((b) => b.textContent?.trim() === "Save")).toBe(false);
+    wrapper.unmount();
+  });
+
+  it("keeps a branch without hours open around the clock, and never saves invented hours for it", async () => {
+    const allDay = { ...BRANCH, id: 8, name: "Yunusobod", code: "YNS", opens_at: null, closes_at: null };
+    const calls = stub({
+      "GET branches/": () => json([BRANCH, allDay]),
+      "GET branches/managers/": () => json([]),
+      "PATCH branches/8/": (call) => json({ ...allDay, ...(call.body as object) }),
+    });
+    const app = await testApp("/c/1/settings/branches?branch=8");
+    const { default: BranchesPanel } = await import("../panels/BranchesPanel.vue");
+    const { wrapper } = mountWithProviders(BranchesPanel, { plugins: app.plugins });
+    await flushPromises();
+    expect(wrapper.text()).toContain("09:00–21:00 · every day");
+    expect(wrapper.text()).toContain("around the clock · every day");
+
+    // The drawer says so and offers no times to fill in.
+    const toggle = document.querySelector<HTMLButtonElement>("[data-around-the-clock] button[role=switch]")!;
+    expect(toggle.getAttribute("data-state")).toBe("checked");
+    const form = document.querySelector<HTMLFormElement>("#branch-form")!;
+    expect(form.textContent).not.toContain("Opens");
+    // Switching it off brings opening hours to fill in; on again, they go.
+    toggle.click();
+    await flushPromises();
+    expect(form.textContent).toContain("Opens");
+    toggle.click();
+    await flushPromises();
+    expect(form.textContent).not.toContain("Opens");
+
+    // Saving another change keeps it without hours.
+    const name = form.querySelector<HTMLInputElement>('input[maxlength="100"]')!;
+    name.value = "Yunusobod 24/7";
+    name.dispatchEvent(new Event("input"));
+    form.dispatchEvent(new Event("submit", { cancelable: true }));
+    await flushPromises();
+    const patch = calls.find((c) => c.method === "PATCH");
+    expect(patch?.body).toMatchObject({ name: "Yunusobod 24/7", opens_at: null, closes_at: null });
     wrapper.unmount();
   });
 });
