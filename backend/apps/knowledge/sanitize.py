@@ -413,9 +413,22 @@ def to_text(body: str) -> str:
     return renderer.result()
 
 
+LIST_MARK = re.compile(r"^(?:[☐☑•]|\d{1,3}\.)\s+")
+SENTENCE_END = (".", "!", "?", ":", "…", ";")
+
+
 def excerpt(text: str, limit: int = 220) -> str:
-    """The first `limit` characters of `text` on one line, cut at a word."""
-    flat = " ".join(text.split())
+    """The first `limit` characters of `text` on one line, cut at a word. Lines lose their list
+    marks (bullets, checkboxes, numbers); a line that doesn't end a sentence (a list item, a
+    table row) is joined to the next with " · " rather than run into it."""
+    flat = ""
+    for line in text.splitlines():
+        line = LIST_MARK.sub("", " ".join(line.split()))
+        if not line:
+            continue
+        if flat:
+            flat += " " if flat.endswith(SENTENCE_END) else " · "
+        flat += line
     if len(flat) <= limit:
         return flat
     cut = flat[:limit].rsplit(" ", 1)[0]

@@ -144,3 +144,16 @@ def test_a_long_page_is_cut_for_telegram_as_safe_plain_text():
 def test_excerpt_cuts_at_a_word():
     assert sanitize.excerpt("one two three four", 9) == "one two…"
     assert sanitize.excerpt("short", 20) == "short"
+
+
+def test_excerpt_drops_list_marks_and_keeps_items_apart():
+    text = sanitize.to_text(
+        sanitize.clean(
+            '<p>Kiyim:</p><ul data-type="taskList"><li data-type="taskItem" '
+            'data-checked="false"><div><p>Futbolka</p></div></li><li data-type="taskItem" '
+            'data-checked="true"><div><p>Nishon</p></div></li></ul><ol><li><p>Keling</p></li>'
+            "</ol><p>Tamom.</p>"
+        )
+    )
+
+    assert sanitize.excerpt(text) == "Kiyim: Futbolka · Nishon · Keling · Tamom."
