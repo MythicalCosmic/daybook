@@ -102,9 +102,9 @@ def parse_range(params, company, now: datetime) -> Range:
     if compare == "none":
         return Range(start, end)
     if compare == "year":
-        return Range(start, end, _shift_months(start, -12), _shift_months(end, -12))
+        return Range(start, end, _shift_months(start, -12), _shift_end(end, -12))
     if isinstance(shift, Months):
-        return Range(start, end, _shift_months(start, -shift), _shift_months(end, -shift))
+        return Range(start, end, _shift_months(start, -shift), _shift_end(end, -shift))
     span = timedelta(days=shift) if shift else end - start + timedelta(days=1)
     return Range(start, end, start - span, end - span)
 
@@ -148,6 +148,15 @@ def _shift_months(day: date, months: int) -> date:
     year, month = divmod(index, 12)
     month += 1
     return date(year, month, min(day.day, calendar.monthrange(year, month)[1]))
+
+
+def _shift_end(day: date, months: int) -> date:
+    """Like `_shift_months`, but the last day of a month stays the last day of its month:
+    all of September compares with all of August (as the dashboard labels it), not 1-30 August."""
+    shifted = _shift_months(day, months)
+    if day.day == calendar.monthrange(day.year, day.month)[1]:
+        return shifted.replace(day=calendar.monthrange(shifted.year, shifted.month)[1])
+    return shifted
 
 
 def _day(text: str, name: str) -> date:

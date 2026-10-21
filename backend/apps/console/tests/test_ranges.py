@@ -52,7 +52,7 @@ def test_presets(preset, start, end):
         ("week", date(2026, 10, 12), date(2026, 10, 13)),  # Mon-Tue of last week
         ("last_week", date(2026, 10, 5), date(2026, 10, 11)),
         ("month", date(2026, 9, 1), date(2026, 9, 20)),  # the plan's example
-        ("last_month", date(2026, 8, 1), date(2026, 8, 30)),  # same days, not the whole month
+        ("last_month", date(2026, 8, 1), date(2026, 8, 31)),  # the whole month before
         ("last_30", date(2026, 8, 22), date(2026, 9, 20)),
         ("quarter", date(2026, 7, 1), date(2026, 7, 20)),
         ("year", date(2025, 1, 1), date(2025, 10, 20)),
@@ -120,3 +120,11 @@ def test_bad_parameters_raise(params):
 
 def test_three_years_is_the_limit():
     assert MAX_DAYS == 366 * 3
+
+
+def test_a_month_end_compares_with_the_end_of_the_shifted_month():
+    span = parse(**{"from": "2026-09-01", "to": "2026-09-30", "compare": "year"})
+    assert span.compare_end == date(2025, 9, 30)
+
+    span = parse(**{"from": "2024-02-01", "to": "2024-02-29", "compare": "year"})
+    assert (span.compare_start, span.compare_end) == (date(2023, 2, 1), date(2023, 2, 28))
