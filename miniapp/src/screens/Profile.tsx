@@ -32,7 +32,15 @@ export function Profile() {
   const today = dayKey(new Date(), member.timeZone);
   // Dates without a time: read them at noon UTC so no timezone moves the day.
   const day = (date: string) => dayMonth(`${date}T12:00:00Z`, "UTC", locale);
-  const span = (first: string, last: string) => (first === last ? day(first) : `${day(first)} – ${day(last)}`);
+  const whole = (date: string) => <span className="nowrap">{day(date)}</span>;
+  const span = (first: string, last: string) =>
+    first === last ? (
+      whole(first)
+    ) : (
+      <>
+        {whole(first)} – {whole(last)}
+      </>
+    );
 
   const pickTheme = (mode: ThemeMode) => {
     haptic();
@@ -107,7 +115,7 @@ export function Profile() {
                   {cancellable(item, today) && (
                     <button
                       className="btn btn-ghost"
-                      style={{ padding: "6px 8px", minHeight: 0, fontSize: 14 }}
+                      style={{ padding: "0 8px", fontSize: 14 }}
                       disabled={cancelTimeOff.isPending}
                       onClick={() =>
                         cancelTimeOff.mutate(item.id, {

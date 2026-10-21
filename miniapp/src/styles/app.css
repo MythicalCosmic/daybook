@@ -176,6 +176,11 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+/* A date or an amount that must not break across lines ("27-okt", "26 окт."). */
+.nowrap {
+  white-space: nowrap;
+}
+
 /* — buttons — */
 
 .btn {
@@ -225,7 +230,8 @@ button {
   font-family: var(--font-body);
   font-weight: 700;
   font-size: 14.5px;
-  min-height: 36px;
+  /* A finger's width: "See all", "Mark all read" and the like are tapped on the go. */
+  min-height: 40px;
   padding: 0 10px;
   color: var(--color-accent-700);
 }
@@ -409,7 +415,7 @@ textarea.input {
 }
 
 .seg--small .seg-opt {
-  min-height: 0;
+  min-height: 40px;
   font-size: 13.5px;
   padding: 6px 11px;
   flex: none;
