@@ -198,6 +198,8 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
   "detail.kicker.ownRepeat": "Ваша задача · {repeat}",
   "detail.banner.review": "Отправлено на проверку в {time}",
   "detail.banner.reviewNote": "Скоро проверят.",
+  "detail.banner.reviewBy": "Выполнено в {time} · {name}",
+  "detail.banner.reviewByNote": "Посмотрите результат, затем подтвердите или верните.",
   "detail.banner.returned": "Задачу вернул(а) {name}",
   "detail.banner.checked": "Проверено: {name}, {time}",
   "detail.banner.done": "Готово в {time}",

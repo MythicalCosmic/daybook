@@ -13,7 +13,7 @@ import type { Comment, Task } from "../api/types";
 import { LateCard, ReminderNote } from "../components/Reminders";
 import { FeatureSlot } from "../features/FeatureSlot";
 import { errorText, useCompleteTask } from "../lib/actions";
-import { isLate, repeatLabel, type ViewContext } from "../lib/taskView";
+import { isLate, isOpen, repeatLabel, type ViewContext } from "../lib/taskView";
 import { clock, dayMonth, daysFromToday, weekdayShort } from "../lib/time";
 import { useViewContext } from "../lib/useNow";
 import { useNavigation } from "../state/navigation";
@@ -126,7 +126,8 @@ function Detail({ task, comments, ctx }: { task: Task; comments: Comment[]; ctx:
         <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "0 4px" }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             <span className={`tag tag-${status.tone}`} style={{ fontSize: 13, padding: "4px 11px" }}>{status.label}</span>
-            {task.proof !== "none" && task.status !== "done" && (
+            {/* The proof it needs, while it's still to do: once sent, the proof is there. */}
+            {task.proof !== "none" && isOpen(task) && (
               <span className="tag tag-neutral" style={{ fontSize: 13, padding: "4px 11px" }}>{t(`proof.tag.${task.proof}`)}</span>
             )}
           </div>
@@ -221,7 +222,10 @@ function StatusBanner({ task, lastComment, ctx }: { task: Task; lastComment?: Co
   const at = (moment: string | null) => (moment ? clock(moment, ctx.timeZone, ctx.locale) : "—");
   let banner: { tone: string; icon: ReactNode; title: string; note?: string } | null = null;
   if (task.status === "review") {
-    banner = { tone: "", icon: <Hourglass size={17} strokeWidth={2.6} />, title: t("detail.banner.review", { time: at(task.completed_at) }), note: t("detail.banner.reviewNote") };
+    // Whoever checks it hears who finished it and what to do; whoever did it, that it's on its way.
+    banner = task.actions.includes("confirm")
+      ? { tone: "", icon: <Hourglass size={17} strokeWidth={2.6} />, title: t("detail.banner.reviewBy", { name: task.assignee.name, time: at(task.completed_at) }), note: t("detail.banner.reviewByNote") }
+      : { tone: "", icon: <Hourglass size={17} strokeWidth={2.6} />, title: t("detail.banner.review", { time: at(task.completed_at) }), note: t("detail.banner.reviewNote") };
   } else if (task.status === "returned") {
     banner = {
       tone: "accent",

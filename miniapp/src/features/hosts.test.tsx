@@ -325,8 +325,13 @@ describe("feature hosts in the real screens", () => {
     cleanup();
 
     const review = { ...base, status: "review", assignee: { id: 9, name: "Jasur Tursunov", position: null }, actions: ["return", "confirm"] } as Task;
-    const checking = renderWith(<TaskDetail taskId={43} />, { seed: { task: review, comments: [] } });
+    const checking = renderWith(<TaskDetail taskId={43} />, { seed: { task: { ...review, proof: "photo", completed_at: "2026-10-21T04:04:00Z" } as Task, comments: [] } });
     expect(bar(checking.container)).toEqual(["Send back", "Confirm"]);
+    // The checker hears who finished it and what to do, not "it will be checked soon"; the photo
+    // is attached, so no "Photo needed".
+    expect(checking.container.textContent).toContain("Jasur Tursunov finished it at 09:04");
+    expect(checking.container.textContent).toContain("Look at the proof, then confirm it or send it back.");
+    expect(checking.container.textContent).not.toContain("Photo needed");
     cleanup();
 
     const waiting = { ...base, status: "review", actions: [] } as unknown as Task;

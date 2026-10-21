@@ -187,6 +187,8 @@ const uz: Partial<Record<Key, string>> = {
   "detail.kicker.ownRepeat": "O‘z vazifangiz · {repeat}",
   "detail.banner.review": "{time} da tekshiruvga yuborildi",
   "detail.banner.reviewNote": "Tez orada tekshiriladi.",
+  "detail.banner.reviewBy": "{name} {time} da bajardi",
+  "detail.banner.reviewByNote": "Natijani ko‘rib chiqing, so‘ng tasdiqlang yoki qaytaring.",
   "detail.banner.returned": "{name} vazifani qaytardi",
   "detail.banner.checked": "{name} {time} da tekshirdi",
   "detail.banner.done": "{time} da bajarildi",

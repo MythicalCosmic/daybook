@@ -12,7 +12,7 @@ type Props = {
   /** The round button on the left; omitted where ticking makes no sense. */
   onTick?: () => void;
   meta?: string;
-  /** In place of the time chip: a finished run's proof photo. */
+  /** In place of the time chip: a finished run's proof photo; `false` for nothing at all. */
   trailing?: ReactNode;
 };
 

@@ -1,4 +1,5 @@
 import { CheckCheck, ListPlus } from "lucide-react";
+import { useEffect } from "react";
 
 import { useBoard, useReviewQueue } from "../api/hooks";
 import type { Task } from "../api/types";
@@ -11,6 +12,7 @@ import { useNavigation, type TasksTab } from "../state/navigation";
 import { useMember } from "../state/session";
 import { haptic } from "../telegram";
 import { EmptyState, LoadError } from "../ui";
+import { useScrollEdges } from "../ui/useScrollEdges";
 
 /** Scroll the tab strip just enough to show the chosen tab (no page jump). */
 function keepInView(node: HTMLButtonElement | null) {
@@ -32,6 +34,7 @@ export function Tasks() {
   const ctx = useViewContext();
   const { t } = ctx;
   const member = useMember();
+  const strip = useScrollEdges<HTMLDivElement>();
   const navigation = useNavigation();
   const complete = useCompleteTask();
   const canReview = member.permissions.includes("tasks.confirm");
@@ -49,6 +52,8 @@ export function Tasks() {
   if (canReview) tabs.push({ key: "review", count: reviews.data?.length ?? 0 });
 
   const open = (task: Task) => navigation.openTask(task.id);
+  // Counts and labels change the strip's width: say again which edges hide tabs.
+  useEffect(strip.update);
 
   return (
     <div className="screen fade-in" style={{ gap: 10 }}>
@@ -59,7 +64,7 @@ export function Tasks() {
 
       {/* Four tabs with counts don't fit a phone in every language: the strip scrolls sideways
           then, keeping the chosen tab in view. */}
-      <div className="seg seg--scroll" role="tablist">
+      <div ref={strip.ref} className="seg seg--scroll" role="tablist">
         {tabs.map(({ key, count }) => (
           <button
             key={key}

@@ -155,6 +155,7 @@ export function ReviewQueue({
               ctx={ctx}
               onOpen={() => onOpen(task)}
               meta={t("meta.finishedBy", { name: task.assignee.name, time: task.completed_at ? clock(task.completed_at, ctx.timeZone, ctx.locale) : "—" })}
+              trailing={false}
             />
           ))}
         </>
