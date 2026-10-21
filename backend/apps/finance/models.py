@@ -21,6 +21,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.companies.models import Branch, Company, TenantModel
 from apps.core.money import Currency, CurrencyField, MoneyField, RateField
+from apps.core.storage import private_storage, private_upload_to
 from apps.members.models import Membership
 
 PHONE_PATTERN = r"^\+998\d{9}$"
@@ -806,3 +807,81 @@ class Transaction(Voidable, TenantModel):
 
     def __str__(self):
         return f"{self.occurred_on} {self.get_kind_display()}: {self.amount} {self.currency}"
+
+
+class Receipt(TenantModel):
+    """A receipt photo or PDF behind a ledger entry, kept in private storage (§2.8).
+
+    Uploaded files go through `apps.core.uploads.accept_document`: pictures are re-encoded as
+    JPEG (with a small WebP thumbnail), PDFs are checked by their bytes, and the server picks the
+    name. A receipt may be uploaded before its entry exists (quick add, AI reading) and is linked
+    when the entry is recorded; `transaction` is empty until then.
+    """
+
+    class Extraction(models.TextChoices):
+        NONE = "none", _("Not read")
+        PENDING = "pending", _("Being read")
+        DONE = "done", _("Read")
+        FAILED = "failed", _("Couldn't be read")
+
+    company = models.ForeignKey(Company, on_delete=models.PROTECT, related_name="finance_receipts")
+    transaction = models.ForeignKey(
+        Transaction,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="receipts",
+    )
+    file = models.FileField(storage=private_storage, upload_to=private_upload_to("receipts"))
+    thumb = models.FileField(
+        storage=private_storage,
+        upload_to=private_upload_to("receipts/thumbs"),
+        blank=True,
+        help_text=_("A 400 px preview of a picture; empty for a PDF."),
+    )
+    content_type = models.CharField(max_length=64)
+    size = models.PositiveIntegerField(default=0)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    extraction_status = models.CharField(
+        max_length=10, choices=Extraction.choices, default=Extraction.NONE
+    )
+    extracted = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ["pk"]
+        indexes = [models.Index(fields=["company", "transaction"])]
+
+    def __str__(self):
+        return f"Receipt #{self.pk}"
+
+    @property
+    def is_image(self) -> bool:
+        return self.content_type.startswith("image/")
+
+
+class DebtInstallment(models.Model):
+    """One planned payment of a debt (an instalment plan). The schedule is a plan: payments
+    settle the debt as a whole, and each instalment counts as paid once the payments so far
+    cover it and the ones before it."""
+
+    debt = models.ForeignKey(Debt, on_delete=models.CASCADE, related_name="installments")
+    due_on = models.DateField()
+    amount = MoneyField(help_text=_("In the debt's currency."))
+    position = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["due_on", "position", "pk"]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(amount__gt=0), name="finance_installment_amount_positive"
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.due_on}: {self.amount}"
