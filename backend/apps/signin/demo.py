@@ -1,8 +1,8 @@
 """Demo data of owner sign-in: the owner's other devices, so the sessions page has a story.
 
-Dilnoza signs in on her shop laptop most days, checks the dashboard on her iPhone in the
-evening, and once signed in from her brother's PC at home. The demo rows carry no real refresh
-token, so they can be revoked but never used.
+Dilnoza signs in on the laptop in the Chilonzor pharmacy's office most days, checks the
+dashboard on her phone in the evening, and once signed in from her brother's computer at home.
+The demo rows carry no real refresh token, so they can be revoked but never used.
 """
 
 import secrets

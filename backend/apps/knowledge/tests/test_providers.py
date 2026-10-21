@@ -20,7 +20,7 @@ def test_registrations_use_app_prefixed_keys():
     assert "knowledge.spaces" in registry.COPY_PARTS
 
 
-def test_palette_search_respects_who_reads_what(company, owner, courier, cashier_position):
+def test_palette_search_respects_who_reads_what(company, owner, cook, cashier_position):
     till = SpaceFactory(company=company, audience_all=False, positions=[cashier_position])
     PageFactory(space=till, title="Kassani ochish")
     PageFactory(space=SpaceFactory(company=company), title="Kassa draft", published=False)
@@ -29,7 +29,7 @@ def test_palette_search_respects_who_reads_what(company, owner, courier, cashier
         "Kassani ochish",
         "Kassa draft",
     }
-    assert providers.search(courier, "kassa", 5) == []
+    assert providers.search(cook, "kassa", 5) == []
     [hit] = [hit for hit in providers.search(owner, "draft", 5)]
     assert hit.url == f"/c/{company.pk}/knowledge/p/{hit.id}"
     assert "Draft" in hit.subtitle
@@ -98,20 +98,20 @@ def test_copy_keeps_positions_by_name_and_replaces_the_starter_shelf(
     target_owner = member(other_company, "Owner")
     defaults.ensure(other_company)  # the empty "Company handbook" a new company starts with
     cashier = Position.objects.create(company=company, name="Kassir")
-    courier = Position.objects.create(company=company, name="Kuryer")
+    cook = Position.objects.create(company=company, name="Kuryer")
     their_cashier = Position.objects.create(company=other_company, name="Kassir")
     till = SpaceFactory(company=company, name="Kassa", audience_all=False, positions=[cashier])
-    warehouse = SpaceFactory(company=company, name="Ombor", audience_all=False, positions=[courier])
+    kitchen = SpaceFactory(company=company, name="Yetkazish", audience_all=False, positions=[cook])
     PageFactory(space=till)
-    PageFactory(space=warehouse)
+    PageFactory(space=kitchen)
 
     providers.copy_spaces(company, other_company, target_owner)
 
     copies = {space.name: space for space in Space.objects.filter(company=other_company)}
-    assert set(copies) == {"Kassa", "Ombor"}  # the empty starter shelf made way
+    assert set(copies) == {"Kassa", "Yetkazish"}  # the empty starter shelf made way
     assert copies["Kassa"].audience_all is False
     assert list(copies["Kassa"].positions.all()) == [their_cashier]
-    assert copies["Ombor"].audience_all is True  # no "Kuryer" there: everyone reads it
+    assert copies["Yetkazish"].audience_all is True  # no "Kuryer" there: everyone reads it
 
 
 def test_copy_brings_pictures_along(company, other_company, owner, member):
@@ -133,13 +133,13 @@ def test_copy_brings_pictures_along(company, other_company, owner, member):
     assert f'data-image-id="{copy.pk}"' in page.body and copy.page == page
 
 
-def test_ai_tools_search_and_read_pages(company, owner, courier, cashier_position):
+def test_ai_tools_search_and_read_pages(company, owner, cook, cashier_position):
     till = SpaceFactory(company=company, audience_all=False, positions=[cashier_position])
     page = PageFactory(space=till, title="Kassani ochish", body="<p>Razmen 500 000</p>")
 
     found = call_tool("knowledge_search", owner, query="kassa")
     read = call_tool("knowledge_page", owner, page_id=page.pk)
-    denied = call_tool("knowledge_page", courier, page_id=page.pk)
+    denied = call_tool("knowledge_page", cook, page_id=page.pk)
 
     assert [row["id"] for row in found["rows"]] == [page.pk]
     assert "Razmen" in read["data"]["text"]

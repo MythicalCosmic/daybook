@@ -200,10 +200,10 @@ async def test_a_menu_command_ends_an_applicants_conversation_too(dp, bot):
 
     with temporary_handler(applicants.router.message, answer, Application.answer, F.text):
         await context.set_state(Application.answer)
-        await dp.feed_update(bot, updates.message(tg, "Two years at a bakery"))
+        await dp.feed_update(bot, updates.message(tg, "Two years at a pharmacy"))
         await dp.feed_update(bot, updates.message(tg, "/tasks"))
 
-    assert answers == ["Two years at a bakery"]
+    assert answers == ["Two years at a pharmacy"]
     assert await context.get_state() is None
 
 

@@ -290,7 +290,11 @@ class SwapActionView(MemberView):
         "cancel": services.cancel_swap,
     }
 
-    @extend_schema(request=None, responses=s.SwapOutSerializer)
+    @extend_schema(
+        request=None,
+        responses=s.SwapOutSerializer,
+        operation_id="v1_companies_attendance_swaps_answer",
+    )
     def post(self, request, company_id, pk, verb):
         if verb not in self.ACTIONS:
             raise NotFound

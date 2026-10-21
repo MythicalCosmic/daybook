@@ -602,6 +602,8 @@ class ShiftViewSet(
         "publish": MANAGE,
     }
     pagination_class = None
+    # What a shift looks like (the schema's DELETE reads it; responses are built by hand).
+    serializer_class = s.ShiftOutSerializer
     lookup_value_regex = r"\d+"
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 

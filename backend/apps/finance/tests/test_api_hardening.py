@@ -364,7 +364,7 @@ class TestScopedPartyBalances:
         self, owner_api, fin, role, person, boss, branches, today
     ):
         main, other = branches
-        party = CounterpartyFactory(company=fin, name="Barakat Kafe")
+        party = CounterpartyFactory(company=fin, name="Tonggi Shabnam klinikasi")
         for branch, amount in ((main, "100000"), (other, "900000")):
             services.open_debt(
                 fin,

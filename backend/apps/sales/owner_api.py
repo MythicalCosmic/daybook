@@ -12,7 +12,12 @@ from zoneinfo import ZoneInfo
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    extend_schema,
+    extend_schema_view,
+    inline_serializer,
+)
 from rest_framework import mixins, serializers, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
@@ -300,6 +305,7 @@ TargetListSerializer = inline_serializer(
 )
 
 
+@extend_schema_view(destroy=extend_schema(responses={204: None}))
 class TargetViewSet(mixins.DestroyModelMixin, SalesViewSet):
     """Monthly goals for the company, a branch or a person, with daily pacing."""
 

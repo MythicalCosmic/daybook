@@ -112,7 +112,9 @@ class Perm(models.TextChoices):
 
 
 # The roles every new company starts with. Existing companies got theirs through migrations
-# (members/0005 creates Cashier and Accountant and adds a few permissions, never removes any).
+# that only add (members/0005 creates Cashier and Accountant; members/0008 gives each role still
+# named like one of these its Phase 2 permissions). A permission added here later needs a
+# migration of its own for existing companies (members/tests/test_phase2_role_migration.py).
 DEFAULT_ROLES = (
     {"name": "Owner", "is_owner": True},
     {
