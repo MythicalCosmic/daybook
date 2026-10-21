@@ -71,11 +71,11 @@ function timeOf(item: CalendarItem): string {
         <ul class="flex min-w-0 flex-col gap-0.5">
           <li v-for="entry in block.entries" :key="`${block.day}-${entry.item.id}`">
             <button type="button" class="group flex w-full min-w-0 items-center gap-3 rounded-[9px] px-2 py-1.5 text-left transition-colors hover:bg-highlight" @click="emit('item-click', entry.item)">
-              <span class="w-[92px] shrink-0 text-xs tabular-nums text-muted">{{ timeOf(entry.item) }}</span>
+              <span class="w-[78px] shrink-0 text-xs tabular-nums text-muted sm:w-[92px]">{{ timeOf(entry.item) }}</span>
               <span class="h-7 w-1 shrink-0 rounded-full" :style="{ background: itemColor(entry.item) }" aria-hidden="true" />
               <span class="min-w-0 flex-1">
                 <span class="flex min-w-0 items-center gap-1.5">
-                  <span class="truncate text-base font-medium text-fg group-hover:text-accent-fg">{{ entry.item.title }}</span>
+                  <span class="line-clamp-2 min-w-0 text-base font-medium text-fg group-hover:text-accent-fg sm:line-clamp-1">{{ entry.item.title }}</span>
                   <Repeat v-if="entry.item.kind === 'agenda.event' && String(entry.item.id).split(':')[1]?.includes('-')" :size="12" class="shrink-0 text-subtle" :aria-label="t('agenda.repeats')" />
                 </span>
                 <span v-if="entry.item.subtitle" class="block truncate text-xs text-muted">{{ entry.item.subtitle }}</span>

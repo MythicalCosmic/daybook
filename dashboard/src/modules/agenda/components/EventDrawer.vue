@@ -122,14 +122,14 @@ const tones = { going: "success", pending: "neutral", declined: "danger" } as co
 </script>
 
 <template>
-  <UiDrawer query-key="event" :title="event?.title ?? t('agenda.drawer.title')" size="md">
-    <ErrorState v-if="query.isError.value" compact :error="query.error.value" :retry="() => query.refetch()" />
-    <div v-else-if="!event" class="flex flex-col gap-3">
+  <UiDrawer query-key="event" :title="t('agenda.drawer.title')" size="md">
+    <div v-if="query.isError.value" class="p-5"><ErrorState compact :error="query.error.value" :retry="() => query.refetch()" /></div>
+    <div v-else-if="!event" class="flex flex-col gap-3 p-5">
       <SkeletonBlock width="70%" height="24px" />
       <SkeletonBlock width="50%" />
       <SkeletonBlock height="120px" radius="12px" />
     </div>
-    <div v-else class="flex flex-col gap-5">
+    <div v-else class="flex flex-col gap-5 p-5">
       <div class="flex items-start gap-3">
         <span class="mt-1 h-10 w-1.5 shrink-0 rounded-full" :style="{ background: tokenColor(event.color) ?? undefined }" aria-hidden="true" />
         <div class="min-w-0 flex-1">
@@ -189,12 +189,14 @@ const tones = { going: "success", pending: "neutral", declined: "danger" } as co
 
       <p v-if="event.created_by" class="text-xs text-subtle">{{ t("agenda.drawer.createdBy", { name: event.created_by.name, when: fmt.relative(event.created_at) }) }}</p>
 
-      <div v-if="event.can_edit" class="sticky bottom-0 -mx-1 flex flex-wrap gap-2 border-t border-line bg-surface px-1 pt-3">
-        <UiButton variant="primary" :icon="Pencil" @click="emit('edit', event)">{{ t("common.edit") }}</UiButton>
-        <UiButton v-if="event.attendees.length" :icon="BellRing" :loading="busy === 'remind'" @click="remind">{{ t("agenda.drawer.remindNow") }}</UiButton>
-        <span class="flex-1" />
-        <UiButton variant="ghost" :icon="Ban" class="text-danger" @click="cancel">{{ t("agenda.drawer.cancel") }}</UiButton>
-      </div>
     </div>
+    <template v-if="event?.can_edit" #footer>
+      <div class="flex w-full flex-wrap items-center gap-2">
+        <UiButton variant="primary" :icon="Pencil" @click="emit('edit', event)">{{ t("common.edit") }}</UiButton>
+        <UiButton v-if="event.attendees.length && !event.cancelled" :icon="BellRing" :loading="busy === 'remind'" @click="remind">{{ t("agenda.drawer.remindNow") }}</UiButton>
+        <span class="flex-1" />
+        <UiButton v-if="!event.cancelled" variant="ghost" :icon="Ban" class="text-danger" @click="cancel">{{ t("agenda.drawer.cancel") }}</UiButton>
+      </div>
+    </template>
   </UiDrawer>
 </template>

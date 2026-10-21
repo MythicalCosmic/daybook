@@ -52,92 +52,94 @@ export function EventPage({ params }: PageProps) {
     });
 
   return (
-    <Screen variant="detail">
-      <PageHeader kicker={t(`kind.${event.kind}`)} title={event.title} subtitle={when(event, today, member.timeZone, locale, words, t("allDay"))} onBack={navigation.pop} />
-      {event.cancelled && <Banner tone="accent" icon={CircleX} title={t("cancelled")} body={event.cancel_reason || undefined} />}
+    <>
+      <Screen variant="detail">
+        <PageHeader kicker={t(`kind.${event.kind}`)} title={event.title} onBack={navigation.pop} />
+        {event.cancelled && <Banner tone="accent" icon={CircleX} title={t("cancelled")} body={event.cancel_reason || undefined} />}
 
-      <Card>
-        <div className="agm-facts">
-          <div className="agm-fact">
-            <span className={cx("agm-bar", colorClass(event.color))} aria-hidden />
-            <span>{when(event, today, member.timeZone, locale, words, t("allDay"))}</span>
-          </div>
-          {event.repeat !== "none" && (
-            <div className="agm-fact">
-              <Repeat size={19} strokeWidth={2.4} aria-hidden />
-              <span>{t(`repeat.${event.repeat}`)}</span>
-            </div>
-          )}
-          {event.place && (
-            <div className="agm-fact">
-              <MapPin size={19} strokeWidth={2.4} aria-hidden />
-              <span>{event.place}</span>
-            </div>
-          )}
-          {event.branch && (
-            <div className="agm-fact">
-              <Building2 size={19} strokeWidth={2.4} aria-hidden />
-              <span>{event.branch.name}</span>
-            </div>
-          )}
-          {invited && (
-            <div className="agm-fact">
-              <BellRing size={19} strokeWidth={2.4} aria-hidden />
-              <span>{reminderText(event.remind_before, t)}</span>
-            </div>
-          )}
-        </div>
-      </Card>
-
-      {event.description && (
         <Card>
-          <p className="agm-description">{event.description}</p>
+          <div className="agm-facts">
+            <div className="agm-fact">
+              <span className={cx("agm-bar", colorClass(event.color))} aria-hidden />
+              <span>{when(event, today, member.timeZone, locale, words, t("allDay"))}</span>
+            </div>
+            {event.repeat !== "none" && (
+              <div className="agm-fact">
+                <Repeat size={19} strokeWidth={2.4} aria-hidden />
+                <span>{t(`repeat.${event.repeat}`)}</span>
+              </div>
+            )}
+            {event.place && (
+              <div className="agm-fact">
+                <MapPin size={19} strokeWidth={2.4} aria-hidden />
+                <span>{event.place}</span>
+              </div>
+            )}
+            {event.branch && (
+              <div className="agm-fact">
+                <Building2 size={19} strokeWidth={2.4} aria-hidden />
+                <span>{event.branch.name}</span>
+              </div>
+            )}
+            {invited && (
+              <div className="agm-fact">
+                <BellRing size={19} strokeWidth={2.4} aria-hidden />
+                <span>{reminderText(event.remind_before, t)}</span>
+              </div>
+            )}
+          </div>
         </Card>
-      )}
 
-      {invited && event.my_response !== "pending" && (
-        <>
-          <SectionHead size="small">{t("answer.question")}</SectionHead>
-          <Segmented
-            options={[
-              { value: "going", label: t("answer.going") },
-              { value: "declined", label: t("answer.declined") },
-            ]}
-            value={event.my_response as "going" | "declined"}
-            onChange={(value) => reply(value)}
-            label={t("answer.question")}
-          />
-        </>
-      )}
+        {event.description && (
+          <Card>
+            <p className="agm-description">{event.description}</p>
+          </Card>
+        )}
 
-      {event.attendees.length > 0 && (
-        <>
-          <SectionHead count={event.attendees.length}>{t("attendees", { count: event.attendees.length })}</SectionHead>
-          <ListCard>
-            {event.attendees.map((attendee) => {
-              const [first = "", last = ""] = attendee.member.name.split(" ");
-              return (
-                <ListRow
-                  key={attendee.member.id}
-                  icon={<span className="agm-person">{initials(first, last)}</span>}
-                  title={attendee.member.name}
-                  subtitle={attendee.member.position ?? undefined}
-                  value={<Badge tone={ANSWER_TONE[attendee.response]} size="small">{t(attendee.response === "going" ? "answer.going" : attendee.response === "declined" ? "answer.declined" : "answer.pending")}</Badge>}
-                />
-              );
-            })}
-          </ListCard>
-          <p className="agm-hint">{t("counts", { going: event.responses.going, pending: event.responses.pending })}</p>
-        </>
-      )}
+        {invited && event.my_response !== "pending" && (
+          <>
+            <SectionHead size="small">{t("answer.question")}</SectionHead>
+            <Segmented
+              options={[
+                { value: "going", label: t("answer.going") },
+                { value: "declined", label: t("answer.declined") },
+              ]}
+              value={event.my_response as "going" | "declined"}
+              onChange={(value) => reply(value)}
+              label={t("answer.question")}
+            />
+          </>
+        )}
 
+        {event.attendees.length > 0 && (
+          <>
+            <SectionHead>{t("attendees", { count: event.attendees.length })}</SectionHead>
+            <ListCard>
+              {event.attendees.map((attendee) => {
+                const [first = "", last = ""] = attendee.member.name.split(" ");
+                return (
+                  <ListRow
+                    key={attendee.member.id}
+                    icon={<span className="agm-person">{initials(first, last)}</span>}
+                    title={attendee.member.name}
+                    subtitle={attendee.member.position ?? undefined}
+                    value={<Badge tone={ANSWER_TONE[attendee.response]} size="small">{t(attendee.response === "going" ? "answer.going" : attendee.response === "declined" ? "answer.declined" : "answer.pending")}</Badge>}
+                  />
+                );
+              })}
+            </ListCard>
+            <p className="agm-hint">{t("counts", { going: event.responses.going, pending: event.responses.pending })}</p>
+          </>
+        )}
+      </Screen>
+      {/* Outside the scrolling screen, so it stays at the bottom however far one scrolls. */}
       {invited && event.my_response === "pending" && (
         <BottomBar
           primary={{ text: t("answer.going"), onClick: () => reply("going"), loading: answer.isPending && answer.variables === "going", icon: CalendarDays, shine: true }}
           secondary={{ text: t("answer.declined"), onClick: () => reply("declined"), loading: answer.isPending && answer.variables === "declined" }}
         />
       )}
-    </Screen>
+    </>
   );
 }
 

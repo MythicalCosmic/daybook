@@ -36,6 +36,12 @@
   font-size: 20px;
 }
 
+/* A long title must not squeeze the "Must read" badge or the chevron beside it. */
+.list-item[class*="kbm-depth-"] .list-item-value,
+.list-item[class*="kbm-depth-"] .list-item-value > svg {
+  flex: none;
+}
+
 /* Pages inside pages step in a little, like the tree in the dashboard. */
 .list-item.kbm-depth-1 {
   padding-left: 22px;

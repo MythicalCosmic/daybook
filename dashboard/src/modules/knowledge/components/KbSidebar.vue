@@ -45,11 +45,11 @@ watch(
   },
   { immediate: true },
 );
-// With one or two spaces, open them all: there is nothing to hide.
+// With a few spaces, open them all: there is nothing to hide.
 watch(
   () => spaces.data.value,
   (list) => {
-    if (list && list.length <= 2 && !expanded.value.length) expanded.value = list.map((space) => space.id);
+    if (list && list.length <= 4 && expanded.value.length <= 1) expanded.value = Array.from(new Set([...expanded.value, ...list.map((space) => space.id)]));
   },
   { immediate: true },
 );
@@ -71,7 +71,7 @@ useHotkey(
 
 <template>
   <nav class="flex min-h-0 flex-col gap-3" :aria-label="t('knowledge.sidebar.label')">
-    <TextInput ref="searchInput" v-model="query" type="search" :icon="Search" :placeholder="t('knowledge.sidebar.search')" clearable :aria-label="t('knowledge.sidebar.search')" />
+    <TextInput ref="searchInput" v-model="query" enterkeyhint="search" :icon="Search" :placeholder="t('knowledge.sidebar.search')" clearable :aria-label="t('knowledge.sidebar.search')" />
 
     <div v-if="searching" class="flex flex-col gap-0.5">
       <p class="px-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-subtle">{{ t("knowledge.sidebar.results") }}</p>

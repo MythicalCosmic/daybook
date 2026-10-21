@@ -21,6 +21,7 @@
   "agenda.hotkey.new": "Yangi tadbir",
   "agenda.view.label": "Ko‘rinish",
   "agenda.view.agenda": "Ro‘yxat",
+  "agenda.sources.own": "Kompaniya tadbirlari",
   "agenda.sources.label": "Ko‘rsatiladigan taqvimlar",
   "agenda.sources.title": "Taqvimlar",
   "agenda.sources.hint": "Har bir modul o‘z sanalarini qo‘shadi. Taqvimni yashirish yoki ko‘rsatish uchun uning belgisini bosing.",

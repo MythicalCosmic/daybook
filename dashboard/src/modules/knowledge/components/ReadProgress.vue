@@ -14,8 +14,8 @@ const tone = computed(() => readTone(props.read));
 </script>
 
 <template>
-  <div v-if="read && read.total" :class="['flex min-w-0 items-center gap-2', compact ? 'w-[120px]' : 'w-full']">
-    <ProgressBar :value="read.read" :max="read.total" size="xs" :tone="tone === 'neutral' ? 'primary' : tone" class="min-w-0 flex-1" :label="t('knowledge.read.of', { read: read.read, total: read.total })" />
+  <div v-if="read && read.total" :class="['flex min-w-0 items-center gap-2', compact ? 'w-[120px]' : 'w-full']" :title="t('knowledge.read.of', { read: read.read, total: read.total })">
+    <ProgressBar :value="read.read" :max="read.total" size="xs" :tone="tone === 'neutral' ? 'primary' : tone" class="min-w-0 flex-1" />
     <span class="shrink-0 text-xs font-semibold tabular-nums text-muted">{{ read.read }}/{{ read.total }}</span>
   </div>
 </template>

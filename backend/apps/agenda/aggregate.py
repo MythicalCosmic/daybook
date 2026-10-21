@@ -11,8 +11,11 @@ from __future__ import annotations
 from datetime import date
 
 from apps.agenda import serializers
+from apps.agenda.models import Event
 from apps.console import registry
 from apps.members.models import Membership
+
+OWN = "agenda.events"
 
 
 def sources(member: Membership) -> list[dict]:
@@ -34,5 +37,19 @@ def items(
             continue
         for item in registry.collect_calendar(member, first, last, sources=[source.key]):
             found.append(serializers.item_json(source.key, item, member.company))
+    _add_places(found)
     found.sort(key=lambda row: (row["start"][:10], not row["all_day"], row["start"], row["id"]))
     return found
+
+
+def _add_places(rows: list[dict]) -> None:
+    """A second line for the company's own events: where they happen (other sources: none)."""
+    ids = {int(row["id"].split(":", 1)[1].split("-", 1)[0]) for row in rows if row["source"] == OWN}
+    places = {
+        event.pk: event.place or (event.branch.name if event.branch else "")
+        for event in Event.objects.filter(pk__in=ids).select_related("branch")
+    }
+    for row in rows:
+        row["subtitle"] = ""
+        if row["source"] == OWN:
+            row["subtitle"] = places.get(int(row["id"].split(":", 1)[1].split("-", 1)[0]), "")

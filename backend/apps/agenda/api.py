@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.agenda import aggregate, queries, services
+from apps.agenda.models import EventAttendee
 from apps.agenda.serializers import (
     AgendaAttendeeSerializer,
     AgendaCalendarItemSerializer,
@@ -37,6 +38,7 @@ class CalendarView(APIView):
                 "sources": AgendaSourceSerializer(many=True),
                 "items": AgendaCalendarItemSerializer(many=True),
                 "mine": serializers.ListField(child=serializers.CharField()),
+                "answers": serializers.DictField(child=serializers.CharField()),
             },
         ),
     )
@@ -44,23 +46,25 @@ class CalendarView(APIView):
         member = self.membership
         first, last = window(request.query_params, member.company)
         items = aggregate.items(member, first, last)
-        invited = set(
-            queries.visible_events(member)
-            .filter(invites__membership=member)
-            .values_list("pk", flat=True)
+        # The person's answer to each event they are invited to: the app asks only when one is due.
+        invited = dict(
+            EventAttendee.objects.filter(
+                membership=member, event__in=queries.visible_events(member)
+            ).values_list("event_id", "response")
         )
-        mine = [
-            item["id"]
+        answers = {
+            item["id"]: invited[event_id]
             for item in items
             if item["kind"] == "agenda.event"
-            and int(item["id"].split(":", 1)[1].split("-", 1)[0]) in invited
-        ]
+            and (event_id := int(item["id"].split(":", 1)[1].split("-", 1)[0])) in invited
+        }
         return Response(
             {
                 "range": {"from": first.isoformat(), "to": last.isoformat()},
                 "sources": aggregate.sources(member),
                 "items": items,
-                "mine": mine,
+                "mine": list(answers),
+                "answers": answers,
             }
         )
 

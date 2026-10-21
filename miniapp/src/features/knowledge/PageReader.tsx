@@ -49,46 +49,49 @@ export function PageReader({ params }: PageProps) {
     });
 
   return (
-    <Screen variant="detail">
-      <PageHeader
-        kicker={`${data.space.icon} ${data.space.name}`.trim()}
-        title={`${data.emoji ? `${data.emoji} ` : ""}${data.title}`}
-        subtitle={
-          <span className="kbm-meta">
-            {data.require_ack && <Badge tone="accent" size="small">{t("mustRead")}</Badge>}
-            <span>
-              {t("version", { version: data.version })} · {t("updated", { date: dayMonth(data.updated_at, member.timeZone, locale) })}
+    <>
+      <Screen variant="detail">
+        <PageHeader
+          kicker={`${data.space.icon} ${data.space.name}`.trim()}
+          title={`${data.emoji ? `${data.emoji} ` : ""}${data.title}`}
+          subtitle={
+            <span className="kbm-meta">
+              {data.require_ack && <Badge tone="accent" size="small">{t("mustRead")}</Badge>}
+              <span>
+                {t("version", { version: data.version })} · {t("updated", { date: dayMonth(data.updated_at, member.timeZone, locale) })}
+              </span>
             </span>
-          </span>
-        }
-        onBack={navigation.pop}
-      />
-      {mustConfirm ? (
-        <Banner tone="accent" icon={BookOpenCheck} title={t("read.ask")} />
-      ) : data.require_ack && data.my_ack ? (
-        <Banner tone="sage" icon={CheckCheck} title={t("read.confirmed", { version: data.my_ack.version })} />
-      ) : null}
-      {/* Cleaned by the server's allow-list, then again by safeHtml. */}
-      <article className="kbm-article" dangerouslySetInnerHTML={{ __html: body }} />
-      {data.children.length > 0 && (
-        <>
-          <SectionHead size="small">{t("subpages")}</SectionHead>
-          <ListCard>
-            {data.children.map((child) => (
-              <ListRow
-                key={child.id}
-                icon={<span className="kbm-emoji">{child.emoji || "📄"}</span>}
-                title={child.title}
-                onClick={() => {
-                  haptic.select();
-                  navigation.push({ feature: "knowledge", page: "page", params: { id: child.id } });
-                }}
-              />
-            ))}
-          </ListCard>
-        </>
-      )}
+          }
+          onBack={navigation.pop}
+        />
+        {mustConfirm ? (
+          <Banner tone="accent" icon={BookOpenCheck} title={t("read.ask")} />
+        ) : data.require_ack && data.my_ack ? (
+          <Banner tone="sage" icon={CheckCheck} title={t("read.confirmed", { version: data.my_ack.version })} />
+        ) : null}
+        {/* Cleaned by the server's allow-list, then again by safeHtml. */}
+        <article className="kbm-article" dangerouslySetInnerHTML={{ __html: body }} />
+        {data.children.length > 0 && (
+          <>
+            <SectionHead size="small">{t("subpages")}</SectionHead>
+            <ListCard>
+              {data.children.map((child) => (
+                <ListRow
+                  key={child.id}
+                  icon={<span className="kbm-emoji">{child.emoji || "📄"}</span>}
+                  title={child.title}
+                  onClick={() => {
+                    haptic.select();
+                    navigation.push({ feature: "knowledge", page: "page", params: { id: child.id } });
+                  }}
+                />
+              ))}
+            </ListCard>
+          </>
+        )}
+      </Screen>
+      {/* Outside the scrolling screen, so it stays at the bottom however far one reads. */}
       {mustConfirm && <BottomBar primary={{ text: t("read.button"), onClick: confirm, loading: ack.isPending, icon: CheckCheck, shine: true }} />}
-    </Screen>
+    </>
   );
 }

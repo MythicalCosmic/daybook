@@ -347,3 +347,20 @@ def test_a_new_company_gets_one_space_once(company):
     defaults.ensure(company)
 
     assert Space.objects.filter(company=company).count() == 1
+
+
+def test_the_author_has_read_what_they_publish(company, owner, cashier):
+    page = services.create_page(
+        SpaceFactory(company=company),
+        by=owner,
+        title="Rules",
+        body="<p>v1</p>",
+        require_ack=True,
+        publish=True,
+        notify_readers=False,
+    )
+
+    assert queries.to_read(owner) == []
+    assert [p.pk for p in queries.to_read(cashier)] == [page.pk]
+    page = services.save_page(page, by=owner, body="<p>v2</p>", reread=True, notify_readers=False)
+    assert PageAck.objects.filter(page=page, membership=owner, version=2).exists()

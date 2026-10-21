@@ -59,7 +59,7 @@ const kpis = computed(() => [
   { id: "spaces", label: t("knowledge.kpi.spaces"), value: counts.value?.spaces ?? null, icon: Layers },
   { id: "published", label: t("knowledge.kpi.published"), value: counts.value?.published ?? null, icon: BookOpen },
   ...(canManage.value ? [{ id: "drafts", label: t("knowledge.kpi.drafts"), value: counts.value?.drafts ?? null, icon: FilePen }] : []),
-  { id: "ack", label: t("knowledge.kpi.mustRead"), value: counts.value?.require_ack ?? null, icon: CircleCheckBig, hint: t("knowledge.kpi.mustReadHint") },
+  { id: "ack", label: t("knowledge.kpi.mustRead"), value: counts.value?.require_ack ?? null, icon: CircleCheckBig },
 ]);
 
 async function remind(page: PageRow): Promise<void> {
@@ -89,7 +89,7 @@ useHotkey("n", () => canManage.value && void router.push(`${base.value}/new`), {
     </PageHeader>
 
     <div v-if="isPhone" class="mb-5">
-      <TextInput v-model="query" type="search" :icon="Search" :placeholder="t('knowledge.sidebar.search')" clearable size="lg" />
+      <TextInput v-model="query" enterkeyhint="search" :icon="Search" :placeholder="t('knowledge.sidebar.search')" clearable size="lg" />
       <div v-if="searching" class="ui-card mt-2 p-1.5">
         <p v-if="results.data.value && !results.data.value.results.length" class="px-2 py-3 text-sm text-muted">{{ t("knowledge.sidebar.noResults") }}</p>
         <PageListItem v-for="page in results.data.value?.results ?? []" :key="page.id" :page="page" show-excerpt />
@@ -116,7 +116,8 @@ useHotkey("n", () => canManage.value && void router.push(`${base.value}/new`), {
     </EmptyState>
 
     <div v-else-if="overview.data.value" class="flex flex-col gap-6">
-      <KpiStrip :items="kpis" />
+      <!-- Four stacked tiles fill a phone screen; the lists below carry the same numbers there. -->
+      <div class="hidden sm:block"><KpiStrip :items="kpis" /></div>
 
       <section v-if="canManage && overview.data.value.attention.length" class="ui-card p-1.5" :aria-label="t('knowledge.attention.title')">
         <header class="flex flex-wrap items-center gap-2 px-3 pb-1 pt-3">

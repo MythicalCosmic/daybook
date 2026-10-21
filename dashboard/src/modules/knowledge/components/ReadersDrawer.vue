@@ -62,7 +62,7 @@ async function remind(): Promise<void> {
 
 <template>
   <UiDrawer query-key="readers" :title="t('knowledge.readers.title')" :description="page.title" size="md">
-    <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-4 p-5">
       <ErrorState v-if="readers.isError.value" compact :error="readers.error.value" :retry="() => readers.refetch()" />
       <template v-else-if="!readers.data.value">
         <SkeletonBlock height="72px" radius="12px" />

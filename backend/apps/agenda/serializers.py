@@ -48,6 +48,7 @@ class AgendaCalendarItemSerializer(serializers.Serializer):
     all_day = serializers.BooleanField()
     color = serializers.CharField()
     url = serializers.CharField()
+    subtitle = serializers.CharField(help_text="Where a company event happens; empty otherwise.")
 
 
 class AgendaSourceSerializer(serializers.Serializer):

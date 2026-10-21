@@ -21,6 +21,7 @@
   "agenda.hotkey.new": "Новое событие",
   "agenda.view.label": "Вид",
   "agenda.view.agenda": "Список",
+  "agenda.sources.own": "События компании",
   "agenda.sources.label": "Показываемые календари",
   "agenda.sources.title": "Календари",
   "agenda.sources.hint": "Каждый модуль добавляет свои даты. Нажмите на метку, чтобы скрыть или показать календарь.",

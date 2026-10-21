@@ -28,6 +28,8 @@ export interface CalendarEntry {
   /** A design token name ("chart-3", "danger"); the client turns it into a colour. */
   color: string;
   url: string;
+  /** Where a company event happens; empty for other calendars. */
+  subtitle?: string;
 }
 
 export interface CalendarResponse {

@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from django.utils import timezone
+
 from apps.members.models import Membership
 
 
@@ -42,13 +44,29 @@ def title(
     return None
 
 
+def _task_subtitle(task) -> str:
+    """Whose task it is and the day it is due: tasks often share a title."""
+    parts = [task.assignee.full_name] if task.assignee_id else []
+    if task.due_at:
+        parts.append(timezone.localtime(task.due_at).strftime("%d.%m"))
+    return " · ".join(part for part in parts if part) or f"#{task.pk}"
+
+
 def search(member: Membership, q: str, *, limit: int = 8) -> list[Target]:
-    """Routines and tasks whose title holds `q` (routines first: they are linked the most)."""
+    """Routines and tasks whose title holds `q` (routines first: they are linked the most).
+
+    Tasks a routine made are left out: linking the routine covers every one of them.
+    """
     from apps.tasks.queries import visible_tasks
 
     q = (q or "").strip()
     routines = _routines(member.company_id).filter(is_active=True)
-    tasks = visible_tasks(member).exclude(kind="personal")
+    tasks = (
+        visible_tasks(member)
+        .exclude(kind="personal")
+        .filter(template__isnull=True)
+        .select_related("assignee")
+    )
     if q:
         routines = routines.filter(title__icontains=q)
         tasks = tasks.filter(title__icontains=q)
@@ -58,7 +76,7 @@ def search(member: Membership, q: str, *, limit: int = 8) -> list[Target]:
     ]
     rest = max(0, limit - len(found))
     found += [
-        Target("task", row.pk, row.title, f"#{row.pk}")
+        Target("task", row.pk, row.title, _task_subtitle(row))
         for row in tasks.order_by("-created_at")[:rest]
     ]
     return found

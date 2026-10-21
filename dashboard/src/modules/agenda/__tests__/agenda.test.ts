@@ -13,7 +13,7 @@ import AgendaList from "../components/AgendaList.vue";
 import SourceToggles from "../components/SourceToggles.vue";
 import en from "../i18n/en.json";
 import module from "../index";
-import { eventIdOf, remindKey, toCalendarItem, tokenColor, windowFor } from "../lib";
+import { eventIdOf, remindKey, sourceLabel, toCalendarItem, tokenColor, windowFor } from "../lib";
 import type { CalendarEntry } from "../types";
 
 const entry = (overrides: Partial<CalendarEntry> = {}): CalendarEntry => ({
@@ -66,7 +66,14 @@ describe("lib", () => {
   });
 
   it("maps API items onto the calendar components", () => {
-    expect(toCalendarItem(entry(), "Company events")).toMatchObject({ id: "agenda.events:12", color: "var(--c-chart-3)", subtitle: "Company events" });
+    expect(toCalendarItem(entry({ subtitle: "Office" }), "Company events")).toMatchObject({ id: "agenda.events:12", color: "var(--c-chart-3)", subtitle: "Office" });
+    expect(toCalendarItem(entry({ source: "timeoff.holidays", kind: "timeoff.holiday" }), "Holidays").subtitle).toBe("Holidays");
+  });
+
+  it("names its own calendar in the UI language and keeps other sources' names", () => {
+    const t = (key: string) => `«${key}»`;
+    expect(sourceLabel({ key: "agenda.events", label: "Company events" }, t)).toBe("«agenda.sources.own»");
+    expect(sourceLabel({ key: "timeoff.holidays", label: "Bayramlar" }, t)).toBe("Bayramlar");
   });
 });
 

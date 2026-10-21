@@ -86,16 +86,10 @@ async function move(change: TreeMove): Promise<void> {
         <span class="text-[15px] leading-none" aria-hidden="true">{{ space.icon || "📁" }}</span>
         <span class="truncate">{{ space.name }}</span>
       </RouterLink>
-      <span class="shrink-0 text-xs tabular-nums text-subtle group-hover:hidden">{{ space.counts.pages || "" }}</span>
-      <IconButton
-        v-if="canManage"
-        :icon="Plus"
-        :label="t('knowledge.newPageIn', { space: space.name })"
-        size="sm"
-        :tooltip="false"
-        class="hidden group-hover:inline-flex group-focus-within:inline-flex"
-        :to="{ path: `${base}/new`, query: { space: String(space.id) } }"
-      />
+      <span :class="['shrink-0 text-xs tabular-nums text-subtle', canManage && 'group-focus-within:hidden group-hover:hidden']">{{ space.counts.pages || "" }}</span>
+      <span v-if="canManage" class="hidden group-focus-within:block group-hover:block">
+        <IconButton :icon="Plus" :label="t('knowledge.newPageIn', { space: space.name })" size="sm" :tooltip="false" :to="{ path: `${base}/new`, query: { space: String(space.id) } }" />
+      </span>
     </div>
     <div v-if="expanded" class="ml-3 border-l border-line pl-1.5 pt-0.5">
       <div v-if="skeleton" class="flex flex-col gap-2 px-2 py-2" aria-hidden="true">

@@ -17,7 +17,7 @@ import { useCompanyStore } from "@/stores/company";
 
 import { useCalendar } from "../api";
 import UpcomingList from "../components/UpcomingList.vue";
-import { eventIdOf, toCalendarItem } from "../lib";
+import { eventIdOf, sourceLabel, toCalendarItem } from "../lib";
 
 const props = defineProps<{ companyId: number; range?: Range; compare?: Range | null }>();
 
@@ -27,7 +27,7 @@ const company = useCompanyStore();
 const today = computed(() => todayIn(company.timezone));
 const calendar = useCalendar(computed(() => ({ from: today.value, to: addDays(today.value, 6) })));
 const skeleton = useDelayedPending(computed(() => calendar.isPending.value));
-const labels = computed(() => Object.fromEntries((calendar.data.value?.sources ?? []).map((source) => [source.key, source.label])));
+const labels = computed(() => Object.fromEntries((calendar.data.value?.sources ?? []).map((source) => [source.key, sourceLabel(source, t)])));
 const items = computed(() => (calendar.data.value?.items ?? []).map((entry) => toCalendarItem(entry, labels.value[entry.source])));
 const base = computed(() => `/c/${props.companyId}/calendar`);
 

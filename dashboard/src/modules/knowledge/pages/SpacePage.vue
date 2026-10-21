@@ -1,24 +1,22 @@
 <script setup lang="ts">
 /**
- * One space: who reads it, its pages as a tree (managers reorder them here too, by dragging or with
- * Alt + arrows), and the space's own settings.
+ * One space: who reads it and every page in it as cards, in the tree's order (pages inside other
+ * pages say where they sit). Managers see drafts and how many people have read each must-read
+ * page; they reorder pages in the sidebar tree, or with "Move" on a page.
  */
-import { Archive, ArchiveRestore, Ellipsis, FilePlus2, FileText, Pencil, Plus, Users } from "@lucide/vue";
-import { useQueryClient } from "@tanstack/vue-query";
+import { Archive, ArchiveRestore, BookOpen, Ellipsis, FilePen, FilePlus2, FileText, Pencil, Users } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRoute, useRouter } from "vue-router";
+import { RouterLink, useRoute, useRouter } from "vue-router";
 
 import DropdownMenu, { type MenuEntry } from "@/components/DropdownMenu.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import IconButton from "@/components/IconButton.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import RelativeTime from "@/components/RelativeTime.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import StatusPill from "@/components/StatusPill.vue";
-import type { TreeId, TreeMove } from "@/components/tree";
-import TreeList from "@/components/TreeList.vue";
-import UiBadge from "@/components/UiBadge.vue";
 import UiButton from "@/components/UiButton.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
@@ -27,15 +25,15 @@ import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useCan } from "@/lib/usePermission";
 import { useCompanyStore } from "@/stores/company";
 
-import { kbKeys, knowledgeApi, useRefresh, useSpaces, useTree } from "../api";
+import { knowledgeApi, usePages, useRefresh, useSpaces, useTree } from "../api";
+import ReadProgress from "../components/ReadProgress.vue";
 import SpaceDialog from "../components/SpaceDialog.vue";
-import { audienceText, countNodes, moveData, toTreeNodes } from "../lib";
-import type { TreeNodeData } from "../types";
+import { audienceText, flatten } from "../lib";
+import type { PageRow } from "../types";
 
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
-const client = useQueryClient();
 const company = useCompanyStore();
 const confirm = useConfirm();
 const canManage = useCan("knowledge.manage");
@@ -45,33 +43,32 @@ const spaceId = computed(() => Number(route.params.spaceId));
 const spaces = useSpaces();
 const space = computed(() => spaces.data.value?.find((item) => item.id === spaceId.value) ?? null);
 const tree = useTree(spaceId);
-const skeleton = useDelayedPending(computed(() => spaces.isPending.value || tree.isPending.value));
+const pages = usePages(computed(() => ({ space: spaceId.value, page_size: 200 })));
+const skeleton = useDelayedPending(computed(() => spaces.isPending.value || tree.isPending.value || pages.isPending.value));
 const editing = ref(false);
-const expanded = ref<TreeId[]>([]);
 const base = computed(() => `/c/${company.currentId}/knowledge`);
 const newPage = computed(() => ({ path: `${base.value}/new`, query: { space: String(spaceId.value) } }));
 
-const byId = computed(() => {
-  const map = new Map<number, TreeNodeData>();
-  const walk = (nodes: TreeNodeData[]) => nodes.forEach((node) => (map.set(node.id, node), walk(node.children)));
-  walk(tree.data.value ?? []);
-  return map;
+/** Every page in the tree's order, with the page it sits in. */
+const cards = computed(() => {
+  const rows = new Map((pages.data.value?.results ?? []).map((row) => [row.id, row]));
+  const titles = new Map<number, string>();
+  return flatten(tree.data.value ?? [])
+    .map(({ node, depth }) => {
+      titles.set(node.id, node.title);
+      const row = rows.get(node.id);
+      return row ? { row, depth, parent: row.parent_id ? (titles.get(row.parent_id) ?? null) : null } : null;
+    })
+    .filter((card): card is { row: PageRow; depth: number; parent: string | null } => card !== null);
 });
-const nodes = computed(() => toTreeNodes(tree.data.value ?? [], t("knowledge.draft")));
-const total = computed(() => countNodes(tree.data.value ?? []));
-
-async function move(change: TreeMove): Promise<void> {
-  const key = kbKeys.tree(company.currentId ?? 0, spaceId.value);
-  const before = client.getQueryData<TreeNodeData[]>(key);
-  const parent = change.parentId === null ? null : Number(change.parentId);
-  if (before) client.setQueryData(key, moveData(before, { id: Number(change.id), parentId: parent, index: change.index }));
-  try {
-    await knowledgeApi.move(company.currentId ?? 0, Number(change.id), { parent, index: change.index });
-    void refresh();
-  } catch {
-    if (before) client.setQueryData(key, before);
-  }
-}
+const stats = computed(() => {
+  const rows = cards.value.map((card) => card.row);
+  return {
+    total: rows.length,
+    mustRead: rows.filter((row) => row.published && row.require_ack).length,
+    drafts: rows.filter((row) => !row.published).length,
+  };
+});
 
 async function archive(): Promise<void> {
   if (!space.value) return;
@@ -109,11 +106,11 @@ useHotkey("n", () => canManage.value && void router.push(newPage.value), { descr
 
 <template>
   <div>
-    <ErrorState v-if="spaces.isError.value || tree.isError.value" :error="spaces.error.value ?? tree.error.value" :retry="() => (spaces.refetch(), tree.refetch())" />
+    <ErrorState v-if="spaces.isError.value || tree.isError.value || pages.isError.value" :error="spaces.error.value ?? tree.error.value ?? pages.error.value" :retry="() => (spaces.refetch(), tree.refetch(), pages.refetch())" />
     <div v-else-if="skeleton || !space" class="flex flex-col gap-4">
       <SkeletonBlock width="40%" height="28px" />
       <SkeletonBlock width="60%" />
-      <SkeletonBlock height="260px" radius="12px" />
+      <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"><SkeletonBlock v-for="n in 6" :key="n" height="150px" radius="12px" /></div>
     </div>
     <template v-else>
       <PageHeader :title="`${space.icon ? space.icon + ' ' : ''}${space.name}`" :description="space.description || undefined" :back="base" :back-label="t('knowledge.title')">
@@ -125,13 +122,15 @@ useHotkey("n", () => canManage.value && void router.push(newPage.value), { descr
         </template>
         <template #meta>
           <StatusPill size="sm" tone="info" :icon="Users" :dot="false" :label="audienceText(space, t('knowledge.space.everyone'))" />
-          <StatusPill size="sm" tone="neutral" :dot="false" :label="t('knowledge.pagesCount', { n: total }, total)" />
+          <StatusPill size="sm" tone="neutral" :icon="BookOpen" :dot="false" :label="t('knowledge.pagesCount', { n: stats.total }, stats.total)" />
+          <StatusPill v-if="stats.mustRead" size="sm" tone="primary" :dot="false" :label="t('knowledge.space.mustReadCount', { n: stats.mustRead })" />
+          <StatusPill v-if="canManage && stats.drafts" size="sm" tone="neutral" :icon="FilePen" :dot="false" :label="t('knowledge.draftsCount', { n: stats.drafts }, stats.drafts)" />
           <StatusPill v-if="space.archived" size="sm" tone="warning" :label="t('knowledge.archived')" />
         </template>
       </PageHeader>
 
       <EmptyState
-        v-if="!total"
+        v-if="!cards.length"
         :icon="FileText"
         :title="t('knowledge.space.emptyTitle')"
         :description="canManage ? t('knowledge.space.emptyBody') : t('knowledge.space.emptyReader')"
@@ -140,30 +139,32 @@ useHotkey("n", () => canManage.value && void router.push(newPage.value), { descr
         <UiButton v-if="canManage" variant="primary" :icon="FilePlus2" :to="newPage">{{ t("knowledge.sidebar.writeFirst") }}</UiButton>
       </EmptyState>
 
-      <section v-else class="ui-card p-2" :aria-label="t('knowledge.space.contents')">
-        <header class="flex items-center gap-2 px-2 pb-2 pt-1">
-          <h2 class="flex-1 text-sm font-semibold text-muted">{{ t("knowledge.space.contents") }}</h2>
-          <span v-if="canManage" class="hidden text-xs text-subtle sm:inline">{{ t("knowledge.space.dragHint") }}</span>
-        </header>
-        <TreeList
-          v-model:expanded="expanded"
-          :nodes="nodes"
-          :draggable="canManage"
-          :max-depth="3"
-          :label="space.name"
-          @select="(node) => router.push(`${base}/p/${node.id}`)"
-          @move="move"
-        >
-          <template #node="{ node }">
-            <span class="min-w-0 flex-1 truncate">{{ node.label }}</span>
-            <StatusPill v-if="byId.get(Number(node.id)) && !byId.get(Number(node.id))!.published" size="sm" tone="neutral" :label="t('knowledge.draft')" />
-            <UiBadge v-else-if="byId.get(Number(node.id))?.require_ack" tone="primary" variant="soft">{{ t("knowledge.mustRead") }}</UiBadge>
-          </template>
-          <template v-if="canManage" #actions="{ node }">
-            <IconButton :icon="Plus" :label="t('knowledge.addSubpage')" size="sm" :tooltip="false" :to="{ path: `${base}/new`, query: { space: String(spaceId), parent: String(node.id) } }" />
-          </template>
-        </TreeList>
-      </section>
+      <template v-else>
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <RouterLink
+            v-for="card in cards"
+            :key="card.row.id"
+            :to="`${base}/p/${card.row.id}`"
+            class="ui-card group flex min-w-0 flex-col gap-2.5 p-4 transition-[box-shadow,transform] duration-150 hover:-translate-y-px hover:shadow-raised"
+          >
+            <div class="flex items-start gap-3">
+              <span class="grid size-10 shrink-0 place-items-center rounded-[11px] bg-surface-2 text-[20px] dark:bg-surface-3" aria-hidden="true">{{ card.row.emoji || "📄" }}</span>
+              <div class="min-w-0 flex-1">
+                <p v-if="card.parent" class="truncate text-[11px] font-semibold uppercase tracking-[0.05em] text-subtle">{{ t("knowledge.space.inside", { title: card.parent }) }}</p>
+                <h3 class="line-clamp-2 text-base font-semibold leading-snug text-fg group-hover:text-accent-fg">{{ card.row.title }}</h3>
+              </div>
+            </div>
+            <p class="line-clamp-2 min-h-[2.6em] text-sm text-muted">{{ card.row.excerpt || t("knowledge.page.emptyTitle") }}</p>
+            <div class="mt-auto flex min-w-0 flex-wrap items-center gap-2 border-t border-line pt-2.5 text-xs text-muted">
+              <StatusPill v-if="!card.row.published" size="sm" tone="neutral" :label="t('knowledge.draft')" />
+              <StatusPill v-else-if="card.row.require_ack" size="sm" tone="primary" :dot="false" :label="t('knowledge.mustRead')" />
+              <span class="min-w-0 truncate"><RelativeTime :value="card.row.updated_at" /><template v-if="card.row.updated_by"> · {{ card.row.updated_by.name }}</template></span>
+              <ReadProgress v-if="canManage && card.row.require_ack && card.row.read" :read="card.row.read" compact class="ml-auto" />
+            </div>
+          </RouterLink>
+        </div>
+        <p v-if="canManage" class="mt-3 hidden text-xs text-subtle lg:block">{{ t("knowledge.space.dragHint") }}</p>
+      </template>
 
       <SpaceDialog v-model:open="editing" :space="space" />
     </template>

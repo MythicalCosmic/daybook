@@ -104,7 +104,7 @@ describe("PageReader", () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
     client.setQueryData(kbKeys.page(1, 5), page());
     let release!: () => void;
-    api.mockImplementation((path: string, options?: { method?: string }) => {
+    api.mockImplementation((_path: string, options?: { method?: string }) => {
       if (options?.method === "POST") return new Promise((resolve) => (release = () => resolve({ version: 3, at: "2026-10-21T09:00:00Z" })));
       return Promise.resolve(page({ my_ack: { version: 3, at: "2026-10-21T09:00:00Z", current: true } }));
     });

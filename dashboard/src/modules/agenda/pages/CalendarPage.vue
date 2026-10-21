@@ -40,7 +40,7 @@ import EventDialog from "../components/EventDialog.vue";
 import EventDrawer from "../components/EventDrawer.vue";
 import SourceToggles from "../components/SourceToggles.vue";
 import UpcomingList from "../components/UpcomingList.vue";
-import { eventIdOf, toCalendarItem, tokenColor, windowFor } from "../lib";
+import { eventIdOf, sourceLabel, toCalendarItem, tokenColor, windowFor } from "../lib";
 import type { AgendaEvent, CalendarEntry, CalendarView } from "../types";
 
 const { t } = useI18n();
@@ -74,7 +74,7 @@ const upcomingRange = computed(() => ({ from: today.value, to: addDays(today.val
 const upcoming = useCalendar(upcomingRange);
 const skeleton = useDelayedPending(computed(() => calendar.isPending.value));
 
-const sources = computed(() => calendar.data.value?.sources ?? []);
+const sources = computed(() => (calendar.data.value?.sources ?? []).map((source) => ({ ...source, label: sourceLabel(source, t) })));
 const labels = computed(() => Object.fromEntries(sources.value.map((source) => [source.key, source.label])));
 const entries = computed(() => calendar.data.value?.items ?? []);
 const visibleEntries = computed(() => entries.value.filter((entry) => !hidden.value.includes(entry.source)));
@@ -190,7 +190,7 @@ useHotkey("n", () => create(), { description: "agenda.hotkey.new", group: "page"
       <SourceToggles v-if="sources.length" v-model="hidden" :sources="sources" :counts="counts" :colors="colors" class="lg:ml-2" />
     </div>
 
-    <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_288px]">
+    <div class="grid gap-6" :class="view === 'month' && 'xl:grid-cols-[minmax(0,1fr)_288px]'">
       <div class="min-w-0">
         <ErrorState v-if="calendar.isError.value" :error="calendar.error.value" :retry="() => calendar.refetch()" />
         <div v-else-if="skeleton" class="flex flex-col gap-3">
@@ -214,7 +214,9 @@ useHotkey("n", () => create(), { description: "agenda.hotkey.new", group: "page"
         </template>
       </div>
 
-      <aside class="hidden min-w-0 flex-col gap-4 xl:flex">
+      <!-- Week and agenda already list what is coming, and need the width: the rail goes with the month only
+           (beside it on wide screens, under it on narrow ones, where the month shows only dots). -->
+      <aside v-if="view === 'month'" class="flex min-w-0 flex-col gap-4">
         <section class="ui-card p-3" :aria-label="t('agenda.upcoming.title')">
           <h2 class="mb-2 px-2 pt-1 text-sm font-semibold text-fg">{{ t("agenda.upcoming.title") }}</h2>
           <div v-if="upcoming.isPending.value" class="flex flex-col gap-2 px-2"><SkeletonBlock v-for="n in 4" :key="n" height="34px" radius="8px" /></div>
@@ -234,8 +236,8 @@ useHotkey("n", () => create(), { description: "agenda.hotkey.new", group: "page"
     <EventDrawer @edit="edit" />
     <EventDialog v-model:open="creating" :event="editing" :day="draftDay" :time="draftTime" @saved="onSaved" />
 
-    <UiDrawer v-model:open="otherOpen" :title="other?.title ?? ''" size="sm">
-      <div v-if="other" class="flex flex-col gap-3">
+    <UiDrawer v-model:open="otherOpen" :title="other ? (labels[other.source] ?? other.source) : ''" size="sm">
+      <div v-if="other" class="flex flex-col gap-3 p-5">
         <div class="flex items-center gap-3">
           <span class="h-9 w-1.5 rounded-full" :style="{ background: colors[other.source] }" aria-hidden="true" />
           <div class="min-w-0">

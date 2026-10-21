@@ -21,7 +21,6 @@
   "knowledge.kpi.published": "Published pages",
   "knowledge.kpi.drafts": "Drafts",
   "knowledge.kpi.mustRead": "Must-read pages",
-  "knowledge.kpi.mustReadHint": "Pages everyone confirms they have read",
   "knowledge.empty.title": "Write down how your team works",
   "knowledge.empty.body": "Start a space for a topic, like the till or the warehouse, and add pages your team can read in Telegram.",
   "knowledge.empty.reader": "Nothing has been written here yet.",
@@ -64,7 +63,7 @@
   "knowledge.space.archiveBody": "Its pages disappear for readers. Nothing is deleted: you can restore it later.",
   "knowledge.space.archived": "Space archived",
   "knowledge.space.contents": "Pages",
-  "knowledge.space.dragHint": "Drag pages to reorder or nest them",
+  "knowledge.space.dragHint": "To reorder or nest pages, drag them in the tree on the left.",
   "knowledge.space.emptyTitle": "No pages in this space yet",
   "knowledge.space.emptyBody": "Write the first page: a checklist, a rule or a how-to.",
   "knowledge.space.emptyReader": "Pages will appear here when they are published.",
@@ -237,5 +236,7 @@
   "knowledge.settings.saved": "Saved",
   "knowledge.widget.title": "Pages to confirm",
   "knowledge.widget.empty": "Everyone is up to date",
-  "knowledge.widget.emptyBody": "Every must-read page has been confirmed."
+  "knowledge.widget.emptyBody": "Every must-read page has been confirmed.",
+  "knowledge.space.mustReadCount": "Must read: {n}",
+  "knowledge.space.inside": "In {title}"
 }

@@ -21,6 +21,7 @@
   "agenda.hotkey.new": "New event",
   "agenda.view.label": "View",
   "agenda.view.agenda": "Agenda",
+  "agenda.sources.own": "Company events",
   "agenda.sources.label": "Calendars to show",
   "agenda.sources.title": "Calendars",
   "agenda.sources.hint": "Each module adds its own dates. Tap a chip to hide or show its calendar.",

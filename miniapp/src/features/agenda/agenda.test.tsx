@@ -1,6 +1,6 @@
 /** The calendar feature: days, colours, and answering an invitation. */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -10,6 +10,7 @@ import { NavigationProvider } from "../../state/navigation";
 import { SessionProvider } from "../../state/session";
 import { ToastProvider } from "../../state/toast";
 import { agendaKeys, eventIdOf, type AgendaEvent, type CalendarEntry } from "./api";
+import { CalendarHome } from "./CalendarHome";
 import { EventPage } from "./EventPage";
 import { byDay, colorClass, mondayOf, weekDays } from "./lib";
 
@@ -80,6 +81,7 @@ function renderWith(node: ReactNode, client: QueryClient) {
 afterEach(() => {
   cleanup();
   api.mockReset();
+  vi.useRealTimers();
 });
 
 describe("lib", () => {
@@ -127,5 +129,26 @@ describe("EventPage", () => {
 
     expect(screen.getByText("This event was cancelled")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /I’ll come/ })).toBeNull();
+  });
+});
+
+describe("CalendarHome", () => {
+  it("marks only the invitations still waiting for an answer", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-21T09:00:00+05:00"));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const planning = entry({ id: "agenda.events:14", title: "Weekly planning", start: "2026-10-22T09:00:00+05:00", end: "2026-10-22T09:30:00+05:00" });
+    api.mockResolvedValue({
+      range: { from: "2026-10-19", to: "2026-11-03" },
+      sources: [{ key: "agenda.events", label: "Company events", color: "chart-3" }],
+      items: [entry(), planning],
+      mine: ["agenda.events:12", "agenda.events:14"],
+      answers: { "agenda.events:12": "pending", "agenda.events:14": "going" },
+    });
+    renderWith(<CalendarHome />, client);
+
+    await waitFor(() => expect(screen.getAllByText("Weekly planning").length).toBeGreaterThan(0));
+    expect(screen.getAllByText("Answer?").length).toBeGreaterThan(0);
+    expect(screen.queryByText("You’re invited")).toBeNull();
   });
 });

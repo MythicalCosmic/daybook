@@ -225,6 +225,19 @@ def _write_version(page: Page, by: Membership | None, note: str = "") -> PageVer
     )
 
 
+def _self_ack(page: Page, by: Membership | None) -> None:
+    """Whoever publishes or rewrites a must-read page has read that version."""
+    if by is None or not page.require_ack or not page.published:
+        return
+    PageAck.objects.get_or_create(
+        company_id=page.company_id,
+        page=page,
+        membership=by,
+        version=page.version,
+        defaults={"at": timezone.now()},
+    )
+
+
 @transaction.atomic
 def create_page(
     space: Space,
@@ -320,6 +333,7 @@ def save_page(
         _write_version(page, by, note)
         _attach_images(page)
     _audit(KnowledgeAction.PAGE_SAVED, page, by, changed=changed, version=page.version)
+    _self_ack(page, by)
     _bump(page.company_id)
     if ask_again and notify_readers:
         _notify_published(page, by, updated=True)
@@ -345,6 +359,7 @@ def publish_page(page: Page, *, by: Membership | None, notify_readers: bool = Tr
     page.updated_by = by
     page.save()
     _audit(KnowledgeAction.PAGE_PUBLISHED, page, by, version=page.version)
+    _self_ack(page, by)
     _bump(page.company_id)
     if notify_readers:
         _notify_published(page, by, updated=False)

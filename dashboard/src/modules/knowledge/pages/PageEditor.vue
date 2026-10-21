@@ -242,17 +242,17 @@ const status = computed(() => {
         <IconButton :icon="ArrowLeft" :label="t('common.back')" :to="backTo" variant="ghost" />
         <div class="min-w-0 flex-1">
           <p class="truncate text-sm font-semibold text-fg">{{ isNew ? t("knowledge.editor.newTitle") : draft.title || t("knowledge.editor.untitled") }}</p>
-          <p class="flex items-center gap-1.5 text-xs text-muted">
+          <p class="flex min-w-0 items-center gap-1.5 text-xs text-muted">
             <template v-if="status">
-              <Check v-if="status.tone === 'success'" :size="12" class="text-success" />
-              <CircleAlert v-else-if="status.tone === 'warning'" :size="12" class="text-warning" />
-              {{ status.text }}
+              <Check v-if="status.tone === 'success'" :size="12" class="shrink-0 text-success" />
+              <CircleAlert v-else-if="status.tone === 'warning'" :size="12" class="shrink-0 text-warning" />
+              <span class="truncate">{{ status.text }}</span>
             </template>
-            <template v-else>{{ isNew ? t("knowledge.editor.newHint") : published ? t("knowledge.editor.liveHint") : t("knowledge.editor.draftHint") }}</template>
+            <span v-else class="truncate">{{ isNew ? t("knowledge.editor.newHint") : published ? t("knowledge.editor.liveHint") : t("knowledge.editor.draftHint") }}</span>
           </p>
         </div>
-        <StatusPill v-if="!isNew" size="sm" class="hidden sm:inline-flex" :tone="published ? 'success' : 'neutral'" :label="published ? t('knowledge.page.live') : t('knowledge.draft')" />
-        <UiButton v-if="!isNew" variant="ghost" :icon="Eye" class="hidden md:inline-flex" @click="done">{{ t("knowledge.editor.done") }}</UiButton>
+        <span v-if="!isNew" class="hidden sm:contents"><StatusPill size="sm" :tone="published ? 'success' : 'neutral'" :label="published ? t('knowledge.page.live') : t('knowledge.draft')" /></span>
+        <span v-if="!isNew" class="hidden md:contents"><UiButton variant="ghost" :icon="Eye" @click="done">{{ t("knowledge.editor.done") }}</UiButton></span>
         <UiButton :variant="published ? 'primary' : 'secondary'" :icon="Save" :loading="saving && published" :disabled="saving || (!dirty && !isNew)" @click="save()">
           {{ t("common.save") }}
         </UiButton>

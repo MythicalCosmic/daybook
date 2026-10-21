@@ -28,6 +28,7 @@ export function CalendarHome() {
 
   const labels = useMemo(() => Object.fromEntries((week.data?.sources ?? []).map((source) => [source.key, source.label])), [week.data]);
   const mine = useMemo(() => new Set([...(week.data?.mine ?? []), ...(upcoming.data?.mine ?? [])]), [week.data, upcoming.data]);
+  const answers = useMemo(() => ({ ...(week.data?.answers ?? {}), ...(upcoming.data?.answers ?? {}) }), [week.data, upcoming.data]);
   const weekByDay = useMemo(() => byDay(week.data?.items ?? [], days, member.timeZone), [week.data, days, member.timeZone]);
   const upcomingDays = Array.from({ length: 14 }, (_, i) => addDays(today, i));
   const nextByDay = useMemo(() => byDay(upcoming.data?.items ?? [], upcomingDays, member.timeZone), [upcoming.data, today, member.timeZone]);
@@ -39,14 +40,22 @@ export function CalendarHome() {
     haptic.select();
     navigation.push({ feature: "agenda", page: "event", params: { id } });
   };
+  // Only an answer still due (or a "can't come") needs a mark; events the person comes to stay quiet.
+  const answerBadge = (id: string) => {
+    const answer = answers[id];
+    if (answer === "pending") return <Badge tone="accent" size="small">{t("answer.ask")}</Badge>;
+    if (answer === "declined") return <Badge size="small">{t("answer.declined")}</Badge>;
+    if (!answer && mine.has(id)) return <Badge tone="accent" size="small">{t("mine")}</Badge>;
+    return undefined;
+  };
   const row = (item: CalendarEntry, day: string) => (
     <ListRow
       key={`${day}-${item.id}`}
       variant="card"
       icon={<span className={cx("agm-bar", colorClass(item.color))} />}
       title={item.title}
-      subtitle={`${timeLabel(item, member.timeZone, locale, t("allDay"))}${eventIdOf(item) ? "" : ` · ${labels[item.source] ?? ""}`}`}
-      value={mine.has(item.id) ? <Badge tone="accent" size="small">{t("mine")}</Badge> : undefined}
+      subtitle={[timeLabel(item, member.timeZone, locale, t("allDay")), eventIdOf(item) ? item.subtitle : labels[item.source]].filter(Boolean).join(" · ")}
+      value={answerBadge(item.id)}
       chevron={eventIdOf(item) !== null}
       onClick={eventIdOf(item) ? () => open(item) : undefined}
     />

@@ -1,9 +1,11 @@
 """Owner endpoints of the knowledge base: permissions, tenancy, branch scope, hidden fields."""
 
 import io
+from datetime import datetime
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.utils import timezone
 from PIL import Image
 
 from apps.companies.models import Branch
@@ -283,6 +285,30 @@ def test_remind_endpoint(company, owner, owner_api, cashier):
 
 
 # Links ----------------------------------------------------------------------------------
+
+
+def test_link_targets_skip_routine_tasks_and_say_whose(company, owner, manager, owner_api):
+    from apps.tasks.models import TaskTemplate
+    from apps.tasks.tests.factories import TaskFactory
+
+    manager.first_name, manager.last_name = "Bekzod", "Mirzayev"
+    manager.save(update_fields=["first_name", "last_name"])
+    routine = TaskTemplate.objects.create(company=company, title="Close the till", due_time="22:00")
+    TaskFactory(assignee=manager, created_by=owner, title="Close the till", template=routine)
+    one_off = TaskFactory(
+        assignee=manager,
+        created_by=owner,
+        title="Close the till early",
+        due_at=timezone.make_aware(datetime(2026, 10, 21, 18, 0)),
+    )
+
+    targets = owner_api(owner).get(url(company, "link-targets/"), {"q": "close"}).data
+
+    assert [(row["type"], row["id"]) for row in targets] == [
+        ("routine", routine.pk),
+        ("task", one_off.pk),
+    ]
+    assert targets[1]["subtitle"] == "Bekzod Mirzayev · 21.10"
 
 
 def test_link_targets_links_and_linked(company, owner, manager, owner_api):

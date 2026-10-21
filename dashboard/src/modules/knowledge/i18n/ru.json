@@ -18,10 +18,9 @@
   "knowledge.hotkey.history": "История версий",
   "knowledge.hotkey.save": "Сохранить страницу",
   "knowledge.kpi.spaces": "Разделы",
-  "knowledge.kpi.published": "Опубликованные страницы",
+  "knowledge.kpi.published": "Опубликовано",
   "knowledge.kpi.drafts": "Черновики",
-  "knowledge.kpi.mustRead": "Обязательные к прочтению",
-  "knowledge.kpi.mustReadHint": "Страницы, прочтение которых подтверждает каждый",
+  "knowledge.kpi.mustRead": "Обязательные",
   "knowledge.empty.title": "Запишите, как работает ваша команда",
   "knowledge.empty.body": "Создайте раздел по теме, например «Касса» или «Склад», и добавьте страницы, которые команда прочитает в Telegram.",
   "knowledge.empty.reader": "Здесь пока ничего не написано.",
@@ -64,7 +63,7 @@
   "knowledge.space.archiveBody": "Его страницы перестанут быть видны читателям. Ничего не удаляется: раздел можно восстановить.",
   "knowledge.space.archived": "Раздел в архиве",
   "knowledge.space.contents": "Страницы",
-  "knowledge.space.dragHint": "Перетаскивайте страницы, чтобы менять порядок и вложенность",
+  "knowledge.space.dragHint": "Чтобы изменить порядок или вложенность, перетаскивайте страницы в дереве слева.",
   "knowledge.space.emptyTitle": "В этом разделе пока нет страниц",
   "knowledge.space.emptyBody": "Напишите первую страницу: чек-лист, правило или инструкцию.",
   "knowledge.space.emptyReader": "Страницы появятся здесь после публикации.",
@@ -237,5 +236,7 @@
   "knowledge.settings.saved": "Сохранено",
   "knowledge.widget.title": "Страницы к подтверждению",
   "knowledge.widget.empty": "Все в курсе",
-  "knowledge.widget.emptyBody": "Все обязательные страницы подтверждены."
+  "knowledge.widget.emptyBody": "Все обязательные страницы подтверждены.",
+  "knowledge.space.mustReadCount": "Обязательных: {n}",
+  "knowledge.space.inside": "Внутри: {title}"
 }

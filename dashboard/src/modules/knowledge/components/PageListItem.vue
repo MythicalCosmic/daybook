@@ -34,7 +34,7 @@ const to = computed(() => `/c/${company.currentId}/knowledge/p/${props.page.id}`
         </template>
       </span>
     </span>
-    <ReadProgress v-if="showRead && page.read" :read="page.read" compact class="hidden sm:flex" />
+    <ReadProgress v-if="showRead && page.require_ack && page.read" :read="page.read" compact class="hidden sm:flex" />
     <slot name="end" />
   </RouterLink>
 </template>

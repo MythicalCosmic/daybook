@@ -214,12 +214,12 @@ const visibilityOptions = computed(() => [
 
       <div class="ui-card flex flex-col gap-4 bg-surface-2/40 p-4 dark:bg-surface-2/60">
         <ToggleSwitch v-model="form.values.allDay" :label="t('agenda.dialog.allDay')" />
-        <div class="grid gap-3 sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)]">
-          <FormField :label="form.values.allDay ? t('agenda.dialog.from') : t('agenda.dialog.date')" :error="form.errors.date" required>
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)]">
+          <FormField :label="form.values.allDay ? t('agenda.dialog.from') : t('agenda.dialog.date')" :error="form.errors.date" required class="col-span-2 sm:col-span-1">
             <DatePicker v-model="form.values.date" format="weekday" />
           </FormField>
           <template v-if="form.values.allDay">
-            <FormField :label="t('agenda.dialog.to')" :error="form.errors.endDate" optional class="sm:col-span-2">
+            <FormField :label="t('agenda.dialog.to')" :error="form.errors.endDate" optional class="col-span-2">
               <DatePicker v-model="form.values.endDate" :min="form.values.date" clearable :placeholder="t('agenda.dialog.sameDay')" />
             </FormField>
           </template>

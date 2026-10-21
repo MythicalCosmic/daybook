@@ -3,7 +3,7 @@ import { monthGrid, type Month } from "@/components/calendar";
 import type { CalendarItem } from "@/components/calendarItems";
 import { addDays, startOfWeek } from "@/lib/dates";
 
-import type { CalendarEntry, CalendarView, EventKind } from "./types";
+import type { CalendarEntry, CalendarSource, CalendarView, EventKind } from "./types";
 
 /** A source's colour token ("chart-3", "danger") as CSS; anything else (a raw colour) passes through. */
 export function tokenColor(color: string | null | undefined): string | null {
@@ -34,7 +34,15 @@ export function eventIdOf(entry: Pick<CalendarEntry, "id" | "kind">): number | n
   return Number.isFinite(id) && id > 0 ? id : null;
 }
 
-/** An API item as CalendarMonth / CalendarWeek draw it. */
+/**
+ * An API item as CalendarMonth / CalendarWeek draw it: a company event's place, or the name of
+ * the calendar a date comes from, on the second line.
+ */
+/** A source's name: the calendar's own events are named here, so they follow the UI language. */
+export function sourceLabel(source: CalendarSource, t: (key: string) => string): string {
+  return source.key === "agenda.events" ? t("agenda.sources.own") : source.label;
+}
+
 export function toCalendarItem(entry: CalendarEntry, sourceLabel?: string): CalendarItem {
   return {
     id: entry.id,
@@ -45,7 +53,7 @@ export function toCalendarItem(entry: CalendarEntry, sourceLabel?: string): Cale
     all_day: entry.all_day,
     color: tokenColor(entry.color),
     url: entry.url,
-    subtitle: sourceLabel,
+    subtitle: entry.source === "agenda.events" ? entry.subtitle || undefined : sourceLabel,
   };
 }
 

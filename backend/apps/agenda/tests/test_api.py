@@ -100,7 +100,10 @@ def test_calendar_merges_every_source_the_caller_may_see(
         "all_day": True,
         "color": "danger",
         "url": "",
+        "subtitle": "",
     }
+    planning = next(item for item in as_owner["items"] if item["source"] == "agenda.events")
+    assert planning["subtitle"] == ""  # no place given
 
 
 def test_calendar_source_toggles(company, owner, owner_api, sources):
@@ -307,6 +310,7 @@ def test_my_calendar_in_the_app(company, alisher, nigora, api_as, sources):
     assert {"Training", "Company dinner", "Mustaqillik kuni"} <= titles
     assert "Interview" not in titles and "Pay day" not in titles
     assert data["mine"] == [f"agenda.events:{mine.pk}"]
+    assert data["answers"] == {f"agenda.events:{mine.pk}": "pending"}
 
 
 def test_event_detail_and_answer_in_the_app(company, alisher, nigora, api_as):
@@ -328,3 +332,13 @@ def test_event_detail_and_answer_in_the_app(company, alisher, nigora, api_as):
         == 403
     )
     assert api_as(nigora).get(app_url(company, f"events/{private.pk}/")).status_code == 404
+
+
+def test_company_events_say_where_they_happen(company, owner, owner_api, chilonzor):
+    EventFactory(company=company, title="Training", place="Ofis xonasi")
+    EventFactory(company=company, title="Inventory", branch=chilonzor)
+
+    items = owner_api(owner).get(owner_url(company), {"from": TODAY.isoformat()}).data["items"]
+
+    places = {item["title"]: item["subtitle"] for item in items}
+    assert places == {"Training": "Ofis xonasi", "Inventory": chilonzor.name}

@@ -61,7 +61,7 @@ export function KnowledgeHome() {
           {home.data.to_read.length > 0 && (
             <>
               <SectionHead count={home.data.to_read.length}>{t("toRead.title")}</SectionHead>
-              <p className="kbm-hint">{t("toRead.hint")}</p>
+              {/* Each page says "read it to the end and confirm" itself; the list needs no hint. */}
               {home.data.to_read.map((row) => (
                 <ListRow key={row.id} variant="card" tone="accent" icon={emoji(row.emoji)} title={row.title} subtitle={`${row.space.icon} ${row.space.name} · ${t("mustRead")}`} alert onClick={() => openPage(row)} />
               ))}

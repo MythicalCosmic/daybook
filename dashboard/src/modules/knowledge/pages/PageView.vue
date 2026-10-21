@@ -68,7 +68,7 @@ const query = usePage(pageId);
 const page = computed(() => query.data.value ?? null);
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const canEdit = computed(() => !!page.value?.can_edit);
-const showReaders = computed(() => canEdit.value && !!page.value?.published && !page.value.archived);
+const showReaders = computed(() => canEdit.value && !!page.value?.published && !!page.value.require_ack && !page.value.archived);
 const readers = useReaders(pageId, showReaders);
 const base = computed(() => `/c/${company.currentId}/knowledge`);
 const linking = ref(false);

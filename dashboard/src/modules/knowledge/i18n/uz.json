@@ -21,7 +21,6 @@
   "knowledge.kpi.published": "E’lon qilingan sahifalar",
   "knowledge.kpi.drafts": "Qoralamalar",
   "knowledge.kpi.mustRead": "O‘qilishi shart sahifalar",
-  "knowledge.kpi.mustReadHint": "Hamma o‘qiganini tasdiqlaydigan sahifalar",
   "knowledge.empty.title": "Jamoangiz qanday ishlashini yozib qo‘ying",
   "knowledge.empty.body": "Kassa yoki ombor kabi mavzu uchun bo‘lim oching va jamoa Telegramda o‘qiy oladigan sahifalar qo‘shing.",
   "knowledge.empty.reader": "Bu yerda hali hech narsa yozilmagan.",
@@ -64,7 +63,7 @@
   "knowledge.space.archiveBody": "Uning sahifalari o‘quvchilarga ko‘rinmay qoladi. Hech narsa o‘chirilmaydi: keyin tiklashingiz mumkin.",
   "knowledge.space.archived": "Bo‘lim arxivlandi",
   "knowledge.space.contents": "Sahifalar",
-  "knowledge.space.dragHint": "Tartibini o‘zgartirish yoki ichma-ich joylash uchun sahifalarni suring",
+  "knowledge.space.dragHint": "Sahifalar tartibini o‘zgartirish yoki ichma-ich joylash uchun ularni chapdagi daraxtda suring.",
   "knowledge.space.emptyTitle": "Bu bo‘limda hali sahifa yo‘q",
   "knowledge.space.emptyBody": "Birinchi sahifani yozing: nazorat ro‘yxati, qoida yoki yo‘riqnoma.",
   "knowledge.space.emptyReader": "Sahifalar e’lon qilinganda shu yerda paydo bo‘ladi.",
@@ -237,5 +236,7 @@
   "knowledge.settings.saved": "Saqlandi",
   "knowledge.widget.title": "Tasdiqlanishi kerak bo‘lgan sahifalar",
   "knowledge.widget.empty": "Hamma xabardor",
-  "knowledge.widget.emptyBody": "O‘qilishi shart barcha sahifalar tasdiqlangan."
+  "knowledge.widget.emptyBody": "O‘qilishi shart barcha sahifalar tasdiqlangan.",
+  "knowledge.space.mustReadCount": "O‘qish shart: {n}",
+  "knowledge.space.inside": "{title} ichida"
 }

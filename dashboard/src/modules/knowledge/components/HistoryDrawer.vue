@@ -68,7 +68,7 @@ async function restore(version: number): Promise<void> {
 
 <template>
   <UiDrawer query-key="history" :title="t('knowledge.history.title')" :description="page.title" :size="picked ? 'xl' : 'md'">
-    <div v-if="picked" class="flex flex-col gap-4">
+    <div v-if="picked" class="flex flex-col gap-4 p-5">
       <div class="flex flex-wrap items-center gap-2">
         <UiButton size="sm" variant="ghost" :icon="ArrowLeft" @click="picked = null">{{ t("knowledge.history.all") }}</UiButton>
         <span class="flex-1" />
@@ -88,7 +88,7 @@ async function restore(version: number): Promise<void> {
       </template>
     </div>
 
-    <div v-else class="flex flex-col">
+    <div v-else class="flex flex-col p-4">
       <ErrorState v-if="versions.isError.value" compact :error="versions.error.value" :retry="() => versions.refetch()" />
       <div v-else-if="!versions.data.value" class="flex flex-col gap-3"><SkeletonBlock v-for="n in 4" :key="n" height="52px" radius="10px" /></div>
       <ol v-else class="relative flex flex-col">

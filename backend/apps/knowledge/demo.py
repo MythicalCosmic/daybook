@@ -5,7 +5,7 @@ import io
 from datetime import timedelta
 
 from django.core.files.uploadedfile import SimpleUploadedFile
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 from apps.knowledge import services
 from apps.knowledge.models import Page, PageAck, Space
@@ -215,8 +215,12 @@ def _banner() -> SimpleUploadedFile:
             outline=(255, 242, 235),
             width=2,
         )
-    draw.rounded_rectangle([64, 120, 520, 240], radius=28, fill=(255, 242, 235))
-    draw.text((96, 162), "DEMO SHOP  ·  CHILONZOR  ·  YUNUSOBOD", fill=(140, 73, 26))
+    try:
+        title, line = ImageFont.load_default(size=64), ImageFont.load_default(size=26)
+    except OSError, TypeError:  # no FreeType: the small bitmap font
+        title = line = ImageFont.load_default()
+    draw.text((72, 110), "Demo Shop", font=title, fill=(255, 242, 235))
+    draw.text((76, 200), "Chilonzor  ·  Yunusobod  ·  2026", font=line, fill=(255, 226, 208))
     buffer = io.BytesIO()
     image.save(buffer, format="PNG")
     return SimpleUploadedFile("banner.png", buffer.getvalue(), content_type="image/png")
@@ -296,7 +300,7 @@ def seed(company, people, now) -> None:
     welcome = page(handbook, "Xush kelibsiz!", "👋", WELCOME.format(image=""))
     try:
         banner = services.upload_image(company, _banner(), by=owner, page=welcome)
-        services.save_page(
+        welcome = services.save_page(
             welcome,
             by=owner,
             body=WELCOME.format(image=f'<img data-image-id="{banner.pk}" alt="Demo Shop">'),
@@ -311,7 +315,7 @@ def seed(company, people, now) -> None:
 
     typo = OPEN_TILL_V1.replace("tekshiring", "tekshring")
     open_till = page(till, "Kassani ochish tartibi", "🔓", typo, ack=True)
-    services.save_page(open_till, by=owner, body=OPEN_TILL_V1, note="Imlo tuzatildi")
+    open_till = services.save_page(open_till, by=owner, body=OPEN_TILL_V1, note="Imlo tuzatildi")
     close_till = page(till, "Kassani yopish va Z-hisobot", "🔒", CLOSE_TILL, ack=True)
     terminal = page(till, "Terminal ishlamasa nima qilish kerak", "💳", TERMINAL, parent=open_till)
     page(till, "Qaytarish (vozvrat) qoidalari", "🧾", RETURNS, publish=False)
@@ -334,7 +338,7 @@ def seed(company, people, now) -> None:
     read(greeting, people["worker"], manager, days_ago=2)
     # The till opening page changed: Madina read the old version, so she has to read it again.
     read(open_till, people["madina"], manager, days_ago=9)
-    services.save_page(
+    open_till = services.save_page(
         open_till,
         by=owner,
         body=OPEN_TILL,

@@ -13,6 +13,8 @@ export type CalendarEntry = {
   all_day: boolean;
   color: string;
   url: string;
+  /** Where a company event happens; empty for other calendars. */
+  subtitle?: string;
 };
 
 export type CalendarData = {
@@ -21,6 +23,8 @@ export type CalendarData = {
   items: CalendarEntry[];
   /** Ids of the items that are events the person is invited to. */
   mine: string[];
+  /** The person's answer to each event in `items` they are invited to. */
+  answers?: Record<string, "pending" | "going" | "declined">;
 };
 
 export type Answer = "pending" | "going" | "declined";
