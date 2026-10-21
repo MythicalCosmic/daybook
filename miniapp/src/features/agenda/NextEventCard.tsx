@@ -38,6 +38,7 @@ export function NextEventCard({ member }: SlotProps) {
       icon={CalendarClock}
       title={next.title}
       body={[whenText, extra].filter(Boolean).join(" · ")}
+      wrap
       onClick={
         id
           ? () => {

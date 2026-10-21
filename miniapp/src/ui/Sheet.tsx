@@ -1,5 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, type ReactNode } from "react";
 
+import { useHideNativeButtons } from "./BottomBar";
+
 /**
  * The bottom sheet: a dimmed backdrop (tap to close), a handle, and the content. Telegram's back
  * button closes navigation sheets through `useNavigation().closeSheet`; Escape closes it too.
@@ -25,6 +27,8 @@ export function Sheet({
   const titleId = useId();
   const close = useRef(onClose);
   close.current = onClose;
+  // The page's Telegram buttons step aside while the sheet is open (its own BottomBar shows).
+  useHideNativeButtons(true);
 
   // Name the dialog after the heading its content brings (the content changes while it stays open).
   useLayoutEffect(() => {

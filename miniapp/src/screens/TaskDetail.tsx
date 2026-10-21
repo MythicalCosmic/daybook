@@ -1,4 +1,4 @@
-import { Check, Hourglass, SendHorizontal, Undo2, X } from "lucide-react";
+import { Check, Hourglass, Play, SendHorizontal, Undo2, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import {
@@ -20,6 +20,7 @@ import { useNavigation } from "../state/navigation";
 import { initials, useMember } from "../state/session";
 import { useToast } from "../state/toast";
 import { haptic } from "../telegram";
+import { BottomBar, type BottomAction } from "../ui";
 
 export function TaskDetail({ taskId }: { taskId: number }) {
   const ctx = useViewContext();
@@ -340,6 +341,11 @@ function Mentions({ text }: { text: string }) {
   );
 }
 
+/**
+ * The task's actions in the bottom bar, like every page's: Telegram's main button for the one that
+ * finishes the step (Mark as done, Send again, Confirm) and its secondary button beside it (Start,
+ * Send back). Outside Telegram, or on an older client, the same two buttons sit in the page.
+ */
 function ActionBar({ task, isMine }: { task: Task; isMine: boolean }) {
   const { t } = useViewContext();
   const member = useMember();
@@ -359,47 +365,29 @@ function ActionBar({ task, isMine }: { task: Task; isMine: boolean }) {
       },
     );
 
-  const buttons: ReactNode[] = [];
-  // As in the design, Start is for assigned work (so whoever gave it sees it's underway);
-  // daily and personal tasks, and anything sent back, just get done.
-  if (task.actions.includes("start") && task.kind === "assigned" && task.status !== "returned") {
-    buttons.push(
-      <button key="start" className="btn btn-secondary btn-lg" style={{ flex: 1, fontSize: 17 }} disabled={action.isPending} onClick={() => run("start", t("toast.started"))}>
-        {t("detail.start")}
-      </button>,
-    );
-  }
-  if (task.actions.includes("complete")) {
-    buttons.push(
-      <button key="complete" className="btn btn-primary btn-lg" style={{ flex: 2 }} disabled={action.isPending} onClick={() => complete(task)}>
-        <Check size={20} strokeWidth={3} />
-        <span>{task.status === "returned" ? t("detail.sendAgain") : t("detail.markDone")}</span>
-      </button>,
-    );
-  }
-  if (task.status === "review" && isMine) {
-    buttons.push(
-      <button key="waiting" className="btn btn-secondary btn-lg" style={{ flex: 1, fontSize: 17 }} disabled>
-        {t("detail.waiting")}
-      </button>,
-    );
+  let primary: BottomAction | null = null;
+  let secondary: BottomAction | undefined;
+  if (task.actions.includes("confirm")) {
+    primary = { text: t("detail.confirm"), icon: Check, loading: action.isPending, onClick: () => run("confirm", t("toast.confirmed")) };
+  } else if (task.actions.includes("complete")) {
+    primary = {
+      text: task.status === "returned" ? t("detail.sendAgain") : t("detail.markDone"),
+      icon: Check,
+      disabled: action.isPending,
+      onClick: () => complete(task),
+    };
+  } else if (task.status === "review" && isMine) {
+    primary = { text: t("detail.waiting"), icon: Hourglass, disabled: true, onClick: () => undefined };
   }
   if (task.actions.includes("return")) {
-    buttons.push(
-      <button key="return" className="btn btn-secondary btn-lg" style={{ flex: 1, fontSize: 17 }} onClick={() => navigation.openSheet({ kind: "return", taskId: task.id })}>
-        {t("detail.sendBack")}
-      </button>,
-    );
+    secondary = { text: t("detail.sendBack"), icon: Undo2, onClick: () => navigation.openSheet({ kind: "return", taskId: task.id }) };
+  } else if (task.actions.includes("start") && task.kind === "assigned" && task.status !== "returned") {
+    // As in the design, Start is for assigned work (so whoever gave it sees it's underway);
+    // daily and personal tasks, and anything sent back, just get done.
+    secondary = { text: t("detail.start"), icon: Play, disabled: action.isPending, onClick: () => run("start", t("toast.started")) };
   }
-  if (task.actions.includes("confirm")) {
-    buttons.push(
-      <button key="confirm" className="btn btn-primary btn-lg" style={{ flex: 2 }} disabled={action.isPending} onClick={() => run("confirm", t("toast.confirmed"))}>
-        <Check size={20} strokeWidth={3} />
-        <span>{t("detail.confirm")}</span>
-      </button>,
-    );
-  }
-  return buttons.length ? <div className="action-bar">{buttons}</div> : null;
+  if (!primary && secondary) [primary, secondary] = [secondary, undefined];
+  return primary ? <BottomBar primary={primary} secondary={secondary} /> : null;
 }
 
 function dueLabel(task: Task, ctx: ViewContext): string {

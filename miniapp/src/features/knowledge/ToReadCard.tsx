@@ -27,6 +27,7 @@ export function ToReadCard({ member }: SlotProps) {
       icon={BookOpenCheck}
       title={t("card.title", { count: pages.length })}
       body={pages.length === 1 ? `${pages[0]!.emoji} ${pages[0]!.title}`.trim() : t("card.body")}
+      wrap
       onClick={open}
     />
   );

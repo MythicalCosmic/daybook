@@ -87,7 +87,8 @@ function ShiftRow({ shift, now, onAsk }: { shift: Shift; now: number; onAsk: (sh
     <ListRow
       icon={CalendarDays}
       title={shiftDay(shift, member.timeZone, locale)}
-      subtitle={[shiftLine(shift), shift.position?.name].filter(Boolean).join(" · ")}
+      // The position only when it isn't the person's usual one: the same word on every row is noise.
+      subtitle={[shiftLine(shift), shift.position?.name !== member.position?.name && shift.position?.name].filter(Boolean).join(" · ")}
       value={badge}
       onClick={askable ? () => onAsk(shift) : undefined}
       chevron={askable}
