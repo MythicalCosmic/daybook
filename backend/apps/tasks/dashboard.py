@@ -550,7 +550,10 @@ def routine_day(
         total = len(tasks) - counts["cancelled"]
         finished = counts["done"] + counts["review"]
         give = None
-        if reason == generation.MADE_LATE and day == today and may_give:
+        # Offered to whoever may plan this routine (services.give_routine_today's own checks):
+        # routines rights, and the routine's branch in their scope.
+        plans_it = may_give and (scope is None or routine.branch_id in scope)
+        if reason == generation.MADE_LATE and day == today and plans_it:
             give = generation.today_status(routine, now)["give"]
         order = {state: index for index, state in enumerate(RUN_ORDER)}
         rows = sorted(

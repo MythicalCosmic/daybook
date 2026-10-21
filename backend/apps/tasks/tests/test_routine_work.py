@@ -180,6 +180,9 @@ def test_a_branch_lead_sees_their_branchs_routine_work(pharmacy, owner_api):
     # Gani works at the other branch: his run isn't the lead's to see.
     assert {run["member"]["name"].split()[0] for run in kassa["runs"]} == {"Ali", "Vali"}
     assert kassa["progress"] == {"finished": 2, "total": 2, "percent": 100}
+    # The late routine belongs to every branch: the lead may not plan it, so it offers nothing.
+    late = next(r for r in body["routines"] if r["routine"]["title"] == "Muddati yaqin dorilar")
+    assert late["reason"] == "made_late" and late["give"] is None
 
 
 def test_routine_work_needs_seeing_all_tasks_and_confirming_needs_tasks_confirm(
