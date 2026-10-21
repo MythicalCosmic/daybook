@@ -113,15 +113,31 @@ export function cockpit<W extends CockpitWidget>(widgets: readonly W[]): Cockpit
   return { lead, kpis: pack(kpis), cards: pack(rest) };
 }
 
-/** First fit, row by row, keeping the order; then a row with room left widens its cards. */
+/** The module a widget id belongs to ("projects.atRisk" → "projects"); ids without one stand alone. */
+const moduleOf = (id: string): string => (id.includes(".") ? id.slice(0, id.indexOf(".")) : `#${id}`);
+
+/**
+ * First fit, row by row, keeping the order; then a row with room left widens its cards.
+ *
+ * Neighbours from one module that fit in a row together stay together (Projects at risk beside My
+ * projects): related cards read side by side and, being alike, are about as tall, where splitting
+ * them would set a short list beside a tall chart and leave half a card empty.
+ */
 export function pack<W extends CockpitWidget>(widgets: readonly W[], columns = COLUMNS): Array<Placed<W>> {
   const rows: Array<Array<Placed<W>>> = [];
   const used = (row: Array<Placed<W>>) => row.reduce((sum, item) => sum + item.span, 0);
+  const width = (unit: Array<Placed<W>>) => used(unit);
+  const units: Array<Array<Placed<W>>> = [];
   for (const widget of widgets) {
-    const span = Math.min(widget.span, columns) as WidgetSpan;
-    const row = rows.find((candidate) => used(candidate) + span <= columns);
-    if (row) row.push({ widget, span });
-    else rows.push([{ widget, span }]);
+    const placed = { widget, span: Math.min(widget.span, columns) as WidgetSpan };
+    const last = units.at(-1);
+    if (last && moduleOf(last[0]!.widget.id) === moduleOf(widget.id) && width(last) + placed.span <= columns) last.push(placed);
+    else units.push([placed]);
+  }
+  for (const unit of units) {
+    const row = rows.find((candidate) => used(candidate) + width(unit) <= columns);
+    if (row) row.push(...unit);
+    else rows.push([...unit]);
   }
   for (const row of rows) {
     // Round-robin from the last card, so [2] becomes [4] and [1, 1] becomes [2, 2].

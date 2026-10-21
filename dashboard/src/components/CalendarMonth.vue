@@ -10,13 +10,13 @@ import { ChevronLeft, ChevronRight } from "@lucide/vue";
 import { computed, nextTick, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { formatDay, todayIn } from "@/lib/dates";
+import { addDays, formatDay, todayIn } from "@/lib/dates";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
 import { isWeekend, keyTarget, monthOf, monthWeeks, shiftMonth, type Month } from "./calendar";
-import { itemColor, itemsByDay, type CalendarItem } from "./calendarItems";
+import { itemColor, itemsByDay, namesItem, type CalendarItem, type PlacedItem } from "./calendarItems";
 import UiButton from "./UiButton.vue";
 import UiPopover from "./UiPopover.vue";
 
@@ -70,6 +70,16 @@ async function onKeydown(event: KeyboardEvent, day: string): Promise<void> {
 
 const selectedItems = computed(() => (selected.value ? (itemsByDay(props.items, [selected.value], company.timezone).get(selected.value) ?? []) : []));
 
+/** Days, from day `d` of a week row to its end, that a bar keeps the same row: its name runs across them. */
+function labelRun(entry: PlacedItem, d: number, week: readonly string[], index: number): number {
+  let run = 1;
+  for (let next = d + 1; next < week.length; next++) {
+    if ((placed.value.get(week[next]!) ?? [])[index]?.item !== entry.item) break;
+    run += 1;
+  }
+  return run;
+}
+
 function timeOf(item: CalendarItem): string | null {
   return item.all_day || /^\d{4}-\d{2}-\d{2}$/.test(item.start) ? null : fmt.instant(item.start, "time");
 }
@@ -97,10 +107,10 @@ function timeOf(item: CalendarItem): string | null {
           {{ t(isPhone ? `common.weekday.min.${n - 1}` : `common.weekday.short.${n - 1}`) }}
         </span>
       </div>
-      <div ref="grid" role="grid" :aria-label="formatDay(`${month}-01`, fmt.lang.value, 'monthYear')" :class="['grid grid-cols-7', loading && 'opacity-60 transition-opacity']">
+      <div ref="grid" role="grid" :aria-label="formatDay(`${month}-01`, fmt.lang.value, 'monthYear')" :class="['@container grid grid-cols-7', loading && 'opacity-60 transition-opacity']">
         <template v-for="(week, w) in weeks" :key="w">
           <div
-            v-for="day in week"
+            v-for="(day, d) in week"
             :key="day"
             role="gridcell"
             :aria-selected="day === selected"
@@ -139,10 +149,10 @@ function timeOf(item: CalendarItem): string | null {
             <div v-if="isPhone" class="pointer-events-none relative z-[1] flex flex-wrap justify-center gap-0.5 px-1 pb-1.5 pt-1">
               <span v-for="entry in (placed.get(day) ?? []).slice(0, 4)" :key="String(entry.item.id)" class="size-1.5 rounded-full" :style="{ background: itemColor(entry.item) }" />
             </div>
-            <!-- Desktop: chips -->
-            <div v-else class="relative z-[1] flex min-w-0 flex-col gap-0.5 px-1 pb-1.5 pt-1">
+            <!-- Desktop: chips. Earlier days stack above later ones, so a bar's name runs over the days it covers. -->
+            <div v-else class="relative flex min-w-0 flex-col gap-0.5 px-1 pb-1.5 pt-1" :style="{ zIndex: 8 - d }">
               <button
-                v-for="entry in (placed.get(day) ?? []).slice(0, maxPerDay)"
+                v-for="(entry, index) in (placed.get(day) ?? []).slice(0, maxPerDay)"
                 :key="String(entry.item.id)"
                 type="button"
                 :class="[
@@ -156,7 +166,12 @@ function timeOf(item: CalendarItem): string | null {
               >
                 <slot name="item" :item="entry.item">
                   <span v-if="timeOf(entry.item) && !entry.fromBefore" class="shrink-0 tabular-nums text-muted">{{ timeOf(entry.item) }}</span>
-                  <span class="truncate">{{ entry.fromBefore ? "" : entry.item.title }}</span>
+                  <span
+                    v-if="namesItem(entry, day, week[0]!, placed.get(addDays(day, -1)), maxPerDay, index)"
+                    class="truncate"
+                    :style="entry.toAfter ? { flex: 'none', width: `calc(${labelRun(entry, d, week, index)} * 100cqw / 7 - 20px)` } : undefined"
+                    >{{ entry.item.title }}</span
+                  >
                 </slot>
               </button>
               <UiPopover v-if="(placed.get(day) ?? []).length > maxPerDay" width="260px">

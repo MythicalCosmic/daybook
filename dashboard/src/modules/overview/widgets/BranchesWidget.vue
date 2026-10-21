@@ -47,7 +47,8 @@ function statusLabel(branch: BranchToday): string {
   }
   if (branch.status === "not_opened") {
     const late = minutesLate(branch.opens_at, zonedNow(company.timezone, now.value));
-    return late > 0 ? t("overview.branches.status.late", { n: late }) : t("overview.branches.status.not_opened");
+    // "6h 41m late", not "+401 min".
+    return late > 0 ? t("overview.branches.status.late", { late: fmt.duration(late) }) : t("overview.branches.status.not_opened");
   }
   return t(`overview.branches.status.${branch.status}`);
 }

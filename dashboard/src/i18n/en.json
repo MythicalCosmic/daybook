@@ -289,6 +289,7 @@
   "common.chart.empty": "No data for this period",
   "common.chart.compare": "Previous period",
   "common.chart.target": "Target",
+  "common.chart.soFar": "so far",
   "common.chart.other": "Other",
   "common.kpi.open": "Open the list",
 

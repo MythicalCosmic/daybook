@@ -289,6 +289,7 @@
   "common.chart.empty": "Нет данных за этот период",
   "common.chart.compare": "Прошлый период",
   "common.chart.target": "План",
+  "common.chart.soFar": "пока",
   "common.chart.other": "Прочее",
   "common.kpi.open": "Открыть список",
 

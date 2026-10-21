@@ -191,6 +191,23 @@ describe("cockpit layout", () => {
     expect(pack([w("k1", "kpi"), w("k2", "kpi"), w("k3", "kpi")]).map((x) => x.span)).toEqual([1, 1, 2]);
   });
 
+  it("keeps neighbouring cards of one module in the same row", () => {
+    // The registered order of Wave 1: finance's chart would otherwise sit beside "Projects at
+    // risk" and leave "My projects" beside the tall agenda.
+    const placed = pack([
+      w("tasks.trend", "chart", 2),
+      w("tasks.top", "card", 2),
+      w("finance.flow", "chart", 2),
+      w("projects.atRisk", "card", 2),
+      w("projects.mine", "card", 2),
+      w("agenda.upcoming", "card", 2),
+    ]);
+    expect(placed.map((x) => x.widget.id)).toEqual(["tasks.trend", "tasks.top", "finance.flow", "agenda.upcoming", "projects.atRisk", "projects.mine"]);
+    expect(placed.map((x) => x.span)).toEqual([2, 2, 2, 2, 2, 2]);
+    // Apart in the person's own order, they stay apart.
+    expect(pack([w("projects.atRisk", "card", 2), w("finance.flow", "chart", 2), w("projects.mine", "card", 2)]).map((x) => x.widget.id)).toEqual(["projects.atRisk", "finance.flow", "projects.mine"]);
+  });
+
   it("reads and writes the saved layout, and knows when it is just the default", () => {
     const widgets = [w("a", "card", 2), w("b", "card", 2), w("c", "kpi")];
     expect(layoutFromState({ widgets: [{ id: "b", hidden: false, order: 1 }, { id: "c", hidden: true, order: 0 }] })).toEqual({ order: ["c", "b"], hidden: ["c"] });
@@ -223,20 +240,23 @@ describe("BranchesWidget", () => {
           }),
           branch({ id: 2, name: "Yunusobod", code: "YNS", opens_at: "10:00", status: "not_opened" }),
           branch({ id: 3, name: "Sergeli", code: "SRG", status: "day_off" }),
+          branch({ id: 4, name: "Olmazor", code: "OLM", opens_at: "07:30", status: "not_opened" }),
         ]),
     });
     const app = await testApp("/c/1");
     const { wrapper } = mountWithProviders(BranchesWidget, { plugins: app.plugins, props: { companyId: 1 } });
     await flushPromises();
     const cards = wrapper.findAll("li");
-    expect(cards).toHaveLength(3);
+    expect(cards).toHaveLength(4);
     expect(cards[0]!.text()).toContain("Opened 08:57 by Dilnoza");
     expect(cards[0]!.text()).toContain("6/7");
     expect(cards[0]!.text()).toContain("1 late");
-    expect(cards[1]!.text()).toContain("Not opened · +12 min");
+    expect(cards[1]!.text()).toContain("Not opened · 12m late");
+    // Hours read as hours: "2h 42m late", not "+162 min".
+    expect(cards[3]!.text()).toContain("Not opened · 2h 42m late");
     expect(cards[1]!.text()).toContain(en["overview.branches.noFacts"]);
     expect(cards[2]!.text()).toContain("Day off");
-    expect(wrapper.text()).toContain("1 of 3 open");
+    expect(wrapper.text()).toContain("1 of 4 open");
   });
 
   it("says so when there are no branches", async () => {

@@ -11,10 +11,12 @@
  *     @update="(view) => views.update.mutate({ id: Number(view.id), state })" … />
  */
 import { Ellipsis, Pencil, Plus, Share2, Trash2, Users } from "@lucide/vue";
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import type { SavedViewTab } from "@/lib/useSavedViews";
+
+import { useSlidingIndicator } from "./useSlidingIndicator";
 
 import CheckBox from "./CheckBox.vue";
 import DropdownMenu, { type MenuEntry } from "./DropdownMenu.vue";
@@ -52,17 +54,12 @@ const visible = computed(() => {
 const overflow = computed(() => props.views.filter((view) => !visible.value.includes(view)));
 const current = computed(() => props.views.find((view) => view.id === active.value) ?? null);
 
-// Sliding underline.
+// Sliding underline: follows the active view, also when a count arrives and widens a tab before it.
 const strip = ref<HTMLElement | null>(null);
-const indicator = ref<{ left: number; width: number } | null>(null);
-function measure(): void {
-  const el = strip.value?.querySelector<HTMLElement>('[data-active="true"]');
-  indicator.value = el ? { left: el.offsetLeft, width: el.offsetWidth } : null;
-}
-watch([active, () => props.views.length], () => nextTick(measure));
-onMounted(() => {
-  measure();
-  void document.fonts?.ready.then(measure);
+const { indicator } = useSlidingIndicator(strip, {
+  active: () => '[data-active="true"]',
+  items: "[data-active]",
+  deps: [active, () => visible.value.map((view) => `${view.id}:${view.name}:${view.count ?? ""}`).join("|"), () => props.dirty],
 });
 
 // Save as new.

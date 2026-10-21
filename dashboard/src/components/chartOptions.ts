@@ -84,6 +84,12 @@ export interface CartesianInput {
   yMax?: number;
   /** Whole-number ticks only (counts never get 0.5). */
   integer?: boolean;
+  /**
+   * The last category is still in progress (today so far): line charts reach its point with a
+   * dashed segment and a hollow dot, and its tooltip says `label` ("so far"), so a half-done day
+   * doesn't read as a collapse.
+   */
+  partial?: { label: string } | null;
 }
 
 /** Legend key for a target: a short dashed line (the other keys are swatches). */
@@ -116,6 +122,8 @@ export function cartesianOption(theme: ChartTheme, input: CartesianInput, style:
   const targetName = targetValue !== null ? input.target?.label || "" : "";
   const showLegend = input.legend ?? input.series.length + (input.compare ? 1 : 0) + (targetName ? 1 : 0) > 1;
   const stacked = style.stacked || style.normalize;
+  const partial = style.type === "line" && !stacked && !!input.partial && categories.length > 1;
+  const last = categories.length - 1;
 
   const series: Record<string, unknown>[] = input.series.map((entry, index) => {
     const color = colorOf(entry, index);
@@ -124,7 +132,8 @@ export function cartesianOption(theme: ChartTheme, input: CartesianInput, style:
       return {
         type: "line",
         name: entry.name,
-        data,
+        // In progress: the solid line stops a point early; the dashed one below finishes it.
+        data: partial ? data.map((value, i) => (i === last ? null : value)) : data,
         stack: stacked ? "total" : entry.stack,
         smooth: style.smooth ? 0.3 : false,
         showSymbol: data.length <= 2,
@@ -171,6 +180,28 @@ export function cartesianOption(theme: ChartTheme, input: CartesianInput, style:
       emphasis: { focus: "series" },
     };
   });
+
+  if (partial) {
+    // Same name as its series, so the legend shows and hides both together.
+    input.series.forEach((entry, index) => {
+      const color = colorOf(entry, index);
+      const data = values[index]!;
+      series.push({
+        type: "line",
+        name: entry.name,
+        data: data.map((value, i) => (i < last - 1 ? null : i === last && value !== null ? { value, symbol: "emptyCircle", symbolSize: 8 } : value)),
+        smooth: false,
+        symbol: "none",
+        showSymbol: true,
+        connectNulls: false,
+        lineStyle: { width: 2, color, type: [4, 4], cap: "round" },
+        itemStyle: { color, borderColor: color, borderWidth: 2 },
+        emphasis: { disabled: true },
+        tooltip: { show: false },
+        z: 3,
+      });
+    });
+  }
 
   if (input.compare) {
     series.push({
@@ -252,7 +283,7 @@ export function cartesianOption(theme: ChartTheme, input: CartesianInput, style:
           itemHeight: 10,
           itemGap: 16,
           textStyle: { color: theme.muted, fontFamily: theme.fontFamily, fontSize: CHART_TYPE.label },
-          ...(targetName ? { data: [...legendNames, { name: targetName, icon: DASH_ICON }] } : {}),
+          ...(targetName ? { data: [...legendNames, { name: targetName, icon: DASH_ICON }] } : partial ? { data: legendNames } : {}),
         }
       : { show: false },
     tooltip: {
@@ -262,14 +293,17 @@ export function cartesianOption(theme: ChartTheme, input: CartesianInput, style:
       formatter: (params: Array<{ dataIndex: number; seriesIndex: number; seriesName: string; color: string; value: number | null }>) => {
         const first = params[0];
         if (!first) return "";
-        const rows = params.map((param) => ({
-          name: param.seriesName,
-          color: param.seriesIndex >= input.series.length ? theme.compare : colorOf(input.series[param.seriesIndex]!, param.seriesIndex),
-          value: typeof param.value === "number" ? param.value : null,
-          dashed: param.seriesIndex >= input.series.length || input.series[param.seriesIndex]?.dashed,
-        }));
+        const i = first.dataIndex;
+        // Rows from the data, one per series the legend shows (an in-progress point lives on a
+        // helper series of the same name, which has no row of its own).
+        const shown = new Set(params.map((param) => param.seriesName));
+        const rows: TooltipRow[] = input.series
+          .map((entry, index) => ({ name: entry.name, color: colorOf(entry, index), value: values[index]?.[i] ?? null, dashed: entry.dashed }))
+          .filter((row) => shown.has(row.name));
+        if (input.compare && shown.has(input.compare.name)) rows.push({ name: input.compare.name, color: theme.compare, value: toNumber(input.compare.data[i] ?? null), dashed: true });
         if (targetName) rows.push({ name: targetName, color: theme.muted, value: targetValue, dashed: true });
-        return tooltipHtml(labels[first.dataIndex] ?? "", rows, format, ctx, theme);
+        const title = (labels[i] ?? "") + (partial && i === last ? ` · ${input.partial!.label}` : "");
+        return tooltipHtml(title, rows, format, ctx, theme);
       },
     },
     xAxis: style.horizontal ? valueAxis : categoryAxis,

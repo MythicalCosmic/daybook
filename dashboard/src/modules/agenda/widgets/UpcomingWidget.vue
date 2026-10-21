@@ -6,7 +6,7 @@ import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
 import type { Range } from "@/api/types";
-import type { CalendarItem } from "@/components/calendarItems";
+import { withoutEcho, type CalendarItem } from "@/components/calendarItems";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
@@ -29,7 +29,8 @@ const today = computed(() => todayIn(company.timezone));
 const calendar = useCalendar(computed(() => ({ from: today.value, to: addDays(today.value, 6) })));
 const skeleton = useDelayedPending(computed(() => calendar.isPending.value));
 const labels = computed(() => Object.fromEntries((calendar.data.value?.sources ?? []).map((source) => [source.key, sourceLabel(source, t)])));
-const items = computed(() => (calendar.data.value?.items ?? []).map((entry) => toCalendarItem(entry, labels.value[entry.source])));
+// The calendar's name only when the title doesn't already say it ("Jasur · time off" needs no "Time off").
+const items = computed(() => (calendar.data.value?.items ?? []).map((entry) => withoutEcho(toCalendarItem(entry, labels.value[entry.source]))));
 const base = computed(() => `/c/${props.companyId}/calendar`);
 
 function open(item: CalendarItem): void {

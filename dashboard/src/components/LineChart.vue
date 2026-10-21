@@ -27,8 +27,10 @@ withDefaults(
     integer?: boolean;
     label?: string;
     smooth?: boolean;
+    /** The last category is still in progress (today so far): dashed into a hollow point, `label` ("so far") in the tooltip. */
+    partial?: { label: string } | null;
   }>(),
-  { compare: null, valueFormat: "number", currency: undefined, xFormat: "none", height: "240px", legend: undefined, target: null, yMax: undefined, integer: false, label: undefined, smooth: false },
+  { compare: null, valueFormat: "number", currency: undefined, xFormat: "none", height: "240px", legend: undefined, target: null, yMax: undefined, integer: false, label: undefined, smooth: false, partial: null },
 );
 </script>
 

@@ -60,6 +60,22 @@ describe("cartesianOption", () => {
     expect(html).toContain("90");
   });
 
+  it("finishes an in-progress last point with a dashed segment and says so in the tooltip", () => {
+    const option = build({ partial: { label: "so far" }, valueFormat: "percent", xFormat: "day" });
+    // The solid line stops a point early; a helper of the same name dashes into a hollow dot.
+    expect(option.series).toHaveLength(2);
+    expect(option.series[0].data).toEqual([80, 95, null]);
+    expect(option.series[1]).toMatchObject({ name: "On time", lineStyle: { type: [4, 4] }, tooltip: { show: false } });
+    expect(option.series[1].data).toEqual([null, 95, { value: 100, symbol: "emptyCircle", symbolSize: 8 }]);
+    // One row per series, with today's real value, titled "so far".
+    const html: string = option.tooltip.formatter([{ dataIndex: 2, seriesIndex: 0, seriesName: "On time", color: "#c67139", value: null }]);
+    expect(html).toContain("21 Oct · so far");
+    expect(html.match(/On time/g)).toHaveLength(1);
+    expect(html).toContain("100");
+    // Bars and stacks have no in-progress look.
+    expect(build({ partial: { label: "so far" } }, { type: "bar" }).series).toHaveLength(1);
+  });
+
   it("draws an unnamed target as the line alone", () => {
     const option = build({ target: { value: 50 } });
     expect(option.series).toHaveLength(1);

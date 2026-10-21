@@ -15,7 +15,7 @@
   "overview.branches.status.openedBy": "{time} da ochildi, {name}",
   "overview.branches.status.openedAt": "{time} da ochildi",
   "overview.branches.status.not_opened": "Ochilmagan",
-  "overview.branches.status.late": "Ochilmagan · +{n} daq",
+  "overview.branches.status.late": "Ochilmagan · {late} kechikmoqda",
   "overview.branches.status.closed": "Yopiq",
   "overview.branches.status.day_off": "Dam olish kuni",
   "overview.branches.staff": "Ishdagi xodimlar",

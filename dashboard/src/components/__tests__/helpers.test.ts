@@ -1,7 +1,7 @@
 /** The small pure helpers behind TreeList, CalendarWeek, WidgetGrid, TimePicker and KpiCard. */
 import { describe, expect, it } from "vitest";
 
-import { itemDays, itemsByDay, layoutTimed, type CalendarItem } from "@/components/calendarItems";
+import { itemDays, itemsByDay, layoutTimed, namesItem, withoutEcho, type CalendarItem } from "@/components/calendarItems";
 import { matchOption, normalize } from "@/components/options";
 import { dropMove, flattenTree, keyboardMove, moveNode, zoneAt, type TreeNode } from "@/components/tree";
 import { arrange, moveWidget, toggleWidget } from "@/components/widgetLayout";
@@ -75,6 +75,46 @@ describe("calendar items", () => {
     expect(days.get("2026-10-20")![0]).toMatchObject({ fromBefore: true, toAfter: true });
     expect(days.get("2026-10-21")![0]).toMatchObject({ fromBefore: true, toAfter: false });
     expect(days.get("2026-10-22")).toEqual([]);
+  });
+
+  it("keeps items spanning several days in the top rows, earliest and longest first", () => {
+    const items: CalendarItem[] = [
+      { id: "due", title: "12 tasks due", start: "2026-10-20", all_day: true },
+      { id: "short", title: "Madina · time off", start: "2026-10-20", end: "2026-10-21", all_day: true },
+      { id: "long", title: "Jasur · time off", start: "2026-10-18", end: "2026-10-22", all_day: true },
+      { id: "meeting", title: "Meeting", start: "2026-10-20T09:00:00+05:00" },
+    ];
+    const days = itemsByDay(items, ["2026-10-19", "2026-10-20", "2026-10-21"], tz);
+    expect(days.get("2026-10-20")!.map((p) => p.item.id)).toEqual(["long", "short", "due", "meeting"]);
+    expect(days.get("2026-10-21")!.map((p) => p.item.id)).toEqual(["long", "short"]);
+  });
+
+  it("names a continuing bar at the start of each week and after a day it had no room on", () => {
+    const leave: CalendarItem = { id: 1, title: "Jasur · time off", start: "2026-10-16", end: "2026-10-20", all_day: true };
+    const others = (n: number) => Array.from({ length: n }, (_, i): CalendarItem => ({ id: `o${i}`, title: `Other ${i}`, start: "2026-10-16", all_day: true }));
+    const days = itemsByDay([leave], ["2026-10-16", "2026-10-17", "2026-10-18", "2026-10-19", "2026-10-20"], tz);
+    const entry = (day: string) => days.get(day)!.find((p) => p.item === leave)!;
+    // Its first day, and Monday 19 October, which starts a new week row.
+    expect(namesItem(entry("2026-10-16"), "2026-10-16", "2026-10-12", undefined, 3, 0)).toBe(true);
+    expect(namesItem(entry("2026-10-17"), "2026-10-17", "2026-10-12", days.get("2026-10-16"), 3, 0)).toBe(false);
+    expect(namesItem(entry("2026-10-19"), "2026-10-19", "2026-10-19", days.get("2026-10-18"), 3, 0)).toBe(true);
+    // The day before had four other items ahead of it and showed only three: name it here.
+    const placed = (list: CalendarItem[]) => list.map((item) => ({ item, fromBefore: false, toAfter: false }));
+    const crowded = [...placed(others(4)), entry("2026-10-16")];
+    expect(namesItem(entry("2026-10-17"), "2026-10-17", "2026-10-12", crowded, 3, 0)).toBe(true);
+    // The day before showed it one row lower (another bar ended): the bar starts again here, named.
+    const lower = [...placed(others(1)), entry("2026-10-16")];
+    expect(namesItem(entry("2026-10-17"), "2026-10-17", "2026-10-12", lower, 3, 0)).toBe(true);
+    expect(namesItem(entry("2026-10-17"), "2026-10-17", "2026-10-12", lower, 3, 1)).toBe(false);
+  });
+
+  it("drops a second line that only repeats the title", () => {
+    const item = (title: string, subtitle?: string): CalendarItem => ({ id: title, title, subtitle, start: "2026-10-21", all_day: true });
+    expect(withoutEcho(item("Jasur Tursunov · time off", "Time off")).subtitle).toBeUndefined();
+    expect(withoutEcho(item("18 tasks due", "Tasks due")).subtitle).toBeUndefined();
+    expect(withoutEcho(item("Chilonzor: 2 on shift", "Shifts")).subtitle).toBeUndefined();
+    expect(withoutEcho(item("GPP inspection visit", "Company events")).subtitle).toBe("Company events");
+    expect(withoutEcho(item("Pharmacist training")).subtitle).toBeUndefined();
   });
 
   it("lays overlapping events side by side", () => {

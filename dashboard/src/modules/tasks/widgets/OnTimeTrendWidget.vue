@@ -18,6 +18,8 @@ const fmt = useFormat();
 const query = useSummary();
 const series = computed(() => query.data.value?.series ?? []);
 const categories = computed(() => series.value.map((point) => point.date));
+// Today counts only what was due so far: its point is "so far", dashed, not a fall.
+const partial = computed(() => (categories.value.at(-1) === query.data.value?.today ? { label: t("common.chart.soFar") } : null));
 // The headline covers the same 14 days as the line (the KPI tile shows the last 7).
 const value = computed(() => {
   const due = series.value.reduce((sum, point) => sum + point.total, 0);
@@ -58,6 +60,7 @@ const csv = computed(() => ({
       x-format="day"
       height="220px"
       :y-max="100"
+      :partial="partial"
       smooth
     />
   </ChartCard>

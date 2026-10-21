@@ -44,27 +44,69 @@ export function itemDays(item: CalendarItem, tz: string): { first: string; last:
   return { first, last: last < first ? first : last };
 }
 
-/** Items per day for the given days, all-day ones first, then by start time. */
+/**
+ * Items per day for the given days: items spanning several days first (earliest start, then the
+ * longest), so a bar keeps the same top row across the days it covers and never hides in "+N
+ * more" on some of them; then the other all-day items, then timed ones by start time.
+ */
 export function itemsByDay(items: readonly CalendarItem[], days: readonly string[], tz: string): Map<string, PlacedItem[]> {
   const map = new Map<string, PlacedItem[]>(days.map((day) => [day, []]));
   const firstDay = days[0];
   const lastDay = days.at(-1);
   if (!firstDay || !lastDay) return map;
+  const spans = new Map<CalendarItem, { first: string; last: string }>();
   for (const item of items) {
-    const { first, last } = itemDays(item, tz);
+    const span = itemDays(item, tz);
+    spans.set(item, span);
+    const { first, last } = span;
     if (last < firstDay || first > lastDay) continue;
     for (let day = first < firstDay ? firstDay : first; day <= last && day <= lastDay; day = addDays(day, 1)) {
       map.get(day)?.push({ item, fromBefore: day > first, toAfter: day < last });
     }
   }
   const instant = (item: CalendarItem) => (item.all_day ? 0 : Date.parse(item.start) || 0);
+  const multiDay = (item: CalendarItem) => {
+    const span = spans.get(item)!;
+    return span.last > span.first;
+  };
   for (const list of map.values()) {
     list.sort((a, b) => {
+      const spanning = Number(multiDay(b.item)) - Number(multiDay(a.item));
+      if (spanning) return spanning;
+      if (multiDay(a.item)) {
+        const [sa, sb] = [spans.get(a.item)!, spans.get(b.item)!];
+        if (sa.first !== sb.first) return sa.first < sb.first ? -1 : 1;
+        if (sa.last !== sb.last) return sa.last > sb.last ? -1 : 1;
+        return 0;
+      }
       const allDay = Number(!!b.item.all_day) - Number(!!a.item.all_day);
       return allDay || instant(a.item) - instant(b.item);
     });
   }
   return map;
+}
+
+/**
+ * The item without its second line when the title already says it: "Jasur Tursunov · time off"
+ * over "All day · Time off", "18 tasks due" over "Tasks due".
+ */
+export function withoutEcho(item: CalendarItem): CalendarItem {
+  const label = item.subtitle?.trim().toLocaleLowerCase();
+  if (!label) return item;
+  // The label's stem, so "Shifts" also matches "2 on shift".
+  const stem = label.slice(0, Math.max(4, label.length - 2));
+  return item.title.toLocaleLowerCase().includes(stem) ? { ...item, subtitle: undefined } : item;
+}
+
+/**
+ * Whether a day's chip (row `index`) names its item: on the item's first day, at the start of each
+ * week row, and on a continuing day where the bar doesn't simply carry on from the day before:
+ * that day had no room for it ("+N more") or showed it on another row.
+ */
+export function namesItem(entry: PlacedItem, day: string, weekStart: string, previous: readonly PlacedItem[] | undefined, maxPerDay: number, index: number): boolean {
+  if (!entry.fromBefore || day === weekStart) return true;
+  const shown = (previous ?? []).slice(0, maxPerDay);
+  return shown.findIndex((other) => other.item === entry.item) !== index;
 }
 
 export interface TimedBox {

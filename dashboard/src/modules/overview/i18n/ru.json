@@ -15,7 +15,7 @@
   "overview.branches.status.openedBy": "Открыт в {time}, {name}",
   "overview.branches.status.openedAt": "Открыт в {time}",
   "overview.branches.status.not_opened": "Не открыт",
-  "overview.branches.status.late": "Не открыт · +{n} мин",
+  "overview.branches.status.late": "Не открыт · опаздывает на {late}",
   "overview.branches.status.closed": "Закрыт",
   "overview.branches.status.day_off": "Выходной",
   "overview.branches.staff": "На месте",

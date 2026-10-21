@@ -14,6 +14,7 @@ import KpiCard from "@/components/KpiCard.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import PersonCell from "@/components/PersonCell.vue";
+import SavedViewsTabs from "@/components/SavedViewsTabs.vue";
 import TextInput from "@/components/TextInput.vue";
 import UiBadge from "@/components/UiBadge.vue";
 import UiButton from "@/components/UiButton.vue";
@@ -280,6 +281,34 @@ describe("small layout fixes", () => {
     await flushPromises();
     // "To verify" grew a badge: "All", and its underline, start further right.
     const first = header.find("[data-tab='verify']").element as HTMLElement;
+    expect(width(first)).toBeGreaterThan(90);
+    expect(underline()).toContain(`left: ${width(first)}px`);
+    widthSpy.mockRestore();
+    leftSpy.mockRestore();
+  });
+
+  it("SavedViewsTabs moves the underline when a view's count arrives and widens a tab before it", async () => {
+    // jsdom has no layout: a tab is 10 px per character, placed after the tabs before it.
+    const width = (el: HTMLElement) => (el.textContent ?? "").trim().length * 10;
+    const widthSpy = vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(function (this: HTMLElement) {
+      return width(this);
+    });
+    const leftSpy = vi.spyOn(HTMLElement.prototype, "offsetLeft", "get").mockImplementation(function (this: HTMLElement) {
+      let left = 0;
+      for (let el = this.previousElementSibling as HTMLElement | null; el; el = el.previousElementSibling as HTMLElement | null) if (el.dataset.active) left += width(el);
+      return left;
+    });
+    const views = (count?: number) => [
+      { id: "verify", name: "To verify", builtin: true, count },
+      { id: "all", name: "All", builtin: true },
+    ];
+    const tabs = mount(SavedViewsTabs, { props: { modelValue: "all", views: views() as never }, global: { plugins: plugins() } });
+    await flushPromises();
+    const underline = () => tabs.find("[role='tablist'] > span[aria-hidden='true']").attributes("style");
+    expect(underline()).toContain("left: 90px");
+    await tabs.setProps({ views: views(4) as never });
+    await flushPromises();
+    const first = tabs.find("[data-active='false']").element as HTMLElement;
     expect(width(first)).toBeGreaterThan(90);
     expect(underline()).toContain(`left: ${width(first)}px`);
     widthSpy.mockRestore();
