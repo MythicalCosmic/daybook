@@ -11,6 +11,7 @@ import { useToast } from "../../state/toast";
 import { haptic } from "../../telegram";
 import { Badge, Banner, BottomBar, ListCard, ListRow, LoadError, PageHeader, Screen, ScreenSkeleton, SectionHead } from "../../ui";
 import { useAcknowledge, useKbPage } from "./api";
+import { useFollowLink } from "./links";
 import "./knowledge.css";
 import { messages } from "./messages";
 import { safeHtml } from "./safeHtml";
@@ -26,6 +27,7 @@ export function PageReader({ params }: PageProps) {
   const page = useKbPage(member.companyId, id);
   const ack = useAcknowledge(member.companyId, id);
   const body = useMemo(() => safeHtml(page.data?.body ?? ""), [page.data?.body]);
+  const followLink = useFollowLink();
 
   if (!page.data) {
     return (
@@ -73,8 +75,19 @@ export function PageReader({ params }: PageProps) {
         ) : data.require_ack && data.my_ack ? (
           <Banner tone="sage" icon={CheckCheck} title={t("read.confirmed", { version: data.my_ack.version })} />
         ) : null}
-        {/* Cleaned by the server's allow-list, then again by safeHtml. */}
-        <article className="kbm-article" dangerouslySetInnerHTML={{ __html: body }} />
+        {/* Cleaned by the server's allow-list, then again by safeHtml. Its links open through the
+            app: one into the app opens that screen here, others in Telegram's browser. */}
+        <article
+          className="kbm-article"
+          onClick={(event) => {
+            const anchor = event.target instanceof Element ? event.target.closest("a[href]") : null;
+            if (anchor && followLink(anchor.getAttribute("href") ?? "")) {
+              event.preventDefault();
+              haptic.select();
+            }
+          }}
+          dangerouslySetInnerHTML={{ __html: body }}
+        />
         {data.children.length > 0 && (
           <>
             <SectionHead size="small">{t("subpages")}</SectionHead>

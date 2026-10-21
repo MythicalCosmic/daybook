@@ -130,6 +130,37 @@ describe("PageReader", () => {
     await waitFor(() => expect(screen.queryByRole("button", { name: /I’ve read it/ })).toBeNull());
   });
 
+  it("opens a link into the app right here, and other links in Telegram's browser", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
+    const origin = window.location.origin;
+    client.setQueryData(
+      kbKeys.page(1, 5),
+      page({ require_ack: false, body: `<p><a href="${origin}/app/?screen=kb:9">Kassa rules</a> and <a href="https://example.com/guide">the supplier's guide</a></p>` }),
+    );
+    api.mockResolvedValue(page({ require_ack: false }));
+    const opened = vi.spyOn(window, "open").mockImplementation(() => null);
+    let navigation: Navigation | null = null;
+    const Probe = () => {
+      navigation = useNavigation();
+      return null;
+    };
+    renderWith(
+      <>
+        <PageReader params={{ id: 5 }} />
+        <Probe />
+      </>,
+      client,
+    );
+
+    fireEvent.click(screen.getByText("Kassa rules"));
+    // Another page of the knowledge base, over this one: Back comes back here.
+    expect(navigation!.top).toEqual({ feature: "knowledge", page: "page", params: { id: 9 } });
+    expect(opened).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByText("the supplier's guide"));
+    expect(opened).toHaveBeenCalledWith("https://example.com/guide", "_blank", "noopener");
+  });
+
   it("asks again when the server refuses", async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity }, mutations: { retry: false } } });
     client.setQueryData(kbKeys.page(1, 5), page());
