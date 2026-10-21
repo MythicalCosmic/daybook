@@ -7,7 +7,7 @@ import { daysFromToday, dayMonth } from "../../lib/time";
 import { useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
 import { haptic } from "../../telegram";
-import { EmptyState, Input, ListCard, ListRow, PageHeader, Screen, ScreenSkeleton, SectionHead } from "../../ui";
+import { EmptyState, Input, ListCard, ListRow, LoadError, PageHeader, Screen, ScreenSkeleton, SectionHead } from "../../ui";
 import { useKbHome, useKbSearch, type KbPageRow } from "./api";
 import "./knowledge.css";
 import { messages } from "./messages";
@@ -53,7 +53,11 @@ export function KnowledgeHome() {
           </ListCard>
         )
       ) : !home.data ? (
-        <ScreenSkeleton variant="list" delay={150} />
+        home.isError ? (
+          <LoadError compact error={home.error} onRetry={() => void home.refetch()} />
+        ) : (
+          <ScreenSkeleton variant="list" delay={150} />
+        )
       ) : home.data.spaces.length === 0 ? (
         <EmptyState icon={BookOpenCheck} tone="sage" title={t("empty.title")} body={t("empty.body")} />
       ) : (
@@ -90,7 +94,7 @@ export function KnowledgeHome() {
               <SectionHead>{t("recent")}</SectionHead>
               <ListCard>
                 {home.data.recent.map((row) => (
-                  <ListRow key={row.id} icon={emoji(row.emoji)} title={row.title} subtitle={`${row.space.name} · ${updated(row)}`} onClick={() => openPage(row)} />
+                  <ListRow key={row.id} icon={emoji(row.emoji)} title={row.title} subtitle={`${updated(row)} · ${row.space.name}`} onClick={() => openPage(row)} />
                 ))}
               </ListCard>
             </>

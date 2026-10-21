@@ -2,7 +2,7 @@ import { FolderKanban } from "lucide-react";
 
 import { useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
-import { EmptyState, PageHeader, PullToRefresh, ScreenSkeleton } from "../../ui";
+import { EmptyState, LoadError, PageHeader, PullToRefresh, ScreenSkeleton } from "../../ui";
 import { useFeatureT } from "../../i18n/feature";
 import { useMyProjects } from "./api";
 import { messages } from "./messages";
@@ -22,8 +22,8 @@ export default function ProjectsPage() {
       <PageHeader kicker={member.company.name} title={t("title")} onBack={navigation.pop} />
       {query.isPending ? (
         <ScreenSkeleton variant="list" delay={150} />
-      ) : query.isError ? (
-        <EmptyState compact icon={FolderKanban} title={t("error")} />
+      ) : query.isError && !query.data ? (
+        <LoadError compact error={query.error} onRetry={() => void query.refetch()} />
       ) : projects.length === 0 ? (
         <EmptyState icon={FolderKanban} tone="sage" title={t("empty")} body={t("emptyBody")} />
       ) : (

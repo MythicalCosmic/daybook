@@ -5,7 +5,9 @@ type Schemas = components["schemas"];
 export type Me = Schemas["Me"];
 export type Membership = Schemas["Membership"];
 export type Position = Schemas["Position"];
-export type Task = Schemas["Task"];
+/** `routine`: the routine (task template) that made a daily task, null for one-off work. The
+ * employee API sends it; until the schema is regenerated it's written here by hand. */
+export type Task = Schemas["Task"] & { routine?: number | null };
 export type TaskStatus = Schemas["TaskStatusEnum"];
 export type TaskAction = Schemas["ActionsEnum"];
 export type Comment = Schemas["Comment"];
@@ -25,5 +27,8 @@ export type TimeOff = Schemas["TimeOff"];
 export type TimeOffStatus = Schemas["TimeOffStatusEnum"];
 export type Holiday = Schemas["Holiday"];
 export type OffToday = Schemas["OffToday"];
+
+/** `POST tasks/confirm/`: how confirming several tasks went, one result per id. */
+export type ConfirmMany = { done: number; failed: number; results: { id: number; ok: boolean; error: string }[] };
 
 export type Page<T> = { count: number; next: string | null; previous: string | null; results: T[] };

@@ -121,6 +121,12 @@
   white-space: normal;
 }
 
+/* A colleague's open till: news, not a call to act, so the calm sage circle. */
+.kassa-hero--busy .kassa-hero-icon {
+  background: var(--color-accent-2-200);
+  color: var(--color-accent-2-800);
+}
+
 .kassa-hero-cta {
   flex: none;
   min-height: 40px;
@@ -483,8 +489,8 @@
 
 .kassa-thumb {
   flex: none;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   padding: 0;
   border: 0;
   border-radius: 10px;
@@ -502,6 +508,7 @@
 .kassa-history-link {
   align-self: center;
   margin-top: 4px;
+  min-height: 40px;
 }
 
 .kassa-sofar {

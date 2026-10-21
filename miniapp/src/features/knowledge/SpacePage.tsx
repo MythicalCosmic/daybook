@@ -5,7 +5,7 @@ import { useFeatureT } from "../../i18n/feature";
 import { useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
 import { haptic } from "../../telegram";
-import { Badge, EmptyState, ListCard, ListRow, PageHeader, Screen, ScreenSkeleton } from "../../ui";
+import { Badge, EmptyState, ListCard, ListRow, LoadError, PageHeader, Screen, ScreenSkeleton } from "../../ui";
 import { flattenTree, useKbSpace } from "./api";
 import "./knowledge.css";
 import { messages } from "./messages";
@@ -21,7 +21,11 @@ export function SpacePage({ params }: PageProps) {
   if (!space.data) {
     return (
       <Screen variant="detail">
-        <ScreenSkeleton variant="list" delay={150} />
+        {space.isError ? (
+          <LoadError error={space.error} onRetry={() => void space.refetch()} onBack={navigation.pop} />
+        ) : (
+          <ScreenSkeleton variant="list" delay={150} />
+        )}
       </Screen>
     );
   }

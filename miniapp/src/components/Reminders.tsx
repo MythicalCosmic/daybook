@@ -31,7 +31,9 @@ export function LateCard({
   const nodes = reminder ? timeline(task, reminder, ctx) : [];
   const total = reminder?.escalate_after ?? 0;
   const snoozed = reminder?.snoozed_until && new Date(reminder.snoozed_until) > ctx.now ? reminder.snoozed_until : null;
-  const manager = reminder?.escalate_to ?? t("detail.reminders.manager");
+  // Without a name, "your manager" reads inside a sentence; one that starts with it has its own text.
+  const named = reminder?.escalate_to ?? null;
+  const manager = named ?? t("detail.reminders.manager");
   const escalation = nodes.find((node) => node.state === "escalation");
 
   let subtitle = t("detail.late.body", { time: at(task.due_at!) });
@@ -76,7 +78,9 @@ export function LateCard({
         <div style={{ fontSize: 15, lineHeight: 1.5, textWrap: "pretty" }}>
           {t("detail.reminders.every", { every: reminder.every_minutes })}{" "}
           {reminder.escalated_at
-            ? t("detail.reminders.escalated", { name: manager })
+            ? named
+              ? t("detail.reminders.escalated", { name: named })
+              : t("detail.reminders.escalatedManager")
             : escalation
               ? t("detail.reminders.escalateAt", { time: escalation.time, name: manager })
               : null}
@@ -153,7 +157,8 @@ function timeline(task: Task, reminder: ReminderInfo, ctx: ViewContext): Node[] 
     key: "escalation",
     mark: name ? initials(first, last) : "M",
     time: escalatedAt === null ? "" : at(escalatedAt),
-    caption: first || ctx.t("detail.reminders.manager"),
+    // A caption under the dot, capitalised like "Sent" and "Next" beside it.
+    caption: first || ctx.t("detail.node.manager"),
     state: "escalation",
   });
   return nodes;

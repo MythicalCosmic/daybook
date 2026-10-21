@@ -95,6 +95,10 @@ describe("task view", () => {
 
   it("explains each task in one line", () => {
     expect(rowMeta(task({ due_at: "2026-10-19T04:16:00Z" }), ctx())).toBe("25 min late");
+    // A day and a bit keeps its hours; after that, days are enough.
+    expect(rowMeta(task({ due_at: "2026-10-18T01:41:00Z" }), ctx())).toBe("1 d 3 h late");
+    expect(rowMeta(task({ due_at: "2026-10-05T04:41:00Z" }), ctx())).toBe("14 d late");
+    expect(rowMeta(task({ due_at: "2026-10-05T04:41:00Z" }), ctx("uz"))).toBe("14 kun kechikdi");
     expect(rowMeta(task({ kind: "assigned", created_by: { id: 2, name: "Anna K.", position: null } }), ctx())).toBe(
       "From Anna K.",
     );
@@ -108,6 +112,13 @@ describe("task view", () => {
     expect(rowRight(task({ due_at: "2026-10-19T09:00:00Z" }), ctx())).toBe("14:00");
     expect(rowRight(task({ due_at: "2026-10-20T09:00:00Z" }), ctx())).toBe("Tomorrow");
     expect(rowRight(task(), ctx())).toBe("");
+  });
+
+  it("dates a chip more than a week away instead of naming a weekday that could be either", () => {
+    expect(rowRight(task({ due_at: "2026-10-18T09:00:00Z" }), ctx())).toBe("Yesterday");
+    expect(rowRight(task({ due_at: "2026-10-15T09:00:00Z" }), ctx())).toBe("Thu");
+    expect(rowRight(task({ due_at: "2026-10-05T09:00:00Z" }), ctx())).toBe("5 Oct");
+    expect(rowRight(task({ due_at: "2026-10-05T09:00:00Z" }), ctx("ru"))).toBe("5 окт.");
   });
 
   it("names repeats in the person's language", () => {

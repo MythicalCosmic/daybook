@@ -1,4 +1,4 @@
-import { Check, Hourglass, SendHorizontal, Undo2, X } from "lucide-react";
+import { Check, Hourglass, Play, SendHorizontal, Undo2, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import {
@@ -13,29 +13,34 @@ import type { Comment, Task } from "../api/types";
 import { LateCard, ReminderNote } from "../components/Reminders";
 import { FeatureSlot } from "../features/FeatureSlot";
 import { errorText, useCompleteTask } from "../lib/actions";
-import { isLate, repeatLabel, type ViewContext } from "../lib/taskView";
+import { isLate, isOpen, repeatLabel, type ViewContext } from "../lib/taskView";
 import { clock, dayMonth, daysFromToday, weekdayShort } from "../lib/time";
 import { useViewContext } from "../lib/useNow";
 import { useNavigation } from "../state/navigation";
 import { initials, useMember } from "../state/session";
 import { useToast } from "../state/toast";
 import { haptic } from "../telegram";
+import { BottomBar, LoadError, ScreenSkeleton, type BottomAction } from "../ui";
 
 export function TaskDetail({ taskId }: { taskId: number }) {
   const ctx = useViewContext();
   const member = useMember();
   const task = useTask(member.companyId, taskId);
   const comments = useComments(member.companyId, taskId);
+  const navigation = useNavigation();
 
   return (
     <div className="detail-layer">
       {task.data ? (
         <Detail task={task.data} comments={comments.data ?? []} ctx={ctx} />
+      ) : task.isError ? (
+        // A task that's gone (or isn't mine to see) says so, instead of a skeleton that never ends.
+        <div className="screen screen--detail">
+          <LoadError error={task.error} onRetry={() => void task.refetch()} onBack={navigation.pop} />
+        </div>
       ) : (
         <div className="screen screen--detail">
-          <div className="skeleton" style={{ height: 40, width: "60%" }} />
-          <div className="skeleton" style={{ height: 120 }} />
-          <div className="skeleton" style={{ height: 180 }} />
+          <ScreenSkeleton variant="detail" delay={150} />
         </div>
       )}
     </div>
@@ -101,14 +106,7 @@ function Detail({ task, comments, ctx }: { task: Task; comments: Comment[]; ctx:
     [t("detail.due"), dueLabel(task, ctx)],
     [t("detail.repeats"), repeat ?? t("detail.no")],
     [t("detail.proof"), t(`proof.${task.proof}`)],
-    [
-      t("detail.check"),
-      task.needs_confirmation
-        ? task.kind === "assigned" && task.created_by
-          ? task.created_by.name
-          : t("detail.checkYes")
-        : t("detail.checkNo"),
-    ],
+    [t("detail.check"), checker(task, member.id, t)],
   ];
   if (!isMine) details.push([t("detail.for"), task.assignee.name]);
 
@@ -121,7 +119,8 @@ function Detail({ task, comments, ctx }: { task: Task; comments: Comment[]; ctx:
         <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "0 4px" }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             <span className={`tag tag-${status.tone}`} style={{ fontSize: 13, padding: "4px 11px" }}>{status.label}</span>
-            {task.proof !== "none" && task.status !== "done" && (
+            {/* The proof it needs, while it's still to do: once sent, the proof is there. */}
+            {task.proof !== "none" && isOpen(task) && (
               <span className="tag tag-neutral" style={{ fontSize: 13, padding: "4px 11px" }}>{t(`proof.tag.${task.proof}`)}</span>
             )}
           </div>
@@ -216,7 +215,10 @@ function StatusBanner({ task, lastComment, ctx }: { task: Task; lastComment?: Co
   const at = (moment: string | null) => (moment ? clock(moment, ctx.timeZone, ctx.locale) : "—");
   let banner: { tone: string; icon: ReactNode; title: string; note?: string } | null = null;
   if (task.status === "review") {
-    banner = { tone: "", icon: <Hourglass size={17} strokeWidth={2.6} />, title: t("detail.banner.review", { time: at(task.completed_at) }), note: t("detail.banner.reviewNote") };
+    // Whoever checks it hears who finished it and what to do; whoever did it, that it's on its way.
+    banner = task.actions.includes("confirm")
+      ? { tone: "", icon: <Hourglass size={17} strokeWidth={2.6} />, title: t("detail.banner.reviewBy", { name: task.assignee.name, time: at(task.completed_at) }), note: t(task.proof === "none" ? "detail.banner.reviewByNoteBare" : "detail.banner.reviewByNote") }
+      : { tone: "", icon: <Hourglass size={17} strokeWidth={2.6} />, title: t("detail.banner.review", { time: at(task.completed_at) }), note: t("detail.banner.reviewNote") };
   } else if (task.status === "returned") {
     banner = {
       tone: "accent",
@@ -340,6 +342,11 @@ function Mentions({ text }: { text: string }) {
   );
 }
 
+/**
+ * The task's actions in the bottom bar, like every page's: Telegram's main button for the one that
+ * finishes the step (Mark as done, Send again, Confirm) and its secondary button beside it (Start,
+ * Send back). Outside Telegram, or on an older client, the same two buttons sit in the page.
+ */
 function ActionBar({ task, isMine }: { task: Task; isMine: boolean }) {
   const { t } = useViewContext();
   const member = useMember();
@@ -359,47 +366,42 @@ function ActionBar({ task, isMine }: { task: Task; isMine: boolean }) {
       },
     );
 
-  const buttons: ReactNode[] = [];
-  // As in the design, Start is for assigned work (so whoever gave it sees it's underway);
-  // daily and personal tasks, and anything sent back, just get done.
-  if (task.actions.includes("start") && task.kind === "assigned" && task.status !== "returned") {
-    buttons.push(
-      <button key="start" className="btn btn-secondary btn-lg" style={{ flex: 1, fontSize: 17 }} disabled={action.isPending} onClick={() => run("start", t("toast.started"))}>
-        {t("detail.start")}
-      </button>,
-    );
-  }
-  if (task.actions.includes("complete")) {
-    buttons.push(
-      <button key="complete" className="btn btn-primary btn-lg" style={{ flex: 2 }} disabled={action.isPending} onClick={() => complete(task)}>
-        <Check size={20} strokeWidth={3} />
-        <span>{task.status === "returned" ? t("detail.sendAgain") : t("detail.markDone")}</span>
-      </button>,
-    );
-  }
-  if (task.status === "review" && isMine) {
-    buttons.push(
-      <button key="waiting" className="btn btn-secondary btn-lg" style={{ flex: 1, fontSize: 17 }} disabled>
-        {t("detail.waiting")}
-      </button>,
-    );
+  let primary: BottomAction | null = null;
+  let secondary: BottomAction | undefined;
+  if (task.actions.includes("confirm")) {
+    primary = { text: t("detail.confirm"), icon: Check, loading: action.isPending, onClick: () => run("confirm", t("toast.confirmed")) };
+  } else if (task.actions.includes("complete")) {
+    primary = {
+      text: task.status === "returned" ? t("detail.sendAgain") : t("detail.markDone"),
+      icon: Check,
+      disabled: action.isPending,
+      onClick: () => complete(task),
+    };
+  } else if (task.status === "review" && isMine) {
+    primary = { text: t("detail.waiting"), icon: Hourglass, disabled: true, onClick: () => undefined };
   }
   if (task.actions.includes("return")) {
-    buttons.push(
-      <button key="return" className="btn btn-secondary btn-lg" style={{ flex: 1, fontSize: 17 }} onClick={() => navigation.openSheet({ kind: "return", taskId: task.id })}>
-        {t("detail.sendBack")}
-      </button>,
-    );
+    secondary = { text: t("detail.sendBack"), icon: Undo2, onClick: () => navigation.openSheet({ kind: "return", taskId: task.id }) };
+  } else if (task.actions.includes("start") && task.kind === "assigned" && task.status !== "returned") {
+    // As in the design, Start is for assigned work (so whoever gave it sees it's underway);
+    // daily and personal tasks, and anything sent back, just get done.
+    secondary = { text: t("detail.start"), icon: Play, disabled: action.isPending, onClick: () => run("start", t("toast.started")) };
   }
-  if (task.actions.includes("confirm")) {
-    buttons.push(
-      <button key="confirm" className="btn btn-primary btn-lg" style={{ flex: 2 }} disabled={action.isPending} onClick={() => run("confirm", t("toast.confirmed"))}>
-        <Check size={20} strokeWidth={3} />
-        <span>{t("detail.confirm")}</span>
-      </button>,
-    );
-  }
-  return buttons.length ? <div className="action-bar">{buttons}</div> : null;
+  if (!primary && secondary) [primary, secondary] = [secondary, undefined];
+  return primary ? <BottomBar primary={primary} secondary={secondary} /> : null;
+}
+
+/**
+ * Who checks the task, as the person looking reads it: whoever confirmed it once it's checked,
+ * "You" for the one who checks it (not "Your manager" to the manager), the giver of assigned work,
+ * else "Your manager".
+ */
+export function checker(task: Task, me: number, t: ViewContext["t"]): string {
+  if (!task.needs_confirmation) return t("detail.checkNo");
+  if (task.confirmed_by) return task.confirmed_by.id === me ? t("detail.checkYou") : task.confirmed_by.name;
+  if (task.actions.includes("confirm") || task.created_by?.id === me) return t("detail.checkYou");
+  if (task.kind === "assigned" && task.created_by) return task.created_by.name;
+  return t("detail.checkYes");
 }
 
 function dueLabel(task: Task, ctx: ViewContext): string {

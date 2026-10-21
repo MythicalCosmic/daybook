@@ -1,13 +1,28 @@
+import { CheckCheck, ListPlus } from "lucide-react";
+import { useEffect } from "react";
+
 import { useBoard, useReviewQueue } from "../api/hooks";
 import type { Task } from "../api/types";
+import { ReviewQueue, RoutinesTab } from "../components/Routines";
 import { RowSkeleton, TaskRow } from "../components/TaskRow";
 import { useCompleteTask } from "../lib/actions";
 import { groupTasks, isDueToday, isOpen } from "../lib/taskView";
-import { clock } from "../lib/time";
 import { useViewContext } from "../lib/useNow";
 import { useNavigation, type TasksTab } from "../state/navigation";
 import { useMember } from "../state/session";
 import { haptic } from "../telegram";
+import { EmptyState, LoadError } from "../ui";
+import { useScrollEdges } from "../ui/useScrollEdges";
+
+/** Scroll the tab strip just enough to show the chosen tab (no page jump). */
+function keepInView(node: HTMLButtonElement | null) {
+  const strip = node?.parentElement;
+  if (!node || !strip || strip.scrollWidth <= strip.clientWidth) return;
+  const left = node.offsetLeft - 8;
+  const right = node.offsetLeft + node.offsetWidth + 8 - strip.clientWidth;
+  if (strip.scrollLeft > left) strip.scrollTo({ left, behavior: "smooth" });
+  else if (strip.scrollLeft < right) strip.scrollTo({ left: right, behavior: "smooth" });
+}
 
 const KIND: Record<Exclude<TasksTab, "review">, Task["kind"]> = {
   daily: "daily",
@@ -19,6 +34,7 @@ export function Tasks() {
   const ctx = useViewContext();
   const { t } = ctx;
   const member = useMember();
+  const strip = useScrollEdges<HTMLDivElement>();
   const navigation = useNavigation();
   const complete = useCompleteTask();
   const canReview = member.permissions.includes("tasks.confirm");
@@ -36,18 +52,24 @@ export function Tasks() {
   if (canReview) tabs.push({ key: "review", count: reviews.data?.length ?? 0 });
 
   const open = (task: Task) => navigation.openTask(task.id);
+  // Counts and labels change the strip's width: say again which edges hide tabs.
+  useEffect(strip.update);
 
   return (
     <div className="screen fade-in" style={{ gap: 10 }}>
       <div className="page-head">
         <h1 className="heading title-lg">{t("tasks.title")}</h1>
-        <div className="subline">{t("tasks.left", { count: leftToday })}</div>
+        {/* Counted once the list is here: "0 tasks left" while it loads would be a guess. */}
+        <div className="subline">{board.data ? t("tasks.left", { count: leftToday }) : "\u00a0"}</div>
       </div>
 
-      <div className="seg" role="tablist">
+      {/* Four tabs with counts don't fit a phone in every language: the strip scrolls sideways
+          then, keeping the chosen tab in view. */}
+      <div ref={strip.ref} className="seg seg--scroll" role="tablist">
         {tabs.map(({ key, count }) => (
           <button
             key={key}
+            ref={tab === key ? keepInView : undefined}
             className="seg-opt"
             role="tab"
             aria-pressed={tab === key}
@@ -63,9 +85,14 @@ export function Tasks() {
       </div>
 
       {tab === "review" ? (
-        <ReviewList tasks={reviews.data} loading={reviews.isPending} onOpen={open} ctx={ctx} />
+        <ReviewQueue tasks={reviews.data} loading={reviews.isPending} error={reviews.error} onRetry={() => void reviews.refetch()} ctx={ctx} onOpen={open} />
       ) : board.isPending ? (
         <RowSkeleton count={4} />
+      ) : board.isError && !board.data ? (
+        // Not "All done here": the list didn't load, and saying so beats a false all-clear.
+        <LoadError compact error={board.error} onRetry={() => void board.refetch()} />
+      ) : tab === "daily" ? (
+        <RoutinesTab tasks={tasks.filter((task) => task.kind === "daily")} ctx={ctx} onOpen={open} onTick={complete} />
       ) : (
         <Groups tasks={tasks.filter((task) => task.kind === KIND[tab])} tab={tab} onOpen={open} onTick={complete} ctx={ctx} />
       )}
@@ -82,10 +109,10 @@ function Groups({ tasks, tab, onOpen, onTick, ctx }: {
 }) {
   const groups = groupTasks(tasks, ctx.now);
   if (!groups.length) {
-    return (
-      <div className="muted" style={{ padding: "var(--space-6) 4px", fontSize: 16 }}>
-        {tab === "personal" ? ctx.t("tasks.empty.personal") : ctx.t("tasks.empty.other")}
-      </div>
+    return tab === "personal" ? (
+      <EmptyState compact icon={ListPlus} title={ctx.t("tasks.empty.personal")} body={ctx.t("tasks.empty.personalBody")} />
+    ) : (
+      <EmptyState compact tone="sage" icon={CheckCheck} title={ctx.t("tasks.empty.other")} body={ctx.t("tasks.empty.otherBody")} />
     );
   }
   return (
@@ -100,34 +127,6 @@ function Groups({ tasks, tab, onOpen, onTick, ctx }: {
             <TaskRow key={task.id} task={task} ctx={ctx} onOpen={() => onOpen(task)} onTick={() => onTick(task)} />
           ))}
         </div>
-      ))}
-    </>
-  );
-}
-
-function ReviewList({ tasks, loading, onOpen, ctx }: {
-  tasks: Task[] | undefined;
-  loading: boolean;
-  onOpen: (task: Task) => void;
-  ctx: ReturnType<typeof useViewContext>;
-}) {
-  if (loading) return <RowSkeleton count={3} />;
-  if (!tasks?.length) {
-    return <div className="muted" style={{ padding: "var(--space-6) 4px", fontSize: 16 }}>{ctx.t("tasks.empty.review")}</div>;
-  }
-  return (
-    <>
-      {tasks.map((task) => (
-        <TaskRow
-          key={task.id}
-          task={task}
-          ctx={ctx}
-          onOpen={() => onOpen(task)}
-          meta={ctx.t("meta.finishedBy", {
-            name: task.assignee.name,
-            time: task.completed_at ? clock(task.completed_at, ctx.timeZone, ctx.locale) : "—",
-          })}
-        />
       ))}
     </>
   );

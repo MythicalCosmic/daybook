@@ -56,6 +56,8 @@ function OpenShift({ kassa }: { kassa: Kassa }) {
   const currency = kassa.settings.currency;
   const money = useMoney(currency);
   const free = kassa.registers.filter((till) => !till.busy);
+  // Tills of several branches can share a name ("Kassa 1"): a busy one still says where it is.
+  const manyBranches = new Set(kassa.registers.map((till) => till.branch.id)).size > 1;
   const [tillId, setTillId] = useState<number | null>(() => {
     const remembered = lastTill();
     if (free.some((till) => till.id === remembered)) return remembered;
@@ -125,7 +127,11 @@ function OpenShift({ kassa }: { kassa: Kassa }) {
                 </span>
                 <span className="row-main">
                   <span className="row-title">{till.name}</span>
-                  <span className="row-meta">{till.busy ? t("open.busy", { name: till.busy.cashier, code: till.busy.code }) : till.branch.name}</span>
+                  <span className="row-meta">
+                    {till.busy
+                      ? [manyBranches && till.branch.name, t("open.busy", { name: till.busy.cashier, code: till.busy.code })].filter(Boolean).join(" · ")
+                      : till.branch.name}
+                  </span>
                 </span>
                 <span className="kassa-radio" aria-hidden>
                   {selected && <Check size={15} strokeWidth={3.2} />}
@@ -150,7 +156,8 @@ function OpenShift({ kassa }: { kassa: Kassa }) {
       </Screen>
       <BottomBar
         primary={{
-          text: tillId ? t("open.submit", { amount: money(amount) }) : t("open.pick"),
+          // With every till open by colleagues there is nothing to pick: say so where the action was.
+          text: tillId ? t("open.submit", { amount: money(amount) }) : free.length ? t("open.pick") : t("allBusy"),
           onClick: submit,
           disabled: !tillId,
           loading: open.isPending,

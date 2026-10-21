@@ -8,7 +8,7 @@ import { useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
 import { useToast } from "../../state/toast";
 import { haptic } from "../../telegram";
-import { Avatar, Badge, EmptyState, IconButton, PageHeader, PullToRefresh, ScreenSkeleton, Segmented, cx } from "../../ui";
+import { Avatar, Badge, IconButton, LoadError, PageHeader, PullToRefresh, ScreenSkeleton, Segmented, cx } from "../../ui";
 import type { PageProps } from "../registry";
 import { useBoard, useMoveCard, useTimer, type Board, type Card } from "./api";
 import { colorClass, endOf, hhmm } from "./lib";
@@ -155,7 +155,7 @@ export default function BoardPage({ params }: PageProps) {
     return (
       <div className="screen screen--detail enter">
         <PageHeader title={t("board")} onBack={navigation.pop} />
-        <EmptyState compact title={t("error")} />
+        <LoadError error={query.error} onRetry={() => void query.refetch()} onBack={navigation.pop} />
       </div>
     );
   }

@@ -7,7 +7,7 @@
  * geofence like the server does, and then: outside a "flag" fence it asks to confirm, outside a
  * "reject" fence it explains; a company that wants a selfie gets one before the check-in is sent.
  */
-import { ChevronRight, Clock3, LogIn, MapPin, MapPinOff, RotateCcw, Settings2, TriangleAlert } from "lucide-react";
+import { CalendarClock, CalendarDays, CalendarOff, ChevronRight, CircleCheck, Clock3, LogIn, MapPin, MapPinOff, RotateCcw, Settings2, TriangleAlert } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { useI18n, type Lang } from "../../i18n";
@@ -16,7 +16,7 @@ import { formatDistance, getLocation, openLocationSettings, type LocationFailure
 import { useNow } from "../../lib/useNow";
 import { useMember } from "../../state/session";
 import { haptic } from "../../telegram";
-import { Badge, Button, Card, CardTitle, IconButton, PhotoInput, Skeleton, SlideToConfirm, useToast, type CardTone, type SlideState } from "../../ui";
+import { Badge, Banner, Button, Card, CardTitle, IconButton, PhotoInput, Skeleton, SlideToConfirm, useToast, type CardTone, type SlideState } from "../../ui";
 import { useCheck, useToday, type Tap } from "./api";
 import { fenceCheck, minutesBetween, shiftDay, shiftLine, wallClock, type FenceCheck } from "./lib";
 import { duration, useT, whereLabel, type T } from "./text";
@@ -50,7 +50,11 @@ function hasFence(day: MyDay): boolean {
   return Boolean(day.branch && day.branch.latitude !== null && day.branch.longitude !== null);
 }
 
-export function CheckInCard({ onOpen }: { onOpen?: () => void }) {
+/**
+ * `compact` (Home): while there is nothing to slide (the shift hasn't opened, a day off, done for
+ * the day) the card is one calm row that opens the attendance page, instead of a big card.
+ */
+export function CheckInCard({ onOpen, compact = false }: { onOpen?: () => void; compact?: boolean }) {
   const t = useT();
   const { lang, locale } = useI18n();
   const member = useMember();
@@ -77,6 +81,7 @@ export function CheckInCard({ onOpen }: { onOpen?: () => void }) {
   }, [flash]);
 
   if (today.isPending) {
+    if (compact) return <Skeleton height={70} radius={22} />;
     return (
       <Card padding="lg" className="att-hero" aria-busy>
         <Skeleton height={18} width="62%" />
@@ -171,6 +176,23 @@ export function CheckInCard({ onOpen }: { onOpen?: () => void }) {
   const slideState: SlideState = flash ? "done" : step.kind === "locating" || step.kind === "sending" ? "loading" : "idle";
   const look = describe(day, now, t, { timeZone: member.timeZone, locale, lang });
   const chevron = onOpen && !natural ? <IconButton icon={ChevronRight} label={t("card.open")} size={36} variant="ghost" onClick={onOpen} /> : null;
+
+  if (compact && onOpen && !direction && step.kind === "idle") {
+    const icon = day.state === "done" ? CircleCheck : day.state === "upcoming" ? CalendarClock : day.next_shift ? CalendarDays : CalendarOff;
+    return (
+      <Banner
+        size="lg"
+        tone={day.state === "done" ? "sage" : "plain"}
+        iconTone="sage"
+        icon={icon}
+        title={look.title}
+        body={look.lines.join(" · ") || undefined}
+        wrap
+        onClick={onOpen}
+        className="att-hero-row"
+      />
+    );
+  }
 
   return (
     <Card tone={look.tone} padding="lg" className="att-hero">
@@ -339,6 +361,8 @@ function describe(day: MyDay, now: Date, t: T, { timeZone, locale, lang }: LookC
         lines: [shift ? t("card.startsIn", { time: duration(t, minutesBetween(now, shift.starts_at)) }) : ""].filter(Boolean),
       };
     default:
+      // With nothing planned at all, "No shift today" over "No shifts planned yet" said it twice.
+      if (!day.next_shift) return { tone: "plain", title: t("card.noNext"), lines: [t("card.noNextBody")] };
       return { tone: "plain", title: t("card.offTitle"), lines: [next] };
   }
 }

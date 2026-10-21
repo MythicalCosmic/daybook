@@ -36,8 +36,27 @@ async def test_sharing_own_contact_saves_a_verified_phone(dp, bot, company, memb
     assert user.phone == "+998901234567"
     reply = last_message(bot)
     assert "phone number is saved" in reply.text
+    # The app asked for it mid-registration: back to the app, not "name, phone and position" again.
+    assert "finish your account in the app" in reply.text
+    assert "phone and position" not in reply.text
     assert isinstance(reply.reply_markup, InlineKeyboardMarkup)
     assert reply.reply_markup.inline_keyboard[0][0].web_app.url == "https://app.example.com"
+
+
+async def test_a_registered_member_updating_their_phone_gets_the_menu(
+    dp, bot, company, member, settings
+):
+    settings.EMPLOYEE_MINIAPP_URL = "https://app.example.com"
+    worker = await member.aregistered(company, user__phone="+998900000001")
+
+    await dp.feed_update(
+        bot, updates.contact(updates.tg_user(worker.user.telegram_id), "+998901112233")
+    )
+
+    reply = last_message(bot)
+    assert "phone number is saved" in reply.text
+    assert "finish your account" not in reply.text
+    assert isinstance(reply.reply_markup, ReplyKeyboardMarkup)
 
 
 async def test_someone_elses_contact_is_not_saved(dp, bot, company, member):

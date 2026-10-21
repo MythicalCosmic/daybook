@@ -4,6 +4,7 @@ import { api } from "./client";
 import type {
   Activity,
   Comment,
+  ConfirmMany,
   Holiday,
   Language,
   Me,
@@ -186,6 +187,15 @@ export function useTaskAction(company: number) {
       }
     },
     onSuccess: refresh,
+  });
+}
+
+/** Confirm several finished tasks at once (a routine's runs): each by the same rules as one. */
+export function useConfirmMany(company: number) {
+  const refresh = useRefreshAfterTaskChange(company);
+  return useMutation({
+    mutationFn: (ids: number[]) => api<ConfirmMany>(`${tasksPath(company)}/confirm/`, { json: { ids } }),
+    onSuccess: () => refresh(),
   });
 }
 

@@ -82,6 +82,16 @@ export function dayMonth(moment: string | Date, timeZone: string, locale: string
   return formatter(locale, { timeZone, day: "numeric", month: "short" }).format(new Date(moment));
 }
 
+/** "26 October", "26 октября", "26-oktabr": a date inside a sentence, where a shortened month's dot
+ * would run into the sentence's own ("до 26 окт.."). */
+export function dayMonthLong(moment: string | Date, timeZone: string, locale: string): string {
+  if (isUzbek(locale)) {
+    const { day, month } = calendar(moment, timeZone);
+    return `${day}-${UZ_MONTHS[month]}`;
+  }
+  return formatter(locale, { timeZone, day: "numeric", month: "long" }).format(new Date(moment));
+}
+
 export function longDate(moment: Date, timeZone: string, locale: string): string {
   if (isUzbek(locale)) {
     const { day, month, weekday } = calendar(moment, timeZone);

@@ -3,7 +3,7 @@
  * `replaces` and `plusActions` work in place (PLAN-OWNER §9.4 item 13 keeps this green).
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { CalendarCheck, HandCoins, Receipt, Trophy } from "lucide-react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -12,6 +12,8 @@ import { keys } from "../api/hooks";
 import type { Me, Membership, Summary, Task } from "../api/types";
 import { I18nProvider } from "../i18n";
 import { Home } from "../screens/Home";
+import { Tasks } from "../screens/Tasks";
+import { ActivityScreen } from "../screens/Activity";
 import { Profile } from "../screens/Profile";
 import { Sheets } from "../sheets/Sheets";
 import { NavigationProvider, useNavigation, type Navigation, type NavigationInit } from "../state/navigation";
@@ -75,7 +77,7 @@ function membership(permissions: string[]): Membership {
     id: 7,
     company: {
       id: 1,
-      name: "Demo Shop",
+      name: "Demo Dorixona",
       timezone: "Asia/Tashkent",
       features: [],
       owner_sees_personal_tasks: false,
@@ -121,16 +123,23 @@ function Probe() {
 
 function renderWith(
   node: ReactNode,
-  { permissions = [] as string[], initial = undefined as NavigationInit | undefined, seed = undefined as { task: Task; comments: [] } | undefined } = {},
+  {
+    permissions = [] as string[],
+    initial = undefined as NavigationInit | undefined,
+    seed = undefined as { task: Task; comments: [] } | undefined,
+    numbers = summary as Summary | null,
+    board = [] as Task[] | null,
+    activity = [] as unknown[] | null,
+  } = {},
 ) {
   const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } });
-  client.setQueryData(keys.summary(1), summary);
+  if (numbers) client.setQueryData(keys.summary(1), numbers);
   if (seed) {
     client.setQueryData(keys.task(1, seed.task.id), seed.task);
     client.setQueryData(keys.comments(1, seed.task.id), seed.comments);
   }
-  client.setQueryData(keys.board(1), []);
-  client.setQueryData(keys.activity(1), []);
+  if (board) client.setQueryData(keys.board(1), board);
+  if (activity) client.setQueryData(keys.activity(1), activity);
   client.setQueryData(keys.timeOff(1), []);
   client.setQueryData(keys.holidays(1), []);
   const me = { id: 1, telegram_id: 4242, telegram_username: "", first_name: "Alisher", last_name: "Valiyev", phone: "", memberships: [membership(permissions)] } as Me;
@@ -173,6 +182,103 @@ describe("feature hosts in the real screens", () => {
     // Overviews come last, after the day's tasks ("Up next").
     expect(order.at(-1)).toBe("end");
     expect(order.indexOf("end")).toBeGreaterThan(order.indexOf("section-head"));
+  });
+
+  it("say nothing is due once on Home: a sun instead of 0/0 and no empty Up next", () => {
+    const { container } = renderWith(<Home />, { numbers: { ...summary, today_total: 0, today_done: 0, streak_days: 4 } });
+    expect(screen.getByText("Nothing due today")).toBeTruthy();
+    expect(screen.getByText("4 days in a row")).toBeTruthy();
+    expect(screen.queryByText("0/0")).toBeNull();
+    expect(container.querySelector(".home-today-free")).toBeTruthy();
+    expect(screen.queryByText("Up next")).toBeNull();
+    expect(screen.queryByText("Nothing else due today.")).toBeNull();
+    cleanup();
+
+    renderWith(<Home />);
+    expect(screen.getByText("3/8")).toBeTruthy();
+    expect(screen.getByText("Up next")).toBeTruthy();
+  });
+
+  it("tell routines and one-off work apart on Home's day card, when today has both", () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-21T10:00:00+05:00"));
+    try {
+      const due = "2026-10-21T15:00:00+05:00";
+      const base = { description: "", priority: "normal", proof: "none", needs_confirmation: false, proof_text: "", proof_photo: null, checklist: [], reminder: null, repeat_weekdays: null, started_at: null, completed_at: null, confirmed_at: null, confirmed_by: null, is_overdue: false, actions: [], created_at: due, for_date: null, assignee: { id: 7, name: "Alisher Valiyev", position: null }, created_by: null };
+      const board = [
+        { ...base, id: 1, kind: "daily", title: "Fridge temperature", status: "done", due_at: due },
+        { ...base, id: 2, kind: "daily", title: "Expiry dates", status: "todo", due_at: due },
+        { ...base, id: 3, kind: "assigned", title: "Count the safe", status: "todo", due_at: due },
+      ] as unknown as Task[];
+      const { container } = renderWith(<Home />, { board, numbers: { ...summary, today_total: 3, today_done: 1 } });
+      expect(container.querySelector(".home-today-split")?.textContent).toBe("Routines 1/2 · Tasks 0/1");
+      // A routine's row carries the repeat mark; one-off work doesn't.
+      const rows = [...container.querySelectorAll(".row")];
+      expect(rows.find((row) => row.textContent?.includes("Expiry dates"))?.querySelector(".row-meta-routine")).toBeTruthy();
+      expect(rows.find((row) => row.textContent?.includes("Count the safe"))?.querySelector(".row-meta-routine")).toBeNull();
+      cleanup();
+
+      renderWith(<Home />, { board: board.filter((task) => task.kind === "daily"), numbers: { ...summary, today_total: 2, today_done: 1 } });
+      expect(document.querySelector(".home-today-split")).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("say nothing they don't know yet: no guesses while loading, and a list that failed says so", async () => {
+    // The summary and the board never arrive (no network in tests).
+    vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new TypeError("Failed to fetch"))));
+    try {
+      const home = renderWith(<Home />, { numbers: null, board: null });
+      expect(screen.queryByText("Nothing due today")).toBeNull();
+      expect(home.container.querySelector(".home-today-loading")).toBeTruthy();
+      expect(home.container.querySelector(".ui-ring-label")?.textContent).toBe("");
+      // Up next doesn't claim "Nothing else due today" about a list it couldn't load.
+      expect(await screen.findByText("This part didn't open")).toBeTruthy();
+      expect(screen.queryByText("Nothing else due today.")).toBeNull();
+      cleanup();
+
+      renderWith(<Tasks />, { board: null });
+      expect(screen.queryByText(/tasks? left for today/)).toBeNull();
+      expect(await screen.findByText("This part didn't open")).toBeTruthy();
+      expect(screen.queryByText("All done here")).toBeNull();
+      cleanup();
+
+      renderWith(<ActivityScreen />, { activity: null });
+      expect(await screen.findByText("This part didn't open")).toBeTruthy();
+      expect(screen.queryByText("You're all caught up")).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("claim no streak and keep no endless placeholder when the day's numbers fail", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new TypeError("Failed to fetch"))));
+    try {
+      const me = renderWith(<Profile />, { numbers: null });
+      // Loading: a placeholder line, not "Finish today's tasks to start a streak" to someone mid-streak.
+      expect(me.container.querySelector(".profile-streak .skeleton")).toBeTruthy();
+      expect(screen.queryByText(/start a streak/)).toBeNull();
+      // Failed: no streak card at all, rather than a claim or a placeholder that never ends.
+      await waitFor(() => expect(me.container.querySelector(".profile-streak")).toBeNull());
+      expect(screen.queryByText(/start a streak/)).toBeNull();
+      cleanup();
+
+      const home = renderWith(<Home />, { numbers: null });
+      expect(home.container.querySelector(".home-today-loading")).toBeTruthy();
+      await waitFor(() => expect(home.container.querySelector(".home-today")).toBeNull());
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("keep quiet hours with the settings on Me, under no group of their own", () => {
+    const { container } = renderWith(<Profile />, { numbers: { ...summary, quiet_from: "22:00:00", quiet_until: "08:00:00" } });
+    const headings = [...container.querySelectorAll(".section-head")].map((node) => node.textContent);
+    expect(headings).not.toContain("My work");
+    const settings = [...container.querySelectorAll(".card.list-card")].at(-1)!;
+    expect(settings.textContent).toContain("Quiet hours");
+    expect(settings.textContent).toContain("22:00–08:00");
   });
 
   it("group feature rows on Me and let features take over time off and team results", () => {
@@ -233,6 +339,60 @@ describe("feature hosts in the real screens", () => {
       node.getAttribute("data-testid") ?? node.className,
     );
     expect(order.slice(0, 3)).toEqual(["check-item", "task-block", "detail-line"]);
+  });
+
+  it("put the task's actions in the bottom bar: the step that finishes it, the other beside it", () => {
+    const base = {
+      id: 43,
+      kind: "assigned",
+      title: "Count the safe",
+      description: "",
+      status: "todo",
+      priority: "normal",
+      due_at: null,
+      for_date: null,
+      proof: "none",
+      needs_confirmation: false,
+      proof_text: "",
+      proof_photo: null,
+      assignee: { id: 7, name: "Alisher Valiyev", position: null },
+      created_by: { id: 3, name: "Dilnoza Karimova", position: null },
+      confirmed_by: null,
+      checklist: [],
+      reminder: null,
+      repeat_weekdays: null,
+      started_at: null,
+      completed_at: null,
+      confirmed_at: null,
+      is_overdue: false,
+      actions: ["start", "complete"],
+      created_at: "2026-10-18T10:00:00Z",
+    } as unknown as Task;
+    const bar = (container: HTMLElement) => [...container.querySelectorAll(".action-bar button")].map((button) => button.textContent);
+
+    const mine = renderWith(<TaskDetail taskId={43} />, { seed: { task: base, comments: [] } });
+    expect(bar(mine.container)).toEqual(["Start", "Mark as done"]);
+    cleanup();
+
+    const review = { ...base, status: "review", assignee: { id: 9, name: "Jasur Tursunov", position: null }, actions: ["return", "confirm"] } as Task;
+    const checking = renderWith(<TaskDetail taskId={43} />, { seed: { task: { ...review, proof: "photo", completed_at: "2026-10-21T04:04:00Z" } as Task, comments: [] } });
+    expect(bar(checking.container)).toEqual(["Send back", "Confirm"]);
+    // The checker hears who finished it and what to do, not "it will be checked soon"; the photo
+    // is attached, so no "Photo needed".
+    expect(checking.container.textContent).toContain("Jasur Tursunov finished it at 09:04");
+    expect(checking.container.textContent).toContain("Look at the proof, then confirm it or send it back.");
+    expect(checking.container.textContent).not.toContain("Photo needed");
+    cleanup();
+
+    // Work that needed no proof: nothing to look at, so the note doesn't ask for it.
+    const bare = renderWith(<TaskDetail taskId={43} />, { seed: { task: { ...review, proof: "none", completed_at: "2026-10-21T04:04:00Z" } as Task, comments: [] } });
+    expect(bare.container.textContent).toContain("Confirm it, or send it back with what to fix.");
+    cleanup();
+
+    const waiting = { ...base, status: "review", actions: [] } as unknown as Task;
+    const sent = renderWith(<TaskDetail taskId={43} />, { seed: { task: waiting, comments: [] } });
+    expect(bar(sent.container)).toEqual(["Waiting for a check"]);
+    expect((sent.container.querySelector(".action-bar button") as HTMLButtonElement).disabled).toBe(true);
   });
 
   it("show quick-add actions above the personal task form", () => {

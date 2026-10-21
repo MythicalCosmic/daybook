@@ -8,7 +8,7 @@ import { useI18n } from "../../i18n";
 import { dayKey } from "../../lib/time";
 import { useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
-import { Badge, Banner, EmptyState, ListCard, ListRow, PageHeader, Screen, SkeletonList } from "../../ui";
+import { Badge, Banner, EmptyState, ListCard, ListRow, LoadError, PageHeader, Screen, SkeletonList } from "../../ui";
 import { useMyShifts, useToday } from "./api";
 import { shiftDay, shiftLine } from "./lib";
 import { codeLabel, usePageT } from "./pageText";
@@ -46,7 +46,7 @@ export default function ShiftsPage() {
       {shifts.isPending ? (
         <SkeletonList count={5} />
       ) : shifts.isError ? (
-        <EmptyState title={t("ui.failed.title")} body={t("ui.failed.body")} action={{ label: t("common.retry"), onClick: () => shifts.refetch() }} />
+        <LoadError error={shifts.error} onRetry={() => void shifts.refetch()} />
       ) : !shifts.data?.length ? (
         <EmptyState icon={CalendarX2} tone="sage" title={t("shifts.empty")} body={t("shifts.emptyBody")} />
       ) : (
@@ -87,7 +87,8 @@ function ShiftRow({ shift, now, onAsk }: { shift: Shift; now: number; onAsk: (sh
     <ListRow
       icon={CalendarDays}
       title={shiftDay(shift, member.timeZone, locale)}
-      subtitle={[shiftLine(shift), shift.position?.name].filter(Boolean).join(" · ")}
+      // The position only when it isn't the person's usual one: the same word on every row is noise.
+      subtitle={[shiftLine(shift), shift.position?.name !== member.position?.name && shift.position?.name].filter(Boolean).join(" · ")}
       value={badge}
       onClick={askable ? () => onAsk(shift) : undefined}
       chevron={askable}

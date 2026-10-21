@@ -1,12 +1,19 @@
 import { Check, Hourglass, LockKeyhole } from "lucide-react";
 
 import type { Membership } from "../api/types";
+import { Mark } from "../components/Mark";
 import { useI18n } from "../i18n";
+import { formatPhone } from "../lib/phone";
 import { clock, daysFromToday, dayMonth } from "../lib/time";
 import { useSession } from "../state/session";
+import { BottomBar, cx } from "../ui";
 
 type Step = { title: string; sub: string; state: "done" | "current" | "future" };
 
+/**
+ * The waiting room after the request is sent, and the welcome once it's approved (the approval
+ * lands while the app is open). The request card is only there while it's being checked.
+ */
 export function Waiting({ membership, onOpen }: { membership: Membership; onOpen: () => void }) {
   const { t, locale } = useI18n();
   const { me } = useSession();
@@ -31,90 +38,90 @@ export function Waiting({ membership, onOpen }: { membership: Membership; onOpen
   ];
 
   return (
-    <div className="screen screen--plain fade-in" style={{ paddingTop: "calc(var(--top-inset) + 56px)", paddingInline: 24, gap: "var(--space-6)" }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        {approved ? (
-          <span className="circle" style={{ width: 76, height: 76, background: "var(--color-accent-2)", color: "var(--color-bg)" }}>
-            <Check size={34} strokeWidth={3} />
-          </span>
-        ) : (
-          <div style={{ position: "relative", width: 76, height: 76 }}>
-            <span className="pulse" style={{ background: "var(--color-accent-200)" }} />
-            <span className="circle" style={{ position: "absolute", inset: 0, background: "var(--color-accent-100)", color: "var(--color-accent-700)" }}>
-              <Hourglass size={32} strokeWidth={2.4} />
+    <>
+      <div className={cx("screen screen--plain signup waiting fade-in", approved && "waiting--approved")}>
+        <div className="signup-brand">
+          <Mark size={26} />
+          <span>{membership.company.name}</span>
+        </div>
+
+        <div className="waiting-hero">
+          {approved ? (
+            <span className="circle waiting-badge waiting-badge--done">
+              <Check size={34} strokeWidth={3} />
             </span>
+          ) : (
+            <span className="waiting-badge-wrap">
+              <span className="pulse" />
+              <span className="circle waiting-badge">
+                <Hourglass size={32} strokeWidth={2.4} />
+              </span>
+            </span>
+          )}
+          <h1 className="heading title-xl">{approved ? t("waiting.approvedTitle", { name: membership.first_name }) : t("waiting.title")}</h1>
+          <p className="lede">{approved ? t("waiting.approvedBody") : t("waiting.body")}</p>
+        </div>
+
+        {!approved && (
+          <div className="card waiting-request">
+            <div className="card-title">{t("waiting.request")}</div>
+            <dl className="waiting-facts">
+              <dt>{t("waiting.name")}</dt>
+              <dd>
+                {membership.first_name} {membership.last_name}
+              </dd>
+              <dt>{t("waiting.phone")}</dt>
+              <dd className="num">{me.phone ? formatPhone(me.phone) : "—"}</dd>
+              <dt>{t("waiting.role")}</dt>
+              <dd>{membership.position?.name ?? "—"}</dd>
+            </dl>
           </div>
         )}
-        <h1 className="heading title-xl">
-          {approved ? t("waiting.approvedTitle", { name: membership.first_name }) : t("waiting.title")}
-        </h1>
-        <p className="lede" style={{ margin: 0, lineHeight: 1.55 }}>
-          {approved ? t("waiting.approvedBody") : t("waiting.body")}
-        </p>
-      </div>
 
-      <div className="card" style={{ gap: 12 }}>
-        <div className="card-title">{t("waiting.request")}</div>
-        <div style={{ display: "grid", gridTemplateColumns: "72px minmax(0, 1fr)", gap: "10px 14px", fontSize: 16, alignItems: "baseline" }}>
-          <span className="muted" style={{ fontSize: 14 }}>{t("waiting.name")}</span>
-          <span style={{ fontWeight: 600 }}>{membership.first_name} {membership.last_name}</span>
-          <span className="muted" style={{ fontSize: 14 }}>{t("waiting.phone")}</span>
-          <span className="num" style={{ fontWeight: 600 }}>{me.phone || "—"}</span>
-          <span className="muted" style={{ fontSize: 14 }}>{t("waiting.role")}</span>
-          <span style={{ fontWeight: 600 }}>{membership.position?.name ?? "—"}</span>
-        </div>
-      </div>
+        <ol className="waiting-steps">
+          {steps.map((step, index) => (
+            <li key={step.title} className="waiting-step">
+              <span className="waiting-step-rail">
+                <StepDot state={step.state} />
+                {index < steps.length - 1 && <span className="waiting-step-line" />}
+              </span>
+              <span className="waiting-step-text">
+                <span className="waiting-step-title">{step.title}</span>
+                <span className="muted num waiting-step-sub">{step.sub}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
 
-      <div style={{ display: "flex", flexDirection: "column" }}>
-        {steps.map((step, index) => (
-          <div key={step.title} style={{ display: "grid", gridTemplateColumns: "30px minmax(0, 1fr)", gap: "0 14px" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <StepDot state={step.state} />
-              {index < steps.length - 1 && (
-                <span style={{ flex: 1, width: 3, minHeight: 22, margin: "4px 0", borderRadius: 3, background: "color-mix(in srgb, var(--color-text) 12%, transparent)" }} />
-              )}
-            </div>
-            <div style={{ padding: "3px 0 var(--space-4)" }}>
-              <div style={{ fontSize: 16, fontWeight: 700, lineHeight: "22px" }}>{step.title}</div>
-              <div className="muted num" style={{ fontSize: 14 }}>{step.sub}</div>
-            </div>
+        {!approved && (
+          <div className="banner waiting-locked">
+            <LockKeyhole size={19} strokeWidth={2.4} style={{ flex: "none" }} aria-hidden />
+            <span>{t("waiting.locked")}</span>
           </div>
-        ))}
+        )}
       </div>
-
-      {approved ? (
-        <button className="btn btn-primary btn-lg btn-block" onClick={onOpen}>
-          {t("waiting.open")}
-        </button>
-      ) : (
-        <div className="banner" style={{ fontSize: 14.5 }}>
-          <LockKeyhole size={19} strokeWidth={2.4} style={{ flex: "none" }} />
-          <span>{t("waiting.locked")}</span>
-        </div>
-      )}
-    </div>
+      {approved && <BottomBar primary={{ text: t("waiting.open"), onClick: onOpen, shine: true }} />}
+    </>
   );
 }
 
 function StepDot({ state }: { state: Step["state"] }) {
   if (state === "done") {
     return (
-      <span className="circle" style={{ width: 30, height: 30, background: "var(--color-accent-2)", color: "var(--color-bg)" }}>
+      <span className="circle waiting-dot waiting-dot--done">
         <Check size={16} strokeWidth={3} />
       </span>
     );
   }
   if (state === "current") {
     return (
-      <span style={{ flex: "none", position: "relative", width: 30, height: 30 }}>
-        <span className="pulse" style={{ background: "var(--color-accent-300)" }} />
-        <span className="circle" style={{ position: "absolute", inset: 0, background: "var(--color-bg)", boxShadow: "inset 0 0 0 3px var(--color-accent)" }}>
-          <span style={{ width: 10, height: 10, borderRadius: "50%", background: "var(--color-accent)" }} />
+      <span className="waiting-dot waiting-dot--current">
+        <span className="pulse" />
+        <span className="circle waiting-dot-ring">
+          <span className="waiting-dot-core" />
         </span>
       </span>
     );
   }
-  return (
-    <span style={{ flex: "none", width: 30, height: 30, borderRadius: "50%", boxShadow: "inset 0 0 0 2.5px color-mix(in srgb, var(--color-text) 20%, transparent)" }} />
-  );
+  return <span className="waiting-dot waiting-dot--future" />;
 }

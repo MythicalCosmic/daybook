@@ -34,8 +34,8 @@
 .agm-week-nav {
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   border-radius: 999px;
   border: 0;
   background: transparent;

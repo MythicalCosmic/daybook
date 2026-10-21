@@ -1,4 +1,4 @@
-import { AlarmClock, ChevronRight, Eye, Flame, TreePalm } from "lucide-react";
+import { AlarmClock, Eye, Flame, Sun, TreePalm } from "lucide-react";
 
 import { useActivity, useBoard, useSummary } from "../api/hooks";
 import { ActivityRow } from "../components/ActivityRow";
@@ -6,12 +6,24 @@ import { FeatureSlot } from "../features/FeatureSlot";
 import { Ring } from "../components/Ring";
 import { RowSkeleton, TaskRow } from "../components/TaskRow";
 import { useCompleteTask } from "../lib/actions";
+import { isFinished, isRoutine, routineProgress } from "../lib/routines";
 import { byDue, isDueToday, isLate, isOpen } from "../lib/taskView";
 import { dayKey, dayMonth, hourIn, longDate } from "../lib/time";
 import { useViewContext } from "../lib/useNow";
 import { useNavigation } from "../state/navigation";
 import { useMember } from "../state/session";
+import { Banner, LoadError } from "../ui";
 
+/**
+ * Home, most urgent first: what to do right now (the hero: check in or out, the till), the shape
+ * of the day (off today, today's progress), what waits for me (late work, work to check, then
+ * the feature cards: cash to confirm, the running timer, swaps, the next event, pages to read),
+ * the next tasks and news, and overviews such as my projects at the end.
+ *
+ * Card anatomy: every notice is a Banner (icon circle, bold title, one line, chevron). Only what
+ * can't wait is tinted (late work: accent) or the day itself (off today: sage); requests and
+ * reminders sit on the plain surface with a coloured circle.
+ */
 export function Home() {
   const ctx = useViewContext();
   const { t } = ctx;
@@ -32,6 +44,15 @@ export function Home() {
   const hour = hourIn(ctx.now, ctx.timeZone);
   const greeting = hour < 12 ? "home.morning" : hour < 18 ? "home.afternoon" : "home.evening";
   const numbers = summary.data;
+  // Nothing due today: the progress card says so, and an empty "Up next" would say it twice.
+  const showUpNext = !numbers || numbers.today_total > 0;
+  // Routines and one-off work read apart: "Routines 2/4 · Tasks 1/3" when today has both.
+  const routines = routineProgress(tasks, ctx);
+  const oneOff = tasks.filter((task) => !isRoutine(task) && task.status !== "cancelled" && isDueToday(task, ctx));
+  const split =
+    routines.total > 0 && oneOff.length > 0
+      ? t("home.split", { routines: `${routines.done}/${routines.total}`, tasks: `${oneOff.filter(isFinished).length}/${oneOff.length}` })
+      : null;
 
   return (
     <div className="screen fade-in">
@@ -44,83 +65,98 @@ export function Home() {
 
       <FeatureSlot name="home.hero" />
 
-      <button className="card" style={{ flexDirection: "row", alignItems: "center", gap: 16, padding: "16px 18px", border: 0, textAlign: "left" }} onClick={() => navigation.goTo("tasks")}>
-        <Ring done={numbers?.today_done ?? 0} total={numbers?.today_total ?? 0} />
-        <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 8 }}>
-          <span style={{ fontSize: 17, fontWeight: 700, lineHeight: 1.25 }}>
-            {numbers && numbers.today_total > 0
-              ? t("home.progress", { done: numbers.today_done, total: numbers.today_total })
-              : t("home.nothingToday")}
+      {numbers?.off_today && (
+        <Banner
+          tone="sage"
+          size="lg"
+          icon={TreePalm}
+          title={numbers.off_today.kind === "holiday" ? numbers.off_today.name : t("home.offToday")}
+          body={
+            numbers.off_today.until === dayKey(ctx.now, ctx.timeZone)
+              ? t("home.offTodayBody")
+              : t("home.offUntil", { date: dayMonth(`${numbers.off_today.until}T12:00:00Z`, "UTC", ctx.locale) })
+          }
+          wrap
+        />
+      )}
+
+      {/* Numbers that failed to load leave no card: a placeholder that never ends would say they're coming. */}
+      {(numbers || !summary.isError) && (
+      <button className="card card--tap home-today" onClick={() => navigation.goTo("tasks")}>
+        {numbers && numbers.today_total === 0 ? (
+          <span className="circle home-today-free" aria-hidden>
+            <Sun size={28} strokeWidth={2.2} />
           </span>
+        ) : (
+          <Ring done={numbers?.today_done ?? 0} total={numbers?.today_total ?? 0} loading={!numbers} />
+        )}
+        <span className="home-today-text">
+          {/* Before the numbers come, a placeholder line: "Nothing due today" would be a guess. */}
+          {numbers ? (
+            <span className="home-today-title">
+              {numbers.today_total > 0 ? t("home.progress", { done: numbers.today_done, total: numbers.today_total }) : t("home.nothingToday")}
+            </span>
+          ) : (
+            <span className="skeleton home-today-loading" aria-hidden />
+          )}
+          {split && numbers && numbers.today_total > 0 && <span className="home-today-split">{split}</span>}
           {numbers && numbers.streak_days > 0 && (
-            <span className="tag tag-sage" style={{ alignSelf: "flex-start", fontSize: 13, padding: "4px 10px 4px 8px" }}>
+            <span className="tag tag-sage home-today-streak">
               <Flame size={15} strokeWidth={2.6} />
               {t("home.streak", { count: numbers.streak_days })}
             </span>
           )}
         </span>
       </button>
-
-      {numbers?.off_today && (
-        <div className="banner banner--sage" style={{ padding: "14px 16px", gap: 14 }}>
-          <span className="circle" style={{ width: 42, height: 42, background: "var(--color-accent-2)", color: "var(--color-bg)" }}>
-            <TreePalm size={21} strokeWidth={2.4} />
-          </span>
-          <span className="row-main">
-            <span style={{ fontSize: 16, fontWeight: 700 }}>
-              {numbers.off_today.kind === "holiday" ? numbers.off_today.name : t("home.offToday")}
-            </span>
-            <span className="row-meta" style={{ color: "inherit", whiteSpace: "normal" }}>
-              {numbers.off_today.until === dayKey(ctx.now, ctx.timeZone)
-                ? t("home.offTodayBody")
-                : t("home.offUntil", { date: dayMonth(`${numbers.off_today.until}T12:00:00Z`, "UTC", ctx.locale) })}
-            </span>
-          </span>
-        </div>
       )}
 
       {late.length > 0 && (
-        <button className="banner banner--accent" style={{ padding: "14px 16px", gap: 14 }} onClick={() => navigation.openTask(late[0].id)}>
-          <span className="circle" style={{ width: 42, height: 42, background: "var(--color-accent)", color: "var(--color-bg)" }}>
-            <AlarmClock size={21} strokeWidth={2.4} />
-          </span>
-          <span className="row-main">
-            <span style={{ fontSize: 16, fontWeight: 700 }}>{t("home.late", { count: late.length })}</span>
-            <span className="row-meta" style={{ color: "inherit" }}>{late[0].title}</span>
-          </span>
-          <ChevronRight size={20} strokeWidth={2.5} />
-        </button>
+        <Banner
+          tone="accent"
+          size="lg"
+          icon={AlarmClock}
+          title={t("home.late", { count: late.length })}
+          body={late[0].title}
+          onClick={() => navigation.openTask(late[0].id)}
+        />
       )}
 
       {numbers && numbers.awaiting_review > 0 && (
-        <button className="banner banner--sage" style={{ padding: "14px 16px", gap: 14 }} onClick={() => navigation.goTo("tasks", "review")}>
-          <span className="circle" style={{ width: 42, height: 42, background: "var(--color-accent-2)", color: "var(--color-bg)" }}>
-            <Eye size={21} strokeWidth={2.4} />
-          </span>
-          <span className="row-main">
-            <span style={{ fontSize: 16, fontWeight: 700 }}>{t("home.toCheck", { count: numbers.awaiting_review })}</span>
-            <span className="row-meta" style={{ color: "inherit" }}>{t("home.toCheckBody")}</span>
-          </span>
-          <ChevronRight size={20} strokeWidth={2.5} />
-        </button>
+        <Banner
+          size="lg"
+          iconTone="sage"
+          icon={Eye}
+          title={t("home.toCheck", { count: numbers.awaiting_review })}
+          body={t("home.toCheckBody")}
+          // A sentence, not a title: whole in Uzbek and Russian too, never cut to "…kutm…".
+          wrap
+          onClick={() => navigation.goTo("tasks", "review")}
+        />
       )}
 
       <FeatureSlot name="home.cards" />
 
-      <div className="section-head">
-        <span>{t("home.upNext")}</span>
-        <button className="btn btn-ghost" style={{ marginRight: -10 }} onClick={() => navigation.goTo("tasks")}>
-          {t("home.allTasks")}
-        </button>
-      </div>
-      {board.isPending ? (
-        <RowSkeleton />
-      ) : upNext.length ? (
-        upNext.map((task) => (
-          <TaskRow key={task.id} task={task} ctx={ctx} onOpen={() => navigation.openTask(task.id)} onTick={() => complete(task)} />
-        ))
-      ) : (
-        <div className="muted" style={{ padding: 4, fontSize: 15 }}>{t("home.nothingNext")}</div>
+      {showUpNext && (
+        <>
+          <div className="section-head">
+            <span>{t("home.upNext")}</span>
+            <button className="btn btn-ghost" style={{ marginRight: -10 }} onClick={() => navigation.goTo("tasks")}>
+              {t("home.allTasks")}
+            </button>
+          </div>
+          {board.isPending ? (
+            <RowSkeleton />
+          ) : board.isError && !board.data ? (
+            // Not "Nothing else due today": the list didn't load.
+            <LoadError compact error={board.error} onRetry={() => void board.refetch()} />
+          ) : upNext.length ? (
+            upNext.map((task) => (
+              <TaskRow key={task.id} task={task} ctx={ctx} onOpen={() => navigation.openTask(task.id)} onTick={() => complete(task)} />
+            ))
+          ) : (
+            <div className="muted home-quiet">{t("home.nothingNext")}</div>
+          )}
+        </>
       )}
 
       {news.length > 0 && (

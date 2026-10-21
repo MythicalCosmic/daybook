@@ -20,6 +20,7 @@ import { SkeletonList } from "./Skeleton";
 import { SlideToConfirm } from "./SlideToConfirm";
 import { Stepper } from "./Stepper";
 import { useObjectUrl } from "./useObjectUrl";
+import { useScrollEdges } from "./useScrollEdges";
 
 const NB = " ";
 const inLang = (lang: Lang, node: React.ReactNode) => render(<I18nProvider lang={lang}>{node}</I18nProvider>);
@@ -127,6 +128,33 @@ describe("fields", () => {
     const phone = screen.getByLabelText("Phone");
     expect(phone.getAttribute("aria-invalid")).toBe("true");
     expect(screen.getByRole("alert").textContent).toBe("Wrong number");
+  });
+});
+
+describe("a strip that scrolls sideways", () => {
+  function Strip() {
+    const edges = useScrollEdges<HTMLDivElement>();
+    return <div data-testid="strip" ref={edges.ref} />;
+  }
+
+  it("says which sides hide more of it, for the fade", () => {
+    render(<Strip />);
+    const strip = screen.getByTestId("strip");
+    Object.defineProperty(strip, "clientWidth", { configurable: true, value: 300 });
+    Object.defineProperty(strip, "scrollWidth", { configurable: true, value: 500 });
+    const scrollTo = (left: number) => {
+      strip.scrollLeft = left;
+      fireEvent.scroll(strip);
+    };
+    scrollTo(0);
+    expect(strip.dataset.more).toBe("right");
+    scrollTo(100);
+    expect(strip.dataset.more).toBe("both");
+    scrollTo(200);
+    expect(strip.dataset.more).toBe("left");
+    Object.defineProperty(strip, "scrollWidth", { configurable: true, value: 300 });
+    scrollTo(0);
+    expect(strip.dataset.more).toBeUndefined();
   });
 });
 

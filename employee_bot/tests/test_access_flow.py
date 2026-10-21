@@ -1,5 +1,15 @@
+from datetime import datetime
+
 import pytest
-from aiogram.methods import AnswerCallbackQuery, EditMessageText
+from aiogram.methods import AnswerCallbackQuery, EditMessageText, SendMessage
+from aiogram.types import (
+    Chat,
+    InlineKeyboardMarkup,
+    Message,
+    ReplyKeyboardMarkup,
+    Update,
+    WebAppData,
+)
 from asgiref.sync import sync_to_async
 from django.utils import timezone
 
@@ -26,7 +36,8 @@ async def test_invite_link_opens_a_request_and_points_to_account_creation(
 
     membership = await get_membership(company, 501)
     assert membership.status == Membership.Status.PENDING
-    reply = bot.requests[-1]
+    # The last message (the chat's menu button gets its label after it: test_menu_button.py).
+    reply = sent(bot)[-1]
     assert "You're joining" in reply.text
     assert reply.reply_markup.inline_keyboard[0][0].web_app.url == "https://app.example.com"
 
@@ -313,3 +324,68 @@ def test_branch_choices_fit_telegrams_callback_limit():
     )
     assert bot_messages.unpack_branches("", branches) == []
     assert bot_messages.unpack_branches("not base36!", branches) == []
+
+
+def app_data(telegram_id: int, data: str = "open_app") -> Update:
+    """What Telegram sends when a mini app opened from a keyboard button calls sendData()."""
+    return Update(
+        update_id=telegram_id * 10 + 1,
+        message=Message(
+            message_id=telegram_id * 10 + 2,
+            date=datetime.now(),
+            chat=Chat(id=telegram_id, type="private"),
+            from_user=updates.tg_user(telegram_id),
+            web_app_data=WebAppData(data=data, button_text="📱 Open app"),
+        ),
+    )
+
+
+def sent(bot) -> list[SendMessage]:
+    return [r for r in bot.requests if isinstance(r, SendMessage)]
+
+
+async def test_an_app_opened_from_an_old_keyboard_gets_a_button_that_signs_in(
+    dp, bot, company, member, settings
+):
+    """Telegram signs nobody in from a keyboard button: the app asks the bot for a way that does.
+    The member gets today's menu (which replaces the old keyboard) and then the app's button."""
+    settings.EMPLOYEE_MINIAPP_URL = "https://app.example.com/app/"
+    worker = await member.aregistered(company)
+
+    await dp.feed_update(bot, app_data(worker.user.telegram_id))
+
+    menu, button = sent(bot)[-2:]
+    assert isinstance(menu.reply_markup, ReplyKeyboardMarkup)
+    assert not any(key.web_app for row in menu.reply_markup.keyboard for key in row)
+    assert isinstance(button.reply_markup, InlineKeyboardMarkup)
+    assert button.reply_markup.inline_keyboard[0][0].web_app.url == "https://app.example.com/app/"
+
+
+async def test_someone_creating_an_account_gets_the_create_account_button_once(
+    dp, bot, company, settings
+):
+    settings.EMPLOYEE_MINIAPP_URL = "https://app.example.com/app/"
+    newcomer = updates.tg_user(503)
+    await dp.feed_update(bot, updates.message(newcomer, f"/start {company.invite_start_param}"))
+    before = len(sent(bot))
+
+    await dp.feed_update(bot, app_data(503))
+
+    [reply] = sent(bot)[before:]
+    assert "create your account" in reply.text
+    assert reply.reply_markup.inline_keyboard[0][0].web_app.url == "https://app.example.com/app/"
+
+
+async def test_other_app_data_is_left_alone(dp, bot, company, member, settings):
+    settings.EMPLOYEE_MINIAPP_URL = "https://app.example.com/app/"
+    worker = await member.aregistered(company)
+    before = len(sent(bot))
+
+    await dp.feed_update(bot, app_data(worker.user.telegram_id, data="something else"))
+
+    assert not any(
+        isinstance(r.reply_markup, InlineKeyboardMarkup)
+        and r.reply_markup.inline_keyboard[0][0].web_app
+        for r in sent(bot)[before:]
+        if r.reply_markup is not None
+    )

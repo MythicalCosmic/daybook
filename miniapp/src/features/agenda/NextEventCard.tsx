@@ -11,7 +11,10 @@ import { eventIdOf, useCalendar } from "./api";
 import { dayName, timeLabel } from "./lib";
 import { messages } from "./messages";
 
-/** Home: the next event I'm invited to today or tomorrow, one tap from answering. */
+/**
+ * Home: the next event I'm invited to today or tomorrow, one tap from answering. The line says
+ * when, then "Are you coming?" while I haven't answered, or where it is once I have.
+ */
 export function NextEventCard({ member }: SlotProps) {
   const t = useFeatureT(messages);
   const { locale } = useI18n();
@@ -26,13 +29,16 @@ export function NextEventCard({ member }: SlotProps) {
   const id = eventIdOf(next);
   const first = next.all_day ? next.start.slice(0, 10) : dayKey(next.start, timeZone);
   const whenText = `${dayName(first, today, timeZone, locale, { today: t("today"), tomorrow: t("tomorrow") })} ${timeLabel(next, timeZone, locale, t("allDay"))}`;
+  const answer = calendar.data?.answers?.[next.id];
+  const extra = answer === "pending" ? t("answer.question") : answer === "declined" ? t("answer.declined") : next.subtitle;
   return (
     <Banner
-      tone="sage"
+      iconTone="sage"
       size="lg"
       icon={CalendarClock}
       title={next.title}
-      body={t("card.when", { when: whenText })}
+      body={[whenText, extra].filter(Boolean).join(" · ")}
+      wrap
       onClick={
         id
           ? () => {

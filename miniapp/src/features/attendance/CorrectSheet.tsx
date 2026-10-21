@@ -3,7 +3,7 @@
  * check-out opens it with the record): the times I really came and left and what happened. The
  * manager decides; the change is audited on their side.
  */
-import { Send } from "lucide-react";
+import { SearchX, Send } from "lucide-react";
 import { useState } from "react";
 
 import { useI18n } from "../../i18n";
@@ -26,7 +26,7 @@ export default function CorrectSheet({ params, close }: SheetProps) {
   const recordId = params.record !== undefined && Number.isFinite(Number(params.record)) ? Number(params.record) : null;
   const record = useRecord(member.companyId, recordId);
   if (recordId !== null && record.isPending) return <SkeletonList count={3} height={56} />;
-  if (recordId !== null && record.isError) return <EmptyState compact title={t("ui.notFound.title")} body={t("ui.notFound.body")} />;
+  if (recordId !== null && record.isError) return <EmptyState compact icon={SearchX} tone="sage" title={t("ui.notFound.title")} body={t("ui.notFound.body")} />;
   const date = record.data?.date ?? (typeof params.date === "string" ? params.date : null);
   return <CorrectForm record={record.data ?? null} initialDate={date} close={close} />;
 }

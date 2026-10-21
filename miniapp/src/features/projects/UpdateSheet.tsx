@@ -4,7 +4,7 @@ import { useFeatureT } from "../../i18n/feature";
 import { useMember } from "../../state/session";
 import { useToast } from "../../state/toast";
 import { haptic } from "../../telegram";
-import { BottomBar, Field, SheetTitle, Textarea } from "../../ui";
+import { Button, Field, SheetTitle, Textarea } from "../../ui";
 import type { SheetProps } from "../registry";
 import { postUpdate, useRefresh, type Health } from "./api";
 import { messages } from "./messages";
@@ -63,7 +63,10 @@ export default function UpdateSheet({ params, close }: SheetProps) {
       <Field label={t("updates.text")} optional>
         <Textarea value={text} rows={4} maxLength={4000} placeholder={t("updates.placeholder")} onChange={(event) => setText(event.target.value)} />
       </Field>
-      <BottomBar primary={{ text: t("updates.send"), onClick: () => void send(), loading: saving }} />
+      {/* In the sheet, like every sheet's action: Telegram's button belongs to the page below. */}
+      <Button variant="primary" size="lg" block loading={saving} onClick={() => void send()}>
+        {t("updates.send")}
+      </Button>
     </div>
   );
 }

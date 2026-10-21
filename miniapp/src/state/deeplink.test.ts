@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { defineFeature, type Feature, type PageProps, type SheetProps } from "../features/registry";
-import { parseScreen, readScreenLink, resolveScreen } from "./deeplink";
+import { appScreenLink, parseScreen, readScreenLink, resolveScreen } from "./deeplink";
 import { CORE, taskPage } from "./navigation";
 
 const Page = (_: PageProps) => null;
@@ -52,6 +52,20 @@ describe("screen links", () => {
     expect(readScreenLink({ search: "", hash: "#tgWebAppData=x&tgWebAppStartParam=team" }, null)).toEqual({ name: "team", arg: null });
     expect(readScreenLink({ search: "", hash: "#tgWebAppData=x" }, "activity")).toEqual({ name: "activity", arg: null });
     expect(readScreenLink({ search: "", hash: "#tgWebAppData=x" }, null)).toBeNull();
+  });
+});
+
+describe("links into the app itself", () => {
+  const here = { origin: "https://daybook.example", href: "https://daybook.example/app/" };
+
+  it("read the screen a link to this app points to, and leave other links alone", () => {
+    expect(appScreenLink("https://daybook.example/app/?screen=kb:12", here, "/app/")).toEqual({ name: "kb", arg: "12" });
+    expect(appScreenLink("https://daybook.example/app/#tgWebAppStartParam=event-7", here, "/app/")).toEqual({ name: "event", arg: "7" });
+    // The app with no screen named is Home.
+    expect(appScreenLink("https://daybook.example/app/", here, "/app/")).toEqual({ name: "home", arg: null });
+    expect(appScreenLink("https://daybook.example/dashboard/tasks", here, "/app/")).toBeNull();
+    expect(appScreenLink("https://elsewhere.example/app/?screen=kb:12", here, "/app/")).toBeNull();
+    expect(appScreenLink("not a url ::", { origin: "null", href: "about:blank" }, "/app/")).toBeNull();
   });
 });
 

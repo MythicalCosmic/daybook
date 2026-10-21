@@ -14,9 +14,12 @@ import "./kassa.css";
 
 /**
  * Home's top card for a cashier: "Kassa is closed · Open shift", or the open shift with its
- * three everyday actions. Nothing at all for someone without a till in their branch.
+ * three everyday actions. When colleagues already have every till open, who has it, with nothing
+ * to press. Nothing at all for someone without a till in their branch, nor a closed till for
+ * someone off today ("Open shift" beside "You're off today" would contradict it; the bot's
+ * "🧾 Kassa" button still opens the Kassa page).
  */
-export function KassaHero({ member }: SlotProps) {
+export function KassaHero({ member, summary }: SlotProps) {
   const t = useKassaT();
   const { locale } = useI18n();
   const navigation = useNavigation();
@@ -32,9 +35,30 @@ export function KassaHero({ member }: SlotProps) {
   const shift = data.shift;
 
   if (!shift) {
+    if (summary?.off_today) return null;
     // Owners and managers (who have the dashboard) see the closed till only once they ran one.
     if (!data.recent.length && can(member, "dashboard.access")) return null;
     const branch = data.registers.find((till) => !till.busy)?.branch.name ?? data.registers[0]?.branch.name;
+    const busy = data.registers.filter((till) => till.busy);
+    if (busy.length === data.registers.length) {
+      const [only] = busy;
+      return (
+        <Card className="kassa-hero kassa-hero--closed kassa-hero--busy">
+          <span className="circle kassa-hero-icon">
+            <Store size={22} strokeWidth={2.4} aria-hidden />
+          </span>
+          <span className="row-main">
+            {branch && <span className="kassa-kicker">{branch}</span>}
+            <span className="kassa-hero-title">{busy.length === 1 ? t("hero.busyTitle", { till: only.name }) : t("allBusy")}</span>
+            <span className="row-meta">
+              {busy.length === 1 && only.busy
+                ? t("hero.busyBody", { name: only.busy.cashier, code: only.busy.code })
+                : busy.map((till) => till.busy?.cashier).join(", ")}
+            </span>
+          </span>
+        </Card>
+      );
+    }
     return (
       <CardButton className="kassa-hero kassa-hero--closed" onClick={openKassa}>
         <span className="circle kassa-hero-icon">

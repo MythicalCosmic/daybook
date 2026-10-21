@@ -16,7 +16,7 @@ import type { Membership } from "./types";
 function membership(company: Record<string, unknown> = {}, extra: Record<string, unknown> = {}): Membership {
   return {
     id: 7,
-    company: { id: 1, name: "Demo Shop", timezone: "Asia/Tashkent", ...company },
+    company: { id: 1, name: "Demo Dorixona", timezone: "Asia/Tashkent", ...company },
     status: "approved",
     first_name: "Alisher",
     last_name: "Valiyev",

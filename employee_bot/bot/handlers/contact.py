@@ -1,7 +1,9 @@
 from aiogram import F, Router
 from aiogram.enums import ChatType
-from aiogram.types import Contact, Message
+from aiogram.types import Contact, InlineKeyboardButton, InlineKeyboardMarkup, Message, WebAppInfo
 from asgiref.sync import sync_to_async
+from django.conf import settings
+from django.utils.translation import gettext as _
 
 from apps.accounts.models import User
 from apps.accounts.services import save_verified_phone
@@ -34,4 +36,17 @@ def _save(user: User, contact: Contact) -> bot_messages.BotMessage | None:
     if not saved:
         return bot_messages.foreign_contact()
     membership.user = user  # same person, now with the phone the next step depends on
+    if not membership.is_onboarded and settings.EMPLOYEE_MINIAPP_URL:
+        return _finish_in_the_app()
     return bot_messages.phone_saved(membership)
+
+
+def _finish_in_the_app() -> bot_messages.BotMessage:
+    """The contact comes from the app's "Share my phone number" while the account is being made
+    there: say it arrived and send the person back to the app (the button reopens it if they
+    closed it meanwhile), rather than asking again for a name, phone and position."""
+    button = InlineKeyboardButton(
+        text=_("📱 Create account"), web_app=WebAppInfo(url=settings.EMPLOYEE_MINIAPP_URL)
+    )
+    text = _("📱 Thanks, your phone number is saved. Now finish your account in the app.")
+    return text, InlineKeyboardMarkup(inline_keyboard=[[button]])
