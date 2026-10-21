@@ -131,8 +131,13 @@ const flowCsv = computed(() => ({
 
 // Debts, top expenses, alerts -----------------------------------------------------------------
 
+// Every expense group of the month: the donut folds the small ones into "Other", and its middle
+// shows the month's expenses, the same figure as the Expenses tile above.
 const slices = computed(() => (data.value?.top_expenses ?? []).map((row) => ({ name: row.name, value: row.amount, color: css(row.color || colorFor(row.id)) })));
-const slicesTotal = computed(() => fmt.money(slices.value.reduce((sum, slice) => sum.plus(slice.value), dec(0)).toString(), undefined, { compact: true, currencyDisplay: "none" }));
+const slicesTotal = computed(() => {
+  const total = data.value?.month.expense ?? slices.value.reduce((sum, slice) => sum.plus(slice.value), dec(0)).toString();
+  return fmt.money(total, undefined, { compact: true, currencyDisplay: "none" });
+});
 const alerts = computed(() => {
   const d = data.value;
   if (!d) return [];
@@ -192,7 +197,7 @@ const firstRun = computed(() => !!data.value && !data.value.has_ledger);
           </InlineAlert>
         </div>
 
-        <KpiStrip :items="kpis" :loading="overview.isPending.value" :columns="4" />
+        <KpiStrip :items="kpis" :loading="overview.isPending.value" :columns="4" phone="grid" />
 
         <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
           <ChartCard

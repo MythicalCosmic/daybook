@@ -516,5 +516,6 @@
   "sales.widget.error": "Couldn't load sales",
   "sales.shift.movedOut": "Cash out so far",
   "sales.shift.movedOutHint": "sales count at close",
+  "sales.shift.movedOutSub": "payouts, handovers, safe",
   "sales.flow.soFar": "Float minus cash out, before sales"
 }

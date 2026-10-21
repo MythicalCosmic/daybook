@@ -12,6 +12,7 @@ import { RouterLink } from "vue-router";
 
 import BarChart from "@/components/BarChart.vue";
 import BranchPicker from "@/components/BranchPicker.vue";
+import type { ChartSeries } from "@/components/chartCard";
 import ChartCard from "@/components/ChartCard.vue";
 import DateRangePicker from "@/components/DateRangePicker.vue";
 import DonutChart from "@/components/DonutChart.vue";
@@ -23,6 +24,7 @@ import LineChart from "@/components/LineChart.vue";
 import MoneyText from "@/components/MoneyText.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import UiButton from "@/components/UiButton.vue";
+import { useChartTheme } from "@/components/useChartTheme";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { rangeParams } from "@/lib/dateRange";
 import { divide, isZero, sum } from "@/lib/decimal";
@@ -90,21 +92,25 @@ const branchChart = computed(() => ({
 }));
 const methodRows = computed(() => byMethod.data.value?.breakdown ?? []);
 const donut = computed(() => methodRows.value.map((row) => ({ name: row.label, value: row.net })));
-/** Method share per branch, as a 100% bar per branch (top methods, the rest as "Other"). */
+/** Method share per branch, as a 100% bar per branch: the donut's five top methods in the donut's
+ * colours, the rest as a warm-gray "Other", so the two charts read alike. */
+const chartTheme = useChartTheme();
+const MIX_TOP = 5;
 const mix = computed(() => {
-  const top = methodRows.value.slice(0, 4);
+  const top = methodRows.value.slice(0, MIX_TOP);
   const topKeys = new Set(top.map((row) => row.key));
   const rows = branchRows.value;
-  const series = top.map((method) => ({
+  const series: ChartSeries[] = top.map((method) => ({
     name: method.label,
     data: rows.map((row) => row.methods?.find((m) => m.key === method.key)?.net ?? "0"),
     stack: "mix",
   }));
-  if (methodRows.value.length > 4) {
+  if (methodRows.value.length > MIX_TOP) {
     series.push({
       name: t("sales.chart.other"),
       data: rows.map((row) => sum((row.methods ?? []).filter((m) => !topKeys.has(m.key)).map((m) => m.net))),
       stack: "mix",
+      color: chartTheme.value.compare,
     });
   }
   return { categories: rows.map((row) => row.label), series };

@@ -21,6 +21,7 @@ import type { TableColumn } from "@/components/table";
 import UiBadge from "@/components/UiBadge.vue";
 import { useDataTable } from "@/components/useDataTable";
 import { counter, pulse } from "@/core/pulse";
+import { dec } from "@/lib/decimal";
 import { paramsDiffer, useSavedViews } from "@/lib/useSavedViews";
 import { rs, useRouteState } from "@/lib/useRouteState";
 import { useFormat } from "@/lib/useFormat";
@@ -37,6 +38,9 @@ const router = useRouter();
 const options = useOptions();
 const settings = useSettings();
 const tolerance = computed(() => settings.data.value?.cash_tolerance ?? options.data.value?.settings.cash_tolerance ?? "0");
+/** In shift-totals mode an open till's sales arrive with the Z-report: none to show yet, not zero. */
+const shiftTotals = computed(() => (settings.data.value?.mode ?? options.data.value?.settings.mode) === "shift_totals");
+const awaitingTotals = (row: ShiftRow) => shiftTotals.value && row.status === "open" && dec(row.net).isZero();
 
 const defs = computed<FilterDef[]>(() => [
   { key: "branch", label: t("sales.filter.branch"), type: "multi", icon: Building2, options: (options.data.value?.branches ?? []).map((b) => ({ value: String(b.id), label: b.name, description: b.code })) },
@@ -105,8 +109,8 @@ const query = useShifts(params);
 const rows = computed(() => query.data.value?.results);
 
 const columns = computed<TableColumn<ShiftRow>[]>(() => [
-  { id: "code", header: t("sales.col.shift"), sortable: "number", width: 150, hideable: false, sticky: true },
-  { id: "business_day", header: t("sales.col.day"), sortable: true, width: 132, format: (v) => fmt.day(String(v), "short") },
+  { id: "code", header: t("sales.col.shift"), sortable: "number", width: 142, hideable: false, sticky: true },
+  { id: "business_day", header: t("sales.col.day"), sortable: true, width: 148, format: (v) => fmt.day(String(v), "short") },
   { id: "cashier", header: t("sales.col.cashier"), minWidth: 190, value: (row) => row.cashier.name },
   { id: "branch", header: t("sales.col.branch"), width: 130, value: (row) => row.branch.name },
   { id: "status", header: t("sales.col.status"), width: 130 },
@@ -192,7 +196,10 @@ onMounted(() => {
             <UiBadge v-if="row.forced" size="sm" tone="warning">{{ t("sales.shift.forcedShort") }}</UiBadge>
           </span>
         </template>
-        <template #cell-net="{ row }"><MoneyText :value="row.net" class="font-semibold" /></template>
+        <template #cell-net="{ row }">
+          <span v-if="awaitingTotals(row)" class="text-subtle" :title="t('sales.shift.movedOutHint')" data-testid="net-awaiting">—</span>
+          <MoneyText v-else :value="row.net" class="font-semibold" />
+        </template>
         <template #cell-counted_cash="{ row }"><MoneyText :value="row.counted_cash" /></template>
         <template #cell-difference="{ row }">
           <!-- An exact count stays quiet (a check); only real differences take colour. -->
@@ -215,7 +222,8 @@ onMounted(() => {
               <StatusPill size="sm" :tone="SHIFT_TONES[row.status]" :label="t(`sales.status.${row.status}`)" />
             </div>
             <div class="flex items-end justify-between gap-3">
-              <MoneyText :value="row.net" class="text-md font-semibold text-fg" />
+              <span v-if="awaitingTotals(row)" class="text-sm text-subtle">{{ t("sales.shift.movedOutHint") }}</span>
+              <MoneyText v-else :value="row.net" class="text-md font-semibold text-fg" />
               <span v-if="differenceLevel(row.difference, tolerance) === 'none'" class="inline-flex items-center gap-1 text-sm tabular-nums text-muted">
                 <Check :size="14" class="text-success" aria-hidden="true" />{{ t("sales.level.none") }}
               </span>

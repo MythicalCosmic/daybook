@@ -1053,7 +1053,8 @@ def overview(company, *, branch_ids, today: date, mask_sensitive: bool = False) 
     """The finance overview (§4.7 `overview/`): cash now (in base and per currency), income,
     expenses and profit this month so far against the same days of last month, what is owed
     both ways with the overdue part, what falls due in the next 7 days, entries waiting for
-    approval, the top expense categories of the month, the rate and its stale flag."""
+    approval, the month's expenses by top-level category (all of them, biggest first, so they add
+    up to the month's expenses), the rate and its stale flag."""
     position = cash_position(company, None, branch_ids=branch_ids, today=today)
     month_start = today.replace(day=1)
     last_start = _add_months(month_start, -1)
@@ -1086,7 +1087,7 @@ def overview(company, *, branch_ids, today: date, mask_sensitive: bool = False) 
         )
         .values("group_id")
         .annotate(total=Sum("base_amount"))
-        .order_by("total")[:6]
+        .order_by("total")
     )
     names = {
         category.pk: category

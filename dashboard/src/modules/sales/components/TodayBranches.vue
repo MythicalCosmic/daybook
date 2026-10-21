@@ -17,20 +17,25 @@ import ProgressBar from "@/components/ProgressBar.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import StatusPill, { type StatusTone } from "@/components/StatusPill.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
-import { percent } from "@/lib/decimal";
+import { dec, percent } from "@/lib/decimal";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
-import { useToday } from "../api";
+import { useOptions, useToday } from "../api";
 import type { BranchTodaySales } from "../types";
 
 const { t } = useI18n();
 const fmt = useFormat();
 const company = useCompanyStore();
 const query = useToday();
+const options = useOptions();
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const branches = computed(() => query.data.value?.branches ?? []);
+/** Tills open and nothing closed yet in shift-totals mode: today's sales come with the Z-reports. */
+function awaitingTotals(branch: BranchTodaySales): boolean {
+  return options.data.value?.settings.mode === "shift_totals" && branch.open_tills.length > 0 && branch.receipts === 0 && dec(branch.net).isZero();
+}
 
 const TONES: Record<BranchTodaySales["status"], StatusTone> = { open: "success", not_opened: "danger", closed: "neutral", day_off: "info" };
 
@@ -78,8 +83,14 @@ const link = (branch: BranchTodaySales) => ({ path: `/c/${company.currentId}/sal
           </div>
           <div class="text-right">
             <p class="text-[11px] font-medium uppercase tracking-wide text-subtle">{{ t("sales.today.soFar") }}</p>
-            <p class="text-lg font-semibold tabular-nums text-fg"><MoneyText :value="branch.net" compact /></p>
-            <p class="text-xs text-muted">{{ t("sales.today.receipts", { n: branch.receipts }, branch.receipts) }}</p>
+            <template v-if="awaitingTotals(branch)">
+              <p class="text-lg font-semibold text-subtle" data-testid="today-awaiting">—</p>
+              <p class="text-xs text-muted">{{ t("sales.shift.movedOutHint") }}</p>
+            </template>
+            <template v-else>
+              <p class="text-lg font-semibold tabular-nums text-fg"><MoneyText :value="branch.net" compact /></p>
+              <p class="text-xs text-muted">{{ t("sales.today.receipts", { n: branch.receipts }, branch.receipts) }}</p>
+            </template>
           </div>
         </div>
 

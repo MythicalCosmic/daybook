@@ -46,7 +46,7 @@ watch(
 const kpis = computed(() => [
   { id: "total", label: t("finance.reports.trendTotal", { n: months.value }), value: data.value?.total ?? null, format: "money" as const, compact: true },
   { id: "average", label: t("finance.reports.trendAverage"), value: data.value?.average ?? null, format: "money" as const, compact: true },
-  { id: "last", label: t("finance.reports.trendThisMonth"), value: data.value?.series.at(-1)?.amount ?? null, previous: data.value?.series.at(-2)?.amount, format: "money" as const, compact: true, inverse: data.value?.category.kind === "expense" },
+  { id: "last", label: t("finance.reports.trendThisMonth"), value: data.value?.series.at(-1)?.amount ?? null, previous: data.value?.series.at(-2)?.amount, deltaLabel: t("finance.reports.vsLastMonth"), format: "money" as const, compact: true, inverse: data.value?.category.kind === "expense" },
 ]);
 const labels = computed(() => (data.value?.series ?? []).map((point) => point.date));
 const series = computed(() => [{ name: data.value?.category.name ?? "", data: (data.value?.series ?? []).map((p) => p.amount), color: css(node.value ? colorFor(node.value.id, node.value.color) : "var(--c-chart-1)") }]);

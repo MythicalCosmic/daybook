@@ -194,3 +194,29 @@ def test_branch_scope_narrows_every_report(books, owner, member):
         "100.00"
     )
     assert queries.pnl(books, OCT_3, OCT_3, "month", branch_ids=[])["income"]["total"] == D("0.00")
+
+
+def test_overview_lists_every_expense_group_of_the_month(books, owner, cash):
+    """The overview's expense breakdown covers the whole month, so a chart of it adds up to the
+    month's expenses (it used to stop at six groups and lose the rest)."""
+    for day in (OCT_3, OCT_10):
+        ExchangeRateFactory(date=day, rate=D("12000"))
+    services.record_transaction(
+        books, by=owner, kind="opening", amount=D("100000000"), occurred_on=OCT_3, account=cash
+    )
+    for index in range(9):
+        category = services.create_category(books, by=owner, name=f"Cost {index}", kind="expense")
+        services.record_transaction(
+            books,
+            by=owner,
+            kind="expense",
+            amount=D(1_000_000 * (index + 1)),
+            occurred_on=OCT_10,
+            account=cash,
+            category=category,
+        )
+    data = queries.overview(books, branch_ids=None, today=date(2026, 10, 21))
+    groups = data["top_expenses"]
+    assert len(groups) == 9
+    assert [row["name"] for row in groups[:2]] == ["Cost 8", "Cost 7"]  # biggest first
+    assert sum(row["amount"] for row in groups) == data["month"]["expense"] == D("45000000.00")

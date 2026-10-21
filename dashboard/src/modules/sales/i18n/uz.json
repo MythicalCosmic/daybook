@@ -516,5 +516,6 @@
   "sales.widget.error": "Savdoni yuklab bo‘lmadi",
   "sales.shift.movedOut": "Hozircha chiqqan naqd",
   "sales.shift.movedOutHint": "savdo yopishda qo‘shiladi",
+  "sales.shift.movedOutSub": "to‘lovlar, topshirish, seyf",
   "sales.flow.soFar": "Savdosiz: mayda pul minus chiqim"
 }

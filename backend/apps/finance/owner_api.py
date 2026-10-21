@@ -927,10 +927,18 @@ class TransactionViewSet(FinanceMixin, OwnerViewSet):
     )
     def list(self, request, company_id):
         rows = self._filtered()
+        # The sums follow the filters: posted rows unless a status is asked for (the "Waiting"
+        # view sums what waits), and transfers only when the list is narrowed to them (both legs,
+        # so in = out); otherwise they would only move money between our own accounts.
+        counted = rows
+        if Transaction.Kind.TRANSFER not in filters.choices(
+            request.query_params, "kind", Transaction.Kind.values
+        ):
+            counted = counted.exclude(kind=Transaction.Kind.TRANSFER)
+        if not filters.choices(request.query_params, "status", Transaction.Status.values):
+            counted = counted.filter(status=Transaction.Status.POSTED)
         sums = (
-            rows.exclude(kind=Transaction.Kind.TRANSFER)
-            .filter(status=Transaction.Status.POSTED)
-            .aggregate(
+            counted.aggregate(
                 money_in=Sum("base_amount", filter=Q(base_amount__gt=0)),
                 money_out=Sum("base_amount", filter=Q(base_amount__lt=0)),
             )

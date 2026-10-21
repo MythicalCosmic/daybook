@@ -516,5 +516,6 @@
   "sales.widget.error": "Не удалось загрузить продажи",
   "sales.shift.movedOut": "Выдано из кассы",
   "sales.shift.movedOutHint": "выручка — при закрытии",
+  "sales.shift.movedOutSub": "выплаты, передачи, сейф",
   "sales.flow.soFar": "Размен минус выдачи, без выручки"
 }

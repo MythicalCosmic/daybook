@@ -161,12 +161,14 @@ function saveView(input: { name: string; shared: boolean }): void {
 const columns = computed<TableColumn<Transaction>[]>(() => [
   { id: "occurred_on", header: t("finance.field.date"), sortable: true, width: 96, format: (value) => fmt.day(String(value), "short") },
   { id: "description", header: t("finance.tx.what"), minWidth: 220, hideable: false, sticky: true, value: (row) => row.description || row.category?.name || row.kind_label },
-  { id: "category", header: t("finance.field.category"), width: 190, value: (row) => row.category?.name ?? "" },
-  { id: "account", header: t("finance.field.account"), width: 170, value: (row) => row.account?.name ?? "" },
-  { id: "amount", header: t("finance.field.amount"), sortable: true, numeric: true, width: 168, value: (row) => row.amount, csv: (row) => row.amount },
-  { id: "receipts", header: "", width: 48, hideable: false, align: "center", value: (row) => row.receipts.length || "", csv: (row) => row.receipts.length },
-  { id: "branch", header: t("finance.field.branch"), width: 88, value: (row) => row.branch?.name ?? "" },
-  { id: "status", header: t("finance.filter.status"), width: 136, value: (row) => row.status_label, csv: (row) => row.status_label },
+  // Widths add up to the content width of a 1440 px screen with the sidebar open, so the ledger
+  // needs no sideways scroll there; "What" takes whatever is left.
+  { id: "category", header: t("finance.field.category"), width: 170, value: (row) => row.category?.name ?? "" },
+  { id: "account", header: t("finance.field.account"), width: 160, value: (row) => row.account?.name ?? "" },
+  { id: "amount", header: t("finance.field.amount"), sortable: true, numeric: true, width: 152, value: (row) => row.amount, csv: (row) => row.amount },
+  { id: "receipts", header: "", width: 44, hideable: false, align: "center", value: (row) => row.receipts.length || "", csv: (row) => row.receipts.length },
+  { id: "branch", header: t("finance.field.branch"), width: 76, value: (row) => row.branch?.name ?? "" },
+  { id: "status", header: t("finance.filter.status"), width: 128, value: (row) => row.status_label, csv: (row) => row.status_label },
 ]);
 
 function open(row: Transaction): void {
@@ -307,8 +309,8 @@ const kindIcon = (kind: TransactionKind) => KIND_ICONS[kind] ?? Receipt;
               <component :is="kindIcon(row.kind)" :size="14" />
             </span>
             <div class="min-w-0">
-              <p class="truncate text-base font-medium text-fg">{{ row.masked ? row.category?.name : row.description || row.category?.name || row.kind_label }}</p>
-              <p class="truncate text-xs text-muted">
+              <p class="truncate text-base font-medium text-fg" :title="row.masked ? row.category?.name : row.description || row.category?.name || row.kind_label">{{ row.masked ? row.category?.name : row.description || row.category?.name || row.kind_label }}</p>
+              <p class="truncate text-xs text-muted" :title="row.counterparty?.name ?? row.membership?.name ?? row.source?.label ?? undefined">
                 <template v-if="row.counterparty">{{ row.counterparty.name }}</template>
                 <template v-else-if="row.membership">{{ row.membership.name }}</template>
                 <template v-else-if="row.source">{{ row.source.label }}</template>
@@ -321,7 +323,7 @@ const kindIcon = (kind: TransactionKind) => KIND_ICONS[kind] ?? Receipt;
         <template #cell-account="{ row }">
           <span v-if="row.account" class="inline-flex min-w-0 items-center gap-1.5 text-sm text-fg">
             <component :is="ACCOUNT_ICONS[row.account.kind]" :size="14" class="shrink-0 text-subtle" aria-hidden="true" />
-            <span class="truncate">{{ row.account.name }}</span>
+            <span class="truncate" :title="row.account.name">{{ row.account.name }}</span>
           </span>
           <span v-else class="text-sm text-subtle">{{ t("finance.tx.noAccount") }}</span>
         </template>

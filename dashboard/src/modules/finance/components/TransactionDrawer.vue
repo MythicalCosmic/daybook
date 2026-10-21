@@ -279,7 +279,7 @@ const fieldLabels = computed(() => ({
               <p :class="['text-[1.625rem] font-semibold leading-8 tracking-[-0.02em] tabular-nums', row.status === 'void' && 'text-subtle line-through']">
                 <MoneyText :value="row.amount" :currency="row.currency" sign="always" :colored="row.status !== 'void'" :decimals="row.currency === 'USD' ? 'always' : 'auto'" />
               </p>
-              <p v-if="foreign" class="text-sm text-muted">≈ <MoneyText :value="row.base_amount" /></p>
+              <p v-if="foreign" class="text-sm text-muted">≈ <MoneyText :value="row.base_amount" :decimals="company.currency === 'USD' ? 'always' : 'never'" /></p>
               <div v-if="row.status !== 'posted'" class="mt-1.5 flex flex-wrap items-center gap-1.5">
                 <StatusPill :tone="STATUS_TONES[row.status]" size="sm" :label="row.status_label" />
               </div>

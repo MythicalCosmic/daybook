@@ -56,11 +56,11 @@ const filtered = computed(() => kind.value !== "all" || owes.value !== "any" || 
 const columns = computed<TableColumn<Counterparty>[]>(() => [
   { id: "name", header: t("finance.parties.name"), minWidth: 230, sticky: true, hideable: false },
   { id: "kind", header: t("finance.parties.kind"), width: 120, value: (row) => row.kind_label },
-  { id: "phone", header: t("finance.parties.phone"), width: 160, format: (value) => formatPhone(String(value ?? "")) || "—" },
+  { id: "phone", header: t("finance.parties.phone"), width: 150, format: (value) => formatPhone(String(value ?? "")) || "—" },
   { id: "owes_us", header: t("finance.parties.owesUs"), numeric: true, width: 150 },
   { id: "we_owe", header: t("finance.parties.weOwe"), numeric: true, width: 140 },
-  { id: "last_activity", header: t("finance.parties.lastActivity"), width: 120, format: (value) => (value ? fmt.day(String(value), "short") : "—") },
-  { id: "tags", header: t("finance.parties.tags"), width: 170, value: (row) => row.tags.join(", ") },
+  { id: "last_activity", header: t("finance.parties.lastActivity"), width: 150, format: (value) => (value ? fmt.day(String(value), "short") : "—") },
+  { id: "tags", header: t("finance.parties.tags"), width: 150, value: (row) => row.tags.join(", ") },
 ]);
 
 /** "Rustam Qodirov (ijara)" → initials of the name, not of the note in brackets. */
@@ -136,8 +136,8 @@ const kindTone = { customer: "success", supplier: "info", both: "primary", state
         <div class="flex min-w-0 items-center gap-2.5">
           <UserAvatar :name="avatarName(row.name)" :size="30" shape="rounded" />
           <div class="min-w-0">
-            <p class="truncate text-base font-medium text-fg">{{ row.name }}</p>
-            <p class="truncate text-xs text-muted">{{ [row.contact_person, row.tin ? `INN ${row.tin}` : ""].filter(Boolean).join(" · ") || row.kind_label }}</p>
+            <p class="truncate text-base font-medium text-fg" :title="row.name">{{ row.name }}</p>
+            <p class="truncate text-xs text-muted" :title="[row.contact_person, row.tin ? `INN ${row.tin}` : ''].filter(Boolean).join(' · ') || undefined">{{ [row.contact_person, row.tin ? `INN ${row.tin}` : ""].filter(Boolean).join(" · ") || row.kind_label }}</p>
           </div>
         </div>
       </template>

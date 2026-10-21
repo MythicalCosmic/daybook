@@ -168,15 +168,22 @@ const timeline = computed<TimelineEvent[]>(() =>
       <dl class="grid grid-cols-2 gap-px overflow-hidden rounded-[12px] border border-line bg-line sm:grid-cols-4">
         <div class="bg-surface p-3">
           <dt class="text-xs text-muted">{{ t("sales.shift.net") }}</dt>
-          <dd class="mt-1 text-md font-semibold text-fg"><MoneyText :value="shift.net" compact /></dd>
-          <dd class="mt-0.5 text-[11px] text-subtle">{{ t("sales.shift.receipts", { n: shift.receipts }, shift.receipts) }}</dd>
+          <!-- Shift totals arrive with the Z-report: an open till has no sales to show yet, not zero. -->
+          <template v-if="awaitingTotals">
+            <dd class="mt-1 text-md font-semibold text-subtle" data-testid="net-awaiting">—</dd>
+            <dd class="mt-0.5 text-[11px] text-subtle">{{ t("sales.shift.movedOutHint") }}</dd>
+          </template>
+          <template v-else>
+            <dd class="mt-1 text-md font-semibold text-fg"><MoneyText :value="shift.net" compact /></dd>
+            <dd class="mt-0.5 text-[11px] text-subtle">{{ t("sales.shift.receipts", { n: shift.receipts }, shift.receipts) }}</dd>
+          </template>
         </div>
         <!-- An open till without receipts has no sales yet (they come with the Z-report at close),
              so "expected" would read float minus cash out, often below zero: show the cash out. -->
         <div v-if="awaitingTotals" class="bg-surface p-3">
           <dt class="text-xs text-muted">{{ t("sales.shift.movedOut") }}</dt>
           <dd class="mt-1 text-md font-semibold text-fg"><MoneyText :value="movedOut" compact /></dd>
-          <dd class="mt-0.5 text-[11px] text-subtle">{{ t("sales.shift.movedOutHint") }}</dd>
+          <dd class="mt-0.5 text-[11px] text-subtle">{{ t("sales.shift.movedOutSub") }}</dd>
         </div>
         <div v-else class="bg-surface p-3">
           <dt class="text-xs text-muted">{{ t("sales.shift.expected") }}</dt>

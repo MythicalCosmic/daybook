@@ -380,6 +380,31 @@ class TestTransactions:
             == "-900000.00"
         )
 
+    def test_the_sums_follow_the_status_and_kind_filters(self, client, fin, kassa, bank, boss, today):
+        income(fin, boss, kassa, "5000000", today)
+        expense(fin, boss, kassa, "450000", today, status="pending")
+        services.transfer(
+            fin,
+            by=boss,
+            from_account=kassa,
+            to_account=bank,
+            amount_out=Decimal("2000000"),
+            occurred_on=today,
+        )
+
+        def summary(**params):
+            return client.get(url(fin, "transactions/"), params).json()["summary"]
+
+        # Everything: posted rows, transfers left out (they only move money between accounts).
+        assert summary()["money_in"] == "5000000.00"
+        assert summary()["money_out"] == "0.00"
+        # The "Waiting" view sums what waits, not zero.
+        assert summary(status="pending")["money_out"] == "450000.00"
+        # The "Transfers" view shows both legs.
+        transfers = summary(kind="transfer")
+        assert transfers["money_in"] == transfers["money_out"] == "2000000.00"
+        assert transfers["net"] == "0.00"
+
     def test_the_creator_edits_within_24_hours_others_need_finance_manage(
         self, owner_api, fin, role, person, kassa, boss, today
     ):
