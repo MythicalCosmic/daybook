@@ -126,6 +126,8 @@
   "routines.detail.person": "Xodim",
   "routines.detail.noPeople": "Bu davrda hech kimga berilmagan.",
   "routines.detail.history": "Tarix",
+  "routines.detail.goneTitle": "Bu muntazam vazifa endi yo‘q",
+  "routines.detail.goneBody": "U o‘chirilgan. U bergan vazifalar «Vazifalar»da qoladi.",
   "routines.delete.title": "Muntazam vazifa o‘chirilsinmi?",
   "routines.delete.body": "“{title}” endi vazifa yaratmaydi. Avval berilgan vazifalar qoladi.",
   "routines.toast.created": "Muntazam vazifa yaratildi",

@@ -3,7 +3,7 @@
  * One routine (plan §6.1 `routines/:id`): how it went over a range (on time, late, missed per day
  * and per person), who gets it on a day, its settings and its audited history.
  */
-import { CalendarClock, Clock, ListChecks, Pause, Pencil, Play, Send, Store, UsersRound } from "@lucide/vue";
+import { CalendarClock, Clock, ListChecks, Pause, Pencil, Play, Repeat, Send, Store, UsersRound } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
@@ -12,6 +12,7 @@ import AuditTrail from "@/components/AuditTrail.vue";
 import BarChart from "@/components/BarChart.vue";
 import ChartCard from "@/components/ChartCard.vue";
 import DateRangePicker from "@/components/DateRangePicker.vue";
+import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import InlineAlert from "@/components/InlineAlert.vue";
 import KpiCard from "@/components/KpiCard.vue";
@@ -24,6 +25,7 @@ import UiButton from "@/components/UiButton.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { useChartTheme } from "@/components/useChartTheme";
 import { toast } from "@/components/useToast";
+import { isApiError } from "@/api/http";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useFormat } from "@/lib/useFormat";
 import { usePageTitle } from "@/lib/usePageTitle";
@@ -60,6 +62,8 @@ const auditLabels = computed(() => routineFieldLabels(t));
 const auditFormat = computed(() => formatRoutineAudit(t, { options: planOptions.data.value, branches: company.current?.branches ?? [] }));
 
 const data = computed(() => routine.data.value ?? null);
+// Deleted (or never there): trying again won't bring it back, so the page offers the list instead.
+const gone = computed(() => isApiError(routine.error.value) && routine.error.value.status === 404);
 usePageTitle(() => data.value?.title);
 
 // Made today after its due time: it starts the next day it's due, and today's task can still go out.
@@ -111,6 +115,11 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
 <template>
   <div class="flex min-w-0 flex-col gap-5">
     <div v-if="routine.isPending.value" class="flex flex-col gap-4"><SkeletonBlock width="30%" height="28px" /><SkeletonBlock height="120px" radius="12px" /></div>
+    <div v-else-if="routine.isError.value && gone" class="ui-card">
+      <EmptyState :icon="Repeat" :title="t('routines.detail.goneTitle')" :description="t('routines.detail.goneBody')">
+        <UiButton :to="{ name: 'routines.list' }">{{ t("routines.nav.all") }}</UiButton>
+      </EmptyState>
+    </div>
     <ErrorState v-else-if="routine.isError.value" class="ui-card" :error="routine.error.value" :retry="() => routine.refetch()" />
     <template v-else-if="data">
       <PageHeader :title="data.title" :description="data.description || undefined" :back="{ name: 'routines.list' }" :back-label="t('routines.title')">

@@ -547,3 +547,23 @@ describe("Today opened from History", () => {
     wrapper.unmount();
   });
 });
+
+describe("RoutineDetailPage", () => {
+  it("says a deleted routine is gone and offers the list instead of trying again", async () => {
+    stub({ "GET tasks/options/": () => json(options) });
+    const app = await testApp("/c/1/routines/999");
+    for (const name of ["routines.today", "routines.history", "routines.confirm", "routines.list", "routines.onboarding"]) {
+      app.router.addRoute({ path: `/named/${name}/:id?`, name, component: { render: () => null } });
+    }
+    app.router.addRoute({ path: "/c/:companyId/routines/:id(\\d+)", name: "routines.detail", component: { render: () => null } });
+    await app.router.push("/c/1/routines/999");
+    const { default: RoutineDetailPage } = await import("../pages/RoutineDetailPage.vue");
+    const { wrapper } = mountWithProviders(RoutineDetailPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    const text = document.body.textContent ?? "";
+    expect(text).toContain("This routine no longer exists");
+    expect(text).not.toContain("Try again");
+    wrapper.unmount();
+  });
+});

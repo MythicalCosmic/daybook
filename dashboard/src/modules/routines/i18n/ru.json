@@ -126,6 +126,8 @@
   "routines.detail.person": "Сотрудник",
   "routines.detail.noPeople": "За этот период её никто не получал.",
   "routines.detail.history": "История",
+  "routines.detail.goneTitle": "Этой регулярной задачи больше нет",
+  "routines.detail.goneBody": "Она удалена. Уже выданные задачи остались в «Задачах».",
   "routines.delete.title": "Удалить регулярную задачу?",
   "routines.delete.body": "«{title}» перестанет создавать задачи. Уже созданные останутся.",
   "routines.toast.created": "Регулярная задача создана",

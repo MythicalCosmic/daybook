@@ -126,6 +126,8 @@
   "routines.detail.person": "Person",
   "routines.detail.noPeople": "Nobody had it in this period.",
   "routines.detail.history": "History",
+  "routines.detail.goneTitle": "This routine no longer exists",
+  "routines.detail.goneBody": "It was deleted. The tasks it already gave stay in Tasks.",
   "routines.delete.title": "Delete this routine?",
   "routines.delete.body": "“{title}” stops making tasks. Tasks it already made stay.",
   "routines.toast.created": "Routine created",
