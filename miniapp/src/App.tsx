@@ -27,6 +27,19 @@ import { initData, onThemeChange, openedWithoutSignIn, useBackButton } from "./t
 import { applyTheme, savedThemeMode } from "./theme";
 
 const SPLASH_MS = 900;
+const LAST_LANGUAGE = "daybook.lang";
+
+/**
+ * The language the person last used the app in. A screen without a sign-in (an old keyboard
+ * button opened the app) knows nobody, so it speaks that rather than the phone's language.
+ */
+function lastLanguage(): string | undefined {
+  try {
+    return window.localStorage.getItem(LAST_LANGUAGE) ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 export function App() {
   const signedIn = Boolean(initData());
@@ -39,11 +52,18 @@ export function App() {
     return () => window.clearTimeout(timer);
   }, []);
   useEffect(() => onThemeChange(() => applyTheme(savedThemeMode())), []);
+  const chosen = me.data?.language;
+  useEffect(() => {
+    if (!chosen) return;
+    try {
+      window.localStorage.setItem(LAST_LANGUAGE, chosen);
+    } catch {
+      // Only a convenience for the screen without a sign-in.
+    }
+  }, [chosen]);
 
   const language = asLang(
-    me.data?.language ??
-      window.Telegram?.WebApp?.initDataUnsafe?.user?.language_code ??
-      navigator.language.slice(0, 2),
+    chosen ?? window.Telegram?.WebApp?.initDataUnsafe?.user?.language_code ?? lastLanguage() ?? navigator.language.slice(0, 2),
   );
   return (
     <I18nProvider lang={language}>

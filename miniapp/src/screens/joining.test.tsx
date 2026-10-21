@@ -226,6 +226,17 @@ describe("opening the app", () => {
     expect(screen.getByRole("button", { name: "Back to the chat" })).toBeTruthy();
   }, 20_000);
 
+  it("speaks the language the person last used the app in when nobody is signed in", async () => {
+    localStorage.setItem("daybook.lang", "uz");
+    try {
+      await loadApp({ platform: "android", initData: "", sendData: vi.fn(), close: vi.fn() });
+      expect(await screen.findByText("Daybook’ni chatdan oching")).toBeTruthy();
+      expect(screen.getByRole("button", { name: "Menga tugma yuboring" })).toBeTruthy();
+    } finally {
+      localStorage.removeItem("daybook.lang");
+    }
+  }, 20_000);
+
   it("in a browser, says the app lives in Telegram", async () => {
     await loadApp({ platform: "unknown", initData: "" });
     expect(await screen.findByText("Open Daybook in Telegram")).toBeTruthy();

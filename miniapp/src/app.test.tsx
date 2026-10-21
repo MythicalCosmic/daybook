@@ -71,6 +71,8 @@ describe("app", () => {
     renderApp(me("approved"));
     expect(await screen.findByText("Home", {}, { timeout: 3000 })).toBeTruthy();
     expect(document.querySelector(".tabbar")).not.toBeNull();
+    // Remembered for a later launch without a sign-in (joining.test.tsx, "opening the app").
+    expect(localStorage.getItem("daybook.lang")).toBe("en");
   });
 
   it("opens the screen a launch link asks for", async () => {
