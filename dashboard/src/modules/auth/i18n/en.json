@@ -1,6 +1,5 @@
 {
   "auth.title": "Sign-in",
-  "auth.dev.cafeManager": "Demo Café manager",
   "auth.login.title": "Sign in with Telegram",
   "auth.login.lead": "Scan the code with your phone’s camera, or open Telegram on this computer.",
   "auth.login.leadPhone": "Remember the number below, open Telegram and tap it in the bot.",
@@ -45,7 +44,14 @@
   "auth.dev.submit": "Sign in",
   "auth.dev.presets": "Demo people",
   "auth.dev.owner": "Owner",
-  "auth.dev.manager": "Manager",
-  "auth.dev.you": "You",
+  "auth.dev.headOfPharmacy": "Head of pharmacy",
+  "auth.dev.pharmacist": "Pharmacist",
+  "auth.dev.warehouseManager": "Warehouse manager",
+  "auth.dev.storekeeper": "Storekeeper",
+  "auth.dev.salesManager": "Sales manager",
+  "auth.dev.strangers": "Not in a company yet",
+  "auth.dev.applicant": "Joining, no details yet",
+  "auth.dev.waiting": "Waiting for approval",
+  "auth.dev.outsider": "Outsider",
   "auth.dev.invalidId": "Enter a Telegram id: digits only"
 }

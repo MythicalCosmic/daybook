@@ -1,4 +1,4 @@
-/** Plugins a component test needs: pinia with a signed-in owner in Demo Shop, a memory router, i18n in English, vue-query. */
+/** Plugins a component test needs: pinia with a signed-in owner in Demo Dorixona, a memory router, i18n in English, vue-query. */
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { mount, type VueWrapper } from "@vue/test-utils";
 import { createPinia, setActivePinia, type Pinia } from "pinia";

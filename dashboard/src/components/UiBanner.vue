@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * A page-wide notice across the top of a page or panel: "AI is off: an owner must accept the
- * terms", "October is locked", "You're viewing Demo Café". Bolder than InlineAlert. With
+ * terms", "October is locked", "You're viewing Demo Distribyutor". Bolder than InlineAlert. With
  * `storage-key` a dismissed banner stays dismissed in this browser.
  */
 import { CircleAlert, Info, Sparkles, TriangleAlert, X } from "@lucide/vue";

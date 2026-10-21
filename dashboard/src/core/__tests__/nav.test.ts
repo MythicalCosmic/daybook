@@ -63,12 +63,12 @@ const pulse = { counters: { "tasks.review": 2, "finance.claims": 1, "finance.ove
 describe("perms", () => {
   it("owners hold everything, others what they were given", () => {
     const owner = company();
-    const cafe = manager(["sales.view"]);
+    const distributor = manager(["sales.view"]);
     expect(hasPerm(owner, "payroll.finalize")).toBe(true);
-    expect(hasPerm(cafe, "sales.view")).toBe(true);
-    expect(hasPerm(cafe, ["finance.view", "sales.view"])).toBe(true);
-    expect(hasPerm(cafe, "finance.view")).toBe(false);
-    expect(hasPerm(cafe, [])).toBe(true);
+    expect(hasPerm(distributor, "sales.view")).toBe(true);
+    expect(hasPerm(distributor, ["finance.view", "sales.view"])).toBe(true);
+    expect(hasPerm(distributor, "finance.view")).toBe(false);
+    expect(hasPerm(distributor, [])).toBe(true);
     expect(hasPerm(null, undefined)).toBe(false);
     expect(isPerm("crm.manage")).toBe(true);
     expect(isPerm("crm.delete")).toBe(false);
@@ -81,10 +81,10 @@ describe("buildNav", () => {
     expect(all.map((m) => m.id)).toEqual(["overview", "tasks", "finance"]);
     const nav = buildNav(all, company(), pulse);
     expect(nav.map((g) => g.id)).toEqual(["overview", "work", "money"]);
-    const cafe = buildNav(all, manager(["finance.view"], { features: ["sales"] }), pulse);
-    expect(cafe.map((g) => g.id)).toEqual(["overview", "work"]);
+    const distributor = buildNav(all, manager(["finance.view"], { features: ["sales"] }), pulse);
+    expect(distributor.map((g) => g.id)).toEqual(["overview", "work"]);
     // Without tasks.confirm the Reviews page disappears and Tasks becomes a single item.
-    expect(cafe[1]!.modules[0]!.children).toEqual([]);
+    expect(distributor[1]!.modules[0]!.children).toEqual([]);
     expect(isModuleVisible(finance, manager(["finance.record"]))).toBe(true);
     expect(buildNav(all, null)).toEqual([]);
   });

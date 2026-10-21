@@ -84,7 +84,7 @@ watch(
 watch(language, (value) => setLanguage(value), { immediate: true });
 
 onMounted(() => {
-  // In the mock build the demo owner is signed in: format money and dates as Demo Shop does.
+  // In the mock build the demo owner is signed in: format money and dates as Demo Dorixona does.
   if (session.me && company.currentId === null) company.setCurrent(company.defaultCompanyId());
 });
 

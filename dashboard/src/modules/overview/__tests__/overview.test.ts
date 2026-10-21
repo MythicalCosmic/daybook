@@ -95,7 +95,7 @@ describe("OverviewPage", () => {
     const { wrapper } = mountWithProviders(OverviewPage, { plugins: app.plugins });
     await flushPromises();
     expect(wrapper.find("h1").text()).toBe("Good morning, Dilnoza");
-    expect(wrapper.text()).toContain("Demo Shop");
+    expect(wrapper.text()).toContain("Demo Dorixona");
     const ids = wrapper.findAll("[data-widget]").map((el) => el.attributes("data-widget")!);
     // Other modules add widgets of their own, so this checks the rules, not one exact list:
     // W0's own widgets are there, in their order (branches 10, the inbox's Needs you 30, activity 40)…

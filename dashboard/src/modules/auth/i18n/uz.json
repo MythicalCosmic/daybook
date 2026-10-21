@@ -1,6 +1,5 @@
 {
   "auth.title": "Kirish",
-  "auth.dev.cafeManager": "Demo Café menejeri",
   "auth.login.title": "Telegram orqali kirish",
   "auth.login.lead": "Kodni telefon kamerasi bilan skanerlang yoki Telegram’ni shu kompyuterda oching.",
   "auth.login.leadPhone": "Pastdagi raqamni eslab qoling, Telegram’ni oching va botda shu raqamni bosing.",
@@ -45,7 +44,14 @@
   "auth.dev.submit": "Kirish",
   "auth.dev.presets": "Demo xodimlar",
   "auth.dev.owner": "Egasi",
-  "auth.dev.manager": "Menejer",
-  "auth.dev.you": "Siz",
+  "auth.dev.headOfPharmacy": "Dorixona mudiri",
+  "auth.dev.pharmacist": "Farmatsevt",
+  "auth.dev.warehouseManager": "Ombor mudiri",
+  "auth.dev.storekeeper": "Omborchi",
+  "auth.dev.salesManager": "Savdo menejeri",
+  "auth.dev.strangers": "Hali kompaniyada emas",
+  "auth.dev.applicant": "Qo‘shilmoqda, ma’lumot yo‘q",
+  "auth.dev.waiting": "Tasdiqlashni kutmoqda",
+  "auth.dev.outsider": "Begona",
   "auth.dev.invalidId": "Telegram id kiriting: faqat raqamlar"
 }

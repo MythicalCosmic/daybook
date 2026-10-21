@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Where you are: "Money › Finance › Accounts › Kapitalbank". Links for every level but the last;
+ * Where you are: "Money › Finance › Accounts › Bank account". Links for every level but the last;
  * with more than `max` levels the middle ones fold into a "…" menu.
  */
 import { ChevronRight, Ellipsis } from "@lucide/vue";

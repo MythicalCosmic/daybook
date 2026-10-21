@@ -94,7 +94,7 @@ function onMove(move: KanbanMove<DemoCard>): void {
 }
 function addCard(column: string, close: () => void): void {
   if (!quickTitle.value.trim()) return close();
-  cards.value = [...cards.value, { id: Date.now(), key: `RENO-${cards.value.length + 21}`, title: quickTitle.value.trim(), list: column, assignee: PEOPLE[0]!, due: today.value, labels: [], checklist: [0, 0], allowed: BOARD_COLUMNS.map((c) => c.id) }];
+  cards.value = [...cards.value, { id: Date.now(), key: `OPEN-${cards.value.length + 21}`, title: quickTitle.value.trim(), list: column, assignee: PEOPLE[0]!, due: today.value, labels: [], checklist: [0, 0], allowed: BOARD_COLUMNS.map((c) => c.id) }];
   quickTitle.value = "";
   close();
 }

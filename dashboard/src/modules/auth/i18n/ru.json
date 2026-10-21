@@ -1,6 +1,5 @@
 {
   "auth.title": "Вход",
-  "auth.dev.cafeManager": "Менеджер Demo Café",
   "auth.login.title": "Вход через Telegram",
   "auth.login.lead": "Отсканируйте код камерой телефона или откройте Telegram на этом компьютере.",
   "auth.login.leadPhone": "Запомните число ниже, откройте Telegram и нажмите его в боте.",
@@ -45,7 +44,14 @@
   "auth.dev.submit": "Войти",
   "auth.dev.presets": "Демо-люди",
   "auth.dev.owner": "Владелец",
-  "auth.dev.manager": "Менеджер",
-  "auth.dev.you": "Вы",
+  "auth.dev.headOfPharmacy": "Заведующий аптекой",
+  "auth.dev.pharmacist": "Фармацевт",
+  "auth.dev.warehouseManager": "Заведующий складом",
+  "auth.dev.storekeeper": "Кладовщик",
+  "auth.dev.salesManager": "Менеджер по продажам",
+  "auth.dev.strangers": "Пока не в компании",
+  "auth.dev.applicant": "Вступает, без данных",
+  "auth.dev.waiting": "Ждёт одобрения",
+  "auth.dev.outsider": "Посторонний",
   "auth.dev.invalidId": "Введите Telegram id: только цифры"
 }
