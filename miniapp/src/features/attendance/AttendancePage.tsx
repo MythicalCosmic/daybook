@@ -117,8 +117,8 @@ function MonthCard({
     <Card className="att-month">
       <div className="att-month-head">
         <span className="att-month-title">{monthTitle(t, month)}</span>
-        <IconButton icon={ChevronLeft} label={t("month.prev")} size={36} variant="ghost" onClick={() => onMonth(shiftMonth(month, -1))} />
-        <IconButton icon={ChevronRight} label={t("month.next")} size={36} variant="ghost" disabled={!canGoNext} onClick={() => onMonth(shiftMonth(month, 1))} />
+        <IconButton icon={ChevronLeft} label={t("month.prev")} size={40} variant="ghost" onClick={() => onMonth(shiftMonth(month, -1))} />
+        <IconButton icon={ChevronRight} label={t("month.next")} size={40} variant="ghost" disabled={!canGoNext} onClick={() => onMonth(shiftMonth(month, 1))} />
       </div>
       {failed && !shown ? (
         // The app's own failure block: its icon and Try again, not the "all done" check mark.

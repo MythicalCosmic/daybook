@@ -274,6 +274,11 @@
   padding: 14px 16px;
 }
 
+/* Start and Stop take a finger's height, on Home and on the task screen. */
+.prj-timer .btn {
+  min-height: 40px;
+}
+
 /* On Home the notices around it are banners: the same corners and circle. */
 .prj-home-timer {
   border-radius: 22px;
