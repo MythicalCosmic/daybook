@@ -179,7 +179,7 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
                 <th class="px-3 py-2.5 text-right font-medium">{{ t("routines.detail.onTimeShort") }}</th>
                 <th class="px-3 py-2.5 text-right font-medium">{{ t("routines.detail.late") }}</th>
                 <th class="px-3 py-2.5 text-right font-medium">{{ t("routines.detail.missed") }}</th>
-                <th class="w-[220px] px-4 py-2.5 font-medium">{{ t("routines.detail.onTime") }}</th>
+                <th class="w-[220px] px-4 py-2.5 font-medium">{{ t("routines.detail.onTimeRate") }}</th>
               </tr>
             </thead>
             <tbody>

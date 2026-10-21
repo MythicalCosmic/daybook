@@ -118,6 +118,7 @@
   "routines.detail.made": "Berildi",
   "routines.detail.onTime": "O‘z vaqtida",
   "routines.detail.onTimeShort": "O‘z vaqtida",
+  "routines.detail.onTimeRate": "O‘z vaqtida ulushi",
   "routines.detail.late": "Kechikkan",
   "routines.detail.missed": "Bajarilmagan",
   "routines.detail.chartTitle": "Kunma-kun",

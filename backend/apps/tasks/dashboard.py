@@ -591,7 +591,7 @@ def routine_day(
                 "progress": {
                     "finished": finished,
                     "total": total,
-                    "percent": round(100 * finished / total) if total else None,
+                    "percent": share(finished, total),
                 },
                 "counts": counts,
                 "runs": [{"task": task, "state": state} for task, state in rows],
@@ -606,6 +606,19 @@ def routine_day(
     return {"day": day, "holiday": holiday, "routines": listed, "totals": totals, "idle": idle}
 
 
+def share(part: int, whole: int) -> int | None:
+    """A whole percent of `whole` that reads 100 only when all of it is done and 0 only when
+    none of it is (537 of 539 is 99, not a rounded-up 100); None when there is nothing."""
+    if not whole:
+        return None
+    value = round(100 * part / whole)
+    if part < whole:
+        value = min(value, 99)
+    if part > 0:
+        value = max(value, 1)
+    return value
+
+
 def _cell() -> dict:
     return {"made": 0, "finished": 0, "on_time": 0, "late": 0, "missed": 0, "open": 0}
 
@@ -614,8 +627,8 @@ def _rated(cell: dict) -> dict:
     """A cell with its rates over the work whose time has come (not what's still ahead)."""
     due = cell["made"] - cell["open"]
     return cell | {
-        "percent": round(100 * cell["finished"] / due) if due else None,
-        "on_time_percent": round(100 * cell["on_time"] / due) if due else None,
+        "percent": share(cell["finished"], due),
+        "on_time_percent": share(cell["on_time"], due),
     }
 
 

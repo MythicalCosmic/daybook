@@ -118,6 +118,7 @@
   "routines.detail.made": "Создано",
   "routines.detail.onTime": "Вовремя",
   "routines.detail.onTimeShort": "Вовремя",
+  "routines.detail.onTimeRate": "Доля вовремя",
   "routines.detail.late": "С опозданием",
   "routines.detail.missed": "Не выполнено",
   "routines.detail.chartTitle": "По дням",

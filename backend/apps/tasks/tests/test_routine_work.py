@@ -15,6 +15,7 @@ from django.test.utils import CaptureQueriesContext
 from apps.audit.models import AuditLog
 from apps.members.models import Membership
 from apps.members.tests.factories import PositionFactory
+from apps.tasks import dashboard
 from apps.tasks.generation import generate_daily_tasks
 from apps.tasks.models import Proof, Task
 from apps.tasks.tests.factories import TaskFactory, TaskTemplateFactory, jpeg, make_shop
@@ -232,6 +233,13 @@ def test_history_rates_each_routine_per_day_over_the_work_due(pharmacy, owner_ap
     ali = next(row for row in body["people"] if row["member"]["id"] == people["ali"].pk)
     assert (ali["made"], ali["finished"], ali["open"], ali["percent"]) == (4, 3, 1, 100)
     assert ali["on_time_percent"] == 67
+
+
+def test_a_rate_reads_100_only_when_everything_is_done():
+    """537 of 539 done is 99 %, not a rounded-up 100 % with two runs still late."""
+    assert dashboard.share(537, 539) == 99 and dashboard.share(539, 539) == 100
+    assert dashboard.share(1, 400) == 1 and dashboard.share(0, 400) == 0
+    assert dashboard.share(2, 3) == 67 and dashboard.share(0, 0) is None
 
 
 def test_open_work_past_its_time_is_late_until_its_day_is_over(pharmacy, owner_api, clock):

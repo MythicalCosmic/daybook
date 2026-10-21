@@ -14,7 +14,7 @@ import { formatRoutineAudit, routineFieldLabels } from "../audit";
 import RoutineEditor from "../components/RoutineEditor.vue";
 import en from "../i18n/en.json";
 import module from "../index";
-import { afterSave, madeLateNote, missesToday, nextRunOf, runDayWords, runLabel, type RunWords } from "../lib";
+import { afterSave, madeLateNote, missesToday, nextRunOf, runDayWords, runLabel, share, wholePercent, type RunWords } from "../lib";
 import type { Routine } from "../types";
 
 interface Call {
@@ -282,6 +282,11 @@ describe("next run", () => {
     expect(runLabel("2026-11-02T04:00:00Z", words)).toBe('routines.run.date{"day":"2026-11-02","time":"09:00"}');
     expect(runDayWords("2026-10-22T04:00:00Z", words)).toBe("routines.runDay.tomorrow");
     expect(runDayWords("2026-10-23T04:00:00Z", words)).toBe("routines.runDay.weekday.4");
+  });
+
+  it("reads 100 % only when everything is done, and 0 % only when nothing is", () => {
+    expect([share(537, 539), share(539, 539), share(1, 400), share(0, 400), share(2, 3), share(0, 0)]).toEqual([99, 100, 1, 0, 67, null]);
+    expect([wholePercent(99.6), wholePercent(100), wholePercent(0.3), wholePercent(0), wholePercent(96.4)]).toEqual([99, 100, 1, 0, 96]);
   });
 
   it("says a late-made routine's today honestly, before and after today's task went out by hand", () => {

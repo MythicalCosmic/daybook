@@ -34,6 +34,7 @@ import { useConfirmRuns, usePlanOptions, useRoutineDay, useSendBackRun } from ".
 import DayRoutineCard from "../components/DayRoutineCard.vue";
 import GiveTodayDialog from "../components/GiveTodayDialog.vue";
 import RoutinesHeader from "../components/RoutinesHeader.vue";
+import { share } from "../lib";
 import type { GiveTarget, RoutineRun } from "../types";
 
 const { t } = useI18n();
@@ -82,7 +83,7 @@ const totalsShown = computed(() => {
 });
 const kpis = computed(() => {
   const totals = totalsShown.value;
-  const percent = totals && totals.total ? Math.round((100 * totals.finished) / totals.total) : null;
+  const percent = totals ? share(totals.finished, totals.total) : null;
   return [
     {
       id: "finished",

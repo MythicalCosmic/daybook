@@ -118,6 +118,7 @@
   "routines.detail.made": "Made",
   "routines.detail.onTime": "On time",
   "routines.detail.onTimeShort": "On time",
+  "routines.detail.onTimeRate": "On-time rate",
   "routines.detail.late": "Late",
   "routines.detail.missed": "Missed",
   "routines.detail.chartTitle": "Day by day",

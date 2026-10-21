@@ -41,6 +41,24 @@ export function runText(run: RoutineRun, t: T, time: (iso: string) => string): s
   }
 }
 
+/** A whole percent of `whole` that reads 100 only when all of it is done and 0 only when none is
+ * (537 of 539 is 99, not a rounded-up 100), as the server rounds Today's and History's rates. */
+export function share(part: number, whole: number): number | null {
+  if (!whole) return null;
+  let value = Math.round((100 * part) / whole);
+  if (part < whole) value = Math.min(value, 99);
+  if (part > 0) value = Math.max(value, 1);
+  return value;
+}
+
+/** A percent with decimals shown whole by the same rule: 99.6 reads 99, 0.3 reads 1. */
+export function wholePercent(value: number): number {
+  const rounded = Math.round(value);
+  if (value < 100 && rounded >= 100) return 99;
+  if (value > 0 && rounded <= 0) return 1;
+  return rounded;
+}
+
 /** Monday = 0 … Sunday = 6, of a company-local day ("2026-10-21"). */
 export function weekdayOf(day: string): number {
   return (parseDay(day).getUTCDay() + 6) % 7;
