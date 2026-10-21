@@ -4,6 +4,7 @@
  */
 import type { StatusTone } from "@/components/StatusPill.vue";
 import type { AvatarStatus } from "@/components/UserAvatar.vue";
+import { addDays, diffDays } from "@/lib/dates";
 
 import type { Person } from "./types";
 
@@ -66,4 +67,18 @@ export function tenureParts(days: number | null | undefined): { years: number; m
   const years = Math.floor(days / 365);
   const months = Math.floor((days % 365) / 30);
   return { years, months, days };
+}
+
+/**
+ * Approved time off still ahead (calendar days after `today`), shown next to "days off taken this
+ * year", which counts up to today: together they make what the Time off tab calls approved.
+ */
+export function bookedDaysAhead(upcoming: ReadonlyArray<{ first_day: string; last_day: string; status: string }>, today: string): number {
+  let days = 0;
+  for (const item of upcoming) {
+    if (item.status !== "approved" || item.last_day <= today) continue;
+    const from = item.first_day > today ? item.first_day : addDays(today, 1);
+    days += diffDays(from, item.last_day) + 1;
+  }
+  return days;
 }

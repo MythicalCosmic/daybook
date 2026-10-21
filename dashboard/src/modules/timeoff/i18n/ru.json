@@ -16,11 +16,11 @@
 
   "timeoff.kpi.pending": "Ждут вас",
   "timeoff.kpi.pendingHint": "Нужно одобрить или отклонить",
-  "timeoff.kpi.today": "Отсутствуют сегодня",
+  "timeoff.kpi.today": "Нет сегодня",
   "timeoff.kpi.todayHint": "В одобренном отпуске сегодня",
-  "timeoff.kpi.week": "Отсутствуют на неделе",
+  "timeoff.kpi.week": "Нет на неделе",
   "timeoff.kpi.weekHint": "Хотя бы один день на этой неделе",
-  "timeoff.kpi.month": "Дней отдыха в этом месяце",
+  "timeoff.kpi.month": "Дни отдыха за месяц",
   "timeoff.kpi.monthHint": "Одобренные дни, все вместе",
 
   "timeoff.view.calendar": "Календарь",
@@ -149,7 +149,7 @@
   "timeoff.holidays.emptyBody": "Добавьте государственные праздники Узбекистана в один клик, а затем свои выходные.",
   "timeoff.holidays.hayitNote": "Рамазан и Курбан хайит идут по лунному календарю: добавляйте их каждый год, когда правительство объявит даты.",
 
-  "timeoff.person.thisYear": "В этом году {n} день отдыха | В этом году {n} дня отдыха | В этом году {n} дней отдыха",
+  "timeoff.person.thisYear": "Одобрено в этом году: {n} день | Одобрено в этом году: {n} дня | Одобрено в этом году: {n} дней",
   "timeoff.person.emptyTitle": "Отпусков пока нет",
   "timeoff.person.emptyBody": "Здесь появятся заявки из приложения и отпуска, которые вы для него записали.",
   "timeoff.person.noReason": "Причина не указана",

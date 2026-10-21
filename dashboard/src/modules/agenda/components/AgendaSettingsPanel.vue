@@ -52,27 +52,30 @@ async function save<K extends keyof AgendaSettings>(field: K, value: AgendaSetti
   <div class="flex flex-col gap-5">
     <ErrorState v-if="settings.isError.value" compact :error="settings.error.value" :retry="() => settings.refetch()" />
     <div v-else-if="!settings.data.value" class="flex flex-col gap-3" aria-hidden="true">
-      <SkeletonBlock height="56px" radius="8px" />
-      <SkeletonBlock height="44px" radius="8px" />
+      <SkeletonBlock height="96px" radius="12px" />
+      <SkeletonBlock height="64px" radius="12px" />
     </div>
-    <template v-else>
-      <FormField :label="t('agenda.settings.defaultRemind')" :hint="t('agenda.settings.defaultRemindHint')">
+    <!-- One card of rows, like every settings panel; each change saves at once. -->
+    <div v-else class="ui-card flex flex-col divide-y divide-line">
+      <FormField class="px-4 py-3.5 md:px-5" :label="t('agenda.settings.defaultRemind')" :hint="t('agenda.settings.defaultRemindHint')">
         <SelectBox
           :model-value="settings.data.value.default_remind_before ?? 'none'"
           :options="remindOptions"
           :disabled="!canManage"
+          class="sm:max-w-[320px]"
           @update:model-value="(value) => save('default_remind_before', value === 'none' || value === null ? null : Number(value))"
         />
       </FormField>
       <ToggleSwitch
         :model-value="settings.data.value.notify_invites"
         layout="row"
+        class="px-4 py-3.5 md:px-5"
         :label="t('agenda.settings.notifyInvites')"
         :description="t('agenda.settings.notifyInvitesHint')"
         :loading="saving === 'notify_invites'"
         :disabled="!canManage"
         @update:model-value="(value: boolean) => save('notify_invites', value)"
       />
-    </template>
+    </div>
   </div>
 </template>

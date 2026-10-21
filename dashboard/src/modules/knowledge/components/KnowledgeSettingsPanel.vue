@@ -53,27 +53,30 @@ async function save<K extends keyof KnowledgeSettings>(field: K, value: Knowledg
   <div class="flex flex-col gap-5">
     <ErrorState v-if="settings.isError.value" compact :error="settings.error.value" :retry="() => settings.refetch()" />
     <div v-else-if="!settings.data.value" class="flex flex-col gap-3" aria-hidden="true">
-      <SkeletonBlock height="44px" radius="8px" />
-      <SkeletonBlock height="56px" radius="8px" />
+      <SkeletonBlock height="64px" radius="12px" />
+      <SkeletonBlock height="96px" radius="12px" />
     </div>
-    <template v-else>
+    <!-- One card of rows, like every settings panel; each change saves at once. -->
+    <div v-else class="ui-card flex flex-col divide-y divide-line">
       <ToggleSwitch
         :model-value="settings.data.value.notify_on_publish"
         layout="row"
+        class="px-4 py-3.5 md:px-5"
         :label="t('knowledge.settings.notify')"
         :description="t('knowledge.settings.notifyHint')"
         :loading="saving === 'notify_on_publish'"
         :disabled="!canManage"
         @update:model-value="(value: boolean) => save('notify_on_publish', value)"
       />
-      <FormField :label="t('knowledge.settings.remind')" :hint="t('knowledge.settings.remindHint')">
+      <FormField class="px-4 py-3.5 md:px-5" :label="t('knowledge.settings.remind')" :hint="t('knowledge.settings.remindHint')">
         <SelectBox
           :model-value="settings.data.value.remind_unread_after_hours"
           :options="hourOptions"
           :disabled="!canManage"
+          class="sm:max-w-[320px]"
           @update:model-value="(value) => value !== null && save('remind_unread_after_hours', Number(value))"
         />
       </FormField>
-    </template>
+    </div>
   </div>
 </template>

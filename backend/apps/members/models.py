@@ -44,7 +44,7 @@ class AccessRole(TenantModel):
 
 
 class Position(TenantModel):
-    """A job title (Cashier, Cook…) the employee picks during onboarding. Grants nothing."""
+    """A job title (Pharmacist, Cashier…) the employee picks during onboarding. Grants nothing."""
 
     name = models.CharField(max_length=100)
     order = models.PositiveIntegerField(default=0)

@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 
 import type { PermissionInfo } from "@/api/types";
+import { PERMS } from "@/core/perms.generated";
 import { i18n, mergeModuleMessages, setLanguage } from "@/i18n";
 import { json } from "@/test/fixtures";
 import { mountWithProviders, testApp } from "@/test/plugins";
@@ -17,7 +18,8 @@ import en from "../i18n/en.json";
 import ru from "../i18n/ru.json";
 import uz from "../i18n/uz.json";
 import module from "../index";
-import { rateTone, statusChip, tenureParts } from "../status";
+import { PERMISSION_AREAS, groupByArea, permissionArea } from "../permissionAreas";
+import { bookedDaysAhead, rateTone, statusChip, tenureParts } from "../status";
 import type { Role } from "../types";
 
 interface Call {
@@ -142,7 +144,8 @@ describe("PermissionMatrix", () => {
     const { wrapper, inner } = await mountMatrix(roles, (code) => code !== "finance.view");
     await flushPromises();
     const text = wrapper.text();
-    expect(text).toContain("Members");
+    // Areas follow the sidebar, not the code prefix.
+    expect(text).toContain("Team and attendance");
     expect(text).toContain("Finance");
     // Owner holds everything: its counts are full and it has no checkboxes.
     expect(wrapper.findAll('[aria-label="Owners hold every permission"]').length).toBe(3);
@@ -174,6 +177,111 @@ describe("PermissionMatrix", () => {
     const empty = mountWithProviders(PermissionMatrix, { plugins: app.plugins, props: { roles: [role({ id: 2 })], permissions, grantable: () => true, draft: {}, area: "finance", query: "approve" } });
     await flushPromises();
     expect(empty.wrapper.text()).toContain("No permission matches.");
+  });
+});
+
+describe("permission areas", () => {
+  it("places every permission in exactly one area, each named in every language", () => {
+    const placed = PERMISSION_AREAS.flatMap((area) => area.perms);
+    expect([...placed].sort()).toEqual([...PERMS].sort());
+    expect(new Set(placed).size).toBe(placed.length);
+    for (const area of [...PERMISSION_AREAS.map((a) => a.id), "other"]) {
+      for (const dictionary of [en, uz, ru] as Array<Record<string, string>>) expect(dictionary[`people.permArea.${area}`], area).toBeTruthy();
+    }
+    // Areas are not one-row leftovers of the code prefixes any more.
+    expect(PERMISSION_AREAS.every((area) => area.perms.length >= 3)).toBe(true);
+  });
+
+  it("groups in sidebar order and keeps a new permission near its prefix", () => {
+    const rows = [{ code: "finance.view" }, { code: "audit.view" }, { code: "members.view" }, { code: "company.settings" }, { code: "tasks.later_feature" }, { code: "brand.new" }];
+    expect(groupByArea(rows).map((g) => [g.area, g.items.map((i) => i.code)])).toEqual([
+      ["access", ["company.settings", "audit.view"]],
+      ["people", ["members.view"]],
+      ["work", ["tasks.later_feature"]],
+      ["finance", ["finance.view"]],
+      ["other", ["brand.new"]],
+    ]);
+    expect(permissionArea("time_off.approve")).toBe("people");
+    expect(permissionArea("roles.manage")).toBe("access");
+  });
+});
+
+describe("bookedDaysAhead", () => {
+  it("counts approved days after today, which days off taken leaves out", () => {
+    const today = "2026-10-21";
+    expect(
+      bookedDaysAhead(
+        [
+          { first_day: "2026-10-25", last_day: "2026-10-27", status: "approved" },
+          // Started already: only the days after today.
+          { first_day: "2026-10-20", last_day: "2026-10-22", status: "approved" },
+          { first_day: "2026-10-28", last_day: "2026-10-29", status: "pending" },
+          { first_day: "2026-10-19", last_day: "2026-10-21", status: "approved" },
+        ],
+        today,
+      ),
+    ).toBe(4);
+    expect(bookedDaysAhead([], today)).toBe(0);
+  });
+});
+
+describe("PersonOverviewTab", () => {
+  it("links its time off card to the Time off tab instead of repeating Record time off", async () => {
+    const PersonOverviewTab = (await import("../components/PersonOverviewTab.vue")).default;
+    const person = {
+      id: 7,
+      name: "Alisher Valiyev",
+      position: { id: 1, name: "Farmatsevt" },
+      role: { id: 2, name: "Xodim" },
+      home_branch: { id: 1, name: "Chilonzor" },
+      branches: [{ id: 1, name: "Chilonzor" }],
+      phone: "+998901234567",
+      username: "",
+      language: "uz",
+      can: { record_time_off: true },
+      overview: {
+        trend: [],
+        on_time: 0,
+        late: 0,
+        missed: 0,
+        total: 0,
+        on_time_percent: null,
+        streak: 0,
+        joined_on: "2025-10-06",
+        days_off_this_year: 0,
+        range: { from: "2026-09-22", to: "2026-10-21" },
+        upcoming_time_off: [{ id: 1, first_day: "2026-10-25", last_day: "2026-10-27", status: "approved", reason: "Ta’til" }],
+      },
+    };
+    const app = await testApp("/c/1/people/7");
+    const { wrapper } = mountWithProviders(PersonOverviewTab, { plugins: app.plugins, props: { person, rateTone: "neutral", timeOffTo: "/c/1/people/7/time-off" } });
+    await flushPromises();
+    expect(wrapper.find("[data-time-off-link]").attributes("href")).toBe("/c/1/people/7/time-off");
+    expect(wrapper.text()).not.toContain("Record time off");
+    const without = mountWithProviders(PersonOverviewTab, { plugins: app.plugins, props: { person, rateTone: "neutral" } });
+    await flushPromises();
+    expect(without.wrapper.find("[data-time-off-link]").exists()).toBe(false);
+  });
+});
+
+describe("PersonPage", () => {
+  it("offers no retry for someone who isn't there", async () => {
+    const PersonPage = (await import("../pages/PersonPage.vue")).default;
+    stub(() => json({ detail: "Not found." }, 404));
+    const app = await testApp("/c/1/people/99999");
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: "/c/:companyId/people/:memberId(\\d+)/:tab?", component: PersonPage },
+        { path: "/:any(.*)*", component: { render: () => null } },
+      ],
+    });
+    await router.push("/c/1/people/99999");
+    const { wrapper } = mountWithProviders(PersonPage, { plugins: [app.pinia, router, i18n, [VueQueryPlugin, { queryClient: app.client }]] });
+    await flushPromises();
+    await flushPromises();
+    expect(wrapper.text()).toContain("It’s gone: it was deleted or moved.");
+    expect(wrapper.findAll("button").some((b) => b.text() === "Try again")).toBe(false);
   });
 });
 
@@ -211,6 +319,7 @@ describe("OffboardPage", () => {
     steps: [
       { key: "members", label: "Access and work", order: 10, lines: ["Their access ends at once."], blockers: [], fields: [], defaults: {} },
       { key: "sales", label: "Cash", order: 30, lines: [], blockers: ["Open till CHL-1042 must be closed first."], fields: [], defaults: {}, restricted: true },
+      { key: "finance", label: "Money they hold", order: 40, lines: [], blockers: [], fields: [], defaults: {} },
     ],
   };
 
@@ -238,6 +347,8 @@ describe("OffboardPage", () => {
     expect(wrapper.text()).toContain("No access");
     expect(wrapper.text()).toContain("Open till CHL-1042 must be closed first.");
     expect(wrapper.text()).toContain("what blocks it still counts");
+    // A part with nothing to say says so, once: the blocked one shows its blocker instead.
+    expect(wrapper.findAll("[data-nothing]").map((p) => p.text())).toEqual([en["people.offboard.nothing"]]);
     await wrapper.findAll("button").find((b) => b.text() === "Continue")!.trigger("click");
     await flushPromises();
     const submit = wrapper.findAll("button").find((b) => b.text().startsWith("Offboard"))!;

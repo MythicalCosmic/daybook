@@ -5,7 +5,8 @@
  * a manager), holidays and days off shaded, today marked. Names stay put while the days scroll
  * sideways on small screens. A bar opens its request.
  */
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { useResizeObserver } from "@vueuse/core";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import UiTooltip from "@/components/UiTooltip.vue";
@@ -38,14 +39,47 @@ const todayIndex = computed(() => days.value.findIndex((d) => d.today));
 
 // When the month does not fit, start scrolled so today sits near the left edge of the days.
 const wrap = ref<HTMLElement | null>(null);
+/** How far the days are scrolled, and one day's width: bars that start before the visible days move their label into view. */
+const scrollX = ref(0);
+const dayPx = ref(0);
+function measure() {
+  const el = wrap.value;
+  if (!el) return;
+  const name = el.querySelector<HTMLElement>(".name")?.offsetWidth ?? 0;
+  dayPx.value = count.value ? Math.max(0, el.scrollWidth - name) / count.value : 0;
+  scrollX.value = el.scrollLeft;
+}
+let frame = 0;
+function onScroll() {
+  if (frame) return;
+  frame = requestAnimationFrame(() => {
+    frame = 0;
+    scrollX.value = wrap.value?.scrollLeft ?? 0;
+  });
+}
+onBeforeUnmount(() => cancelAnimationFrame(frame));
 function scrollToToday() {
   const el = wrap.value;
-  if (!el || el.scrollWidth <= el.clientWidth) return;
+  if (!el || el.scrollWidth <= el.clientWidth) return measure();
   const name = el.querySelector<HTMLElement>(".name")?.offsetWidth ?? 0;
   const dayWidth = (el.scrollWidth - name) / count.value;
-  el.scrollLeft = todayIndex.value > 2 ? (todayIndex.value - 2) * dayWidth : 0;
+  const target = todayIndex.value > 2 ? (todayIndex.value - 2) * dayWidth : 0;
+  // Late in the month the days run out before today reaches the left edge: stop on a whole day
+  // rather than at the very end, which would leave the first visible day cut in half.
+  el.scrollLeft = Math.min(target, Math.floor((el.scrollWidth - el.clientWidth) / dayWidth) * dayWidth);
+  measure();
 }
 onMounted(scrollToToday);
+// The days stretch with the card (the waiting list beside it arrives later), which would leave the
+// first visible day cut in half: start again on a whole day when the width changes.
+let lastWidth = 0;
+useResizeObserver(wrap, (entries) => {
+  const width = Math.round(entries[0]?.contentRect.width ?? 0);
+  if (width && width !== lastWidth) {
+    lastWidth = width;
+    scrollToToday();
+  }
+});
 watch(
   () => props.month.from,
   () => void nextTick(scrollToToday),
@@ -60,7 +94,22 @@ function bar(item: CalendarItem) {
     clippedStart: item.first_day < props.month.from,
     clippedEnd: item.last_day > props.month.to,
     narrow: end - start < 2,
+    ...labelPlace(start, end),
   };
+}
+
+/**
+ * A bar that starts before the first visible day (scrolled under the names) moves its label to
+ * the visible part, so it reads "Kasallik varaqasi…" rather than "…llik vara…"; with less than two
+ * days of it in view the label is left out (the tooltip still has it).
+ */
+function labelPlace(start: number, end: number): { shift: number; hideLabel: boolean } {
+  const day = dayPx.value;
+  if (!day) return { shift: 0, hideLabel: false };
+  const hidden = scrollX.value - (start * day + 2);
+  if (hidden <= 0) return { shift: 0, hideLabel: false };
+  const visible = (end + 1) * day - 2 - scrollX.value;
+  return { shift: Math.round(hidden), hideLabel: visible < 2 * day };
 }
 
 function tone(item: CalendarItem): "approved" | "pending" | "recorded" {
@@ -81,7 +130,7 @@ function tip(item: CalendarItem, name: string): string {
 </script>
 
 <template>
-  <div ref="wrap" class="grid-wrap ui-card overflow-x-auto" :style="{ '--days': count }">
+  <div ref="wrap" class="grid-wrap ui-card overflow-x-auto" :style="{ '--days': count }" @scroll.passive="onScroll">
     <div class="board" role="grid" :aria-rowcount="month.rows.length + 1" :aria-label="t('timeoff.calendar.label', { month: fmt.day(month.from, 'monthYear') })">
       <!-- Header -->
       <div class="row head" role="row">
@@ -116,6 +165,7 @@ function tip(item: CalendarItem, name: string): string {
           type="button"
           class="name sticky left-0 z-10 flex min-w-0 items-center gap-2.5 border-b border-r border-line bg-surface px-4 text-left hover:bg-[color-mix(in_srgb,var(--c-text)_4%,var(--c-surface))]"
           role="rowheader"
+          :title="[row.member.name, row.position, row.home_branch?.name].filter(Boolean).join(' · ')"
           @click="emit('person', row.member.id)"
         >
           <UserAvatar :name="row.member.name" :src="row.member.photo_url" :size="26" />
@@ -137,7 +187,7 @@ function tip(item: CalendarItem, name: string): string {
               :aria-label="tip(item, row.member.name)"
               @click="emit('open', item.id)"
             >
-              <span v-if="!bar(item).narrow" class="truncate">{{ label(item) }}</span>
+              <span v-if="!bar(item).narrow && !bar(item).hideLabel" class="truncate" :style="bar(item).shift ? { paddingLeft: `${bar(item).shift}px` } : undefined">{{ label(item) }}</span>
             </button>
           </UiTooltip>
         </div>

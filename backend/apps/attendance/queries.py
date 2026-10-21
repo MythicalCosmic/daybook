@@ -391,6 +391,9 @@ def day_board(
     checked in past the grace minutes. Not yet: a shift today without a check-in, until
     `no_show_alert_minutes` after its start. Absent: past that, or marked absent. Off: no
     shift (day off, leave, holiday, suspended).
+
+    `totals` counts each state, `rostered` (people with a planned shift), `late_missing`, and
+    of those who came (in + late) `present` (still checked in: "present now") and `left`.
     """
     now = now or timezone.now()
     settings = conf.get_settings(company)
@@ -461,6 +464,9 @@ def day_board(
         if member.pk not in with_shift and record is None and elsewhere:
             continue
         totals[state] += 1
+        if state in (IN, LATE):
+            # Came that day: still here ("present", what "present now" counts) or gone already.
+            totals["present" if record.status == AttendanceRecord.Status.OPEN else "left"] += 1
         if working:
             totals["rostered"] += 1
             if record is None and working[0].starts_at + grace <= now and day == today:
@@ -483,7 +489,7 @@ def day_board(
             row["member"]["name"],
         )
     )
-    for key in (IN, LATE, NOT_YET, ABSENT, OFF, "rostered", LATE + "_missing"):
+    for key in (IN, LATE, NOT_YET, ABSENT, OFF, "rostered", LATE + "_missing", "present", "left"):
         totals.setdefault(key, 0)
     return {
         "date": day.isoformat(),

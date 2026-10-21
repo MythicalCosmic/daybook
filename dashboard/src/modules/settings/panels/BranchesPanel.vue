@@ -1,9 +1,10 @@
 <script setup lang="ts">
 /**
- * Settings › Branches (plan §4.4): every shop with its address, hours, open days, check-in
- * circle, manager and people. A branch opens in a drawer (`?branch=12`, `?branch=new` to add one);
- * order is changed from each card's menu, closed branches sit at the bottom. Everyone with
- * dashboard access sees the branches in their scope; `company.settings` changes them.
+ * Settings › Branches (plan §4.4): every pharmacy, warehouse or office with its address, hours
+ * ("around the clock" when it has none), open days, check-in circle, manager and people. A branch
+ * opens in a drawer (`?branch=12`, `?branch=new` to add one); order is changed from each card's
+ * menu, closed branches sit at the bottom. Everyone with dashboard access sees the branches in
+ * their scope; `company.settings` changes them.
  */
 import { ArrowDown, ArrowUp, CircleDot, Clock, EllipsisVertical, MapPin, Pencil, Plus, Store, Users, Wallet } from "@lucide/vue";
 import { computed } from "vue";
@@ -121,7 +122,7 @@ function menu(branch: Branch, index: number) {
             </p>
             <div class="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-muted">
               <span class="inline-flex items-center gap-1.5"><Clock :size="14" />
-                <template v-if="branch.opens_at">{{ branch.opens_at }}–{{ branch.closes_at }} · </template>{{ days(branch) }}
+                {{ branch.opens_at ? `${branch.opens_at}–${branch.closes_at}` : t("settings.branch.allDayShort") }} · {{ days(branch) }}
               </span>
               <span class="inline-flex items-center gap-1.5"><Users :size="14" />{{ t("settings.branch.peopleCount", { n: branch.people }, branch.people) }}</span>
               <span v-if="branch.latitude" class="inline-flex items-center gap-1.5"><CircleDot :size="14" />{{ t("settings.branch.radiusShort", { m: branch.geofence_m }) }}</span>

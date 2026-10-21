@@ -38,7 +38,7 @@
   "groups.footer": "Сообщения отправляются с паузами, чтобы активная группа не упёрлась в лимиты Telegram.",
   "groups.cmd.open": "Группы в Telegram",
   "groups.cmd.add": "Добавить бота в группу Telegram",
-  "groups.event.daily_done.title": "Ежедневные задачи выполнены",
+  "groups.event.daily_done.title": "Регулярные задачи выполнены",
   "groups.event.daily_done.body": "Когда кто-то выполняет регулярную задачу.",
   "groups.event.tasks_done.title": "Поручения выполнены",
   "groups.event.tasks_done.body": "Когда выполнена выданная вами задача.",

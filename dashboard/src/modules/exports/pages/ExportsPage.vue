@@ -11,6 +11,7 @@ import { useI18n } from "vue-i18n";
 
 import type { ExportJob } from "@/api/types";
 import DataTable from "@/components/DataTable.vue";
+import EmptyState from "@/components/EmptyState.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import RelativeTime from "@/components/RelativeTime.vue";
 import StatusPill, { type StatusTone } from "@/components/StatusPill.vue";
@@ -20,12 +21,14 @@ import UiButton from "@/components/UiButton.vue";
 import UiTooltip from "@/components/UiTooltip.vue";
 import { useDataTable } from "@/components/useDataTable";
 import { toast } from "@/components/useToast";
+import { currentLanguage } from "@/i18n";
 import { downloadExport } from "@/lib/useExport";
 import { useFormat } from "@/lib/useFormat";
 import { useNow } from "@/lib/useNow";
 import { useCompanyStore } from "@/stores/company";
 
 import { getExport, isBuilding, useCreateExport, useExports } from "../api";
+import { describeParams } from "../describe";
 import NewExportDialog from "../components/NewExportDialog.vue";
 
 const { t } = useI18n();
@@ -44,11 +47,9 @@ const TONES: Record<ExportJob["status"], StatusTone> = { pending: "info", runnin
 
 const expired = (job: ExportJob) => new Date(job.expires_at).getTime() <= now.value;
 
+/** What the file holds, in words ("14–20 Oct · Late only"), never the API's keys. */
 function paramsText(job: ExportJob): string {
-  return Object.entries(job.params ?? {})
-    .filter(([, value]) => value !== null && value !== "" && !(Array.isArray(value) && !value.length))
-    .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(", ") : String(value)}`)
-    .join(" · ");
+  return describeParams(job.params, (key, named = {}, plural) => (plural === undefined ? t(key, named) : t(key, named, plural)), currentLanguage());
 }
 
 async function download(job: ExportJob): Promise<void> {
@@ -93,7 +94,14 @@ const columns = computed<TableColumn<ExportJob>[]>(() => [
       </template>
     </PageHeader>
 
+    <!-- None yet: the reason and the way to make one, without an empty table and its column picker. -->
+    <div v-if="query.data.value?.count === 0" class="ui-card" data-exports-empty>
+      <EmptyState :icon="FileSpreadsheet" :title="t('exports.empty.title')" :description="t('exports.empty.body')">
+        <UiButton variant="secondary" :icon="Plus" @click="creating = true">{{ t("exports.new") }}</UiButton>
+      </EmptyState>
+    </div>
     <DataTable
+      v-else
       :state="table"
       :columns="columns"
       :rows="rows"

@@ -2,7 +2,8 @@
 /**
  * The header every attendance page shares: title, one line of context and the section tabs
  * (Today · Timesheet · Roster · Schedules · Swaps · Corrections) as links, with the waiting counts
- * from the pulse. Tabs the person may not open are left out.
+ * from the pulse. Tabs the person may not open are left out. No margin under the tabs: every
+ * attendance page is a column with a gap, which spaces it like the other pages.
  */
 import { CalendarClock, CalendarDays, CalendarRange, ClipboardCheck, Clock3, Repeat2 } from "@lucide/vue";
 import { computed } from "vue";
@@ -43,7 +44,7 @@ const tabs = computed<PageTab[]>(() => {
 </script>
 
 <template>
-  <PageHeader :title="title" :description="description" :tabs="tabs">
+  <PageHeader class="!mb-0" :title="title" :description="description" :tabs="tabs">
     <template v-if="$slots.actions" #actions><slot name="actions" /></template>
     <template v-if="$slots.meta" #meta><slot name="meta" /></template>
   </PageHeader>

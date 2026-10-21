@@ -32,7 +32,7 @@ import { createRecord, useCompanyId, useRefresh, useSummary, useTimesheet } from
 import AttendanceHeader from "../components/AttendanceHeader.vue";
 import BranchSwitch from "../components/BranchSwitch.vue";
 import RecordDrawer from "../components/RecordDrawer.vue";
-import { CELL_CLASSES, CELL_WITH_HOURS, hours, isWeekend, localDateTime, monthStart, shiftMonth } from "../lib";
+import { CELL_CLASSES, CELL_WITH_HOURS, hours, isWeekend, localDateTime, monthStart, shiftMonth, wholeDayScroll } from "../lib";
 import type { Cell, CellCode, TimesheetRow } from "../types";
 
 const { t } = useI18n();
@@ -146,8 +146,16 @@ watch(
     if (!cell) return;
     const totals = el.querySelector<HTMLElement>("thead .att-sticky-right");
     const pinned = totals && getComputedStyle(totals).position === "sticky" ? totals.offsetWidth : 0;
-    const target = cell.offsetLeft + cell.offsetWidth + 3 * cell.offsetWidth - (el.clientWidth - pinned);
-    el.scrollLeft = Math.max(0, target);
+    // Positions inside the scroller: the header cells are sticky, so their offsetLeft counts from
+    // the page, not from the table.
+    const origin = el.getBoundingClientRect().left + el.clientLeft - el.scrollLeft;
+    const at = (node: HTMLElement) => node.getBoundingClientRect().left - origin;
+    const target = at(cell) + cell.offsetWidth + 3 * cell.offsetWidth - (el.clientWidth - pinned);
+    const names = el.querySelector<HTMLElement>("thead .att-sticky-left");
+    const first = el.querySelector<HTMLElement>("thead th[data-day]");
+    // At `start` the month's first day sits right after the pinned names.
+    const start = (first ? at(first) : 0) - (names && getComputedStyle(names).position === "sticky" ? names.offsetWidth : 0);
+    el.scrollLeft = wholeDayScroll({ target, start, width: cell.offsetWidth, max: el.scrollWidth - el.clientWidth });
   },
   { immediate: true },
 );
@@ -174,7 +182,7 @@ watch(
       <BranchSwitch v-model="branch" />
     </div>
 
-    <KpiStrip :items="kpis" :columns="5" phone="grid" />
+    <KpiStrip :items="kpis" :columns="5" phone="compact" />
 
     <div v-if="skeleton" class="ui-card flex flex-col gap-2 p-4">
       <SkeletonBlock v-for="n in 7" :key="n" height="34px" radius="8px" />
@@ -215,7 +223,7 @@ watch(
           <tbody>
             <tr v-for="row in data.people" :key="row.member.id" class="group">
               <th scope="row" class="att-sticky-left z-10 border-b border-line bg-surface px-3 py-1.5 text-left font-normal group-hover:bg-surface-2">
-                <div class="flex min-w-0 items-center gap-2">
+                <div class="flex min-w-0 items-center gap-2" :title="[row.member.name, row.member.position?.name].filter(Boolean).join(' · ')">
                   <UserAvatar :name="row.member.name" :src="row.member.photo_url" :size="26" />
                   <div class="min-w-0">
                     <p class="truncate text-sm font-medium text-fg">{{ row.member.name }}</p>

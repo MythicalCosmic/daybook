@@ -186,7 +186,8 @@ const previewTime = computed(() => (scheduledFor.value ? fmt.instant(scheduledFo
             </FormField>
           </div>
           <div class="flex flex-wrap items-center gap-3 rounded-[12px] bg-surface-2/70 px-4 py-3 dark:bg-surface-2">
-            <AvatarStack v-if="audience.data.value?.sample.length" :people="audience.data.value.sample" :max="5" :size="26" />
+            <!-- The API sends a sample of six faces: all of them, never a "+1" that hides how many get it (the count says). -->
+            <AvatarStack v-if="audience.data.value?.sample.length" :people="audience.data.value.sample" :max="audience.data.value.sample.length" :size="26" />
             <p class="text-base text-fg">
               <template v-if="audience.isPending.value">{{ t("comms.compose.counting") }}</template>
               <template v-else-if="audience.data.value?.count">

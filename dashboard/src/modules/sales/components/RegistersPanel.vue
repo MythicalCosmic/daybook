@@ -7,6 +7,7 @@
 import { Archive, ArchiveRestore, Pencil, Plus, Wallet } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { RouterLink, useRoute } from "vue-router";
 
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
@@ -36,6 +37,9 @@ const options = useOptions();
 const query = useRegisters();
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const canEdit = computed(() => company.can("sales.manage"));
+const route = useRoute();
+/** "Change it in Rules": the sales rules panel next door, in Settings or on the sales setup page. */
+const rulesLink = computed(() => (route.name === "settings.page" ? `/c/${company.currentId}/settings/sales` : `/c/${company.currentId}/sales/setup?tab=rules`));
 
 const groups = computed(() => {
   const byBranch = new Map<number, { id: number; name: string; code: string; registers: Register[] }>();
@@ -107,13 +111,21 @@ async function archive(register: Register): Promise<void> {
         <li v-for="register in group.registers" :key="register.id" :class="['flex items-center gap-3 px-4 py-3', !register.is_active && 'opacity-55']">
           <span class="grid size-9 shrink-0 place-items-center rounded-[10px] bg-accent-soft text-accent-fg"><Wallet :size="16" /></span>
           <div class="min-w-0 flex-1">
-            <p class="truncate text-sm font-semibold text-fg">{{ register.name }}</p>
-            <p class="truncate text-xs text-muted">
+            <p class="truncate text-sm font-semibold text-fg" :title="register.name">{{ register.name }}</p>
+            <p class="text-xs text-muted sm:truncate" :title="`${register.fiscal_serial || t('sales.registers.noSerial')} · ${register.cash_account.name}`">
               {{ register.fiscal_serial || t("sales.registers.noSerial") }} · {{ register.cash_account.name }}
             </p>
+            <!-- On a phone the open shift and the cash go under the name instead of being dropped. -->
+            <div class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 sm:hidden">
+              <StatusPill v-if="register.open_shift" size="sm" tone="info" live :label="t('sales.registers.openBy', { name: register.open_shift.cashier.name.split(' ')[0] })" />
+              <StatusPill v-else-if="!register.is_active" size="sm" tone="neutral" :label="t('sales.registers.archived')" />
+              <span class="inline-flex items-baseline gap-1.5 text-xs text-muted">{{ t("sales.registers.holds") }} <MoneyText :value="register.cash_now" class="text-sm font-semibold text-fg" /></span>
+            </div>
           </div>
-          <StatusPill v-if="register.open_shift" size="sm" tone="info" live :label="t('sales.registers.openBy', { name: register.open_shift.cashier.name.split(' ')[0] })" />
-          <StatusPill v-else-if="!register.is_active" size="sm" tone="neutral" :label="t('sales.registers.archived')" />
+          <span class="contents max-sm:hidden">
+            <StatusPill v-if="register.open_shift" size="sm" tone="info" live :label="t('sales.registers.openBy', { name: register.open_shift.cashier.name.split(' ')[0] })" />
+            <StatusPill v-else-if="!register.is_active" size="sm" tone="neutral" :label="t('sales.registers.archived')" />
+          </span>
           <div class="w-[120px] text-right max-sm:hidden">
             <p class="text-[11px] text-muted">{{ t("sales.registers.holds") }}</p>
             <MoneyText :value="register.cash_now" class="text-sm font-semibold text-fg" />
@@ -143,6 +155,8 @@ async function archive(register: Register): Promise<void> {
         <UiButton variant="primary" :loading="save.isPending.value" @click="submit">{{ editing ? t("common.save") : t("sales.registers.create") }}</UiButton>
       </template>
     </UiDialog>
-    <p class="text-xs text-subtle">{{ t("sales.registers.footnote", { tolerance: fmt.money(options.data.value?.settings.cash_tolerance ?? "0") }) }}</p>
+    <RouterLink :to="rulesLink" class="w-fit text-xs text-subtle hover:text-fg hover:underline" data-rules-link>{{
+      t("sales.registers.footnote", { tolerance: fmt.money(options.data.value?.settings.cash_tolerance ?? "0") })
+    }}</RouterLink>
   </div>
 </template>

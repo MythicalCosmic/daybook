@@ -134,7 +134,8 @@ const personUrl = computed(() => `/c/${company.currentId}/people/${memberId.valu
 </script>
 
 <template>
-  <div class="mx-auto flex w-full max-w-[880px] flex-col gap-5">
+  <div class="flex w-full max-w-[880px] flex-col gap-5">
+    <!-- Left-aligned like every other page; the wizard keeps a readable width. -->
     <PageHeader class="!mb-0" :title="t('people.offboard.title')" :description="t('people.offboard.description')" :back="personUrl" :back-label="person.data.value?.name ?? t('people.title')" />
 
     <div v-if="skeleton" class="ui-card flex flex-col gap-4 p-5"><SkeletonBlock height="40px" /><SkeletonBlock :lines="4" /><SkeletonBlock height="120px" radius="12px" /></div>
@@ -182,6 +183,8 @@ const personUrl = computed(() => `/c/${company.currentId}/people/${memberId.valu
             <ul v-if="step.lines.length" class="flex flex-col gap-1.5">
               <li v-for="line in step.lines" :key="line" class="flex gap-2 text-base text-fg"><span class="mt-[7px] size-1.5 shrink-0 rounded-full bg-subtle" aria-hidden="true" />{{ line }}</li>
             </ul>
+            <!-- A part with nothing to say (no till for a courier) says so instead of an empty card. -->
+            <p v-else-if="!step.restricted && !step.blockers.length && !step.fields.length" class="text-sm text-muted" data-nothing>{{ t("people.offboard.nothing") }}</p>
             <InlineAlert v-for="blocker in step.blockers" :key="blocker" tone="danger" size="sm" :description="blocker" />
             <div v-if="step.fields.length" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <OffboardField

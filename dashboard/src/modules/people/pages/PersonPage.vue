@@ -27,6 +27,7 @@ import { computed, defineAsyncComponent, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
+import { isApiError } from "@/api/http";
 import DropdownMenu, { type MenuEntry } from "@/components/DropdownMenu.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import ExtensionSlot from "@/components/ExtensionSlot.vue";
@@ -42,6 +43,7 @@ import { toast } from "@/components/useToast";
 import { allowed, isModuleVisible } from "@/core/access";
 import { hasExtension } from "@/core/extensions";
 import { modules } from "@/core/modules";
+import { todayIn } from "@/lib/dates";
 import { formatPhone } from "@/lib/format";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
@@ -52,7 +54,7 @@ import { personAction, usePerson, usePersonMutation } from "../api";
 import PersonHistory from "../components/PersonHistory.vue";
 import PersonOverviewTab from "../components/PersonOverviewTab.vue";
 import PersonTabBar from "../components/PersonTabBar.vue";
-import { rateTone, statusChip, tenureParts } from "../status";
+import { bookedDaysAhead, rateTone, statusChip, tenureParts } from "../status";
 import type { PersonDetail } from "../types";
 
 const PersonEditDialog = defineAsyncComponent(() => import("../components/PersonEditDialog.vue"));
@@ -91,7 +93,8 @@ const tab = computed(() => {
 });
 const extraTab = computed(() => extraTabs.value.find((item) => item.id === tab.value) ?? null);
 
-const chip = computed(() => (person.value ? statusChip(person.value, (d) => fmt.day(d, "medium")) : null));
+// The same short date as on the Team list; the banner and the time-off card give the full one.
+const chip = computed(() => (person.value ? statusChip(person.value, (d) => fmt.day(d, "short")) : null));
 const tenure = computed(() => {
   const parts = tenureParts(person.value?.overview.tenure_days);
   if (!parts) return null;
@@ -99,6 +102,9 @@ const tenure = computed(() => {
   if (parts.months) return t("people.tenure.months", { n: parts.months }, parts.months);
   return t("people.tenure.days", { n: parts.days }, parts.days);
 });
+
+/** Approved days still ahead, which "days off taken this year" leaves out (it counts up to today). */
+const booked = computed(() => bookedDaysAhead(person.value?.overview.upcoming_time_off ?? [], todayIn(company.timezone)));
 
 const kpis = computed(() => {
   const o = person.value?.overview;
@@ -113,7 +119,13 @@ const kpis = computed(() => {
     { id: "done", label: t("people.kpi.done30"), value: o?.done ?? null },
     { id: "late", label: t("people.kpi.lateNow"), value: o?.late_now ?? null, hint: o?.open_now ? t("people.kpi.openNow", { n: o.open_now }) : undefined },
     { id: "streak", label: t("people.kpi.streak"), value: o?.streak ?? null, format: (value: number) => t("people.days", { n: value }, value) },
-    { id: "off", label: t("people.kpi.daysOff"), value: o?.days_off_this_year ?? null, format: (value: number) => t("people.days", { n: value }, value) },
+    {
+      id: "off",
+      label: t("people.kpi.daysOff"),
+      value: o?.days_off_this_year ?? null,
+      format: (value: number) => t("people.days", { n: value }, value),
+      hint: booked.value ? t("people.kpi.daysBooked", { n: booked.value }, booked.value) : undefined,
+    },
   ];
 });
 
@@ -201,7 +213,8 @@ const hasProfileActions = computed(() => hasExtension("people.profile.actions", 
       </div>
       <SkeletonBlock height="72px" radius="12px" />
     </div>
-    <ErrorState v-else-if="query.isError.value" class="ui-card" :error="query.error.value" :retry="() => query.refetch()" />
+    <!-- Trying again can't bring back someone who isn't there (404): no retry then. -->
+    <ErrorState v-else-if="query.isError.value" class="ui-card" :error="query.error.value" :retry="isApiError(query.error.value) && query.error.value.status === 404 ? undefined : () => query.refetch()" />
 
     <template v-else-if="person">
       <!-- Header -->
@@ -259,7 +272,7 @@ const hasProfileActions = computed(() => hasExtension("people.profile.actions", 
 
       <!-- Tabs -->
       <PersonTabBar :tabs="tabs" :active="tab" :aria-label="t('people.tab.label')" />
-      <PersonOverviewTab v-if="tab === 'overview'" :person="person" :rate-tone="rateTone(person.overview.on_time_percent)" />
+      <PersonOverviewTab v-if="tab === 'overview'" :person="person" :rate-tone="rateTone(person.overview.on_time_percent)" :time-off-to="tabs.find((item) => item.id === 'time-off')?.to" />
       <section v-else-if="tab === 'history'" class="ui-card p-5">
         <PersonHistory :member-id="person.id" />
       </section>

@@ -103,7 +103,7 @@ async function save(): Promise<void> {
       </PageSection>
 
       <StickyActionBar :show="dirty" :message="t('common.unsaved')" tone="warning">
-        <UiButton variant="ghost" @click="draft = query.data.value ? { ...query.data.value, default_lists: [...query.data.value.default_lists] } : null">{{ t("common.cancel") }}</UiButton>
+        <UiButton variant="ghost" @click="draft = query.data.value ? { ...query.data.value, default_lists: [...query.data.value.default_lists] } : null">{{ t("common.discard") }}</UiButton>
         <UiButton variant="primary" :loading="saving" @click="save">{{ t("common.save") }}</UiButton>
       </StickyActionBar>
     </template>

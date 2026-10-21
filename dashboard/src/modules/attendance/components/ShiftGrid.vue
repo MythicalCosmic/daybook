@@ -121,7 +121,7 @@ const memberSubtitle = (member: RosterMember) =>
 
         <!-- Open shifts -->
         <template v-if="editable || openCount">
-          <div class="att-cell att-side flex items-center gap-2 px-3 py-2" role="rowheader">
+          <div class="att-cell att-side flex items-center gap-2 px-3 py-2" role="rowheader" :title="`${t('attendance.roster.openShifts')} · ${t('attendance.roster.openShiftsHint')}`">
             <span class="grid size-7 shrink-0 place-items-center rounded-full bg-warning-soft text-warning"><Plus :size="14" aria-hidden="true" /></span>
             <div class="min-w-0">
               <p class="truncate text-sm font-semibold text-fg">{{ t("attendance.roster.openShifts") }}</p>
@@ -159,7 +159,7 @@ const memberSubtitle = (member: RosterMember) =>
 
         <!-- People -->
         <template v-for="member in roster.members" :key="member.id">
-          <button type="button" class="att-cell att-side flex items-center gap-2 px-3 py-2 text-left hover:bg-highlight" role="rowheader" @click="emit('person', member)">
+          <button type="button" class="att-cell att-side flex items-center gap-2 px-3 py-2 text-left hover:bg-highlight" role="rowheader" :title="`${member.name} · ${memberSubtitle(member)}`" @click="emit('person', member)">
             <UserAvatar :name="member.name" :src="member.photo_url" :size="28" />
             <div class="min-w-0">
               <p class="truncate text-sm font-semibold text-fg">{{ member.name }}</p>
@@ -197,11 +197,12 @@ const memberSubtitle = (member: RosterMember) =>
                 <span class="font-semibold">{{ t("attendance.roster.onLeave") }}</span>
               </template>
               <template v-else>
-                <span class="flex items-center gap-1 tabular-nums">
-                  {{ shift.start }}–{{ shift.end }}
-                  <Repeat2 v-if="shift.swap_pending" :size="11" class="text-warning" :aria-label="t('attendance.roster.swapPending')" />
-                  <Check v-if="shift.has_record" :size="11" class="text-success" :aria-label="t('attendance.roster.happened')" />
-                  <StickyNote v-if="shift.note" :size="10" class="opacity-60" aria-hidden="true" />
+                <!-- The hours stay on one line; in a narrow day the marks give way first. -->
+                <span class="flex w-full min-w-0 items-center gap-1 overflow-hidden tabular-nums">
+                  <span class="whitespace-nowrap">{{ shift.start }}–{{ shift.end }}</span>
+                  <Repeat2 v-if="shift.swap_pending" :size="11" class="shrink-0 text-warning" :aria-label="t('attendance.roster.swapPending')" />
+                  <Check v-if="shift.has_record" :size="11" class="shrink-0 text-success" :aria-label="t('attendance.roster.happened')" />
+                  <StickyNote v-if="shift.note" :size="10" class="shrink-0 opacity-60" aria-hidden="true" />
                 </span>
                 <span class="att-chip-sub">
                   <template v-if="!shift.published">{{ t("attendance.roster.draft") }} · </template>

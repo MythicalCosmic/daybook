@@ -8,6 +8,7 @@
 import { ArrowDown, ArrowUp, Pencil, Plus } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRoute } from "vue-router";
 
 import ErrorState from "@/components/ErrorState.vue";
 import FormField from "@/components/FormField.vue";
@@ -22,6 +23,7 @@ import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
 import { useDelayedPending } from "@/lib/useDelayedPending";
+import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
 import { salesApi, useMethods, useOptions, useSalesMutation } from "../api";
@@ -35,6 +37,18 @@ const options = useOptions();
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const canEdit = computed(() => company.can("sales.manage"));
 const methods = computed(() => query.data.value ?? []);
+const fmt = useFormat();
+/** In Settings the page header already says the list is in the cashier's order. */
+const route = useRoute();
+const inSettings = computed(() => route.name === "settings.page");
+
+/** The line under a method's name: its kind, where its money lands and its fee ("0,6%" in uz). */
+function detail(method: PaymentMethod): string {
+  const parts = [t(`sales.methods.kind.${method.kind}`)];
+  if (method.kind !== "cash" && method.kind !== "credit") parts.push(method.account?.name ?? t("sales.methods.branchClearing"));
+  if (Number(method.fee_percent)) parts.push(t("sales.methods.fee", { n: fmt.percent(Number(method.fee_percent), 2) }));
+  return parts.join(" · ");
+}
 
 const KINDS: MethodKind[] = ["cash", "card", "qr", "transfer", "credit", "installment", "other"];
 const kinds = computed(() => KINDS.map((value) => ({ value, label: t(`sales.methods.kind.${value}`), icon: METHOD_ICONS[value] })));
@@ -89,11 +103,11 @@ async function submit(): Promise<void> {
     <div v-if="skeleton" class="flex flex-col gap-2"><SkeletonBlock v-for="n in 6" :key="n" height="52px" radius="10px" /></div>
     <ErrorState v-else-if="query.isError.value" :error="query.error.value" :retry="() => query.refetch()" />
     <section v-else class="ui-card">
-      <header class="flex items-center gap-2 px-4 pb-2 pt-4">
-        <p class="flex-1 text-sm text-muted">{{ t("sales.methods.hint") }}</p>
-        <UiButton v-if="canEdit" size="sm" variant="ghost" :icon="Plus" @click="openDialog(null)">{{ t("sales.methods.add") }}</UiButton>
+      <header v-if="!inSettings || canEdit" class="flex items-center gap-2 px-4 pb-2 pt-4">
+        <p v-if="!inSettings" class="flex-1 text-sm text-muted">{{ t("sales.methods.hint") }}</p>
+        <UiButton v-if="canEdit" size="sm" variant="ghost" :icon="Plus" :class="inSettings && 'ml-auto'" @click="openDialog(null)">{{ t("sales.methods.add") }}</UiButton>
       </header>
-      <ol class="divide-y divide-line border-t border-line">
+      <ol :class="['divide-y divide-line', (!inSettings || canEdit) && 'border-t border-line']">
         <li v-for="(method, index) in methods" :key="method.id" :class="['flex items-center gap-3 px-4 py-2.5', !method.is_active && 'opacity-60']">
           <span class="grid size-9 shrink-0 place-items-center rounded-[10px] bg-surface-2 text-muted"><component :is="METHOD_ICONS[method.kind]" :size="16" /></span>
           <div class="min-w-0 flex-1">
@@ -101,11 +115,8 @@ async function submit(): Promise<void> {
               <span class="truncate">{{ method.name }}</span>
               <UiBadge v-if="method.kind === 'credit'" size="sm" tone="info">{{ t("sales.methods.creditBadge") }}</UiBadge>
             </p>
-            <p class="truncate text-xs text-muted">
-              {{ t(`sales.methods.kind.${method.kind}`) }}
-              <template v-if="method.kind !== 'cash' && method.kind !== 'credit'"> · {{ method.account?.name ?? t("sales.methods.branchClearing") }}</template>
-              <template v-if="Number(method.fee_percent)"> · {{ t("sales.methods.fee", { n: method.fee_percent }) }}</template>
-            </p>
+            <!-- Wraps on a phone rather than cutting the account and the fee off; in full on hover. -->
+            <p class="text-xs text-muted sm:truncate" :title="detail(method)">{{ detail(method) }}</p>
           </div>
           <template v-if="canEdit">
             <div class="flex max-sm:hidden">

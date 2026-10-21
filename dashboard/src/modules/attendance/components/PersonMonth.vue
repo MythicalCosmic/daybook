@@ -76,7 +76,7 @@ function cellTitle(day: string, cell: Cell): string {
     </div>
     <ErrorState v-else-if="query.isError.value" :error="query.error.value" :retry="() => query.refetch()" />
     <template v-else-if="data">
-      <KpiStrip :items="kpis" :columns="4" phone="grid" />
+      <KpiStrip :items="kpis" :columns="4" phone="compact" />
 
       <section class="ui-card p-3" :aria-label="t('attendance.person.calendar')">
         <div class="grid grid-cols-7 gap-1 text-center">
@@ -86,7 +86,7 @@ function cellTitle(day: string, cell: Cell): string {
             v-for="day in data.days"
             :key="day"
             :class="[
-              'flex aspect-[5/4] min-w-0 flex-col items-center justify-center rounded-[8px] text-xs',
+              'flex aspect-[5/4] min-w-0 flex-col items-center justify-center rounded-[8px] text-xs lg:aspect-auto lg:h-[60px]',
               CELL_CLASSES[data.cells[day]?.code ?? 'off'],
               day === data.today && 'outline outline-2 outline-offset-1 outline-[var(--c-primary)]',
             ]"

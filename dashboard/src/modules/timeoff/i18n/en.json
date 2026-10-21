@@ -149,7 +149,7 @@
   "timeoff.holidays.emptyBody": "Add Uzbekistan’s public holidays in one click, then your own days off.",
   "timeoff.holidays.hayitNote": "Ramazon and Qurbon hayiti follow the lunar calendar: add them each year once the government announces the dates.",
 
-  "timeoff.person.thisYear": "{n} days off this year | {n} day off this year | {n} days off this year",
+  "timeoff.person.thisYear": "{n} days approved this year | {n} day approved this year | {n} days approved this year",
   "timeoff.person.emptyTitle": "No time off yet",
   "timeoff.person.emptyBody": "Requests from the app and time off you record for them show up here.",
   "timeoff.person.noReason": "No reason given",

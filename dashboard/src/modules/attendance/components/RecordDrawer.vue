@@ -269,7 +269,7 @@ async function decide(approve: boolean, reason = ""): Promise<void> {
           <ImageLightbox v-model:open="lightbox" :images="[{ src: record.photo_url, alt: t('attendance.record.selfie') }]" />
         </div>
 
-        <p v-if="record.note" class="rounded-[10px] bg-surface-2 px-3 py-2.5 text-sm text-fg">“{{ record.note }}”</p>
+        <p v-if="record.note" class="rounded-[10px] bg-surface-2 px-3 py-2.5 text-sm text-fg">{{ t("attendance.quote", { text: record.note }) }}</p>
 
         <form v-if="editing" class="flex flex-col gap-3 rounded-[12px] border border-line p-3" @submit.prevent="saveEdit">
           <p class="text-sm font-semibold text-fg">{{ t("attendance.record.correctTitle") }}</p>
