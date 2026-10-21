@@ -20,7 +20,7 @@ import { duration } from "./text";
 import type { CellCode, Correction, MyMonth } from "./types";
 import "./attendance.css";
 
-const LEGEND: readonly CellCode[] = ["present", "late", "absent", "leave", "planned"];
+const LEGEND: readonly CellCode[] = ["present", "late", "absent", "auto", "leave", "planned"];
 
 export default function AttendancePage() {
   const t = usePageT();
@@ -189,12 +189,20 @@ function Totals({ data }: { data: MyMonth }) {
 function CorrectionRow({ item }: { item: Correction }) {
   const t = usePageT();
   const { locale } = useI18n();
-  const times = [item.check_in_at, item.check_out_at].map((value) => (value ? wallClock(value) : "…")).join("–");
+  // Both times as "09:00–18:22"; one alone says which it is ("Left at 18:22").
+  const times =
+    item.check_in_at && item.check_out_at
+      ? `${wallClock(item.check_in_at)}–${wallClock(item.check_out_at)}`
+      : item.check_in_at
+        ? `${t("fix.in")} ${wallClock(item.check_in_at)}`
+        : item.check_out_at
+          ? `${t("fix.out")} ${wallClock(item.check_out_at)}`
+          : "";
   const tone = item.status === "approved" ? "sage" : item.status === "rejected" ? "neutral" : "accent";
   return (
     <ListRow
       title={`${weekdayShort(`${item.date}T12:00:00Z`, "UTC", locale)}, ${dayMonth(`${item.date}T12:00:00Z`, "UTC", locale)}`}
-      subtitle={[item.check_in_at || item.check_out_at ? times : "", item.decision_note || item.reason].filter(Boolean).join(" · ")}
+      subtitle={[times, item.decision_note || item.reason].filter(Boolean).join(" · ")}
       value={
         <Badge tone={tone} size="small">
           {requestStatusLabel(t, item.status)}

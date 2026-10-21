@@ -223,6 +223,12 @@ button.att-cal-day:focus-visible {
   background: transparent;
 }
 
+.att-board-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .att-hint {
   margin: 0;
   font-size: 14px;

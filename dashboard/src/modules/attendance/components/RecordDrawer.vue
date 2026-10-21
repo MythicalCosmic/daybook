@@ -29,6 +29,7 @@ import UserAvatar from "@/components/UserAvatar.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { useFormat } from "@/lib/useFormat";
+import { useNow } from "@/lib/useNow";
 import { rs, useRouteState } from "@/lib/useRouteState";
 import { useCompanyStore } from "@/stores/company";
 
@@ -106,11 +107,23 @@ const events = computed<TimelineEvent[]>(() => {
   return list;
 });
 
+const now = useNow();
+/** Minutes since the check-in of a record still open (the break isn't known yet). */
+const soFar = computed(() => {
+  const value = record.value;
+  if (value?.status !== "open" || !value.check_in_at) return 0;
+  return Math.max(0, Math.floor((now.value - Date.parse(value.check_in_at)) / 60_000));
+});
+/** An absent or excused day has no times: one sentence says so instead of a grid of dashes. */
+const noTimes = computed(() => record.value?.status === "absent" || record.value?.status === "excused");
+
 const facts = computed<DescriptionItem[]>(() => {
   const value = record.value;
-  if (!value) return [];
+  if (!value || noTimes.value) return [];
+  const finished = value.worked_minutes ? fmt.duration(value.worked_minutes) : "—";
+  const running = soFar.value ? t("attendance.record.soFar", { d: fmt.duration(soFar.value) }) : "—";
   const items: DescriptionItem[] = [
-    { key: "worked", label: t("attendance.record.worked"), value: value.worked_minutes ? fmt.duration(value.worked_minutes) : "—" },
+    { key: "worked", label: t("attendance.record.worked"), value: value.status === "open" ? running : finished },
     { key: "late", label: t("attendance.record.late"), value: value.is_late ? fmt.duration(value.late_minutes) : "—" },
     { key: "early", label: t("attendance.record.early"), value: value.early_leave_minutes ? fmt.duration(value.early_leave_minutes) : "—" },
     {
@@ -239,11 +252,14 @@ async function decide(approve: boolean, reason = ""): Promise<void> {
         </InlineAlert>
 
         <TimelineList v-if="events.length" :events="events" :group="false" dense />
-        <p v-else class="rounded-[10px] bg-surface-2 px-3 py-3 text-sm text-muted">{{ t("attendance.record.noTimes") }}</p>
+        <p v-if="noTimes" :class="['rounded-[10px] px-3 py-3 text-sm', record.status === 'absent' ? 'bg-danger-soft text-danger' : 'bg-info-soft text-info']">
+          {{ record.status === "absent" ? t("attendance.record.absentNote") : t("attendance.record.excusedNote") }}
+        </p>
+        <p v-else-if="!events.length" class="rounded-[10px] bg-surface-2 px-3 py-3 text-sm text-muted">{{ t("attendance.record.noTimes") }}</p>
 
         <GeoMap v-if="mapPoints.length && record.branch_geo" :branches="[record.branch_geo]" :points="mapPoints" height="200px" :interactive="false" />
 
-        <DescriptionList :items="facts" :columns="2" />
+        <DescriptionList v-if="facts.length" :items="facts" :columns="2" />
 
         <div v-if="record.photo_url" class="flex items-center gap-3">
           <button type="button" class="overflow-hidden rounded-[10px] border border-line" @click="lightbox = true">

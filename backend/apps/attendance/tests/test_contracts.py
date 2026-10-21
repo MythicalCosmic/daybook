@@ -204,9 +204,10 @@ def test_stream_items_are_scoped(staff, freeze):
     services.update_settings(company, by=staff.manager, require_location=False)
     services.check_in(staff.ali, now=local(DAY, 8, 50))
     services.check_in(staff.sara, now=local(DAY, 9, 10))
-    titles = [item.title for item in queries.stream(staff.lead, None, 10)]
-    assert any("Ali" in title for title in titles)
-    assert not any("Sara" in title for title in titles)
+    items = queries.stream(staff.lead, None, 10)
+    assert [item.actor["name"] for item in items] == ["Ali"]
+    # The actor's name sits above the title in the stream, so the title doesn't repeat it.
+    assert items[0].title == "Checked in · Chilonzor"
 
 
 def test_offboard_step_and_calendar(staff, freeze):

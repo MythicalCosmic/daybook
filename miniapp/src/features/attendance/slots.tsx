@@ -8,7 +8,7 @@ import { useI18n } from "../../i18n";
 import { useNavigation } from "../../state/navigation";
 import { Banner } from "../../ui";
 import type { MeItemStatus, SlotProps } from "../registry";
-import { useToday } from "./api";
+import { useBoard, useToday } from "./api";
 import { CheckInCard } from "./CheckInCard";
 import { wallClock } from "./lib";
 import { useT } from "./text";
@@ -35,6 +35,15 @@ export function WaitingSlot({ member }: SlotProps) {
       onClick={() => navigation.push({ feature: "attendance", page: "swaps" })}
     />
   );
+}
+
+/** Me → Who's in (managers): "3 of 4" people on shift are here. */
+export function useBoardStatus({ member }: SlotProps): MeItemStatus {
+  const t = useT();
+  const board = useBoard(member.companyId);
+  const totals = board.data?.totals;
+  if (!totals || !totals.rostered) return {};
+  return { value: t("me.boardValue", { present: totals.in + totals.late, rostered: totals.rostered }) };
 }
 
 /** Me → Attendance: "In since 08:57" while checked in, else the next shift; a bubble for requests. */

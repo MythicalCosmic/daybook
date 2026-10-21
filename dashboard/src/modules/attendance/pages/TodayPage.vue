@@ -20,6 +20,7 @@ import StatusPill from "@/components/StatusPill.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDrawer from "@/components/UiDrawer.vue";
 import { todayIn } from "@/lib/dates";
+import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
@@ -40,6 +41,7 @@ const SettingsForm = defineAsyncComponent(() => import("../components/SettingsFo
 const { t } = useI18n();
 const fmt = useFormat();
 const company = useCompanyStore();
+const { isPhone } = useBreakpoints();
 
 const today = computed(() => todayIn(company.timezone));
 const day = useRouteState("date", rs.day());
@@ -62,12 +64,15 @@ const columns = computed(() =>
   })),
 );
 const showBranch = computed(() => !branch.value && (data.value?.branches.length ?? 0) > 1);
+/** People not here yet whose shift has already started (past the grace minutes). */
+const overdue = computed(() => (data.value?.people ?? []).filter((row) => row.state === "not_yet" && row.reason === "late").length);
 
 const kpis = computed(() => {
   const totals = data.value?.totals;
   if (!totals) return [];
   const present = totals.in + totals.late;
-  const spark = (week.data.value?.series ?? []).slice(-14).map((point) => point.present);
+  // On a phone the KPI is half the width: the number and its line of context need the room.
+  const spark = isPhone.value ? undefined : (week.data.value?.series ?? []).slice(-14).map((point) => point.present);
   return [
     {
       id: "present",
@@ -79,8 +84,14 @@ const kpis = computed(() => {
       sparkColor: "var(--c-chart-2)",
     },
     { id: "late", label: t("attendance.kpi.late"), value: totals.late, hint: totals.late ? t("attendance.kpi.lateHint") : undefined, sparkColor: "var(--c-chart-4)" },
-    { id: "missing", label: isToday.value ? t("attendance.kpi.notIn") : t("attendance.kpi.notYet"), value: isToday.value ? totals.late_missing : totals.not_yet, hint: t("attendance.kpi.notInHint") },
-    { id: "absent", label: t("attendance.kpi.absent"), value: totals.absent },
+    // The same people as the "Not here yet" column, so the numbers and the columns always agree.
+    {
+      id: "missing",
+      label: t("attendance.state.not_yet"),
+      value: totals.not_yet,
+      hint: !totals.not_yet ? undefined : overdue.value ? t("attendance.kpi.notYetHint", { n: overdue.value }) : t("attendance.kpi.notYetSoon"),
+    },
+    { id: "absent", label: t("attendance.kpi.absent"), value: totals.absent, hint: totals.absent && isToday.value ? t("attendance.kpi.absentHint") : undefined },
     {
       id: "ontime",
       label: t("attendance.kpi.onTime30"),
@@ -156,7 +167,7 @@ const columnLabel = (state: BoardState) => t(`attendance.state.${state}`);
     </div>
     <ErrorState v-else-if="board.isError.value" :error="board.error.value" :retry="() => board.refetch()" />
     <template v-else-if="data">
-      <KpiStrip :items="kpis" :columns="5" />
+      <KpiStrip class="att-kpis" :items="kpis" :columns="5" />
 
       <EmptyState
         v-if="!data.people.length"
@@ -180,7 +191,7 @@ const columnLabel = (state: BoardState) => t(`attendance.state.${state}`);
             <span class="rounded-full bg-surface px-1.5 text-xs font-semibold tabular-nums text-muted">{{ column.rows.length }}</span>
           </header>
           <TransitionGroup tag="div" name="att-list" class="flex flex-col gap-2 px-2 pb-2">
-            <BoardTile v-for="row in column.rows" :key="row.member.id" :row="row" :show-branch="showBranch" @open="open" />
+            <BoardTile v-for="row in column.rows" :key="row.member.id" :row="row" :show-branch="showBranch" :now="data.is_today ? data.now : null" @open="open" />
           </TransitionGroup>
           <p v-if="!column.rows.length" class="px-3 pb-4 pt-1 text-xs text-subtle">{{ t(`attendance.state.${column.state}Empty`) }}</p>
         </section>

@@ -6,7 +6,7 @@
  * it (audited, reason required), or to record a day nobody checked in for.
  */
 import { CalendarDays, ChevronLeft, ChevronRight, Users } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import EmptyState from "@/components/EmptyState.vue";
@@ -131,6 +131,24 @@ async function saveDraft(): Promise<void> {
 }
 
 const dayHeader = (day: string) => t(`common.weekday.min.${(new Date(`${day}T00:00:00Z`).getUTCDay() + 6) % 7}`);
+
+// This month opens scrolled so today's column is in view, next to the pinned totals.
+const scroller = ref<HTMLElement | null>(null);
+watch(
+  () => [data.value?.month, data.value?.people.length],
+  async () => {
+    await nextTick();
+    const el = scroller.value;
+    const today = data.value?.today;
+    if (!el || !today || !data.value?.days.includes(today)) return;
+    const cell = el.querySelector<HTMLElement>(`th[data-day="${today}"]`);
+    if (!cell) return;
+    const pinned = el.querySelector<HTMLElement>("thead .att-sticky-right")?.offsetWidth ?? 0;
+    const target = cell.offsetLeft + cell.offsetWidth + 3 * cell.offsetWidth - (el.clientWidth - pinned);
+    el.scrollLeft = Math.max(0, target);
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
@@ -154,7 +172,7 @@ const dayHeader = (day: string) => t(`common.weekday.min.${(new Date(`${day}T00:
       <BranchSwitch v-model="branch" />
     </div>
 
-    <KpiStrip :items="kpis" :columns="5" />
+    <KpiStrip class="att-kpis" :items="kpis" :columns="5" />
 
     <div v-if="skeleton" class="ui-card flex flex-col gap-2 p-4">
       <SkeletonBlock v-for="n in 7" :key="n" height="34px" radius="8px" />
@@ -162,7 +180,7 @@ const dayHeader = (day: string) => t(`common.weekday.min.${(new Date(`${day}T00:
     <ErrorState v-else-if="sheet.isError.value" :error="sheet.error.value" :retry="() => sheet.refetch()" />
     <EmptyState v-else-if="data && !data.people.length" :icon="Users" :title="t('attendance.sheet.emptyTitle')" :description="t('attendance.sheet.emptyBody')" />
     <section v-else-if="data" class="ui-card overflow-hidden" :aria-label="t('attendance.sheet.title')">
-      <div class="att-sheet">
+      <div ref="scroller" class="att-sheet">
         <table class="w-max min-w-full border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
@@ -170,6 +188,7 @@ const dayHeader = (day: string) => t(`common.weekday.min.${(new Date(`${day}T00:
               <th
                 v-for="day in data.days"
                 :key="day"
+                :data-day="day"
                 scope="col"
                 :class="[
                   'border-b border-line px-0.5 py-1.5 text-center font-normal',

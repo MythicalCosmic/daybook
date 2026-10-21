@@ -6,10 +6,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api, apiForm } from "../../api/client";
-import type { AttendanceRecord, Candidate, CheckResult, Correction, MyDay, MyMonth, MySwaps, OpenShift, Shift, Swap } from "./types";
+import type { AttendanceRecord, Board, Candidate, CheckResult, Correction, MyDay, MyMonth, MySwaps, OpenShift, Shift, Swap } from "./types";
 
 export const attendanceKeys = {
   all: (company: number) => ["attendance", company] as const,
+  board: (company: number) => ["attendance", company, "board"] as const,
   today: (company: number) => ["attendance", company, "today"] as const,
   month: (company: number, month: string) => ["attendance", company, "month", month] as const,
   shifts: (company: number) => ["attendance", company, "shifts"] as const,
@@ -29,6 +30,15 @@ export function useToday(company: number, enabled = true) {
     queryFn: () => api<MyDay>(`${base(company)}/today/`),
     refetchInterval: 60_000,
     enabled,
+  });
+}
+
+/** Managers' "Who's in" for today (needs attendance.view); live like the card. */
+export function useBoard(company: number) {
+  return useQuery({
+    queryKey: attendanceKeys.board(company),
+    queryFn: () => api<Board>(`${base(company)}/board/`),
+    refetchInterval: 60_000,
   });
 }
 

@@ -180,3 +180,26 @@ export type Swap = {
 export type MySwaps = { mine: Swap[]; requests: Swap[] };
 
 export type Candidate = { member: PersonCard; shifts: Shift[] };
+
+/** The managers' "Who's in" (`board/`, the same day board the dashboard reads). */
+export type BoardState = "in" | "late" | "not_yet" | "absent" | "off";
+
+export type BoardRow = {
+  member: PersonCard;
+  branch: BranchRef | null;
+  state: BoardState;
+  /** Why: late (not here yet), leave, day_off, holiday, suspended, no_shift, excused. */
+  reason: string | null;
+  shift: Shift | null;
+  record: AttendanceRecord | null;
+};
+
+export type Board = {
+  date: string;
+  is_today: boolean;
+  now: string;
+  holiday: string | null;
+  totals: Record<BoardState | "rostered" | "late_missing", number>;
+  branches: (BranchGeo & { rostered: number; checked_in: number; first_check_in: string | null })[];
+  people: BoardRow[];
+};

@@ -1421,16 +1421,15 @@ def stream(member: Membership, since: datetime | None, limit: int) -> list:
         records = records.filter(check_in_at__gte=timezone.now() - timedelta(days=2))
     items = []
     for record in records.order_by("-check_in_at")[:limit]:
-        name = record.membership.full_name or str(record.membership.user)
+        # The stream shows the actor's name above the title, so the title doesn't repeat it.
         where = record.branch.name if record.branch_id else ""
         if record.is_late:
-            title = _("%(name)s checked in %(minutes)s min late · %(branch)s") % {
-                "name": name,
+            title = _("Checked in %(minutes)s min late · %(branch)s") % {
                 "minutes": record.late_minutes,
                 "branch": where,
             }
         else:
-            title = _("%(name)s checked in · %(branch)s") % {"name": name, "branch": where}
+            title = _("Checked in · %(branch)s") % {"branch": where}
         items.append(
             StreamItem(
                 at=record.check_in_at,

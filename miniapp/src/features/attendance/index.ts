@@ -7,13 +7,14 @@
  * Deep links: `attendance` (the bot's menu button), `attendance.shifts`, `attendance.swaps`,
  * `attendance.correct:<record id>` (the automatic check-out notice).
  */
-import { CalendarClock, Repeat2 } from "lucide-react";
+import { CalendarClock, Repeat2, Users } from "lucide-react";
 import { lazy } from "react";
 
 import { hasModule } from "../../api/membership";
+import { can } from "../../api/permissions";
 import { defineFeature } from "../registry";
 import { messages } from "./messages";
-import { HeroSlot, WaitingSlot, useMeStatus } from "./slots";
+import { HeroSlot, WaitingSlot, useBoardStatus, useMeStatus } from "./slots";
 
 export default defineFeature({
   id: "attendance",
@@ -25,12 +26,26 @@ export default defineFeature({
     home: lazy(() => import("./AttendancePage")),
     shifts: lazy(() => import("./ShiftsPage")),
     swaps: lazy(() => import("./SwapsPage")),
+    // Managers' "Who's in" (attendance.view; the endpoint checks it again).
+    board: lazy(() => import("./BoardPage")),
   },
   sheets: {
     correct: lazy(() => import("./CorrectSheet")),
     swap: lazy(() => import("./SwapSheet")),
   },
-  meItems: [{ id: "attendance", group: "work", label: "me.attendance", icon: CalendarClock, open: { page: "home" }, order: 20, useStatus: useMeStatus }],
+  meItems: [
+    { id: "attendance", group: "work", label: "me.attendance", icon: CalendarClock, open: { page: "home" }, order: 20, useStatus: useMeStatus },
+    {
+      id: "board",
+      group: "team",
+      label: "me.board",
+      icon: Users,
+      open: { page: "board" },
+      order: 10,
+      visible: (member) => can(member, "attendance.view"),
+      useStatus: useBoardStatus,
+    },
+  ],
   plusActions: [{ id: "swap", label: "plus.swap", icon: Repeat2, open: { page: "shifts" }, order: 40 }],
   routes: {
     attendance: "home",

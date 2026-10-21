@@ -211,7 +211,10 @@ onMounted(() => {
       <SkeletonBlock v-for="n in 6" :key="n" height="58px" radius="8px" />
     </div>
     <ErrorState v-else-if="query.isError.value" :error="query.error.value" :retry="() => query.refetch()" />
-    <EmptyState v-else-if="roster && !roster.members.length" :icon="CalendarPlus" :title="t('attendance.roster.emptyTitle')" :description="t('attendance.roster.emptyBody')" />
+    <EmptyState v-else-if="roster && !roster.members.length" :icon="CalendarPlus" :title="t('attendance.roster.emptyTitle')" :description="t('attendance.roster.emptyBody')">
+      <UiButton v-if="branch" variant="secondary" @click="branch = null">{{ t("attendance.allBranches") }}</UiButton>
+      <UiButton v-if="canManage" variant="primary" :to="`/c/${company.currentId}/attendance/schedules`">{{ t("attendance.today.emptyAction") }}</UiButton>
+    </EmptyState>
     <ShiftGrid v-else-if="roster" :roster="roster" :editable="canManage" :today="today" @add="add" @edit="edit" @move="move" @place="place" @person="person" />
 
     <ShiftDialog v-if="roster" v-model:open="dialogOpen" :draft="draft" :members="roster.members" :templates="roster.templates" :branch-id="branch" />

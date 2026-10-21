@@ -320,15 +320,18 @@ function describe(day: MyDay, now: Date, t: T, { timeZone, locale, lang }: LookC
       return {
         tone: "accent",
         title: shiftTitle,
-        lines: [t("card.startsAt", { time: shift?.start ?? "" })],
+        lines: [t("card.startedAt", { time: shift?.start ?? "" })],
         badge: shift ? (
           <Badge tone="accent" size="small" icon={Clock3}>
             {t("card.late", { time: duration(t, minutesBetween(shift.starts_at, now)) })}
           </Badge>
         ) : undefined,
       };
-    case "due":
-      return { tone: "accent", title: shiftTitle, lines: [t("card.startsAt", { time: shift?.start ?? "" })] };
+    case "due": {
+      // Within the grace minutes the shift may already have begun: say so in the past tense.
+      const begun = shift ? new Date(shift.starts_at).getTime() <= now.getTime() : false;
+      return { tone: "accent", title: shiftTitle, lines: [t(begun ? "card.startedAt" : "card.startsAt", { time: shift?.start ?? "" })] };
+    }
     case "upcoming":
       return {
         tone: "plain",

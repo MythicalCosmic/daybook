@@ -419,5 +419,13 @@
   "attendance.widget.absentLegend": "Не пришли",
   "attendance.widget.onTimeValue": "{p}% вовремя",
   "attendance.widget.date": "Дата",
-  "attendance.widget.empty": "За последние две недели смен не было"
+  "attendance.widget.empty": "За последние две недели смен не было",
+  "attendance.kpi.notYetHint": "{n} уже опаздывают",
+  "attendance.kpi.notYetSoon": "начнут позже",
+  "attendance.kpi.absentHint": "так и не отметились",
+  "attendance.record.soFar": "пока {d}",
+  "attendance.record.absentNote": "На эту смену никто не отметился. Если причина уважительная, отметьте как уважительную; если человек работал, укажите время.",
+  "attendance.record.excusedNote": "Это отсутствие отмечено как уважительное.",
+  "attendance.widget.last14": "Последние 14 дней",
+  "attendance.widget.notYet": "Ещё не пришли"
 }

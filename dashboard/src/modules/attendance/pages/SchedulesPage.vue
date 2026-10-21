@@ -38,7 +38,7 @@ import { useCompanyStore } from "@/stores/company";
 import { archiveSchedule, assignSchedule, removeTemplate, saveTemplate, unassignSchedule, useCompanyId, useRefresh, useSchedules, useStaff, useTemplates } from "../api";
 import AttendanceHeader from "../components/AttendanceHeader.vue";
 import ScheduleEditor from "../components/ScheduleEditor.vue";
-import { slotColor } from "../lib";
+import { compactTime, slotColor } from "../lib";
 import type { Schedule, ShiftTemplate } from "../types";
 
 const { t } = useI18n();
@@ -68,7 +68,8 @@ const pickerPeople = computed<PersonOption[]>(() =>
 function weekCells(schedule: Schedule) {
   return Array.from({ length: 7 }, (_, weekday) => {
     const day = schedule.days.find((row) => row.weekday === weekday);
-    return { weekday, label: day ? `${day.starts_at.slice(0, 2)}–${day.ends_at.slice(0, 2)}` : "", on: !!day };
+    // "8:30" over "17:30": the half hours matter, so the times are never cut to the hour.
+    return { weekday, start: day ? compactTime(day.starts_at) : "", end: day ? compactTime(day.ends_at) : "", on: !!day };
   });
 }
 
@@ -237,7 +238,10 @@ async function dropTemplate(template: ShiftTemplate): Promise<void> {
         <div v-if="schedule.kind === 'weekly'" class="grid grid-cols-7 gap-1">
           <div v-for="cell in weekCells(schedule)" :key="cell.weekday" :class="['flex flex-col items-center gap-0.5 rounded-[7px] py-1.5', cell.on ? 'bg-accent-soft text-accent-fg' : 'bg-surface-2 text-subtle']">
             <span class="text-[10px] font-semibold uppercase">{{ t(`common.weekday.min.${cell.weekday}`) }}</span>
-            <span class="text-[10px] tabular-nums">{{ cell.label || "—" }}</span>
+            <span v-if="cell.on" class="flex flex-col items-center text-[10px] leading-tight tabular-nums">
+              <span>{{ cell.start }}</span><span class="opacity-80">{{ cell.end }}</span>
+            </span>
+            <span v-else class="text-[10px] leading-[25px]">—</span>
           </div>
         </div>
         <div v-else-if="schedule.kind === 'rotating'" class="flex flex-col gap-2">

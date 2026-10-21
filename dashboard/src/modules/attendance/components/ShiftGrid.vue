@@ -100,7 +100,7 @@ const memberSubtitle = (member: RosterMember) =>
 <template>
   <div class="flex flex-col gap-3">
     <div class="att-grid-scroll overflow-auto rounded-[12px] border border-line bg-surface">
-      <div class="att-grid min-w-[1060px]" role="grid" :aria-label="t('attendance.roster.gridLabel')">
+      <div class="att-grid min-w-[916px] sm:min-w-[1060px]" role="grid" :aria-label="t('attendance.roster.gridLabel')">
         <!-- Header -->
         <div class="att-cell att-head att-corner flex items-end px-3 pb-2" role="columnheader">
           <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-muted"><Users :size="13" aria-hidden="true" />{{ t("attendance.roster.team", { n: roster.members.length }) }}</span>
@@ -376,6 +376,17 @@ const memberSubtitle = (member: RosterMember) =>
   .att-add {
     opacity: 1;
     border-color: var(--c-border);
+  }
+}
+/* Phones: a narrow name column, so a day or two of the week is visible next to it; the rest
+   scrolls sideways with the names pinned. */
+@media (max-width: 639.98px) {
+  .att-grid {
+    grid-template-columns: 132px repeat(7, minmax(112px, 1fr));
+  }
+  .att-chip {
+    padding: 4px 6px;
+    font-size: 11px;
   }
 }
 </style>

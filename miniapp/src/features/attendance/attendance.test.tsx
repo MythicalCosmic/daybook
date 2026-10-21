@@ -311,6 +311,55 @@ describe("the check-in card", () => {
     expect(await screen.findByText("Bugun smena yo‘q")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Smenasiz belgilash" })).toBeTruthy();
   });
+
+  it("says a shift that began already started", async () => {
+    serve(day({ state: "late", now: "2026-10-21T09:40:00+05:00" }));
+    renderCard();
+    expect(await screen.findByText("Your shift started at 09:00. Check in when you’re there")).toBeTruthy();
+  });
+});
+
+describe("who's in (managers)", () => {
+  const person = (id: number, name: string) => ({ id, name, photo_url: null, position: { id: 1, name: "Cashier" }, home_branch: { id: 3, name: "Chilonzor" }, status: "approved" });
+  const board = {
+    date: "2026-10-21",
+    is_today: true,
+    now: "2026-10-21T10:20:00+05:00",
+    holiday: null,
+    totals: { in: 1, late: 1, not_yet: 1, absent: 0, off: 1, rostered: 3, late_missing: 1 },
+    branches: [],
+    people: [
+      { member: person(1, "Bekzod Mirzayev"), branch: null, state: "in", reason: null, shift: day().shift, record: { ...RECORD, in_distance_m: 39 } },
+      { member: person(2, "Alisher Valiyev"), branch: null, state: "late", reason: null, shift: day().shift, record: { ...RECORD, id: 91, is_late: true, late_minutes: 25 } },
+      { member: person(3, "Jasur Tursunov"), branch: null, state: "not_yet", reason: "late", shift: day().shift, record: null },
+      { member: person(4, "Madina Saidova"), branch: null, state: "off", reason: "leave", shift: null, record: null },
+    ],
+  };
+
+  it("lists today's people by state, the urgent ones first, with lateness and distance", async () => {
+    client.api.mockImplementation(async (path: string) => {
+      if (path.endsWith("/attendance/board/")) return board;
+      throw new Error(`unexpected ${path}`);
+    });
+    const { default: BoardPage } = await import("./BoardPage");
+    renderCard(<BoardPage />);
+    expect(await screen.findByText("Bekzod Mirzayev")).toBeTruthy();
+    const sections = screen.getAllByRole("region").map((section) => section.getAttribute("aria-label"));
+    expect(sections).toEqual(["Came late", "Not here yet", "In", "Off today"]);
+    expect(screen.getByText("2 of 3 on shift are here")).toBeTruthy();
+    expect(screen.getByText("+25 min")).toBeTruthy();
+    expect(screen.getByText("+1 h 20 min")).toBeTruthy();
+    expect(screen.getByText("40 m")).toBeTruthy();
+    expect(screen.getByText(/Shift started 09:00/)).toBeTruthy();
+    expect(screen.getByText(/Time off/)).toBeTruthy();
+  });
+
+  it("is in Me only for people who may see everyone's attendance", () => {
+    const item = attendance.meItems!.find((entry) => entry.id === "board")!;
+    const context = { member: { ...membership(), timeZone: "Asia/Tashkent", companyId: 1 }, summary: undefined };
+    expect(item.visible!(context.member as never, undefined)).toBe(false);
+    expect(item.visible!({ ...context.member, permissions: ["attendance.view"] } as never, undefined)).toBe(true);
+  });
 });
 
 describe("the attendance feature", () => {

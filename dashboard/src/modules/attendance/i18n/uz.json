@@ -419,5 +419,13 @@
   "attendance.widget.absentLegend": "Kelmadi",
   "attendance.widget.onTimeValue": "{p}% o‘z vaqtida",
   "attendance.widget.date": "Sana",
-  "attendance.widget.empty": "So‘nggi ikki haftada smenalar yo‘q"
+  "attendance.widget.empty": "So‘nggi ikki haftada smenalar yo‘q",
+  "attendance.kpi.notYetHint": "{n} nafari kechikmoqda",
+  "attendance.kpi.notYetSoon": "bugun keyinroq",
+  "attendance.kpi.absentHint": "hali belgilanmagan",
+  "attendance.record.soFar": "hozircha {d}",
+  "attendance.record.absentNote": "Bu smenaga hech kim kelganini belgilamagan. Sababli bo‘lsa, uzrli deb belgilang; ishlagan bo‘lsa, vaqtini kiriting.",
+  "attendance.record.excusedNote": "Bu kelmaslik uzrli deb belgilangan.",
+  "attendance.widget.last14": "So‘nggi 14 kun",
+  "attendance.widget.notYet": "Hali kelmagan"
 }

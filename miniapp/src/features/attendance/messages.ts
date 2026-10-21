@@ -9,12 +9,15 @@ export const messages = defineMessages({
   en: {
     "me.attendance": "Attendance",
     "me.in": "In since {time}",
+    "me.board": "Who’s in",
+    "me.boardValue": "{present} of {rostered}",
     "plus.swap": "Swap a shift",
 
     "card.shiftTitle": "Shift {line}",
     "card.offTitle": "No shift today",
     "card.startsIn": "Starts in {time}",
     "card.startsAt": "Your shift starts at {time}",
+    "card.startedAt": "Your shift started at {time}. Check in when you’re there",
     "card.late": "Late by {time}",
     "card.inSince": "Checked in at {time}",
     "card.soFar": "{time} so far",
@@ -66,12 +69,15 @@ export const messages = defineMessages({
   ru: {
     "me.attendance": "Посещаемость",
     "me.in": "На работе с {time}",
+    "me.board": "Кто на работе",
+    "me.boardValue": "{present} из {rostered}",
     "plus.swap": "Обменять смену",
 
     "card.shiftTitle": "Смена {line}",
     "card.offTitle": "Сегодня нет смены",
     "card.startsIn": "Начнётся через {time}",
     "card.startsAt": "Смена начинается в {time}",
+    "card.startedAt": "Смена началась в {time}. Отметьтесь, когда будете на месте",
     "card.late": "Опоздание {time}",
     "card.inSince": "Вы пришли в {time}",
     "card.soFar": "Уже {time}",
@@ -127,12 +133,15 @@ export const messages = defineMessages({
   uz: {
     "me.attendance": "Davomat",
     "me.in": "{time} dan beri ishda",
+    "me.board": "Kim ishda",
+    "me.boardValue": "{rostered} tadan {present}",
     "plus.swap": "Smenani almashtirish",
 
     "card.shiftTitle": "Smena {line}",
     "card.offTitle": "Bugun smena yo‘q",
     "card.startsIn": "{time} dan so‘ng boshlanadi",
     "card.startsAt": "Smena {time} da boshlanadi",
+    "card.startedAt": "Smena {time} da boshlangan. Yetib kelgach, belgilang",
     "card.late": "{time} kechikish",
     "card.inSince": "{time} da keldingiz",
     "card.soFar": "Hozircha {time}",

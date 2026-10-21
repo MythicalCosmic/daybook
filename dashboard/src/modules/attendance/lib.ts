@@ -81,6 +81,12 @@ export function hours(minutes: number): string {
   return (Math.round((minutes / 60) * 10) / 10).toFixed(minutes % 60 === 0 ? 0 : 1);
 }
 
+/** "08:30" → "8:30", "18:00" → "18:00": a wall-clock time as short as it can be without losing minutes. */
+export function compactTime(time: string): string {
+  const [h = "0", m = "00"] = time.split(":");
+  return `${Number(h)}:${m.slice(0, 2).padStart(2, "0")}`;
+}
+
 export function toMinutes(time: string): number {
   const [h = "0", m = "0"] = time.split(":");
   return Number(h) * 60 + Number(m);

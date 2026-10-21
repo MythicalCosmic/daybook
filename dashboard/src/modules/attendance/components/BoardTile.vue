@@ -14,7 +14,7 @@ import { useFormat } from "@/lib/useFormat";
 import { clockOf, formatDistance, STATE_COLORS } from "../lib";
 import type { BoardRow } from "../types";
 
-const props = defineProps<{ row: BoardRow; showBranch?: boolean }>();
+const props = defineProps<{ row: BoardRow; showBranch?: boolean; /** The board's "now" (ISO), for how late someone not here yet is. */ now?: string | null }>();
 defineEmits<{ open: [row: BoardRow] }>();
 
 const { t } = useI18n();
@@ -39,7 +39,13 @@ const sourceIcon = computed(() => {
   }
 });
 
-/** The second line: what the day looks like for them. */
+/** Minutes past the start for someone whose shift began and who isn't here yet. */
+const overdue = computed(() => {
+  if (props.row.state !== "not_yet" || props.row.reason !== "late" || !props.now || !shift.value) return 0;
+  return Math.max(0, Math.floor((Date.parse(props.now) - Date.parse(shift.value.starts_at)) / 60_000));
+});
+
+/** The detail line: what the day looks like for them. */
 const detail = computed(() => {
   const row = props.row;
   if (row.state === "off") return t(`attendance.reason.${row.reason ?? "no_shift"}`);
@@ -70,17 +76,19 @@ const detail = computed(() => {
       <div class="min-w-0 flex-1">
         <p class="truncate text-sm font-semibold text-fg">{{ row.member.name }}</p>
         <p class="truncate text-xs text-muted">
+          <!-- The hours first: they matter most and must never be cut off. -->
+          <template v-if="shift && row.state !== 'off'"><span class="font-medium tabular-nums text-fg/80">{{ shift.start }}–{{ shift.end }}</span><span v-if="row.member.position || (showBranch && row.branch)"> · </span></template>
           <template v-if="row.member.position">{{ row.member.position.name }}</template>
-          <template v-if="shift && row.state !== 'off'"><span v-if="row.member.position"> · </span><span class="tabular-nums">{{ shift.start }}–{{ shift.end }}</span></template>
-          <template v-if="showBranch && row.branch"> · {{ row.branch.name }}</template>
+          <template v-if="showBranch && row.branch"><span v-if="row.member.position"> · </span>{{ row.branch.name }}</template>
         </p>
       </div>
     </div>
     <div v-if="detail || record" class="flex min-w-0 flex-wrap items-center gap-1.5 text-xs">
-      <span :class="['min-w-0 truncate tabular-nums', row.state === 'absent' ? 'font-medium text-danger' : row.state === 'late' ? 'font-medium text-warning' : 'text-muted']">
+      <span :class="['min-w-0 truncate tabular-nums', row.state === 'absent' ? 'font-medium text-danger' : row.state === 'late' || overdue ? 'font-medium text-warning' : 'text-muted']">
         <component :is="sourceIcon" v-if="record?.check_in_at" :size="11" class="mr-1 inline -translate-y-px text-subtle" aria-hidden="true" />{{ detail }}
       </span>
       <span v-if="record?.is_late" class="rounded-full bg-warning-soft px-1.5 py-px text-[11px] font-semibold tabular-nums text-warning">+{{ fmt.duration(record.late_minutes) }}</span>
+      <span v-else-if="overdue" class="rounded-full bg-warning-soft px-1.5 py-px text-[11px] font-semibold tabular-nums text-warning">+{{ fmt.duration(overdue) }}</span>
       <span class="flex-1" />
       <span
         v-if="record && record.in_distance_m !== null && !noLocation"

@@ -419,5 +419,13 @@
   "attendance.widget.absentLegend": "Absent",
   "attendance.widget.onTimeValue": "{p}% on time",
   "attendance.widget.date": "Date",
-  "attendance.widget.empty": "No shifts in the last two weeks"
+  "attendance.widget.empty": "No shifts in the last two weeks",
+  "attendance.kpi.notYetHint": "{n} past their start",
+  "attendance.kpi.notYetSoon": "start later today",
+  "attendance.kpi.absentHint": "no check-in by now",
+  "attendance.record.soFar": "{d} so far",
+  "attendance.record.absentNote": "Nobody checked in for this shift. Excuse it if there was a good reason, or record the times if they did work.",
+  "attendance.record.excusedNote": "This absence was excused.",
+  "attendance.widget.last14": "Last 14 days",
+  "attendance.widget.notYet": "Not here yet"
 }

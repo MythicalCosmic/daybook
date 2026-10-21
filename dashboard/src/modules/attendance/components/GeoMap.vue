@@ -37,6 +37,16 @@ const el = ref<HTMLElement | null>(null);
 const map = shallowRef<L.Map | null>(null);
 let layer: L.LayerGroup | null = null;
 
+/** Leaflet inserts string content as HTML; names come from people and owners, so they go in as text. */
+function text(value: string): HTMLElement {
+  const span = document.createElement("span");
+  span.textContent = value;
+  return span;
+}
+
+// Metres per degree of latitude (close enough to place a label).
+const METRES_PER_DEGREE = 111_320;
+
 function draw(): void {
   const current = map.value;
   if (!current) return;
@@ -45,18 +55,25 @@ function draw(): void {
   const bounds: L.LatLngExpression[] = [];
   for (const branch of props.branches) {
     if (branch.latitude === null || branch.longitude === null) continue;
-    const center: L.LatLngExpression = [Number(branch.latitude), Number(branch.longitude)];
-    bounds.push(center);
-    L.circle(center, { radius: branch.geofence_m, className: "att-geo-fence", weight: 1.5 })
-      .bindTooltip(branch.name, { permanent: true, direction: "top", className: "att-geo-label", offset: [0, -6] })
-      .addTo(layer);
+    const lat = Number(branch.latitude);
+    const lng = Number(branch.longitude);
+    const center: L.LatLngExpression = [lat, lng];
+    // The name sits on the fence's top edge, so it never hides a check-in inside the circle.
+    const edge: L.LatLngExpression = [lat + branch.geofence_m / METRES_PER_DEGREE, lng];
+    // The whole circle stays in view (its top edge carries the label).
+    bounds.push(center, edge, [lat - branch.geofence_m / METRES_PER_DEGREE, lng]);
+    L.circle(center, { radius: branch.geofence_m, className: "att-geo-fence", weight: 1.5 }).addTo(layer);
     L.circleMarker(center, { radius: 4, className: "att-geo-center", weight: 2 }).addTo(layer);
+    L.tooltip({ permanent: true, direction: "top", className: "att-geo-label", offset: [0, -2] })
+      .setLatLng(edge)
+      .setContent(text(branch.name))
+      .addTo(layer);
   }
   for (const point of props.points) {
     const at: L.LatLngExpression = [Number(point.lat), Number(point.lng)];
     bounds.push(at);
     L.circleMarker(at, { radius: 6, className: `att-geo-point att-geo-${point.tone}`, weight: 2 })
-      .bindTooltip(point.label, { direction: "top", offset: [0, -4] })
+      .bindTooltip(text(point.label), { direction: "top", offset: [0, -4] })
       .on("click", () => emit("select", point.id))
       .addTo(layer);
   }

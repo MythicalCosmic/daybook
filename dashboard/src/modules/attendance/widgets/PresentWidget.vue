@@ -14,6 +14,8 @@ import ErrorState from "@/components/ErrorState.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 
 import { useBoard, useSummary } from "../api";
+import { STATE_COLORS } from "../lib";
+import type { BoardState } from "../types";
 
 const props = defineProps<{ companyId: number; range?: Range; compare?: Range | null }>();
 
@@ -26,6 +28,17 @@ const present = computed(() => (totals.value ? totals.value.in + totals.value.la
 const days = computed(() => (trend.data.value?.series ?? []).slice(-14));
 const peak = computed(() => Math.max(1, ...days.value.map((day) => day.rostered || day.present)));
 const share = computed(() => (totals.value?.rostered ? Math.round((present.value / totals.value.rostered) * 100) : null));
+const breakdown = computed(() => {
+  const value = totals.value;
+  if (!value) return [];
+  const states: Array<[BoardState, number]> = [
+    ["in", value.in],
+    ["late", value.late],
+    ["not_yet", value.not_yet],
+    ["absent", value.absent],
+  ];
+  return states.map(([state, count]) => ({ state, count, label: t(`attendance.state.${state}`) }));
+});
 </script>
 
 <template>
@@ -52,21 +65,27 @@ const share = computed(() => (totals.value?.rostered ? Math.round((present.value
         <span class="text-base tabular-nums text-subtle">/ {{ totals.rostered }}</span>
         <span v-if="share !== null" class="ml-auto rounded-full bg-success-soft px-2 py-0.5 text-xs font-semibold tabular-nums text-success">{{ share }}%</span>
       </div>
-      <p class="truncate text-xs text-muted">
-        <span v-if="totals.late" class="font-medium text-warning">{{ t("attendance.widget.late", { n: totals.late }) }}</span>
-        <template v-if="totals.late && totals.late_missing"> · </template>
-        <span v-if="totals.late_missing" class="font-medium text-danger">{{ t("attendance.widget.missing", { n: totals.late_missing }) }}</span>
-        <template v-if="!totals.late && !totals.late_missing">{{ t("attendance.kpi.ofRostered", { n: totals.rostered }) }}</template>
-      </p>
+      <p class="truncate text-xs text-muted">{{ t("attendance.kpi.ofRostered", { n: totals.rostered }) }}</p>
+      <!-- Today's board in four lines: the same states as its columns. -->
+      <ul class="flex flex-col gap-1.5 border-t border-line pt-3">
+        <li v-for="item in breakdown" :key="item.state" class="flex items-center gap-2 text-xs">
+          <span class="size-2 shrink-0 rounded-full" :style="{ background: STATE_COLORS[item.state] }" aria-hidden="true" />
+          <span class="min-w-0 flex-1 truncate text-muted">{{ item.label }}</span>
+          <span :class="['tabular-nums', item.count ? 'font-semibold text-fg' : 'text-subtle']">{{ item.count }}</span>
+        </li>
+      </ul>
     </template>
-    <div v-if="days.length" class="mt-auto flex h-8 items-end gap-[3px]" aria-hidden="true">
-      <span
-        v-for="day in days"
-        :key="day.date"
-        class="flex-1 rounded-t-[2px] bg-[color-mix(in_srgb,var(--c-chart-2)_70%,transparent)]"
-        :style="{ height: `${Math.max(6, (day.present / peak) * 100)}%` }"
-        :title="`${day.date}: ${day.present}/${day.rostered}`"
-      />
+    <div v-if="days.length" class="mt-auto flex flex-col gap-1.5">
+      <span class="text-[11px] text-subtle">{{ t("attendance.widget.last14") }}</span>
+      <div class="flex h-8 items-end gap-[3px]" aria-hidden="true">
+        <span
+          v-for="day in days"
+          :key="day.date"
+          class="flex-1 rounded-t-[2px] bg-[color-mix(in_srgb,var(--c-chart-2)_70%,transparent)]"
+          :style="{ height: `${Math.max(6, (day.present / peak) * 100)}%` }"
+          :title="`${day.date}: ${day.present}/${day.rostered}`"
+        />
+      </div>
     </div>
   </RouterLink>
 </template>

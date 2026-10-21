@@ -9,7 +9,6 @@ import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import ErrorState from "@/components/ErrorState.vue";
-import FormField from "@/components/FormField.vue";
 import NumberInput from "@/components/NumberInput.vue";
 import RadioCards from "@/components/RadioCards.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
@@ -19,6 +18,7 @@ import UiButton from "@/components/UiButton.vue";
 import { toast } from "@/components/useToast";
 
 import { saveSettings, useCompanyId, useRefresh, useSettings } from "../api";
+import SettingRow from "./SettingRow.vue";
 import type { AttendanceSettings } from "../types";
 
 const { t } = useI18n();
@@ -91,39 +91,39 @@ function reset(): void {
               ]"
             />
           </div>
-          <FormField class="p-3" :label="t('attendance.settings.maxAccuracy')" :hint="t('attendance.settings.maxAccuracyHint')" layout="inline">
-            <NumberInput v-model="draft.max_accuracy_m" :min="10" :max="5000" :step="10" :suffix="t('attendance.unit.m')" class="w-36" />
-          </FormField>
+          <SettingRow v-slot="{ id }" :label="t('attendance.settings.maxAccuracy')" :hint="t('attendance.settings.maxAccuracyHint')">
+            <NumberInput :id="id" v-model="draft.max_accuracy_m" :min="10" :max="5000" :step="10" :suffix="t('attendance.unit.m')" class="w-full" />
+          </SettingRow>
         </div>
       </section>
 
       <section class="flex flex-col gap-3">
         <h3 class="flex items-center gap-2 text-sm font-semibold text-fg"><Clock3 :size="15" class="text-subtle" />{{ t("attendance.settings.timing") }}</h3>
-        <div class="ui-card grid divide-y divide-line">
-          <FormField class="p-3" layout="inline" :label="t('attendance.settings.grace')" :hint="t('attendance.settings.graceHint')">
-            <NumberInput v-model="draft.grace_minutes" :min="0" :max="240" :suffix="t('attendance.unit.min')" class="w-40" />
-          </FormField>
-          <FormField class="p-3" layout="inline" :label="t('attendance.settings.earlyLeave')" :hint="t('attendance.settings.earlyLeaveHint')">
-            <NumberInput v-model="draft.early_leave_grace_minutes" :min="0" :max="240" :suffix="t('attendance.unit.min')" class="w-40" />
-          </FormField>
-          <FormField class="p-3" layout="inline" :label="t('attendance.settings.preShift')" :hint="t('attendance.settings.preShiftHint')">
-            <NumberInput v-model="draft.pre_shift_reminder_minutes" :min="0" :max="240" :step="5" :suffix="t('attendance.unit.min')" class="w-40" />
-          </FormField>
-          <FormField class="p-3" layout="inline" :label="t('attendance.settings.remind')" :hint="t('attendance.settings.remindHint')">
-            <NumberInput v-model="draft.remind_after_minutes" :min="0" :max="240" :step="5" :suffix="t('attendance.unit.min')" class="w-40" />
-          </FormField>
-          <FormField class="p-3" layout="inline" :label="t('attendance.settings.noShow')" :hint="t('attendance.settings.noShowHint')">
-            <NumberInput v-model="draft.no_show_alert_minutes" :min="0" :max="480" :step="5" :suffix="t('attendance.unit.min')" class="w-40" />
-          </FormField>
-          <FormField class="p-3" layout="inline" :label="t('attendance.settings.earlyCheckIn')" :hint="t('attendance.settings.earlyCheckInHint')">
-            <NumberInput v-model="draft.early_check_in_minutes" :min="0" :max="480" :step="15" :suffix="t('attendance.unit.min')" class="w-40" />
-          </FormField>
-          <FormField class="p-3" layout="inline" :label="t('attendance.settings.autoClose')" :hint="t('attendance.settings.autoCloseHint')">
-            <NumberInput v-model="draft.auto_close_after_hours" :min="1" :max="24" :suffix="t('attendance.unit.h')" class="w-40" />
-          </FormField>
-          <FormField class="p-3" layout="inline" :label="t('attendance.settings.overtime')" :hint="t('attendance.settings.overtimeHint')">
-            <NumberInput v-model="draft.overtime_after_minutes" :min="0" :max="240" :step="5" :suffix="t('attendance.unit.min')" class="w-40" />
-          </FormField>
+        <div class="ui-card flex flex-col divide-y divide-line">
+          <SettingRow v-slot="{ id }" :label="t('attendance.settings.grace')" :hint="t('attendance.settings.graceHint')">
+            <NumberInput :id="id" v-model="draft.grace_minutes" :min="0" :max="240" :suffix="t('attendance.unit.min')" class="w-full" />
+          </SettingRow>
+          <SettingRow v-slot="{ id }" :label="t('attendance.settings.earlyLeave')" :hint="t('attendance.settings.earlyLeaveHint')">
+            <NumberInput :id="id" v-model="draft.early_leave_grace_minutes" :min="0" :max="240" :suffix="t('attendance.unit.min')" class="w-full" />
+          </SettingRow>
+          <SettingRow v-slot="{ id }" :label="t('attendance.settings.preShift')" :hint="t('attendance.settings.preShiftHint')">
+            <NumberInput :id="id" v-model="draft.pre_shift_reminder_minutes" :min="0" :max="240" :step="5" :suffix="t('attendance.unit.min')" class="w-full" />
+          </SettingRow>
+          <SettingRow v-slot="{ id }" :label="t('attendance.settings.remind')" :hint="t('attendance.settings.remindHint')">
+            <NumberInput :id="id" v-model="draft.remind_after_minutes" :min="0" :max="240" :step="5" :suffix="t('attendance.unit.min')" class="w-full" />
+          </SettingRow>
+          <SettingRow v-slot="{ id }" :label="t('attendance.settings.noShow')" :hint="t('attendance.settings.noShowHint')">
+            <NumberInput :id="id" v-model="draft.no_show_alert_minutes" :min="0" :max="480" :step="5" :suffix="t('attendance.unit.min')" class="w-full" />
+          </SettingRow>
+          <SettingRow v-slot="{ id }" :label="t('attendance.settings.earlyCheckIn')" :hint="t('attendance.settings.earlyCheckInHint')">
+            <NumberInput :id="id" v-model="draft.early_check_in_minutes" :min="0" :max="480" :step="15" :suffix="t('attendance.unit.min')" class="w-full" />
+          </SettingRow>
+          <SettingRow v-slot="{ id }" :label="t('attendance.settings.autoClose')" :hint="t('attendance.settings.autoCloseHint')">
+            <NumberInput :id="id" v-model="draft.auto_close_after_hours" :min="1" :max="24" :suffix="t('attendance.unit.h')" class="w-full" />
+          </SettingRow>
+          <SettingRow v-slot="{ id }" :label="t('attendance.settings.overtime')" :hint="t('attendance.settings.overtimeHint')">
+            <NumberInput :id="id" v-model="draft.overtime_after_minutes" :min="0" :max="240" :step="5" :suffix="t('attendance.unit.min')" class="w-full" />
+          </SettingRow>
         </div>
       </section>
 
