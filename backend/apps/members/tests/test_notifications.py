@@ -1,6 +1,8 @@
 import pytest
 from django.utils import timezone
 
+from apps.inbox.callbacks import InboxAction
+from apps.inbox.models import Notification
 from apps.members.callbacks import JoinAction, JoinDecision
 from apps.members.models import Membership
 from apps.members.notifications import (
@@ -46,21 +48,42 @@ def submitted_request(company, **kwargs):
     )
 
 
-def test_join_request_reaches_approvers_with_details_and_buttons(company, member, sent_messages):
+def test_join_request_reaches_approvers_with_details_and_buttons(
+    company, member, sent_messages, django_capture_on_commit_callbacks
+):
     manager = member(company, "Manager")
     request = submitted_request(company, position=PositionFactory(company=company, name="Cashier"))
 
-    send_join_request(request.pk)
+    with django_capture_on_commit_callbacks(execute=True):
+        send_join_request(request.pk)
 
     [message] = sent_messages
     assert message["chat_id"] == manager.user.telegram_id
     assert "Ali Valiyev" in message["text"]
     assert "Position: Cashier" in message["text"]
     assert "Phone: +998901234567" in message["text"]
+    # An inbox notification: deciding anywhere (bot, Needs you) settles every approver's copy.
     buttons = message["reply_markup"]["inline_keyboard"][0]
+    actions = [InboxAction.unpack(button["callback_data"]) for button in buttons]
+    assert [action.key for action in actions] == ["approve", "reject"]
+    [item] = Notification.objects.filter(kind="members.join")
+    assert (item.target_id, item.in_app) == (request.pk, False)
+
+
+def test_platform_admins_outside_the_company_get_the_classic_request(
+    company, member, sent_messages, settings, django_capture_on_commit_callbacks
+):
+    member(company, "Manager")
+    settings.PLATFORM_ADMIN_TG_IDS = [999]
+    request = submitted_request(company)
+
+    with django_capture_on_commit_callbacks(execute=True):
+        send_join_request(request.pk)
+
+    [classic] = [message for message in sent_messages if message["chat_id"] == 999]
+    buttons = classic["reply_markup"]["inline_keyboard"][0]
     decisions = [JoinDecision.unpack(button["callback_data"]) for button in buttons]
     assert [d.action for d in decisions] == [JoinAction.APPROVE, JoinAction.REJECT]
-    assert {d.membership_id for d in decisions} == {request.pk}
 
 
 def test_request_without_details_is_not_sent_yet(company, member, sent_messages):
@@ -72,11 +95,14 @@ def test_request_without_details_is_not_sent_yet(company, member, sent_messages)
     assert sent_messages == []
 
 
-def test_join_request_text_escapes_html(company, member, sent_messages):
+def test_join_request_text_escapes_html(
+    company, member, sent_messages, django_capture_on_commit_callbacks
+):
     member(company, "Manager")
     request = submitted_request(company, first_name="<b>Eve</b>")
 
-    send_join_request(request.pk)
+    with django_capture_on_commit_callbacks(execute=True):
+        send_join_request(request.pk)
 
     assert "&lt;b&gt;Eve&lt;/b&gt;" in sent_messages[0]["text"]
 

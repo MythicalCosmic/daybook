@@ -133,8 +133,9 @@ def test_decide_approves_by_id(company, member, django_capture_on_commit_callbac
 
     request.refresh_from_db()
     assert request.status == Membership.Status.APPROVED
-    # The requester hears about it, so do the team's groups, and member_approved goes out.
-    assert len(callbacks) == 3
+    # The requester hears about it, so do the team's groups, member_approved goes out and the
+    # dashboard's directory and Needs you refresh.
+    assert len(callbacks) == 4
 
 
 def test_decide_rejects_unknown_requests(company, member):

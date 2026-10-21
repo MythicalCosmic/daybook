@@ -61,3 +61,72 @@ def _outcome(time_off: TimeOff) -> str:
     if time_off.status == TimeOff.Status.APPROVED:
         return _("✅ Approved by %(name)s") % {"name": name}
     return _("❌ Rejected by %(name)s") % {"name": name}
+
+
+# Inbox notifications (plain text: the inbox escapes it) ---------------------------------
+
+
+def request_title(time_off: TimeOff) -> str:
+    return _("🌴 Time off request · %(name)s") % {"name": time_off.membership}
+
+
+def request_body(time_off: TimeOff) -> str:
+    lines = [
+        _("📅 %(dates)s · days: %(count)d") % {"dates": dates(time_off), "count": time_off.days}
+    ]
+    if time_off.reason:
+        lines.append(_("Reason: %(reason)s") % {"reason": time_off.reason})
+    return "\n".join(lines)
+
+
+def decision_title(time_off: TimeOff) -> str:
+    if time_off.status == TimeOff.Status.APPROVED:
+        return _("🌴 Your time off is approved")
+    return _("Your time off request was declined")
+
+
+def decision_body(time_off: TimeOff) -> str:
+    values = {"dates": dates(time_off)}
+    if time_off.status == TimeOff.Status.APPROVED:
+        return (
+            _("%(dates)s. No tasks or reminders from me on those days. Have a good rest!") % values
+        )
+    return _("%(dates)s. Talk to your manager if you need these days.") % values
+
+
+def recorded_title(time_off: TimeOff) -> str:
+    return _("🌴 Time off recorded for you")
+
+
+def recorded_body(time_off: TimeOff) -> str:
+    by = time_off.recorded_by
+    lines = [
+        _("%(dates)s, recorded by %(name)s.")
+        % {"dates": dates(time_off), "name": by if by is not None else "—"}
+    ]
+    if time_off.reason:
+        lines.append(_("Reason: %(reason)s") % {"reason": time_off.reason})
+    return "\n".join(lines)
+
+
+def revoked_title(time_off: TimeOff) -> str:
+    if time_off.status == TimeOff.Status.CANCELLED:
+        return _("Your time off was cancelled")
+    return _("Your time off was shortened")
+
+
+def revoked_body(time_off: TimeOff) -> str:
+    who = time_off.revoked_by.get_full_name() if time_off.revoked_by else "—"
+    if time_off.status == TimeOff.Status.CANCELLED:
+        text = _("%(name)s cancelled your time off %(dates)s.") % {
+            "name": who,
+            "dates": dates(time_off),
+        }
+    else:
+        text = _("%(name)s changed your time off: it now ends on %(date)s.") % {
+            "name": who,
+            "date": f"{time_off.last_day:%d.%m}",
+        }
+    if time_off.revoke_reason:
+        text += "\n" + _("Reason: %(reason)s") % {"reason": time_off.revoke_reason}
+    return text

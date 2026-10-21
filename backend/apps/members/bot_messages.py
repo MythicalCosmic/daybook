@@ -17,7 +17,7 @@ from django.utils.translation import gettext as _
 from django.utils.translation import gettext_noop
 
 from apps.members import bot_menu
-from apps.members.callbacks import JoinAction, JoinDecision
+from apps.members.callbacks import JoinAction, JoinDecision, JoinSetup, JoinStep
 from apps.members.models import Membership
 
 type BotMessage = tuple[
@@ -252,3 +252,216 @@ def _outcome(membership: Membership) -> str:
     if membership.status == Membership.Status.BLOCKED:
         return _("⛔ Blocked by %(name)s") % by
     return str(membership.get_status_display())
+
+
+# Join requests through the inbox, and approving one with branches in the bot ----------
+
+
+def join_request_title(membership: Membership) -> str:
+    """The inbox copy's title (plain text: the inbox escapes it)."""
+    return _("📝 Join request · %(name)s") % {"name": _requester_name(membership)}
+
+
+def join_request_body(membership: Membership) -> str:
+    user = membership.user
+    lines = [_("Company: %(company)s") % {"company": membership.company.name}]
+    if membership.position:
+        lines.append(_("Position: %(position)s") % {"position": membership.position.name})
+    if user.phone:
+        lines.append(_("Phone: %(phone)s") % {"phone": user.phone})
+    if user.telegram_username:
+        lines.append(_("Username: @%(username)s") % {"username": user.telegram_username})
+    return "\n".join(lines)
+
+
+def join_setup(
+    membership: Membership,
+    *,
+    branches: list,
+    chosen: list[int],
+    role,
+    nid: int,
+) -> BotMessage:
+    """Step 1 of approving in a company with several branches: pick the branches (and the role,
+    optionally), then Approve."""
+    name = html.quote(membership.first_name or _requester_name(membership))
+    lines = [
+        _join_header(membership),
+        "",
+        _("<b>Where will %(name)s work?</b> Tap the branches, then approve.") % {"name": name},
+    ]
+    packed = _pack(chosen, branches)
+    role_id = role.pk if role is not None and not role.is_default else 0
+    rows = []
+    row: list[InlineKeyboardButton] = []
+    for branch in branches:
+        mark = "✅" if branch.pk in chosen else "▫️"
+        row.append(
+            _setup_button(
+                f"{mark} {branch.name}",
+                JoinStep.BRANCH,
+                membership,
+                nid=nid,
+                branches=packed,
+                role=role_id,
+                pick=branch.pk,
+            )
+        )
+        if len(row) == 2:
+            rows.append(row)
+            row = []
+    if row:
+        rows.append(row)
+    role_name = role.name if role is not None else "—"
+    rows.append(
+        [
+            _setup_button(
+                _("👤 Role: %(role)s") % {"role": role_name},
+                JoinStep.ROLES,
+                membership,
+                nid=nid,
+                branches=packed,
+                role=role_id,
+            )
+        ]
+    )
+    rows.append(
+        [
+            _setup_button(
+                _("✅ Approve"),
+                JoinStep.APPROVE,
+                membership,
+                nid=nid,
+                branches=packed,
+                role=role_id,
+            ),
+            _setup_button(_("‹ Back"), JoinStep.BACK, membership, nid=nid),
+        ]
+    )
+    return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def join_home(
+    membership: Membership, *, branches: list, chosen: list[int], role_id: int, nid: int
+) -> BotMessage:
+    """Step 2 when they work in several branches: which one is home (new tasks belong to it)."""
+    name = html.quote(membership.first_name or _requester_name(membership))
+    lines = [
+        _join_header(membership),
+        "",
+        _("<b>Which is %(name)s's home branch?</b> New tasks will belong to it.") % {"name": name},
+    ]
+    packed = _pack(chosen, branches)
+    rows = [
+        [
+            _setup_button(
+                f"🏠 {branch.name}",
+                JoinStep.HOME,
+                membership,
+                nid=nid,
+                branches=packed,
+                role=role_id,
+                pick=branch.pk,
+            )
+        ]
+        for branch in branches
+        if branch.pk in chosen
+    ]
+    rows.append(
+        [
+            _setup_button(
+                _("‹ Back"),
+                JoinStep.ROLE,
+                membership,
+                nid=nid,
+                branches=packed,
+                role=role_id,
+                pick=role_id,
+            )
+        ]
+    )
+    return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def join_roles(
+    membership: Membership,
+    *,
+    roles: list,
+    current_id: int,
+    branches: list,
+    chosen: list[int],
+    nid: int,
+) -> BotMessage:
+    """The roles the approver may give; the default one first."""
+    lines = [_join_header(membership), "", _("<b>Which role?</b> It decides what they may do.")]
+    packed = _pack(chosen, branches)
+    rows = []
+    for role in roles:
+        value = 0 if role.is_default else role.pk
+        selected = value == current_id
+        label = role.name + (" · " + _("default") if role.is_default else "")
+        rows.append(
+            [
+                _setup_button(
+                    f"{'✅ ' if selected else ''}{label}",
+                    JoinStep.ROLE,
+                    membership,
+                    nid=nid,
+                    branches=packed,
+                    role=current_id,
+                    pick=value,
+                )
+            ]
+        )
+    return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def unpack_branches(text: str, branches: list) -> list[int]:
+    """The ids of the branches a button's choice names (see `_pack`), in branch order."""
+    try:
+        mask = int(text or "0", 36)
+    except ValueError:
+        return []
+    return [branch.pk for index, branch in enumerate(branches) if mask >> index & 1]
+
+
+def _pack(chosen: list[int], branches: list) -> str:
+    """The chosen branches as a base-36 bitmask over the approver's branches in order: Telegram
+    allows 64 bytes of callback data, which a list of ids outgrows once ids are long."""
+    mask = sum(1 << index for index, branch in enumerate(branches) if branch.pk in chosen)
+    digits = "0123456789abcdefghijklmnopqrstuvwxyz"
+    packed = ""
+    while mask:
+        mask, rest = divmod(mask, 36)
+        packed = digits[rest] + packed
+    return packed
+
+
+def _join_header(membership: Membership) -> str:
+    user = membership.user
+    lines = [
+        _("📝 <b>Join request</b> · %(company)s")
+        % {"company": html.quote(membership.company.name)},
+        _("Name: %(name)s") % {"name": html.quote(_requester_name(membership))},
+    ]
+    if membership.position:
+        lines.append(
+            _("Position: %(position)s") % {"position": html.quote(membership.position.name)}
+        )
+    if user.phone:
+        lines.append(_("Phone: %(phone)s") % {"phone": html.quote(user.phone)})
+    return "\n".join(lines)
+
+
+def _requester_name(membership: Membership) -> str:
+    user = membership.user
+    return membership.full_name or user.get_full_name() or str(user)
+
+
+def _setup_button(
+    text: str, step: JoinStep, membership: Membership, **fields
+) -> InlineKeyboardButton:
+    return InlineKeyboardButton(
+        text=text,
+        callback_data=JoinSetup(step=step, membership_id=membership.pk, **fields).pack(),
+    )
