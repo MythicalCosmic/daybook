@@ -269,6 +269,33 @@ class TestEntries:
         row.refresh_from_db()
         assert (row.rate, row.base_amount) == (D("13000"), D("-130000.00"))
 
+    def test_moving_an_entry_to_another_currency_needs_its_amount(
+        self, books, owner, cash, dollars, day, usd
+    ):
+        services.record_transaction(
+            books, by=owner, kind="opening", amount=D("100"), occurred_on=day, account=dollars
+        )
+        services.record_transaction(
+            books, by=owner, kind="opening", amount=D("5000000"), occurred_on=day, account=cash
+        )
+        row = services.record_transaction(
+            books,
+            by=owner,
+            kind="expense",
+            amount=D("10"),
+            occurred_on=day,
+            account=dollars,
+            category="rent",
+        )
+        with pytest.raises(DomainError, match="UZS"):
+            services.update_transaction(row, by=owner, account=cash)
+        services.update_transaction(row, by=owner, account=cash, amount=D("128000"))
+        row.refresh_from_db()
+        assert (row.currency, row.amount, row.base_amount) == ("UZS", D("-128000"), D("-128000"))
+        dollars.refresh_from_db()
+        cash.refresh_from_db()
+        assert (dollars.balance, cash.balance) == (D("100.00"), D("4872000.00"))
+
     def test_a_void_entry_cant_be_changed(self, books, owner, cash, day):
         services.record_transaction(
             books, by=owner, kind="opening", amount=D("100"), occurred_on=day, account=cash

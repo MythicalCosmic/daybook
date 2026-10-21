@@ -183,132 +183,134 @@ const firstRun = computed(() => !!data.value && !data.value.has_ledger);
         </EmptyState>
       </div>
 
-      <div v-if="alerts.length" class="grid grid-cols-1 gap-2 lg:grid-cols-2">
-        <InlineAlert v-for="alert in alerts" :key="alert.id" :tone="alert.tone" size="sm" :title="alert.title" :description="alert.body">
-          <template v-if="alert.to" #actions>
-            <UiButton :to="alert.to" size="sm" variant="ghost" :icon-right="ArrowRight">{{ alert.action ?? t("finance.overview.open") }}</UiButton>
-          </template>
-        </InlineAlert>
-      </div>
+      <template v-if="!firstRun">
+        <div v-if="alerts.length" class="grid grid-cols-1 gap-2 lg:grid-cols-2">
+          <InlineAlert v-for="alert in alerts" :key="alert.id" :tone="alert.tone" size="sm" :title="alert.title" :description="alert.body">
+            <template v-if="alert.to" #actions>
+              <UiButton :to="alert.to" size="sm" variant="ghost" :icon-right="ArrowRight">{{ alert.action ?? t("finance.overview.open") }}</UiButton>
+            </template>
+          </InlineAlert>
+        </div>
 
-      <KpiStrip :items="kpis" :loading="overview.isPending.value" :columns="4" />
+        <KpiStrip :items="kpis" :loading="overview.isPending.value" :columns="4" />
 
-      <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <ChartCard
-          class="xl:col-span-2"
-          :title="t('finance.overview.cashFlow')"
-          :subtitle="flow.data.value ? t('finance.overview.cashFlowNet', { net: fmt.money(flow.data.value.totals.net, undefined, { sign: 'always', compact: true }) }) : undefined"
-          :loading="flow.isPending.value"
-          :error="flow.error.value"
-          :retry="() => flow.refetch()"
-          :empty="flowEmpty"
-          :empty-text="t('finance.overview.cashFlowEmpty')"
-          :csv="flowCsv as never"
-          height="260px"
-        >
-          <template #actions>
-            <SegmentedControl
-              v-model="span"
-              size="sm"
-              :options="[
-                { value: '30', label: t('finance.overview.days', { n: 30 }) },
-                { value: '90', label: t('finance.overview.days', { n: 90 }) },
-                { value: '365', label: t('finance.overview.year') },
-              ]"
-            />
-          </template>
-          <BarChart :categories="categories" :series="flowSeries" value-format="money" :x-format="span === '365' ? 'month' : 'day'" height="260px" legend />
-        </ChartCard>
+        <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
+          <ChartCard
+            class="xl:col-span-2"
+            :title="t('finance.overview.cashFlow')"
+            :subtitle="flow.data.value ? t('finance.overview.cashFlowNet', { net: fmt.money(flow.data.value.totals.net, undefined, { sign: 'always', compact: true }) }) : undefined"
+            :loading="flow.isPending.value"
+            :error="flow.error.value"
+            :retry="() => flow.refetch()"
+            :empty="flowEmpty"
+            :empty-text="t('finance.overview.cashFlowEmpty')"
+            :csv="flowCsv as never"
+            height="260px"
+          >
+            <template #actions>
+              <SegmentedControl
+                v-model="span"
+                size="sm"
+                :options="[
+                  { value: '30', label: t('finance.overview.days', { n: 30 }) },
+                  { value: '90', label: t('finance.overview.days', { n: 90 }) },
+                  { value: '365', label: t('finance.overview.year') },
+                ]"
+              />
+            </template>
+            <BarChart :categories="categories" :series="flowSeries" value-format="money" :x-format="span === '365' ? 'month' : 'day'" height="260px" legend />
+          </ChartCard>
 
-        <section class="ui-card flex flex-col p-4" :aria-label="t('finance.overview.owed')">
-          <header class="mb-3 flex items-center gap-2">
-            <HandCoins :size="16" class="text-subtle" />
-            <h3 class="flex-1 text-sm font-semibold text-fg">{{ t("finance.overview.owed") }}</h3>
-            <RouterLink :to="`${base}/debts`" class="inline-flex items-center gap-1 rounded-[6px] px-1.5 py-0.5 text-sm font-semibold text-muted hover:bg-highlight hover:text-fg">
-              {{ t("common.viewAll") }}<ArrowRight :size="14" />
-            </RouterLink>
-          </header>
-          <template v-if="skeleton">
-            <SkeletonBlock v-for="n in 2" :key="n" height="64px" class="mb-3" />
-          </template>
-          <template v-else-if="data">
-            <RouterLink
-              v-for="side in (['receivable', 'payable'] as const)"
-              :key="side"
-              :to="{ path: `${base}/debts`, query: { direction: side } }"
-              class="group mb-2 rounded-[10px] border border-line p-3 transition-colors hover:border-line-strong hover:bg-surface-2/50"
-            >
-              <div class="flex items-baseline justify-between gap-2">
-                <span class="text-sm font-medium text-muted">{{ t(`finance.debts.side.${side}`) }}</span>
-                <span class="text-xs text-subtle">{{ t("finance.overview.debtCount", { n: data[side].count }, data[side].count) }}</span>
-              </div>
-              <p class="mt-0.5 text-xl font-semibold tabular-nums text-fg"><MoneyText :value="data[side].total" compact /></p>
-              <ProgressBar class="mt-2" size="sm" :value="share(data[side].overdue, data[side].total)" :max="100" :tone="side === 'payable' ? 'danger' : 'warning'" />
-              <p class="mt-1.5 text-xs" :class="isZeroMoney(data[side].overdue) ? 'text-subtle' : side === 'payable' ? 'text-danger' : 'text-warning'">
-                <template v-if="isZeroMoney(data[side].overdue)">{{ t("finance.overview.nothingOverdue") }}</template>
-                <template v-else>{{ t("finance.overview.overdue", { amount: fmt.money(data[side].overdue, undefined, { compact: true }) }) }}</template>
-              </p>
-            </RouterLink>
-          </template>
-        </section>
-      </div>
-
-      <div class="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
-        <ChartCard :title="t('finance.overview.topExpenses')" :subtitle="t('finance.overview.thisMonth')" :loading="overview.isPending.value" :empty="!slices.length" :empty-text="t('finance.overview.noExpenses')" height="220px">
-          <DonutChart :slices="slices" :value-format="(value: number) => fmt.money(value, undefined, { compact: true })" :center-label="t('finance.overview.expenses')" :center-value="slicesTotal" height="180px" legend="bottom" :max-slices="5" />
-        </ChartCard>
-
-        <section class="ui-card flex flex-col p-4" :aria-label="t('finance.overview.dueSoon')">
-          <header class="mb-2 flex items-center gap-2">
-            <AlarmClock :size="16" class="text-subtle" />
-            <h3 class="flex-1 text-sm font-semibold text-fg">{{ t("finance.overview.dueSoon") }}</h3>
-            <UiBadge v-if="data?.due_soon.length" :count="data.due_soon.length" tone="primary" />
-          </header>
-          <div v-if="skeleton" class="flex flex-col gap-2"><SkeletonBlock v-for="n in 4" :key="n" height="40px" /></div>
-          <EmptyState v-else-if="data && !data.due_soon.length" size="sm" tone="success" :title="t('finance.overview.nothingDue')" :description="t('finance.overview.nothingDueBody')" />
-          <ul v-else-if="data" class="-mx-2 flex flex-col">
-            <li v-for="debt in data.due_soon" :key="debt.id">
-              <RouterLink :to="{ path: `${base}/debts`, query: { direction: debt.direction, debt: String(debt.id) } }" class="flex items-center gap-3 rounded-[10px] px-2 py-2 hover:bg-highlight">
-                <span :class="['grid size-8 shrink-0 place-items-center rounded-[9px] text-xs font-bold', debt.direction === 'receivable' ? 'bg-success-soft text-success' : 'bg-danger-soft text-danger']" aria-hidden="true">
-                  {{ debt.direction === "receivable" ? "+" : "−" }}
-                </span>
-                <div class="min-w-0 flex-1">
-                  <p class="truncate text-sm font-semibold text-fg">{{ debt.party?.name ?? t("finance.debts.hidden") }}</p>
-                  <p class="truncate text-xs text-muted">{{ debt.due_on ? fmt.day(debt.due_on, "weekdayShort") : "" }} · {{ t(`finance.debtKind.${debt.kind}`) }}</p>
+          <section class="ui-card flex flex-col p-4" :aria-label="t('finance.overview.owed')">
+            <header class="mb-3 flex items-center gap-2">
+              <HandCoins :size="16" class="text-subtle" />
+              <h3 class="flex-1 text-sm font-semibold text-fg">{{ t("finance.overview.owed") }}</h3>
+              <RouterLink :to="`${base}/debts`" class="inline-flex items-center gap-1 rounded-[6px] px-1.5 py-0.5 text-sm font-semibold text-muted hover:bg-highlight hover:text-fg">
+                {{ t("common.viewAll") }}<ArrowRight :size="14" />
+              </RouterLink>
+            </header>
+            <template v-if="skeleton">
+              <SkeletonBlock v-for="n in 2" :key="n" height="64px" class="mb-3" />
+            </template>
+            <template v-else-if="data">
+              <RouterLink
+                v-for="side in (['receivable', 'payable'] as const)"
+                :key="side"
+                :to="{ path: `${base}/debts`, query: { direction: side } }"
+                class="group mb-2 rounded-[10px] border border-line p-3 transition-colors hover:border-line-strong hover:bg-surface-2/50"
+              >
+                <div class="flex items-baseline justify-between gap-2">
+                  <span class="text-sm font-medium text-muted">{{ t(`finance.debts.side.${side}`) }}</span>
+                  <span class="text-xs text-subtle">{{ t("finance.overview.debtCount", { n: data[side].count }, data[side].count) }}</span>
                 </div>
-                <span class="shrink-0 text-sm font-semibold tabular-nums text-fg"><MoneyText :value="debt.outstanding" :currency="debt.currency" compact /></span>
+                <p class="mt-0.5 text-xl font-semibold tabular-nums text-fg"><MoneyText :value="data[side].total" compact /></p>
+                <ProgressBar class="mt-2" size="sm" :value="share(data[side].overdue, data[side].total)" :max="100" :tone="side === 'payable' ? 'danger' : 'warning'" />
+                <p class="mt-1.5 text-xs" :class="isZeroMoney(data[side].overdue) ? 'text-subtle' : side === 'payable' ? 'text-danger' : 'text-warning'">
+                  <template v-if="isZeroMoney(data[side].overdue)">{{ t("finance.overview.nothingOverdue") }}</template>
+                  <template v-else>{{ t("finance.overview.overdue", { amount: fmt.money(data[side].overdue, undefined, { compact: true }) }) }}</template>
+                </p>
               </RouterLink>
-            </li>
-          </ul>
-        </section>
+            </template>
+          </section>
+        </div>
 
-        <section class="ui-card flex flex-col p-4 lg:col-span-2 xl:col-span-1" :aria-label="t('finance.nav.accounts')">
-          <header class="mb-2 flex items-center gap-2">
-            <Wallet :size="16" class="text-subtle" />
-            <h3 class="flex-1 text-sm font-semibold text-fg">{{ t("finance.nav.accounts") }}</h3>
-            <RouterLink :to="`${base}/accounts`" class="inline-flex items-center gap-1 rounded-[6px] px-1.5 py-0.5 text-sm font-semibold text-muted hover:bg-highlight hover:text-fg">
-              {{ t("common.viewAll") }}<ArrowRight :size="14" />
-            </RouterLink>
-          </header>
-          <div v-if="skeleton" class="flex flex-col gap-2"><SkeletonBlock v-for="n in 5" :key="n" height="32px" /></div>
-          <ul v-else-if="data" class="-mx-2 flex flex-col">
-            <li v-for="account in pickerOrder(data.cash.accounts).slice(0, 7)" :key="account.id">
-              <RouterLink :to="`${base}/accounts/${account.id}`" class="flex items-center gap-3 rounded-[10px] px-2 py-1.5 hover:bg-highlight">
-                <component :is="ACCOUNT_ICONS[account.kind]" :size="16" class="shrink-0 text-subtle" aria-hidden="true" />
-                <span class="min-w-0 flex-1 truncate text-sm text-fg">{{ account.name }}</span>
-                <span :class="['shrink-0 text-sm font-semibold tabular-nums', isNegative(account.balance) ? 'text-danger' : 'text-fg']">
-                  <MoneyText :value="account.balance" :currency="account.currency" :compact="account.currency === company.currency" />
-                </span>
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
+          <ChartCard :title="t('finance.overview.topExpenses')" :subtitle="t('finance.overview.thisMonth')" :loading="overview.isPending.value" :empty="!slices.length" :empty-text="t('finance.overview.noExpenses')" height="220px">
+            <DonutChart :slices="slices" :value-format="(value: number) => fmt.money(value, undefined, { compact: true })" :center-label="t('finance.overview.expenses')" :center-value="slicesTotal" height="180px" legend="bottom" :max-slices="5" />
+          </ChartCard>
+
+          <section class="ui-card flex flex-col p-4" :aria-label="t('finance.overview.dueSoon')">
+            <header class="mb-2 flex items-center gap-2">
+              <AlarmClock :size="16" class="text-subtle" />
+              <h3 class="flex-1 text-sm font-semibold text-fg">{{ t("finance.overview.dueSoon") }}</h3>
+              <UiBadge v-if="data?.due_soon.length" :count="data.due_soon.length" tone="primary" />
+            </header>
+            <div v-if="skeleton" class="flex flex-col gap-2"><SkeletonBlock v-for="n in 4" :key="n" height="40px" /></div>
+            <EmptyState v-else-if="data && !data.due_soon.length" size="sm" tone="success" :title="t('finance.overview.nothingDue')" :description="t('finance.overview.nothingDueBody')" />
+            <ul v-else-if="data" class="-mx-2 flex flex-col">
+              <li v-for="debt in data.due_soon" :key="debt.id">
+                <RouterLink :to="{ path: `${base}/debts`, query: { direction: debt.direction, debt: String(debt.id) } }" class="flex items-center gap-3 rounded-[10px] px-2 py-2 hover:bg-highlight">
+                  <span :class="['grid size-8 shrink-0 place-items-center rounded-[9px] text-xs font-bold', debt.direction === 'receivable' ? 'bg-success-soft text-success' : 'bg-danger-soft text-danger']" aria-hidden="true">
+                    {{ debt.direction === "receivable" ? "+" : "−" }}
+                  </span>
+                  <div class="min-w-0 flex-1">
+                    <p class="truncate text-sm font-semibold text-fg">{{ debt.party?.name ?? t("finance.debts.hidden") }}</p>
+                    <p class="truncate text-xs text-muted">{{ debt.due_on ? fmt.day(debt.due_on, "weekdayShort") : "" }} · {{ t(`finance.debtKind.${debt.kind}`) }}</p>
+                  </div>
+                  <span class="shrink-0 text-sm font-semibold tabular-nums text-fg"><MoneyText :value="debt.outstanding" :currency="debt.currency" compact /></span>
+                </RouterLink>
+              </li>
+            </ul>
+          </section>
+
+          <section class="ui-card flex flex-col p-4 lg:col-span-2 xl:col-span-1" :aria-label="t('finance.nav.accounts')">
+            <header class="mb-2 flex items-center gap-2">
+              <Wallet :size="16" class="text-subtle" />
+              <h3 class="flex-1 text-sm font-semibold text-fg">{{ t("finance.nav.accounts") }}</h3>
+              <RouterLink :to="`${base}/accounts`" class="inline-flex items-center gap-1 rounded-[6px] px-1.5 py-0.5 text-sm font-semibold text-muted hover:bg-highlight hover:text-fg">
+                {{ t("common.viewAll") }}<ArrowRight :size="14" />
               </RouterLink>
-            </li>
-          </ul>
-          <p v-if="data && data.cash.rate.rate" class="mt-auto flex items-center gap-1.5 border-t border-line pt-2.5 text-xs text-muted">
-            <CircleAlert v-if="data.cash.rate.stale" :size="13" class="text-warning" />
-            {{ t("finance.overview.rateLine", { rate: fmt.number(data.cash.rate.rate, 2) }) }}
-            <span v-if="data.cash.rate.stale" class="text-warning">· {{ t("finance.rates.staleShort") }}</span>
-          </p>
-        </section>
-      </div>
+            </header>
+            <div v-if="skeleton" class="flex flex-col gap-2"><SkeletonBlock v-for="n in 5" :key="n" height="32px" /></div>
+            <ul v-else-if="data" class="-mx-2 flex flex-col">
+              <li v-for="account in pickerOrder(data.cash.accounts).slice(0, 7)" :key="account.id">
+                <RouterLink :to="`${base}/accounts/${account.id}`" class="flex items-center gap-3 rounded-[10px] px-2 py-1.5 hover:bg-highlight">
+                  <component :is="ACCOUNT_ICONS[account.kind]" :size="16" class="shrink-0 text-subtle" aria-hidden="true" />
+                  <span class="min-w-0 flex-1 truncate text-sm text-fg">{{ account.name }}</span>
+                  <span :class="['shrink-0 text-sm font-semibold tabular-nums', isNegative(account.balance) ? 'text-danger' : 'text-fg']">
+                    <MoneyText :value="account.balance" :currency="account.currency" :compact="account.currency === company.currency" />
+                  </span>
+                </RouterLink>
+              </li>
+            </ul>
+            <p v-if="data && data.cash.rate.rate" class="mt-auto flex items-center gap-1.5 border-t border-line pt-2.5 text-xs text-muted">
+              <CircleAlert v-if="data.cash.rate.stale" :size="13" class="text-warning" />
+              {{ t("finance.overview.rateLine", { rate: fmt.number(data.cash.rate.rate, 2) }) }}
+              <span v-if="data.cash.rate.stale" class="text-warning">· {{ t("finance.rates.staleShort") }}</span>
+            </p>
+          </section>
+        </div>
+      </template>
     </div>
   </div>
 </template>

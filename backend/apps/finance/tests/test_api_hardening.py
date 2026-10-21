@@ -667,3 +667,47 @@ class TestQueryCounts:
         self.fill(fin, boss, kassa, today, 9)
         many = self.count(client, target)
         assert many == few, (path, few, many)
+
+
+def test_money_is_booked_on_a_day_that_has_come(client, fin, kassa, today):
+    tomorrow = (today + timedelta(days=1)).isoformat()
+    rent = Category.objects.get(company=fin, system_code="rent").pk
+    response = client.post(
+        url(fin, "transactions/"),
+        {
+            "kind": "expense",
+            "amount": "10",
+            "occurred_on": tomorrow,
+            "account": kassa.pk,
+            "category": rent,
+        },
+        format="json",
+    )
+    assert response.status_code == 400
+    assert "occurred_on" in response.json()
+    safe = MoneyAccountFactory(company=fin, name="Safe")
+    response = client.post(
+        url(fin, "transfers/"),
+        {
+            "from_account": kassa.pk,
+            "to_account": safe.pk,
+            "amount_out": "5",
+            "occurred_on": tomorrow,
+        },
+        format="json",
+    )
+    assert response.status_code == 400
+    response = client.post(
+        url(fin, "debts/"),
+        {
+            "direction": "receivable",
+            "kind": "trade",
+            "mode": "opening",
+            "amount": "100",
+            "currency": "UZS",
+            "issued_on": tomorrow,
+            "counterparty": CounterpartyFactory(company=fin).pk,
+        },
+        format="json",
+    )
+    assert response.status_code == 400

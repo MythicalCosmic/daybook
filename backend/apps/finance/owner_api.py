@@ -177,6 +177,13 @@ class FinanceMixin:
             raise exceptions.ValidationError({"project": [_("Pick a project.")]})
         return found
 
+    def not_future(self, day, field: str):
+        """Money is booked on the day it moved: a later day would put it in today's balances
+        while the reports for today leave it out."""
+        if day is not None and day > self.today:
+            raise exceptions.ValidationError({field: [_("Pick today or an earlier day.")]})
+        return day
+
     def wanted_branches(self) -> list[int] | None:
         """The caller's scope narrowed to `?branch=` (§4: intersected with the scope)."""
         return access.branch_filter(
@@ -436,6 +443,7 @@ class AccountViewSet(FinanceMixin, OwnerViewSet):
         holder = self.member(data.get("holder"), "holder")
         branch = self.write_branch(data.get("branch"))
         operators = [self.member(pk, "operators") for pk in data.get("operators", [])]
+        self.not_future(data.get("opening_on"), "opening_on")
         opening = data.get("opening_balance")
         if opening is not None and opening < 0:
             # A card or account that starts in the red can only hold that balance with an
@@ -953,6 +961,7 @@ class TransactionViewSet(FinanceMixin, OwnerViewSet):
         serializer = out.TransactionCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+        self.not_future(data["occurred_on"], "occurred_on")
         kind = data["kind"]
         if kind in (Transaction.Kind.OWNER, Transaction.Kind.OPENING) and not access.can_manage(
             self.membership
@@ -1007,6 +1016,7 @@ class TransactionViewSet(FinanceMixin, OwnerViewSet):
         serializer = out.TransactionUpdateSerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         data = dict(serializer.validated_data)
+        self.not_future(data.get("occurred_on"), "occurred_on")
         changes = {}
         for key, value in data.items():
             match key:
@@ -1222,6 +1232,7 @@ class TransferViewSet(FinanceMixin, mixins.ListModelMixin, OwnerViewSet):
         serializer = out.TransferCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+        self.not_future(data["occurred_on"], "occurred_on")
         source = self.account(data["from_account"], access.recordable_accounts(self.membership))
         target = self.account(data["to_account"], access.transfer_targets(self.membership))
         moved = domain(
@@ -1439,6 +1450,7 @@ class DebtViewSet(FinanceMixin, OwnerViewSet):
         serializer = out.DebtCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+        self.not_future(data["issued_on"], "issued_on")
         mode = data["mode"]
         account = (
             self.account(data.get("account"), access.recordable_accounts(self.membership))
@@ -1495,6 +1507,7 @@ class DebtViewSet(FinanceMixin, OwnerViewSet):
         serializer = out.PaymentSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+        self.not_future(data["paid_on"], "paid_on")
         account = self.account(data["account"], access.recordable_accounts(self.membership))
         row = domain(
             lambda: services.pay_debt(

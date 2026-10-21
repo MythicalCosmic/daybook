@@ -9,6 +9,7 @@ import ChartCard from "@/components/ChartCard.vue";
 import ComboBox from "@/components/ComboBox.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
+import ExportButton from "@/components/ExportButton.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
 import SegmentedControl from "@/components/SegmentedControl.vue";
 import { rs, useRouteState } from "@/lib/useRouteState";
@@ -64,6 +65,8 @@ const series = computed(() => [{ name: data.value?.category.name ?? "", data: (d
           { value: '24', label: t('finance.reports.months', { n: 24 }) },
         ]"
       />
+      <span class="flex-1" />
+      <ExportButton v-if="category" kind="finance.category_trend" :params="params" size="sm" />
     </div>
     <div v-if="!category" class="ui-card">
       <EmptyState :icon="Tags" :title="t('finance.reports.pickCategory')" :description="t('finance.reports.trendHint')" />

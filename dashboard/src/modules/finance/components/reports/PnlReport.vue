@@ -1,12 +1,13 @@
 <script setup lang="ts">
 /** Profit and loss: the period's headline numbers, income against expenses per period, the tree table. */
-import { ChevronsDownUp, ChevronsUpDown } from "@lucide/vue";
+import { ChartColumn, ChevronsDownUp, ChevronsUpDown, Plus } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import BarChart from "@/components/BarChart.vue";
 import ChartCard from "@/components/ChartCard.vue";
 import DateRangePicker from "@/components/DateRangePicker.vue";
+import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import ExportButton from "@/components/ExportButton.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
@@ -16,10 +17,12 @@ import UiButton from "@/components/UiButton.vue";
 import { useRangeState } from "@/lib/useRangeState";
 import { rs, useRouteState } from "@/lib/useRouteState";
 import { useFormat } from "@/lib/useFormat";
+import { useCompanyStore } from "@/stores/company";
 
 import { periodParams, usePnl } from "../../api";
 import { useCssColor } from "../../colors";
 import { dropEmptyCompare, trimLeadingPeriods } from "../../lib";
+import { openQuickAdd } from "../../quickAdd";
 import PnlTable from "./PnlTable.vue";
 
 const props = defineProps<{ branch: number[] }>();
@@ -33,6 +36,8 @@ const params = computed(() => ({ ...periodParams(period.value), group: group.val
 const query = usePnl(params);
 const data = computed(() => (query.data.value ? dropEmptyCompare(trimLeadingPeriods(query.data.value)) : undefined));
 const table = ref<InstanceType<typeof PnlTable> | null>(null);
+const company = useCompanyStore();
+const empty = computed(() => !!data.value && !data.value.income.nodes.length && !data.value.expense.nodes.length);
 const expanded = ref(false);
 
 const kpis = computed(() => {
@@ -80,16 +85,21 @@ function toggleAll(): void {
         ]"
       />
       <span class="flex-1" />
-      <UiButton variant="ghost" size="sm" :icon="expanded ? ChevronsDownUp : ChevronsUpDown" @click="toggleAll">{{ expanded ? t("finance.reports.collapse") : t("finance.reports.expand") }}</UiButton>
+      <UiButton v-if="!empty" variant="ghost" size="sm" :icon="expanded ? ChevronsDownUp : ChevronsUpDown" @click="toggleAll">{{ expanded ? t("finance.reports.collapse") : t("finance.reports.expand") }}</UiButton>
       <ExportButton kind="finance.pnl" :params="params" size="sm" />
     </div>
     <ErrorState v-if="query.isError.value" :error="query.error.value" :retry="() => query.refetch()" />
     <template v-else>
       <KpiStrip :items="kpis" :loading="query.isPending.value" :columns="4" />
-      <ChartCard v-if="(data?.periods.length ?? 0) > 1" :title="t('finance.reports.pnlChart')" :loading="query.isPending.value" height="220px">
+      <ChartCard v-if="(data?.periods.length ?? 0) > 1 && !empty" :title="t('finance.reports.pnlChart')" :loading="query.isPending.value" height="220px">
         <BarChart :categories="labels" :series="series" value-format="money" height="220px" legend />
       </ChartCard>
       <SkeletonBlock v-if="query.isPending.value" height="420px" radius="12px" />
+      <div v-else-if="empty" class="ui-card">
+        <EmptyState :icon="ChartColumn" :title="t('finance.reports.pnlEmptyTitle')" :description="t('finance.reports.pnlEmpty')">
+          <UiButton v-if="company.can('finance.record')" variant="primary" :icon="Plus" @click="openQuickAdd('expense')">{{ t("finance.cmd.record") }}</UiButton>
+        </EmptyState>
+      </div>
       <PnlTable v-else-if="data" ref="table" :data="data" />
     </template>
   </div>

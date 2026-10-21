@@ -1888,6 +1888,12 @@ def update_transaction(txn: Transaction, *, by: Membership, **changes) -> Transa
         if account is None:
             raise DomainError(_("Pick the account the money went to or came from."))
         _check_active(account)
+        if account.currency != row.currency and "amount" not in changes:
+            # 100 dollars moved to a so‘m account would silently become 100 so‘m.
+            raise DomainError(
+                _("%(account)s holds %(currency)s: enter the amount in %(currency)s too.")
+                % {"account": account, "currency": account.currency}
+            )
         if "amount" in changes:
             value = _money(changes["amount"])
             if row.kind in SIGNED_KINDS:

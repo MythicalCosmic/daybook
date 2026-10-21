@@ -38,7 +38,7 @@ function pick(value: unknown): void {
       :key="kind"
       :value="kind"
       :data-testid="`account-kind-${kind}`"
-      class="pressable group flex min-h-[68px] flex-col items-start gap-2 rounded-[10px] border border-line bg-surface p-2.5 text-left outline-offset-2 hover:border-line-strong data-[state=checked]:border-primary data-[state=checked]:bg-accent-soft/40 data-[state=checked]:shadow-[0_0_0_1px_var(--c-primary)]"
+      class="pressable group flex min-h-[52px] items-center gap-2.5 rounded-[10px] border border-line bg-surface p-2.5 text-left outline-offset-2 hover:border-line-strong sm:min-h-[68px] sm:flex-col sm:items-start sm:gap-2 data-[state=checked]:border-primary data-[state=checked]:bg-accent-soft/40 data-[state=checked]:shadow-[0_0_0_1px_var(--c-primary)]"
     >
       <span class="grid size-7 shrink-0 place-items-center rounded-[8px] bg-surface-2 text-muted transition-colors group-data-[state=checked]:bg-primary group-data-[state=checked]:text-on-primary dark:bg-surface-3">
         <component :is="ACCOUNT_ICONS[kind]" :size="15" aria-hidden="true" />

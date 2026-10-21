@@ -142,6 +142,22 @@ register_exporter(
     feature=FINANCE,
 )
 register_exporter(
+    "finance.balances",
+    perm=Perm.FINANCE_VIEW,
+    label=_("Balances on a day"),
+    columns=exporters.BALANCE_COLUMNS,
+    rows=exporters.balance_rows,
+    feature=FINANCE,
+)
+register_exporter(
+    "finance.category_trend",
+    perm=Perm.FINANCE_VIEW,
+    label=_("Category trend"),
+    columns=exporters.CATEGORY_TREND_COLUMNS,
+    rows=exporters.category_trend_rows,
+    feature=FINANCE,
+)
+register_exporter(
     "finance.debts",
     perm=Perm.FINANCE_VIEW,
     label=_("Debts"),

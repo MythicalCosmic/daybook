@@ -7,6 +7,7 @@ import { RouterLink } from "vue-router";
 
 import DatePicker from "@/components/DatePicker.vue";
 import ErrorState from "@/components/ErrorState.vue";
+import ExportButton from "@/components/ExportButton.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
 import MoneyText from "@/components/MoneyText.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
@@ -49,6 +50,8 @@ const groups = computed(() =>
     <div class="flex flex-wrap items-center gap-2">
       <DatePicker v-model="day" :max="today" class="w-56" />
       <span class="text-sm text-muted">{{ t("finance.reports.endOfDay") }}</span>
+      <span class="flex-1" />
+      <ExportButton kind="finance.balances" :params="params" size="sm" />
     </div>
     <ErrorState v-if="query.isError.value" :error="query.error.value" :retry="() => query.refetch()" />
     <template v-else>

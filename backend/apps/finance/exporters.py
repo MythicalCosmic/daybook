@@ -11,7 +11,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.exports.registry import Column
 from apps.finance import access, filters, queries
-from apps.finance.models import Debt
+from apps.finance.models import Category, Debt, MoneyAccount
 from apps.members import scope
 from apps.reports.periods import RangeError, parse_range
 
@@ -46,6 +46,21 @@ CASH_FLOW_COLUMNS = [
     Column("money_in", _("Money in"), "money"),
     Column("money_out", _("Money out"), "money"),
     Column("net", _("Net"), "money"),
+]
+
+BALANCE_COLUMNS = [
+    Column("line", _("Account or line")),
+    Column("kind", _("Kind")),
+    Column("branch", _("Branch")),
+    Column("currency", _("Currency")),
+    Column("balance", _("Balance"), "money"),
+    Column("base", _("In base currency"), "money"),
+]
+
+CATEGORY_TREND_COLUMNS = [
+    Column("month", _("Month")),
+    Column("category", _("Category")),
+    Column("amount", _("Amount"), "money"),
 ]
 
 DEBT_COLUMNS = [
@@ -234,3 +249,61 @@ def debt_rows(member, params: dict):
             "responsible": str(debt.responsible) if debt.responsible_id else "",
             "description": "" if masked else debt.description,
         }
+
+
+def balance_rows(member, params: dict):
+    """Balances on a day (`on`, default today): every account in scope, then what was owed both
+    ways and the net position, as the Balances report shows them."""
+    today = queries.local_today(member.company)
+    on = filters.day(params, "on") or today
+    data = queries.balances_on(member.company, min(on, today), branch_ids=_branches(member, params))
+    accounts = {
+        account.pk: account
+        for account in MoneyAccount.objects.filter(
+            pk__in=[row["id"] for row in data["accounts"]]
+        ).select_related("branch")
+    }
+    for row in data["accounts"]:
+        account = accounts[row["id"]]
+        yield {
+            "line": account.name,
+            "kind": str(account.get_kind_display()),
+            "branch": account.branch.name if account.branch_id else "",
+            "currency": row["currency"],
+            "balance": row["balance"],
+            "base": row["base"],
+        }
+    base = member.company.base_currency
+    for key, label in (
+        ("total", _("Money on every account")),
+        ("receivable", _("Owed to us")),
+        ("payable", _("We owe")),
+        ("net", _("Net position")),
+    ):
+        value = data[key]["total"] if isinstance(data[key], dict) else data[key]
+        yield {
+            "line": str(label),
+            "kind": "",
+            "branch": "",
+            "currency": base,
+            "balance": None,
+            "base": value,
+        }
+
+
+def category_trend_rows(member, params: dict):
+    """One category (with its subcategories) month by month, as the Category trends report."""
+    pk = filters.one_int(params, "category")
+    category = Category.objects.filter(company=member.company, pk=pk).first() if pk else None
+    if category is None:
+        return
+    months = filters.one_int(params, "months") or 12
+    data = queries.category_trend(
+        member.company,
+        category,
+        months,
+        branch_ids=_branches(member, params),
+        today=queries.local_today(member.company),
+    )
+    for point in data["series"]:
+        yield {"month": point["date"][:7], "category": category.name, "amount": point["amount"]}

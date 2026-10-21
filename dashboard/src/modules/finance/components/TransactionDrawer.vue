@@ -161,6 +161,9 @@ const editKind = computed(() => (row.value?.kind === "income" ? "income" : row.v
 const categoryChoices = computed(() => categoryOptions(categories.data.value, editKind.value, { activeOnly: true }));
 const accountChoices = computed(() => (options.data.value?.accounts ?? []).filter((a) => !row.value || a.currency === row.value.currency || row.value.kind === "owner" || row.value.kind === "opening").map((a) => ({ value: a.id, label: a.name, description: a.currency })));
 const minDay = computed(() => (options.data.value?.locked_until ? addDays(options.data.value.locked_until, 1) : null));
+// The currency of the account picked in the editor (owner and opening entries may move to an
+// account in the other currency; the amount is then entered in that currency).
+const draftCurrency = computed(() => options.data.value?.accounts.find((a) => a.id === draft.value.account)?.currency ?? row.value?.currency ?? company.currency);
 
 async function counterpartySource(q: string, signal: AbortSignal): Promise<SelectOption<number>[]> {
   const rows = await searchCounterparties(company.currentId ?? 0, q, signal);
@@ -174,7 +177,8 @@ async function saveEdit(): Promise<void> {
   try {
     const patch: Record<string, unknown> = { description: draft.value.description };
     if (r.is_manual) {
-      if (draft.value.amount && draft.value.amount !== absolute(r.amount)) patch.amount = draft.value.amount;
+      const newCurrency = draftCurrency.value !== r.currency;
+      if (draft.value.amount && (newCurrency || draft.value.amount !== absolute(r.amount))) patch.amount = draft.value.amount;
       if (draft.value.occurred_on && draft.value.occurred_on !== r.occurred_on) patch.occurred_on = draft.value.occurred_on;
       if (draft.value.account && draft.value.account !== r.account?.id) patch.account = draft.value.account;
       if (editKind.value && draft.value.category !== (r.category?.id ?? null)) patch.category = draft.value.category;
@@ -315,7 +319,7 @@ const fieldLabels = computed(() => ({
               <p v-if="!row.is_manual" class="text-sm text-muted">{{ t("finance.tx.onlyNote") }}</p>
               <template v-if="row.is_manual">
                 <FormField :label="t('finance.field.amount')">
-                  <MoneyInput v-model="draft.amount" :currencies="[row.currency]" />
+                  <MoneyInput v-model="draft.amount" :currencies="[draftCurrency]" />
                 </FormField>
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <FormField :label="t('finance.field.date')">

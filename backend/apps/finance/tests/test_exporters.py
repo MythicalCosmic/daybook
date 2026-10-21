@@ -143,3 +143,43 @@ def test_ledger_and_debt_exports_are_marked_sensitive(fin, boss):
     assert export_services.request_export(boss, "finance.transactions", format="csv").sensitive
     assert export_services.request_export(boss, "finance.debts", format="csv").sensitive
     assert not export_services.request_export(boss, "finance.pnl", format="csv").sensitive
+
+
+def test_balances_and_a_category_trend_export_like_their_reports(fin, boss, cash, today):
+    services.record_transaction(
+        fin, by=boss, kind="opening", amount=D("2500000"), occurred_on=today, account=cash
+    )
+    services.record_transaction(
+        fin,
+        by=boss,
+        kind="expense",
+        amount=D("400000"),
+        occurred_on=today,
+        account=cash,
+        category="rent",
+    )
+    services.open_debt(
+        fin,
+        by=boss,
+        direction="receivable",
+        kind="trade",
+        amount=D("150000"),
+        currency="UZS",
+        issued_on=today,
+        counterparty=CounterpartyFactory(company=fin),
+        is_opening=True,
+    )
+    rows = csv_rows(built(boss, "finance.balances"))
+    lines = {row[0]: row for row in rows[1:]}
+    assert lines[cash.name][4] == "2100000.00"
+    assert lines["Owed to us"][5] == "150000.00"
+    assert lines["Net position"][5] == "2250000.00"
+
+    from apps.finance.models import Category
+
+    rent = Category.objects.get(company=fin, system_code="rent")
+    rows = csv_rows(
+        built(boss, "finance.category_trend", params={"category": rent.pk, "months": 3})
+    )
+    assert len(rows) == 4
+    assert rows[-1][1:] == [rent.name, "400000.00"]
