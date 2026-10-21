@@ -93,7 +93,8 @@ const tab = computed(() => {
 });
 const extraTab = computed(() => extraTabs.value.find((item) => item.id === tab.value) ?? null);
 
-const chip = computed(() => (person.value ? statusChip(person.value, (d) => fmt.day(d, "medium")) : null));
+// The same short date as on the Team list; the banner and the time-off card give the full one.
+const chip = computed(() => (person.value ? statusChip(person.value, (d) => fmt.day(d, "short")) : null));
 const tenure = computed(() => {
   const parts = tenureParts(person.value?.overview.tenure_days);
   if (!parts) return null;
