@@ -265,8 +265,8 @@ def test_people_without_dashboard_access_are_refused(browser, company, member):
 
 
 def test_a_platform_admin_without_a_membership_is_refused(browser, settings):
-    admin = UserFactory(telegram_id=6589960007, is_superuser=True)
-    settings.PLATFORM_ADMIN_TG_IDS = [6589960007]
+    admin = UserFactory(telegram_id=7000000001, is_superuser=True)
+    settings.PLATFORM_ADMIN_TG_IDS = [7000000001]
     browser.start()
 
     assert "don't have access" in bot_flow.start(admin, browser.code)[0]

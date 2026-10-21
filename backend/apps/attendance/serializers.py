@@ -41,6 +41,7 @@ class LocalDateTimeField(serializers.DateTimeField):
 
 class SettingsSerializer(serializers.ModelSerializer):
     class Meta:
+        ref_name = "AttendanceSettings"
         model = AttendanceSettings
         fields = SETTINGS_FIELDS
 
@@ -52,15 +53,24 @@ class RefSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
 
+    class Meta:
+        ref_name = "AttendanceRef"
+
 
 class BranchRefSerializer(RefSerializer):
     code = serializers.CharField()
+
+    class Meta:
+        ref_name = "AttendanceBranchRef"
 
 
 class BranchGeoSerializer(BranchRefSerializer):
     latitude = serializers.CharField(allow_null=True)
     longitude = serializers.CharField(allow_null=True)
     geofence_m = serializers.IntegerField()
+
+    class Meta:
+        ref_name = "BranchGeo"
 
 
 class PersonCardSerializer(serializers.Serializer):
@@ -157,6 +167,9 @@ class BoardBranchSerializer(BranchGeoSerializer):
     rostered = serializers.IntegerField()
     checked_in = serializers.IntegerField()
     first_check_in = serializers.DateTimeField(allow_null=True)
+
+    class Meta:
+        ref_name = "BoardBranch"
 
 
 class BoardSerializer(serializers.Serializer):
@@ -271,6 +284,9 @@ class RecordCreateSerializer(serializers.Serializer):
 
 class ReasonSerializer(serializers.Serializer):
     reason = serializers.CharField(max_length=300)
+
+    class Meta:
+        ref_name = "AttendanceReason"
 
 
 class DecisionSerializer(serializers.Serializer):
@@ -397,11 +413,17 @@ class BulkSerializer(serializers.Serializer):
         child=serializers.IntegerField(), required=False, allow_null=True
     )
 
+    class Meta:
+        ref_name = "AttendanceBulk"
+
 
 class PublishSerializer(serializers.Serializer):
     start = serializers.DateField()
     end = serializers.DateField()
     branch_id = serializers.IntegerField(required=False, allow_null=True)
+
+    class Meta:
+        ref_name = "AttendancePublish"
 
     def validate(self, attrs):
         if attrs["end"] < attrs["start"]:
@@ -413,6 +435,9 @@ class PublishSerializer(serializers.Serializer):
 
 class CountSerializer(serializers.Serializer):
     count = serializers.IntegerField()
+
+    class Meta:
+        ref_name = "AttendanceCount"
 
 
 # Swaps and corrections ------------------------------------------------------------------

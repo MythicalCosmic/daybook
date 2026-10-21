@@ -5,7 +5,8 @@ Visibility always goes through `queries.visible_tasks` (personal tasks only for 
 company setting on; branch scope §2.6), so a task outside it answers 404 like another company's.
 """
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from django.db import transaction
 from django.db.models import Case, F, IntegerField, Value, When
@@ -30,6 +31,7 @@ from apps.tasks.owner_serializers import (
     BulkSerializer,
     CommentRowSerializer,
     CommentSerializer,
+    GiveTodayInputSerializer,
     MoveSerializer,
     ReasonSerializer,
     ReassignSerializer,
@@ -41,6 +43,8 @@ from apps.tasks.owner_serializers import (
     TaskRowSerializer,
     TaskUpdateSerializer,
     person,
+    routine_ref,
+    run_row,
 )
 
 LIST_FILTERS = [
@@ -62,7 +66,15 @@ LIST_FILTERS = [
     OpenApiParameter("has_proof", bool),
     OpenApiParameter("needs_confirmation", bool),
     OpenApiParameter("q", description="Title, description or the person's name."),
+    OpenApiParameter(
+        "routines",
+        description="without: one-off tasks only (the Tasks page), only: routine work only. "
+        "Routine work is the daily task a routine made; empty: both.",
+    ),
 ]
+ROUTINES_PARAM = OpenApiParameter(
+    "routines", description="without: one-off tasks only, only: routine work only; empty: both."
+)
 ORDERINGS = {
     "due_at",
     "-due_at",
@@ -126,7 +138,16 @@ def parse_filters(params) -> queries.TaskFilters:
         has_proof=_boolean(params.get("has_proof")),
         needs_confirmation=_boolean(params.get("needs_confirmation")),
         q=params.get("q", "")[:100],
+        routines=_routines(params),
     )
+
+
+def _routines(params) -> str:
+    """The `routines` filter: "without" (one-off work), "only" (routine work) or "" (both)."""
+    value = params.get("routines", "")
+    if value not in ("", queries.WITHOUT_ROUTINES, queries.ONLY_ROUTINES):
+        raise exceptions.ValidationError({"routines": [_("Use without or only.")]})
+    return value
 
 
 def order(tasks, ordering: str | None):
@@ -466,7 +487,11 @@ class TaskOwnerViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerVi
         return Response(data)
 
     @extend_schema(
-        parameters=[OpenApiParameter("assignee", int), OpenApiParameter("branch", int, many=True)],
+        parameters=[
+            OpenApiParameter("assignee", int),
+            OpenApiParameter("branch", int, many=True),
+            ROUTINES_PARAM,
+        ],
         responses=inline_serializer(
             "TaskSummary",
             {
@@ -487,7 +512,8 @@ class TaskOwnerViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerVi
     @action(detail=False, methods=["get"])
     def summary(self, request, company_id):
         """KPI numbers (personal tasks never count): today, late now, waiting for a check,
-        7-day on-time % against the 7 days before, a 14-day series."""
+        7-day on-time % against the 7 days before, a 14-day series. `routines=without` counts
+        one-off work only (the Tasks page), `only` routine work only."""
         assignee = _ints(request.query_params.getlist("assignee"))
         branches = _ints(request.query_params.getlist("branch"))
         data = dashboard.summary(
@@ -495,16 +521,19 @@ class TaskOwnerViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerVi
             timezone.now(),
             branch_ids=branches or None,
             assignee_id=assignee[0] if assignee else None,
+            routines=_routines(request.query_params),
         )
         return Response(data)
 
-    @extend_schema(responses=TaskReviewSerializer(many=True))
+    @extend_schema(parameters=[ROUTINES_PARAM], responses=TaskReviewSerializer(many=True))
     @action(detail=False, methods=["get"])
     def reviews(self, request, company_id):
-        """Work waiting for the caller's check, oldest first, with proof photos."""
-        tasks = dashboard.with_rows(queries.awaiting_review_by(self.membership)).order_by(
-            "completed_at", "pk"
+        """Work waiting for the caller's check, oldest first, with proof photos. One-off work is
+        checked here (`routines=without`); routine work has its own queue (routines/to-confirm/)."""
+        waiting = queries.split(
+            queries.awaiting_review_by(self.membership), _routines(request.query_params)
         )
+        tasks = dashboard.with_rows(waiting).order_by("completed_at", "pk")
         page = self.paginate_queryset(tasks)
         return self.get_paginated_response(
             TaskReviewSerializer(page, many=True, context=self.get_serializer_context()).data
@@ -624,10 +653,18 @@ class RoutineViewSet(
     mixins.DestroyModelMixin,
     OwnerViewSet,
 ):
-    """Routines (daily templates) and onboarding templates (`?onboarding=true`)."""
+    """Routines (daily templates) and onboarding templates (`?onboarding=true`), and routine work:
+    a day of it (`day/`, the Routines page's Today), its history and what waits for confirmation.
+    Planning routines needs tasks.templates; seeing everyone's routine work tasks.view_all, and
+    confirming it tasks.confirm."""
 
     serializer_class = RoutineSerializer
     perm = Perm.TASKS_TEMPLATES
+    perms_by_action = {
+        "day": Perm.TASKS_VIEW_ALL,
+        "history": Perm.TASKS_VIEW_ALL,
+        "to_confirm": Perm.TASKS_CONFIRM,
+    }
     pagination_class = None
 
     def get_queryset(self):
@@ -664,26 +701,25 @@ class RoutineViewSet(
         if q := request.query_params.get("q", "").strip():
             templates = templates.filter(title__icontains=q)
         templates = list(templates.order_by("-is_active", "due_time", "title"))
-        stats = dashboard.routine_stats(templates, self.company, timezone.now())
-        context = self.get_serializer_context() | {"stats": stats}
+        now = timezone.now()
+        context = self.get_serializer_context() | {
+            "now": now,
+            "stats": dashboard.routine_stats(templates, self.company, now),
+            "next_runs": generation.next_runs(templates, self.company, now),
+        }
         return Response(RoutineSerializer(templates, many=True, context=context).data)
 
     def retrieve(self, request, company_id, pk):
-        template = self.get_object()
-        stats = dashboard.routine_stats([template], self.company, timezone.now())
-        return Response(
-            RoutineSerializer(
-                template, context=self.get_serializer_context() | {"stats": stats}
-            ).data
-        )
+        return Response(self._answer(self.get_object(), stats=True))
 
     @extend_schema(request=RoutineWriteSerializer, responses={201: RoutineSerializer})
     def create(self, request, company_id):
+        """The new routine, with `next_run` and `today`: when its first tasks come, and "Give
+        today's task now" when it was made after today's deadline."""
         fields = self._fields(request.data, partial=False)
         template = services.create_template(by=self.membership, **fields)
         return Response(
-            RoutineSerializer(self.get_queryset().get(pk=template.pk)).data,
-            status=status.HTTP_201_CREATED,
+            self._answer(self.get_queryset().get(pk=template.pk)), status=status.HTTP_201_CREATED
         )
 
     @extend_schema(request=RoutineWriteSerializer, responses=RoutineSerializer)
@@ -691,7 +727,17 @@ class RoutineViewSet(
         template = self.get_object()
         fields = self._fields(request.data, partial=True)
         template = services.update_template(template, by=self.membership, **fields)
-        return Response(RoutineSerializer(self.get_queryset().get(pk=template.pk)).data)
+        return Response(self._answer(self.get_queryset().get(pk=template.pk)))
+
+    def _answer(self, template: TaskTemplate, *, stats: bool = False) -> dict:
+        """One routine as its own page reads it: next run, today and (detail) its stats."""
+        now = timezone.now()
+        context = self.get_serializer_context() | {"now": now}
+        if not template.onboarding:
+            context["today"] = {template.pk: generation.today_status(template, now)}
+        if stats:
+            context["stats"] = dashboard.routine_stats([template], self.company, now)
+        return RoutineSerializer(template, context=context).data
 
     @transaction.atomic
     def perform_destroy(self, template):
@@ -741,13 +787,25 @@ class RoutineViewSet(
                 "day": serializers.DateField(),
                 "due": serializers.BooleanField(),
                 "holiday": serializers.BooleanField(),
-                "people": serializers.ListField(child=serializers.DictField()),
+                "reason": serializers.CharField(
+                    allow_null=True,
+                    help_text="Why it makes no tasks that day: paused, onboarding, holiday, "
+                    "not_due, not_started or made_late (made after that day's deadline).",
+                ),
+                "due_at": serializers.DateTimeField(),
+                "next_run": serializers.DateTimeField(allow_null=True),
+                "people": serializers.ListField(
+                    child=serializers.DictField(),
+                    help_text="{member, gets, reason}; reason: left, suspended, not_registered, "
+                    "branch, joined_later, time_off or off.",
+                ),
             },
         ),
     )
     @action(detail=True, methods=["get"])
     def preview(self, request, company_id, pk):
-        """Who would get it on `day`, by the same rules as daily generation."""
+        """Who would get it on `day`, by the same rules as daily generation: a day it makes no
+        tasks says why (and when its next tasks come), each person who doesn't get it why."""
         template = self.get_object()
         day = _day(request.query_params.get("day"), "day") or queries.company_today(
             self.company
@@ -758,11 +816,49 @@ class RoutineViewSet(
                 "day": day,
                 "due": data["due"],
                 "holiday": data["holiday"],
+                "reason": data["reason"],
+                "due_at": data["due_at"],
+                "next_run": data["next_run"],
                 "people": [
                     {"member": person(row["member"]), "gets": row["gets"], "reason": row["reason"]}
                     for row in data["people"]
                 ],
             }
+        )
+
+    @extend_schema(
+        request=GiveTodayInputSerializer,
+        responses={
+            201: inline_serializer(
+                "RoutineGivenToday",
+                {
+                    "given": serializers.IntegerField(),
+                    "due_at": serializers.DateTimeField(),
+                    "people": serializers.ListField(child=serializers.DictField()),
+                },
+            )
+        },
+    )
+    @action(detail=True, methods=["post"], url_path="give-today")
+    def give_today(self, request, company_id, pk):
+        """Give today's task now, for a routine made after today's deadline (it starts the next
+        day it is due): today's task to everyone it would give it to, due at `due_time` today
+        (default: in two hours)."""
+        template = self.get_object()
+        data = GiveTodayInputSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        due_at = None
+        if (due_time := data.validated_data.get("due_time")) is not None:
+            tz = ZoneInfo(self.company.timezone)
+            due_at = datetime.combine(queries.company_today(self.company), due_time, tzinfo=tz)
+        tasks = services.give_routine_today(template, by=self.membership, due_at=due_at)
+        return Response(
+            {
+                "given": len(tasks),
+                "due_at": tasks[0].due_at,
+                "people": [person(task.assignee) for task in tasks],
+            },
+            status=status.HTTP_201_CREATED,
         )
 
     @extend_schema(
@@ -790,6 +886,153 @@ class RoutineViewSet(
         data = dashboard.routine_compliance(template, start, end, timezone.now())
         data["people"] = [row | {"member": person(row["member"])} for row in data["people"]]
         return Response({"range": {"from": start, "to": end}, **data})
+
+    # Routine work (the Routines page) ------------------------------------------------------
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("day", description="Company-local day, YYYY-MM-DD. Default: today."),
+            OpenApiParameter("branch", int, many=True),
+            OpenApiParameter("position", int, many=True),
+        ],
+        responses=inline_serializer(
+            "RoutineDay",
+            {
+                "day": serializers.DateField(),
+                "holiday": serializers.BooleanField(),
+                "idle": serializers.IntegerField(help_text="Routines with nothing that day."),
+                "totals": serializers.DictField(),
+                "routines": serializers.ListField(
+                    child=serializers.DictField(),
+                    help_text="{routine, due_at, reason, next_run, give, progress, counts, runs, "
+                    "skipped}; a run's state: done, review, late, missed, returned, open, "
+                    "cancelled; skipped reasons: time_off, off, suspended, joined_later.",
+                ),
+            },
+        ),
+    )
+    @action(detail=False, methods=["get"])
+    def day(self, request, company_id):
+        """Every routine due on `day` (or with work that day): progress, each person's run with
+        its proof, and who it skipped, filtered by branch and position."""
+        params = request.query_params
+        day = _day(params.get("day"), "day") or queries.company_today(self.company)
+        data = dashboard.routine_day(
+            self.membership,
+            day,
+            timezone.now(),
+            branch_ids=_ints(params.getlist("branch")) or None,
+            position_ids=_ints(params.getlist("position")) or None,
+        )
+        member = self.membership
+        return Response(
+            {
+                "day": data["day"],
+                "holiday": data["holiday"],
+                "idle": data["idle"],
+                "totals": data["totals"],
+                "routines": [
+                    {
+                        "routine": routine_ref(row["routine"]),
+                        "due_at": row["due_at"],
+                        "reason": row["reason"],
+                        "next_run": row["next_run"],
+                        "give": row["give"],
+                        "progress": row["progress"],
+                        "counts": row["counts"],
+                        "runs": [run_row(run["task"], run["state"], member) for run in row["runs"]],
+                        "skipped": [
+                            {"member": person(skip["member"]), "reason": skip["reason"]}
+                            for skip in row["skipped"]
+                        ],
+                    }
+                    for row in data["routines"]
+                ],
+            }
+        )
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("from"),
+            OpenApiParameter("to"),
+            OpenApiParameter("branch", int, many=True),
+            OpenApiParameter("position", int, many=True),
+        ],
+        responses=inline_serializer(
+            "RoutineHistory",
+            {
+                "range": serializers.DictField(),
+                "days": serializers.ListField(child=serializers.DateField()),
+                "routines": serializers.ListField(child=serializers.DictField()),
+                "series": serializers.ListField(child=serializers.DictField()),
+                "people": serializers.ListField(child=serializers.DictField()),
+                "totals": serializers.DictField(),
+            },
+        ),
+    )
+    @action(detail=False, methods=["get"])
+    def history(self, request, company_id):
+        """Routine work per routine per day (the completion heatmap; default the last 4 weeks),
+        per day and per person: made, finished, on time, late, missed and the rates."""
+        params = request.query_params
+        today = queries.company_today(self.company)
+        if params.get("from") or params.get("to"):
+            start, end = _range(params, max_days=92)
+        else:
+            start, end = today - timedelta(days=27), today
+        data = dashboard.routine_history(
+            self.membership,
+            start,
+            end,
+            timezone.now(),
+            branch_ids=_ints(params.getlist("branch")) or None,
+            position_ids=_ints(params.getlist("position")) or None,
+        )
+        return Response(
+            {
+                "range": {"from": start, "to": end},
+                "days": data["days"],
+                "routines": [
+                    row | {"routine": routine_ref(row["routine"])} for row in data["routines"]
+                ],
+                "series": data["series"],
+                "people": [row | {"member": person(row["member"])} for row in data["people"]],
+                "totals": data["totals"],
+            }
+        )
+
+    @extend_schema(
+        responses=inline_serializer(
+            "RoutineToConfirm",
+            {
+                "count": serializers.IntegerField(),
+                "groups": serializers.ListField(
+                    child=serializers.DictField(), help_text="{routine, day, items: [run]}"
+                ),
+            },
+        )
+    )
+    @action(detail=False, methods=["get"], url_path="to-confirm")
+    def to_confirm(self, request, company_id):
+        """Routine work waiting for the caller's confirmation, grouped by routine and day,
+        oldest first. Confirm a group with tasks/bulk/ (action confirm); send one back with
+        tasks/<id>/return/."""
+        now = timezone.now()
+        member = self.membership
+        groups = []
+        for group in dashboard.routine_confirm_queue(member):
+            day_end = queries.day_bounds(self.company, group["day"])[1]
+            groups.append(
+                {
+                    "routine": routine_ref(group["routine"]),
+                    "day": group["day"],
+                    "items": [
+                        run_row(task, dashboard.run_state(task, now, day_end), member)
+                        for task in group["items"]
+                    ],
+                }
+            )
+        return Response({"count": sum(len(group["items"]) for group in groups), "groups": groups})
 
 
 def _one(queryset, pk):

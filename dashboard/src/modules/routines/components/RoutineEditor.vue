@@ -3,9 +3,11 @@
  * Create or edit a routine (made every day it's due, for everyone it names) or an onboarding
  * template (given once to each new person it names, a few days after they're let in). People,
  * positions, an optional branch, proof, checklist, reminder policy and who hears when it's late.
- * Existing routines show "who gets it tomorrow" beside the form.
+ * Existing routines show "who gets it tomorrow" beside the form. The When section says when the
+ * next (or first) tasks come as you type; a routine made after today's deadline starts the next
+ * day it's due, and saving one offers "Give today's task now".
  */
-import { Trash2 } from "@lucide/vue";
+import { CalendarClock, Trash2 } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -28,8 +30,11 @@ import WeekdayPicker from "@/components/WeekdayPicker.vue";
 import { isApiError } from "@/api/http";
 
 import { useDeleteRoutine, usePlanOptions, useSaveRoutine } from "../api";
+import { afterSave, missesToday, nextRunOf, runLabel } from "../lib";
 import type { ProofKind, Routine, RoutineInput } from "../types";
+import { useRunWords } from "../useRunWords";
 import ChecklistEditor from "./ChecklistEditor.vue";
+import GiveTodayDialog from "./GiveTodayDialog.vue";
 import RoutinePreview from "./RoutinePreview.vue";
 
 const open = defineModel<boolean>("open", { default: false });
@@ -91,6 +96,40 @@ const policyOptions = computed(() => [
   ...(options.data.value?.policies ?? []).filter((p) => !p.is_default).map((p) => ({ value: p.id, label: p.name })),
 ]);
 const policyValue = computed({ get: () => policy.value ?? 0, set: (value: number) => (policy.value = value || null) });
+
+// When its tasks come, as the form stands (the server has the last word: it knows the holidays).
+const words = useRunWords();
+const runHint = computed(() => {
+  if (isOnboarding.value) return null;
+  if (editing.value && !active.value) return { text: t("routines.editor.pausedRun"), late: null };
+  const draft = { weekdays: weekdays.value, due_time: dueTime.value, starts_on: startsOn.value };
+  const next = nextRunOf(draft, words.value.now, words.value.timeZone);
+  if (!next) return null;
+  const when = runLabel(next, words.value);
+  const late = !editing.value && missesToday(draft, words.value.now, words.value.timeZone) ? t("routines.editor.missesToday", { time: dueTime.value }) : null;
+  return { text: t(editing.value ? "routines.editor.nextRun" : "routines.editor.firstRun", { when }), late };
+});
+
+// After saving: when the first tasks come, and today's task for a routine made after its time.
+const giveOpen = ref(false);
+const saved = ref<Routine | null>(null);
+function announce(routine: Routine, created: boolean): void {
+  const title = created ? t("routines.toast.created") : t("routines.toast.saved");
+  const next = afterSave(routine, created);
+  if (next === "dialog") {
+    // It missed today's deadline: say so where it can't be missed, and offer today's task.
+    saved.value = routine;
+    giveOpen.value = true;
+    toast.success(title, { description: routine.title });
+    return;
+  }
+  const when = routine.next_run ? runLabel(routine.next_run, words.value) : null;
+  const description = when ? t(created ? "routines.editor.firstRun" : "routines.editor.nextRun", { when }) : routine.title;
+  toast.success(title, {
+    description,
+    ...(next === "offer" ? { action: { label: t("routines.give.button"), onClick: () => ((saved.value = routine), (giveOpen.value = true)) } } : {}),
+  });
+}
 const proofOptions = computed(() => (["none", "photo", "text", "any"] as const).map((value) => ({ value, label: t(`routines.proof.${value}`) })));
 
 function input(): RoutineInput {
@@ -131,9 +170,11 @@ function validate(): boolean {
 async function submit(): Promise<void> {
   if (!validate()) return;
   try {
+    const created = !editing.value;
     const routine = await save.mutateAsync({ id: props.routine?.id ?? null, input: input() });
-    toast.success(editing.value ? t("routines.toast.saved") : t("routines.toast.created"), { description: routine.title });
     open.value = false;
+    if (routine.onboarding) toast.success(created ? t("routines.toast.created") : t("routines.toast.saved"), { description: routine.title });
+    else announce(routine, created);
     emit("saved", routine);
   } catch (error) {
     if (isApiError(error)) {
@@ -198,6 +239,13 @@ async function onDelete(): Promise<void> {
               <DatePicker v-model="startsOn" clearable />
             </FormField>
           </div>
+          <div v-if="runHint" class="flex items-start gap-2.5 rounded-[10px] bg-surface-2 px-3 py-2.5 text-sm" data-testid="run-hint" aria-live="polite">
+            <CalendarClock :size="16" class="mt-0.5 shrink-0 text-accent-fg" aria-hidden="true" />
+            <div class="min-w-0">
+              <p class="font-medium text-fg">{{ runHint.text }}</p>
+              <p v-if="runHint.late" class="mt-0.5 text-muted">{{ runHint.late }}</p>
+            </div>
+          </div>
         </section>
 
         <section class="flex flex-col gap-4 border-t border-line pt-5">
@@ -256,4 +304,5 @@ async function onDelete(): Promise<void> {
       <UiButton variant="primary" :loading="save.isPending.value" @click="submit">{{ editing ? t("common.save") : t("common.create") }}</UiButton>
     </template>
   </UiDrawer>
+  <GiveTodayDialog v-model:open="giveOpen" :routine="saved" />
 </template>

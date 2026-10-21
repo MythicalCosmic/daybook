@@ -65,7 +65,7 @@ Packages: **W1** A Identity & company setup · B Tasks oversight · C People & c
 | **Create a company from the owner bot** (name, timezone → company, Owner membership, first branch) | Must | Today only a platform admin can create one, in Django admin | A |
 | **"Get started" checklist** (branches, invite staff, connect a group, choose modules, set pay, opening balances, registers, schedules), steps added by modules | Must | A new owner needs a path to a working setup | A + modules |
 | Company switcher (every company where the person has `dashboard.access`) | Must | One owner, several businesses | W0 |
-| Navigation built from permissions and `Company.features` | Must | Managers see less; a café doesn't need Stock | W0 |
+| Navigation built from permissions and `Company.features` | Must | Managers see less; a company without tills doesn't need Kassa | W0 |
 | Command palette (⌘K / Ctrl+K): pages, actions, server search over every module | Must | "Everything" needs a fast way in | W0 + all |
 | Inbox drawer: **Needs you** (approvals from every module, approve in place) and **Notifications** | Must | One queue instead of six bot chats | W0 + all |
 | Live badges and auto-refresh through `pulse/` | Must | Feels live without websockets | W0 |
@@ -328,7 +328,7 @@ These rules let 5–6 engineers or agents work in **one working tree** at the sa
 19. **Uploads go through `apps.core.uploads`.** Images through `sanitize_image()`, other files through `accept_document()` (§2.8). Never save a client file name, extension or content type.
 20. **Bots.** Feature routers are registered by W0 after the state-bound tasks and announcements routers and before the home router. Never register a bare `F.photo` handler: photo handlers are state-bound or filtered by caption (`#xarajat` …), so they can't swallow task proof photos.
 21. **Every owner endpoint** is company-scoped, permission-checked through `Perm`, audits every change through `audit.record`, bumps its pulse key after commit, returns money as strings, takes dates as company-local `YYYY-MM-DD`, and is documented with `extend_schema`. Each one has tests for: another company's id (404), a missing permission (403), hidden fields absent (salaries, profit, IDs), and branch isolation where §2.6 applies.
-22. **Demo data.** `demo.py` exposes `seed(company, people, now)`; `people` has the keys `owner`, `manager`, `worker`, `madina`, `jasur`, `nigora`. Test it with the root fixture `demo_people(company)`, never with `call_command("seed_demo")`.
+22. **Demo data.** `demo.py` exposes `seed(company, people, now)` for Demo Dorixona; `people` has the keys `owner`, `manager`, `worker`, `madina`, `jasur`, `nigora`. Two hooks are optional: `seed_small(company, people, now)` fills the second, smaller company (Demo Distribyutor; `people`: `owner`, `manager`, `worker`, `cashier`), and `finish(company, people, now)` runs for each company the demo filled once every app's `seed` and `seed_small` has run, for what would refuse other demos' rows or needs them (finance settles the card terminal for the tills' weeks and closes the books there; the inbox's runs last, to mark old messages read). Take who works which shift where, who is away and who runs a till from `apps.core.demo_plan.Plan(company, people, now)` instead of inventing dates, so nobody works while on leave, suspended or gone; run services as of a past moment with `apps.core.demo_time.moment(at)` (their after-commit work runs at that moment too). Only invented company, brand and person names; medicines by generic name. Test a demo with the root fixture `demo_people(company)` (or seed_demo's `Command()._build_pharmacy(now)` when it needs the whole cast), never with `call_command("seed_demo")`.
 
 ### 2.4 Dev isolation: databases, Redis and ports
 
@@ -2423,7 +2423,7 @@ employee_bot/bot/handlers/features/finance.py, employee_bot/tests/test_finance.p
 ```
 Tests: `PYTEST_DB=i uv run pytest backend/apps/finance employee_bot/tests/test_finance.py employee_bot/tests/test_dispatcher.py`.
 
-Consumes: `apps.ai.receipts.start_scan` and `ai.availability.status` (K, same wave: W0 stubs until K lands; falls back to manual entry). Provides: `finance.queries.upcoming(company, days, *, branch_ids)`, `forecast(company, days)`; claim services `submit_claim`, `decide_claim`, `pay_claim`. Registrations: queue `finance.claims`; inbox kind `finance.claim` with `queue_kind`; pulse `finance.claims`; brief section `finance_obligations` (bills and taxes due, budget burn); exporter `finance.budget`; AI tools `finance_upcoming`, `finance_budgets`; Overview widget `finance.budget_burn`; mini app `plusActions: Expense`.
+Consumes: `apps.ai.receipts.start_scan` and `ai.availability.status` (K, same wave: W0 stubs until K lands; falls back to manual entry). Provides: `finance.queries.upcoming(company, days, *, branch_ids)`, `forecast(company, days)`; claim services `submit_claim`, `decide_claim`, `pay_claim`. Registrations: queue `finance.claims`; inbox kind `finance.claim` with `queue_kind`; pulse `finance.claims`; brief section `finance.obligations` (bills and taxes due, budget burn); exporter `finance.budget`; AI tools `finance_upcoming`, `finance_budgets`; Overview widget `finance.budget_burn`; mini app `plusActions: Expense`.
 
 Acceptance: recurring occurrences idempotent per due date and moved off holidays; tax calendar templates create editable rules (due days are settings, labelled "confirm with your accountant"); budget alerts once per threshold; claims: own money → reimbursement debt (payroll or cash per setting), held cash → pending expense on the holder's account, posted on approval; below the threshold claims post at once; nobody approves their own claim; forecast low point verified on fixtures; the bot claim flow works with AI unavailable; the `#xarajat` photo handler is caption-filtered and a task-proof photo in the task flow still reaches the tasks router (dispatcher test).
 
@@ -2591,7 +2591,7 @@ Acceptance: the directory shows only colleagues in the viewer's branches (everyo
 
 ### 12.3 Questions for the owner (they refine, not block)
 
-- **Which business types are in scope?** Retail shops and cafés with tills, or also service, wholesale and B2B companies that sell by invoice? This decides whether invoices mode (J, Should) ships in this phase or moves to later.
+- **Which business types are in scope?** Retail shops and cafés with tills, or also service, wholesale and B2B companies that sell by invoice? This decides whether invoices mode (J, Should) ships in this phase or moves to later. *(Answered on 2026-10-21: pharmacies and the trade around them, §14.)*
 - Do any branches use a POS (iiko, Poster, Billz, MoySklad)?
 - Monthly, daily, hourly or per-task pay, or a mix, and which pay day? Should fines be proposed automatically?
 - Should anyone be able to create a company in the owner bot, or only people with a code from you?
@@ -2611,7 +2611,7 @@ The owner asked again, more explicitly: "make sure it's multi project; the emplo
 | Employee | `@daily_taskmanagment_bot` | `EMPLOYEE_BOT_TOKEN`, `EMPLOYEE_BOT_USERNAME` |
 | Owner | `@owner_taskmanagment_bot` | `OWNER_BOT_TOKEN`, `OWNER_BOT_USERNAME` |
 
-The owner's Telegram id `6589960007` is in `PLATFORM_ADMIN_TG_IDS`. `seed_demo` gains `--owner-tg <id>`: that Telegram user becomes Owner of the demo company and of a second, smaller demo company ("Demo Café"), so the real owner can sign in to the dashboard and both bots against demo data and try the portfolio and the company switcher. Agents and tests never use the real tokens; worktrees get a copy of `.env` with test tokens and `TELEGRAM_DRY_RUN=true`.
+The owner's own Telegram id is in `PLATFORM_ADMIN_TG_IDS` (in `.env`, never in the repository). `seed_demo` gains `--owner-tg <id>`: that Telegram user becomes Owner of the demo company and of a second, smaller demo company ("Demo Café"), so the real owner can sign in to the dashboard and both bots against demo data and try the portfolio and the company switcher. Agents and tests never use the real tokens; worktrees get a copy of `.env` with test tokens and `TELEGRAM_DRY_RUN=true`.
 
 ### 13.1 Rank changes
 
@@ -2932,6 +2932,9 @@ These exist or are added by H in the same wave. S calls them through `apps/lifec
 
 **Other registrations:** queue `lifecycle.resignations`, `lifecycle.job_changes`; calendar sources (`last_working_day`, suspension ends, review deadlines); brief section `lifecycle`; AI tool `lifecycle_overview` (counts and dates, never free-text evidence); exporters `lifecycle.discipline` (sensitive), `lifecycle.assets`.
 
+
+**Owns** (Package S): `backend/apps/lifecycle/` (all), `dashboard/src/modules/lifecycle/`, `miniapp/src/features/lifecycle/`, `employee_bot/bot/handlers/features/lifecycle.py`, `employee_bot/tests/test_lifecycle.py`. Tests: `PYTEST_DB=s uv run pytest backend/apps/lifecycle employee_bot/tests/test_lifecycle.py`.
+
 ### 13.5 Knowledge base and company calendar (apps `apps.knowledge` and `apps.agenda`, Package Q, Wave 1)
 
 The calendar app is `agenda`, not `calendar`: a project module named `calendar` would read like the standard library one.
@@ -3006,6 +3009,7 @@ The calendar app is `agenda`, not `calendar`: a project module named `calendar` 
 - **Actions on a won deal:** "Create project" (T's service) and "Create invoice" (J's invoice service).
 - **Permissions:** `crm.view` and `crm.manage`. A deal's owner always sees their own deals.
 - **Other registrations:** search `crm.deal`, company facts none, AI tool `crm_pipeline`, calendar source expected closes, copy part pipelines.
+- **Owns** (Package U): `backend/apps/crm/` (all), `dashboard/src/modules/crm/`, `employee_bot/bot/handlers/features/crm.py` and its tests if the bot gets a CRM touchpoint. Tests: `PYTEST_DB=u uv run pytest backend/apps/crm`.
 
 ### 13.7 Delivery changes
 
@@ -3103,3 +3107,912 @@ The calendar app is `agenda`, not `calendar`: a project module named `calendar` 
 | 62 | Deploy details | Stream with `DB_CONN_MAX_AGE=0`; `private_media` in the shared `x-app` block | §8.4, §11.1 |
 | 63 | Owner bot packaging | All code and tests inside `ownerbot`, run with `python -m ownerbot`; `ownerbot` first-party in ruff | §2.2, §11.1 |
 
+---
+
+## 14. Pharmacy focus (the owner's clarification, 2026-10-21)
+
+The platform's owner wrote: "This project is for pharmacy and all that, not for food related stuff." The product now targets **pharmacies and pharmacy chains in Uzbekistan (dorixonalar)** and the trade around them: the distributors that supply them and the clinics and companies that buy from them. Until now §1–§13 and the demo assumed generic shops and a café. **Where this section conflicts with an earlier one, this section wins** (it also wins over §13). It also records the lead's decisions of the same day: the demo is rebuilt during the Wave 1 visual pass (§14.3, §14.5), storage readings build on the visual pass's routines (§14.10), and the employee bot opens the mini app only from the chat menu button and inline buttons (§14.17).
+
+**One platform, many pharmacy businesses.** 911 Trello is sold to many companies: retail pharmacies and chains, distributors, and companies that are both. Nothing in this section assumes one company's answers. What a company is and who it sells to, which branches are open 24 hours or licensed for controlled substances, where its sales lines come from, its tax regime, camera scanning, and every legal number are company or branch settings with safe defaults, asked for in the "Get started" checklist and edited in the dashboard's settings panels (§14.21).
+
+The facts behind it (laws, inspections, how pharmacies work, market numbers, and a glossary of about 100 terms in en / uz / ru) are in `docs/research/pharmacy.md` (the lead copies it from the research note into the repo in W2.a). Every legal statement there carries its source, date and a confidence mark. Anything this section marks **"(confirm)"** must be checked with a local pharmacist or lawyer before the platform presents it to its customers as the law; it never blocks a package, because every such rule is a company setting whose default is the value shown (§14.21).
+
+Unchanged: the architecture (§2), the money rules, the ledger, branch scope, AI principles, the wave mechanics of §13.7 (worktrees, file ownership), and every feature not named here. **No POS, no fiscalization, no calls to government systems** stays the rule of §0: §14.18 lists the government systems as designed integration points.
+
+### 14.0 Decisions at a glance
+
+| Topic | Decision | Why |
+|---|---|---|
+| Who it is for | Pharmacy businesses: retail pharmacies and chains, pharmaceutical distributors (wholesale by invoice), and companies that are both. Each company says which it is and who it sells to (`Company.business_kind`, `Company.sells_to`), and modules take their defaults from that | The platform owner's clarification; one platform sold to many such companies |
+| Selling and fiscal receipts | The pharmacy's own certified cash-register software stays the system of record for receipts, fiscal data and DataMatrix scanning. Each company imports its sales lines (CSV/XLSX) through import profiles, one per cash-register program, as facts for stock, expiry and margins, or works without lines, with stock from receipts, transfers, write-offs and counts. E's shift totals, Z-report photos and blind cash count stay the money truth | Fiscal and marking software must be certified; importing gets stock, expiry and margins right without that work |
+| Stock unit | Stock is counted in the **smallest part the pharmacy sells** (a blister, an ampoule, a tablet), with `units_per_pack` on the product. Prices are per pack; the part price is derived and editable | Pharmacies sell part packs every day; whole parts avoid 1/3-pack rounding |
+| Batches | Every unit of stock belongs to a **batch** (one goods-receipt line: series, expiry date, supplier, cost). Deductions take the earliest-expiring sellable batch first (FEFO) | Expiry is the largest avoidable loss and the first thing an inspector checks |
+| Cost and margin | Each batch carries its own cost, so a sale line's cost is exact. Finance keeps booking purchases when goods arrive (§3.9); margin analytics use sale-line costs | One ledger stays simple; margins stay true |
+| Compliance journals | The journals an inspector asks for are produced from data, never typed twice: temperature and humidity log, controlled-substance register, prescription log, write-off and destruction acts, staff certificates, licences | Paper journals are the daily pain pharmacy owners pay to remove |
+| Qualified staff | "A qualified pharmacist whenever a branch is open" is a company rule that applies at pharmacy branches (on by default): gaps are shown two weeks ahead and alerted live, and a till opened by someone unqualified alerts | Only people with pharmaceutical education may sell (§14.4 row 5); a pharmacy owner's biggest staffing risk |
+| Government systems | Asl belgisi (digital marking), the fiscal data operator, e-invoices (e-faktura), e-prescriptions and the reference-price registry are integration points: the fields exist and the interfaces are designed, nothing calls out | External, certified, changing; out of scope by §0 |
+| Medical safety | The product never recommends a medicine, dose or substitute to anyone. "Analogs" are a catalogue fact (same INN, form and strength), shown to the pharmacist, who decides | Liability; AI rule in §14.12 |
+| Words | Pharmacy words in every uz / ru / en string (§14.2); code identifiers stay as they are | Cheap, and every pharmacy owner sees their business |
+| Company settings | Business kind and customers, branch facts (24 hours, controlled-substance licence, social pharmacy, e-prescription area), the sales-line source, the tax regime, camera scanning and every legal number (price caps, keeping and destruction periods, storage ranges and reading times, night pay, expiry steps) are company or branch settings whose defaults are the values in this section (§14.21) | The law and each business differ; nothing waits on one company's answers |
+| Demo | "Demo Dorixona" (two pharmacies, one open 24 hours) and "Demo Distribyutor" replace "Demo Shop" and "Demo Café". The Wave 1 visual pass rebuilds the demo now; each Wave 2 package adds its own part. Only invented company and brand names | §14.3, §14.5 |
+| Delivery | J splits into **J1** (stock, `apps/inventory`) and **J2** (sales lines, `apps/sales`) in Wave 2 and **J3** (purchasing, supplier returns, stock analytics) in Wave 3; B returns as **B2** for readings; a short lead step **W2.a** lands the shared changes first | Each package fits one engineer and one long session, and no file has two owners in a wave (§14.20) |
+
+### 14.1 Rank changes
+
+| Feature | Was | Now | Pkg |
+|---|---|---|---|
+| Stock module (§1.7 "Products catalog… stock counts… write-offs") | Should | **Must**, as a medicines catalogue with batches, expiry and FEFO | J1 |
+| Goods receipts against distributor invoices, payable with a due date | Should | **Must** | J1 (+ I) |
+| Inter-branch transfers | missing | **Must** | J1 |
+| Near-expiry alerts and the expiry board (90 / 60 / 30 days) | missing | **Must** | J1 |
+| Write-offs with an act PDF and destruction record | Should (write-off with photo) | **Must** | J1 |
+| Quarantine and recall of a series | missing | **Must** | J1 |
+| Sales lines imported from the pharmacy's cash-register software | Should ("CSV sales import") | **Must** | J2 |
+| Controlled-substance register (subject-quantitative accounting) | missing | **Must**; it runs only at the branches marked as licensed (`Branch.controlled_licence`, §14.21) | J1 |
+| Prescription log | missing | Should | J1 |
+| Returns to distributors (credit notes) | missing | Should | J3 (Wave 3) + I |
+| Legal Rx price caps per batch (20 % markup, reference price) and the cap-breach check on sales | missing | **Must** | J1, J2 |
+| Mandatory assortment check | missing | **Must** | J1 |
+| Pricing rules (markup bands, rounding) and price tags | missing | Should | J1 |
+| Distributor price lists, comparison and purchase orders | Could ("purchase orders") | Should | J3 (Wave 3) |
+| Defektura (requests we could not serve) | missing | Should | J1 |
+| Reorder suggestions | missing (low stock only) | Should | J3 (Wave 3) |
+| Storage readings: fridge and room temperature, humidity, with an allowed range and alerts | missing (a photo task) | **Must** | B2 |
+| Qualified-pharmacist coverage rule | missing | **Must** | G |
+| Pharmacist diplomas, certificates and qualification category with expiry; required documents per position | Must (documents) / Should (required documents) | **Must** (both) | G |
+| Licences and permits register per branch (pharmacy licence, controlled-substance licence, lease, instrument checks) | missing | **Must** | G |
+| Night-work pay (22:00–06:00) | missing | **Must** (24-hour pharmacies) | H |
+| Bonus on a pharmacist's personal sales | missing | Should | H |
+| Invoices mode | Should | Should; its main users are the distributor profile and pharmacies selling to clinics | J2 |
+| CRM deals | Should | Should, shaped for B2B buyers (clinics, other pharmacies, companies) | U |
+| Stock analytics: ABC, dead stock, expiry losses, margins | missing | **Must** | J3 (Wave 3; J1 and J2 queries) |
+| XYZ, pharmacist KPIs (average check, items per check) | missing | Should | J3 (Wave 3) |
+| Mini app pharmacist screens: stock lookup, expiry check | Should (count screen) | **Must** | P (+ J1 API) |
+| Mini app: receiving, count, transfers, defektura, prescription entry | Should (receipt draft, count) | Should | P (+ J1 API) |
+| Medical book as a required document (§1.8 "mandatory in food and retail") | Must | The kind stays; whether it is required is a per-position setting (§14.9) | G |
+| Connectors to POS products | Could | Could, now meaning pharmacy cash-register software; the import of §14.7 covers the need first | later |
+
+### 14.2 Words: terminology and copy rules
+
+1. **Pharmacy words everywhere a person reads them**: dashboard and mini app dictionaries, gettext strings, notification and bot texts, PDF templates, AI prompts and the `AI_FAKE` canned answers. The table below fixes the main terms; the full glossary (about 100 terms with colloquial forms) is in the research note. Uzbek is Latin with ‘ and ’ as in the existing translations (o‘, g‘, ma’lumot).
+2. **Code stays as it is.** Model, field, enum, permission, URL and registry names do not change (`Product`, `GoodsReceipt`, `stock.manage`, `sales.view`); only labels change. New pharmacy-only models and fields take pharmacy names (`StockBatch.series`, `Product.inn`, `RxRecord`).
+3. **No food or café words** anywhere a person or a model can see them: copy, placeholders, help-text examples, notification texts, AI prompts, test fixtures that render text, and the demo ("oat milk", "barista", "kitchen", "menu", "bread and buns", "drinks fridge", "Coca-Cola bonus"). Neutral shop words stay where they are neutral ("branch", "till", "shift").
+4. **Say what the pharmacist says.** Uzbek pharmacists use Russian loanwords at work (nakladnoy, defektura, seriya, prixod). The uz UI uses the word said at the counter; where a literary Uzbek word is understood, it goes first with the loanword in brackets once per screen: "Kirim (nakladnoy)". Russian uses standard pharmacy Russian. Glossary rows marked low-confidence are checked with a practising Tashkent pharmacist during the integration translation pass.
+5. **Medical-safety copy.** Never "recommended", "best substitute", "take", "dose" or advice addressed to a patient. Analog lists are titled "Same active ingredient, form and strength" / "Ta’sir etuvchi moddasi, shakli va dozasi bir xil" / "То же МНН, форма и дозировка".
+
+| English (UI) | Uzbek (UI) | Russian (UI) | Where |
+|---|---|---|---|
+| Pharmacy (a branch) | Dorixona | Аптека | `companies.Branch` in pharmacy screens; "branch" stays in settings |
+| Medicines (catalogue) | Dorilar | Препараты | `inventory.Product` list; one item: "Dori" / "Препарат", or "Tovar" / "Товар" when `kind != medicine` |
+| Active ingredient (INN) | Ta’sir etuvchi modda (XPN) | МНН | `Product.inn` |
+| Distributor | Distribyutor | Дистрибьютор | supplier counterparties in stock screens |
+| Receipt of goods | Kirim (nakladnoy) | Приход (накладная) | `GoodsReceipt` |
+| Batch, series | Seriya | Серия | `StockBatch` |
+| Expiry date | Yaroqlilik muddati | Срок годности | `StockBatch.expires_on` |
+| Expiring soon / expired | Muddati tugayapti / muddati o‘tgan | Истекает срок / просрочено | expiry board |
+| Write-off / act | Hisobdan chiqarish / dalolatnoma | Списание / акт | `WriteOff` |
+| Transfer between pharmacies | Filiallararo ko‘chirish | Перемещение | `StockTransfer` |
+| Return to distributor | Distribyutorga qaytarish | Возврат поставщику | `SupplierReturn` (J3) |
+| Stock count | Inventarizatsiya | Инвентаризация | `StockCount` |
+| Out-of-stock requests | Defektura | Дефектура | `MissingRequest` |
+| Prescription only / without prescription | Retsept bo‘yicha / retseptsiz | По рецепту / без рецепта | `Product.rx_required` |
+| Controlled substance | Nazoratdagi modda | Подконтрольное вещество | `Product.control_class` (the uz term is a working label; confirm) |
+| Prescription log | Retseptlar jurnali | Журнал регистрации рецептов | `RxRecord` |
+| Markup / reference price | Ustama / referent narx | Наценка / референтная цена | pricing |
+| Price tag | Narx yorlig‘i | Ценник | price-tag PDF |
+| Head of pharmacy | Dorixona mudiri | Заведующий аптекой | position |
+| Senior pharmacist (higher education) | Provizor | Провизор | position |
+| Pharmacist (college) | Farmatsevt | Фармацевт | position |
+| Reading | Ko‘rsatkich | Показание | `TaskReading` |
+| Temperature and humidity log | Harorat va namlik jurnali | Журнал температуры и влажности | readings PDF |
+| 24-hour pharmacy | Kecha-kunduz ishlaydigan dorixona | Круглосуточная аптека | `Branch.open_24h` |
+| Licences and permits | Litsenziya va ruxsatnomalar | Лицензии и разрешения | `hr.BranchPermit` |
+
+### 14.3 Demo data rules
+
+These rules are the specification of the demo rebuild that the Wave 1 visual pass does now (branch `w1v/backend`: `seed_demo`, the root `conftest.py` `DEMO_PEOPLE` and every Wave 1 app's `demo.py`), and of the parts the Wave 2 packages add (§14.5).
+
+**Names.** Only invented companies, brands and trade names. Real chains, distributors, manufacturers, banks, internet providers and brands never appear (this also removes what the Wave 1 demos use today: Coca-Cola, Kapitalbank, Uzonline, Artel, Agromir and the café's suppliers). State bodies appear only under generic names ("Soliq inspeksiyasi", "Elektr ta’minoti"). Every invented company name is checked against orginfo.uz and 2GIS before it is committed and changed on a match. Medicines are named by INN, strength, form and pack ("Amoksitsillin 500 mg kapsula №16"); INNs are generic names, not brands; invented trade names and manufacturers fill `trade_name` and `manufacturer`.
+
+**Companies.**
+- **Demo Dorixona** (slug `demo-pharmacy`, replaces Demo Shop; a pharmacy selling to walk-in customers and clinics): Chilonzor (CHL, 08:00–22:00 every day) and Yunusobod (YNS, open around the clock, the branch licensed for controlled substances); both are in Tashkent, so both are in the e-prescription area. Yunusobod's `opens_at` and `closes_at` stay empty. The company and branch settings of §14.21 (`business_kind`, `sells_to`, `open_24h`, `controlled_licence`, `e_prescription_area`) don't exist in Wave 1: W2.a adds them and `seed_demo` sets them (§14.5). Sales lines come from an import profile (J2's demo). Every module on.
+- **Demo Distribyutor** (slug `demo-distributor`, replaces Demo Café, also as the second company `seed_demo --owner-tg` joins, §13.0; a distributor selling to pharmacies and clinics): one warehouse, "Sergeli ombori" (SRG, 09:00–18:00 Mon–Sat), selling by invoice to invented pharmacies and clinics, with no sales-line import (stock leaves by invoice); modules finance, sales (`mode = invoices`), stock, hr, payroll, ai.
+- `seed_demo --reset` also deletes the old `demo-shop` and `demo-cafe` companies once.
+
+**Positions** (made with these English names, which the module demos look up, and renamed to Uzbek by `seed_demo` once every demo has run): Head of pharmacy → Dorixona mudiri; Senior pharmacist → Provizor; Pharmacist → Farmatsevt; Stock & receiving → Omborchi; Courier → Kuryer; Office → Ofis. Distributor: Warehouse manager → Ombor mudiri; Storekeeper → Omborchi; Sales manager → Savdo menejeri; Driver → Haydovchi; Office → Ofis.
+
+**People** (the six keys of rule 22 stay): `owner` = Owner (Office); `manager` = Head of pharmacy at Chilonzor and its `Branch.manager` (role Manager); `worker` = Pharmacist at Chilonzor; `madina` = Senior pharmacist at Chilonzor; `jasur` = Courier for both pharmacies (role Employee); `nigora` = Pharmacist at Yunusobod, nights. `worker`, `madina` and `nigora` get the **Pharmacist** role in W2.a, which adds it to `DEFAULT_ROLES` with `sales.operate`, `finance.claim` and `stock.operate` (with a members data migration that creates it where the name is free) and gives it to them in `seed_demo` and `DEMO_PEOPLE` (§14.5). Until then the Wave 1 rebuild keeps the existing roles: pharmacists who run a till hold Cashier, the others Employee. The members demo's extra staff make Chilonzor 4 qualified people on a 2/2 schedule (one or two per shift) and Yunusobod 6 qualified people on 12-hour day (08:00–20:00) and night (20:00–08:00) shifts, plus a storekeeper and an accountant.
+
+**Each `demo.py`** works with the root fixture `demo_people(company)`, which makes one branch: it puts its rows in the company's first branch and uses Yunusobod only when it exists.
+
+**Golden tests.** §3.17's golden cases keep their own fixture (`Company.workdays` Mon–Sat, Asia/Tashkent, holiday 1 October 2026). Where §3.17 says "the Demo Shop setup" it means that fixture, not a demo company.
+
+**Numbers** (research note, Part B; estimates where it says so):
+
+| Item | Demo value |
+|---|---|
+| Sales per day | Chilonzor ≈ 6 mln so‘m (≈ 110 receipts); Yunusobod ≈ 12 mln so‘m (≈ 210 receipts, nights ≈ 20 %) |
+| Average check, items per receipt | ≈ 55 000 so‘m; 1.7 |
+| Payment mix | cash 40 %, Uzcard/Humo 35 %, Click/Payme/Uzum 25 %; no instalments; nasiya for three regulars and one clinic |
+| Catalogue | ≈ 150 items: 120 medicines across the dosage forms, 15 medical devices, 15 vitamins, hygiene and baby-care items; Rx ≈ 60 % of sales value |
+| Prices | local generics 1 500–12 000 so‘m, imported 20 000–150 000 so‘m, average pack ≈ 30 000 so‘m |
+| Markup | Rx at the batch cap (≤ 20 %), OTC 25–40 %, vitamins and cosmetics 30–50 % |
+| Special items | 25 Rx items, including 6 antibiotics and 2 systemic hormones (the e-prescription group); 3 cold-chain items; 2 restricted strong-acting items stocked only at Yunusobod; 8 socially significant; 20 on the mandatory list (one missing at Chilonzor) |
+| Batches | 1–4 per item and pharmacy; 3 expired waiting for write-off, 8 expiring within 30 days, 12 within 31–90 days, the rest 6–36 months; one recalled series found in both pharmacies |
+| Distributors (invented, check names) | "Ko‘kterak Farm Distribyutor" (30 days), "Oqtosh Med Ta’minot" (45 days), "Tolzor Farm Savdo" (14 days), "Chinorbek Pharma Logistika" (prepaid); deliveries every working day |
+| Stock documents | 6 weeks of receipts (one draft waiting, one with a cost jump, one with a short shelf life), 4 transfers (one disputed), 3 write-offs (one destroyed with a full commission and act, one waiting with 12 days left, one proposed), 2 applied counts (one 120 000 so‘m shortage) and 1 open, 15 defektura rows; in Wave 3, J3 adds price lists from 2 distributors, 1 order sent and 1 received, and one credited supplier return |
+| Readings | the storage preset in both pharmacies (Yunusobod has 2 fridges), 60 days of readings with two excursions and their notes, one recheck |
+| Pay | pharmacist 4.5–6.5 mln, night pharmacist 6–7.5 mln, head 10–12 mln, courier 3.5 mln so‘m a month; the 1 % sales bonus rule on |
+| HR | diplomas and certificates for every qualified person; one certificate expiring in 20 days; one pharmacist without a verified certificate, so next Saturday night at Yunusobod shows a coverage gap; pharmacy licence, GPP certificate (surveillance visit in 3 weeks), Yunusobod's controlled-substance licence, checks for 3 thermometers and 2 hygrometers (one due in 10 days) |
+
+**Story pieces by app:** knowledge base "Dorixona qoidalari" (receiving, cold chain, dispensing prescription medicines, expired goods, the controlled register, price caps and tags, the till, the night handover); agenda (GPP surveillance visit, distributor meeting, cold-chain training, the monthly sanitary day as a monthly event); projects ("Sergeli pharmacy opening": licence, fit-out, fridge purchase, at risk; "GPP surveillance readiness"; "Q4 full stock count"; "Diabetes awareness week"); CRM (12 deals with invented clinics and companies, U in Wave 2); announcements ("New reference prices from tomorrow", "Sanitary day on Saturday").
+
+### 14.4 What the law asks, and what the product does
+
+Checked on 21.10.2026. Confidence: **H** = read in the primary text (mostly consolidated lex.uz editions), **M** = secondary source or partly read, **L** = search snippet. "(confirm)" marks what a local pharmacist or lawyer must confirm; every such item is a setting with the default shown. Full citations are in the research note.
+
+| # | Rule | Source | Conf. | Product response |
+|---|---|---|---|---|
+| 1 | Pharmaceutical activity is licensed; a licence lasts 5 years and can be extended; only pharmacies and their branches sell medicines at retail | Law 415-I "On medicines and pharmaceutical activity" (edition ZRU-399, 2016), arts. 16, 20, 21; CM No. 80 (21.02.2022) | H | G: `BranchPermit` kind `pharmacy_licence`, expiry warnings |
+| 2 | The licence number, term, activity and issuer are displayed in the pharmacy; the sign shows working hours | CM No. 185 (06.04.2017) Annex 2 paras 14, 22 | H | G: printable licence board (Could); `Branch` hours |
+| 3 | From 01.09.2025 new pharmacies must register their lease with the tax authority and accept electronic payments; a licence can be suspended for goods without documents or marking | PP-190 (23.05.2025) | M | G: permit kind `lease`; E's card and QR methods; J1 receipt checks |
+| 4 | A GPP certificate is required: chains from 01.01.2025, every pharmacy from 01.01.2026; it lasts 3 years with surveillance visits | UP-20 (23.01.2024) Annex 2; kun.uz 09.10.2025 | H / M | G: permit kind `gpp_certificate` with `next_check_on` |
+| 5 | Only people with special pharmaceutical education may sell medicines; a pharmacy head needs higher medical or pharmaceutical education, a branch head pharmaceutical education; couriers need none | CM No. 185 Annex 2 paras 8, 39¹; Law art. 21 | H | G: `qualified()`, coverage rule, unqualified-seller alert, required documents. No text says "a pharmacist every hour"; the rule is our reading of para 8 |
+| 6 | Old qualification categories (5 years) were repealed on 22.02.2024; a state registration of pharmaceutical workers (5 years) starts voluntary on 01.07.2027 and mandatory on 01.01.2030 | lex.uz 2543185; news of 21.10.2026 on a resolution of 19.10.2026 | M | G: document kinds `qualification_category` (optional) and `state_registration` (from 2027) |
+| 7 | Licence supervision at most once a year, up to 5 days, risk-based | UP-20 | H | N: inspection pack |
+| 8 | Dispensing is video-recorded continuously and the recording kept 1 month; repeated violations end the licence | PP-4438 (06.09.2019) para 3 | H | B2 preset: daily "camera records and keeps 30 days" check (Should) |
+| 9 | A medicine is OTC only if it is on the Ministry of Health OTC list (whatever its pack says); everything else is Rx | MoH list reg. No. 3315 (30.07.2021); Law art. 20 | M | J1: `rx_required`, imported from the lists |
+| 10 | Rx is sold on the approved form or an e-prescription, by INN; paper prescriptions stay in the pharmacy and go into the prescription register (Annex 1); invalid ones go into a separate register (Annex 2) and the prescriber's facility is told | CM No. 185 Annex 2 paras 27, 31, 31¹, 37¹ | H | J1: `RxRecord` and the invalid-prescription log (Should) |
+| 11 | Prescriptions are kept: preferential 3 years, narcotic 5 years, psychotropic, medical ethanol, anabolic and strong-acting list 1 year, all others 3 months; then destroyed with an act | CM No. 185 Annex 2 paras 36–37 | H | J1: `keep_until` by `rx_kind`; a destruction act for expired prescriptions (Should) |
+| 12 | E-prescriptions: in force 12.12.2025; from 16.12.2025 mandatory in Tashkent and 15 pilot districts for antibiotics, systemic synthetic antibacterials and systemic hormones; the pharmacist checks the e-prescription by the patient's ID and PINFL and records dispensing with an e-signature; nationwide rollout planned for the end of 2026 | CM No. 570 (08.09.2025); MoH order reg. No. 3725 (15.12.2025); gazeta.uz 20.01.2026 | H / M | J1: `e_rx_group` flag, `e_prescription_id` on `RxRecord`; integration point (§14.18). The product never stores a patient's PINFL |
+| 13 | Rx markup caps from 01.04.2025: retail ≤ 20 %, wholesale ≤ 15 % of the purchase price, never above the maximum reference price; OTC and medical devices are free | UP-13 (28.01.2025) para 2; CM No. 185 Annex 2 para 10 | H | J1: per-batch price caps (Must); J2: cap-breach check (Must) |
+| 14 | Socially significant medicines: 10 % cap; social pharmacies sell listed items at fixed prices | podrobno.uz 29.01.2025; CM No. 334 (03.05.2018) | M / H | J1: `socially_significant` with a 10 % default (confirm) |
+| 15 | Receipt prices registered in the tax app are compared with reference prices and fined; mass checks in 2026 revoked licences | UP-13 Annex 4; anhor.uz 2026 | H / M | J2 cap check; N insight |
+| 16 | Every item shows its price, signed by the responsible person; Rx items are not displayed to the public; a share of shelves goes to supplements and herbal products | CM No. 185 Annex 2 para 26 | H (share: M) | J1: price tags with a signature line; Rx flagged "not for public display" |
+| 17 | Every pharmacy stocks the Ministry of Health's mandatory assortment list | CM No. 185 Annex 2 para 24 | H | J1: `mandatory_list` and a daily check (Must) |
+| 18 | The buyer gets the fiscal receipt and a goods receipt naming the dispensing employee | CM No. 185 Annex 2 para 24 | H | The pharmacy's cash-register software; J2 keeps the cashier on each line |
+| 19 | Medicines sold are not returned or exchanged | CM No. 185 Annex 2 para 39; CM No. 75 (13.02.2003) list | H / M | J2: a refund lands in quarantine, never back on sale |
+| 20 | A part of a pack may be sold only if each part shows name, series, expiry and manufacturer; never from a damaged primary pack | CM No. 185 Annex 2 para 30 | H | J1: `units_per_pack` help text |
+| 21 | Online sale: OTC medicines and medical equipment only, never narcotics, psychotropics or precursors; the site shows licence, price and markup; delivery cars have cameras and temperature control | CM No. 185 Annex 2 paras 15, 29¹, 39¹, 41 | H | Out of scope (Could); any future public feed lists OTC items only |
+| 22 | Narcotics, psychotropics and precursors: a licensed activity; safes and metal cabinets; narcotics on special forms for ≤ 7 days' need, valid 7 days; psychotropics ≤ 1 month, valid 1 month, stock ≤ 1 month's need; numbered, laced, sealed books; monthly inventory by the 3rd; discrepancies reported to the internal affairs bodies and the Ministry within 3 days | MoH order No. 36, reg. No. 3604 (in force 30.01.2025, amended 19.05.2026) | H | J1: controlled register that prints pages matching the books (the paper book stays the legal record), month close by the 3rd, discrepancy alert with the 3-day reminder, validity and stock checks |
+| 23 | Listed strong-acting medicines are under subject-quantitative accounting since 01.12.2019; the starred ones (zaleplon, pregabalin, tropicamide, cyclopentolate, gabapentin, sibutramine) are sold only by social pharmacies and pharmacies licensed for narcotics and psychotropics | PP-4438 para 1; CM No. 818 (27.09.2019, edition 2024, amended 2025) | H | J1: `control_class = strong`, `restricted_channel`; such items can't be received at a branch that is neither `controlled_licence` nor `social_pharmacy` (branch settings, §14.21) |
+| 24 | Digital marking (Asl belgisi): medicines mandatory since 2022–2023 (unmarked leftovers can no longer be sold), medical devices from 01.07.2027; codes travel in e-invoices (none without codes since 01.09.2025); a receipt is formed only after the code is scanned and a used code blocks it; repeat violations are fined 0.2–2 % of quarterly net revenue and can suspend the licence | CM No. 149 (02.04.2022, edition 07.03.2026); PP-190; CM No. 23 (23.01.2026) | H / M | Integration point (§14.18); `marking_required` |
+| 25 | Wholesale of marked goods is paid by bank transfer only; imported medicines come only from the importer or its official dealers, on an e-invoice (from 01.07.2025) | PP-190 para 3 | H | I: cash-payment warning; J1: `SupplierProfile.official_dealer`, receipt warning for imported items (Should) |
+| 26 | Every sale goes through a registered online or virtual cash register; each line carries the MXIK code; the regulation has a new edition from 22.10.2026 (not yet read) | CM No. 943 (2019), edition CM No. 393 (20.07.2026) | M | No fiscalization (§0); MXIK fields for import matching |
+| 27 | Electronic invoices are mandatory between businesses | CM No. 522 (25.06.2019), cited | M | J2: invoice PDF says it is not an e-invoice; `e_invoice_ref`; integration point |
+| 28 | The VAT exemption for medicines ended on 01.04.2024 (12 % since); pharmacies may stay on turnover tax; from 01.06.2026 the turnover-tax threshold is 12 000 base values and a 6 % simplified VAT is optional | buxgalter.uz 2024–2025; UP-100 (26.05.2026) | M / H | I: `tax_regime`; J1 `vat_percent` null = company rate (confirm) |
+| 29 | Storage: a thermometer in storage rooms (placement rules), a refrigerator for heat-sensitive medicines, air conditioning, nothing on the floor, controlled items in equipped areas, daily wet cleaning, weekly disinfection, a monthly sanitary day. Humidity limits and how often to log readings were **not found** | SanQvaN 0071-24 (order No. 10, 05.04.2024) | H / M | B2: storage preset; the ranges (fridge 2–8 °C, room 15–25 °C, humidity ≤ 60 %) and twice-a-day times are defaults (confirm) |
+| 30 | Unfit, falsified and counterfeit medicines: the owner withdraws them at once and destroys them within 30 days at its cost; a commission of at least 5 (owner, environment, sanitary and pharmaceutical-safety bodies); a responsible person named by order; photo or video; an act with fixed fields, copies to those bodies | CM No. 185 Annex 3 (edition CM No. 353, 30.06.2026) | M–H | J1: write-off and destruction flow (Must) |
+| 31 | The pharmaceutical-safety centre publishes lists of falsified and rejected series as files; no feed | uzpharm-control.uz (snippet) | M | J1: `RecallNotice` import |
+| 32 | No national duty for night or on-duty pharmacies was found | Law, CM No. 185, CM No. 334 | M | `Branch.open_24h` is an operating fact, not a legal one |
+| 33 | Night work (22:00–06:00) is paid at least 1.5× | Labour Code (28.10.2022); gov.uz guidance | H (rate) / M (hours) | H: night pay |
+
+Regulators: the Ministry of Health; the Agency for the Development of Medicine and the Pharmaceutical Industry (renamed by UP-74 of 05.05.2026; runs the reference-price registry; its GxP centre issues GPP certificates); the Center for Pharmaceutical Product Safety (inspections, rejected-series lists, reference-price revisions); the Tax Committee (receipts, marking checks); CRPT Turon (Asl belgisi operator).
+
+### 14.5 Shared changes before Wave 2 (W2.a, lead) and the demo
+
+**W2.a** (the lead alone, short, committed before Wave 2 branches are cut, like W0.a). Every file here is a shared or Wave 1 file; after W2.a the package named in brackets owns it.
+1. **Permissions** (`apps/members/permissions.py` + `members/migrations/00NN_pharmacy.py`: `AlterField` for the choices and a data migration that only adds, as §5): `stock.operate` "Look up stock, count, receive goods for checking, record expiry checks and defektura" and `stock.controlled` "Keep the controlled-substance register and the prescription log". `DEFAULT_ROLES`: Pharmacist (born in the Wave 1 rebuild, §14.3) and Cashier gain `stock.operate`; Manager needs nothing new, because every `stock.operate` action also accepts `stock.manage` (§14.6.4). The data migration: roles holding `sales.operate` gain `stock.operate`, and a "Pharmacist" role is created where the name is free (any company the rebuild's migration missed). Then `make perms-ts` and `make api-types` once.
+2. **Company and branch settings** (`apps/companies/models.py` + `companies/migrations/00NN_pharmacy_settings.py`; scopes and defaults in §14.21):
+   - `Company.business_kind` (`pharmacy` | `distributor` | `both`, default `pharmacy`) and `Company.sells_to` (ArrayField of `walk_in` | `clinics` | `pharmacies` | `companies`, default `["walk_in"]`), edited in A's company settings (`apps/companies/owner_api.py`, `dashboard/src/modules/settings/panels/CompanyPanel.vue`) and asked by a new "Get started" step `companies.business` ("Tell us about your business", order 5, `settings/company`, registered in `apps/companies/hooks.py`); the "Choose your modules" step then suggests the modules that fit the kind. Both reach the dashboard in the company payload of `apps/console/queries.py` (typed in `dashboard/src/api/types.ts`), so modules hide screens that don't apply (a distributor sees no coverage week or mandatory list; a pharmacy selling only to walk-in customers sees no invoices page). They switch no module (`Company.features` stays the only switch, §0); each package reads them only for its defaults, and every such default stays an editable setting.
+   - `Branch.kind` (`pharmacy` | `warehouse` | `office`, default `pharmacy`; the retail rules of §14.6, §14.7 and §14.9 apply at pharmacy branches), `Branch.open_24h` (help text "Open around the clock: hours and weekdays are ignored"), `Branch.controlled_licence` ("Licensed for narcotics and psychotropics": the controlled register runs here), `Branch.social_pharmacy` and `Branch.e_prescription_area` (the Bools default False), edited in A's `BranchSerializer` (`apps/companies/owner_api.py`) and branch form (`dashboard/src/modules/settings/components/BranchDrawer.vue` and `types.ts`; the hours hide when `open_24h` is on); the `companies.branches` step's description names them.
+   - `open_24h`'s readers outside sales: `apps/console/queries.py`, where `branches_today` cards gain `open_24h` and `branch_status` answers `open` for a 24-hour branch when a till or a check-in shows it and `not_opened` otherwise, never `closed` or `day_off`; and the Overview's `dashboard/src/modules/overview/widgets/BranchesWidget.vue`, which shows "Open 24 hours" instead of the hours. E's alerts follow in J2 (§14.7), G reads it for coverage (§14.9), and J1 reads the licence and e-prescription flags (§14.6).
+3. **Minimal `apps.inventory`** (then J1): `Product` (every field of §14.6.1), `ProductCategory`, `Manufacturer` and `StockBatch` (without `receipt_line`, which J1 adds) in `inventory/migrations/0001_initial.py`; `ProductFactory` and `StockBatchFactory` in `inventory/tests/factories.py`; `services.py` and `queries.py` with the contract of §14.6.3 and the stub behaviour stated there.
+4. **`tasks.services.create_system_task(company, *, assignee, title, due_at, description="", checklist=(), escalate_to=None) -> Task`** (then B2): an `assigned` task with no `created_by`, `branch` = the assignee's home branch, the company's default reminder policy and the usual "new task" message, built like B's onboarding tasks (`apps/tasks/onboarding.py`); it refuses an assignee who is not approved and onboarded. Other apps need it because `create_task(by=…)` makes a personal task when `by` is also the assignee, and would put a real person's name on work the system created. J1 uses it for the monthly expiry check and recall tasks (§14.6.2).
+5. **Roster slot**: `attendance.roster.coverage` added to `EXTENSION_POINTS` (`dashboard/src/core/modules.ts`) and rendered in `dashboard/src/modules/attendance/pages/RosterPage.vue` as `<ExtensionSlot name="attendance.roster.coverage" :context="{ companyId, branchId, week }" />` (the page already keeps `?branch=` and `?week=` in the URL).
+6. **Company facts key** in `apps/console/contracts.py`: `InventoryCompanyFacts` (`expiring_30d_value: str`, `low_items: int`) under the key `inventory` in `COMPANY_FACTS` (§13.2's fixed keys), so J1's `register_company_facts("inventory", …)` passes the fixed-key check.
+7. **Dev package `j2`** in `deploy/dev-packages.mk` (`j2:trello_j2:20:28300:28301:28302:28303`), so `make guard|run|demo PKG=j2` work. J1 keeps `j`, B2 reuses `b`, J3 (Wave 3) reuses `j`.
+8. **Demo**: `seed_demo` sets the new settings of §14.3: Demo Dorixona is a `pharmacy` selling to walk-in customers and clinics, Yunusobod is `open_24h` and `controlled_licence`, both of its branches are in the e-prescription area; Demo Distribyutor is a `distributor` selling to pharmacies and clinics, and its Sergeli branch is a `warehouse`.
+9. `docs/PLAN-OWNER.md` gains this section and a line in its contents list; `docs/research/pharmacy.md` gets the research note.
+
+**The demo.** The Wave 1 visual pass rebuilds the demo now, exactly as §14.3 says: `seed_demo` and `core/tests/test_seed_demo.py`, the root `conftest.py` `DEMO_PEOPLE`, and the `demo.py` of every Wave 1 app (members, attendance, announcements, groups, knowledge, agenda, projects, inbox, signin, tasks, sales, finance, timeoff and the rest) tell the pharmacy story. There is **no separate demo track in Wave 2**: each Wave 2 package writes its part of the story into its own `demo.py` (finance I, sales J2, tasks B2, timeoff L, inventory J1, hr G, payroll H, crm U, lifecycle S, ai K), reading the people, positions and branches the core demo made, and tests it with `demo_people(company)` (rule 22). `make demo` and the extended `test_seed_demo` check the whole story at integration (§11.6).
+
+### 14.6 Package J1: stock and medicines (`apps.inventory`, Wave 2, Must)
+
+J is split by app and wave: **J1** (this section, `apps/inventory`) and **J2** (§14.7, `apps/sales`) in Wave 2, two engineers with disjoint files, and **J3** (§14.16, `apps/inventory` again, the J1 engineer) in Wave 3 for purchasing, supplier returns and stock analytics, because the pharmacy work is about three times §11.4's J. W2.a (§14.5) ships the minimal `Product` and `StockBatch` models and the stock contract with final signatures, so J2 and S code against committed stubs (the §13.3 pattern). J1 replaces §3.9 with the models below; everything in §3.9 not repeated here keeps its rules (stock changes only through services under `select_for_update`; counts hide expected quantities; "estimate" label until sale lines flow in). J1 builds and tests the mini app's E endpoints; the screens are P's in Wave 3 (§14.17).
+
+#### 14.6.1 Models
+
+```
+StockSettings (plain, 1-1 Company CASCADE, lazy via conf.get_settings)
+  expiry_steps ArrayField(SmallInt) default [90, 60, 30]   # warning steps in days; 0 (expired) is always on
+  min_shelf_days PositiveSmallInt default 180     # a receipt line expiring sooner gets a warning (a setting, not law)
+  fefo_strict Bool default True                   # taking a later batch while an earlier sellable one exists needs a reason
+  allow_negative Bool default True                # sales imported before their receipt: stock goes below zero, flagged
+  default_markup_percent Decimal(5,2) default 25.00   # OTC goods; Rx items are capped below
+  rx_max_markup_percent Decimal(5,2) default 20.00     # §14.4: Rx retail markup cap on the purchase price
+  social_max_markup_percent Decimal(5,2) default 10.00 # §14.4: socially significant medicines (confirm)
+  cap_enforced Bool default True                  # a manual price above a legal cap is refused, not just flagged
+  price_rounding Money default 100                # prices round UP to this, and DOWN when a cap would be crossed
+  price_jump_percent Decimal(5,2) default 10.00   # receipt cost above the last cost by more → warning
+  writeoff_approval Bool default True
+  show_other_branches Bool default True           # the mini app lookup shows quantities at the company's other pharmacies
+  camera_scanning Bool default True               # the mini app offers camera scanning where the phone supports it
+                                                  # (§14.17); typed search always works
+  rx_log Bool                                     # default on for a pharmacy or both, off for a distributor
+                                                  # (Company.business_kind, read when the row is made)
+  count_tolerance Money default 50000             # a count shortage above this (at cost) notifies owners
+  # legal periods: each default is the value §14.4 reports (21.10.2026); a company may change it
+  destroy_within_days PositiveSmallInt default 30         # unfit goods are destroyed within (row 30)
+  destroy_commission_min PositiveSmallInt default 5       # members of a destruction commission (row 30)
+  rx_keep_months JSONField default {"regular": 3, "benefit": 36, "narcotic": 60, "psychotropic": 12, "listed": 12}
+                                                  # prescription keeping time by rx_kind (row 11)
+  rx_destroy_commission_min PositiveSmallInt default 3    # destroying narcotic and psychotropic prescriptions (confirm)
+  narcotic_rx_valid_days PositiveSmallInt default 7; psychotropic_rx_valid_months PositiveSmallInt default 1   # row 22
+  psychotropic_stock_months PositiveSmallInt default 1    # psychotropic stock at most this much need (row 22)
+  controlled_close_day PositiveSmallInt default 3         # the month's inventory is due by this day (row 22)
+  controlled_report_days PositiveSmallInt default 3       # a discrepancy is reported within (row 22)
+  # Where the rules apply is a branch setting (W2.a, §14.21): the controlled register runs at Branch.controlled_licence
+  # branches, starred items may also be held at Branch.social_pharmacy ones, and the e-prescription check applies at
+  # Branch.e_prescription_area ones
+  next_receipt_number, next_transfer_number, next_writeoff_number
+                                                  PositiveInt default 1 (taken under select_for_update);
+                                                  J3 adds next_return_number and next_order_number
+
+Manufacturer: name CharField(120); country CharField(2, blank) (ISO 3166-1); UniqueConstraint(company, name)   # W2.a
+ProductCategory: name; parent FK self null PROTECT (max 2 levels); order    # W2.a; defaults.ensure seeds the pharmacy tree
+Product                                           # W2.a creates it with every field below; J1 owns it afterwards
+  name CharField(200)                             # display name: "Paratsetamol 500 mg tabletka №20"
+  trade_name CharField(120, blank)
+  inn CharField(200, blank, db_index)             # active ingredient(s), normalized lowercase Latin INN;
+                                                  # combinations sorted and joined with "+"
+  kind CharField(10) medicine|device|supplement|cosmetic|other|service, default medicine
+  dosage_form CharField(16, blank) tablet|capsule|syrup|suspension|solution|injection|powder|ointment|cream|gel|
+                                   eye_drops|ear_drops|nasal|spray|suppository|patch|other
+  strength CharField(40, blank)                   # "500 mg", "250 mg/5 ml"
+  units_per_pack PositiveSmallInt default 1       # sellable parts in one pack (blisters, ampoules, tablets); 1 = whole packs only
+  part_label CharField(12, blank)                 # "blister", "ampula", "dona"
+  manufacturer FK Manufacturer null PROTECT; category FK ProductCategory null SET_NULL
+  rx_required Bool default False                  # prescription-only: everything not on the OTC list (§14.4 row 9)
+  e_rx_group Bool default False                   # in a group that must be prescribed electronically (row 12)
+  control_class CharField(12) none|narcotic|psychotropic|precursor|strong default none   # rows 22–23
+  restricted_channel Bool default False           # a starred strong-acting item (row 23)
+  storage CharField(6) room|cool|cold|frozen default room   # 15–25 °C | 8–15 °C | 2–8 °C | ≤ −18 °C (confirm ranges)
+  light_sensitive Bool default False
+  barcode CharField(32, blank, db_index)          # the pack's main EAN-13
+  sku CharField(64, blank)
+  mxik_code CharField(17, blank); package_code CharField(20, blank)   # tasnif.soliq.uz product and package codes (§14.18)
+  registration_number CharField(40, blank); registration_until Date null   # state registration certificate
+  marking_required Bool default False             # carries an Asl belgisi DataMatrix code (§14.18)
+  vat_percent Decimal(4,2) null                   # null = the company's rate from I's tax regime (§14.8); §14.4
+  socially_significant Bool default False         # 10 % markup cap (§14.4)
+  mandatory_list Bool default False               # on the Ministry of Health list every pharmacy must stock (§14.4)
+  reference_price Money null; reference_price_on Date null   # registry ceiling per pack for Rx items (§14.4)
+  sale_price Money                                # per pack: the price of the batch FEFO sells next (a cache kept by
+                                                  # the services), or the list price of an item without batches
+  part_price Money null                           # per part; null = price / units_per_pack rounded up to price_rounding
+  cost_price Money null                           # last receipt cost per pack; hidden without finance.view
+  track_stock Bool default True; image ImageField(blank) (sanitized); is_active Bool default True
+  UniqueConstraint(company, barcode) where barcode != ""; UniqueConstraint(company, sku) where sku != ""
+ProductCode: product FK CASCADE; kind barcode|supplier|pos; code CharField(64)
+  supplier FK finance.Counterparty null PROTECT  # a distributor's own item code (price lists, invoices)
+  UniqueConstraint(company, kind, supplier, code, nulls_distinct=False)
+SupplierProfile: counterparty OneToOne finance.Counterparty PROTECT (kind supplier or both)
+  payment_terms_days PositiveSmallInt null        # default due date of its receipts
+  official_dealer Bool default False              # the importer or an official dealer of imported medicines (row 25)
+  delivery_days PositiveSmallInt default 1; min_order Money null; order_channel telegram|email|phone|portal|other
+  telegram_username CharField(64, blank); price_list_mapping JSONField default dict (saved column map, used by J3); notes
+
+StockBatch                                        # W2.a creates it; J1 owns it afterwards
+  product FK PROTECT; series CharField(40); expires_on Date; made_on Date null
+  receipt_line OneToOne GoodsReceiptLine null SET_NULL   # added by J1; null: opening stock or a count surplus
+  supplier FK finance.Counterparty null PROTECT
+  unit_cost Money                                 # per pack as the distributor's invoice charges it (VAT included),
+                                                  # base currency, frozen at posting
+  retail_price Money                              # per pack, set at posting; an Rx batch is never priced above
+                                                  # unit_cost × (1 + cap) or the reference price (§14.6.2)
+  status sellable|quarantine|recalled default sellable   # "expired" is derived from expires_on, never stored
+  Index(company, product, expires_on)
+BatchStock (plain): branch FK PROTECT; batch FK PROTECT; quantity Decimal(14,3)   # in parts
+  UniqueConstraint(branch, batch)
+StockLevel (plain, cache of Σ BatchStock): branch FK; product FK; quantity Decimal(14,3); min_qty, max_qty Decimal null
+  updated_at; UniqueConstraint(branch, product)
+StockMovement: branch FK PROTECT; product FK PROTECT; batch FK null PROTECT
+  kind opening|receipt|sale|refund|writeoff|transfer_out|transfer_in|count_adjustment|quarantine|release
+                                                  # J3 adds return_out
+  quantity Decimal(14,3) signed (parts); unit_cost Money null (per part); document_type CharField(32); document_id
+  reason CharField(16, blank); created_by FK Membership null SET_NULL; at DT
+  Index(company, product, at); Index(company, branch, at); Index(batch)
+
+GoodsReceipt: number CharField(24) ("KR-CHL-0042"); branch FK PROTECT; supplier FK finance.Counterparty PROTECT
+  supplier_invoice_number CharField(40); supplier_invoice_date Date; currency
+  status draft|submitted|posted|void; total, vat_total Money; due_on Date null (default invoice date + payment terms)
+  file Private(blank) (the nakladnoy: photo, PDF or XLSX)
+  received_by FK Membership null SET_NULL; posted_by FK Membership null SET_NULL; posted_at DT null
+  debt FK finance.Debt null PROTECT               # payable opened at posting
+  e_invoice_ref CharField(64, blank)              # id in the e-invoice system (§14.18)
+  marking_state CharField(10) none|pending|accepted default none   # (§14.18), never set by a call in this phase
+  + void fields; UniqueConstraint(company, number); UniqueConstraint(company, supplier, supplier_invoice_number)
+  # J3 adds order FK PurchaseOrder null SET_NULL
+GoodsReceiptLine (plain): receipt FK CASCADE; product FK PROTECT; series; expires_on; made_on null
+  packs Decimal(12,3); quantity Decimal(14,3) (parts = packs × units_per_pack); unit_cost Money (per pack)
+  vat_percent; total Money; retail_price Money null (proposed by the pricing rules, editable while draft)
+  warnings ArrayField(CharField(24)) default list # short_shelf_life, cost_jump, recalled_series, over_price_cap,
+                                                  # registration_expired, rx_flag_mismatch, not_official_dealer,
+                                                  # over_month_need, not_licensed_branch
+  order
+
+StockTransfer: number; from_branch FK PROTECT; to_branch FK PROTECT; status draft|sent|received|disputed|void
+  sent_by/sent_at, received_by/received_at; note; Check(from_branch != to_branch)
+StockTransferLine (plain): transfer FK CASCADE; product FK; batch FK PROTECT; quantity_sent; quantity_received null
+WriteOff: number; branch; reason expired|damaged|recall|quality|shortage|internal_use|other
+  status proposed|approved|destroyed|void; proposed_by; approved_by/approved_at; value Money (at batch cost)
+  destroy_by Date null                            # approved_at + 30 days for unfit goods (§14.4)
+  responsible CharField(150, blank); order_number CharField(40, blank)   # the person named by the owner's order
+  commission JSONField default list               # [{name, organisation, role}], at least 5 for a destruction (§14.4)
+  method CharField(16, blank) crush|dilute|incinerate|disposal|decontaminate|other; place CharField(200, blank)
+  destroyed_at DT null; act_pdf Private(blank) (generated); sent_to JSONField default list (who got a copy)
+WriteOffLine (plain): writeoff FK CASCADE; batch FK PROTECT; quantity; unit_cost
+WriteOffFile (plain): writeoff FK CASCADE; file Private; kind photo|video|signed_act|order|other; uploaded_by; at
+StockCount: branch; kind full|partial|handover; category FK null; status open|submitted|applied; task FK tasks.Task null
+  started_by; submitted_at; applied_by; applied_at; value_difference Money null
+StockCountLine (plain): count FK CASCADE; product FK; batch FK null; expected (snapshot, never shown to counters)
+  counted null; difference null
+RecallNotice: product FK null; inn_or_name CharField(200, blank); series CharField(40); reason CharField(200)
+  source CharField(200) (regulator list or letter, number and date); received_on Date; status open|closed
+  file Private(blank) (the list as published); found JSONField default list (branch, batch, quantity, task id)
+
+PricingRule (Should): category FK ProductCategory null CASCADE (null = every category)
+  cost_from, cost_to Money null (per pack); markup_percent Decimal(5,2); order PositiveSmallInt; is_active
+MissingRequest (defektura, Should): branch; product FK null; name CharField(200) (free text when not in the catalogue)
+  packs Decimal default 1; source CharField(10) counter|mandatory default counter
+  requested_at; requested_by FK Membership null SET_NULL
+  customer_phone CharField(16, blank) (call-back; scrubbed for AI); status open|ordered|fulfilled|cancelled
+  # J3 adds order_line FK PurchaseOrderLine null SET_NULL
+RxRecord (Should): branch; product FK PROTECT; batch FK null; quantity
+  document_type CharField(32, blank); document_id PositiveBigInt null   # e.g. ("sales.saleline", 812): a reference,
+                                                  # not a foreign key, because sales and inventory migrate in the same wave
+  prescription_number CharField(40, blank); prescribed_on Date; prescriber CharField(120); facility CharField(120, blank)
+  rx_kind regular|benefit|narcotic|psychotropic|listed default regular
+  status dispensed|invalid default dispensed; invalid_reason CharField(200, blank); facility_notified_at DT null
+  # no patient name, ID or PINFL is ever stored
+  e_prescription_id CharField(64, blank) (§14.18); photo Private(blank) (the paper prescription, when kept)
+  keep_until Date                                 # recorded + rx_keep_months[rx_kind]
+  recorded_by; recorded_at
+ControlledPeriod (Must; at Branch.controlled_licence branches): branch; product FK; month Date (1st)
+  opening, received, issued, written_off, closing, counted Decimal; difference Decimal
+  closed_by FK Membership null; closed_at DT null; reported_on Date null (the discrepancy report, row 22)
+  UniqueConstraint(branch, product, month)
+MarkingCode (Could, §14.18): code CharField(100); product FK; batch FK null; status received|sold|written_off|returned
+  receipt_line FK null; document_type/document_id (the sale or write-off); at DT; UniqueConstraint(company, code)
+  # designed, not built
+```
+
+J2's `SaleLine` and `InvoiceLine` point at `Product` and, for stock-tracked items, at `StockBatch` (one line per batch, §14.7). Both models come from W2.a's `inventory/migrations/0001_initial.py`, so J2's migrations depend only on committed ones (§13.7).
+
+#### 14.6.2 Rules
+
+- **Parts and packs.** Quantities are stored in parts. `packs × units_per_pack = parts`. The UI shows "3 qadoq 1 blister" (packs and the remainder). Part price = `part_price`, or the batch price / `units_per_pack` rounded up to `price_rounding`; for an Rx item it rounds down instead when rounding up would put the part above its own cap. Golden: pack 24 000, 2 parts → part 12 000; pack 25 150, 10 parts, rounding 100 → part 2 600; Rx pack 12 400 at cost 10 340, 3 parts → 4 133.33 → part cap 4 136 → **4 100**.
+- **FEFO.** `deduct()` takes, at the branch, sellable batches with stock in order of `expires_on`, then the receipt date, skipping `quarantine`, `recalled` and expired batches. A caller may name a series; with `fefo_strict`, naming a later batch while an earlier sellable one has stock needs a reason (stored on the movement). Golden: batch A (expires 31.12.2026, 10 parts) and B (31.03.2027, 20 parts); a sale of 15 → A 0, B 15, cost = 10 × A's part cost + 5 × B's.
+- **Negative stock.** With `allow_negative`, a deduction larger than the sellable stock takes what exists and books the rest against a "shortfall" movement with `batch=None`, flagged on the level ("−3, waiting for a receipt"). The next receipt of that product at that branch settles the shortfall first (a `count_adjustment` pair, cost from the new batch). Without it, the service raises `DomainError`.
+- **Receipts.** A draft (pharmacist through the E endpoints, or the dashboard) becomes `submitted`; someone with `stock.manage` posts it. Posting, in one transaction: number taken, one batch per line, `BatchStock` and `StockLevel` up, `receipt` movements, `Product.cost_price` updated, warnings recomputed and stored, and the payable opened through the finance contract: `finance.services.open_debt(company, by=by, direction="payable", kind="trade", amount=receipt.total, currency=receipt.currency, issued_on=receipt.supplier_invoice_date, counterparty=receipt.supplier, due_on=receipt.due_on, category="goods", branch=receipt.branch, source=Source("inventory.goodsreceipt", receipt.id))` (`Source` from `apps.finance.sources`; the `goods` category books the purchase as an accrual, §3.7). Golden: invoice 05.10.2026, terms 30 days → due 04.11.2026. Void: only while none of its batches has a later movement; an unpaid payable is cancelled with `cancel_debt(debt, by=by, reason=…)`, and a payable with any payment refuses the void ("return the goods instead", J3).
+- **Warnings at receipt** never block posting, except `not_licensed_branch` (below): `short_shelf_life` (expires within `min_shelf_days`), `cost_jump` (unit cost above the last cost by more than `price_jump_percent`), `recalled_series` (an open `RecallNotice` matches product or INN and series), `registration_expired`, `rx_flag_mismatch` (the distributor's file says Rx and the catalogue doesn't), `over_price_cap` (the proposed price was lowered to the cap).
+- **Retail prices and legal caps (Must).** Prices are per batch because the Rx cap is a markup on that batch's purchase price (§14.4). At posting each line's `retail_price` becomes the batch's price: the proposal is `cost × (1 + markup)` rounded up to `price_rounding`, where the markup comes from the first matching `PricingRule` (Should) or `default_markup_percent`. For an Rx product the price is then capped at `cost × (1 + rx_max_markup_percent)` (or `social_max_markup_percent` when `socially_significant`) **rounded down**, and at `reference_price` when set. Golden (rounding 100): OTC cost 10 340 at 25 % → 12 925 → **13 000**; Rx cost 10 340 → cap 12 408 → **12 400**; the same Rx item with a reference price of 12 000 → **12 000**; socially significant cost 10 340 → cap 11 374 → **11 300**. With `cap_enforced`, setting an Rx batch's price above its cap raises `DomainError`. Every price change is audited and adds the product to a "price tags to print" list (PDF from `core.pdf.render_pdf`, Should; Rx items carry "not for public display" on the shelf list, §14.4). `reference_price` is typed or imported from an XLSX of the registry (no feed exists, §14.18).
+- **Mandatory assortment (Must).** A daily check lists, per pharmacy branch (`Branch.kind = pharmacy`), every `mandatory_list` product with no sellable stock (`inventory.queries.mandatory_missing`), in the expiry digest, the brief and a "Mandatory list" filter on the Stock page; with defektura (Should) each also opens a defektura row (`source = mandatory`). The list itself is imported once from the Ministry of Health's published list (XLSX) and edited by hand.
+- **Transfers.** `send` deducts the named batches (or FEFO) at the source into transit; `receive` adds the received quantities of the **same batches** at the destination. A difference makes the transfer `disputed`, notifies both heads and keeps the missing quantity in transit until a manager resolves it (write-off as shortage or correction).
+- **Write-offs and destruction.** Proposed with reason and photos; with `writeoff_approval` someone with `stock.manage` approves, which deducts the batches and freezes `value` at batch cost. Unfit goods (expired, damaged, quality, recall) get `destroy_by` = approval + `destroy_within_days` (default 30, §14.4), with reminders to the approver 10 days before and on the day. Recording the destruction needs the method, place, date and time, the responsible person and order number, a commission of at least `destroy_commission_min` people (default 5; the form offers the owner and the environmental, sanitary and pharmaceutical-safety authorities, confirm) and at least one photo or video. The act PDF ("Yo‘q qilish dalolatnomasi" / "Акт уничтожения", uz and ru) prints every field of §14.4 plus lines, series, expiry and value; `sent_to` records who received a copy. A shortage or internal-use write-off has no destruction step. **No ledger row** in either case: the cost was booked as a purchase when the goods arrived; expiry losses are an analytics figure (§14.16).
+- **Expiry.** A daily job per company (06:00 local, once per day) notifies each batch once per step of `expiry_steps` (default 90, 60, 30 days) and once at expiry, as one digest per branch to `stock.manage` holders of that branch; on the 1st of each month it creates one "Expiry shelf check" task per branch through W2.a's `tasks.services.create_system_task`, assigned to the branch's `manager` (else the first active `stock.manage` holder whose home branch it is, else the first owner), with a checklist of up to 30 batches that expire within the first step. An expired batch can't be sold, transferred or returned (sales imports still record it, flagged "sold after expiry" for owners).
+- **Quarantine and recall.** `quarantine`/`release` move a batch in or out of sale with a reason. Registering a `RecallNotice` (typed, or imported from the XLSX/CSV form of the regulator's rejected-series list, §14.4) finds every matching batch in every branch, sets it `recalled`, records what was found and creates one "Remove series X from sale" task per branch that holds it (`create_system_task`, same assignee rule); it closes when every found quantity was written off (or, from Wave 3, returned). Receipts are checked against open notices (`recalled_series`).
+- **Counts.** As §3.9, by batch for stock-tracked products: the counter sees product, series and expiry, never the expected quantity. `handover` counts are the ones S asks for when a head of pharmacy leaves (§14.14). Applying books `count_adjustment` movements per batch at batch cost; a shortage above `count_tolerance` (at cost) notifies owners.
+- **Prescription log (Should).** An `RxRecord` is made from an imported sale line of an Rx product (J2 fills what the import file carries; the pharmacist completes the rest through the E endpoint) or entered by hand. At a branch with `e_prescription_area`, an Rx line of an `e_rx_group` product without `e_prescription_id` is flagged for the head. An invalid prescription is recorded with `status=invalid` and the reason, and the head marks when the prescriber's facility was told. The monthly logs (prescriptions; invalid prescriptions) print from these rows. `keep_until` follows `rx_keep_months` by `rx_kind` (defaults: the periods of §14.4 row 11); a nightly job deletes the photo and blanks the prescriber after it (the counts stay for analytics).
+- **Controlled register (Must).** At each branch with `controlled_licence`, for products with `control_class != none`, the register is computed from movements (opening, received by receipt, issued by sale, written off, closing) per product and month. The paper books (numbered, laced, sealed) stay the legal record; 911 prints pages laid out like them (narcotics book; psychotropics and precursor-containing medicines book) so the pharmacist copies or attaches them (confirm the layouts). "Close the month" stores a `ControlledPeriod` with the counted balance: a reminder on the 1st, an alert the day after `controlled_close_day` (default the 3rd) if not closed. A difference is critical: owners and `stock.controlled` holders are notified with "report to the internal affairs bodies and the Ministry of Health within `controlled_report_days` days" (default 3), repeated daily until `reported_on` is filled. With the prescription log on, an issue of such a product without an `RxRecord` within 24 hours is flagged on the register, and an `RxRecord` dispensed after the prescription's validity (`narcotic_rx_valid_days`, default 7; `psychotropic_rx_valid_months`, default 1) is flagged; without the log the register still balances and closes. Receiving a narcotic, psychotropic or precursor item at a branch without `controlled_licence`, or a `restricted_channel` item at a branch that has neither `controlled_licence` nor `social_pharmacy`, is refused (`not_licensed_branch`); a psychotropic receipt that leaves more than `psychotropic_stock_months` of need on hand (default 1; velocity × 30 a month) warns (`over_month_need`).
+- **Prescriptions past their keeping time (Should).** On the 1st, the list of `RxRecord` rows past `keep_until` becomes a draft destruction act (a commission of at least `rx_destroy_commission_min`, default 3, for narcotic and psychotropic prescriptions, confirm); confirming it records the act and clears the photos.
+- **Distributors of imported goods (Should).** A receipt line of a product whose manufacturer is outside Uzbekistan, from a supplier without `official_dealer`, warns (`not_official_dealer`).
+
+#### 14.6.3 Services and the stock contract
+
+Contract (signatures fixed in W2.a; J1 fills them; J2, S, J3 and N call them):
+```python
+Allocation = NamedTuple("Allocation", [("batch_id", int | None), ("quantity", Decimal), ("unit_cost", Decimal | None)])
+#   quantity in parts; unit_cost per part at batch cost
+inventory.services.deduct(branch, product, quantity, *, by, document: tuple[str, int], kind="sale",
+                          series=None, reason="", at=None) -> list[Allocation]          # FEFO; parts
+inventory.services.restock(branch, allocations, *, by, document, kind="refund",
+                           status="quarantine") -> None     # refunds; a voided invoice passes status="sellable"
+inventory.services.start_count(branch, *, by, kind="partial", category=None) -> StockCount
+inventory.services.remember_code(product, *, by, kind, code, supplier=None) -> None         # an import line matched by hand
+inventory.services.record_rx(*, by, branch, product, quantity, document=None, **fields) -> RxRecord | None
+inventory.services.journal_pdf(kind, *, branch, month, product=None, language) -> bytes     # kind rx|rx_invalid|controlled
+inventory.queries.match_code(company, code) -> Product | None                             # barcode, POS or supplier code
+inventory.queries.lookup(company, q, *, branch_ids, limit=20) -> list[dict]               # name, trade name, INN, barcode
+inventory.queries.levels(company, *, branch_ids, low=False)                               # (§11.4)
+inventory.queries.batches(company, *, branch_ids, product_id=None, expiring_within=None, status=None) -> QuerySet
+inventory.queries.expiring(company, *, branch_ids, within_days, as_of) -> list[dict]      # value at cost and retail
+inventory.queries.movements(company, start, end, *, branch_ids, kinds=None) -> QuerySet   # J3's and N's source
+inventory.queries.velocity(company, *, branch_ids, days=28) -> dict[tuple[int, int], Decimal]   # (branch, product) → parts/day
+inventory.queries.analogs(product, *, branch_ids) -> list[dict]                           # same inn + dosage_form + strength
+inventory.queries.mandatory_missing(company, *, branch_ids, day) -> list[dict]
+inventory.queries.last_applied_count(branch, *, kind="handover") -> datetime | None       # S's handover blocker
+```
+W2.a stubs: `deduct` returns `[Allocation(None, quantity, None)]` and moves nothing; `restock` and `remember_code` do nothing; `record_rx` returns `None`; `start_count` and `journal_pdf` raise `DomainError` ("arrives with the stock module"); `match_code` and `lookup` work on `Product` from day one (barcode and SKU; quantities `null` until J1); the other queries return empty results or `None`. J1 keeps every signature. `restock` with `batch_id=None` (a refund whose sale the file doesn't name) books against the batch most recently deducted for that product at that branch.
+
+Other services (all audited, `by: Membership`): products (create, update, `import_products(file, mapping)` from XLSX/CSV with barcode matching and a dry run, merge two products), categories, manufacturers, supplier profiles; receipts (`create_receipt`, `add_line`, `import_lines(receipt, file, mapping)` for a distributor's Excel invoice (Should), `submit`, `post`, `void`); transfers (`create`, `send`, `receive`, `resolve`); write-offs (`propose`, `approve`, `mark_destroyed`, `void`); counts (`start_count`, `submit`, `apply`); batches (`quarantine`, `release`, `set_markdown`); recalls (`register_recall`, `close_recall`); pricing (`suggest_price`, `set_price`; `price_tags_pdf`, Should); defektura (`add_request`, `set_status`, Should); prescriptions (`record_rx`, Should); controlled register (`close_month`). J3 adds returns, price lists and orders in Wave 3 (§14.16).
+
+#### 14.6.4 API, permissions, registrations
+
+O `stock/` (replaces §4.8's one-line stock list): CRUD `products/` (+ `import/`, `{id}/analogs/`, `{id}/batches/`, `{id}/movements/`), `categories/`, `manufacturers/`, `suppliers/`; GET `levels/?branch&q&low&negative&rx&control&storage&mandatory`; GET `batches/?branch&product&expires_before&status` + POST `batches/{id}/{quarantine|release|markdown}/`; GET `expiry/?branch&within=90` (buckets with value); CRUD `receipts/` + `{id}/lines/import/` + POST `{id}/{post|void}/`; CRUD `transfers/` + `{id}/{send|receive|resolve|void}/`; CRUD `write-offs/` + `{id}/{approve|destroyed|void}/` + GET `{id}/act/`; CRUD `counts/` + `{id}/{submit|apply}/`; CRUD `recalls/` + `{id}/close/`; `pricing-rules/`, POST `price-tags/`; CRUD `defektura/`; GET `journals/rx/?branch&month` (+ `pdf/`), GET `journals/controlled/?branch&product&month` (+ `pdf/`), POST `journals/controlled/close/`; GET/PATCH `settings/`.
+
+E `stock/` (the mini app; P builds the screens in Wave 3, §14.17): GET `settings/` (the mini app's flags: `camera_scanning`, `show_other_branches`); GET `lookup/?q=` (my branches first, then the others when `show_other_branches`), GET `products/{id}/` (batches here, analogs, other branches); GET/POST `receipts/` (draft), POST/PATCH `receipts/{id}/lines/`, POST `receipts/{id}/submit/`; GET/PATCH `counts/{id}/lines/` (blind); GET `expiry/` (my branch) + POST `batches/{id}/expiry-action/` `{action: on_shelf|propose_writeoff, photo?}` (J3 adds `propose_return`); GET `transfers/incoming/` + POST `transfers/{id}/receive/`; POST `defektura/`; POST `rx/`.
+
+Permissions (W2.a adds the two new codes, §14.5):
+
+| Action | Permission |
+|---|---|
+| Read stock, batches, lookup, analogs | `sales.view`, `stock.manage` or `stock.operate` (§5's "read access to stock" gains `stock.operate`) |
+| Receipt drafts, counts, expiry actions, receiving a transfer, defektura, prescription entries | `stock.operate` or `stock.manage` |
+| Post or void receipts, approve write-offs, transfers, recalls, prices, catalogue, settings (and J3's returns and orders) | `stock.manage` |
+| Controlled register (read, close the month) and the prescription log | `stock.controlled` |
+| Cost prices, batch costs, values, margins | `finance.view` (field rule of §5) |
+
+Registrations: search `inventory.product` (name, trade name, INN, barcode), `inventory.batch` (series: the recall search), `inventory.receipt`; queues `inventory.receipts_to_post`, `inventory.writeoffs_to_approve`, `inventory.transfers_disputed`; pulse `inventory.expiring`, `inventory.low`, `inventory.to_post`; notification kinds `inventory.expiry_digest`, `inventory.transfer_incoming`, `inventory.transfer_disputed`, `inventory.recall`, `inventory.count_shortage`, `inventory.cost_jump`, `inventory.destroy_due`, `inventory.controlled_close_due`, `inventory.controlled_mismatch`; brief section `inventory` (value expiring in 30 days, expired still on stock, low stock, mandatory items missing, receipts to post, open recalls); exporters `inventory.levels`, `inventory.batches`, `inventory.movements`, `inventory.expiry`, `inventory.writeoffs`, `inventory.rx_log` (sensitive), `inventory.controlled`; finance source `inventory.goodsreceipt`; file checks `inventory.receipt_file`, `inventory.writeoff_act`, `inventory.rx_photo`; setup steps `inventory.catalogue` ("Import your medicines"), `inventory.opening_stock` ("Enter opening stock with series and expiry"), `inventory.suppliers` ("Add distributors and their payment terms"); copy parts `inventory.categories`, `inventory.pricing`; company facts `inventory` (`expiring_30d_value`, `low_items`; W2.a adds the key); AI tools in §14.12; Overview widgets `inventory.kpi.expiring_30d`, `inventory.kpi.stock_value` (finance.view), `inventory.low_stock`; settings panel `stock`; beat `inventory.tasks.daily_scan` (hourly, acting once per company day at 06:00 local: expiry steps, the monthly check task, the mandatory-assortment check, destruction and controlled-month reminders, prescriptions past keeping), `recompute_low_stock` (hourly, §10.1), `remind_unposted` (daily: drafts older than 2 days).
+
+Dashboard (`dashboard/src/modules/stock/`, group `money`, first item): **Medicines** (catalogue with Rx, controlled and cold-chain badges, import wizard), **Stock** (levels by branch with batches; filters low, negative, Rx, controlled, storage, mandatory), **Expiry** (90 / 60 / 30 / expired buckets with value; bulk actions transfer, mark down, write off; J3 adds return), **Receipts** (list, detail with lines and warnings, post, link to the payable), **Transfers**, **Write-offs and acts**, **Counts**, **Recalls**, **Defektura** (Should), **Journals** (the prescription log when `rx_log` is on, the controlled register when a branch has `controlled_licence`). Product drawer: batches, movements, analogs, price history, codes. Settings → Stock (`settings/stock`) edits every `StockSettings` field, grouped as prices and caps, expiry, legal periods, prescriptions and the mini app.
+
+Bot: J1 has no router of its own; everything goes through inbox kinds with action buttons: "Transfer from Chilonzor: 8 items [Received ✓] [Open]", "Receipt KR-CHL-0042 from Ko‘kterak Farm waits for posting [Open]", "Chilonzor: 12 batches expire within 30 days, 4.2 mln so‘m [Open]", "Recall: series 230415 of Amoksitsillin 500 mg, 3 packs at Yunusobod [Open]". [Received ✓] receives every line as sent (differences need the screen). An employee's [Open] is an inline button that opens the mini app at `app_screen` (`stock.expiry`, `stock.transfer:<id>`; P's pages answer them in Wave 3); an owner's opens the dashboard.
+
+Demo (`apps/inventory/demo.py`): the catalogue, batches, receipts, transfers, write-offs, counts, a recall, defektura and a closed controlled month at Yunusobod of §14.3.
+
+Owns (Wave 2):
+```
+backend/apps/inventory/                   (all; W2.a's models, factories and contract signatures stay fixed)
+dashboard/src/modules/stock/
+```
+Tests: `PYTEST_DB=j uv run pytest backend/apps/inventory`.
+
+Acceptance: the golden cases above (parts and part price, FEFO, payable due date, pricing with and without a cap) as exact tests; the contract signatures equal W2.a's (a test imports and inspects them); stock changes only through services under row locks (two parallel deductions of the last 5 parts: one gets them, the other a shortfall); quarantined, recalled and expired batches never allocated; posting a receipt opens exactly one payable and a retried post opens none; a receipt with a consumed batch can't be voided; a transfer moves the same batches and a short receipt makes it disputed; write-off approval deducts at batch cost, writes no ledger row and the act PDF starts with `%PDF`; each expiry step notifies once per batch and the monthly check task is created once per branch through `create_system_task`; a recall finds batches in every branch, blocks them and makes one task per branch; counts never return `expected` to a counter (API test); the controlled register's closing balance equals opening + received − issued − written off on fixtures; branch scope on every list, export, search provider and AI tool; cost fields absent without `finance.view`.
+
+### 14.7 Package J2: sales lines, customers and invoices (`apps.sales`, Wave 2)
+
+J2 continues E's app with J's sales rows of §11.4 (invoices, customers, nasiya, imports, Kassa additions) and adds what a pharmacy needs to get **true stock, margins and cap compliance from the cash-register software it already uses**.
+
+**Sales line import (Must).**
+- `SalesSettings.sales_lines` (`none` | `import` | `receipts`, default `none`): where a company's sale lines come from. `none` means no lines: stock moves only through receipts, transfers, write-offs and counts, the stock pages keep §3.9's "estimate" label, and margins, ABC and the cap check say they need sales lines. `import` turns on the Import page and the daily import below. `receipts` is the receipts mode with lines (below). Edited in Settings → Sales (`settings/sales`); the "Get started" step `sales.lines` ("Where do your sales lines come from?") asks it. A new `SalesSettings` row of a company whose `business_kind` is `distributor` starts with `mode = invoices`.
+- `SalesImportProfile`: name; `file_kind` csv|xlsx; `encoding`; `delimiter`; `columns` JSON (map of receipt number, date and time, register, cashier code, item code, item name, quantity, unit (pack|part), price, discount, line total, payment method, refund flag, series, prescription number); `date_format`; `branch` FK null (null = a branch column); `is_active` — one per cash-register program, with its column map saved; a company may keep several (a chain running two programs), each reused every day.
+- `SalesImport` (the plan's `imports/`): profile; file Private; status queued|processing|ready|failed; counts (lines, matched, unmatched, duplicates); `day_check` JSON (imported net vs `DailySales.net` per branch and day); `created_by` FK Membership null SET_NULL.
+- `PosCashier`: `code CharField(32)`; `membership FK Membership null SET_NULL`; `UniqueConstraint(company, code)` — maps the program's cashier names or codes to people, once.
+- `SaleLine` (§3.8; no such model exists yet, J2 creates it) with §3.8's fields, `cost_price` replaced by `cost Money null` (batch part cost × quantity), plus `batch FK inventory.StockBatch null PROTECT`, `quantity` in parts, `parts_per_pack` (snapshot) and `line_number`. A receipt line that spans batches is stored as one row per batch (same `line_number`). Its prescription is found through `RxRecord.document_type/document_id`.
+- Imported receipts are `Sale` rows with `source=import`, `shift=None`, `cashier` from `PosCashier`, and `external_id = "<profile id>:<register>:<business day>:<receipt number>"` (its SHA-1 when longer than 64 characters), because cash-register programs restart receipt numbers per register and day; importing the same file twice adds nothing (§3.8's unique constraint).
+- **Imported receipts are line facts, not money.** E's shift totals stay the only source of sales money (§0: one ledger). An import never calls `finance_bridge.book_sale`, and `rollup.rebuild_day` leaves `source=import` rows out of `DailySales` (today it adds every shift-less sale to the day). Without this, every imported receipt would count twice in sales and in the ledger.
+- Processing (`sales.tasks.process_import`, §10.1): match each code with `inventory.queries.match_code`; `inventory.services.deduct(branch, product, quantity, by=import.created_by, document=("sales.sale", sale.id), series=…)` (FEFO; the file's series when it has one), then one `SaleLine` per returned allocation; refunds call `inventory.services.restock(…, status="quarantine")` with the original receipt's allocations when the file names it, because medicines of proper quality may not be taken back for resale (§14.4); an Rx line with a prescription number calls `inventory.services.record_rx(…, document=("sales.saleline", line.id))`. Unmatched lines wait in a "match" list; matching one by hand calls `inventory.services.remember_code` and reprocesses every waiting line with that code.
+- **Cap check (Must):** after each import, every Rx line sold above its batch cap or the product's reference price (§14.6.2) is listed (`sales.queries.cap_breaches`); one notification `sales.price_cap_breach` per branch and day to `sales.manage` holders and owners ("3 sales above the legal price yesterday at Yunusobod"), because tax-app receipts are matched against reference prices (§14.4).
+- **Day check:** the imported net per branch and day is compared with E's shift totals (`DailySales.net`); a gap above 1 % is shown on the import and in the brief ("the import covers 96 % of Tuesday's tills").
+
+**24-hour branches (Must).** `scan.py`: for an `open_24h` branch there is no "branch not opened" alert and no "after closing" moment; a till open more than 26 hours alerts instead (today a branch without hours alerts after 16), and the cash-over-limit check runs once at the business day's end (`SalesSettings.business_day_ends_at`).
+
+**Customers, nasiya, invoices (Should, as §11.4).** Unchanged except:
+- Invoice lines of stock-tracked products deduct stock at issue (FEFO, `document=("sales.invoice", id)`), are stored one row per batch with series and expiry printed, and a void restocks them with `status="sellable"` (the goods never left).
+- An Rx invoice line priced above its batch cost × (1 + `SalesSettings.rx_wholesale_max_markup_percent`, default 15.00, the wholesale cap of §14.4 row 13) or the product's reference price warns at issue (Should; the distributor profile).
+- The PDF prints each line's MXIK code and VAT (the product's rate, else the company's rate from I's `finance.queries.vat_percent(company)`, called through `apps/sales/integrations.py`, which answers 0 until integration) and the footer "This is not an electronic invoice (EHF)" in uz/ru/en. The legal B2B document is the e-invoice (§14.4); `Invoice.e_invoice_ref CharField(64, blank)` stores its id when someone types it (§14.18).
+- `sales.services.create_invoice(company, *, by, counterparty, lines, branch=None, currency="UZS", notes="") -> Invoice` (a draft; `lines` = `[{"product_id"?, "name", "quantity", "price", "discount"?}]`) is the fixed signature U calls (§14.13).
+- Customer kinds in pharmacy words: clinic, pharmacy, company, person (Counterparty `tags`).
+
+**Receipts mode with lines** (§1.7 "Line items on single receipts", `sales_lines = receipts`) stays Should and is meant for a pharmacy without software of its own; it deducts stock through the same contract, and those sales are money as today.
+
+Registrations (in addition to §11.4's J rows for sales): setup step `sales.lines`; exporter `sales.lines`; queue `sales.import_unmatched` (count of waiting lines); notification kinds `sales.price_cap_breach`, `sales.import_failed`; brief section addition (cap breaches, import gap); query contracts for J3 and N: `sales.queries.line_facts(company, start, end, *, branch_ids) -> QuerySet` (lines with batch, cost, cashier, receipt, branch, business day) and `sales.queries.cap_breaches(company, start, end, *, branch_ids) -> list[dict]`; AI tool `sales_lines_top` (top items, cap breaches; Should).
+
+Dashboard (`dashboard/src/modules/sales/`): **Import** (profiles with a column mapper that previews the first 20 rows, uploads, results with matched/unmatched/duplicates and the day check, the match list), **Lines** (filterable table, Rx and cap-breach filters), POS cashier mapping in settings. Mini app (`features/kassa/`): nasiya sale and payment as §9.3.
+
+Demo (`apps/sales/demo.py`, already pharmacy from the Wave 1 rebuild): an import profile, 35 days of imported lines matching the tills, two cap breaches, the match list with three waiting codes, and invoices of Demo Distribyutor.
+
+Owns (Wave 2):
+```
+backend/apps/sales/                       (all, continuing E's work, including templates/sales/invoice.html and demo.py)
+dashboard/src/modules/sales/
+miniapp/src/features/kassa/
+employee_bot/bot/handlers/features/sales.py, employee_bot/tests/test_sales.py
+```
+Tests: `PYTEST_DB=j2 uv run pytest backend/apps/sales employee_bot/tests/test_sales.py` (W2.a adds the `j2` dev package).
+
+Acceptance: §11.4's J acceptance for invoices, customers and nasiya; with `sales_lines = none` no import runs and nothing else changes; importing the same file twice adds nothing, and two receipts with the same number on different days or registers are both kept; an import changes neither `DailySales` nor any ledger row (the day's shift totals and P&L are identical before and after); a line spanning two batches becomes two rows whose costs add up; an unmatched code matched once is remembered and its waiting lines are processed; refunds land in quarantine; an Rx line above its cap is listed and notified once per branch and day; the day check matches hand-computed fixtures; a 24-hour branch gets no not-opened alert and its till alerts after 26 hours; with the W2.a stub (`deduct` returns one allocation without a batch) the import still records lines with `cost = null`, so J2 never waits for J1.
+
+### 14.8 Package I: distributor payables, credit notes and the tax regime (Wave 2)
+
+I keeps §11.4's scope. Pharmacy additions:
+
+| Item | Rank | What |
+|---|---|---|
+| `credit_debt` contract | Should | `finance.services.credit_debt(debt, *, by, amount, credited_on, reason, source=None) -> Transaction`: settles part of an open debt without money and reduces the P&L of the debt's own category (a contra row tied to the debt, no account: a payable's purchase cost goes down, a receivable's sales go down); it counts in `Debt.paid` like a write-off. Idempotent on `source`; refuses more than the open amount and a debt locked by another source. J3's supplier returns call it in Wave 3 |
+| Pay distributors | Should | Finance → **Payables** screen: open payables grouped by distributor and due date (overdue, this week, later), select several and pay from one account (`pay_debt` per debt, one audit row each). Paying a goods-receipt payable (`Debt.source_type == "inventory.goodsreceipt"`) from a cash, safe, employee or owner account shows a warning, because wholesale of marked goods must be paid by bank transfer (§14.4 row 25) |
+| Tax regime | Must (the setting); Should (calendar and tile) | `FinanceSettings.tax_regime` (`turnover`, `vat` or `vat_simplified`; default `turnover`) and `vat_percent` (12.00 for vat, 6.00 for vat_simplified, 0 otherwise); `finance.queries.vat_percent(company) -> Decimal` (J2 calls it, §14.7). Per company, edited in Settings → Finance (`settings/finance`) and asked by the "Get started" step `finance.tax_regime` ("Which tax do you pay?"); a product with another rate sets `Product.vat_percent` (J1). Should: the tax-calendar templates of §1.6 in one set per regime, and a "turnover so far this year vs the turnover-tax threshold" tile with the threshold in base calculation values as an editable setting (default 12 000, §14.4, confirm) |
+| Pharmacy categories | Must | `defaults.ensure` adds, when missing, plain categories (no system code, since no service books into them): income "Marketing bonuses" (what manufacturers and distributors pay for displays and plans), "Insurance fund reimbursements"; expense "Licences and certificates", "Destruction services", "Instrument checks". New companies get `goods` named "Medicines and goods"; an existing name is never overwritten |
+| Demo | Must | `apps/finance/demo.py` (pharmacy since the Wave 1 rebuild, no real company names, §14.3) gains I's rows: budgets, recurring rent and utilities, the tax calendar, claims, a marketing bonus, destruction services, and distributor payables only before J1's six weeks of receipts, so the two demos never book the same invoice |
+
+Registrations added: setup step `finance.tax_regime`; brief section line "payables due today and overdue"; AI tool `finance_payables` (by distributor and due date, `share_finance`; Should). Tests and ownership as §11.4.
+
+Acceptance (added): `credit_debt` books one row, moves no account, lowers the category total and the debt by the same amount, and a retry with the same source books nothing; the payables screen pays three debts in one action with three ledger rows; the cash-account warning appears for a goods-receipt payable and not for rent; `vat_percent` follows the regime.
+
+### 14.9 Package G: qualifications, licences and the pharmacist coverage rule (Wave 2, Must)
+
+G keeps §11.4's and §13.4's scope. A pharmacy may let only people with pharmaceutical education sell (§14.4), so G owns the facts that say who is qualified, and the rule that uses them. The rule lives in G, not in F: F's app is committed and only read (`attendance.queries.shifts_between`, `records_between`, `day_board`), so nothing in `apps/attendance` changes; the roster slot is a dashboard line W2.a adds (§14.5). G's own Should rows of §1.8 (hiring with vacancies and applicants, celebrations, policies) are cut before anything in this section.
+
+**Models (added to §3.11):**
+```
+EmployeeDocument.kind gains: pharmacy_diploma (higher: provizor, or college: farmatsevt), medical_diploma,
+  pharmacist_certificate (specialist certificate), qualification_category (malaka toifasi, optional since 2024),
+  state_registration (the 5-year registration, voluntary from 01.07.2027, mandatory from 01.01.2030), medical_exam
+EmployeeDocument gains: level CharField(16, blank) (higher|college for diplomas; highest|first|second for categories)
+  specialty CharField(80, blank); issuer CharField(150, blank)
+RequiredDocument (Should in §3.11): Must now; gains level CharField(16, blank) (blank = any level) and
+  alternatives ArrayField(CharField(24)) default list (other kinds that satisfy it)
+HRSettings gains (edited in Settings → HR, settings/hr):
+  coverage_enabled Bool default True            # the rule runs at pharmacy branches (Branch.kind = pharmacy) only,
+                                                # so a distributor's warehouses never show gaps
+  pharmacist_positions M2M Position blank       # who counts as a pharmacist on duty
+  coverage_min PositiveSmallInt default 1       # qualified people needed whenever a branch is open
+  coverage_needs_documents Bool default True    # only people who meet their position's required documents count
+  coverage_alert_minutes PositiveSmallInt default 15
+  coverage_days PositiveSmallInt default 14     # how far ahead planned gaps are checked
+  unqualified_seller_alert Bool default True    # off for a company whose cashiers only take payment
+BranchPermit (TenantModel): branch FK null PROTECT (null = the whole company)
+  kind pharmacy_licence|controlled_licence|gpp_certificate|lease|sanitary|fire_safety|instrument_check|other
+  number CharField(60, blank); issuer CharField(150, blank); issued_on Date null; expires_on Date null (null = no end)
+  next_check_on Date null                       # a GPP surveillance visit, an instrument's metrological check
+  file Private(blank); note CharField(300, blank); expiry_notified ArrayField(SmallInt) default list; is_active Bool
+  Index(company, expires_on)
+  # a new pharmacy_licence defaults expires_on to issued_on + 5 years (§14.4 row 1); a gpp_certificate to + 3 years
+```
+Required documents are not guessed from position names (real companies name positions in Uzbek or Russian, and `defaults.ensure` runs for every company after each deploy). The setup step `hr.pharmacists` asks which positions are pharmacists and which is the head; saving fills `pharmacist_positions` and creates their `RequiredDocument` rows when none exist (§14.4 row 5; confirm): head → `pharmacy_diploma` (higher) or `medical_diploma` (higher), + `pharmacist_certificate`; senior pharmacist → `pharmacy_diploma` (higher) + `pharmacist_certificate`; pharmacist → `pharmacy_diploma` (any level) + `pharmacist_certificate`. G's demo sets them for the demo positions by their English names.
+
+**Services and queries:**
+- `hr.queries.qualified(company, member_ids, day) -> set[int]`: approved members (suspended people never count) whose position is in `pharmacist_positions` and, with `coverage_needs_documents`, who meet every `RequiredDocument` of their position on `day` (a verified document of the kind or an alternative, at the level asked, not expired).
+- `hr.coverage.planned_gaps(company, start, end, *, branch_ids, drafts=False, exclude_member_ids=()) -> list[Gap]`: with `coverage_enabled`, for each pharmacy branch and day, the parts of the open hours during which fewer than `coverage_min` qualified people have a planned shift there; each such interval is a `Gap(branch_id, start, end, have, need)`. Open hours are `opens_at`–`closes_at` on `open_weekdays` with company holidays closed, or all day every day (holidays included) when `open_24h`. Only planned shifts of a person count: shifts with `status=leave` (F marks approved leave that way) and open shifts without a person never count. Each shift counts for the qualification on its own `date`. `drafts=True` includes unpublished shifts for the roster view (`shifts_between(…, drafts=…)`); `exclude_member_ids` leaves people out, so L can show the gap a leave would open (§14.15).
+- `hr.coverage.live(company, now) -> list[LiveGap]`: with `coverage_enabled`, pharmacy branches open now where fewer than `coverage_min` qualified people have an open attendance record.
+- Permits cross-check (Should): a branch marked `controlled_licence` without an active `controlled_licence` permit, or with one that has expired, shows a warning in the permits list and the brief.
+- `hr.coverage.unqualified_sellers(company, day, *, branch_ids) -> list[dict]`: open or today's cash shifts (E's committed `sales.queries.shifts(company, filters, limit, *, branch_ids)`) whose cashier is not qualified that day.
+- `hr.queries.permits(company, *, branch_ids, kinds=None, active=True) -> QuerySet[BranchPermit]` and `hr.queries.qualified_staff(company, *, branch_ids, day) -> list[dict]` (name, position, documents with their dates): N's inspection pack reads them (§14.16).
+- Beat `hr.tasks.watch_coverage`: every 5 minutes, live gaps that last `coverage_alert_minutes` → critical `hr.coverage_gap_live` to the branch's manager and owners (dedupe per branch and gap start), and with `unqualified_seller_alert` a new unqualified seller → critical `hr.unqualified_seller`; hourly, planned gaps on published shifts in the next `coverage_days` → warning `hr.coverage_gap_planned` once per gap to `attendance.manage` holders of the branch.
+- Golden (Chilonzor 08:00–22:00, `coverage_min` 1): qualified shifts 08:00–17:00 and 14:00–22:00 → no gap; without the second → gap 17:00–22:00. Yunusobod `open_24h`: 08:00–20:00 and 20:00–08:00 → no gap; the night person's certificate expired yesterday → gap 20:00–08:00 and a live alert at 20:15 when nobody qualified has checked in.
+- Permits: `hr.tasks.watch_expiries` (§10.1) also covers `BranchPermit` expiry and `next_check_on` (30/7/0 days) and the pharmacist kinds of `EmployeeDocument`.
+
+**API** (prefix O `hr/`): GET `coverage/?from&to&branch&drafts` (attendance.view or hr.view), GET `coverage/live/`; CRUD `permits/` (hr.view / hr.manage; files through signed URLs, check kind `hr.permit`).
+
+**Registrations:** notification kinds above; pulse `hr.coverage`; brief section `hr.coverage` (registry keys are the app label or start with `hr.`: gaps in the next 7 days, live gap now, unqualified sellers, permits and certificates expiring in 30 days); calendar source `hr.permits`; AI tool `hr_coverage`; setup steps `hr.permits` ("Add your pharmacy licence and GPP certificate"), `hr.pharmacists` ("Choose who counts as a pharmacist and upload their diplomas and certificates"); Overview widget `hr.coverage_week`; a component in W2.a's `attendance.roster.coverage` slot that draws the gaps on F's roster.
+
+**Dashboard** (`dashboard/src/modules/hr/`): **Coverage** (a week per branch: open hours, qualified people planned, gaps in red, a "Fix in roster" link to `attendance/roster?branch=&week=`), **Licences and permits**, the compliance matrix with the pharmacist kinds, the Person 360 documents tab with level and category. Mini app (`features/hr/`): "Upload my renewed certificate" when one expires within 30 days.
+
+**Other G items for pharmacies (Should):** contract templates "Pharmacist employment contract" and "Full material liability agreement" in uz and ru (`defaults.ensure`, editable; confirm the wording with a lawyer); a policy "Dispensing and storage rules" seeded as a draft.
+
+Acceptance (added to §11.4): the golden coverage cases as exact tests; a warehouse branch, and any branch while `coverage_enabled` is off, shows no gap; an expired or unverified certificate removes the person from coverage; a person on leave and an open shift never count; `exclude_member_ids` shows the gap a leave would open; a live gap alerts once per gap after 15 minutes; an unqualified cashier opening a till alerts once; permits warn at 30/7/0 days; branch scope on coverage, permits and the AI tool; nothing in F's app or tables is written.
+
+### 14.10 Package B2: storage readings on routines (Wave 2, Must)
+
+B2 is Package B coming back for one Wave 2 increment (the B engineer; nobody else owns `apps/tasks` in Wave 2). It builds on the Wave 1 visual pass, which gives routines TODAY / HISTORY / ALL ROUTINES views and a grouped "To confirm" flow with bulk confirm, keeps the tasks page for one-off work, and groups routines on their own in the mini app. **Readings are a proof type of a routine task**: a routine can ask for numbers within an allowed range (fridge temperature, room temperature, humidity); its tasks are completed by entering them; they show in the routine's TODAY view and in its journal. Readings are generic (any business can use them), and the pharmacy journals are reports over them.
+
+A routine has one due time and makes one task per person per day (B's `TaskTemplate.due_time` and the unique (template, assignee, for_date) rule), so a reading taken at 09:00 and at 20:00 is two routines; the journal joins them by instrument.
+
+**Models:**
+```
+TasksSettings (plain, 1-1 Company CASCADE, lazy via a new apps/tasks/conf.py get_settings; Settings → Routines)
+  storage_fridge_min, storage_fridge_max Decimal(5,1) default 2.0, 8.0     # §14.4 row 29 defaults (confirm)
+  storage_room_min, storage_room_max Decimal(5,1) default 15.0, 25.0
+  storage_humidity_max Decimal(5,1) default 60.0
+  storage_times ArrayField(Time) default [09:00, 20:00]
+  # the storage preset's defaults; each routine it makes keeps its own copy of the ranges, editable per routine
+Proof (apps/tasks/models.py) gains READINGS = "readings" ("Readings")
+TaskTemplate gains:
+  readings JSONField default list   # 1–3 specs, required when proof = readings and empty otherwise:
+  #   [{"key": "t", "label": "Fridge 1 (vaccines) temperature", "unit": "°C", "min": "2.0", "max": "8.0",
+  #     "critical": true}]   keys a–z, unique per routine; never on personal or onboarding templates
+  shared Bool default False         # (Should) "one of us does it": the first completion closes the others' copies
+Task gains: readings JSONField default list       # the routine's specs, copied when the task is made;
+                                                  # editing the routine later never changes them
+TaskReading (TenantModel): task FK CASCADE related_name="readings_taken"; template FK TaskTemplate null SET_NULL
+  branch FK Branch null SET_NULL (= task.branch); key CharField(8); label CharField(80); unit CharField(8)
+  value Decimal(8,2); min, max Decimal(8,2) null (copied); in_range Bool
+  note CharField(300, blank)                      # what was done about it; required when out of range
+  is_recheck Bool default False; recorded_by FK Membership null SET_NULL; recorded_at DT
+  Index(company, template, recorded_at); Index(company, branch, recorded_at)
+```
+
+**Services** (signatures extend B's, keyword-only, so every existing caller keeps working):
+- `tasks.services.complete_task(task, *, by, proof_text="", proof_photo=None, readings=None, reading_note="")`: a task with `proof=readings` needs a value for each spec (`DomainError` otherwise); values parse "5,2" and "5.2", and are refused outside −50…+100; any value out of range needs `reading_note`; one `TaskReading` per value; then the normal completion path (a routine that needs confirmation goes to the grouped To-confirm list with its values). After commit, an out-of-range reading notifies `tasks.reading_out_of_range` (critical when the spec says so) to the task's `escalate_to`, or the branch's people with `tasks.confirm`, and owners; dedupe per task.
+- With `shared` (Should): the first completion closes the other open copies of that routine for that day at the same branch (status `cancelled`, an activity "Done by Madina", reminders stopped). Cancelled tasks never count in KPIs (`reports.kpis` already leaves them out), so nobody is chased for a reading a colleague took.
+- `tasks.services.recheck(task, *, by, readings, note="")`: within 2 hours of completion, adds `is_recheck` rows (after moving the vaccines, the second measurement); back in range edits the earlier notification ("back in range at 10:42").
+- Every path that makes a routine's tasks (daily generation and the visual pass's "give today") copies `template.readings` into the task.
+- `tasks.presets.apply_storage_preset(branch, *, by, fridges=1, positions=(), times=None)` creates for that branch, as `shared` routines: for each time (default `TasksSettings.storage_times`), one reading routine per fridge (the fridge range, critical) and one for the room (the room range and the humidity maximum), all taken from `TasksSettings`; daily wet cleaning; weekly disinfection; and, at a pharmacy branch, a daily "dispensing camera records and keeps 30 days" check (§14.4 rows 8, 29). Positions are picked in the preset dialog (default: every position at the branch). The monthly sanitary day is a monthly company-calendar event (Q's agenda repeats monthly; routines repeat by weekday), so the preset does not make it.
+- `tasks.queries.readings_journal(company, start, end, *, branch_ids, template_id=None) -> list[dict]` and `tasks.queries.readings_pdf(branch, month, *, language) -> bytes`: the branch's temperature and humidity log for a month, every reading routine of the branch grouped by instrument label (so morning and evening routines share a page), with date, time, value, range, who, note, rechecks and a signature line per day (`templates/tasks/readings_journal.html` through `core.pdf.render_pdf`). N's inspection pack uses it (§14.16).
+
+**API:** E `tasks/{id}/complete/` accepts `readings` (object key → value) and `reading_note`; E `tasks/{id}/recheck/`; O routines accept `proof="readings"`, `readings` and `shared`; O POST `routines/storage-preset/` `{branch, fridges, positions, times}` (tasks.templates); O `tasks/{id}/` returns the specs and the readings taken; O `routines/{id}/readings/?from&to` (rows plus an analytics-shape series per key) and O `routines/readings/pdf/?branch&month=` (tasks.view_all or tasks.templates; branch scope).
+
+**Surfaces:**
+- Dashboard (`dashboard/src/modules/routines/`, `tasks/`): the routine editor offers the proof type "Readings" with a specs editor (label, unit, min, max, critical) and the "one of us does it" switch; TODAY: each run row of a readings routine shows its values with their range state, the note and rechecks, and the routine's day card counts excursions; the To-confirm list shows the values; the routine's journal (HISTORY and the routine page) has a line chart with the allowed band, excursions marked, the table and the month PDF; the task drawer shows the readings; a "Set up storage readings" dialog (the preset) opens from the routines page and the setup step; Overview widget `tasks.readings_today` (today's excursions and missed readings).
+- Mini app (`miniapp/src/features/readings/`, new): a `taskActions` block on the task screen for readings tasks: the allowed range, a numeric pad per value, the note when out of range, and its own "Save and complete" button. Until P merges it in Wave 3, the screen's normal Complete button gets the API's "readings needed" message, translated.
+- Employee bot (`employee_bot/bot/handlers/member/tasks.py`): after "Done" on a readings task, the bot asks in the chat for each value with its range ("Fridge 1 (vaccines), °C, allowed 2–8:") and for the note when a value is out of range; a photo proof is not asked, since readings are the proof.
+
+**Registrations** (in `apps/tasks/hooks.py` and the routines module): notification kind `tasks.reading_out_of_range`; pulse `tasks.readings_alerts`; exporter `tasks.readings`; AI tool `tasks_readings` (excursions and missed readings per routine and branch); setup step `tasks.storage` ("Set up fridge and room readings"); settings panel `routines` (Settings → Routines, `settings/routines`: the preset's ranges and times); the brief section `tasks` adds excursions and missed readings.
+
+Demo (`apps/tasks/demo.py`, already pharmacy from the Wave 1 rebuild): the storage preset in both pharmacies (Yunusobod with 2 fridges) and 60 days of readings with two excursions, their notes and one recheck.
+
+Owns (Wave 2):
+```
+backend/apps/tasks/                       (all, including templates/tasks/readings_journal.html and demo.py)
+dashboard/src/modules/{routines, tasks}/
+miniapp/src/features/readings/
+employee_bot/bot/handlers/member/tasks.py, employee_bot/tests/test_tasks.py
+```
+Tests: `PYTEST_DB=b uv run pytest backend/apps/tasks employee_bot/tests/test_tasks.py employee_bot/tests/test_dispatcher.py` (`test_dispatcher.py` is run, not edited).
+
+Acceptance: fridge spec 2–8: 5.0 completes; 8.5 without a note is refused, with a note completes and notifies once; a missing value is refused; "5,2" from the bot is 5.2; a routine with `proof=readings` and no specs is refused, and so are specs on a personal or onboarding template; generated and "give today" tasks copy the specs and a later routine edit leaves them alone; a recheck in range updates the notification; a `shared` routine's first completion cancels the other copies at that branch for that day and they count in no KPI; the preset makes its routines with the company's `TasksSettings` ranges and times (or the dialog's times) and the given positions, once per call; the branch log PDF starts with `%PDF` and shows morning and evening readings and the excursion with its note; branch scope on the journal; existing task tests (completion without readings, proofs, KPIs) unchanged.
+
+### 14.11 Package H: night work and sales bonuses (Wave 2)
+
+| Item | Rank | What |
+|---|---|---|
+| Night work | **Must** | `PayrollSettings` gains `night_multiplier Decimal(4,2) default 1.50`, `night_starts_at` 22:00, `night_ends_at` 06:00, `daily_hours Decimal(4,2) default 8`: company settings in Settings → Payroll (`settings/payroll`), whose defaults are the Labour Code values of §14.4 row 33. Night minutes are the overlap of each closed attendance record (F's committed `records_between`) with the night window. Premium = (`night_multiplier` − 1) × hourly rate × night hours, where the hourly rate is `amount / (S × daily_hours)` for monthly earners, `rate / daily_hours` for daily earners and `rate` for hourly earners. `PayslipLine.kind` gains `night_work`. The Labour Code minimum is 1.5× for night hours (§14.4); the one-hour shortening of a night shift is not modelled (a note on the setting) |
+| Sales bonus | Should | `AdjustmentRule.metric` gains `sales.net` (a person's net sales in the period from E's committed `sales.queries.cashier_scorecard`), with `amount_type=percent` |
+| Count shortage deductions | Could | J1's applied count with a shortage proposes fines split among the branch's materially liable people (`propose_fine`), never automatic; designed here, built later |
+
+Golden (added to §3.17): monthly 5 200 000, S = 26, `daily_hours` 8 → hourly 25 000; 4 night shifts with 8 night hours each = 32 h → premium 0.5 × 25 000 × 32 = **400 000**. Hourly earner at 25 000 with the same nights → **400 000** on top of the hours. Sales bonus 1 % of 48 000 000 → **480 000**.
+
+Demo (`apps/payroll/demo.py`): pharmacist pay from §14.3 (pharmacist 4.5–6.5 mln, night pharmacist 6–7.5 mln, head 10–12 mln, courier 3.5 mln so‘m a month), one night-heavy payslip at Yunusobod.
+
+Acceptance (added to §11.4): the night golden cases as exact tests; a 20:00–08:00 record counts 8 night hours, all in the payroll period of its `date` (the start date, §3.10), including across a month end; no premium without attendance records; changing the multiplier on a draft run recalculates it; the sales-bonus preview equals the run's line.
+
+### 14.12 Package K: AI for a pharmacy (Wave 2)
+
+- **Safety rule (Must)**, added to the static system prompt of §8.4 (`system[0]`, the same text for every company) and to the eval set: "This company works with medicines: it is a pharmacy, a distributor or both. Answer business questions about its data. Never recommend a medicine, a dose or a substitute for a person, and never describe how to use a medicine. When asked for analogs, call the analogs tool and present the result as catalogue items with the same active ingredient, form and strength, for the pharmacist to choose." A tool result is the only source of an analog list. The company context (`system[1]`) gains the company's `business_kind` and `sells_to`.
+- **Strip check (Should):** on the finished answer, before it is stored, product names from the company's catalogue (W2.a's `inventory.queries.lookup` works from day one) that no tool returned in the turn are removed, and the stored message replaces the streamed text when the turn completes.
+- **Tools** (owned and tested by the modules through `call_tool`, §8.3; Must: `inventory_find_item`, `inventory_analogs`, `inventory_expiring`, `hr_coverage`, `tasks_readings`; Should: the rest): J1: `inventory_find_item` (name, INN or barcode → stock per branch, price, Rx flag, nearest expiry), `inventory_analogs`, `inventory_expiring` (days, branch → batches with quantity and value), `inventory_receipts` (distributor, period, unposted, payable status), `inventory_defektura`, `inventory_stock_levels` (§8.3, kept; readable with `stock.operate` too); J2: `sales_lines_top` (top items, cap breaches); G: `hr_coverage`; B2: `tasks_readings`; I: `finance_payables`; J3 in Wave 3: `inventory_reorder`, `inventory_dead_stock`. Values at cost need `finance.view` and `share_finance`; free text such as customer phones on defektura rows is scrubbed (§8.3).
+- **Task drafts (Should)** learn the pharmacy routines ("Fridge reading twice a day, 2–8 °C") and propose `proof="readings"` with specs; applying passes them to `tasks.services.create_template` only after integration, once B2's `readings` field is in `TEMPLATE_FIELDS` (until then the draft is applied without them and says so).
+- **Eval set (§8.9, Must):** K writes 12 pharmacy questions for the live eval (`make ai-eval`) ("Which batches expire within 30 days at Chilonzor and what are they worth?", "Is a qualified pharmacist rostered for every hour at Yunusobod this week?", "How much do we owe distributors this week?", "Analogs of Amoksitsillin 500 mg in stock?"). Their exact expected numbers come from the integrated demo, so the lead fills them at integration (§14.20).
+- **Could:** reading a distributor's invoice photo into a receipt draft (`ai.documents.start_invoice_scan(file, *, by, supplier=None)`, structured like receipts in §8.5); designed only, because most invoices arrive as e-invoices or spreadsheets.
+
+Acceptance (added to §11.4): the safety text sits in the cached prefix (the byte-stable test of §8.4 covers it); on the fake client an analogs turn calls the analogs tool, and with the strip check a product name no tool returned is removed from the stored answer; the `AI_FAKE` canned answers use pharmacy words.
+
+### 14.13 Package U: CRM for B2B buyers (Wave 2, Should)
+
+- Pipeline "B2B supply" (clinics, private hospitals, companies, other pharmacies): New → Request and prices → Offer sent → Contract → First delivery (won) / Lost; lost reasons price, payment terms, assortment, tender lost, other. `defaults.ensure` creates it when `Company.sells_to` includes clinics, pharmacies or companies.
+- Pipeline "New pharmacy client": `defaults.ensure` creates it when `Company.business_kind` is `distributor` or `both`; Demo Distribyutor's demo uses it. Either pipeline is also a one-click template on the CRM page, for a company whose settings change later.
+- `Deal` gains `monthly_volume Money null` (expected purchases a month), `contract_number CharField(40, blank)`, `contract_until Date null`, `tender_ref CharField(64, blank)` (a state-procurement lot); `source` choices add `tender`, `referral`, `walk_in`, `call`.
+- On a won deal: "Create invoice" calls J2's `sales.services.create_invoice(company, by=…, counterparty=deal.counterparty, lines=[…])` through `apps/crm/integrations.py` (a clear `DomainError` until integration, §13.4 pattern); "Create delivery routine" makes a weekly routine through B's committed `tasks.services.create_template` (needs `tasks.templates`).
+- Demo (`apps/crm/demo.py`): 12 deals with invented clinics and companies (§14.3).
+
+Acceptance: `defaults.ensure` creates each pipeline once, only for a company whose `business_kind` and `sells_to` call for it, and the template adds a missing one once; a won deal's "Create invoice" opens a draft invoice for the deal's counterparty (patched integration in U's tests; the shim's `DomainError` otherwise); "Create delivery routine" goes through `create_template`; the new fields are audited.
+
+### 14.14 Package S: lifecycle details for pharmacies (Wave 2)
+
+| Item | Rank | What |
+|---|---|---|
+| Handover count | Should | S's offboard step `lifecycle` gets a blocker when the leaving person is a branch's `manager` or holds `stock.controlled`: "No handover stock count since the termination was scheduled", with a button that calls `inventory.services.start_count(branch, by=by, kind="handover")` for the branch they head (or their home branch); the blocker clears when `inventory.queries.last_applied_count(branch, kind="handover")` is later than the scheduling. Both functions are W2.a's committed contract (stubs until J1 lands). An owner can override, as every blocker |
+| Discipline categories | Should | `DisciplinaryRecord.category` adds `storage_breach`, `dispensing_error`, `rx_violation`, `expired_sale`, `stock_shortage` |
+| Qualification on job changes | Should | A JobChange that moves a person into a pharmacist position warns when G's `hr.queries.qualified` would be false for them on the effective day; the call goes through `apps/lifecycle/integrations.py`, which stays silent until integration |
+
+Instrument checks (thermometers, hygrometers, fridges, scales) are G's `BranchPermit` kind `instrument_check` with `next_check_on` (§14.9), so S's `Asset` gets no second check date.
+
+Acceptance: the handover blocker shows only for a branch's manager or a `stock.controlled` holder and clears once a handover count is applied after the termination was scheduled; with W2.a's stub the button explains why it can't run; the JobChange warning uses `qualified()` on the effective day (patched integration in S's tests).
+
+### 14.15 Package L: leave (Wave 2)
+
+- No pharmacy-specific leave type is needed.
+- Should: the approve dialog (dashboard and bot) shows the coverage gaps the leave would open for the requested days ("Approving leaves Yunusobod without a qualified pharmacist on 14–15 Nov, 20:00–08:00"), through `apps/timeoff/integrations.py` calling `hr.coverage.planned_gaps(company, first_day, last_day, branch_ids=<the requester's branches>, exclude_member_ids={requester.pk})` (empty until integration). It warns; it never blocks.
+- Acceptance: the dialog lists the gaps G returns for the requested days and still approves; with the shim and no G, it shows nothing and approval works as before.
+
+### 14.16 Wave 3: J3 (purchasing, supplier returns, stock analytics) and N (insights, briefings, inspection pack)
+
+**Package J3** (`apps.inventory`, Wave 3; the J1 engineer returns, as B returns in Wave 2). It takes J1's purchasing items out of Wave 2, where J1 is already the largest package, and the stock analytics out of N, whose Wave 3 is already full. It calls only committed Wave 2 code.
+
+Models (J3's migrations in `apps/inventory`):
+```
+StockSettings gains next_return_number, next_order_number (PositiveInt default 1); StockMovement.kind gains return_out
+SupplierReturn (Should): number; branch; supplier FK finance.Counterparty PROTECT; receipt FK GoodsReceipt null
+  reason near_expiry|damaged|wrong_item|recall|other; status draft|sent|credited|void; total Money
+  credit_note_number CharField(40, blank); credited_on Date null
+SupplierReturnLine (plain): supplier_return FK CASCADE; batch FK PROTECT; quantity; unit_cost
+PriceList (Should): supplier FK PROTECT; received_on; valid_until null; file Private; status active|archived
+PriceListItem (plain): price_list FK CASCADE; product FK null SET_NULL (matched); supplier_code; name; barcode
+  price Money (per pack); expires_on Date null (the offered stock's expiry); available Decimal null
+PurchaseOrder (Should): number; branch; supplier FK PROTECT; status draft|sent|partly_received|received|cancelled
+  expected_on Date null; sent_at; total Money; created_by
+PurchaseOrderLine (plain): order FK CASCADE; product FK; packs; price Money null; received_packs Decimal default 0
+GoodsReceipt gains order FK PurchaseOrder null SET_NULL; MissingRequest gains order_line FK PurchaseOrderLine null SET_NULL
+```
+
+Services: returns (`create`, `send`, `credit` → I's committed `finance.services.credit_debt(debt, by=…, amount=…, credited_on=…, reason=…, source=Source("inventory.supplierreturn", id))`, `void`; the E expiry action gains `propose_return`, which adds the batch to a draft return); price lists (`import_price_list(supplier, file, *, by)` with the column map saved on `SupplierProfile.price_list_mapping`, matched through `ProductCode`; `compare(product_ids)`); orders (`reorder_suggestions(branch, *, days=28, cover_days=7)`, `create_orders(suggestions, *, by)`, `send_order(order, *, by)`: PDF/XLSX to the distributor's Telegram username or a share link, like invoices). Reorder suggestion: `need = velocity × (delivery_days + cover_days) − on_hand − on_order`, at least `min_qty − on_hand`, at most `max_qty − on_hand`, rounded up to whole packs; open defektura for the product adds its packs. Best supplier = the lowest price in active price lists whose offered expiry is at least `min_shelf_days` away.
+
+**Stock analytics (Must: ABC, dead stock, expiry, margins; Should: XYZ, pharmacist KPIs).** J3 computes them in `apps/inventory/analytics.py` from J1's and J2's committed queries (`inventory.queries.movements`, `batches`, `expiring`, `velocity`; `sales.queries.line_facts`) and F's worked minutes, serves them under O `stock/analytics/{abc,xyz,dead-stock,expiry,margins,pharmacists}/?from&to&branch&group_by` (sales.view; anything at cost needs finance.view) in the analytics shape of §4, and shows them on an **Analytics** page of `dashboard/src/modules/stock/`:
+
+| Report | Definition |
+|---|---|
+| ABC | Items ranked by revenue (or gross margin) in the range; A = the first items making 80 % of the total, B = the next 15 %, C = the rest (thresholds are settings) |
+| XYZ | Coefficient of variation of weekly quantity sold over the last 12 weeks (items with at least 8 weeks of history): X ≤ 25 %, Y ≤ 50 %, Z above (settings; the thresholds are an assumption) |
+| Dead stock | On hand > 0 and no sale for 90 days (setting); value at batch cost; age of the oldest batch |
+| Expiry | Value expiring in 30 / 60 / 90 days now; expiry losses (write-offs with reason expired, at cost) by month, branch, distributor and category; losses as a share of sales |
+| Margins | Revenue − cost of sale lines, markup % and margin %, by item, category, distributor (the batch's supplier), branch and pharmacist |
+| Pharmacist KPIs | Receipts, average check, items per receipt, sales per worked hour (with F's worked minutes), share of Rx, refunds, defektura rows logged |
+
+API (O `stock/`): CRUD `returns/` + `{id}/{send|credit|void}/`; `price-lists/` (+ `import/`), GET `compare/?q`; CRUD `orders/` + `{id}/{send|cancel}/`, GET `reorder/?branch`, POST `reorder/orders/`; the analytics routes above. Dashboard: **Returns**, **Orders and price lists** (comparison grid with the cheapest price and best expiry per item), **Analytics**; the Expiry page's bulk actions gain return. Registrations: finance source `inventory.supplierreturn`; AI tools `inventory_reorder`, `inventory_dead_stock`. Demo: price lists from 2 distributors, 1 order sent and 1 received, one credited return (§14.3).
+
+Owns (Wave 3): `backend/apps/inventory/`, `dashboard/src/modules/stock/`. Tests: `PYTEST_DB=j uv run pytest backend/apps/inventory`.
+
+Acceptance: ABC on a 10-item fixture gives the expected classes; XYZ on synthetic weekly series; dead stock and expiry losses on fixtures; margins equal Σ(line total − cost) per group; values at cost absent without `finance.view`; branch scope on every analytics endpoint; a credited return books exactly one `credit_debt` row and a retry books none; reorder suggestions match the formula on fixtures; the comparison picks the cheapest price whose offered expiry is at least `min_shelf_days` away.
+
+**Package N additions** (Wave 3, files as §11.5; every rule reads only committed Wave 2 queries).
+
+**Insight rules added (§3.15 kinds; Must: temperature, coverage, expiry exposure, price-cap breach; Should: the rest):** `insights.temperature_unstable` (2 excursions of one routine in 7 days, from `tasks.queries.readings_journal`), `insights.coverage_gap` (planned gaps in the next 7 days, `hr.coverage.planned_gaps`), `insights.expiry_exposure` (value expiring in 60 days above 5 % of stock value, or up 30 % on last month, from `inventory.queries.expiring` and `batches`), `insights.price_cap_breach` (J2's breaches repeated, `sales.queries.cap_breaches`), `insights.dead_stock_growing` (from `inventory.queries.velocity` and `levels`), `insights.sold_below_cost` (`sales.queries.line_facts`), `insights.payables_crunch` (distributor payables due in 7 days above cash on hand, from I's `finance.queries.upcoming` and `cash_position`). Count shortages, cost jumps and unposted receipts get no insight rule: J1 already notifies each of them.
+
+**Briefings:** the morning brief gets the sections J1, J2, G, B2 and I register (expiring this week, mandatory items missing, cap breaches, coverage tonight, yesterday's excursions, payables due).
+
+**Inspection pack (Should):** exporter `exports.inspection_pack` (N owns `apps/exports`): for one branch and a period, a zip of the licences and GPP certificate (`hr.queries.permits` files), the staff qualification list (`hr.queries.qualified_staff`), the readings logs of the last three months (`tasks.queries.readings_pdf`), the controlled register and prescription log (`inventory.services.journal_pdf`), the write-off and destruction acts (stored `WriteOff.act_pdf`) and the mandatory-assortment check (`inventory.queries.mandatory_missing`); owners or holders of both `hr.view` and `stock.manage`; audited; never sent to Telegram by default.
+
+**Portfolio:** shows J1's company facts (`expiring_30d_value`, `low_items`).
+
+Acceptance (added to §11.5): each new insight rule fires once on fixtures and dedupes; branch scope on every rule; the inspection pack contains every listed file, is audited and is never sent to Telegram by default.
+
+### 14.17 Package P: pharmacist screens in the mini app (Wave 3)
+
+P owns all of `miniapp/src` in Wave 3 (§9.4) and builds the pharmacist experience on J1's E endpoints in a new `features/stock/` folder (§9.3's `features/stock/` row moves from J to P: J1 builds and tests the endpoints in Wave 2, P the screens), harmonised with its polish rules:
+
+| Screen | Rank | What |
+|---|---|---|
+| Stock lookup | **Must** | Search by name, trade name, INN or barcode (typed, or scanned, below); result rows: name, form, strength, pack, Rx and cold-chain badges, price per pack and per part, quantity here ("3 qadoq 1 blister"), nearest expiry, quantity at other pharmacies; detail: batches here, analogs (same INN, form and strength, in stock first, titled as such), "Add to defektura" when there is none |
+| Expiry check | **Must** | My branch's batches expiring within 90 / 60 / 30 days and expired ones; per batch: "On the near-expiry shelf ✓", "Propose write-off" (photo), and "Propose return" (J3's `propose_return`, the same Wave 3; P builds it against the endpoint documented in §14.16 and the integration pass checks it); the monthly check task opens this screen |
+| Readings | **Must** | B2's `features/readings` block merged into the task screen's single Complete flow (`screens/TaskDetail.tsx`) |
+| Receiving | Should | Distributor, invoice number and date, photo of the nakladnoy; lines by search or scan with series, expiry (month and year picker), packs and cost; warnings as J1 computes them; submit for posting |
+| Count | Should | The blind count screen (search or scan, series and expiry shown, expected never shown) |
+| Transfers in | Should | "Incoming from Chilonzor: 8 items" → count what arrived → receive |
+| Defektura | Should | (+) action: free text or catalogue item, packs, optional customer phone for a call-back |
+| Prescription entry | Should | For an Rx sale without the e-prescription number in the import: prescription number and date, prescriber, facility, photo when the kind must be kept |
+
+Home for someone with `stock.operate`: a card "4 batches expire this month here" and today's readings due. Me: "Stock" entry. (+): Defektura, Receive goods.
+
+**Opening the app from the bot.** The employee bot opens the mini app only from the chat's menu button and from inline buttons, because a Mini App opened from a reply-keyboard button gets no `initData` and can't sign the person in. No stock entry is added to the reply keyboard: the stock screens are reached inside the app (Home, Me, (+)) and from the inline [Open] buttons of J1's and B2's notifications (`app_screen` = `stock.expiry`, `stock.transfer:<id>`, `task:<id>`).
+
+**Scanning.** Telegram's scan popup reads QR codes only (Bot API 6.4+ documents it "for scanning a QR code"; research note), so EAN-13 and DataMatrix need another path: P uses the browser's `BarcodeDetector` where `getSupportedFormats()` lists the format (it is not available in every webview) and falls back to typed search. Camera scanning is a per-company option (`StockSettings.camera_scanning`, Settings → Stock, default on, read from E `stock/settings/`); typed search always works. This replaces §9.3's "barcode via `showScanQrPopup`". A JavaScript barcode decoder would make scanning work everywhere but is a new npm dependency, so it is an integration decision for the lead (§14.21). On the dashboard, ordinary USB and Bluetooth scanners type into the search box and work already.
+
+Acceptance (added to §11.5): typed lookup by name, INN and barcode renders the API's rows; quantities show as packs and parts; analogs carry the required title; expiry actions update optimistically and roll back on error; `BarcodeDetector` is used only when `getSupportedFormats()` lists the format (vitest with a fake); the readings block and the Complete button are one flow; the stock screens meet P's polish rules (no inline styles, shaped skeletons, empty states). P's Should screens are cut before its polish items.
+
+### 14.18 Government systems: integration points (designed, not built)
+
+§0's "no POS, no fiscalization" stands. For each system below this phase stores the fields a later integration needs and nothing calls out: no credentials, no network calls, no Celery jobs, no stub gateway files. The interface column is the design for the package that builds it later. When a later package builds a connector, each company switches it on in that module's settings with its own credentials or certificates; in this phase nothing is built, so there is nothing to switch.
+
+| System | What the law asks (§14.4) | Who does it today | Stored now | Interface for later |
+|---|---|---|---|---|
+| **Asl belgisi** digital marking (operator CRPT Turon) | Codes arrive in e-invoices; each pack is scanned at sale into the fiscal receipt; write-offs withdraw codes | The pharmacy's certified cash register and its marking account | `Product.marking_required`, `GoodsReceipt.marking_state`; `MarkingCode` designed (Could), not migrated | `apps/inventory/marking.py`: `MarkingGateway.accept(receipt)`, `withdraw(writeoff)`, `status(code)`; partial-pack and write-off reporting must be confirmed with the operator first |
+| **Fiscal data** (online and virtual cash registers, fiscal data operator) | Every sale gets a fiscal receipt with an MXIK code per line and the marking code; new regulation edition from 22.10.2026 | The certified cash register | E's totals, Z number and photos; J2's imported lines; `Product.mxik_code`, `package_code`; `Register.fiscal_serial` | `apps/sales/fiscal.py`: `FiscalSource.receipts(register, day)` to pull receipts from a register vendor's API instead of a file |
+| **E-invoices** (EHF operators) | Mandatory between businesses; marked goods need their codes in it | The pharmacy, in its operator account | `GoodsReceipt.e_invoice_ref`, `Invoice.e_invoice_ref`; import of the operator's spreadsheet export through the receipt line import | `apps/inventory/einvoice.py`: `EInvoiceGateway.incoming(since)`, `sign(ref)`; `apps/sales/einvoice.py`: `issue(invoice)` |
+| **E-prescriptions** ("Elektron retsept" module) | Pharmacist checks the prescription by ID and PINFL and records dispensing with an e-signature | The pharmacist in the state module (some cash-register software integrates it) | `RxRecord.e_prescription_id`, `Product.e_rx_group`, `Branch.e_prescription_area` | `apps/inventory/eprescription.py`: `lookup(number)`, `dispense(record)`; never stores patient identifiers |
+| **Reference-price registry** | Rx prices never above it; revised with exchange rates | The pharmacy reads the registry or app | `Product.reference_price`, `reference_price_on`; XLSX import | `apps/inventory/reference_prices.py`: `fetch(changed_since)` |
+| **Rejected and falsified series lists** | Published as files | The pharmacy reads them | `RecallNotice` with XLSX/CSV import | none: no feed exists |
+| **Product classifier** (tasnif.soliq.uz) | MXIK on receipts and e-invoices | The cash-register software | `mxik_code`, `package_code`, typed or imported | `apps/inventory/tasnif.py`: `lookup(mxik)` |
+| **Licensing system** | Licences are issued electronically | The owner | G's `BranchPermit`, typed | none |
+
+### 14.19 Wave 1 files that change, exactly
+
+| File | Change | Why | Who |
+|---|---|---|---|
+| `backend/apps/members/permissions.py`, new `members/migrations/00NN_pharmacy.py` | `stock.operate`, `stock.controlled`; Pharmacist and Cashier gain `stock.operate` | New codes live only in this shared file | W2.a |
+| `backend/apps/companies/models.py`, new `companies/migrations/00NN_pharmacy_settings.py` | `Company.business_kind`, `sells_to`; `Branch.kind`, `open_24h`, `controlled_licence`, `social_pharmacy`, `e_prescription_area` | Company and branch settings (§14.21) | W2.a |
+| `backend/apps/companies/owner_api.py` (company and branch serializers), `apps/companies/hooks.py` (setup step `companies.business`), `dashboard/src/modules/settings/panels/CompanyPanel.vue`, `components/BranchDrawer.vue` and `types.ts`, `dashboard/src/api/types.ts` | The new fields in the forms and the payloads | Each company sets them | W2.a |
+| `backend/apps/console/queries.py` (company payload, `branches_today`, `branch_status`), `dashboard/src/modules/overview/widgets/BranchesWidget.vue` | Kind and customers in the payload; 24-hour rule, card field, "Open 24 hours" label | Modules hide what doesn't apply; branch cards would show "closed" at night | W2.a |
+| `backend/apps/console/contracts.py` | Company facts key `inventory` | J1's portfolio facts must pass the fixed-key check | W2.a |
+| `dashboard/src/core/modules.ts`, `dashboard/src/modules/attendance/pages/RosterPage.vue` | Slot `attendance.roster.coverage` | G's gaps on F's roster | W2.a |
+| `backend/apps/tasks/services.py` | `create_system_task` | J1's monthly check and recall tasks | W2.a, then B2 |
+| `backend/apps/inventory/{models,services,queries}.py`, `inventory/tests/factories.py`, `inventory/migrations/0001_initial.py` | Minimal models, factories and the stock contract | J1/J2 split (§13.3 pattern) | W2.a, then J1 |
+| `deploy/dev-packages.mk` | Package `j2` | `make guard\|run\|demo PKG=j2` | W2.a |
+| `backend/apps/core/management/commands/seed_demo.py` | The demo companies' new settings (§14.3) | The Wave 1 rebuild can't set fields that don't exist yet | W2.a |
+| `backend/apps/sales/scan.py`, `sales/rollup.py` | 24-hour alerts; imported receipts left out of `DailySales` | §14.7 | J2 |
+| `backend/apps/tasks/**`, `employee_bot/bot/handlers/member/tasks.py`, `dashboard/src/modules/{routines,tasks}/` | Readings, shared routines, the storage preset and `TasksSettings` | §14.10 | B2 |
+| `backend/apps/{finance,sales,tasks,timeoff}/demo.py` | Wave 2 rows added to the pharmacy story the Wave 1 rebuild wrote | §14.3, §14.5 | I, J2, B2, L |
+| `miniapp/src/screens/TaskDetail.tsx` | One Complete flow with readings | §14.10 | P (Wave 3) |
+| Generated `dashboard/src/core/perms.generated.ts`, `miniapp/src/api/{openapi.yaml,schema.d.ts}` | Regenerated | New permissions and fields | W2.a, then integration |
+| `backend/locale/**` | uz/ru for every new string, pharmacist review | Rule 5 | Integration |
+
+Nothing else in a Wave 1 app changes in Wave 2: `apps/attendance`, `apps/agenda`, `apps/knowledge`, `apps/projects`, `apps/announcements`, `apps/groups` and the rest keep the code and the demo the Wave 1 visual pass leaves them.
+
+### 14.20 Delivery changes
+
+| Wave | Packages |
+|---|---|
+| W2.a | Lead: §14.5 |
+| Wave 2 | G H I **J1 J2** K L S U + **B2** |
+| Wave 3 | N, P (with the pharmacist screens), R + **J3** (purchasing, supplier returns, stock analytics) |
+
+- **Ownership changes against §11.4 and §11.5:** J becomes J1 (`backend/apps/inventory/`, `dashboard/src/modules/stock/`) and J2 (`backend/apps/sales/`, `dashboard/src/modules/sales/`, `miniapp/src/features/kassa/`, `employee_bot/bot/handlers/features/sales.py`, `employee_bot/tests/test_sales.py`); nobody owns `miniapp/src/features/stock/` in Wave 2 (P creates it in Wave 3); B2 owns `backend/apps/tasks/` (all), `dashboard/src/modules/{routines,tasks}/`, `miniapp/src/features/readings/`, `employee_bot/bot/handlers/member/tasks.py` and `employee_bot/tests/test_tasks.py`. In Wave 3, J3 owns `backend/apps/inventory/` and `dashboard/src/modules/stock/`, P also takes `miniapp/src/features/{stock,readings}/`, and N's list stays as §11.5 (the stock analytics are J3's). W2.a's files are the lead's and are committed before any Wave 2 branch is cut. No file has two owners in a wave: `employee_bot/tests/test_dispatcher.py` is run by I, K, L and B2 and edited by none of them; `apps/console/**`, `apps/companies/models.py`, `apps/members/permissions.py`, the root `conftest.py`, `seed_demo` and `deploy/**` stay the lead's.
+- **Same-wave calls (Wave 2)**, each with the fixed signature given in its section:
+
+| Caller → callee | Call | How |
+|---|---|---|
+| J2 → J1 | the stock contract (§14.6.3) | W2.a's committed stubs; J1 fills them |
+| S → J1 | `start_count`, `last_applied_count` | W2.a's committed stubs |
+| J1 → B | `tasks.services.create_system_task` | committed in W2.a |
+| L → G | `hr.coverage.planned_gaps(…, exclude_member_ids=…)` | `apps/timeoff/integrations.py`, empty until integration |
+| S → G | `hr.queries.qualified` (besides §13.4's contract services) | `apps/lifecycle/integrations.py`, silent until integration |
+| U → J2 | `sales.services.create_invoice` | `apps/crm/integrations.py`, `DomainError` until integration |
+| J2 → I | `finance.queries.vat_percent` | `apps/sales/integrations.py`, 0 until integration |
+| K → modules | their AI tools | the registry: a tool is offered once its module registers it (§8.3); task drafts pass `readings` only after integration |
+
+  G and H read only committed Wave 1 apps (F, E). Wave 3 calls go to committed Wave 2 code (J3 → I `credit_debt`, J2 `line_facts`; N → the queries named in §14.16; P → J1's and B2's E endpoints), except P → J3's `propose_return`, which P builds against the documented endpoint and the integration pass checks.
+- **Tests:** J1 and J3 `PYTEST_DB=j`, J2 `PYTEST_DB=j2`, B2 `PYTEST_DB=b` (commands in each section).
+- **Cut order if Wave 2 runs long** (Should items of this section and of the packages it extends, first cut first): J1's price tags and pricing rules (the legal caps stay), distributor-file line import, defektura and prescription log (with the log go the controlled register's prescription checks); J2's receipts mode with lines and wholesale cap warning, then §11.4's invoices, customers and nasiya; G's hiring, celebrations, policies and pharmacy contract templates; I's payables screen, `credit_debt`, the per-regime tax calendar and the threshold tile; B2's shared routines (every rostered person then gets a copy of a reading routine); L's coverage warning; S's handover blocker, discipline categories and JobChange warning; U's B2B pipeline and fields; H's sales bonus; K's strip check and draft readings.
+- **Never cut (Wave 2):** the catalogue with batches and FEFO, receipts with payables, legal price caps and the cap-breach check, the expiry board and alerts, write-offs with destruction acts, quarantine and recalls, transfers, counts, the mandatory-assortment check, the controlled register (at licensed branches), the company and branch settings of §14.21 (a cut feature takes its own settings with it), the sales-line import, readings with the storage preset, required documents and the qualified-pharmacist coverage rule, permits, night pay, the AI safety rule, pharmacy categories and words. **Never cut (Wave 3):** J3's ABC, dead stock, expiry losses and margins; P's stock lookup, expiry check and single Complete flow; N's temperature, coverage, expiry-exposure and price-cap insights.
+- **Integration additions (§11.6):** cross-package tests for a receipt (J1) whose payable is paid on I's payables screen; an imported sales file (J2) that deducts FEFO batches (J1), reports a cap breach and leaves `DailySales` and the ledger unchanged; coverage (G) on real roster shifts (F) with approved leave (L), and L's dialog showing the gap; a handover count (S → J1); a won deal's draft invoice (U → J2); invoice VAT from I's regime (J2 → I); the 12 pharmacy eval questions' expected numbers filled from the integrated demo (K); in Wave 3, a supplier return credited (J3 → I), a reading excursion (B2) feeding N's insight and brief, and the inspection pack (N) collecting G, B2 and J1 PDFs; `make demo` building both pharmacy companies with every Wave 2 package's rows; a settings sweep (a distributor, a pharmacy and a "both" company on fixtures: each sees only the screens and rules its settings call for); screenshots of the stock, expiry, coverage and readings pages. **Launch checklist** (not a setting): a practising pharmacist reviews the Uzbek and Russian wording, the glossary's low-confidence rows and the journal layouts (temperature log, controlled books, destruction act) before launch.
+- **Risks added (§12.1):** pharmacy businesses differ (retail, wholesale or both; one branch or many; licences per branch; different cash-register programs and tax regimes) → nothing assumes one company's answers, every such choice is a company or branch setting with a safe default (§14.21); the law moves fast in 2026 (a new cash-register regulation from 22.10.2026, an e-prescription draft, worker registration from 2027) → every legal number is a company setting, the research note carries dates, "(confirm)" items are reviewed before launch; catalogue matching is the hard part of every pharmacy system → dry-run imports, the match list and remembered codes; cash-register exports differ → import profiles with a column mapper; phone scanning is uneven → typed search always works; medical liability → no-advice copy and the AI rule; patient privacy → no patient identifiers anywhere; J1 is the largest Wave 2 package → its mini app screens are P's, its purchasing and analytics are J3's, and its Should items are the first cut.
+
+### 14.21 Company settings this section adds
+
+911 Trello serves many pharmacy businesses, so every choice that differs between them, and every legal number, is a setting with a safe default. A company answers the important ones in the "Get started" checklist (the steps named below) and changes any of them later in the dashboard's settings panels (`settings/<panel>`). Defaults that come from the law are the values §14.4 reports as read on 21.10.2026; changing one is the company's decision.
+
+| Setting | Scope | Default | Built by | Edited in |
+|---|---|---|---|---|
+| What the company is, `Company.business_kind` (pharmacy, distributor, both), and who it sells to, `Company.sells_to` (walk-in customers, clinics, other pharmacies, companies). Modules take defaults from them (coverage, the prescription log, the sales mode, the CRM pipelines) and hide screens that don't apply; neither switches a module | company | pharmacy; walk-in | W2.a | `settings/company`; step `companies.business` |
+| Branch kind, `Branch.kind` (pharmacy, warehouse, office): the retail rules (mandatory list, coverage, the dispensing-camera check) apply at pharmacy branches | branch | pharmacy | W2.a | `settings/branches` (branch drawer); step `companies.branches` |
+| Open 24 hours, `Branch.open_24h` | branch | off | W2.a (console, J2 and G read it) | `settings/branches` |
+| Licensed for narcotics and psychotropics, `Branch.controlled_licence` (the controlled register runs only here); social pharmacy, `Branch.social_pharmacy` (may also hold starred items) | branch | off; off | W2.a (J1 reads them, G cross-checks the permit) | `settings/branches` |
+| In an e-prescription area, `Branch.e_prescription_area` | branch | off | W2.a (J1 reads it) | `settings/branches` |
+| Where sales lines come from, `SalesSettings.sales_lines` (none, import, receipts), and the import profiles (one per cash-register program, column map saved, several allowed); a distributor's sales mode starts as invoices | company (a profile may fix its branch) | none: stock from receipts, transfers, write-offs and counts | J2 | `settings/sales`, the Import page; step `sales.lines` |
+| Tax regime, `FinanceSettings.tax_regime` (turnover tax, VAT 12 %, simplified VAT 6 %), its rate and the turnover-tax threshold; VAT per product where it differs, `Product.vat_percent` | company; product | turnover tax, 0 %, 12 000 base values; the company's rate | I; J1 (product) | `settings/finance`, the Medicines page; step `finance.tax_regime` |
+| Legal price caps: Rx retail and socially significant markups and their enforcement (`StockSettings.rx_max_markup_percent`, `social_max_markup_percent`, `cap_enforced`); the Rx wholesale markup (`SalesSettings.rx_wholesale_max_markup_percent`) | company | 20 %, 10 % (confirm), enforced; 15 % | J1; J2 | `settings/stock`; `settings/sales` |
+| Expiry steps and shelf life (`expiry_steps`, `min_shelf_days`); the stock legal periods (`destroy_within_days`, `destroy_commission_min`, `rx_keep_months`, `rx_destroy_commission_min`, `narcotic_rx_valid_days`, `psychotropic_rx_valid_months`, `psychotropic_stock_months`, `controlled_close_day`, `controlled_report_days`) | company | 90 / 60 / 30 days, 180 days; 30 days, 5, 3 months / 3 / 5 / 1 / 1 years, 3, 7 days, 1 month, 1 month, the 3rd, 3 days | J1 | `settings/stock` |
+| Prescription log, `StockSettings.rx_log` | company | on for a pharmacy or both, off for a distributor | J1 | `settings/stock` |
+| Pricing: OTC markup, rounding, pricing rules | company | 25 %, 100 so‘m, none | J1 | `settings/stock`, the Pricing rules page |
+| Camera barcode scanning in the mini app, `StockSettings.camera_scanning` (typed search always works) | company | on, where the phone supports it | J1; P honours it | `settings/stock` |
+| Storage readings: fridge and room ranges, humidity maximum, reading times (`TasksSettings`); each routine keeps its own editable copy | company; routine | 2–8 °C, 15–25 °C, ≤ 60 %, 09:00 and 20:00 (confirm) | B2 | `settings/routines`, the preset dialog; step `tasks.storage` |
+| Pharmacist coverage (`HRSettings.coverage_enabled`, `pharmacist_positions`, `coverage_min`, `coverage_needs_documents`, `coverage_alert_minutes`, `coverage_days`, `unqualified_seller_alert`) and the required documents per position | company (at pharmacy branches) | on, chosen in setup, 1, on, 15 min, 14 days, on | G | `settings/hr`; step `hr.pharmacists` |
+| Night work (`PayrollSettings.night_multiplier`, `night_starts_at`, `night_ends_at`, `daily_hours`) | company | 1.5×, 22:00–06:00, 8 h | H | `settings/payroll` |
+| Government connectors (Asl belgisi, fiscal data, e-invoices, e-prescriptions, reference prices) | company | off: not built in this phase (§14.18) | the later package that builds each | that module's settings, with the company's own credentials |
+
+The pharmacist's review of the wording and the journal layouts is a launch checklist item, not a setting (§14.20).
+
+The lead's answers (2026-10-21) to the questions this section raised:
+- **Camera scanning:** P may add one barcode decoder library for the mini app (pinned exact version, at least two weeks old, loaded lazily only when someone opens the scanner, so the first load doesn't grow); `BarcodeDetector` is used where the webview has it, and typed search always works.
+- **J3** (price lists, comparison, purchase orders, reorder suggestions, supplier returns and the stock analytics, by the J1 engineer) is approved for Wave 3; **W2.a**'s items and **B2**'s shared routines are approved.
+- **Rx cap base:** the cap is applied to the invoice purchase price as recorded on the batch; for a VAT payer that is the same retail ceiling as capping the VAT-free cost and adding the same output VAT. It stays a company setting marked (confirm).
+- **Government connectors and an OTC-only public feed or online ordering:** later phases, not before the platform has pharmacy customers who ask for them.
+
+Questions still open for the platform's lead (they refine, not block):
+1. May P add a JavaScript barcode decoder (a new npm dependency, §2.3 rule 7) so camera scanning works in every webview, or do `BarcodeDetector` and typed search suffice for launch?
+2. Which government connector, if any, is the first later project (each needs credentials or certification per company, §14.18)?
+3. Is an OTC-only public feed or online ordering wanted in a later phase (§14.4 row 21 allows OTC items only)?
+
+---
+
+## 15. From the owner's own testing (2026-10-21)
+
+The owner used the Wave 1 build in Telegram and the dashboard on 2026-10-21 and asked for the changes below. Where this section conflicts with an earlier one, this section wins.
+
+### 15.1 Opening the mini app (done at Wave 1 integration)
+
+A Mini App opened from a reply-keyboard `web_app` button gets **no initData**, so it can't sign anyone in; the app showed its "open this in Telegram" screen. Rules from now on:
+- The employee bot's chat **menu button** opens the mini app (`bot.commands.menu_button`, https address only), like the owner bot's "Dashboard" button.
+- Reply-keyboard buttons never open the app themselves. The main menu's "📱 Open app" and every module button registered with `web_app_screen` send their text; the bot answers with an **inline** `web_app` button (`members.bot_messages.open_app`), which carries initData. Notifications keep using inline `web_app` buttons.
+- Inside Telegram without initData, the mini app tells the person to use the menu button or the button in the chat; the "outside Telegram" screen is only for real browsers.
+
+### 15.2 Routines are not tasks (Wave 1 visual pass; every later package keeps it)
+
+A **routine** (`tasks.TaskTemplate`) is a rule that creates a task for each person it applies to on every day it's due. A **task** is one piece of work someone gives or takes once (assigned, personal, a project card). Owners must never have to guess which is which.
+- **Words:** Routine / Muntazam vazifa (short: Muntazam) / Регулярная задача, and Task / Vazifa / Задача, everywhere.
+- **Dashboard:** the Tasks page shows one-off work; routine-made tasks are left out unless the "Include routines" filter is on, and every count says what it counts. The Routines page has **Today** (each routine due today: progress and every person's run — done with time and proof, waiting for confirmation, late, missed, skipped with the reason), **History** (routine × day completion for four weeks, drill into a day) and **All routines** (definitions with their next run).
+- **Confirming:** routine runs are confirmed in their own **To confirm** list, grouped by routine and day, photos in a grid, **Confirm all** per group and return-with-reason per run (an audited bulk service; the same rules as confirming one task: only people who may confirm, never one's own). One-off tasks keep their review in the task drawer.
+- **First run:** a routine made after today's due time starts on its next due day. The preview says so, each routine shows its next run, and saving offers **"Give today's task now"**.
+- **Mini app:** the employee's routine tasks for today are their own group with today's progress and a collapsed "Done today" group; a manager's "To check" groups routine runs by routine with Confirm all, apart from one-off tasks.
+- **Later packages:** B2's storage readings (§14.10) are a proof type of a routine run and appear in its Today view and journal; N counts routines and tasks separately; P keeps the split in every mini app screen.
+
+### 15.3 Finished tasks accepted automatically (B2, Wave 2, Must)
+
+Today a task needs a review only when its creator ticked "needs confirmation". Owners want a company-wide rule:
+- **Setting** (tasks settings panel, `tasks.conf`): "When someone finishes a task": **Accept it automatically** (default for new companies) / **Accept automatically only with a photo or text proof, otherwise ask** / **Always ask the person who gave it**. It sets the default of `needs_confirmation` for new tasks and routines; a task's or routine's own choice still wins.
+- **Timeout:** "If nobody reviews it within N hours, accept it automatically" (off by default; 4–72 h). A beat job accepts overdue reviews, audits each as "accepted automatically after N h without a review", and tells the person who should have reviewed.
+- **Tests:** each mode for one-off tasks and routine runs, the timeout (idempotent, never accepts a returned task), the audit row, the bot and mini app texts.
+
+### 15.4 The complete employee file (G, H, S, L with C's Person 360; Wave 2, Must)
+
+The owner: "not just Telegram task management, but their salaries, advance payments, history, contract and contract generation, firing someone, blocking someone, getting their stuff". Person 360 becomes the **complete employee file**, built by the Wave 2 packages through the registries C's page already reads (person tabs, `people.profile.actions`):
+
+| Tab | Content | Package |
+|---|---|---|
+| Profile | personal details, department and manager, emergency contact | G |
+| Documents | passport/ID (sensitive), tax ID, diplomas, pharmacist certificates and medical book with expiry alerts, required documents per position | G |
+| Contracts | contracts generated from templates (employment contract, material responsibility agreement, NDA) as PDF from the person's data, amendments, end and renewal dates, the signed scan | G |
+| Pay | pay setup and its history, payslips (PDF, "I received it"), advances, bonuses and fines, debts | H |
+| Leave | balances by type, requests and history | L |
+| Attendance | as built in Wave 1 | F |
+| Tasks and routines | one-off tasks and routine runs as separate sections (§15.2) | B (C's tab) |
+| Equipment | items issued and returned, what is still out | S |
+| Discipline | warnings, fines (proposed to H), suspensions | S |
+| History | **one timeline** of the person's working life: hired, contract signed/changed/ended, pay changes, promotions and transfers, warnings, suspensions, leave, equipment, leaving | all (audit) |
+
+- **History timeline:** every package records its person events as audit records targeted at the membership with a readable summary; C's history tab shows them in one timeline with filters by kind. Sensitive details (amounts, document numbers, evidence) follow the existing audit redaction and `required_perm` rules.
+- **Header actions** (through `people.profile.actions`): Suspend, Block and Terminate (S; termination runs C's one offboarding wizard with final pay from H and equipment return from S), Give an advance (H), New contract / amend (G), Record leave (L), Issue equipment (S).
+- **Advances (H):** the employee requests one in the mini app or bot, a manager approves it from the inbox (`payroll.advances`), it is paid from cash or bank through finance, and it is deducted from the next payroll run automatically (with the configured cap) and shown on the payslip.
+- **Employee self-service in the mini app:** my contract (the PDF), my payslips with "I received it", request an advance, my leave balances and requests, my documents (upload what is asked, see expiry), my equipment.
+- **Acceptance:** for a demo pharmacist, Person 360 shows every tab filled, the history timeline lists at least hire, contract, a pay change, leave and a warning in order, and each header action works end to end with an audit row.

@@ -22,6 +22,7 @@ import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { useHotkey } from "@/core/hotkeys";
 import { useDelayedPending } from "@/lib/useDelayedPending";
+import { usePageTitle } from "@/lib/usePageTitle";
 import { useCan } from "@/lib/usePermission";
 import { useCompanyStore } from "@/stores/company";
 
@@ -42,6 +43,7 @@ const refresh = useRefresh();
 const spaceId = computed(() => Number(route.params.spaceId));
 const spaces = useSpaces();
 const space = computed(() => spaces.data.value?.find((item) => item.id === spaceId.value) ?? null);
+usePageTitle(() => space.value?.name);
 const tree = useTree(spaceId);
 const pages = usePages(computed(() => ({ space: spaceId.value, page_size: 200 })));
 const skeleton = useDelayedPending(computed(() => spaces.isPending.value || tree.isPending.value || pages.isPending.value));

@@ -90,7 +90,7 @@ const slices = computed(() => (money.value?.by_category ?? []).map((row) => ({ n
     </div>
     <ErrorState v-else-if="query.isError.value" :error="query.error.value" :retry="() => query.refetch()" />
     <template v-else-if="money">
-      <KpiStrip :items="kpis as never" />
+      <KpiStrip :items="kpis as never" phone="grid" />
 
       <section v-if="money.budget" class="ui-card flex flex-col gap-3 p-4 md:p-5">
         <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">

@@ -183,7 +183,6 @@ def test_the_service_checks_the_actor(company, other_company, member, group):
 def test_demo_groups(company, demo_people):
     company.features = ["sales", "attendance", "hr", "recognition"]
     company.save()
-    PositionFactory(company=company, name="Cashier")
     people = demo_people(company)
 
     demo.seed(company, people, timezone.now())
@@ -197,7 +196,7 @@ def test_demo_groups(company, demo_people):
         "cash",
         "sales",
     }
-    assert [p.name for p in kassa.positions.all()] == ["Cashier"]
+    assert {p.name for p in kassa.positions.all()} == {"Pharmacist", "Senior pharmacist"}
 
 
 def test_managers_hear_when_the_bot_is_removed(company, owner, member, group):

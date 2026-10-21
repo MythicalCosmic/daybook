@@ -16,7 +16,7 @@ pytestmark = pytest.mark.django_db
 
 
 def test_codes_are_easy_to_read_and_stored_as_hashes():
-    code, raw = signup.create_code(uses=2, note="Malika, Chorsu bakery")
+    code, raw = signup.create_code(uses=2, note="Malika, Chorsu pharmacy")
 
     assert len(raw) == 9 and raw[4] == "-"
     assert set(raw.replace("-", "")) <= set(signup.ALPHABET)
@@ -89,9 +89,9 @@ def test_open_and_off_modes(settings):
 
 def test_platform_admins_never_need_a_code(settings):
     settings.COMPANY_SIGNUP = "off"
-    settings.PLATFORM_ADMIN_TG_IDS = [6589960007]
+    settings.PLATFORM_ADMIN_TG_IDS = [7000000001]
 
-    assert signup.admit(UserFactory(telegram_id=6589960007), None) is None
+    assert signup.admit(UserFactory(telegram_id=7000000001), None) is None
 
 
 def test_the_command_prints_the_code_and_the_bot_link(settings):
@@ -121,7 +121,7 @@ def test_without_the_owner_bot_the_command_prints_no_link(settings):
 
 def test_the_admin_shows_a_new_code_once(admin_client):
     response = admin_client.post(
-        "/admin/signin/signupcode/add/", {"note": "Yunusobod café", "uses_left": 1}, follow=True
+        "/admin/signin/signupcode/add/", {"note": "Yunusobod pharmacy", "uses_left": 1}, follow=True
     )
 
     assert response.status_code == 200

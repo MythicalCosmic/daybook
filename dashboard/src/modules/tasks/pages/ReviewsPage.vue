@@ -1,10 +1,11 @@
 <script setup lang="ts">
 /**
- * Waiting for my check (plan §6.2): finished work with large proof photos, oldest first. `A`
+ * Waiting for my check (plan §6.2): finished one-off work with large proof photos, oldest first.
+ * Routine work is confirmed on its own page (Routines → To confirm), linked from here. `A`
  * accepts the focused card, `R` sends it back (asks why), `J`/`K` move between cards. Accepting
  * waits 5 seconds with "Undo" before it reaches the server, so a slip costs nothing.
  */
-import { Check, ChevronRight, ClipboardCheck, FileText, RotateCcw } from "@lucide/vue";
+import { Check, ChevronRight, ClipboardCheck, FileText, Repeat, RotateCcw } from "@lucide/vue";
 import { computed, nextTick, onBeforeUnmount, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -21,12 +22,15 @@ import UserAvatar from "@/components/UserAvatar.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { dismissToast, toast } from "@/components/useToast";
 import { useHotkey } from "@/core/hotkeys";
+import { usePulseCount } from "@/core/pulse";
+import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { patchQuery } from "@/lib/useRouteState";
 import { useCompanyStore } from "@/stores/company";
 
 import { tasksApi, useRefreshTasks, useReviews } from "../api";
 import TaskDrawer from "../components/TaskDrawer.vue";
+import { cardKey } from "../meta";
 import type { TaskReview } from "../types";
 
 const UNDO_MS = 5000;
@@ -35,9 +39,13 @@ const { t } = useI18n();
 const router = useRouter();
 const company = useCompanyStore();
 const confirm = useConfirm();
+// Accept and send back are finger-sized on phones.
+const { isPhone } = useBreakpoints();
+const tap = computed(() => (isPhone.value ? "lg" : "sm"));
 const refresh = useRefreshTasks();
 
 const query = useReviews();
+const routineChecks = usePulseCount("tasks.routine_review");
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const hidden = ref<Set<number>>(new Set());
 const cards = computed(() => (query.data.value?.results ?? []).filter((task) => !hidden.value.has(task.id)));
@@ -165,6 +173,11 @@ function open(task: TaskReview): void {
       </template>
     </PageHeader>
 
+    <p v-if="routineChecks > 0" class="-mt-2 flex flex-wrap items-center gap-1.5 text-sm text-muted" data-testid="routine-checks">
+      <Repeat :size="15" class="text-subtle" aria-hidden="true" />{{ t("tasks.reviews.routines", { n: routineChecks }, routineChecks) }}
+      <RouterLink :to="`/c/${company.currentId}/routines/confirm`" class="inline-flex items-center font-medium text-accent-fg hover:underline">{{ t("tasks.reviews.toRoutines") }}<ChevronRight :size="14" /></RouterLink>
+    </p>
+
     <div v-if="skeleton" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <div v-for="n in 6" :key="n" class="ui-card flex flex-col gap-3 p-3">
         <SkeletonBlock height="220px" radius="10px" />
@@ -190,15 +203,27 @@ function open(task: TaskReview): void {
       >
         <div :class="['relative w-full overflow-hidden bg-surface-2', task.proof_photo ? 'aspect-[4/3]' : 'h-32 sm:h-auto sm:aspect-[4/3]']">
           <ProofThumb v-if="task.proof_photo" :src="task.proof_photo" :images="[{ src: task.proof_photo, caption: task.title }]" size="fill" class="!rounded-none" />
-          <div v-else class="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
-            <FileText :size="22" class="text-subtle" />
-            <p v-if="task.proof_text" class="line-clamp-5 text-sm text-fg">“{{ task.proof_text }}”</p>
-            <p v-else class="text-sm text-muted">{{ task.proof === "none" ? t("tasks.reviews.noProof") : t("tasks.reviews.noPhoto") }}</p>
+          <!-- No photo: what was reported, else what was asked, so the card still says something. -->
+          <div v-else class="flex h-full flex-col justify-center gap-2 p-5">
+            <template v-if="task.proof_text">
+              <FileText :size="18" class="text-subtle" aria-hidden="true" />
+              <p class="line-clamp-5 text-sm text-fg">“{{ task.proof_text }}”</p>
+            </template>
+            <template v-else-if="task.description">
+              <p class="text-[11px] font-semibold uppercase tracking-[0.05em] text-subtle">{{ t("tasks.reviews.asked") }}</p>
+              <p class="line-clamp-5 whitespace-pre-line text-sm text-muted">{{ task.description }}</p>
+            </template>
+            <p v-else class="flex flex-col items-center gap-2 text-center text-sm text-muted">
+              <FileText :size="22" class="text-subtle" aria-hidden="true" />{{ task.proof === "none" ? t("tasks.reviews.noProof") : t("tasks.reviews.noPhoto") }}
+            </p>
+            <p v-if="(task.proof_text || task.description) && !task.proof_photo" class="mt-auto text-xs text-subtle">{{ task.proof === "none" ? t("tasks.reviews.noProof") : t("tasks.reviews.noPhoto") }}</p>
           </div>
           <span v-if="task.reward" class="absolute left-2 top-2 rounded-full bg-surface/90 px-2 py-0.5 text-xs font-semibold text-success shadow-xs">{{ t("tasks.reward.short") }}</span>
         </div>
         <div class="flex flex-1 flex-col gap-2 p-3.5">
-          <button type="button" class="line-clamp-2 text-left text-base font-semibold leading-5 text-fg hover:underline" @click="open(task)">{{ task.title }}</button>
+          <button type="button" class="line-clamp-2 text-left text-base font-semibold leading-5 text-fg hover:underline" :title="task.project?.name" @click="open(task)">
+            <span v-if="task.project" class="mr-1 font-mono text-xs font-semibold text-subtle">{{ cardKey(task.project) }}</span>{{ task.title }}
+          </button>
           <div class="flex min-w-0 items-center gap-2 text-sm text-muted">
             <UserAvatar :name="task.assignee.name" :src="task.assignee.photo_url" :size="22" />
             <span class="min-w-0 truncate"><span class="font-medium text-fg">{{ task.assignee.name }}</span><template v-if="task.branch"> · {{ task.branch.name }}</template></span>
@@ -208,8 +233,8 @@ function open(task: TaskReview): void {
           <p v-if="task.checklist.total" class="text-xs text-muted">{{ t("tasks.reviews.checklist", { done: task.checklist.done, total: task.checklist.total }) }}</p>
           <p v-if="task.proof_photo && task.proof_text" class="line-clamp-2 rounded-[8px] bg-surface-2 px-2.5 py-1.5 text-sm text-fg">{{ task.proof_text }}</p>
           <div class="mt-auto flex gap-2 pt-1">
-            <UiButton variant="primary" size="sm" :icon="Check" class="flex-1" @click="accept(task)">{{ t("tasks.action.confirm") }}</UiButton>
-            <UiButton size="sm" :icon="RotateCcw" class="flex-1" @click="sendBack(task)">{{ t("tasks.action.return") }}</UiButton>
+            <UiButton variant="primary" :size="tap" :icon="Check" class="flex-1" @click="accept(task)">{{ t("tasks.action.confirm") }}</UiButton>
+            <UiButton :size="tap" :icon="RotateCcw" class="flex-1" @click="sendBack(task)">{{ t("tasks.action.return") }}</UiButton>
           </div>
         </div>
       </article>

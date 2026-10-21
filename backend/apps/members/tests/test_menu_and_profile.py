@@ -6,7 +6,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from apps.companies.tests.factories import BranchFactory
 from apps.members import bot_menu
-from apps.members.bot_messages import main_menu, miniapp_url
+from apps.members.bot_messages import main_menu, miniapp_url, open_app
 
 pytestmark = pytest.mark.django_db
 
@@ -82,9 +82,20 @@ def test_registered_buttons_join_the_menu_for_the_people_who_should_see_them(
         ["📍 Check in", "💸 Expense"],
         ["📱 Open app"],
     ]
-    check_in = markup.keyboard[1][0]
-    assert check_in.web_app.url == "https://app.example.com/app/?screen=attendance"
-    assert markup.keyboard[1][1].web_app is None
+    # No keyboard button opens the app itself: Telegram would give it no initData.
+    assert all(button.web_app is None for row in markup.keyboard for button in row)
+
+
+def test_the_app_opens_from_an_inline_button(settings):
+    settings.EMPLOYEE_MINIAPP_URL = "https://app.example.com/app/"
+
+    _text, markup = open_app("attendance", label="📍 Check in")
+
+    [[button]] = markup.inline_keyboard
+    assert button.text == "📍 Check in"
+    assert button.web_app.url == "https://app.example.com/app/?screen=attendance"
+    [[plain]] = open_app()[1].inline_keyboard
+    assert plain.text == "📱 Open app" and plain.web_app.url == "https://app.example.com/app/"
 
 
 def test_without_a_member_or_the_app_buttons_stay_plain(company, member, no_buttons):

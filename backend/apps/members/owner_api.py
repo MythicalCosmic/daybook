@@ -56,11 +56,17 @@ class NamedSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
 
+    class Meta:
+        ref_name = "MembersNamed"
+
 
 class BranchRefSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     code = serializers.CharField()
+
+    class Meta:
+        ref_name = "MembersBranchRef"
 
 
 class RoleRefSerializer(serializers.Serializer):
@@ -93,6 +99,7 @@ class PersonSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
+        ref_name = "MembersPerson"
         model = Membership
         fields = (
             "id",
@@ -197,6 +204,7 @@ class PersonDetailSerializer(PersonSerializer):
     can = serializers.SerializerMethodField()
 
     class Meta(PersonSerializer.Meta):
+        ref_name = "PersonDetail"
         fields = (
             *PersonSerializer.Meta.fields,
             "language",
@@ -632,7 +640,8 @@ class JoinRequestSerializer(serializers.ModelSerializer):
     def get_onboarded(self, row: Membership) -> bool:
         return row.onboarded_at is not None
 
-    def get_requested_at(self, row: Membership):
+    @extend_schema_field(serializers.DateTimeField())
+    def get_requested_at(self, row: Membership) -> str:
         return (row.onboarded_at or row.created_at).isoformat()
 
     @extend_schema_field(

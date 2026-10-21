@@ -142,16 +142,24 @@ def test_the_demo(company, demo_people):
     finance_defaults.ensure(company)
     now = timezone.now()
 
-    demo.seed(company, demo_people(company), now)
+    people = demo_people(company)
+    demo.seed(company, people, now)
 
     projects = {p.key: p for p in Project.objects.filter(company=company)}
-    assert set(projects) == {"OPEN", "WEB", "AUDIT", "PROMO"}
-    opening = projects["OPEN"]
+    assert set(projects) == {"SRG", "GPP", "INV", "DIA"}
+    opening = projects["SRG"]
     assert opening.status == "active" and opening.health == "at_risk"
-    assert opening.budget == Decimal("120000000.00")
-    assert opening.tasks.count() == 30 and projects["WEB"].tasks.count() == 30
-    assert projects["AUDIT"].tasks.count() == 30 and projects["AUDIT"].status == "planning"
-    assert projects["WEB"].health == "on_track"
+    assert opening.budget == Decimal("150000000.00")
+    assert opening.tasks.count() == 30 and projects["GPP"].tasks.count() == 30
+    assert projects["INV"].tasks.count() == 30 and projects["INV"].status == "planning"
+    assert projects["GPP"].health == "on_track"
+    assert projects["DIA"].status == "completed"
+    # Time only on the days each person works.
+    from apps.core import demo_plan
+
+    story = demo_plan.Plan(company, people, now)
+    for entry in TimeEntry.objects.filter(company=company).select_related("membership"):
+        assert story.works(story.key_of(entry.membership), entry.day)
     assert opening.finance_transactions.filter(kind="expense").count() == 9
     assert TimeEntry.objects.filter(company=company).count() > 20
     assert ProjectUpdate.objects.filter(project=opening).count() == 3

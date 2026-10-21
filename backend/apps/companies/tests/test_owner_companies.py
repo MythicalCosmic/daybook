@@ -31,7 +31,7 @@ def test_an_owner_creates_another_company_without_a_code(
         response = owner_api(owner).post(
             NEW,
             {
-                "name": "Baraka Café",
+                "name": "Baraka Dorixona",
                 "timezone": "Asia/Tashkent",
                 "language": "uz",
                 "base_currency": "USD",
@@ -42,7 +42,7 @@ def test_an_owner_creates_another_company_without_a_code(
     assert response.status_code == 201, response.content
     company = Company.objects.get(pk=response.json()["id"])
     assert (company.name, company.base_currency, company.default_language) == (
-        "Baraka Café",
+        "Baraka Dorixona",
         "USD",
         "uz",
     )
@@ -184,7 +184,7 @@ def test_create_company_for_is_the_bot_path_too(settings):
     user = UserFactory(first_name="Malika")
 
     company, copied = services.create_company_for(
-        user, name="Malika's bakery", timezone="Asia/Samarkand"
+        user, name="Malika's pharmacy", timezone="Asia/Samarkand"
     )
 
     assert copied == {}

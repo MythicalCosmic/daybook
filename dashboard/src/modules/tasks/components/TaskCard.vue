@@ -10,6 +10,7 @@ import { useI18n } from "vue-i18n";
 import MoneyText from "@/components/MoneyText.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 
+import { cardKey } from "../meta";
 import type { TaskRow } from "../types";
 import DueLabel from "./DueLabel.vue";
 import TaskStatusPill from "./TaskStatusPill.vue";
@@ -26,7 +27,7 @@ const urgent = computed(() => props.task.priority === "urgent" || props.task.pri
     <div class="flex min-w-0 items-start gap-2">
       <div class="min-w-0 flex-1">
         <p class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-muted">
-          <span v-if="task.project" class="font-mono text-[11px] font-semibold text-subtle">{{ task.project.key }}</span>
+          <span v-if="task.project" class="font-mono text-[11px] font-semibold text-subtle" :title="task.project.name">{{ cardKey(task.project) }}</span>
           <span v-if="task.routine" class="inline-flex min-w-0 items-center gap-1"><Repeat :size="11" aria-hidden="true" /><span class="truncate">{{ task.routine.onboarding ? t("tasks.kind.onboarding") : t("tasks.kind.routine") }}</span></span>
           <span v-else-if="task.kind === 'personal'" class="truncate">{{ t("tasks.kind.personal") }}</span>
           <span v-if="urgent" :class="['inline-flex items-center gap-0.5 font-semibold', task.priority === 'urgent' ? 'text-danger' : 'text-warning']">

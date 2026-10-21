@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
- * Routines (plan §6.2): daily work that repeats, each with its days and time, who does it, its
- * branch, and how often it got done in the last 30 days (with a 14-day sparkline), so routines
- * nobody does stand out. The Onboarding tab lists the first-days tasks new people get.
+ * Routines → All routines (plan §6.2): the routines themselves, each with its days, when its next
+ * tasks come, who does it, its branch, and how often it got done in the last 30 days (with a
+ * 14-day sparkline), so routines nobody does stand out. Onboarding (beside it) lists the
+ * first-days tasks new people get.
  */
 import { CalendarClock, ChevronRight, Clock, Ellipsis, GraduationCap, ListChecks, Pencil, Plus, Repeat, Store, Trash2, UsersRound } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
@@ -14,7 +15,6 @@ import DropdownMenu, { type MenuEntry } from "@/components/DropdownMenu.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import IconButton from "@/components/IconButton.vue";
-import PageHeader from "@/components/PageHeader.vue";
 import SegmentedControl from "@/components/SegmentedControl.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import SparkLine from "@/components/SparkLine.vue";
@@ -30,11 +30,15 @@ import { rs, useRouteState } from "@/lib/useRouteState";
 
 import { useDeleteRoutine, useRoutines, useToggleActive } from "../api";
 import RoutineEditor from "../components/RoutineEditor.vue";
+import RoutinesHeader from "../components/RoutinesHeader.vue";
 import WeekdayDots from "../components/WeekdayDots.vue";
+import { runLabel, wholePercent } from "../lib";
 import type { Routine } from "../types";
+import { useRunWords } from "../useRunWords";
 
 const { t } = useI18n();
 const fmt = useFormat();
+const words = useRunWords();
 const route = useRoute();
 const router = useRouter();
 const confirm = useConfirm();
@@ -61,9 +65,14 @@ const counts = computed(() => {
   return { all: all.length, active: all.filter((r) => r.is_active).length, paused: all.filter((r) => !r.is_active).length };
 });
 
-const tabs = computed(() => [
-  { id: "routines", label: t("routines.tabs.routines"), icon: Repeat, to: { name: "routines.list" } },
-  { id: "onboarding", label: t("routines.tabs.onboarding"), icon: GraduationCap, to: { name: "routines.onboarding" } },
+// Routines and onboarding templates sit side by side under "All routines".
+const kind = computed({
+  get: () => (onboarding.value ? "onboarding" : "routines"),
+  set: (value: string) => void router.push({ name: value === "onboarding" ? "routines.onboarding" : "routines.list" }),
+});
+const kinds = computed(() => [
+  { value: "routines", label: t("routines.tabs.routines"), icon: Repeat },
+  { value: "onboarding", label: t("routines.tabs.onboarding"), icon: GraduationCap },
 ]);
 
 // Editor
@@ -124,10 +133,12 @@ function open(routine: Routine): void {
   else void router.push({ name: "routines.detail", params: { id: routine.id } });
 }
 
-// A line through two points says nothing: new routines show only their percentage.
-function sparkOf(routine: Routine): Array<number | null> {
-  const points = routine.stats?.spark ?? [];
-  return points.filter((value) => value !== null).length >= 4 ? points : [];
+// The days it ran, joined: days off (a Mon–Fri routine's weekend) would cut the line into dashes.
+// A line through two points says nothing: new routines show only their percentage. Neither does a
+// line that never moves (done every day: the percentage says it), which SparkLine draws at the bottom.
+function sparkOf(routine: Routine): number[] {
+  const points = (routine.stats?.spark ?? []).filter((value): value is number => value !== null);
+  return points.length >= 4 && new Set(points).size > 1 ? points : [];
 }
 
 function completionTone(value: number | null): string {
@@ -146,14 +157,15 @@ function who(routine: Routine): string {
 
 <template>
   <div class="flex min-w-0 flex-col gap-5">
-    <PageHeader :title="t('routines.title')" :description="onboarding ? t('routines.onboardingDescription') : t('routines.description')" :tabs="tabs">
+    <RoutinesHeader :description="onboarding ? t('routines.onboardingDescription') : t('routines.description')">
       <template #actions>
         <UiButton variant="primary" :icon="Plus" kbd="N" @click="create">{{ onboarding ? t("routines.newOnboarding") : t("routines.new") }}</UiButton>
       </template>
-    </PageHeader>
+    </RoutinesHeader>
 
     <div class="flex flex-wrap items-center gap-2">
-      <TextInput v-model="search" type="search" :icon="ListChecks" clearable :placeholder="t('routines.search')" class="w-full sm:w-[300px]" />
+      <SegmentedControl v-model="kind" :options="kinds" :aria-label="t('routines.nav.all')" />
+      <TextInput v-model="search" type="search" :icon="ListChecks" clearable :placeholder="t('routines.search')" class="w-full sm:w-[260px]" />
       <span class="flex-1" />
       <SegmentedControl
         v-model="state"
@@ -195,7 +207,10 @@ function who(routine: Routine): string {
           <div class="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted">
             <WeekdayDots v-if="!onboarding" :days="routine.weekdays" />
             <span v-else class="inline-flex items-center gap-1"><CalendarClock :size="14" />{{ t("routines.dueAfter", { n: routine.due_after_days }, routine.due_after_days) }}</span>
-            <span class="inline-flex items-center gap-1 tabular-nums"><Clock :size="14" />{{ routine.due_time.slice(0, 5) }}</span>
+            <span v-if="!onboarding && routine.next_run" class="inline-flex items-center gap-1 tabular-nums" :title="t('routines.nextRunHint')" data-testid="next-run">
+              <Clock :size="14" /><span class="text-subtle">{{ t("routines.next") }}</span><span class="font-medium text-fg">{{ runLabel(routine.next_run, words) }}</span>
+            </span>
+            <span v-else class="inline-flex items-center gap-1 tabular-nums"><Clock :size="14" />{{ routine.due_time.slice(0, 5) }}</span>
             <span v-if="routine.branch" class="inline-flex items-center gap-1"><Store :size="14" />{{ routine.branch.name }}</span>
             <span class="inline-flex min-w-0 items-center gap-1"><UsersRound :size="14" class="shrink-0" /><span class="truncate">{{ who(routine) }}</span></span>
             <span v-if="routine.checklist.length" class="inline-flex items-center gap-1"><ListChecks :size="14" />{{ t("routines.steps", { n: routine.checklist.length }, routine.checklist.length) }}</span>
@@ -206,7 +221,7 @@ function who(routine: Routine): string {
           <div v-if="!onboarding" class="flex items-center gap-3">
             <SparkLine :data="sparkOf(routine)" :width="96" :height="28" color="var(--c-chart-2)" :label="t('routines.sparkLabel')" />
             <div class="min-w-[68px] whitespace-nowrap text-right">
-              <p :class="['text-md font-semibold tabular-nums', completionTone(routine.stats?.completion_30d ?? null)]">{{ routine.stats?.completion_30d === null || !routine.stats ? "—" : fmt.percent(routine.stats.completion_30d, 0) }}</p>
+              <p :class="['text-md font-semibold tabular-nums', completionTone(routine.stats?.completion_30d ?? null)]">{{ routine.stats?.completion_30d === null || !routine.stats ? "—" : fmt.percent(wholePercent(routine.stats.completion_30d), 0) }}</p>
               <p class="text-xs text-subtle">{{ t("routines.done30") }}</p>
             </div>
           </div>

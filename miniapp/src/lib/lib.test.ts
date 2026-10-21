@@ -52,6 +52,7 @@ function task(overrides: Partial<Task> = {}): Task {
     created_by: { id: 1, name: "Ali Valiyev", position: null },
     confirmed_by: null,
     checklist: [],
+    card: null,
     reminder: null,
     repeat_weekdays: null,
     started_at: null,
