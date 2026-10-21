@@ -178,8 +178,10 @@
   "routines.give.button": "Give today's task now",
   "routines.give.done": "Today's task went to {n} people | Today's task went to {n} person | Today's task went to {n} people",
   "routines.give.doneBody": "“{title}”, due today at {time}",
+  "routines.give.see": "See it in Today",
   "routines.give.detailBody": "It was made after today's {due}, so it made no tasks today. {n} people can still get today's task. | It was made after today's {due}, so it made no tasks today. {n} person can still get today's task. | It was made after today's {due}, so it made no tasks today. {n} people can still get today's task.",
   "routines.give.detailBodyNobody": "It was made after today's {due}, so it made no tasks today.",
+  "routines.give.givenBody": "It was made after today's {due}; today's task was given by hand.",
   "routines.help": "Routines create a task for each person every day they're due. One-off tasks are on the Tasks page.",
   "routines.nav.today": "Today",
   "routines.nav.history": "History",
@@ -269,5 +271,6 @@
   "routines.history.colDone": "Done",
   "routines.history.colOnTime": "On time",
   "routines.history.colRate": "Completion",
-  "routines.navTitle": "Routines"
+  "routines.navTitle": "Routines",
+  "routines.give.givenMoreBody": "It was made after today's {due}; today's task was given by hand. {n} more people can still get it. | It was made after today's {due}; today's task was given by hand. {n} more person can still get it. | It was made after today's {due}; today's task was given by hand. {n} more people can still get it."
 }

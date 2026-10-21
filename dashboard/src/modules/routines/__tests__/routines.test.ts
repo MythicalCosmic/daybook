@@ -14,7 +14,7 @@ import { formatRoutineAudit, routineFieldLabels } from "../audit";
 import RoutineEditor from "../components/RoutineEditor.vue";
 import en from "../i18n/en.json";
 import module from "../index";
-import { afterSave, missesToday, nextRunOf, runDayWords, runLabel, type RunWords } from "../lib";
+import { afterSave, madeLateNote, missesToday, nextRunOf, runDayWords, runLabel, type RunWords } from "../lib";
 import type { Routine } from "../types";
 
 interface Call {
@@ -284,6 +284,18 @@ describe("next run", () => {
     expect(runDayWords("2026-10-23T04:00:00Z", words)).toBe("routines.runDay.weekday.4");
   });
 
+  it("says a late-made routine's today honestly, before and after today's task went out by hand", () => {
+    const routine = { due_time: "09:00:00", next_run: "2026-10-22T04:00:00Z" };
+    const today = { past: false, given: 0, give: { people: 2 } };
+    expect(madeLateNote(routine, today, words)).toEqual({ title: 'Routines.give.title{"day":"routines.runDay.tomorrow"}', body: 'routines.give.detailBody{"due":"09:00","n":2}' });
+    // Given to everyone: no "it made no tasks today" any more.
+    expect(madeLateNote(routine, { ...today, given: 2, give: null }, words)?.body).toBe('routines.give.givenBody{"due":"09:00"}');
+    expect(madeLateNote(routine, { ...today, given: 2, give: { people: 1 } }, words)?.body).toBe('routines.give.givenMoreBody{"due":"09:00","n":1}');
+    // An earlier day: no task that day, or no note when one was given by hand.
+    expect(madeLateNote(routine, { past: true, given: 0, give: null }, words)).toEqual({ title: 'routines.preview.madeLate{"time":"09:00"}', body: "" });
+    expect(madeLateNote(routine, { past: true, given: 1, give: null }, words)).toBeNull();
+  });
+
   it("opens the give-today dialog only for a new routine that missed today", () => {
     const late = { onboarding: false, today: { reason: "made_late", give: { people: 2, due_at: "2026-10-21T09:30:00Z" } } };
     expect(afterSave(late, true)).toBe("dialog");
@@ -336,6 +348,13 @@ describe("a routine made after its time", () => {
     await flushPromises();
     expect(calls.find((c) => c.method === "POST")?.body).toEqual({ due_time: "14:30" });
     expect(toasts.at(-1)?.title).toBe("Today's task went to 2 people");
+    // Routine work isn't in Tasks: the toast leads to the routine on Today.
+    app.router.addRoute({ path: "/named/routines.today", name: "routines.today", component: { render: () => null } });
+    expect(toasts.at(-1)?.action?.label).toBe("See it in Today");
+    toasts.at(-1)!.action!.onClick();
+    await flushPromises();
+    expect(app.router.currentRoute.value.name).toBe("routines.today");
+    expect(app.router.currentRoute.value.query.routine).toBe("50");
     wrapper.unmount();
   });
 

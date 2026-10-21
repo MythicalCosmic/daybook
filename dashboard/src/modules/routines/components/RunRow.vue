@@ -11,6 +11,7 @@ import { useI18n } from "vue-i18n";
 import IconButton from "@/components/IconButton.vue";
 import ProofThumb from "@/components/ProofThumb.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
+import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
@@ -23,6 +24,9 @@ const emit = defineEmits<{ confirm: [run: RoutineRun]; sendBack: [run: RoutineRu
 const { t } = useI18n();
 const fmt = useFormat();
 const company = useCompanyStore();
+// Confirm and send back are finger-sized on phones.
+const { isPhone } = useBreakpoints();
+const tap = computed(() => (isPhone.value ? "lg" : "sm"));
 const look = computed(() => RUN_LOOK[props.run.state]);
 const text = computed(() => runText(props.run, t, (iso) => fmt.instant(iso, "time")));
 const tone = computed(
@@ -69,8 +73,8 @@ const caption = computed(() => `${props.run.member.name} · ${props.title}${prop
       <FileText :size="16" aria-hidden="true" />
     </span>
     <div v-if="run.can_confirm" class="flex shrink-0 items-center gap-0.5">
-      <IconButton :icon="Check" :label="t('routines.confirm.one')" size="sm" variant="soft" :disabled="busy" @click="emit('confirm', run)" />
-      <IconButton :icon="RotateCcw" :label="t('routines.confirm.sendBack')" size="sm" :disabled="busy" @click="emit('sendBack', run)" />
+      <IconButton :icon="Check" :label="t('routines.confirm.one')" :size="tap" variant="soft" :disabled="busy" @click="emit('confirm', run)" />
+      <IconButton :icon="RotateCcw" :label="t('routines.confirm.sendBack')" :size="tap" :disabled="busy" @click="emit('sendBack', run)" />
     </div>
   </li>
 </template>

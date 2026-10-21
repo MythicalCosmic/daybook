@@ -86,6 +86,7 @@ def test_a_routine_made_after_todays_deadline_starts_the_next_day(company, membe
         "date": WED,
         "reason": generation.MADE_LATE,
         "give": {"people": 1, "due_at": at(WED, 14, 30)},
+        "given": 0,
     }
 
     # Tomorrow it runs like any routine, and the preview says Ali gets it.
@@ -231,6 +232,8 @@ def test_give_todays_task_now(company, member, clock, at, django_capture_on_comm
     )
     generate_daily_tasks(company, WED)
     assert made_for(routine, WED) == set()
+    before = generation.today_status(routine, timezone.now())
+    assert (before["given"], before["give"]["people"]) == (0, 2)
 
     with django_capture_on_commit_callbacks(execute=False) as callbacks:
         tasks = services.give_routine_today(routine, by=shop.owner)
@@ -249,7 +252,9 @@ def test_give_todays_task_now(company, member, clock, at, django_capture_on_comm
     assert made_for(routine, WED) == {ali.pk, shop.owner.pk}
     with pytest.raises(DomainError):
         services.give_routine_today(routine, by=shop.owner)
-    assert generation.today_status(routine, timezone.now())["give"] is None
+    # Its page now says today's task went out by hand, and offers it no more.
+    after = generation.today_status(routine, timezone.now())
+    assert (after["reason"], after["given"], after["give"]) == (generation.MADE_LATE, 2, None)
 
 
 def test_todays_task_is_given_only_when_the_routine_was_made_late(company, member, clock, at):

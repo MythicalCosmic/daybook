@@ -23,6 +23,7 @@ import UiButton from "@/components/UiButton.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { addDays, todayIn } from "@/lib/dates";
+import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { usePermission } from "@/lib/usePermission";
@@ -40,6 +41,9 @@ const fmt = useFormat();
 const company = useCompanyStore();
 const { can } = usePermission();
 const ask = useConfirm();
+// Phones get finger-sized day buttons (40 px); a pointer is happy with 28.
+const { isPhone } = useBreakpoints();
+const tap = computed(() => (isPhone.value ? "lg" : "sm"));
 
 const today = computed(() => todayIn(company.timezone));
 const dayParam = useRouteState("day", rs.string(""));
@@ -152,11 +156,11 @@ function give(target: GiveTarget): void {
     <RoutinesHeader>
       <template #actions>
         <div class="flex items-center gap-1">
-          <IconButton :icon="ChevronLeft" :label="t('routines.today.previousDay')" size="sm" variant="secondary" @click="day = addDays(day, -1)" />
-          <DatePicker v-model="day" size="sm" format="weekday" class="w-[220px] max-sm:min-w-0 max-sm:flex-1" />
-          <IconButton :icon="ChevronRight" :label="t('routines.today.nextDay')" size="sm" variant="secondary" @click="day = addDays(day, 1)" />
+          <IconButton :icon="ChevronLeft" :label="t('routines.today.previousDay')" :size="tap" variant="secondary" @click="day = addDays(day, -1)" />
+          <DatePicker v-model="day" :size="tap" format="weekday" class="w-[220px] max-sm:min-w-0 max-sm:flex-1" />
+          <IconButton :icon="ChevronRight" :label="t('routines.today.nextDay')" :size="tap" variant="secondary" @click="day = addDays(day, 1)" />
         </div>
-        <UiButton v-if="!isToday" size="sm" :icon="CalendarCheck" @click="day = today">{{ t("routines.today.backToToday") }}</UiButton>
+        <UiButton v-if="!isToday" :size="tap" :icon="CalendarCheck" @click="day = today">{{ t("routines.today.backToToday") }}</UiButton>
       </template>
     </RoutinesHeader>
 

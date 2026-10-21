@@ -178,8 +178,10 @@
   "routines.give.button": "Bugungi vazifani berish",
   "routines.give.done": "Bugungi vazifa {n} kishiga berildi | Bugungi vazifa {n} kishiga berildi | Bugungi vazifa {n} kishiga berildi",
   "routines.give.doneBody": "«{title}», muddati bugun soat {time}",
+  "routines.give.see": "«Bugun»da ko‘rish",
   "routines.give.detailBody": "Bugungi {due} dan keyin yaratilgani uchun bugun vazifalar berilmadi. Bugungi vazifani hali {n} kishiga berish mumkin. | Bugungi {due} dan keyin yaratilgani uchun bugun vazifalar berilmadi. Bugungi vazifani hali {n} kishiga berish mumkin. | Bugungi {due} dan keyin yaratilgani uchun bugun vazifalar berilmadi. Bugungi vazifani hali {n} kishiga berish mumkin.",
   "routines.give.detailBodyNobody": "Bugungi {due} dan keyin yaratilgani uchun bugun vazifalar berilmadi.",
+  "routines.give.givenBody": "Bugungi {due} dan keyin yaratilgan; bugungi vazifa qo‘lda berildi.",
   "routines.help": "Muntazam vazifa har bir xodimga belgilangan har kuni vazifa beradi. Bir martalik vazifalar «Vazifalar» sahifasida.",
   "routines.nav.today": "Bugun",
   "routines.nav.history": "Tarix",
@@ -269,5 +271,6 @@
   "routines.history.colDone": "Bajarilgan",
   "routines.history.colOnTime": "O‘z vaqtida",
   "routines.history.colRate": "Bajarilish",
-  "routines.navTitle": "Muntazam"
+  "routines.navTitle": "Muntazam",
+  "routines.give.givenMoreBody": "Bugungi {due} dan keyin yaratilgan; bugungi vazifa qo‘lda berildi. Uni yana {n} kishiga berish mumkin. | Bugungi {due} dan keyin yaratilgan; bugungi vazifa qo‘lda berildi. Uni yana {n} kishiga berish mumkin. | Bugungi {due} dan keyin yaratilgan; bugungi vazifa qo‘lda berildi. Uni yana {n} kishiga berish mumkin."
 }

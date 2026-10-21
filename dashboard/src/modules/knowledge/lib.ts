@@ -103,10 +103,10 @@ export async function safeBody(html: string): Promise<string> {
     ALLOWED_ATTR: ["href", "target", "rel", "src", "alt", "data-image-id", "data-type", "data-checked", "data-callout", "type", "checked", "disabled", "colspan", "rowspan", "start"],
     ALLOW_DATA_ATTR: false,
     RETURN_DOM: true,
-  });
+  }) as HTMLElement; // the cleaned <body>, in DOMPurify's own inert document
   for (const box of body.querySelectorAll('input[type="checkbox"]')) box.setAttribute("disabled", "");
   for (const table of body.querySelectorAll("table")) {
-    const wrapper = body.ownerDocument.createElement("div");
+    const wrapper = (body.ownerDocument ?? document).createElement("div");
     wrapper.className = "tableWrapper";
     table.replaceWith(wrapper);
     wrapper.append(table);

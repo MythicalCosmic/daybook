@@ -38,7 +38,7 @@ import GiveTodayDialog from "../components/GiveTodayDialog.vue";
 import RoutineEditor from "../components/RoutineEditor.vue";
 import RoutinePreview from "../components/RoutinePreview.vue";
 import WeekdayDots from "../components/WeekdayDots.vue";
-import { capitalize, runDayWords, runLabel } from "../lib";
+import { madeLateNote, runLabel } from "../lib";
 import { useRunWords } from "../useRunWords";
 
 const { t } = useI18n();
@@ -72,12 +72,7 @@ const giveOpen = ref(false);
 const lateToday = computed(() => {
   const routine = data.value;
   if (routine?.today?.reason !== "made_late") return null;
-  const due = routine.due_time.slice(0, 5);
-  const day = routine.next_run ? runDayWords(routine.next_run, words.value) : null;
-  return {
-    title: day ? capitalize(t("routines.give.title", { day })) : t("routines.give.titleLater"),
-    body: routine.today.give ? t("routines.give.detailBody", { due, n: routine.today.give.people }, routine.today.give.people) : t("routines.give.detailBodyNobody", { due }),
-  };
+  return madeLateNote(routine, { past: false, given: routine.today.given ?? 0, give: routine.today.give }, words.value);
 });
 const totals = computed(() => compliance.data.value?.totals);
 const kpis = computed(() => [

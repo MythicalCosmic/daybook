@@ -395,6 +395,9 @@ class RoutineTodaySerializer(serializers.Serializer):
     date = serializers.DateField()
     reason = serializers.CharField(allow_null=True)
     give = RoutineGiveSerializer(allow_null=True)
+    given = serializers.IntegerField(
+        default=0, help_text="Made after today's deadline: today's tasks given by hand anyway."
+    )
 
 
 class RoutineSerializer(serializers.ModelSerializer):
