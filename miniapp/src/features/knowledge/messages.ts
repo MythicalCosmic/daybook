@@ -26,7 +26,8 @@ export const messages = defineMessages({
     subpages: "Pages inside",
     "card.title_one": "{count} page to read",
     "card.title_other": "{count} pages to read",
-    "card.body": "Your managers ask you to read and confirm it.",
+    // Only under "2 pages to read" and more (one page shows its own title instead).
+    "card.body": "Your managers ask you to read and confirm them.",
     howTo: "How to do this",
   },
   ru: {

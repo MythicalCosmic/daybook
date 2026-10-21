@@ -488,6 +488,8 @@ describe("the timer on the task screen", () => {
       [3, { assignee: { id: 3, name: "Dilnoza Karimova", position: null } }],
       [2, { status: "done" }],
       [2, { status: "cancelled" }],
+      // Waiting for a check: no timer to start (the reviewer sees the card, not work to time).
+      [2, { status: "review" }],
     ];
     for (const [id, overrides] of cases) {
       server.calls.splice(0);

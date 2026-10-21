@@ -318,7 +318,8 @@ describe("the check-in card", () => {
   it("speaks Uzbek", async () => {
     serve(day({ state: "off", shift: null }));
     renderCard(<CheckInCard />, "uz");
-    expect(await screen.findByText("Bugun smena yo‘q")).toBeTruthy();
+    expect(await screen.findByText("Hali smena rejalashtirilmagan")).toBeTruthy();
+    expect(screen.getByText("Smenalarni rahbaringiz rejalashtiradi, ular shu yerda ko‘rinadi.")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Smenasiz belgilash" })).toBeTruthy();
   });
 
@@ -343,6 +344,14 @@ describe("the check-in card on Home", () => {
     expect(row.textContent).toContain("Next shift: Sun, 25 Oct, 09:00–18:00 · Chilonzor");
     // Checking in without a shift stays on the attendance page.
     expect(screen.queryByRole("button", { name: /Check in without a shift/ })).toBeNull();
+  });
+
+  it("says once that nothing is planned yet, and who plans it, for someone new", async () => {
+    serve(dayOff);
+    renderCard(hero());
+    const row = await screen.findByRole("button", { name: /No shifts planned yet/ });
+    expect(row.textContent).toContain("Your manager plans them, and they show up here.");
+    expect(row.textContent).not.toContain("No shift today");
   });
 
   it("stays away for an owner without shifts and on a day off the person asked for", async () => {

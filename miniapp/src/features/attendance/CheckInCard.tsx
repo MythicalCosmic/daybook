@@ -361,6 +361,8 @@ function describe(day: MyDay, now: Date, t: T, { timeZone, locale, lang }: LookC
         lines: [shift ? t("card.startsIn", { time: duration(t, minutesBetween(now, shift.starts_at)) }) : ""].filter(Boolean),
       };
     default:
+      // With nothing planned at all, "No shift today" over "No shifts planned yet" said it twice.
+      if (!day.next_shift) return { tone: "plain", title: t("card.noNext"), lines: [t("card.noNextBody")] };
       return { tone: "plain", title: t("card.offTitle"), lines: [next] };
   }
 }

@@ -36,7 +36,8 @@ async def test_invite_link_opens_a_request_and_points_to_account_creation(
 
     membership = await get_membership(company, 501)
     assert membership.status == Membership.Status.PENDING
-    reply = bot.requests[-1]
+    # The last message (the chat's menu button gets its label after it: test_menu_button.py).
+    reply = sent(bot)[-1]
     assert "You're joining" in reply.text
     assert reply.reply_markup.inline_keyboard[0][0].web_app.url == "https://app.example.com"
 

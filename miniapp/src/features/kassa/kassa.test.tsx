@@ -8,7 +8,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { Me, Membership } from "../../api/types";
+import type { Me, Membership, Summary } from "../../api/types";
 import { I18nProvider } from "../../i18n";
 import { NavigationProvider } from "../../state/navigation";
 import { SessionProvider, type Member } from "../../state/session";
@@ -224,6 +224,25 @@ describe("during a shift", () => {
     expect(await screen.findByText("Kassa 1")).toBeTruthy();
     expect(screen.getByText(/Shift open · CH-12/)).toBeTruthy();
     for (const name of ["Hand over", "Payout", "Close shift"]) expect(screen.getByRole("button", { name })).toBeTruthy();
+  });
+
+  it("asks to open the till on Home, except on a day off, when an open shift still shows", async () => {
+    const off = { off_today: { kind: "time_off", name: "", until: "2026-10-22" } } as unknown as Summary;
+    serve({ "/sales/shifts/current/": kassa() });
+    const working = wrap(<KassaHero member={member} summary={undefined} />);
+    expect(await screen.findByText("Kassa is closed")).toBeTruthy();
+    working.unmount();
+
+    // "You're off today" is on Home: no "Open shift" beside it.
+    const resting = wrap(<KassaHero member={member} summary={off} />);
+    await waitFor(() => expect(client.api).toHaveBeenCalled());
+    await waitFor(() => expect(resting.container.querySelector(".skeleton")).toBeNull());
+    expect(screen.queryByText("Kassa is closed")).toBeNull();
+    resting.unmount();
+
+    serve({ "/sales/shifts/current/": kassa({ shift: shift() }) });
+    wrap(<KassaHero member={member} summary={off} />);
+    expect(await screen.findByText(/Shift open · CH-12/)).toBeTruthy();
   });
 });
 

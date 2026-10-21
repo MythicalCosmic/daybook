@@ -174,6 +174,20 @@ describe("To check", () => {
     expect(screen.getByText("Count the safe")).toBeTruthy();
   });
 
+  it("puts a routine's Confirm under its name, above the runs, and lets one run take the card's width", () => {
+    const expiry = task({ id: 4, routine: 9, title: "Expiry dates", status: "review", completed_at: "2026-10-21T09:40:00+05:00", actions: ["confirm", "return"] });
+    const { container } = renderWith(<ReviewQueue tasks={[...queue(), expiry]} loading={false} error={null} onRetry={() => undefined} ctx={ctx()} onOpen={() => undefined} />);
+    const [fridge, single] = [...container.querySelectorAll<HTMLElement>(".routine-check")];
+    // Never at the card's foot, where the tab bar and the (+) cover the end of the screen.
+    const confirmAll = within(fridge).getByRole("button", { name: "Confirm all (2)" });
+    const grid = fridge.querySelector(".routine-check-grid") as HTMLElement;
+    expect(confirmAll.compareDocumentPosition(grid) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(grid.classList.contains("routine-check-grid--one")).toBe(false);
+    // One run waiting: "Confirm", and the run across the whole card.
+    expect(within(single).getByRole("button", { name: "Confirm" })).toBeTruthy();
+    expect(single.querySelector(".routine-check-grid")?.classList.contains("routine-check-grid--one")).toBe(true);
+  });
+
   it("confirms all of a routine's runs in one go and says how it went", async () => {
     api.mockResolvedValue({ done: 2, failed: 0, results: [{ id: 1, ok: true, error: "" }, { id: 2, ok: true, error: "" }] });
     renderWith(<ReviewQueue tasks={queue()} loading={false} error={null} onRetry={() => undefined} ctx={ctx()} onOpen={() => undefined} />);

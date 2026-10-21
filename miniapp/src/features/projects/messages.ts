@@ -23,7 +23,7 @@ export const messages = defineMessages({
     "status.completed": "Completed",
     "status.cancelled": "Cancelled",
     home: "Your projects",
-    homeAll: "All",
+    homeAll: "See all",
     board: "Board",
     updates: "Updates",
     mine: "My cards",

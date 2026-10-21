@@ -81,6 +81,13 @@ button {
   gap: var(--space-4);
 }
 
+/* Inside Telegram a page's action is Telegram's own button, under the page: with no bar in the
+   page to clear, the page ends near the bottom, and so does what sticks to it (Kassa's total,
+   which otherwise floated 150 px up over the notes being counted). */
+.detail-layer:not(:has(.action-bar)) .screen--detail {
+  padding-bottom: calc(var(--bottom-inset) + 40px);
+}
+
 :root {
   --top-inset: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px));
   --bottom-inset: var(--tg-safe-area-inset-bottom, 0px);
@@ -1656,6 +1663,21 @@ textarea.input {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+}
+
+/* A routine with one run waiting: the run takes the whole width, its photo in a wide frame. */
+.routine-check-grid--one {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.routine-check-grid--one .run-tile-proof {
+  aspect-ratio: 16 / 9;
+}
+
+/* Without a photo, a note or nothing at all needs no picture's height. */
+.routine-check-grid--one .run-tile-proof:not(:has(img)) {
+  aspect-ratio: auto;
+  min-height: 92px;
 }
 
 .run-tile {

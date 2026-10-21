@@ -1,10 +1,14 @@
-from aiogram import F, Router
+import logging
+
+from aiogram import Bot, F, Router
 from aiogram.enums import ChatType
+from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import CommandObject, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from asgiref.sync import sync_to_async
 from django.conf import settings
+from django.utils import translation
 
 from apps.accounts.models import User
 from apps.companies.services import find_by_invite
@@ -12,6 +16,9 @@ from apps.core.exceptions import DomainError
 from apps.members import bot_messages, services
 from apps.members.models import Membership
 from bot import deeplinks
+from bot.commands import menu_button
+
+logger = logging.getLogger(__name__)
 
 router = Router(name="start")
 
@@ -22,6 +29,14 @@ OPEN_APP_REQUEST = "open_app"
 
 @router.message(CommandStart(), F.chat.type == ChatType.PRIVATE)
 async def cmd_start(
+    message: Message, command: CommandObject, user: User, state: FSMContext, bot: Bot
+) -> None:
+    await _answer_start(message, command, user, state)
+    # After the answer, so it never waits on this.
+    await set_menu_button(bot, message.chat.id, user)
+
+
+async def _answer_start(
     message: Message, command: CommandObject, user: User, state: FSMContext
 ) -> None:
     # Deep links features registered (login_…, job_…) first; their handlers decide what happens
@@ -36,7 +51,7 @@ async def cmd_start(
 
 
 @router.message(F.web_app_data, F.chat.type == ChatType.PRIVATE)
-async def app_asks_for_a_button(message: Message, user: User, state: FSMContext) -> None:
+async def app_asks_for_a_button(message: Message, user: User, state: FSMContext, bot: Bot) -> None:
     """The mini app, opened from a keyboard button of an old main menu, couldn't sign the person
     in and asked for a way that does (Telegram closed it and sent us its data). Answer with where
     they stand, which for a member also replaces that old keyboard with today's menu, then a
@@ -46,6 +61,20 @@ async def app_asks_for_a_button(message: Message, user: User, state: FSMContext)
     await state.clear()  # like any menu button, it ends a conversation in progress
     for text, markup in await _open_app_replies(user):
         await message.answer(text, reply_markup=markup)
+    await set_menu_button(bot, message.chat.id, user)
+
+
+async def set_menu_button(bot: Bot, chat_id: int, user: User) -> None:
+    """Label this chat's menu button, which opens the app, in the person's own language: the one
+    every chat starts with is set once, in Uzbek (bot.commands.set_commands), and the app's "Open
+    Daybook from the chat" screen names the button as it reads in their language. Best effort:
+    the button works whatever its label, so a refusal only gets logged."""
+    with translation.override(user.language):
+        button = menu_button()
+    try:
+        await bot.set_chat_menu_button(chat_id=chat_id, menu_button=button)
+    except TelegramAPIError as exc:
+        logger.warning("Couldn't label the menu button of chat %s: %s", chat_id, exc)
 
 
 @sync_to_async

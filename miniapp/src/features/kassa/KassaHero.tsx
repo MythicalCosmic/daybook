@@ -14,9 +14,11 @@ import "./kassa.css";
 
 /**
  * Home's top card for a cashier: "Kassa is closed · Open shift", or the open shift with its
- * three everyday actions. Nothing at all for someone without a till in their branch.
+ * three everyday actions. Nothing at all for someone without a till in their branch, nor a closed
+ * till for someone off today ("Open shift" beside "You're off today" would contradict it; the
+ * bot's "🧾 Kassa" button still opens the Kassa page).
  */
-export function KassaHero({ member }: SlotProps) {
+export function KassaHero({ member, summary }: SlotProps) {
   const t = useKassaT();
   const { locale } = useI18n();
   const navigation = useNavigation();
@@ -32,6 +34,7 @@ export function KassaHero({ member }: SlotProps) {
   const shift = data.shift;
 
   if (!shift) {
+    if (summary?.off_today) return null;
     // Owners and managers (who have the dashboard) see the closed till only once they ran one.
     if (!data.recent.length && can(member, "dashboard.access")) return null;
     const branch = data.registers.find((till) => !till.busy)?.branch.name ?? data.registers[0]?.branch.name;

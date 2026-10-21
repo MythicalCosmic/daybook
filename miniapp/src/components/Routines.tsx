@@ -203,7 +203,13 @@ function RoutineCheck({ group, ctx, onOpen }: { group: RoutineGroup; ctx: ViewCo
           <span className="row-meta">{[repeat, t("review.runs", { count })].filter(Boolean).join(" · ")}</span>
         </span>
       </div>
-      <div className="routine-check-grid">
+      {/* The routine's action sits under its name: in sight as the card arrives, however many runs
+          follow, and never at the foot of the screen under the tab bar and its (+). */}
+      <Button variant="primary" block icon={CheckCheck} loading={confirm.isPending} onClick={confirmAll} className="routine-check-confirm">
+        {count > 1 ? t("review.confirmAll", { count }) : t("detail.confirm")}
+      </Button>
+      {/* One run alone gets the card's whole width rather than half of an empty grid. */}
+      <div className={cx("routine-check-grid", count === 1 && "routine-check-grid--one")}>
         {group.tasks.map((task) => (
           <div key={task.id} className="run-tile">
             <button type="button" className="run-tile-proof" onClick={() => onOpen(task)} aria-label={t("review.openRun", { name: task.assignee.name })}>
@@ -220,7 +226,9 @@ function RoutineCheck({ group, ctx, onOpen }: { group: RoutineGroup; ctx: ViewCo
             </button>
             <div className="run-tile-foot">
               <span className="run-tile-who">
-                <span className="run-tile-name">{task.assignee.name}</span>
+                <span className="run-tile-name" title={task.assignee.name}>
+                  {task.assignee.name}
+                </span>
                 <span className="run-tile-time num">{when(finishedAt(task), ctx)}</span>
               </span>
               <IconButton
@@ -237,9 +245,6 @@ function RoutineCheck({ group, ctx, onOpen }: { group: RoutineGroup; ctx: ViewCo
           </div>
         ))}
       </div>
-      <Button variant="primary" block icon={CheckCheck} loading={confirm.isPending} onClick={confirmAll} className="routine-check-confirm">
-        {count > 1 ? t("review.confirmAll", { count }) : t("detail.confirm")}
-      </Button>
     </div>
   );
 }

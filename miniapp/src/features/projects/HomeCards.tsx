@@ -22,7 +22,7 @@ export function TimerCard({ member }: SlotProps) {
   if (!running) return null;
 
   return (
-    <Card tone="accent" className="prj-timer" layout="row" padding="flush">
+    <Card tone="accent" className="prj-timer prj-home-timer" layout="row" padding="flush">
       <span className="circle ui-row-icon ui-row-icon--accent" aria-hidden>
         <Timer size={20} strokeWidth={2.4} className="prj-pulse" />
       </span>
