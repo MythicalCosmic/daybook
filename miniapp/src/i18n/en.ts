@@ -265,7 +265,7 @@ const en = {
 
   "add.title": "New task",
   "add.what": "What needs doing?",
-  "add.placeholder": "e.g. Check the medicine fridge",
+  "add.placeholder": "e.g. Check the expiry dates",
   "add.when": "When",
   "add.time": "Time",
   "add.repeat": "Repeat",

@@ -278,7 +278,7 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
 
   "add.title": "Новая задача",
   "add.what": "Что нужно сделать?",
-  "add.placeholder": "Например: проверить холодильник",
+  "add.placeholder": "Например: проверить сроки",
   "add.when": "Когда",
   "add.time": "Время",
   "add.repeat": "Повтор",

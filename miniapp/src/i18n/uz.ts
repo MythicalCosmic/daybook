@@ -267,7 +267,7 @@ const uz: Partial<Record<Key, string>> = {
 
   "add.title": "Yangi vazifa",
   "add.what": "Nima qilish kerak?",
-  "add.placeholder": "Masalan: dori muzlatgichini tekshirish",
+  "add.placeholder": "Masalan: muddatlarni tekshirish",
   "add.when": "Qachon",
   "add.time": "Vaqt",
   "add.repeat": "Takrorlash",

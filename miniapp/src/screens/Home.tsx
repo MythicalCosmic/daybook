@@ -125,6 +125,8 @@ export function Home() {
           icon={Eye}
           title={t("home.toCheck", { count: numbers.awaiting_review })}
           body={t("home.toCheckBody")}
+          // A sentence, not a title: whole in Uzbek and Russian too, never cut to "…kutm…".
+          wrap
           onClick={() => navigation.goTo("tasks", "review")}
         />
       )}

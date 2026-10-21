@@ -89,6 +89,12 @@
   min-width: 0;
 }
 
+/* The row's icon keeps its size beside a long label and value ("Посещаемость · На работе с 08:46"
+   squeezed it to a dot). */
+.list-item-label > svg {
+  flex: none;
+}
+
 .list-item-text {
   display: flex;
   flex-direction: column;

@@ -201,15 +201,15 @@ function AddSheet() {
       </div>
       <div className="field">
         <span className="field-label">{t("add.when")}</span>
-        <div style={{ display: "flex", gap: "var(--space-2)" }}>
-          <div className="seg" style={{ flex: 1 }}>
+        <div className="plus-when">
+          <div className="seg">
             {(["today", "tomorrow"] as const).map((option) => (
               <button key={option} className="seg-opt" aria-pressed={day === option} onClick={() => setDay(option)}>
                 {t(option === "today" ? "day.today" : "day.tomorrow")}
               </button>
             ))}
           </div>
-          <input className="input num" type="time" aria-label={t("add.time")} value={time} onChange={(event) => setTime(event.target.value || time)} style={{ flex: "none", width: "auto", minWidth: 128, minHeight: 52, fontSize: 16 }} />
+          <input className="input num" type="time" aria-label={t("add.time")} value={time} onChange={(event) => setTime(event.target.value || time)} />
         </div>
       </div>
       <div className="field">
