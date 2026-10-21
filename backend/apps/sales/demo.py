@@ -742,7 +742,7 @@ def _extras(company, story, rng, now, methods) -> None:
                 source="dashboard",
                 note=note,
                 sold_at=at,
-                number=f"BUY-{1040 + back}",
+                number=f"BUY-{1100 - back}",  # numbers grow with time
             )
 
 

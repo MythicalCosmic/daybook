@@ -1,5 +1,7 @@
 """O groups/: connected groups, event toggles, positions and branches filters, disconnect."""
 
+from datetime import timedelta
+
 import pytest
 from django.utils import timezone
 
@@ -197,6 +199,8 @@ def test_demo_groups(company, demo_people):
         "sales",
     }
     assert {p.name for p in kassa.positions.all()} == {"Pharmacist", "Senior pharmacist"}
+    # Linked weeks and months ago, not on the day the demo was built.
+    assert all(g.created_at < timezone.now() - timedelta(days=30) for g in groups)
 
 
 def test_managers_hear_when_the_bot_is_removed(company, owner, member, group):

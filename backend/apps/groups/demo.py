@@ -5,19 +5,22 @@ a "Kassa" chat for the pharmacists who run Chilonzor's till. The chat ids are ma
 like real supergroups) and never reached in development (`TELEGRAM_DRY_RUN`).
 """
 
+from datetime import timedelta
+
 from apps.groups.models import GroupEvent, TelegramGroup
 from apps.members.models import Position
 
 E = GroupEvent
 
 GROUPS = (
-    # (chat id, title, events, branch name or None, position names)
+    # (chat id, title, events, branch name or None, position names, linked days ago)
     (
         -1001900000101,
         "Demo Dorixona · Rahbariyat",
         [E.LATE, E.MEMBERS, E.EVENING, E.CASH, E.SALES, E.SHIFTS, E.CELEBRATIONS],
         None,
         (),
+        212,
     ),
     (
         -1001900000102,
@@ -25,6 +28,7 @@ GROUPS = (
         [E.DAILY_DONE, E.TASKS_DONE, E.LATE, E.MORNING, E.EVENING, E.ATTENDANCE, E.KUDOS],
         "Chilonzor",
         (),
+        181,
     ),
     (
         -1001900000103,
@@ -32,6 +36,7 @@ GROUPS = (
         [E.DAILY_DONE, E.LATE, E.MORNING, E.EVENING, E.CELEBRATIONS],
         "Yunusobod",
         (),
+        149,
     ),
     (
         -1001900000104,
@@ -39,6 +44,7 @@ GROUPS = (
         [E.CASH, E.SHIFTS, E.SALES],
         "Chilonzor",
         ("Pharmacist", "Senior pharmacist"),
+        47,
     ),
 )
 
@@ -48,7 +54,7 @@ def seed(company, people, now) -> None:
     and nigora to their memberships."""
     branches = {branch.name: branch for branch in company.branches.all()}
     linked_by = people.get("manager") or people.get("owner")
-    for chat_id, title, events, branch, positions in GROUPS:
+    for chat_id, title, events, branch, positions, days_ago in GROUPS:
         group, created = TelegramGroup.objects.get_or_create(
             chat_id=chat_id,
             defaults={
@@ -60,6 +66,8 @@ def seed(company, people, now) -> None:
         )
         if not created or group.company_id != company.pk:
             continue
+        # Linked months ago (the team has used them since), not "today".
+        TelegramGroup.objects.filter(pk=group.pk).update(created_at=now - timedelta(days=days_ago))
         if branch and branch in branches:
             group.branches.set([branches[branch]])
         if positions:

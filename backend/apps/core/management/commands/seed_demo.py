@@ -688,8 +688,17 @@ class Command(BaseCommand):
             due=time(9, 15),
             days=days,
             late={2},
+            today=True,
         )
-        history(story, boss, "manager", "Kunlik jo‘natmalarni tekshirish", due=time(17), days=days)
+        history(
+            story,
+            boss,
+            "manager",
+            "Kunlik jo‘natmalarni tekshirish",
+            due=time(17),
+            days=days,
+            today=True,
+        )
         history(
             story,
             boss,
@@ -698,6 +707,7 @@ class Command(BaseCommand):
             due=time(14),
             days=days,
             late={3},
+            today=True,
         )
         picking = TaskTemplate.objects.create(
             company=company,
@@ -753,10 +763,12 @@ def made_long_ago(story, *templates) -> None:
     )
 
 
-def history(story, by, key, title, *, due=time(10, 0), days=14, late=()):
+def history(story, by, key, title, *, due=time(10, 0), days=14, late=(), today=False):
     """Two weeks (`days`) of one person's routine, on the days they work, all done: `late`
     counts their working days back (1 is the last one) when it was done after reminders, so the
-    story stays the same whatever the rota. Nothing past stays open."""
+    story stays the same whatever the rota. Nothing past stays open. With `today`, also today's
+    run when they work today (done once its time has passed), for a company no tasks demo
+    fills."""
     who = story.member(key)
     if who is None:
         return None
@@ -796,6 +808,27 @@ def history(story, by, key, title, *, due=time(10, 0), days=14, late=()):
     Task.objects.filter(pk__in=[work.pk for work in tasks]).update(
         created_at=F("due_at") - timedelta(hours=8)
     )
+    if today and story.works(key, story.today):
+        due_at = story.at(story.today, due)
+        done = due_at <= story.now - timedelta(minutes=5)
+        run = Task.objects.create(
+            company=company,
+            kind=Task.Kind.DAILY,
+            template=template,
+            for_date=story.today,
+            title=title,
+            assignee=who,
+            branch=who.home_branch,
+            created_by=by,
+            due_at=due_at,
+            status=Task.Status.DONE if done else Task.Status.TODO,
+            completed_at=story.at_work(key, story.today, due_at - timedelta(minutes=12))
+            if done
+            else None,
+        )
+        # Made at midnight, like daily generation.
+        made = min(story.now - timedelta(minutes=10), story.at(story.today, time(0, 5)))
+        Task.objects.filter(pk=run.pk).update(created_at=made)
     logs = [
         ReminderLog(task=work, kind=ReminderLog.Kind.REMINDER, step=step, recipient=who)
         for work in tasks

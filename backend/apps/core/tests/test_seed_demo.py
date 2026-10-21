@@ -313,6 +313,11 @@ def test_the_distributor_is_a_second_smaller_company_with_the_same_owner(debug):
     owned = Membership.objects.filter(user=owner, role__is_owner=True, status="approved")
     assert sorted(owned.values_list("company__slug", flat=True)) == sorted([PHARMACY, DISTRIBUTOR])
     assert Task.objects.for_company(distributor).filter(branch=branch).count() > 14
+    # No tasks demo fills the distributor: its routines get today's runs from the core demo.
+    story = demo_plan.Plan(distributor, {}, timezone.now())
+    if story.works("worker", story.today):
+        today = Task.objects.for_company(distributor).filter(for_date=story.today)
+        assert today.filter(template__title="Ombor harorati va namligini yozish").count() == 1
     # The core demo's own routines (both companies') have run for a while.
     assert not list(made_today(Company.objects.filter(slug__in=(PHARMACY, DISTRIBUTOR))))
 
