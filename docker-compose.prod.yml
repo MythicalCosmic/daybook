@@ -24,6 +24,11 @@ services:
     restart: unless-stopped
     profiles: ["app"]
 
+  # Postgres' default connection limit (100) is plenty for one stack; the higher limit in
+  # docker-compose.yml is for development.
+  db:
+    command: !reset []
+
   # Only Caddy talks to these.
   backend:
     ports: !reset []

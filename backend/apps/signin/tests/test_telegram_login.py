@@ -12,6 +12,8 @@ from apps.signin.tokens import OwnerAccessToken
 pytestmark = pytest.mark.django_db
 
 URL = "/api/v1/owner/auth/telegram/"
+REFRESH = "/api/v1/owner/auth/refresh/"
+DASHBOARD = {"HTTP_X_REQUESTED_WITH": "dashboard", "HTTP_ORIGIN": "http://testserver"}
 OWNER_TOKEN = "43:OWNER-TEST"
 EMPLOYEE_TOKEN = "42:EMPLOYEE-TEST"
 
@@ -128,3 +130,19 @@ def test_it_is_throttled_per_client_ip(client, tokens, owner):
 
     assert blocked.status_code == 429
     assert elsewhere.status_code == 200
+
+
+def test_it_counts_apart_from_the_dashboards_cookie_endpoints(client, tokens, owner):
+    """Refresh, logout and the dev login share `owner_auth`; this has `owner_telegram`."""
+    for _ in range(30):
+        client.post(REFRESH, REMOTE_ADDR="10.0.0.7", **DASHBOARD)
+    assert client.post(REFRESH, REMOTE_ADDR="10.0.0.7", **DASHBOARD).status_code == 429
+
+    signed_in = client.post(
+        URL,
+        {"init_data": signed_init_data(7710001, token=OWNER_TOKEN)},
+        content_type="application/json",
+        REMOTE_ADDR="10.0.0.7",
+    )
+
+    assert signed_in.status_code == 200

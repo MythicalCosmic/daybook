@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def private_commands() -> list[BotCommand]:
     # Telegram shows one menu to everyone, so the module commands (/checkin, /expense, /pay,
-    # /kudos) are listed even where the module is off: each module's handler in
+    # /kudos, /kb, /calendar) are listed even where the module is off: each module's handler in
     # bot/handlers/features/ answers that case. Until it exists the command gets the home screen.
     return [
         BotCommand(command="start", description=_("Home")),
@@ -29,6 +29,8 @@ def private_commands() -> list[BotCommand]:
         BotCommand(command="expense", description=_("Submit an expense with a receipt")),
         BotCommand(command="pay", description=_("My pay and payslips")),
         BotCommand(command="kudos", description=_("Thank a colleague")),
+        BotCommand(command="kb", description=_("Knowledge base: pages to read")),
+        BotCommand(command="calendar", description=_("Company calendar: the next 7 days")),
         BotCommand(command="announce", description=_("Send an announcement (managers)")),
     ]
 

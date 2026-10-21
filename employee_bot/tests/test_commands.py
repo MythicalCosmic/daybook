@@ -22,6 +22,8 @@ async def test_the_private_menu_has_the_module_commands(bot):
             "expense",
             "pay",
             "kudos",
+            "kb",
+            "calendar",
             "announce",
         ]
         assert all(c.description for c in menu.commands)

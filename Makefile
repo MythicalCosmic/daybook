@@ -8,6 +8,10 @@ MAKEMESSAGES := PYTHONPATH=backend DJANGO_SETTINGS_MODULE=config.settings.dev uv
 	makemessages -l uz -l ru -i miniapp -i dashboard -i node_modules -i tests -i staticfiles \
 	-i media -i private_media --add-location=file --no-obsolete
 HAS_DASHBOARD := $(wildcard dashboard/package.json)
+# Development processes close their database connection after each request, task or update:
+# every package's dev server, workers and bots share one Postgres, and threaded runserver kept
+# dozens of idle connections each with the default DB_CONN_MAX_AGE=60.
+DEV_DB := DB_CONN_MAX_AGE=0
 
 .PHONY: help up down install migrate makemigrations superuser shell messages demo run worker \
 	ai-worker beat stream bot owner-bot app app-build dashboard dashboard-test dashboard-build \
@@ -53,27 +57,27 @@ demo: ## Rebuild Demo Shop and Demo Café [PKG, DEMO_APPS=sales,finance, OWNER_T
 		$(if $(OWNER_TG),--owner-tg $(OWNER_TG))
 
 run: ## Django dev server (:28000) [PKG]
-	$(PKG_ENV) $(MANAGE) runserver 127.0.0.1:$(BACKEND_PORT)
+	$(PKG_ENV) $(DEV_DB) $(MANAGE) runserver 127.0.0.1:$(BACKEND_PORT)
 
 worker: ## Celery worker for the celery and default queues [PKG]
-	cd backend && $(PKG_ENV) uv run celery -A config worker -Q celery,default -l info
+	cd backend && $(PKG_ENV) $(DEV_DB) uv run celery -A config worker -Q celery,default -l info
 
 ai-worker: ## Celery worker for the ai queue [PKG]
-	cd backend && $(PKG_ENV) uv run celery -A config worker -Q ai -c 4 -l info
+	cd backend && $(PKG_ENV) $(DEV_DB) uv run celery -A config worker -Q ai -c 4 -l info
 
 beat: ## Celery beat [PKG]
 	cd backend && $(PKG_ENV) uv run celery -A config beat -l info \
 		--schedule celerybeat-schedule$(if $(PKG),-$(PKG))
 
 stream: ## AI answer streams, uvicorn with reload (:28001) [PKG]
-	cd backend && $(PKG_ENV) DJANGO_SETTINGS_MODULE=config.settings.dev DB_CONN_MAX_AGE=0 \
+	cd backend && $(PKG_ENV) $(DEV_DB) DJANGO_SETTINGS_MODULE=config.settings.dev \
 		uv run uvicorn config.asgi:application --host 127.0.0.1 --port $(STREAM_PORT) --reload
 
 bot: ## Employee bot (polling; one copy per token) [PKG]
-	cd employee_bot && $(PKG_ENV) uv run python main.py
+	cd employee_bot && $(PKG_ENV) $(DEV_DB) uv run python main.py
 
 owner-bot: ## Owner bot (polling; one copy per token) [PKG]
-	cd owner_bot && $(PKG_ENV) uv run python -m ownerbot
+	cd owner_bot && $(PKG_ENV) $(DEV_DB) uv run python -m ownerbot
 
 app: ## Mini app dev server on :28173/app/ (proxies /api to the backend) [PKG]
 	cd miniapp && DEV_PORT=$(MINIAPP_PORT) $(VITE_ENV) npm run dev

@@ -40,6 +40,10 @@ x-app: &app
 services:
   db:
     image: postgres:18-alpine
+    # In development every work package runs its own dev server, workers and bots against this
+    # one Postgres (deploy/dev-packages.mk), which the default 100 connections can't carry.
+    # docker-compose.prod.yml puts the default back.
+    command: ["postgres", "-c", "max_connections=300"]
     environment:
       POSTGRES_DB: trello
       POSTGRES_USER: trello
