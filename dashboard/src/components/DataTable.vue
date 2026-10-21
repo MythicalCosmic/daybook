@@ -34,6 +34,7 @@ import IconButton from "./IconButton.vue";
 import SelectBox from "./SelectBox.vue";
 import SkeletonBlock from "./SkeletonBlock.vue";
 import { columnValue, csvColumns, keyOf, sortField, type RowKey, type TableColumn } from "./table";
+import { vTruncateTitle } from "./truncateTitle";
 import { useMoreToTheRight } from "./useScrollFade";
 import UiButton from "./UiButton.vue";
 import type { DataTableState } from "./useDataTable";
@@ -483,7 +484,7 @@ const tableMinWidth = computed(
                 >
                   <div :class="['flex min-w-0 items-center', alignClass(column)]">
                     <slot :name="`cell-${column.id}`" :row="row.original" :value="columnValue(column, row.original)">
-                      <span :class="['truncate', cellText(column, row.original) === '—' && 'text-subtle']">{{ cellText(column, row.original) }}</span>
+                      <span v-truncate-title :class="['truncate', cellText(column, row.original) === '—' && 'text-subtle']">{{ cellText(column, row.original) }}</span>
                     </slot>
                   </div>
                 </td>

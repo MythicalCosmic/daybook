@@ -293,6 +293,30 @@ describe("BranchesWidget", () => {
     expect(wrapper.text()).toContain("1 of 4 open");
   });
 
+  it("says tills count their sales at close while every till is still open, and names the tasks ring", async () => {
+    stub({
+      "branches/today/": () =>
+        json([
+          branch({ sales: { opened_at: "2026-10-21T02:54:00Z", opened_by: { id: 11, name: "Alisher Valiyev" }, open_tills: 1, net: "0.00", cash_in_branch: "1340000.00" }, tasks: { done: 4, total: 11, late: 2 } }),
+          branch({ id: 2, name: "Yunusobod", code: "YNS", sales: { opened_at: "2026-10-21T03:04:00Z", opened_by: null, open_tills: 1, net: "2850000.00", cash_in_branch: "0.00" } }),
+          branch({ id: 3, name: "Sergeli", code: "SRG", status: "closed", sales: { opened_at: null, opened_by: null, open_tills: 0, net: "0.00", cash_in_branch: "0.00" } }),
+        ]),
+    });
+    const app = await testApp("/c/1");
+    const { wrapper } = mountWithProviders(BranchesWidget, { plugins: app.plugins, props: { companyId: 1 } });
+    await flushPromises();
+    const cards = wrapper.findAll("li");
+    // Nothing counted yet with the till open: not "0 UZS".
+    const atClose = cards[0]!.find("[data-sales-at-close]");
+    expect(atClose.text()).toBe(en["overview.branches.salesAtClose"]);
+    expect(atClose.attributes("title")).toBe(en["overview.branches.salesAtCloseHint"]);
+    expect(cards[0]!.find(`[title="Tasks done today: 4 of 11"]`).exists()).toBe(true);
+    // Receipts already in, or no till open: the amount itself.
+    expect(cards[1]!.find("[data-sales-at-close]").exists()).toBe(false);
+    expect(cards[1]!.text()).toMatch(/2\.9M\sUZS/);
+    expect(cards[2]!.find("[data-sales-at-close]").exists()).toBe(false);
+  });
+
   it("says so when there are no branches", async () => {
     stub({ "branches/today/": () => json([]) });
     const app = await testApp("/c/1");

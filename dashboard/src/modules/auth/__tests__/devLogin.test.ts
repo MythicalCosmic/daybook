@@ -21,7 +21,8 @@ afterEach(() => vi.unstubAllGlobals());
 describe("development sign-in", () => {
   it("offers only the demo people, by demo company", () => {
     expect(DEMO_COMPANIES.map((company) => company.name)).toEqual(["Demo Dorixona", "Demo Distribyutor"]);
-    expect(everyone.map((person) => person.id)).toEqual([1001, 1002, 4242, 2001, 2002, 2003, 5001, 5002, 5003]);
+    // As `make demo` prints them (backend/apps/core/demo_plan.py PEOPLE and SMALL_PEOPLE).
+    expect(everyone.map((person) => person.id)).toEqual([1001, 1002, 4242, 1004, 1005, 1006, 2001, 2002, 2003, 5001, 5002, 5003]);
     // Demo ids are short; a real Telegram id (nine or ten digits) never goes in the repository.
     for (const person of everyone) expect(String(person.id)).toMatch(/^\d{4}$/);
   });

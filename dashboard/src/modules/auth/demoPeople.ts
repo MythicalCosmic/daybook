@@ -18,6 +18,9 @@ export const DEMO_COMPANIES: ReadonlyArray<{ name: string; people: readonly Demo
       { id: 1001, name: "Dilnoza Karimova", role: "auth.dev.owner" },
       { id: 1002, name: "Bekzod Mirzayev", role: "auth.dev.headOfPharmacy" },
       { id: 4242, name: "Alisher Valiyev", role: "auth.dev.pharmacist" },
+      { id: 1004, name: "Madina Saidova", role: "auth.dev.seniorPharmacist" },
+      { id: 1005, name: "Jasur Tursunov", role: "auth.dev.courier" },
+      { id: 1006, name: "Nigora Azimova", role: "auth.dev.nightPharmacist" },
     ],
   },
   {

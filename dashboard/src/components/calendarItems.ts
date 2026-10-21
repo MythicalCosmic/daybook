@@ -93,10 +93,16 @@ export function itemsByDay(items: readonly CalendarItem[], days: readonly string
 export function withoutEcho(item: CalendarItem): CalendarItem {
   const label = item.subtitle?.trim().toLocaleLowerCase();
   if (!label) return item;
-  // The label's stem, so "Shifts" also matches "2 on shift" and the Uzbek "Vazifa muddatlari" its
-  // "18 ta vazifa muddati".
-  const stem = label.slice(0, Math.max(4, Math.ceil(label.length * 0.6)));
-  return item.title.toLocaleLowerCase().includes(stem) ? { ...item, subtitle: undefined } : item;
+  const words = (text: string) => text.toLocaleLowerCase().split(/[^\p{L}\p{N}‘’']+/u).filter(Boolean);
+  // Each word of the label by its stem, so "Shifts" matches "2 on shift", the Uzbek "Vazifa
+  // muddatlari" its "18 ta vazifa muddati" and the Russian "Сроки задач" its "Срок: 19 задач".
+  // Short words ("due", "off") don't count; every longer one must be in the title.
+  const stems = words(label)
+    .filter((word) => word.length >= 4)
+    .map((word) => word.slice(0, Math.max(4, Math.ceil(word.length * 0.6))));
+  const title = words(item.title);
+  const echoed = stems.length > 0 && stems.every((stem) => title.some((word) => word.startsWith(stem)));
+  return echoed ? { ...item, subtitle: undefined } : item;
 }
 
 /**

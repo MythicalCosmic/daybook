@@ -46,11 +46,11 @@ describe("palette and switcher", () => {
   });
 
   it("leads with the group the query names, and leaves out loose fuzzy matches", async () => {
-    // The server lists payments that mention Barakat Kafe before the counterparty itself.
+    // The server lists payments that mention Barakat Farm before the counterparty itself.
     const results = [
-      { type: "finance.transaction", id: 1, title: "Debt payment", subtitle: "19.10.2026 · 1 500 000 UZS · Barakat Kafe", url: "finance/transactions?txn=1" },
-      { type: "finance.transaction", id: 2, title: "Ulgurji, nasiyaga", subtitle: "Barakat Kafe", url: "finance/transactions?txn=2" },
-      { type: "finance.counterparty", id: 3, title: "Barakat Kafe", subtitle: "Customer", url: "finance/counterparties?cp=3" },
+      { type: "finance.transaction", id: 1, title: "Debt payment", subtitle: "19.10.2026 · 1 500 000 UZS · Barakat Farm", url: "finance/transactions?txn=1" },
+      { type: "finance.transaction", id: 2, title: "Ulgurji, nasiyaga", subtitle: "Barakat Farm", url: "finance/transactions?txn=2" },
+      { type: "finance.counterparty", id: 3, title: "Barakat Farm", subtitle: "Customer", url: "finance/counterparties?cp=3" },
     ];
     vi.stubGlobal("fetch", vi.fn(async (url: string) => json(String(url).includes("/search/") ? { results } : {})));
     Element.prototype.scrollIntoView ??= () => undefined;

@@ -28,8 +28,13 @@ describe("range values", () => {
   });
 
   it("sends from, to and the compare mode to the API", () => {
-    expect(rangeParams(rangeValue("month", TZ, "prev", NOW))).toEqual({ from: "2026-10-01", to: "2026-10-20", compare: "prev" });
+    // A preset goes as itself: the server then compares 1–20 October with 1–20 September, as the
+    // picker says, not with the 20 days just before (a custom range's rule).
+    expect(rangeParams(rangeValue("month", TZ, "prev", NOW))).toEqual({ preset: "month", compare: "prev" });
+    expect(compareOf(rangeValue("month", TZ, "prev", NOW))).toEqual({ from: "2026-09-01", to: "2026-09-20" });
+    expect(rangeParams(rangeValue("last_30", TZ, "none", NOW))).toEqual({ preset: "last_30" });
     expect(rangeParams(customValue({ from: "2026-10-01", to: "2026-10-05" }))).toEqual({ from: "2026-10-01", to: "2026-10-05" });
+    expect(rangeParams(customValue({ from: "2026-10-01", to: "2026-10-05" }, "year"))).toEqual({ from: "2026-10-01", to: "2026-10-05", compare: "year" });
   });
 
   it("round-trips through the URL, leaving defaults out", () => {

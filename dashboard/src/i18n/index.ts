@@ -143,7 +143,14 @@ export function setLanguage(language: Language): Promise<void> {
     apply();
     return Promise.resolve();
   }
-  return Promise.all([loadLanguage(language), ensureAllModuleMessages(missing, language)]).then(apply);
+  return Promise.all([loadLanguage(language), ensureAllModuleMessages(missing, language)])
+    .then(apply)
+    .catch((error: unknown) => {
+      // The language never arrived (offline): pages opened from now on load their dictionaries in
+      // the language still on screen, not in the one that failed.
+      if (target === language) target = null;
+      throw error;
+    });
 }
 
 /** Text of `key` in every language, for searching titles in uz, ru and en at once. */

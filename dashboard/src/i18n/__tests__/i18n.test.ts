@@ -126,6 +126,27 @@ describe("i18n", () => {
     expect(fresh.allLanguages("kudos.title")).toEqual({ uz: "Rahmatlar", ru: "Благодарности", en: "Kudos" });
   });
 
+  it("keeps loading pages in the language on screen when a switch's dictionary fails to arrive", async () => {
+    vi.resetModules();
+    vi.doMock("@/i18n/ru.json", () => {
+      throw new Error("offline");
+    });
+    try {
+      const fresh = await import("@/i18n");
+      await fresh.setLanguage("en");
+      await expect(fresh.setLanguage("ru")).rejects.toThrow();
+      expect(fresh.currentLanguage()).toBe("en");
+      const loader = vi.fn(async (language: "uz" | "ru" | "en") => ({ "late.title": `in ${language}` }));
+      const late = defineModule({ id: "late", group: "work", order: 1, icon: {}, title: "late.title", routes: [], messages: loader });
+      await fresh.ensureModuleMessages(late);
+      expect(loader).toHaveBeenCalledWith("en");
+      expect(fresh.t("late.title")).toBe("in en");
+    } finally {
+      vi.doUnmock("@/i18n/ru.json");
+      vi.resetModules();
+    }
+  });
+
   it("has small guards", () => {
     expect(isLanguage("uz")).toBe(true);
     expect(isLanguage("de")).toBe(false);

@@ -96,6 +96,18 @@ describe("InboxDrawer", () => {
     expect(post?.body).toEqual({ source: "dashboard" });
   });
 
+  it("closes from the button in its own header, like every other drawer", async () => {
+    stub({ "GET queue/counts/": () => json({ total: 0, kinds: [] }), "GET queue/": () => json({ items: [] }) });
+    const app = await testApp("/c/1?inbox=needs");
+    mountWithProviders(InboxDrawer, { plugins: app.plugins });
+    await flushPromises();
+    const close = document.body.querySelector<HTMLButtonElement>("[data-inbox-close]")!;
+    expect(close.getAttribute("aria-label")).toBe("Close");
+    close.click();
+    await flushPromises();
+    expect(app.router.currentRoute.value.query.inbox).toBeUndefined();
+  });
+
   it("asks for a reason before a notification action that needs one and shows the server's answer", async () => {
     const calls = stub({
       "GET queue/counts/": () => json({ total: 0, kinds: [] }),

@@ -8,7 +8,8 @@
  *   <KpiCard :label="t('sales.net')" :value="totals.net" :previous="previous?.net" format="money" :spark="series.map((p) => p.net)" :to="…" />
  */
 import { ArrowUpRight } from "@lucide/vue";
-import { computed, type Component } from "vue";
+import { useResizeObserver } from "@vueuse/core";
+import { computed, ref, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, type RouteLocationRaw } from "vue-router";
 
@@ -41,6 +42,8 @@ const props = withDefaults(
     points?: boolean;
     spark?: Array<number | string | null>;
     sparkColor?: string;
+    /** The trend's first and last day ("8 Oct", "Yesterday"), shown under it when it fills a tall tile. */
+    sparkLabels?: [string, string];
     to?: RouteLocationRaw;
     hint?: string;
     icon?: Component;
@@ -62,6 +65,7 @@ const props = withDefaults(
     points: false,
     spark: undefined,
     sparkColor: "var(--c-chart-1)",
+    sparkLabels: undefined,
     to: undefined,
     hint: undefined,
     icon: undefined,
@@ -96,6 +100,18 @@ function render(value: number | null, exact: boolean): string {
 
 const text = computed(() => render(tween.running.value ? tween.value.value : numeric.value, !tween.running.value));
 const full = computed(() => (props.format === "money" && props.compact && numeric.value !== null ? fmt.money(props.value) : undefined));
+
+const hasSpark = computed(() => !!props.spark && props.spark.length > 1);
+/**
+ * Free height under the number (a row made tall by richer tiles, as on the Overview): the trend
+ * fills it, as wide as the tile, instead of sitting small beside the delta; a short tile (a KPI
+ * strip) keeps it beside the delta. The box takes only the free space, so the trend can't grow it.
+ */
+const spare = ref<HTMLElement | null>(null);
+const roomy = ref(false);
+useResizeObserver(spare, (entries) => {
+  roomy.value = (entries[0]?.contentRect.height ?? 0) >= 56;
+});
 
 const change = computed(() => {
   if (props.delta !== undefined) return props.delta;
@@ -134,10 +150,13 @@ const change = computed(() => {
     </template>
     <template v-else>
       <p class="kpi-value mt-1.5 truncate" :title="full ?? text" aria-live="polite">{{ text }}</p>
-      <!-- A narrow tile has no room for the trend beside its delta; in a row made tall by richer
-           tiles, it draws the trend across the free middle instead (only when there is room). -->
-      <div v-if="spark && spark.length > 1" class="kpi-spare hidden min-h-0 flex-1 @max-[15rem]:flex" aria-hidden="true" data-kpi-spare>
-        <SparkLine :data="spark" :color="sparkColor" fluid :height="40" class="kpi-spare-line" />
+      <div v-if="hasSpark" ref="spare" class="kpi-spare min-h-0 flex-1" aria-hidden="true" data-kpi-spare>
+        <template v-if="roomy">
+          <SparkLine :data="spark!" :color="sparkColor" fluid :height="48" class="max-h-16 min-h-0 flex-1" data-kpi-trend />
+          <div v-if="sparkLabels" class="mt-1 flex justify-between gap-2 text-[11px] tabular-nums text-subtle">
+            <span>{{ sparkLabels[0] }}</span><span>{{ sparkLabels[1] }}</span>
+          </div>
+        </template>
       </div>
       <div class="mt-auto flex min-h-[32px] items-end justify-between gap-3 pt-2" data-kpi-foot>
         <div class="flex min-w-0 flex-col gap-1">
@@ -145,8 +164,8 @@ const change = computed(() => {
           <span v-if="hint" class="line-clamp-2 text-xs text-muted">{{ hint }}</span>
           <slot />
         </div>
-        <!-- Two tiles per row on a phone leave no room beside the delta: the trend steps aside. -->
-        <SparkLine v-if="spark && spark.length > 1" :data="spark" :color="sparkColor" :width="104" :height="32" class="shrink-0 @max-[15rem]:hidden" />
+        <!-- Beside the delta in a short tile; two tiles per row on a phone leave no room for it there. -->
+        <SparkLine v-if="hasSpark && !roomy" :data="spark!" :color="sparkColor" :width="104" :height="32" class="shrink-0 @max-[15rem]:hidden" />
       </div>
     </template>
   </component>
@@ -156,15 +175,9 @@ const change = computed(() => {
 /* Its height comes only from the free space (size containment): none in a short tile. */
 .kpi-spare {
   container-type: size;
+  display: flex;
   flex-direction: column;
   justify-content: flex-end;
-}
-.kpi-spare-line {
-  display: none;
-}
-@container (min-height: 3.5rem) {
-  .kpi-spare-line {
-    display: block;
-  }
+  padding-top: 0.75rem;
 }
 </style>

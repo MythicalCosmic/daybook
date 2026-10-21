@@ -18,6 +18,7 @@ import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import StatusPill, { type StatusTone } from "@/components/StatusPill.vue";
 import { useWidgetSkeleton } from "@/components/widgetSkeleton";
 import { zonedNow } from "@/lib/dates";
+import { isZero } from "@/lib/decimal";
 import { useFormat } from "@/lib/useFormat";
 import { useNow } from "@/lib/useNow";
 import { useCompanyStore } from "@/stores/company";
@@ -61,6 +62,15 @@ function hours(branch: BranchToday): string | null {
 function hasFacts(branch: BranchToday): boolean {
   return !!(branch.sales || branch.attendance || branch.finance || branch.tasks);
 }
+
+/** Tills count their sales when their shift closes (Z-report): with every till still open and nothing in yet, "0 so‘m" would read as nothing sold. */
+function salesAtClose(branch: BranchToday): boolean {
+  return !!branch.sales && branch.sales.open_tills > 0 && isZero(branch.sales.net);
+}
+
+function tasksTitle(branch: BranchToday): string {
+  return t("overview.branches.tasksDone", { done: branch.tasks?.done ?? 0, total: branch.tasks?.total ?? 0 });
+}
 </script>
 
 <template>
@@ -101,8 +111,8 @@ function hasFacts(branch: BranchToday): boolean {
                   </div>
                   <StatusPill class="mt-2" size="sm" :tone="TONES[branch.status]" :live="branch.status === 'not_opened'" :label="statusLabel(branch)" />
                 </div>
-                <div v-if="branch.tasks && branch.tasks.total > 0" class="shrink-0 @3xl:hidden">
-                  <ProgressRing :value="branch.tasks.done" :max="branch.tasks.total" :size="44" tone="auto" show-value :label="t('overview.branches.tasks')" />
+                <div v-if="branch.tasks && branch.tasks.total > 0" class="shrink-0 @3xl:hidden" :title="tasksTitle(branch)">
+                  <ProgressRing :value="branch.tasks.done" :max="branch.tasks.total" :size="44" tone="auto" show-value :label="tasksTitle(branch)" />
                 </div>
               </div>
               <p v-if="hours(branch)" class="mt-2.5 flex items-center gap-1.5 text-xs text-muted">
@@ -117,7 +127,10 @@ function hasFacts(branch: BranchToday): boolean {
               </div>
               <div v-if="branch.sales" class="min-w-0">
                 <dt class="truncate text-[11px] text-muted">{{ t("overview.branches.sales") }}</dt>
-                <dd class="mt-0.5 truncate text-sm font-semibold text-fg"><MoneyText :value="branch.sales.net" compact /></dd>
+                <dd v-if="salesAtClose(branch)" class="mt-0.5 truncate text-sm text-subtle" :title="t('overview.branches.salesAtCloseHint')" data-sales-at-close>
+                  {{ t("overview.branches.salesAtClose") }}
+                </dd>
+                <dd v-else class="mt-0.5 truncate text-sm font-semibold text-fg"><MoneyText :value="branch.sales.net" compact /></dd>
               </div>
               <div v-if="branch.sales" class="min-w-0">
                 <dt class="truncate text-[11px] text-muted">{{ t("overview.branches.tills") }}</dt>
@@ -130,8 +143,8 @@ function hasFacts(branch: BranchToday): boolean {
             </dl>
             <p v-else class="mt-3 border-t border-line pt-3 text-xs text-subtle @3xl:mt-0 @3xl:w-[26rem] @3xl:shrink-0 @3xl:border-l @3xl:border-t-0 @3xl:pl-6 @3xl:pt-0">{{ t("overview.branches.noFacts") }}</p>
             <!-- The ring's own display would beat `hidden`: the wrapper carries it. -->
-            <div v-if="branch.tasks && branch.tasks.total > 0" class="hidden shrink-0 @3xl:block">
-              <ProgressRing :value="branch.tasks.done" :max="branch.tasks.total" :size="44" tone="auto" show-value :label="t('overview.branches.tasks')" />
+            <div v-if="branch.tasks && branch.tasks.total > 0" class="hidden shrink-0 @3xl:block" :title="tasksTitle(branch)">
+              <ProgressRing :value="branch.tasks.done" :max="branch.tasks.total" :size="44" tone="auto" show-value :label="tasksTitle(branch)" />
             </div>
           </div>
         </li>

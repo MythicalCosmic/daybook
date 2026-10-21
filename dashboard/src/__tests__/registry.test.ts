@@ -179,7 +179,9 @@ describe("registry", () => {
     }
     problems.push(...registryProblems(modules));
     expect(problems).toEqual([]);
-  });
+    // Every module and its three dictionaries load here (60 files): past vitest's 5 s on a busy
+    // machine running the whole suite, though about 1 s on its own.
+  }, 30_000);
 
   it("the catalog's placeholders honour the same contract", async () => {
     const stubs = devStubModules();

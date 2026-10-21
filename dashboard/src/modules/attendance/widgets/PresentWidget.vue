@@ -61,9 +61,9 @@ const breakdown = computed(() => {
       <SkeletonBlock width="70%" height="12px" />
     </div>
     <template v-else-if="totals">
+      <!-- The rostered count is said once, in the line below ("of 10 on shift"). -->
       <div class="mt-1.5 flex items-baseline gap-1.5">
         <span class="kpi-value">{{ present }}</span>
-        <span class="text-base tabular-nums text-subtle">/ {{ totals.rostered }}</span>
         <span v-if="share !== null" class="ml-auto self-center rounded-full bg-success-soft px-2 py-0.5 text-xs font-semibold tabular-nums text-success">{{ share }}%</span>
       </div>
       <p class="mt-0.5 truncate text-xs text-muted">{{ t("attendance.kpi.ofRostered", { n: totals.rostered }) }}</p>

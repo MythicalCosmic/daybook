@@ -15,7 +15,9 @@ import KpiStrip from "@/components/KpiStrip.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import PersonCell from "@/components/PersonCell.vue";
 import SavedViewsTabs from "@/components/SavedViewsTabs.vue";
+import SparkLine from "@/components/SparkLine.vue";
 import TextInput from "@/components/TextInput.vue";
+import { syncTruncateTitle } from "@/components/truncateTitle";
 import UiBadge from "@/components/UiBadge.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
@@ -439,5 +441,69 @@ describe("WidgetCard", () => {
     expect(moreToTheRight(0, 1000, 1000)).toBe(false);
     expect(moreToTheRight(0, 1000, 1240)).toBe(true);
     expect(moreToTheRight(240, 1000, 1240)).toBe(false);
+  });
+});
+
+describe("SparkLine", () => {
+  it("steps over a missing day instead of breaking the line, and marks the last point with a round dot", () => {
+    const spark = mount(SparkLine, { props: { data: [75, null, null, 80, 100, null] } });
+    const line = spark.find("[data-spark-line]").attributes("d")!;
+    // One stroke through the three days that have a value, each at its own day's place.
+    expect(line.match(/[ML]/g)).toEqual(["M", "L", "L"]);
+    expect(line.startsWith("M3.0,")).toBe(true);
+    // The wash closes under that one stroke (no second, slanted piece).
+    expect(spark.find("[data-spark-fill]").attributes("d")!.match(/M/g)).toHaveLength(1);
+    // A zero-length round-capped stroke, so stretching (`fluid`) can't turn the dot into an ellipse.
+    const dot = spark.find("[data-spark-dot]");
+    expect(dot.attributes("d")).toMatch(/h0$/);
+    expect(dot.attributes("stroke-linecap")).toBe("round");
+    expect(mount(SparkLine, { props: { data: [5, null] } }).find("[data-spark-line]").exists()).toBe(false);
+  });
+
+  it("KpiCard draws its trend across free height in a tall tile, and beside the delta in a short one", async () => {
+    let height = 20;
+    const observers: Array<() => void> = [];
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(private callback: ResizeObserverCallback) {}
+        observe(target: Element) {
+          const fire = () => this.callback([{ target, contentRect: { height } } as unknown as ResizeObserverEntry], this as unknown as ResizeObserver);
+          observers.push(fire);
+          fire();
+        }
+        unobserve() {}
+        disconnect() {}
+      },
+    );
+    const tile = mount(KpiCard, {
+      props: { label: "Sales yesterday", value: "17700000", format: "money", compact: true, spark: [12, 15, 11, 17], sparkLabels: ["8 Oct", "Yesterday"] },
+      global: { plugins: plugins() },
+    });
+    await flushPromises();
+    expect(tile.find("[data-kpi-foot] svg").exists()).toBe(true);
+    expect(tile.find("[data-kpi-trend]").exists()).toBe(false);
+    // The row grew (a richer tile beside it): the trend moves into the free space, with its days.
+    height = 120;
+    observers.forEach((fire) => fire());
+    await flushPromises();
+    expect(tile.find("[data-kpi-trend]").exists()).toBe(true);
+    expect(tile.find("[data-kpi-foot] svg").exists()).toBe(false);
+    expect(tile.find("[data-kpi-spare]").text()).toBe("8 OctYesterday");
+    vi.unstubAllGlobals();
+  });
+});
+
+describe("v-truncate-title", () => {
+  it("shows a text cut short in a tooltip, and nothing for a text that fits", () => {
+    const el = document.createElement("span");
+    el.textContent = "Terminal (karta va QR)";
+    Object.defineProperty(el, "clientWidth", { value: 80, configurable: true });
+    Object.defineProperty(el, "scrollWidth", { value: 140, configurable: true });
+    syncTruncateTitle(el);
+    expect(el.title).toBe("Terminal (karta va QR)");
+    Object.defineProperty(el, "scrollWidth", { value: 80, configurable: true });
+    syncTruncateTitle(el);
+    expect(el.hasAttribute("title")).toBe(false);
   });
 });

@@ -117,7 +117,9 @@ describe("calendar items", () => {
     expect(withoutEcho(item("18 ta vazifa muddati", "Vazifa muddatlari")).subtitle).toBeUndefined();
     expect(withoutEcho(item("Chilonzor: smenada 2 kishi", "Smenalar")).subtitle).toBeUndefined();
     expect(withoutEcho(item("Жасур Турсунов · отпуск", "Отпуска")).subtitle).toBeUndefined();
+    expect(withoutEcho(item("Срок: 19 задач", "Сроки задач")).subtitle).toBeUndefined();
     expect(withoutEcho(item("GPP inspection visit", "Company events")).subtitle).toBe("Company events");
+    expect(withoutEcho(item("Pay Ko‘kterak Farm Distribyutor 10 910 000 UZS", "Debt due dates")).subtitle).toBe("Debt due dates");
     expect(withoutEcho(item("Pharmacist training")).subtitle).toBeUndefined();
   });
 

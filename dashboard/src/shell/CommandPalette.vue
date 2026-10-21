@@ -73,6 +73,7 @@ import { usePaletteStore } from "@/stores/palette";
 import { useUiStore } from "@/stores/ui";
 
 import { isTextKey, markPaletteMounted } from "./paletteLoader";
+import { byMatch, bySectionMatch, groupWeight, keepLocal, plain } from "./paletteRank";
 import { searchTypeKey } from "./searchTypes";
 
 const props = defineProps<{ groups: NavGroup[]; aiAvailable: boolean }>();
@@ -293,12 +294,13 @@ const companyItems = computed<Item[]>(() =>
 );
 
 const localItems = computed(() => [...jumpItems.value, ...moduleCommands.value, ...shellCommands.value, ...companyItems.value]);
+// Matched without Uzbek apostrophes or leading emoji (paletteRank `plain`): "tatil" finds "Ta’til".
 const fuse = computed(
   () =>
     new Fuse(localItems.value, {
       keys: [
-        { name: "title", weight: 2 },
-        { name: "keywords", weight: 1 },
+        { name: "title", weight: 2, getFn: (item: Item) => plain(item.title) },
+        { name: "keywords", weight: 1, getFn: (item: Item) => item.keywords.map(plain) },
       ],
       threshold: 0.3,
       ignoreLocation: true,
@@ -353,40 +355,6 @@ const typeLabel = (type: string) => {
   return module ? t(module.title) : t("shell.searchType.other");
 };
 
-/**
- * Fuse scores "fin" in "Briefings" like "fin" in "Finance"; people expect the word that starts with
- * what they typed first. Stable: Fuse's order is kept inside each bucket.
- */
-/** 0: a title or keyword starts with the query; 1: one of their words does; 2: it only matched fuzzily. */
-function prefixBucket(texts: readonly string[], q: string): 0 | 1 | 2 {
-  const needle = q.toLocaleLowerCase();
-  const words = texts.map((w) => w.toLocaleLowerCase());
-  if (words.some((w) => w.startsWith(needle))) return 0;
-  if (words.some((w) => w.split(/[\s·:,()/-]+/).some((part) => part.startsWith(needle)))) return 1;
-  return 2;
-}
-
-function rankByPrefix(items: Item[], q: string): Item[] {
-  return items
-    .map((item, index) => ({ item, index, rank: prefixBucket([item.title, ...item.keywords], q) }))
-    .sort((a, b) => a.rank - b.rank || a.index - b.index)
-    .map((x) => x.item);
-}
-
-/**
- * Result groups, the best match first: the group whose hit is named by the query ("Barakat" →
- * the counterparty Barakat Kafe) before groups that only mention it (its payments). Otherwise the
- * server's order stays.
- */
-function rankGroups<G extends { items: Item[] }>(groups: G[], q: string): G[] {
-  const best = (group: G) => Math.min(...group.items.map((item) => prefixBucket([item.title], q)));
-  return groups
-    .map((group, index) => ({ group, index, rank: best(group) }))
-    .sort((a, b) => a.rank - b.rank || a.index - b.index)
-    .map((x) => x.group);
-}
-
-
 interface SectionView {
   id: string;
   label: string;
@@ -403,22 +371,28 @@ const sections = computed<SectionView[]>(() => {
     if (companyItems.value.length) out.push({ id: "companies", label: t("shell.palette.companies"), items: companyItems.value.slice(0, 4) });
     return out.filter((s) => s.items.length);
   }
-  const found = fuse.value.search(q).filter((r) => (r.score ?? 0) <= LOOSE_SCORE || prefixBucket([r.item.title, ...r.item.keywords], q) < 2);
-  const matched = rankByPrefix(
+  const found = fuse.value.search(plain(q)).filter((r) => keepLocal(r.item, q, r.score ?? 0, LOOSE_SCORE));
+  const matched = byMatch(
     found.map((r) => r.item),
     q,
   );
   const jump = matched.filter((i) => i.section === "jump").slice(0, 6);
   const actions = matched.filter((i) => i.section === "actions").slice(0, 5);
   const companies = matched.filter((i) => i.section === "companies").slice(0, 4);
-  if (jump.length) out.push({ id: "jump", label: t("shell.palette.jump"), items: jump });
   const byType = new Map<string, Item[]>();
   for (const item of resultItems.value) {
     const list = byType.get(item.hit!.type) ?? [];
     list.push(item);
     byType.set(item.hit!.type, list);
   }
-  out.push(...rankGroups([...byType].map(([type, items]) => ({ id: `results:${type}`, label: typeLabel(type), items })), q));
+  // Pages and record groups in one order, the best answer first: "Chil" leads with the branch
+  // Chilonzor, "CHL-17" with the shifts before the payments that name them, "Settings" with the page.
+  const ranked: Array<SectionView & { weight: number }> = [];
+  if (jump.length) ranked.push({ id: "jump", label: t("shell.palette.jump"), items: jump, weight: -1 });
+  for (const [type, items] of byType) {
+    ranked.push({ id: `results:${type}`, label: typeLabel(type), items: byMatch(items, q), weight: groupWeight(searchTypeKey(type, (candidate) => te(candidate))) });
+  }
+  out.push(...bySectionMatch(ranked, q));
   if (actions.length) out.push({ id: "actions", label: t("shell.palette.actions"), items: actions });
   if (companies.length) out.push({ id: "companies", label: t("shell.palette.companies"), items: companies });
   if (props.aiAvailable) {
