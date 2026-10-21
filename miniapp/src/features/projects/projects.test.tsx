@@ -186,6 +186,27 @@ afterEach(() => {
   nav = null;
 });
 
+describe("the Me row", () => {
+  function Status() {
+    const item = feature.meItems![0]!;
+    const member = { ...membership(), timeZone: "Asia/Tashkent", companyId: 1 };
+    const status = item.useStatus!({ member, summary: undefined });
+    return <span data-testid="status">{String(status.value ?? "")}|{String(status.badge ?? "")}</span>;
+  }
+
+  it("shows my open cards as its value, not as a bubble beside the project count", async () => {
+    state.projects = [project, { ...project, id: 6, my_open: 9 }];
+    renderWith(<Status />);
+    expect(await screen.findByText("11 open|")).toBeTruthy();
+  });
+
+  it("counts my projects when no card of mine is open", async () => {
+    state.projects = [{ ...project, my_open: 0 }];
+    renderWith(<Status />);
+    expect(await screen.findByText("1|")).toBeTruthy();
+  });
+});
+
 describe("the feature", () => {
   it("plugs into Me, Home, the (+) sheet and deep links", () => {
     const { features, problems } = collectFeatures({ "./projects/index.ts": { default: feature } });

@@ -94,6 +94,10 @@ describe("task view", () => {
 
   it("explains each task in one line", () => {
     expect(rowMeta(task({ due_at: "2026-10-19T04:16:00Z" }), ctx())).toBe("25 min late");
+    // A day and a bit keeps its hours; after that, days are enough.
+    expect(rowMeta(task({ due_at: "2026-10-18T01:41:00Z" }), ctx())).toBe("1 d 3 h late");
+    expect(rowMeta(task({ due_at: "2026-10-05T04:41:00Z" }), ctx())).toBe("14 d late");
+    expect(rowMeta(task({ due_at: "2026-10-05T04:41:00Z" }), ctx("uz"))).toBe("14 kun kechikdi");
     expect(rowMeta(task({ kind: "assigned", created_by: { id: 2, name: "Anna K.", position: null } }), ctx())).toBe(
       "From Anna K.",
     );

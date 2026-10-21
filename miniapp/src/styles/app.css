@@ -371,6 +371,8 @@ textarea.input {
 
 /* A strip of tabs that may not fit: options fill the row when they can and scroll when not. */
 .seg--scroll {
+  /* A scroll container may shrink to nothing in the screen's column: keep its height. */
+  flex: none;
   overflow-x: auto;
   scrollbar-width: none;
   overscroll-behavior-x: contain;
@@ -548,6 +550,11 @@ textarea.input {
 .tag-neutral {
   background: var(--color-neutral-100);
   color: var(--color-neutral-800);
+}
+
+/* In dark the lightest neutral is the surface itself: a step up keeps chips visible on cards. */
+:root[data-theme="dark"] .tag-neutral {
+  background: var(--color-neutral-200);
 }
 
 .tag-small {

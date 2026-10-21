@@ -17,6 +17,8 @@ import { ToastProvider } from "../../state/toast";
 import { featureVisible, routeTarget } from "../registry";
 import attendance from ".";
 import { CheckInCard } from "./CheckInCard";
+import { HeroSlot } from "./slots";
+import type { Summary } from "../../api/types";
 import { fenceCheck, minutesBetween, monthWeeks, shiftMonth } from "./lib";
 import { messages } from "./messages";
 import { pageMessages } from "./pageMessages";
@@ -324,6 +326,43 @@ describe("the check-in card", () => {
     serve(day({ state: "late", now: "2026-10-21T09:40:00+05:00" }));
     renderCard();
     expect(await screen.findByText("Your shift started at 09:00. Check in when you’re there")).toBeTruthy();
+  });
+});
+
+describe("the check-in card on Home", () => {
+  const next = { ...day().shift!, id: 42, date: "2026-10-25", starts_at: "2026-10-25T09:00:00+05:00", ends_at: "2026-10-25T18:00:00+05:00" };
+  const dayOff = day({ state: "off", shift: null, next_shift: null });
+  const hero = (permissions: string[] = [], summary?: Partial<Summary>) => (
+    <HeroSlot member={{ ...membership(), permissions, timeZone: "Asia/Tashkent", companyId: 1 } as never} summary={summary as Summary | undefined} />
+  );
+
+  it("is one calm row on a day off, opening the attendance page", async () => {
+    serve({ ...dayOff, next_shift: next });
+    renderCard(hero());
+    const row = await screen.findByRole("button", { name: /No shift today/ });
+    expect(row.textContent).toContain("Next shift: Sun, 25 Oct, 09:00–18:00 · Chilonzor");
+    // Checking in without a shift stays on the attendance page.
+    expect(screen.queryByRole("button", { name: /Check in without a shift/ })).toBeNull();
+  });
+
+  it("stays away for an owner without shifts and on a day off the person asked for", async () => {
+    serve(dayOff);
+    const owner = renderCard(hero(["dashboard.access"]));
+    await waitFor(() => expect(client.api).toHaveBeenCalled());
+    await act(async () => undefined);
+    await waitFor(() => expect(owner.container.innerHTML).toBe(""));
+    cleanup();
+
+    serve({ ...dayOff, next_shift: next });
+    const resting = renderCard(hero([], { off_today: { kind: "time_off", name: "", until: "2026-10-22" } }));
+    await act(async () => undefined);
+    await waitFor(() => expect(resting.container.innerHTML).toBe(""));
+  });
+
+  it("is still the full card when there is something to slide", async () => {
+    serve(day());
+    renderCard(hero(["dashboard.access"]));
+    expect(await screen.findByRole("button", { name: /Slide to check in/ })).toBeTruthy();
   });
 });
 

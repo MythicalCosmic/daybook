@@ -172,6 +172,17 @@ describe("opening a shift", () => {
     );
   });
 
+  it("says where a busy till is when tills of several branches share a name", async () => {
+    const yunusobod = { id: 4, name: "Yunusobod", code: "YN" };
+    const registers = [
+      { id: 1, name: "Kassa 1", branch, busy: null },
+      { id: 3, name: "Kassa 1", branch: yunusobod, busy: { code: "YN-11", cashier: "Jasur Tursunov" } },
+    ];
+    serve({ "/sales/shifts/current/": kassa({ registers }), "/sales/handovers/pending/": { results: [] } });
+    wrap(<KassaPage params={{}} />);
+    expect(await screen.findByText("Yunusobod · Open: Jasur Tursunov · YN-11")).toBeTruthy();
+  });
+
   it("can take a typed total instead of counted notes", async () => {
     serve({ "/sales/shifts/current/": kassa(), "/sales/handovers/pending/": { results: [] } }, () => shift());
     wrap(<KassaPage params={{}} />);

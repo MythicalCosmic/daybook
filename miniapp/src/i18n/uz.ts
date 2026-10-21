@@ -121,6 +121,7 @@ const uz: Partial<Record<Key, string>> = {
   "duration.minutes": "{count} daq",
   "duration.hours": "{hours} soat {minutes} daq",
   "duration.days": "{days} kun {hours} soat",
+  "duration.daysOnly": "{days} kun",
 
   "repeat.daily": "Har kuni",
   "repeat.weekdays": "Ish kunlari",

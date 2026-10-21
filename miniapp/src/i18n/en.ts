@@ -119,6 +119,7 @@ const en = {
   "duration.minutes": "{count} min",
   "duration.hours": "{hours} h {minutes} min",
   "duration.days": "{days} d {hours} h",
+  "duration.daysOnly": "{days} d",
 
   "repeat.daily": "Every day",
   "repeat.weekdays": "Weekdays",

@@ -121,10 +121,15 @@ function Probe() {
 
 function renderWith(
   node: ReactNode,
-  { permissions = [] as string[], initial = undefined as NavigationInit | undefined, seed = undefined as { task: Task; comments: [] } | undefined } = {},
+  {
+    permissions = [] as string[],
+    initial = undefined as NavigationInit | undefined,
+    seed = undefined as { task: Task; comments: [] } | undefined,
+    numbers = summary,
+  } = {},
 ) {
   const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } });
-  client.setQueryData(keys.summary(1), summary);
+  client.setQueryData(keys.summary(1), numbers);
   if (seed) {
     client.setQueryData(keys.task(1, seed.task.id), seed.task);
     client.setQueryData(keys.comments(1, seed.task.id), seed.comments);
@@ -173,6 +178,30 @@ describe("feature hosts in the real screens", () => {
     // Overviews come last, after the day's tasks ("Up next").
     expect(order.at(-1)).toBe("end");
     expect(order.indexOf("end")).toBeGreaterThan(order.indexOf("section-head"));
+  });
+
+  it("say nothing is due once on Home: a sun instead of 0/0 and no empty Up next", () => {
+    const { container } = renderWith(<Home />, { numbers: { ...summary, today_total: 0, today_done: 0, streak_days: 4 } });
+    expect(screen.getByText("Nothing due today")).toBeTruthy();
+    expect(screen.getByText("4 days in a row")).toBeTruthy();
+    expect(screen.queryByText("0/0")).toBeNull();
+    expect(container.querySelector(".home-today-free")).toBeTruthy();
+    expect(screen.queryByText("Up next")).toBeNull();
+    expect(screen.queryByText("Nothing else due today.")).toBeNull();
+    cleanup();
+
+    renderWith(<Home />);
+    expect(screen.getByText("3/8")).toBeTruthy();
+    expect(screen.getByText("Up next")).toBeTruthy();
+  });
+
+  it("keep quiet hours with the settings on Me, under no group of their own", () => {
+    const { container } = renderWith(<Profile />, { numbers: { ...summary, quiet_from: "22:00:00", quiet_until: "08:00:00" } });
+    const headings = [...container.querySelectorAll(".section-head")].map((node) => node.textContent);
+    expect(headings).not.toContain("My work");
+    const settings = [...container.querySelectorAll(".card.list-card")].at(-1)!;
+    expect(settings.textContent).toContain("Quiet hours");
+    expect(settings.textContent).toContain("22:00–08:00");
   });
 
   it("group feature rows on Me and let features take over time off and team results", () => {
@@ -233,6 +262,50 @@ describe("feature hosts in the real screens", () => {
       node.getAttribute("data-testid") ?? node.className,
     );
     expect(order.slice(0, 3)).toEqual(["check-item", "task-block", "detail-line"]);
+  });
+
+  it("put the task's actions in the bottom bar: the step that finishes it, the other beside it", () => {
+    const base = {
+      id: 43,
+      kind: "assigned",
+      title: "Count the safe",
+      description: "",
+      status: "todo",
+      priority: "normal",
+      due_at: null,
+      for_date: null,
+      proof: "none",
+      needs_confirmation: false,
+      proof_text: "",
+      proof_photo: null,
+      assignee: { id: 7, name: "Alisher Valiyev", position: null },
+      created_by: { id: 3, name: "Dilnoza Karimova", position: null },
+      confirmed_by: null,
+      checklist: [],
+      reminder: null,
+      repeat_weekdays: null,
+      started_at: null,
+      completed_at: null,
+      confirmed_at: null,
+      is_overdue: false,
+      actions: ["start", "complete"],
+      created_at: "2026-10-18T10:00:00Z",
+    } as unknown as Task;
+    const bar = (container: HTMLElement) => [...container.querySelectorAll(".action-bar button")].map((button) => button.textContent);
+
+    const mine = renderWith(<TaskDetail taskId={43} />, { seed: { task: base, comments: [] } });
+    expect(bar(mine.container)).toEqual(["Start", "Mark as done"]);
+    cleanup();
+
+    const review = { ...base, status: "review", assignee: { id: 9, name: "Jasur Tursunov", position: null }, actions: ["return", "confirm"] } as Task;
+    const checking = renderWith(<TaskDetail taskId={43} />, { seed: { task: review, comments: [] } });
+    expect(bar(checking.container)).toEqual(["Send back", "Confirm"]);
+    cleanup();
+
+    const waiting = { ...base, status: "review", actions: [] } as unknown as Task;
+    const sent = renderWith(<TaskDetail taskId={43} />, { seed: { task: waiting, comments: [] } });
+    expect(bar(sent.container)).toEqual(["Waiting for a check"]);
+    expect((sent.container.querySelector(".action-bar button") as HTMLButtonElement).disabled).toBe(true);
   });
 
   it("show quick-add actions above the personal task form", () => {

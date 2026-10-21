@@ -39,7 +39,10 @@ export function duration(minutes: number, t: Translate): string {
   if (minutes < 60) return t("duration.minutes", { count: minutes });
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return t("duration.hours", { hours, minutes: minutes % 60 });
-  return t("duration.days", { days: Math.floor(hours / 24), hours: hours % 24 });
+  // Past a day the hours matter less, and "14 d 0 h" reads as noise.
+  const days = Math.floor(hours / 24);
+  if (days >= 2 || hours % 24 === 0) return t("duration.daysOnly", { days });
+  return t("duration.days", { days, hours: hours % 24 });
 }
 
 /** 0 = Monday … 6 = Sunday, as the API sends them. */

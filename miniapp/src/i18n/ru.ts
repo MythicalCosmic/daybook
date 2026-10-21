@@ -126,6 +126,7 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
   "duration.minutes": "{count} мин",
   "duration.hours": "{hours} ч {minutes} мин",
   "duration.days": "{days} д {hours} ч",
+  "duration.daysOnly": "{days} д",
 
   "repeat.daily": "Каждый день",
   "repeat.weekdays": "По будням",
