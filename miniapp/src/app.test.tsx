@@ -22,7 +22,7 @@ function me(status: string, permissions: string[] = [], extra: Record<string, un
   const membership = {
     ...extra,
     id: 7,
-    company: { id: 1, name: "Demo Shop", timezone: "Asia/Tashkent" },
+    company: { id: 1, name: "Demo Dorixona", timezone: "Asia/Tashkent" },
     status,
     first_name: "Alisher",
     last_name: "Valiyev",
@@ -192,7 +192,7 @@ describe("app", () => {
   it("thanks someone who left the company instead of telling them they aren't in one yet", async () => {
     renderApp(me("left"));
     expect(await screen.findByText("You're no longer on the team", {}, { timeout: 3000 })).toBeTruthy();
-    expect(screen.getByText(/Thank you for your work at Demo Shop/)).toBeTruthy();
+    expect(screen.getByText(/Thank you for your work at Demo Dorixona/)).toBeTruthy();
     expect(document.querySelector(".tabbar")).toBeNull();
   }, 15_000);
 

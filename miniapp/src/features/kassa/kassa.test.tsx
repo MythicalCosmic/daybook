@@ -33,7 +33,7 @@ vi.mock("../../api/client", async (importOriginal) => {
 
 const membership = {
   id: 7,
-  company: { id: 1, name: "Demo Shop", timezone: "Asia/Tashkent", features: ["sales"], base_currency: "UZS" },
+  company: { id: 1, name: "Demo Dorixona", timezone: "Asia/Tashkent", features: ["sales"], base_currency: "UZS" },
   status: "approved",
   first_name: "Madina",
   last_name: "Saidova",
@@ -183,6 +183,15 @@ describe("opening a shift", () => {
     expect(await screen.findByText("Yunusobod · Open: Jasur Tursunov · YN-11")).toBeTruthy();
   });
 
+  it("says every till is open instead of asking to pick one when none is free", async () => {
+    const registers = [{ id: 2, name: "Kassa 2", branch, busy: { code: "CH-11", cashier: "Jasur Tursunov" } }];
+    serve({ "/sales/shifts/current/": kassa({ registers }), "/sales/handovers/pending/": { results: [] } });
+    wrap(<KassaPage params={{}} />);
+    const action = await screen.findByRole("button", { name: /Every till is open/ });
+    expect(action.hasAttribute("disabled")).toBe(true);
+    expect(screen.queryByRole("button", { name: /Pick a till/ })).toBeNull();
+  });
+
   it("can take a typed total instead of counted notes", async () => {
     serve({ "/sales/shifts/current/": kassa(), "/sales/handovers/pending/": { results: [] } }, () => shift());
     wrap(<KassaPage params={{}} />);
@@ -243,6 +252,29 @@ describe("during a shift", () => {
     serve({ "/sales/shifts/current/": kassa({ shift: shift() }) });
     wrap(<KassaHero member={member} summary={off} />);
     expect(await screen.findByText(/Shift open · CH-12/)).toBeTruthy();
+  });
+
+  it("says who has the till when colleagues have every till open, with nothing to press", async () => {
+    const taken = { code: "CH-11", cashier: "Jasur Tursunov" };
+    serve({ "/sales/shifts/current/": kassa({ registers: [{ id: 2, name: "Kassa 2", branch, busy: taken }] }) });
+    const one = wrap(<KassaHero member={member} summary={undefined} />);
+    expect(await screen.findByText("Kassa 2 is open")).toBeTruthy();
+    expect(screen.getByText("Jasur Tursunov has it · CH-11")).toBeTruthy();
+    expect(screen.queryByText("Open shift")).toBeNull();
+    expect(screen.queryByRole("button")).toBeNull();
+    one.unmount();
+
+    serve({
+      "/sales/shifts/current/": kassa({
+        registers: [
+          { id: 2, name: "Kassa 2", branch, busy: taken },
+          { id: 3, name: "Kassa 3", branch, busy: { code: "CH-13", cashier: "Nigora Azimova" } },
+        ],
+      }),
+    });
+    wrap(<KassaHero member={member} summary={undefined} />);
+    expect(await screen.findByText("Every till is open")).toBeTruthy();
+    expect(screen.getByText("Jasur Tursunov, Nigora Azimova")).toBeTruthy();
   });
 });
 

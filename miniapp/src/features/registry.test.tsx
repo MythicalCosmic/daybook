@@ -126,7 +126,7 @@ function membership(permissions: string[]): Membership {
     id: 7,
     company: {
       id: 1,
-      name: "Demo Shop",
+      name: "Demo Dorixona",
       timezone: "Asia/Tashkent",
       features: [],
       owner_sees_personal_tasks: false,

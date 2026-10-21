@@ -156,7 +156,8 @@ function OpenShift({ kassa }: { kassa: Kassa }) {
       </Screen>
       <BottomBar
         primary={{
-          text: tillId ? t("open.submit", { amount: money(amount) }) : t("open.pick"),
+          // With every till open by colleagues there is nothing to pick: say so where the action was.
+          text: tillId ? t("open.submit", { amount: money(amount) }) : free.length ? t("open.pick") : t("allBusy"),
           onClick: submit,
           disabled: !tillId,
           loading: open.isPending,

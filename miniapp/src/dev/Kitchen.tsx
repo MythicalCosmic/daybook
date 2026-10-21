@@ -96,7 +96,7 @@ const DEMO = {
     tooBig: "That's more than the 5 000 000 so‘m limit.",
     taxi: "Taxi",
     supplies: "Supplies",
-    food: "Courier",
+    courier: "Courier",
     repairs: "Repairs",
     drawer: "Cash in the drawer",
     expected: "Count it without looking at the total",
@@ -157,7 +157,7 @@ const DEMO = {
     tooBig: "Это больше лимита в 5 000 000 сум.",
     taxi: "Такси",
     supplies: "Расходники",
-    food: "Курьер",
+    courier: "Курьер",
     repairs: "Ремонт",
     drawer: "Наличные в кассе",
     expected: "Считайте, не глядя на итог",
@@ -218,7 +218,7 @@ const DEMO = {
     tooBig: "Bu 5 000 000 so‘mlik chegaradan ko‘p.",
     taxi: "Taksi",
     supplies: "Sarf materiallari",
-    food: "Kuryer",
+    courier: "Kuryer",
     repairs: "Ta’mirlash",
     drawer: "Kassadagi naqd pul",
     expected: "Jami summaga qaramay sanang",
@@ -353,7 +353,7 @@ export function Kitchen({ section }: { section: string | null }) {
           options={[
             { value: "taxi", label: d.taxi, icon: Car },
             { value: "supplies", label: d.supplies, icon: Package },
-            { value: "food", label: d.food, icon: Truck },
+            { value: "courier", label: d.courier, icon: Truck },
             { value: "repairs", label: d.repairs, icon: Wrench },
             { value: "cold", label: "+2…+8 °C", icon: Snowflake },
           ]}
@@ -511,7 +511,7 @@ export function Kitchen({ section }: { section: string | null }) {
               options={[
                 { value: "taxi", label: d.taxi, icon: Car },
                 { value: "supplies", label: d.supplies, icon: Package },
-                { value: "food", label: d.food, icon: Truck },
+                { value: "courier", label: d.courier, icon: Truck },
               ]}
             />
             <Button variant="primary" size="lg" block onClick={() => setSheet(false)}>

@@ -104,7 +104,7 @@ function serve(today: MyDay, result: object = { record: RECORD, created: true, o
 function membership(features: string[] = ["attendance"], status = "approved"): Membership {
   return {
     id: 7,
-    company: { id: 1, name: "Demo Shop", timezone: "Asia/Tashkent", features, owner_sees_personal_tasks: false, base_currency: "UZS", team_directory_phones: false },
+    company: { id: 1, name: "Demo Dorixona", timezone: "Asia/Tashkent", features, owner_sees_personal_tasks: false, base_currency: "UZS", team_directory_phones: false },
     status,
     first_name: "Alisher",
     last_name: "Valiyev",

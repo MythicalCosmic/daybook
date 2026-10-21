@@ -55,7 +55,7 @@ function membership(): Membership {
     id: ME,
     company: {
       id: 1,
-      name: "Demo Shop",
+      name: "Demo Dorixona",
       timezone: "Asia/Tashkent",
       features: [],
       owner_sees_personal_tasks: false,

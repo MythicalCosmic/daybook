@@ -88,6 +88,12 @@ button {
   padding-bottom: calc(var(--bottom-inset) + 40px);
 }
 
+/* Sticky offsets count from inside that padding: rest 12 px above the edge, not 40 px with notes
+   showing through below. */
+.detail-layer:not(:has(.action-bar)) .ui-denoms--sticky .ui-denoms-total {
+  bottom: calc(var(--space-3) - 40px);
+}
+
 :root {
   --top-inset: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px));
   --bottom-inset: var(--tg-safe-area-inset-bottom, 0px);
@@ -1712,7 +1718,8 @@ textarea.input {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 4;
   overflow: hidden;
-  padding: 10px 12px;
+  /* Margin, not padding: a clamped box's padding shows the top of the fifth line. */
+  margin: 10px 12px;
   font-size: 14px;
   line-height: 1.35;
   text-align: left;

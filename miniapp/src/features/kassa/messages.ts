@@ -30,6 +30,9 @@ export const messages = defineMessages({
     "hero.since": "since {time} · {duration}",
     "hero.salesSoFar": "Sales so far: {amount}",
     "hero.waiting": "{name} hasn’t confirmed {amount} yet",
+    "hero.busyTitle": "{till} is open",
+    "hero.busyBody": "{name} has it · {code}",
+    allBusy: "Every till is open",
 
     "action.sale": "New receipt",
     "action.saleHint": "Amount and payment method",
@@ -277,6 +280,9 @@ export const messages = defineMessages({
     "hero.since": "с {time} · {duration}",
     "hero.salesSoFar": "Продажи сейчас: {amount}",
     "hero.waiting": "{name} ещё не подтвердил(а) {amount}",
+    "hero.busyTitle": "{till} открыта",
+    "hero.busyBody": "За кассой {name} · {code}",
+    allBusy: "Все кассы открыты",
 
     "action.sale": "Новый чек",
     "action.saleHint": "Сумма и способ оплаты",
@@ -526,6 +532,9 @@ export const messages = defineMessages({
     "hero.since": "{time} dan beri · {duration}",
     "hero.salesSoFar": "Hozircha savdo: {amount}",
     "hero.waiting": "{name} hali {amount} ni tasdiqlamadi",
+    "hero.busyTitle": "{till} ochiq",
+    "hero.busyBody": "Kassada {name} · {code}",
+    allBusy: "Barcha kassalar ochiq",
 
     "action.sale": "Yangi chek",
     "action.saleHint": "Summa va to‘lov turi",
