@@ -1,0 +1,57 @@
+/**
+ * Kassa (PLAN-OWNER §9.3, package E): the cashier's till in the mini app. Home shows the till
+ * (closed: "Open shift"; open: payout, handover, close) and the "Received?" card for cash
+ * handed to me; the Kassa page opens a shift with the float counted note by note, runs it, and
+ * closes it with totals per method, photos and the blind count, kept as a draft on the phone.
+ *
+ * Deep links: `kassa` (the Kassa page), `kassa.shift:<id>` (one of my shifts), `kassa.close:<id>`.
+ */
+import { HandCoins, Store } from "lucide-react";
+import { lazy } from "react";
+
+import { hasModule } from "../../api/membership";
+import { can } from "../../api/permissions";
+import { useMember, type Member } from "../../state/session";
+import { defineFeature, type SlotProps } from "../registry";
+import { useKassa } from "./api";
+import { KassaHero } from "./KassaHero";
+import { messages } from "./messages";
+import { ReceivedCards } from "./Received";
+
+/** The till itself: cashiers and whoever else may run one. */
+const runsTill = (member: Member) => can(member, "sales.operate");
+
+/** Me → My shifts shows the open shift's code. */
+function useShiftStatus(_: SlotProps) {
+  const member = useMember();
+  const kassa = useKassa(member.companyId);
+  return { value: kassa.data?.shift?.code };
+}
+
+const sheet = <T extends "PayoutSheet" | "HandoverSheet" | "SafeSheet" | "SaleSheet">(name: T) =>
+  lazy(() => import("./sheets").then((module) => ({ default: module[name] })));
+
+export default defineFeature({
+  id: "kassa",
+  messages,
+  // Anyone may receive handed-over cash; the till itself needs sales.operate (checked per slot).
+  visible: (member) => hasModule(member, "sales"),
+  pages: {
+    home: lazy(() => import("./KassaPage")),
+    close: lazy(() => import("./ClosePage")),
+    shift: lazy(() => import("./ShiftPage")),
+    history: lazy(() => import("./HistoryPage")),
+  },
+  sheets: {
+    payout: sheet("PayoutSheet"),
+    handover: sheet("HandoverSheet"),
+    safe: sheet("SafeSheet"),
+    sale: sheet("SaleSheet"),
+  },
+  homeHero: [{ id: "till", component: KassaHero, order: 20, visible: runsTill }],
+  homeCards: [{ id: "received", component: ReceivedCards, order: 10 }],
+  meItems: [{ id: "shifts", group: "work", label: "me.shifts", icon: Store, open: { page: "history" }, visible: runsTill, useStatus: useShiftStatus }],
+  plusActions: [{ id: "payout", label: "plus.payout", icon: HandCoins, open: { sheet: "payout" }, order: 30, visible: runsTill }],
+  // `kassa.shift:<id>` and `kassa.close:<id>` resolve through the generic <feature>.<page> form.
+  routes: { kassa: "home" },
+});

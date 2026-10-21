@@ -1,0 +1,1028 @@
+/* Kassa: the till screens. Built on the app's tokens and primitives (styles/tokens.css, ui/ui.css);
+   every class here starts with `kassa-`. */
+
+/* — shared — */
+
+.kassa-kicker {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--color-accent-700);
+}
+
+.kassa-help {
+  margin: 0;
+  padding: 0 4px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.kassa-help--alert {
+  color: var(--color-accent-700);
+  font-weight: 600;
+}
+
+.kassa-radio {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--color-divider);
+  color: var(--color-bg);
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.is-selected > .kassa-radio {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.kassa-lines {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.kassa-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  font-size: 15px;
+}
+
+.kassa-line + .kassa-line {
+  border-top: 1px solid var(--hairline);
+}
+
+.kassa-line dt {
+  color: var(--muted);
+  min-width: 0;
+}
+
+.kassa-line dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+.kassa-line--strong {
+  font-size: 16.5px;
+}
+
+.kassa-line--strong dt {
+  color: inherit;
+  font-weight: 700;
+}
+
+.kassa-line--strong dd {
+  font-weight: 800;
+}
+
+.kassa-refund {
+  color: var(--color-accent-700);
+  font-weight: 600;
+}
+
+/* — Home: the till card — */
+
+.kassa-hero {
+  flex: none;
+}
+
+.kassa-hero--closed {
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 16px 16px 18px;
+  border: 0;
+  text-align: left;
+  color: var(--color-text);
+}
+
+.kassa-hero-icon {
+  width: 46px;
+  height: 46px;
+  background: var(--color-accent-200);
+  color: var(--color-accent-800);
+}
+
+.kassa-hero-title {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.kassa-hero--closed .row-meta {
+  white-space: normal;
+}
+
+.kassa-hero-cta {
+  flex: none;
+  min-height: 40px;
+  padding: 0 16px;
+  pointer-events: none;
+}
+
+.kassa-hero--open {
+  gap: 12px;
+  padding: 16px 16px 14px;
+}
+
+.kassa-hero-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 2px 2px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.kassa-hero-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.kassa-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--color-accent-2-700);
+}
+
+.kassa-hero-name {
+  font-size: 26px;
+  line-height: 1.1;
+  color: var(--color-accent-2-900);
+}
+
+.kassa-hero-meta {
+  font-size: 14.5px;
+  color: color-mix(in srgb, var(--color-accent-2-900) 72%, transparent);
+}
+
+.kassa-hero-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-accent-200) 70%, transparent);
+  color: var(--color-accent-800);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.kassa-hero-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.kassa-hero-actions .btn {
+  flex-direction: column;
+  gap: 4px;
+  min-height: 64px;
+  padding: 10px 6px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  text-align: center;
+  background: var(--color-bg);
+  border-color: transparent;
+  color: var(--color-text);
+}
+
+.kassa-hero-actions .btn-primary {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.kassa-hero-actions .btn span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+/* — "Received?" — */
+
+.kassa-received {
+  gap: 14px;
+  padding: 16px;
+}
+
+.kassa-received-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.kassa-received-icon {
+  width: 42px;
+  height: 42px;
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.kassa-received-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.kassa-received-title {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.kassa-received-meta {
+  font-size: 14px;
+  line-height: 1.4;
+  color: color-mix(in srgb, currentColor 75%, transparent);
+}
+
+.kassa-quote {
+  margin-top: 2px;
+  font-size: 14.5px;
+  font-style: italic;
+}
+
+.kassa-received-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 8px;
+}
+
+.kassa-received-actions .btn {
+  min-height: 46px;
+}
+
+.kassa-received-actions .btn-secondary {
+  border-color: color-mix(in srgb, var(--color-accent-800) 30%, transparent);
+  color: inherit;
+}
+
+.kassa-received-decline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* — opening — */
+
+.kassa-tills {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kassa-till,
+.kassa-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px 12px 12px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  text-align: left;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.kassa-till.is-selected,
+.kassa-person.is-selected {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent-100) 60%, var(--color-surface));
+}
+
+.kassa-till:disabled {
+  opacity: 0.55;
+}
+
+.kassa-till-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--color-bg);
+}
+
+.kassa-till.is-selected .kassa-till-icon {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.kassa-count {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kassa-count-switch {
+  align-self: center;
+}
+
+/* — the open shift — */
+
+.kassa-blind {
+  flex-direction: row;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px 18px;
+}
+
+.kassa-blind-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--color-bg);
+  color: var(--color-accent-2-700);
+}
+
+.kassa-blind-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.kassa-blind-title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.kassa-blind-body {
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.kassa-blind-float {
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-accent-2-700);
+}
+
+.kassa-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.kassa-action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-height: 118px;
+  padding: 14px;
+  border: 0;
+  border-radius: calc(var(--radius-lg) * 0.8);
+  background: var(--color-surface);
+  color: var(--color-text);
+  text-align: left;
+  transition: transform 120ms ease, background 160ms ease;
+}
+
+.kassa-action:active {
+  transform: scale(0.98);
+}
+
+.kassa-action-icon {
+  width: 42px;
+  height: 42px;
+  margin-bottom: 8px;
+  background: var(--color-bg);
+  color: var(--color-accent-700);
+}
+
+.kassa-action-label {
+  font-family: var(--font-heading);
+  font-size: 17px;
+  line-height: 1.15;
+}
+
+.kassa-action-hint {
+  font-size: 13.5px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.kassa-action--wide {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  min-height: 0;
+  padding: 16px;
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.kassa-action--wide .kassa-action-icon {
+  margin: 0;
+  background: color-mix(in srgb, var(--color-bg) 22%, transparent);
+  color: var(--color-bg);
+}
+
+.kassa-action--wide .kassa-action-hint {
+  color: color-mix(in srgb, var(--color-bg) 82%, transparent);
+}
+
+.kassa-action-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kassa-move {
+  align-items: flex-start;
+  padding-right: 14px;
+}
+
+.kassa-move .ui-row-icon {
+  margin-top: 2px;
+}
+
+.kassa-move-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.kassa-move-top .row-title {
+  min-width: 0;
+}
+
+.kassa-move--void .row-title,
+.kassa-move--void .kassa-move-amount {
+  text-decoration: line-through;
+  opacity: 0.55;
+}
+
+.kassa-move-amount {
+  flex: none;
+  font-size: 15.5px;
+  font-weight: 700;
+}
+
+.kassa-thumb {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.kassa-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.kassa-history-link {
+  align-self: center;
+  margin-top: 4px;
+}
+
+.kassa-sofar {
+  gap: 4px;
+  padding: 18px 20px;
+}
+
+.kassa-sofar .ui-money--hero {
+  font-size: 34px;
+}
+
+.kassa-sofar-count {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.kassa-sofar-methods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.kassa-sofar-method {
+  display: inline-flex;
+  gap: 6px;
+  align-items: baseline;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--color-bg);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.kassa-entry {
+  gap: 10px;
+}
+
+.kassa-entry--void .list-item-text > span:first-child {
+  text-decoration: line-through;
+  opacity: 0.55;
+}
+
+.kassa-entry-void {
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.kassa-entry-undo {
+  gap: 4px;
+  flex: none;
+}
+
+/* — closing — */
+
+.kassa-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.kassa-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  padding: 8px 2px 7px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.kassa-step:disabled {
+  cursor: default;
+}
+
+.kassa-step-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--color-surface);
+  color: var(--muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.kassa-step.is-done .kassa-step-dot {
+  background: var(--color-accent-2);
+  color: var(--color-bg);
+}
+
+.kassa-step.is-current {
+  color: var(--color-text);
+}
+
+.kassa-step.is-current .kassa-step-dot {
+  background: var(--color-accent);
+  color: var(--color-bg);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-accent) 22%, transparent);
+}
+
+.kassa-step-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kassa-restored {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-2-100);
+  color: var(--color-accent-2-800);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.kassa-restored > span {
+  flex: 1;
+  min-width: 0;
+}
+
+.kassa-restored-reset {
+  flex: none;
+  color: inherit;
+}
+
+/* One line of payment methods that scrolls sideways to the screen edge, so the keypad stays in view. */
+.kassa-methods {
+  flex: none;
+  display: flex;
+  gap: 8px;
+  margin: 0 -20px;
+  padding: 2px 20px 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-padding: 0 20px;
+  scroll-snap-type: x proximity;
+}
+
+.kassa-methods::-webkit-scrollbar {
+  display: none;
+}
+
+.kassa-method {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  flex: none;
+  min-width: 108px;
+  max-width: 150px;
+  padding: 10px 12px;
+  scroll-snap-align: start;
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  text-align: left;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.kassa-method-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.kassa-method-amount {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.kassa-method.is-filled .kassa-method-name {
+  color: var(--color-accent-2-700);
+}
+
+.kassa-method.is-selected {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent-100) 60%, var(--color-surface));
+}
+
+.kassa-method.is-selected .kassa-method-name {
+  color: var(--color-accent-700);
+}
+
+.kassa-pad-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.kassa-next-method {
+  gap: 2px;
+  max-width: 50%;
+  margin-right: -6px;
+}
+
+.kassa-next-method span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kassa-net {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-2-100);
+  color: var(--color-accent-2-800);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.kassa-two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.kassa-edit {
+  margin: -6px -10px -6px 0;
+}
+
+.kassa-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.kassa-photo-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 14px;
+  background: var(--color-bg);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.kassa-photo-chip img,
+.kassa-photo-none {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  object-fit: cover;
+  display: block;
+}
+
+.kassa-photo-none {
+  background: repeating-linear-gradient(45deg, var(--color-neutral-200), var(--color-neutral-200) 4px, transparent 4px, transparent 8px);
+}
+
+.kassa-photo-chip-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.kassa-photo-chip-text .muted {
+  font-size: 12.5px;
+}
+
+.kassa-photo-chip--missing {
+  color: var(--color-accent-700);
+}
+
+.kassa-counted {
+  gap: 4px;
+}
+
+.kassa-counted .ui-money--hero {
+  font-size: 34px;
+}
+
+.kassa-counted-hint {
+  font-size: 13.5px;
+  line-height: 1.4;
+  opacity: 0.8;
+}
+
+.kassa-offline {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.action-bar.kassa-slide > * {
+  flex: 1;
+  min-width: 0;
+}
+
+/* — the result — */
+
+.kassa-result {
+  align-items: stretch;
+  text-align: center;
+}
+
+.kassa-result-mark {
+  position: relative;
+  align-self: center;
+  width: 104px;
+  height: 104px;
+  margin: 18px 0 4px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--color-accent-2);
+  color: var(--color-bg);
+  animation: kassa-pop 520ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+.kassa-result-ring {
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  border: 3px solid color-mix(in srgb, var(--color-accent-2) 35%, transparent);
+  animation: kassa-ring 900ms ease-out 200ms both;
+}
+
+.kassa-result-title {
+  margin: 0;
+}
+
+.kassa-result-sub {
+  margin: -6px 0 6px;
+}
+
+.kassa-result .card,
+.kassa-result .banner {
+  text-align: left;
+}
+
+@keyframes kassa-pop {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes kassa-ring {
+  from {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+}
+
+/* — shift detail and history — */
+
+.kassa-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.kassa-gallery-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.kassa-gallery-item img {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  display: block;
+}
+
+.kassa-gallery-item span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 4px;
+}
+
+.kassa-month {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kassa-shift-row {
+  padding-right: 10px;
+}
+
+.kassa-day {
+  flex: none;
+  width: 44px;
+  height: 46px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg);
+  line-height: 1.05;
+}
+
+.kassa-day-num {
+  font-family: var(--font-heading);
+  font-size: 19px;
+}
+
+.kassa-day-week {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+/* — sheets — */
+
+.kassa-people {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kassa-confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 4px;
+  text-align: center;
+}
+
+.kassa-confirm-title {
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.kassa-confirm-body {
+  margin: 0 0 8px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.kassa-confirm .ui-slide {
+  align-self: stretch;
+}
+
+.kassa-last {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-2-100);
+  color: var(--color-accent-2-800);
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+.kassa-last > span {
+  flex: 1;
+  min-width: 0;
+}
+
+.kassa-last-undo {
+  gap: 4px;
+  flex: none;
+  color: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kassa-result-mark,
+  .kassa-result-ring {
+    animation: none;
+  }
+}
+
+/* A sideways-scrolling row inside a column that overflows: never squash it to nothing. */
+.kassa-keep {
+  flex: none;
+  min-width: 0;
+}
