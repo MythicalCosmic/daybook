@@ -436,7 +436,8 @@ msgstr ""
 #: backend/apps/announcements/bot_messages.py
 #, python-format
 msgid "📣 <b>Reminder</b>: please read this announcement from %(name)s."
-msgstr "📣 <b>Напоминание</b>: пожалуйста, прочитайте объявление от %(name)s."
+msgstr ""
+"📣 <b>Напоминание</b>: пожалуйста, прочитайте объявление. Автор: %(name)s."
 
 #: backend/apps/announcements/bot_messages.py
 #, python-format
@@ -1148,7 +1149,7 @@ msgstr "Геопозиции с точностью хуже этой помеч�
 
 #: backend/apps/attendance/models.py
 msgid "No daily tasks on a rostered day off."
-msgstr "В выходной по графику ежедневные задачи не приходят."
+msgstr "В выходной по графику регулярные задачи не приходят."
 
 #: backend/apps/attendance/models.py
 msgid "A manager approves swaps and covers after the colleague agrees."
@@ -1502,7 +1503,7 @@ msgstr "Теперь это ваша смена: %(shift)s"
 #: backend/apps/attendance/notify.py
 #, python-format
 msgid "Your swap with %(name)s is done"
-msgstr "Обмен сменами с %(name)s состоялся"
+msgstr "Обмен сменами состоялся: %(name)s"
 
 #: backend/apps/attendance/notify.py
 #, python-format
@@ -1652,8 +1653,8 @@ msgid ""
 "Why: late (not here yet), leave, day_off, holiday, suspended, no_shift, "
 "excused."
 msgstr ""
-"Причина: late (ещё не пришёл), leave, day_off, holiday, suspended, no_shift, "
-"excused."
+"Причина: late (ещё нет на месте), leave, day_off, holiday, suspended, "
+"no_shift, excused."
 
 #: backend/apps/attendance/serializers.py
 msgid "Any day of the week; it starts on Monday."
@@ -2007,15 +2008,15 @@ msgstr "Задача отменена"
 
 #: backend/apps/audit/models.py
 msgid "Added a daily task"
-msgstr "Добавлена ежедневная задача"
+msgstr "Добавлена регулярная задача"
 
 #: backend/apps/audit/models.py
 msgid "Changed a daily task"
-msgstr "Изменена ежедневная задача"
+msgstr "Изменена регулярная задача"
 
 #: backend/apps/audit/models.py
 msgid "Deleted a daily task"
-msgstr "Удалена ежедневная задача"
+msgstr "Удалена регулярная задача"
 
 #: backend/apps/audit/models.py
 msgid "Added reminder settings"
@@ -2434,7 +2435,7 @@ msgstr "Такой точки нет на карте."
 
 #: backend/apps/companies/services.py
 msgid "The check-in radius is between 25 and 5 000 metres."
-msgstr "Радиус для отметки прихода — от 25 до 5 000 метров."
+msgstr "Радиус для отметки прихода — от 25 до 5 000 метров."
 
 #: backend/apps/companies/services.py
 msgid "Pick weekdays from Monday to Sunday."
@@ -4143,7 +4144,7 @@ msgstr "В %(time)s, вовремя."
 #: backend/apps/groups/bot_messages.py
 #, python-format
 msgid "At %(time)s, %(late)s late."
-msgstr "В %(time)s, с опозданием на %(late)s."
+msgstr "В %(time)s, просрочено на %(late)s."
 
 #: backend/apps/groups/bot_messages.py
 msgid "Waiting for a check."
@@ -4187,7 +4188,7 @@ msgstr "✅ Вовремя: %(count)d"
 #: backend/apps/groups/bot_messages.py
 #, python-format
 msgid "⏰ Done late: %(count)d"
-msgstr "⏰ С опозданием: %(count)d"
+msgstr "⏰ С просрочкой: %(count)d"
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
@@ -4238,8 +4239,8 @@ msgid ""
 "daily summaries.\n"
 "A manager can link me to the company by sending /connect."
 msgstr ""
-"👋 Привет! Я присылаю сюда новости команды по задачам: выполненные дела, "
-"просрочки и итоги дня.\n"
+"👋 Здравствуйте! Я присылаю сюда новости команды по задачам: выполненные "
+"дела, просрочки и итоги дня.\n"
 "Руководитель может подключить меня к компании командой /connect."
 
 #: backend/apps/groups/bot_messages.py
@@ -4303,7 +4304,7 @@ msgstr ""
 
 #: backend/apps/groups/models.py
 msgid "Daily tasks done"
-msgstr "Выполненные ежедневные задачи"
+msgstr "Выполненные регулярные задачи"
 
 #: backend/apps/groups/models.py
 msgid "Assigned tasks done"
@@ -4384,7 +4385,8 @@ msgstr "Бот удалён из группы «%(group)s»"
 #: backend/apps/groups/services.py
 #, python-format
 msgid "Removed by %(name)s. Add the bot again to keep the group posted."
-msgstr "Удалил: %(name)s. Добавьте бота снова, чтобы группа получала новости."
+msgstr ""
+"Кто удалил: %(name)s. Добавьте бота снова, чтобы группа получала новости."
 
 #: backend/apps/groups/services.py
 msgid "Add the bot again to keep the group posted."
@@ -4985,8 +4987,8 @@ msgstr "❌ Отклонить"
 msgid ""
 "👋 Hi! To join your company, open the invite link your manager sent you."
 msgstr ""
-"👋 Привет! Чтобы присоединиться к компании, откройте ссылку-приглашение от "
-"руководителя."
+"👋 Здравствуйте! Чтобы присоединиться к компании, откройте ссылку-"
+"приглашение от руководителя."
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -4999,8 +5001,8 @@ msgid ""
 "⏳ Your request to join <b>%(company)s</b> is waiting for approval. I'll "
 "message you as soon as it's decided."
 msgstr ""
-"⏳ Ваша заявка в <b>%(company)s</b> ждёт одобрения. Я напишу, как только "
-"будет решение."
+"⏳ Ваша заявка в компанию <b>%(company)s</b> ждёт одобрения. Я напишу, как "
+"только будет решение."
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -5022,7 +5024,7 @@ msgstr "▶️ Ваш доступ к компании <b>%(company)s</b> вос
 #: backend/apps/members/bot_messages.py
 #, python-format
 msgid "🎉 Your request to join <b>%(company)s</b> was approved!"
-msgstr "🎉 Ваша заявка в <b>%(company)s</b> одобрена!"
+msgstr "🎉 Ваша заявка в компанию <b>%(company)s</b> одобрена!"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -5032,7 +5034,7 @@ msgstr "✅ Вы сотрудник компании <b>%(company)s</b>."
 #: backend/apps/members/bot_messages.py
 #, python-format
 msgid "👋 Welcome to <b>%(company)s</b>!"
-msgstr "👋 Добро пожаловать в <b>%(company)s</b>!"
+msgstr "👋 Добро пожаловать в команду <b>%(company)s</b>!"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -5086,7 +5088,7 @@ msgstr "📱 Поделиться номером"
 #: backend/apps/members/bot_messages.py
 #, python-format
 msgid "Your request to join <b>%(company)s</b> was declined."
-msgstr "Ваша заявка в <b>%(company)s</b> отклонена."
+msgstr "Ваша заявка в компанию <b>%(company)s</b> отклонена."
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -5269,7 +5271,7 @@ msgstr "Назначение задач другим"
 
 #: backend/apps/members/permissions.py
 msgid "Manage daily task templates"
-msgstr "Управление шаблонами ежедневных задач"
+msgstr "Управление регулярными задачами"
 
 #: backend/apps/members/permissions.py
 msgid "Confirm completed tasks"
@@ -5951,7 +5953,7 @@ msgstr "Хорошо, тогда позже."
 
 #: backend/apps/projects/bot_messages.py
 msgid "That's a bit long: keep it under 4 000 characters."
-msgstr "Длинновато: уложитесь в 4 000 символов."
+msgstr "Длинновато: уложитесь в 4 000 символов."
 
 #: backend/apps/projects/conf.py
 msgid "Backlog"
@@ -6554,7 +6556,7 @@ msgstr ""
 msgid ""
 "😤 Still not done: <b>%(task)s</b>, %(late)s late. Finish it now, please."
 msgstr ""
-"😤 Всё ещё не сделано: <b>%(task)s</b>, просрочка %(late)s. Пожалуйста, "
+"❗ Всё ещё не сделано: <b>%(task)s</b>, просрочено на %(late)s. Пожалуйста, "
 "закончите сейчас."
 
 #: backend/apps/reminders/bot_messages.py
@@ -6646,7 +6648,7 @@ msgstr "Подстановки: {name} {task} {due} {late}"
 
 #: backend/apps/reminders/models.py
 msgid "Heads-up"
-msgstr "Предупреждение"
+msgstr "Напоминание до срока"
 
 #: backend/apps/reminders/models.py
 msgid "Reminder"
@@ -6734,7 +6736,7 @@ msgid ""
 "branch or day."
 msgstr ""
 "Кто выполнял задачи вовремя за период: по сотрудникам, должностям, "
-"ежедневным задачам, филиалам или дням."
+"регулярным задачам, филиалам или дням."
 
 #: backend/apps/reports/ai_tools.py
 msgid ""
@@ -6748,8 +6750,8 @@ msgid ""
 "Each daily routine: tasks made, done on time, late and missed, and routines "
 "nobody does."
 msgstr ""
-"По каждой ежедневной задаче: сколько задач создано, сколько выполнено "
-"вовремя, с опозданием и не выполнено, а также ежедневные задачи, которые "
+"По каждой регулярной задаче: сколько задач создано, сколько выполнено "
+"вовремя, с просрочкой и не выполнено, а также регулярные задачи, которые "
 "никто не делает."
 
 #: backend/apps/reports/bot_messages.py
@@ -6766,13 +6768,13 @@ msgstr "Вовремя: <b>%(percent)s</b> (%(on_time)d из %(total)d)."
 #, python-format
 msgid "Late: %(late)d · not done: %(missed)d · reminders sent: %(reminders)d"
 msgstr ""
-"С опозданием: %(late)d · не выполнено: %(missed)d · напоминаний: "
+"С просрочкой: %(late)d · не выполнено: %(missed)d · напоминаний: "
 "%(reminders)d"
 
 #: backend/apps/reports/bot_messages.py
 #, python-format
 msgid "%(count)d late"
-msgstr "с опозданием: %(count)d"
+msgstr "с просрочкой: %(count)d"
 
 #: backend/apps/reports/bot_messages.py
 #, python-format
@@ -6807,7 +6809,7 @@ msgstr "Вовремя"
 
 #: backend/apps/reports/hooks.py
 msgid "Late"
-msgstr "С опозданием"
+msgstr "С просрочкой"
 
 #: backend/apps/reports/hooks.py
 msgid "Missed"
@@ -6819,7 +6821,7 @@ msgstr "Вовремя, %"
 
 #: backend/apps/reports/hooks.py
 msgid "Average delay, min"
-msgstr "Среднее опоздание, мин"
+msgstr "Средняя просрочка, мин"
 
 #: backend/apps/reports/hooks.py
 msgid "Late now"
@@ -6994,7 +6996,7 @@ msgstr "Чек аннулирован"
 #: backend/apps/sales/bot_messages.py
 #, python-format
 msgid "💵 %(person)s handed you %(amount)s"
-msgstr "💵 %(person)s передал(а) вам %(amount)s"
+msgstr "💵 %(person)s: вам передано %(amount)s"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -7011,8 +7013,8 @@ msgstr "⚠️ Передача не получена: %(amount)s"
 msgid ""
 "%(receiver)s says the cash %(cashier)s handed over at %(till)s never arrived."
 msgstr ""
-"%(receiver)s сообщает, что наличные, которые %(cashier)s передал(а) из кассы "
-"«%(till)s», не дошли."
+"%(receiver)s сообщает, что наличные из кассы «%(till)s» не дошли. "
+"Отправитель: %(cashier)s."
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -7046,13 +7048,13 @@ msgid ""
 "%(cashier)s counted %(counted)s when opening %(till)s; the last shift left "
 "%(expected)s."
 msgstr ""
-"%(cashier)s при открытии кассы «%(till)s» насчитал(а) %(counted)s, а прошлая "
+"%(cashier)s: при открытии кассы «%(till)s» насчитано %(counted)s, а прошлая "
 "смена оставила %(expected)s."
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
 msgid "%(cashier)s closed %(shift)s: %(net)s"
-msgstr "%(cashier)s закрыл(а) смену %(shift)s: %(net)s"
+msgstr "%(cashier)s: смена %(shift)s закрыта, итог %(net)s"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -7117,7 +7119,7 @@ msgstr "Смена %(shift)s всё ещё открыта"
 #, python-format
 msgid "%(cashier)s hasn't closed the till at %(branch)s (closes at %(time)s)."
 msgstr ""
-"%(cashier)s не закрыл(а) кассу в филиале %(branch)s (закрытие в %(time)s)."
+"%(cashier)s: касса в филиале %(branch)s не закрыта (закрытие в %(time)s)."
 
 #: backend/apps/sales/bot_messages.py
 msgid "🧾 Your till is still open"
@@ -7136,7 +7138,7 @@ msgstr "Крупная выдача из кассы: %(amount)s"
 #: backend/apps/sales/bot_messages.py
 #, python-format
 msgid "%(person)s paid out from %(till)s: %(reason)s"
-msgstr "%(person)s выдал(а) деньги из кассы «%(till)s»: %(reason)s"
+msgstr "%(person)s: выдача из кассы «%(till)s». Причина: %(reason)s"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -8227,7 +8229,7 @@ msgstr "Отправлено напоминание по задаче"
 
 #: backend/apps/tasks/audit_actions.py
 msgid "Gave a new person their onboarding tasks"
-msgstr "Новому сотруднику выданы задачи для новичков"
+msgstr "Новому сотруднику выданы задачи адаптации"
 
 #: backend/apps/tasks/audit_actions.py
 msgid "Changed several tasks at once"
@@ -8259,7 +8261,7 @@ msgstr "Срок: %(when)s"
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "🎁 Reward: +%(amount)s"
-msgstr "🎁 Вознаграждение: +%(amount)s"
+msgstr "🎁 Премия: +%(amount)s"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
@@ -8279,7 +8281,7 @@ msgstr "Чек-лист: %(done)d из %(total)d"
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "Proof needed: %(proof)s"
-msgstr "Нужно приложить: %(proof)s"
+msgstr "Для завершения нужно: %(proof)s"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
@@ -8289,7 +8291,7 @@ msgstr "Отчёт: %(text)s"
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "📨 <b>New task</b> from %(name)s"
-msgstr "📨 <b>Новая задача</b> от %(name)s"
+msgstr "📨 <b>Новая задача</b> · %(name)s"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
@@ -8319,7 +8321,7 @@ msgstr "👋 %(name)s ждёт выполнения этой задачи."
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "👋 Welcome to %(company)s, %(name)s!"
-msgstr "👋 Добро пожаловать в %(company)s, %(name)s!"
+msgstr "👋 Добро пожаловать в команду «%(company)s», %(name)s!"
 
 #: backend/apps/tasks/bot_messages.py
 msgid "Here are your first tasks to get started. Tap one to open it."
@@ -8329,17 +8331,18 @@ msgstr ""
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "📷 Send a photo to complete <b>%(title)s</b>."
-msgstr "📷 Чтобы завершить <b>%(title)s</b>, пришлите фото."
+msgstr "📷 Чтобы завершить задачу <b>%(title)s</b>, пришлите фото."
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "✍️ Send a short report to complete <b>%(title)s</b>."
-msgstr "✍️ Чтобы завершить <b>%(title)s</b>, пришлите короткий отчёт."
+msgstr "✍️ Чтобы завершить задачу <b>%(title)s</b>, пришлите короткий отчёт."
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "📷 Send a photo or a short report to complete <b>%(title)s</b>."
-msgstr "📷 Чтобы завершить <b>%(title)s</b>, пришлите фото или короткий отчёт."
+msgstr ""
+"📷 Чтобы завершить задачу <b>%(title)s</b>, пришлите фото или короткий отчёт."
 
 #: backend/apps/tasks/bot_messages.py
 msgid "What needs to be fixed? Send a short comment."
@@ -8389,7 +8392,7 @@ msgstr "%(hours)d ч %(minutes)d мин"
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "%(days)d d %(hours)d h"
-msgstr "%(days)d д %(hours)d ч"
+msgstr "%(days)d дн. %(hours)d ч"
 
 #: backend/apps/tasks/bot_messages.py
 msgid "▶️ Start"
@@ -8420,10 +8423,10 @@ msgstr "Выполнена задача «%(title)s»"
 #, python-format
 msgid "%(count)d task due"
 msgid_plural "%(count)d tasks due"
-msgstr[0] "Срок: %(count)d задача"
-msgstr[1] "Срок: %(count)d задачи"
-msgstr[2] "Срок: %(count)d задач"
-msgstr[3] "Срок: %(count)d задачи"
+msgstr[0] "%(count)d задача со сроком"
+msgstr[1] "%(count)d задачи со сроком"
+msgstr[2] "%(count)d задач со сроком"
+msgstr[3] "%(count)d задачи со сроком"
 
 #: backend/apps/tasks/hooks.py
 msgid "Tasks to check"
@@ -8439,7 +8442,7 @@ msgstr "Регулярные задачи"
 
 #: backend/apps/tasks/hooks.py
 msgid "Onboarding tasks"
-msgstr "Задачи для новичков"
+msgstr "Задачи адаптации"
 
 #: backend/apps/tasks/hooks.py
 msgid "Tasks"
@@ -8471,11 +8474,11 @@ msgstr "Чек-лист"
 
 #: backend/apps/tasks/hooks.py
 msgid "Proof"
-msgstr "Подтверждение"
+msgstr "Отчёт"
 
 #: backend/apps/tasks/hooks.py
 msgid "Reward"
-msgstr "Вознаграждение"
+msgstr "Премия"
 
 #: backend/apps/tasks/models.py
 msgid "Monday"
@@ -8568,16 +8571,16 @@ msgid ""
 "An onboarding task: given once to each new person it names when they are "
 "approved, instead of every day."
 msgstr ""
-"Задача для новичков: выдаётся не каждый день, а один раз — каждому новому "
+"Задача адаптации: выдаётся не каждый день, а один раз — каждому новому "
 "сотруднику из числа получателей после одобрения его заявки."
 
 #: backend/apps/tasks/models.py
 msgid "Onboarding tasks: due this many days after the approval."
-msgstr "Задачи для новичков: срок — через столько дней после одобрения."
+msgstr "Задачи адаптации: срок — через столько дней после одобрения."
 
 #: backend/apps/tasks/models.py
 msgid "Daily"
-msgstr "Ежедневная"
+msgstr "Регулярная"
 
 #: backend/apps/tasks/models.py
 msgid "Assigned"
@@ -8601,11 +8604,11 @@ msgstr "Срочный"
 
 #: backend/apps/tasks/models.py
 msgid "For daily tasks: the local day it belongs to."
-msgstr "Для ежедневных задач: местная дата, к которой она относится."
+msgstr "Для регулярных задач: местная дата, к которой она относится."
 
 #: backend/apps/tasks/models.py
 msgid "A small preview of the proof photo, made after it's uploaded."
-msgstr "Миниатюра фотоподтверждения, создаётся после загрузки."
+msgstr "Миниатюра фотоотчёта, создаётся после загрузки."
 
 #: backend/apps/tasks/models.py
 msgid "When a manager last pressed \"Nudge now\"."
@@ -8678,7 +8681,7 @@ msgstr "Укажите due_at или shift_days."
 
 #: backend/apps/tasks/services.py
 msgid "Repeating tasks for others are set up as daily tasks."
-msgstr "Повторяющиеся задачи для других настраиваются как ежедневные."
+msgstr "Повторяющиеся задачи для других настраиваются как регулярные."
 
 #: backend/apps/tasks/services.py
 msgid "Pick a time for a repeating task."
@@ -8686,8 +8689,7 @@ msgstr "Выберите время для повторяющейся задач
 
 #: backend/apps/tasks/services.py
 msgid "A reward is for work you give to someone else."
-msgstr ""
-"Вознаграждение назначают только за работу, которую вы поручаете другому."
+msgstr "Премию назначают только за работу, которую вы поручаете другому."
 
 #: backend/apps/tasks/services.py
 msgid "You can't change this task."
@@ -8875,7 +8877,7 @@ msgstr "Срок должен быть в будущем."
 
 #: backend/apps/tasks/services.py
 msgid "A reward must be a positive amount."
-msgstr "Сумма вознаграждения должна быть больше нуля."
+msgstr "Сумма премии должна быть больше нуля."
 
 #: backend/apps/tasks/services.py
 msgid "Attach a photo to complete this task."
@@ -9383,7 +9385,7 @@ msgstr "Готово! 🎉"
 #: employee_bot/bot/handlers/member/tasks.py
 #, python-format
 msgid "Snoozed until %(time)s."
-msgstr "Отложено до %(time)s."
+msgstr "Отложено. Следующее напоминание: %(time)s."
 
 #: employee_bot/bot/handlers/member/tasks.py
 msgid "Confirmed 👍"
