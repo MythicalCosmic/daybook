@@ -15,6 +15,7 @@ import ProofThumb from "@/components/ProofThumb.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UiButton from "@/components/UiButton.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
+import { returnReasonFields } from "@/components/returnReasons";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { usePulseCount } from "@/core/pulse";
@@ -77,7 +78,7 @@ async function sendBack(run: RoutineRun, group: ConfirmGroup): Promise<void> {
   const answer = await ask({
     title: t("routines.confirm.sendBackTitle"),
     message: `${run.member.name} · ${group.routine.title}`,
-    reason: "required",
+    ...returnReasonFields(t),
     reasonLabel: t("routines.confirm.reason"),
     reasonPlaceholder: t("routines.confirm.reasonPlaceholder"),
     confirmLabel: t("routines.confirm.sendBack"),

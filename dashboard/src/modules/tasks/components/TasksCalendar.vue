@@ -5,7 +5,7 @@
  * the side summary. Click a task to open it.
  */
 import { CalendarDays, CalendarRange } from "@lucide/vue";
-import { computed } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import CalendarMonth from "@/components/CalendarMonth.vue";
@@ -73,6 +73,21 @@ const legend = computed(() => [
 
 const day = computed(() => (query.data.value?.days ?? []).find((entry) => entry.date === selected.value) ?? null);
 
+// Opening this month: today's week comes into view (it sits below the fold on a laptop, under
+// weeks already past), once per visit, scrolling no further than needed.
+const host = ref<HTMLElement | null>(null);
+let broughtToday = false;
+watch(
+  () => [query.data.value, mode.value, month.value] as const,
+  async ([data, currentMode, currentMonth]) => {
+    if (broughtToday || !data || currentMode !== "month" || currentMonth !== today.value.slice(0, 7)) return;
+    broughtToday = true;
+    await nextTick();
+    host.value?.querySelector<HTMLElement>('[aria-current="date"]')?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+  },
+  { immediate: true },
+);
+
 function openItem(item: CalendarItem): void {
   const task = byId.value.get(String(item.id));
   if (task) emit("open", task);
@@ -80,7 +95,7 @@ function openItem(item: CalendarItem): void {
 </script>
 
 <template>
-  <div class="min-w-0">
+  <div ref="host" class="min-w-0">
     <ErrorState v-if="query.isError.value" class="ui-card" :error="query.error.value" :retry="() => query.refetch()" />
     <div v-else class="flex flex-col gap-3">
       <p v-if="query.data.value?.truncated" class="rounded-[8px] bg-warning-soft px-3 py-2 text-sm text-warning">{{ t("tasks.calendar.truncated") }}</p>

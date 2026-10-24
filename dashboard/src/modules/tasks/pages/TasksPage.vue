@@ -7,11 +7,12 @@
  * the list. Saved views as tabs, filter chips in the URL, the drawer (`?task=`) and "New task"
  * (`N`). Other modules add tools through `tasks.toolbar`.
  */
-import { CalendarDays, Columns3, Plus, Repeat, Rows3 } from "@lucide/vue";
+import { CalendarDays, Columns3, ListFilter, Plus, Repeat, Rows3, Search } from "@lucide/vue";
 import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
+import BottomSheet from "@/components/BottomSheet.vue";
 import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import FilterBar from "@/components/FilterBar.vue";
 import { useUrlFilters } from "@/components/filters";
@@ -20,6 +21,8 @@ import PageHeader from "@/components/PageHeader.vue";
 import SavedViewsTabs from "@/components/SavedViewsTabs.vue";
 import { useScopedBranches } from "@/components/pickers";
 import SegmentedControl from "@/components/SegmentedControl.vue";
+import TextInput from "@/components/TextInput.vue";
+import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import UiButton from "@/components/UiButton.vue";
 import { useDataTable } from "@/components/useDataTable";
 import { useHotkey } from "@/core/hotkeys";
@@ -65,6 +68,8 @@ const params = computed<Record<string, string | string[]>>(() => {
   return routinesAsked.value ? base : { ...base, routines: "without" };
 });
 const filtered = computed(() => filters.active.value > 0 || !!search.value);
+/** Phones: the filter chips open in a sheet. */
+const filtersOpen = ref(false);
 
 const table = useDataTable({ id: "tasks.list", ordering: "due_at", url: true, hidden: ["routine", "created_by", "reward", "completed_at"] });
 
@@ -191,8 +196,8 @@ const viewOptions = computed(() => [
       </template>
     </PageHeader>
 
-    <!-- Phones: two tight numbers per row, so the list starts on the first screen (as on Routines). -->
-    <KpiStrip :items="kpis" :loading="summary.isPending.value" :columns="4" phone="compact" />
+    <!-- Phones: the four numbers on one short row, so the list starts on the first screen. -->
+    <KpiStrip :items="kpis" :loading="summary.isPending.value" :columns="4" phone="line" />
 
     <div class="flex min-w-0 flex-col gap-3">
       <SavedViewsTabs
@@ -206,22 +211,38 @@ const viewOptions = computed(() => [
         @delete="(target) => (saved.remove.mutate(Number(target.id)), applyView('open'))"
       />
       <div class="flex min-w-0 flex-wrap items-start gap-2">
-        <FilterBar v-model="filters.values.value" v-model:search="search" class="min-w-0 flex-1 max-xl:basis-full" :defs="defs" searchable :search-placeholder="t('tasks.searchPlaceholder')" />
-        <button
-          type="button"
-          :aria-pressed="routinesAsked"
-          :title="t('tasks.filter.includeRoutinesHint')"
-          :class="[
-            'pressable inline-flex h-8 shrink-0 items-center gap-1.5 rounded-button border px-2.5 text-sm font-medium transition-colors',
-            routinesAsked ? 'border-transparent bg-accent-soft text-accent-fg' : 'border-dashed border-line-strong bg-surface text-muted hover:bg-highlight hover:text-fg',
-          ]"
-          data-testid="include-routines"
-          @click="withRoutines = !withRoutines"
-        >
-          <Repeat :size="14" aria-hidden="true" />{{ t("tasks.filter.includeRoutines") }}
-        </button>
+        <template v-if="!isPhone">
+          <FilterBar v-model="filters.values.value" v-model:search="search" class="min-w-0 flex-1 max-xl:basis-full" :defs="defs" searchable :search-placeholder="t('tasks.searchPlaceholder')" />
+          <button
+            type="button"
+            :aria-pressed="routinesAsked"
+            :title="t('tasks.filter.includeRoutinesHint')"
+            :class="[
+              'pressable inline-flex h-8 shrink-0 items-center gap-1.5 rounded-button border px-2.5 text-sm font-medium transition-colors',
+              routinesAsked ? 'border-transparent bg-accent-soft text-accent-fg' : 'border-dashed border-line-strong bg-surface text-muted hover:bg-highlight hover:text-fg',
+            ]"
+            data-testid="include-routines"
+            @click="withRoutines = !withRoutines"
+          >
+            <Repeat :size="14" aria-hidden="true" />{{ t("tasks.filter.includeRoutines") }}
+          </button>
+        </template>
+        <!-- Phones: search, one Filters button (the chips live in a sheet), the view switch. -->
+        <template v-else>
+          <TextInput v-model="search" :icon="Search" clearable :placeholder="t('tasks.searchPlaceholder')" class="min-w-0 flex-1" />
+          <UiButton :icon="ListFilter" :aria-label="t('tasks.filters.title')" data-testid="phone-filters" @click="filtersOpen = true">
+            <span v-if="filters.active.value + (routinesAsked ? 1 : 0)" class="tabular-nums">{{ filters.active.value + (routinesAsked ? 1 : 0) }}</span>
+          </UiButton>
+        </template>
         <SegmentedControl v-model="view" :options="viewOptions" :aria-label="t('tasks.view.label')" />
       </div>
+      <BottomSheet v-if="isPhone" v-model:open="filtersOpen" :title="t('tasks.filters.title')">
+        <div class="flex flex-col gap-4 pb-2">
+          <FilterBar v-model="filters.values.value" :defs="defs" />
+          <ToggleSwitch v-model="withRoutines" layout="row" :label="t('tasks.filter.includeRoutines')" :description="t('tasks.filter.includeRoutinesHint')" />
+          <UiButton variant="primary" block @click="filtersOpen = false">{{ t("common.filter.done") }}</UiButton>
+        </div>
+      </BottomSheet>
 
       <TasksTable v-if="view === 'table'" :state="table" :params="params" :filtered="filtered" :active-id="openId" @open="open" @clear-filters="filters.clear(), (search = '')" @include-routines="withRoutines = true" />
       <TasksBoard v-else-if="view === 'board'" :params="params" @open="open" />

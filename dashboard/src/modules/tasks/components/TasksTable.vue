@@ -24,10 +24,11 @@ import { useFormat } from "@/lib/useFormat";
 import { usePermission } from "@/lib/usePermission";
 
 import { useBulk, useTaskList, useTaskOptions } from "../api";
-import { cardKey, PRIORITY_TONE } from "../meta";
+import { cardKey } from "../meta";
 import type { BulkAction, BulkInput, TaskPriority, TaskRow } from "../types";
 import { PRIORITIES } from "../types";
 import DueLabel from "./DueLabel.vue";
+import PriorityFlag from "./PriorityFlag.vue";
 import TaskCard from "./TaskCard.vue";
 import TaskStatusPill from "./TaskStatusPill.vue";
 
@@ -100,7 +101,8 @@ async function cancelMany(selected: string[], clear: () => void): Promise<void> 
     title: t("tasks.bulk.cancelTitle", { n: selected.length }),
     message: t("tasks.bulk.cancelBody"),
     tone: "danger",
-    confirmLabel: t("tasks.action.cancel"),
+    confirmLabel: t("tasks.bulk.cancel"),
+    cancelLabel: t("common.close"),
   });
   if (answer) await runBulk(selected, clear, "cancel");
 }
@@ -184,9 +186,7 @@ async function reassignMany(selected: string[], clear: () => void): Promise<void
       <DueLabel :due="row.due_at" :overdue="row.is_overdue" />
     </template>
     <template #cell-priority="{ row }">
-      <span :class="['inline-flex items-center gap-1 text-sm', PRIORITY_TONE[row.priority] === 'danger' ? 'font-semibold text-danger' : PRIORITY_TONE[row.priority] === 'warning' ? 'font-medium text-warning' : 'text-muted']">
-        <Flag v-if="row.priority === 'urgent' || row.priority === 'high'" :size="13" aria-hidden="true" />{{ t(`tasks.priority.${row.priority}`) }}
-      </span>
+      <PriorityFlag :priority="row.priority" quiet />
     </template>
     <template #cell-branch="{ row }">
       <span class="truncate text-sm text-muted">{{ row.branch?.name ?? "—" }}</span>
@@ -222,7 +222,7 @@ async function reassignMany(selected: string[], clear: () => void): Promise<void
       </DropdownMenu>
       <UiButton size="sm" :icon="BellRing" @click="runBulk(selected, clear, 'nudge')">{{ t("tasks.action.nudge") }}</UiButton>
       <UiButton v-if="can('tasks.confirm')" size="sm" :icon="CheckCheck" @click="runBulk(selected, clear, 'confirm')">{{ t("tasks.action.confirm") }}</UiButton>
-      <UiButton size="sm" variant="ghost" :icon="X" class="hover:!text-danger" @click="cancelMany(selected, clear)">{{ t("tasks.action.cancel") }}</UiButton>
+      <UiButton size="sm" variant="ghost" :icon="X" class="hover:!text-danger" data-testid="bulk-cancel" @click="cancelMany(selected, clear)">{{ t("tasks.bulk.cancel") }}</UiButton>
     </template>
   </DataTable>
 </template>

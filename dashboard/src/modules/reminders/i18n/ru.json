@@ -104,7 +104,7 @@
   "reminders.log.kinds.escalation": "Руководителю",
   "reminders.log.kinds.blocked": "Бот заблокирован",
   "reminders.blocked.hint": "Эти сотрудники заблокировали бота, поэтому напоминания и новые задачи до них не доходят. Попросите их открыть бота и снова нажать «Старт».",
-  "reminders.blocked.since": "Заблокировал(а)",
+  "reminders.blocked.since": "Бот заблокирован",
   "reminders.blocked.open": "открытых задач",
   "reminders.blocked.late": "просрочено: {n}",
   "reminders.blocked.emptyTitle": "Все на связи",

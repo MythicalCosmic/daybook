@@ -12,11 +12,13 @@ import type { Page } from "@/api/types";
 import { useCompanyStore } from "@/stores/company";
 
 import type {
+  BlockerAction,
   BoardColumn,
   BoardColumnId,
   BulkInput,
   BulkResponse,
   ProofWall,
+  QuickAddParse,
   TaskCalendar,
   TaskComment,
   TaskCreateInput,
@@ -53,9 +55,18 @@ export const tasksApi = {
   cancel: (cid: number, id: number) => http.post<TaskDetail>(ownerPath(cid, `tasks/${id}/cancel/`)),
   reassign: (cid: number, id: number, assigneeId: number) => http.post<TaskDetail>(ownerPath(cid, `tasks/${id}/reassign/`), { assignee_id: assigneeId }),
   nudge: (cid: number, id: number) => http.post<{ nudged_at: string }>(ownerPath(cid, `tasks/${id}/nudge/`)),
-  comment: (cid: number, id: number, text: string) => http.post<TaskComment>(ownerPath(cid, `tasks/${id}/comment/`), { text }),
+  /** `mentions` (membership ids) are told in Telegram too (contract 5); left out when nobody is. */
+  comment: (cid: number, id: number, text: string, mentions: number[] = []) =>
+    http.post<TaskComment>(ownerPath(cid, `tasks/${id}/comment/`), mentions.length ? { text, mentions } : { text }),
   move: (cid: number, id: number, to: BoardColumnId, reason = "") => http.post<TaskDetail>(ownerPath(cid, `tasks/${id}/move/`), { to, reason }),
   bulk: (cid: number, input: BulkInput) => http.post<BulkResponse>(ownerPath(cid, "tasks/bulk/"), input),
+  /** Quick add (contract 1): what a typed title says about the deadline and urgency. Never toasts. */
+  parse: (cid: number, text: string, signal?: AbortSignal) => http.post<QuickAddParse>(ownerPath(cid, "tasks/parse/"), { text }, { signal, toast: false }),
+  /** Can't do it (contract 7): give it to someone else, set a new time, or cancel it. */
+  resolveBlocker: (cid: number, id: number, input: { action: BlockerAction; assignee_id?: number; due_at?: string }) =>
+    http.post<TaskDetail>(ownerPath(cid, `tasks/${id}/blocker/resolve/`), input),
+  /** Need more time (contract 8): the giver's answer. */
+  decideExtension: (cid: number, id: number, approve: boolean) => http.post<TaskDetail>(ownerPath(cid, `tasks/${id}/extension/decide/`), { approve }),
 };
 
 /** Filter values (URL shape) as API params: empty values dropped. */

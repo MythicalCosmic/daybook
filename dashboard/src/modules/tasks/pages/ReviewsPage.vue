@@ -19,6 +19,7 @@ import RelativeTime from "@/components/RelativeTime.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UiButton from "@/components/UiButton.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
+import { returnReasonFields } from "@/components/returnReasons";
 import { useConfirm } from "@/components/useConfirm";
 import { dismissToast, toast } from "@/components/useToast";
 import { useHotkey } from "@/core/hotkeys";
@@ -98,7 +99,7 @@ async function sendBack(task: TaskReview): Promise<void> {
   const answer = await confirm({
     title: t("tasks.sendBack.title"),
     message: task.title,
-    reason: "required",
+    ...returnReasonFields(t),
     reasonLabel: t("tasks.sendBack.reason"),
     reasonPlaceholder: t("tasks.sendBack.placeholder"),
     confirmLabel: t("tasks.action.return"),

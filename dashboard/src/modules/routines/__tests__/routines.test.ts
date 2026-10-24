@@ -476,7 +476,7 @@ describe("routine work", () => {
     const { wrapper } = await mountPage("/c/1/routines", "TodayPage");
     const text = document.body.textContent ?? "";
     expect(text).toContain("Late · due 09:00");
-    expect(text).toContain("Waiting · done 09:20");
+    expect(text).toContain("Waiting for check · 09:20");
     expect(text).toContain("Done 08:50");
     expect(text).toContain("2/3 done");
     expect(text).toContain("Aziza Usmonova");

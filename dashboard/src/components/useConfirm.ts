@@ -14,6 +14,11 @@ export interface ConfirmRequest {
   reason?: "none" | "optional" | "required";
   reasonLabel?: string;
   reasonPlaceholder?: string;
+  /** Ready answers as chips above the text (ConfirmDialog). */
+  reasonChips?: string[];
+  /** The chip that asks for the person's own words. */
+  reasonOther?: string;
+  reasonNotePlaceholder?: string;
   icon?: Component;
   /** Runs before the dialog closes; the dialog stays open if it throws. */
   onConfirm?: (reason: string) => unknown;

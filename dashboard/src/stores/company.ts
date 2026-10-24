@@ -32,11 +32,18 @@ export const useCompanyStore = defineStore("company", () => {
     }
   }
 
-  /** Where "/" goes: the last company used in this browser when still allowed, else the first. */
+  /**
+   * Where "/" goes: the last company used in this browser when still allowed. A first visit opens
+   * the main business, not the alphabetically first: one the person owns, that is set up, with the
+   * most branches (a pharmacy chain before its small distributor); the list's order breaks ties.
+   */
   function defaultCompanyId(): number | null {
     const list = companies.value;
     if (list.some((c) => c.id === lastId.value)) return lastId.value;
-    return list[0]?.id ?? null;
+    const main = [...list].sort(
+      (a, b) => Number(b.is_owner) - Number(a.is_owner) || Number(b.setup_completed) - Number(a.setup_completed) || b.branches.length - a.branches.length,
+    );
+    return main[0]?.id ?? null;
   }
 
   function has(id: number): boolean {

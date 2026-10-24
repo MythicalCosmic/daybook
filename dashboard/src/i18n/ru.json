@@ -473,5 +473,11 @@
   "shell.telegram.endedBody": "Откройте панель снова из бота, чтобы продолжить.",
   "shell.telegram.close": "Закрыть",
 
-  "shell.overlay.close": "Закрыть"
+  "shell.overlay.close": "Закрыть",
+  "common.reasonNotePlaceholder": "Можно добавить подробности",
+  "common.returnReason.photo": "Фото нечёткое",
+  "common.returnReason.unfinished": "Не доделано",
+  "common.returnReason.wrongItem": "Не тот товар",
+  "common.returnReason.other": "Другое…",
+  "common.returnReason.note": "Можно уточнить, что именно исправить"
 }

@@ -25,7 +25,35 @@ export interface TaskPerson {
   position: string | null;
 }
 
-export interface TaskRow {
+/** Why the assignee can't do it ("Can't do it", cross-area contract 7). */
+export type BlockerReason = "no_stock" | "no_access" | "broken" | "not_mine" | "other";
+export const BLOCKER_REASONS: readonly BlockerReason[] = ["no_stock", "no_access", "broken", "not_mine", "other"];
+
+export interface TaskBlocker {
+  reason_code: BlockerReason;
+  note: string;
+  at: string;
+}
+
+/** The assignee asks for a later deadline (contract 8); the giver approves or declines. */
+export interface TaskExtension {
+  until: string;
+  note: string;
+  at: string;
+}
+
+/**
+ * Fields the backend adds tonight (contracts 7, 8, 10). Optional: an older backend leaves them
+ * out, and the drawer and the table then simply don't show them.
+ */
+export interface TaskExtras {
+  blocker?: TaskBlocker | null;
+  extension?: TaskExtension | null;
+  /** When the assignee first opened it (the app's task screen or the bot card). */
+  seen_at?: string | null;
+}
+
+export interface TaskRow extends TaskExtras {
   id: number;
   kind: TaskKind;
   title: string;
@@ -182,6 +210,20 @@ export interface TaskCreateInput {
   position_ids?: number[];
   branch_ids?: number[];
 }
+
+/** What quick add read in a typed title (contract 1, `tasks/parse/`); nothing is saved. */
+export interface QuickAddParse {
+  /** The title without the words that were understood. */
+  title: string;
+  due_at: string | null;
+  /** The deadline in the reader's language, with the weekday and the date ("Ertaga, 22-oktabr (payshanba), 18:00"). */
+  due_label: string | null;
+  priority: TaskPriority | null;
+  repeat: "daily" | "weekdays" | "weekly" | null;
+  repeat_weekdays: number[] | null;
+}
+
+export type BlockerAction = "reassign" | "new_due" | "cancel";
 
 export interface TaskUpdateInput {
   title?: string;

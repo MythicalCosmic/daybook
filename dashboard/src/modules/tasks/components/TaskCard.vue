@@ -3,7 +3,7 @@
  * A task as a card: on the board, in phone lists and in the person's tab. Title with its project
  * key or routine, who and when, checklist progress, reward and a small proof preview.
  */
-import { CheckCheck, Flag, Gift, ImageIcon, Repeat } from "@lucide/vue";
+import { CheckCheck, Gift, ImageIcon, Repeat } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -13,13 +13,13 @@ import UserAvatar from "@/components/UserAvatar.vue";
 import { cardKey } from "../meta";
 import type { TaskRow } from "../types";
 import DueLabel from "./DueLabel.vue";
+import PriorityFlag from "./PriorityFlag.vue";
 import TaskStatusPill from "./TaskStatusPill.vue";
 
 const props = withDefaults(defineProps<{ task: TaskRow; showStatus?: boolean; showAssignee?: boolean }>(), { showStatus: false, showAssignee: true });
 
 const { t } = useI18n();
 const done = computed(() => props.task.status === "done");
-const urgent = computed(() => props.task.priority === "urgent" || props.task.priority === "high");
 </script>
 
 <template>
@@ -30,9 +30,7 @@ const urgent = computed(() => props.task.priority === "urgent" || props.task.pri
           <span v-if="task.project" class="font-mono text-[11px] font-semibold text-subtle" :title="task.project.name">{{ cardKey(task.project) }}</span>
           <span v-if="task.routine" class="inline-flex min-w-0 items-center gap-1"><Repeat :size="11" aria-hidden="true" /><span class="truncate">{{ task.routine.onboarding ? t("tasks.kind.onboarding") : t("tasks.kind.routine") }}</span></span>
           <span v-else-if="task.kind === 'personal'" class="truncate">{{ t("tasks.kind.personal") }}</span>
-          <span v-if="urgent" :class="['inline-flex items-center gap-0.5 font-semibold', task.priority === 'urgent' ? 'text-danger' : 'text-warning']">
-            <Flag :size="11" aria-hidden="true" />{{ t(`tasks.priority.${task.priority}`) }}
-          </span>
+          <PriorityFlag :priority="task.priority" :size="11" />
         </p>
         <p :class="['mt-0.5 line-clamp-2 text-sm font-semibold leading-5', done ? 'text-muted' : 'text-fg']">{{ task.title }}</p>
       </div>
