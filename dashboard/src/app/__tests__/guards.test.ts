@@ -85,3 +85,17 @@ describe("guards", () => {
     expect(router.currentRoute.value.fullPath).toBe("/c/1");
   });
 });
+
+describe("the first company", () => {
+  it("opens the main company on a first visit, the last one used after that", () => {
+    setActivePinia(createPinia());
+    const distributor = manager([], { id: 41, name: "Demo Distribyutor", is_owner: true, branches: [{ id: 9, name: "Ombor", code: "OMB" }] });
+    const pharmacy = company({ id: 40, name: "Demo Dorixona", branches: [{ id: 1, name: "Chilonzor", code: "CHL" }, { id: 2, name: "Yunusobod", code: "YUN" }] });
+    useSessionStore().me = me([distributor, pharmacy]);
+    localStorage.removeItem("daybook.console.lastCompany");
+    const store = useCompanyStore();
+    expect(store.defaultCompanyId()).toBe(40);
+    store.setCurrent(41);
+    expect(store.defaultCompanyId()).toBe(41);
+  });
+});
