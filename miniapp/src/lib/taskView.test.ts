@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { giverMeta } from "../screens/Tasks";
 import { ctxFor, makeTask, NOW } from "../test/harness";
-import { byFocus, formatDue, groupTasks, minutesLeft, priorityLevel, rowRight, seenLabel } from "./taskView";
+import { byFocus, formatDue, groupByDay, groupTasks, minutesLeft, priorityLevel, rowMeta, rowRight, seenLabel } from "./taskView";
 
 describe("one order everywhere (R2 T7)", () => {
   it("puts late work first, then sent back, then urgent, then the soonest deadline, undated last", () => {
@@ -25,6 +25,36 @@ describe("one order everywhere (R2 T7)", () => {
       NOW,
     );
     expect(groups[0].tasks.map((task) => task.title)).toEqual(["urgent", "normal"]);
+  });
+});
+
+describe("work by day (audit M-7)", () => {
+  it("splits open work into today, tomorrow, the next few days, later and undated", () => {
+    const groups = groupByDay(
+      [
+        makeTask({ title: "late", due_at: "2026-10-21T09:00:00+05:00" }),
+        makeTask({ title: "today", due_at: "2026-10-21T18:00:00+05:00" }),
+        makeTask({ title: "tomorrow", due_at: "2026-10-22T10:00:00+05:00" }),
+        makeTask({ title: "friday", due_at: "2026-10-23T10:00:00+05:00" }),
+        makeTask({ title: "count", due_at: "2026-11-14T10:00:00+05:00" }),
+        makeTask({ title: "someday", due_at: null }),
+        makeTask({ title: "checked", status: "review" }),
+      ],
+      ctxFor("en"),
+    );
+    expect(groups.map((group) => [group.key, group.tasks.map((task) => task.title)])).toEqual([
+      ["attention", ["late"]],
+      ["today", ["today"]],
+      ["tomorrow", ["tomorrow"]],
+      ["soon", ["friday"]],
+      ["later", ["count"]],
+      ["noDue", ["someday"]],
+      ["review", ["checked"]],
+    ]);
+  });
+
+  it("says when work is underway", () => {
+    expect(rowMeta(makeTask({ status: "in_progress" }), ctxFor("uz"))).toBe("Jarayonda · Kimdan: Bekzod Mirzayev");
   });
 });
 
@@ -83,7 +113,7 @@ describe("the line under work I gave", () => {
     expect(giverMeta(makeTask({ seen_at: "2026-10-21T09:12:00+05:00" }), ctx)).toBe("Alisher Valiyev · Seen 09:12");
     expect(giverMeta(makeTask({ due_at: "2026-10-21T09:30:00+05:00" }), ctx)).toBe("Alisher Valiyev · 30 min late");
     expect(giverMeta(makeTask({ blocker: { reason_code: "no_stock", note: "", at: NOW.toISOString() } }), ctx)).toBe(
-      "Alisher Valiyev · Can't be done: Out of stock",
+      "Alisher Valiyev · Can't be done: out of stock",
     );
     expect(giverMeta(makeTask({ status: "review", completed_at: "2026-10-21T09:40:00+05:00" }), ctx)).toBe("Alisher Valiyev · Done at 09:40");
     expect(giverMeta(makeTask({ status: "in_progress" }), ctx)).toBe("Alisher Valiyev · In progress");

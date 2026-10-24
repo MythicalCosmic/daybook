@@ -50,6 +50,23 @@ describe("rows", () => {
   });
 });
 
+describe("groups by day", () => {
+  it("keeps work a week or more away folded under Later", () => {
+    show({
+      board: [
+        makeTask({ title: "Shelf labels", due_at: "2026-10-21T17:00:00+05:00" }),
+        makeTask({ title: "Inventory count", due_at: "2026-11-14T10:00:00+05:00" }),
+      ],
+    });
+    expect(screen.getByText("Today")).toBeTruthy();
+    const later = screen.getByRole("button", { name: /Later/ });
+    expect(later.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByText("Inventory count")).toBeNull();
+    fireEvent.click(later);
+    expect(screen.getByText("Inventory count")).toBeTruthy();
+  });
+});
+
 describe("empty lists", () => {
   it("teach quick add on Mine and open the sheet", () => {
     show({ tab: "personal" });
@@ -84,7 +101,7 @@ describe("Given by me", () => {
     show({ permissions: ["tasks.assign"], tab: "given", given });
     const heads = [...document.querySelectorAll(".section-head")].map((head) => head.firstElementChild?.textContent);
     expect(heads).toEqual(["Needs attention", "Waiting for your check", "In progress"]);
-    expect(screen.getByText("Madina Saidova · Can't be done: Equipment broken")).toBeTruthy();
+    expect(screen.getByText("Madina Saidova · Can't be done: equipment broken")).toBeTruthy();
     expect(screen.getByText("Alisher Valiyev · Done at 09:40")).toBeTruthy();
     expect(screen.getByText("Madina Saidova · Seen 09:12")).toBeTruthy();
     // Someone's own task never shows as work given.

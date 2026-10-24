@@ -474,7 +474,9 @@ function RequestBanners({ task, isMine, ctx }: { task: Task; isMine: boolean; ct
                 : t("detail.blocked.giver", { name: task.assignee.name, reason: t(`blocker.reason.${task.blocker.reason_code}`).toLocaleLowerCase() })}
             </span>
             {task.blocker.note && <span className="request-banner-note">{t("routines.quoted", { text: task.blocker.note })}</span>}
-            <span className="request-banner-meta num">{isMine ? t("detail.blocked.mineNote") : shortMoment(task.blocker.at, ctx)}</span>
+            <span className="request-banner-meta num">
+              {isMine ? t("detail.blocked.mineNote") : t("detail.blocked.at", { time: shortMoment(task.blocker.at, ctx) })}
+            </span>
             {canDecide && (
               <span className="request-banner-actions">
                 <button type="button" className="btn btn-secondary" disabled={action.isPending} onClick={() => navigation.openSheet({ kind: "reassign", taskId: task.id })}>

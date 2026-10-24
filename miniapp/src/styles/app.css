@@ -1905,6 +1905,20 @@ textarea.input {
   vertical-align: baseline;
 }
 
+.row-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin: 2px 0 1px;
+  font-size: 13px;
+}
+
+.row-tags .prio,
+.row-tags .row-reward {
+  margin-right: 0;
+}
+
 .tag-urgent {
   background: var(--color-accent);
   color: var(--color-bg);
@@ -1990,6 +2004,15 @@ textarea.input {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+/* Body-font buttons inside cards and banners, as the late card's Snooze. */
+.detail-problem-actions .btn,
+.request-banner-actions .btn,
+.plus-more,
+.plus-step-add {
+  font-family: var(--font-body);
+  font-weight: 700;
 }
 
 .detail-problem-actions .btn {
@@ -2150,8 +2173,10 @@ textarea.input {
   background: color-mix(in srgb, var(--color-accent) 12%, transparent);
 }
 
-.ui-chip--urgent[aria-pressed="true"] {
+/* ui.css loads after this file: the doubled class outranks its pressed chip. */
+.ui-chip.ui-chip--urgent[aria-pressed="true"] {
   background: var(--color-accent);
+  border-color: var(--color-accent);
   color: var(--color-bg);
 }
 

@@ -26,6 +26,7 @@ export function TaskRow({ task, ctx, onOpen, onTick, meta, trailing }: Props) {
   // Within the last hour the chip counts down ("25 min left"), outlined so it reads apart from late.
   const soon = !alert && minutesLeft(task, ctx.now) !== null;
   const prio = priorityLevel(task);
+  const urgent = prio === "urgent" && task.status !== "done";
   const tick = (event: MouseEvent) => {
     event.stopPropagation();
     (onTick ?? onOpen)();
@@ -38,23 +39,29 @@ export function TaskRow({ task, ctx, onOpen, onTick, meta, trailing }: Props) {
       </button>
       <div className="row-main">
         <div className={kind === "done" ? "row-title row-title--done" : "row-title"}>{task.title}</div>
+        {/* Urgency (a word with its flag, never colour alone) and the reward get their own line, so
+            the line under them keeps who gave it or when it's due. */}
+        {(urgent || task.reward) && (
+          <div className="row-tags">
+            {urgent && (
+              <span className="prio prio--urgent">
+                <Flag size={12} strokeWidth={2.8} aria-hidden />
+                {ctx.t("priority.urgent")}
+              </span>
+            )}
+            {task.reward && (
+              <span className="row-reward">
+                <Gift size={13} strokeWidth={2.6} aria-hidden />
+                {formatMoney(task.reward, "UZS", lang, { sign: "always", compact: true })}
+              </span>
+            )}
+          </div>
+        )}
         <div className={alert ? "row-meta row-meta--alert" : "row-meta"}>
-          {/* Urgency first, as a word with its flag (never colour alone); high is a quiet flag. */}
-          {prio === "urgent" && task.status !== "done" && (
-            <span className="prio prio--urgent">
-              <Flag size={12} strokeWidth={2.8} aria-hidden />
-              {ctx.t("priority.urgent")}
-            </span>
-          )}
+          {/* High is a quiet flag before the line. */}
           {prio === "high" && task.status !== "done" && (
             <span className="prio prio--high" role="img" aria-label={ctx.t("priority.high")} title={ctx.t("priority.high")}>
               <Flag size={13} strokeWidth={2.6} aria-hidden />
-            </span>
-          )}
-          {task.reward && (
-            <span className="row-reward">
-              <Gift size={13} strokeWidth={2.6} aria-hidden />
-              {formatMoney(task.reward, "UZS", lang, { sign: "always", compact: true })}
             </span>
           )}
           {/* Routines carry a repeat mark, so they never read as one-off work. */}

@@ -97,7 +97,10 @@ export function Home() {
           {/* Before the numbers come, a placeholder line: "Nothing due today" would be a guess. */}
           {numbers ? (
             <span className="home-today-title">
-              {numbers.today_total > 0 ? t("home.progress", { done: numbers.today_done, total: numbers.today_total }) : t("home.nothingToday")}
+              {numbers.today_total > 0
+                ? t("home.progress", { done: numbers.today_done, total: numbers.today_total })
+                : // With late work below, "nothing due today" would contradict it (audit M-11).
+                  t(late.length > 0 ? "home.nothingNewToday" : "home.nothingToday")}
             </span>
           ) : (
             <span className="skeleton home-today-loading" aria-hidden />

@@ -45,6 +45,12 @@ export const keys = {
 const tasksPath = (company: number) => `/companies/${company}/tasks`;
 
 /**
+ * How often what changes under a person's feet (their list, the numbers, the feed) is fetched
+ * again while the app is open and in view; never while it's hidden (audit M-14).
+ */
+const LIVE_MS = 60_000;
+
+/**
  * The backend doesn't have this endpoint yet: no route (Django's plain 404, no JSON body) or a
  * route that takes no POST (405). A 404 that explains itself ("No such task") is a real answer.
  */
@@ -64,6 +70,7 @@ export function useMe(options: { poll?: boolean; enabled?: boolean } = {}) {
 export function useSummary(company: number) {
   return useQuery({
     queryKey: keys.summary(company),
+    refetchInterval: LIVE_MS,
     queryFn: () => api<Summary>(`/companies/${company}/summary/`),
   });
 }
@@ -71,6 +78,7 @@ export function useSummary(company: number) {
 export function useBoard(company: number) {
   return useQuery({
     queryKey: keys.board(company),
+    refetchInterval: LIVE_MS,
     queryFn: () =>
       api<Page<Task>>(`${tasksPath(company)}/?scope=board&page_size=200`).then((page) => page.results),
   });
@@ -79,6 +87,7 @@ export function useBoard(company: number) {
 export function useReviewQueue(company: number, enabled: boolean) {
   return useQuery({
     queryKey: keys.review(company),
+    refetchInterval: LIVE_MS,
     queryFn: () =>
       api<Page<Task>>(`${tasksPath(company)}/?scope=review&page_size=200`).then(
         (page) => page.results,
@@ -94,6 +103,7 @@ export function useReviewQueue(company: number, enabled: boolean) {
 export function useGivenByMe(company: number, enabled: boolean) {
   return useQuery({
     queryKey: keys.given(company),
+    refetchInterval: LIVE_MS,
     queryFn: () =>
       api<Page<Task>>(
         `${tasksPath(company)}/?given_by=me&scope=created&status=todo,in_progress,returned,review&page_size=200`,
@@ -129,6 +139,7 @@ export function useComments(company: number, id: number) {
 export function useActivity(company: number) {
   return useQuery({
     queryKey: keys.activity(company),
+    refetchInterval: LIVE_MS,
     queryFn: () =>
       api<Page<Activity>>(`/companies/${company}/activity/?page_size=100`).then(
         (page) => page.results,

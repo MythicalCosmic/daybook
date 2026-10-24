@@ -1,5 +1,5 @@
-import { CheckCheck, ClipboardList, ListPlus, Plus, Send } from "lucide-react";
-import { useEffect } from "react";
+import { CheckCheck, ChevronDown, ClipboardList, ListPlus, Plus, Send } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { useBoard, useGivenByMe, useReviewQueue } from "../api/hooks";
 import type { Task } from "../api/types";
@@ -10,7 +10,7 @@ import { quickAddAvailable } from "../lib/quickAdd";
 import {
   byFocus,
   duration,
-  groupTasks,
+  groupByDay,
   isDueToday,
   isLate,
   isOpen,
@@ -73,8 +73,13 @@ export function Tasks() {
     haptic();
     navigation.openSheet({ kind: "add" });
   };
-  // Counts and labels change the strip's width: say again which edges hide tabs.
+  // Counts and labels change the strip's width: say again which edges hide tabs, and keep the
+  // chosen tab whole once its count arrives (a link straight to "Given by me" lands on the last).
   useEffect(strip.update);
+  const counts = tabs.map((item) => item.count).join(",");
+  useEffect(() => {
+    keepInView(strip.ref.current?.querySelector<HTMLButtonElement>('[aria-pressed="true"]') ?? null);
+  }, [tab, counts, strip.ref]);
 
   return (
     <div className="screen fade-in" style={{ gap: 10 }}>
@@ -131,7 +136,9 @@ function Groups({ tasks, tab, onOpen, onTick, onAdd, ctx }: {
   onAdd: () => void;
   ctx: ViewContext;
 }) {
-  const groups = groupTasks(tasks, ctx.now);
+  const groups = groupByDay(tasks, ctx);
+  // Work a week or more away waits folded, unless it's all there is.
+  const [showLater, setShowLater] = useState(false);
   if (!groups.length) {
     // Each empty list says what will show up here and gives the one thing to do (R2 T44).
     return tab === "personal" ? (
@@ -146,19 +153,38 @@ function Groups({ tasks, tab, onOpen, onTick, onAdd, ctx }: {
       <EmptyState compact tone="sage" icon={ClipboardList} title={ctx.t("tasks.empty.assigned")} body={ctx.t("tasks.empty.assignedBody")} />
     );
   }
+  const foldLater = groups.length > 1;
   return (
     <>
-      {groups.map((group) => (
-        <div key={group.key} style={{ display: "contents" }}>
-          <div className="section-head section-head--small" style={{ justifyContent: "flex-start", gap: 8 }}>
-            <span>{ctx.t(`tasks.group.${group.key}`)}</span>
-            <span className="tag tag-neutral tag-small">{group.tasks.length}</span>
+      {groups.map((group) => {
+        const folded = group.key === "later" && foldLater && !showLater;
+        return (
+          <div key={group.key} style={{ display: "contents" }}>
+            {group.key === "later" && foldLater ? (
+              <button
+                type="button"
+                className="section-head section-head--small section-head--count routine-done-toggle"
+                aria-expanded={!folded}
+                onClick={() => {
+                  haptic.select();
+                  setShowLater((value) => !value);
+                }}
+              >
+                <span>{ctx.t("tasks.group.later")}</span>
+                <span className="tag tag-neutral tag-small">{group.tasks.length}</span>
+                <ChevronDown size={19} strokeWidth={2.5} className="routine-done-chevron" aria-hidden />
+              </button>
+            ) : (
+              <div className="section-head section-head--small" style={{ justifyContent: "flex-start", gap: 8 }}>
+                <span>{ctx.t(`tasks.group.${group.key}`)}</span>
+                <span className="tag tag-neutral tag-small">{group.tasks.length}</span>
+              </div>
+            )}
+            {!folded &&
+              group.tasks.map((task) => <TaskRow key={task.id} task={task} ctx={ctx} onOpen={() => onOpen(task)} onTick={() => onTick(task)} />)}
           </div>
-          {group.tasks.map((task) => (
-            <TaskRow key={task.id} task={task} ctx={ctx} onOpen={() => onOpen(task)} onTick={() => onTick(task)} />
-          ))}
-        </div>
-      ))}
+        );
+      })}
     </>
   );
 }

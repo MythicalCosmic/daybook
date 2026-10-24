@@ -78,13 +78,16 @@ export function rowMeta(task: Task, ctx: ViewContext): string {
       : t("meta.waitingCheck");
   }
   if (task.status === "returned") return t("meta.sentBack");
-  if (task.blocker) return t("meta.blocked", { reason: t(`blocker.reason.${task.blocker.reason_code}`) });
+  // The reason continues the sentence after the colon: lowercase ("Can't be done: out of stock").
+  if (task.blocker) return t("meta.blocked", { reason: t(`blocker.reason.${task.blocker.reason_code}`).toLocaleLowerCase() });
   if (isLate(task, now)) return t("meta.late", { duration: duration(lateBy(task, now), t) });
   if (task.extension) return t("meta.extension");
   const repeat = repeatLabel(task.repeat_weekdays, ctx);
-  if (task.kind === "assigned" && task.created_by) return t("meta.from", { name: task.created_by.name });
-  if (task.kind === "daily") return repeat ?? t("meta.daily");
-  return repeat ?? t("meta.own");
+  // Started work says so: it otherwise differs from to-do only by the glyph's dot (audit M-7).
+  const started = task.status === "in_progress" ? `${t("status.in_progress")} · ` : "";
+  if (task.kind === "assigned" && task.created_by) return started + t("meta.from", { name: task.created_by.name });
+  if (task.kind === "daily") return started + (repeat ?? t("meta.daily"));
+  return started + (repeat ?? t("meta.own"));
 }
 
 /** Minutes before the deadline when the time chip turns into a countdown ("25 min left"). */
@@ -186,6 +189,32 @@ export function groupTasks(tasks: Task[], now: Date): Group[] {
   ];
   return groups
     .map((group) => ({ ...group, tasks: [...group.tasks].sort(group.key === "attention" || group.key === "todo" ? focus : byDue) }))
+    .filter((group) => group.tasks.length > 0);
+}
+
+export type DayGroup = { key: "attention" | "today" | "tomorrow" | "soon" | "later" | "noDue" | "review" | "done"; tasks: Task[] };
+
+/**
+ * Work by when it's due (audit M-7): what needs attention, then today, tomorrow, the next few
+ * days, later (shown folded), undated; then work being checked and today's finished. A list of
+ * fifteen with inventory counts weeks away no longer buries today's work.
+ */
+export function groupByDay(tasks: Task[], ctx: ViewContext): DayGroup[] {
+  const focus = byFocus(ctx.now);
+  const open = tasks.filter((task) => isOpen(task) && !needsAttention(task, ctx.now));
+  const day = (task: Task) => (task.due_at ? daysFromToday(task.due_at, ctx.now, ctx.timeZone) : null);
+  const groups: DayGroup[] = [
+    { key: "attention", tasks: tasks.filter((task) => needsAttention(task, ctx.now)) },
+    { key: "today", tasks: open.filter((task) => day(task) !== null && day(task)! <= 0) },
+    { key: "tomorrow", tasks: open.filter((task) => day(task) === 1) },
+    { key: "soon", tasks: open.filter((task) => day(task) !== null && day(task)! >= 2 && day(task)! <= 6) },
+    { key: "later", tasks: open.filter((task) => day(task) !== null && day(task)! >= 7) },
+    { key: "noDue", tasks: open.filter((task) => day(task) === null) },
+    { key: "review", tasks: tasks.filter((task) => task.status === "review") },
+    { key: "done", tasks: tasks.filter((task) => task.status === "done") },
+  ];
+  return groups
+    .map((group) => ({ ...group, tasks: [...group.tasks].sort(group.key === "review" || group.key === "done" ? byDue : focus) }))
     .filter((group) => group.tasks.length > 0);
 }
 
