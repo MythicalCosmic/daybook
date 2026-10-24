@@ -1,8 +1,9 @@
 from datetime import date
+from zoneinfo import ZoneInfo
 
 from django.db import transaction
 from django.db.models import Q
-from django.utils import timezone
+from django.utils import timezone, translation
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_field
 from rest_framework import mixins, serializers, status, viewsets
@@ -10,6 +11,7 @@ from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 
 from apps.audit import services as audit
@@ -21,7 +23,7 @@ from apps.members.api import IsCompanyMember, MemberBriefSerializer, requires
 from apps.members.models import Membership, Position
 from apps.members.permissions import Perm
 from apps.reminders.policies import escalation_recipients, policy_for
-from apps.tasks import dashboard, queries, rules, services, stats
+from apps.tasks import dashboard, dates, queries, quickadd, rules, services, stats
 from apps.tasks.models import (
     Activity,
     ChecklistItem,
@@ -63,6 +65,36 @@ class TaskCardSerializer(serializers.Serializer):
     key = serializers.CharField(help_text='The card\'s key, "RENO-14".')
 
 
+class TaskBlockerSerializer(serializers.Serializer):
+    reason_code = serializers.ChoiceField(Task.Blocker.choices)
+    note = serializers.CharField(allow_blank=True)
+    at = serializers.DateTimeField()
+
+
+class TaskExtensionSerializer(serializers.Serializer):
+    until = serializers.DateTimeField()
+    note = serializers.CharField(allow_blank=True)
+    at = serializers.DateTimeField()
+
+
+def blocker_of(task: Task) -> dict | None:
+    """The open "can't do it" of a task (both APIs), or None."""
+    if task.blocked_at is None:
+        return None
+    return {"reason_code": task.blocker, "note": task.blocker_note, "at": task.blocked_at}
+
+
+def extension_of(task: Task) -> dict | None:
+    """The open "need more time" request of a task (both APIs), or None."""
+    if task.extension_until is None:
+        return None
+    return {
+        "until": task.extension_until,
+        "note": task.extension_note,
+        "at": task.extension_asked_at,
+    }
+
+
 class TaskSerializer(serializers.ModelSerializer):
     assignee = MemberBriefSerializer()
     created_by = MemberBriefSerializer(allow_null=True)
@@ -76,6 +108,8 @@ class TaskSerializer(serializers.ModelSerializer):
     reward = MoneySerializerField(allow_null=True, read_only=True)
     proof_thumb = serializers.SerializerMethodField()
     routine = serializers.SerializerMethodField()
+    blocker = serializers.SerializerMethodField()
+    extension = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -107,9 +141,23 @@ class TaskSerializer(serializers.ModelSerializer):
             "confirmed_by",
             "is_overdue",
             "actions",
+            "snoozed_until",
+            "seen_at",
+            "blocker",
+            "extension",
             "created_at",
         )
         read_only_fields = fields
+
+    @extend_schema_field(TaskBlockerSerializer(allow_null=True))
+    def get_blocker(self, task: Task) -> dict | None:
+        """The assignee's "can't do it", while nobody has answered it."""
+        return blocker_of(task)
+
+    @extend_schema_field(TaskExtensionSerializer(allow_null=True))
+    def get_extension(self, task: Task) -> dict | None:
+        """The later deadline the assignee asked for, while nobody has decided."""
+        return extension_of(task)
 
     @extend_schema_field(TaskCardSerializer(allow_null=True))
     def get_card(self, task: Task) -> dict | None:
@@ -281,11 +329,94 @@ class ChecklistToggleSerializer(serializers.Serializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     author = MemberBriefSerializer(allow_null=True, read_only=True)
+    mentions = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        write_only=True,
+        max_length=services.MAX_MENTIONS,
+        help_text="Membership ids of people to notify: on the task or working in its branch.",
+    )
 
     class Meta:
         model = TaskComment
-        fields = ("id", "author", "text", "created_at")
+        fields = ("id", "author", "text", "created_at", "mentions")
         read_only_fields = ("id", "author", "created_at")
+
+
+class TaskParseInputSerializer(serializers.Serializer):
+    text = serializers.CharField(max_length=500, allow_blank=True)
+
+
+class TaskParseSerializer(serializers.Serializer):
+    title = serializers.CharField(help_text="What was typed without the words read as a date.")
+    due_at = serializers.DateTimeField(allow_null=True)
+    due_label = serializers.CharField(
+        allow_null=True,
+        help_text="Ready to show in the person's language: Ertaga, 22-oktabr (payshanba), 18:00.",
+    )
+    priority = serializers.ChoiceField(Task.Priority.choices, allow_null=True)
+    repeat = serializers.ChoiceField(
+        [Repeat.DAILY, Repeat.WEEKDAYS, Repeat.WEEKLY], allow_null=True
+    )
+    repeat_weekdays = serializers.ListField(
+        child=serializers.IntegerField(min_value=0, max_value=6),
+        allow_null=True,
+        help_text="0 = Monday; for weekly, the due day's weekday.",
+    )
+
+
+class SnoozeSerializer(serializers.Serializer):
+    preset = serializers.ChoiceField(
+        services.SNOOZE_PRESETS,
+        required=False,
+        allow_null=True,
+        help_text="15m or 1h hold the reminders (the deadline stays); tomorrow_morning moves "
+        "one's own task to 09:00 tomorrow. Empty: the policy's own length.",
+    )
+
+
+class BlockerReportSerializer(serializers.Serializer):
+    reason_code = serializers.ChoiceField(Task.Blocker.choices)
+    note = serializers.CharField(allow_blank=True, default="", max_length=300)
+
+
+class BlockerResolveSerializer(serializers.Serializer):
+    action = serializers.ChoiceField(services.BlockerAction.ALL)
+    assignee_id = serializers.IntegerField(required=False, allow_null=True)
+    due_at = serializers.DateTimeField(required=False, allow_null=True)
+
+
+class ExtensionRequestSerializer(serializers.Serializer):
+    until = serializers.DateTimeField()
+    note = serializers.CharField(allow_blank=True, default="", max_length=300)
+
+
+class ExtensionDecideSerializer(serializers.Serializer):
+    approve = serializers.BooleanField()
+
+
+class ParseThrottle(UserRateThrottle):
+    """Quick add parses as people type (after a 250 ms pause): generous, but bounded."""
+
+    scope = "task_parse"
+    rate = "120/min"
+
+
+def parsed(text: str, company) -> dict:
+    """What `text` says about when, in the company's time and the caller's language (contract 1
+    of the task-polish backlog; the employee and owner APIs both answer with this)."""
+    local_now = timezone.localtime(timezone.now(), ZoneInfo(company.timezone))
+    lang = translation.get_language()
+    found = quickadd.parse(text, now=local_now, lang=lang)
+    due = found.due_at
+    return {
+        "title": found.title,
+        "due_at": due,
+        "due_label": dates.due_label(due, local_now, lang) if due else None,
+        "priority": found.priority,
+        "repeat": found.repeat,
+        "repeat_weekdays": list(found.repeat_weekdays) if found.repeat_weekdays else None,
+    }
 
 
 class TaskViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -311,6 +442,8 @@ class TaskViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
                 tasks = tasks.filter(assignee=member)
             elif scope == "created":
                 tasks = tasks.filter(created_by=member).exclude(assignee=member)
+        if self.request.query_params.get("given_by") == "me":
+            tasks = tasks.filter(created_by=member).exclude(assignee=member)
         if statuses := self.request.query_params.get("status"):
             tasks = tasks.filter(status__in=statuses.split(","))
         if kind := self.request.query_params.get("kind"):
@@ -338,10 +471,27 @@ class TaskViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
             OpenApiParameter("status", description="Comma-separated statuses."),
             OpenApiParameter("kind", enum=list(Task.Kind.values)),
             OpenApiParameter("q", description="Words in the title or description."),
+            OpenApiParameter(
+                "given_by", enum=["me"], description="me: tasks I gave to someone else."
+            ),
         ]
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
+
+    def retrieve(self, request, *args, **kwargs):
+        """One task. The assignee opening it the first time marks it seen (`seen_at`)."""
+        task = self.get_object()
+        services.mark_seen(task, by=self.membership)
+        return Response(TaskSerializer(task, context=self.get_serializer_context()).data)
+
+    @extend_schema(request=TaskParseInputSerializer, responses=TaskParseSerializer)
+    @action(detail=False, methods=["post"], throttle_classes=[ParseThrottle])
+    def parse(self, request, company_id):
+        """What a quick-add text says (a deadline, a repeat, urgency) and the title without
+        those words. Nothing is saved: the client sends `due_at` when it creates the task."""
+        text = self._validated(TaskParseInputSerializer)["text"]
+        return Response(TaskParseSerializer(parsed(text, self.membership.company)).data)
 
     @extend_schema(
         parameters=[
@@ -399,8 +549,62 @@ class TaskViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
 
     @extend_schema(request=None, responses=TaskSerializer)
     @action(detail=True, methods=["post"])
+    def reopen(self, request, company_id, pk):
+        """Undo a Done: the person who did it, within a minute, before anyone accepted it."""
+        return self._respond(services.reopen_task(self.get_object(), by=self.membership))
+
+    @extend_schema(request=SnoozeSerializer, responses=TaskSerializer)
+    @action(detail=True, methods=["post"])
     def snooze(self, request, company_id, pk):
-        return self._respond(services.snooze_task(self.get_object(), by=self.membership))
+        preset = self._validated(SnoozeSerializer).get("preset")
+        task = services.snooze_task(self.get_object(), by=self.membership, preset=preset)
+        return self._respond(task)
+
+    @extend_schema(request=BlockerReportSerializer, responses=TaskSerializer)
+    @action(detail=True, methods=["post"])
+    def blocker(self, request, company_id, pk):
+        """ "Can't do it": the reminders pause and whoever gave it hears, with the reason."""
+        data = self._validated(BlockerReportSerializer)
+        task = services.report_blocker(
+            self.get_object(),
+            by=self.membership,
+            reason_code=data["reason_code"],
+            note=data["note"],
+        )
+        return self._respond(task)
+
+    @extend_schema(request=BlockerResolveSerializer, responses=TaskSerializer)
+    @action(detail=True, methods=["post"], url_path="blocker/resolve")
+    def resolve_blocker(self, request, company_id, pk):
+        """Answer a "can't do it": someone else (`assignee_id`), a new deadline (`due_at`) or
+        cancel. Whoever gave it, or holds tasks.assign or tasks.confirm for its branch."""
+        data = self._validated(BlockerResolveSerializer)
+        task = services.resolve_blocker(
+            self.get_object(),
+            by=self.membership,
+            action=data["action"],
+            assignee_id=data.get("assignee_id"),
+            due_at=data.get("due_at"),
+        )
+        return self._respond(task)
+
+    @extend_schema(request=ExtensionRequestSerializer, responses=TaskSerializer)
+    @action(detail=True, methods=["post"])
+    def extension(self, request, company_id, pk):
+        """ "Need more time": ask whoever gave it for a later deadline (`until`)."""
+        data = self._validated(ExtensionRequestSerializer)
+        task = services.request_extension(
+            self.get_object(), by=self.membership, until=data["until"], note=data["note"]
+        )
+        return self._respond(task)
+
+    @extend_schema(request=ExtensionDecideSerializer, responses=TaskSerializer)
+    @action(detail=True, methods=["post"], url_path="extension/decide")
+    def decide_extension(self, request, company_id, pk):
+        """Approve (the deadline moves) or decline (it stays) a request for more time."""
+        approve = self._validated(ExtensionDecideSerializer)["approve"]
+        task = services.decide_extension(self.get_object(), by=self.membership, approve=approve)
+        return self._respond(task)
 
     @extend_schema(request=None, responses=TaskSerializer)
     @action(detail=True, methods=["post"])
@@ -467,8 +671,10 @@ class TaskViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
         if request.method == "GET":
             comments = task.comments.select_related("author__user", "author__position")
             return Response(CommentSerializer(comments, many=True).data)
-        text = self._validated(CommentSerializer)["text"]
-        comment = services.add_comment(task, by=self.membership, text=text)
+        data = self._validated(CommentSerializer)
+        comment = services.add_comment(
+            task, by=self.membership, text=data["text"], mentions=data.get("mentions", [])
+        )
         return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
 
     def _validated(self, serializer_class) -> dict:

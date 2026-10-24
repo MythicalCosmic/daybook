@@ -6,6 +6,7 @@ from django.db import models
 from django.db.models import F
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import pgettext_lazy
 
 from apps.companies.models import Branch, TenantModel
 from apps.core.models import TimeStampedModel
@@ -141,9 +142,10 @@ class Task(TenantModel):
     class Status(models.TextChoices):
         TODO = "todo", _("To do")
         IN_PROGRESS = "in_progress", _("In progress")
-        REVIEW = "review", _("Waiting for confirmation")
+        REVIEW = "review", _("Waiting for check")
         RETURNED = "returned", _("Sent back")
-        DONE = "done", _("Done")
+        # Its own context: the projects board's "Done" column is another word in Russian.
+        DONE = "done", pgettext_lazy("task status", "Done")
         CANCELLED = "cancelled", _("Cancelled")
 
     class Priority(models.TextChoices):
@@ -151,6 +153,15 @@ class Task(TenantModel):
         NORMAL = "normal", _("Normal")
         HIGH = "high", _("High")
         URGENT = "urgent", _("Urgent")
+
+    class Blocker(models.TextChoices):
+        """Why the assignee can't do it ("Can't do it", `services.report_blocker`)."""
+
+        NO_STOCK = "no_stock", _("Out of stock")
+        NO_ACCESS = "no_access", _("No access")
+        BROKEN = "broken", _("Something is broken")
+        NOT_MINE = "not_mine", _("Not my task")
+        OTHER = "other", _("Another reason")
 
     # Still the assignee's to do. A returned task is open again: it needs another go.
     OPEN_STATUSES = (Status.TODO, Status.IN_PROGRESS, Status.RETURNED)
@@ -211,6 +222,18 @@ class Task(TenantModel):
     last_nudged_at = models.DateTimeField(
         null=True, blank=True, help_text=_('When a manager last pressed "Nudge now".')
     )
+    seen_at = models.DateTimeField(
+        null=True, blank=True, help_text=_("When the assignee first opened it.")
+    )
+
+    # "Can't do it": the assignee's reason; reminders pause until the giver decides.
+    blocker = models.CharField(max_length=10, choices=Blocker.choices, blank=True)
+    blocker_note = models.CharField(max_length=300, blank=True)
+    blocked_at = models.DateTimeField(null=True, blank=True)
+    # "Need more time": the deadline the assignee asked for, until the giver decides.
+    extension_until = models.DateTimeField(null=True, blank=True)
+    extension_note = models.CharField(max_length=300, blank=True)
+    extension_asked_at = models.DateTimeField(null=True, blank=True)
 
     reward = MoneyField(null=True, blank=True)
     branch = models.ForeignKey(

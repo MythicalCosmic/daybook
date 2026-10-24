@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from datetime import datetime
 
 from django.utils import timezone, translation
 
@@ -7,7 +8,7 @@ from apps.members.models import Membership
 from apps.notifications.tasks import send_telegram_message
 from apps.notifications.telegram import BotName, serialize_markup
 from apps.tasks import bot_messages
-from apps.tasks.models import Task
+from apps.tasks.models import Task, TaskComment
 from apps.tasks.queries import TASK_RELATIONS, reviewers
 
 
@@ -18,9 +19,13 @@ def send_task_assigned(task_id: int) -> None:
     _send(task.assignee, bot_messages.task_assigned, task, timezone.now())
 
 
-def send_task_completed(task_id: int) -> None:
+def send_task_completed(task_id: int, completed_at: str | None = None) -> None:
+    """Tell the reviewer (or whoever gave it). Queued after the undo window with the completion
+    it was for: a Done taken back, or done again since, sends nothing from here."""
     task = _load(task_id)
     if task is None:
+        return
+    if completed_at is not None and task.completed_at != datetime.fromisoformat(completed_at):
         return
     photo = task.proof_photo.name or None
     now = timezone.now()
@@ -50,10 +55,90 @@ def send_task_reviewed(task_id: int) -> None:
 def send_nudge(task_id: int, by_id: int) -> None:
     """The dashboard's "Nudge now": the task's card with who is waiting for it."""
     task = _load(task_id)
-    by = Membership.objects.select_related("user").filter(pk=by_id).first()
+    by = _member(by_id)
     if task is None or by is None or not task.is_open:
         return
     _send(task.assignee, bot_messages.nudge, task, by, timezone.now())
+
+
+def send_comment(comment_id: int, mentioned_ids: list[int]) -> None:
+    """A new comment, to the assignee, whoever gave the task and everyone mentioned; never to
+    the author (research R2 T33/T34)."""
+    comment = TaskComment.objects.select_related("author__user").filter(pk=comment_id).first()
+    if comment is None:
+        return
+    task = _load(comment.task_id)
+    if task is None:
+        return
+    mentioned = set(mentioned_ids)
+    people: dict[int, Membership] = {}
+    for person in (task.assignee, task.created_by):
+        if person is not None:
+            people[person.pk] = person
+    for person in Membership.objects.select_related("user", "company").filter(
+        pk__in=mentioned, company_id=task.company_id
+    ):
+        people.setdefault(person.pk, person)
+    author_id = comment.author_id
+    for person in people.values():
+        if person.pk == author_id:
+            continue
+        on_task = person.pk in (task.assignee_id, task.created_by_id)
+        _send(
+            person,
+            bot_messages.comment_notice,
+            task,
+            comment.text,
+            comment.author,
+            person,
+            person.pk in mentioned and not on_task,
+        )
+
+
+def send_due_changed(task_id: int, old_due: str | None, by_id: int) -> None:
+    task, by = _load(task_id), _member(by_id)
+    if task is None or by is None or not task.is_open:
+        return
+    old = datetime.fromisoformat(old_due) if old_due else None
+    _send(task.assignee, bot_messages.due_changed, task, old, by, timezone.now())
+
+
+def send_task_cancelled(task_id: int, by_id: int) -> None:
+    task, by = _load(task_id), _member(by_id)
+    if task is None or by is None or task.status != Task.Status.CANCELLED:
+        return
+    _send(task.assignee, bot_messages.task_cancelled, task, by)
+
+
+def send_task_taken_away(task_id: int, previous_id: int, by_id: int) -> None:
+    task, previous, by = _load(task_id), _member(previous_id), _member(by_id)
+    if task is None or previous is None or by is None or task.assignee_id == previous.pk:
+        return
+    _send(previous, bot_messages.task_taken_away, task, by)
+
+
+def send_blocked(task_id: int, giver_ids: list[int]) -> None:
+    """ "Can't do it" reaches whoever gave the task, with what they can do about it."""
+    task = _load(task_id)
+    if task is None or task.blocked_at is None:
+        return
+    now = timezone.now()
+    for giver in Membership.objects.select_related("user", "company").filter(pk__in=giver_ids):
+        _send(giver, bot_messages.blocked_notice, task, giver, now)
+
+
+def send_blocker_resolved(task_id: int, action: str, by_id: int, reporter_id: int) -> None:
+    task, by, reporter = _load(task_id), _member(by_id), _member(reporter_id)
+    if task is None or by is None or reporter is None:
+        return
+    _send(reporter, bot_messages.blocker_answer, task, action, by, timezone.now())
+
+
+def send_extension_decided(task_id: int, approved: bool, by_id: int, until: str) -> None:
+    task, by = _load(task_id), _member(by_id)
+    if task is None or by is None or not task.is_open:
+        return
+    _send(task.assignee, bot_messages.extension_answer, task, approved, by, timezone.now())
 
 
 def send_onboarding(member_id: int, task_ids: list[int]) -> None:
@@ -97,6 +182,10 @@ def _send(
     send_telegram_message.delay(
         BotName.EMPLOYEE, user.telegram_id, text, serialize_markup(markup), photo
     )
+
+
+def _member(member_id: int) -> Membership | None:
+    return Membership.objects.select_related("user", "company").filter(pk=member_id).first()
 
 
 def _load(task_id: int) -> Task | None:

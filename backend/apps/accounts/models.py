@@ -30,6 +30,17 @@ class User(AbstractUser):
         blank=True,
         help_text=_("When Telegram said this person blocked the owner bot."),
     )
+    bot_company = models.ForeignKey(
+        "companies.Company",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        help_text=_(
+            "For someone in several companies: the one the employee bot's lists and new tasks "
+            "use. Empty: the one with the most open work for them."
+        ),
+    )
     photo = models.ImageField(upload_to="avatars/", blank=True)
     photo_checked_at = models.DateTimeField(
         null=True, blank=True, help_text=_("When the Telegram profile photo was last fetched.")

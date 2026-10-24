@@ -1,3 +1,6 @@
+from functools import partial
+
+from django.db import transaction
 from drf_spectacular.utils import extend_schema, extend_schema_field
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
@@ -10,6 +13,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from apps.accounts.models import User
 from apps.accounts.services import sync_telegram_user
+from apps.accounts.tasks import relabel_employee_chat
 from apps.accounts.telegram_auth import InvalidInitData, validate_init_data
 from apps.members.api import MembershipSerializer
 from apps.members.models import Membership
@@ -95,10 +99,17 @@ class TelegramAuthView(APIView):
 
 
 class MeView(RetrieveUpdateAPIView):
-    """The signed-in person, with every membership. Only `language` can be changed."""
+    """The signed-in person, with every membership. Only `language` can be changed; a new one
+    relabels the person's chat with the employee bot too (its menus and keyboard)."""
 
     serializer_class = MeSerializer
     http_method_names = ("get", "patch", "options")
 
     def get_object(self):
         return self.request.user
+
+    def perform_update(self, serializer):
+        before = serializer.instance.language
+        user = serializer.save()
+        if user.language != before:
+            transaction.on_commit(partial(relabel_employee_chat.delay, user.pk))
