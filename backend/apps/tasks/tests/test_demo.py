@@ -33,6 +33,15 @@ def test_the_demo_fills_every_page(company, demo_people):
     ).exists()
     people["nigora"].user.refresh_from_db()
     assert people["nigora"].user.employee_bot_blocked_at is not None
+    # Tonight's task features have something to show: a "can't do it" waiting for the owner, a
+    # request for more time and "seen" receipts, all dated in order.
+    blocked = tasks.get(blocked_at__isnull=False)
+    assert blocked.blocker == Task.Blocker.BROKEN and blocked.next_reminder_at is None
+    assert blocked.created_at < blocked.seen_at < blocked.blocked_at < timezone.now()
+    asked = tasks.get(extension_until__isnull=False)
+    assert asked.created_at < asked.seen_at < asked.extension_asked_at < timezone.now()
+    assert asked.extension_until > asked.due_at
+    assert tasks.filter(kind=Task.Kind.ASSIGNED, seen_at__isnull=False).count() >= 3
     # Fridge readings are written down inside the cold chain's range.
     readings = tasks.filter(template__title=demo_plan.FRIDGE_EVENING).exclude(proof_text="")
     assert readings.exists()

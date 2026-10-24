@@ -22,6 +22,7 @@ from apps.audit.models import AuditLog
 from apps.core import demo_plan, uploads
 from apps.members.models import Membership
 from apps.reminders.models import ReminderLog, ReminderPolicy, ReminderText
+from apps.tasks.audit_actions import TasksAction
 from apps.tasks.models import Activity, ChecklistItem, Proof, Task, TaskComment, TaskTemplate
 
 HISTORY_DAYS = 60  # two months: the reports compare a month with the one before
@@ -600,6 +601,7 @@ def _given(company, story, people, now, rng, strict) -> None:
         on_day("manager", next_day("manager"), 17),
         priority=Task.Priority.HIGH,
         description="Dori saqlash xonasida harorat 24\u00a0°C ga yetdi. Usta chaqiring.",
+        seen_at=now - timedelta(hours=19, minutes=30),
     )
     back = next_day("madina", story.day(1))
     given(
@@ -663,6 +665,47 @@ def _given(company, story, people, now, rng, strict) -> None:
         by=owner,
         priority=Task.Priority.HIGH,
     )
+    # Madina couldn't print the day's report at closing: the receipt printer jams. Its reminders
+    # wait until the owner decides (someone else, a new time or cancel).
+    report_due = on_day("madina", last_day("madina"), 21, 30)
+    jammed = given(
+        "Kassa apparatidan kunlik Z-hisobotni chiqarish",
+        "madina",
+        report_due,
+        priority=Task.Priority.HIGH,
+        seen_at=report_due - timedelta(hours=6),
+        blocker=Task.Blocker.BROKEN,
+        blocker_note="Чековый принтер зажёвывает бумагу, отчёт не печатается.",
+        blocked_at=report_due - timedelta(minutes=25),
+    )
+    if jammed is not None:
+        _history(TasksAction.BLOCKED, jammed, jammed.assignee, jammed.blocked_at, reason="broken")
+    # Alisher asks for more time on today's delivery: the supplier comes after lunch.
+    delivery_day = today if story.works("worker", today) else next_day("worker")
+    delivery_due = on_day("worker", delivery_day, 12)
+    asked_from = min(delivery_due, now) - timedelta(hours=20)  # when `given` dates the task
+    delivery = given(
+        "Distribyutordan kelgan dorilarni qabul qilib, javonlarga joylash",
+        "worker",
+        delivery_due,
+        checklist=[
+            ("Yuk xati bilan solishtirish", False),
+            ("Sovuq zanjir dorilari muzlatgichga", False),
+        ],
+        seen_at=asked_from + timedelta(minutes=12),
+        extension_until=delivery_due + timedelta(hours=4),
+        extension_note="Yetkazib beruvchi tushdan keyin keladi.",
+        extension_asked_at=asked_from + timedelta(hours=1, minutes=10),
+    )
+    if delivery is not None:
+        asked = [audit.plain(delivery.due_at), audit.plain(delivery.extension_until)]
+        _history(
+            TasksAction.EXTENSION_ASKED,
+            delivery,
+            delivery.assignee,
+            delivery.extension_asked_at,
+            changes={"due_at": asked},
+        )
 
     # The head's own to-do list: personal, so only owners (with the setting on) see it.
     own_day = today if story.works("manager", today) else next_day("manager")
