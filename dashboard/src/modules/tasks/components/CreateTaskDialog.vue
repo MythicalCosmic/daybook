@@ -234,7 +234,7 @@ async function submit(): Promise<void> {
           class="-mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-[10px] border border-dashed border-line-strong bg-surface-2 px-2.5 py-1.5 text-sm"
           role="status"
           :aria-label="t('tasks.quick.understood')"
-          data-testid="quick-add"
+          data-testid="quick-add-understood"
         >
           <span v-if="understood.title" class="inline-flex min-w-0 items-center gap-1 font-medium text-fg">
             <Sparkles :size="13" class="shrink-0 text-accent-fg" aria-hidden="true" /><span class="truncate">{{ understood.title }}</span>

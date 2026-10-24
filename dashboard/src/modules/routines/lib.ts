@@ -51,7 +51,6 @@ export function share(part: number, whole: number): number | null {
   return value;
 }
 
-/** A percent with decimals shown whole by the same rule: 99.6 reads 99, 0.3 reads 1. */
 /**
  * A routine's last 30 days as Team results reads people: the share done on time is the headline
  * (late runs count as done, so "done" alone stays green for a delivery that's late every other day),
@@ -68,6 +67,7 @@ export function onTimeShare(stats: RoutineStats | null): { percent: number; late
   };
 }
 
+/** A percent with decimals shown whole by the same rule: 99.6 reads 99, 0.3 reads 1. */
 export function wholePercent(value: number): number {
   const rounded = Math.round(value);
   if (value < 100 && rounded >= 100) return 99;

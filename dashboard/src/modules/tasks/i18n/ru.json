@@ -87,7 +87,7 @@
   "tasks.field.branch": "Филиал",
   "tasks.field.routine": "Регулярная задача",
   "tasks.field.givenBy": "Кто поручил",
-  "tasks.field.confirmedBy": "Проверил",
+  "tasks.field.confirmedBy": "Кто проверил",
   "tasks.field.created": "Создана",
   "tasks.field.status": "Статус",
   "tasks.due.none": "Без срока",
@@ -307,8 +307,8 @@
   "tasks.blocker.title": "{name}: не может выполнить задачу",
   "tasks.blocker.reason.no_stock": "Нет товара",
   "tasks.blocker.reason.no_access": "Нет доступа",
-  "tasks.blocker.reason.broken": "Что-то сломалось",
-  "tasks.blocker.reason.not_mine": "Это не его задача",
+  "tasks.blocker.reason.broken": "Сломалось оборудование",
+  "tasks.blocker.reason.not_mine": "Это не моя задача",
   "tasks.blocker.reason.other": "Другая причина",
   "tasks.blocker.paused": "Напоминания приостановлены",
   "tasks.blocker.reassign": "Передать другому",
@@ -347,5 +347,6 @@
   "tasks.widget.reviewShort": "на проверке",
   "tasks.widget.answersShort": "ждут ответа",
   "tasks.reviews.decidedElsewhere": "Её уже проверил другой руководитель",
-  "tasks.kpi.reviewOldest": "Разовые задачи · самая старая ждёт: {time}"
+  "tasks.kpi.reviewOldest": "Разовые задачи · самая старая ждёт: {time}",
+  "tasks.quoted": "«{text}»"
 }

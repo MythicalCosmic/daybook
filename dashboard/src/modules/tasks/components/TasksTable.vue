@@ -24,7 +24,7 @@ import { useFormat } from "@/lib/useFormat";
 import { usePermission } from "@/lib/usePermission";
 
 import { useBulk, useTaskList, useTaskOptions } from "../api";
-import { cardKey } from "../meta";
+import { cardKey, isUnseen } from "../meta";
 import type { BulkAction, BulkInput, TaskPriority, TaskRow } from "../types";
 import { PRIORITIES } from "../types";
 import DueLabel from "./DueLabel.vue";
@@ -182,7 +182,7 @@ async function reassignMany(selected: string[], clear: () => void): Promise<void
     </template>
     <template #cell-seen_at="{ row }">
       <span v-if="row.seen_at" class="inline-flex items-center gap-1 text-sm tabular-nums text-muted" :title="fmt.instant(row.seen_at, 'datetime')"><Eye :size="13" aria-hidden="true" />{{ fmt.instant(row.seen_at, "short") }}</span>
-      <span v-else-if="row.kind !== 'personal' && (row.status === 'todo' || row.status === 'returned')" class="inline-flex items-center gap-1 text-sm text-subtle"><EyeOff :size="13" aria-hidden="true" />{{ t("tasks.seen.not") }}</span>
+      <span v-else-if="isUnseen(row)" class="inline-flex items-center gap-1 text-sm text-subtle"><EyeOff :size="13" aria-hidden="true" />{{ t("tasks.seen.not") }}</span>
       <span v-else class="text-subtle">—</span>
     </template>
     <template #cell-assignee="{ row }">

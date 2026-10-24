@@ -5,7 +5,7 @@ import type { Component } from "vue";
 
 import type { StatusTone } from "@/components/StatusPill.vue";
 
-import type { BoardColumnId, TaskPriority, TaskStatus } from "./types";
+import type { BoardColumnId, TaskKind, TaskPriority, TaskStatus } from "./types";
 
 export const STATUS_TONE: Record<TaskStatus, StatusTone> = {
   todo: "neutral",
@@ -55,6 +55,15 @@ export function boardOrder<T extends { status: TaskStatus; is_overdue: boolean; 
     .map((item, index) => ({ item, index }))
     .sort((a, b) => rank(a.item) - rank(b.item) || a.index - b.index)
     .map(({ item }) => item);
+}
+
+/**
+ * Given work its person hasn't opened yet (contract 10): assigned work still to do or sent back,
+ * with `seen_at` null. Done, started or routine work without it isn't "unseen" (finished from a
+ * reminder's button, or from before "seen" existed), nor is a row from a backend without the field.
+ */
+export function isUnseen(task: { kind: TaskKind; status: TaskStatus; seen_at?: string | null }): boolean {
+  return task.kind === "assigned" && task.seen_at === null && (task.status === "todo" || task.status === "returned");
 }
 
 /** A board card's key as the project board and the bot write it ("OPEN-14"; "OPEN" until numbered). */

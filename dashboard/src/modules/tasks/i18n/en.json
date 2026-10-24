@@ -285,7 +285,7 @@
   "tasks.reviews.routines": "{n} routine tasks are waiting for a check on their own page | {n} routine task is waiting for a check on its own page | {n} routine tasks are waiting for a check on their own page",
   "tasks.reviews.toRoutines": "Routines: to check",
   "tasks.bulk.cancel": "Cancel tasks",
-  "tasks.quick.hint": "You can write when, too: «Count the till tomorrow 18:00 !!»",
+  "tasks.quick.hint": "You can write when, too: “Order insulin tomorrow 18:00 !!”",
   "tasks.quick.understood": "Understood from the title",
   "tasks.quick.notDate": "Not a date",
   "tasks.quick.notDateHint": "Keep these words in the title",
@@ -307,8 +307,8 @@
   "tasks.blocker.title": "{name} can't do this task",
   "tasks.blocker.reason.no_stock": "Out of stock",
   "tasks.blocker.reason.no_access": "No access",
-  "tasks.blocker.reason.broken": "Something is broken",
-  "tasks.blocker.reason.not_mine": "Not their task",
+  "tasks.blocker.reason.broken": "Equipment broken",
+  "tasks.blocker.reason.not_mine": "Not my task",
   "tasks.blocker.reason.other": "Another reason",
   "tasks.blocker.paused": "Reminders are paused",
   "tasks.blocker.reassign": "Give to someone else",
@@ -347,5 +347,6 @@
   "tasks.widget.reviewShort": "to check",
   "tasks.widget.answersShort": "wait for you",
   "tasks.reviews.decidedElsewhere": "Someone else already checked it",
-  "tasks.kpi.reviewOldest": "One-off tasks · the oldest has waited {time}"
+  "tasks.kpi.reviewOldest": "One-off tasks · the oldest has waited {time}",
+  "tasks.quoted": "“{text}”"
 }

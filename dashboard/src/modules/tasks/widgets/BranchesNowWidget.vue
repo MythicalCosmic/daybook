@@ -90,7 +90,7 @@ const rows = computed(() => {
         <p class="min-w-[120px] flex-1 truncate text-sm font-semibold text-fg" :title="row.branch.name">{{ row.branch.name }}</p>
         <div class="flex flex-wrap items-center gap-1.5 text-sm tabular-nums">
           <RouterLink v-if="row.done" :to="row.done.to" class="pressable inline-flex h-7 items-center gap-1 rounded-full px-2 text-muted hover:bg-highlight hover:text-fg" :title="t('tasks.kpi.doneToday')">
-            <CircleCheck :size="14" class="text-success" aria-hidden="true" /><span class="font-semibold text-fg">{{ row.done.value }}</span><span class="max-sm:hidden">{{ t("tasks.widget.doneShort") }}</span>
+            <CircleCheck :size="14" class="text-success" aria-hidden="true" /><span class="font-semibold text-fg">{{ row.done.value }}</span><span class="max-sm:sr-only">{{ t("tasks.widget.doneShort") }}</span>
           </RouterLink>
           <RouterLink
             v-if="row.late"
@@ -99,7 +99,7 @@ const rows = computed(() => {
             :title="t('tasks.kpi.lateNow')"
             data-stat="late"
           >
-            <AlarmClock :size="14" aria-hidden="true" />{{ row.late.value }}<span class="max-sm:hidden">{{ t("tasks.widget.lateShort") }}</span>
+            <AlarmClock :size="14" aria-hidden="true" />{{ row.late.value }}<span class="max-sm:sr-only">{{ t("tasks.widget.lateShort") }}</span>
           </RouterLink>
           <RouterLink
             v-if="row.review"
@@ -108,7 +108,7 @@ const rows = computed(() => {
             :title="t('tasks.kpi.review')"
             data-stat="review"
           >
-            <Hourglass :size="14" aria-hidden="true" />{{ row.review.value }}<span class="max-sm:hidden">{{ t("tasks.widget.reviewShort") }}</span>
+            <Hourglass :size="14" aria-hidden="true" />{{ row.review.value }}<span class="max-sm:sr-only">{{ t("tasks.widget.reviewShort") }}</span>
           </RouterLink>
           <RouterLink
             v-if="row.answers"
@@ -117,7 +117,7 @@ const rows = computed(() => {
             :title="t('tasks.answers.title')"
             data-stat="answers"
           >
-            <MessageCircleQuestion :size="14" aria-hidden="true" />{{ row.answers.value }}<span class="max-sm:hidden">{{ t("tasks.widget.answersShort") }}</span>
+            <MessageCircleQuestion :size="14" aria-hidden="true" />{{ row.answers.value }}<span class="max-sm:sr-only">{{ t("tasks.widget.answersShort") }}</span>
           </RouterLink>
         </div>
       </li>

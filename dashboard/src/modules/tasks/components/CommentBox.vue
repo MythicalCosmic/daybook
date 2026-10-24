@@ -2,10 +2,12 @@
 /**
  * The drawer's comment box with @mentions (contract 5): typing "@" lists the task's people (who
  * does it, who gave it, the branch team); picking one writes "@Name" and the comment then tells
- * them in Telegram as well. ↑/↓ move, Enter or Tab picks, Esc closes; ⌘/Ctrl+Enter sends.
+ * them in Telegram as well. ↑/↓ move, Enter or Tab picks, Esc closes; ⌘/Ctrl+Enter sends. The
+ * field points at the list and its active person (`aria-controls`, `aria-activedescendant`), so a
+ * screen reader follows the arrows.
  */
 import { AtSign, Send } from "@lucide/vue";
-import { computed, nextTick, ref } from "vue";
+import { computed, nextTick, ref, useId } from "vue";
 import { useI18n } from "vue-i18n";
 
 import IconButton from "@/components/IconButton.vue";
@@ -29,6 +31,8 @@ const area = ref<InstanceType<typeof TextArea> | null>(null);
 const picked = ref<Map<number, string>>(new Map());
 const query = ref<string | null>(null);
 const active = ref(0);
+const listId = useId();
+const optionId = (index: number) => `${listId}-${index}`;
 
 const fold = (value: string) => value.toLocaleLowerCase().replace(/[‘’ʻʼ'`]/g, "");
 const matches = computed(() => {
@@ -110,24 +114,28 @@ defineExpose({ clear, focus: () => textarea()?.focus() });
 
 <template>
   <form class="relative flex items-end gap-2" @submit.prevent="send">
+    <!-- The field keeps the focus: the options are picked with the keys or a press, never tabbed to. -->
     <ul
       v-if="open"
+      :id="listId"
       class="absolute bottom-full left-0 z-10 mb-1.5 flex max-h-64 w-[min(100%,320px)] flex-col overflow-y-auto rounded-[10px] border border-line bg-surface p-1 shadow-raised"
       role="listbox"
       :aria-label="t('tasks.comments.mention')"
       data-testid="mention-list"
     >
-      <li v-for="(person, index) in matches" :key="person.id" role="option" :aria-selected="index === active">
-        <button
-          type="button"
-          :class="['flex w-full min-w-0 items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-sm', index === active ? 'bg-highlight' : 'hover:bg-highlight']"
-          @mousedown.prevent="pick(person)"
-          @mouseenter="active = index"
-        >
-          <UserAvatar :name="person.name" :src="person.photo_url" :size="22" />
-          <span class="min-w-0 flex-1 truncate font-medium text-fg">{{ person.name }}</span>
-          <span v-if="person.subtitle" class="max-w-[45%] shrink-0 truncate text-xs text-muted">{{ person.subtitle }}</span>
-        </button>
+      <li
+        v-for="(person, index) in matches"
+        :id="optionId(index)"
+        :key="person.id"
+        role="option"
+        :aria-selected="index === active"
+        :class="['flex w-full min-w-0 cursor-pointer items-center gap-2 rounded-[7px] px-2 py-1.5 text-left text-sm', index === active ? 'bg-highlight' : 'hover:bg-highlight']"
+        @mousedown.prevent="pick(person)"
+        @mouseenter="active = index"
+      >
+        <UserAvatar :name="person.name" :src="person.photo_url" :size="22" />
+        <span class="min-w-0 flex-1 truncate font-medium text-fg">{{ person.name }}</span>
+        <span v-if="person.subtitle" class="max-w-[45%] shrink-0 truncate text-xs text-muted">{{ person.subtitle }}</span>
       </li>
     </ul>
     <TextArea
@@ -138,6 +146,9 @@ defineExpose({ clear, focus: () => textarea()?.focus() });
       :placeholder="placeholder ?? t('tasks.comments.placeholder')"
       class="flex-1"
       data-testid="comment-text"
+      aria-autocomplete="list"
+      :aria-controls="open ? listId : undefined"
+      :aria-activedescendant="open ? optionId(active) : undefined"
       @input="readQuery"
       @click="readQuery"
       @keydown="onKeydown"

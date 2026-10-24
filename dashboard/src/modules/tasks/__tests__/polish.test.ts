@@ -153,7 +153,7 @@ describe("quick add in New task (contract 1)", () => {
     const { calls, wrapper } = await open({ "POST tasks/parse/": () => json(parsed) });
     await type("Ertaga 15:00 dorilarni sanash !!");
     expect(calls.filter((c) => c.url.endsWith("/tasks/parse/")).map((c) => c.body)).toEqual([{ text: "Ertaga 15:00 dorilarni sanash !!" }]);
-    const line = document.body.querySelector("[data-testid=quick-add]")!.textContent ?? "";
+    const line = document.body.querySelector("[data-testid=quick-add-understood]")!.textContent ?? "";
     expect(line).toContain("Dorilarni sanash");
     expect(line).toContain("Tomorrow, 26 Oct (Mon), 15:00");
     expect(line).toContain("Urgent");
@@ -169,7 +169,7 @@ describe("quick add in New task (contract 1)", () => {
     await type("Ertaga 15:00 dorilarni sanash !!");
     document.body.querySelector<HTMLButtonElement>("[data-testid=quick-add-dismiss]")!.click();
     await nextTick();
-    expect(document.body.querySelector("[data-testid=quick-add]")).toBeNull();
+    expect(document.body.querySelector("[data-testid=quick-add-understood]")).toBeNull();
     expect(document.body.querySelector("[data-testid=due-parsed]")).toBeNull();
     wrapper.unmount();
   });
@@ -177,7 +177,7 @@ describe("quick add in New task (contract 1)", () => {
   it("says nothing when nothing was understood, and stops asking a backend without the endpoint", async () => {
     const { calls, wrapper } = await open({});
     await type("Kassa hisoboti ertaga");
-    expect(document.body.querySelector("[data-testid=quick-add]")).toBeNull();
+    expect(document.body.querySelector("[data-testid=quick-add-understood]")).toBeNull();
     await type("Kassa hisoboti ertaga 18:00");
     expect(calls.filter((c) => c.url.endsWith("/tasks/parse/"))).toHaveLength(1);
     // A failed read never toasts: typing must not pop errors.

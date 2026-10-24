@@ -219,7 +219,6 @@ function open(task: { id: number }): void {
   patchQuery(router, { task: String(task.id) }, true);
 }
 
-/** Nothing was reported: fine when nothing was asked, worth a look when a photo or note was. */
 /** How late the work came in (R2 T29), or null when it was on time or had no deadline. */
 function lateBy(task: TaskReview): string | null {
   if (!task.due_at || !task.completed_at) return null;
@@ -228,6 +227,7 @@ function lateBy(task: TaskReview): string | null {
   return t("tasks.due.lateBy", { time: lateness(minutes, { min: t("tasks.unit.min"), h: t("tasks.unit.h"), d: t("tasks.unit.d") }) });
 }
 
+/** Nothing was reported: fine when nothing was asked, worth a look when a photo or note was. */
 const missing = (task: TaskReview) => (task.proof === "none" ? { text: t("tasks.reviews.noProof"), warn: false } : { text: t("tasks.reviews.noPhoto"), warn: true });
 </script>
 
@@ -261,10 +261,10 @@ const missing = (task: TaskReview) => (task.proof === "none" ? { text: t("tasks.
             <p class="mt-0.5 text-sm text-muted">
               <span class="font-medium text-fg">{{ item.task.assignee.name }}</span>
               <template v-if="item.kind === 'extension' && item.task.extension">
-                · {{ t("tasks.extension.until", { time: fmt.instant(item.task.extension.until, "short") }) }}<template v-if="item.task.extension.note"> · «{{ item.task.extension.note }}»</template>
+                · {{ t("tasks.extension.until", { time: fmt.instant(item.task.extension.until, "short") }) }}<template v-if="item.task.extension.note"> · {{ t("tasks.quoted", { text: item.task.extension.note }) }}</template>
               </template>
               <template v-else-if="item.task.blocker">
-                · {{ t(`tasks.blocker.reason.${item.task.blocker.reason_code}`) }}<template v-if="item.task.blocker.note"> · «{{ item.task.blocker.note }}»</template>
+                · {{ t(`tasks.blocker.reason.${item.task.blocker.reason_code}`) }}<template v-if="item.task.blocker.note"> · {{ t("tasks.quoted", { text: item.task.blocker.note }) }}</template>
               </template>
             </p>
           </div>

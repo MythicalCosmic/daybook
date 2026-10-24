@@ -49,7 +49,7 @@ import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
 import { tasksApi, taskKeys, useRefreshTasks, useTaskDetail, useTaskMutation, useTaskOptions } from "../api";
-import { cardKey, highlightMentions, lateness, minutesBetween, reminderLag, zonedIso, zonedParts } from "../meta";
+import { cardKey, highlightMentions, isUnseen, lateness, minutesBetween, reminderLag, zonedIso, zonedParts } from "../meta";
 import type { BlockerAction, TaskDetail, TaskPriority, TaskUpdateInput } from "../types";
 import { PRIORITIES } from "../types";
 import CommentBox, { type MentionPerson } from "./CommentBox.vue";
@@ -279,7 +279,12 @@ const mentionable = computed<MentionPerson[]>(() => {
   }
   return out;
 });
-// Keyboard, while a task is open: C writes a comment, E changes the deadline (R2 T45).
+// Keyboard, while a task is open: C writes a comment, E changes the deadline (R2 T45). The drawer
+// is itself a dialog, so these answer inside it, but only while nothing is open above it (a
+// confirm, a popover, the reassign picker).
+function drawerOnTop(): boolean {
+  return document.querySelectorAll('[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]').length <= 1;
+}
 useHotkey(
   "c",
   async () => {
@@ -287,9 +292,14 @@ useHotkey(
     await nextTick();
     commentBox.value?.focus();
   },
-  { description: "tasks.keys.comment", group: "page", enabled: () => !!task.value && can("comment") },
+  { description: "tasks.keys.comment", group: "page", allowInDialogs: true, enabled: () => !!task.value && can("comment") && drawerOnTop() },
 );
-useHotkey("e", () => (dueOpen.value = true), { description: "tasks.keys.due", group: "page", enabled: () => !!task.value && can("edit") });
+useHotkey("e", () => (dueOpen.value = true), {
+  description: "tasks.keys.due",
+  group: "page",
+  allowInDialogs: true,
+  enabled: () => !!task.value && can("edit") && drawerOnTop(),
+});
 
 /** Every name an @mention in this task's comments may carry (the writer's own included). */
 const knownNames = computed(() => {
@@ -316,14 +326,18 @@ const reminderNext = computed(() => {
   return { text: t("tasks.reminders.stuck", { time: lateness(lag, words) }), stuck: true };
 });
 
-/** Assigned work only: when the assignee first opened it (contract 10); hidden on older backends. */
+/**
+ * When the assignee first opened it (contract 10); hidden on older backends. "Not opened yet" is
+ * said only of given work still waiting to be done: work finished from a reminder's button, a
+ * routine run or a task from before "seen" existed has no `seen_at` either, and isn't unseen.
+ */
 const seen = computed(() => {
   const current = task.value;
   if (!current || current.kind === "personal" || !("seen_at" in current)) return null;
   if (current.seen_at) return { at: current.seen_at, text: t("tasks.seen.at", { time: fmt.instant(current.seen_at, "short") }), late: false };
+  if (!isUnseen(current)) return null;
   // Not opened 30 minutes after it was given: worth a nudge.
-  const waited = minutesBetween(current.created_at, new Date());
-  return { at: null, text: t("tasks.seen.not"), late: waited > 30 && (current.status === "todo" || current.status === "returned") };
+  return { at: null, text: t("tasks.seen.not"), late: minutesBetween(current.created_at, new Date()) > 30 };
 });
 
 /** When finished work was handed in (waiting for a check counts), and how late, if it was. */
@@ -452,7 +466,7 @@ const formatAudit = (field: string, value: unknown) => {
             <div class="min-w-0 flex-1">
               <p class="text-sm font-semibold text-fg">{{ t("tasks.blocker.title", { name: task.assignee.name }) }}</p>
               <p class="mt-0.5 text-sm text-fg">
-                <span class="font-medium">{{ t(`tasks.blocker.reason.${task.blocker.reason_code}`) }}</span><template v-if="task.blocker.note">: «{{ task.blocker.note }}»</template>
+                <span class="font-medium">{{ t(`tasks.blocker.reason.${task.blocker.reason_code}`) }}</span><template v-if="task.blocker.note">: {{ t("tasks.quoted", { text: task.blocker.note }) }}</template>
               </p>
               <p class="mt-1 text-xs text-muted">{{ t("tasks.blocker.paused") }} · <RelativeTime :value="task.blocker.at" /></p>
             </div>
@@ -466,11 +480,11 @@ const formatAudit = (field: string, value: unknown) => {
                 <UiButton size="sm" variant="primary" :disabled="!blockedTo" @click="blockerReassign">{{ t("tasks.blocker.reassign") }}</UiButton>
               </div>
             </UiPopover>
-            <UiPopover v-if="can('edit')" :open="blockedOpen === 'due'" width="300px" @update:open="(value: boolean) => (blockedOpen = value ? 'due' : null)">
+            <UiPopover v-if="can('edit')" :open="blockedOpen === 'due'" width="320px" @update:open="(value: boolean) => (blockedOpen = value ? 'due' : null)">
               <template #trigger><UiButton size="sm" :icon="CalendarClock">{{ t("tasks.blocker.newDue") }}</UiButton></template>
               <div class="flex flex-col gap-2">
                 <p class="text-sm font-semibold text-fg">{{ t("tasks.blocker.newDue") }}</p>
-                <div class="grid grid-cols-[1fr_110px] gap-2">
+                <div class="grid grid-cols-[1fr_124px] gap-2">
                   <DatePicker v-model="blockedDay" :min="todayIn(company.timezone)" size="sm" />
                   <TimePicker v-model="blockedTime" :step="15" size="sm" />
                 </div>
@@ -488,7 +502,7 @@ const formatAudit = (field: string, value: unknown) => {
             <div class="min-w-0 flex-1">
               <p class="text-sm font-semibold text-fg">{{ t("tasks.extension.title", { name: task.assignee.name }) }}</p>
               <p class="mt-0.5 text-sm text-fg">
-                {{ t("tasks.extension.until", { time: fmt.instant(task.extension.until, "short") }) }}<template v-if="task.extension.note"> · «{{ task.extension.note }}»</template>
+                {{ t("tasks.extension.until", { time: fmt.instant(task.extension.until, "short") }) }}<template v-if="task.extension.note"> · {{ t("tasks.quoted", { text: task.extension.note }) }}</template>
               </p>
               <p class="mt-1 text-xs text-muted"><RelativeTime :value="task.extension.at" /></p>
             </div>
@@ -538,11 +552,11 @@ const formatAudit = (field: string, value: unknown) => {
           <dt class="text-muted">{{ t("tasks.field.due_at") }}</dt>
           <dd class="flex min-w-0 items-center gap-2">
             <DueLabel :due="task.due_at" :overdue="task.is_overdue" />
-            <UiPopover v-if="can('edit')" v-model:open="dueOpen" width="300px">
+            <UiPopover v-if="can('edit')" v-model:open="dueOpen" width="320px">
               <template #trigger><IconButton :icon="Pencil" :label="t('tasks.due.change')" size="sm" /></template>
               <div class="flex flex-col gap-2">
                 <p class="text-sm font-semibold text-fg">{{ t("tasks.due.change") }}</p>
-                <div class="grid grid-cols-[1fr_110px] gap-2">
+                <div class="grid grid-cols-[1fr_124px] gap-2">
                   <DatePicker v-model="dueDay" :min="todayIn(company.timezone)" size="sm" />
                   <TimePicker v-model="dueTime" :step="15" size="sm" />
                 </div>

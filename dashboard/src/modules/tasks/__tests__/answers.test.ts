@@ -4,16 +4,13 @@
 import "@/core/modules";
 
 import { flushPromises } from "@vue/test-utils";
-import { createPinia, setActivePinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 
 import { confirmQueue } from "@/components/useConfirm";
 import { toasts } from "@/components/useToast";
 import { mergeModuleMessages } from "@/i18n";
-import { useCompanyStore } from "@/stores/company";
-import { useSessionStore } from "@/stores/session";
-import { company, json, manager, me } from "@/test/fixtures";
+import { json } from "@/test/fixtures";
 import { mountWithProviders, testApp } from "@/test/plugins";
 
 import TaskDrawer from "../components/TaskDrawer.vue";
@@ -121,7 +118,8 @@ describe("the drawer: can't do it (contract 7)", () => {
     const { wrapper } = await openDrawer(blocked);
     const panel = document.body.querySelector("[data-testid=blocker]")!.textContent ?? "";
     expect(panel).toContain("Alisher Valiyev can't do this task");
-    expect(panel).toContain("Something is broken: «The fridge thermometer is dead»");
+    // The worker's reason as the app names it, the note in English quotation marks.
+    expect(panel).toContain("Equipment broken: “The fridge thermometer is dead”");
     expect(panel).toContain("Reminders are paused");
     expect(buttons().filter((b) => b.textContent?.trim() === "Reassign")).toHaveLength(0);
     expect(button("Nudge now")).toBeUndefined();
@@ -155,7 +153,7 @@ describe("the drawer: need more time (contract 8)", () => {
     const { calls, wrapper } = await openDrawer(asked, { "POST tasks/7/extension/decide/": () => json(detail()) });
     const panel = document.body.querySelector("[data-testid=extension]")!.textContent ?? "";
     expect(panel).toContain("Alisher Valiyev asks for more time");
-    expect(panel).toContain("«The delivery is late»");
+    expect(panel).toContain("“The delivery is late”");
     // Another day: the button names the day as well as the time.
     expect(document.body.querySelector("[data-testid=extension-approve]")!.textContent).toMatch(/Allow · .*28.*12:00/);
     document.body.querySelector<HTMLButtonElement>("[data-testid=extension-approve]")!.click();
@@ -182,6 +180,40 @@ describe("the drawer: seen, reminders, comments", () => {
     const third = await openDrawer(legacy);
     expect(document.body.querySelector("[data-testid=seen]")).toBeNull();
     third.wrapper.unmount();
+  });
+
+  it("never calls finished, started or routine work unopened", async () => {
+    // Done from a reminder's button, started from the bot's list, a routine run: no seen_at, yet
+    // "Not opened yet" would be false. The row stays away; a time it was seen still shows.
+    for (const overrides of [{ status: "done" as const }, { status: "in_progress" as const }, { kind: "daily" as const }]) {
+      const { wrapper } = await openDrawer(detail({ seen_at: null, ...overrides }));
+      expect(document.body.querySelector("[data-testid=seen]")).toBeNull();
+      wrapper.unmount();
+      document.body.innerHTML = "";
+    }
+    const done = await openDrawer(detail({ status: "done", seen_at: "2026-10-25T04:12:00Z" }));
+    expect(document.body.querySelector("[data-testid=seen]")!.textContent).toContain("09:12");
+    done.wrapper.unmount();
+  });
+
+  it("answers C and E inside the open drawer, and not under a dialog above it", async () => {
+    const { wrapper } = await openDrawer(detail());
+    const press = (key: string) => window.dispatchEvent(new KeyboardEvent("keydown", { key, code: `Key${key.toUpperCase()}`, bubbles: true }));
+    // The drawer itself is an open dialog: the keys still work in it.
+    expect(document.body.querySelectorAll('[role="dialog"][data-state="open"]').length).toBe(1);
+    press("c");
+    await flushPromises();
+    expect(document.activeElement?.getAttribute("data-testid")).toBe("comment-text");
+    (document.activeElement as HTMLElement).blur();
+    press("e");
+    await flushPromises();
+    // The deadline popover opened above the drawer.
+    expect(document.body.querySelectorAll('[role="dialog"][data-state="open"]').length).toBe(2);
+    // With it open, C waits: the popover is on top.
+    press("c");
+    await flushPromises();
+    expect(document.activeElement?.getAttribute("data-testid")).not.toBe("comment-text");
+    wrapper.unmount();
   });
 
   it("reads a reminder time already passed as going out now, and a long lag as stopped", async () => {
@@ -221,9 +253,17 @@ describe("the drawer: seen, reminders, comments", () => {
     const list = document.body.querySelector("[data-testid=mention-list]")!;
     // The branch team only (Nigora works in Yunusobod), filtered by what's typed.
     expect([...list.querySelectorAll("[role=option] .truncate.font-medium")].map((o) => o.textContent?.trim())).toEqual(["Madina Saidova"]);
-    list.querySelector<HTMLButtonElement>("button")!.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+    // The field points at the list and the person a key would pick, for screen readers.
+    const option = list.querySelector<HTMLElement>("[role=option]")!;
+    expect(area.getAttribute("aria-autocomplete")).toBe("list");
+    expect(area.getAttribute("aria-controls")).toBe(list.id);
+    expect(area.getAttribute("aria-activedescendant")).toBe(option.id);
+    expect(option.getAttribute("aria-selected")).toBe("true");
+    expect(option.querySelector("button")).toBeNull(); // nothing to tab to inside an option
+    option.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
     await nextTick();
     expect(area.value).toBe("Please @Madina Saidova ");
+    expect(area.getAttribute("aria-activedescendant")).toBeNull();
     area.value += "check the shelf too";
     area.dispatchEvent(new Event("input"));
     await nextTick();
@@ -412,17 +452,5 @@ describe("helpers", () => {
     const now = new Date("2026-10-25T10:00:00Z");
     expect(reminderLag("2026-10-25T09:53:00Z", now)).toBe(7);
     expect(reminderLag("2026-10-25T10:20:00Z", now)).toBe(-20);
-  });
-
-  it("opens the main company on a first visit, the last one used after that", () => {
-    setActivePinia(createPinia());
-    const distributor = manager([], { id: 41, name: "Demo Distribyutor", is_owner: true, branches: [{ id: 9, name: "Ombor", code: "OMB" }] });
-    const pharmacy = company({ id: 40, name: "Demo Dorixona", branches: [{ id: 1, name: "Chilonzor", code: "CHL" }, { id: 2, name: "Yunusobod", code: "YUN" }] });
-    useSessionStore().me = me([distributor, pharmacy]);
-    localStorage.removeItem("daybook.console.lastCompany");
-    const store = useCompanyStore();
-    expect(store.defaultCompanyId()).toBe(40);
-    store.setCurrent(41);
-    expect(store.defaultCompanyId()).toBe(41);
   });
 });

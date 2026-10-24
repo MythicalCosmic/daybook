@@ -307,8 +307,8 @@
   "tasks.blocker.title": "{name} bu vazifani bajara olmayapti",
   "tasks.blocker.reason.no_stock": "Tovar yo‘q",
   "tasks.blocker.reason.no_access": "Kirish imkoni yo‘q",
-  "tasks.blocker.reason.broken": "Nimadir buzilgan",
-  "tasks.blocker.reason.not_mine": "Bu uning vazifasi emas",
+  "tasks.blocker.reason.broken": "Uskuna buzilgan",
+  "tasks.blocker.reason.not_mine": "Bu mening vazifam emas",
   "tasks.blocker.reason.other": "Boshqa sabab",
   "tasks.blocker.paused": "Eslatmalar to‘xtatildi",
   "tasks.blocker.reassign": "Boshqasiga berish",
@@ -347,5 +347,6 @@
   "tasks.widget.reviewShort": "tekshiruvda",
   "tasks.widget.answersShort": "javob kutmoqda",
   "tasks.reviews.decidedElsewhere": "Uni boshqa rahbar allaqachon tekshirgan",
-  "tasks.kpi.reviewOldest": "Bir martalik vazifalar · eng eskisi kutmoqda: {time}"
+  "tasks.kpi.reviewOldest": "Bir martalik vazifalar · eng eskisi kutmoqda: {time}",
+  "tasks.quoted": "«{text}»"
 }

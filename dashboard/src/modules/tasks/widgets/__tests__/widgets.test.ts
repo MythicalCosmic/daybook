@@ -121,5 +121,11 @@ describe("Branches now (R2 §3.19)", () => {
     await vi.waitFor(() => expect(chilonzor.find("[data-stat=answers]").text()).toContain("1"));
     expect(chilonzor.find("[data-stat=answers]").attributes("href")).toContain("blocked=true");
     expect(wrapper.find("[data-branch='2'] [data-stat=late]").classes()).toContain("text-subtle");
+    // On a phone the short words step aside visually but stay readable: a number alone ("3")
+    // tells a screen reader nothing.
+    const word = chilonzor.find("[data-stat=late] span");
+    expect(word.text()).toMatch(/lateShort|late/);
+    expect(word.classes()).toContain("max-sm:sr-only");
+    expect(word.classes()).not.toContain("max-sm:hidden");
   });
 });
