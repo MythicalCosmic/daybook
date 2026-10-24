@@ -1,6 +1,6 @@
-import { AlarmClock, Eye, Flame, Sun, TreePalm } from "lucide-react";
+import { AlarmClock, Eye, Flame, MessageCircleQuestion, Sun, TreePalm } from "lucide-react";
 
-import { useActivity, useBoard, useSummary } from "../api/hooks";
+import { useActivity, useBoard, useGivenByMe, useSummary } from "../api/hooks";
 import { ActivityRow } from "../components/ActivityRow";
 import { FeatureSlot } from "../features/FeatureSlot";
 import { Ring } from "../components/Ring";
@@ -33,6 +33,8 @@ export function Home() {
   const summary = useSummary(member.companyId);
   const board = useBoard(member.companyId);
   const activity = useActivity(member.companyId);
+  const given = useGivenByMe(member.companyId, member.permissions.includes("tasks.assign"));
+  const requests = (given.data ?? []).filter((task) => task.blocker || task.extension);
 
   const tasks = board.data ?? [];
   // Urgent work first, then the soonest deadline: the same order as the lists (R2 T7).
@@ -124,6 +126,19 @@ export function Home() {
           title={t("home.late", { count: late.length })}
           body={late[0].title}
           onClick={() => navigation.openTask(late[0].id)}
+        />
+      )}
+
+      {/* Work I gave whose person can't do it or asks for more time: it waits for my answer. */}
+      {requests.length > 0 && (
+        <Banner
+          size="lg"
+          tone="accent"
+          icon={MessageCircleQuestion}
+          title={t("home.requests", { count: requests.length })}
+          body={t("home.requestsBody")}
+          wrap
+          onClick={() => (requests.length === 1 ? navigation.openTask(requests[0].id) : navigation.goTo("tasks", "given"))}
         />
       )}
 
