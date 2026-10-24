@@ -47,6 +47,7 @@ class QuickAdd:
     guessed_time: bool = False  # no time was given: `due_at` carries the default time
     rolled: bool = False  # a time that had passed today: moved to tomorrow
     past: bool = False  # an explicit moment that has already passed: nothing set
+    passed: datetime | None = None  # that moment, so the same time tomorrow can be offered
 
     @property
     def found(self) -> bool:
@@ -698,7 +699,7 @@ def _resolve(spec: _Spec, now: datetime, default_time: time, end_of_day: time) -
                 return {"due": _soon(now)}
             if guessed and day == today:
                 return {"day": day, "guessed_time": True}  # "bugun" after 18:00: ask the time
-            return {"past": True}
+            return {"past": True, "passed": due}
         result = {"due": due, "guessed_time": guessed}
     while spec.repeat == "weekdays" and result["due"].weekday() >= 5:
         result["due"] += timedelta(days=1)

@@ -16,6 +16,7 @@ from bot.handlers.features.sales import router as sales_router
 from bot.handlers.member.announcements import router as announcements_router
 from bot.handlers.member.app import router as app_router
 from bot.handlers.member.home import router as home_router
+from bot.handlers.member.new_task import router as new_task_router
 from bot.handlers.member.tasks import router as tasks_router
 from bot.middlewares.access import MemberAccessMiddleware
 
@@ -46,5 +47,10 @@ router.callback_query.outer_middleware(MemberAccessMiddleware())
 # are waiting in wins over every feature; home answers whatever nothing else took. A menu
 # command (/checkin …) ends an open conversation before routing (bot.middlewares.menu_commands).
 router.include_routers(
-    app_router, tasks_router, announcements_router, *FEATURE_ROUTERS, home_router
+    app_router,
+    tasks_router,
+    new_task_router,
+    announcements_router,
+    *FEATURE_ROUTERS,
+    home_router,
 )

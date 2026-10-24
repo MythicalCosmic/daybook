@@ -5,7 +5,7 @@ from django.utils import timezone, translation
 
 from apps.members.bot_messages import BotMessage
 from apps.members.models import Membership
-from apps.notifications.tasks import send_telegram_message
+from apps.notifications.tasks import edit_telegram_message, send_telegram_message
 from apps.notifications.telegram import BotName, serialize_markup
 from apps.tasks import bot_messages
 from apps.tasks.models import Task, TaskComment
@@ -139,6 +139,18 @@ def send_extension_decided(task_id: int, approved: bool, by_id: int, until: str)
     if task is None or by is None or not task.is_open:
         return
     _send(task.assignee, bot_messages.extension_answer, task, approved, by, timezone.now())
+
+
+def refresh_card(task_id: int, member_id: int, chat_id: int, message_id: int) -> None:
+    """The card in a chat, drawn again as it is now (an Undo button whose minute is over goes)."""
+    task, member = _load(task_id), _member(member_id)
+    if task is None or member is None:
+        return
+    with translation.override(member.user.language):
+        text, markup = bot_messages.task_card(task, member, timezone.now())
+    edit_telegram_message.delay(
+        BotName.EMPLOYEE, chat_id, message_id, text, serialize_markup(markup)
+    )
 
 
 def send_onboarding(member_id: int, task_ids: list[int]) -> None:

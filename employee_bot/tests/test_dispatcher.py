@@ -4,6 +4,7 @@ from contextlib import contextmanager
 
 import pytest
 from aiogram import F, Router
+from aiogram.methods import EditMessageText
 from aiogram.types import CallbackQuery, Message
 from asgiref.sync import sync_to_async
 
@@ -45,6 +46,8 @@ def test_top_level_order(dp):
     assert names(dp) == [
         "feature_signin",  # sign-in and deep links work for anyone, member or not
         "start",
+        "language",  # the language picker, /help and /settings: anyone may use them
+        "company",  # the company switch of someone in several companies
         "feature_applicants",  # applicants aren't members; their contact isn't a join request
         "approvals",
         "time_off",
@@ -61,6 +64,7 @@ def test_feature_routers_sit_between_the_state_bound_routers_and_home(dp):
     assert inside == [
         "member-app",  # the menu's app buttons answer before a module handles its button's text
         "member_tasks",
+        "member_new_task",
         "member_announcements",
         *(f"feature_{area}" for area in AREAS),
         "member_home",
@@ -143,20 +147,28 @@ async def test_feature_handlers_wait_until_the_member_has_registered(dp, bot, co
     assert "Accounts are created in the app" in bot.sent_texts()[-1]  # home's registration prompt
 
 
-# Rule 20: a photo nobody asked for reaches home, never a feature. Once packages add photo
-# handlers, these fail if one of them takes photos outside its own conversation or caption tag.
+# Rule 20: a photo nobody asked for never reaches a feature. Tasks answer it ("which task is
+# this photo for?", research R1 C4); a caption tag (#xarajat) leaves it to its module. Once
+# packages add photo handlers, these fail if one of them takes photos outside its own
+# conversation or caption tag.
 
 
 @pytest.mark.django_db(transaction=True)
-async def test_photos_outside_a_conversation_reach_home(dp, bot, company, member):
+async def test_photos_outside_a_conversation_are_asked_about_by_tasks(dp, bot, company, member):
     worker = await member.aregistered(company)
     tg = updates.tg_user(worker.user.telegram_id)
+    taken = []
 
-    await dp.feed_update(bot, updates.photo(tg))
-    await dp.feed_update(bot, updates.photo(tg, caption="Shelf after restock"))
+    async def greedy(message: Message) -> None:
+        taken.append(message.caption)
 
+    with temporary_handler(finance.router.message, greedy, F.photo):
+        await dp.feed_update(bot, updates.photo(tg))
+        await dp.feed_update(bot, updates.photo(tg, caption="Shelf after restock"))
+
+    assert taken == []
     assert len(bot.sent_texts()) == 2
-    assert all("You're a member of" in text for text in bot.sent_texts())
+    assert all("No task is waiting for a photo" in text for text in bot.sent_texts())
 
 
 @pytest.mark.django_db(transaction=True)
@@ -172,7 +184,8 @@ async def test_a_proof_photo_reaches_its_task_before_any_feature(dp, bot, compan
     done = TaskCallback(action=TaskAction.DONE, task_id=task.pk).pack()
     with temporary_handler(finance.router.message, greedy, F.photo):
         await dp.feed_update(bot, updates.callback(tg, done))
-        assert "Send a photo" in bot.sent_texts()[-1]
+        [prompt] = [r for r in bot.requests if isinstance(r, EditMessageText)]
+        assert "Send a photo" in prompt.text  # the tapped card asks for it (research R1 C3)
 
         # Even with a caption a feature listens for: the task asked for this photo.
         await dp.feed_update(bot, updates.photo(tg, caption="#xarajat shelf"))

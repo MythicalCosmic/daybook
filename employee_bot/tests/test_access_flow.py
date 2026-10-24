@@ -33,6 +33,7 @@ async def test_invite_link_opens_a_request_and_points_to_account_creation(
     ali = updates.tg_user(501)
 
     await dp.feed_update(bot, updates.message(ali, f"/start {company.invite_start_param}"))
+    await dp.feed_update(bot, updates.pick_language(ali))  # a new person picks first
 
     membership = await get_membership(company, 501)
     assert membership.status == Membership.Status.PENDING
@@ -46,6 +47,7 @@ async def test_approvers_hear_once_the_account_is_created(dp, bot, company, memb
     manager = await member.acreate(company, "Manager")
     ali = updates.tg_user(502)
     await dp.feed_update(bot, updates.message(ali, f"/start {company.invite_start_param}"))
+    await dp.feed_update(bot, updates.pick_language(ali))  # a new person picks first
     assert sent_messages == []  # nothing to decide on yet
 
     membership = await Membership.objects.select_related("user").aget(user__telegram_id=502)
@@ -64,13 +66,17 @@ async def test_approvers_hear_once_the_account_is_created(dp, bot, company, memb
 
 
 async def test_invalid_invite_link_is_explained(dp, bot, db):
-    await dp.feed_update(bot, updates.message(updates.tg_user(503), "/start c_nope"))
+    nobody = updates.tg_user(503)
+    await dp.feed_update(bot, updates.message(nobody, "/start c_nope"))
+    await dp.feed_update(bot, updates.pick_language(nobody))
 
     assert "invalid or has expired" in bot.sent_texts()[-1]
 
 
 async def test_plain_start_without_membership_asks_for_invite_link(dp, bot, db):
-    await dp.feed_update(bot, updates.message(updates.tg_user(504), "/start"))
+    nobody = updates.tg_user(504)
+    await dp.feed_update(bot, updates.message(nobody, "/start"))
+    await dp.feed_update(bot, updates.pick_language(nobody))
 
     assert "open the invite link" in bot.sent_texts()[-1]
 
@@ -78,6 +84,7 @@ async def test_plain_start_without_membership_asks_for_invite_link(dp, bot, db):
 async def test_gate_sends_new_people_to_account_creation(dp, bot, company):
     ali = updates.tg_user(505)
     await dp.feed_update(bot, updates.message(ali, f"/start {company.invite_start_param}"))
+    await dp.feed_update(bot, updates.pick_language(ali))  # a new person picks first
 
     await dp.feed_update(bot, updates.message(ali, "show me my tasks"))
 
@@ -127,6 +134,7 @@ async def test_manager_approves_from_the_button(dp, bot, company, member, sent_m
     manager = await member.acreate(company, "Manager")
     ali = updates.tg_user(506)
     await dp.feed_update(bot, updates.message(ali, f"/start {company.invite_start_param}"))
+    await dp.feed_update(bot, updates.pick_language(ali))  # a new person picks first
     request = await get_membership(company, 506)
     data = JoinDecision(action=JoinAction.APPROVE, membership_id=request.pk).pack()
 
@@ -145,6 +153,7 @@ async def test_employee_cannot_approve_from_the_button(dp, bot, company, member)
     employee = await member.acreate(company)
     ali = updates.tg_user(507)
     await dp.feed_update(bot, updates.message(ali, f"/start {company.invite_start_param}"))
+    await dp.feed_update(bot, updates.pick_language(ali))  # a new person picks first
     request = await get_membership(company, 507)
     data = JoinDecision(action=JoinAction.APPROVE, membership_id=request.pk).pack()
 
@@ -152,7 +161,7 @@ async def test_employee_cannot_approve_from_the_button(dp, bot, company, member)
 
     request = await get_membership(company, 507)
     assert request.status == Membership.Status.PENDING
-    answer = next(r for r in bot.requests if isinstance(r, AnswerCallbackQuery))
+    answer = [r for r in bot.requests if isinstance(r, AnswerCallbackQuery)][-1]
     assert answer.show_alert
     assert "permission" in answer.text
 
@@ -160,9 +169,9 @@ async def test_employee_cannot_approve_from_the_button(dp, bot, company, member)
 async def test_second_approver_sees_who_decided_first(dp, bot, company, member):
     first = await member.acreate(company, "Manager")
     second = await member.acreate(company, "Owner")
-    await dp.feed_update(
-        bot, updates.message(updates.tg_user(508), f"/start {company.invite_start_param}")
-    )
+    applicant = updates.tg_user(508)
+    await dp.feed_update(bot, updates.message(applicant, f"/start {company.invite_start_param}"))
+    await dp.feed_update(bot, updates.pick_language(applicant))
     request = await get_membership(company, 508)
     approve = JoinDecision(action=JoinAction.APPROVE, membership_id=request.pk).pack()
     reject = JoinDecision(action=JoinAction.REJECT, membership_id=request.pk).pack()
@@ -367,6 +376,7 @@ async def test_someone_creating_an_account_gets_the_create_account_button_once(
     settings.EMPLOYEE_MINIAPP_URL = "https://app.example.com/app/"
     newcomer = updates.tg_user(503)
     await dp.feed_update(bot, updates.message(newcomer, f"/start {company.invite_start_param}"))
+    await dp.feed_update(bot, updates.pick_language(newcomer))  # a new person picks first
     before = len(sent(bot))
 
     await dp.feed_update(bot, app_data(503))

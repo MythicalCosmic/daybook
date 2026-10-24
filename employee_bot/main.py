@@ -21,7 +21,11 @@ logger = logging.getLogger(__name__)
 
 
 def create_bot() -> Bot:
-    return Bot(token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    # No link previews: a URL in a task or a comment would push the card's buttons down (R1 F2).
+    return Bot(
+        token=settings.BOT_TOKEN,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML, link_preview_is_disabled=True),
+    )
 
 
 def create_storage() -> BaseStorage:

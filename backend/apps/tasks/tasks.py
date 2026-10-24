@@ -26,6 +26,12 @@ def notify_task_completed(task_id: int, completed_at: str | None = None) -> None
 
 
 @shared_task
+def refresh_card(task_id: int, member_id: int, chat_id: int, message_id: int) -> None:
+    """Draw a task card again where it is, e.g. once its Undo button's minute is over."""
+    notifications.refresh_card(task_id, member_id, chat_id, message_id)
+
+
+@shared_task
 def notify_comment(comment_id: int, mentioned_ids: list[int]) -> None:
     notifications.send_comment(comment_id, mentioned_ids)
 
