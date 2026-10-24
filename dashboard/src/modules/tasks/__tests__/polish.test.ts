@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { nextTick } from "vue";
 
 import ConfirmDialog from "@/components/ConfirmDialog.vue";
+import PersonPicker from "@/components/PersonPicker.vue";
 import { returnReasonFields } from "@/components/returnReasons";
 import { toasts } from "@/components/useToast";
 import { i18n, mergeModuleMessages, russianPlural } from "@/i18n";
@@ -194,6 +195,32 @@ describe("quick add in New task (contract 1)", () => {
     await type("Dorilarni sanash");
     expect(document.body.querySelector("[data-testid=due-parsed]")).toBeNull();
     expect(button("Tomorrow 09:00")?.getAttribute("aria-pressed")).toBe("true");
+    wrapper.unmount();
+  });
+
+  it("saves once when Create is pressed twice while the title is still being read", async () => {
+    const slow = () => new Promise<Response>((resolve) => setTimeout(() => resolve(json(parsed)), 120));
+    const { calls, wrapper } = await open({
+      "POST tasks/parse/": slow as never,
+      "POST tasks/": () => json({ created: 1, ids: [40] }, 201),
+    });
+    // Who gets it, as the person picker reports a pick.
+    wrapper.findComponent(PersonPicker).vm.$emit("update:modelValue", [12]);
+    await nextTick();
+    const input = document.body.querySelector<HTMLInputElement>("input[data-testid=create-title]")!;
+    input.value = "Ertaga 15:00 dorilarni sanash !!";
+    input.dispatchEvent(new Event("input"));
+    await nextTick(); // the keystroke's own task ends before the next press
+    // Pressed twice at once, before the pause and the reading are over.
+    const create = buttons().find((b) => b.textContent?.includes("Create"))!;
+    create.click();
+    create.click();
+    await wait(400);
+    await flushPromises();
+    const saves = calls.filter((c) => c.method === "POST" && c.url.endsWith("/companies/1/tasks/"));
+    expect(saves).toHaveLength(1);
+    // What the title said went with it.
+    expect(saves[0]!.body).toMatchObject({ title: "Dorilarni sanash", due_at: "2026-10-26T10:00:00Z", priority: "urgent", assignee_ids: [12] });
     wrapper.unmount();
   });
 

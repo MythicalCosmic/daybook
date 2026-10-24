@@ -193,12 +193,17 @@ const whoError = computed(() => (showErrors.value && recipients.value.length ===
 
 const proofOptions = computed(() => (["none", "photo", "text", "any"] as const).map((value) => ({ value, label: t(`tasks.proof.${value}`) })));
 
+/** Saving: reading the title first can take a moment, and a second press mustn't make it twice. */
+const saving = ref(false);
+
 async function submit(): Promise<void> {
+  if (saving.value) return;
   showErrors.value = true;
-  // Typed and saved within the pause: read the title first, so its deadline isn't lost.
-  await quick.settle();
-  if (!finalTitle.value || recipients.value.length === 0) return;
+  saving.value = true;
   try {
+    // Typed and saved within the pause: read the title first, so its deadline isn't lost.
+    await quick.settle();
+    if (!finalTitle.value || recipients.value.length === 0) return;
     const result = await create.mutateAsync({
       title: finalTitle.value,
       description: description.value.trim(),
@@ -217,6 +222,8 @@ async function submit(): Promise<void> {
     emit("created", result.ids);
   } catch {
     // Field errors and the reason come from the HTTP layer.
+  } finally {
+    saving.value = false;
   }
 }
 </script>
@@ -340,7 +347,7 @@ async function submit(): Promise<void> {
         <span class="truncate">{{ recipients.length ? t("tasks.create.makes", { n: recipients.length }, recipients.length) : t("tasks.create.nobodyYet") }}</span>
       </div>
       <UiButton variant="ghost" @click="open = false">{{ t("common.cancel") }}</UiButton>
-      <UiButton variant="primary" :icon="proof === 'photo' ? Camera : undefined" :loading="create.isPending.value" kbd="mod+enter" @click="submit">{{ t("tasks.create.submit") }}</UiButton>
+      <UiButton variant="primary" :icon="proof === 'photo' ? Camera : undefined" :loading="saving" kbd="mod+enter" @click="submit">{{ t("tasks.create.submit") }}</UiButton>
     </template>
   </UiDialog>
 </template>
