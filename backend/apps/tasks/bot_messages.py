@@ -221,8 +221,12 @@ def card_keyboard(task: Task, member: Membership, now: datetime) -> InlineKeyboa
             manager.append(_button(_("👤 Someone else"), TaskAction.REASSIGN, task.pk))
         if manager:
             rows.append(manager)
+        more = []
+        if rules.can_manage(task, member):
+            more.append(_button(_("🕒 New time"), TaskAction.NEW_DUE, task.pk))
         if rules.can_manage(task, member) or task.created_by_id == member.pk:
-            rows.append([_button(_("💬 Comment"), TaskAction.COMMENT, task.pk)])
+            more.append(_button(_("💬 Comment"), TaskAction.COMMENT, task.pk))
+        rows.append(more)
     last = []
     if app := app_button(task):
         last.append(app)
@@ -678,7 +682,9 @@ def onboarding_welcome(member: Membership, tasks: list[Task], now: datetime) -> 
 
 
 def ask_title() -> BotMessage:
-    text = _("✍️ What needs to be done? You can say when too, e.g. «Count the till tomorrow 18:00».")
+    text = _(
+        "✍️ What needs to be done? You can say when too, e.g. «Order insulin tomorrow 18:00 !!»."
+    )
     return text, stop_keyboard(placeholder=True)
 
 

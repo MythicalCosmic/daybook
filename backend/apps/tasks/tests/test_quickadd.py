@@ -224,6 +224,15 @@ CASES = [
     (WED_10, "!! Dori ertaga", "Dori", "2026-10-22 18:00", {"priority": "urgent"}),
     (WED_10, "Dori !!! olib kelish", "Dori olib kelish", None, {"priority": "urgent"}),
     (WED_10, "Salom!", "Salom!", None, {}),
+    # "till" is the cash register in a pharmacy, never "until" (dashboard review)
+    (
+        WED_10,
+        "Count the till tomorrow 18:00 !!",
+        "Count the till",
+        "2026-10-22 18:00",
+        {"priority": "urgent"},
+    ),
+    (WED_10, "today 18:00 close the till", "Close the till", "2026-10-21 18:00", {}),
     (WED_10, "ertaga 10:00", "", "2026-10-22 10:00", {}),
     # The evening: a part of the day that's under way, a time that's gone
     (WED_1910, "Kassa bugun kechqurun", "Kassa", "2026-10-21 20:30", {}),

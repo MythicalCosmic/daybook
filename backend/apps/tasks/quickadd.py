@@ -490,8 +490,8 @@ _rule(
     + r"|(?:в|во|к|ко|до)\s+(?P<d_h>\d{1,2})(?:[:.](?P<d_m>\d{2}))?(?:\s*(?:ч\.?|час(?:а|ов)?))?"
     r"(?:\s+(?P<d_part>утра|дня|вечера|ночи))?"
     r"|(?P<e_h>\d{1,2})(?:[:.](?P<e_m>\d{2}))?\s*(?:ч\.?|час(?:а|ов)?)?\s+(?P<e_part>утра|дня|вечера|ночи)"
-    r"|(?:(?:at|by|until|till|@)\s*)?(?P<f_h>\d{1,2})(?::(?P<f_m>\d{2}))?(?P<f_ap>\s*[ap]\.?m\.?|[ap])"
-    r"|(?:at|by|until|till|@)\s*(?P<g_h>\d{1,2})(?::(?P<g_m>\d{2}))?"
+    r"|(?:(?:at|by|until|@)\s*)?(?P<f_h>\d{1,2})(?::(?P<f_m>\d{2}))?(?P<f_ap>\s*[ap]\.?m\.?|[ap])"
+    r"|(?:at|by|until|@)\s*(?P<g_h>\d{1,2})(?::(?P<g_m>\d{2}))?"
 )(_time)
 
 
@@ -534,7 +534,7 @@ def _date(g: dict, spec: _Spec) -> bool:
     r"(?:\s+(?:kuni|куни)|gacha|ga|da|гача|га|да)?"
     r"|(?:(?:в|во|к|ко|до|на)\s+)?(?:(?P<wr_mod>следующ(?:ий|ую|ее|ей|его)|эт(?:от|у|о)"
     r"|ближайш(?:ий|ую|ее|ей|его))\s+)?(?P<wr>" + _WD_RU_RE + ")"
-    r"|(?:(?:on|by|until|till)\s+)?(?:(?P<we_mod>next|this|coming)\s+)?(?P<we>" + _WD_EN_RE + ")"
+    r"|(?:(?:on|by|until)\s+)?(?:(?P<we_mod>next|this|coming)\s+)?(?P<we>" + _WD_EN_RE + ")"
 )
 def _weekday(g: dict, spec: _Spec) -> bool:
     if spec.has_day() or spec.delta:
@@ -718,7 +718,6 @@ _DANGLING = {
     "by",
     "in",
     "until",
-    "till",
     "soat",
     "соат",
 }

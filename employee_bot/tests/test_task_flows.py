@@ -460,6 +460,26 @@ async def test_more_time_from_the_card(dp, bot, company, member):
     assert task.due_at == due  # until the giver says yes
 
 
+async def test_a_manager_sets_a_new_time_from_the_card(dp, bot, company, member):
+    """Audit B-9: a manager's card is not a dead end; the deadline moves from it."""
+    worker = await member.aregistered(company)
+    manager = await member.aregistered(company, "Manager")
+    due = timezone.now() + timedelta(hours=1)
+    task = await make_task(assignee=worker, created_by=manager, due_at=due)
+    boss = updates.tg_user(manager.user.telegram_id)
+
+    await dp.feed_update(bot, updates.callback(boss, press(TaskAction.OPEN, task.pk)))
+    actions = actions_of(of(bot, EditMessageText)[-1].reply_markup)
+    assert TaskAction.NEW_DUE in actions and TaskAction.NUDGE in actions
+
+    await dp.feed_update(bot, updates.callback(boss, press(TaskAction.NEW_DUE, task.pk)))
+    await dp.feed_update(
+        bot, updates.callback(boss, WhenCallback(kind="due", task_id=task.pk, choice="1h").pack())
+    )
+    task = await reload(task)
+    assert task.due_at > due
+
+
 async def test_snooze_choices_in_place(dp, bot, company, member):
     worker = await member.aregistered(company)
     manager = await member.aregistered(company, "Manager")
