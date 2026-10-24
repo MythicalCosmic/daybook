@@ -635,7 +635,14 @@ def extension_answer(task: Task, approved: bool, by: Membership, now: datetime) 
 
 def copy_of(task: Task, member: Membership, kind: str, now: datetime) -> BotMessage:
     """A task message in someone's chat, drawn again as the task is now (research R1 C5): its
-    buttons are what this person may still do, and the first line says how it ended."""
+    buttons are what this person may still do, and the first line says how it ended. Until
+    then, a "can't do it" stays that question and a late alert stays an alert."""
+    if task.is_open and kind == "blocked" and task.blocked_at:
+        return blocked_notice(task, member, now)
+    if task.is_open and kind == "escalation" and task.due_at and task.due_at < now:
+        from apps.reminders.bot_messages import escalation  # it builds on this module
+
+        return escalation(task, now, member)
     return task_card(task, member, now, _copy_header(task, member, kind, now))
 
 

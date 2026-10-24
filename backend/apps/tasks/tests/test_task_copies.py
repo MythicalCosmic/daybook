@@ -122,3 +122,33 @@ def test_done_takes_the_last_reminder_away_and_updates_the_late_alert(
         -1
     ]
     assert alert["text"].startswith("✅ <b>Done</b>") and "late" in alert["text"]
+
+
+def test_a_cant_do_it_stays_a_question_until_someone_answers(
+    company, member, telegram, django_capture_on_commit_callbacks
+):
+    manager = member.registered(company, "Manager")
+    worker = member.registered(company)
+    task = TaskFactory(
+        assignee=worker, created_by=manager, due_at=timezone.now() + timedelta(hours=2)
+    )
+
+    with django_capture_on_commit_callbacks(execute=True):
+        services.report_blocker(task, by=worker, reason_code=Task.Blocker.NO_STOCK)
+
+    notice = TaskMessage.objects.get(task=task, kind=TaskMessage.Kind.BLOCKED)
+    redrawn = [edit for edit in edits_to(telegram, manager) if edit["id"] == notice.message_id]
+    assert redrawn, "the copies are drawn again after the change"
+    assert "can't do this task" in redrawn[-1]["text"]
+    assert TaskAction.CANCEL in actions(redrawn[-1]["markup"])
+
+    with django_capture_on_commit_callbacks(execute=True):
+        services.resolve_blocker(
+            task,
+            by=manager,
+            action=services.BlockerAction.NEW_DUE,
+            due_at=timezone.now() + timedelta(days=1),
+        )
+
+    answered = [edit for edit in edits_to(telegram, manager) if edit["id"] == notice.message_id]
+    assert TaskAction.CANCEL not in actions(answered[-1]["markup"])
