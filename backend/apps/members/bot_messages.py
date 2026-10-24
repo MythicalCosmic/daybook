@@ -28,11 +28,15 @@ type BotMessage = tuple[
 MENU_MY_TASKS = gettext_noop("📋 My tasks")
 MENU_NEW_TASK = gettext_noop("➕ New task")
 MENU_APP = gettext_noop("📱 Open app")
+MENU_TO_CHECK = gettext_noop("🔎 To check")
+# The company switch of someone in several companies: "🏢 Demo Dorixona ▸" (audit X-1).
+COMPANY_BUTTON = "🏢 {name} ▸"
 
 
 def main_menu(membership: Membership | None = None) -> ReplyKeyboardMarkup:
-    """The persistent menu: tasks first, then the buttons modules registered for this person
-    (apps.members.bot_menu), then the app.
+    """The persistent menu: tasks first, "🔎 To check" for whoever checks work, then the buttons
+    modules registered for this person (apps.members.bot_menu), the company switch for someone
+    in several companies, and the app.
 
     Every button sends its text, none opens the mini app itself: Telegram gives a Mini App
     opened from a keyboard button no initData, so the app couldn't sign the person in. The bot
@@ -41,11 +45,52 @@ def main_menu(membership: Membership | None = None) -> ReplyKeyboardMarkup:
     rows = [[KeyboardButton(text=_(MENU_MY_TASKS)), KeyboardButton(text=_(MENU_NEW_TASK))]]
     extra = []
     if membership is not None:
-        extra = [KeyboardButton(text=_(b.msgid)) for b in bot_menu.buttons_for(membership)]
+        if checks_work(membership):
+            extra.append(KeyboardButton(text=_(MENU_TO_CHECK)))
+        extra += [KeyboardButton(text=_(b.msgid)) for b in bot_menu.buttons_for(membership)]
     rows += [extra[index : index + 2] for index in range(0, len(extra), 2)]
+    if membership is not None and several_companies(membership):
+        rows.append([KeyboardButton(text=company_button(membership.company))])
     if settings.EMPLOYEE_MINIAPP_URL:
         rows.append([KeyboardButton(text=_(MENU_APP))])
-    return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True, is_persistent=True)
+    return ReplyKeyboardMarkup(
+        keyboard=rows,
+        resize_keyboard=True,
+        is_persistent=True,
+        input_field_placeholder=_("Type a task or pick from the menu")[:64],
+    )
+
+
+def checks_work(membership: Membership) -> bool:
+    """Whoever accepts or sends back finished work: tasks.confirm holders and those who give
+    work (they check what they gave)."""
+    from apps.members.permissions import Perm
+
+    return membership.has_perm(Perm.TASKS_CONFIRM) or membership.has_perm(Perm.TASKS_ASSIGN)
+
+
+def several_companies(membership: Membership) -> bool:
+    """Whether the person is an approved member of more than one active company."""
+    cached = getattr(membership, "_several_companies", None)
+    if cached is None:
+        cached = (
+            Membership.objects.filter(
+                user_id=membership.user_id,
+                status=Membership.Status.APPROVED,
+                company__is_active=True,
+            ).count()
+            > 1
+        )
+        membership._several_companies = cached
+    return cached
+
+
+def company_button(company) -> str:
+    return COMPANY_BUTTON.format(name=company.name)
+
+
+def is_company_button(text: str | None) -> bool:
+    return bool(text) and text.startswith("🏢 ") and text.endswith(" ▸")
 
 
 def open_app(screen: str | None = None, label: str | None = None) -> BotMessage:
@@ -174,9 +219,36 @@ def member_home(membership: Membership) -> BotMessage:
     company = {"company": html.quote(membership.company.name)}
     if membership.is_onboarded:
         header = _("✅ You're a member of <b>%(company)s</b>.") % company
+        if summary := _work_summary(membership):
+            header += "\n" + summary
     else:
         header = _("👋 Welcome to <b>%(company)s</b>!") % company
-    return _compose(header, _next_step(membership))
+    text, markup = _compose(header, _next_step(membership))
+    if membership.is_onboarded and membership.status == Membership.Status.APPROVED:
+        text += "\n\n" + _("🌐 /language · ❓ /help")
+    return text, markup
+
+
+def _work_summary(membership: Membership) -> str:
+    """One line of what's on the person's plate (audit B-7): open, late, waiting for them."""
+    from django.utils import timezone
+
+    from apps.tasks import queries
+    from apps.tasks.models import Task
+
+    work = queries.open_work(membership)
+    total = work.count()
+    if not total and not checks_work(membership):
+        return ""
+    late = work.filter(status__in=Task.OPEN_STATUSES, due_at__lt=timezone.now()).count()
+    parts = [_("📋 Open: %(count)d") % {"count": total}]
+    if late:
+        parts.append(_("🔴 late: %(count)d") % {"count": late})
+    if checks_work(membership):
+        waiting = queries.awaiting_review_by(membership).count()
+        if waiting:
+            parts.append(_("🔎 to check: %(count)d") % {"count": waiting})
+    return " · ".join(parts)
 
 
 def offboarded(membership: Membership) -> BotMessage:

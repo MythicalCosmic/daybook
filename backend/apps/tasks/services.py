@@ -159,6 +159,7 @@ def update_task(task: Task, *, by: Membership, **changes) -> Task:
     if moved and by.pk != task.assignee_id:
         old = old_due.isoformat() if old_due else None
         transaction.on_commit(partial(jobs.notify_due_changed.delay, task.pk, old, by.pk))
+    _refresh_copies(task)
     return task
 
 
@@ -171,6 +172,7 @@ def start_task(task: Task, *, by: Membership) -> Task:
     task.status = Task.Status.IN_PROGRESS
     task.started_at = timezone.now()
     task.save()
+    _refresh_copies(task)
     return task
 
 
@@ -213,6 +215,7 @@ def complete_task(
     transaction.on_commit(
         partial(group_jobs.announce_task_done.apply_async, (task.pk, stamp), countdown=wait)
     )
+    _refresh_copies(task)
     return task
 
 
@@ -242,6 +245,7 @@ def reopen_task(task: Task, *, by: Membership) -> Task:
         created_at__gte=completed_at,
     ).delete()
     _audit(TasksAction.REOPENED, task, by)
+    _refresh_copies(task)
     return task
 
 
@@ -256,6 +260,7 @@ def confirm_task(task: Task, *, by: Membership) -> Task:
     _add_to_feed(Activity.Kind.CONFIRMED, task, [task.assignee], by)
     _audit(AuditLog.Action.TASK_CONFIRMED, task, by)
     transaction.on_commit(partial(jobs.notify_task_reviewed.delay, task.pk))
+    _refresh_copies(task)
     return task
 
 
@@ -274,6 +279,7 @@ def return_task(task: Task, *, by: Membership, reason: str) -> Task:
     _add_to_feed(Activity.Kind.RETURNED, task, [task.assignee], by, reason)
     _audit(AuditLog.Action.TASK_RETURNED, task, by, reason=reason)
     transaction.on_commit(partial(jobs.notify_task_reviewed.delay, task.pk))
+    _refresh_copies(task)
     return task
 
 
@@ -295,6 +301,7 @@ def cancel_task(task: Task, *, by: Membership, stop_repeating: bool = False) -> 
         task.template.save(update_fields=["is_active", "updated_at"])
     if by.pk != task.assignee_id:
         transaction.on_commit(partial(jobs.notify_task_cancelled.delay, task.pk, by.pk))
+    _refresh_copies(task)
     return task
 
 
@@ -543,6 +550,7 @@ def _reassign(task: Task, *, by: Membership, assignee: Membership) -> Task:
         transaction.on_commit(
             partial(jobs.notify_task_taken_away.delay, task.pk, previous.pk, by.pk)
         )
+    _refresh_copies(task)
     return task
 
 
@@ -628,6 +636,7 @@ def report_blocker(task: Task, *, by: Membership, reason_code: str, note: str = 
         transaction.on_commit(
             partial(jobs.notify_blocked.delay, task.pk, [person.pk for person in givers])
         )
+    _refresh_copies(task)
     return task
 
 
@@ -674,6 +683,7 @@ def resolve_blocker(
     transaction.on_commit(
         partial(jobs.notify_blocker_resolved.delay, task.pk, action, by.pk, reporter.pk)
     )
+    _refresh_copies(task)
     return task
 
 
@@ -715,6 +725,7 @@ def request_extension(task: Task, *, by: Membership, until: datetime, note: str 
                 inbox.NotificationAction("decline", _("✖️ Keep the deadline")),
             ],
         )
+    _refresh_copies(task)
     return task
 
 
@@ -748,6 +759,7 @@ def decide_extension(task: Task, *, by: Membership, approve: bool) -> Task:
     transaction.on_commit(
         partial(jobs.notify_extension_decided.delay, task.pk, approve, by.pk, until.isoformat())
     )
+    _refresh_copies(task)
     return task
 
 
@@ -1253,6 +1265,13 @@ def _apply_changes(task: Task, changes: dict) -> None:
                 raise DomainError(_("A reward must be a positive amount."))
             reward = reward.quantize(Decimal("0.01"))
         task.reward = reward
+
+
+def _refresh_copies(task: Task) -> None:
+    """After the commit, every copy of the task in people's chats is drawn again as it is now
+    (research R1 C5): no stale buttons on a checker's request, a reassigned card or a late
+    alert."""
+    transaction.on_commit(partial(jobs.refresh_task_messages.delay, task.pk))
 
 
 def _restart_reminders(task: Task) -> None:

@@ -44,14 +44,14 @@ def test_money_follows_the_active_language():
 @pytest.mark.parametrize(
     ("value", "lang", "text"),
     [
-        (date(2026, 10, 5), "en", "5 Oct"),
-        (date(2026, 9, 5), "en", "5 Sept"),
+        (date(2026, 10, 5), "en", f"5{NB}Oct"),
+        (date(2026, 9, 5), "en", f"5{NB}Sept"),
         (date(2026, 10, 5), "uz", "5-okt"),
-        (date(2026, 10, 5), "ru", "5 окт."),
-        (date(2026, 5, 9), "ru", "9 мая"),
-        (date(2025, 10, 5), "en", "5 Oct 2025"),
-        (date(2025, 10, 5), "uz", "5-okt, 2025"),
-        (date(2025, 10, 5), "ru", "5 окт. 2025 г."),
+        (date(2026, 10, 5), "ru", f"5{NB}окт."),
+        (date(2026, 5, 9), "ru", f"9{NB}мая"),
+        (date(2025, 10, 5), "en", f"5{NB}Oct{NB}2025"),
+        (date(2025, 10, 5), "uz", f"5-okt,{NB}2025"),
+        (date(2025, 10, 5), "ru", f"5{NB}окт.{NB}2025{NB}г."),
     ],
 )
 def test_days_drop_the_year_only_within_the_current_one(value, lang, text):

@@ -76,6 +76,7 @@ async def test_someone_elses_contact_is_not_saved(dp, bot, company, member):
 async def test_pending_people_share_their_phone_while_creating_an_account(dp, bot, company):
     tg_user = updates.tg_user(601)
     await dp.feed_update(bot, updates.message(tg_user, f"/start {company.invite_start_param}"))
+    await dp.feed_update(bot, updates.pick_language(tg_user))  # a new person picks first
 
     await dp.feed_update(bot, updates.contact(tg_user, "+998901234567"))
 

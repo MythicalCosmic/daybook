@@ -87,7 +87,7 @@ def bot_membership(user: User):
     approved = [m for m in memberships if m.status == Membership.Status.APPROVED]
     if len(approved) > 1:
         chosen = next((m for m in approved if m.company_id == user.bot_company_id), None)
-        return chosen or _busiest(approved)
+        return chosen or first_choice(approved)
     return (approved or memberships or [None])[0]
 
 
@@ -116,17 +116,31 @@ def remember_company(user: User, company_id: int) -> None:
         User.objects.filter(pk=user.pk).update(bot_company_id=company_id)
 
 
-def _busiest(memberships: list):
-    """Of several approved memberships, the one with the most open work: tasks of theirs still
-    open plus work waiting for their check (the latest updated wins a tie)."""
+def first_choice(memberships: list):
+    """Of several approved memberships, the company someone sees first, the same in the bot,
+    the mini app and the dashboard: one they own, the one with the most branches, then the one
+    with the most open work for them (their open tasks and the work waiting for their check);
+    the latest updated wins a tie."""
+    from django.db.models import Count
+
+    from apps.companies.models import Branch
     from apps.tasks import queries
     from apps.tasks.models import Task
 
-    def work(member) -> int:
-        mine = Task.objects.filter(assignee=member, status__in=Task.OPEN_STATUSES).count()
-        return mine + queries.awaiting_review_by(member).count()
+    branches = dict(
+        Branch.objects.filter(company_id__in=[m.company_id for m in memberships])
+        .values("company_id")
+        .annotate(count=Count("pk"))
+        .values_list("company_id", "count")
+    )
 
-    return max(memberships, key=work)
+    def rank(member) -> tuple:
+        owns = member.role is not None and member.role.is_owner
+        mine = Task.objects.filter(assignee=member, status__in=Task.OPEN_STATUSES).count()
+        work = mine + queries.awaiting_review_by(member).count()
+        return owns, branches.get(member.company_id, 0), work
+
+    return max(memberships, key=rank)
 
 
 def save_verified_phone(user: User, *, contact_user_id: int | None, phone_number: str) -> bool:

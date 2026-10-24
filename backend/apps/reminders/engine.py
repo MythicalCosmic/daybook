@@ -16,8 +16,8 @@ from apps.notifications.telegram import BotName, serialize_markup
 from apps.reminders import bot_messages
 from apps.reminders.models import ReminderLog, ReminderPolicy
 from apps.reminders.policies import escalation_recipients, policy_for
-from apps.reminders.schedule import quiet_until
-from apps.tasks.models import Task
+from apps.reminders.schedule import quiet_for_task
+from apps.tasks.models import Task, TaskMessage
 from apps.tasks.queries import TASK_RELATIONS
 from apps.timeoff.queries import days_off
 
@@ -27,6 +27,9 @@ BATCH = 500
 # While someone has blocked the bot, try again this often instead of every few minutes.
 BLOCKED_RETRY = timedelta(hours=1)
 DAYS_OFF_AHEAD = timedelta(days=70)
+# Around a shift: arriving a little early or staying a little late still counts as at work.
+SHIFT_MARGIN = timedelta(minutes=30)
+SHIFT_LOOKAHEAD = timedelta(hours=24)
 
 
 @dataclass
@@ -74,6 +77,7 @@ def _claim(task_id: int, now: datetime) -> Claim | None:
     member = task.assignee
     if (
         task.due_at is None
+        or task.blocked_at is not None  # "can't do it": quiet until someone decides
         or member.status != Membership.Status.APPROVED
         or member.user.telegram_id is None
     ):
@@ -83,7 +87,10 @@ def _claim(task_id: int, now: datetime) -> Claim | None:
     local_now = timezone.localtime(now, ZoneInfo(task.company.timezone))
     # Holidays and approved time off are quiet too, for as far ahead as time off can reach.
     off = days_off(member, local_now.date(), local_now.date() + DAYS_OFF_AHEAD)
-    if (resume_at := quiet_until(local_now, policy, off)) is not None:
+    resume_at = quiet_for_task(
+        local_now, policy, off, due=task.due_at, shift=shift_now(member, now, task.company)
+    )
+    if resume_at is not None:
         _save(task, next_reminder_at=resume_at)
         return None
 
@@ -149,8 +156,35 @@ def _deliver(claim: Claim, now: datetime) -> None:
             ReminderLog.Kind.ESCALATION,
             task,
             claim.step,
-            lambda: bot_messages.escalation(task, now),
+            lambda recipient: bot_messages.escalation(task, now, recipient),
         )
+
+
+def shift_now(
+    member: Membership, now: datetime, company=None
+) -> tuple[bool, datetime | None] | None:
+    """Whether the person is at work now and when their next shift starts, from the attendance
+    roster (research R1 N1); None when the company doesn't use attendance or the person has no
+    shift around now, so the policy's quiet hours decide."""
+    if not (company or member.company).has_feature("attendance"):
+        return None
+    from apps.attendance.models import WorkShift
+
+    shifts = list(
+        WorkShift.objects.working()
+        .filter(
+            membership=member,
+            ends_at__gte=now - SHIFT_MARGIN,
+            starts_at__lte=now + SHIFT_LOOKAHEAD,
+        )
+        .order_by("starts_at")
+        .values_list("starts_at", "ends_at")
+    )
+    if not shifts:
+        return None
+    at_work = any(start - SHIFT_MARGIN <= now <= end + SHIFT_MARGIN for start, end in shifts)
+    upcoming = [start for start, _end in shifts if start - SHIFT_MARGIN > now]
+    return at_work, (upcoming[0] if upcoming else None)
 
 
 def _blocked(task: Task, member: Membership, now: datetime) -> None:
@@ -167,7 +201,7 @@ def _blocked(task: Task, member: Membership, now: datetime) -> None:
         ReminderLog.Kind.BLOCKED,
         task,
         task.reminders_sent,
-        lambda: bot_messages.blocked(member, task),
+        lambda recipient: bot_messages.blocked(member, task),
     )
 
 
@@ -177,13 +211,26 @@ def _tell(recipients, kind: str, task: Task, step: int, build) -> None:
         if chat_id is None:
             continue
         with translation.override(recipient.user.language):
-            text, markup = build()
+            text, markup = build(recipient)
         try:
-            telegram.send_message(BotName.EMPLOYEE, chat_id, text, serialize_markup(markup))
+            message_id = telegram.send_message(
+                BotName.EMPLOYEE, chat_id, text, serialize_markup(markup)
+            )
         except TelegramAPIError as exc:
             _log(task, kind, step, recipient, error=str(exc))
         else:
             _log(task, kind, step, recipient)
+            if kind == ReminderLog.Kind.ESCALATION and message_id is not None:
+                # Kept, so the alert says "done" once it is (research R1 C5).
+                TaskMessage.objects.get_or_create(
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    defaults={
+                        "task": task,
+                        "member": recipient,
+                        "kind": TaskMessage.Kind.ESCALATION,
+                    },
+                )
 
 
 def _save(task: Task, **fields) -> None:

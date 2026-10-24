@@ -345,3 +345,33 @@ class Activity(TenantModel):
 
     def __str__(self):
         return f"{self.get_kind_display()}: {self.task}"
+
+
+class TaskMessage(models.Model):
+    """A bot message about a task in someone's chat (research R1 C5): when the task changes,
+    every copy is drawn again, so nobody taps a stale button. The card someone taps is edited
+    by the bot itself."""
+
+    class Kind(models.TextChoices):
+        CARD = "card", _("Task card")
+        REVIEW = "review", _("Check request")
+        BLOCKED = "blocked", _("Can't do it")
+        ESCALATION = "escalation", _("Late alert")
+
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="messages")
+    member = models.ForeignKey(
+        Membership, on_delete=models.CASCADE, null=True, blank=True, related_name="+"
+    )
+    kind = models.CharField(max_length=12, choices=Kind.choices)
+    chat_id = models.BigIntegerField()
+    message_id = models.BigIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["chat_id", "message_id"], name="one_row_per_message")
+        ]
+        indexes = [models.Index(fields=["task", "created_at"])]
+
+    def __str__(self):
+        return f"{self.kind} of {self.task_id} in {self.chat_id}"

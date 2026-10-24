@@ -148,3 +148,56 @@ def test_the_digest_speaks_each_persons_language(company, member, sent_messages)
 
     [message] = to(sent_messages, person)
     assert message["text"].startswith("🌅 Доброе утро, Олег! Задач на сегодня: 1.")
+
+
+# When it comes (audit X-9) and what it says --------------------------------------------
+
+
+@pytest.fixture
+def rostered(company):
+    company.features = [*company.features, "attendance"]
+    company.save(update_fields=["features"])
+    return company
+
+
+def test_the_night_shift_hears_before_its_shift_not_at_nine(rostered, member, sent_messages):
+    from apps.attendance.tests.factories import shift_at
+
+    nigora = member.registered(rostered, first_name="Nigora")
+    shift_at(nigora, WEDNESDAY, time(20), time(8))
+    TaskFactory(assignee=nigora, due_at=at(WEDNESDAY, 23, 30))
+
+    assert post_morning_digests(MORNING) == 0  # 09:02: not her time
+    assert post_morning_digests(at(WEDNESDAY, 19, 46)) == 1
+
+    [message] = to(sent_messages, nigora)
+    assert message["text"].startswith("👋 Nigora, tasks for your shift: 1.")
+
+
+def test_a_rostered_day_off_gets_nothing(rostered, member, sent_messages):
+    from apps.attendance.tests.factories import shift_at
+
+    person = member.registered(rostered)
+    shift_at(person, WEDNESDAY + timedelta(days=1))  # works tomorrow, not today
+    TaskFactory(assignee=person, due_at=at(WEDNESDAY, 12))
+
+    assert post_morning_digests(MORNING) == 0
+    assert sent_messages == []
+
+
+def test_an_early_first_task_brings_the_digest_forward(worker, sent_messages):
+    TaskFactory(assignee=worker, due_at=at(WEDNESDAY, 8, 15))  # the opener's handover
+
+    assert post_morning_digests(at(WEDNESDAY, 7, 46)) == 1
+    assert to(sent_messages, worker)
+
+
+def test_names_are_escaped(company, member, sent_messages):
+    """Research R1 F4: a name with < or & no longer makes Telegram refuse the message."""
+    person = member.registered(company, first_name="<b>Ali & Co</b>")
+    TaskFactory(assignee=person, due_at=at(WEDNESDAY, 12))
+
+    post_morning_digests(MORNING)
+
+    [message] = to(sent_messages, person)
+    assert "&lt;b&gt;Ali &amp; Co&lt;/b&gt;" in message["text"]

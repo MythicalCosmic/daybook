@@ -110,3 +110,16 @@ def test_no_task_for_someone_who_registered_after_the_deadline(company, member):
     generate_daily_tasks(company, MONDAY)
 
     assert not daily_tasks().exists()
+
+
+def test_new_routine_work_moves_the_dashboards_pulse(company, member, monkeypatch):
+    """Audit X-13: bulk_create sends no post_save, so generation bumps the pulse itself."""
+    TaskTemplateFactory(company=company, assignees=[member.registered(company)])
+    bumped = []
+    monkeypatch.setattr(
+        "apps.tasks.generation.pulse.bump", lambda company_id, key: bumped.append((company_id, key))
+    )
+
+    generate_daily_tasks(company, MONDAY)
+
+    assert bumped == [(company.pk, "tasks.tasks")]

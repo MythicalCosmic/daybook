@@ -63,17 +63,24 @@ def test_finished_work_goes_to_the_reviewer_with_the_photo(manager, worker, sent
     assert actions(message) == [TaskAction.CONFIRM, TaskAction.RETURN]
 
 
-def test_daily_task_review_goes_to_everyone_who_can_confirm(company, member, worker, sent_messages):
+def test_daily_task_review_goes_to_the_closest_checkers(company, member, worker, sent_messages):
+    """Audit X-11: managers check routine work; the owner hears only when nobody else may."""
     manager = member.registered(company, "Manager")
+    member.registered(company, "Owner")
+    task = TaskFactory(assignee=worker, kind=Task.Kind.DAILY, status=Task.Status.REVIEW)
+
+    send_task_completed(task.pk)
+
+    assert {m["chat_id"] for m in sent_messages} == {manager.user.telegram_id}
+
+
+def test_the_owner_checks_when_nobody_else_may(company, member, worker, sent_messages):
     owner = member.registered(company, "Owner")
     task = TaskFactory(assignee=worker, kind=Task.Kind.DAILY, status=Task.Status.REVIEW)
 
     send_task_completed(task.pk)
 
-    assert {m["chat_id"] for m in sent_messages} == {
-        manager.user.telegram_id,
-        owner.user.telegram_id,
-    }
+    assert {m["chat_id"] for m in sent_messages} == {owner.user.telegram_id}
 
 
 def test_creator_hears_when_an_assigned_task_is_done(manager, worker, sent_messages):

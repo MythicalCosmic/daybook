@@ -47,7 +47,9 @@ def text_message(text: str | None) -> Message:
 
 
 def test_the_menu_commands_are_the_private_menu():
-    assert menu_commands() == {command.command for command in private_commands()}
+    listed = {command.command for command in private_commands(several_companies=True)}
+    # The language command's short forms and settings interrupt too, though they're unlisted.
+    assert menu_commands() == listed | {"til", "lang", "settings"}
     assert {
         "checkin",
         "expense",
@@ -149,7 +151,8 @@ async def test_a_menu_command_never_becomes_an_announcement(dp, bot, company, me
 
     assert "You're a member of" in bot.sent_texts()[-1]  # home, not a preview of "/expense"
     await dp.feed_update(bot, updates.message(tg, "Shop closes at 18:00 today"))
-    assert "You're a member of" in bot.sent_texts()[-1]  # and the draft is gone
+    # The draft is gone: plain text is offered as a task (research R1 Q1), not announced.
+    assert "Add this as a task?" in bot.sent_texts()[-1]
 
 
 @pytestmark_db

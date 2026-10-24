@@ -148,3 +148,25 @@ class _BotDouble:
 @pytest.fixture
 def bot_double():
     return _BotDouble()
+
+
+def test_me_shows_and_switches_the_company(api_as, member):
+    from apps.companies.models import Branch
+
+    shop, supplier = CompanyFactory(name="Demo Dorixona"), CompanyFactory(name="Demo Distribyutor")
+    Branch.objects.create(company=shop, name="Yunusobod")  # the shop has two branches
+    owner = member.registered(shop, "Owner")
+    member.registered(supplier, "Owner", user=owner.user)
+    client = api_as(owner)
+
+    # A first visit: the company they own with the most branches, as the dashboard opens.
+    assert client.get("/api/v1/me/").json()["bot_company"] == shop.pk
+
+    response = client.patch("/api/v1/me/", {"bot_company": supplier.pk}, format="json")
+    assert response.json()["bot_company"] == supplier.pk
+    owner.user.refresh_from_db()
+    assert owner.user.bot_company_id == supplier.pk
+
+    stranger = CompanyFactory()
+    refused = client.patch("/api/v1/me/", {"bot_company": stranger.pk}, format="json")
+    assert refused.status_code == 400

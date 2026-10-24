@@ -229,8 +229,10 @@ def test_review_requests_and_late_alerts_reach_only_confirmers_who_see_the_task(
     def pks(people):
         return {person.pk for person in people}
 
-    assert pks(queries.reviewers(routine)) == {checker_here.pk, manager.pk}
-    assert pks(escalation_recipients(routine)) == {checker_here.pk, manager.pk}
+    # The branch's own checker first; the manager of every branch still sees it (audit X-11).
+    assert pks(queries.reviewers(routine)) == {checker_here.pk}
+    assert pks(escalation_recipients(routine)) == {checker_here.pk}
+    assert manager.pk in pks(queries.confirmers(routine))
     assert pks(queries.reviewers(company_wide)) == {manager.pk}
     assert checker_there.pk not in pks(queries.confirmers(routine))
     assert nowhere.pk not in pks(queries.confirmers(routine))

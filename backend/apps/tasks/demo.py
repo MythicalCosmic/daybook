@@ -729,7 +729,7 @@ def _policies(company) -> tuple[ReminderPolicy, ReminderPolicy]:
             ReminderText(
                 policy=strict,
                 from_step=1,
-                text="{name}, {task} {due} da bajarilishi kerak edi. Iltimos, hoziroq bajaring.",
+                text="{name}, {task}: muddat {due} edi. Iltimos, hoziroq bajaring.",
             ),
             ReminderText(
                 policy=strict,

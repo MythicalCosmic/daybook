@@ -10,8 +10,11 @@ from aiogram.types import (
     ChatMemberMember,
     ChatMemberUpdated,
     Contact,
+    Document,
+    InlineKeyboardMarkup,
     Message,
     PhotoSize,
+    Sticker,
     Update,
     User,
 )
@@ -72,7 +75,7 @@ def contact(from_user: User, phone_number: str, owner_id: int | None = None) -> 
     )
 
 
-def photo(from_user: User, caption: str | None = None) -> Update:
+def photo(from_user: User, caption: str | None = None, media_group_id: str | None = None) -> Update:
     return Update(
         update_id=next(_ids),
         message=Message(
@@ -81,10 +84,71 @@ def photo(from_user: User, caption: str | None = None) -> Update:
             chat=Chat(id=from_user.id, type="private"),
             from_user=from_user,
             caption=caption,
+            media_group_id=media_group_id,
             photo=[
                 PhotoSize(file_id="small", file_unique_id="s", width=90, height=90),
                 PhotoSize(file_id="large", file_unique_id="l", width=1280, height=1280),
             ],
+        ),
+    )
+
+
+def image_file(from_user: User, mime_type: str = "image/jpeg") -> Update:
+    """A photo sent as a file, to keep its quality."""
+    return Update(
+        update_id=next(_ids),
+        message=Message(
+            message_id=next(_ids),
+            date=datetime.now(),
+            chat=Chat(id=from_user.id, type="private"),
+            from_user=from_user,
+            document=Document(
+                file_id="doc", file_unique_id="d", file_name="IMG_1.jpg", mime_type=mime_type
+            ),
+        ),
+    )
+
+
+def sticker(from_user: User) -> Update:
+    return Update(
+        update_id=next(_ids),
+        message=Message(
+            message_id=next(_ids),
+            date=datetime.now(),
+            chat=Chat(id=from_user.id, type="private"),
+            from_user=from_user,
+            sticker=Sticker(
+                file_id="st",
+                file_unique_id="st",
+                type="regular",
+                width=512,
+                height=512,
+                is_animated=False,
+                is_video=False,
+            ),
+        ),
+    )
+
+
+def reply(from_user: User, text: str, to_markup: InlineKeyboardMarkup) -> Update:
+    """A text sent as a reply to one of the bot's messages carrying `to_markup`."""
+    replied = Message(
+        message_id=next(_ids),
+        date=datetime.now(),
+        chat=Chat(id=from_user.id, type="private"),
+        from_user=BOT,
+        text="card",
+        reply_markup=to_markup,
+    )
+    return Update(
+        update_id=next(_ids),
+        message=Message(
+            message_id=next(_ids),
+            date=datetime.now(),
+            chat=Chat(id=from_user.id, type="private"),
+            from_user=from_user,
+            text=text,
+            reply_to_message=replied,
         ),
     )
 
@@ -164,3 +228,10 @@ def group_callback(from_user: User, data: str, chat_id: int = GROUP_ID) -> Updat
             ),
         ),
     )
+
+
+def pick_language(from_user: User, code: str = "en", mode: str = "first") -> Update:
+    """A tap on the language picker a brand-new person gets first (research R1 L2)."""
+    from bot.callbacks import LangCallback
+
+    return callback(from_user, LangCallback(code=code, mode=mode).pack())

@@ -47,6 +47,7 @@ class QuickAdd:
     guessed_time: bool = False  # no time was given: `due_at` carries the default time
     rolled: bool = False  # a time that had passed today: moved to tomorrow
     past: bool = False  # an explicit moment that has already passed: nothing set
+    passed: datetime | None = None  # that moment, so the same time tomorrow can be offered
 
     @property
     def found(self) -> bool:
@@ -489,8 +490,8 @@ _rule(
     + r"|(?:в|во|к|ко|до)\s+(?P<d_h>\d{1,2})(?:[:.](?P<d_m>\d{2}))?(?:\s*(?:ч\.?|час(?:а|ов)?))?"
     r"(?:\s+(?P<d_part>утра|дня|вечера|ночи))?"
     r"|(?P<e_h>\d{1,2})(?:[:.](?P<e_m>\d{2}))?\s*(?:ч\.?|час(?:а|ов)?)?\s+(?P<e_part>утра|дня|вечера|ночи)"
-    r"|(?:(?:at|by|until|till|@)\s*)?(?P<f_h>\d{1,2})(?::(?P<f_m>\d{2}))?(?P<f_ap>\s*[ap]\.?m\.?|[ap])"
-    r"|(?:at|by|until|till|@)\s*(?P<g_h>\d{1,2})(?::(?P<g_m>\d{2}))?"
+    r"|(?:(?:at|by|until|@)\s*)?(?P<f_h>\d{1,2})(?::(?P<f_m>\d{2}))?(?P<f_ap>\s*[ap]\.?m\.?|[ap])"
+    r"|(?:at|by|until|@)\s*(?P<g_h>\d{1,2})(?::(?P<g_m>\d{2}))?"
 )(_time)
 
 
@@ -533,7 +534,7 @@ def _date(g: dict, spec: _Spec) -> bool:
     r"(?:\s+(?:kuni|куни)|gacha|ga|da|гача|га|да)?"
     r"|(?:(?:в|во|к|ко|до|на)\s+)?(?:(?P<wr_mod>следующ(?:ий|ую|ее|ей|его)|эт(?:от|у|о)"
     r"|ближайш(?:ий|ую|ее|ей|его))\s+)?(?P<wr>" + _WD_RU_RE + ")"
-    r"|(?:(?:on|by|until|till)\s+)?(?:(?P<we_mod>next|this|coming)\s+)?(?P<we>" + _WD_EN_RE + ")"
+    r"|(?:(?:on|by|until)\s+)?(?:(?P<we_mod>next|this|coming)\s+)?(?P<we>" + _WD_EN_RE + ")"
 )
 def _weekday(g: dict, spec: _Spec) -> bool:
     if spec.has_day() or spec.delta:
@@ -698,7 +699,7 @@ def _resolve(spec: _Spec, now: datetime, default_time: time, end_of_day: time) -
                 return {"due": _soon(now)}
             if guessed and day == today:
                 return {"day": day, "guessed_time": True}  # "bugun" after 18:00: ask the time
-            return {"past": True}
+            return {"past": True, "passed": due}
         result = {"due": due, "guessed_time": guessed}
     while spec.repeat == "weekdays" and result["due"].weekday() >= 5:
         result["due"] += timedelta(days=1)
@@ -717,7 +718,6 @@ _DANGLING = {
     "by",
     "in",
     "until",
-    "till",
     "soat",
     "соат",
 }
@@ -762,27 +762,37 @@ def parse(
     nobody has to pick one first; it is there for callers that word the result."""
     if now.tzinfo is None:
         raise ValueError("`now` must be timezone-aware, in the company's timezone.")
-    s, origin = _normalize(text)
-    spec = _Spec()
-    bangs = re.search(r"!{2,}[\s.]*$", s)  # "Kassa!!" is urgent
-    if bangs:
-        spec.priority = "urgent"
-    start, end, spans = _peel(s, spec, bangs.start() if bangs else len(s))
-    found = _merge(s, spans) + (((bangs.start(), len(s.rstrip())),) if bangs else ())
-    if not found:
+    # "!!" anywhere makes it urgent ("Kassa!!", "Dori !! ertaga"); the marks leave the title.
+    bangs = [match.span() for match in _BANGS.finditer(text)]
+    plain = _blank(text, bangs)
+    s, origin = _normalize(plain)
+    spec = _Spec(priority="urgent" if bangs else None)
+    start, end, spans = _peel(s, spec, len(s))
+    found = _merge(s, spans)
+    if not found and not bangs:
         return QuickAdd(title=text.strip())
     moment = _resolve(spec, now, default_time, end_of_day)
     due_at = moment.pop("due", None)
     repeat = None if spec.repeat == "none" else spec.repeat
     return QuickAdd(
-        title=_title(text, _start_of(origin, start), _end_of(origin, end)) if start < end else "",
+        title=_title(plain, _start_of(origin, start), _end_of(origin, end)) if start < end else "",
         due_at=due_at,
         repeat=repeat,
         repeat_weekdays=_repeat_weekdays(repeat, due_at, spec.weekday),
         priority=spec.priority,
-        spans=tuple((_start_of(origin, a), _end_of(origin, b)) for a, b in found),
+        spans=tuple(sorted([(_start_of(origin, a), _end_of(origin, b)) for a, b in found] + bangs)),
         **moment,
     )
+
+
+_BANGS = re.compile(r"!{2,}")
+
+
+def _blank(text: str, spans: list[tuple[int, int]]) -> str:
+    """`text` with spaces over `spans`: the same length, so positions still match."""
+    for first, last in spans:
+        text = text[:first] + " " * (last - first) + text[last:]
+    return text
 
 
 def _repeat_weekdays(

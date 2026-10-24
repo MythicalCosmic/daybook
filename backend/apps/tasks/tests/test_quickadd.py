@@ -219,6 +219,20 @@ CASES = [
         {},
     ),
     (WED_10, "Holodilnik!!", "Holodilnik", None, {"priority": "urgent"}),
+    # the marks count wherever they are, and leave the title (mini app review)
+    (WED_10, "Dori !! ertaga", "Dori", "2026-10-22 18:00", {"priority": "urgent"}),
+    (WED_10, "!! Dori ertaga", "Dori", "2026-10-22 18:00", {"priority": "urgent"}),
+    (WED_10, "Dori !!! olib kelish", "Dori olib kelish", None, {"priority": "urgent"}),
+    (WED_10, "Salom!", "Salom!", None, {}),
+    # "till" is the cash register in a pharmacy, never "until" (dashboard review)
+    (
+        WED_10,
+        "Count the till tomorrow 18:00 !!",
+        "Count the till",
+        "2026-10-22 18:00",
+        {"priority": "urgent"},
+    ),
+    (WED_10, "today 18:00 close the till", "Close the till", "2026-10-21 18:00", {}),
     (WED_10, "ertaga 10:00", "", "2026-10-22 10:00", {}),
     # The evening: a part of the day that's under way, a time that's gone
     (WED_1910, "Kassa bugun kechqurun", "Kassa", "2026-10-21 20:30", {}),
@@ -353,3 +367,9 @@ def test_only_a_date_leaves_no_title():
     got = parse("ertaga 10:00", now=WED_10, lang="uz")
     assert got.title == ""
     assert _shown(got.due_at) == "2026-10-22 10:00"
+
+
+def test_urgency_marks_inside_the_text_are_highlighted_too():
+    text = "Dori !! ertaga"
+    got = parse(text, now=WED_10)
+    assert [text[a:b] for a, b in got.spans] == ["!!", "ertaga"]

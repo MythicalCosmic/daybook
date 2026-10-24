@@ -117,7 +117,40 @@ def test_parse_without_a_date_keeps_the_text(shop, api_as):
         "priority": None,
         "repeat": None,
         "repeat_weekdays": None,
+        "rolled": False,
+        "past": False,
+        "passed_at": None,
     }
+
+
+def test_parse_says_when_the_typed_time_has_passed(shop, api_as, wednesday_morning):
+    """So the app can offer "tomorrow?" as the bot does: a moment that has passed sets
+    nothing; a time alone that has passed today is tomorrow's."""
+    client = api_as(shop.worker)
+
+    past = client.post(
+        employee_path(shop.company, "parse/"), {"text": "Kassa bugun 08:00"}, format="json"
+    ).json()
+    assert past["past"] is True and past["rolled"] is False
+    assert past["due_at"] is None and past["title"] == "Kassa"
+    assert datetime.fromisoformat(past["passed_at"]) == WEDNESDAY_10.replace(hour=8)
+
+    rolled = client.post(
+        employee_path(shop.company, "parse/"), {"text": "Kassa 9:30"}, format="json"
+    ).json()
+    assert rolled["rolled"] is True and rolled["past"] is False
+    due = datetime.fromisoformat(rolled["due_at"]).astimezone(TASHKENT)
+    assert (due.day, due.hour, due.minute) == (22, 9, 30)
+
+
+def test_parse_reads_the_urgency_marks_anywhere(shop, api_as, wednesday_morning):
+    data = (
+        api_as(shop.worker)
+        .post(employee_path(shop.company, "parse/"), {"text": "Dori !! ertaga"}, format="json")
+        .json()
+    )
+    assert data["title"] == "Dori" and data["priority"] == "urgent"
+    assert datetime.fromisoformat(data["due_at"]).astimezone(TASHKENT).day == 22
 
 
 def test_the_owner_api_parses_too(shop, owner_api):
@@ -527,3 +560,28 @@ def test_the_person_who_loses_a_task_hears(shop, member, sent_messages, commit):
     [message] = texts(sent_messages, shop.worker.user.telegram_id)
     assert "Given to someone else" in message
     assert texts(sent_messages, neighbour.user.telegram_id)  # and the new person gets it
+
+
+def test_the_assignee_sees_why_and_by_whom_it_came_back(shop, api_as):
+    task = given(shop, needs_confirmation=True)
+    services.complete_task(task, by=shop.worker)
+    services.return_task(task, by=shop.lead, reason="Retake it in daylight")
+    services.add_comment(task, by=shop.worker, text="OK, after lunch")  # a later comment
+
+    data = api_as(shop.worker).get(employee_path(shop.company, f"{task.pk}/")).json()
+
+    assert data["returned_reason"] == "Retake it in daylight"
+    assert data["returned_by"]["id"] == shop.lead.pk
+
+
+def test_reminder_info_has_the_real_send_times(shop, api_as):
+    from apps.reminders.models import ReminderLog
+
+    task = given(shop, due_at=timezone.now() - timedelta(minutes=30))
+    ReminderLog.objects.create(
+        task=task, kind=ReminderLog.Kind.REMINDER, step=1, recipient=shop.worker
+    )
+
+    data = api_as(shop.worker).get(employee_path(shop.company, f"{task.pk}/")).json()
+
+    assert len(data["reminder"]["sent_times"]) == 1

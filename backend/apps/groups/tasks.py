@@ -82,14 +82,24 @@ def queue_post(
 
 
 def _post(
-    company: Company, about: Membership, event: GroupEvent, build, photo: str | None = None
+    company: Company,
+    about: Membership,
+    event: GroupEvent,
+    build,
+    photo: str | None = None,
+    branch_id: int | None = None,
 ) -> None:
-    """Post news about a member to each of the company's groups that wants it."""
+    """Post news about a member to each of the company's groups that wants it: groups of every
+    branch, or of the branch the news is from (audit X-2)."""
     covers = Q(positions=None)
     if about.position_id:
         covers |= Q(positions=about.position_id)
+    where = Q(branches=None)
+    if branch_id is not None:
+        where |= Q(branches=branch_id)
     groups = list(
         TelegramGroup.objects.filter(covers, company=company, is_active=True)
+        .filter(where)
         .filter(events__contains=[event])
         .values_list("pk", flat=True)
         .distinct()
@@ -116,7 +126,12 @@ def announce_task_done(task_id: int, completed_at: str | None = None) -> None:
         return  # personal tasks stay personal
     photo = task.proof_photo.name or None
     _post(
-        task.company, task.assignee, event[task.kind], lambda: bot_messages.task_done(task), photo
+        task.company,
+        task.assignee,
+        event[task.kind],
+        lambda: bot_messages.task_done(task),
+        photo,
+        branch_id=task.branch_id,
     )
 
 
@@ -126,7 +141,13 @@ def announce_late(task_id: int) -> None:
     if task is None or not task.is_open:
         return
     now = timezone.now()
-    _post(task.company, task.assignee, GroupEvent.LATE, lambda: bot_messages.late(task, now))
+    _post(
+        task.company,
+        task.assignee,
+        GroupEvent.LATE,
+        lambda: bot_messages.late(task, now),
+        branch_id=task.branch_id,
+    )
 
 
 @shared_task
@@ -138,7 +159,13 @@ def announce_member(membership_id: int) -> None:
     )
     if member is None or member.status != Membership.Status.APPROVED:
         return
-    _post(member.company, member, GroupEvent.MEMBERS, lambda: bot_messages.member_joined(member))
+    _post(
+        member.company,
+        member,
+        GroupEvent.MEMBERS,
+        lambda: bot_messages.member_joined(member),
+        branch_id=member.home_branch_id,
+    )
 
 
 @shared_task
@@ -164,32 +191,39 @@ def _post_report(company: Company, kind: GroupEvent, local: datetime) -> int:
     groups = (
         TelegramGroup.objects.filter(company=company, is_active=True, events__contains=[kind])
         .exclude(pk__in=already)
-        .prefetch_related(Prefetch("positions", queryset=Position.objects.only("pk")))
+        .prefetch_related(Prefetch("positions", queryset=Position.objects.only("pk")), "branches")
     )
-    built: dict[frozenset[int], BotMessage | None] = {}  # one report per position filter
+    # One report per position and branch filter: a branch's group hears its own branch only.
+    built: dict[tuple[frozenset[int], frozenset[int]], BotMessage | None] = {}
     posted = 0
     for group in groups:
         positions = frozenset(position.pk for position in group.positions.all())
-        if positions not in built:
+        branches = frozenset(branch.pk for branch in group.branches.all())
+        key = (positions, branches)
+        if key not in built:
             with translation.override(company.default_language):
-                built[positions] = _report(company, kind, local, positions)
-        if built[positions] is None:
+                built[key] = _report(company, kind, local, positions, branches)
+        if built[key] is None:
             continue  # nothing to say, e.g. on a day off
         # The unique report row is the claim: a second run that gets here skips it.
         _, claimed = GroupReport.objects.get_or_create(group=group, kind=kind, day=day)
         if claimed:
-            queue_post(group.pk, built[positions])
+            queue_post(group.pk, built[key])
             posted += 1
     return posted
 
 
 def _report(
-    company: Company, kind: GroupEvent, local: datetime, positions: frozenset[int]
+    company: Company,
+    kind: GroupEvent,
+    local: datetime,
+    positions: frozenset[int],
+    branches: frozenset[int] = frozenset(),
 ) -> BotMessage | None:
     day = local.date()
     if kind == GroupEvent.MORNING:
-        rows = reports.morning_plan(company, day, positions)
+        rows = reports.morning_plan(company, day, positions, branches)
         return bot_messages.morning(company, day, rows) if rows else None
     # Work due later tonight isn't late yet, so the summary leaves it out.
-    stats = reports.day_stats(company, day, until=local, positions=positions)
+    stats = reports.day_stats(company, day, until=local, positions=positions, branches=branches)
     return bot_messages.evening(day, stats) if stats.total else None

@@ -128,7 +128,7 @@ def awaiting_review_by(member: Membership) -> QuerySet[Task]:
 
 
 def reviewers(task: Task) -> list[Membership]:
-    """Who gets asked to confirm finished work."""
+    """Who gets asked to confirm finished work: whoever gave it, else the closest checkers."""
     creator = task.created_by
     if (
         task.kind == Task.Kind.ASSIGNED
@@ -136,7 +136,24 @@ def reviewers(task: Task) -> list[Membership]:
         and creator.status == Membership.Status.APPROVED
     ):
         return [creator]
-    return confirmers(task)
+    return closest_confirmers(task)
+
+
+def closest_confirmers(task: Task) -> list[Membership]:
+    """The checkers a task's news goes to (audit X-11): the branch's own heads (a scope that
+    names its branch) first, else managers of every branch, and the owners only when nobody
+    else may. Everyone in `confirmers` can still check it from their queue."""
+    everyone = confirmers(task)
+    if not everyone:
+        return []
+
+    def tier(member: Membership) -> int:
+        if member.role is not None and member.role.is_owner:
+            return 2
+        return 0 if branch_ids(member) is not None else 1
+
+    closest = min(tier(member) for member in everyone)
+    return [member for member in everyone if tier(member) == closest]
 
 
 def search(

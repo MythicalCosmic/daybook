@@ -1,6 +1,7 @@
 from functools import partial
 
 from django.db import transaction
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, extend_schema_field
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
@@ -12,7 +13,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 
 from apps.accounts.models import User
-from apps.accounts.services import sync_telegram_user
+from apps.accounts.services import approved_memberships, bot_membership, sync_telegram_user
 from apps.accounts.tasks import relabel_employee_chat
 from apps.accounts.telegram_auth import InvalidInitData, validate_init_data
 from apps.members.api import MembershipSerializer
@@ -31,6 +32,16 @@ class AccessTokenSerializer(serializers.Serializer):
 
 class MeSerializer(serializers.ModelSerializer):
     memberships = serializers.SerializerMethodField()
+    bot_company = serializers.IntegerField(
+        source="bot_company_id",
+        allow_null=True,
+        required=False,
+        help_text=(
+            "The company the person works in, the same in the bot, the mini app and the "
+            "dashboard: the one they picked last, else the one they see first (a company they "
+            "own, the most branches). Set it to switch."
+        ),
+    )
 
     class Meta:
         model = User
@@ -42,6 +53,7 @@ class MeSerializer(serializers.ModelSerializer):
             "last_name",
             "phone",
             "language",
+            "bot_company",
             "memberships",
         )
         read_only_fields = (
@@ -52,6 +64,20 @@ class MeSerializer(serializers.ModelSerializer):
             "last_name",
             "phone",
         )
+
+    def to_representation(self, user: User) -> dict:
+        data = super().to_representation(user)
+        membership = bot_membership(user)
+        approved = membership is not None and membership.status == Membership.Status.APPROVED
+        data["bot_company"] = membership.company_id if approved else None
+        return data
+
+    def validate_bot_company(self, value: int | None) -> int | None:
+        if value is not None and value not in {
+            member.company_id for member in approved_memberships(self.instance)
+        }:
+            raise serializers.ValidationError(_("You don't work in that company."))
+        return value
 
     @extend_schema_field(MembershipSerializer(many=True))
     def get_memberships(self, user: User) -> list[dict]:
@@ -99,8 +125,9 @@ class TelegramAuthView(APIView):
 
 
 class MeView(RetrieveUpdateAPIView):
-    """The signed-in person, with every membership. Only `language` can be changed; a new one
-    relabels the person's chat with the employee bot too (its menus and keyboard)."""
+    """The signed-in person, with every membership. `language` and `bot_company` can be changed:
+    a new language relabels the person's chat with the employee bot too (its menus and
+    keyboard), and the company is the one the bot's lists and new tasks use."""
 
     serializer_class = MeSerializer
     http_method_names = ("get", "patch", "options")

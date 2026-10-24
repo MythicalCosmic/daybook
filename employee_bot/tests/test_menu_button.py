@@ -45,6 +45,8 @@ async def test_start_labels_the_chats_menu_button_in_their_language(
     person = updates.tg_user(9_201, language_code=language)
 
     await dp.feed_update(bot, updates.message(person, "/start"))
+    if language != "uz":  # a new person whose Telegram isn't Uzbek picks the language first
+        await dp.feed_update(bot, updates.pick_language(person, language))
 
     [button] = menu_buttons(bot)
     assert button.chat_id == 9_201
@@ -80,7 +82,9 @@ async def test_a_refused_label_never_stops_the_answer(dp, bot, settings, monkeyp
 
     monkeypatch.setattr(bot.session, "make_request", refuse)
 
-    await dp.feed_update(bot, updates.message(updates.tg_user(9_202), "/start"))
+    person = updates.tg_user(9_202)
+    await dp.feed_update(bot, updates.message(person, "/start"))
+    await dp.feed_update(bot, updates.pick_language(person))
 
     assert bot.sent_texts()  # the greeting still went out
     assert "Couldn't label the menu button" in caplog.text

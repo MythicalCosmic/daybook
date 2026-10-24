@@ -110,7 +110,8 @@ def test_assignee_starts_and_completes(worker, django_capture_on_commit_callback
     assert task.status == Task.Status.DONE
     assert task.started_at is not None
     assert task.completed_at is not None
-    assert len(callbacks) == 2  # the creator hears about it, and so do the team's groups
+    # The creator hears about it, the team's groups too, and the task's copies are redrawn.
+    assert len(callbacks) == 3
 
 
 def test_only_the_assignee_works_on_a_task(manager, worker):
@@ -196,7 +197,8 @@ def test_sent_back_task_is_open_again_with_the_reason(manager, worker):
     assert task.status == Task.Status.RETURNED
     assert task.is_open
     assert task.comments.get().text == "Retake in daylight"
-    assert Action.START in rules.allowed_actions(task, worker)
+    # Back with the worker: straight to Done again, no Start (audit M-16).
+    assert rules.allowed_actions(task, worker)[0] == Action.COMPLETE
 
 
 def test_sending_back_needs_a_reason(manager, worker):

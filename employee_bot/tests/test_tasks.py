@@ -5,7 +5,7 @@ from aiogram.methods import AnswerCallbackQuery, EditMessageText, SendMessage
 from asgiref.sync import sync_to_async
 from django.utils import timezone
 
-from apps.tasks.callbacks import DueCallback, DuePreset, TaskAction, TaskCallback
+from apps.tasks.callbacks import DueCallback, DuePreset, QuickAddCallback, TaskAction, TaskCallback
 from apps.tasks.models import Proof, Task
 from apps.tasks.tests.factories import TaskFactory, jpeg_bytes
 from tests import mocked_bot, updates
@@ -84,7 +84,7 @@ async def test_photo_proof_is_collected_before_completing(dp, bot, company, memb
     tg = updates.tg_user(worker.user.telegram_id)
 
     await dp.feed_update(bot, updates.callback(tg, press(TaskAction.DONE, task.pk)))
-    assert "Send a photo" in sent(bot)[-1].text
+    assert "Send a photo" in edits(bot)[-1].text  # the tapped card asks (research R1 C3)
 
     await dp.feed_update(bot, updates.message(tg, "it's done, trust me"))
     assert "Attach a photo" in sent(bot)[-1].text
@@ -132,12 +132,14 @@ async def test_new_task_with_a_preset_deadline(dp, bot, company, member):
     await dp.feed_update(bot, updates.message(tg, "➕ New task"))
     await dp.feed_update(bot, updates.message(tg, "Order receipt rolls"))
     await dp.feed_update(bot, updates.callback(tg, DueCallback(preset=DuePreset.IN_AN_HOUR).pack()))
+    assert not await Task.objects.filter(assignee=worker).aexists()  # the preview comes first
+    await dp.feed_update(bot, updates.callback(tg, QuickAddCallback(action="save").pack()))
 
     task = await Task.objects.aget(assignee=worker)
     assert task.title == "Order receipt rolls"
     assert task.kind == Task.Kind.PERSONAL
     assert timedelta(minutes=55) < task.due_at - timezone.now() <= timedelta(hours=1)
-    assert "Added to your list" in sent(bot)[-1].text
+    assert "Added to your list" in edits(bot)[-1].text
 
 
 async def test_new_task_with_a_typed_deadline(dp, bot, company, member):
@@ -147,9 +149,11 @@ async def test_new_task_with_a_typed_deadline(dp, bot, company, member):
     await dp.feed_update(bot, updates.message(tg, "/new"))
     await dp.feed_update(bot, updates.message(tg, "Learn the refunds flow"))
     await dp.feed_update(bot, updates.message(tg, "whenever"))
-    assert "I didn't get that" in sent(bot)[-1].text
+    assert "I didn't catch the time" in sent(bot)[-1].text
+    assert sent(bot)[-1].reply_markup.inline_keyboard  # the presets again (audit B-3)
 
     await dp.feed_update(bot, updates.message(tg, "25.12 18:00"))
+    await dp.feed_update(bot, updates.callback(tg, QuickAddCallback(action="save").pack()))
 
     task = await Task.objects.aget(assignee=worker)
     assert timezone.localtime(task.due_at).strftime("%d.%m %H:%M") == "25.12 18:00"
@@ -211,7 +215,7 @@ async def test_colleague_cannot_confirm_from_a_forwarded_button(dp, bot, company
     )
 
     assert (await reload(task)).status == Task.Status.REVIEW
-    assert alerts(bot) == ["This task no longer exists."]  # not even visible to them
+    assert alerts(bot) == ["This task was deleted or given to someone else."]  # not visible
 
 
 async def test_unregistered_member_gets_the_registration_prompt(dp, bot, company, member):
@@ -238,7 +242,8 @@ async def test_snooze_from_a_reminder(dp, bot, company, member):
     task = await reload(task)
     assert task.snooze_count == 1
     answer = [r for r in bot.requests if isinstance(r, AnswerCallbackQuery)][-1]
-    assert answer.text.startswith("Snoozed until")
+    assert answer.text.startswith("⏰ Snoozed. Next reminder at")
+    assert "the deadline stays" in answer.text
 
     await dp.feed_update(bot, updates.callback(tg, press(TaskAction.SNOOZE, task.pk)))
 

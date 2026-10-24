@@ -107,7 +107,13 @@ async def test_commands_and_the_menu_button(bot, settings):
     await set_commands(bot)
 
     menus = [r for r in bot.requests if isinstance(r, SetMyCommands)]
-    assert [c.command for c in menus[0].commands] == ["today", "dashboard", "new", "start"]
+    assert [c.command for c in menus[0].commands] == [
+        "today",
+        "dashboard",
+        "new",
+        "language",
+        "start",
+    ]
     [menu] = [r for r in bot.requests if isinstance(r, SetChatMenuButton)]
     assert isinstance(menu.menu_button, MenuButtonWebApp)
     assert menu.menu_button.web_app.url == "https://app.example.uz/dashboard/"

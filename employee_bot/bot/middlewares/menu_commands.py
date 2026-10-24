@@ -9,7 +9,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, TelegramObject
 
 from apps.members.bot_menu import registered
-from apps.members.bot_messages import MENU_APP
+from apps.members.bot_messages import MENU_APP, MENU_TO_CHECK, is_company_button
 from bot.commands import private_commands
 from bot.filters.menu import translations
 
@@ -17,10 +17,17 @@ from bot.filters.menu import translations
 COMMAND = re.compile(r"/(?P<command>[A-Za-z0-9_]{1,32})(?:@[A-Za-z0-9_]+)?(?:\s|$)")
 
 
+# Typed rather than picked from the menu, they still end a conversation: the language
+# command's short forms, and settings.
+HIDDEN_COMMANDS = frozenset({"til", "lang", "settings"})
+
+
 @cache
 def menu_commands() -> frozenset[str]:
-    """The commands in the private chat menu (bot/commands.py), without the slash."""
-    return frozenset(command.command for command in private_commands())
+    """The commands in the private chat menu (bot/commands.py), without the slash: the menu of
+    someone in several companies too (/company), and the hidden short forms."""
+    listed = private_commands(several_companies=True)
+    return frozenset(command.command for command in listed) | HIDDEN_COMMANDS
 
 
 def command_of(message: Message) -> str | None:
@@ -34,12 +41,14 @@ def is_menu_command(message: Message) -> bool:
 
 
 def is_menu_button(message: Message) -> bool:
-    """A main-menu button a module registered (apps.members.bot_menu), or the app's button, in
-    any language."""
+    """A main-menu button a module registered (apps.members.bot_menu), the app's or the
+    checker's button, or the company switch ("🏢 Demo Dorixona ▸"), in any language."""
     text = message.text
     if not text:
         return False
-    return text in translations(MENU_APP) or any(
+    if text in translations(MENU_APP) or text in translations(MENU_TO_CHECK):
+        return True
+    return is_company_button(text) or any(
         text in translations(button.msgid) for button in registered()
     )
 

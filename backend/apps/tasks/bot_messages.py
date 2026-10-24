@@ -17,7 +17,7 @@ from django.utils.translation import gettext as _
 
 from apps.companies.models import Company
 from apps.core.money import format_money
-from apps.members.bot_messages import BotMessage, miniapp_url
+from apps.members.bot_messages import BotMessage, miniapp_url, several_companies
 from apps.members.models import Membership
 from apps.reminders.policies import policy_for
 from apps.tasks import dates, rules
@@ -26,11 +26,14 @@ from apps.tasks.callbacks import (
     DuePreset,
     ListCallback,
     PhotoCallback,
+    PickCallback,
     QuickAddCallback,
+    ReasonCallback,
     SnoozeCallback,
     StepCallback,
     TaskAction,
     TaskCallback,
+    WhenCallback,
 )
 from apps.tasks.dates import EVENING
 from apps.tasks.models import Proof, Task
@@ -218,8 +221,12 @@ def card_keyboard(task: Task, member: Membership, now: datetime) -> InlineKeyboa
             manager.append(_button(_("👤 Someone else"), TaskAction.REASSIGN, task.pk))
         if manager:
             rows.append(manager)
+        more = []
+        if rules.can_manage(task, member):
+            more.append(_button(_("🕒 New time"), TaskAction.NEW_DUE, task.pk))
         if rules.can_manage(task, member) or task.created_by_id == member.pk:
-            rows.append([_button(_("💬 Comment"), TaskAction.COMMENT, task.pk)])
+            more.append(_button(_("💬 Comment"), TaskAction.COMMENT, task.pk))
+        rows.append(more)
     last = []
     if app := app_button(task):
         last.append(app)
@@ -283,6 +290,7 @@ def snoozed_note(task: Task) -> str:
     values = {"time": _clock(task, task.snoozed_until), "due": _clock(task, task.due_at)}
     if task.kind == Task.Kind.PERSONAL:
         return _("⏰ Snoozed. Next reminder at %(time)s.") % values
+    # Translators: %(time)s is a clock time; %(due)s reads like "bugun, 18:00".
     return _("⏰ Snoozed. Next reminder at %(time)s; the deadline stays %(due)s.") % values
 
 
@@ -343,6 +351,7 @@ def which_photo_task(tasks: list[Task], now: datetime) -> BotMessage:
 
 def comment_prompt(task: Task) -> BotMessage:
     """Ask for a comment, with the reply field open and Cancel kept (Bot API 10.3)."""
+    # Translators: %(title)s is the task's title: let a carrier word take any case ending.
     text = _("💬 Write your comment on <b>%(title)s</b>:") % {
         "title": html.quote(display_title(task))
     }
@@ -356,19 +365,168 @@ def return_reason_request() -> BotMessage:
     return _("What needs to be fixed? Send a short comment."), stop_keyboard()
 
 
+def return_reasons() -> list[tuple[str, str]]:
+    """Ready-made reasons for sending work back (research R1 C8, R2 T30): one tap sends it."""
+    return [
+        ("photo", _("📷 Photo is unclear")),
+        ("unfinished", _("🧾 Not finished")),
+        ("wrong", _("❌ Wrong item")),
+    ]
+
+
+def return_prompt(task: Task, member: Membership, now: datetime) -> BotMessage:
+    """The checker's card, asking what to fix: a ready reason, or their own words."""
+    line = _("↩️ What needs to be fixed? Tap a reason or write your own.")
+    rows = [
+        [
+            InlineKeyboardButton(
+                text=label,
+                callback_data=ReasonCallback(kind="return", task_id=task.pk, code=code).pack(),
+            )
+        ]
+        for code, label in return_reasons()
+    ]
+    rows.append([_button(_("‹ Back"), TaskAction.BACK, task.pk)])
+    text = f"{card_text(task, member, now)}\n\n<b>{line}</b>"
+    return text, InlineKeyboardMarkup(inline_keyboard=rows, force_reply=True)
+
+
+BLOCK_MARKS = {"no_stock": "📦", "no_access": "🔑", "broken": "🔧", "not_mine": "🙅", "other": "✍️"}
+
+
+def block_keyboard(task: Task) -> InlineKeyboardMarkup:
+    """Why it can't be done (research R2 T57): chips first, words only for "another reason"."""
+    rows = [
+        [
+            InlineKeyboardButton(
+                text=f"{BLOCK_MARKS[code]} {label}",
+                callback_data=ReasonCallback(kind="block", task_id=task.pk, code=code).pack(),
+            )
+        ]
+        for code, label in Task.Blocker.choices
+    ]
+    rows.append([_button(_("‹ Back"), TaskAction.BACK, task.pk)])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def when_keyboard(task: Task, kind: str, now: datetime) -> InlineKeyboardMarkup:
+    """New deadlines to pick: more time asked by the assignee (`kind` "more"), or a deadline a
+    manager sets (`kind` "due"). "Type" asks for one in words (R2 §6)."""
+
+    def choice(label: str, value: str) -> InlineKeyboardButton:
+        return InlineKeyboardButton(
+            text=label, callback_data=WhenCallback(kind=kind, task_id=task.pk, choice=value).pack()
+        )
+
+    local = timezone.localtime(now, ZoneInfo(task.company.timezone))
+    if kind == "more":
+        first = [choice(_("⏰ +30 min"), "30m"), choice(_("⏰ +1 hour"), "1h")]
+    else:
+        first = [choice(_("⏰ In 1 hour"), "1h")]
+        if local.time() < EVENING:
+            first.append(choice(_("🌆 Today 18:00"), "today"))
+    rows = [
+        first,
+        [choice(_("🌅 Tomorrow 09:00"), "tomorrow"), choice(_("✍️ Type a time"), "type")],
+        [_button(_("‹ Back"), TaskAction.BACK, task.pk)],
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def ask_typed_time(kind: str) -> BotMessage:
+    if kind == "more":
+        text = _("🕒 Until when? Write it: 18:30, tomorrow 9:00, Friday.")
+    else:
+        text = _("⏰ The new deadline? Write it: 18:30, tomorrow 9:00, Friday.")
+    return text, stop_keyboard(placeholder=True)
+
+
+def cancel_keyboard(task: Task) -> InlineKeyboardMarkup:
+    """Cancelling can't be undone, so it asks first (research R2 T39)."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [_button(_("✖️ Yes, cancel the task"), TaskAction.CANCEL_YES, task.pk, style="danger")],
+            [_button(_("‹ Back"), TaskAction.BACK, task.pk)],
+        ]
+    )
+
+
+def person_picker(
+    people: list[Membership], *, task_id: int = 0, page: int = 0, me: bool = False
+) -> InlineKeyboardMarkup:
+    """People to give work to, eight a page: "🙋 Me" first for a new task (audit X-7)."""
+    pages = max(1, -(-len(people) // PAGE_SIZE))
+    page = min(max(page, 0), pages - 1)
+    rows = []
+    if me and page == 0:
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text=_("🙋 Me"), callback_data=PickCallback(task_id=task_id, member_id=0).pack()
+                )
+            ]
+        )
+    for person in people[page * PAGE_SIZE : (page + 1) * PAGE_SIZE]:
+        name = str(person)
+        label = name if len(name) <= TITLE_IN_LIST else f"{name[: TITLE_IN_LIST - 1]}…"
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text=f"👤 {label}",
+                    callback_data=PickCallback(task_id=task_id, member_id=person.pk).pack(),
+                )
+            ]
+        )
+    if pages > 1:
+        nav = []
+        if page > 0:
+            nav.append(
+                InlineKeyboardButton(
+                    text="‹",
+                    callback_data=PickCallback(task_id=task_id, member_id=-1, page=page - 1).pack(),
+                )
+            )
+        nav.append(
+            InlineKeyboardButton(
+                text=f"{page + 1}/{pages}",
+                callback_data=PickCallback(task_id=task_id, member_id=-1, page=page).pack(),
+            )
+        )
+        if page < pages - 1:
+            nav.append(
+                InlineKeyboardButton(
+                    text="›",
+                    callback_data=PickCallback(task_id=task_id, member_id=-1, page=page + 1).pack(),
+                )
+            )
+        rows.append(nav)
+    if task_id:
+        rows.append([_button(_("‹ Back"), TaskAction.BACK, task_id)])
+    else:
+        rows.append([_button(_("✖️ Cancel"), TaskAction.STOP)])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def ask_assignee() -> str:
+    return _("👤 Who is it for?")
+
+
 # Notifications -----------------------------------------------------------------------------
 
 
 def task_assigned(task: Task, now: datetime) -> BotMessage:
     if task.kind == Task.Kind.DAILY:
+        # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
         header = _("🔁 <b>Today's routine task</b> · %(name)s")
     else:
+        # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
         header = _("📨 <b>New task</b> · %(name)s")
     header %= {"name": html.quote(str(task.created_by or ""))}
     return task_card(task, task.assignee, now, header.rstrip(" ·"))
 
 
 def review_request(task: Task, reviewer: Membership, now: datetime) -> BotMessage:
+    # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
     header = _("🔎 %(name)s finished a task. Please check it.") % {
         "name": html.quote(str(task.assignee))
     }
@@ -376,11 +534,13 @@ def review_request(task: Task, reviewer: Membership, now: datetime) -> BotMessag
 
 
 def task_completed(task: Task, creator: Membership, now: datetime) -> BotMessage:
+    # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
     header = _("✅ %(name)s completed a task.") % {"name": html.quote(str(task.assignee))}
     return task_card(task, creator, now, header)
 
 
 def task_confirmed(task: Task, now: datetime) -> BotMessage:
+    # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
     header = _("👍 %(name)s confirmed your task.") % {"name": html.quote(str(task.confirmed_by))}
     return task_card(task, task.assignee, now, header)
 
@@ -392,6 +552,7 @@ def task_returned(task: Task, reason: str, now: datetime) -> BotMessage:
 
 def nudge(task: Task, by: Membership, now: datetime) -> BotMessage:
     """The dashboard's "Nudge now": a friendly push from a named person."""
+    # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
     header = _("👋 %(name)s is waiting for this task.") % {"name": html.quote(str(by))}
     return task_card(task, task.assignee, now, header)
 
@@ -403,8 +564,10 @@ def comment_notice(
     adds a comment (R1 Q2); the reply button asks for one."""
     name = html.quote(str(author)) if author else "—"
     if mentioned:
+        # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
         header = _("💬 <b>%(name)s mentioned you</b>") % {"name": name}
     else:
+        # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
         header = _("💬 <b>New comment</b> · %(name)s") % {"name": name}
     lines = [header, f"{_icon(task, timezone.now())} <b>{html.quote(display_title(task))}</b>"]
     if several_companies(recipient):
@@ -416,8 +579,10 @@ def comment_notice(
 
 def due_changed(task: Task, old_due: datetime | None, by: Membership, now: datetime) -> BotMessage:
     """The deadline moved (audit X-6): the card, saying what it was."""
+    # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
     header = _("🕒 <b>New deadline</b> · %(name)s") % {"name": html.quote(str(by))}
     if old_due is not None:
+        # Translators: %(when)s reads like "bugun, 18:00" or "25-okt, 18:30".
         header += "\n" + _("It was: %(when)s") % {"when": _short(task, old_due, now)}
     return task_card(task, task.assignee, now, header)
 
@@ -425,6 +590,7 @@ def due_changed(task: Task, old_due: datetime | None, by: Membership, now: datet
 def task_cancelled(task: Task, by: Membership) -> BotMessage:
     text = "\n".join(
         [
+            # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
             _("✖️ <b>Task cancelled</b> · %(name)s") % {"name": html.quote(str(by))},
             f"<s>{html.quote(display_title(task))}</s>",
         ]
@@ -436,8 +602,10 @@ def task_cancelled(task: Task, by: Membership) -> BotMessage:
 def task_taken_away(task: Task, by: Membership) -> BotMessage:
     text = "\n".join(
         [
+            # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
             _("↪️ <b>Given to someone else</b> · %(name)s") % {"name": html.quote(str(by))},
             f"<s>{html.quote(display_title(task))}</s>",
+            # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
             _("Now it's for: %(name)s") % {"name": html.quote(str(task.assignee))},
         ]
     )
@@ -447,6 +615,7 @@ def task_taken_away(task: Task, by: Membership) -> BotMessage:
 
 def blocked_notice(task: Task, giver: Membership, now: datetime) -> BotMessage:
     """Someone can't do a task (research R2 T57): the reason on its own line, and what to do."""
+    # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
     header = _("⛔ <b>%(name)s can't do this task</b>") % {"name": html.quote(str(task.assignee))}
     text = card_text(task, giver, now, header)
     rows = [
@@ -468,16 +637,60 @@ def blocker_answer(task: Task, action: str, by: Membership, now: datetime) -> Bo
         return task_taken_away(task, by)
     if action == "cancel":
         return task_cancelled(task, by)
+    # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
     return task_card(task, task.assignee, now, _("🕒 <b>New deadline</b> · %(name)s") % name)
 
 
 def extension_answer(task: Task, approved: bool, by: Membership, now: datetime) -> BotMessage:
     name = {"name": html.quote(str(by))}
     if approved:
+        # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
         header = _("✅ <b>More time given</b> · %(name)s") % name
     else:
+        # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
         header = _("✖️ <b>The deadline stays</b> · %(name)s") % name
     return task_card(task, task.assignee, now, header)
+
+
+def copy_of(task: Task, member: Membership, kind: str, now: datetime) -> BotMessage:
+    """A task message in someone's chat, drawn again as the task is now (research R1 C5): its
+    buttons are what this person may still do, and the first line says how it ended. Until
+    then, a "can't do it" stays that question and a late alert stays an alert."""
+    if task.is_open and kind == "blocked" and task.blocked_at:
+        return blocked_notice(task, member, now)
+    if task.is_open and kind == "escalation" and task.due_at and task.due_at < now:
+        from apps.reminders.bot_messages import escalation  # it builds on this module
+
+        return escalation(task, now, member)
+    return task_card(task, member, now, _copy_header(task, member, kind, now))
+
+
+def _copy_header(task: Task, member: Membership, kind: str, now: datetime) -> str:
+    if task.status == Task.Status.CANCELLED:
+        return _("✖️ <b>Task cancelled</b>")
+    if kind == "card" and member.pk not in (task.assignee_id, task.created_by_id):
+        return _("↪️ <b>Given to someone else</b>")
+    if kind not in ("review", "escalation", "blocked"):
+        return ""
+    if task.status == Task.Status.DONE:
+        if task.confirmed_by_id:
+            # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+            return _("✅ <b>Accepted</b> · %(name)s") % {"name": html.quote(str(task.confirmed_by))}
+        done = {"time": _clock(task, task.completed_at)}
+        if task.due_at and task.completed_at > task.due_at:
+            done["late"] = format_duration(task.completed_at - task.due_at)
+            # Translators: %(time)s is a clock time (14:30); %(late)s a length (25 min, 1 h 5 min).
+            return _("✅ <b>Done</b> · %(time)s, %(late)s late") % done
+        return _("✅ <b>Done</b> · %(time)s") % done
+    if kind == "review":
+        if task.status == Task.Status.RETURNED:
+            return _("↩️ <b>Sent back</b>")
+        if task.status == Task.Status.REVIEW:
+            # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+            return _("🔎 %(name)s finished a task. Please check it.") % {
+                "name": html.quote(str(task.assignee))
+            }
+    return ""
 
 
 def onboarding_welcome(member: Membership, tasks: list[Task], now: datetime) -> BotMessage:
@@ -498,7 +711,9 @@ def onboarding_welcome(member: Membership, tasks: list[Task], now: datetime) -> 
 
 
 def ask_title() -> BotMessage:
-    text = _("✍️ What needs to be done? You can say when too, e.g. «Count the till tomorrow 18:00».")
+    text = _(
+        "✍️ What needs to be done? You can say when too, e.g. «Order insulin tomorrow 18:00 !!»."
+    )
     return text, stop_keyboard(placeholder=True)
 
 
@@ -526,6 +741,7 @@ def ask_due(company: Company, now: datetime, *, error: bool = False) -> BotMessa
 
 def due_passed(when: str) -> BotMessage:
     """An explicit "today 18:00" typed at 19:10 (research R2 §6.1): offer tomorrow."""
+    # Translators: %(when)s is a clock time such as 08:00.
     text = _("%(when)s has already passed today. Tomorrow at the same time?") % {"when": when}
     rows = [
         [
@@ -563,6 +779,7 @@ def quick_add_preview(
     if urgent:
         lines.append(f"⚡ {Task.Priority.URGENT.label}")
     if assignee:
+        # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
         lines.append(_("👤 For: %(name)s") % {"name": html.quote(assignee)})
     first = [
         InlineKeyboardButton(
@@ -620,23 +837,6 @@ def format_duration(delta: timedelta) -> str:
     if not hours:
         return _("%(days)d d") % {"days": days}
     return _("%(days)d d %(hours)d h") % {"days": days, "hours": hours}
-
-
-def several_companies(member: Membership) -> bool:
-    """Whether the person works in more than one company, so messages name the company
-    (audit X-1). Asked once per membership object."""
-    cached = getattr(member, "_several_companies", None)
-    if cached is None:
-        cached = (
-            Membership.objects.filter(
-                user_id=member.user_id,
-                status=Membership.Status.APPROVED,
-                company__is_active=True,
-            ).count()
-            > 1
-        )
-        member._several_companies = cached
-    return cached
 
 
 def _short(task: Task, moment: datetime, now: datetime) -> str:

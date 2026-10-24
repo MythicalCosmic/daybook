@@ -26,7 +26,7 @@ class ReminderPolicy(TenantModel):
         help_text=_("After the deadline, remind again this often until it's done."),
     )
     max_reminders = models.PositiveSmallIntegerField(
-        default=12, help_text=_("Stop after this many reminders. 0 = until it's done.")
+        default=8, help_text=_("Stop after this many reminders. 0 = until it's done.")
     )
     escalate_after = models.PositiveSmallIntegerField(
         default=3, help_text=_("Tell the manager after this many reminders. 0 = never.")
@@ -47,8 +47,9 @@ class ReminderPolicy(TenantModel):
     max_snoozes = models.PositiveSmallIntegerField(
         default=1, help_text=_("Snoozes allowed per task. 0 = none.")
     )
+    # One live reminder per task (audit X-10, research R1 N2): the new one still rings.
     replace_previous = models.BooleanField(
-        default=False,
+        default=True,
         help_text=_("Delete the last reminder when sending the next, instead of stacking them."),
     )
 

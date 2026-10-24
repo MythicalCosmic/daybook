@@ -22,6 +22,7 @@ from apps.core.money import MoneySerializerField
 from apps.members.api import IsCompanyMember, MemberBriefSerializer, requires
 from apps.members.models import Membership, Position
 from apps.members.permissions import Perm
+from apps.reminders.models import ReminderLog
 from apps.reminders.policies import escalation_recipients, policy_for
 from apps.tasks import dashboard, dates, queries, quickadd, rules, services, stats
 from apps.tasks.models import (
@@ -56,6 +57,10 @@ class ReminderInfoSerializer(serializers.Serializer):
     snooze_minutes = serializers.IntegerField()
     snoozes_left = serializers.IntegerField()
     snoozed_until = serializers.DateTimeField(allow_null=True)
+    sent_times = serializers.ListField(
+        child=serializers.DateTimeField(),
+        help_text="When the reminders the assignee got went out, oldest first.",
+    )
 
 
 class TaskCardSerializer(serializers.Serializer):
@@ -110,6 +115,8 @@ class TaskSerializer(serializers.ModelSerializer):
     routine = serializers.SerializerMethodField()
     blocker = serializers.SerializerMethodField()
     extension = serializers.SerializerMethodField()
+    returned_reason = serializers.SerializerMethodField()
+    returned_by = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -145,9 +152,48 @@ class TaskSerializer(serializers.ModelSerializer):
             "seen_at",
             "blocker",
             "extension",
+            "returned_reason",
+            "returned_by",
             "created_at",
         )
         read_only_fields = fields
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_returned_reason(self, task: Task) -> str | None:
+        """Why it was sent back, while it's back with the assignee (single-task responses)."""
+        sent_back = self._sent_back(task)
+        return sent_back[0] if sent_back else None
+
+    @extend_schema_field(MemberBriefSerializer(allow_null=True))
+    def get_returned_by(self, task: Task) -> dict | None:
+        """Who sent it back (single-task responses)."""
+        sent_back = self._sent_back(task)
+        if not sent_back or sent_back[1] is None:
+            return None
+        return MemberBriefSerializer(sent_back[1]).data
+
+    def _sent_back(self, task: Task) -> tuple[str, Membership | None] | None:
+        """The last "sent back" of a task back with its assignee: the reason and who said it."""
+        if not self.context.get("detail") or task.status != Task.Status.RETURNED:
+            return None
+        cache = self.context.setdefault("_sent_back", {})
+        if task.pk not in cache:
+            row = (
+                AuditLog.objects.filter(
+                    target_type="task", target_id=task.pk, action=AuditLog.Action.TASK_RETURNED
+                )
+                .order_by("-created_at", "-pk")
+                .first()
+            )
+            who = None
+            if row is not None and row.actor_id is not None:
+                who = (
+                    Membership.objects.filter(company_id=task.company_id, user_id=row.actor_id)
+                    .select_related("user", "position")
+                    .first()
+                )
+            cache[task.pk] = ((row.details or {}).get("reason", ""), who) if row else None
+        return cache[task.pk]
 
     @extend_schema_field(TaskBlockerSerializer(allow_null=True))
     def get_blocker(self, task: Task) -> dict | None:
@@ -193,6 +239,13 @@ class TaskSerializer(serializers.ModelSerializer):
             "snooze_minutes": policy.snooze_minutes,
             "snoozes_left": max(0, policy.max_snoozes - task.snooze_count),
             "snoozed_until": task.snoozed_until,
+            "sent_times": list(
+                task.reminder_log.filter(
+                    kind=ReminderLog.Kind.REMINDER, recipient_id=task.assignee_id, delivered=True
+                )
+                .order_by("sent_at")
+                .values_list("sent_at", flat=True)
+            ),
         }
 
     @extend_schema_field(serializers.ListField(child=serializers.IntegerField(), allow_null=True))
@@ -363,6 +416,18 @@ class TaskParseSerializer(serializers.Serializer):
         allow_null=True,
         help_text="0 = Monday; for weekly, the due day's weekday.",
     )
+    rolled = serializers.BooleanField(
+        default=False,
+        help_text="A time alone that had already passed today: due_at is that time tomorrow.",
+    )
+    past = serializers.BooleanField(
+        default=False,
+        help_text='The typed moment has already passed ("bugun 01:00" at 03:00): due_at is '
+        "empty; offer passed_at's time tomorrow, as the bot does.",
+    )
+    passed_at = serializers.DateTimeField(
+        allow_null=True, default=None, help_text="That moment, when past is true."
+    )
 
 
 class SnoozeSerializer(serializers.Serializer):
@@ -416,6 +481,9 @@ def parsed(text: str, company) -> dict:
         "priority": found.priority,
         "repeat": found.repeat,
         "repeat_weekdays": list(found.repeat_weekdays) if found.repeat_weekdays else None,
+        "rolled": found.rolled,
+        "past": found.past,
+        "passed_at": found.passed,
     }
 
 

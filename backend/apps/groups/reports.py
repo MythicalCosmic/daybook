@@ -43,7 +43,7 @@ def day_bounds(company: Company, day: date) -> tuple[datetime, datetime]:
     return start, start + timedelta(days=1)
 
 
-def _due_on(company: Company, day: date, positions: Collection[int]):
+def _due_on(company: Company, day: date, positions: Collection[int], branches=()):
     start, end = day_bounds(company, day)
     tasks = (
         Task.objects.for_company(company)
@@ -55,12 +55,19 @@ def _due_on(company: Company, day: date, positions: Collection[int]):
         )
         .exclude(status=Task.Status.CANCELLED)
     )
+    if branches:  # a group of some branches gets their news only (audit X-2)
+        tasks = tasks.filter(branch_id__in=branches)
     return tasks.filter(assignee__position__in=positions) if positions else tasks
 
 
-def morning_plan(company: Company, day: date, positions: Collection[int] = ()) -> list[PlanRow]:
+def morning_plan(
+    company: Company,
+    day: date,
+    positions: Collection[int] = (),
+    branches: Collection[int] = (),
+) -> list[PlanRow]:
     rows = list(
-        _due_on(company, day, positions)
+        _due_on(company, day, positions, branches)
         .values("assignee")
         .annotate(count=Count("id"), first_due=Min("due_at"))
         .order_by("first_due")
@@ -75,12 +82,16 @@ def morning_plan(company: Company, day: date, positions: Collection[int] = ()) -
 
 
 def day_stats(
-    company: Company, day: date, until: datetime | None = None, positions: Collection[int] = ()
+    company: Company,
+    day: date,
+    until: datetime | None = None,
+    positions: Collection[int] = (),
+    branches: Collection[int] = (),
 ) -> DayStats:
     """How the day's work went; with `until`, only work that was due by then counts."""
     stats = DayStats()
     tasks = (
-        _due_on(company, day, positions)
+        _due_on(company, day, positions, branches)
         .select_related("assignee__user", "project", "card")
         .order_by("due_at")
     )
