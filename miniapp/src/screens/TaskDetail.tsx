@@ -13,10 +13,12 @@ import {
   Undo2,
   X,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { api, ApiError } from "../api/client";
 import {
+  keys,
   useActivity,
   useAddComment,
   useComments,
@@ -813,7 +815,10 @@ function ActionBar({ task, isMine }: { task: Task; isMine: boolean }) {
   const action = useTaskAction(member.companyId);
   const complete = useCompleteTask();
   const confirmTasks = useConfirmTasks();
-  const queue = useReviewQueue(member.companyId, task.actions.includes("confirm"));
+  const client = useQueryClient();
+  // Keeps the "To check" list loaded for "open the next one"; read at the tap, from the cache (the
+  // result object isn't read while rendering, so it wouldn't re-render with the data).
+  useReviewQueue(member.companyId, task.actions.includes("confirm"));
   const toast = useToast();
   const start = () =>
     action.mutate(
@@ -828,7 +833,7 @@ function ActionBar({ task, isMine }: { task: Task; isMine: boolean }) {
     );
   // Confirm goes out after a moment with Undo; meanwhile the next thing to check opens (audit M-9).
   const confirm = () => {
-    const next = (queue.data ?? []).find((other) => other.id !== task.id);
+    const next = (client.getQueryData<Task[]>(keys.review(member.companyId)) ?? []).find((other) => other.id !== task.id);
     confirmTasks([task]);
     if (next) navigation.openTask(next.id);
     else navigation.closeTask();

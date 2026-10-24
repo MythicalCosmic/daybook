@@ -313,12 +313,11 @@ function ReassignForm({ task }: { task: Task }) {
       ) : people.length === 0 ? (
         <p className="sheet-note sheet-note--muted">{members.isError ? errorText(members.error, t) : t("pick.empty")}</p>
       ) : (
-        <div className="card list-card sheet-options" role="list" aria-label={t("pick.title")}>
+        <div className="card list-card sheet-options" role="group" aria-label={t("pick.title")}>
           {people.map((person) => (
             <button
               key={person.id}
               type="button"
-              role="listitem"
               className="list-item sheet-option"
               disabled={action.isPending}
               onClick={() => {

@@ -278,10 +278,17 @@ function LanguageSheet() {
   const toast = useToast();
   const pick = (code: Lang) => {
     haptic.select();
-    navigation.closeSheet();
-    if (code === lang) return;
+    if (code === lang) {
+      navigation.closeSheet();
+      return;
+    }
+    // The app turns to the new language at once (optimistic); the sheet closes once it's saved,
+    // or stays, back in the old language, if the server refuses.
     setLanguage.mutate(code, {
-      onSuccess: () => toast(translate(code, "lang.changed" satisfies Key), { tone: "success" }),
+      onSuccess: () => {
+        navigation.closeSheet();
+        toast(translate(code, "lang.changed" satisfies Key), { tone: "success" });
+      },
       onError: (error) => toast(errorText(error, t), { tone: "error" }),
     });
   };
