@@ -131,7 +131,11 @@ def _read(path: str, storage: str, *, filename: str | None = None) -> BufferedIn
 
 
 def _bot(token: str) -> Bot:
-    return Bot(token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    # No link previews, as in both bots: a pasted link must not turn a task into a big card.
+    return Bot(
+        token,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML, link_preview_is_disabled=True),
+    )
 
 
 async def _delete(token: str, chat_id: int, message_id: int) -> None:

@@ -22,6 +22,13 @@ def test_message_is_dropped_without_a_token(settings, monkeypatch):
     assert calls == []
 
 
+def test_backend_messages_show_no_link_previews():
+    bot = telegram._bot("42:TEST")
+
+    assert bot.default.link_preview_is_disabled is True
+    assert bot.default.parse_mode == "HTML"
+
+
 def test_keyboard_survives_the_trip_through_celery():
     markup = InlineKeyboardMarkup(
         inline_keyboard=[[InlineKeyboardButton(text="Approve", callback_data="join:approve:1")]]
