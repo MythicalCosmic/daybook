@@ -574,7 +574,7 @@ async def block_with_note(message: Message, membership: Membership, state: FSMCo
     TaskCallback.filter(F.action.in_({TaskAction.MORE_TIME, TaskAction.NEW_DUE}))
 )
 async def time_choices(
-    callback: CallbackQuery, callback_data: TaskCallback, membership: Membership
+    callback: CallbackQuery, callback_data: TaskCallback, membership: Membership, state: FSMContext
 ) -> None:
     task = await cards.find(membership, callback_data.task_id)
     if task is None:
@@ -583,6 +583,14 @@ async def time_choices(
     kind = "more" if callback_data.action == TaskAction.MORE_TIME else "due"
     keyboard = await sync_to_async(task_messages.when_keyboard)(task, kind, timezone.now())
     await cards.edit_keyboard(callback, keyboard)
+    # A time typed while the choices show ("ertaga 10:00") is read too, not only after ✍️.
+    await state.set_state(TaskTime.typed)
+    await state.update_data(
+        kind=kind,
+        task_id=task.pk,
+        chat_id=callback.message.chat.id,
+        message_id=callback.message.message_id,
+    )
     await callback.answer()
 
 
@@ -605,6 +613,8 @@ async def time_chosen(
         await callback.message.answer(text, reply_markup=markup)
         await callback.answer()
         return
+    if await state.get_state() == TaskTime.typed.state:
+        await state.clear()
     task = await cards.find(membership, callback_data.task_id)
     if task is None:
         await callback.answer(cards.gone(), show_alert=True)

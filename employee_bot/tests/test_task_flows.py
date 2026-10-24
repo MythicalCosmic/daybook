@@ -392,6 +392,37 @@ async def test_a_push_from_the_other_company_works(dp, bot, member):
     assert (await type(owner.user).objects.aget(pk=owner.user_id)).bot_company_id == shop.pk
 
 
+async def test_a_push_from_the_other_company_brings_its_menu(dp, bot, member):
+    """Final review: the tap moved the lists to the shop, but the menu still said "🏢 Supplier ▸"
+    (and showed the supplier's modules) until /start."""
+    from aiogram.types import ReplyKeyboardMarkup
+
+    shop, supplier = await sync_to_async(CompanyFactory)(), await sync_to_async(CompanyFactory)()
+    owner = await member.aregistered(shop, "Owner")
+    await member.aregistered(supplier, "Owner", user=owner.user)
+    worker = await member.aregistered(shop)
+    task = await make_task(
+        assignee=worker, created_by=owner, status=Task.Status.REVIEW, needs_confirmation=True
+    )
+    await sync_to_async(type(owner.user).objects.filter(pk=owner.user_id).update)(
+        bot_company=supplier
+    )
+    tg = updates.tg_user(owner.user.telegram_id)
+
+    await dp.feed_update(bot, updates.callback(tg, press(TaskAction.CONFIRM, task.pk)))
+
+    note = of(bot, SendMessage)[-1]
+    assert note.text == f"🏢 Now working in <b>{shop.name}</b>."
+    assert isinstance(note.reply_markup, ReplyKeyboardMarkup)
+    labels = [button.text for row in note.reply_markup.keyboard for button in row]
+    assert any(shop.name in label for label in labels)
+
+    # A second tap in the same company changes nothing, so it says nothing.
+    sent = len(of(bot, SendMessage))
+    await dp.feed_update(bot, updates.callback(tg, press(TaskAction.OPEN, task.pk)))
+    assert len(of(bot, SendMessage)) == sent
+
+
 async def test_the_company_switch(dp, bot, member):
     shop, supplier = await sync_to_async(CompanyFactory)(), await sync_to_async(CompanyFactory)()
     owner = await member.aregistered(shop, "Owner")
@@ -478,6 +509,44 @@ async def test_a_manager_sets_a_new_time_from_the_card(dp, bot, company, member)
     )
     task = await reload(task)
     assert task.due_at > due
+
+
+async def test_a_time_typed_while_the_choices_show_is_read(dp, bot, company, member):
+    """Final review: typing "tomorrow 10:00" under the choices (without ✍️ first) used to fall
+    through to the home message and leave the deadline as it was."""
+    worker = await member.aregistered(company)
+    manager = await member.aregistered(company, "Manager")
+    due = timezone.now() + timedelta(hours=1)
+    task = await make_task(assignee=worker, created_by=manager, due_at=due)
+    boss = updates.tg_user(manager.user.telegram_id)
+
+    await dp.feed_update(bot, updates.callback(boss, press(TaskAction.NEW_DUE, task.pk)))
+    await dp.feed_update(bot, updates.message(boss, "tomorrow 10:00"))
+
+    task = await reload(task)
+    tz = ZoneInfo(company.timezone)
+    local = timezone.localtime(task.due_at, tz)
+    # "tomorrow" after midnight is the coming morning (research R2), so only the hour is fixed
+    assert (local.hour, local.minute) == (10, 0) and task.due_at > due
+    assert of(bot, SendMessage)[-1].text == "🕒 New deadline set."
+
+
+async def test_a_preset_after_the_choices_leaves_no_time_question_behind(dp, bot, company, member):
+    worker = await member.aregistered(company)
+    manager = await member.aregistered(company, "Manager")
+    task = await make_task(
+        assignee=worker, created_by=manager, due_at=timezone.now() + timedelta(hours=1)
+    )
+    boss = updates.tg_user(manager.user.telegram_id)
+
+    await dp.feed_update(bot, updates.callback(boss, press(TaskAction.NEW_DUE, task.pk)))
+    await dp.feed_update(
+        bot, updates.callback(boss, WhenCallback(kind="due", task_id=task.pk, choice="1h").pack())
+    )
+    await dp.feed_update(bot, updates.message(boss, "Order insulin"))
+
+    # The text is not read as a time any more ("I didn't catch the time")
+    assert "didn't catch the time" not in (of(bot, SendMessage)[-1].text or "")
 
 
 async def test_snooze_choices_in_place(dp, bot, company, member):

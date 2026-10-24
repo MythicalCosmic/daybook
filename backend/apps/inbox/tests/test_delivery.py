@@ -194,3 +194,14 @@ def test_someone_who_lost_access_since_hears_nothing(owner, telegram):
     delivery.deliver(item.pk)
 
     assert telegram.sent == []
+
+
+def test_an_outcome_with_its_own_mark_gets_no_second_tick():
+    from apps.inbox.bot_messages import outcome_line
+
+    assert outcome_line("Approved", "Dilnoza") == "✅ Approved · Dilnoza"
+    assert outcome_line("Approved", "") == "✅ Approved"
+    # Tasks settle with marked outcomes; "✅ 🕒 New deadline set" read like a glitch.
+    assert outcome_line("🕒 New deadline set", "Bekzod") == "🕒 New deadline set · Bekzod"
+    assert outcome_line(_("✅ More time given"), "Bekzod") == "✅ More time given · Bekzod"
+    assert outcome_line("✖️ Task cancelled", "") == "✖️ Task cancelled"
