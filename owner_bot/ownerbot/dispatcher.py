@@ -14,7 +14,11 @@ from ownerbot.middlewares import register_all_middlewares
 
 def create_bot(settings: Settings | None = None) -> Bot:
     settings = settings or load_settings()
-    return Bot(token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    # No link previews: a URL in a notification would push its buttons down (research R1 F2).
+    return Bot(
+        token=settings.BOT_TOKEN,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML, link_preview_is_disabled=True),
+    )
 
 
 def create_storage(settings: Settings | None = None) -> BaseStorage:

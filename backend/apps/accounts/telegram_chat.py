@@ -54,6 +54,12 @@ CHANGED = {
     "ru": "✅ Теперь пишу по-русски. Приложение тоже откроется на русском. Меню обновлено 👇",
     "en": "✅ I'll write in English from now on. The app will open in English too. Menu updated 👇",
 }
+# The owner bot has no reply keyboard to replace: just the words.
+CHANGED_SHORT = {
+    "uz": "✅ Endi o‘zbek tilida yozaman.",
+    "ru": "✅ Теперь пишу по-русски.",
+    "en": "✅ I'll write in English from now on.",
+}
 ALREADY = {
     "uz": "O‘zbekcha allaqachon tanlangan",
     "ru": "Русский уже выбран",
