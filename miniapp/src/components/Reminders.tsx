@@ -65,13 +65,14 @@ export function LateCard({
       {nodes.length > 0 && (
         <div style={{ display: "flex" }}>
           {nodes.map((node, index) => (
-            <div key={node.key} style={{ flex: 1, minWidth: 0, position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            // A little room at the sides: two "Отправлено" side by side at 360 px never run together.
+            <div key={node.key} style={{ flex: 1, minWidth: 0, padding: "0 2px", position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
               {index < nodes.length - 1 && (
                 <span style={{ position: "absolute", top: 15, left: "50%", width: "100%", height: 3, borderRadius: 3, background: "color-mix(in srgb, var(--color-accent) 30%, transparent)" }} />
               )}
               <NodeDot node={node} />
               <span className="num" style={{ fontSize: 13.5, fontWeight: 700 }}>{node.time}</span>
-              <span style={{ fontSize: 12, marginTop: -4, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <span style={{ fontSize: 11.5, marginTop: -4, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {node.caption}
               </span>
             </div>
