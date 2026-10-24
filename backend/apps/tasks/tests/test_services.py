@@ -196,7 +196,8 @@ def test_sent_back_task_is_open_again_with_the_reason(manager, worker):
     assert task.status == Task.Status.RETURNED
     assert task.is_open
     assert task.comments.get().text == "Retake in daylight"
-    assert Action.START in rules.allowed_actions(task, worker)
+    # Back with the worker: straight to Done again, no Start (audit M-16).
+    assert rules.allowed_actions(task, worker)[0] == Action.COMPLETE
 
 
 def test_sending_back_needs_a_reason(manager, worker):

@@ -1,7 +1,7 @@
 from apps.members.models import Membership
 from apps.reminders.models import ReminderPolicy
 from apps.tasks.models import Task, TaskTemplate
-from apps.tasks.queries import confirmers
+from apps.tasks.queries import closest_confirmers
 
 
 def default_policy(company_id: int) -> ReminderPolicy:
@@ -35,5 +35,6 @@ def escalation_recipients(task: Task) -> list[Membership]:
         and creator.status == approved
     ):
         return [creator]
-    # Only confirmers whose branch scope covers the task (docs/PLAN-OWNER.md §2.6).
-    return confirmers(task)
+    # Only confirmers whose branch scope covers the task (docs/PLAN-OWNER.md §2.6), the
+    # branch's own heads first and the owners last (audit X-11).
+    return closest_confirmers(task)

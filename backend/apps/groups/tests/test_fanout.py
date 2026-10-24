@@ -1,4 +1,5 @@
 from datetime import timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
 from aiogram.exceptions import (
@@ -331,3 +332,44 @@ def test_group_posts_are_in_the_companys_language(member, sent_messages, languag
 
     [post] = sent_messages
     assert expected in post["text"]
+
+
+# Branch groups hear their own branch (audit X-2) ---------------------------------------
+
+
+def test_a_branch_group_gets_only_its_branchs_news(company, worker, sent_messages):
+    from apps.companies.tests.factories import BranchFactory
+    from apps.groups.tasks import post_daily_reports
+
+    here = company.branches.get()
+    there = BranchFactory(company=company, name="Yunusobod", code="YNS")
+    everyone = TelegramGroupFactory(
+        company=company, events=[GroupEvent.DAILY_DONE, GroupEvent.MORNING]
+    )
+    ours = TelegramGroupFactory(company=company, events=[GroupEvent.DAILY_DONE, GroupEvent.MORNING])
+    ours.branches.set([here])
+    theirs = TelegramGroupFactory(
+        company=company, events=[GroupEvent.DAILY_DONE, GroupEvent.MORNING]
+    )
+    theirs.branches.set([there])
+
+    announce_task_done(finished(worker, kind=Task.Kind.DAILY, branch=here).pk)
+
+    assert posts(sent_messages, everyone) and posts(sent_messages, ours)
+    assert not posts(sent_messages, theirs)
+
+    # The morning plan too: a Yunusobod group never lists Chilonzor's people.
+    sent_messages.clear()
+    today = timezone.localtime(timezone.now(), ZoneInfo(company.timezone))
+    TaskFactory(
+        assignee=worker,
+        kind=Task.Kind.DAILY,
+        branch=here,
+        due_at=today.replace(hour=12, minute=0, second=0, microsecond=0),
+    )
+    morning = today.replace(
+        hour=company.morning_report_at.hour, minute=company.morning_report_at.minute + 1
+    )
+    post_daily_reports(morning)
+    assert "Dilnoza Karimova" in posts(sent_messages, ours)[0]["text"]
+    assert not posts(sent_messages, theirs)  # nothing in their branch: no plan at all

@@ -8,7 +8,7 @@ from either company works whatever is picked here.
 
 from contextlib import suppress
 
-from aiogram import F, Router
+from aiogram import F, Router, html
 from aiogram.enums import ChatType
 from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import Command, Filter
@@ -59,7 +59,7 @@ async def pick_company(callback: CallbackQuery, callback_data: CompanyCallback, 
     await callback.answer(f"🏢 {name}")
     with suppress(TelegramAPIError):
         await callback.message.edit_text(
-            _("🏢 Now working in <b>%(company)s</b>.") % {"company": name}
+            _("🏢 Now working in <b>%(company)s</b>.") % {"company": html.quote(name)}
         )
     # The main menu differs per company (its modules), so it comes again with the home message.
     await callback.message.answer(text, reply_markup=markup)
@@ -70,7 +70,7 @@ def _picker(user: User) -> bot_messages.BotMessage:
     if len(memberships) < 2:
         if memberships:
             return _("You work in one company: <b>%(company)s</b>.") % {
-                "company": memberships[0].company.name
+                "company": html.quote(memberships[0].company.name)
             }, None
         return _("You don't have access to this."), None
     current = bot_membership(user)

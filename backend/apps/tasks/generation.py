@@ -19,6 +19,7 @@ from zoneinfo import ZoneInfo
 from django.utils import timezone
 
 from apps.companies.models import Company
+from apps.console import pulse
 from apps.members.models import Membership
 from apps.reminders.policies import policy_for
 from apps.reminders.schedule import first_reminder_at
@@ -162,6 +163,10 @@ def generate_daily_tasks(company: Company, day: date) -> None:
     # The unique (template, assignee, for_date) constraint makes reruns no-ops.
     Task.objects.bulk_create(new_tasks, ignore_conflicts=True)
     add_checklists(with_checklist, day)
+    if new_tasks:
+        # bulk_create sends no post_save: open dashboards hear about the day's routine work
+        # from here (audit X-13).
+        pulse.bump(company.pk, "tasks.tasks")
 
 
 def getting(

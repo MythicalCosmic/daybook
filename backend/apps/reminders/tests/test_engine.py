@@ -6,6 +6,7 @@ from aiogram.exceptions import TelegramForbiddenError
 from aiogram.methods import SendMessage
 from django.utils import timezone
 
+from apps.attendance.tests.factories import shift_at
 from apps.notifications import telegram
 from apps.reminders.engine import send_due_reminders
 from apps.reminders.models import ReminderLog, ReminderText
@@ -60,7 +61,7 @@ def test_first_reminder_at_the_deadline(company, worker, manager, noon, sent_mes
     [message] = to(sent_messages, worker)
     assert "Stock count" in message["text"]
     assert "was due at 11:59" in message["text"]
-    assert buttons(message) == [TaskAction.DONE, TaskAction.SNOOZE, TaskAction.OPEN]
+    assert buttons(message) == [TaskAction.DONE, TaskAction.SNOOZE_MENU, TaskAction.OPEN]
     task.refresh_from_db()
     assert task.reminders_sent == 1
     assert task.next_reminder_at == noon + timedelta(minutes=20)
@@ -112,13 +113,76 @@ def test_heads_up_before_the_deadline(company, worker, noon, sent_messages):
 
 def test_quiet_hours_hold_reminders_until_morning(worker, noon, sent_messages):
     late_evening = noon.replace(hour=23)
-    task = late_task(worker, late_evening)
+    due = noon.replace(hour=18)  # day work, still open late at night
+    task = TaskFactory(assignee=worker, due_at=due, next_reminder_at=late_evening)
 
     send_due_reminders(late_evening)
 
     assert sent_messages == []
     task.refresh_from_db()
     assert task.next_reminder_at == (late_evening + timedelta(days=1)).replace(hour=8, minute=0)
+
+
+def test_a_task_due_inside_quiet_hours_is_night_work(worker, noon, sent_messages):
+    """Research R2 P1: the night shift's 23:30 till check is reminded at 23:30, not at 08:00."""
+    night = noon.replace(hour=23, minute=30)
+    late_task(worker, night, title="Tungi kassa tekshiruvi")
+
+    send_due_reminders(night)
+
+    [message] = to(sent_messages, worker)
+    assert "Tungi kassa tekshiruvi" in message["text"]
+
+
+def test_on_shift_quiet_hours_dont_apply(company, worker, noon, sent_messages):
+    """Research R1 N1: with attendance, quiet means off shift."""
+    company.features = [*company.features, "attendance"]
+    company.save(update_fields=["features"])
+    night = noon.replace(hour=2)  # deep inside quiet hours
+    shift_at(worker, night.date() - timedelta(days=1), time(20), time(8))
+    task = TaskFactory(assignee=worker, due_at=noon.replace(hour=1), next_reminder_at=night)
+
+    send_due_reminders(night)
+
+    assert to(sent_messages, worker)
+    task.refresh_from_db()
+    assert task.reminders_sent == 1
+
+
+def test_off_shift_waits_for_the_next_shift(company, worker, noon, sent_messages):
+    company.features = [*company.features, "attendance"]
+    company.save(update_fields=["features"])
+    shift = shift_at(worker, noon.date(), time(14), time(22))  # starts later today
+    task = late_task(worker, noon)
+
+    send_due_reminders(noon)
+
+    assert sent_messages == []
+    task.refresh_from_db()
+    assert task.next_reminder_at == shift.starts_at
+
+
+def test_cant_do_it_keeps_reminders_quiet(worker, manager, noon, sent_messages):
+    task = late_task(worker, noon, created_by=manager, blocked_at=noon, blocker="broken")
+
+    assert send_due_reminders(noon) == 0
+    task.refresh_from_db()
+    assert task.next_reminder_at is None
+
+
+def test_owner_text_is_for_readers_of_the_company_language(
+    company, worker, manager, noon, sent_messages
+):
+    policy = default_policy(company.pk)
+    ReminderText.objects.create(policy=policy, from_step=1, text="Iltimos, {task}!")
+    worker.user.language = "ru"  # the company writes in English
+    worker.user.save(update_fields=["language"])
+    late_task(worker, noon, created_by=manager, title="Shelves")
+
+    send_due_reminders(noon)
+
+    [message] = to(sent_messages, worker)
+    assert "Iltimos" not in message["text"]  # the built-in text, in Russian, instead
 
 
 def test_manager_hears_after_the_third_reminder(worker, manager, noon, sent_messages):
@@ -133,14 +197,14 @@ def test_manager_hears_after_the_third_reminder(worker, manager, noon, sent_mess
     [escalation] = to(sent_messages, manager)
     assert str(worker) in escalation["text"]
     assert "Call the supplier" in escalation["text"]
-    assert buttons(escalation) == [TaskAction.OPEN]
+    # The manager can act on it (audit B-9): remind now, give it to someone else, open it.
+    assert buttons(escalation) == [TaskAction.NUDGE, TaskAction.REASSIGN, TaskAction.OPEN]
     task.refresh_from_db()
     assert task.escalated_at == noon + timedelta(minutes=40)
 
 
-def test_daily_work_escalates_to_everyone_who_confirms(
-    company, member, worker, noon, sent_messages
-):
+def test_daily_work_escalates_to_the_closest_checkers(company, member, worker, noon, sent_messages):
+    """Audit X-11: the manager hears it's late; the owner isn't flooded with every routine."""
     manager = member.registered(company, "Manager")
     owner = member.registered(company, "Owner")
     task = late_task(worker, noon, kind=Task.Kind.DAILY)
@@ -149,7 +213,7 @@ def test_daily_work_escalates_to_everyone_who_confirms(
     send_due_reminders(noon)
 
     assert len(to(sent_messages, manager)) == 1
-    assert len(to(sent_messages, owner)) == 1
+    assert to(sent_messages, owner) == []
 
 
 def test_named_contact_gets_the_late_alert(company, member, worker, manager, noon, sent_messages):
@@ -192,7 +256,7 @@ def test_snooze_button_goes_away_when_none_are_left(worker, manager, noon, sent_
 
     send_due_reminders(noon)
 
-    assert TaskAction.SNOOZE not in buttons(sent_messages[0])
+    assert TaskAction.SNOOZE_MENU not in buttons(sent_messages[0])
 
 
 def test_someone_who_blocked_the_bot_is_reported_once(

@@ -527,3 +527,28 @@ def test_the_person_who_loses_a_task_hears(shop, member, sent_messages, commit):
     [message] = texts(sent_messages, shop.worker.user.telegram_id)
     assert "Given to someone else" in message
     assert texts(sent_messages, neighbour.user.telegram_id)  # and the new person gets it
+
+
+def test_the_assignee_sees_why_and_by_whom_it_came_back(shop, api_as):
+    task = given(shop, needs_confirmation=True)
+    services.complete_task(task, by=shop.worker)
+    services.return_task(task, by=shop.lead, reason="Retake it in daylight")
+    services.add_comment(task, by=shop.worker, text="OK, after lunch")  # a later comment
+
+    data = api_as(shop.worker).get(employee_path(shop.company, f"{task.pk}/")).json()
+
+    assert data["returned_reason"] == "Retake it in daylight"
+    assert data["returned_by"]["id"] == shop.lead.pk
+
+
+def test_reminder_info_has_the_real_send_times(shop, api_as):
+    from apps.reminders.models import ReminderLog
+
+    task = given(shop, due_at=timezone.now() - timedelta(minutes=30))
+    ReminderLog.objects.create(
+        task=task, kind=ReminderLog.Kind.REMINDER, step=1, recipient=shop.worker
+    )
+
+    data = api_as(shop.worker).get(employee_path(shop.company, f"{task.pk}/")).json()
+
+    assert len(data["reminder"]["sent_times"]) == 1

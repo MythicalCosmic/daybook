@@ -63,7 +63,9 @@ def can_manage(task: Task, member: Membership) -> bool:
 def allowed_actions(task: Task, member: Membership) -> list[Action]:
     actions = []
     if is_assignee(task, member):
-        if task.status in (Task.Status.TODO, Task.Status.RETURNED):
+        # Start is for work someone was given (audit M-16): routines, one's own tasks and work
+        # sent back go straight to Done, the same in the bot and the app.
+        if task.kind == Task.Kind.ASSIGNED and task.status == Task.Status.TODO:
             actions.append(Action.START)
         if task.is_open:
             actions.append(Action.COMPLETE)

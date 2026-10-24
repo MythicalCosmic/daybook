@@ -72,13 +72,14 @@ def day(value: date, today: date, lang: str | None = None) -> str:
     lang = language(lang)
     month = MONTHS[lang][value.month - 1]
     same_year = value.year == today.year
+    # No-break spaces: "5 Oct" never splits across lines (research R3 §1.8).
     if lang == "uz":
         text = f"{value.day}-{month}"
-        return text if same_year else f"{text}, {value.year}"
-    text = f"{value.day} {month}"
+        return text if same_year else f"{text},{NBSP}{value.year}"
+    text = f"{value.day}{NBSP}{month}"
     if same_year:
         return text
-    return f"{text} {value.year}" if lang == "en" else f"{text} {value.year} г."
+    return f"{text}{NBSP}{value.year}" if lang == "en" else f"{text}{NBSP}{value.year}{NBSP}г."
 
 
 def phone(value: str | None) -> str:
