@@ -256,7 +256,13 @@ describe("the reviews page", () => {
 
   it("puts more-time requests and can't-do work first, with Approve right there", async () => {
     const calls = stub({
-      "GET tasks/reviews/": () => json(page([{ ...row({ id: 9, status: "review", completed_at: "2026-10-24T10:00:00Z", proof: "text" }), description: "", proof_text: "Done: 12 boxes" }])),
+      "GET tasks/reviews/": () =>
+        json(
+          page([
+            { ...row({ id: 9, status: "review", completed_at: "2026-10-24T10:00:00Z", proof: "text" }), description: "", proof_text: "Done: 12 boxes" },
+            { ...row({ id: 10, title: "Count the till", status: "review", due_at: "2026-10-24T08:00:00Z", completed_at: "2026-10-24T10:00:00Z" }), description: "", proof_text: "" },
+          ]),
+        ),
       "GET tasks/?extension=true&page_size=50": () => json(page([row({ id: 8, title: "Arrange the cabinets", extension: { until: "2026-10-25T13:00:00Z", note: "", at: "2026-10-25T02:00:00Z" } })])),
       "GET tasks/?blocked=true&page_size=50": () => json(page([row({ blocker: { reason_code: "no_stock", note: "", at: "2026-10-25T02:00:00Z" } })])),
       "POST tasks/8/extension/decide/": () => json(detail({ id: 8 })),
@@ -276,6 +282,8 @@ describe("the reviews page", () => {
     const card = document.body.querySelector("[data-review-card][data-compact]")!;
     expect(card.querySelector("blockquote")?.textContent).toBe("Done: 12 boxes");
     expect(card.querySelector("img")).toBeNull();
+    // How late it came in, on the card (R2 T29): only the late one says so.
+    expect([...document.body.querySelectorAll("[data-testid=late-by]")].map((el) => el.textContent?.trim())).toEqual(["· late 2 h"]);
     wrapper.unmount();
   });
 });

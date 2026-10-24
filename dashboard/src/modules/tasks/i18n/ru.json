@@ -340,5 +340,10 @@
   "tasks.reviews.withPhoto": "С фото",
   "tasks.reviews.withoutPhoto": "Без фото",
   "tasks.keys.comment": "Написать комментарий",
-  "tasks.keys.due": "Изменить срок"
+  "tasks.keys.due": "Изменить срок",
+  "tasks.widget.branchesNow": "Филиалы сейчас",
+  "tasks.widget.doneShort": "выполнено",
+  "tasks.widget.lateShort": "просрочено",
+  "tasks.widget.reviewShort": "на проверке",
+  "tasks.widget.answersShort": "ждут ответа"
 }

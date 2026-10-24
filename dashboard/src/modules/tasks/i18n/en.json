@@ -340,5 +340,10 @@
   "tasks.reviews.withPhoto": "With a photo",
   "tasks.reviews.withoutPhoto": "Without a photo",
   "tasks.keys.comment": "Write a comment",
-  "tasks.keys.due": "Change the deadline"
+  "tasks.keys.due": "Change the deadline",
+  "tasks.widget.branchesNow": "Branches now",
+  "tasks.widget.doneShort": "done",
+  "tasks.widget.lateShort": "late",
+  "tasks.widget.reviewShort": "to check",
+  "tasks.widget.answersShort": "wait for you"
 }

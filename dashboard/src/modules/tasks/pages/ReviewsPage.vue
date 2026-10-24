@@ -38,7 +38,7 @@ import { useCompanyStore } from "@/stores/company";
 import { tasksApi, useRefreshTasks, useReviews, useTaskList } from "../api";
 import TaskDrawer from "../components/TaskDrawer.vue";
 import { BLOCKED_PARAMS, EXTENSION_PARAMS } from "../filters";
-import { cardKey } from "../meta";
+import { cardKey, lateness, minutesBetween } from "../meta";
 import type { TaskReview, TaskRow } from "../types";
 
 const UNDO_MS = 5000;
@@ -207,6 +207,14 @@ function open(task: { id: number }): void {
 }
 
 /** Nothing was reported: fine when nothing was asked, worth a look when a photo or note was. */
+/** How late the work came in (R2 T29), or null when it was on time or had no deadline. */
+function lateBy(task: TaskReview): string | null {
+  if (!task.due_at || !task.completed_at) return null;
+  const minutes = minutesBetween(task.due_at, task.completed_at);
+  if (minutes <= 0) return null;
+  return t("tasks.due.lateBy", { time: lateness(minutes, { min: t("tasks.unit.min"), h: t("tasks.unit.h"), d: t("tasks.unit.d") }) });
+}
+
 const missing = (task: TaskReview) => (task.proof === "none" ? { text: t("tasks.reviews.noProof"), warn: false } : { text: t("tasks.reviews.noPhoto"), warn: true });
 </script>
 
@@ -249,12 +257,12 @@ const missing = (task: TaskReview) => (task.proof === "none" ? { text: t("tasks.
           </div>
           <div class="flex shrink-0 gap-2 max-sm:w-full max-sm:flex-col">
             <template v-if="item.kind === 'extension' && item.task.extension">
-              <UiButton :size="tap" variant="primary" :icon="Check" class="max-sm:flex-1" :loading="deciding.has(`${item.task.id}:true`)" data-testid="answer-approve" @click="decide(item.task, true)">
+              <UiButton :size="tap" variant="primary" :icon="Check" class="max-sm:w-full" :loading="deciding.has(`${item.task.id}:true`)" data-testid="answer-approve" @click="decide(item.task, true)">
                 {{ t("tasks.extension.approve", { time: untilLabel(item.task.extension.until) }) }}
               </UiButton>
-              <UiButton :size="tap" :icon="X" class="max-sm:flex-1" :loading="deciding.has(`${item.task.id}:false`)" data-testid="answer-decline" @click="decide(item.task, false)">{{ t("tasks.extension.decline") }}</UiButton>
+              <UiButton :size="tap" :icon="X" class="max-sm:w-full" :loading="deciding.has(`${item.task.id}:false`)" data-testid="answer-decline" @click="decide(item.task, false)">{{ t("tasks.extension.decline") }}</UiButton>
             </template>
-            <UiButton v-else :size="tap" :icon-right="ChevronRight" class="max-sm:flex-1" @click="open(item.task)">{{ t("tasks.answers.open") }}</UiButton>
+            <UiButton v-else :size="tap" :icon-right="ChevronRight" class="max-sm:w-full" @click="open(item.task)">{{ t("tasks.answers.open") }}</UiButton>
           </div>
         </li>
       </ul>
@@ -296,7 +304,7 @@ const missing = (task: TaskReview) => (task.proof === "none" ? { text: t("tasks.
               <UserAvatar :name="task.assignee.name" :src="task.assignee.photo_url" :size="22" />
               <span class="min-w-0 truncate"><span class="font-medium text-fg">{{ task.assignee.name }}</span><template v-if="task.branch"> · {{ task.branch.name }}</template></span>
               <span class="flex-1" />
-              <RelativeTime :value="task.completed_at" class="shrink-0 text-xs" />
+              <span class="flex shrink-0 items-center gap-1 text-xs"><RelativeTime :value="task.completed_at" /><span v-if="lateBy(task)" class="font-semibold text-danger" data-testid="late-by">· {{ lateBy(task) }}</span></span>
             </div>
             <p v-if="task.checklist.total" class="text-xs text-muted">{{ t("tasks.reviews.checklist", { done: task.checklist.done, total: task.checklist.total }) }}</p>
             <p v-if="task.proof_text" class="line-clamp-2 rounded-[8px] bg-surface-2 px-2.5 py-1.5 text-sm text-fg">{{ task.proof_text }}</p>
@@ -326,7 +334,7 @@ const missing = (task: TaskReview) => (task.proof === "none" ? { text: t("tasks.
             </button>
             <div class="flex min-w-0 items-center gap-2 text-sm text-muted">
               <UserAvatar :name="task.assignee.name" :src="task.assignee.photo_url" :size="20" />
-              <span class="min-w-0"><span class="font-medium text-fg">{{ task.assignee.name }}</span><template v-if="task.branch"> · {{ task.branch.name }}</template> · <RelativeTime :value="task.completed_at" /></span>
+              <span class="min-w-0"><span class="font-medium text-fg">{{ task.assignee.name }}</span><template v-if="task.branch"> · {{ task.branch.name }}</template> · <RelativeTime :value="task.completed_at" /><span v-if="lateBy(task)" class="font-semibold text-danger" data-testid="late-by"> · {{ lateBy(task) }}</span></span>
             </div>
             <blockquote v-if="task.proof_text" class="line-clamp-3 rounded-[8px] border-l-[3px] border-primary bg-surface-2 px-2.5 py-1.5 text-sm text-fg">{{ task.proof_text }}</blockquote>
             <p v-else-if="task.description" class="line-clamp-2 text-sm text-muted">

@@ -158,7 +158,7 @@ describe("api", () => {
   it("registers in Work with the review badge and the plan's permissions", () => {
     expect(module).toMatchObject({ id: "tasks", group: "work", order: 10 });
     expect(module.perm).toEqual(["tasks.view_all", "tasks.confirm", "tasks.assign"]);
-    expect(module.widgets?.map((w) => w.id)).toEqual(["tasks.kpi.done_today", "tasks.kpi.on_time", "tasks.kpi.late_now", "tasks.chart.on_time_trend", "tasks.top_bottom"]);
+    expect(module.widgets?.map((w) => w.id)).toEqual(["tasks.kpi.done_today", "tasks.kpi.on_time", "tasks.kpi.late_now", "tasks.chart.on_time_trend", "tasks.branches_now", "tasks.top_bottom"]);
   });
 });
 

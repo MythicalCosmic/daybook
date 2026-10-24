@@ -340,5 +340,10 @@
   "tasks.reviews.withPhoto": "Rasm bilan",
   "tasks.reviews.withoutPhoto": "Rasmsiz",
   "tasks.keys.comment": "Izoh yozish",
-  "tasks.keys.due": "Muddatni o‘zgartirish"
+  "tasks.keys.due": "Muddatni o‘zgartirish",
+  "tasks.widget.branchesNow": "Filiallar hozir",
+  "tasks.widget.doneShort": "bajarildi",
+  "tasks.widget.lateShort": "kechikkan",
+  "tasks.widget.reviewShort": "tekshiruvda",
+  "tasks.widget.answersShort": "javob kutmoqda"
 }
