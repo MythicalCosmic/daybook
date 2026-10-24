@@ -61,7 +61,7 @@ describe("the late card's escalation", () => {
   });
 
   it.each([
-    ["uz", "Rahbaringizga xabar berildi.", "Rahbar"],
+    ["uz", "Rahbaringiz xabardor qilindi.", "Rahbar"],
     ["ru", "Руководитель уже в курсе.", "Руководитель"],
   ] as const)("reads right in %s too", (lang, sentence, caption) => {
     const { container } = show(reminder(), lang);

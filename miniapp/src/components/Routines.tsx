@@ -1,15 +1,11 @@
 import { CheckCheck, ChevronDown, Eye, Repeat, Undo2 } from "lucide-react";
 import { useState } from "react";
 
-import { useConfirmMany } from "../api/hooks";
 import type { Task } from "../api/types";
-import { errorText } from "../lib/actions";
+import { useConfirmTasks } from "../lib/actions";
 import { byFinished, finishedAt, groupByRoutine, isRoutine, routineProgress, type RoutineGroup } from "../lib/routines";
-import { groupTasks, repeatLabel, rowMeta, type ViewContext } from "../lib/taskView";
-import { clock, dayMonth, daysFromToday } from "../lib/time";
+import { groupTasks, repeatLabel, rowMeta, shortMoment, type ViewContext } from "../lib/taskView";
 import { useNavigation } from "../state/navigation";
-import { useMember } from "../state/session";
-import { useToast } from "../state/toast";
 import { haptic } from "../telegram";
 import { Avatar, Button, EmptyState, IconButton, LoadError, ProgressBar, cx } from "../ui";
 import { RowSkeleton, TaskRow } from "./TaskRow";
@@ -18,9 +14,7 @@ type Open = (task: Task) => void;
 
 /** "09:12" today, "20 Oct 18:02" before. */
 function when(at: string | null, ctx: ViewContext): string {
-  if (!at) return "";
-  const time = clock(at, ctx.timeZone, ctx.locale);
-  return daysFromToday(at, ctx.now, ctx.timeZone) === 0 ? time : `${dayMonth(at, ctx.timeZone, ctx.locale)} ${time}`;
+  return at ? shortMoment(at, ctx) : "";
 }
 
 /** A finished run's line: when it was done (or checked), and the note it was finished with. */
@@ -57,7 +51,8 @@ export function RoutinesTab({ tasks, ctx, onOpen, onTick }: { tasks: Task[]; ctx
           </span>
           <span className="row-main">
             <span className="routine-summary-title">{total ? t("routines.progress", { done: finished, total }) : t("routines.noneToday")}</span>
-            <span className="row-meta row-meta--wrap">{t("routines.help")}</span>
+            {/* None today: what will show up here, and when (R2 T44). */}
+            <span className="row-meta row-meta--wrap">{total ? t("routines.help") : t("routines.noneHelp")}</span>
           </span>
         </div>
         {total > 0 && <ProgressBar value={finished} total={total} size="sm" tone={finished === total ? "sage" : "accent"} ariaLabel={t("routines.progress", { done: finished, total })} />}
@@ -154,7 +149,8 @@ export function ReviewQueue({
               task={task}
               ctx={ctx}
               onOpen={() => onOpen(task)}
-              meta={t("meta.finishedBy", { name: task.assignee.name, time: task.completed_at ? clock(task.completed_at, ctx.timeZone, ctx.locale) : "—" })}
+              // The day too when it isn't today: work that has waited three days says so (audit M-8).
+              meta={t("meta.finishedBy", { name: task.assignee.name, time: when(task.completed_at, ctx) || "—" })}
               trailing={false}
             />
           ))}
@@ -167,30 +163,13 @@ export function ReviewQueue({
 /** One routine's runs waiting for a check: the proofs in a grid, Confirm all, Send back each. */
 function RoutineCheck({ group, ctx, onOpen }: { group: RoutineGroup; ctx: ViewContext; onOpen: Open }) {
   const { t } = ctx;
-  const member = useMember();
   const navigation = useNavigation();
-  const toast = useToast();
-  const confirm = useConfirmMany(member.companyId);
+  const confirmTasks = useConfirmTasks();
   const count = group.tasks.length;
   const repeat = repeatLabel(group.tasks[0].repeat_weekdays, ctx);
 
-  const confirmAll = () =>
-    confirm.mutate(
-      group.tasks.map((task) => task.id),
-      {
-        onSuccess: (result) => {
-          haptic.notify(result.failed ? "warning" : "success");
-          const confirmed = t("review.confirmed", { count: result.done });
-          toast(result.failed ? `${confirmed} · ${t("review.notConfirmed", { count: result.failed })}` : confirmed, {
-            tone: result.failed ? undefined : "success",
-          });
-        },
-        onError: (error) => {
-          haptic.notify("error");
-          toast(errorText(error, t), { tone: "error" });
-        },
-      },
-    );
+  // Goes out after a moment, with Undo in the toast meanwhile (the server can't take it back).
+  const confirmAll = () => confirmTasks(group.tasks);
 
   return (
     <div className="card routine-check">
@@ -205,7 +184,7 @@ function RoutineCheck({ group, ctx, onOpen }: { group: RoutineGroup; ctx: ViewCo
       </div>
       {/* The routine's action sits under its name: in sight as the card arrives, however many runs
           follow, and never at the foot of the screen under the tab bar and its (+). */}
-      <Button variant="primary" block icon={CheckCheck} loading={confirm.isPending} onClick={confirmAll} className="routine-check-confirm">
+      <Button variant="primary" block icon={CheckCheck} onClick={confirmAll} className="routine-check-confirm">
         {count > 1 ? t("review.confirmAll", { count }) : t("detail.confirm")}
       </Button>
       {/* One run alone gets the card's whole width rather than half of an empty grid. */}

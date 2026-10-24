@@ -154,7 +154,7 @@ export const messages = defineMessages({
     "log.less": "На 15 минут меньше",
     "log.more": "На 15 минут больше",
     "log.note": "Что делали?",
-    "log.notePlaceholder": "Например, оформил новую витрину с витаминами",
+    "log.notePlaceholder": "Например: оформление новой витрины с витаминами",
     "log.save": "Сохранить {time}",
     "log.saved": "Записано {time}",
     "log.noProjects": "Сначала присоединитесь к проекту.",

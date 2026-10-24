@@ -1,14 +1,14 @@
-import { AlarmClock, Eye, Flame, Sun, TreePalm } from "lucide-react";
+import { AlarmClock, Eye, Flame, MessageCircleQuestion, Sun, TreePalm } from "lucide-react";
 
-import { useActivity, useBoard, useSummary } from "../api/hooks";
+import { useActivity, useBoard, useGivenByMe, useSummary } from "../api/hooks";
 import { ActivityRow } from "../components/ActivityRow";
 import { FeatureSlot } from "../features/FeatureSlot";
 import { Ring } from "../components/Ring";
 import { RowSkeleton, TaskRow } from "../components/TaskRow";
 import { useCompleteTask } from "../lib/actions";
 import { isFinished, isRoutine, routineProgress } from "../lib/routines";
-import { byDue, isDueToday, isLate, isOpen } from "../lib/taskView";
-import { dayKey, dayMonth, hourIn, longDate } from "../lib/time";
+import { byFocus, isDueToday, isLate, isOpen } from "../lib/taskView";
+import { dayKey, dayMonthLong, hourIn, longDate } from "../lib/time";
 import { useViewContext } from "../lib/useNow";
 import { useNavigation } from "../state/navigation";
 import { useMember } from "../state/session";
@@ -33,12 +33,16 @@ export function Home() {
   const summary = useSummary(member.companyId);
   const board = useBoard(member.companyId);
   const activity = useActivity(member.companyId);
+  const given = useGivenByMe(member.companyId, member.permissions.includes("tasks.assign"));
+  const requests = (given.data ?? []).filter((task) => task.blocker || task.extension);
 
   const tasks = board.data ?? [];
-  const late = tasks.filter((task) => isLate(task, ctx.now)).sort(byDue);
+  // Urgent work first, then the soonest deadline: the same order as the lists (R2 T7).
+  const focus = byFocus(ctx.now);
+  const late = tasks.filter((task) => isLate(task, ctx.now)).sort(focus);
   const upNext = tasks
     .filter((task) => isOpen(task) && isDueToday(task, ctx) && !isLate(task, ctx.now))
-    .sort(byDue)
+    .sort(focus)
     .slice(0, 3);
   const news = (activity.data ?? []).filter((item) => !item.is_read).slice(0, 2);
   const hour = hourIn(ctx.now, ctx.timeZone);
@@ -74,7 +78,8 @@ export function Home() {
           body={
             numbers.off_today.until === dayKey(ctx.now, ctx.timeZone)
               ? t("home.offTodayBody")
-              : t("home.offUntil", { date: dayMonth(`${numbers.off_today.until}T12:00:00Z`, "UTC", ctx.locale) })
+              : // The full month: "25-oktabrgacha" reads right, "25-oktgacha" would not.
+                t("home.offUntil", { date: dayMonthLong(`${numbers.off_today.until}T12:00:00Z`, "UTC", ctx.locale) })
           }
           wrap
         />
@@ -94,7 +99,10 @@ export function Home() {
           {/* Before the numbers come, a placeholder line: "Nothing due today" would be a guess. */}
           {numbers ? (
             <span className="home-today-title">
-              {numbers.today_total > 0 ? t("home.progress", { done: numbers.today_done, total: numbers.today_total }) : t("home.nothingToday")}
+              {numbers.today_total > 0
+                ? t("home.progress", { done: numbers.today_done, total: numbers.today_total })
+                : // With late work below, "nothing due today" would contradict it (audit M-11).
+                  t(late.length > 0 ? "home.nothingNewToday" : "home.nothingToday")}
             </span>
           ) : (
             <span className="skeleton home-today-loading" aria-hidden />
@@ -118,6 +126,19 @@ export function Home() {
           title={t("home.late", { count: late.length })}
           body={late[0].title}
           onClick={() => navigation.openTask(late[0].id)}
+        />
+      )}
+
+      {/* Work I gave whose person can't do it or asks for more time: it waits for my answer. */}
+      {requests.length > 0 && (
+        <Banner
+          size="lg"
+          tone="accent"
+          icon={MessageCircleQuestion}
+          title={t("home.requests", { count: requests.length })}
+          body={t("home.requestsBody")}
+          wrap
+          onClick={() => (requests.length === 1 ? navigation.openTask(requests[0].id) : navigation.goTo("tasks", "given"))}
         />
       )}
 

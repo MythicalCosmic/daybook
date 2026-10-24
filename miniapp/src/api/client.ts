@@ -43,7 +43,8 @@ function ensureLogin(): Promise<void> {
   return login;
 }
 
-type Options = { method?: string; json?: unknown; form?: FormData };
+/** `keepalive`: the request still goes out if the app closes meanwhile (a confirm sent on leaving). */
+type Options = { method?: string; json?: unknown; form?: FormData; keepalive?: boolean };
 
 export async function api<T>(path: string, options: Options = {}): Promise<T> {
   if (!accessToken) await ensureLogin();
@@ -97,7 +98,7 @@ export function apiForm<T>(
   return api<T>(path, { method: options.method ?? "POST", form });
 }
 
-function send(path: string, { method, json, form }: Options): Promise<Response> {
+function send(path: string, { method, json, form, keepalive }: Options): Promise<Response> {
   const headers: Record<string, string> = { Authorization: `Bearer ${accessToken}` };
   let body: BodyInit | undefined;
   if (form) body = form;
@@ -105,7 +106,7 @@ function send(path: string, { method, json, form }: Options): Promise<Response> 
     headers["Content-Type"] = "application/json";
     body = JSON.stringify(json);
   }
-  return fetch(`${BASE}${path}`, { method: method ?? (body ? "POST" : "GET"), headers, body });
+  return fetch(`${BASE}${path}`, { method: method ?? (body ? "POST" : "GET"), headers, body, ...(keepalive ? { keepalive } : {}) });
 }
 
 async function readBody(response: Response): Promise<unknown> {

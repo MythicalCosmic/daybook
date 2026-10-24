@@ -1,21 +1,32 @@
-import { Check, CircleCheck, ClipboardList, Eye, MessageCircle, Undo2, type LucideIcon } from "lucide-react";
+import { AtSign, Bell, CalendarClock, Check, CircleCheck, ClipboardList, Eye, MessageCircle, OctagonAlert, Undo2, type LucideIcon } from "lucide-react";
 
 import type { Activity } from "../api/types";
+import type { Key } from "../i18n";
 import { clock, dayMonth, daysFromToday } from "../lib/time";
 import type { ViewContext } from "../lib/taskView";
 
-const LOOK: Record<Activity["kind"], { icon: LucideIcon; background: string; color: string }> = {
+type Look = { icon: LucideIcon; background: string; color: string };
+
+const LOOK: Record<string, Look> = {
   assigned: { icon: ClipboardList, background: "var(--color-bg)", color: "var(--color-text)" },
   review: { icon: Eye, background: "var(--color-accent-2-200)", color: "var(--color-accent-2-800)" },
   completed: { icon: CircleCheck, background: "var(--color-accent-2-200)", color: "var(--color-accent-2-800)" },
   confirmed: { icon: Check, background: "var(--color-accent-2)", color: "var(--color-bg)" },
   returned: { icon: Undo2, background: "var(--color-accent-200)", color: "var(--color-accent-800)" },
   commented: { icon: MessageCircle, background: "var(--color-bg)", color: "var(--color-text)" },
+  mentioned: { icon: AtSign, background: "var(--color-bg)", color: "var(--color-accent-700)" },
+  blocked: { icon: OctagonAlert, background: "var(--color-accent-200)", color: "var(--color-accent-800)" },
+  extension: { icon: CalendarClock, background: "var(--color-accent-100)", color: "var(--color-accent-800)" },
 };
 
+/** Kinds the backend may add before the app knows them read as a plain update, never a crash. */
+const OTHER: Look = { icon: Bell, background: "var(--color-bg)", color: "var(--color-text)" };
+const KNOWN = new Set(Object.keys(LOOK));
+
 export function ActivityRow({ item, ctx, onOpen }: { item: Activity; ctx: ViewContext; onOpen: () => void }) {
-  const { icon: Icon, background, color } = LOOK[item.kind];
+  const { icon: Icon, background, color } = LOOK[item.kind] ?? OTHER;
   const name = item.actor?.name ?? ctx.t("activity.someone");
+  const title = ctx.t((KNOWN.has(item.kind) ? `activity.${item.kind}` : "activity.other") as Key, { name });
   const when =
     daysFromToday(item.created_at, ctx.now, ctx.timeZone) === 0
       ? clock(item.created_at, ctx.timeZone, ctx.locale)
@@ -26,7 +37,7 @@ export function ActivityRow({ item, ctx, onOpen }: { item: Activity; ctx: ViewCo
         <Icon size={19} strokeWidth={2.4} />
       </span>
       <span className="row-main" style={{ gap: 1 }}>
-        <span style={{ fontSize: 15, fontWeight: 700 }}>{ctx.t(`activity.${item.kind}`, { name })}</span>
+        <span style={{ fontSize: 15, fontWeight: 700 }}>{title}</span>
         <span className="row-meta">{item.text || item.task.title}</span>
       </span>
       <span style={{ flex: "none", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>

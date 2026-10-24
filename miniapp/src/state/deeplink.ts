@@ -19,7 +19,7 @@ import { CORE, taskPage, type NavigationInit, type TasksTab } from "./navigation
 
 export type ScreenLink = { name: string; arg: string | null };
 
-const TASKS_TABS: readonly string[] = ["daily", "assigned", "personal", "review"] satisfies TasksTab[];
+const TASKS_TABS: readonly string[] = ["daily", "assigned", "personal", "review", "given"] satisfies TasksTab[];
 
 /** "payslip:12" → {payslip, "12"}; "payslip-12" (startapp form) → the same; "home" → {home, null}. */
 export function parseScreen(raw: string, form: "screen" | "startapp" = "screen"): ScreenLink | null {

@@ -29,8 +29,10 @@ export function LateCard({
   const { t } = ctx;
   const at = (moment: string | Date) => clock(moment, ctx.timeZone, ctx.locale);
   const nodes = reminder ? timeline(task, reminder, ctx) : [];
-  const total = reminder?.escalate_after ?? 0;
-  const snoozed = reminder?.snoozed_until && new Date(reminder.snoozed_until) > ctx.now ? reminder.snoozed_until : null;
+  // How many reminders go out at most (0: until it's done), not when the manager hears (audit M-5).
+  const total = reminder?.max_reminders ?? 0;
+  const snoozedAt = task.snoozed_until ?? reminder?.snoozed_until ?? null;
+  const snoozed = snoozedAt && new Date(snoozedAt) > ctx.now ? snoozedAt : null;
   // Without a name, "your manager" reads inside a sentence; one that starts with it has its own text.
   const named = reminder?.escalate_to ?? null;
   const manager = named ?? t("detail.reminders.manager");
@@ -39,8 +41,11 @@ export function LateCard({
   let subtitle = t("detail.late.body", { time: at(task.due_at!) });
   if (snoozed) subtitle = t("detail.reminders.snoozed", { time: at(snoozed) });
   else if (reminder && total > 0 && reminder.sent >= total) subtitle = t("detail.reminders.allSent", { total });
-  else if (reminder?.next_at && reminder.sent > 0 && total > 0)
-    subtitle = t("detail.reminders.progress", { sent: reminder.sent, total, time: at(reminder.next_at) });
+  else if (reminder?.next_at && reminder.sent > 0)
+    subtitle =
+      total > 0
+        ? t("detail.reminders.progress", { sent: reminder.sent, total, time: at(reminder.next_at) })
+        : t("detail.reminders.sentSoFar", { sent: reminder.sent, time: at(reminder.next_at) });
   else if (reminder?.next_at) subtitle = t("detail.reminders.first", { time: at(reminder.next_at) });
 
   return (
@@ -60,13 +65,14 @@ export function LateCard({
       {nodes.length > 0 && (
         <div style={{ display: "flex" }}>
           {nodes.map((node, index) => (
-            <div key={node.key} style={{ flex: 1, minWidth: 0, position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            // A little room at the sides: two "Отправлено" side by side at 360 px never run together.
+            <div key={node.key} style={{ flex: 1, minWidth: 0, padding: "0 2px", position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
               {index < nodes.length - 1 && (
                 <span style={{ position: "absolute", top: 15, left: "50%", width: "100%", height: 3, borderRadius: 3, background: "color-mix(in srgb, var(--color-accent) 30%, transparent)" }} />
               )}
               <NodeDot node={node} />
               <span className="num" style={{ fontSize: 13.5, fontWeight: 700 }}>{node.time}</span>
-              <span style={{ fontSize: 12, marginTop: -4, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <span style={{ fontSize: 11.5, marginTop: -4, maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {node.caption}
               </span>
             </div>
@@ -97,9 +103,11 @@ export function LateCard({
           >
             <Clock3 size={17} strokeWidth={2.6} />
             <span>
-              {reminder.snoozes_left > 0
-                ? t("detail.snooze", { minutes: reminder.snooze_minutes, left: reminder.snoozes_left })
-                : t("detail.noSnooze")}
+              {reminder.snoozes_left === 0
+                ? t("detail.noSnooze")
+                : task.snoozed_until !== undefined
+                  ? t("detail.snoozeChoices", { left: reminder.snoozes_left })
+                  : t("detail.snooze", { minutes: reminder.snooze_minutes, left: reminder.snoozes_left })}
             </span>
           </button>
           <button className="btn btn-ghost" onClick={onAskHelp} style={{ minHeight: 44, padding: "0 14px", color: "var(--color-accent-800)" }}>
@@ -111,12 +119,12 @@ export function LateCard({
   );
 }
 
-/** For open tasks that aren't late yet: what the bot will do at the deadline. */
-export function ReminderNote({ task, reminder, when, ctx }: { task: Task; reminder: ReminderInfo; when: string; ctx: ViewContext }) {
+/** For open tasks that aren't late yet: what the bot will do at the deadline (shown just above). */
+export function ReminderNote({ task, reminder, ctx }: { task: Task; reminder: ReminderInfo; ctx: ViewContext }) {
   const text =
     task.kind === "personal"
-      ? ctx.t("detail.reminders.once", { when })
-      : ctx.t("detail.reminders.upcoming", { when, every: reminder.every_minutes });
+      ? ctx.t("detail.reminders.once")
+      : ctx.t("detail.reminders.upcoming", { every: reminder.every_minutes });
   return (
     <div className="banner" style={{ alignItems: "center" }}>
       <span className="banner-icon" style={{ color: "var(--color-accent-700)" }}>
@@ -145,7 +153,9 @@ function timeline(task: Task, reminder: ReminderInfo, ctx: ViewContext): Node[] 
     nodes.push({
       key: String(step),
       mark: String(step),
-      time: when === null ? "" : at(when),
+      // A reminder that went out shows no time: quiet hours and snoozes move them, and a computed
+      // "22:51" inside quiet hours would be invented (audit M-5). Coming ones count from the next.
+      time: when === null || state === "sent" ? "" : at(when),
       caption: state === "sent" ? ctx.t("detail.node.sent") : state === "next" ? ctx.t("detail.node.next") : "",
       state,
     });

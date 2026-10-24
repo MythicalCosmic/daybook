@@ -92,14 +92,19 @@ export function dayMonthLong(moment: string | Date, timeZone: string, locale: st
   return formatter(locale, { timeZone, day: "numeric", month: "long" }).format(new Date(moment));
 }
 
+/** "Yakshanba, 25-oktabr", "Воскресенье, 25 октября": a date that starts a line, so capitalised
+ * (inside a sentence Uzbek and Russian weekdays are lowercase). */
 export function longDate(moment: Date, timeZone: string, locale: string): string {
   if (isUzbek(locale)) {
     const { day, month, weekday } = calendar(moment, timeZone);
-    return `${UZ_WEEKDAYS[weekday]}, ${day}-${UZ_MONTHS[month]}`;
+    return capitalise(`${UZ_WEEKDAYS[weekday]}, ${day}-${UZ_MONTHS[month]}`);
   }
-  return formatter(locale, { timeZone, weekday: "long", day: "numeric", month: "long" }).format(
-    moment,
-  );
+  return capitalise(formatter(locale, { timeZone, weekday: "long", day: "numeric", month: "long" }).format(moment));
+}
+
+/** The first letter up: a date or weekday that starts a line. */
+export function capitalise(text: string): string {
+  return text.charAt(0).toLocaleUpperCase() + text.slice(1);
 }
 
 /** The instant a wall-clock time on a given day happens in `timeZone`. */

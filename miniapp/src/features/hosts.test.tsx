@@ -391,7 +391,7 @@ describe("feature hosts in the real screens", () => {
 
     const waiting = { ...base, status: "review", actions: [] } as unknown as Task;
     const sent = renderWith(<TaskDetail taskId={43} />, { seed: { task: waiting, comments: [] } });
-    expect(bar(sent.container)).toEqual(["Waiting for a check"]);
+    expect(bar(sent.container)).toEqual(["Waiting for check"]);
     expect((sent.container.querySelector(".action-bar button") as HTMLButtonElement).disabled).toBe(true);
   });
 

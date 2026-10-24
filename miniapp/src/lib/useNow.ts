@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { baseCurrency } from "../api/membership";
 import { useI18n } from "../i18n";
 import { useMember } from "../state/session";
 import type { ViewContext } from "./taskView";
@@ -16,7 +17,7 @@ export function useNow(intervalMs = 30_000): Date {
 
 export function useViewContext(): ViewContext {
   const { t, locale } = useI18n();
-  const { timeZone } = useMember();
+  const member = useMember();
   const now = useNow();
-  return { t, locale, timeZone, now };
+  return { t, locale, timeZone: member.timeZone, now, currency: baseCurrency(member) };
 }
