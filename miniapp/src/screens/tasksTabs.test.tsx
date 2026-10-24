@@ -2,7 +2,7 @@
  * The Tasks screen: urgency on rows, empty lists that teach, and "Given by me" for whoever hands
  * out work (what needs them first, then work to check, then the rest, with seen receipts).
  */
-import { cleanup, fireEvent, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { keys } from "../api/hooks";
@@ -11,7 +11,7 @@ import { resetQuickAdd } from "../lib/quickAdd";
 import { makeTask, membership, navigationState, NOW, person, renderApp } from "../test/harness";
 import { Tasks } from "./Tasks";
 
-const api = vi.hoisted(() => vi.fn(() => Promise.reject(new Error("no network in tests"))));
+const api = vi.hoisted(() => vi.fn((_path: string): Promise<unknown> => Promise.reject(new Error("no network in tests"))));
 vi.mock("../api/client", async (importOriginal) => ({ ...(await importOriginal<typeof import("../api/client")>()), api }));
 
 function show(options: { board?: Task[]; given?: Task[]; permissions?: Membership["permissions"]; tab?: "daily" | "assigned" | "personal" | "given" } = {}) {
@@ -32,6 +32,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  api.mockReset();
   vi.useRealTimers();
 });
 
@@ -47,6 +48,22 @@ describe("rows", () => {
     expect(rows.map((row) => within(row).getByText(/Shelf labels|Insulin order/).textContent)).toEqual(["Insulin order", "Shelf labels"]);
     expect(within(rows[0]).getByText("Urgent")).toBeTruthy();
     expect(within(rows[1]).getByText("20 min left")).toBeTruthy();
+  });
+});
+
+describe("the round tick", () => {
+  it("shows done at once and goes back if the server refuses", async () => {
+    let refuse: (error: unknown) => void = () => undefined;
+    api.mockImplementation((path: string) =>
+      path.endsWith("/complete/") ? new Promise((_resolve, reject) => (refuse = reject)) : Promise.reject(new Error("no network in tests")),
+    );
+    show({ board: [makeTask({ title: "Shelf labels", due_at: "2026-10-21T17:00:00+05:00" })] });
+    const tick = () => screen.getByRole("button", { name: /Shelf labels/ }).querySelector(".glyph") as HTMLElement;
+    fireEvent.click(tick());
+    await waitFor(() => expect(tick().className).toContain("glyph--done"));
+    act(() => refuse(new Error("offline")));
+    await waitFor(() => expect(tick().className).toContain("glyph--todo"));
+    expect(await screen.findByText("No connection. Check your internet and try again.")).toBeTruthy();
   });
 });
 

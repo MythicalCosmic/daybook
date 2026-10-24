@@ -92,6 +92,7 @@ export function useCompleteTask(): (task: Task) => void {
   const toast = useToast();
   const doneToast = useDoneToast();
   const tickLeftFirst = useTickLeftFirst();
+  const client = useQueryClient();
   const { t } = useI18n();
   return (task) => {
     if (!task.actions.includes("complete")) {
@@ -105,6 +106,12 @@ export function useCompleteTask(): (task: Task) => void {
         navigation.openSheet({ kind: "complete", taskId: task.id });
         return;
       }
+      // The tick shows at once (R2 T40); a refusal puts the row back as it was.
+      const board = keys.board(companyId);
+      const before = client.getQueryData<Task[]>(board);
+      client.setQueryData<Task[]>(board, (list) =>
+        list?.map((row) => (row.id === task.id ? { ...row, status: "done", completed_at: new Date().toISOString(), actions: [] } : row)),
+      );
       action.mutate(
         { taskId: task.id, action: "complete", proofText: "", photo: null },
         {
@@ -113,6 +120,7 @@ export function useCompleteTask(): (task: Task) => void {
             doneToast(done);
           },
           onError: (error) => {
+            if (before) client.setQueryData(board, before);
             haptic("error");
             toast(errorText(error, t), { tone: "error" });
           },
