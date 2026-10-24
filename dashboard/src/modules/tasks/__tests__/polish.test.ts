@@ -185,6 +185,18 @@ describe("quick add in New task (contract 1)", () => {
     wrapper.unmount();
   });
 
+  it("falls back to the default deadline when the understood words are deleted", async () => {
+    let call = 0;
+    const { wrapper } = await open({ "POST tasks/parse/": () => (call++ === 0 ? json(parsed) : json({ title: "Dorilarni sanash", due_at: null, due_label: null, priority: null, repeat: null, repeat_weekdays: null })) });
+    await type("Ertaga 15:00 dorilarni sanash !!");
+    document.body.querySelector<HTMLButtonElement>("[data-testid=due-parsed]")!.click();
+    await nextTick();
+    await type("Dorilarni sanash");
+    expect(document.body.querySelector("[data-testid=due-parsed]")).toBeNull();
+    expect(button("Tomorrow 09:00")?.getAttribute("aria-pressed")).toBe("true");
+    wrapper.unmount();
+  });
+
   it("points repeating work to routines", async () => {
     const { wrapper } = await open({ "POST tasks/parse/": () => json({ ...parsed, title: "Kassa hisoboti", priority: null, repeat: "daily" }) });
     await type("Kassa hisoboti har kuni 18:00 xx");

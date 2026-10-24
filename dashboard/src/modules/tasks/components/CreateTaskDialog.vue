@@ -117,7 +117,11 @@ watch(proof, (value) => {
 });
 
 const due = computed<DuePreset>({
-  get: () => dueChoice.value ?? (understood.value?.due_at ? "parsed" : "tomorrow_am"),
+  get: () => {
+    // "From the title" picked, then the words deleted: back to the default, never "no deadline".
+    const choice = dueChoice.value === "parsed" && !understood.value?.due_at ? null : dueChoice.value;
+    return choice ?? (understood.value?.due_at ? "parsed" : "tomorrow_am");
+  },
   set: (value) => (dueChoice.value = value),
 });
 const priority = computed<TaskPriority>({
