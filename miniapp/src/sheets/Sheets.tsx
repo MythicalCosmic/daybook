@@ -148,7 +148,7 @@ type ReturnReason = (typeof RETURN_REASONS)[number];
 
 /**
  * Send it back (R2 T30): a reason in one tap, what to fix in a few words after it. The reason
- * goes out as text in the reviewer's language: "Фото нечёткое. Переснимите при дневном свете".
+ * goes out as text in the reviewer's language, worded as the dashboard's chips are.
  */
 function ReturnSheet({ taskId }: { taskId: number }) {
   const { t } = useI18n();
@@ -161,7 +161,8 @@ function ReturnSheet({ taskId }: { taskId: number }) {
   const [note, setNote] = useState("");
   useDraftGuard(Boolean(reason || note.trim()));
   const needsNote = reason === null || reason === "other";
-  const text = [reason && reason !== "other" ? t(`return.reason.${reason}`) : "", note.trim()].filter(Boolean).join(". ");
+  // The chip is the reason; a note follows after a colon ("Фото нечёткое: переснимите при дневном свете").
+  const text = [reason && reason !== "other" ? t(`return.reason.${reason}`) : "", note.trim()].filter(Boolean).join(": ");
   const ready = needsNote ? Boolean(note.trim()) : true;
   const submit = () => {
     if (!ready || !text || action.isPending) return;

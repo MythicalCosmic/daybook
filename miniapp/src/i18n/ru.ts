@@ -349,7 +349,7 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
   "return.reason.photo": "Фото нечёткое",
   "return.reason.unfinished": "Не доделано",
   "return.reason.wrong": "Не тот товар",
-  "return.reason.other": "Другое",
+  "return.reason.other": "Другое…",
   "return.label": "Что нужно исправить?",
   "return.noteOptional": "Что исправить (по желанию)",
   "return.placeholder": "Например: переснимите фото при дневном свете",

@@ -101,13 +101,13 @@ describe("sending work back (R2 T30)", () => {
     expect(screen.getByLabelText("What to fix (optional)")).toBeTruthy();
     fireEvent.change(screen.getByLabelText("What to fix (optional)"), { target: { value: "Retake it in daylight" } });
     fireEvent.click(send);
-    await waitFor(() => expect(sent("/return/")).toEqual([{ reason: "Photo is unclear. Retake it in daylight" }]));
+    await waitFor(() => expect(sent("/return/")).toEqual([{ reason: "Photo is unclear: Retake it in daylight" }]));
   });
 
   it("needs words for Other", () => {
     const task = makeTask({ status: "review" });
     open(task, { kind: "return", taskId: task.id }, { manager: true });
-    fireEvent.click(screen.getByRole("radio", { name: "Other" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Other…" }));
     expect(screen.getByLabelText("What needs to be fixed?")).toBeTruthy();
     expect((screen.getByRole("button", { name: "Send back" }) as HTMLButtonElement).disabled).toBe(true);
   });

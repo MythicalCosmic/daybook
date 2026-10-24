@@ -334,10 +334,10 @@ const uz: Partial<Record<Key, string>> = {
 
   "return.title": "Vazifani qaytarish",
   "return.why": "Sababi",
-  "return.reason.photo": "Rasm tushunarsiz",
+  "return.reason.photo": "Rasm aniq emas",
   "return.reason.unfinished": "Oxiriga yetkazilmagan",
   "return.reason.wrong": "Noto‘g‘ri mahsulot",
-  "return.reason.other": "Boshqa sabab",
+  "return.reason.other": "Boshqa…",
   "return.label": "Nimani tuzatish kerak?",
   "return.noteOptional": "Nimani tuzatish kerak (ixtiyoriy)",
   "return.placeholder": "Masalan: rasmni kunduzgi yorug‘likda qayta oling",

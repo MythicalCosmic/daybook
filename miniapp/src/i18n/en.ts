@@ -336,7 +336,7 @@ const en = {
   "return.reason.photo": "Photo is unclear",
   "return.reason.unfinished": "Not finished",
   "return.reason.wrong": "Wrong item",
-  "return.reason.other": "Other",
+  "return.reason.other": "Other…",
   "return.label": "What needs to be fixed?",
   "return.noteOptional": "What to fix (optional)",
   "return.placeholder": "e.g. Retake the photo in daylight",

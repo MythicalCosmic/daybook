@@ -1887,8 +1887,13 @@ textarea.input {
   line-height: 1.35;
 }
 
+/* High is a plain flag (as on the dashboard): uncoloured, so only urgent work reads red. */
 .prio--high {
-  color: var(--color-accent-700);
+  color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+
+.row-meta--alert .prio--high {
+  color: inherit;
 }
 
 .row-reward {
