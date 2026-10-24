@@ -763,27 +763,37 @@ def parse(
     nobody has to pick one first; it is there for callers that word the result."""
     if now.tzinfo is None:
         raise ValueError("`now` must be timezone-aware, in the company's timezone.")
-    s, origin = _normalize(text)
-    spec = _Spec()
-    bangs = re.search(r"!{2,}[\s.]*$", s)  # "Kassa!!" is urgent
-    if bangs:
-        spec.priority = "urgent"
-    start, end, spans = _peel(s, spec, bangs.start() if bangs else len(s))
-    found = _merge(s, spans) + (((bangs.start(), len(s.rstrip())),) if bangs else ())
-    if not found:
+    # "!!" anywhere makes it urgent ("Kassa!!", "Dori !! ertaga"); the marks leave the title.
+    bangs = [match.span() for match in _BANGS.finditer(text)]
+    plain = _blank(text, bangs)
+    s, origin = _normalize(plain)
+    spec = _Spec(priority="urgent" if bangs else None)
+    start, end, spans = _peel(s, spec, len(s))
+    found = _merge(s, spans)
+    if not found and not bangs:
         return QuickAdd(title=text.strip())
     moment = _resolve(spec, now, default_time, end_of_day)
     due_at = moment.pop("due", None)
     repeat = None if spec.repeat == "none" else spec.repeat
     return QuickAdd(
-        title=_title(text, _start_of(origin, start), _end_of(origin, end)) if start < end else "",
+        title=_title(plain, _start_of(origin, start), _end_of(origin, end)) if start < end else "",
         due_at=due_at,
         repeat=repeat,
         repeat_weekdays=_repeat_weekdays(repeat, due_at, spec.weekday),
         priority=spec.priority,
-        spans=tuple((_start_of(origin, a), _end_of(origin, b)) for a, b in found),
+        spans=tuple(sorted([(_start_of(origin, a), _end_of(origin, b)) for a, b in found] + bangs)),
         **moment,
     )
+
+
+_BANGS = re.compile(r"!{2,}")
+
+
+def _blank(text: str, spans: list[tuple[int, int]]) -> str:
+    """`text` with spaces over `spans`: the same length, so positions still match."""
+    for first, last in spans:
+        text = text[:first] + " " * (last - first) + text[last:]
+    return text
 
 
 def _repeat_weekdays(

@@ -117,7 +117,40 @@ def test_parse_without_a_date_keeps_the_text(shop, api_as):
         "priority": None,
         "repeat": None,
         "repeat_weekdays": None,
+        "rolled": False,
+        "past": False,
+        "passed_at": None,
     }
+
+
+def test_parse_says_when_the_typed_time_has_passed(shop, api_as, wednesday_morning):
+    """So the app can offer "tomorrow?" as the bot does: a moment that has passed sets
+    nothing; a time alone that has passed today is tomorrow's."""
+    client = api_as(shop.worker)
+
+    past = client.post(
+        employee_path(shop.company, "parse/"), {"text": "Kassa bugun 08:00"}, format="json"
+    ).json()
+    assert past["past"] is True and past["rolled"] is False
+    assert past["due_at"] is None and past["title"] == "Kassa"
+    assert datetime.fromisoformat(past["passed_at"]) == WEDNESDAY_10.replace(hour=8)
+
+    rolled = client.post(
+        employee_path(shop.company, "parse/"), {"text": "Kassa 9:30"}, format="json"
+    ).json()
+    assert rolled["rolled"] is True and rolled["past"] is False
+    due = datetime.fromisoformat(rolled["due_at"]).astimezone(TASHKENT)
+    assert (due.day, due.hour, due.minute) == (22, 9, 30)
+
+
+def test_parse_reads_the_urgency_marks_anywhere(shop, api_as, wednesday_morning):
+    data = (
+        api_as(shop.worker)
+        .post(employee_path(shop.company, "parse/"), {"text": "Dori !! ertaga"}, format="json")
+        .json()
+    )
+    assert data["title"] == "Dori" and data["priority"] == "urgent"
+    assert datetime.fromisoformat(data["due_at"]).astimezone(TASHKENT).day == 22
 
 
 def test_the_owner_api_parses_too(shop, owner_api):

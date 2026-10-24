@@ -416,6 +416,18 @@ class TaskParseSerializer(serializers.Serializer):
         allow_null=True,
         help_text="0 = Monday; for weekly, the due day's weekday.",
     )
+    rolled = serializers.BooleanField(
+        default=False,
+        help_text="A time alone that had already passed today: due_at is that time tomorrow.",
+    )
+    past = serializers.BooleanField(
+        default=False,
+        help_text='The typed moment has already passed ("bugun 01:00" at 03:00): due_at is '
+        "empty; offer passed_at's time tomorrow, as the bot does.",
+    )
+    passed_at = serializers.DateTimeField(
+        allow_null=True, default=None, help_text="That moment, when past is true."
+    )
 
 
 class SnoozeSerializer(serializers.Serializer):
@@ -469,6 +481,9 @@ def parsed(text: str, company) -> dict:
         "priority": found.priority,
         "repeat": found.repeat,
         "repeat_weekdays": list(found.repeat_weekdays) if found.repeat_weekdays else None,
+        "rolled": found.rolled,
+        "past": found.past,
+        "passed_at": found.passed,
     }
 
 
