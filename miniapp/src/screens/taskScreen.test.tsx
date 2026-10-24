@@ -217,7 +217,7 @@ describe("confirming safely", () => {
   it("keeps a typed comment when Ask for help adds the mention", async () => {
     const task = makeTask({
       due_at: "2026-10-21T09:00:00+05:00",
-      reminder: { every_minutes: 20, sent: 1, max_reminders: 12, escalate_after: 3, next_at: null, escalated_at: null, escalate_to: "Bekzod Mirzayev", snooze_minutes: 10, snoozes_left: 1, snoozed_until: null },
+      reminder: { every_minutes: 20, sent: 1, max_reminders: 12, escalate_after: 3, next_at: null, escalated_at: null, escalate_to: "Bekzod Mirzayev", snooze_minutes: 10, snoozes_left: 1, snoozed_until: null, sent_times: [] },
     });
     show(task);
     const box = screen.getByPlaceholderText("Write a comment…") as HTMLInputElement;

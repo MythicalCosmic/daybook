@@ -2142,6 +2142,13 @@ paths:
           pattern: ^\d+$
         required: true
       - in: query
+        name: given_by
+        schema:
+          type: string
+          enum:
+          - me
+        description: 'me: tasks I gave to someone else.'
+      - in: query
         name: kind
         schema:
           type: string
@@ -2232,7 +2239,8 @@ paths:
   /api/v1/companies/{company_id}/tasks/{id}/:
     get:
       operationId: v1_companies_tasks_retrieve
-      description: Tasks of one company, as the signed-in member may see them.
+      description: One task. The assignee opening it the first time marks it seen
+        (`seen_at`).
       parameters:
       - in: path
         name: company_id
@@ -2287,6 +2295,91 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedTaskUpdateRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+          description: ''
+  /api/v1/companies/{company_id}/tasks/{id}/blocker/:
+    post:
+      operationId: v1_companies_tasks_blocker_create
+      description: '"Can''t do it": the reminders pause and whoever gave it hears,
+        with the reason.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlockerReportRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BlockerReportRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BlockerReportRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+          description: ''
+  /api/v1/companies/{company_id}/tasks/{id}/blocker/resolve/:
+    post:
+      operationId: v1_companies_tasks_blocker_resolve_create
+      description: |-
+        Answer a "can't do it": someone else (`assignee_id`), a new deadline (`due_at`) or
+        cancel. Whoever gave it, or holds tasks.assign or tasks.confirm for its branch.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlockerResolveRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BlockerResolveRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BlockerResolveRequest'
+        required: true
       security:
       - jwtAuth: []
       - cookieAuth: []
@@ -2534,6 +2627,119 @@ paths:
               schema:
                 $ref: '#/components/schemas/Task'
           description: ''
+  /api/v1/companies/{company_id}/tasks/{id}/extension/:
+    post:
+      operationId: v1_companies_tasks_extension_create
+      description: '"Need more time": ask whoever gave it for a later deadline (`until`).'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtensionRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ExtensionRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ExtensionRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+          description: ''
+  /api/v1/companies/{company_id}/tasks/{id}/extension/decide/:
+    post:
+      operationId: v1_companies_tasks_extension_decide_create
+      description: Approve (the deadline moves) or decline (it stays) a request for
+        more time.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtensionDecideRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ExtensionDecideRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ExtensionDecideRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+          description: ''
+  /api/v1/companies/{company_id}/tasks/{id}/reopen/:
+    post:
+      operationId: v1_companies_tasks_reopen_create
+      description: 'Undo a Done: the person who did it, within a minute, before anyone
+        accepted it.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+          description: ''
   /api/v1/companies/{company_id}/tasks/{id}/return/:
     post:
       operationId: v1_companies_tasks_return_create
@@ -2594,6 +2800,17 @@ paths:
         required: true
       tags:
       - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SnoozeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SnoozeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SnoozeRequest'
       security:
       - jwtAuth: []
       - cookieAuth: []
@@ -2708,6 +2925,43 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ConfirmManyResponse'
+          description: ''
+  /api/v1/companies/{company_id}/tasks/parse/:
+    post:
+      operationId: v1_companies_tasks_parse_create
+      description: |-
+        What a quick-add text says (a deadline, a repeat, urgency) and the title without
+        those words. Nothing is saved: the client sends `due_at` when it creates the task.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskParseInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TaskParseInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TaskParseInputRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskParse'
           description: ''
   /api/v1/companies/{company_id}/team-stats/:
     get:
@@ -2848,8 +3102,10 @@ paths:
   /api/v1/me/:
     get:
       operationId: v1_me_retrieve
-      description: The signed-in person, with every membership. Only `language` can
-        be changed.
+      description: |-
+        The signed-in person, with every membership. `language` and `bot_company` can be changed:
+        a new language relabels the person's chat with the employee bot too (its menus and
+        keyboard), and the company is the one the bot's lists and new tasks use.
       tags:
       - v1
       security:
@@ -2864,8 +3120,10 @@ paths:
           description: ''
     patch:
       operationId: v1_me_partial_update
-      description: The signed-in person, with every membership. Only `language` can
-        be changed.
+      description: |-
+        The signed-in person, with every membership. `language` and `bot_company` can be changed:
+        a new language relabels the person's chat with the employee bot too (its menus and
+        keyboard), and the company is the one the bot's lists and new tasks use.
       tags:
       - v1
       requestBody:
@@ -2900,6 +3158,16 @@ components:
             again.
       required:
       - access
+    ActionEnum:
+      enum:
+      - reassign
+      - new_due
+      - cancel
+      type: string
+      description: |-
+        * `reassign` - reassign
+        * `new_due` - new_due
+        * `cancel` - cancel
     ActionsEnum:
       enum:
       - start
@@ -3418,6 +3686,31 @@ components:
         * `rejected` - Rejected
         * `cancelled` - Cancelled
         * `expired` - Expired
+    BlockerReportRequest:
+      type: object
+      properties:
+        reason_code:
+          $ref: '#/components/schemas/ReasonCodeEnum'
+        note:
+          type: string
+          default: ''
+          maxLength: 300
+      required:
+      - reason_code
+    BlockerResolveRequest:
+      type: object
+      properties:
+        action:
+          $ref: '#/components/schemas/ActionEnum'
+        assignee_id:
+          type: integer
+          nullable: true
+        due_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - action
     Board:
       type: object
       properties:
@@ -3828,6 +4121,14 @@ components:
         text:
           type: string
           minLength: 1
+        mentions:
+          type: array
+          items:
+            type: integer
+          writeOnly: true
+          description: 'Membership ids of people to notify: on the task or working
+            in its branch.'
+          maxItems: 20
       required:
       - text
     CompaniesFeatureEnum:
@@ -4062,6 +4363,25 @@ components:
         * `missed` - missed
         * `free` - free
         * `today` - today
+    ExtensionDecideRequest:
+      type: object
+      properties:
+        approve:
+          type: boolean
+      required:
+      - approve
+    ExtensionRequestRequest:
+      type: object
+      properties:
+        until:
+          type: string
+          format: date-time
+        note:
+          type: string
+          default: ''
+          maxLength: 300
+      required:
+      - until
     FeedAnnouncement:
       type: object
       properties:
@@ -4732,6 +5052,12 @@ components:
           description: Only set from a contact the person shared in Telegram.
         language:
           $ref: '#/components/schemas/LanguageEnum'
+        bot_company:
+          type: integer
+          nullable: true
+          description: 'The company the person works in, the same in the bot, the
+            mini app and the dashboard: the one they picked last, else the one they
+            see first (a company they own, the most branches). Set it to switch.'
         memberships:
           type: array
           items:
@@ -5464,6 +5790,12 @@ components:
       properties:
         language:
           $ref: '#/components/schemas/LanguageEnum'
+        bot_company:
+          type: integer
+          nullable: true
+          description: 'The company the person works in, the same in the bot, the
+            mini app and the dashboard: the one they picked last, else the one they
+            see first (a company they own, the most branches). Set it to switch.'
     PatchedReminderPolicyRequest:
       type: object
       properties:
@@ -5771,6 +6103,16 @@ components:
       required:
       - id
       - name
+    PresetEnum:
+      enum:
+      - 15m
+      - 1h
+      - tomorrow_morning
+      type: string
+      description: |-
+        * `15m` - 15m
+        * `1h` - 1h
+        * `tomorrow_morning` - tomorrow_morning
     PriorityEnum:
       enum:
       - low
@@ -6480,6 +6822,20 @@ components:
         * `photo` - Photo
         * `text` - Text report
         * `any` - Photo or text report
+    ReasonCodeEnum:
+      enum:
+      - no_stock
+      - no_access
+      - broken
+      - not_mine
+      - other
+      type: string
+      description: |-
+        * `no_stock` - Out of stock
+        * `no_access` - No access
+        * `broken` - Something is broken
+        * `not_mine` - Not my task
+        * `other` - Another reason
     RecordOut:
       type: object
       properties:
@@ -6616,6 +6972,12 @@ components:
           type: string
           format: date-time
           nullable: true
+        sent_times:
+          type: array
+          items:
+            type: string
+            format: date-time
+          description: When the reminders the assignee got went out, oldest first.
       required:
       - escalate_after
       - escalate_to
@@ -6624,6 +6986,7 @@ components:
       - max_reminders
       - next_at
       - sent
+      - sent_times
       - snooze_minutes
       - snoozed_until
       - snoozes_left
@@ -6949,6 +7312,20 @@ components:
       - status
       - swap_pending
       - time_off_id
+    SnoozeRequest:
+      type: object
+      properties:
+        preset:
+          nullable: true
+          description: |-
+            15m or 1h hold the reminders (the deadline stays); tomorrow_morning moves one's own task to 09:00 tomorrow. Empty: the policy's own length.
+
+            * `15m` - 15m
+            * `1h` - 1h
+            * `tomorrow_morning` - tomorrow_morning
+          oneOf:
+          - $ref: '#/components/schemas/PresetEnum'
+          - $ref: '#/components/schemas/NullEnum'
     Summary:
       type: object
       properties:
@@ -7202,6 +7579,36 @@ components:
           items:
             $ref: '#/components/schemas/ActionsEnum'
           readOnly: true
+        snoozed_until:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        seen_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: When the assignee first opened it.
+        blocker:
+          allOf:
+          - $ref: '#/components/schemas/TaskBlocker'
+          nullable: true
+          readOnly: true
+        extension:
+          allOf:
+          - $ref: '#/components/schemas/TaskExtension'
+          nullable: true
+          readOnly: true
+        returned_reason:
+          type: string
+          nullable: true
+          readOnly: true
+        returned_by:
+          allOf:
+          - $ref: '#/components/schemas/MemberBrief'
+          nullable: true
+          readOnly: true
         created_at:
           type: string
           format: date-time
@@ -7209,6 +7616,7 @@ components:
       required:
       - actions
       - assignee
+      - blocker
       - card
       - checklist
       - completed_at
@@ -7218,6 +7626,7 @@ components:
       - created_by
       - description
       - due_at
+      - extension
       - for_date
       - id
       - is_overdue
@@ -7230,11 +7639,29 @@ components:
       - proof_thumb
       - reminder
       - repeat_weekdays
+      - returned_by
+      - returned_reason
       - reward
       - routine
+      - seen_at
+      - snoozed_until
       - started_at
       - status
       - title
+    TaskBlocker:
+      type: object
+      properties:
+        reason_code:
+          $ref: '#/components/schemas/ReasonCodeEnum'
+        note:
+          type: string
+        at:
+          type: string
+          format: date-time
+      required:
+      - at
+      - note
+      - reason_code
     TaskBrief:
       type: object
       properties:
@@ -7319,6 +7746,21 @@ components:
             * `weekly` - Every week
       required:
       - title
+    TaskExtension:
+      type: object
+      properties:
+        until:
+          type: string
+          format: date-time
+        note:
+          type: string
+        at:
+          type: string
+          format: date-time
+      required:
+      - at
+      - note
+      - until
     TaskKindEnum:
       enum:
       - daily
@@ -7329,6 +7771,79 @@ components:
         * `daily` - Daily
         * `assigned` - Assigned
         * `personal` - Personal
+    TaskParse:
+      type: object
+      properties:
+        title:
+          type: string
+          description: What was typed without the words read as a date.
+        due_at:
+          type: string
+          format: date-time
+          nullable: true
+        due_label:
+          type: string
+          nullable: true
+          description: 'Ready to show in the person''s language: Ertaga, 22-oktabr
+            (payshanba), 18:00.'
+        priority:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/PriorityEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        repeat:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/TaskParseRepeatEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        repeat_weekdays:
+          type: array
+          items:
+            type: integer
+            maximum: 6
+            minimum: 0
+          nullable: true
+          description: 0 = Monday; for weekly, the due day's weekday.
+        rolled:
+          type: boolean
+          default: false
+          description: 'A time alone that had already passed today: due_at is that
+            time tomorrow.'
+        past:
+          type: boolean
+          default: false
+          description: 'The typed moment has already passed ("bugun 01:00" at 03:00):
+            due_at is empty; offer passed_at''s time tomorrow, as the bot does.'
+        passed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: That moment, when past is true.
+      required:
+      - due_at
+      - due_label
+      - priority
+      - repeat
+      - repeat_weekdays
+      - title
+    TaskParseInputRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          maxLength: 500
+      required:
+      - text
+    TaskParseRepeatEnum:
+      enum:
+      - daily
+      - weekdays
+      - weekly
+      type: string
+      description: |-
+        * `daily` - daily
+        * `weekdays` - weekdays
+        * `weekly` - weekly
     TaskStatusEnum:
       enum:
       - todo
@@ -7341,7 +7856,7 @@ components:
       description: |-
         * `todo` - To do
         * `in_progress` - In progress
-        * `review` - Waiting for confirmation
+        * `review` - Waiting for check
         * `returned` - Sent back
         * `done` - Done
         * `cancelled` - Cancelled

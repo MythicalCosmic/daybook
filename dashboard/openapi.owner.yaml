@@ -12056,6 +12056,11 @@ paths:
           items:
             type: integer
       - in: query
+        name: blocked
+        schema:
+          type: boolean
+        description: 'true: "can''t do it" waiting for an answer.'
+      - in: query
         name: branch
         schema:
           type: array
@@ -12082,6 +12087,11 @@ paths:
         schema:
           type: string
         description: Company-local day, YYYY-MM-DD (inclusive).
+      - in: query
+        name: extension
+        schema:
+          type: boolean
+        description: 'true: more time asked, not decided yet.'
       - in: query
         name: has_proof
         schema:
@@ -12146,6 +12156,11 @@ paths:
           type: string
         description: 'without: one-off tasks only (the Tasks page), only: routine
           work only. Routine work is the daily task a routine made; empty: both.'
+      - in: query
+        name: seen
+        schema:
+          type: boolean
+        description: 'false: the assignee hasn''t opened it yet.'
       - in: query
         name: status
         schema:
@@ -12262,6 +12277,47 @@ paths:
               schema:
                 $ref: '#/components/schemas/TaskDetail'
           description: ''
+  /api/v1/owner/companies/{company_id}/tasks/{id}/blocker/resolve/:
+    post:
+      operationId: companies_tasks_blocker_resolve_create
+      description: |-
+        Answer a "can't do it": someone else (`assignee_id`), a new deadline (`due_at`) or
+        cancel. Whoever gave it, or holds tasks.assign or tasks.confirm for its branch.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlockerResolveRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BlockerResolveRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BlockerResolveRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDetail'
+          description: ''
   /api/v1/owner/companies/{company_id}/tasks/{id}/cancel/:
     post:
       operationId: companies_tasks_cancel_create
@@ -12346,6 +12402,46 @@ paths:
         required: true
       tags:
       - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDetail'
+          description: ''
+  /api/v1/owner/companies/{company_id}/tasks/{id}/extension/decide/:
+    post:
+      operationId: companies_tasks_extension_decide_create
+      description: Approve (the deadline moves to what was asked) or decline a request
+        for more time.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this task.
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtensionDecideRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ExtensionDecideRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ExtensionDecideRequest'
+        required: true
       security:
       - ownerJwtAuth: []
       responses:
@@ -12552,6 +12648,11 @@ paths:
           items:
             type: integer
       - in: query
+        name: blocked
+        schema:
+          type: boolean
+        description: 'true: "can''t do it" waiting for an answer.'
+      - in: query
         name: branch
         schema:
           type: array
@@ -12578,6 +12679,11 @@ paths:
         schema:
           type: string
         description: Company-local day, YYYY-MM-DD (inclusive).
+      - in: query
+        name: extension
+        schema:
+          type: boolean
+        description: 'true: more time asked, not decided yet.'
       - in: query
         name: has_proof
         schema:
@@ -12626,6 +12732,11 @@ paths:
           type: string
         description: 'without: one-off tasks only (the Tasks page), only: routine
           work only. Routine work is the daily task a routine made; empty: both.'
+      - in: query
+        name: seen
+        schema:
+          type: boolean
+        description: 'false: the assignee hasn''t opened it yet.'
       - in: query
         name: status
         schema:
@@ -12689,6 +12800,11 @@ paths:
           items:
             type: integer
       - in: query
+        name: blocked
+        schema:
+          type: boolean
+        description: 'true: "can''t do it" waiting for an answer.'
+      - in: query
         name: branch
         schema:
           type: array
@@ -12715,6 +12831,11 @@ paths:
         schema:
           type: string
         description: Company-local day, YYYY-MM-DD (inclusive).
+      - in: query
+        name: extension
+        schema:
+          type: boolean
+        description: 'true: more time asked, not decided yet.'
       - in: query
         name: from
         schema:
@@ -12769,6 +12890,11 @@ paths:
         description: 'without: one-off tasks only (the Tasks page), only: routine
           work only. Routine work is the daily task a routine made; empty: both.'
       - in: query
+        name: seen
+        schema:
+          type: boolean
+        description: 'false: the assignee hasn''t opened it yet.'
+      - in: query
         name: status
         schema:
           type: array
@@ -12813,6 +12939,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TaskOptions'
+          description: ''
+  /api/v1/owner/companies/{company_id}/tasks/parse/:
+    post:
+      operationId: companies_tasks_parse_create
+      description: |-
+        What a quick-add text says (deadline, repeat, urgency) and the title without those
+        words, in the company's time and the caller's language. Nothing is saved.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskParseInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TaskParseInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TaskParseInputRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskParse'
           description: ''
   /api/v1/owner/companies/{company_id}/tasks/reviews/:
     get:
@@ -14280,6 +14441,30 @@ components:
       - target
       - target_id
       - target_type
+    BlockerResolveActionEnum:
+      enum:
+      - reassign
+      - new_due
+      - cancel
+      type: string
+      description: |-
+        * `reassign` - reassign
+        * `new_due` - new_due
+        * `cancel` - cancel
+    BlockerResolveRequest:
+      type: object
+      properties:
+        action:
+          $ref: '#/components/schemas/BlockerResolveActionEnum'
+        assignee_id:
+          type: integer
+          nullable: true
+        due_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - action
     Board:
       type: object
       properties:
@@ -14851,6 +15036,13 @@ components:
           type: string
           minLength: 1
           maxLength: 2000
+        mentions:
+          type: array
+          items:
+            type: integer
+          description: 'Membership ids of people to notify: on the task or working
+            in its branch.'
+          maxItems: 20
       required:
       - text
     CommentRow:
@@ -15848,6 +16040,13 @@ components:
         * `running` - Building
         * `ready` - Ready
         * `failed` - Failed
+    ExtensionDecideRequest:
+      type: object
+      properties:
+        approve:
+          type: boolean
+      required:
+      - approve
     Features:
       type: object
       properties:
@@ -22926,6 +23125,20 @@ components:
         * `cbu` - cbu
         * `manual` - manual
         * `company` - company
+    ReasonCodeEnum:
+      enum:
+      - no_stock
+      - no_access
+      - broken
+      - not_mine
+      - other
+      type: string
+      description: |-
+        * `no_stock` - Out of stock
+        * `no_access` - No access
+        * `broken` - Something is broken
+        * `not_mine` - Not my task
+        * `other` - Another reason
     ReasonEnum:
       enum:
       - resignation
@@ -25547,6 +25760,20 @@ components:
       required:
       - amount
       - month
+    TaskBlocker:
+      type: object
+      properties:
+        reason_code:
+          $ref: '#/components/schemas/ReasonCodeEnum'
+        note:
+          type: string
+        at:
+          type: string
+          format: date-time
+      required:
+      - at
+      - note
+      - reason_code
     TaskBoard:
       type: object
       properties:
@@ -25773,6 +26000,22 @@ components:
           items:
             $ref: '#/components/schemas/TaskMoveEnum'
           readOnly: true
+        seen_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: When the assignee first opened it.
+        blocker:
+          allOf:
+          - $ref: '#/components/schemas/TaskBlocker'
+          nullable: true
+          readOnly: true
+        extension:
+          allOf:
+          - $ref: '#/components/schemas/TaskExtension'
+          nullable: true
+          readOnly: true
         description:
           type: string
           readOnly: true
@@ -25813,6 +26056,7 @@ components:
       required:
       - actions
       - assignee
+      - blocker
       - branch
       - checklist
       - checklist_items
@@ -25824,6 +26068,7 @@ components:
       - created_by
       - description
       - due_at
+      - extension
       - for_date
       - has_proof
       - id
@@ -25841,9 +26086,25 @@ components:
       - reminders
       - reward
       - routine
+      - seen_at
       - started_at
       - status
       - title
+    TaskExtension:
+      type: object
+      properties:
+        until:
+          type: string
+          format: date-time
+        note:
+          type: string
+        at:
+          type: string
+          format: date-time
+      required:
+      - at
+      - note
+      - until
     TaskKindEnum:
       enum:
       - daily
@@ -25904,6 +26165,79 @@ components:
       - policies
       - positions
       - routines
+    TaskParse:
+      type: object
+      properties:
+        title:
+          type: string
+          description: What was typed without the words read as a date.
+        due_at:
+          type: string
+          format: date-time
+          nullable: true
+        due_label:
+          type: string
+          nullable: true
+          description: 'Ready to show in the person''s language: Ertaga, 22-oktabr
+            (payshanba), 18:00.'
+        priority:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/PriorityEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        repeat:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/TaskParseRepeatEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        repeat_weekdays:
+          type: array
+          items:
+            type: integer
+            maximum: 6
+            minimum: 0
+          nullable: true
+          description: 0 = Monday; for weekly, the due day's weekday.
+        rolled:
+          type: boolean
+          default: false
+          description: 'A time alone that had already passed today: due_at is that
+            time tomorrow.'
+        past:
+          type: boolean
+          default: false
+          description: 'The typed moment has already passed ("bugun 01:00" at 03:00):
+            due_at is empty; offer passed_at''s time tomorrow, as the bot does.'
+        passed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: That moment, when past is true.
+      required:
+      - due_at
+      - due_label
+      - priority
+      - repeat
+      - repeat_weekdays
+      - title
+    TaskParseInputRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          maxLength: 500
+      required:
+      - text
+    TaskParseRepeatEnum:
+      enum:
+      - daily
+      - weekdays
+      - weekly
+      type: string
+      description: |-
+        * `daily` - daily
+        * `weekdays` - weekdays
+        * `weekly` - weekly
     TaskProofWall:
       type: object
       properties:
@@ -26030,6 +26364,22 @@ components:
           items:
             $ref: '#/components/schemas/TaskMoveEnum'
           readOnly: true
+        seen_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: When the assignee first opened it.
+        blocker:
+          allOf:
+          - $ref: '#/components/schemas/TaskBlocker'
+          nullable: true
+          readOnly: true
+        extension:
+          allOf:
+          - $ref: '#/components/schemas/TaskExtension'
+          nullable: true
+          readOnly: true
         description:
           type: string
           readOnly: true
@@ -26038,6 +26388,7 @@ components:
           readOnly: true
       required:
       - assignee
+      - blocker
       - branch
       - checklist
       - completed_at
@@ -26046,6 +26397,7 @@ components:
       - created_by
       - description
       - due_at
+      - extension
       - for_date
       - has_proof
       - id
@@ -26061,6 +26413,7 @@ components:
       - proof_thumb
       - reward
       - routine
+      - seen_at
       - started_at
       - status
       - title
@@ -26175,8 +26528,25 @@ components:
           items:
             $ref: '#/components/schemas/TaskMoveEnum'
           readOnly: true
+        seen_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: When the assignee first opened it.
+        blocker:
+          allOf:
+          - $ref: '#/components/schemas/TaskBlocker'
+          nullable: true
+          readOnly: true
+        extension:
+          allOf:
+          - $ref: '#/components/schemas/TaskExtension'
+          nullable: true
+          readOnly: true
       required:
       - assignee
+      - blocker
       - branch
       - checklist
       - completed_at
@@ -26184,6 +26554,7 @@ components:
       - created_at
       - created_by
       - due_at
+      - extension
       - for_date
       - has_proof
       - id
@@ -26198,6 +26569,7 @@ components:
       - proof_thumb
       - reward
       - routine
+      - seen_at
       - started_at
       - status
       - title
@@ -26213,7 +26585,7 @@ components:
       description: |-
         * `todo` - To do
         * `in_progress` - In progress
-        * `review` - Waiting for confirmation
+        * `review` - Waiting for check
         * `returned` - Sent back
         * `done` - Done
         * `cancelled` - Cancelled

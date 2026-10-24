@@ -37,6 +37,7 @@ function reminder(fields: Partial<ReminderInfo> = {}): ReminderInfo {
     snooze_minutes: 10,
     snoozes_left: 1,
     snoozed_until: null,
+    sent_times: [],
     ...fields,
   };
 }

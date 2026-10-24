@@ -62,6 +62,12 @@ function task(overrides: Partial<Task> = {}): Task {
     is_overdue: false,
     actions: ["start", "complete"],
     created_at: "2026-10-18T10:00:00Z",
+    snoozed_until: null,
+    seen_at: null,
+    blocker: null,
+    extension: null,
+    returned_reason: null,
+    returned_by: null,
     ...overrides,
   };
 }

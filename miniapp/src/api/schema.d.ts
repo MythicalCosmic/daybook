@@ -1014,7 +1014,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Tasks of one company, as the signed-in member may see them. */
+        /** @description One task. The assignee opening it the first time marks it seen (`seen_at`). */
         get: operations["v1_companies_tasks_retrieve"];
         put?: never;
         post?: never;
@@ -1023,6 +1023,43 @@ export interface paths {
         head?: never;
         /** @description Tasks of one company, as the signed-in member may see them. */
         patch: operations["v1_companies_tasks_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/tasks/{id}/blocker/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description "Can't do it": the reminders pause and whoever gave it hears, with the reason. */
+        post: operations["v1_companies_tasks_blocker_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/tasks/{id}/blocker/resolve/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Answer a "can't do it": someone else (`assignee_id`), a new deadline (`due_at`) or
+         *     cancel. Whoever gave it, or holds tasks.assign or tasks.confirm for its branch.
+         */
+        post: operations["v1_companies_tasks_blocker_resolve_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/companies/{company_id}/tasks/{id}/cancel/": {
@@ -1105,6 +1142,57 @@ export interface paths {
         put?: never;
         /** @description Tasks of one company, as the signed-in member may see them. */
         post: operations["v1_companies_tasks_confirm_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/tasks/{id}/extension/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description "Need more time": ask whoever gave it for a later deadline (`until`). */
+        post: operations["v1_companies_tasks_extension_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/tasks/{id}/extension/decide/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Approve (the deadline moves) or decline (it stays) a request for more time. */
+        post: operations["v1_companies_tasks_extension_decide_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/tasks/{id}/reopen/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Undo a Done: the person who did it, within a minute, before anyone accepted it. */
+        post: operations["v1_companies_tasks_reopen_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1204,6 +1292,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/tasks/parse/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description What a quick-add text says (a deadline, a repeat, urgency) and the title without
+         *     those words. Nothing is saved: the client sends `due_at` when it creates the task.
+         */
+        post: operations["v1_companies_tasks_parse_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/team-stats/": {
         parameters: {
             query?: never;
@@ -1263,14 +1371,22 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description The signed-in person, with every membership. Only `language` can be changed. */
+        /**
+         * @description The signed-in person, with every membership. `language` and `bot_company` can be changed:
+         *     a new language relabels the person's chat with the employee bot too (its menus and
+         *     keyboard), and the company is the one the bot's lists and new tasks use.
+         */
         get: operations["v1_me_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        /** @description The signed-in person, with every membership. Only `language` can be changed. */
+        /**
+         * @description The signed-in person, with every membership. `language` and `bot_company` can be changed:
+         *     a new language relabels the person's chat with the employee bot too (its menus and
+         *     keyboard), and the company is the one the bot's lists and new tasks use.
+         */
         patch: operations["v1_me_partial_update"];
         trace?: never;
     };
@@ -1282,6 +1398,13 @@ export interface components {
             /** @description Bearer token for the API. When it expires, sign in with initData again. */
             access: string;
         };
+        /**
+         * @description * `reassign` - reassign
+         *     * `new_due` - new_due
+         *     * `cancel` - cancel
+         * @enum {string}
+         */
+        ActionEnum: "reassign" | "new_due" | "cancel";
         /**
          * @description * `start` - start
          *     * `complete` - complete
@@ -1539,6 +1662,17 @@ export interface components {
          * @enum {string}
          */
         AttendanceSwapStatusEnum: "requested" | "accepted" | "approved" | "rejected" | "cancelled" | "expired";
+        BlockerReportRequest: {
+            reason_code: components["schemas"]["ReasonCodeEnum"];
+            /** @default  */
+            note: string;
+        };
+        BlockerResolveRequest: {
+            action: components["schemas"]["ActionEnum"];
+            assignee_id?: number | null;
+            /** Format: date-time */
+            due_at?: string | null;
+        };
         Board: {
             /** Format: date */
             date: string;
@@ -1700,6 +1834,8 @@ export interface components {
         };
         CommentRequest: {
             text: string;
+            /** @description Membership ids of people to notify: on the task or working in its branch. */
+            mentions?: number[];
         };
         /**
          * @description * `finance` - Finance
@@ -1812,6 +1948,15 @@ export interface components {
          * @enum {string}
          */
         DayStateEnum: "done" | "missed" | "free" | "today";
+        ExtensionDecideRequest: {
+            approve: boolean;
+        };
+        ExtensionRequestRequest: {
+            /** Format: date-time */
+            until: string;
+            /** @default  */
+            note: string;
+        };
         FeedAnnouncement: {
             readonly id: number;
             readonly title: string;
@@ -2064,6 +2209,8 @@ export interface components {
             /** @description Only set from a contact the person shared in Telegram. */
             readonly phone: string;
             language?: components["schemas"]["LanguageEnum"];
+            /** @description The company the person works in, the same in the bot, the mini app and the dashboard: the one they picked last, else the one they see first (a company they own, the most branches). Set it to switch. */
+            bot_company?: number | null;
             readonly memberships: components["schemas"]["Membership"][];
         };
         MemberBrief: {
@@ -2370,6 +2517,8 @@ export interface components {
         };
         PatchedMeRequest: {
             language?: components["schemas"]["LanguageEnum"];
+            /** @description The company the person works in, the same in the bot, the mini app and the dashboard: the one they picked last, else the one they see first (a company they own, the most branches). Set it to switch. */
+            bot_company?: number | null;
         };
         PatchedReminderPolicyRequest: {
             name?: string;
@@ -2514,6 +2663,13 @@ export interface components {
             readonly id: number;
             readonly name: string;
         };
+        /**
+         * @description * `15m` - 15m
+         *     * `1h` - 1h
+         *     * `tomorrow_morning` - tomorrow_morning
+         * @enum {string}
+         */
+        PresetEnum: "15m" | "1h" | "tomorrow_morning";
         /**
          * @description * `low` - Low
          *     * `normal` - Normal
@@ -2788,6 +2944,15 @@ export interface components {
          * @enum {string}
          */
         ProofEnum: "none" | "photo" | "text" | "any";
+        /**
+         * @description * `no_stock` - Out of stock
+         *     * `no_access` - No access
+         *     * `broken` - Something is broken
+         *     * `not_mine` - Not my task
+         *     * `other` - Another reason
+         * @enum {string}
+         */
+        ReasonCodeEnum: "no_stock" | "no_access" | "broken" | "not_mine" | "other";
         RecordOut: {
             id: number;
             member_id: number;
@@ -2837,6 +3002,8 @@ export interface components {
             snoozes_left: number;
             /** Format: date-time */
             snoozed_until: string | null;
+            /** @description When the reminders the assignee got went out, oldest first. */
+            sent_times: string[];
         };
         ReminderPolicy: {
             readonly id: number;
@@ -2986,6 +3153,16 @@ export interface components {
             swap_pending: boolean;
             has_record: boolean;
         };
+        SnoozeRequest: {
+            /**
+             * @description 15m or 1h hold the reminders (the deadline stays); tomorrow_morning moves one's own task to 09:00 tomorrow. Empty: the policy's own length.
+             *
+             *     * `15m` - 15m
+             *     * `1h` - 1h
+             *     * `tomorrow_morning` - tomorrow_morning
+             */
+            preset?: (components["schemas"]["PresetEnum"] | components["schemas"]["NullEnum"]) | null;
+        };
         Summary: {
             today_total: number;
             today_done: number;
@@ -3083,7 +3260,24 @@ export interface components {
             readonly is_overdue: boolean;
             readonly actions: components["schemas"]["ActionsEnum"][];
             /** Format: date-time */
+            readonly snoozed_until: string | null;
+            /**
+             * Format: date-time
+             * @description When the assignee first opened it.
+             */
+            readonly seen_at: string | null;
+            readonly blocker: components["schemas"]["TaskBlocker"] | null;
+            readonly extension: components["schemas"]["TaskExtension"] | null;
+            readonly returned_reason: string | null;
+            readonly returned_by: components["schemas"]["MemberBrief"] | null;
+            /** Format: date-time */
             readonly created_at: string;
+        };
+        TaskBlocker: {
+            reason_code: components["schemas"]["ReasonCodeEnum"];
+            note: string;
+            /** Format: date-time */
+            at: string;
         };
         TaskBrief: {
             readonly id: number;
@@ -3124,6 +3318,13 @@ export interface components {
              */
             repeat: components["schemas"]["RepeatEnum"];
         };
+        TaskExtension: {
+            /** Format: date-time */
+            until: string;
+            note: string;
+            /** Format: date-time */
+            at: string;
+        };
         /**
          * @description * `daily` - Daily
          *     * `assigned` - Assigned
@@ -3131,10 +3332,47 @@ export interface components {
          * @enum {string}
          */
         TaskKindEnum: "daily" | "assigned" | "personal";
+        TaskParse: {
+            /** @description What was typed without the words read as a date. */
+            title: string;
+            /** Format: date-time */
+            due_at: string | null;
+            /** @description Ready to show in the person's language: Ertaga, 22-oktabr (payshanba), 18:00. */
+            due_label: string | null;
+            priority: (components["schemas"]["PriorityEnum"] | components["schemas"]["NullEnum"]) | null;
+            repeat: (components["schemas"]["TaskParseRepeatEnum"] | components["schemas"]["NullEnum"]) | null;
+            /** @description 0 = Monday; for weekly, the due day's weekday. */
+            repeat_weekdays: number[] | null;
+            /**
+             * @description A time alone that had already passed today: due_at is that time tomorrow.
+             * @default false
+             */
+            rolled: boolean;
+            /**
+             * @description The typed moment has already passed ("bugun 01:00" at 03:00): due_at is empty; offer passed_at's time tomorrow, as the bot does.
+             * @default false
+             */
+            past: boolean;
+            /**
+             * Format: date-time
+             * @description That moment, when past is true.
+             */
+            passed_at?: string | null;
+        };
+        TaskParseInputRequest: {
+            text: string;
+        };
+        /**
+         * @description * `daily` - daily
+         *     * `weekdays` - weekdays
+         *     * `weekly` - weekly
+         * @enum {string}
+         */
+        TaskParseRepeatEnum: "daily" | "weekdays" | "weekly";
         /**
          * @description * `todo` - To do
          *     * `in_progress` - In progress
-         *     * `review` - Waiting for confirmation
+         *     * `review` - Waiting for check
          *     * `returned` - Sent back
          *     * `done` - Done
          *     * `cancelled` - Cancelled
@@ -4967,6 +5205,8 @@ export interface operations {
     v1_companies_tasks_list: {
         parameters: {
             query?: {
+                /** @description me: tasks I gave to someone else. */
+                given_by?: "me";
                 kind?: "assigned" | "daily" | "personal";
                 /** @description A page number within the paginated result set. */
                 page?: number;
@@ -5063,6 +5303,64 @@ export interface operations {
                 "application/json": components["schemas"]["PatchedTaskUpdateRequest"];
                 "application/x-www-form-urlencoded": components["schemas"]["PatchedTaskUpdateRequest"];
                 "multipart/form-data": components["schemas"]["PatchedTaskUpdateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"];
+                };
+            };
+        };
+    };
+    v1_companies_tasks_blocker_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: string;
+                /** @description A unique integer value identifying this task. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BlockerReportRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["BlockerReportRequest"];
+                "multipart/form-data": components["schemas"]["BlockerReportRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"];
+                };
+            };
+        };
+    };
+    v1_companies_tasks_blocker_resolve_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: string;
+                /** @description A unique integer value identifying this task. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BlockerResolveRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["BlockerResolveRequest"];
+                "multipart/form-data": components["schemas"]["BlockerResolveRequest"];
             };
         };
         responses: {
@@ -5244,6 +5542,87 @@ export interface operations {
             };
         };
     };
+    v1_companies_tasks_extension_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: string;
+                /** @description A unique integer value identifying this task. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExtensionRequestRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ExtensionRequestRequest"];
+                "multipart/form-data": components["schemas"]["ExtensionRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"];
+                };
+            };
+        };
+    };
+    v1_companies_tasks_extension_decide_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: string;
+                /** @description A unique integer value identifying this task. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExtensionDecideRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["ExtensionDecideRequest"];
+                "multipart/form-data": components["schemas"]["ExtensionDecideRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"];
+                };
+            };
+        };
+    };
+    v1_companies_tasks_reopen_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: string;
+                /** @description A unique integer value identifying this task. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"];
+                };
+            };
+        };
+    };
     v1_companies_tasks_return_create: {
         parameters: {
             query?: never;
@@ -5284,7 +5663,13 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SnoozeRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["SnoozeRequest"];
+                "multipart/form-data": components["schemas"]["SnoozeRequest"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -5368,6 +5753,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ConfirmManyResponse"];
+                };
+            };
+        };
+    };
+    v1_companies_tasks_parse_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskParseInputRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["TaskParseInputRequest"];
+                "multipart/form-data": components["schemas"]["TaskParseInputRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskParse"];
                 };
             };
         };
