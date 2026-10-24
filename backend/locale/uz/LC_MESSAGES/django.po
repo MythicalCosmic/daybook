@@ -4205,7 +4205,7 @@ msgstr "Bu qarz %(source)s #%(id)s uchun band qilingan."
 #: backend/apps/groups/bot_messages.py
 #, python-format
 msgid "✅ <b>%(name)s</b> finished <b>%(task)s</b>"
-msgstr "✅ <b>%(name)s</b> vazifani bajardi: <b>%(task)s</b>"
+msgstr "✅ <b>%(name)s</b> vazifasini bajardi: <b>%(task)s</b>"
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
@@ -4219,7 +4219,7 @@ msgstr "Soat %(time)s, %(late)s kechikib."
 
 #: backend/apps/groups/bot_messages.py
 msgid "Waiting for a check."
-msgstr "Tekshiruv kutilmoqda."
+msgstr "Tekshiruvda."
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
@@ -8328,7 +8328,7 @@ msgstr "Bu odam sizning kompaniyangizda emas."
 
 #: backend/apps/tasks/audit_actions.py
 msgid "Gave a task to someone else"
-msgstr "Vazifani boshqa odamga berdi"
+msgstr "Vazifani boshqa xodimga berdi"
 
 #: backend/apps/tasks/audit_actions.py
 msgid "Nudged someone about a task"
@@ -8572,7 +8572,7 @@ msgstr "Bajarilgan vaqti"
 
 #: backend/apps/tasks/hooks.py
 msgid "Given by"
-msgstr "Kim bergan"
+msgstr "Kim berdi"
 
 #: backend/apps/tasks/hooks.py
 msgid "Checklist"
@@ -8845,7 +8845,7 @@ msgstr "Bir martada ko‘pi bilan %(max)d kishiga bering."
 
 #: backend/apps/tasks/services.py
 msgid "You can't give this task to someone else."
-msgstr "Bu vazifani boshqa odamga bera olmaysiz."
+msgstr "Bu vazifani boshqa xodimga bera olmaysiz."
 
 #: backend/apps/tasks/services.py
 #, python-format

@@ -4148,7 +4148,7 @@ msgstr "В %(time)s, просрочено на %(late)s."
 
 #: backend/apps/groups/bot_messages.py
 msgid "Waiting for a check."
-msgstr "Ждёт проверки."
+msgstr "На проверке."
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
@@ -8213,7 +8213,7 @@ msgstr "Выберите период не больше 42 дней, после�
 
 #: backend/apps/tasks/api.py
 msgid "That checklist item doesn't exist."
-msgstr "Такого пункта чек-листа нет."
+msgstr "Такого шага в чек-листе нет."
 
 #: backend/apps/tasks/api.py backend/apps/tasks/owner_api.py
 msgid "That person isn't in your company."
