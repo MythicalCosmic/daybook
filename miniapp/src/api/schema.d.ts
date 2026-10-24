@@ -2947,7 +2947,7 @@ export interface components {
         /**
          * @description * `no_stock` - Out of stock
          *     * `no_access` - No access
-         *     * `broken` - Something is broken
+         *     * `broken` - Equipment broken
          *     * `not_mine` - Not my task
          *     * `other` - Another reason
          * @enum {string}

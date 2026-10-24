@@ -93,7 +93,7 @@ def review_list(tasks: list[Task], now: datetime, *, page: int = 0) -> BotMessag
     text = "\n".join(
         [
             _("🔎 <b>To check</b>: %(count)d") % {"count": len(ordered)},
-            _("Tap one to see it, then accept it or send it back."),
+            _("Tap one to see it, then confirm it or send it back."),
         ]
     )
     rows = _page_rows(ordered, now, "check", page, review=True)

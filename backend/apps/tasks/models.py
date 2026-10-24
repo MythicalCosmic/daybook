@@ -159,7 +159,7 @@ class Task(TenantModel):
 
         NO_STOCK = "no_stock", _("Out of stock")
         NO_ACCESS = "no_access", _("No access")
-        BROKEN = "broken", _("Something is broken")
+        BROKEN = "broken", _("Equipment broken")
         NOT_MINE = "not_mine", _("Not my task")
         OTHER = "other", _("Another reason")
 
