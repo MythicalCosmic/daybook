@@ -80,6 +80,30 @@ describe("the round tick", () => {
     await waitFor(() => expect(tick().className).toContain("glyph--todo"));
     expect(await screen.findByText("No connection. Check your internet and try again.")).toBeTruthy();
   });
+
+  it("puts back only the row the server refused, not another ticked meanwhile", async () => {
+    const answers: Record<string, { refuse: (error: unknown) => void }> = {};
+    api.mockImplementation((path: string) => {
+      const done = /tasks\/(\d+)\/complete\/$/.exec(path);
+      if (!done) return Promise.reject(new Error("no network in tests"));
+      return new Promise((_resolve, reject) => (answers[done[1]] = { refuse: reject }));
+    });
+    show({
+      board: [
+        makeTask({ id: 51, title: "Shelf labels", due_at: "2026-10-21T17:00:00+05:00" }),
+        makeTask({ id: 52, title: "Fridge log", due_at: "2026-10-21T18:00:00+05:00" }),
+      ],
+    });
+    const tick = (name: RegExp) => screen.getByRole("button", { name }).querySelector(".glyph") as HTMLElement;
+    fireEvent.click(tick(/Shelf labels/));
+    await waitFor(() => expect(tick(/Shelf labels/).className).toContain("glyph--done"));
+    fireEvent.click(tick(/Fridge log/));
+    await waitFor(() => expect(tick(/Fridge log/).className).toContain("glyph--done"));
+    act(() => answers["51"].refuse(new Error("offline")));
+    await waitFor(() => expect(tick(/Shelf labels/).className).toContain("glyph--todo"));
+    // The other tick is still on its way: it stays done.
+    expect(tick(/Fridge log/).className).toContain("glyph--done");
+  });
 });
 
 describe("groups by day", () => {

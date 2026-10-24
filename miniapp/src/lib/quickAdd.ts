@@ -50,7 +50,8 @@ const plain = (text: string) => text.toLocaleLowerCase().replace(/\s+/g, " ").tr
  * no `past` flag, so this is how the sheet can say why no deadline was read.
  */
 export function readPassed(text: string, result: QuickAdd | null): boolean {
-  return Boolean(result && !recognised(result) && text.trim() && plain(result.title) !== plain(text));
+  // The title is compared before `recognised`, whose negation would leave nothing to read it from.
+  return Boolean(result && text.trim() && plain(result.title) !== plain(text) && !recognised(result));
 }
 
 /** What was read, apart from the title: dismissing "Not a date" holds while this stays the same. */

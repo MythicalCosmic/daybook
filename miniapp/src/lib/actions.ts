@@ -106,24 +106,24 @@ export function useCompleteTask(): (task: Task) => void {
         navigation.openSheet({ kind: "complete", taskId: task.id });
         return;
       }
-      // The tick shows at once (R2 T40); a refusal puts the row back as it was.
+      // The tick shows at once (R2 T40); a refusal puts this row back as it was, and only this
+      // row: another one ticked meanwhile keeps its own tick.
       const board = keys.board(companyId);
-      const before = client.getQueryData<Task[]>(board);
+      const original = client.getQueryData<Task[]>(board)?.find((row) => row.id === task.id);
       client.setQueryData<Task[]>(board, (list) =>
         list?.map((row) => (row.id === task.id ? { ...row, status: "done", completed_at: new Date().toISOString(), actions: [] } : row)),
       );
-      action.mutate(
-        { taskId: task.id, action: "complete", proofText: "", photo: null },
-        {
-          onSuccess: (done) => {
-            haptic("success");
-            doneToast(done);
-          },
-          onError: (error) => {
-            if (before) client.setQueryData(board, before);
-            haptic("error");
-            toast(errorText(error, t), { tone: "error" });
-          },
+      // Each tick hears its own answer: mutate()'s callbacks reach only the latest call, so a
+      // refused first tick of two quick ones would stay shown as done, with no word said.
+      action.mutateAsync({ taskId: task.id, action: "complete", proofText: "", photo: null }).then(
+        (done) => {
+          haptic("success");
+          doneToast(done);
+        },
+        (error: unknown) => {
+          if (original) client.setQueryData<Task[]>(board, (list) => list?.map((row) => (row.id === task.id ? original : row)));
+          haptic("error");
+          toast(errorText(error, t), { tone: "error" });
         },
       );
     });
