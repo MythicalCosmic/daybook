@@ -629,6 +629,37 @@ def extension_answer(task: Task, approved: bool, by: Membership, now: datetime) 
     return task_card(task, task.assignee, now, header)
 
 
+def copy_of(task: Task, member: Membership, kind: str, now: datetime) -> BotMessage:
+    """A task message in someone's chat, drawn again as the task is now (research R1 C5): its
+    buttons are what this person may still do, and the first line says how it ended."""
+    return task_card(task, member, now, _copy_header(task, member, kind, now))
+
+
+def _copy_header(task: Task, member: Membership, kind: str, now: datetime) -> str:
+    if task.status == Task.Status.CANCELLED:
+        return _("✖️ <b>Task cancelled</b>")
+    if kind == "card" and member.pk not in (task.assignee_id, task.created_by_id):
+        return _("↪️ <b>Given to someone else</b>")
+    if kind not in ("review", "escalation", "blocked"):
+        return ""
+    if task.status == Task.Status.DONE:
+        if task.confirmed_by_id:
+            return _("✅ <b>Accepted</b> · %(name)s") % {"name": html.quote(str(task.confirmed_by))}
+        done = {"time": _clock(task, task.completed_at)}
+        if task.due_at and task.completed_at > task.due_at:
+            done["late"] = format_duration(task.completed_at - task.due_at)
+            return _("✅ <b>Done</b> · %(time)s, %(late)s late") % done
+        return _("✅ <b>Done</b> · %(time)s") % done
+    if kind == "review":
+        if task.status == Task.Status.RETURNED:
+            return _("↩️ <b>Sent back</b>")
+        if task.status == Task.Status.REVIEW:
+            return _("🔎 %(name)s finished a task. Please check it.") % {
+                "name": html.quote(str(task.assignee))
+            }
+    return ""
+
+
 def onboarding_welcome(member: Membership, tasks: list[Task], now: datetime) -> BotMessage:
     """A new person's first tasks, right after they were let in."""
     lines = [

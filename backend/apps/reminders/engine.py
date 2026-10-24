@@ -17,7 +17,7 @@ from apps.reminders import bot_messages
 from apps.reminders.models import ReminderLog, ReminderPolicy
 from apps.reminders.policies import escalation_recipients, policy_for
 from apps.reminders.schedule import quiet_for_task
-from apps.tasks.models import Task
+from apps.tasks.models import Task, TaskMessage
 from apps.tasks.queries import TASK_RELATIONS
 from apps.timeoff.queries import days_off
 
@@ -213,11 +213,24 @@ def _tell(recipients, kind: str, task: Task, step: int, build) -> None:
         with translation.override(recipient.user.language):
             text, markup = build(recipient)
         try:
-            telegram.send_message(BotName.EMPLOYEE, chat_id, text, serialize_markup(markup))
+            message_id = telegram.send_message(
+                BotName.EMPLOYEE, chat_id, text, serialize_markup(markup)
+            )
         except TelegramAPIError as exc:
             _log(task, kind, step, recipient, error=str(exc))
         else:
             _log(task, kind, step, recipient)
+            if kind == ReminderLog.Kind.ESCALATION and message_id is not None:
+                # Kept, so the alert says "done" once it is (research R1 C5).
+                TaskMessage.objects.get_or_create(
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    defaults={
+                        "task": task,
+                        "member": recipient,
+                        "kind": TaskMessage.Kind.ESCALATION,
+                    },
+                )
 
 
 def _save(task: Task, **fields) -> None:

@@ -1,10 +1,19 @@
+import logging
 from zoneinfo import ZoneInfo
 
+from aiogram.exceptions import (
+    TelegramForbiddenError,
+    TelegramNetworkError,
+    TelegramRetryAfter,
+    TelegramServerError,
+)
 from celery import shared_task
 from django.utils import timezone
 
 from apps.companies.models import Company
 from apps.tasks import generation, notifications
+
+logger = logging.getLogger(__name__)
 
 
 @shared_task
@@ -23,6 +32,28 @@ def notify_task_assigned(task_id: int) -> None:
 def notify_task_completed(task_id: int, completed_at: str | None = None) -> None:
     """Queued after the undo window; `completed_at` is the completion it was queued for."""
     notifications.send_task_completed(task_id, completed_at)
+
+
+@shared_task(
+    bind=True,
+    autoretry_for=(TelegramNetworkError, TelegramServerError),
+    retry_backoff=True,
+    max_retries=5,
+)
+def send_task_message(self, task_id, member_id, kind, chat_id, text, reply_markup=None, photo=None):
+    """One task message, its id kept so every copy can be drawn again later (research R1 C5)."""
+    try:
+        notifications.deliver(task_id, member_id, kind, chat_id, text, reply_markup, photo)
+    except TelegramRetryAfter as exc:
+        raise self.retry(countdown=exc.retry_after) from exc
+    except TelegramForbiddenError:
+        logger.info("Chat %s blocked the employee bot or never started it", chat_id)
+
+
+@shared_task
+def refresh_task_messages(task_id: int) -> None:
+    """The task changed: its copies in people's chats follow."""
+    notifications.refresh_messages(task_id)
 
 
 @shared_task

@@ -110,7 +110,8 @@ def test_assignee_starts_and_completes(worker, django_capture_on_commit_callback
     assert task.status == Task.Status.DONE
     assert task.started_at is not None
     assert task.completed_at is not None
-    assert len(callbacks) == 2  # the creator hears about it, and so do the team's groups
+    # The creator hears about it, the team's groups too, and the task's copies are redrawn.
+    assert len(callbacks) == 3
 
 
 def test_only_the_assignee_works_on_a_task(manager, worker):
