@@ -239,7 +239,7 @@ def test_bot_messages_show_the_reward_and_the_project_key(shop):
     )
     text, _markup = bot_messages.task_card(task, shop.worker, timezone.now())
     assert "CHL-1 · Paint the wall" in text
-    assert "50 000" in text
+    assert "50\u00a0000" in text  # a no-break space: the amount never splits (R3 §1.8)
     text, _ = bot_messages.nudge(task, shop.owner, timezone.now())
     assert str(shop.owner) in text
 

@@ -1,5 +1,6 @@
 """Who may do what with a task. Pure checks: no queries beyond already-loaded relations."""
 
+from datetime import datetime, timedelta
 from enum import StrEnum
 
 from apps.members.models import Membership
@@ -16,8 +17,25 @@ class Action(StrEnum):
     CANCEL = "cancel"
 
 
+# Done can be undone this long (research R2 T38): the service enforces it, the bot's card shows
+# its Undo button meanwhile.
+UNDO_WINDOW = timedelta(seconds=60)
+
+
 def is_assignee(task: Task, member: Membership) -> bool:
     return task.assignee_id == member.pk
+
+
+def can_undo(task: Task, member: Membership, now: datetime) -> bool:
+    """Whether the assignee may still take back their Done: within `UNDO_WINDOW`, before anyone
+    confirmed it."""
+    return (
+        is_assignee(task, member)
+        and task.status in (Task.Status.DONE, Task.Status.REVIEW)
+        and task.completed_at is not None
+        and task.confirmed_at is None
+        and now - task.completed_at <= UNDO_WINDOW
+    )
 
 
 def can_review(task: Task, member: Membership) -> bool:

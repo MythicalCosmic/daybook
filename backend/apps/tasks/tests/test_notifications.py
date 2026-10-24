@@ -21,7 +21,12 @@ def manager(company, member):
 
 def actions(message) -> list[TaskAction]:
     rows = message["reply_markup"]["inline_keyboard"]
-    return [TaskCallback.unpack(button["callback_data"]).action for row in rows for button in row]
+    return [
+        TaskCallback.unpack(button["callback_data"]).action
+        for row in rows
+        for button in row
+        if button.get("callback_data", "").startswith("task:")
+    ]
 
 
 def test_assignee_hears_about_a_new_task_with_buttons(manager, worker, sent_messages):
@@ -33,7 +38,15 @@ def test_assignee_hears_about_a_new_task_with_buttons(manager, worker, sent_mess
     assert message["chat_id"] == worker.user.telegram_id
     assert "New task" in message["text"]
     assert "Call the supplier" in message["text"]
-    assert actions(message) == [TaskAction.START, TaskAction.DONE, TaskAction.LIST]
+    assert actions(message) == [
+        TaskAction.START,
+        TaskAction.DONE,
+        TaskAction.COMMENT,
+        TaskAction.BLOCK,
+        TaskAction.LIST,
+    ]
+    rows = message["reply_markup"]["inline_keyboard"]
+    assert all(len(row) <= 2 for row in rows)  # two buttons a row at most (research R1 C2)
 
 
 def test_finished_work_goes_to_the_reviewer_with_the_photo(manager, worker, sent_messages):

@@ -9,7 +9,13 @@ from rest_framework import serializers
 from apps.core.money import MoneySerializerField
 from apps.members.models import Membership
 from apps.reminders.policies import escalation_recipients, policy_for
-from apps.tasks import generation, rules
+from apps.tasks import generation, rules, services
+from apps.tasks.api import (
+    TaskBlockerSerializer,
+    TaskExtensionSerializer,
+    blocker_of,
+    extension_of,
+)
 from apps.tasks.models import ChecklistItem, Proof, Task, TaskComment, TaskTemplate
 
 
@@ -83,6 +89,8 @@ class TaskRowSerializer(serializers.ModelSerializer):
     is_overdue = serializers.SerializerMethodField()
     reward = MoneySerializerField(allow_null=True)
     moves = serializers.SerializerMethodField()
+    blocker = serializers.SerializerMethodField()
+    extension = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -112,8 +120,21 @@ class TaskRowSerializer(serializers.ModelSerializer):
             "confirmed_at",
             "created_at",
             "moves",
+            "seen_at",
+            "blocker",
+            "extension",
         )
         read_only_fields = fields
+
+    @extend_schema_field(TaskBlockerSerializer(allow_null=True))
+    def get_blocker(self, task: Task) -> dict | None:
+        """The assignee's "can't do it", while nobody has answered it."""
+        return blocker_of(task)
+
+    @extend_schema_field(TaskExtensionSerializer(allow_null=True))
+    def get_extension(self, task: Task) -> dict | None:
+        """The later deadline the assignee asked for, while nobody has decided."""
+        return extension_of(task)
 
     @extend_schema_field(PersonRefSerializer)
     def get_assignee(self, task: Task) -> dict:
@@ -324,6 +345,12 @@ class ReassignSerializer(serializers.Serializer):
 
 class CommentSerializer(serializers.Serializer):
     text = serializers.CharField(max_length=2000)
+    mentions = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        max_length=services.MAX_MENTIONS,
+        help_text="Membership ids of people to notify: on the task or working in its branch.",
+    )
 
 
 class MoveSerializer(serializers.Serializer):

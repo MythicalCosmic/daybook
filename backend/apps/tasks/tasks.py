@@ -20,8 +20,44 @@ def notify_task_assigned(task_id: int) -> None:
 
 
 @shared_task
-def notify_task_completed(task_id: int) -> None:
-    notifications.send_task_completed(task_id)
+def notify_task_completed(task_id: int, completed_at: str | None = None) -> None:
+    """Queued after the undo window; `completed_at` is the completion it was queued for."""
+    notifications.send_task_completed(task_id, completed_at)
+
+
+@shared_task
+def notify_comment(comment_id: int, mentioned_ids: list[int]) -> None:
+    notifications.send_comment(comment_id, mentioned_ids)
+
+
+@shared_task
+def notify_due_changed(task_id: int, old_due: str | None, by_id: int) -> None:
+    notifications.send_due_changed(task_id, old_due, by_id)
+
+
+@shared_task
+def notify_task_cancelled(task_id: int, by_id: int) -> None:
+    notifications.send_task_cancelled(task_id, by_id)
+
+
+@shared_task
+def notify_task_taken_away(task_id: int, previous_id: int, by_id: int) -> None:
+    notifications.send_task_taken_away(task_id, previous_id, by_id)
+
+
+@shared_task
+def notify_blocked(task_id: int, giver_ids: list[int]) -> None:
+    notifications.send_blocked(task_id, giver_ids)
+
+
+@shared_task
+def notify_blocker_resolved(task_id: int, action: str, by_id: int, reporter_id: int) -> None:
+    notifications.send_blocker_resolved(task_id, action, by_id, reporter_id)
+
+
+@shared_task
+def notify_extension_decided(task_id: int, approved: bool, by_id: int, until: str) -> None:
+    notifications.send_extension_decided(task_id, approved, by_id, until)
 
 
 @shared_task

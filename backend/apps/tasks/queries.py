@@ -95,6 +95,16 @@ def todays_tasks(member: Membership, now: datetime) -> QuerySet[Task]:
     )
 
 
+def open_work(member: Membership) -> QuerySet[Task]:
+    """Everything still on the member's plate, whatever its deadline (audit B-1): open tasks
+    and their own work waiting for a check."""
+    return (
+        Task.objects.for_company(member.company_id)
+        .select_related(*TASK_RELATIONS)
+        .filter(assignee=member, status__in=(*Task.OPEN_STATUSES, Task.Status.REVIEW))
+    )
+
+
 def board_tasks(member: Membership, now: datetime) -> QuerySet[Task]:
     """The member's own board: everything still open or being checked, plus today's finished."""
     tz = ZoneInfo(member.company.timezone)
@@ -215,6 +225,9 @@ class TaskFilters:
     needs_confirmation: bool | None = None
     q: str = ""
     routines: str = ""  # "without": one-off work only, "only": routine work only, "": both
+    blocked: bool | None = None  # "can't do it" waiting for an answer
+    extension: bool | None = None  # more time asked, waiting for a decision
+    seen: bool | None = None  # the assignee has opened it
 
 
 def filtered(
@@ -257,6 +270,12 @@ def filtered(
         tasks = tasks.filter(proof) if filters.has_proof else tasks.exclude(proof)
     if filters.needs_confirmation is not None:
         tasks = tasks.filter(needs_confirmation=filters.needs_confirmation)
+    if filters.blocked is not None:
+        tasks = tasks.filter(blocked_at__isnull=not filters.blocked)
+    if filters.extension is not None:
+        tasks = tasks.filter(extension_until__isnull=not filters.extension)
+    if filters.seen is not None:
+        tasks = tasks.filter(seen_at__isnull=not filters.seen)
     if q := filters.q.strip():
         tasks = tasks.filter(
             Q(title__icontains=q)
