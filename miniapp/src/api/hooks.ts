@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
 
+import { isPending, usePendingVersion } from "../lib/delayedSend";
 import { api, ApiError } from "./client";
 import type {
   Activity,
   BlockerReason,
   BlockerResolution,
   Comment,
-  ConfirmMany,
   Holiday,
   Language,
   Me,
@@ -84,7 +85,17 @@ export function useBoard(company: number) {
   });
 }
 
+/**
+ * Work waiting for my check. Work I just confirmed (its request waits a moment for Undo) stays
+ * out of it, whatever a refetch meanwhile brings back.
+ */
 export function useReviewQueue(company: number, enabled: boolean) {
+  const pendingVersion = usePendingVersion();
+  const select = useCallback(
+    (tasks: Task[]) => tasks.filter((task) => !isPending(task.id)),
+    // A new function whenever the pending set changes, so the list is filtered again.
+    [pendingVersion],
+  );
   return useQuery({
     queryKey: keys.review(company),
     refetchInterval: LIVE_MS,
@@ -92,6 +103,7 @@ export function useReviewQueue(company: number, enabled: boolean) {
       api<Page<Task>>(`${tasksPath(company)}/?scope=review&page_size=200`).then(
         (page) => page.results,
       ),
+    select,
     enabled,
   });
 }
@@ -294,15 +306,6 @@ export function useTaskAction(company: number) {
   return useMutation({
     mutationFn: (input: ActionInput) => runAction(company, input),
     onSuccess: refresh,
-  });
-}
-
-/** Confirm several finished tasks at once (a routine's runs): each by the same rules as one. */
-export function useConfirmMany(company: number) {
-  const refresh = useRefreshAfterTaskChange(company);
-  return useMutation({
-    mutationFn: (ids: number[]) => api<ConfirmMany>(`${tasksPath(company)}/confirm/`, { json: { ids } }),
-    onSuccess: () => refresh(),
   });
 }
 

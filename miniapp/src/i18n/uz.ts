@@ -404,6 +404,7 @@ const uz: Partial<Record<Key, string>> = {
   "add.read.notDate": "Bu sana emas",
   "add.read.keep": "Yozganimdek qolsin",
   "add.read.needTitle": "Endi nima qilish kerakligini yozing.",
+  "add.read.noRepeat": "Hamkasbga berilgan vazifa takrorlanmaydi: muntazam vazifalar dashboardda sozlanadi.",
   "add.for": "Kim uchun",
   "add.forMe": "O‘zim",
   "add.illCheck": "Men tekshiraman",

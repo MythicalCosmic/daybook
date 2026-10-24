@@ -54,7 +54,7 @@ export function TaskRow({ task, ctx, onOpen, onTick, meta, trailing, wrapMeta = 
             {task.reward && (
               <span className="row-reward">
                 <Gift size={13} strokeWidth={2.6} aria-hidden />
-                {formatMoney(task.reward, "UZS", lang, { sign: "always", compact: true })}
+                {formatMoney(task.reward, ctx.currency ?? "UZS", lang, { sign: "always", compact: true })}
               </span>
             )}
           </div>

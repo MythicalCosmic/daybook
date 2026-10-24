@@ -51,6 +51,21 @@ describe("rows", () => {
   });
 });
 
+describe("rewards on rows", () => {
+  it("are in the company's own currency", () => {
+    renderApp(<Tasks />, {
+      me: person([membership({ id: 3, company: { id: 1, name: "Shop", timezone: "Asia/Tashkent", base_currency: "USD" } } as never)]),
+      init: { tab: "tasks", tasksTab: "assigned" },
+      seed: (client) => {
+        client.setQueryData(keys.board(1), [makeTask({ title: "Count the till", reward: "10.00" })]);
+        client.setQueryData(keys.review(1), []);
+        client.setQueryData(keys.given(1), []);
+      },
+    });
+    expect(screen.getByText(/\+\$10/)).toBeTruthy();
+  });
+});
+
 describe("the round tick", () => {
   it("shows done at once and goes back if the server refuses", async () => {
     let refuse: (error: unknown) => void = () => undefined;

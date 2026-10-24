@@ -169,6 +169,7 @@ export function AddSheet() {
           read={read}
           urgent={urgent}
           missingTitle={missingTitle}
+          forColleague={assignee !== null}
           onDismiss={() => {
             haptic.select();
             setDismissed(readSignature(read));
@@ -300,8 +301,22 @@ function applied(result: QuickAdd | null, dismissed: string | null): QuickAdd | 
  * What the typed text was read as: "⏰ Ertaga, 22-oktabr (payshanba), 18:00", the title without
  * those words, urgency and repeat, and the one tap that keeps the words as typed.
  */
-function QuickRead({ read, urgent, missingTitle, onDismiss }: { read: QuickAdd; urgent: boolean; missingTitle: boolean; onDismiss: () => void }) {
+function QuickRead({
+  read,
+  urgent,
+  missingTitle,
+  forColleague,
+  onDismiss,
+}: {
+  read: QuickAdd;
+  urgent: boolean;
+  missingTitle: boolean;
+  /** A colleague's task doesn't repeat: say so rather than drop the repeat that was read. */
+  forColleague: boolean;
+  onDismiss: () => void;
+}) {
   const { t } = useI18n();
+  const repeat = read.repeat && !forColleague ? read.repeat : null;
   return (
     <div className="qa-read" role="status" aria-label={t("add.read.label")}>
       <span className="qa-read-icon" aria-hidden>
@@ -309,7 +324,7 @@ function QuickRead({ read, urgent, missingTitle, onDismiss }: { read: QuickAdd; 
       </span>
       <span className="qa-read-main">
         {read.due_at && read.due_label && <span className="qa-read-when num">{read.due_label}</span>}
-        {(urgent || read.repeat) && (
+        {(urgent || repeat) && (
           <span className="qa-read-tags">
             {urgent && (
               <span className="prio prio--urgent">
@@ -317,14 +332,15 @@ function QuickRead({ read, urgent, missingTitle, onDismiss }: { read: QuickAdd; 
                 {t("priority.urgent")}
               </span>
             )}
-            {read.repeat && (
+            {repeat && (
               <span className="qa-read-tag">
                 <RepeatIcon size={13} strokeWidth={2.6} aria-hidden />
-                {t(`add.repeat.${read.repeat}`)}
+                {t(`add.repeat.${repeat}`)}
               </span>
             )}
           </span>
         )}
+        {read.repeat && forColleague && <span className="qa-read-title">{t("add.read.noRepeat")}</span>}
         {missingTitle ? (
           <span className="qa-read-title qa-read-title--missing">{t("add.read.needTitle")}</span>
         ) : (

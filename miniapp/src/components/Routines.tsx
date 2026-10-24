@@ -4,8 +4,7 @@ import { useState } from "react";
 import type { Task } from "../api/types";
 import { useConfirmTasks } from "../lib/actions";
 import { byFinished, finishedAt, groupByRoutine, isRoutine, routineProgress, type RoutineGroup } from "../lib/routines";
-import { groupTasks, repeatLabel, rowMeta, type ViewContext } from "../lib/taskView";
-import { clock, dayMonth, daysFromToday } from "../lib/time";
+import { groupTasks, repeatLabel, rowMeta, shortMoment, type ViewContext } from "../lib/taskView";
 import { useNavigation } from "../state/navigation";
 import { haptic } from "../telegram";
 import { Avatar, Button, EmptyState, IconButton, LoadError, ProgressBar, cx } from "../ui";
@@ -15,9 +14,7 @@ type Open = (task: Task) => void;
 
 /** "09:12" today, "20 Oct 18:02" before. */
 function when(at: string | null, ctx: ViewContext): string {
-  if (!at) return "";
-  const time = clock(at, ctx.timeZone, ctx.locale);
-  return daysFromToday(at, ctx.now, ctx.timeZone) === 0 ? time : `${dayMonth(at, ctx.timeZone, ctx.locale)} ${time}`;
+  return at ? shortMoment(at, ctx) : "";
 }
 
 /** A finished run's line: when it was done (or checked), and the note it was finished with. */

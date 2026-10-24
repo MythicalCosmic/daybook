@@ -8,6 +8,7 @@ import { act, cleanup, fireEvent, render, screen, within } from "@testing-librar
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { keys, useReviewQueue } from "../api/hooks";
 import type { Me, Membership, Task } from "../api/types";
 import { I18nProvider, LOCALES, translate } from "../i18n";
 import { groupByRoutine, routineProgress } from "../lib/routines";
@@ -63,6 +64,12 @@ function task(fields: Partial<Task> = {}): Task {
 function Sheet() {
   const { sheet } = useNavigation();
   return <div data-testid="sheet">{sheet ? JSON.stringify(sheet) : ""}</div>;
+}
+
+/** The "To check" list as the Tasks screen reads it: through the hook that hides pending work. */
+function Queue() {
+  const reviews = useReviewQueue(1, true);
+  return <ReviewQueue tasks={reviews.data} loading={false} error={null} onRetry={() => undefined} ctx={ctx()} onOpen={() => undefined} />;
 }
 
 function renderWith(node: ReactNode) {
@@ -200,6 +207,42 @@ describe("To check", () => {
       expect(api).not.toHaveBeenCalled();
       await act(() => vi.advanceTimersByTimeAsync(5000));
       expect(api).toHaveBeenCalledWith("/companies/1/tasks/confirm/", { json: { ids: [1, 2] }, keepalive: true });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("keeps confirmed runs out of the list while they wait, whatever a refetch brings", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      api.mockImplementation((path: string) =>
+        Promise.resolve(path.endsWith("/confirm/") ? { done: 2, failed: 0, results: [] } : { results: queue().slice(0, 2) }),
+      );
+      const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } });
+      client.setQueryData(keys.review(1), queue().slice(0, 2));
+      const membership = { id: 3, company: { id: 1, name: "Demo Dorixona", timezone: "Asia/Tashkent" }, status: "approved", is_onboarded: true, permissions: ["tasks.confirm"] } as unknown as Membership;
+      const me = { id: 1, telegram_id: 1002, first_name: "Bekzod", last_name: "Mirzayev", phone: "", memberships: [membership] } as unknown as Me;
+      render(
+        <QueryClientProvider client={client}>
+          <I18nProvider lang="en">
+            <ToastProvider>
+              <SessionProvider me={me}>
+                <NavigationProvider>
+                  <Queue />
+                </NavigationProvider>
+              </SessionProvider>
+            </ToastProvider>
+          </I18nProvider>
+        </QueryClientProvider>,
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Confirm all (2)" }));
+      expect(await screen.findByText("Nothing to check")).toBeTruthy();
+      // A refetch in the Undo window brings them back from the server: still hidden.
+      act(() => client.setQueryData(keys.review(1), queue().slice(0, 2)));
+      expect(screen.getByText("Nothing to check")).toBeTruthy();
+      // Undo puts them back.
+      fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+      expect(await screen.findByText("Fridge temperature")).toBeTruthy();
     } finally {
       vi.useRealTimers();
     }

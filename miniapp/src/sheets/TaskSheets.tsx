@@ -213,8 +213,10 @@ function ExtensionForm({ task }: { task: Task }) {
   const base = due > now ? due : now;
   const today = dayKey(now, member.timeZone);
   const [choice, setChoice] = useState<More>("30m");
-  const [day, setDay] = useState(dayKey(base, member.timeZone));
-  const [time, setTime] = useState(clock(new Date(+base + 60 * 60_000), member.timeZone, "en-GB"));
+  // "Pick a time" starts an hour after the deadline, the day included (23:30 → tomorrow 00:30).
+  const [hourLater] = useState(() => new Date(+base + 60 * 60_000));
+  const [day, setDay] = useState(dayKey(hourLater, member.timeZone));
+  const [time, setTime] = useState(clock(hourLater, member.timeZone, "en-GB"));
   const [note, setNote] = useState("");
   useDraftGuard(Boolean(note.trim()));
 

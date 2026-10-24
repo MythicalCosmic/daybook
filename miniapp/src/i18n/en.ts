@@ -403,6 +403,7 @@ const en = {
   "add.read.notDate": "Not a date",
   "add.read.keep": "Keep as typed",
   "add.read.needTitle": "Now add what needs doing.",
+  "add.read.noRepeat": "A task given to a colleague doesn't repeat: routines are set up on the dashboard.",
   "add.for": "For",
   "add.forMe": "Me",
   "add.illCheck": "I'll check it",

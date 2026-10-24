@@ -8,7 +8,7 @@ import { useNavigation } from "../state/navigation";
 import { useMember } from "../state/session";
 import { useToast } from "../state/toast";
 import { haptic, popup } from "../telegram";
-import { sendLater, UNDO_MS } from "./delayedSend";
+import { isPending, sendLater, setPending, UNDO_MS } from "./delayedSend";
 
 export function errorText(error: unknown, t: Translate): string {
   if (error instanceof ApiError) return error.detail ?? t("error.generic");
@@ -132,42 +132,53 @@ export function useCompleteTask(): (task: Task) => void {
 
 /**
  * Confirm finished work with a moment to take it back: the toast offers Undo for five seconds
- * and the request goes out after it (the server has no "unconfirm"). The work leaves the
- * "To check" list at once and comes back on Undo.
+ * and the request goes out after it (the server has no "unconfirm"). Meanwhile the work is kept
+ * out of "To check", whatever the list refetches, until the list after the send is in. Work
+ * already waiting to go out is never confirmed twice.
  */
-export function useConfirmTasks(): (tasks: Task[], options?: { onSent?: () => void }) => void {
+export function useConfirmTasks(): (tasks: Task[]) => void {
   const client = useQueryClient();
   const toast = useToast();
   const { t } = useI18n();
   const { companyId } = useMember();
-  return (tasks, options = {}) => {
-    const ids = tasks.map((task) => task.id);
-    const queueKey = keys.review(companyId);
-    const before = client.getQueryData<Task[]>(queueKey);
-    client.setQueryData<Task[]>(queueKey, (queue) => queue?.filter((task) => !ids.includes(task.id)));
-    const restore = () => {
-      if (before) client.setQueryData(queueKey, before);
-      void client.invalidateQueries({ queryKey: keys.tasks(companyId) });
+  return (tasks) => {
+    const ids = tasks.map((task) => task.id).filter((id) => !isPending(id));
+    if (!ids.length) return;
+    setPending(ids, true);
+    // Back in the list (or gone from it) only once the lists after the send have arrived.
+    const settle = async (task?: Task) => {
+      if (task) client.setQueryData(keys.task(companyId, task.id), task);
+      await Promise.allSettled([
+        client.invalidateQueries({ queryKey: keys.tasks(companyId) }),
+        client.invalidateQueries({ queryKey: keys.summary(companyId) }),
+        client.invalidateQueries({ queryKey: keys.activity(companyId) }),
+      ]);
+      setPending(ids, false);
     };
     const job = sendLater(() => {
-      const request: Promise<unknown> =
-        ids.length === 1
-          ? api<Task>(`/companies/${companyId}/tasks/${ids[0]}/confirm/`, { method: "POST", keepalive: true }).then((task) =>
-              refreshAfterTaskChange(client, companyId, task),
-            )
-          : api<ConfirmMany>(`/companies/${companyId}/tasks/confirm/`, { json: { ids }, keepalive: true }).then((result) => {
-              refreshAfterTaskChange(client, companyId);
-              if (result.failed) {
-                haptic.notify("warning");
-                toast(t("review.notConfirmed", { count: result.failed }), { tone: "error" });
-              }
-            });
-      request.then(
-        () => options.onSent?.(),
+      if (ids.length === 1) {
+        api<Task>(`/companies/${companyId}/tasks/${ids[0]}/confirm/`, { method: "POST", keepalive: true }).then(
+          (task) => void settle(task),
+          (error: unknown) => {
+            haptic.notify("error");
+            toast(errorText(error, t), { tone: "error" });
+            void settle();
+          },
+        );
+        return;
+      }
+      api<ConfirmMany>(`/companies/${companyId}/tasks/confirm/`, { json: { ids }, keepalive: true }).then(
+        (result) => {
+          if (result.failed) {
+            haptic.notify("warning");
+            toast(t("review.notConfirmed", { count: result.failed }), { tone: "error" });
+          }
+          void settle();
+        },
         (error: unknown) => {
-          restore();
           haptic.notify("error");
           toast(errorText(error, t), { tone: "error" });
+          void settle();
         },
       );
     });
@@ -175,12 +186,15 @@ export function useConfirmTasks(): (tasks: Task[], options?: { onSent?: () => vo
     toast(ids.length === 1 ? t("toast.confirmed") : t("review.confirmed", { count: ids.length }), {
       tone: "success",
       duration: UNDO_MS,
+      // Holding the toast holds the send too: Undo never shows for what already went out.
+      onHold: job.pause,
+      onRelease: job.resume,
       action: {
         label: t("ui.toast.undo"),
         onPress: () => {
           haptic.select();
           if (job.cancel()) {
-            restore();
+            setPending(ids, false);
             toast(t("toast.confirmUndone"));
           } else {
             toast(t("toast.undoFailed"), { tone: "error" });

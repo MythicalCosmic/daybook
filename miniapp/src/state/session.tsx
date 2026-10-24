@@ -45,18 +45,32 @@ function savedCompany(): number | null {
   }
 }
 
+/** How long the first screen waits for the company remembered on another phone. */
+const CLOUD_WAIT_MS = 400;
+
 export function SessionProvider({ me, children }: { me: Me; children: ReactNode }) {
   const [preferred, setPreferred] = useState<number | null>(savedCompany);
-  // Nothing remembered on this phone: the company used last on another one, if it's still mine.
+  // Nothing remembered on this phone and more than one company: ask Telegram's cloud for the one
+  // used last on another phone before the first screen, so the company never changes under a
+  // screen already open (or a draft already started).
+  const [ready, setReady] = useState(() => preferred !== null || me.memberships.filter((m) => m.status === "approved").length < 2);
   useEffect(() => {
-    if (preferred !== null || me.memberships.filter((m) => m.status === "approved").length < 2) return;
-    let live = true;
+    if (ready) return;
+    let decided = false;
+    const decide = (id: number | null) => {
+      if (decided) return;
+      decided = true;
+      if (id !== null) setPreferred(id);
+      setReady(true);
+    };
+    const timer = window.setTimeout(() => decide(null), CLOUD_WAIT_MS);
     void cloudStorage.get(CLOUD_KEY).then((value) => {
       const id = Number(value);
-      if (live && id > 0 && me.memberships.some((m) => m.company.id === id && m.status === "approved")) setPreferred(id);
+      decide(id > 0 && me.memberships.some((m) => m.company.id === id && m.status === "approved") ? id : null);
     });
     return () => {
-      live = false;
+      decided = true;
+      window.clearTimeout(timer);
     };
     // Only at launch: later choices are made here and saved by switchCompany.
   }, []);
@@ -77,7 +91,7 @@ export function SessionProvider({ me, children }: { me: Me; children: ReactNode 
     }),
     [me, preferred],
   );
-  return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
+  return <SessionContext.Provider value={value}>{ready ? children : null}</SessionContext.Provider>;
 }
 
 export function useSession(): Session {

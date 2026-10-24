@@ -178,6 +178,20 @@ describe("giving a task from the (+) sheet", () => {
     expect(await screen.findByText("Task given: Madina Saidova.")).toBeTruthy();
   });
 
+  it("says a colleague's task won't repeat instead of dropping the repeat silently", async () => {
+    answer({ title: "Kassani sanash", due_at: TOMORROW_18, due_label: "Tomorrow, 22 Oct (Thu), 18:00", priority: null, repeat: "daily", repeat_weekdays: [0, 1, 2, 3, 4, 5, 6] });
+    openSheet(["tasks.assign"]);
+    const forWhom = (await screen.findByLabelText("For")) as HTMLSelectElement;
+    await waitFor(() => expect(forWhom.options.length).toBe(2));
+    type("Kassani sanash har kuni 18:00");
+    // The reading is in (the repeat select's own "Every day" option doesn't count).
+    expect(await screen.findByText("Tomorrow, 22 Oct (Thu), 18:00")).toBeTruthy();
+    expect(screen.getByText("Every day", { selector: ".qa-read-tag" })).toBeTruthy();
+    fireEvent.change(forWhom, { target: { value: "12" } });
+    expect(screen.queryByText("Every day")).toBeNull();
+    expect(screen.getByText("A task given to a colleague doesn't repeat: routines are set up on the dashboard.")).toBeTruthy();
+  });
+
   it("shows no For field to someone who doesn't hand out work", () => {
     answer();
     openSheet();

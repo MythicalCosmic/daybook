@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { giverMeta } from "../screens/Tasks";
 import { ctxFor, makeTask, NOW } from "../test/harness";
-import { byFocus, formatDue, groupByDay, groupTasks, minutesLeft, priorityLevel, rowMeta, rowRight, seenLabel } from "./taskView";
+import { blockerReason, byFocus, formatDue, groupByDay, groupTasks, minutesLeft, priorityLevel, rowMeta, rowRight, seenLabel } from "./taskView";
 
 describe("one order everywhere (R2 T7)", () => {
   it("puts late work first, then sent back, then urgent, then the soonest deadline, undated last", () => {
@@ -94,6 +94,13 @@ describe("a deadline as words", () => {
     expect(formatDue("2026-10-29T18:30:00+05:00", ctxFor("uz"))).toBe("Payshanba, 29-oktabr, 18:30");
     expect(formatDue("2026-10-29T18:30:00+05:00", ctxFor("ru"), true)).toBe("чт 29 окт., 18:30");
     expect(formatDue("2026-10-29T18:30:00+05:00", ctxFor("en"), true)).toBe("Thu 29 Oct, 18:30");
+  });
+});
+
+describe("blocker reasons", () => {
+  it("read as Other when the backend sends one this app doesn't know", () => {
+    expect(blockerReason("no_stock", ctxFor("uz").t)).toBe("Tovar yo‘q");
+    expect(blockerReason("sick", ctxFor("en").t)).toBe("Other");
   });
 });
 

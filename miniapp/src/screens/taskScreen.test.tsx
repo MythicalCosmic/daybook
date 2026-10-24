@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../api/client";
 import { keys } from "../api/hooks";
 import type { Activity, Comment, Task } from "../api/types";
+import { useNavigation } from "../state/navigation";
 import { makeTask, membership, navigationState, NOW, person, renderApp } from "../test/harness";
 import { returnInfo, TaskDetail } from "./TaskDetail";
 
@@ -60,6 +61,13 @@ function show(task: Task, options: { me?: ReturnType<typeof person>; comments?: 
 }
 
 const manager = () => person([membership({ id: 3, first_name: "Bekzod", last_name: "Mirzayev", permissions: ["tasks.assign", "tasks.confirm"] })]);
+
+/** The task on top of the stack, as the app renders it (so opening the next one shows it). */
+function NextTask() {
+  const { stack } = useNavigation();
+  const top = stack.at(-1);
+  return top ? <TaskDetail key={String(top.params?.id)} taskId={Number(top.params?.id)} /> : null;
+}
 
 beforeEach(() => {
   vi.useFakeTimers({ now: NOW, shouldAdvanceTime: true });
@@ -174,6 +182,48 @@ describe("finishing and undoing", () => {
     expect(callsTo(`/companies/1/tasks/${task.id}/confirm/`)).toHaveLength(0);
     await act(() => vi.advanceTimersByTimeAsync(5000));
     expect(callsTo(`/companies/1/tasks/${task.id}/confirm/`)[0][1]).toEqual({ method: "POST", keepalive: true });
+  });
+});
+
+describe("confirming safely", () => {
+  it("takes a double tap as one Confirm: the next task isn't confirmed unseen", async () => {
+    const task = makeTask({ status: "review", actions: ["confirm", "return"] });
+    const next = makeTask({ status: "review", title: "Fridge", actions: ["confirm", "return"] });
+    routes(task, { "/confirm/": () => ({ status: "done" }) });
+    const view = renderApp(<NextTask />, {
+      me: manager(),
+      init: { tab: "tasks", stack: [{ feature: "core", page: "task", params: { id: task.id } }] },
+      seed: (client) => {
+        for (const item of [task, next]) {
+          client.setQueryData(keys.task(1, item.id), item);
+          client.setQueryData(keys.comments(1, item.id), []);
+        }
+        client.setQueryData(keys.activity(1), []);
+        client.setQueryData(keys.summary(1), {});
+        client.setQueryData(keys.review(1), [task, next]);
+        client.setQueryData(keys.members(1), []);
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+    // Now on the next task; the second tap of the double tap lands on its Confirm.
+    expect(await screen.findByRole("heading", { name: "Fridge" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+    await act(() => vi.advanceTimersByTimeAsync(6000));
+    expect(callsTo(`/companies/1/tasks/${task.id}/confirm/`)).toHaveLength(1);
+    expect(callsTo(`/companies/1/tasks/${next.id}/confirm/`)).toHaveLength(0);
+    expect(view.client.getQueryData(keys.review(1))).toBeTruthy();
+  });
+
+  it("keeps a typed comment when Ask for help adds the mention", async () => {
+    const task = makeTask({
+      due_at: "2026-10-21T09:00:00+05:00",
+      reminder: { every_minutes: 20, sent: 1, max_reminders: 12, escalate_after: 3, next_at: null, escalated_at: null, escalate_to: "Bekzod Mirzayev", snooze_minutes: 10, snoozes_left: 1, snoozed_until: null },
+    });
+    show(task);
+    const box = screen.getByPlaceholderText("Write a comment…") as HTMLInputElement;
+    fireEvent.change(box, { target: { value: "The terminal receipt is missing", selectionStart: 31 } });
+    fireEvent.click(screen.getByRole("button", { name: "Ask for help" }));
+    await waitFor(() => expect(box.value).toBe("@Bekzod The terminal receipt is missing"));
   });
 });
 

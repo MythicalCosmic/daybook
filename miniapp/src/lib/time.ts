@@ -102,7 +102,8 @@ export function longDate(moment: Date, timeZone: string, locale: string): string
   return capitalise(formatter(locale, { timeZone, weekday: "long", day: "numeric", month: "long" }).format(moment));
 }
 
-function capitalise(text: string): string {
+/** The first letter up: a date or weekday that starts a line. */
+export function capitalise(text: string): string {
   return text.charAt(0).toLocaleUpperCase() + text.slice(1);
 }
 

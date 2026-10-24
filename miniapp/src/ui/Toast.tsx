@@ -10,6 +10,9 @@ export type ToastOptions = {
   action?: { label: string; onPress: () => void };
   /** How long it stays (ms); 2600 by default, 5000 with an action. */
   duration?: number;
+  /** A finger or the focus rests on the toast (it stays meanwhile), and leaves it. */
+  onHold?: () => void;
+  onRelease?: () => void;
 };
 
 export type ToastData = { id: number; text: string } & ToastOptions;

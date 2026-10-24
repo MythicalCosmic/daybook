@@ -159,9 +159,17 @@ function useStackBackButton() {
  * Back in the app after a while in the chat (Telegram's "activated"), everything shown is fetched
  * again: a manager's confirm or return made meanwhile shows at once (audit M-14).
  */
-function useRefreshOnReturn() {
+function useRefreshOnReturn(company: number) {
   const client = useQueryClient();
-  useEffect(() => onActivated(() => void client.invalidateQueries()), [client]);
+  useEffect(
+    () =>
+      onActivated(() => {
+        void client.invalidateQueries({ queryKey: ["tasks", company] });
+        void client.invalidateQueries({ queryKey: ["summary", company] });
+        void client.invalidateQueries({ queryKey: ["activity", company] });
+      }),
+    [client, company],
+  );
 }
 
 function MainApp() {
@@ -169,7 +177,7 @@ function MainApp() {
   const member = useMember();
   const summary = useSummary(member.companyId);
   useStackBackButton();
-  useRefreshOnReturn();
+  useRefreshOnReturn(member.companyId);
 
   return (
     <>

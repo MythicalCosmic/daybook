@@ -66,7 +66,8 @@ export function Tasks() {
     { key: "personal", count: tasks.filter((task) => task.kind === "personal" && isOpen(task)).length },
   ];
   if (canReview) tabs.push({ key: "review", count: reviews.data?.length ?? 0 });
-  if (canAssign) tabs.push({ key: "given", count: (given.data ?? []).filter(needsGiver(ctx.now)).length });
+  // Counted over the same list the tab shows: work for others, still open, that needs me.
+  if (canAssign) tabs.push({ key: "given", count: givenWork(given.data).filter((task) => isOpen(task) && needsGiver(ctx.now)(task)).length });
 
   const open = (task: Task) => navigation.openTask(task.id);
   const add = () => {
@@ -189,6 +190,9 @@ function Groups({ tasks, tab, onOpen, onTick, onAdd, ctx }: {
   );
 }
 
+/** Work I gave others: someone's own tasks never count (a backend without `given_by` may send them). */
+const givenWork = (tasks: Task[] | undefined) => (tasks ?? []).filter((task) => task.kind !== "personal");
+
 /** Work I gave that wants something from me now: a blocker, a request for more time, lateness. */
 const needsGiver = (now: Date) => (task: Task) => Boolean(task.blocker || task.extension) || isLate(task, now);
 
@@ -218,8 +222,7 @@ function GivenByMe({ tasks, loading, error, onRetry, ctx, onOpen, onAdd }: {
 }) {
   if (loading) return <RowSkeleton count={3} />;
   if (!tasks && error) return <LoadError compact error={error} onRetry={onRetry} />;
-  // Only work for others: someone's own tasks are theirs (a backend without `given_by` may send them).
-  const mine = (tasks ?? []).filter((task) => task.kind !== "personal");
+  const mine = givenWork(tasks);
   if (!mine.length) {
     return (
       <EmptyState

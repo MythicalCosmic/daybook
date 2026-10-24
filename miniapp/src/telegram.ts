@@ -87,18 +87,12 @@ export function onThemeChange(callback: () => void): () => void {
 
 /**
  * The app comes back into view after being minimised or left for the chat (Telegram 8.0
- * "activated"; elsewhere, the page becoming visible again).
+ * "activated"). Elsewhere nothing is needed: TanStack Query already refetches on focus.
  */
 export function onActivated(callback: () => void): () => void {
-  if (webApp && supports("8.0")) {
-    webApp.onEvent("activated", callback);
-    return () => webApp.offEvent("activated", callback);
-  }
-  const visible = () => {
-    if (document.visibilityState === "visible") callback();
-  };
-  document.addEventListener("visibilitychange", visible);
-  return () => document.removeEventListener("visibilitychange", visible);
+  if (!webApp || !supports("8.0")) return () => {};
+  webApp.onEvent("activated", callback);
+  return () => webApp.offEvent("activated", callback);
 }
 
 /** Match Telegram's own header and background to the app's ground color. */

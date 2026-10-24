@@ -416,6 +416,7 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
   "add.read.notDate": "Это не срок",
   "add.read.keep": "Оставить как есть",
   "add.read.needTitle": "Теперь напишите, что нужно сделать.",
+  "add.read.noRepeat": "Поручение не повторяется: регулярные задачи настраиваются в панели управления.",
   "add.for": "Кому",
   "add.forMe": "Себе",
   "add.illCheck": "Нужна моя проверка",

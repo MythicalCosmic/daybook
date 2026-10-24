@@ -34,8 +34,10 @@ import { LateCard, ReminderNote } from "../components/Reminders";
 import { FeatureSlot } from "../features/FeatureSlot";
 import { useI18n } from "../i18n";
 import { errorText, useCompleteTask, useConfirmTasks } from "../lib/actions";
+import { isPending } from "../lib/delayedSend";
 import { formatMoney } from "../lib/money";
 import {
+  blockerReason,
   duration,
   formatDue,
   isLate,
@@ -198,7 +200,7 @@ function Detail({ task, comments, ctx }: { task: Task; comments: Comment[]; ctx:
     [t("detail.proof"), t(`proof.${task.proof}`)],
     [t("detail.check"), checker(task, member.id, t)],
   ];
-  if (task.reward) details.push([t("detail.reward"), formatMoney(task.reward, "UZS", lang, { sign: "always" })]);
+  if (task.reward) details.push([t("detail.reward"), formatMoney(task.reward, ctx.currency ?? "UZS", lang, { sign: "always" })]);
   if (!isMine) {
     const seen = seenLabel(task, ctx);
     details.push([
@@ -257,7 +259,7 @@ function Detail({ task, comments, ctx }: { task: Task; comments: Comment[]; ctx:
             {task.reward && (
               <span className="tag tag-sage" style={{ fontSize: 13, padding: "4px 11px" }}>
                 <Gift size={13} strokeWidth={2.6} aria-hidden />
-                {formatMoney(task.reward, "UZS", lang, { sign: "always" })}
+                {formatMoney(task.reward, ctx.currency ?? "UZS", lang, { sign: "always" })}
               </span>
             )}
             {canManage && (
@@ -370,7 +372,8 @@ function Detail({ task, comments, ctx }: { task: Task; comments: Comment[]; ctx:
 function dueLine(task: Task, ctx: ViewContext): string {
   if (!task.due_at) return ctx.t("detail.noDue");
   const label = formatDue(task.due_at, ctx);
-  const left = Math.floor((+new Date(task.due_at) - +ctx.now) / 60_000);
+  // Rounded up, as the list chip counts down: 24.5 minutes read "25 min left" on both.
+  const left = Math.ceil((+new Date(task.due_at) - +ctx.now) / 60_000);
   return isOpen(task) && left > 0 && left < 12 * 60 ? `${label} · ${ctx.t("due.left", { duration: duration(left, ctx.t) })}` : label;
 }
 
@@ -470,8 +473,8 @@ function RequestBanners({ task, isMine, ctx }: { task: Task; isMine: boolean; ct
           <span className="request-banner-main">
             <span className="request-banner-title">
               {isMine
-                ? t("detail.blocked.mine", { reason: t(`blocker.reason.${task.blocker.reason_code}`).toLocaleLowerCase() })
-                : t("detail.blocked.giver", { name: task.assignee.name, reason: t(`blocker.reason.${task.blocker.reason_code}`).toLocaleLowerCase() })}
+                ? t("detail.blocked.mine", { reason: blockerReason(task.blocker.reason_code, t).toLocaleLowerCase() })
+                : t("detail.blocked.giver", { name: task.assignee.name, reason: blockerReason(task.blocker.reason_code, t).toLocaleLowerCase() })}
             </span>
             {task.blocker.note && <span className="request-banner-note">{t("routines.quoted", { text: task.blocker.note })}</span>}
             <span className="request-banner-meta num">
@@ -582,10 +585,11 @@ function Comments({ task, comments, people, ctx, seed }: {
   useEffect(() => saveDraft(draftKey, draft), [draftKey, draft]);
   useEffect(() => {
     if (!seed) return;
-    setDraft(seed.text);
+    // A comment already typed stays: the mention goes in front of it.
+    setDraft((current) => (!current.trim() ? seed.text : current.includes(seed.text.trim()) ? current : `${seed.text}${current}`));
     if (seed.mention) setMentioned((map) => new Map(map).set(seed.mention!.id, handle(seed.mention!)));
     input.current?.focus();
-    input.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    input.current?.scrollIntoView?.({ behavior: "smooth", block: "center" });
   }, [seed]);
 
   const candidates = useMemo(() => {
@@ -805,6 +809,10 @@ function Mentions({ text }: { text: string }) {
   );
 }
 
+/** The task a Confirm just opened: its own Confirm waits a moment (the same tap isn't a decision). */
+let justOpened: { id: number; until: number } | null = null;
+const CONFIRM_GUARD_MS = 800;
+
 /**
  * The task's actions in the bottom bar, like every page's: Telegram's main button for the one that
  * finishes the step (Mark as done, Send again, Confirm) and its secondary button beside it (Start,
@@ -835,7 +843,12 @@ function ActionBar({ task, isMine }: { task: Task; isMine: boolean }) {
     );
   // Confirm goes out after a moment with Undo; meanwhile the next thing to check opens (audit M-9).
   const confirm = () => {
-    const next = (client.getQueryData<Task[]>(keys.review(member.companyId)) ?? []).find((other) => other.id !== task.id);
+    // The second tap of a double tap lands on the next task's Confirm, which nobody looked at yet.
+    if (isPending(task.id) || (justOpened?.id === task.id && Date.now() < justOpened.until)) return;
+    const next = (client.getQueryData<Task[]>(keys.review(member.companyId)) ?? []).find(
+      (other) => other.id !== task.id && !isPending(other.id),
+    );
+    justOpened = next ? { id: next.id, until: Date.now() + CONFIRM_GUARD_MS } : null;
     confirmTasks([task]);
     if (next) navigation.openTask(next.id);
     else navigation.closeTask();

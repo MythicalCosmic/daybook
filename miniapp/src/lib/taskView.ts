@@ -2,11 +2,12 @@
 
 import type { Task } from "../api/types";
 import type { Translate } from "../i18n";
-import { clock, dayMonth, dayMonthLong, daysFromToday, weekdayLong, weekdayShort } from "./time";
+import { capitalise, clock, dayMonth, dayMonthLong, daysFromToday, weekdayLong, weekdayShort } from "./time";
 
 export type Glyph = "todo" | "late" | "progress" | "review" | "done";
 
-export type ViewContext = { t: Translate; timeZone: string; locale: string; now: Date };
+/** `currency`: the company's base currency, for rewards (UZS when not given). */
+export type ViewContext = { t: Translate; timeZone: string; locale: string; now: Date; currency?: string };
 
 const OPEN = new Set(["todo", "in_progress", "returned"]);
 
@@ -63,6 +64,13 @@ function weekdayName(day: number, ctx: ViewContext, style: "long" | "short"): st
     : weekdayShort(monday, "UTC", ctx.locale);
 }
 
+/** Why the task can't be done, in words; a reason this app doesn't know yet reads as "Other". */
+export function blockerReason(code: string, t: Translate): string {
+  const key = `blocker.reason.${code}`;
+  const text = t(key as Parameters<Translate>[0]);
+  return text === key ? t("blocker.reason.other") : text;
+}
+
 /** The short line under a task's title in lists. */
 export function rowMeta(task: Task, ctx: ViewContext): string {
   const { t, timeZone, locale, now } = ctx;
@@ -79,7 +87,7 @@ export function rowMeta(task: Task, ctx: ViewContext): string {
   }
   if (task.status === "returned") return t("meta.sentBack");
   // The reason continues the sentence after the colon: lowercase ("Can't be done: out of stock").
-  if (task.blocker) return t("meta.blocked", { reason: t(`blocker.reason.${task.blocker.reason_code}`).toLocaleLowerCase() });
+  if (task.blocker) return t("meta.blocked", { reason: blockerReason(task.blocker.reason_code, t).toLocaleLowerCase() });
   if (isLate(task, now)) return t("meta.late", { duration: duration(lateBy(task, now), t) });
   if (task.extension) return t("meta.extension");
   const repeat = repeatLabel(task.repeat_weekdays, ctx);
@@ -122,10 +130,6 @@ function weekday(moment: string, ctx: ViewContext): string {
   return ctx.locale.startsWith("uz")
     ? capitalise(weekdayLong(moment, ctx.timeZone, ctx.locale))
     : capitalise(weekdayShort(moment, ctx.timeZone, ctx.locale));
-}
-
-function capitalise(text: string): string {
-  return text.charAt(0).toLocaleUpperCase() + text.slice(1);
 }
 
 /**

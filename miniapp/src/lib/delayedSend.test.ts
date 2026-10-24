@@ -27,6 +27,32 @@ describe("a delayed send", () => {
     expect(send).not.toHaveBeenCalled();
   });
 
+  it("holds its clock while its toast is held, and gives time again after", () => {
+    const send = vi.fn();
+    const job = sendLater(send);
+    vi.advanceTimersByTime(4000);
+    job.pause();
+    vi.advanceTimersByTime(60_000);
+    expect(send).not.toHaveBeenCalled();
+    job.resume();
+    // Longer than the 2.5 s the toast lingers once let go.
+    vi.advanceTimersByTime(2500);
+    expect(send).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(200);
+    expect(send).toHaveBeenCalledOnce();
+  });
+
+  it("waits for the connection rather than failing offline", () => {
+    const send = vi.fn();
+    Object.defineProperty(navigator, "onLine", { configurable: true, get: () => false });
+    sendLater(send);
+    vi.advanceTimersByTime(UNDO_MS);
+    expect(send).not.toHaveBeenCalled();
+    Object.defineProperty(navigator, "onLine", { configurable: true, get: () => true });
+    window.dispatchEvent(new Event("online"));
+    expect(send).toHaveBeenCalledOnce();
+  });
+
   it("goes out at once when the app is hidden or closed", () => {
     const send = vi.fn();
     sendLater(send);
