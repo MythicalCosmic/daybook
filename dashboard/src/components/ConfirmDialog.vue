@@ -139,7 +139,7 @@ async function confirm(): Promise<void> {
         v-if="reason !== 'none'"
         :label="reasonLabel ?? t('common.reason')"
         :required="reason === 'required' && !readyAnswer"
-        :optional="reason === 'optional' || readyAnswer"
+        :optional="reason === 'optional'"
         :error="touched && missing ? t('common.confirm.reasonRequired') : null"
       >
         <div class="flex flex-col gap-2.5">

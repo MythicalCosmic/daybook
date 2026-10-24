@@ -113,6 +113,26 @@ export function useTaskList(params: MaybeRefOrGetter<Params>) {
   });
 }
 
+/**
+ * How many tasks match `params`, fetching one row: the counts of "what needs you" chips. `check`
+ * says whether that row really matches (a backend that ignores the filter answers with any task):
+ * the count is null then, and the chip stays hidden. A refusal (no tasks.view_all) is null too.
+ */
+export function useTaskCount(params: MaybeRefOrGetter<Params>, check: (row: TaskRow) => boolean) {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => qk(cid.value, MODULE, "count", toValue(params))),
+    queryFn: async ({ signal }) => {
+      const page = await tasksApi.list(cid.value, { ...toValue(params), page_size: 1 }, signal);
+      const first = page.results[0];
+      return first && !check(first) ? null : page.count;
+    },
+    enabled: computed(() => cid.value > 0),
+    staleTime: 30_000,
+    retry: false,
+  });
+}
+
 export function useBoard(params: MaybeRefOrGetter<Params>, enabled: MaybeRefOrGetter<boolean> = true) {
   const cid = useCompanyId();
   return useQuery({

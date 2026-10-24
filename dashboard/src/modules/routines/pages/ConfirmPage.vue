@@ -145,15 +145,9 @@ const photo = (run: RoutineRun, group: ConfirmGroup) => ({
         </header>
         <TransitionGroup name="list" tag="ul" :class="['relative grid gap-3 p-4', group.items.length > 1 && 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5']">
           <li v-for="run in group.items" :key="run.id" class="flex min-w-0 flex-col overflow-hidden rounded-[12px] border border-line bg-surface" :data-run="run.id">
-            <div :class="['relative w-full overflow-hidden bg-surface-2', run.proof_photo ? 'aspect-[4/3]' : 'h-28']">
-              <ProofThumb v-if="run.proof_thumb" :src="run.proof_thumb" :images="[photo(run, group)]" :alt="run.member.name" size="fill" class="!rounded-none" />
-              <div v-else class="flex h-full flex-col justify-center gap-1.5 p-4">
-                <template v-if="run.proof_text">
-                  <FileText :size="16" class="text-subtle" aria-hidden="true" />
-                  <p class="line-clamp-3 text-sm text-fg">“{{ run.proof_text }}”</p>
-                </template>
-                <p v-else class="flex items-center gap-2 text-sm text-muted"><FileText :size="16" class="text-subtle" aria-hidden="true" />{{ run.proof === "none" ? t("routines.confirm.noProof") : t("routines.confirm.noPhoto") }}</p>
-              </div>
+            <!-- A photo gets the frame; work without one gets a compact card (no empty picture). -->
+            <div v-if="run.proof_thumb" class="relative aspect-[4/3] w-full overflow-hidden bg-surface-2">
+              <ProofThumb :src="run.proof_thumb" :images="[photo(run, group)]" :alt="run.member.name" size="fill" class="!rounded-none" />
             </div>
             <div class="flex flex-1 flex-col gap-2 p-3">
               <div class="flex min-w-0 items-center gap-2.5">
@@ -165,7 +159,11 @@ const photo = (run: RoutineRun, group: ConfirmGroup) => ({
                   </p>
                 </div>
               </div>
-              <p v-if="run.proof_photo && run.proof_text" class="line-clamp-2 rounded-[8px] bg-surface-2 px-2.5 py-1.5 text-sm text-fg">{{ run.proof_text }}</p>
+              <p v-if="run.proof_thumb && run.proof_text" class="line-clamp-2 rounded-[8px] bg-surface-2 px-2.5 py-1.5 text-sm text-fg">{{ run.proof_text }}</p>
+              <blockquote v-else-if="run.proof_text" class="line-clamp-3 rounded-[8px] border-l-[3px] border-primary bg-surface-2 px-2.5 py-1.5 text-sm text-fg">{{ run.proof_text }}</blockquote>
+              <p v-else-if="!run.proof_thumb" :class="['inline-flex items-center gap-1 text-xs', run.proof === 'none' ? 'text-subtle' : 'font-medium text-warning']" data-testid="run-no-proof">
+                <FileText :size="13" aria-hidden="true" />{{ run.proof === "none" ? t("routines.confirm.noProof") : t("routines.confirm.noPhoto") }}
+              </p>
               <p v-if="run.checklist.total" class="inline-flex items-center gap-1 text-xs text-muted"><ListChecks :size="13" aria-hidden="true" />{{ t("routines.confirm.checklist", { done: run.checklist.done, total: run.checklist.total }) }}</p>
               <div class="mt-auto flex gap-2 pt-1">
                 <UiButton :size="tap" :icon="Check" class="flex-1" @click="confirm([run], `${run.member.name} · ${group.routine.title}`)">{{ t("routines.confirm.one") }}</UiButton>

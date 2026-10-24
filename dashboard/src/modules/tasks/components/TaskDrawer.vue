@@ -11,7 +11,7 @@
  */
 import { Ban, BellRing, CalendarClock, Check, CircleCheck, Ellipsis, Eye, EyeOff, FolderKanban, Gift, Hourglass, Link2, MessageSquare, Pencil, Repeat, RotateCcw, UserRoundCog, X } from "@lucide/vue";
 import { useQueryClient } from "@tanstack/vue-query";
-import { computed, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, useRouter } from "vue-router";
 
@@ -43,7 +43,8 @@ import { returnReasonFields } from "@/components/returnReasons";
 import { useConfirm } from "@/components/useConfirm";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { toast } from "@/components/useToast";
-import { todayIn } from "@/lib/dates";
+import { useHotkey } from "@/core/hotkeys";
+import { todayIn, zonedDay } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
@@ -159,6 +160,8 @@ async function blockerCancel(): Promise<void> {
 async function onExtension(approve: boolean): Promise<void> {
   await run(approve ? "approve" : "decline", () => decideExtension.mutateAsync(approve), t(approve ? "tasks.extension.approvedToast" : "tasks.extension.declinedToast"));
 }
+/** The asked-for deadline on its button: the time when it's today, else the day too. */
+const untilLabel = (iso: string) => (zonedDay(iso, company.timezone) === todayIn(company.timezone) ? fmt.instant(iso, "time") : fmt.instant(iso, "short"));
 /** The giver decides when they may change the deadline (the server checks again). */
 const canDecide = computed(() => can("edit") || can("reassign"));
 
@@ -276,6 +279,18 @@ const mentionable = computed<MentionPerson[]>(() => {
   }
   return out;
 });
+// Keyboard, while a task is open: C writes a comment, E changes the deadline (R2 T45).
+useHotkey(
+  "c",
+  async () => {
+    tab.value = "comments";
+    await nextTick();
+    commentBox.value?.focus();
+  },
+  { description: "tasks.keys.comment", group: "page", enabled: () => !!task.value && can("comment") },
+);
+useHotkey("e", () => (dueOpen.value = true), { description: "tasks.keys.due", group: "page", enabled: () => !!task.value && can("edit") });
+
 /** Every name an @mention in this task's comments may carry (the writer's own included). */
 const knownNames = computed(() => {
   const current = task.value;
@@ -415,7 +430,7 @@ const formatAudit = (field: string, value: unknown) => {
         <div class="flex flex-wrap items-center gap-2 empty:hidden">
           <UiButton v-if="can('confirm')" variant="primary" :icon="Check" :loading="busy === 'confirm'" @click="onConfirm">{{ t("tasks.action.confirm") }}</UiButton>
           <UiButton v-if="can('return')" :icon="RotateCcw" :loading="busy === 'return'" @click="onSendBack">{{ t("tasks.action.return") }}</UiButton>
-          <UiPopover v-if="can('reassign')" v-model:open="reassignOpen" width="300px">
+          <UiPopover v-if="can('reassign') && !task.blocker" v-model:open="reassignOpen" width="300px">
             <template #trigger><UiButton :icon="UserRoundCog" :loading="busy === 'reassign'">{{ t("tasks.action.reassign") }}</UiButton></template>
             <div class="flex flex-col gap-2">
               <p class="text-sm font-semibold text-fg">{{ t("tasks.reassign.title") }}</p>
@@ -424,7 +439,7 @@ const formatAudit = (field: string, value: unknown) => {
               <UiButton size="sm" variant="primary" :disabled="!reassignTo" @click="onReassign">{{ t("tasks.action.reassign") }}</UiButton>
             </div>
           </UiPopover>
-          <UiButton v-if="can('nudge')" :icon="BellRing" :loading="busy === 'nudge'" :disabled="nudgedRecently" :title="nudgedRecently ? t('tasks.nudge.wait') : t('tasks.nudge.hint')" @click="onNudge">
+          <UiButton v-if="can('nudge') && !task.blocker" :icon="BellRing" :loading="busy === 'nudge'" :disabled="nudgedRecently" :title="nudgedRecently ? t('tasks.nudge.wait') : t('tasks.nudge.hint')" @click="onNudge">
             {{ nudgedRecently ? t("tasks.nudge.sent") : t("tasks.action.nudge") }}
           </UiButton>
           <ExtensionSlot name="tasks.drawer.actions" as="none" :context="slotContext" />
@@ -479,7 +494,7 @@ const formatAudit = (field: string, value: unknown) => {
             </div>
           </div>
           <div v-if="canDecide" class="flex flex-wrap gap-2">
-            <UiButton size="sm" variant="primary" :icon="Check" :loading="busy === 'approve'" data-testid="extension-approve" @click="onExtension(true)">{{ t("tasks.extension.approve", { time: fmt.instant(task.extension.until, "time") }) }}</UiButton>
+            <UiButton size="sm" variant="primary" :icon="Check" :loading="busy === 'approve'" data-testid="extension-approve" @click="onExtension(true)">{{ t("tasks.extension.approve", { time: untilLabel(task.extension.until) }) }}</UiButton>
             <UiButton size="sm" :icon="X" :loading="busy === 'decline'" data-testid="extension-decline" @click="onExtension(false)">{{ t("tasks.extension.decline") }}</UiButton>
           </div>
         </div>

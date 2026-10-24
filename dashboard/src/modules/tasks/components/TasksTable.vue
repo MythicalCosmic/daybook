@@ -4,7 +4,7 @@
  * bulk bar (reassign, move the deadline, priority, nudge, confirm, cancel), cards on phones. Rows
  * open the drawer (`?task=`).
  */
-import { BellRing, CalendarClock, CheckCheck, Flag, FolderKanban, Gift, Inbox, Repeat, UserRoundCog, X } from "@lucide/vue";
+import { BellRing, CalendarClock, CheckCheck, Eye, EyeOff, Flag, FolderKanban, Gift, Inbox, Repeat, UserRoundCog, X } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -30,6 +30,7 @@ import { PRIORITIES } from "../types";
 import DueLabel from "./DueLabel.vue";
 import PriorityFlag from "./PriorityFlag.vue";
 import TaskCard from "./TaskCard.vue";
+import TaskFlags from "./TaskFlags.vue";
 import TaskStatusPill from "./TaskStatusPill.vue";
 
 const props = defineProps<{
@@ -74,6 +75,8 @@ const columns = computed<TableColumn<TaskRow>[]>(() => [
   { id: "proof", header: t("tasks.col.proof"), width: 90, align: "center", value: (row) => (row.has_proof ? "✓" : "") },
   { id: "reward", header: t("tasks.col.reward"), width: 140, numeric: true, value: (row) => row.reward ?? "" },
   { id: "completed_at", header: t("tasks.col.finished"), sortable: true, width: 160, value: (row) => row.completed_at, csv: (row) => (row.completed_at ? fmt.instant(row.completed_at) : "") },
+  // When the assignee first opened it (contract 10): a column to turn on.
+  { id: "seen_at", header: t("tasks.field.seen"), width: 150, value: (row) => row.seen_at ?? "", csv: (row) => (row.seen_at ? fmt.instant(row.seen_at) : "") },
 ]);
 
 // Bulk actions -------------------------------------------------------------------------------
@@ -173,8 +176,14 @@ async function reassignMany(selected: string[], clear: () => void): Promise<void
           <span v-else>{{ t(`tasks.kind.${row.kind}`) }}</span>
           <span v-if="row.checklist.total" :class="['inline-flex items-center gap-0.5 tabular-nums', row.checklist.done === row.checklist.total && 'text-success']"><CheckCheck :size="11" />{{ row.checklist.done }}/{{ row.checklist.total }}</span>
           <span v-if="row.reward" class="inline-flex items-center gap-0.5 text-success"><Gift :size="11" />{{ t("tasks.reward.short") }}</span>
+          <TaskFlags :task="row" />
         </p>
       </div>
+    </template>
+    <template #cell-seen_at="{ row }">
+      <span v-if="row.seen_at" class="inline-flex items-center gap-1 text-sm tabular-nums text-muted" :title="fmt.instant(row.seen_at, 'datetime')"><Eye :size="13" aria-hidden="true" />{{ fmt.instant(row.seen_at, "short") }}</span>
+      <span v-else-if="row.kind !== 'personal' && (row.status === 'todo' || row.status === 'returned')" class="inline-flex items-center gap-1 text-sm text-subtle"><EyeOff :size="13" aria-hidden="true" />{{ t("tasks.seen.not") }}</span>
+      <span v-else class="text-subtle">—</span>
     </template>
     <template #cell-assignee="{ row }">
       <PersonCell :person="row.assignee" :subtitle="row.assignee.position" size="sm" link />

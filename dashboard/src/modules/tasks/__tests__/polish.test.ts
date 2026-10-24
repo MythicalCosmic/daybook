@@ -154,7 +154,7 @@ describe("quick add in New task (contract 1)", () => {
     await type("Ertaga 15:00 dorilarni sanash !!");
     expect(calls.filter((c) => c.url.endsWith("/tasks/parse/")).map((c) => c.body)).toEqual([{ text: "Ertaga 15:00 dorilarni sanash !!" }]);
     const line = document.body.querySelector("[data-testid=quick-add]")!.textContent ?? "";
-    expect(line).toContain("«Dorilarni sanash»");
+    expect(line).toContain("Dorilarni sanash");
     expect(line).toContain("Tomorrow, 26 Oct (Mon), 15:00");
     expect(line).toContain("Urgent");
     // The form follows: the understood deadline is the chosen one, and Urgent is picked.
@@ -204,6 +204,38 @@ describe("quick add in New task (contract 1)", () => {
     const create = buttons().find((b) => b.textContent?.includes("Create"))!;
     expect(create.textContent).not.toContain("⌘");
     expect(create.textContent).toContain("Ctrl");
+    wrapper.unmount();
+  });
+});
+
+describe("layout", () => {
+  it("brings today's week into view when the calendar opens on this month (audit D-3)", async () => {
+    const scrolled: Array<{ el: Element; options: unknown }> = [];
+    const original = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function (this: Element, options?: unknown) {
+      scrolled.push({ el: this, options });
+    } as typeof Element.prototype.scrollIntoView;
+    stub({ "GET tasks/calendar/": () => json({ days: [], items: [], truncated: false }) });
+    const app = await testApp("/c/1/tasks?view=calendar");
+    const { default: TasksCalendar } = await import("../components/TasksCalendar.vue");
+    const { wrapper } = mountWithProviders(TasksCalendar, { plugins: app.plugins, props: { params: {} } });
+    await flushPromises();
+    await flushPromises();
+    Element.prototype.scrollIntoView = original;
+    expect(scrolled).toHaveLength(1);
+    expect(scrolled[0]!.el.getAttribute("aria-current")).toBe("date");
+    expect(scrolled[0]!.options).toMatchObject({ block: "center" });
+    wrapper.unmount();
+  });
+
+  it("keeps the four numbers on one row on phones (audit D-9)", async () => {
+    const app = await testApp("/c/1/tasks");
+    const { default: KpiStrip } = await import("@/components/KpiStrip.vue");
+    const items = ["Done today", "Late now", "Waiting for check", "On time"].map((label, index) => ({ id: String(index), label, value: index }));
+    const { wrapper } = mountWithProviders(KpiStrip, { plugins: app.plugins, props: { items, columns: 4, phone: "line" } });
+    const strip = wrapper.find(".kpi-strip");
+    expect(strip.attributes("data-phone-columns")).toBe("4");
+    expect(strip.classes()).toContain("grid-cols-4");
     wrapper.unmount();
   });
 });

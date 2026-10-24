@@ -42,10 +42,12 @@ function textarea(): HTMLTextAreaElement | null {
   return (area.value?.el as HTMLTextAreaElement | null | undefined) ?? null;
 }
 
-/** "@ali" right before the caret opens the list for "ali". */
+/** "@ali" right before the caret opens the list for "ali". Read from the field itself: this runs on
+ * the same input event as v-model, maybe before the model has the new text. */
 function readQuery(): void {
   const el = textarea();
-  const before = text.value.slice(0, el?.selectionStart ?? text.value.length);
+  const value = el?.value ?? text.value;
+  const before = value.slice(0, el?.selectionStart ?? value.length);
   const match = /(?:^|\s)@([^\s@]{0,30})$/u.exec(before);
   query.value = match ? match[1]! : null;
   active.value = 0;

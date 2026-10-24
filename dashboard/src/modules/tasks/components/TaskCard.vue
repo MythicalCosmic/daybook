@@ -14,6 +14,7 @@ import { cardKey } from "../meta";
 import type { TaskRow } from "../types";
 import DueLabel from "./DueLabel.vue";
 import PriorityFlag from "./PriorityFlag.vue";
+import TaskFlags from "./TaskFlags.vue";
 import TaskStatusPill from "./TaskStatusPill.vue";
 
 const props = withDefaults(defineProps<{ task: TaskRow; showStatus?: boolean; showAssignee?: boolean }>(), { showStatus: false, showAssignee: true });
@@ -31,6 +32,7 @@ const done = computed(() => props.task.status === "done");
           <span v-if="task.routine" class="inline-flex min-w-0 items-center gap-1"><Repeat :size="11" aria-hidden="true" /><span class="truncate">{{ task.routine.onboarding ? t("tasks.kind.onboarding") : t("tasks.kind.routine") }}</span></span>
           <span v-else-if="task.kind === 'personal'" class="truncate">{{ t("tasks.kind.personal") }}</span>
           <PriorityFlag :priority="task.priority" :size="11" />
+          <TaskFlags :task="task" />
         </p>
         <p :class="['mt-0.5 line-clamp-2 text-sm font-semibold leading-5', done ? 'text-muted' : 'text-fg']">{{ task.title }}</p>
       </div>

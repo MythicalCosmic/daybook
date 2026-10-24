@@ -7,10 +7,10 @@
  * the list. Saved views as tabs, filter chips in the URL, the drawer (`?task=`) and "New task"
  * (`N`). Other modules add tools through `tasks.toolbar`.
  */
-import { CalendarDays, Columns3, ListFilter, Plus, Repeat, Rows3, Search } from "@lucide/vue";
-import { computed, onMounted, ref, watch } from "vue";
+import { Ban, CalendarDays, Columns3, Hourglass, ListFilter, Plus, Repeat, Rows3, Search } from "@lucide/vue";
+import { computed, onMounted, ref, watch, type Component } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRoute, useRouter } from "vue-router";
+import { RouterLink, useRoute, useRouter } from "vue-router";
 
 import BottomSheet from "@/components/BottomSheet.vue";
 import ExtensionSlot from "@/components/ExtensionSlot.vue";
@@ -33,13 +33,13 @@ import { patchQuery, rs, useRouteState } from "@/lib/useRouteState";
 import { paramsDiffer, useSavedViews } from "@/lib/useSavedViews";
 import { useCompanyStore } from "@/stores/company";
 
-import { useSummary, useTaskOptions } from "../api";
+import { useSummary, useTaskCount, useTaskOptions } from "../api";
 import CreateTaskDialog from "../components/CreateTaskDialog.vue";
 import TaskDrawer from "../components/TaskDrawer.vue";
 import TasksBoard from "../components/TasksBoard.vue";
 import TasksCalendar from "../components/TasksCalendar.vue";
 import TasksTable from "../components/TasksTable.vue";
-import { asksForRoutines, builtinTabs, builtinViews, filterDefs, viewParams } from "../filters";
+import { asksForRoutines, BLOCKED_PARAMS, builtinTabs, builtinViews, EXTENSION_PARAMS, filterDefs, viewParams } from "../filters";
 import type { TaskRow, TaskView } from "../types";
 
 const { t } = useI18n();
@@ -71,7 +71,7 @@ const filtered = computed(() => filters.active.value > 0 || !!search.value);
 /** Phones: the filter chips open in a sheet. */
 const filtersOpen = ref(false);
 
-const table = useDataTable({ id: "tasks.list", ordering: "due_at", url: true, hidden: ["routine", "created_by", "reward", "completed_at"] });
+const table = useDataTable({ id: "tasks.list", ordering: "due_at", url: true, hidden: ["routine", "created_by", "reward", "completed_at", "seen_at"] });
 
 // Saved views ---------------------------------------------------------------------------------
 const builtins = computed(() => builtinViews(today.value));
@@ -154,6 +154,20 @@ const kpis = computed(() => {
   ];
 });
 
+// What waits for an answer now: "can't do it" and more time asked (answered on the reviews page).
+// Each chip appears only with something in it, on a backend that knows it. (Given work nobody
+// opened is a view, not a chip: everything from before "seen" existed would count.)
+const blockedCount = useTaskCount(BLOCKED_PARAMS, (row) => !!row.blocker);
+const extensionCount = useTaskCount(EXTENSION_PARAMS, (row) => !!row.extension);
+const attention = computed(() => {
+  const items: Array<{ id: string; label: string; icon: Component; tone: string; view?: string; to?: string }> = [];
+  const blocked = blockedCount.data.value ?? 0;
+  const extension = extensionCount.data.value ?? 0;
+  if (blocked) items.push({ id: "blocked", label: t("tasks.attention.blocked", { n: blocked }), icon: Ban, tone: "bg-danger-soft text-danger", view: "blocked" });
+  if (extension) items.push({ id: "extension", label: t("tasks.attention.extension", { n: extension }), icon: Hourglass, tone: "bg-warning-soft text-warning", to: `/c/${company.currentId}/tasks/reviews` });
+  return items;
+});
+
 // Drawer and creating --------------------------------------------------------------------------
 const openId = computed(() => {
   const value = Number(route.query.task);
@@ -189,7 +203,7 @@ const viewOptions = computed(() => [
 
 <template>
   <div class="flex min-w-0 flex-col gap-5">
-    <PageHeader :title="t('tasks.title')" :description="t('tasks.description')">
+    <PageHeader :title="t('tasks.title')" :description="isPhone ? undefined : t('tasks.description')">
       <template #actions>
         <ExtensionSlot name="tasks.toolbar" as="none" :context="{ companyId: company.currentId, filters: params }" />
         <UiButton v-if="can('tasks.assign')" variant="primary" :icon="Plus" kbd="N" @click="createOpen = true">{{ t("tasks.create.button") }}</UiButton>
@@ -198,6 +212,22 @@ const viewOptions = computed(() => [
 
     <!-- Phones: the four numbers on one short row, so the list starts on the first screen. -->
     <KpiStrip :items="kpis" :loading="summary.isPending.value" :columns="4" phone="line" />
+
+    <!-- What needs an answer now (R2 §3.19): only what has something in it. -->
+    <div v-if="attention.length" class="-mt-1 flex items-center gap-2 max-sm:-mx-4 max-sm:overflow-x-auto max-sm:px-4 sm:flex-wrap [scrollbar-width:none]" data-testid="attention">
+      <component
+        :is="item.to ? RouterLink : 'button'"
+        v-for="item in attention"
+        :key="item.id"
+        :to="item.to"
+        :type="item.to ? undefined : 'button'"
+        :class="['pressable inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-sm font-semibold transition-[filter] hover:brightness-95 dark:hover:brightness-125', item.tone]"
+        :data-attention="item.id"
+        @click="item.view && applyView(item.view)"
+      >
+        <component :is="item.icon" :size="14" aria-hidden="true" />{{ item.label }}
+      </component>
+    </div>
 
     <div class="flex min-w-0 flex-col gap-3">
       <SavedViewsTabs

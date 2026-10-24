@@ -9,7 +9,7 @@
  * under the title says what was understood, with the weekday and the date; "Not a date" keeps the
  * words in the title. Picking a deadline or a priority by hand wins until the typed words change.
  */
-import { Building2, Camera, Flag, Repeat, Sparkles, UserRound, Users, X } from "@lucide/vue";
+import { Building2, CalendarClock, Camera, Repeat, Sparkles, UserRound, Users, X } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
@@ -38,6 +38,7 @@ import { zonedIso } from "../meta";
 import { resultKey, useQuickAdd } from "../quickAdd";
 import type { ProofKind, TaskPriority } from "../types";
 import ChecklistEditor from "./ChecklistEditor.vue";
+import PriorityFlag from "./PriorityFlag.vue";
 
 const open = defineModel<boolean>("open", { default: false });
 const emit = defineEmits<{ created: [ids: number[]] }>();
@@ -231,13 +232,12 @@ async function submit(): Promise<void> {
           :aria-label="t('tasks.quick.understood')"
           data-testid="quick-add"
         >
-          <Sparkles :size="14" class="shrink-0 text-accent-fg" aria-hidden="true" />
-          <span v-if="understood.title" class="min-w-0 truncate font-medium text-fg">«{{ understood.title }}»</span>
-          <span v-if="understood.due_label" class="text-muted">· {{ understood.due_label }}</span>
-          <span v-if="understood.priority === 'urgent' || understood.priority === 'high'" :class="['inline-flex items-center gap-0.5 font-semibold', understood.priority === 'urgent' ? 'text-danger' : 'text-fg']">
-            · <Flag :size="12" aria-hidden="true" />{{ t(`tasks.priority.${understood.priority}`) }}
+          <span v-if="understood.title" class="inline-flex min-w-0 items-center gap-1 font-medium text-fg">
+            <Sparkles :size="13" class="shrink-0 text-accent-fg" aria-hidden="true" /><span class="truncate">{{ understood.title }}</span>
           </span>
-          <span v-if="understood.repeat" class="inline-flex items-center gap-0.5 text-muted">· <Repeat :size="12" aria-hidden="true" />{{ t(`tasks.quick.repeat.${understood.repeat}`) }}</span>
+          <span v-if="understood.due_label" class="inline-flex items-center gap-1 text-fg"><CalendarClock :size="13" class="shrink-0 text-muted" aria-hidden="true" />{{ understood.due_label }}</span>
+          <PriorityFlag v-if="understood.priority" :priority="understood.priority" />
+          <span v-if="understood.repeat" class="inline-flex items-center gap-1 text-muted"><Repeat :size="13" aria-hidden="true" />{{ t(`tasks.quick.repeat.${understood.repeat}`) }}</span>
           <span class="flex-1" />
           <button
             type="button"

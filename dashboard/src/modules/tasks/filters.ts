@@ -4,7 +4,7 @@
  * assignee, position, branch, priority, created by, due range, overdue, proof)"). Filter keys are
  * the API's own parameter names, so the URL, the request and a saved view are the same object.
  */
-import { CalendarClock, CircleDot, Flag, Image, Layers, Repeat, ShieldCheck, Store, TriangleAlert, UserRound, UserRoundPen, Users } from "@lucide/vue";
+import { Ban, CalendarClock, CircleDot, Eye, Flag, Hourglass, Image, Layers, Repeat, ShieldCheck, Store, TriangleAlert, UserRound, UserRoundPen, Users } from "@lucide/vue";
 
 import type { FilterDef } from "@/components/filters";
 import type { SavedViewTab } from "@/lib/useSavedViews";
@@ -29,8 +29,19 @@ export function filterDefs(t: T, options: TaskOptions | undefined, branches: Arr
     { key: "overdue", label: t("tasks.filter.overdue"), type: "boolean", icon: TriangleAlert, trueLabel: t("tasks.filter.lateOnly"), falseLabel: t("tasks.filter.notLate") },
     { key: "has_proof", label: t("tasks.col.proof"), type: "boolean", icon: Image, trueLabel: t("tasks.filter.withProof"), falseLabel: t("tasks.filter.withoutProof") },
     { key: "needs_confirmation", label: t("tasks.filter.confirmation"), type: "boolean", icon: ShieldCheck },
+    // "Can't do it", "Need more time" and "Seen" (contracts 7, 8, 10).
+    { key: "blocked", label: t("tasks.filter.blocked"), type: "boolean", icon: Ban, trueLabel: t("tasks.filter.blockedYes"), falseLabel: t("tasks.filter.blockedNo") },
+    { key: "extension", label: t("tasks.filter.extension"), type: "boolean", icon: Hourglass, trueLabel: t("tasks.filter.extensionYes"), falseLabel: t("tasks.filter.extensionNo") },
+    { key: "seen", label: t("tasks.field.seen"), type: "boolean", icon: Eye, trueLabel: t("tasks.filter.seenYes"), falseLabel: t("tasks.filter.seenNo") },
   ];
 }
+
+/** "Can't do it", waiting for an answer. */
+export const BLOCKED_PARAMS: Record<string, string | string[]> = { blocked: "true" };
+/** Assigned work still to do that its person hasn't opened. */
+export const UNSEEN_PARAMS: Record<string, string | string[]> = { seen: "false", kind: ["assigned"], status: ["todo", "returned"] };
+/** Asked for more time, not decided yet. */
+export const EXTENSION_PARAMS: Record<string, string | string[]> = { extension: "true" };
 
 export interface BuiltinView {
   id: string;
@@ -45,9 +56,13 @@ export function builtinViews(today: string): BuiltinView[] {
     { id: "open", params: { status: ["todo", "in_progress", "review", "returned"] }, ordering: "due_at" },
     { id: "late", params: { overdue: "true" }, ordering: "due_at" },
     { id: "review", params: { status: ["review"] }, ordering: "completed_at" },
+    // "Can't do it", waiting for an answer (contract 7).
+    { id: "blocked", params: BLOCKED_PARAMS, ordering: "due_at" },
     { id: "today", params: { due_from: today, due_to: today }, ordering: "due_at" },
     { id: "personal", params: { kind: ["personal"] }, ordering: "due_at", ownerOnly: true },
     { id: "all", params: {}, ordering: "-due_at" },
+    // Given work its person hasn't opened (contract 10).
+    { id: "unseen", params: UNSEEN_PARAMS, ordering: "due_at" },
   ];
 }
 
@@ -61,7 +76,8 @@ export function builtinTabs(t: T, views: BuiltinView[], isOwner: boolean): Saved
  */
 export function asksForRoutines(params: Record<string, string | string[] | undefined>): boolean {
   const list = (value: string | string[] | undefined) => (value === undefined ? [] : Array.isArray(value) ? value : [value]);
-  return list(params.routine).length > 0 || list(params.kind).includes("daily");
+  // "Can't do it" and "more time" need an answer whatever the work: a routine's broken fridge too.
+  return list(params.routine).length > 0 || list(params.kind).includes("daily") || params.blocked === "true" || params.extension === "true";
 }
 
 /** The URL/API params a saved view stores, from whatever shape it was saved in. */

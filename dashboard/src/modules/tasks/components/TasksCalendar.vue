@@ -74,7 +74,7 @@ const legend = computed(() => [
 const day = computed(() => (query.data.value?.days ?? []).find((entry) => entry.date === selected.value) ?? null);
 
 // Opening this month: today's week comes into view (it sits below the fold on a laptop, under
-// weeks already past), once per visit, scrolling no further than needed.
+// weeks already past), once per visit: its week in the middle, the week before above it.
 const host = ref<HTMLElement | null>(null);
 let broughtToday = false;
 watch(
@@ -83,7 +83,7 @@ watch(
     if (broughtToday || !data || currentMode !== "month" || currentMonth !== today.value.slice(0, 7)) return;
     broughtToday = true;
     await nextTick();
-    host.value?.querySelector<HTMLElement>('[aria-current="date"]')?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+    host.value?.querySelector<HTMLElement>('[aria-current="date"]')?.scrollIntoView?.({ block: "center", behavior: "smooth" });
   },
   { immediate: true },
 );
