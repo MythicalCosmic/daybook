@@ -141,7 +141,7 @@ export const messages = defineMessages({
 
     "card.shiftTitle": "Smena {line}",
     "card.offTitle": "Bugun smena yo‘q",
-    "card.startsIn": "{time} dan so‘ng boshlanadi",
+    "card.startsIn": "Boshlanishiga {time} qoldi",
     "card.startsAt": "Smena {time} da boshlanadi",
     "card.startedAt": "Smena {time} da boshlangan. Yetib kelgach, belgilang",
     "card.late": "{time} kechikish",

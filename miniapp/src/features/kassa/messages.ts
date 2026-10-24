@@ -602,7 +602,7 @@ export const messages = defineMessages({
     "moved.deposit": "Kirim",
 
     "received.kicker": "Sizga naqd pul",
-    "received.title": "{amount} ni oldingizmi?",
+    "received.title": "Pulni oldingizmi? {amount}",
     "received.from": "{name} dan · {place} · {ago}",
     "received.yes": "Ha, oldim",
     "received.no": "Olmadim",

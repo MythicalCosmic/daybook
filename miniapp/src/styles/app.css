@@ -1864,3 +1864,497 @@ textarea.input {
     transition-duration: 1ms !important;
   }
 }
+
+/* — task management: priority, quick add, requests, mentions — */
+
+/* Urgency as a word with its flag (never colour alone); high is a quiet flag. */
+.prio {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: none;
+  margin-right: 6px;
+  vertical-align: -2px;
+  font-weight: 700;
+}
+
+.prio--urgent {
+  padding: 1px 7px 1px 6px;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
+.prio--high {
+  color: var(--color-accent-700);
+}
+
+.row-reward {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-right: 6px;
+  vertical-align: -2px;
+  color: var(--color-accent-2-700);
+  font-weight: 700;
+}
+
+.row-meta-text {
+  vertical-align: baseline;
+}
+
+.tag-urgent {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+/* The last hour: a countdown, outlined so it reads apart from late (filled). */
+.tag-soon {
+  background: transparent;
+  color: var(--color-accent-700);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--color-accent) 55%, transparent);
+}
+
+.detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.detail-more {
+  margin-left: auto;
+  width: 40px;
+  height: 40px;
+  margin-top: -6px;
+  margin-bottom: -6px;
+  margin-right: -8px;
+}
+
+.detail-value-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.detail-seen {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-accent-2-700);
+}
+
+.detail-seen--not {
+  color: var(--muted);
+}
+
+/* Steps for someone who can't tick them: a mark, not a box that looks tappable. */
+.check-item--read {
+  cursor: default;
+  color: color-mix(in srgb, var(--color-text) 82%, transparent);
+}
+
+.check-mark {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 0 3px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--color-text) 22%, transparent);
+}
+
+.check-mark--done {
+  background: var(--color-accent-2);
+  color: var(--color-bg);
+  box-shadow: none;
+}
+
+.detail-problem {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 2px 4px 0;
+}
+
+.detail-problem-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.detail-problem-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.detail-problem-actions .btn {
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 15px;
+}
+
+.request-banner {
+  align-items: flex-start;
+}
+
+.request-banner-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.request-banner-title {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.request-banner-note {
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.request-banner-meta {
+  font-size: 13.5px;
+  opacity: 0.85;
+}
+
+.request-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.request-banner-actions .btn {
+  min-height: 42px;
+  padding: 0 14px;
+  font-size: 14.5px;
+}
+
+.request-banner-actions .btn-secondary {
+  background: var(--color-bg);
+  border-color: transparent;
+}
+
+.request-banner-danger {
+  color: var(--color-accent-800);
+}
+
+/* — the (+) sheet — */
+
+.field-count {
+  align-self: flex-end;
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.field-note {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--color-accent-700);
+}
+
+.field .ui-chips + .plus-when {
+  margin-top: 10px;
+}
+
+/* What the typed text was read as (quick add). */
+.qa-read {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: calc(-1 * var(--space-2));
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-100);
+  color: var(--color-accent-900);
+  animation: fade-in 220ms ease;
+}
+
+.qa-read-icon {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.qa-read-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.qa-read-when {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.qa-read-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.qa-read-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.qa-read-title {
+  font-size: 14px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.qa-read-title--missing {
+  font-weight: 700;
+}
+
+.qa-read-undo {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 36px;
+  margin: 2px 0 -4px -10px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-accent-800);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.qa-read-undo:hover {
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+
+.ui-chip--urgent[aria-pressed="true"] {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.plus-more {
+  align-self: flex-start;
+  margin: calc(-1 * var(--space-2)) 0 0 -12px;
+  min-height: 44px;
+  font-size: 15px;
+}
+
+.plus-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.plus-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.plus-step .input {
+  min-height: 48px;
+  font-size: 16px;
+}
+
+.plus-step-remove {
+  width: 44px;
+  height: 44px;
+  flex: none;
+}
+
+.plus-step-add {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 15px;
+}
+
+/* A sheet's own action bar (outside Telegram, where its main button can't stand in) stays in
+   sight at the foot of the sheet however long the form gets. */
+.sheet > .action-bar {
+  position: sticky;
+  bottom: calc(-1 * (var(--bottom-inset) + 32px));
+  margin: auto -22px calc(-1 * (var(--bottom-inset) + 32px));
+  padding: 12px 22px calc(var(--bottom-inset) + 20px);
+}
+
+/* — task sheets: snooze, blockers, the task menu — */
+
+.sheet-options {
+  padding: 2px 16px;
+}
+
+.sheet-option {
+  justify-content: flex-start;
+  text-align: left;
+  min-height: 56px;
+}
+
+.sheet-option:disabled {
+  opacity: 0.6;
+}
+
+.sheet-option-main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.sheet-option-main > svg {
+  flex: none;
+  color: var(--color-accent-700);
+}
+
+.sheet-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.sheet-option-note {
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.sheet-option--danger,
+.sheet-option--danger .sheet-option-main > svg {
+  color: var(--color-accent-800);
+}
+
+.sheet-note {
+  margin: 0;
+  padding: 0 4px;
+  font-size: 15px;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.sheet-note--muted {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* — comments: @ to bring someone in — */
+
+.comment-box {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.comment-at {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin-right: -6px;
+  color: var(--color-accent-700);
+}
+
+.mention-list {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 6px);
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-lg);
+  animation: fade-in 160ms ease;
+}
+
+.mention-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  text-align: left;
+}
+
+.mention-option[aria-selected="true"],
+.mention-option:hover {
+  background: var(--color-surface);
+}
+
+.mention-option-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.mention-option-name {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.mention-option-role {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.mention-empty {
+  padding: 12px 10px;
+  font-size: 14.5px;
+  color: var(--muted);
+}
+
+.comment-hint {
+  padding: 0 6px;
+  font-size: 13.5px;
+  color: var(--color-accent-2-700);
+  font-weight: 600;
+}
+
+/* — no connection — */
+
+.offline-banner {
+  position: absolute;
+  top: calc(var(--top-inset) + 8px);
+  left: 50%;
+  z-index: 25;
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: var(--shadow-md);
+  animation: fade-in 220ms ease;
+}

@@ -11,7 +11,8 @@ import { createContext, useContext, useMemo, useReducer, type ReactNode } from "
  */
 
 export type Tab = "home" | "tasks" | "activity" | "profile";
-export type TasksTab = "daily" | "assigned" | "personal" | "review";
+/** "given": work I gave others (for whoever hands out work). */
+export type TasksTab = "daily" | "assigned" | "personal" | "review" | "given";
 /** The app's own full-screen pages opened from a tab, like the team results. */
 export type Page = "team";
 
@@ -24,6 +25,19 @@ export const CORE = "core";
 export type Sheet =
   | { kind: "complete"; taskId: number }
   | { kind: "return"; taskId: number }
+  /** Reminders later: 15 min, 1 h, or (my own task) tomorrow morning. */
+  | { kind: "snooze"; taskId: number }
+  /** "Can't do it", with a reason. */
+  | { kind: "blocker"; taskId: number }
+  /** "Need more time": ask the giver for a later deadline. */
+  | { kind: "extension"; taskId: number }
+  /** The giver hands blocked work to someone else. */
+  | { kind: "reassign"; taskId: number }
+  /** A new deadline: my own change, or the giver's answer to a blocker (`resolve`). */
+  | { kind: "due"; taskId: number; resolve?: boolean }
+  | { kind: "edit"; taskId: number }
+  /** Edit, reschedule, delete: what `task.actions` allows. */
+  | { kind: "taskMenu"; taskId: number }
   | { kind: "add" }
   | { kind: "language" }
   | { kind: "company" }

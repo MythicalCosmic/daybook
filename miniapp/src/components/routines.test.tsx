@@ -4,7 +4,7 @@
  * together, sent back one by one; one-off tasks on their own below).
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -188,12 +188,35 @@ describe("To check", () => {
     expect(single.querySelector(".routine-check-grid")?.classList.contains("routine-check-grid--one")).toBe(true);
   });
 
-  it("confirms all of a routine's runs in one go and says how it went", async () => {
-    api.mockResolvedValue({ done: 2, failed: 0, results: [{ id: 1, ok: true, error: "" }, { id: 2, ok: true, error: "" }] });
-    renderWith(<ReviewQueue tasks={queue()} loading={false} error={null} onRetry={() => undefined} ctx={ctx()} onOpen={() => undefined} />);
-    fireEvent.click(screen.getByRole("button", { name: "Confirm all (2)" }));
-    await waitFor(() => expect(api).toHaveBeenCalledWith("/companies/1/tasks/confirm/", { json: { ids: [1, 2] } }));
-    expect(await screen.findByText("2 tasks confirmed")).toBeTruthy();
+  it("confirms all of a routine's runs in one go, after a moment to undo it", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      api.mockResolvedValue({ done: 2, failed: 0, results: [{ id: 1, ok: true, error: "" }, { id: 2, ok: true, error: "" }] });
+      renderWith(<ReviewQueue tasks={queue()} loading={false} error={null} onRetry={() => undefined} ctx={ctx()} onOpen={() => undefined} />);
+      fireEvent.click(screen.getByRole("button", { name: "Confirm all (2)" }));
+      // Said at once, with Undo; nothing has gone out yet (the server can't take a confirm back).
+      expect(await screen.findByText("2 tasks confirmed")).toBeTruthy();
+      expect(screen.getByRole("button", { name: "Undo" })).toBeTruthy();
+      expect(api).not.toHaveBeenCalled();
+      await act(() => vi.advanceTimersByTimeAsync(5000));
+      expect(api).toHaveBeenCalledWith("/companies/1/tasks/confirm/", { json: { ids: [1, 2] }, keepalive: true });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("takes Confirm all back with Undo before anything goes out", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      renderWith(<ReviewQueue tasks={queue()} loading={false} error={null} onRetry={() => undefined} ctx={ctx()} onOpen={() => undefined} />);
+      fireEvent.click(screen.getByRole("button", { name: "Confirm all (2)" }));
+      fireEvent.click(await screen.findByRole("button", { name: "Undo" }));
+      expect(await screen.findByText("Not confirmed. It's back in To check.")).toBeTruthy();
+      await act(() => vi.advanceTimersByTimeAsync(6000));
+      expect(api).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("sends one run back with a reason, from its own tile", () => {

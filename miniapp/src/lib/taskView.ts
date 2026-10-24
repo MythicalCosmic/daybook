@@ -2,7 +2,7 @@
 
 import type { Task } from "../api/types";
 import type { Translate } from "../i18n";
-import { clock, dayMonth, daysFromToday, weekdayLong, weekdayShort } from "./time";
+import { clock, dayMonth, dayMonthLong, daysFromToday, weekdayLong, weekdayShort } from "./time";
 
 export type Glyph = "todo" | "late" | "progress" | "review" | "done";
 
@@ -78,29 +78,80 @@ export function rowMeta(task: Task, ctx: ViewContext): string {
       : t("meta.waitingCheck");
   }
   if (task.status === "returned") return t("meta.sentBack");
+  if (task.blocker) return t("meta.blocked", { reason: t(`blocker.reason.${task.blocker.reason_code}`) });
   if (isLate(task, now)) return t("meta.late", { duration: duration(lateBy(task, now), t) });
+  if (task.extension) return t("meta.extension");
   const repeat = repeatLabel(task.repeat_weekdays, ctx);
   if (task.kind === "assigned" && task.created_by) return t("meta.from", { name: task.created_by.name });
   if (task.kind === "daily") return repeat ?? t("meta.daily");
   return repeat ?? t("meta.own");
 }
 
+/** Minutes before the deadline when the time chip turns into a countdown ("25 min left"). */
+export const SOON_MINUTES = 60;
+
+/** Minutes until the deadline of open work due within the hour, else null. */
+export function minutesLeft(task: Task, now: Date): number | null {
+  if (!isOpen(task) || !task.due_at) return null;
+  const left = Math.ceil((+new Date(task.due_at) - +now) / 60_000);
+  return left > 0 && left <= SOON_MINUTES ? left : null;
+}
+
 /**
- * The time chip on the right of a row: today's time, "Tomorrow" or "Yesterday", the weekday
- * within a week either way, and the date further out (a weekday alone would be ambiguous).
+ * The time chip on the right of a row: a countdown inside the last hour, today's time, "Tomorrow"
+ * or "Yesterday", the weekday within a week either way, and the date further out (a weekday alone
+ * would be ambiguous).
  */
 export function rowRight(task: Task, ctx: ViewContext): string {
   if (!task.due_at) return "";
+  const left = minutesLeft(task, ctx.now);
+  if (left !== null) return ctx.t("due.left", { duration: duration(left, ctx.t) });
   const days = daysFromToday(task.due_at, ctx.now, ctx.timeZone);
   if (days === 0) return clock(task.due_at, ctx.timeZone, ctx.locale);
   if (days === 1) return ctx.t("day.tomorrow");
   if (days === -1) return ctx.t("day.yesterday");
-  if (Math.abs(days) < 7) return weekdayShort(task.due_at, ctx.timeZone, ctx.locale);
+  if (Math.abs(days) < 7) return weekday(task.due_at, ctx);
   return dayMonth(task.due_at, ctx.timeZone, ctx.locale);
+}
+
+/** The weekday on a chip: Uzbek spells it out ("Pay" would read as the English word). */
+function weekday(moment: string, ctx: ViewContext): string {
+  return ctx.locale.startsWith("uz")
+    ? capitalise(weekdayLong(moment, ctx.timeZone, ctx.locale))
+    : capitalise(weekdayShort(moment, ctx.timeZone, ctx.locale));
+}
+
+function capitalise(text: string): string {
+  return text.charAt(0).toLocaleUpperCase() + text.slice(1);
+}
+
+/**
+ * A deadline as a value that starts a line: "Bugun, 18:30", "Ertaga, 09:00", then the weekday with
+ * the date ("Payshanba, 29-oktabr, 18:30", "Чт 29 окт., 18:30", "Thu 29 Oct, 18:30"). Inside a
+ * sentence (after a colon) Uzbek and Russian keep the day lowercase: "Muddat: bugun, 18:30".
+ */
+export function formatDue(moment: string, ctx: ViewContext, inSentence = false): string {
+  const time = clock(moment, ctx.timeZone, ctx.locale);
+  const days = daysFromToday(moment, ctx.now, ctx.timeZone);
+  const lower = (text: string) => (inSentence ? text.charAt(0).toLocaleLowerCase() + text.slice(1) : text);
+  if (days === 0) return `${lower(ctx.t("day.today"))}, ${time}`;
+  if (days === 1) return `${lower(ctx.t("day.tomorrow"))}, ${time}`;
+  if (ctx.locale.startsWith("uz")) return `${lower(weekday(moment, ctx))}, ${dayMonthLong(moment, ctx.timeZone, ctx.locale)}, ${time}`;
+  // English weekday names keep their capital in a sentence too.
+  const day = ctx.locale.startsWith("en") ? weekday(moment, ctx) : lower(weekday(moment, ctx));
+  return `${day} ${dayMonth(moment, ctx.timeZone, ctx.locale)}, ${time}`;
 }
 
 export function isDueToday(task: Task, ctx: ViewContext): boolean {
   return task.due_at !== null && daysFromToday(task.due_at, ctx.now, ctx.timeZone) === 0;
+}
+
+/**
+ * Priority as phones show it (R2 T19/T20): "Urgent" with its flag, a quiet flag for high, and
+ * nothing for normal and low (four levels are a dashboard detail).
+ */
+export function priorityLevel(task: Pick<Task, "priority">): "urgent" | "high" | null {
+  return task.priority === "urgent" ? "urgent" : task.priority === "high" ? "high" : null;
 }
 
 export type Group = { key: "attention" | "todo" | "review" | "done"; tasks: Task[] };
@@ -112,7 +163,18 @@ export function byDue(a: Task, b: Task): number {
   return left - right || a.id - b.id;
 }
 
+/**
+ * One order everywhere (R2 T7): late, then sent back, then urgent, then the soonest deadline,
+ * undated work last. The bot's /tasks and the dashboard read work in the same order.
+ */
+export function byFocus(now: Date): (a: Task, b: Task) => number {
+  const rank = (task: Task) => (isLate(task, now) ? 0 : task.status === "returned" ? 1 : 2);
+  const urgency = (task: Task) => (task.priority === "urgent" ? 0 : 1);
+  return (a, b) => rank(a) - rank(b) || urgency(a) - urgency(b) || byDue(a, b);
+}
+
 export function groupTasks(tasks: Task[], now: Date): Group[] {
+  const focus = byFocus(now);
   const groups: Group[] = [
     { key: "attention", tasks: tasks.filter((task) => needsAttention(task, now)) },
     {
@@ -123,6 +185,22 @@ export function groupTasks(tasks: Task[], now: Date): Group[] {
     { key: "done", tasks: tasks.filter((task) => task.status === "done") },
   ];
   return groups
-    .map((group) => ({ ...group, tasks: [...group.tasks].sort(byDue) }))
+    .map((group) => ({ ...group, tasks: [...group.tasks].sort(group.key === "attention" || group.key === "todo" ? focus : byDue) }))
     .filter((group) => group.tasks.length > 0);
+}
+
+/** "09:12" today, "21-okt, 09:12" on another day: when something happened, said briefly. */
+export function shortMoment(moment: string, ctx: ViewContext): string {
+  const time = clock(moment, ctx.timeZone, ctx.locale);
+  return daysFromToday(moment, ctx.now, ctx.timeZone) === 0 ? time : `${dayMonth(moment, ctx.timeZone, ctx.locale)}, ${time}`;
+}
+
+/**
+ * Whether the assignee has opened work someone gave them (R2 T36), as the giver reads it. Null
+ * when there is nothing to say: the backend doesn't send it yet, or the work isn't assigned.
+ */
+export function seenLabel(task: Task, ctx: ViewContext): string | null {
+  if (task.seen_at === undefined || task.kind !== "assigned") return null;
+  if (task.seen_at) return ctx.t("seen.at", { time: shortMoment(task.seen_at, ctx) });
+  return isOpen(task) ? ctx.t("seen.not") : null;
 }

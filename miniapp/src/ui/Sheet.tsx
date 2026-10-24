@@ -1,5 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, type ReactNode } from "react";
 
+import { disableVerticalSwipes } from "../telegram";
 import { useHideNativeButtons } from "./BottomBar";
 
 /**
@@ -29,6 +30,9 @@ export function Sheet({
   close.current = onClose;
   // The page's Telegram buttons step aside while the sheet is open (its own BottomBar shows).
   useHideNativeButtons(true);
+  // A swipe down inside a sheet scrolls it or does nothing: it never minimises the app and loses
+  // what was typed or picked (Telegram 7.7+; audit M-6).
+  useEffect(() => disableVerticalSwipes(), []);
 
   // Name the dialog after the heading its content brings (the content changes while it stays open).
   useLayoutEffect(() => {

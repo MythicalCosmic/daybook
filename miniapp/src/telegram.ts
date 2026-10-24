@@ -85,6 +85,22 @@ export function onThemeChange(callback: () => void): () => void {
   return () => webApp?.offEvent("themeChanged", callback);
 }
 
+/**
+ * The app comes back into view after being minimised or left for the chat (Telegram 8.0
+ * "activated"; elsewhere, the page becoming visible again).
+ */
+export function onActivated(callback: () => void): () => void {
+  if (webApp && supports("8.0")) {
+    webApp.onEvent("activated", callback);
+    return () => webApp.offEvent("activated", callback);
+  }
+  const visible = () => {
+    if (document.visibilityState === "visible") callback();
+  };
+  document.addEventListener("visibilitychange", visible);
+  return () => document.removeEventListener("visibilitychange", visible);
+}
+
 /** Match Telegram's own header and background to the app's ground color. */
 export function paintChrome(color: string): void {
   if (!webApp?.isVersionAtLeast("6.1")) return;
@@ -241,7 +257,7 @@ let swipeLocks = 0;
  * one is released. Needs 7.7+.
  */
 export function disableVerticalSwipes(): () => void {
-  if (!webApp || !supports("7.7")) return () => {};
+  if (!webApp || !supports("7.7") || typeof webApp.disableVerticalSwipes !== "function") return () => {};
   swipeLocks += 1;
   if (swipeLocks === 1) webApp.disableVerticalSwipes();
   let released = false;
@@ -250,6 +266,25 @@ export function disableVerticalSwipes(): () => void {
     released = true;
     swipeLocks -= 1;
     if (swipeLocks === 0) webApp.enableVerticalSwipes();
+  };
+}
+
+let closingLocks = 0;
+
+/**
+ * Ask before Telegram closes the app (6.2+), while something typed or picked would be lost.
+ * Returns the function that stops asking; nested calls stack like `disableVerticalSwipes`.
+ */
+export function confirmClosing(): () => void {
+  if (!webApp || !supports("6.2") || typeof webApp.enableClosingConfirmation !== "function") return () => {};
+  closingLocks += 1;
+  if (closingLocks === 1) webApp.enableClosingConfirmation();
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    closingLocks -= 1;
+    if (closingLocks === 0) webApp.disableClosingConfirmation();
   };
 }
 
@@ -300,6 +335,26 @@ export function scanQr(text?: string): Promise<string | null> {
       webApp.closeScanQrPopup();
       return true;
     });
+  });
+}
+
+export type PopupButton = { id: string; text?: string; type?: "default" | "ok" | "close" | "cancel" | "destructive" };
+
+/**
+ * A question with up to three buttons in Telegram's own dialog (6.2+); resolves with the id of the
+ * button pressed, or null when it was dismissed. Without Telegram, the browser's confirm() stands
+ * in: OK means the first button that isn't a cancel.
+ */
+export function popup(message: string, buttons: PopupButton[], title?: string): Promise<string | null> {
+  return new Promise((resolve) => {
+    if (webApp && supports("6.2") && typeof webApp.showPopup === "function") {
+      // Telegram's typing splits buttons with and without text; ours are checked by the callers.
+      const native = buttons as NonNullable<Parameters<WebApp["showPopup"]>[0]["buttons"]>;
+      webApp.showPopup({ title, message, buttons: native }, (id) => resolve(id || null));
+      return;
+    }
+    const yes = buttons.find((button) => button.type !== "cancel" && button.type !== "close");
+    resolve(window.confirm(message) ? yes?.id ?? null : null);
   });
 }
 

@@ -16,13 +16,22 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
   const act = () => {
     window.clearTimeout(timer.current);
-    toast?.action?.onPress();
+    const press = toast?.action?.onPress;
+    // Closed first, so a toast the action shows ("Back on your list.") is the one that stays.
     setToast(null);
+    press?.();
+  };
+  // A toast with an action stays while a finger or the focus is on it (a screen reader needs the
+  // time to reach Undo), then gives a moment more once it leaves.
+  const hold = () => window.clearTimeout(timer.current);
+  const release = () => {
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => setToast(null), 2500);
   };
   return (
     <ToastContext.Provider value={show}>
       {children}
-      {toast && <ToastView key={toast.id} toast={toast} onAction={act} />}
+      {toast && <ToastView key={toast.id} toast={toast} onAction={act} onHold={hold} onRelease={release} />}
     </ToastContext.Provider>
   );
 }

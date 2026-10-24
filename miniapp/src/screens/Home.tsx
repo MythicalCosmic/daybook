@@ -7,8 +7,8 @@ import { Ring } from "../components/Ring";
 import { RowSkeleton, TaskRow } from "../components/TaskRow";
 import { useCompleteTask } from "../lib/actions";
 import { isFinished, isRoutine, routineProgress } from "../lib/routines";
-import { byDue, isDueToday, isLate, isOpen } from "../lib/taskView";
-import { dayKey, dayMonth, hourIn, longDate } from "../lib/time";
+import { byFocus, isDueToday, isLate, isOpen } from "../lib/taskView";
+import { dayKey, dayMonthLong, hourIn, longDate } from "../lib/time";
 import { useViewContext } from "../lib/useNow";
 import { useNavigation } from "../state/navigation";
 import { useMember } from "../state/session";
@@ -35,10 +35,12 @@ export function Home() {
   const activity = useActivity(member.companyId);
 
   const tasks = board.data ?? [];
-  const late = tasks.filter((task) => isLate(task, ctx.now)).sort(byDue);
+  // Urgent work first, then the soonest deadline: the same order as the lists (R2 T7).
+  const focus = byFocus(ctx.now);
+  const late = tasks.filter((task) => isLate(task, ctx.now)).sort(focus);
   const upNext = tasks
     .filter((task) => isOpen(task) && isDueToday(task, ctx) && !isLate(task, ctx.now))
-    .sort(byDue)
+    .sort(focus)
     .slice(0, 3);
   const news = (activity.data ?? []).filter((item) => !item.is_read).slice(0, 2);
   const hour = hourIn(ctx.now, ctx.timeZone);
@@ -74,7 +76,8 @@ export function Home() {
           body={
             numbers.off_today.until === dayKey(ctx.now, ctx.timeZone)
               ? t("home.offTodayBody")
-              : t("home.offUntil", { date: dayMonth(`${numbers.off_today.until}T12:00:00Z`, "UTC", ctx.locale) })
+              : // The full month: "25-oktabrgacha" reads right, "25-oktgacha" would not.
+                t("home.offUntil", { date: dayMonthLong(`${numbers.off_today.until}T12:00:00Z`, "UTC", ctx.locale) })
           }
           wrap
         />

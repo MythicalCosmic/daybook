@@ -1,19 +1,21 @@
 import { Camera, Check } from "lucide-react";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 
-import { useCreateTask, useRequestTimeOff, useSetLanguage, useTask, useTaskAction } from "../api/hooks";
-import type { Repeat, Task } from "../api/types";
-import { FeatureSlot } from "../features/FeatureSlot";
+import { useRequestTimeOff, useSetLanguage, useTask, useTaskAction } from "../api/hooks";
+import type { Task } from "../api/types";
 import { FeatureSheet } from "../features/hosts";
-import { LANGUAGES, useI18n } from "../i18n";
-import { errorText } from "../lib/actions";
-import { addDays, dayKey, hourIn, zonedInstant } from "../lib/time";
+import { LANGUAGES, translate, useI18n, type Key, type Lang } from "../i18n";
+import { errorText, useDoneToast } from "../lib/actions";
+import { addDays, dayKey } from "../lib/time";
+import { useDraftGuard } from "../lib/useDraftGuard";
 import { useNavigation } from "../state/navigation";
 import { useMember, useSession } from "../state/session";
 import { useToast } from "../state/toast";
 import { haptic } from "../telegram";
 import { Sheet } from "../ui/Sheet";
 import { useObjectUrl } from "../ui/useObjectUrl";
+import { AddSheet } from "./AddSheet";
+import { BlockerSheet, DueSheet, EditSheet, ExtensionSheet, ReassignSheet, SnoozeSheet, TaskMenuSheet } from "./TaskSheets";
 
 export function Sheets() {
   const navigation = useNavigation();
@@ -23,6 +25,13 @@ export function Sheets() {
     <Sheet onClose={navigation.closeSheet}>
       {sheet.kind === "complete" && <CompleteSheet taskId={sheet.taskId} />}
       {sheet.kind === "return" && <ReturnSheet taskId={sheet.taskId} />}
+      {sheet.kind === "snooze" && <SnoozeSheet taskId={sheet.taskId} />}
+      {sheet.kind === "blocker" && <BlockerSheet taskId={sheet.taskId} />}
+      {sheet.kind === "extension" && <ExtensionSheet taskId={sheet.taskId} />}
+      {sheet.kind === "reassign" && <ReassignSheet taskId={sheet.taskId} />}
+      {sheet.kind === "due" && <DueSheet taskId={sheet.taskId} resolve={sheet.resolve} />}
+      {sheet.kind === "edit" && <EditSheet taskId={sheet.taskId} />}
+      {sheet.kind === "taskMenu" && <TaskMenuSheet taskId={sheet.taskId} />}
       {sheet.kind === "add" && <AddSheet />}
       {sheet.kind === "language" && <LanguageSheet />}
       {sheet.kind === "company" && <CompanySheet />}
@@ -44,10 +53,13 @@ function CompleteForm({ task }: { task: Task }) {
   const navigation = useNavigation();
   const action = useTaskAction(member.companyId);
   const toast = useToast();
+  const doneToast = useDoneToast();
   const [photo, setPhoto] = useState<File | null>(null);
-  const [note, setNote] = useState("");
+  // Sent back: the report that went with it is the starting point, not a blank box (audit M-12).
+  const [note, setNote] = useState(task.status === "returned" ? task.proof_text : "");
   const picker = useRef<HTMLInputElement>(null);
   const preview = useObjectUrl(photo);
+  useDraftGuard(Boolean(photo) || note.trim() !== (task.status === "returned" ? task.proof_text.trim() : ""));
 
   const wantsPhoto = task.proof === "photo" || task.proof === "any";
   const missing =
@@ -63,9 +75,9 @@ function CompleteForm({ task }: { task: Task }) {
         onSuccess: (done) => {
           haptic("success");
           navigation.closeSheet();
-          toast(done.status === "review" ? t("toast.sentForCheck") : t("toast.done"));
+          doneToast(done);
         },
-        onError: (error) => toast(errorText(error, t)),
+        onError: (error) => toast(errorText(error, t), { tone: "error" }),
       },
     );
   };
@@ -123,24 +135,37 @@ function CompleteForm({ task }: { task: Task }) {
   );
 }
 
+const RETURN_REASONS = ["photo", "unfinished", "wrong", "other"] as const;
+type ReturnReason = (typeof RETURN_REASONS)[number];
+
+/**
+ * Send it back (R2 T30): a reason in one tap, what to fix in a few words after it. The reason
+ * goes out as text in the reviewer's language: "Фото нечёткое. Переснимите при дневном свете".
+ */
 function ReturnSheet({ taskId }: { taskId: number }) {
   const { t } = useI18n();
   const member = useMember();
   const navigation = useNavigation();
   const action = useTaskAction(member.companyId);
   const toast = useToast();
-  const [reason, setReason] = useState("");
+  const id = useId();
+  const [reason, setReason] = useState<ReturnReason | null>(null);
+  const [note, setNote] = useState("");
+  useDraftGuard(Boolean(reason || note.trim()));
+  const needsNote = reason === null || reason === "other";
+  const text = [reason && reason !== "other" ? t(`return.reason.${reason}`) : "", note.trim()].filter(Boolean).join(". ");
+  const ready = needsNote ? Boolean(note.trim()) : true;
   const submit = () => {
-    if (!reason.trim() || action.isPending) return;
+    if (!ready || !text || action.isPending) return;
     action.mutate(
-      { taskId, action: "return", reason },
+      { taskId, action: "return", reason: text },
       {
         onSuccess: () => {
           haptic();
           navigation.closeSheet();
           toast(t("toast.sentBack"));
         },
-        onError: (error) => toast(errorText(error, t)),
+        onError: (error) => toast(errorText(error, t), { tone: "error" }),
       },
     );
   };
@@ -148,80 +173,32 @@ function ReturnSheet({ taskId }: { taskId: number }) {
     <>
       <div className="heading title-sm">{t("return.title")}</div>
       <div className="field">
-        <label htmlFor="return-reason">{t("return.label")}</label>
-        <textarea id="return-reason" className="input" placeholder={t("return.placeholder")} value={reason} maxLength={2000} onChange={(event) => setReason(event.target.value)} autoFocus />
-      </div>
-      <button className="btn btn-primary btn-lg btn-block" disabled={!reason.trim() || action.isPending} onClick={submit}>
-        {t("return.send")}
-      </button>
-    </>
-  );
-}
-
-const REPEATS: Repeat[] = ["none", "daily", "weekdays", "weekly"];
-
-function AddSheet() {
-  const { t } = useI18n();
-  const member = useMember();
-  const navigation = useNavigation();
-  const create = useCreateTask(member.companyId);
-  const toast = useToast();
-  const now = new Date();
-  const hour = hourIn(now, member.timeZone);
-  // Default to the next full hour today, or tomorrow morning when the day is nearly over.
-  const [day, setDay] = useState<"today" | "tomorrow">(hour < 22 ? "today" : "tomorrow");
-  const [time, setTime] = useState(hour < 22 ? `${String(hour + 1).padStart(2, "0")}:00` : "09:00");
-  const [title, setTitle] = useState("");
-  const [repeat, setRepeat] = useState<Repeat>("none");
-
-  const submit = () => {
-    if (!title.trim() || create.isPending) return;
-    const today = dayKey(now, member.timeZone);
-    const due = zonedInstant(day === "today" ? today : addDays(today, 1), time, member.timeZone);
-    create.mutate(
-      { title: title.trim(), due_at: due.toISOString(), repeat },
-      {
-        onSuccess: () => {
-          haptic("success");
-          navigation.goTo("tasks", "personal");
-          toast(t("toast.added"));
-        },
-        onError: (error) => toast(errorText(error, t)),
-      },
-    );
-  };
-
-  return (
-    <>
-      <FeatureSlot name="plus.actions" />
-      <div className="heading title-sm">{t("add.title")}</div>
-      <div className="field">
-        <label htmlFor="add-title">{t("add.what")}</label>
-        <input id="add-title" className="input" placeholder={t("add.placeholder")} value={title} maxLength={200} onChange={(event) => setTitle(event.target.value)} onKeyDown={(event) => event.key === "Enter" && submit()} />
-      </div>
-      <div className="field">
-        <span className="field-label">{t("add.when")}</span>
-        <div className="plus-when">
-          <div className="seg">
-            {(["today", "tomorrow"] as const).map((option) => (
-              <button key={option} className="seg-opt" aria-pressed={day === option} onClick={() => setDay(option)}>
-                {t(option === "today" ? "day.today" : "day.tomorrow")}
-              </button>
-            ))}
-          </div>
-          <input className="input num" type="time" aria-label={t("add.time")} value={time} onChange={(event) => setTime(event.target.value || time)} />
+        <span className="field-label" id={`${id}-why`}>{t("return.why")}</span>
+        <div className="ui-chips" role="radiogroup" aria-labelledby={`${id}-why`}>
+          {RETURN_REASONS.map((option) => (
+            <button
+              key={option}
+              type="button"
+              className="ui-chip"
+              role="radio"
+              aria-checked={reason === option}
+              aria-pressed={reason === option}
+              onClick={() => {
+                haptic.select();
+                setReason(reason === option ? null : option);
+              }}
+            >
+              <span>{t(`return.reason.${option}`)}</span>
+            </button>
+          ))}
         </div>
       </div>
       <div className="field">
-        <label htmlFor="add-repeat">{t("add.repeat")}</label>
-        <select id="add-repeat" className="input" value={repeat} onChange={(event) => setRepeat(event.target.value as Repeat)}>
-          {REPEATS.map((option) => (
-            <option key={option} value={option}>{t(`add.repeat.${option}`)}</option>
-          ))}
-        </select>
+        <label htmlFor="return-reason">{needsNote ? t("return.label") : t("return.noteOptional")}</label>
+        <textarea id="return-reason" className="input" placeholder={t("return.placeholder")} value={note} maxLength={2000} onChange={(event) => setNote(event.target.value)} />
       </div>
-      <button className="btn btn-primary btn-lg btn-block" disabled={!title.trim() || create.isPending} onClick={submit}>
-        {t("add.submit")}
+      <button className="btn btn-primary btn-lg btn-block" disabled={!ready || !text || action.isPending} onClick={submit}>
+        {t("return.send")}
       </button>
     </>
   );
@@ -290,34 +267,36 @@ function TimeOffSheet() {
   );
 }
 
+/**
+ * The language: the app switches the moment it's tapped, the server saves it and relabels the
+ * bot's chat (menu, commands, keyboard), and the toast says so in the new language.
+ */
 function LanguageSheet() {
   const { t, lang } = useI18n();
   const navigation = useNavigation();
   const setLanguage = useSetLanguage();
   const toast = useToast();
+  const pick = (code: Lang) => {
+    haptic.select();
+    navigation.closeSheet();
+    if (code === lang) return;
+    setLanguage.mutate(code, {
+      onSuccess: () => toast(translate(code, "lang.changed" satisfies Key), { tone: "success" }),
+      onError: (error) => toast(errorText(error, t), { tone: "error" }),
+    });
+  };
   return (
     <>
       <div className="heading title-sm">{t("lang.title")}</div>
       <div role="radiogroup" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {LANGUAGES.map((language) => (
-          <button
-            key={language.code}
-            className="choice"
-            role="radio"
-            aria-checked={lang === language.code}
-            onClick={() => {
-              haptic();
-              setLanguage.mutate(language.code, {
-                onSuccess: navigation.closeSheet,
-                onError: (error) => toast(errorText(error, t)),
-              });
-            }}
-          >
+          <button key={language.code} className="choice" role="radio" aria-checked={lang === language.code} lang={language.code} onClick={() => pick(language.code)}>
             <span>{language.name}</span>
             <span className="dot" />
           </button>
         ))}
       </div>
+      <p className="sheet-note sheet-note--muted">{t("lang.note")}</p>
     </>
   );
 }

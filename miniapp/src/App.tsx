@@ -1,6 +1,8 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { ApiError } from "./api/client";
+import { OfflineBanner } from "./components/OfflineBanner";
 import { useMe, useSummary } from "./api/hooks";
 import { isSuspended } from "./api/membership";
 import type { Membership } from "./api/types";
@@ -23,7 +25,7 @@ import { readScreenLink, resolveScreen, type ScreenLink } from "./state/deeplink
 import { CORE, NavigationProvider, useNavigation, type NavigationInit, type PageRef } from "./state/navigation";
 import { SessionProvider, useMember, useSession } from "./state/session";
 import { ToastProvider } from "./state/toast";
-import { initData, onThemeChange, openedWithoutSignIn, useBackButton } from "./telegram";
+import { initData, onActivated, onThemeChange, openedWithoutSignIn, useBackButton } from "./telegram";
 import { applyTheme, savedThemeMode } from "./theme";
 
 const SPLASH_MS = 900;
@@ -46,10 +48,13 @@ export function App() {
   const me = useMe({ enabled: signedIn });
   // Read once at launch: `?screen=payslip:12` or a startapp parameter picks the first screen.
   const [launch] = useState<ScreenLink | null>(() => readScreenLink());
-  const [splashOver, setSplashOver] = useState(false);
+  // A link from the bot ("📱 Open in app" on a task) goes straight there: no splash to sit through.
+  const [splashOver, setSplashOver] = useState(() => launch !== null);
   useEffect(() => {
+    if (splashOver) return;
     const timer = window.setTimeout(() => setSplashOver(true), SPLASH_MS);
     return () => window.clearTimeout(timer);
+    // Only at launch.
   }, []);
   useEffect(() => onThemeChange(() => applyTheme(savedThemeMode())), []);
   const chosen = me.data?.language;
@@ -65,6 +70,11 @@ export function App() {
   const language = asLang(
     chosen ?? window.Telegram?.WebApp?.initDataUnsafe?.user?.language_code ?? lastLanguage() ?? navigator.language.slice(0, 2),
   );
+  // The page says which language it's in: screen readers, hyphenation and the time picker's
+  // 24-hour clock follow it (audit M-4).
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
   return (
     <I18nProvider lang={language}>
       <div className="app">
@@ -145,14 +155,25 @@ function useStackBackButton() {
   useEffect(() => useBackButton(back), [back]);
 }
 
+/**
+ * Back in the app after a while in the chat (Telegram's "activated"), everything shown is fetched
+ * again: a manager's confirm or return made meanwhile shows at once (audit M-14).
+ */
+function useRefreshOnReturn() {
+  const client = useQueryClient();
+  useEffect(() => onActivated(() => void client.invalidateQueries()), [client]);
+}
+
 function MainApp() {
   const navigation = useNavigation();
   const member = useMember();
   const summary = useSummary(member.companyId);
   useStackBackButton();
+  useRefreshOnReturn();
 
   return (
     <>
+      <OfflineBanner />
       {navigation.tab === "home" && <Home />}
       {navigation.tab === "tasks" && <Tasks />}
       {navigation.tab === "activity" && <ActivityScreen />}

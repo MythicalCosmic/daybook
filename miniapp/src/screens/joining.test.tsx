@@ -230,7 +230,7 @@ describe("opening the app", () => {
     localStorage.setItem("daybook.lang", "uz");
     try {
       await loadApp({ platform: "android", initData: "", sendData: vi.fn(), close: vi.fn() });
-      expect(await screen.findByText("Daybook’ni chatdan oching")).toBeTruthy();
+      expect(await screen.findByText("Daybookni chatdan oching")).toBeTruthy();
       expect(screen.getByRole("button", { name: "Menga tugma yuboring" })).toBeTruthy();
     } finally {
       localStorage.removeItem("daybook.lang");

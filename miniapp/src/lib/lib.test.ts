@@ -192,7 +192,9 @@ describe("Uzbek dates", () => {
 
   it("are spelled out whatever the browser knows", () => {
     expect(dayMonth(moment, "Asia/Tashkent", "uz-Latn-UZ")).toBe("21-okt");
-    expect(longDate(new Date(moment), "Asia/Tashkent", "uz-Latn-UZ")).toBe("chorshanba, 21-oktabr");
+    // It starts a line (Home's subline), so the weekday is capitalised (r3-language §1.6).
+    expect(longDate(new Date(moment), "Asia/Tashkent", "uz-Latn-UZ")).toBe("Chorshanba, 21-oktabr");
+    expect(longDate(new Date(moment), "Asia/Tashkent", "ru-RU")).toBe("Среда, 21 октября");
     expect(weekdayShort(moment, "Asia/Tashkent", "uz-Latn-UZ")).toBe("Chor");
     expect(dayMonth(moment, "UTC", "uz-Latn-UZ")).toBe("20-okt");
   });

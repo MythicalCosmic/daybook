@@ -1,9 +1,12 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { isSuspended } from "../api/membership";
 import type { Me, Membership } from "../api/types";
+import { cloudStorage } from "../telegram";
 
 const STORAGE_KEY = "daybook.company";
+/** The same choice in Telegram's cloud storage: a new phone opens the company used last too. */
+const CLOUD_KEY = "company";
 
 type Session = {
   me: Me;
@@ -44,6 +47,19 @@ function savedCompany(): number | null {
 
 export function SessionProvider({ me, children }: { me: Me; children: ReactNode }) {
   const [preferred, setPreferred] = useState<number | null>(savedCompany);
+  // Nothing remembered on this phone: the company used last on another one, if it's still mine.
+  useEffect(() => {
+    if (preferred !== null || me.memberships.filter((m) => m.status === "approved").length < 2) return;
+    let live = true;
+    void cloudStorage.get(CLOUD_KEY).then((value) => {
+      const id = Number(value);
+      if (live && id > 0 && me.memberships.some((m) => m.company.id === id && m.status === "approved")) setPreferred(id);
+    });
+    return () => {
+      live = false;
+    };
+    // Only at launch: later choices are made here and saved by switchCompany.
+  }, []);
   const value = useMemo<Session>(
     () => ({
       me,
@@ -56,6 +72,7 @@ export function SessionProvider({ me, children }: { me: Me; children: ReactNode 
         } catch {
           // Not remembered across launches, which is fine.
         }
+        void cloudStorage.set(CLOUD_KEY, String(companyId));
       },
     }),
     [me, preferred],
