@@ -19,7 +19,7 @@ import type { BlockerReason, SnoozePreset, Task } from "../api/types";
 import type { Key } from "../i18n";
 import { errorText } from "../lib/actions";
 import { formatDue, type ViewContext } from "../lib/taskView";
-import { addDays, clock, dayKey, zonedInstant } from "../lib/time";
+import { addDays, clock, dayKey, hourIn, zonedInstant } from "../lib/time";
 import { useDraftGuard } from "../lib/useDraftGuard";
 import { useViewContext } from "../lib/useNow";
 import { useNavigation } from "../state/navigation";
@@ -57,8 +57,14 @@ const SNOOZES: { preset: SnoozePreset; label: Key; icon: LucideIcon }[] = [
 ];
 
 /**
+ * Before this hour "tomorrow morning" is the morning ahead, as the server moves it (a night
+ * shift's 03:00 → 09:00 the same day): the button then says "This morning".
+ */
+const ROLLOVER_HOUR = 5;
+
+/**
  * Remind me later (R2 T15): 15 minutes or an hour pause the reminders and say the deadline didn't
- * move; my own task can also move to tomorrow morning.
+ * move; my own task can also move to the coming morning.
  */
 function SnoozeForm({ task }: { task: Task }) {
   const ctx = useViewContext();
@@ -69,6 +75,8 @@ function SnoozeForm({ task }: { task: Task }) {
   const action = useTaskAction(member.companyId);
   const personal = task.kind === "personal";
   const left = task.reminder?.snoozes_left;
+  const night = hourIn(ctx.now, member.timeZone) < ROLLOVER_HOUR;
+  const label = (preset: SnoozePreset, key: Key) => t(preset === "tomorrow_morning" && night ? "snooze.thisMorning" : key);
   const pick = (preset: SnoozePreset) => {
     haptic.select();
     action.mutate(
@@ -86,12 +94,12 @@ function SnoozeForm({ task }: { task: Task }) {
     <>
       <SheetHead kicker={t("snooze.title")} title={task.title} />
       <div className="card list-card sheet-options">
-        {SNOOZES.filter((option) => personal || option.preset !== "tomorrow_morning").map(({ preset, label, icon: Icon }) => (
+        {SNOOZES.filter((option) => personal || option.preset !== "tomorrow_morning").map(({ preset, label: key, icon: Icon }) => (
           <button key={preset} type="button" className="list-item sheet-option" disabled={action.isPending} onClick={() => pick(preset)}>
             <span className="sheet-option-main">
               <Icon size={20} strokeWidth={2.4} aria-hidden />
               <span className="sheet-option-text">
-                <span>{t(label)}</span>
+                <span>{label(preset, key)}</span>
                 {preset === "tomorrow_morning" && <span className="sheet-option-note">{t("snooze.tomorrowNote")}</span>}
               </span>
             </span>
@@ -104,10 +112,13 @@ function SnoozeForm({ task }: { task: Task }) {
   );
 }
 
-/** What the toast says after a snooze: until when, and that the deadline stayed (or moved). */
+/**
+ * What the toast says after a snooze: until when, and that the deadline stayed; or where it moved,
+ * as the server set it ("today, 09:00" when moved at night, never a "tomorrow" it isn't).
+ */
 export function snoozedText(task: Task, preset: SnoozePreset, ctx: ViewContext): string {
   const { t } = ctx;
-  if (preset === "tomorrow_morning" && task.due_at) return t("toast.movedTomorrow", { time: clock(task.due_at, ctx.timeZone, ctx.locale) });
+  if (preset === "tomorrow_morning" && task.due_at) return t("toast.moved", { due: formatDue(task.due_at, ctx, true) });
   const until = task.snoozed_until ?? task.reminder?.snoozed_until ?? null;
   if (!until) return t("toast.snoozedPlain");
   const time = clock(until, ctx.timeZone, ctx.locale);

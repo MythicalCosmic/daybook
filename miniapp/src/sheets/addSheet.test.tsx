@@ -111,6 +111,26 @@ describe("quick add in the (+) sheet", () => {
     await waitFor(() => expect(created()).toEqual([{ title: "Shelf labels", due_at: null, repeat: "none" }]));
   });
 
+  it("says so when the time typed has already passed, and keeps the words as typed", async () => {
+    // "bugun 01:00" at 03:00: the server takes the words out but sets nothing (no past flag).
+    answer({ title: "Dorilarni sanash", due_at: null, due_label: null, priority: null, repeat: null });
+    openSheet();
+    type("Dorilarni sanash bugun 01:00");
+    expect(await screen.findByText("The time you typed has already passed. Choose when it's due.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Today" }).getAttribute("aria-pressed")).toBe("true");
+    add();
+    await waitFor(() => expect(created()[0]).toMatchObject({ title: "Dorilarni sanash bugun 01:00", due_at: "2026-10-21T06:00:00.000Z" }));
+  });
+
+  it("says nothing about the time for a plain title", async () => {
+    answer({ title: "nimadir", due_at: null, due_label: null, priority: null, repeat: null });
+    openSheet();
+    type("nimadir");
+    await waitFor(() => expect(calls("/companies/1/tasks/parse/")).toHaveLength(1));
+    await act(() => vi.advanceTimersByTimeAsync(50));
+    expect(screen.queryByText("The time you typed has already passed. Choose when it's due.")).toBeNull();
+  });
+
   it("asks for the title when the text was only a date", async () => {
     answer({ ...READ, title: "" });
     openSheet();

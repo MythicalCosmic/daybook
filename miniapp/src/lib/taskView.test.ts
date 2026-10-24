@@ -122,7 +122,12 @@ describe("the line under work I gave", () => {
     expect(giverMeta(makeTask({ blocker: { reason_code: "no_stock", note: "", at: NOW.toISOString() } }), ctx)).toBe(
       "Alisher Valiyev · Can't be done: out of stock",
     );
-    expect(giverMeta(makeTask({ status: "review", completed_at: "2026-10-21T09:40:00+05:00" }), ctx)).toBe("Alisher Valiyev · Done at 09:40");
+    expect(giverMeta(makeTask({ status: "review", completed_at: "2026-10-21T09:40:00+05:00" }), ctx)).toBe("Alisher Valiyev · finished 09:40");
+    // Finished on another day: the day is there, and the wording still reads ("готово в 20 окт." didn't).
+    const earlier = makeTask({ status: "review", completed_at: "2026-10-20T20:35:00+05:00" });
+    expect(giverMeta(earlier, ctx)).toBe("Alisher Valiyev · finished 20 Oct, 20:35");
+    expect(giverMeta(earlier, ctxFor("ru"))).toBe("Alisher Valiyev · выполнено: 20 окт., 20:35");
+    expect(giverMeta(earlier, ctxFor("uz"))).toBe("Alisher Valiyev bajardi · 20-okt, 20:35");
     expect(giverMeta(makeTask({ status: "in_progress" }), ctx)).toBe("Alisher Valiyev · In progress");
   });
 });

@@ -6,7 +6,7 @@ import type { QuickAdd, Repeat } from "../api/types";
 import { FeatureSlot } from "../features/FeatureSlot";
 import { useI18n } from "../i18n";
 import { errorText } from "../lib/actions";
-import { quickAddAvailable, readSignature, recognised, useQuickAdd } from "../lib/quickAdd";
+import { quickAddAvailable, readPassed, readSignature, recognised, useQuickAdd } from "../lib/quickAdd";
 import { addDays, clock, dayKey, hourIn, zonedInstant } from "../lib/time";
 import { useDraftGuard } from "../lib/useDraftGuard";
 import { useNavigation } from "../state/navigation";
@@ -58,6 +58,8 @@ export function AddSheet() {
   const quick = useQuickAdd(member.companyId, title);
   const read = applied(quick.result, dismissed);
   const readsDue = Boolean(read?.due_at);
+  // "bugun 01:00" typed at 03:00: nothing is read from it, and the sheet says why.
+  const passed = !quick.stale && readPassed(title, quick.result);
   const people = useMemo(
     () => (members.data ?? []).filter((person) => person.id !== member.id),
     [members.data, member.id],
@@ -181,6 +183,11 @@ export function AddSheet() {
       {!readsDue && (
         <div className="field">
           <span className="field-label" id={`${ids}-when`}>{t("add.when")}</span>
+          {passed && (
+            <span className="field-note" role="status">
+              {t("add.passed")}
+            </span>
+          )}
           <div className="ui-chips" role="group" aria-labelledby={`${ids}-when`}>
             {(["today", "tomorrow", "date", "none"] as const).map((option) => (
               <button

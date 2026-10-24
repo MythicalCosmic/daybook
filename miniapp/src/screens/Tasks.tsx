@@ -200,7 +200,8 @@ const needsGiver = (now: Date) => (task: Task) => Boolean(task.blocker || task.e
 export function giverMeta(task: Task, ctx: ViewContext): string {
   const name = task.assignee.name;
   if (task.status === "review") {
-    return task.completed_at ? `${name} · ${ctx.t("meta.doneAt", { time: shortMoment(task.completed_at, ctx) })}` : `${name} · ${ctx.t("status.review")}`;
+    // As the "To check" rows say it; the day is there when it isn't today ("22 Oct, 20:35").
+    return task.completed_at ? ctx.t("meta.finishedBy", { name, time: shortMoment(task.completed_at, ctx) }) : `${name} · ${ctx.t("status.review")}`;
   }
   if (task.blocker || task.extension || task.status === "returned") return `${name} · ${rowMeta(task, ctx)}`;
   if (isLate(task, ctx.now)) return `${name} · ${ctx.t("meta.late", { duration: duration(lateBy(task, ctx.now), ctx.t) })}`;

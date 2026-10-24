@@ -134,7 +134,7 @@ describe("Given by me", () => {
     const heads = [...document.querySelectorAll(".section-head")].map((head) => head.firstElementChild?.textContent);
     expect(heads).toEqual(["Needs attention", "Waiting for your check", "In progress"]);
     expect(screen.getByText("Madina Saidova · Can't be done: equipment broken")).toBeTruthy();
-    expect(screen.getByText("Alisher Valiyev · Done at 09:40")).toBeTruthy();
+    expect(screen.getByText("Alisher Valiyev · finished 09:40")).toBeTruthy();
     expect(screen.getByText("Madina Saidova · Seen 09:12")).toBeTruthy();
     // Someone's own task never shows as work given.
     expect(screen.queryByText("My own")).toBeNull();

@@ -16,7 +16,7 @@ vi.mock("../api/client", async (importOriginal) => ({ ...(await importOriginal<t
 type Call = [string, { json?: unknown; method?: string } | undefined];
 const sent = (end: string) => (api.mock.calls as Call[]).filter(([path]) => path.endsWith(end)).map(([, options]) => options?.json);
 
-function open(task: Task, sheet: Sheet, options: { members?: unknown[]; manager?: boolean } = {}) {
+function open(task: Task, sheet: Sheet, options: { members?: unknown[]; manager?: boolean; morning?: string } = {}) {
   const me = options.manager ? person([membership({ id: 3, permissions: ["tasks.assign"] })]) : person();
   api.mockImplementation((path: string, request: { json?: Record<string, unknown> } | undefined) => {
     if (path.endsWith("/members/")) return Promise.resolve(options.members ?? []);
@@ -27,7 +27,7 @@ function open(task: Task, sheet: Sheet, options: { members?: unknown[]; manager?
       const preset = request?.json?.preset;
       return Promise.resolve(
         preset === "tomorrow_morning"
-          ? { ...task, due_at: "2026-10-22T09:00:00+05:00" }
+          ? { ...task, due_at: options.morning ?? "2026-10-22T09:00:00+05:00" }
           : { ...task, snoozed_until: preset === "1h" ? "2026-10-21T11:00:00+05:00" : "2026-10-21T10:15:00+05:00" },
       );
     }
@@ -84,10 +84,21 @@ describe("snooze choices (R2 T15)", () => {
   it("can move my own task to tomorrow morning, and says so", async () => {
     const task = makeTask({ kind: "personal", created_by: null, due_at: "2026-10-21T09:30:00+05:00", snoozed_until: null });
     open(task, { kind: "snooze", taskId: task.id });
-    expect(screen.getByText("Moves the deadline to tomorrow morning.")).toBeTruthy();
+    expect(screen.getByText("The deadline moves too.")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Tomorrow 09:00/ }));
     await waitFor(() => expect(sent("/snooze/")).toEqual([{ preset: "tomorrow_morning" }]));
     expect(await screen.findByText("Deadline moved: tomorrow, 09:00.")).toBeTruthy();
+  });
+
+  it("calls it this morning at night, as the server moves it, and never says tomorrow", async () => {
+    // 03:00: the server's "tomorrow morning" is 09:00 the same day (a night shift's coming morning).
+    vi.setSystemTime(new Date("2026-10-21T03:00:00+05:00"));
+    const task = makeTask({ kind: "personal", created_by: null, due_at: "2026-10-21T02:30:00+05:00", snoozed_until: null });
+    open(task, { kind: "snooze", taskId: task.id }, { morning: "2026-10-21T09:00:00+05:00" });
+    expect(screen.queryByRole("button", { name: /Tomorrow 09:00/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /This morning, 09:00/ }));
+    await waitFor(() => expect(sent("/snooze/")).toEqual([{ preset: "tomorrow_morning" }]));
+    expect(await screen.findByText("Deadline moved: today, 09:00.")).toBeTruthy();
   });
 });
 

@@ -42,6 +42,17 @@ export function recognised(result: QuickAdd | null): result is QuickAdd {
   return Boolean(result && (result.due_at || (result.priority && result.priority !== "normal") || result.repeat));
 }
 
+const plain = (text: string) => text.toLocaleLowerCase().replace(/\s+/g, " ").trim();
+
+/**
+ * The server took words out of the title yet set nothing from them: a moment that has already
+ * passed ("bugun 01:00" typed at 03:00, "bugun" after the day's default time). The answer has
+ * no `past` flag, so this is how the sheet can say why no deadline was read.
+ */
+export function readPassed(text: string, result: QuickAdd | null): boolean {
+  return Boolean(result && !recognised(result) && text.trim() && plain(result.title) !== plain(text));
+}
+
 /** What was read, apart from the title: dismissing "Not a date" holds while this stays the same. */
 export function readSignature(result: QuickAdd): string {
   return [result.due_at ?? "", result.priority ?? "", result.repeat ?? ""].join("|");
