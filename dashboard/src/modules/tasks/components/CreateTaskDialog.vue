@@ -3,10 +3,16 @@
  * "New task" (plan §6.2): for people, a position or a branch's staff, one task per person. Due
  * presets, priority, proof, confirmation, a checklist and an optional reward. The footer says how
  * many tasks it makes and who gets them before anything is created.
+ *
+ * Quick add (contract 1): the title is read as it's typed. "Ertaga 15:00 dorilarni sanash !!"
+ * selects "tomorrow (Monday), 15:00" and Urgent, and saves the title as "Dorilarni sanash". The line
+ * under the title says what was understood, with the weekday and the date; "Not a date" keeps the
+ * words in the title. Picking a deadline or a priority by hand wins until the typed words change.
  */
-import { Building2, Camera, UserRound, Users } from "@lucide/vue";
+import { Building2, CalendarClock, Camera, Repeat, Sparkles, UserRound, Users, X } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import { RouterLink } from "vue-router";
 
 import AvatarStack from "@/components/AvatarStack.vue";
 import BranchPicker from "@/components/BranchPicker.vue";
@@ -27,21 +33,24 @@ import { toast } from "@/components/useToast";
 import { addDays, todayIn, zonedNow } from "@/lib/dates";
 import { useCompanyStore } from "@/stores/company";
 
-import { useCreateTasks, useTaskOptions } from "../api";
+import { useCompanyId, useCreateTasks, useTaskOptions } from "../api";
 import { zonedIso } from "../meta";
+import { resultKey, useQuickAdd } from "../quickAdd";
 import type { ProofKind, TaskPriority } from "../types";
 import ChecklistEditor from "./ChecklistEditor.vue";
+import PriorityFlag from "./PriorityFlag.vue";
 
 const open = defineModel<boolean>("open", { default: false });
 const emit = defineEmits<{ created: [ids: number[]] }>();
 
 const { t } = useI18n();
 const company = useCompanyStore();
+const companyId = useCompanyId();
 const options = useTaskOptions();
 const create = useCreateTasks();
 
 type Audience = "people" | "positions" | "branches";
-type DuePreset = "hour" | "today" | "tomorrow_am" | "tomorrow_pm" | "three_days" | "none" | "custom";
+type DuePreset = "parsed" | "hour" | "today" | "tomorrow_am" | "tomorrow_pm" | "three_days" | "none" | "custom";
 
 const title = ref("");
 const description = ref("");
@@ -49,15 +58,38 @@ const audience = ref<Audience>("people");
 const people = ref<number[]>([]);
 const positions = ref<number[]>([]);
 const branches = ref<number[]>([]);
-const due = ref<DuePreset>("tomorrow_am");
+/** A deadline picked by hand; null = what the title says, else tomorrow 09:00. */
+const dueChoice = ref<DuePreset | null>(null);
 const customDay = ref<string | null>(null);
 const customTime = ref<string | null>("18:00");
-const priority = ref<TaskPriority>("normal");
+/** A priority picked by hand; null = what the title says, else normal. */
+const priorityChoice = ref<TaskPriority | null>(null);
 const proof = ref<ProofKind>("none");
 const needsConfirmation = ref(false);
 const checklist = ref<string[]>([]);
 const reward = ref<string | null>(null);
 const showErrors = ref(false);
+
+// Quick add -------------------------------------------------------------------------------------
+const quick = useQuickAdd(title, companyId);
+/** The understanding the person said no to ("Not a date"); a different one shows again. */
+const dismissed = ref<string | null>(null);
+const understood = computed(() => {
+  const result = quick.result.value;
+  return result && resultKey(result) !== dismissed.value ? result : null;
+});
+// New words understood: they win over an earlier pick, as the latest thing the person said.
+watch(
+  () => resultKey(understood.value),
+  (key) => {
+    if (!key || !understood.value) return;
+    if (understood.value.due_at) dueChoice.value = null;
+    if (understood.value.priority) priorityChoice.value = null;
+  },
+);
+function notADate(): void {
+  dismissed.value = resultKey(quick.result.value);
+}
 
 function reset(): void {
   title.value = "";
@@ -66,21 +98,38 @@ function reset(): void {
   people.value = [];
   positions.value = [];
   branches.value = [];
-  due.value = "tomorrow_am";
+  dueChoice.value = null;
   customDay.value = addDays(todayIn(company.timezone), 1);
   customTime.value = "18:00";
-  priority.value = "normal";
+  priorityChoice.value = null;
   proof.value = "none";
   needsConfirmation.value = false;
   checklist.value = [];
   reward.value = null;
   showErrors.value = false;
+  dismissed.value = null;
+  quick.reset();
 }
 watch(open, (value) => value && reset(), { immediate: true });
 // Proof photos are worth a look: asking for a photo suggests confirming it too.
 watch(proof, (value) => {
   if (value === "photo") needsConfirmation.value = true;
 });
+
+const due = computed<DuePreset>({
+  get: () => {
+    // "From the title" picked, then the words deleted: back to the default, never "no deadline".
+    const choice = dueChoice.value === "parsed" && !understood.value?.due_at ? null : dueChoice.value;
+    return choice ?? (understood.value?.due_at ? "parsed" : "tomorrow_am");
+  },
+  set: (value) => (dueChoice.value = value),
+});
+const priority = computed<TaskPriority>({
+  get: () => priorityChoice.value ?? understood.value?.priority ?? "normal",
+  set: (value) => (priorityChoice.value = value),
+});
+/** The title as it will be saved: without the understood words, unless the person said no. */
+const finalTitle = computed(() => (understood.value ? understood.value.title.trim() : title.value.trim()));
 
 const pickerPeople = computed(() =>
   (options.data.value?.people ?? []).map((p) => ({ id: p.id, name: p.name, photo_url: p.photo_url, subtitle: [p.position, p.branch].filter(Boolean).join(" · ") })),
@@ -97,7 +146,9 @@ const recipients = computed(() => {
 
 const hourNow = computed(() => zonedNow(company.timezone).getHours());
 const duePresets = computed(() => {
-  const presets: Array<{ value: DuePreset; label: string }> = [{ value: "hour", label: t("tasks.create.due.hour") }];
+  const presets: Array<{ value: DuePreset; label: string }> = [];
+  if (understood.value?.due_at) presets.push({ value: "parsed", label: understood.value.due_label ?? understood.value.due_at });
+  presets.push({ value: "hour", label: t("tasks.create.due.hour") });
   if (hourNow.value < 17) presets.push({ value: "today", label: t("tasks.create.due.today") });
   presets.push(
     { value: "tomorrow_am", label: t("tasks.create.due.tomorrowAm") },
@@ -112,6 +163,8 @@ const duePresets = computed(() => {
 function dueAt(): string | null {
   const today = todayIn(company.timezone);
   switch (due.value) {
+    case "parsed":
+      return understood.value?.due_at ?? null;
     case "hour":
       return new Date(Date.now() + 60 * 60_000).toISOString();
     case "today":
@@ -129,17 +182,30 @@ function dueAt(): string | null {
   }
 }
 
-const titleError = computed(() => (showErrors.value && !title.value.trim() ? t("tasks.create.titleRequired") : null));
+const titleError = computed(() => {
+  if (!showErrors.value) return null;
+  if (!title.value.trim()) return t("tasks.create.titleRequired");
+  // Only a date was typed ("ertaga 15:00"): the date is understood, the work isn't.
+  if (!finalTitle.value) return t("tasks.quick.titleMissing");
+  return null;
+});
 const whoError = computed(() => (showErrors.value && recipients.value.length === 0 ? t("tasks.create.whoRequired") : null));
 
 const proofOptions = computed(() => (["none", "photo", "text", "any"] as const).map((value) => ({ value, label: t(`tasks.proof.${value}`) })));
 
+/** Saving: reading the title first can take a moment, and a second press mustn't make it twice. */
+const saving = ref(false);
+
 async function submit(): Promise<void> {
+  if (saving.value) return;
   showErrors.value = true;
-  if (!title.value.trim() || recipients.value.length === 0) return;
+  saving.value = true;
   try {
+    // Typed and saved within the pause: read the title first, so its deadline isn't lost.
+    await quick.settle();
+    if (!finalTitle.value || recipients.value.length === 0) return;
     const result = await create.mutateAsync({
-      title: title.value.trim(),
+      title: finalTitle.value,
       description: description.value.trim(),
       due_at: dueAt(),
       priority: priority.value,
@@ -151,11 +217,13 @@ async function submit(): Promise<void> {
       position_ids: audience.value === "positions" ? positions.value : [],
       branch_ids: audience.value === "branches" ? branches.value : [],
     });
-    toast.success(t("tasks.create.done", { n: result.created }, result.created), { description: title.value.trim() });
+    toast.success(t("tasks.create.done", { n: result.created }, result.created), { description: finalTitle.value });
     open.value = false;
     emit("created", result.ids);
   } catch {
     // Field errors and the reason come from the HTTP layer.
+  } finally {
+    saving.value = false;
   }
 }
 </script>
@@ -164,9 +232,39 @@ async function submit(): Promise<void> {
   <UiDialog v-model:open="open" :title="t('tasks.create.title')" :description="t('tasks.create.description')" size="xl">
     <form class="grid gap-x-6 gap-y-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]" @submit.prevent="submit" @keydown.meta.enter.prevent="submit" @keydown.ctrl.enter.prevent="submit">
       <div class="flex min-w-0 flex-col gap-4">
-        <FormField :label="t('tasks.field.title')" :error="titleError" required>
-          <TextInput v-model="title" :maxlength="200" :placeholder="t('tasks.create.titlePlaceholder')" autofocus />
+        <FormField :label="t('tasks.field.title')" :error="titleError" :hint="quick.available.value && !understood ? t('tasks.quick.hint') : undefined" required>
+          <TextInput v-model="title" :maxlength="200" :placeholder="t('tasks.create.titlePlaceholder')" autofocus data-testid="create-title" />
         </FormField>
+        <!-- What the title said: the saved title, the deadline with its weekday and date, urgency. -->
+        <div
+          v-if="understood"
+          class="-mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-[10px] border border-dashed border-line-strong bg-surface-2 px-2.5 py-1.5 text-sm"
+          role="status"
+          :aria-label="t('tasks.quick.understood')"
+          data-testid="quick-add-understood"
+        >
+          <span v-if="understood.title" class="inline-flex min-w-0 items-center gap-1 font-medium text-fg">
+            <Sparkles :size="13" class="shrink-0 text-accent-fg" aria-hidden="true" /><span class="truncate">{{ understood.title }}</span>
+          </span>
+          <span v-if="understood.due_label" class="inline-flex items-center gap-1 text-fg"><CalendarClock :size="13" class="shrink-0 text-muted" aria-hidden="true" />{{ understood.due_label }}</span>
+          <PriorityFlag v-if="understood.priority" :priority="understood.priority" />
+          <span v-if="understood.repeat" class="inline-flex items-center gap-1 text-muted"><Repeat :size="13" aria-hidden="true" />{{ t(`tasks.quick.repeat.${understood.repeat}`) }}</span>
+          <span class="flex-1" />
+          <button
+            type="button"
+            class="pressable inline-flex h-6 items-center gap-1 rounded-full px-2 text-xs font-medium text-muted transition-colors hover:bg-highlight hover:text-fg"
+            :title="t('tasks.quick.notDateHint')"
+            data-testid="quick-add-dismiss"
+            @click="notADate"
+          >
+            <X :size="12" aria-hidden="true" />{{ t("tasks.quick.notDate") }}
+          </button>
+        </div>
+        <!-- Repeating work is a routine, not a one-off task. -->
+        <p v-if="understood?.repeat" class="-mt-2 text-xs text-muted" data-testid="quick-add-repeat">
+          {{ t("tasks.quick.repeatHint") }}
+          <RouterLink :to="`/c/${company.currentId}/routines/all?new=1`" class="font-medium text-accent-fg hover:underline">{{ t("tasks.quick.makeRoutine") }}</RouterLink>
+        </p>
         <FormField :label="t('tasks.field.description')" optional>
           <TextArea v-model="description" :rows="2" :max-rows="6" :placeholder="t('tasks.create.descriptionPlaceholder')" />
         </FormField>
@@ -197,13 +295,15 @@ async function submit(): Promise<void> {
                 :key="preset.value"
                 type="button"
                 :aria-pressed="due === preset.value"
+                :title="preset.value === 'parsed' ? t('tasks.quick.fromTitle') : undefined"
+                :data-testid="preset.value === 'parsed' ? 'due-parsed' : undefined"
                 :class="[
-                  'pressable h-8 rounded-full border px-3 text-sm transition-colors',
+                  'pressable inline-flex h-8 items-center gap-1 rounded-full border px-3 text-sm transition-colors',
                   due === preset.value ? 'border-primary bg-accent-soft font-semibold text-accent-fg' : 'border-line bg-surface text-fg hover:bg-highlight',
                 ]"
                 @click="due = preset.value"
               >
-                {{ preset.label }}
+                <Sparkles v-if="preset.value === 'parsed'" :size="13" class="shrink-0" aria-hidden="true" />{{ preset.label }}
               </button>
             </div>
             <div v-if="due === 'custom'" class="grid grid-cols-[1fr_120px] gap-2 sm:max-w-[360px]">
@@ -247,7 +347,7 @@ async function submit(): Promise<void> {
         <span class="truncate">{{ recipients.length ? t("tasks.create.makes", { n: recipients.length }, recipients.length) : t("tasks.create.nobodyYet") }}</span>
       </div>
       <UiButton variant="ghost" @click="open = false">{{ t("common.cancel") }}</UiButton>
-      <UiButton variant="primary" :icon="proof === 'photo' ? Camera : undefined" :loading="create.isPending.value" kbd="⌘↵" @click="submit">{{ t("tasks.create.submit") }}</UiButton>
+      <UiButton variant="primary" :icon="proof === 'photo' ? Camera : undefined" :loading="saving" kbd="mod+enter" @click="submit">{{ t("tasks.create.submit") }}</UiButton>
     </template>
   </UiDialog>
 </template>

@@ -2,14 +2,19 @@
 /**
  * Waiting for my check (plan §6.2): finished one-off work with large proof photos, oldest first.
  * Routine work is confirmed on its own page (Routines → To confirm), linked from here. `A`
- * accepts the focused card, `R` sends it back (asks why), `J`/`K` move between cards. Accepting
- * waits 5 seconds with "Undo" before it reaches the server, so a slip costs nothing.
+ * accepts the focused card, `R` sends it back (asks why, with ready reasons), `J`/`K` move between
+ * cards. Accepting waits 5 seconds with "Undo" before it reaches the server, so a slip costs nothing.
+ *
+ * Above the queue, what waits for an answer: "Need more time" (Approve / Decline right here,
+ * contract 8) and "Can't do it" (opens the task with its three ways out, contract 7). Work without
+ * a photo gets a compact card below the photo cards instead of an empty picture frame.
  */
-import { Check, ChevronRight, ClipboardCheck, FileText, Repeat, RotateCcw } from "@lucide/vue";
+import { Ban, Check, ChevronRight, ClipboardCheck, FileText, Hourglass, Repeat, RotateCcw, X } from "@lucide/vue";
 import { computed, nextTick, onBeforeUnmount, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
+import { isApiError } from "@/api/http";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import KbdKey from "@/components/KbdKey.vue";
@@ -19,23 +24,28 @@ import RelativeTime from "@/components/RelativeTime.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UiButton from "@/components/UiButton.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
+import { returnReasonFields } from "@/components/returnReasons";
 import { useConfirm } from "@/components/useConfirm";
 import { dismissToast, toast } from "@/components/useToast";
 import { useHotkey } from "@/core/hotkeys";
 import { usePulseCount } from "@/core/pulse";
+import { todayIn, zonedDay } from "@/lib/dates";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
+import { useFormat } from "@/lib/useFormat";
 import { patchQuery } from "@/lib/useRouteState";
 import { useCompanyStore } from "@/stores/company";
 
-import { tasksApi, useRefreshTasks, useReviews } from "../api";
+import { tasksApi, useRefreshTasks, useReviews, useTaskList } from "../api";
 import TaskDrawer from "../components/TaskDrawer.vue";
-import { cardKey } from "../meta";
-import type { TaskReview } from "../types";
+import { BLOCKED_PARAMS, EXTENSION_PARAMS } from "../filters";
+import { cardKey, lateness, minutesBetween } from "../meta";
+import type { TaskReview, TaskRow } from "../types";
 
 const UNDO_MS = 5000;
 
 const { t } = useI18n();
+const fmt = useFormat();
 const router = useRouter();
 const company = useCompanyStore();
 const confirm = useConfirm();
@@ -48,8 +58,43 @@ const query = useReviews();
 const routineChecks = usePulseCount("tasks.routine_review");
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const hidden = ref<Set<number>>(new Set());
-const cards = computed(() => (query.data.value?.results ?? []).filter((task) => !hidden.value.has(task.id)));
+const visible = computed(() => (query.data.value?.results ?? []).filter((task) => !hidden.value.has(task.id)));
+/** Photo cards first (the big pictures to look at), then the compact ones; each oldest first. */
+const photoCards = computed(() => visible.value.filter((task) => !!task.proof_photo));
+const plainCards = computed(() => visible.value.filter((task) => !task.proof_photo));
+/** The cards in the order they stand on the page: what J/K walk through. */
+const cards = computed(() => [...photoCards.value, ...plainCards.value]);
 const total = computed(() => cards.value.length);
+
+// Waiting for an answer ------------------------------------------------------------------------
+// The list needs tasks.view_all: without it (or on a backend without these filters) the queries
+// fail or find nothing, and the section stays away.
+const extensionList = useTaskList({ ...EXTENSION_PARAMS, page_size: 50 });
+const blockedList = useTaskList({ ...BLOCKED_PARAMS, page_size: 50 });
+const answers = computed(() => {
+  const rows: Array<{ kind: "extension" | "blocked"; task: TaskRow }> = [];
+  for (const task of extensionList.data.value?.results ?? []) if (task.extension) rows.push({ kind: "extension", task });
+  for (const task of blockedList.data.value?.results ?? []) if (task.blocker) rows.push({ kind: "blocked", task });
+  return rows;
+});
+/** The asked-for deadline on its button: the time when it's today, else the day too. */
+const untilLabel = (iso: string) => (zonedDay(iso, company.timezone) === todayIn(company.timezone) ? fmt.instant(iso, "time") : fmt.instant(iso, "short"));
+const deciding = ref<Set<string>>(new Set());
+async function decide(task: TaskRow, approve: boolean): Promise<void> {
+  const key = `${task.id}:${approve}`;
+  deciding.value = new Set(deciding.value).add(key);
+  try {
+    await tasksApi.decideExtension(company.currentId!, task.id, approve);
+    toast.success(t(approve ? "tasks.extension.approvedToast" : "tasks.extension.declinedToast"), { description: task.title });
+  } catch {
+    // the HTTP layer showed why
+  } finally {
+    const next = new Set(deciding.value);
+    next.delete(key);
+    deciding.value = next;
+    void refresh();
+  }
+}
 
 const pending = new Map<number, { timer: ReturnType<typeof setTimeout>; toastId: string }>();
 
@@ -63,12 +108,24 @@ function hide(id: number, value: boolean): void {
 async function send(task: TaskReview): Promise<void> {
   pending.delete(task.id);
   try {
-    await tasksApi.confirm(company.currentId!, task.id);
-  } catch {
-    hide(task.id, false); // back in the list; the HTTP layer showed why
-  } finally {
+    await tasksApi.confirm(company.currentId!, task.id, { toast: false });
     void refresh();
+  } catch (error) {
+    // Several people may check the same work (audit X-11): when someone else decided it meanwhile,
+    // it just leaves the queue. Only work still waiting comes back, with the reason it failed.
+    await refresh();
+    if (stillWaiting(task.id)) {
+      hide(task.id, false);
+      toast.error(isApiError(error) && error.detail ? error.detail : t("common.error.generic"), { description: task.title });
+    } else {
+      toast.info(t("tasks.reviews.decidedElsewhere"), { description: task.title });
+    }
   }
+}
+
+/** Whether the queue (as the server has it now) still holds this task. */
+function stillWaiting(id: number): boolean {
+  return (query.data.value?.results ?? []).some((item) => item.id === id);
 }
 
 function accept(task: TaskReview): void {
@@ -98,7 +155,7 @@ async function sendBack(task: TaskReview): Promise<void> {
   const answer = await confirm({
     title: t("tasks.sendBack.title"),
     message: task.title,
-    reason: "required",
+    ...returnReasonFields(t),
     reasonLabel: t("tasks.sendBack.reason"),
     reasonPlaceholder: t("tasks.sendBack.placeholder"),
     confirmLabel: t("tasks.action.return"),
@@ -158,9 +215,20 @@ useHotkey("r", () => {
 useHotkey("j", () => step(1), { description: "tasks.keys.next", group: "page" });
 useHotkey("k", () => step(-1), { description: "tasks.keys.previous", group: "page" });
 
-function open(task: TaskReview): void {
+function open(task: { id: number }): void {
   patchQuery(router, { task: String(task.id) }, true);
 }
+
+/** How late the work came in (R2 T29), or null when it was on time or had no deadline. */
+function lateBy(task: TaskReview): string | null {
+  if (!task.due_at || !task.completed_at) return null;
+  const minutes = minutesBetween(task.due_at, task.completed_at);
+  if (minutes <= 0) return null;
+  return t("tasks.due.lateBy", { time: lateness(minutes, { min: t("tasks.unit.min"), h: t("tasks.unit.h"), d: t("tasks.unit.d") }) });
+}
+
+/** Nothing was reported: fine when nothing was asked, worth a look when a photo or note was. */
+const missing = (task: TaskReview) => (task.proof === "none" ? { text: t("tasks.reviews.noProof"), warn: false } : { text: t("tasks.reviews.noPhoto"), warn: true });
 </script>
 
 <template>
@@ -178,6 +246,41 @@ function open(task: TaskReview): void {
       <RouterLink :to="`/c/${company.currentId}/routines/confirm`" class="inline-flex items-center font-medium text-accent-fg hover:underline">{{ t("tasks.reviews.toRoutines") }}<ChevronRight :size="14" /></RouterLink>
     </p>
 
+    <!-- Waiting for your answer: more time asked, "can't do it". -->
+    <section v-if="answers.length" class="ui-card overflow-hidden" :aria-label="t('tasks.answers.title')" data-testid="answers">
+      <h2 class="flex items-center gap-2 border-b border-line px-4 py-2.5 text-sm font-semibold text-fg">
+        {{ t("tasks.answers.title") }}<span class="rounded-full bg-surface-2 px-1.5 text-xs font-semibold tabular-nums text-muted">{{ answers.length }}</span>
+      </h2>
+      <ul class="divide-y divide-line">
+        <li v-for="item in answers" :key="`${item.kind}:${item.task.id}`" class="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3" :data-answer="item.kind">
+          <span :class="['grid size-8 shrink-0 place-items-center rounded-full', item.kind === 'extension' ? 'bg-warning-soft text-warning' : 'bg-danger-soft text-danger']" aria-hidden="true">
+            <component :is="item.kind === 'extension' ? Hourglass : Ban" :size="15" />
+          </span>
+          <div class="min-w-0 flex-1 basis-[240px]">
+            <button type="button" class="line-clamp-1 text-left text-sm font-semibold text-fg hover:underline" @click="open(item.task)">{{ item.task.title }}</button>
+            <p class="mt-0.5 text-sm text-muted">
+              <span class="font-medium text-fg">{{ item.task.assignee.name }}</span>
+              <template v-if="item.kind === 'extension' && item.task.extension">
+                · {{ t("tasks.extension.until", { time: fmt.instant(item.task.extension.until, "short") }) }}<template v-if="item.task.extension.note"> · {{ t("tasks.quoted", { text: item.task.extension.note }) }}</template>
+              </template>
+              <template v-else-if="item.task.blocker">
+                · {{ t(`tasks.blocker.reason.${item.task.blocker.reason_code}`) }}<template v-if="item.task.blocker.note"> · {{ t("tasks.quoted", { text: item.task.blocker.note }) }}</template>
+              </template>
+            </p>
+          </div>
+          <div class="flex shrink-0 gap-2 max-sm:w-full max-sm:flex-col">
+            <template v-if="item.kind === 'extension' && item.task.extension">
+              <UiButton :size="tap" variant="primary" :icon="Check" class="max-sm:w-full" :loading="deciding.has(`${item.task.id}:true`)" data-testid="answer-approve" @click="decide(item.task, true)">
+                {{ t("tasks.extension.approve", { time: untilLabel(item.task.extension.until) }) }}
+              </UiButton>
+              <UiButton :size="tap" :icon="X" class="max-sm:w-full" :loading="deciding.has(`${item.task.id}:false`)" data-testid="answer-decline" @click="decide(item.task, false)">{{ t("tasks.extension.decline") }}</UiButton>
+            </template>
+            <UiButton v-else :size="tap" :icon-right="ChevronRight" class="max-sm:w-full" @click="open(item.task)">{{ t("tasks.answers.open") }}</UiButton>
+          </div>
+        </li>
+      </ul>
+    </section>
+
     <div v-if="skeleton" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <div v-for="n in 6" :key="n" class="ui-card flex flex-col gap-3 p-3">
         <SkeletonBlock height="220px" radius="10px" />
@@ -191,54 +294,77 @@ function open(task: TaskReview): void {
         <UiButton :to="`/c/${company.currentId}/tasks`" :icon-right="ChevronRight">{{ t("tasks.reviews.toTasks") }}</UiButton>
       </EmptyState>
     </div>
-    <div v-else ref="grid">
-    <TransitionGroup name="list" tag="div" class="relative grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      <article
-        v-for="task in cards"
-        :key="task.id"
-        data-review-card
-        tabindex="0"
-        class="ui-card group/card flex min-w-0 flex-col overflow-hidden outline-offset-2 transition-[border-color,box-shadow] hover:border-line-strong focus-visible:border-primary focus-visible:shadow-raised"
-        @focus="focusedId = task.id"
-      >
-        <div :class="['relative w-full overflow-hidden bg-surface-2', task.proof_photo ? 'aspect-[4/3]' : 'h-32 sm:h-auto sm:aspect-[4/3]']">
-          <ProofThumb v-if="task.proof_photo" :src="task.proof_photo" :images="[{ src: task.proof_photo, caption: task.title }]" size="fill" class="!rounded-none" />
-          <!-- No photo: what was reported, else what was asked, so the card still says something. -->
-          <div v-else class="flex h-full flex-col justify-center gap-2 p-5">
-            <template v-if="task.proof_text">
-              <FileText :size="18" class="text-subtle" aria-hidden="true" />
-              <p class="line-clamp-5 text-sm text-fg">“{{ task.proof_text }}”</p>
-            </template>
-            <template v-else-if="task.description">
-              <p class="text-[11px] font-semibold uppercase tracking-[0.05em] text-subtle">{{ t("tasks.reviews.asked") }}</p>
-              <p class="line-clamp-5 whitespace-pre-line text-sm text-muted">{{ task.description }}</p>
-            </template>
-            <p v-else class="flex flex-col items-center gap-2 text-center text-sm text-muted">
-              <FileText :size="22" class="text-subtle" aria-hidden="true" />{{ task.proof === "none" ? t("tasks.reviews.noProof") : t("tasks.reviews.noPhoto") }}
+    <div v-else ref="grid" class="flex flex-col gap-4">
+      <h2 v-if="photoCards.length && plainCards.length" class="-mb-1 text-sm font-semibold text-muted">{{ t("tasks.reviews.withPhoto") }} · {{ photoCards.length }}</h2>
+      <TransitionGroup v-if="photoCards.length" name="list" tag="div" class="relative grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <article
+          v-for="task in photoCards"
+          :key="task.id"
+          data-review-card
+          tabindex="0"
+          class="ui-card group/card flex min-w-0 flex-col overflow-hidden outline-offset-2 transition-[border-color,box-shadow] hover:border-line-strong focus-visible:border-primary focus-visible:shadow-raised"
+          @focus="focusedId = task.id"
+        >
+          <div class="relative aspect-[4/3] w-full overflow-hidden bg-surface-2">
+            <ProofThumb :src="task.proof_photo!" :images="[{ src: task.proof_photo!, caption: task.title }]" size="fill" class="!rounded-none" />
+            <span v-if="task.reward" class="absolute left-2 top-2 rounded-full bg-surface/90 px-2 py-0.5 text-xs font-semibold text-success shadow-xs">{{ t("tasks.reward.short") }}</span>
+          </div>
+          <div class="flex flex-1 flex-col gap-2 p-3.5">
+            <button type="button" class="line-clamp-2 text-left text-base font-semibold leading-5 text-fg hover:underline" :title="task.project?.name" @click="open(task)">
+              <span v-if="task.project" class="mr-1 font-mono text-xs font-semibold text-subtle">{{ cardKey(task.project) }}</span>{{ task.title }}
+            </button>
+            <div class="flex min-w-0 items-center gap-2 text-sm text-muted">
+              <UserAvatar :name="task.assignee.name" :src="task.assignee.photo_url" :size="22" />
+              <span class="min-w-0 truncate"><span class="font-medium text-fg">{{ task.assignee.name }}</span><template v-if="task.branch"> · {{ task.branch.name }}</template></span>
+              <span class="flex-1" />
+              <span class="flex shrink-0 items-center gap-1 text-xs"><RelativeTime :value="task.completed_at" /><span v-if="lateBy(task)" class="font-semibold text-danger" data-testid="late-by">· {{ lateBy(task) }}</span></span>
+            </div>
+            <p v-if="task.checklist.total" class="text-xs text-muted">{{ t("tasks.reviews.checklist", { done: task.checklist.done, total: task.checklist.total }) }}</p>
+            <p v-if="task.proof_text" class="line-clamp-2 rounded-[8px] bg-surface-2 px-2.5 py-1.5 text-sm text-fg">{{ task.proof_text }}</p>
+            <div class="mt-auto flex gap-2 pt-1">
+              <UiButton variant="primary" :size="tap" :icon="Check" class="flex-1" @click="accept(task)">{{ t("tasks.action.confirm") }}</UiButton>
+              <UiButton :size="tap" :icon="RotateCcw" class="flex-1" @click="sendBack(task)">{{ t("tasks.action.return") }}</UiButton>
+            </div>
+          </div>
+        </article>
+      </TransitionGroup>
+
+      <!-- No photo: what was reported (else what was asked), on a compact card. -->
+      <h2 v-if="photoCards.length && plainCards.length" class="-mb-1 mt-2 text-sm font-semibold text-muted">{{ t("tasks.reviews.withoutPhoto") }} · {{ plainCards.length }}</h2>
+      <TransitionGroup v-if="plainCards.length" name="list" tag="div" class="relative grid gap-3 xl:grid-cols-2">
+        <article
+          v-for="task in plainCards"
+          :key="task.id"
+          data-review-card
+          data-compact
+          tabindex="0"
+          class="ui-card flex min-w-0 flex-col gap-3 p-3.5 outline-offset-2 transition-[border-color,box-shadow] hover:border-line-strong focus-visible:border-primary focus-visible:shadow-raised sm:flex-row sm:items-center"
+          @focus="focusedId = task.id"
+        >
+          <div class="flex min-w-0 flex-1 flex-col gap-1.5">
+            <button type="button" class="line-clamp-2 text-left text-base font-semibold leading-5 text-fg hover:underline" :title="task.project?.name" @click="open(task)">
+              <span v-if="task.project" class="mr-1 font-mono text-xs font-semibold text-subtle">{{ cardKey(task.project) }}</span>{{ task.title }}
+            </button>
+            <div class="flex min-w-0 items-center gap-2 text-sm text-muted">
+              <UserAvatar :name="task.assignee.name" :src="task.assignee.photo_url" :size="20" />
+              <span class="min-w-0"><span class="font-medium text-fg">{{ task.assignee.name }}</span><template v-if="task.branch"> · {{ task.branch.name }}</template> · <RelativeTime :value="task.completed_at" /><span v-if="lateBy(task)" class="font-semibold text-danger" data-testid="late-by"> · {{ lateBy(task) }}</span></span>
+            </div>
+            <blockquote v-if="task.proof_text" class="line-clamp-3 rounded-[8px] border-l-[3px] border-primary bg-surface-2 px-2.5 py-1.5 text-sm text-fg">{{ task.proof_text }}</blockquote>
+            <p v-else-if="task.description" class="line-clamp-2 text-sm text-muted">
+              <span class="text-xs font-semibold uppercase tracking-[0.05em] text-subtle">{{ t("tasks.reviews.asked") }}:</span> {{ task.description }}
             </p>
-            <p v-if="(task.proof_text || task.description) && !task.proof_photo" class="mt-auto text-xs text-subtle">{{ task.proof === "none" ? t("tasks.reviews.noProof") : t("tasks.reviews.noPhoto") }}</p>
+            <p class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+              <span v-if="!task.proof_text" :class="['inline-flex items-center gap-1', missing(task).warn ? 'font-medium text-warning' : 'text-subtle']"><FileText :size="12" aria-hidden="true" />{{ missing(task).text }}</span>
+              <span v-if="task.checklist.total" class="text-muted">{{ t("tasks.reviews.checklist", { done: task.checklist.done, total: task.checklist.total }) }}</span>
+              <span v-if="task.reward" class="font-semibold text-success">{{ t("tasks.reward.short") }}</span>
+            </p>
           </div>
-          <span v-if="task.reward" class="absolute left-2 top-2 rounded-full bg-surface/90 px-2 py-0.5 text-xs font-semibold text-success shadow-xs">{{ t("tasks.reward.short") }}</span>
-        </div>
-        <div class="flex flex-1 flex-col gap-2 p-3.5">
-          <button type="button" class="line-clamp-2 text-left text-base font-semibold leading-5 text-fg hover:underline" :title="task.project?.name" @click="open(task)">
-            <span v-if="task.project" class="mr-1 font-mono text-xs font-semibold text-subtle">{{ cardKey(task.project) }}</span>{{ task.title }}
-          </button>
-          <div class="flex min-w-0 items-center gap-2 text-sm text-muted">
-            <UserAvatar :name="task.assignee.name" :src="task.assignee.photo_url" :size="22" />
-            <span class="min-w-0 truncate"><span class="font-medium text-fg">{{ task.assignee.name }}</span><template v-if="task.branch"> · {{ task.branch.name }}</template></span>
-            <span class="flex-1" />
-            <RelativeTime :value="task.completed_at" class="shrink-0 text-xs" />
-          </div>
-          <p v-if="task.checklist.total" class="text-xs text-muted">{{ t("tasks.reviews.checklist", { done: task.checklist.done, total: task.checklist.total }) }}</p>
-          <p v-if="task.proof_photo && task.proof_text" class="line-clamp-2 rounded-[8px] bg-surface-2 px-2.5 py-1.5 text-sm text-fg">{{ task.proof_text }}</p>
-          <div class="mt-auto flex gap-2 pt-1">
+          <div class="flex shrink-0 gap-2 sm:w-[260px]">
             <UiButton variant="primary" :size="tap" :icon="Check" class="flex-1" @click="accept(task)">{{ t("tasks.action.confirm") }}</UiButton>
             <UiButton :size="tap" :icon="RotateCcw" class="flex-1" @click="sendBack(task)">{{ t("tasks.action.return") }}</UiButton>
           </div>
-        </div>
-      </article>
-    </TransitionGroup>
+        </article>
+      </TransitionGroup>
     </div>
 
     <TaskDrawer />

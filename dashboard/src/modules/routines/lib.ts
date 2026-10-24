@@ -10,7 +10,7 @@ import type { Component } from "vue";
 import type { StatusTone } from "@/components/StatusPill.vue";
 import { addDays, diffDays, parseDay, todayIn, zonedDay } from "@/lib/dates";
 
-import type { RoutineRun, RunState } from "./types";
+import type { RoutineRun, RoutineStats, RunState } from "./types";
 
 type T = (key: string, params?: Record<string, unknown>, plural?: number) => string;
 
@@ -49,6 +49,22 @@ export function share(part: number, whole: number): number | null {
   if (part < whole) value = Math.min(value, 99);
   if (part > 0) value = Math.max(value, 1);
   return value;
+}
+
+/**
+ * A routine's last 30 days as Team results reads people: the share done on time is the headline
+ * (late runs count as done, so "done" alone stays green for a delivery that's late every other day),
+ * with how many were late and how many never done. Null when nothing was due.
+ */
+export function onTimeShare(stats: RoutineStats | null): { percent: number; late: number; missed: number; made: number; onTime: number } | null {
+  if (!stats || !stats.made_30d) return null;
+  return {
+    percent: (100 * stats.on_time_30d) / stats.made_30d,
+    late: Math.max(0, stats.done_30d - stats.on_time_30d),
+    missed: Math.max(0, stats.made_30d - stats.done_30d),
+    made: stats.made_30d,
+    onTime: stats.on_time_30d,
+  };
 }
 
 /** A percent with decimals shown whole by the same rule: 99.6 reads 99, 0.3 reads 1. */

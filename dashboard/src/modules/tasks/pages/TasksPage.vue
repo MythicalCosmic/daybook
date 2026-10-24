@@ -7,11 +7,12 @@
  * the list. Saved views as tabs, filter chips in the URL, the drawer (`?task=`) and "New task"
  * (`N`). Other modules add tools through `tasks.toolbar`.
  */
-import { CalendarDays, Columns3, Plus, Repeat, Rows3 } from "@lucide/vue";
-import { computed, onMounted, ref, watch } from "vue";
+import { Ban, CalendarDays, Columns3, Hourglass, ListFilter, Plus, Repeat, Rows3, Search } from "@lucide/vue";
+import { computed, onMounted, ref, watch, type Component } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRoute, useRouter } from "vue-router";
+import { RouterLink, useRoute, useRouter } from "vue-router";
 
+import BottomSheet from "@/components/BottomSheet.vue";
 import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import FilterBar from "@/components/FilterBar.vue";
 import { useUrlFilters } from "@/components/filters";
@@ -20,6 +21,8 @@ import PageHeader from "@/components/PageHeader.vue";
 import SavedViewsTabs from "@/components/SavedViewsTabs.vue";
 import { useScopedBranches } from "@/components/pickers";
 import SegmentedControl from "@/components/SegmentedControl.vue";
+import TextInput from "@/components/TextInput.vue";
+import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import UiButton from "@/components/UiButton.vue";
 import { useDataTable } from "@/components/useDataTable";
 import { useHotkey } from "@/core/hotkeys";
@@ -30,13 +33,14 @@ import { patchQuery, rs, useRouteState } from "@/lib/useRouteState";
 import { paramsDiffer, useSavedViews } from "@/lib/useSavedViews";
 import { useCompanyStore } from "@/stores/company";
 
-import { useSummary, useTaskOptions } from "../api";
+import { useReviews, useSummary, useTaskCount, useTaskOptions } from "../api";
 import CreateTaskDialog from "../components/CreateTaskDialog.vue";
 import TaskDrawer from "../components/TaskDrawer.vue";
 import TasksBoard from "../components/TasksBoard.vue";
 import TasksCalendar from "../components/TasksCalendar.vue";
 import TasksTable from "../components/TasksTable.vue";
-import { asksForRoutines, builtinTabs, builtinViews, filterDefs, viewParams } from "../filters";
+import { asksForRoutines, BLOCKED_PARAMS, builtinTabs, builtinViews, EXTENSION_PARAMS, filterDefs, viewParams } from "../filters";
+import { lateness, minutesBetween } from "../meta";
 import type { TaskRow, TaskView } from "../types";
 
 const { t } = useI18n();
@@ -65,8 +69,10 @@ const params = computed<Record<string, string | string[]>>(() => {
   return routinesAsked.value ? base : { ...base, routines: "without" };
 });
 const filtered = computed(() => filters.active.value > 0 || !!search.value);
+/** Phones: the filter chips open in a sheet. */
+const filtersOpen = ref(false);
 
-const table = useDataTable({ id: "tasks.list", ordering: "due_at", url: true, hidden: ["routine", "created_by", "reward", "completed_at"] });
+const table = useDataTable({ id: "tasks.list", ordering: "due_at", url: true, hidden: ["routine", "created_by", "reward", "completed_at", "seen_at"] });
 
 // Saved views ---------------------------------------------------------------------------------
 const builtins = computed(() => builtinViews(today.value));
@@ -118,6 +124,15 @@ onMounted(() => {
   if (!hasAny) patchQuery(router, builtins.value[0]!.params);
 });
 
+// How long the oldest one-off work has waited for a check (R2 T32): the queue is oldest first.
+const reviews = useReviews();
+const reviewHint = computed(() => {
+  const oldest = reviews.data.value?.results[0]?.completed_at;
+  if (routinesAsked.value || !oldest) return null;
+  const words = { min: t("tasks.unit.min"), h: t("tasks.unit.h"), d: t("tasks.unit.d") };
+  return t("tasks.kpi.reviewOldest", { time: lateness(minutesBetween(oldest, new Date()), words) });
+});
+
 // KPIs: the same work as the list (one-off tasks, or with routine work when it's asked for) -----
 const summary = useSummary(computed(() => (routinesAsked.value ? {} : { routines: "without" })));
 const kpis = computed(() => {
@@ -134,7 +149,7 @@ const kpis = computed(() => {
     },
     // The late list counts the same work as the number: with routine work when it's in.
     { id: "late", label: t("tasks.kpi.lateNow"), value: data?.late_now ?? null, to: `/c/${cid}/tasks?sv=late&overdue=true${withRoutines.value ? "&routines=1" : ""}`, hint: t(`tasks.kpi.lateNowHint${counts}`) },
-    { id: "review", label: t("tasks.kpi.review"), value: data?.review ?? null, to: `/c/${cid}/tasks/reviews`, hint: t(`tasks.kpi.reviewHint${counts}`) },
+    { id: "review", label: t("tasks.kpi.review"), value: data?.review ?? null, to: `/c/${cid}/tasks/reviews`, hint: reviewHint.value ?? t(`tasks.kpi.reviewHint${counts}`) },
     {
       id: "on_time",
       label: t("tasks.kpi.onTime"),
@@ -147,6 +162,20 @@ const kpis = computed(() => {
       spark: (data?.series ?? []).filter((point) => point.date !== data?.today).map((point) => point.on_time_percent),
     },
   ];
+});
+
+// What waits for an answer now: "can't do it" and more time asked (answered on the reviews page).
+// Each chip appears only with something in it, on a backend that knows it. (Given work nobody
+// opened is a view, not a chip: everything from before "seen" existed would count.)
+const blockedCount = useTaskCount(BLOCKED_PARAMS, (row) => !!row.blocker);
+const extensionCount = useTaskCount(EXTENSION_PARAMS, (row) => !!row.extension);
+const attention = computed(() => {
+  const items: Array<{ id: string; label: string; icon: Component; tone: string; view?: string; to?: string }> = [];
+  const blocked = blockedCount.data.value ?? 0;
+  const extension = extensionCount.data.value ?? 0;
+  if (blocked) items.push({ id: "blocked", label: t("tasks.attention.blocked", { n: blocked }), icon: Ban, tone: "bg-danger-soft text-danger", view: "blocked" });
+  if (extension) items.push({ id: "extension", label: t("tasks.attention.extension", { n: extension }), icon: Hourglass, tone: "bg-warning-soft text-warning", to: `/c/${company.currentId}/tasks/reviews` });
+  return items;
 });
 
 // Drawer and creating --------------------------------------------------------------------------
@@ -184,15 +213,31 @@ const viewOptions = computed(() => [
 
 <template>
   <div class="flex min-w-0 flex-col gap-5">
-    <PageHeader :title="t('tasks.title')" :description="t('tasks.description')">
+    <PageHeader :title="t('tasks.title')" :description="isPhone ? undefined : t('tasks.description')">
       <template #actions>
         <ExtensionSlot name="tasks.toolbar" as="none" :context="{ companyId: company.currentId, filters: params }" />
         <UiButton v-if="can('tasks.assign')" variant="primary" :icon="Plus" kbd="N" @click="createOpen = true">{{ t("tasks.create.button") }}</UiButton>
       </template>
     </PageHeader>
 
-    <!-- Phones: two tight numbers per row, so the list starts on the first screen (as on Routines). -->
-    <KpiStrip :items="kpis" :loading="summary.isPending.value" :columns="4" phone="compact" />
+    <!-- Phones: the four numbers on one short row, so the list starts on the first screen. -->
+    <KpiStrip :items="kpis" :loading="summary.isPending.value" :columns="4" phone="line" />
+
+    <!-- What needs an answer now (R2 §3.19): only what has something in it. -->
+    <div v-if="attention.length" class="-mt-1 flex items-center gap-2 max-sm:-mx-4 max-sm:overflow-x-auto max-sm:px-4 sm:flex-wrap [scrollbar-width:none]" data-testid="attention">
+      <component
+        :is="item.to ? RouterLink : 'button'"
+        v-for="item in attention"
+        :key="item.id"
+        :to="item.to"
+        :type="item.to ? undefined : 'button'"
+        :class="['pressable inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-sm font-semibold transition-[filter] hover:brightness-95 dark:hover:brightness-125', item.tone]"
+        :data-attention="item.id"
+        @click="item.view && applyView(item.view)"
+      >
+        <component :is="item.icon" :size="14" aria-hidden="true" />{{ item.label }}
+      </component>
+    </div>
 
     <div class="flex min-w-0 flex-col gap-3">
       <SavedViewsTabs
@@ -206,22 +251,38 @@ const viewOptions = computed(() => [
         @delete="(target) => (saved.remove.mutate(Number(target.id)), applyView('open'))"
       />
       <div class="flex min-w-0 flex-wrap items-start gap-2">
-        <FilterBar v-model="filters.values.value" v-model:search="search" class="min-w-0 flex-1 max-xl:basis-full" :defs="defs" searchable :search-placeholder="t('tasks.searchPlaceholder')" />
-        <button
-          type="button"
-          :aria-pressed="routinesAsked"
-          :title="t('tasks.filter.includeRoutinesHint')"
-          :class="[
-            'pressable inline-flex h-8 shrink-0 items-center gap-1.5 rounded-button border px-2.5 text-sm font-medium transition-colors',
-            routinesAsked ? 'border-transparent bg-accent-soft text-accent-fg' : 'border-dashed border-line-strong bg-surface text-muted hover:bg-highlight hover:text-fg',
-          ]"
-          data-testid="include-routines"
-          @click="withRoutines = !withRoutines"
-        >
-          <Repeat :size="14" aria-hidden="true" />{{ t("tasks.filter.includeRoutines") }}
-        </button>
+        <template v-if="!isPhone">
+          <FilterBar v-model="filters.values.value" v-model:search="search" class="min-w-0 flex-1 max-xl:basis-full" :defs="defs" searchable :search-placeholder="t('tasks.searchPlaceholder')" />
+          <button
+            type="button"
+            :aria-pressed="routinesAsked"
+            :title="t('tasks.filter.includeRoutinesHint')"
+            :class="[
+              'pressable inline-flex h-8 shrink-0 items-center gap-1.5 rounded-button border px-2.5 text-sm font-medium transition-colors',
+              routinesAsked ? 'border-transparent bg-accent-soft text-accent-fg' : 'border-dashed border-line-strong bg-surface text-muted hover:bg-highlight hover:text-fg',
+            ]"
+            data-testid="include-routines"
+            @click="withRoutines = !withRoutines"
+          >
+            <Repeat :size="14" aria-hidden="true" />{{ t("tasks.filter.includeRoutines") }}
+          </button>
+        </template>
+        <!-- Phones: search, one Filters button (the chips live in a sheet), the view switch. -->
+        <template v-else>
+          <TextInput v-model="search" :icon="Search" clearable :placeholder="t('tasks.searchPlaceholder')" class="min-w-0 flex-1" />
+          <UiButton :icon="ListFilter" :aria-label="t('tasks.filters.title')" data-testid="phone-filters" @click="filtersOpen = true">
+            <span v-if="filters.active.value + (routinesAsked ? 1 : 0)" class="tabular-nums">{{ filters.active.value + (routinesAsked ? 1 : 0) }}</span>
+          </UiButton>
+        </template>
         <SegmentedControl v-model="view" :options="viewOptions" :aria-label="t('tasks.view.label')" />
       </div>
+      <BottomSheet v-if="isPhone" v-model:open="filtersOpen" :title="t('tasks.filters.title')">
+        <div class="flex flex-col gap-4 pb-2">
+          <FilterBar v-model="filters.values.value" :defs="defs" />
+          <ToggleSwitch v-model="withRoutines" layout="row" :label="t('tasks.filter.includeRoutines')" :description="t('tasks.filter.includeRoutinesHint')" />
+          <UiButton variant="primary" block @click="filtersOpen = false">{{ t("common.filter.done") }}</UiButton>
+        </div>
+      </BottomSheet>
 
       <TasksTable v-if="view === 'table'" :state="table" :params="params" :filtered="filtered" :active-id="openId" @open="open" @clear-filters="filters.clear(), (search = '')" @include-routines="withRoutines = true" />
       <TasksBoard v-else-if="view === 'board'" :params="params" @open="open" />

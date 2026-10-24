@@ -14,7 +14,7 @@ import { formatRoutineAudit, routineFieldLabels } from "../audit";
 import RoutineEditor from "../components/RoutineEditor.vue";
 import en from "../i18n/en.json";
 import module from "../index";
-import { afterSave, madeLateNote, missesToday, nextRunOf, runDayWords, runLabel, share, wholePercent, type RunWords } from "../lib";
+import { afterSave, madeLateNote, missesToday, nextRunOf, onTimeShare, runDayWords, runLabel, share, wholePercent, type RunWords } from "../lib";
 import type { Routine } from "../types";
 
 interface Call {
@@ -177,6 +177,28 @@ describe("RoutinesPage", () => {
     await flushPromises();
     expect(wrapper.text()).toContain("Every day");
     expect(wrapper.findAll(`svg[aria-label="${en["routines.sparkLabel"]}"] path[stroke]`)).toHaveLength(1);
+    wrapper.unmount();
+  });
+
+  it("leads with the on-time share, not done (late runs count as done), and says how many were late", async () => {
+    // A delivery done every day but late on 10 of 26: "100% done" hid it (audit D-2).
+    const late = routine({ id: 3, title: "Receive the delivery", stats: { made_30d: 26, done_30d: 26, on_time_30d: 16, completion_30d: 100, spark: Array(14).fill(100) } });
+    stub({ "GET routines/": () => json([late]), "GET tasks/options/": () => json(options) });
+    const app = await testApp("/c/1/routines/all");
+    for (const name of ["routines.today", "routines.history", "routines.confirm", "routines.list", "routines.onboarding", "routines.detail"]) {
+      app.router.addRoute({ path: `/named/${name}/:id?`, name, component: { render: () => null } });
+    }
+    const { default: RoutinesPage } = await import("../pages/RoutinesPage.vue");
+    const { wrapper } = mountWithProviders(RoutinesPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    const figure = wrapper.find("[data-testid=on-time-share]");
+    expect(figure.text()).toContain("62%");
+    expect(figure.text()).toContain("on time, 30 days");
+    expect(figure.text()).toContain("10 late");
+    expect(figure.attributes("title")).toBe("Last 30 days: 26 due · 16 on time · 10 late · 0 not done");
+    expect(onTimeShare(null)).toBeNull();
+    expect(onTimeShare({ made_30d: 0, done_30d: 0, on_time_30d: 0, completion_30d: null, spark: [] })).toBeNull();
     wrapper.unmount();
   });
 });
@@ -476,7 +498,7 @@ describe("routine work", () => {
     const { wrapper } = await mountPage("/c/1/routines", "TodayPage");
     const text = document.body.textContent ?? "";
     expect(text).toContain("Late · due 09:00");
-    expect(text).toContain("Waiting · done 09:20");
+    expect(text).toContain("Waiting for check · 09:20");
     expect(text).toContain("Done 08:50");
     expect(text).toContain("2/3 done");
     expect(text).toContain("Aziza Usmonova");
@@ -511,13 +533,36 @@ describe("routine work", () => {
       "POST tasks/bulk/": () => json({ done: 1, failed: 1, results: [{ id: 1, ok: true, error: "" }, { id: 2, ok: false, error: "You can't confirm this task." }] }),
     });
     const { wrapper } = await mountPage("/c/1/routines/confirm", "ConfirmPage");
-    expect(document.body.textContent).toContain("“+4 °C”");
+    // Work without a photo: the report on a compact card, no empty picture frame (audit D-8).
+    expect(document.body.querySelector("[data-run='1'] blockquote")?.textContent?.trim()).toBe("+4 °C");
+    expect(document.body.querySelector("[data-run='1'] .aspect-\\[4\\/3\\]")).toBeNull();
+    expect(document.body.querySelector("[data-run='2'] [data-testid=run-no-proof]")).not.toBeNull();
     [...document.body.querySelectorAll("button")].find((b) => b.textContent?.trim() === "Confirm all (2)")!.click();
     await flushPromises();
     expect(calls.find((c) => c.method === "POST")?.body).toEqual({ ids: [1, 2], action: "confirm" });
     expect(document.body.querySelector("[data-run='1']")).toBeNull();
     expect(document.body.querySelector("[data-run='2']")).not.toBeNull();
     expect(toasts.map((toast) => toast.title)).toEqual(["1 confirmed", "1 couldn't be confirmed"]);
+    wrapper.unmount();
+  });
+
+  it("To confirm lets runs someone else already checked leave quietly (audit X-11)", async () => {
+    let asked = 0;
+    const items = () => [
+      run(1, "Ali Valiyev", "review", { completed_at: "2026-10-20T03:55:00Z", on_time: true, can_confirm: true }),
+      run(2, "Vali Karimov", "review", { completed_at: "2026-10-20T04:30:00Z", on_time: true, can_confirm: true }),
+    ];
+    stub({
+      // After the confirm, the head has checked run 2 already: it's no longer waiting.
+      "GET routines/to-confirm/": () => json({ count: 2, groups: [{ routine: ref(4, "Muzlatgich haroratini yozish"), day: "2026-10-20", items: asked++ === 0 ? items() : [] }] }),
+      "POST tasks/bulk/": () => json({ done: 1, failed: 1, results: [{ id: 1, ok: true, error: "" }, { id: 2, ok: false, error: "This task isn't waiting for a check." }] }),
+    });
+    const { wrapper } = await mountPage("/c/1/routines/confirm", "ConfirmPage");
+    [...document.body.querySelectorAll("button")].find((b) => b.textContent?.trim() === "Confirm all (2)")!.click();
+    await flushPromises();
+    await flushPromises();
+    expect(document.body.querySelector("[data-run='2']")).toBeNull();
+    expect(toasts.map((toast) => toast.title)).toEqual(["1 was already checked by someone else", "1 confirmed"]);
     wrapper.unmount();
   });
 

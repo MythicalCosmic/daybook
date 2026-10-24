@@ -19,7 +19,7 @@ import KpiCard from "./KpiCard.vue";
 type KpiProps = InstanceType<typeof KpiCard>["$props"];
 
 const props = withDefaults(
-  defineProps<{ items?: Array<KpiProps & { id?: string }>; loading?: boolean; columns?: 2 | 3 | 4 | 5; phone?: "stack" | "grid" | "compact" }>(),
+  defineProps<{ items?: Array<KpiProps & { id?: string }>; loading?: boolean; columns?: 2 | 3 | 4 | 5; phone?: "stack" | "grid" | "compact" | "line" }>(),
   {
     items: () => [],
     loading: false,
@@ -29,10 +29,13 @@ const props = withDefaults(
 );
 
 const count = computed(() => props.columns ?? Math.min(5, Math.max(1, props.items.length || 4)));
-/** Columns below 640 px: one stack by default, else two (three for a strip of three). */
-const phoneColumns = computed(() => (props.phone === "stack" ? 1 : count.value === 3 ? 3 : 2));
+/**
+ * Columns below 640 px: one stack by default, else two (three for a strip of three); "line" keeps
+ * up to four numbers on one short row, for lists that must start on the first screen.
+ */
+const phoneColumns = computed(() => (props.phone === "stack" ? 1 : props.phone === "line" ? Math.min(4, count.value) : count.value === 3 ? 3 : 2));
 const grid = computed(() => {
-  const base = ({ 1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-3" } as const)[phoneColumns.value];
+  const base = ({ 1: "grid-cols-1", 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4" } as Record<number, string>)[phoneColumns.value];
   const wider =
     ({
       1: "",
@@ -93,6 +96,27 @@ const grid = computed(() => {
     padding: 0.75rem;
   }
   .kpi-strip[data-phone="compact"] :deep([data-kpi-foot]) {
+    display: none;
+  }
+  /* One short row: a small two-line label over the number, nothing else. */
+  .kpi-strip[data-phone="line"] > :deep(*) {
+    padding: 0.5rem 0.625rem 0.625rem;
+  }
+  .kpi-strip[data-phone="line"] :deep(.kpi-label) {
+    min-height: 1.75rem;
+    font-size: 0.6875rem;
+    line-height: 0.875rem;
+  }
+  .kpi-strip[data-phone="line"] :deep(.kpi-label ~ svg) {
+    display: none;
+  }
+  .kpi-strip[data-phone="line"] :deep(.kpi-value) {
+    margin-top: 0.25rem;
+    font-size: 1.125rem;
+    line-height: 1.5rem;
+  }
+  .kpi-strip[data-phone="line"] :deep([data-kpi-foot]),
+  .kpi-strip[data-phone="line"] :deep([data-kpi-spare]) {
     display: none;
   }
 }

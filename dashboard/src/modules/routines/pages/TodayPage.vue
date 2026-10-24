@@ -20,6 +20,7 @@ import KpiStrip from "@/components/KpiStrip.vue";
 import { useScopedBranches } from "@/components/pickers";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UiButton from "@/components/UiButton.vue";
+import { returnReasonFields } from "@/components/returnReasons";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { addDays, todayIn } from "@/lib/dates";
@@ -128,7 +129,7 @@ async function sendBack(run: RoutineRun, title: string): Promise<void> {
   const answer = await ask({
     title: t("routines.confirm.sendBackTitle"),
     message: `${run.member.name} · ${title}`,
-    reason: "required",
+    ...returnReasonFields(t),
     reasonLabel: t("routines.confirm.reason"),
     reasonPlaceholder: t("routines.confirm.reasonPlaceholder"),
     confirmLabel: t("routines.confirm.sendBack"),

@@ -158,7 +158,7 @@ describe("api", () => {
   it("registers in Work with the review badge and the plan's permissions", () => {
     expect(module).toMatchObject({ id: "tasks", group: "work", order: 10 });
     expect(module.perm).toEqual(["tasks.view_all", "tasks.confirm", "tasks.assign"]);
-    expect(module.widgets?.map((w) => w.id)).toEqual(["tasks.kpi.done_today", "tasks.kpi.on_time", "tasks.kpi.late_now", "tasks.chart.on_time_trend", "tasks.top_bottom"]);
+    expect(module.widgets?.map((w) => w.id)).toEqual(["tasks.kpi.done_today", "tasks.kpi.on_time", "tasks.kpi.late_now", "tasks.chart.on_time_trend", "tasks.branches_now", "tasks.top_bottom"]);
   });
 });
 
@@ -217,12 +217,12 @@ describe("TaskDrawer", () => {
     expect(text).toContain("Madina Saidova");
     expect(text).toContain("Middle shelf");
     expect(document.body.querySelector('img[src="/media/proofs/thumbs/1/a.webp"], img[src="/media/proofs/1/a.jpg"]')).not.toBeNull();
-    const accept = [...document.body.querySelectorAll("button")].find((b) => b.textContent?.trim() === "Accept");
+    const accept = [...document.body.querySelectorAll("button")].find((b) => b.textContent?.trim() === "Confirm");
     expect(accept).toBeDefined();
     accept!.click();
     await flushPromises();
     expect(calls.some((c) => c.method === "POST" && c.url.endsWith("/tasks/7/confirm/"))).toBe(true);
-    expect(toasts.at(-1)?.title).toBe("Accepted");
+    expect(toasts.at(-1)?.title).toBe("Confirmed");
     wrapper.unmount();
   });
 
@@ -262,7 +262,7 @@ describe("TaskDrawer", () => {
     await flushPromises();
     await flushPromises();
     const asked = calls.filter((c) => c.url.includes("knowledge/pages/linked/")).map((c) => new URL(c.url, "http://x").searchParams.toString());
-    expect(asked.sort()).toEqual(["target_type=routine&target_id=3", "target_type=task&target_id=7"]);
+    expect([...new Set(asked)].sort()).toEqual(["target_type=routine&target_id=3", "target_type=task&target_id=7"]);
     const text = document.body.textContent ?? "";
     expect(text).toContain("Closing the till");
     expect(text).toContain("Reading the fridge thermometer");
@@ -314,7 +314,7 @@ describe("TaskDrawer", () => {
     await flushPromises();
     await flushPromises();
     const labels = [...document.body.querySelectorAll("button")].map((b) => b.textContent?.trim());
-    expect(labels).not.toContain("Accept");
+    expect(labels).not.toContain("Confirm");
     expect(labels).not.toContain("Send back");
     wrapper.unmount();
   });

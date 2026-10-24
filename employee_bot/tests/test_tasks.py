@@ -35,22 +35,29 @@ async def reload(task: Task) -> Task:
     return await Task.objects.aget(pk=task.pk)
 
 
-async def test_my_tasks_lists_whats_due_today(dp, bot, company, member):
+async def test_my_tasks_lists_all_open_work_late_first(dp, bot, company, member):
+    """Audit B-1: everything still open, not just today's; late work first."""
     worker = await member.aregistered(company)
+    later = await make_task(
+        assignee=worker, title="Next week", due_at=timezone.now() + timedelta(days=7)
+    )
     late = await make_task(
         assignee=worker, title="Stock count", due_at=timezone.now() - timedelta(minutes=30)
     )
-    await make_task(assignee=worker, title="Next week", due_at=timezone.now() + timedelta(days=7))
     tg = updates.tg_user(worker.user.telegram_id)
 
     await dp.feed_update(bot, updates.message(tg, "📋 My tasks"))
 
     reply = sent(bot)[-1]
-    buttons = [row[0] for row in reply.reply_markup.inline_keyboard]
-    assert len(buttons) == 1
-    assert "Stock count" in buttons[0].text
-    assert buttons[0].text.startswith("🔴")
-    assert TaskCallback.unpack(buttons[0].callback_data).task_id == late.pk
+    tasks = [
+        TaskCallback.unpack(row[0].callback_data)
+        for row in reply.reply_markup.inline_keyboard
+        if row[0].callback_data.startswith("task:open:")
+    ]
+    assert [task.task_id for task in tasks] == [late.pk, later.pk]
+    first = reply.reply_markup.inline_keyboard[0][0].text
+    assert first.startswith("🔴") and "Stock count" in first
+    assert "late: 1" in reply.text
 
 
 async def test_open_start_and_finish_a_task(dp, bot, company, member):

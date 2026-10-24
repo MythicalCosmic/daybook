@@ -7,15 +7,35 @@ from django.utils.translation import gettext_lazy as _
 from apps.audit import registry as audit_registry
 from apps.console import pulse, registry
 from apps.exports.registry import Column, register_exporter
+from apps.inbox.registry import register_action, register_kind
 from apps.members.permissions import Perm
 from apps.members.scope import branch_ids
 from apps.members.signals import member_approved
-from apps.tasks import feeds, queries
+from apps.tasks import feeds, inbox_actions, queries
 from apps.tasks import tasks as jobs
 from apps.tasks.audit_actions import TasksAction
 from apps.tasks.models import Task, TaskTemplate
 
 audit_registry.register(TasksAction)
+
+# "Can't do it" (research R2 T57): an entry in the giver's inbox; the bot message with its
+# buttons goes out on its own (apps.tasks.notifications.send_blocked), so no Telegram copy here.
+register_kind(
+    "tasks.blocked",
+    label=_("Someone can't do a task"),
+    audience="owner",
+    default_telegram=False,
+    severity="warning",
+)
+# "Need more time" (T17): approve or decline in one tap, in either bot or the dashboard.
+register_kind(
+    "tasks.extension",
+    label=_("Someone asks for more time"),
+    audience="owner",
+    default_telegram=True,
+)
+register_action("tasks.extension", "approve", inbox_actions.approve_extension)
+register_action("tasks.extension", "decline", inbox_actions.decline_extension)
 
 
 def _task_in_scope(member, task_id: int) -> bool:

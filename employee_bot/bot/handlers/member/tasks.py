@@ -254,7 +254,9 @@ def _with_checklist(member: Membership):
 @sync_to_async
 def _task_list(member: Membership) -> BotMessage:
     now = timezone.now()
-    return task_messages.task_list(list(queries.todays_tasks(member, now)), now)
+    tasks = list(queries.open_work(member).prefetch_related("checklist"))
+    reviews = queries.awaiting_review_by(member).count()
+    return task_messages.task_list(tasks, now, reviews=reviews)
 
 
 @sync_to_async

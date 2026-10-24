@@ -32,7 +32,7 @@ import { useDeleteRoutine, useRoutines, useToggleActive } from "../api";
 import RoutineEditor from "../components/RoutineEditor.vue";
 import RoutinesHeader from "../components/RoutinesHeader.vue";
 import WeekdayDots from "../components/WeekdayDots.vue";
-import { runLabel, wholePercent } from "../lib";
+import { onTimeShare, runLabel, wholePercent } from "../lib";
 import type { Routine } from "../types";
 import { useRunWords } from "../useRunWords";
 
@@ -141,6 +141,12 @@ function sparkOf(routine: Routine): number[] {
   return points.length >= 4 && new Set(points).size > 1 ? points : [];
 }
 
+/** The 30 days behind the headline, on hover. */
+function shareHint(routine: Routine): string | undefined {
+  const share = onTimeShare(routine.stats);
+  return share ? t("routines.share30Hint", { made: share.made, onTime: share.onTime, late: share.late, missed: share.missed }) : undefined;
+}
+
 function completionTone(value: number | null): string {
   if (value === null) return "text-subtle";
   if (value >= 90) return "text-success";
@@ -220,9 +226,16 @@ function who(routine: Routine): string {
           <AvatarStack v-if="routine.assignees.length" :people="routine.assignees" :max="3" :size="24" class="max-md:hidden" />
           <div v-if="!onboarding" class="flex items-center gap-3">
             <SparkLine :data="sparkOf(routine)" :width="96" :height="28" color="var(--c-chart-2)" :label="t('routines.sparkLabel')" />
-            <div class="min-w-[68px] whitespace-nowrap text-right">
-              <p :class="['text-md font-semibold tabular-nums', completionTone(routine.stats?.completion_30d ?? null)]">{{ routine.stats?.completion_30d === null || !routine.stats ? "—" : fmt.percent(wholePercent(routine.stats.completion_30d), 0) }}</p>
-              <p class="text-xs text-subtle">{{ t("routines.done30") }}</p>
+            <!-- On time is the headline (late runs count as done, so "done" alone is always green). -->
+            <div class="min-w-[84px] whitespace-nowrap text-right" :title="shareHint(routine)" data-testid="on-time-share">
+              <p :class="['text-md font-semibold tabular-nums', completionTone(onTimeShare(routine.stats)?.percent ?? null)]">
+                {{ onTimeShare(routine.stats) ? fmt.percent(wholePercent(onTimeShare(routine.stats)!.percent), 0) : "—" }}
+              </p>
+              <p class="text-xs text-subtle">
+                {{ t("routines.onTime30") }}<template v-if="onTimeShare(routine.stats)?.late">
+                  · <span class="font-medium text-warning">{{ t("routines.late30", { n: onTimeShare(routine.stats)!.late }, onTimeShare(routine.stats)!.late) }}</span></template
+                >
+              </p>
             </div>
           </div>
           <div class="flex items-center gap-1" @click.stop>

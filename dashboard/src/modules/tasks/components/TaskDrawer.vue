@@ -4,10 +4,14 @@
  * caller, the proof photo with its lightbox, inline edits (assignee, deadline, priority, reward,
  * title and description), the checklist, how the bot chases it, and comments, the merged timeline
  * and the audited history in tabs. Other modules add buttons through `tasks.drawer.actions`.
+ *
+ * Tonight's contracts: "Can't do it" shows its reason with Give to someone else / New time / Cancel
+ * (7), "Need more time" with Approve / Decline (8), when the assignee first saw it (10), and the
+ * comment box tells @mentioned people in Telegram (5). Each shows only once the backend sends it.
  */
-import { BellRing, Check, CircleCheck, Ellipsis, Flag, FolderKanban, Gift, Link2, MessageSquare, Pencil, Repeat, RotateCcw, Send, UserRoundCog, X } from "@lucide/vue";
+import { Ban, BellRing, CalendarClock, Check, CircleCheck, Ellipsis, Eye, EyeOff, FolderKanban, Gift, Hourglass, Link2, MessageSquare, Pencil, Repeat, RotateCcw, UserRoundCog, X } from "@lucide/vue";
 import { useQueryClient } from "@tanstack/vue-query";
-import { computed, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, useRouter } from "vue-router";
 
@@ -35,18 +39,22 @@ import TimePicker from "@/components/TimePicker.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDrawer from "@/components/UiDrawer.vue";
 import UiPopover from "@/components/UiPopover.vue";
+import { returnReasonFields } from "@/components/returnReasons";
 import { useConfirm } from "@/components/useConfirm";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { toast } from "@/components/useToast";
-import { todayIn } from "@/lib/dates";
+import { useHotkey } from "@/core/hotkeys";
+import { todayIn, zonedDay } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
 import { tasksApi, taskKeys, useRefreshTasks, useTaskDetail, useTaskMutation, useTaskOptions } from "../api";
-import { cardKey, lateness, minutesBetween, zonedIso, zonedParts } from "../meta";
-import type { TaskDetail, TaskPriority, TaskUpdateInput } from "../types";
+import { cardKey, highlightMentions, isUnseen, lateness, minutesBetween, reminderLag, zonedIso, zonedParts } from "../meta";
+import type { BlockerAction, TaskDetail, TaskPriority, TaskUpdateInput } from "../types";
 import { PRIORITIES } from "../types";
+import CommentBox, { type MentionPerson } from "./CommentBox.vue";
 import DueLabel from "./DueLabel.vue";
+import PriorityFlag from "./PriorityFlag.vue";
 import TaskStatusPill from "./TaskStatusPill.vue";
 import TaskTimeline from "./TaskTimeline.vue";
 
@@ -80,6 +88,8 @@ const confirmTask = useTaskMutation((cid, _: void) => tasksApi.confirm(cid, id.v
 const sendBack = useTaskMutation((cid, reason: string) => tasksApi.sendBack(cid, id.value!, reason));
 const cancel = useTaskMutation((cid, _: void) => tasksApi.cancel(cid, id.value!));
 const reassign = useTaskMutation((cid, assignee: number) => tasksApi.reassign(cid, id.value!, assignee));
+const resolveBlocker = useTaskMutation((cid, input: { action: BlockerAction; assignee_id?: number; due_at?: string }) => tasksApi.resolveBlocker(cid, id.value!, input));
+const decideExtension = useTaskMutation((cid, approve: boolean) => tasksApi.decideExtension(cid, id.value!, approve));
 const busy = ref<string | null>(null);
 
 async function run<T>(key: string, action: () => Promise<T>, done?: string): Promise<T | undefined> {
@@ -103,7 +113,7 @@ async function onSendBack(): Promise<void> {
   const answer = await confirm({
     title: t("tasks.sendBack.title"),
     message: task.value?.title,
-    reason: "required",
+    ...returnReasonFields(t),
     reasonLabel: t("tasks.sendBack.reason"),
     reasonPlaceholder: t("tasks.sendBack.placeholder"),
     confirmLabel: t("tasks.action.return"),
@@ -113,9 +123,47 @@ async function onSendBack(): Promise<void> {
 }
 
 async function onCancel(): Promise<void> {
-  const answer = await confirm({ title: t("tasks.cancel.title"), message: t("tasks.cancel.body"), tone: "danger", confirmLabel: t("tasks.action.cancel") });
+  const answer = await confirm({ title: t("tasks.cancel.title"), message: t("tasks.cancel.body"), tone: "danger", confirmLabel: t("tasks.action.cancel"), cancelLabel: t("common.close") });
   if (answer) await run("cancel", () => cancel.mutateAsync(), t("tasks.toast.cancelled"));
 }
+
+// Can't do it (contract 7): the reason, and the giver's three ways out -------------------------
+const blockedOpen = ref<"reassign" | "due" | null>(null);
+const blockedTo = ref<number | null>(null);
+const blockedDay = ref<string | null>(null);
+const blockedTime = ref<string | null>("18:00");
+watch(blockedOpen, (which) => {
+  if (which !== "due" || !task.value) return;
+  const parts = task.value.due_at ? zonedParts(task.value.due_at, company.timezone) : { day: todayIn(company.timezone), time: "18:00" };
+  blockedDay.value = parts.day;
+  blockedTime.value = parts.time;
+});
+async function blockerReassign(): Promise<void> {
+  if (!blockedTo.value) return;
+  blockedOpen.value = null;
+  const name = people.value.find((p) => p.id === blockedTo.value)?.name ?? "";
+  await run("blocker", () => resolveBlocker.mutateAsync({ action: "reassign", assignee_id: blockedTo.value! }), t("tasks.toast.reassigned", { name }));
+  blockedTo.value = null;
+}
+async function blockerNewDue(): Promise<void> {
+  if (!blockedDay.value) return;
+  blockedOpen.value = null;
+  const due_at = zonedIso(blockedDay.value, blockedTime.value ?? "18:00", company.timezone);
+  await run("blocker", () => resolveBlocker.mutateAsync({ action: "new_due", due_at }), t("tasks.blocker.movedToast"));
+}
+async function blockerCancel(): Promise<void> {
+  const answer = await confirm({ title: t("tasks.cancel.title"), message: t("tasks.cancel.body"), tone: "danger", confirmLabel: t("tasks.action.cancel"), cancelLabel: t("common.close") });
+  if (answer) await run("blocker", () => resolveBlocker.mutateAsync({ action: "cancel" }), t("tasks.toast.cancelled"));
+}
+
+// Need more time (contract 8) -------------------------------------------------------------------
+async function onExtension(approve: boolean): Promise<void> {
+  await run(approve ? "approve" : "decline", () => decideExtension.mutateAsync(approve), t(approve ? "tasks.extension.approvedToast" : "tasks.extension.declinedToast"));
+}
+/** The asked-for deadline on its button: the time when it's today, else the day too. */
+const untilLabel = (iso: string) => (zonedDay(iso, company.timezone) === todayIn(company.timezone) ? fmt.instant(iso, "time") : fmt.instant(iso, "short"));
+/** The giver decides when they may change the deadline (the server checks again). */
+const canDecide = computed(() => can("edit") || can("reassign"));
 
 async function onNudge(): Promise<void> {
   const current = task.value;
@@ -190,14 +238,16 @@ async function saveText(): Promise<void> {
 // Comments
 const comment = ref("");
 const sending = ref(false);
-async function sendComment(): Promise<void> {
+const commentBox = ref<InstanceType<typeof CommentBox> | null>(null);
+async function sendComment(mentions: number[] = []): Promise<void> {
   const current = task.value;
   if (!current || !comment.value.trim()) return;
   sending.value = true;
   try {
-    const created = await tasksApi.comment(company.currentId!, current.id, comment.value.trim());
+    const created = await tasksApi.comment(company.currentId!, current.id, comment.value.trim(), mentions);
     client.setQueryData<TaskDetail>(taskKeys.detail(company.currentId!, current.id), { ...current, comments: [...current.comments, created] });
     comment.value = "";
+    commentBox.value?.clear();
     void client.invalidateQueries({ queryKey: taskKeys.timeline(company.currentId!, current.id) });
   } catch {
     // shown by the HTTP layer
@@ -205,6 +255,90 @@ async function sendComment(): Promise<void> {
     sending.value = false;
   }
 }
+
+/**
+ * Who a comment can @mention (the server accepts the task's people and its branch team): who does
+ * it and who gave it first, then the branch's people; never the writer.
+ */
+const mentionable = computed<MentionPerson[]>(() => {
+  const current = task.value;
+  if (!current) return [];
+  const me = company.current?.membership_id;
+  const seen = new Set<number>();
+  const out: MentionPerson[] = [];
+  const add = (person: MentionPerson | null) => {
+    if (!person || person.id === me || seen.has(person.id)) return;
+    seen.add(person.id);
+    out.push(person);
+  };
+  add({ ...current.assignee, subtitle: t("tasks.field.assignee") });
+  if (current.created_by) add({ ...current.created_by, subtitle: t("tasks.field.givenBy") });
+  for (const person of options.data.value?.people ?? []) {
+    if (current.branch && person.branch_id !== current.branch.id) continue;
+    add({ id: person.id, name: person.name, photo_url: person.photo_url, subtitle: person.position });
+  }
+  return out;
+});
+// Keyboard, while a task is open: C writes a comment, E changes the deadline (R2 T45). The drawer
+// is itself a dialog, so these answer inside it, but only while nothing is open above it (a
+// confirm, a popover, the reassign picker).
+function drawerOnTop(): boolean {
+  return document.querySelectorAll('[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]').length <= 1;
+}
+useHotkey(
+  "c",
+  async () => {
+    tab.value = "comments";
+    await nextTick();
+    commentBox.value?.focus();
+  },
+  { description: "tasks.keys.comment", group: "page", allowInDialogs: true, enabled: () => !!task.value && can("comment") && drawerOnTop() },
+);
+useHotkey("e", () => (dueOpen.value = true), {
+  description: "tasks.keys.due",
+  group: "page",
+  allowInDialogs: true,
+  enabled: () => !!task.value && can("edit") && drawerOnTop(),
+});
+
+/** Every name an @mention in this task's comments may carry (the writer's own included). */
+const knownNames = computed(() => {
+  const current = task.value;
+  if (!current) return [];
+  return [
+    ...mentionable.value.map((p) => p.name),
+    current.assignee.name,
+    current.created_by?.name ?? "",
+    ...current.comments.map((c) => c.author?.name ?? ""),
+  ];
+});
+/** Comment text split around @mentions, so they stand out. */
+const commentParts = (text: string) => highlightMentions(text, knownNames.value);
+
+// Reminders: a next reminder already due reads "going out now"; well behind means they've stopped.
+const reminderNext = computed(() => {
+  const at = task.value?.reminders?.next_at;
+  if (!at) return null;
+  const lag = reminderLag(at, new Date());
+  const words = { min: t("tasks.unit.min"), h: t("tasks.unit.h"), d: t("tasks.unit.d") };
+  if (new Date(at).getTime() > Date.now()) return { text: t("tasks.reminders.next", { time: fmt.relative(at) }), stuck: false };
+  if (lag <= 5) return { text: t("tasks.reminders.nextNow"), stuck: false };
+  return { text: t("tasks.reminders.stuck", { time: lateness(lag, words) }), stuck: true };
+});
+
+/**
+ * When the assignee first opened it (contract 10); hidden on older backends. "Not opened yet" is
+ * said only of given work still waiting to be done: work finished from a reminder's button, a
+ * routine run or a task from before "seen" existed has no `seen_at` either, and isn't unseen.
+ */
+const seen = computed(() => {
+  const current = task.value;
+  if (!current || current.kind === "personal" || !("seen_at" in current)) return null;
+  if (current.seen_at) return { at: current.seen_at, text: t("tasks.seen.at", { time: fmt.instant(current.seen_at, "short") }), late: false };
+  if (!isUnseen(current)) return null;
+  // Not opened 30 minutes after it was given: worth a nudge.
+  return { at: null, text: t("tasks.seen.not"), late: minutesBetween(current.created_at, new Date()) > 30 };
+});
 
 /** When finished work was handed in (waiting for a check counts), and how late, if it was. */
 const finished = computed(() => {
@@ -296,9 +430,7 @@ const formatAudit = (field: string, value: unknown) => {
       <section class="flex flex-col gap-3 border-b border-line px-5 py-4">
         <div class="flex flex-wrap items-center gap-2">
           <TaskStatusPill :status="task.status" :overdue="task.is_overdue" size="md" />
-          <span v-if="task.priority === 'urgent' || task.priority === 'high'" :class="['inline-flex items-center gap-1 text-sm font-semibold', task.priority === 'urgent' ? 'text-danger' : 'text-warning']">
-            <Flag :size="14" />{{ t(`tasks.priority.${task.priority}`) }}
-          </span>
+          <PriorityFlag :priority="task.priority" :size="13" />
           <span v-if="task.reward" class="inline-flex items-center gap-1 rounded-full bg-success-soft px-2 py-0.5 text-sm font-semibold text-success"><Gift :size="13" /><MoneyText :value="task.reward" sign="always" /></span>
           <span class="flex-1" />
           <!-- Finished work says when it was finished (the deadline is in the details below). -->
@@ -312,7 +444,7 @@ const formatAudit = (field: string, value: unknown) => {
         <div class="flex flex-wrap items-center gap-2 empty:hidden">
           <UiButton v-if="can('confirm')" variant="primary" :icon="Check" :loading="busy === 'confirm'" @click="onConfirm">{{ t("tasks.action.confirm") }}</UiButton>
           <UiButton v-if="can('return')" :icon="RotateCcw" :loading="busy === 'return'" @click="onSendBack">{{ t("tasks.action.return") }}</UiButton>
-          <UiPopover v-if="can('reassign')" v-model:open="reassignOpen" width="300px">
+          <UiPopover v-if="can('reassign') && !task.blocker" v-model:open="reassignOpen" width="300px">
             <template #trigger><UiButton :icon="UserRoundCog" :loading="busy === 'reassign'">{{ t("tasks.action.reassign") }}</UiButton></template>
             <div class="flex flex-col gap-2">
               <p class="text-sm font-semibold text-fg">{{ t("tasks.reassign.title") }}</p>
@@ -321,10 +453,64 @@ const formatAudit = (field: string, value: unknown) => {
               <UiButton size="sm" variant="primary" :disabled="!reassignTo" @click="onReassign">{{ t("tasks.action.reassign") }}</UiButton>
             </div>
           </UiPopover>
-          <UiButton v-if="can('nudge')" :icon="BellRing" :loading="busy === 'nudge'" :disabled="nudgedRecently" :title="nudgedRecently ? t('tasks.nudge.wait') : t('tasks.nudge.hint')" @click="onNudge">
+          <UiButton v-if="can('nudge') && !task.blocker" :icon="BellRing" :loading="busy === 'nudge'" :disabled="nudgedRecently" :title="nudgedRecently ? t('tasks.nudge.wait') : t('tasks.nudge.hint')" @click="onNudge">
             {{ nudgedRecently ? t("tasks.nudge.sent") : t("tasks.action.nudge") }}
           </UiButton>
           <ExtensionSlot name="tasks.drawer.actions" as="none" :context="slotContext" />
+        </div>
+
+        <!-- Can't do it: why, and what the giver can do about it (contract 7). -->
+        <div v-if="task.blocker" class="flex flex-col gap-2.5 rounded-[12px] border border-danger/30 bg-danger-soft px-3.5 py-3" role="status" data-testid="blocker">
+          <div class="flex items-start gap-2.5">
+            <Ban :size="17" class="mt-0.5 shrink-0 text-danger" aria-hidden="true" />
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-fg">{{ t("tasks.blocker.title", { name: task.assignee.name }) }}</p>
+              <p class="mt-0.5 text-sm text-fg">
+                <span class="font-medium">{{ t(`tasks.blocker.reason.${task.blocker.reason_code}`) }}</span><template v-if="task.blocker.note">: {{ t("tasks.quoted", { text: task.blocker.note }) }}</template>
+              </p>
+              <p class="mt-1 text-xs text-muted">{{ t("tasks.blocker.paused") }} · <RelativeTime :value="task.blocker.at" /></p>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <UiPopover v-if="can('reassign')" :open="blockedOpen === 'reassign'" width="300px" @update:open="(value: boolean) => (blockedOpen = value ? 'reassign' : null)">
+              <template #trigger><UiButton size="sm" :icon="UserRoundCog" :loading="busy === 'blocker'">{{ t("tasks.blocker.reassign") }}</UiButton></template>
+              <div class="flex flex-col gap-2">
+                <p class="text-sm font-semibold text-fg">{{ t("tasks.reassign.title") }}</p>
+                <PersonPicker v-model="blockedTo" :people="people" :exclude="[task.assignee.id]" size="sm" />
+                <UiButton size="sm" variant="primary" :disabled="!blockedTo" @click="blockerReassign">{{ t("tasks.blocker.reassign") }}</UiButton>
+              </div>
+            </UiPopover>
+            <UiPopover v-if="can('edit')" :open="blockedOpen === 'due'" width="320px" @update:open="(value: boolean) => (blockedOpen = value ? 'due' : null)">
+              <template #trigger><UiButton size="sm" :icon="CalendarClock">{{ t("tasks.blocker.newDue") }}</UiButton></template>
+              <div class="flex flex-col gap-2">
+                <p class="text-sm font-semibold text-fg">{{ t("tasks.blocker.newDue") }}</p>
+                <div class="grid grid-cols-[1fr_124px] gap-2">
+                  <DatePicker v-model="blockedDay" :min="todayIn(company.timezone)" size="sm" />
+                  <TimePicker v-model="blockedTime" :step="15" size="sm" />
+                </div>
+                <UiButton size="sm" variant="primary" :disabled="!blockedDay" @click="blockerNewDue">{{ t("common.save") }}</UiButton>
+              </div>
+            </UiPopover>
+            <UiButton v-if="can('cancel')" size="sm" variant="ghost" :icon="X" class="hover:!text-danger" @click="blockerCancel">{{ t("tasks.action.cancel") }}</UiButton>
+          </div>
+        </div>
+
+        <!-- Need more time: the new deadline asked for, and the giver's answer (contract 8). -->
+        <div v-if="task.extension" class="flex flex-col gap-2.5 rounded-[12px] border border-warning/30 bg-warning-soft px-3.5 py-3" role="status" data-testid="extension">
+          <div class="flex items-start gap-2.5">
+            <Hourglass :size="17" class="mt-0.5 shrink-0 text-warning" aria-hidden="true" />
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-fg">{{ t("tasks.extension.title", { name: task.assignee.name }) }}</p>
+              <p class="mt-0.5 text-sm text-fg">
+                {{ t("tasks.extension.until", { time: fmt.instant(task.extension.until, "short") }) }}<template v-if="task.extension.note"> · {{ t("tasks.quoted", { text: task.extension.note }) }}</template>
+              </p>
+              <p class="mt-1 text-xs text-muted"><RelativeTime :value="task.extension.at" /></p>
+            </div>
+          </div>
+          <div v-if="canDecide" class="flex flex-wrap gap-2">
+            <UiButton size="sm" variant="primary" :icon="Check" :loading="busy === 'approve'" data-testid="extension-approve" @click="onExtension(true)">{{ t("tasks.extension.approve", { time: untilLabel(task.extension.until) }) }}</UiButton>
+            <UiButton size="sm" :icon="X" :loading="busy === 'decline'" data-testid="extension-decline" @click="onExtension(false)">{{ t("tasks.extension.decline") }}</UiButton>
+          </div>
         </div>
       </section>
 
@@ -356,14 +542,21 @@ const formatAudit = (field: string, value: unknown) => {
           <dt class="text-muted">{{ t("tasks.field.assignee") }}</dt>
           <dd class="min-w-0"><PersonCell :person="task.assignee" :subtitle="task.assignee.position" size="sm" link /></dd>
 
+          <template v-if="seen">
+            <dt class="text-muted">{{ t("tasks.field.seen") }}</dt>
+            <dd :class="['inline-flex min-w-0 items-center gap-1.5', seen.at ? 'text-fg' : seen.late ? 'font-medium text-warning' : 'text-subtle']" data-testid="seen" :title="seen.at ? fmt.instant(seen.at, 'datetime') : undefined">
+              <component :is="seen.at ? Eye : EyeOff" :size="14" class="shrink-0" aria-hidden="true" /><span class="truncate">{{ seen.text }}</span>
+            </dd>
+          </template>
+
           <dt class="text-muted">{{ t("tasks.field.due_at") }}</dt>
           <dd class="flex min-w-0 items-center gap-2">
             <DueLabel :due="task.due_at" :overdue="task.is_overdue" />
-            <UiPopover v-if="can('edit')" v-model:open="dueOpen" width="300px">
+            <UiPopover v-if="can('edit')" v-model:open="dueOpen" width="320px">
               <template #trigger><IconButton :icon="Pencil" :label="t('tasks.due.change')" size="sm" /></template>
               <div class="flex flex-col gap-2">
                 <p class="text-sm font-semibold text-fg">{{ t("tasks.due.change") }}</p>
-                <div class="grid grid-cols-[1fr_110px] gap-2">
+                <div class="grid grid-cols-[1fr_124px] gap-2">
                   <DatePicker v-model="dueDay" :min="todayIn(company.timezone)" size="sm" />
                   <TimePicker v-model="dueTime" :step="15" size="sm" />
                 </div>
@@ -456,7 +649,7 @@ const formatAudit = (field: string, value: unknown) => {
         <p class="text-sm text-fg">
           <BellRing :size="13" class="mr-1 inline text-muted" />{{ task.reminders.policy.name }} · {{ reminderLine }}
         </p>
-        <p v-if="task.reminders.next_at" class="text-xs text-muted">{{ t("tasks.reminders.next", { time: fmt.relative(task.reminders.next_at) }) }}</p>
+        <p v-if="reminderNext" :class="['text-xs', reminderNext.stuck ? 'font-medium text-danger' : 'text-muted']" data-testid="reminder-next">{{ reminderNext.text }}</p>
         <p v-if="task.reminders.escalated_at" class="text-xs font-medium text-danger">
           {{ t("tasks.reminders.escalated", { names: task.reminders.escalate_to.map((p) => p.name).join(", ") || "—", time: fmt.relative(task.reminders.escalated_at) }) }}
         </p>
@@ -483,14 +676,17 @@ const formatAudit = (field: string, value: unknown) => {
               <UserAvatar :name="item.author?.name ?? t('tasks.timeline.system')" :src="item.author?.photo_url" :size="28" class="mt-0.5 shrink-0" />
               <div class="min-w-0 flex-1 rounded-[10px] bg-surface-2 px-3 py-2">
                 <p class="flex items-center gap-2 text-xs text-muted"><span class="font-semibold text-fg">{{ item.author?.name ?? t("tasks.timeline.system") }}</span><RelativeTime :value="item.created_at" /></p>
-                <p class="mt-0.5 whitespace-pre-line text-sm text-fg">{{ item.text }}</p>
+                <p class="mt-0.5 whitespace-pre-line text-sm text-fg">
+                  <template v-for="(part, index) in commentParts(item.text)" :key="index">
+                    <span v-if="part.mention" class="font-semibold text-accent-fg">{{ part.text }}</span>
+                    <template v-else>{{ part.text }}</template>
+                  </template>
+                </p>
               </div>
             </li>
           </ul>
-          <form class="flex items-end gap-2" @submit.prevent="sendComment">
-            <TextArea v-model="comment" :rows="1" :max-rows="6" :placeholder="t('tasks.comments.placeholder')" class="flex-1" @submit="sendComment" />
-            <IconButton :icon="Send" :label="t('tasks.comments.send')" variant="primary" type="submit" :loading="sending" :disabled="!comment.trim()" />
-          </form>
+          <CommentBox ref="commentBox" v-model="comment" :people="mentionable" :sending="sending" @send="sendComment" />
+          <p v-if="mentionable.length" class="-mt-1.5 text-xs text-subtle">{{ t("tasks.comments.mentionHint") }}</p>
         </div>
         <TaskTimeline v-else-if="tab === 'timeline'" :task-id="task.id" />
         <AuditTrail v-else target-type="task" :target-id="task.id" :field-labels="fieldLabels" :format-value="formatAudit" />

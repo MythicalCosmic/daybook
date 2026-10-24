@@ -473,5 +473,11 @@
   "shell.telegram.endedBody": "Reopen the dashboard from the bot to continue.",
   "shell.telegram.close": "Close",
 
-  "shell.overlay.close": "Close"
+  "shell.overlay.close": "Close",
+  "common.reasonNotePlaceholder": "Add a detail, if you like",
+  "common.returnReason.photo": "Photo is unclear",
+  "common.returnReason.unfinished": "Not finished",
+  "common.returnReason.wrongItem": "Wrong item",
+  "common.returnReason.other": "Other…",
+  "common.returnReason.note": "What exactly to fix, if you like"
 }

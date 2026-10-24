@@ -25,6 +25,14 @@ from apps.members.permissions import Perm
 from apps.members.scope import restrict
 from apps.reminders.models import ReminderPolicy
 from apps.tasks import dashboard, generation, queries, services
+from apps.tasks.api import (
+    BlockerResolveSerializer,
+    ExtensionDecideSerializer,
+    ParseThrottle,
+    TaskParseInputSerializer,
+    TaskParseSerializer,
+    parsed,
+)
 from apps.tasks.models import Task, TaskTemplate
 from apps.tasks.owner_serializers import (
     BulkResponseSerializer,
@@ -65,6 +73,9 @@ LIST_FILTERS = [
     OpenApiParameter("overdue", bool),
     OpenApiParameter("has_proof", bool),
     OpenApiParameter("needs_confirmation", bool),
+    OpenApiParameter("blocked", bool, description='true: "can\'t do it" waiting for an answer.'),
+    OpenApiParameter("extension", bool, description="true: more time asked, not decided yet."),
+    OpenApiParameter("seen", bool, description="false: the assignee hasn't opened it yet."),
     OpenApiParameter("q", description="Title, description or the person's name."),
     OpenApiParameter(
         "routines",
@@ -139,6 +150,9 @@ def parse_filters(params) -> queries.TaskFilters:
         needs_confirmation=_boolean(params.get("needs_confirmation")),
         q=params.get("q", "")[:100],
         routines=_routines(params),
+        blocked=_boolean(params.get("blocked")),
+        extension=_boolean(params.get("extension")),
+        seen=_boolean(params.get("seen")),
     )
 
 
@@ -197,6 +211,10 @@ class TaskOwnerViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerVi
         "options": AnyOf(
             Perm.TASKS_VIEW_ALL, Perm.TASKS_ASSIGN, Perm.TASKS_TEMPLATES, Perm.TASKS_CONFIRM
         ),
+        "parse": AnyOf(
+            Perm.TASKS_VIEW_ALL, Perm.TASKS_ASSIGN, Perm.TASKS_TEMPLATES, Perm.TASKS_CONFIRM
+        ),
+        # Answering "can't do it" and "need more time": the service decides who may.
     }
 
     def get_queryset(self):
@@ -354,9 +372,50 @@ class TaskOwnerViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerVi
         data = CommentSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         comment = services.add_comment(
-            self.get_object(), by=self.membership, text=data.validated_data["text"]
+            self.get_object(),
+            by=self.membership,
+            text=data.validated_data["text"],
+            mentions=data.validated_data.get("mentions", []),
         )
         return Response(CommentRowSerializer(comment).data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(request=TaskParseInputSerializer, responses=TaskParseSerializer)
+    @action(detail=False, methods=["post"], throttle_classes=[ParseThrottle])
+    def parse(self, request, company_id):
+        """What a quick-add text says (deadline, repeat, urgency) and the title without those
+        words, in the company's time and the caller's language. Nothing is saved."""
+        data = TaskParseInputSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        return Response(TaskParseSerializer(parsed(data.validated_data["text"], self.company)).data)
+
+    @extend_schema(request=BlockerResolveSerializer, responses=TaskDetailSerializer)
+    @action(detail=True, methods=["post"], url_path="blocker/resolve")
+    def resolve_blocker(self, request, company_id, pk):
+        """Answer a "can't do it": someone else (`assignee_id`), a new deadline (`due_at`) or
+        cancel. Whoever gave it, or holds tasks.assign or tasks.confirm for its branch."""
+        task = self.get_object()
+        data = BlockerResolveSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        task = services.resolve_blocker(
+            task,
+            by=self.membership,
+            action=data.validated_data["action"],
+            assignee_id=data.validated_data.get("assignee_id"),
+            due_at=data.validated_data.get("due_at"),
+        )
+        return Response(self._detail(task))
+
+    @extend_schema(request=ExtensionDecideSerializer, responses=TaskDetailSerializer)
+    @action(detail=True, methods=["post"], url_path="extension/decide")
+    def decide_extension(self, request, company_id, pk):
+        """Approve (the deadline moves to what was asked) or decline a request for more time."""
+        task = self.get_object()
+        data = ExtensionDecideSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        task = services.decide_extension(
+            task, by=self.membership, approve=data.validated_data["approve"]
+        )
+        return Response(self._detail(task))
 
     @extend_schema(request=MoveSerializer, responses=TaskDetailSerializer)
     @action(detail=True, methods=["post"])

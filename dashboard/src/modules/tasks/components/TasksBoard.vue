@@ -12,13 +12,14 @@ import ErrorState from "@/components/ErrorState.vue";
 import type { KanbanColumn, KanbanMove } from "@/components/kanban";
 import KanbanBoard from "@/components/KanbanBoard.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
+import { returnReasonFields } from "@/components/returnReasons";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 
 import { useBoard, useMoveCard } from "../api";
-import { COLUMN_COLOR } from "../meta";
+import { boardOrder, COLUMN_COLOR } from "../meta";
 import type { BoardColumnId, TaskRow } from "../types";
 import { BOARD_COLUMNS } from "../types";
 import TaskCard from "./TaskCard.vue";
@@ -53,7 +54,7 @@ const counts = computed(() => Object.fromEntries((query.data.value?.columns ?? [
 const columns = computed<KanbanColumn[]>(() =>
   BOARD_COLUMNS.map((id) => ({ id, title: t(`tasks.column.${id}`), color: COLUMN_COLOR[id], description: t(`tasks.column.${id}Hint`) })),
 );
-const cards = computed(() => (query.data.value?.columns ?? []).flatMap((column) => column.items));
+const cards = computed(() => (query.data.value?.columns ?? []).flatMap((column) => boardOrder(column.items)));
 
 /** Enter on a focused card opens it (Space picks it up to move, as the board says). */
 function onEnter(event: KeyboardEvent): void {
@@ -70,7 +71,7 @@ async function onMove(change: KanbanMove<TaskRow>): Promise<void> {
     const answer = await confirm({
       title: t("tasks.sendBack.title"),
       message: change.item.title,
-      reason: "required",
+      ...returnReasonFields(t),
       reasonLabel: t("tasks.sendBack.reason"),
       reasonPlaceholder: t("tasks.sendBack.placeholder"),
       confirmLabel: t("tasks.action.return"),

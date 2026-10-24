@@ -68,6 +68,7 @@ export default defineModule({
     { id: "tasks.kpi.on_time", span: 1, order: 11, kind: "kpi", perm: "tasks.view_all", component: defineAsyncComponent(() => import("./widgets/OnTimeWidget.vue")) },
     { id: "tasks.kpi.late_now", span: 1, order: 12, kind: "kpi", perm: "tasks.view_all", component: defineAsyncComponent(() => import("./widgets/LateNowWidget.vue")) },
     { id: "tasks.chart.on_time_trend", span: 2, order: 40, kind: "chart", perm: "tasks.view_all", component: defineAsyncComponent(() => import("./widgets/OnTimeTrendWidget.vue")) },
+    { id: "tasks.branches_now", span: 2, order: 39, kind: "card", perm: "tasks.view_all", component: defineAsyncComponent(() => import("./widgets/BranchesNowWidget.vue")) },
     { id: "tasks.top_bottom", span: 2, order: 41, kind: "card", perm: "reports.view", component: defineAsyncComponent(() => import("./widgets/TopBottomWidget.vue")) },
   ],
   personTabs: [

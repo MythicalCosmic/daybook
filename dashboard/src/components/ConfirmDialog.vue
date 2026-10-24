@@ -8,6 +8,10 @@
  *     tone="danger" reason="required" :confirm-label="t('finance.void')" :on-confirm="(reason) => voidTxn(id, reason)" />
  *
  * Or without markup: `const ok = await useConfirm()({ title, tone: "danger" })` (ConfirmHost in App.vue).
+ *
+ * `reasonChips` offers ready answers above the text (chips first, typing optional: a send-back
+ * reason is a tap, not a sentence typed on a phone). A picked chip is the reason; a note typed under
+ * it is added after a colon. `reasonOther` is the chip that means "I'll write it": it needs text.
  */
 import { CircleAlert, ShieldQuestion } from "@lucide/vue";
 import { computed, ref, watch, type Component } from "vue";
@@ -30,6 +34,12 @@ const props = withDefaults(
     reason?: "none" | "optional" | "required";
     reasonLabel?: string;
     reasonPlaceholder?: string;
+    /** Ready answers shown as chips above the text. */
+    reasonChips?: string[];
+    /** The chip that asks for the person's own words (picked, the text is required). */
+    reasonOther?: string;
+    /** The text's placeholder once a ready answer is picked ("Add a detail, if you like"). */
+    reasonNotePlaceholder?: string;
     icon?: Component;
     onConfirm?: (reason: string) => unknown;
   }>(),
@@ -41,6 +51,9 @@ const props = withDefaults(
     reason: "none",
     reasonLabel: undefined,
     reasonPlaceholder: undefined,
+    reasonChips: () => [],
+    reasonOther: undefined,
+    reasonNotePlaceholder: undefined,
     icon: undefined,
     onConfirm: undefined,
   },
@@ -50,13 +63,16 @@ const emit = defineEmits<{ confirm: [reason: string]; cancel: [] }>();
 
 const { t } = useI18n();
 const text = ref("");
+const chip = ref<string | null>(null);
 const busy = ref(false);
 const touched = ref(false);
+const textArea = ref<InstanceType<typeof TextArea> | null>(null);
 let decided = false;
 
 watch(open, (isOpen) => {
   if (isOpen) {
     text.value = "";
+    chip.value = null;
     touched.value = false;
     decided = false;
   } else if (!decided) {
@@ -64,12 +80,29 @@ watch(open, (isOpen) => {
   }
 });
 
-const missing = computed(() => props.reason === "required" && !text.value.trim());
+const chips = computed(() => (props.reason === "none" ? [] : [...props.reasonChips, ...(props.reasonOther ? [props.reasonOther] : [])]));
+/** A ready answer is picked: the text becomes an optional detail. */
+const readyAnswer = computed(() => chip.value !== null && chip.value !== props.reasonOther);
+const missing = computed(() => props.reason === "required" && !readyAnswer.value && !text.value.trim());
+
+function pick(label: string): void {
+  chip.value = chip.value === label ? null : label;
+  touched.value = false;
+  // "Other": straight to typing.
+  if (chip.value === props.reasonOther) textArea.value?.focus();
+}
+
+/** What the reason says: the picked chip, then the note after a colon; or just what was typed. */
+function finalReason(): string {
+  const note = text.value.trim();
+  if (!readyAnswer.value) return note;
+  return note ? `${chip.value}: ${note}` : chip.value!;
+}
 
 async function confirm(): Promise<void> {
   touched.value = true;
   if (missing.value || busy.value) return;
-  const reason = text.value.trim();
+  const reason = finalReason();
   if (props.onConfirm) {
     busy.value = true;
     try {
@@ -105,11 +138,35 @@ async function confirm(): Promise<void> {
       <FormField
         v-if="reason !== 'none'"
         :label="reasonLabel ?? t('common.reason')"
-        :required="reason === 'required'"
+        :required="reason === 'required' && !readyAnswer"
         :optional="reason === 'optional'"
         :error="touched && missing ? t('common.confirm.reasonRequired') : null"
       >
-        <TextArea v-model="text" :rows="3" :placeholder="reasonPlaceholder ?? t('common.reasonPlaceholder')" autofocus @submit="confirm" />
+        <div class="flex flex-col gap-2.5">
+          <div v-if="chips.length" class="flex flex-wrap gap-1.5" role="group" :aria-label="reasonLabel ?? t('common.reason')" data-testid="reason-chips">
+            <button
+              v-for="label in chips"
+              :key="label"
+              type="button"
+              :aria-pressed="chip === label"
+              :class="[
+                'pressable h-8 rounded-full border px-3 text-sm transition-colors',
+                chip === label ? 'border-primary bg-accent-soft font-semibold text-accent-fg' : 'border-line bg-surface text-fg hover:bg-highlight',
+              ]"
+              @click="pick(label)"
+            >
+              {{ label }}
+            </button>
+          </div>
+          <TextArea
+            ref="textArea"
+            v-model="text"
+            :rows="chips.length ? 2 : 3"
+            :placeholder="readyAnswer ? (reasonNotePlaceholder ?? t('common.reasonNotePlaceholder')) : (reasonPlaceholder ?? t('common.reasonPlaceholder'))"
+            :autofocus="!chips.length"
+            @submit="confirm"
+          />
+        </div>
       </FormField>
       <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <UiButton variant="ghost" :disabled="busy" @click="open = false">{{ cancelLabel ?? t("common.cancel") }}</UiButton>

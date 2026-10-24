@@ -12,11 +12,13 @@ import type { Page } from "@/api/types";
 import { useCompanyStore } from "@/stores/company";
 
 import type {
+  BlockerAction,
   BoardColumn,
   BoardColumnId,
   BulkInput,
   BulkResponse,
   ProofWall,
+  QuickAddParse,
   TaskCalendar,
   TaskComment,
   TaskCreateInput,
@@ -48,14 +50,24 @@ export const tasksApi = {
   proofs: (cid: number, params: Params, signal?: AbortSignal) => http.get<ProofWall>(ownerPath(cid, "proofs/"), params, { signal }),
   create: (cid: number, input: TaskCreateInput) => http.post<{ created: number; ids: number[] }>(ownerPath(cid, "tasks/"), input),
   update: (cid: number, id: number, input: TaskUpdateInput) => http.patch<TaskDetail>(ownerPath(cid, `tasks/${id}/`), input),
-  confirm: (cid: number, id: number) => http.post<TaskDetail>(ownerPath(cid, `tasks/${id}/confirm/`)),
+  /** `toast: false` when the caller explains a refusal itself (the reviews queue). */
+  confirm: (cid: number, id: number, options: { toast?: boolean } = {}) => http.post<TaskDetail>(ownerPath(cid, `tasks/${id}/confirm/`), undefined, options),
   sendBack: (cid: number, id: number, reason: string) => http.post<TaskDetail>(ownerPath(cid, `tasks/${id}/return/`), { reason }),
   cancel: (cid: number, id: number) => http.post<TaskDetail>(ownerPath(cid, `tasks/${id}/cancel/`)),
   reassign: (cid: number, id: number, assigneeId: number) => http.post<TaskDetail>(ownerPath(cid, `tasks/${id}/reassign/`), { assignee_id: assigneeId }),
   nudge: (cid: number, id: number) => http.post<{ nudged_at: string }>(ownerPath(cid, `tasks/${id}/nudge/`)),
-  comment: (cid: number, id: number, text: string) => http.post<TaskComment>(ownerPath(cid, `tasks/${id}/comment/`), { text }),
+  /** `mentions` (membership ids) are told in Telegram too (contract 5); left out when nobody is. */
+  comment: (cid: number, id: number, text: string, mentions: number[] = []) =>
+    http.post<TaskComment>(ownerPath(cid, `tasks/${id}/comment/`), mentions.length ? { text, mentions } : { text }),
   move: (cid: number, id: number, to: BoardColumnId, reason = "") => http.post<TaskDetail>(ownerPath(cid, `tasks/${id}/move/`), { to, reason }),
   bulk: (cid: number, input: BulkInput) => http.post<BulkResponse>(ownerPath(cid, "tasks/bulk/"), input),
+  /** Quick add (contract 1): what a typed title says about the deadline and urgency. Never toasts. */
+  parse: (cid: number, text: string, signal?: AbortSignal) => http.post<QuickAddParse>(ownerPath(cid, "tasks/parse/"), { text }, { signal, toast: false }),
+  /** Can't do it (contract 7): give it to someone else, set a new time, or cancel it. */
+  resolveBlocker: (cid: number, id: number, input: { action: BlockerAction; assignee_id?: number; due_at?: string }) =>
+    http.post<TaskDetail>(ownerPath(cid, `tasks/${id}/blocker/resolve/`), input),
+  /** Need more time (contract 8): the giver's answer. */
+  decideExtension: (cid: number, id: number, approve: boolean) => http.post<TaskDetail>(ownerPath(cid, `tasks/${id}/extension/decide/`), { approve }),
 };
 
 /** Filter values (URL shape) as API params: empty values dropped. */
@@ -99,6 +111,26 @@ export function useTaskList(params: MaybeRefOrGetter<Params>) {
     enabled: computed(() => cid.value > 0),
     placeholderData: keepPreviousData,
     staleTime: 15_000,
+  });
+}
+
+/**
+ * How many tasks match `params`, fetching one row: the counts of "what needs you" chips. `check`
+ * says whether that row really matches (a backend that ignores the filter answers with any task):
+ * the count is null then, and the chip stays hidden. A refusal (no tasks.view_all) is null too.
+ */
+export function useTaskCount(params: MaybeRefOrGetter<Params>, check: (row: TaskRow) => boolean) {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => qk(cid.value, MODULE, "count", toValue(params))),
+    queryFn: async ({ signal }) => {
+      const page = await tasksApi.list(cid.value, { ...toValue(params), page_size: 1 }, signal);
+      const first = page.results[0];
+      return first && !check(first) ? null : page.count;
+    },
+    enabled: computed(() => cid.value > 0),
+    staleTime: 30_000,
+    retry: false,
   });
 }
 
