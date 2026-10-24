@@ -290,6 +290,7 @@ def snoozed_note(task: Task) -> str:
     values = {"time": _clock(task, task.snoozed_until), "due": _clock(task, task.due_at)}
     if task.kind == Task.Kind.PERSONAL:
         return _("⏰ Snoozed. Next reminder at %(time)s.") % values
+    # Translators: %(time)s is a clock time; %(due)s reads like "bugun, 18:00".
     return _("⏰ Snoozed. Next reminder at %(time)s; the deadline stays %(due)s.") % values
 
 
@@ -350,6 +351,7 @@ def which_photo_task(tasks: list[Task], now: datetime) -> BotMessage:
 
 def comment_prompt(task: Task) -> BotMessage:
     """Ask for a comment, with the reply field open and Cancel kept (Bot API 10.3)."""
+    # Translators: %(title)s is the task's title: let a carrier word take any case ending.
     text = _("💬 Write your comment on <b>%(title)s</b>:") % {
         "title": html.quote(display_title(task))
     }
@@ -514,14 +516,17 @@ def ask_assignee() -> str:
 
 def task_assigned(task: Task, now: datetime) -> BotMessage:
     if task.kind == Task.Kind.DAILY:
+        # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
         header = _("🔁 <b>Today's routine task</b> · %(name)s")
     else:
+        # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
         header = _("📨 <b>New task</b> · %(name)s")
     header %= {"name": html.quote(str(task.created_by or ""))}
     return task_card(task, task.assignee, now, header.rstrip(" ·"))
 
 
 def review_request(task: Task, reviewer: Membership, now: datetime) -> BotMessage:
+    # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
     header = _("🔎 %(name)s finished a task. Please check it.") % {
         "name": html.quote(str(task.assignee))
     }
@@ -529,11 +534,13 @@ def review_request(task: Task, reviewer: Membership, now: datetime) -> BotMessag
 
 
 def task_completed(task: Task, creator: Membership, now: datetime) -> BotMessage:
+    # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
     header = _("✅ %(name)s completed a task.") % {"name": html.quote(str(task.assignee))}
     return task_card(task, creator, now, header)
 
 
 def task_confirmed(task: Task, now: datetime) -> BotMessage:
+    # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
     header = _("👍 %(name)s confirmed your task.") % {"name": html.quote(str(task.confirmed_by))}
     return task_card(task, task.assignee, now, header)
 
@@ -545,6 +552,7 @@ def task_returned(task: Task, reason: str, now: datetime) -> BotMessage:
 
 def nudge(task: Task, by: Membership, now: datetime) -> BotMessage:
     """The dashboard's "Nudge now": a friendly push from a named person."""
+    # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
     header = _("👋 %(name)s is waiting for this task.") % {"name": html.quote(str(by))}
     return task_card(task, task.assignee, now, header)
 
@@ -556,8 +564,10 @@ def comment_notice(
     adds a comment (R1 Q2); the reply button asks for one."""
     name = html.quote(str(author)) if author else "—"
     if mentioned:
+        # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
         header = _("💬 <b>%(name)s mentioned you</b>") % {"name": name}
     else:
+        # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
         header = _("💬 <b>New comment</b> · %(name)s") % {"name": name}
     lines = [header, f"{_icon(task, timezone.now())} <b>{html.quote(display_title(task))}</b>"]
     if several_companies(recipient):
@@ -569,8 +579,10 @@ def comment_notice(
 
 def due_changed(task: Task, old_due: datetime | None, by: Membership, now: datetime) -> BotMessage:
     """The deadline moved (audit X-6): the card, saying what it was."""
+    # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
     header = _("🕒 <b>New deadline</b> · %(name)s") % {"name": html.quote(str(by))}
     if old_due is not None:
+        # Translators: %(when)s reads like "bugun, 18:00" or "25-okt, 18:30".
         header += "\n" + _("It was: %(when)s") % {"when": _short(task, old_due, now)}
     return task_card(task, task.assignee, now, header)
 
@@ -578,6 +590,7 @@ def due_changed(task: Task, old_due: datetime | None, by: Membership, now: datet
 def task_cancelled(task: Task, by: Membership) -> BotMessage:
     text = "\n".join(
         [
+            # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
             _("✖️ <b>Task cancelled</b> · %(name)s") % {"name": html.quote(str(by))},
             f"<s>{html.quote(display_title(task))}</s>",
         ]
@@ -589,8 +602,10 @@ def task_cancelled(task: Task, by: Membership) -> BotMessage:
 def task_taken_away(task: Task, by: Membership) -> BotMessage:
     text = "\n".join(
         [
+            # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
             _("↪️ <b>Given to someone else</b> · %(name)s") % {"name": html.quote(str(by))},
             f"<s>{html.quote(display_title(task))}</s>",
+            # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
             _("Now it's for: %(name)s") % {"name": html.quote(str(task.assignee))},
         ]
     )
@@ -600,6 +615,7 @@ def task_taken_away(task: Task, by: Membership) -> BotMessage:
 
 def blocked_notice(task: Task, giver: Membership, now: datetime) -> BotMessage:
     """Someone can't do a task (research R2 T57): the reason on its own line, and what to do."""
+    # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
     header = _("⛔ <b>%(name)s can't do this task</b>") % {"name": html.quote(str(task.assignee))}
     text = card_text(task, giver, now, header)
     rows = [
@@ -621,14 +637,17 @@ def blocker_answer(task: Task, action: str, by: Membership, now: datetime) -> Bo
         return task_taken_away(task, by)
     if action == "cancel":
         return task_cancelled(task, by)
+    # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
     return task_card(task, task.assignee, now, _("🕒 <b>New deadline</b> · %(name)s") % name)
 
 
 def extension_answer(task: Task, approved: bool, by: Membership, now: datetime) -> BotMessage:
     name = {"name": html.quote(str(by))}
     if approved:
+        # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
         header = _("✅ <b>More time given</b> · %(name)s") % name
     else:
+        # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
         header = _("✖️ <b>The deadline stays</b> · %(name)s") % name
     return task_card(task, task.assignee, now, header)
 
@@ -655,16 +674,19 @@ def _copy_header(task: Task, member: Membership, kind: str, now: datetime) -> st
         return ""
     if task.status == Task.Status.DONE:
         if task.confirmed_by_id:
+            # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
             return _("✅ <b>Accepted</b> · %(name)s") % {"name": html.quote(str(task.confirmed_by))}
         done = {"time": _clock(task, task.completed_at)}
         if task.due_at and task.completed_at > task.due_at:
             done["late"] = format_duration(task.completed_at - task.due_at)
+            # Translators: %(time)s is a clock time (14:30); %(late)s a length (25 min, 1 h 5 min).
             return _("✅ <b>Done</b> · %(time)s, %(late)s late") % done
         return _("✅ <b>Done</b> · %(time)s") % done
     if kind == "review":
         if task.status == Task.Status.RETURNED:
             return _("↩️ <b>Sent back</b>")
         if task.status == Task.Status.REVIEW:
+            # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
             return _("🔎 %(name)s finished a task. Please check it.") % {
                 "name": html.quote(str(task.assignee))
             }
@@ -719,6 +741,7 @@ def ask_due(company: Company, now: datetime, *, error: bool = False) -> BotMessa
 
 def due_passed(when: str) -> BotMessage:
     """An explicit "today 18:00" typed at 19:10 (research R2 §6.1): offer tomorrow."""
+    # Translators: %(when)s is a clock time such as 08:00.
     text = _("%(when)s has already passed today. Tomorrow at the same time?") % {"when": when}
     rows = [
         [
@@ -756,6 +779,7 @@ def quick_add_preview(
     if urgent:
         lines.append(f"⚡ {Task.Priority.URGENT.label}")
     if assignee:
+        # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
         lines.append(_("👤 For: %(name)s") % {"name": html.quote(assignee)})
     first = [
         InlineKeyboardButton(
