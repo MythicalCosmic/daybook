@@ -252,7 +252,7 @@ function GivenByMe({ tasks, loading, error, onRetry, ctx, onOpen, onAdd }: {
             <span className="tag tag-neutral tag-small">{group.tasks.length}</span>
           </div>
           {group.tasks.map((task) => (
-            <TaskRow key={task.id} task={task} ctx={ctx} onOpen={() => onOpen(task)} meta={giverMeta(task, ctx)} />
+            <TaskRow key={task.id} task={task} ctx={ctx} onOpen={() => onOpen(task)} meta={giverMeta(task, ctx)} wrapMeta />
           ))}
         </div>
       ))}

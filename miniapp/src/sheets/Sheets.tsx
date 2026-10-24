@@ -6,6 +6,7 @@ import type { Task } from "../api/types";
 import { FeatureSheet } from "../features/hosts";
 import { LANGUAGES, translate, useI18n, type Key, type Lang } from "../i18n";
 import { errorText, useDoneToast } from "../lib/actions";
+import { downscale } from "../lib/image";
 import { addDays, dayKey } from "../lib/time";
 import { useDraftGuard } from "../lib/useDraftGuard";
 import { useNavigation } from "../state/navigation";
@@ -98,8 +99,15 @@ function CompleteForm({ task }: { task: Task }) {
             hidden
             onChange={(event) => {
               const file = event.target.files?.[0] ?? null;
-              if (file) haptic();
+              if (!file) {
+                setPhoto(null);
+                return;
+              }
+              haptic();
+              // Shown at once; the smaller copy replaces it for the upload (a weak signal gets
+              // 300 KB through where 5 MB fails).
               setPhoto(file);
+              void downscale(file).then((small) => setPhoto((current) => (current === file ? small : current)));
             }}
           />
           {photo && preview ? (

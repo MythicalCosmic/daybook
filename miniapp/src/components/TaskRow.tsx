@@ -16,9 +16,11 @@ type Props = {
   meta?: string;
   /** In place of the time chip: a finished run's proof photo; `false` for nothing at all. */
   trailing?: ReactNode;
+  /** Let the line under the title wrap rather than cut (who has it and how late, for the giver). */
+  wrapMeta?: boolean;
 };
 
-export function TaskRow({ task, ctx, onOpen, onTick, meta, trailing }: Props) {
+export function TaskRow({ task, ctx, onOpen, onTick, meta, trailing, wrapMeta = false }: Props) {
   const lang = asLang(ctx.locale.slice(0, 2));
   const kind = glyph(task, ctx.now);
   const alert = needsAttention(task, ctx.now);
@@ -57,7 +59,7 @@ export function TaskRow({ task, ctx, onOpen, onTick, meta, trailing }: Props) {
             )}
           </div>
         )}
-        <div className={alert ? "row-meta row-meta--alert" : "row-meta"}>
+        <div className={["row-meta", alert && "row-meta--alert", wrapMeta && "row-meta--wrap"].filter(Boolean).join(" ")}>
           {/* High is a quiet flag before the line. */}
           {prio === "high" && task.status !== "done" && (
             <span className="prio prio--high" role="img" aria-label={ctx.t("priority.high")} title={ctx.t("priority.high")}>

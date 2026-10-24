@@ -47,6 +47,28 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+describe("finishing with proof", () => {
+  it("sends the photo, and offers Undo after", async () => {
+    const task = makeTask({ proof: "photo", needs_confirmation: true });
+    open(task, { kind: "complete", taskId: task.id });
+    const file = new File(["jpeg"], "shelf.jpg", { type: "image/jpeg" });
+    const input = document.querySelector('.sheet input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+    fireEvent.click(await screen.findByRole("button", { name: "Send for checking" }));
+    await waitFor(() => {
+      const form = (api.mock.calls as [string, { form?: FormData }][]).find(([path]) => path.endsWith("/complete/"))?.[1]?.form;
+      expect((form?.get("proof_photo") as File | null)?.name).toBe("shelf.jpg");
+    });
+    expect(await screen.findByRole("button", { name: "Undo" })).toBeTruthy();
+  });
+
+  it("starts a sent-back report from the one that went with it", () => {
+    const task = makeTask({ proof: "text", status: "returned", proof_text: "Till: 4 250 000" });
+    open(task, { kind: "complete", taskId: task.id });
+    expect((screen.getByLabelText("Note (needed)") as HTMLTextAreaElement).value).toBe("Till: 4 250 000");
+  });
+});
+
 describe("snooze choices (R2 T15)", () => {
   it("pause the reminders of someone's work and say the deadline stays", async () => {
     const task = makeTask({ due_at: "2026-10-21T09:30:00+05:00", snoozed_until: null, reminder: { snoozes_left: 2 } as Task["reminder"] });
