@@ -11,3 +11,8 @@ class TasksAction(models.TextChoices):
     NUDGED = "tasks.nudged", _("Nudged someone about a task")
     ONBOARDING_ASSIGNED = "tasks.onboarding_assigned", _("Gave a new person their onboarding tasks")
     BULK = "tasks.bulk", _("Changed several tasks at once")
+    REOPENED = "tasks.reopened", _("Undid finishing a task")
+    BLOCKED = "tasks.blocked", _("Said they can't do a task")
+    UNBLOCKED = "tasks.unblocked", _("Decided about a task someone couldn't do")
+    EXTENSION_ASKED = "tasks.extension_asked", _("Asked for more time")
+    EXTENSION_DECIDED = "tasks.extension_decided", _("Decided about more time for a task")

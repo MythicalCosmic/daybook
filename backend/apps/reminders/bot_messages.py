@@ -45,7 +45,7 @@ def reminder(
         text = _("🚨 <b>%(task)s</b> is %(late)s late. %(manager)s has been told.") % values
     elif policy.escalate_after and step > policy.escalate_after and task.kind != Task.Kind.PERSONAL:
         text = (
-            _("😤 Still not done: <b>%(task)s</b>, %(late)s late. Finish it now, please.") % values
+            _("❗ Still not done: <b>%(task)s</b>, %(late)s late. Finish it now, please.") % values
         )
     else:
         text = _("🔔 Reminder %(step)d: <b>%(task)s</b> is %(late)s late.") % values

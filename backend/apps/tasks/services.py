@@ -16,13 +16,14 @@ from apps.console import pulse
 from apps.core import uploads
 from apps.core.exceptions import DomainError
 from apps.groups import tasks as group_jobs
+from apps.inbox import services as inbox
 from apps.members.models import Membership, Position
 from apps.members.permissions import Perm
-from apps.members.scope import branch_ids
+from apps.members.scope import allows, branch_ids
 from apps.reminders.models import ReminderPolicy
-from apps.reminders.policies import policy_for
+from apps.reminders.policies import escalation_recipients, policy_for
 from apps.reminders.schedule import first_reminder_at
-from apps.tasks import generation, queries, rules
+from apps.tasks import dates, generation, queries, rules
 from apps.tasks import tasks as jobs
 from apps.tasks.audit_actions import TasksAction
 from apps.tasks.models import (
@@ -45,6 +46,17 @@ MAX_BULK = 200
 # "Nudge now" at most this often per task, so nobody is spammed by a nervous manager.
 NUDGE_COOLDOWN = timedelta(minutes=10)
 MAX_REWARD = Decimal("1000000000")
+# Done can be undone this long (research R2 T38); news of it waits as long, so an undone Done
+# never reaches the group or the reviewer.
+UNDO_WINDOW = rules.UNDO_WINDOW
+# Snooze choices besides the policy's own length ("15m" and "1h" hold the reminders; the
+# deadline stays). "tomorrow_morning" moves someone's own task instead.
+SNOOZE_LENGTHS = {"15m": timedelta(minutes=15), "1h": timedelta(hours=1)}
+TOMORROW_MORNING = "tomorrow_morning"
+SNOOZE_PRESETS = (*SNOOZE_LENGTHS, TOMORROW_MORNING)
+# More time asked for a task: at most this far past the current deadline.
+MAX_EXTENSION = timedelta(days=30)
+MAX_MENTIONS = 20
 
 
 @transaction.atomic
@@ -131,13 +143,22 @@ def update_task(task: Task, *, by: Membership, **changes) -> Task:
     if not task.is_open:
         raise DomainError(_("Only open tasks can be changed."))
     before = {field: audit.plain(getattr(task, field)) for field in changes}
+    old_due = task.due_at
     _apply_changes(task, changes)
+    moved = "due_at" in changes and task.due_at != old_due
     if "due_at" in changes:
         _restart_reminders(task)
+    if moved:
+        # A new deadline answers "can't do it" and "need more time" alike.
+        _clear_blocker(task, by, outcome=_("🕒 New deadline set"))
+        _clear_extension(task, by, outcome=_("🕒 New deadline set"))
     task.save()
     after = {field: audit.plain(getattr(task, field)) for field in changes}
     if changed := audit.diff(before, after):
         _audit(AuditLog.Action.TASK_CHANGED, task, by, changes=changed)
+    if moved and by.pk != task.assignee_id:
+        old = old_due.isoformat() if old_due else None
+        transaction.on_commit(partial(jobs.notify_due_changed.delay, task.pk, old, by.pk))
     return task
 
 
@@ -175,13 +196,52 @@ def complete_task(
     task.completed_at = timezone.now()
     task.status = Task.Status.REVIEW if task.needs_confirmation else Task.Status.DONE
     task.next_reminder_at = None
+    _clear_blocker(task, by, outcome=_("✅ Done"))
+    _clear_extension(task, by, outcome=_("✅ Done"))
     task.save()
     if task.status == Task.Status.REVIEW:
         _add_to_feed(Activity.Kind.REVIEW, task, queries.reviewers(task), by)
     elif task.kind == Task.Kind.ASSIGNED:
         _add_to_feed(Activity.Kind.COMPLETED, task, [task.created_by], by)
-    transaction.on_commit(partial(jobs.notify_task_completed.delay, task.pk))
-    transaction.on_commit(partial(group_jobs.announce_task_done.delay, task.pk))
+    # The reviewer's push and the group's post wait out the undo window, and only go if this
+    # very completion still stands then (`reopen_task`).
+    stamp = task.completed_at.isoformat()
+    wait = int(UNDO_WINDOW.total_seconds())
+    transaction.on_commit(
+        partial(jobs.notify_task_completed.apply_async, (task.pk, stamp), countdown=wait)
+    )
+    transaction.on_commit(
+        partial(group_jobs.announce_task_done.apply_async, (task.pk, stamp), countdown=wait)
+    )
+    return task
+
+
+@transaction.atomic
+def reopen_task(task: Task, *, by: Membership) -> Task:
+    """Undo a Done (research R2 T38): only the person who did it, within `UNDO_WINDOW`, while
+    nobody has confirmed it. The task is open again as it was (in progress once started), the
+    proof stays, reminders pick up again, and the feed entries the Done made go away; the
+    delayed pushes see it's open and stay quiet."""
+    task = _lock(task)
+    _ensure_assignee(task, by)
+    if task.status not in (Task.Status.DONE, Task.Status.REVIEW) or task.completed_at is None:
+        raise DomainError(_("This task isn't finished, so there's nothing to undo."))
+    if task.confirmed_at is not None:
+        raise DomainError(_("This task was already accepted, so it can't be undone."))
+    if timezone.now() - task.completed_at > UNDO_WINDOW:
+        raise DomainError(_("Too late to undo: it's been more than a minute."))
+    completed_at = task.completed_at
+    task.status = Task.Status.IN_PROGRESS if task.started_at else Task.Status.TODO
+    task.completed_at = None
+    task.next_reminder_at = _resume_reminders_at(task)
+    task.save()
+    Activity.objects.filter(
+        task=task,
+        actor=by,
+        kind__in=(Activity.Kind.REVIEW, Activity.Kind.COMPLETED),
+        created_at__gte=completed_at,
+    ).delete()
+    _audit(TasksAction.REOPENED, task, by)
     return task
 
 
@@ -226,11 +286,15 @@ def cancel_task(task: Task, *, by: Membership, stop_repeating: bool = False) -> 
         raise DomainError(_already(task))
     task.status = Task.Status.CANCELLED
     task.next_reminder_at = None
+    _clear_blocker(task, by, outcome=_("✖️ Task cancelled"))
+    _clear_extension(task, by, outcome=_("✖️ Task cancelled"))
     task.save()
     _audit(AuditLog.Action.TASK_CANCELLED, task, by)
     if stop_repeating and task.template is not None and task.template.personal:
         task.template.is_active = False
         task.template.save(update_fields=["is_active", "updated_at"])
+    if by.pk != task.assignee_id:
+        transaction.on_commit(partial(jobs.notify_task_cancelled.delay, task.pk, by.pk))
     return task
 
 
@@ -260,6 +324,8 @@ def hand_back_work(member: Membership) -> None:
             task.escalate_to = None
             task.snooze_count = 0
             task.last_reminder_message_id = None
+            task.blocker, task.blocker_note, task.blocked_at = "", "", None
+            task.extension_until, task.extension_note, task.extension_asked_at = None, "", None
             _restart_reminders(task)
             task.save()
             handed_back.setdefault(giver.pk, []).append(task.pk)
@@ -302,6 +368,7 @@ def resume_reminders(member: Membership) -> int:
             status__in=Task.OPEN_STATUSES,
             due_at__isnull=False,
             next_reminder_at__isnull=True,
+            blocked_at__isnull=True,  # "can't do it" keeps them quiet until someone decides
         )
     )
     resumed = 0
@@ -315,18 +382,39 @@ def resume_reminders(member: Membership) -> int:
 
 
 @transaction.atomic
-def snooze_task(task: Task, *, by: Membership) -> Task:
-    """Hold off the reminders for a while, a limited number of times per task."""
+def snooze_task(task: Task, *, by: Membership, preset: str | None = None) -> Task:
+    """Hold off the reminders for a while, a limited number of times per task: the policy's own
+    length, or a preset ("15m", "1h"). The deadline stays where it is (research R2 T15).
+
+    "tomorrow_morning" is for someone's own task: it moves the deadline to 09:00 of the coming
+    morning in the company's time, and doesn't use up a snooze."""
     task = _lock(task)
     _ensure_assignee(task, by)
     if not task.is_open or task.due_at is None:
         raise DomainError(_("Only open tasks with a deadline can be snoozed."))
+    if preset is not None and preset not in SNOOZE_PRESETS:
+        raise DomainError(_("Pick 15 minutes, an hour or tomorrow morning."))
+    if task.blocked_at is not None:
+        raise DomainError(_("Reminders are already paused: the task is waiting for a decision."))
+    now = timezone.now()
+    if preset == TOMORROW_MORNING:
+        if task.kind != Task.Kind.PERSONAL:
+            raise DomainError(_("Only your own tasks move to tomorrow. Ask for more time instead."))
+        local_now = timezone.localtime(now, ZoneInfo(task.company.timezone))
+        task.due_at = dates.tomorrow_morning(local_now)
+        _restart_reminders(task)
+        task.save()
+        return task
     policy = policy_for(task)
     if task.snooze_count >= policy.max_snoozes:
         raise DomainError(_("No snoozes left for this task."))
-    now = timezone.now()
-    task.snoozed_until = now + timedelta(minutes=policy.snooze_minutes)
-    task.next_reminder_at = task.snoozed_until
+    length = SNOOZE_LENGTHS[preset] if preset else timedelta(minutes=policy.snooze_minutes)
+    task.snoozed_until = now + length
+    upcoming = task.next_reminder_at
+    # A reminder already planned for later than the snooze (a heads-up ahead of the deadline,
+    # say) stays where it is; the snooze never brings one forward.
+    if upcoming is None or upcoming <= task.snoozed_until:
+        task.next_reminder_at = task.snoozed_until
     task.snooze_count += 1
     task.save()
     return task
@@ -344,13 +432,36 @@ def toggle_checklist_item(item: ChecklistItem, *, by: Membership, done: bool) ->
 
 
 @transaction.atomic
-def add_comment(task: Task, *, by: Membership, text: str) -> TaskComment:
+def add_comment(
+    task: Task, *, by: Membership, text: str, mentions: list[int] | tuple[int, ...] = ()
+) -> TaskComment:
+    """A comment, and it reaches people (research R2 T33/T34): the assignee, whoever gave the
+    task and everyone `mentions` names (membership ids) get a bot message and a feed entry;
+    the author never does. A mention must be someone on the task or working in its branch."""
     text = text.strip()
     if not text:
         raise DomainError(_("A comment can't be empty."))
+    mentioned = _mentioned(task, by, mentions)
     comment = TaskComment.objects.create(task=task, author=by, text=text)
-    _add_to_feed(Activity.Kind.COMMENTED, task, [task.assignee, task.created_by], by, text)
+    recipients = [task.assignee, task.created_by, *mentioned]
+    _add_to_feed(Activity.Kind.COMMENTED, task, recipients, by, text)
+    transaction.on_commit(
+        partial(jobs.notify_comment.delay, comment.pk, [person.pk for person in mentioned])
+    )
     return comment
+
+
+def mark_seen(task: Task, *, by: Membership) -> bool:
+    """The first time the assignee opens their task (the app's task screen, the bot's card):
+    `seen_at`, so whoever gave it sees "Seen 09:12" (research R2 T36). True when it was new."""
+    if task.seen_at is not None or not rules.is_assignee(task, by):
+        return False
+    now = timezone.now()
+    if not Task.objects.filter(pk=task.pk, seen_at__isnull=True).update(seen_at=now):
+        return False
+    task.seen_at = now
+    transaction.on_commit(partial(pulse.bump, task.company_id, "tasks.tasks"))
+    return True
 
 
 @transaction.atomic
@@ -394,6 +505,11 @@ def reassign_task(task: Task, *, by: Membership, assignee: Membership) -> Task:
         # The same rule as handing it out: a lead moves a card only between their project's
         # people, someone with tasks.assign within their branches (or the project's people).
         _ensure_may_assign(by, assignee, task.project if task.project_id else None)
+    return _reassign(task, by=by, assignee=assignee)
+
+
+def _reassign(task: Task, *, by: Membership, assignee: Membership) -> Task:
+    """The change itself, on a locked task whose new assignee was checked by the caller."""
     previous = task.assignee
     task.assignee = assignee
     if task.status == Task.Status.IN_PROGRESS:
@@ -402,6 +518,9 @@ def reassign_task(task: Task, *, by: Membership, assignee: Membership) -> Task:
     task.snooze_count = 0
     task.last_reminder_message_id = None
     task.last_nudged_at = None
+    task.seen_at = None  # the new person hasn't seen it yet
+    _clear_blocker(task, by, outcome=_("👤 Given to someone else"))
+    _clear_extension(task, by, outcome=_("👤 Given to someone else"))
     _restart_reminders(task)
     try:
         with transaction.atomic():
@@ -419,6 +538,11 @@ def reassign_task(task: Task, *, by: Membership, assignee: Membership) -> Task:
         changes={"assignee": [str(previous), str(assignee)]},
     )
     transaction.on_commit(partial(jobs.notify_task_assigned.delay, task.pk))
+    if previous.pk != by.pk:
+        # The person who loses it hears so, and stops working to it (audit X-6).
+        transaction.on_commit(
+            partial(jobs.notify_task_taken_away.delay, task.pk, previous.pk, by.pk)
+        )
     return task
 
 
@@ -454,6 +578,292 @@ def move_task(task: Task, *, by: Membership, to: str, reason: str = "") -> Task:
     if to == rules.Column.DONE and task.status == Task.Status.REVIEW:
         return confirm_task(task, by=by)
     return complete_task(task, by=by)
+
+
+# "Can't do it" and "Need more time" (research R2 T57, T17) --------------------------------
+
+
+class BlockerAction:
+    REASSIGN = "reassign"
+    NEW_DUE = "new_due"
+    CANCEL = "cancel"
+
+    ALL = (REASSIGN, NEW_DUE, CANCEL)
+
+
+@transaction.atomic
+def report_blocker(task: Task, *, by: Membership, reason_code: str, note: str = "") -> Task:
+    """The assignee can't do it (out of stock, no access, something broken, not theirs…): the
+    reminders pause and whoever gave it (or its escalation contact) hears, with the choice to
+    give it to someone else, set a new time or cancel it (`resolve_blocker`)."""
+    task = _lock(task)
+    _ensure_assignee(task, by)
+    if not task.is_open:
+        raise DomainError(_already(task))
+    if task.kind == Task.Kind.PERSONAL:
+        raise DomainError(_("This is your own task: change its deadline or cancel it instead."))
+    if reason_code not in Task.Blocker.values:
+        raise DomainError(_("Pick a reason."))
+    note = (note or "").strip()[:300]
+    if reason_code == Task.Blocker.OTHER and not note:
+        raise DomainError(_("Write what's in the way."))
+    task.blocker, task.blocker_note, task.blocked_at = reason_code, note, timezone.now()
+    task.next_reminder_at = None
+    task.save()
+    _audit(TasksAction.BLOCKED, task, by, reason=reason_code)
+    givers = [person for person in escalation_recipients(task) if person.pk != by.pk]
+    if givers:
+        reason = Task.Blocker(reason_code)
+        inbox.notify(
+            givers,
+            "tasks.blocked",
+            title=lambda person: _("⛔ %(name)s can't do a task") % {"name": by},
+            body=lambda person: _blocker_body(task, reason, note),
+            url=f"/c/{task.company_id}/tasks?task={task.pk}",
+            app_screen=f"task:{task.pk}",
+            target=task,
+            actor=by,
+            severity="warning",
+        )
+        transaction.on_commit(
+            partial(jobs.notify_blocked.delay, task.pk, [person.pk for person in givers])
+        )
+    return task
+
+
+@transaction.atomic
+def resolve_blocker(
+    task: Task,
+    *,
+    by: Membership,
+    action: str,
+    assignee_id: int | None = None,
+    due_at: datetime | None = None,
+) -> Task:
+    """Answer a "can't do it": give it to someone else (`assignee_id`), set a new deadline
+    (`due_at`) or cancel it. The giver may, and so may whoever holds tasks.assign or
+    tasks.confirm for the task's branch. The person who reported it hears the answer."""
+    task = _lock(task)
+    if action not in BlockerAction.ALL:
+        raise DomainError(_("Pick: someone else, a new time, or cancel."))
+    if task.blocked_at is None or not task.is_open:
+        raise DomainError(_("This task isn't waiting for a decision."))
+    _ensure_may_decide(task, by)
+    reporter = task.assignee
+    if action == BlockerAction.REASSIGN:
+        person = _colleague(task, by, assignee_id)
+        task = _reassign(task, by=by, assignee=person)
+    elif action == BlockerAction.NEW_DUE:
+        if due_at is None:
+            raise DomainError(_("Pick the new deadline."))
+        old_due = task.due_at
+        _apply_changes(task, {"due_at": due_at})
+        _restart_reminders(task)
+        _clear_blocker(task, by, outcome=_("🕒 New deadline set"))
+        task.save()
+        changes = {"due_at": [audit.plain(old_due), audit.plain(task.due_at)]}
+        _audit(AuditLog.Action.TASK_CHANGED, task, by, changes=changes)
+    else:
+        task.status = Task.Status.CANCELLED
+        task.next_reminder_at = None
+        _clear_blocker(task, by, outcome=_("✖️ Task cancelled"))
+        _clear_extension(task, by, outcome=_("✖️ Task cancelled"))
+        task.save()
+        _audit(AuditLog.Action.TASK_CANCELLED, task, by)
+    _audit(TasksAction.UNBLOCKED, task, by, reason=action)
+    transaction.on_commit(
+        partial(jobs.notify_blocker_resolved.delay, task.pk, action, by.pk, reporter.pk)
+    )
+    return task
+
+
+@transaction.atomic
+def request_extension(task: Task, *, by: Membership, until: datetime, note: str = "") -> Task:
+    """The assignee asks for a later deadline; whoever gave it approves or declines in one tap
+    (bot and inbox, `decide_extension`). Reminders go on meanwhile: the deadline still holds."""
+    task = _lock(task)
+    _ensure_assignee(task, by)
+    if not task.is_open or task.due_at is None:
+        raise DomainError(_("Only open tasks with a deadline can get more time."))
+    if task.kind == Task.Kind.PERSONAL:
+        raise DomainError(_("This is your own task: just change its deadline."))
+    now = timezone.now()
+    if until <= max(task.due_at, now):
+        raise DomainError(_("Pick a time later than the current deadline."))
+    if until - task.due_at > MAX_EXTENSION:
+        raise DomainError(_("Ask for at most 30 days more."))
+    note = (note or "").strip()[:300]
+    task.extension_until, task.extension_note, task.extension_asked_at = until, note, now
+    task.save()
+    asked = {"due_at": [audit.plain(task.due_at), audit.plain(until)]}
+    _audit(TasksAction.EXTENSION_ASKED, task, by, changes=asked)
+    # One open request at a time: an earlier one is closed in the inbox first.
+    inbox.settle(task, outcome=_("Asked again"), by=by, kind="tasks.extension")
+    givers = [person for person in escalation_recipients(task) if person.pk != by.pk]
+    if givers:
+        inbox.notify(
+            givers,
+            "tasks.extension",
+            title=lambda person: _("🕒 %(name)s asks for more time") % {"name": by},
+            body=lambda person: _extension_body(task, person, now),
+            url=f"/c/{task.company_id}/tasks?task={task.pk}",
+            app_screen=f"task:{task.pk}",
+            target=task,
+            actor=by,
+            actions=[
+                inbox.NotificationAction("approve", _("✅ Give more time"), "primary"),
+                inbox.NotificationAction("decline", _("✖️ Keep the deadline")),
+            ],
+        )
+    return task
+
+
+@transaction.atomic
+def decide_extension(task: Task, *, by: Membership, approve: bool) -> Task:
+    """Approve (the deadline moves to what was asked, reminders start over) or decline (it
+    stays). The giver may, and so may whoever holds tasks.assign or tasks.confirm for the task's
+    branch. The assignee hears the answer."""
+    task = _lock(task)
+    if task.extension_until is None or not task.is_open:
+        raise DomainError(_("Nobody is waiting for more time on this task."))
+    _ensure_may_decide(task, by)
+    until, old_due = task.extension_until, task.due_at
+    if approve:
+        if until <= timezone.now():
+            raise DomainError(_("The time asked for has already passed. Set a new deadline."))
+        task.due_at = until
+        _restart_reminders(task)
+    outcome = _("✅ More time given") if approve else _("✖️ Deadline kept")
+    _clear_extension(task, by, outcome=outcome)
+    if approve:
+        _clear_blocker(task, by, outcome=_("🕒 New deadline set"))
+    task.save()
+    _audit(
+        TasksAction.EXTENSION_DECIDED,
+        task,
+        by,
+        reason="approved" if approve else "declined",
+        changes={"due_at": [audit.plain(old_due), audit.plain(task.due_at)]} if approve else {},
+    )
+    transaction.on_commit(
+        partial(jobs.notify_extension_decided.delay, task.pk, approve, by.pk, until.isoformat())
+    )
+    return task
+
+
+def can_decide(task: Task, member: Membership) -> bool:
+    """Who answers a "can't do it" or a "need more time": whoever gave the task, its escalation
+    contact, or someone holding tasks.assign or tasks.confirm whose branch scope covers it."""
+    if task.company_id != member.company_id or rules.is_assignee(task, member):
+        return False
+    if member.status != Membership.Status.APPROVED:
+        return False
+    if task.created_by_id == member.pk or task.escalate_to_id == member.pk:
+        return True
+    holds = member.has_perm(Perm.TASKS_ASSIGN) or member.has_perm(Perm.TASKS_CONFIRM)
+    return holds and allows(branch_ids(member), task.branch_id)
+
+
+def _ensure_may_decide(task: Task, by: Membership) -> None:
+    if not can_decide(task, by):
+        raise PermissionDenied(_("Only whoever gave the task, or a manager, can decide."))
+
+
+def _colleague(task: Task, by: Membership, member_id: int | None) -> Membership:
+    """The person a blocked task goes to: registered in the task's company, inside the deciding
+    person's scope, not the one who couldn't do it."""
+    if member_id is None:
+        raise DomainError(_("Pick who gets it."))
+    person = (
+        Membership.objects.for_company(task.company_id)
+        .select_related("user", "company", "role")
+        .filter(pk=member_id)
+        .first()
+    )
+    if person is None or not _is_registered(person):
+        raise DomainError(_("Tasks can only go to registered members of your company."))
+    if person.pk == task.assignee_id:
+        raise DomainError(_("%(name)s already has this task.") % {"name": person})
+    _ensure_in_scope(by, person)
+    return person
+
+
+def _clear_blocker(task: Task, by: Membership | None, *, outcome) -> None:
+    """The "can't do it" is answered (any way at all): its fields go, and its open inbox entries
+    show `outcome`. The caller saves the task."""
+    if task.blocked_at is None:
+        return
+    task.blocker, task.blocker_note, task.blocked_at = "", "", None
+    inbox.settle(task, outcome=outcome, by=by, kind="tasks.blocked")
+
+
+def _clear_extension(task: Task, by: Membership | None, *, outcome) -> None:
+    """The same for a "need more time" request."""
+    if task.extension_until is None:
+        return
+    task.extension_until, task.extension_note, task.extension_asked_at = None, "", None
+    inbox.settle(task, outcome=outcome, by=by, kind="tasks.extension")
+
+
+def _blocker_body(task: Task, reason: Task.Blocker, note: str) -> str:
+    lines = [f"«{task.title}»", _("Reason: %(reason)s") % {"reason": reason.label}]
+    if note:
+        lines.append(_("Note: %(note)s") % {"note": note})
+    return "\n".join(lines)
+
+
+def _extension_body(task: Task, person: Membership, now: datetime) -> str:
+    """In the recipient's language and the company's time ("bugun, 23:30" → "ertaga, 00:30")."""
+    tz = ZoneInfo(task.company.timezone)
+    local_now = timezone.localtime(now, tz)
+    lang = person.user.language
+
+    def when(moment: datetime) -> str:
+        return dates.short_due(timezone.localtime(moment, tz), local_now, lang)
+
+    lines = [
+        f"«{task.title}»",
+        _("Deadline now: %(due)s") % {"due": when(task.due_at)},
+        _("Asks for: %(until)s") % {"until": when(task.extension_until)},
+    ]
+    if task.extension_note:
+        lines.append(_("Why: %(note)s") % {"note": task.extension_note})
+    return "\n".join(lines)
+
+
+def _mentioned(task: Task, by: Membership, ids) -> list[Membership]:
+    """The people a comment mentions: each must be someone on the task (its assignee, giver,
+    checker or escalation contact) or work where it happens (its branch; any branch for a
+    company-wide task, and anyone whose scope covers it)."""
+    wanted = list(dict.fromkeys(int(pk) for pk in ids or ()))
+    if not wanted:
+        return []
+    if len(wanted) > MAX_MENTIONS:
+        raise DomainError(_("Mention at most %(max)d people.") % {"max": MAX_MENTIONS})
+    people = {
+        person.pk: person
+        for person in Membership.objects.for_company(task.company_id)
+        .filter(pk__in=wanted, status=Membership.Status.APPROVED)
+        .select_related("user", "role", "company")
+        .prefetch_related("branches")
+    }
+    on_task = {task.assignee_id, task.created_by_id, task.confirmed_by_id, task.escalate_to_id}
+    found = []
+    for pk in wanted:
+        person = people.get(pk)
+        if person is None:
+            raise DomainError(_("Some of the people mentioned don't work here."))
+        works_there = (
+            task.branch_id is None
+            or person.home_branch_id == task.branch_id
+            or any(branch.pk == task.branch_id for branch in person.branches.all())
+            or allows(branch_ids(person), task.branch_id)
+        )
+        if pk not in on_task and not works_there:
+            raise DomainError(_("%(name)s doesn't work on this task's branch.") % {"name": person})
+        if pk != by.pk:
+            found.append(person)
+    return found
 
 
 @dataclass(frozen=True)
@@ -901,7 +1311,7 @@ def _ensure_reviewable(task: Task, by: Membership) -> None:
     if not rules.can_review(task, by):
         raise PermissionDenied(_("You can't confirm this task."))
     if task.status != Task.Status.REVIEW:
-        raise DomainError(_("This task isn't waiting for confirmation."))
+        raise DomainError(_("This task isn't waiting for a check."))
 
 
 def _is_registered(member: Membership) -> bool:

@@ -103,9 +103,13 @@ def _post(
 
 
 @shared_task
-def announce_task_done(task_id: int) -> None:
+def announce_task_done(task_id: int, completed_at: str | None = None) -> None:
+    """Queued once the undo window has passed (`apps.tasks.services.UNDO_WINDOW`), with the
+    completion it was queued for: an undone Done (or a later one) posts nothing from here."""
     task = Task.objects.select_related(*TASK_RELATIONS).filter(pk=task_id).first()
     if task is None or task.completed_at is None:
+        return
+    if completed_at is not None and task.completed_at != datetime.fromisoformat(completed_at):
         return
     event = {Task.Kind.DAILY: GroupEvent.DAILY_DONE, Task.Kind.ASSIGNED: GroupEvent.TASKS_DONE}
     if task.kind not in event:
