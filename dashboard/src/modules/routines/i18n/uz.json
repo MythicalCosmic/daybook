@@ -276,5 +276,6 @@
   "routines.give.givenMoreBody": "Bugun soat {due} o‘tgach yaratilgan; bugungi vazifa qo‘lda berildi. Uni yana {n} kishiga berish mumkin. | Bugun soat {due} o‘tgach yaratilgan; bugungi vazifa qo‘lda berildi. Uni yana {n} kishiga berish mumkin. | Bugun soat {due} o‘tgach yaratilgan; bugungi vazifa qo‘lda berildi. Uni yana {n} kishiga berish mumkin.",
   "routines.onTime30": "o‘z vaqtida, 30 kun",
   "routines.late30": "{n} ta kechikkan | {n} ta kechikkan | {n} ta kechikkan",
-  "routines.share30Hint": "Oxirgi 30 kun: muddati kelgan {made} · o‘z vaqtida {onTime} · kechikib {late} · bajarilmagan {missed}"
+  "routines.share30Hint": "Oxirgi 30 kun: muddati kelgan {made} · o‘z vaqtida {onTime} · kechikib {late} · bajarilmagan {missed}",
+  "routines.confirm.decidedElsewhere": "{n} tasini boshqa rahbar allaqachon tekshirgan | {n} tasini boshqa rahbar allaqachon tekshirgan | {n} tasini boshqa rahbar allaqachon tekshirgan"
 }

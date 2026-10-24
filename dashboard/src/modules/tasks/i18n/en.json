@@ -345,5 +345,6 @@
   "tasks.widget.doneShort": "done",
   "tasks.widget.lateShort": "late",
   "tasks.widget.reviewShort": "to check",
-  "tasks.widget.answersShort": "wait for you"
+  "tasks.widget.answersShort": "wait for you",
+  "tasks.reviews.decidedElsewhere": "Someone else already checked it"
 }

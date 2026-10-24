@@ -14,6 +14,7 @@ import { computed, nextTick, onBeforeUnmount, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
+import { isApiError } from "@/api/http";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import KbdKey from "@/components/KbdKey.vue";
@@ -107,12 +108,24 @@ function hide(id: number, value: boolean): void {
 async function send(task: TaskReview): Promise<void> {
   pending.delete(task.id);
   try {
-    await tasksApi.confirm(company.currentId!, task.id);
-  } catch {
-    hide(task.id, false); // back in the list; the HTTP layer showed why
-  } finally {
+    await tasksApi.confirm(company.currentId!, task.id, { toast: false });
     void refresh();
+  } catch (error) {
+    // Several people may check the same work (audit X-11): when someone else decided it meanwhile,
+    // it just leaves the queue. Only work still waiting comes back, with the reason it failed.
+    await refresh();
+    if (stillWaiting(task.id)) {
+      hide(task.id, false);
+      toast.error(isApiError(error) && error.detail ? error.detail : t("common.error.generic"), { description: task.title });
+    } else {
+      toast.info(t("tasks.reviews.decidedElsewhere"), { description: task.title });
+    }
   }
+}
+
+/** Whether the queue (as the server has it now) still holds this task. */
+function stillWaiting(id: number): boolean {
+  return (query.data.value?.results ?? []).some((item) => item.id === id);
 }
 
 function accept(task: TaskReview): void {

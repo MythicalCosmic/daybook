@@ -50,7 +50,8 @@ export const tasksApi = {
   proofs: (cid: number, params: Params, signal?: AbortSignal) => http.get<ProofWall>(ownerPath(cid, "proofs/"), params, { signal }),
   create: (cid: number, input: TaskCreateInput) => http.post<{ created: number; ids: number[] }>(ownerPath(cid, "tasks/"), input),
   update: (cid: number, id: number, input: TaskUpdateInput) => http.patch<TaskDetail>(ownerPath(cid, `tasks/${id}/`), input),
-  confirm: (cid: number, id: number) => http.post<TaskDetail>(ownerPath(cid, `tasks/${id}/confirm/`)),
+  /** `toast: false` when the caller explains a refusal itself (the reviews queue). */
+  confirm: (cid: number, id: number, options: { toast?: boolean } = {}) => http.post<TaskDetail>(ownerPath(cid, `tasks/${id}/confirm/`), undefined, options),
   sendBack: (cid: number, id: number, reason: string) => http.post<TaskDetail>(ownerPath(cid, `tasks/${id}/return/`), { reason }),
   cancel: (cid: number, id: number) => http.post<TaskDetail>(ownerPath(cid, `tasks/${id}/cancel/`)),
   reassign: (cid: number, id: number, assigneeId: number) => http.post<TaskDetail>(ownerPath(cid, `tasks/${id}/reassign/`), { assignee_id: assigneeId }),

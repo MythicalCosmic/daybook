@@ -276,5 +276,6 @@
   "routines.give.givenMoreBody": "It was made after today's {due}; today's task was given by hand. {n} more people can still get it. | It was made after today's {due}; today's task was given by hand. {n} more person can still get it. | It was made after today's {due}; today's task was given by hand. {n} more people can still get it.",
   "routines.onTime30": "on time, 30 days",
   "routines.late30": "{n} late | {n} late | {n} late",
-  "routines.share30Hint": "Last 30 days: {made} due · {onTime} on time · {late} late · {missed} not done"
+  "routines.share30Hint": "Last 30 days: {made} due · {onTime} on time · {late} late · {missed} not done",
+  "routines.confirm.decidedElsewhere": "{n} were already checked by someone else | {n} was already checked by someone else | {n} were already checked by someone else"
 }

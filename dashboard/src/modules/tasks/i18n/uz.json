@@ -345,5 +345,6 @@
   "tasks.widget.doneShort": "bajarildi",
   "tasks.widget.lateShort": "kechikkan",
   "tasks.widget.reviewShort": "tekshiruvda",
-  "tasks.widget.answersShort": "javob kutmoqda"
+  "tasks.widget.answersShort": "javob kutmoqda",
+  "tasks.reviews.decidedElsewhere": "Uni boshqa rahbar allaqachon tekshirgan"
 }

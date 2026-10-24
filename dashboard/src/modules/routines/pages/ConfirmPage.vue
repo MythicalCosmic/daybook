@@ -62,7 +62,16 @@ async function confirm(runs: RoutineRun[], label: string): Promise<void> {
   hide(ids, true);
   try {
     const result = await confirmRuns.mutateAsync(ids);
-    const failed = result.results.filter((row) => !row.ok);
+    let failed = result.results.filter((row) => !row.ok);
+    if (failed.length) {
+      // Someone else may have checked some meanwhile (audit X-11): those just leave. Only runs
+      // still waiting come back, with the reason.
+      await query.refetch();
+      const waiting = new Set((query.data.value?.groups ?? []).flatMap((group) => group.items.map((run) => run.id)));
+      const elsewhere = failed.filter((row) => !waiting.has(row.id)).length;
+      failed = failed.filter((row) => waiting.has(row.id));
+      if (elsewhere) toast.info(t("routines.confirm.decidedElsewhere", { n: elsewhere }, elsewhere), { description: label });
+    }
     hide(
       failed.map((row) => row.id),
       false,

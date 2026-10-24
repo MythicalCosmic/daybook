@@ -546,6 +546,26 @@ describe("routine work", () => {
     wrapper.unmount();
   });
 
+  it("To confirm lets runs someone else already checked leave quietly (audit X-11)", async () => {
+    let asked = 0;
+    const items = () => [
+      run(1, "Ali Valiyev", "review", { completed_at: "2026-10-20T03:55:00Z", on_time: true, can_confirm: true }),
+      run(2, "Vali Karimov", "review", { completed_at: "2026-10-20T04:30:00Z", on_time: true, can_confirm: true }),
+    ];
+    stub({
+      // After the confirm, the head has checked run 2 already: it's no longer waiting.
+      "GET routines/to-confirm/": () => json({ count: 2, groups: [{ routine: ref(4, "Muzlatgich haroratini yozish"), day: "2026-10-20", items: asked++ === 0 ? items() : [] }] }),
+      "POST tasks/bulk/": () => json({ done: 1, failed: 1, results: [{ id: 1, ok: true, error: "" }, { id: 2, ok: false, error: "This task isn't waiting for a check." }] }),
+    });
+    const { wrapper } = await mountPage("/c/1/routines/confirm", "ConfirmPage");
+    [...document.body.querySelectorAll("button")].find((b) => b.textContent?.trim() === "Confirm all (2)")!.click();
+    await flushPromises();
+    await flushPromises();
+    expect(document.body.querySelector("[data-run='2']")).toBeNull();
+    expect(toasts.map((toast) => toast.title)).toEqual(["1 was already checked by someone else", "1 confirmed"]);
+    wrapper.unmount();
+  });
+
   it("History colours each routine's days and a cell opens that day's runs", async () => {
     const cell = (finished: number, made: number) => ({ made, finished, on_time: finished, late: 0, missed: made - finished, open: 0, percent: Math.round((100 * finished) / made), on_time_percent: Math.round((100 * finished) / made) });
     stub({

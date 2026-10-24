@@ -288,6 +288,48 @@ describe("the reviews page", () => {
   });
 });
 
+describe("several people checking the same work (audit X-11)", () => {
+  const page = (results: unknown[]) => ({ count: results.length, next: null, previous: null, results });
+  const waiting = { ...row({ id: 9, status: "review", completed_at: "2026-10-24T10:00:00Z", proof: "text" }), description: "", proof_text: "+4 °C" };
+
+  async function acceptAfterSomeoneElse(stillThere: boolean) {
+    let asked = 0;
+    stub({
+      "GET tasks/reviews/": () => json(page(asked++ === 0 || stillThere ? [waiting] : [])),
+      "GET tasks/?extension=true&page_size=50": () => json(page([])),
+      "GET tasks/?blocked=true&page_size=50": () => json(page([])),
+      "POST tasks/9/confirm/": () => json({ detail: "This task isn't waiting for a check." }, 400),
+    });
+    const app = await testApp("/c/1/tasks/reviews");
+    const { default: ReviewsPage } = await import("../pages/ReviewsPage.vue");
+    const { wrapper } = mountWithProviders(ReviewsPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    vi.useFakeTimers({ toFake: ["setTimeout"] });
+    [...document.body.querySelectorAll<HTMLButtonElement>("[data-review-card] button")].find((b) => b.textContent?.trim() === "Confirm")!.click();
+    await vi.advanceTimersByTimeAsync(5100);
+    vi.useRealTimers();
+    await flushPromises();
+    await flushPromises();
+    return wrapper;
+  }
+
+  it("lets work someone else decided leave the queue quietly", async () => {
+    const wrapper = await acceptAfterSomeoneElse(false);
+    expect(document.body.querySelector("[data-review-card]")).toBeNull();
+    expect(toasts.at(-1)).toMatchObject({ title: "Someone else already checked it" });
+    expect(toasts.some((toast) => toast.title === "This task isn't waiting for a check.")).toBe(false);
+    wrapper.unmount();
+  });
+
+  it("brings back work still waiting, with the reason it failed", async () => {
+    const wrapper = await acceptAfterSomeoneElse(true);
+    expect(document.body.querySelector("[data-review-card]")).not.toBeNull();
+    expect(toasts.at(-1)).toMatchObject({ title: "This task isn't waiting for a check." });
+    wrapper.unmount();
+  });
+});
+
 describe("the Tasks page's chips", () => {
   const empty = { count: 0, next: null, previous: null, results: [] };
   const summary = { today: "2026-10-25", done_today: 0, total_today: 0, late_now: 0, review: 0, open: 1, on_time_percent: null, on_time_previous: null, done_7d: 0, done_prev_7d: 0, series: [] };

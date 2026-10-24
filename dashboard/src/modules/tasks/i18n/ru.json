@@ -345,5 +345,6 @@
   "tasks.widget.doneShort": "выполнено",
   "tasks.widget.lateShort": "просрочено",
   "tasks.widget.reviewShort": "на проверке",
-  "tasks.widget.answersShort": "ждут ответа"
+  "tasks.widget.answersShort": "ждут ответа",
+  "tasks.reviews.decidedElsewhere": "Её уже проверил другой руководитель"
 }
