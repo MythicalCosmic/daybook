@@ -346,5 +346,6 @@
   "tasks.widget.lateShort": "kechikkan",
   "tasks.widget.reviewShort": "tekshiruvda",
   "tasks.widget.answersShort": "javob kutmoqda",
-  "tasks.reviews.decidedElsewhere": "Uni boshqa rahbar allaqachon tekshirgan"
+  "tasks.reviews.decidedElsewhere": "Uni boshqa rahbar allaqachon tekshirgan",
+  "tasks.kpi.reviewOldest": "Bir martalik vazifalar · eng eskisi kutmoqda: {time}"
 }

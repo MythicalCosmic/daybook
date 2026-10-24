@@ -346,5 +346,6 @@
   "tasks.widget.lateShort": "late",
   "tasks.widget.reviewShort": "to check",
   "tasks.widget.answersShort": "wait for you",
-  "tasks.reviews.decidedElsewhere": "Someone else already checked it"
+  "tasks.reviews.decidedElsewhere": "Someone else already checked it",
+  "tasks.kpi.reviewOldest": "One-off tasks · the oldest has waited {time}"
 }

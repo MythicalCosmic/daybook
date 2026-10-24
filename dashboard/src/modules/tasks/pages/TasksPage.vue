@@ -33,13 +33,14 @@ import { patchQuery, rs, useRouteState } from "@/lib/useRouteState";
 import { paramsDiffer, useSavedViews } from "@/lib/useSavedViews";
 import { useCompanyStore } from "@/stores/company";
 
-import { useSummary, useTaskCount, useTaskOptions } from "../api";
+import { useReviews, useSummary, useTaskCount, useTaskOptions } from "../api";
 import CreateTaskDialog from "../components/CreateTaskDialog.vue";
 import TaskDrawer from "../components/TaskDrawer.vue";
 import TasksBoard from "../components/TasksBoard.vue";
 import TasksCalendar from "../components/TasksCalendar.vue";
 import TasksTable from "../components/TasksTable.vue";
 import { asksForRoutines, BLOCKED_PARAMS, builtinTabs, builtinViews, EXTENSION_PARAMS, filterDefs, viewParams } from "../filters";
+import { lateness, minutesBetween } from "../meta";
 import type { TaskRow, TaskView } from "../types";
 
 const { t } = useI18n();
@@ -123,6 +124,15 @@ onMounted(() => {
   if (!hasAny) patchQuery(router, builtins.value[0]!.params);
 });
 
+// How long the oldest one-off work has waited for a check (R2 T32): the queue is oldest first.
+const reviews = useReviews();
+const reviewHint = computed(() => {
+  const oldest = reviews.data.value?.results[0]?.completed_at;
+  if (routinesAsked.value || !oldest) return null;
+  const words = { min: t("tasks.unit.min"), h: t("tasks.unit.h"), d: t("tasks.unit.d") };
+  return t("tasks.kpi.reviewOldest", { time: lateness(minutesBetween(oldest, new Date()), words) });
+});
+
 // KPIs: the same work as the list (one-off tasks, or with routine work when it's asked for) -----
 const summary = useSummary(computed(() => (routinesAsked.value ? {} : { routines: "without" })));
 const kpis = computed(() => {
@@ -139,7 +149,7 @@ const kpis = computed(() => {
     },
     // The late list counts the same work as the number: with routine work when it's in.
     { id: "late", label: t("tasks.kpi.lateNow"), value: data?.late_now ?? null, to: `/c/${cid}/tasks?sv=late&overdue=true${withRoutines.value ? "&routines=1" : ""}`, hint: t(`tasks.kpi.lateNowHint${counts}`) },
-    { id: "review", label: t("tasks.kpi.review"), value: data?.review ?? null, to: `/c/${cid}/tasks/reviews`, hint: t(`tasks.kpi.reviewHint${counts}`) },
+    { id: "review", label: t("tasks.kpi.review"), value: data?.review ?? null, to: `/c/${cid}/tasks/reviews`, hint: reviewHint.value ?? t(`tasks.kpi.reviewHint${counts}`) },
     {
       id: "on_time",
       label: t("tasks.kpi.onTime"),

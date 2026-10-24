@@ -346,5 +346,6 @@
   "tasks.widget.lateShort": "просрочено",
   "tasks.widget.reviewShort": "на проверке",
   "tasks.widget.answersShort": "ждут ответа",
-  "tasks.reviews.decidedElsewhere": "Её уже проверил другой руководитель"
+  "tasks.reviews.decidedElsewhere": "Её уже проверил другой руководитель",
+  "tasks.kpi.reviewOldest": "Разовые задачи · самая старая ждёт: {time}"
 }

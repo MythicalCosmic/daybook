@@ -362,6 +362,23 @@ describe("the Tasks page's chips", () => {
     wrapper.unmount();
   });
 
+  it("says how long the oldest check has waited (R2 T32)", async () => {
+    stub({
+      "GET tasks/": () => json(empty),
+      "GET tasks/reviews/": () => json({ count: 1, next: null, previous: null, results: [{ ...row({ status: "review", completed_at: new Date(Date.now() - 3 * 3600_000).toISOString() }), description: "", proof_text: "" }] }),
+      "GET tasks/summary/": () => json({ ...summary, review: 1 }),
+      "GET tasks/options/": () => json(options),
+      "GET saved-views/": () => json([]),
+    });
+    const app = await testApp("/c/1/tasks");
+    const { default: TasksPage } = await import("../pages/TasksPage.vue");
+    const { wrapper } = mountWithProviders(TasksPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(wrapper.text()).toContain("One-off tasks · the oldest has waited 3 h");
+    wrapper.unmount();
+  });
+
   it("shows no chip when a backend ignores the filter (its row isn't blocked)", async () => {
     const wrapper = await mountTasks({ blocked: row(), extension: null });
     expect(document.body.querySelector("[data-testid=attention]")).toBeNull();
