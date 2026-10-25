@@ -2,7 +2,7 @@
 bot: members, newcomers and people waiting for approval alike.
 
     /language (also /til, /lang)  the picker: O‘zbekcha · Русский · English
-    /settings                     ⚙️ language (and company, for someone in several)
+    /settings                     language (and company, for someone in several)
     /help                         what the bot does
 
 A new language is saved at once, and the chat follows: its command menu, menu button and
@@ -32,6 +32,7 @@ from apps.accounts.telegram_chat import (
     language_of,
     relabel,
 )
+from apps.members.bot_messages import company_button
 from bot.callbacks import LangCallback
 
 router = Router(name="language")
@@ -40,15 +41,20 @@ router.callback_query.filter(F.message.chat.type == ChatType.PRIVATE)
 
 
 def picker(current: str, *, mode: str = "set", order=LANGUAGES) -> InlineKeyboardMarkup:
-    """One row of native names, the current one ticked."""
-    buttons = [
+    """One row of native names, O‘zbekcha first. The current one is coloured and the text above
+    names it in words (PICK_TITLE); no tick marks."""
+    return InlineKeyboardMarkup(inline_keyboard=[language_row(current, mode=mode, order=order)])
+
+
+def language_row(current: str, *, mode: str, order=LANGUAGES) -> list[InlineKeyboardButton]:
+    return [
         InlineKeyboardButton(
-            text=f"✓ {LANGUAGE_NAMES[code]}" if code == current else LANGUAGE_NAMES[code],
+            text=LANGUAGE_NAMES[code],
             callback_data=LangCallback(code=code, mode=mode).pack(),
+            style="success" if code == current else None,
         )
         for code in order
     ]
-    return InlineKeyboardMarkup(inline_keyboard=[buttons])
 
 
 @router.message(Command("language", "til", "lang"))
@@ -76,7 +82,7 @@ async def pick_language(
     if not await sync_to_async(set_language)(user, code):
         await callback.answer(ALREADY[code])
         return
-    await callback.answer(f"✅ {LANGUAGE_NAMES[code]}")
+    await callback.answer(LANGUAGE_NAMES[code])
     with suppress(TelegramAPIError):  # under 48 hours old, so it can go
         await callback.message.delete()
     membership = await sync_to_async(bot_membership)(user)
@@ -86,12 +92,12 @@ async def pick_language(
 @router.message(Command("help"))
 async def show_help(message: Message) -> None:
     lines = [
-        _("Here's what I can do:"),
-        _("📋 /tasks: your tasks"),
-        _("➕ /new: add a task (or just type it)"),
-        _("🔎 /check: work waiting for your check"),
-        _("📱 The button next to the message field opens the app"),
-        _("🌐 /language: change the language"),
+        f"<b>{_("Here's what I can do:")}</b>",
+        _("/tasks: your tasks"),
+        _("/new: add a task (or just type it)"),
+        _("/check: work waiting for your check"),
+        _("The button next to the message field opens the app"),
+        _("/language: change the language"),
     ]
     await message.answer("\n".join(lines))
 
@@ -102,16 +108,20 @@ async def show_settings(message: Message, user: User) -> None:
     rows = [
         [
             InlineKeyboardButton(
-                text=f"{CURRENT[current]} ›",
+                text=CURRENT[current],
                 callback_data=LangCallback(code=current, mode="open").pack(),
             )
         ]
     ]
-    if len(await sync_to_async(approved_memberships)(user)) > 1:
-        membership = await sync_to_async(bot_membership)(user)
-        rows.append(
-            [InlineKeyboardButton(text=f"🏢 {membership.company.name} ›", callback_data="co_open")]
-        )
     with translation.override(user.language):
-        text = _("⚙️ <b>Settings</b>")
+        if len(await sync_to_async(approved_memberships)(user)) > 1:
+            membership = await sync_to_async(bot_membership)(user)
+            rows.append(
+                [
+                    InlineKeyboardButton(
+                        text=company_button(membership.company), callback_data="co_open"
+                    )
+                ]
+            )
+        text = _("<b>Settings</b>")
     await message.answer(text, reply_markup=InlineKeyboardMarkup(inline_keyboard=rows))

@@ -12,8 +12,9 @@ from apps.timeoff.models import TimeOff
 def request(time_off: TimeOff) -> BotMessage:
     """What approvers see. Once decided, it shows the outcome instead of buttons."""
     lines = [
-        _("🌴 <b>Time off request</b> · %(name)s") % {"name": html.quote(str(time_off.membership))},
-        _("📅 %(dates)s · days: %(count)d") % {"dates": dates(time_off), "count": time_off.days},
+        _("<b>Time off request</b> · %(name)s") % {"name": html.quote(str(time_off.membership))},
+        _("Dates: %(dates)s · days: %(count)d")
+        % {"dates": dates(time_off), "count": time_off.days},
     ]
     if time_off.reason:
         lines.append(_("Reason: %(reason)s") % {"reason": html.quote(time_off.reason)})
@@ -21,13 +22,13 @@ def request(time_off: TimeOff) -> BotMessage:
         return "\n".join([*lines, "", _outcome(time_off)]), None
     buttons = [
         InlineKeyboardButton(
-            text=_("✅ Approve"),
+            text=_("Approve"),
             callback_data=TimeOffDecision(
                 action=TimeOffAction.APPROVE, time_off_id=time_off.pk
             ).pack(),
         ),
         InlineKeyboardButton(
-            text=_("❌ Reject"),
+            text=_("Reject"),
             callback_data=TimeOffDecision(
                 action=TimeOffAction.REJECT, time_off_id=time_off.pk
             ).pack(),
@@ -40,7 +41,7 @@ def decision(time_off: TimeOff) -> BotMessage | None:
     values = {"dates": dates(time_off)}
     if time_off.status == TimeOff.Status.APPROVED:
         text = _(
-            "🌴 Your time off is approved: %(dates)s. "
+            "Your time off is approved: %(dates)s. "
             "No tasks or reminders from me on those days. Have a good rest!"
         )
         return text % values, None
@@ -56,23 +57,23 @@ def dates(time_off: TimeOff) -> str:
 
 def _outcome(time_off: TimeOff) -> str:
     if time_off.status == TimeOff.Status.CANCELLED:
-        return _("🚫 Cancelled by %(name)s") % {"name": html.quote(str(time_off.membership))}
+        return _("Cancelled by %(name)s") % {"name": html.quote(str(time_off.membership))}
     name = html.quote(time_off.decided_by.get_full_name() if time_off.decided_by else "—")
     if time_off.status == TimeOff.Status.APPROVED:
-        return _("✅ Approved by %(name)s") % {"name": name}
-    return _("❌ Rejected by %(name)s") % {"name": name}
+        return _("Approved by %(name)s") % {"name": name}
+    return _("Rejected by %(name)s") % {"name": name}
 
 
 # Inbox notifications (plain text: the inbox escapes it) ---------------------------------
 
 
 def request_title(time_off: TimeOff) -> str:
-    return _("🌴 Time off request · %(name)s") % {"name": time_off.membership}
+    return _("Time off request · %(name)s") % {"name": time_off.membership}
 
 
 def request_body(time_off: TimeOff) -> str:
     lines = [
-        _("📅 %(dates)s · days: %(count)d") % {"dates": dates(time_off), "count": time_off.days}
+        _("Dates: %(dates)s · days: %(count)d") % {"dates": dates(time_off), "count": time_off.days}
     ]
     if time_off.reason:
         lines.append(_("Reason: %(reason)s") % {"reason": time_off.reason})
@@ -81,7 +82,7 @@ def request_body(time_off: TimeOff) -> str:
 
 def decision_title(time_off: TimeOff) -> str:
     if time_off.status == TimeOff.Status.APPROVED:
-        return _("🌴 Your time off is approved")
+        return _("Your time off is approved")
     return _("Your time off request was declined")
 
 
@@ -95,7 +96,7 @@ def decision_body(time_off: TimeOff) -> str:
 
 
 def recorded_title(time_off: TimeOff) -> str:
-    return _("🌴 Time off recorded for you")
+    return _("Time off recorded for you")
 
 
 def recorded_body(time_off: TimeOff) -> str:

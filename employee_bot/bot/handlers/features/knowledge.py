@@ -4,8 +4,8 @@ Registered inside the member router, after the state-bound tasks and announcemen
 and before the home router (docs/PLAN-OWNER.md §10.2, rule 20).
 
 - `/kb`: the pages the person still has to confirm, one button each.
-- A page button (and the notification's "📖 Read", through the inbox) sends the page into the
-  chat as text, with "✅ I've read it" when the page asks for it.
+- A page button (and the notification's "Read", through the inbox) sends the page into the
+  chat as text, with "I've read it" when the page asks for it.
 - `/start kb_<id>` opens a page from a link.
 """
 

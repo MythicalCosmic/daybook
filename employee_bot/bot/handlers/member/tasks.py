@@ -124,10 +124,7 @@ class IsTaskReply(Filter):
 @router.message(StateFilter(None), F.text, IsTaskReply())
 async def reply_comments(message: Message, membership: Membership, task_id: int, bot: Bot):
     alert = await _comment(membership, task_id, message.text)
-    if alert:
-        await message.answer(alert)
-    else:
-        await cards.react(bot, message, "👍")
+    await message.answer(alert or _("Comment added."))
 
 
 # The card ----------------------------------------------------------------------------------
@@ -152,7 +149,7 @@ async def back_to_card(
 async def stop(
     callback: CallbackQuery, callback_data: TaskCallback, membership: Membership, state: FSMContext
 ) -> None:
-    """✖️: leave whatever the bot was asking for; a card asking for proof is itself again."""
+    """Cancel: leave whatever the bot was asking for; a card asking for proof is itself again."""
     await state.clear()
     if callback_data.task_id:
         await cards.show(callback, await cards.card(membership, callback_data.task_id))
@@ -166,7 +163,7 @@ async def start_task(
     callback: CallbackQuery, callback_data: TaskCallback, membership: Membership
 ) -> None:
     outcome = await cards.act(membership, callback_data.task_id, services.start_task)
-    await cards.show(callback, outcome, success=_("Started 💪"))
+    await cards.show(callback, outcome, success=_("Started"))
 
 
 @router.callback_query(TaskCallback.filter(F.action == TaskAction.DONE))
@@ -190,7 +187,7 @@ async def tick_all_and_finish(
 async def _done(
     callback: CallbackQuery, membership: Membership, state: FSMContext, task_id: int
 ) -> None:
-    """✅: steps not ticked ask first (X-5); proof is asked for on the card (C3); else done."""
+    """Done: steps not ticked ask first (X-5); proof is asked for on the card (C3); else done."""
     task = await cards.find(membership, task_id)
     if task is None:
         await callback.answer(cards.gone(), show_alert=True)
@@ -228,7 +225,7 @@ async def undo(
     callback: CallbackQuery, callback_data: TaskCallback, membership: Membership
 ) -> None:
     outcome = await cards.act(membership, callback_data.task_id, services.reopen_task)
-    await cards.show(callback, outcome, success=_("↩️ The task is open again."))
+    await cards.show(callback, outcome, success=_("The task is open again."))
 
 
 @router.callback_query(StepCallback.filter())
@@ -245,10 +242,8 @@ async def tick_step(
 @router.message(CompleteTask.proof, IMAGE)
 async def proof_photo(message: Message, membership: Membership, state: FSMContext, bot: Bot):
     if cards.album_seen(message.media_group_id):
-        await cards.react(bot, message, "👌")  # the album is one proof: its first photo
-        return
+        return  # the album is one proof: its first photo
     data = await state.get_data()
-    await cards.react(bot, message, "👀")
     async with ChatActionSender.upload_photo(bot=bot, chat_id=message.chat.id, initial_sleep=0.5):
         photo = await _download(bot, message)
         outcome = await cards.act(
@@ -299,7 +294,7 @@ async def _finish_proof(
     if outcome.alert:
         await message.answer(outcome.alert)
         return
-    await cards.react(bot, message, "👍")
+    # No reaction on the photo: the card above says the proof arrived.
     await cards.edit_at(bot, data["chat_id"], data["message_id"], outcome.message)
     note = await sync_to_async(cards.done_note)(outcome.task)
     if message.message_id != data["message_id"] + 1:
@@ -325,12 +320,10 @@ def _drop_undo_at(task: Task, member: Membership, chat_id: int, message_id: int)
 @router.message(StateFilter(None), IMAGE, NOT_TAGGED)
 async def photo_first(message: Message, membership: Membership, state: FSMContext, bot: Bot):
     if cards.album_seen(message.media_group_id):
-        await cards.react(bot, message, "👌")
         return
     tasks = await _photo_tasks(membership)
     if not tasks:
-        await cards.react(bot, message, "👀")
-        await message.answer(_("📷 No task is waiting for a photo right now."))
+        await message.answer(_("No task is waiting for a photo right now."))
         return
     file = message.photo[-1] if message.photo else message.document
     await state.set_state(ProofFirst.pick)
@@ -350,7 +343,7 @@ async def photo_for_task(
     data = await state.get_data()
     await state.clear()
     if not callback_data.task_id:
-        await cards.edit(callback, (_("👌 Okay, no task."), None))
+        await cards.edit(callback, (_("Okay, no task."), None))
         await callback.answer()
         return
     downloaded = await bot.download(data["file_id"])
@@ -434,10 +427,7 @@ async def write_comment(message: Message, membership: Membership, state: FSMCont
         await message.answer(_("Okay, cancelled."))
         return
     alert = await _comment(membership, task_id, message.text)
-    if alert:
-        await message.answer(alert)
-    else:
-        await cards.react(bot, message, "👍")
+    await message.answer(alert or _("Comment added."))
 
 
 # Checking: accept, or send back with a reason (R1 C8) -------------------------------------
@@ -448,7 +438,7 @@ async def confirm_task(
     callback: CallbackQuery, callback_data: TaskCallback, membership: Membership
 ) -> None:
     outcome = await cards.act(membership, callback_data.task_id, services.confirm_task)
-    await cards.show(callback, outcome, success=_("Confirmed 👍"))
+    await cards.show(callback, outcome, success=_("Confirmed"))
 
 
 @router.callback_query(TaskCallback.filter(F.action == TaskAction.RETURN))
@@ -480,11 +470,11 @@ async def send_back_with_a_reason(
 ) -> None:
     await state.clear()
     reasons = dict(task_messages.return_reasons())
-    reason = reasons.get(callback_data.code, "").split(" ", 1)[-1]
+    reason = reasons.get(callback_data.code, "")
     outcome = await cards.act(
         membership, callback_data.task_id, services.return_task, reason=reason
     )
-    await cards.show(callback, outcome, success=_("↩️ Sent back with your comment."))
+    await cards.show(callback, outcome, success=_("Sent back with your comment."))
 
 
 @router.message(ReturnTask.reason, F.text)
@@ -505,7 +495,7 @@ async def send_back(message: Message, membership: Membership, state: FSMContext,
         return
     if outcome.message and "message_id" in data:
         await cards.edit_at(bot, data["chat_id"], data["message_id"], outcome.message)
-    await cards.react(bot, message, "👍")
+    await message.answer(_("Sent back with your comment."))
 
 
 # "Can't do it" and "Need more time" (R2 T57, T17) -----------------------------------------
@@ -538,7 +528,7 @@ async def block_with_reason(
             message_id=callback.message.message_id,
         )
         await callback.message.answer(
-            _("✍️ What's in the way? Write a few words."),
+            _("What's in the way? Write a few words."),
             reply_markup=task_messages.stop_keyboard(placeholder=True),
         )
         await callback.answer()
@@ -546,7 +536,7 @@ async def block_with_reason(
     outcome = await cards.act(
         membership, callback_data.task_id, services.report_blocker, reason_code=callback_data.code
     )
-    await cards.show(callback, outcome, success=_("⛔ Sent. Reminders wait until someone decides."))
+    await cards.show(callback, outcome, success=_("Sent. Reminders wait until someone decides."))
 
 
 @router.message(BlockTask.note, F.text)
@@ -567,7 +557,7 @@ async def block_with_note(message: Message, membership: Membership, state: FSMCo
         await message.answer(outcome.alert)
         return
     await cards.edit_at(bot, data["chat_id"], data["message_id"], outcome.message)
-    await message.answer(_("⛔ Sent. Reminders wait until someone decides."))
+    await message.answer(_("Sent. Reminders wait until someone decides."))
 
 
 @router.callback_query(
@@ -583,7 +573,8 @@ async def time_choices(
     kind = "more" if callback_data.action == TaskAction.MORE_TIME else "due"
     keyboard = await sync_to_async(task_messages.when_keyboard)(task, kind, timezone.now())
     await cards.edit_keyboard(callback, keyboard)
-    # A time typed while the choices show ("ertaga 10:00") is read too, not only after ✍️.
+    # A time typed while the choices show ("ertaga 10:00") is read too, not only after "Type a
+    # time".
     await state.set_state(TaskTime.typed)
     await state.update_data(
         kind=kind,
@@ -672,8 +663,8 @@ def _chosen_moment(task: Task, kind: str, choice: str, membership: Membership) -
 
 def _time_note(kind: str) -> str:
     if kind == "more":
-        return _("🕒 Asked for more time. The answer comes here.")
-    return _("🕒 New deadline set.")
+        return _("Asked for more time. The answer comes here.")
+    return _("New deadline set.")
 
 
 # Managers on a card (audit B-9): remind now, someone else, cancel -------------------------
@@ -682,7 +673,7 @@ def _time_note(kind: str) -> str:
 @router.callback_query(TaskCallback.filter(F.action == TaskAction.NUDGE))
 async def nudge(callback: CallbackQuery, callback_data: TaskCallback, membership: Membership):
     outcome = await cards.act(membership, callback_data.task_id, services.nudge)
-    await cards.show(callback, outcome, success=_("👋 Reminder sent."))
+    await cards.show(callback, outcome, success=_("Reminder sent."))
 
 
 @router.callback_query(TaskCallback.filter(F.action == TaskAction.REASSIGN))
@@ -712,7 +703,7 @@ async def someone_else_picked(
         await callback.answer()
         return
     outcome = await _give_to(membership, callback_data.task_id, callback_data.member_id)
-    await cards.show(callback, outcome, success=_("👤 Given to someone else."))
+    await cards.show(callback, outcome, success=_("Given to someone else."))
 
 
 @router.callback_query(TaskCallback.filter(F.action == TaskAction.CANCEL))
@@ -732,7 +723,7 @@ async def cancel_task(
     callback: CallbackQuery, callback_data: TaskCallback, membership: Membership
 ) -> None:
     outcome = await _cancel(membership, callback_data.task_id)
-    await cards.show(callback, outcome, success=_("✖️ Task cancelled."))
+    await cards.show(callback, outcome, success=_("Task cancelled."))
 
 
 # Helpers -----------------------------------------------------------------------------------
@@ -740,13 +731,13 @@ async def cancel_task(
 
 def _stop_on(task: Task):
     return task_messages.InlineKeyboardMarkup(
-        inline_keyboard=[[task_messages._button(_("✖️ Cancel"), TaskAction.STOP, task.pk)]]
+        inline_keyboard=[[task_messages._button(_("Cancel"), TaskAction.STOP, task.pk)]]
     )
 
 
 def _list_keyboard():
     return task_messages.InlineKeyboardMarkup(
-        inline_keyboard=[[task_messages.list_button(_("⬅️ My tasks"))]]
+        inline_keyboard=[[task_messages.list_button(_("My tasks"))]]
     )
 
 

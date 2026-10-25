@@ -34,7 +34,7 @@ def test_search_finds_upcoming_events_first(company, owner):
 
     hits = providers.search(owner, "kassa", 5)
 
-    assert [hit.title.split(" ", 1)[1] for hit in hits] == ["Kassa training", "Kassa audit"]
+    assert [hit.title for hit in hits] == ["Kassa training", "Kassa audit"]  # no kind icon
     assert hits[0].url.startswith(f"/c/{company.pk}/calendar?event=")
 
 
@@ -66,7 +66,7 @@ def test_invite_buttons_answer_for_the_person(company, owner, alisher):
 
     message = run_action(note.pk, "going", by=alisher)
 
-    assert message == "✅ You said you'll come."
+    assert message == "You said you'll come."
     assert EventAttendee.objects.get(event=event, membership=alisher).response == "going"
 
 

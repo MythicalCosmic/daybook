@@ -191,9 +191,9 @@ def nudge_leads(now: datetime | None = None) -> int:
                     app_screen=f"projects.updates:{project.pk}",
                     target=project,
                     actions=[
-                        NotificationAction("on_track", _("🟢 On track"), "primary"),
-                        NotificationAction("at_risk", _("🟡 At risk")),
-                        NotificationAction("off_track", _("🔴 Off track"), "danger"),
+                        NotificationAction("on_track", _("On track"), "primary"),
+                        NotificationAction("at_risk", _("At risk")),
+                        NotificationAction("off_track", _("Off track"), "danger"),
                     ],
                     dedupe_key=f"projects.update_nudge:{project.pk}:{today}",
                 )

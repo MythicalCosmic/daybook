@@ -12,6 +12,8 @@ from apps.accounts.services import bot_membership, membership_in, remember_compa
 from apps.members import bot_messages
 from apps.members.models import Membership
 from apps.tasks.models import Task
+from bot.filters.menu import is_old_label
+from bot.keyboards import with_language_button
 from bot.task_refs import task_id_of_event
 
 
@@ -48,12 +50,18 @@ class MemberAccessMiddleware(BaseMiddleware):
                 # (its name on the switch button, its modules), or the old one stays on screen.
                 text, markup = await _switched(membership)
                 await data["bot"].send_message(chat.id, text, reply_markup=markup)
+            elif _old_keyboard(event) and membership.is_onboarded:
+                # A button of a keyboard from before labels lost their emoji: it worked, and
+                # today's keyboard replaces the old one, once.
+                text, markup = await _new_menu(membership)
+                await data["bot"].send_message(chat.id, text, reply_markup=markup)
             return result
 
         if reply is not None:
             if isinstance(event, Message):
                 text, markup = reply
-                await event.answer(text, reply_markup=markup)
+                # Not a member yet, so maybe new: the way to the other languages goes along.
+                await event.answer(text, reply_markup=with_language_button(markup))
             elif isinstance(event, CallbackQuery):
                 await event.answer(await _alert(membership), show_alert=True)
         return None
@@ -84,10 +92,23 @@ def _resolve(
 
 @sync_to_async
 def _switched(membership: Membership) -> bot_messages.BotMessage:
-    text = _("🏢 Now working in <b>%(company)s</b>.") % {
+    text = _("Now working in <b>%(company)s</b>.") % {
         "company": html.quote(membership.company.name)
     }
     return text, bot_messages.main_menu(membership)
+
+
+def _old_keyboard(event: TelegramObject) -> bool:
+    """A message sent by a main-menu button of a keyboard drawn before 25.10.2026."""
+    from bot.middlewares.menu_commands import is_main_menu_label
+
+    text = event.text if isinstance(event, Message) else None
+    return is_old_label(text) and is_main_menu_label(text)
+
+
+@sync_to_async
+def _new_menu(membership: Membership) -> bot_messages.BotMessage:
+    return _("The menu is updated."), bot_messages.main_menu(membership)
 
 
 @sync_to_async

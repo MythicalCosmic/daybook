@@ -2,7 +2,7 @@
 
 The title can carry its deadline ("Kassani sanash ertaga 18:00", research R2 T1): the bot
 reads it with the quick-add parser and shows what it understood, with the weekday and the date,
-before saving, and "📝 Not a date" keeps the words as typed (T2). Without a date it asks, with
+before saving, and "Not a date" keeps the words as typed (T2). Without a date it asks, with
 presets, and a typed answer goes through the same parser (B-3). Whoever may give work picks who
 it's for first, themselves at the top (audit X-7).
 """
@@ -74,7 +74,7 @@ async def got_title(message: Message, membership: Membership, state: FSMContext)
         await message.answer(_("Okay, cancelled."))
         return
     if raw.startswith("/"):
-        await message.answer(_("✍️ Send the task's title, or tap ✖️ Cancel."))
+        await message.answer(_("Send the task's title, or tap «Cancel»."))
         return
     found = quickadd.parse(raw, now=cards.local_now(membership), lang=translation.get_language())
     data = await state.get_data()
@@ -90,11 +90,11 @@ async def got_title(message: Message, membership: Membership, state: FSMContext)
     title = found.title
     if not title:  # only a time: keep it, and ask what is to be done
         await state.update_data(**update)
-        await message.answer(_("✍️ And what needs to be done?"), reply_markup=_cancel())
+        await message.answer(_("And what needs to be done?"), reply_markup=_cancel())
         return
     update["title"] = title[:TITLE_MAX]
     if len(title) > TITLE_MAX:
-        update["note"] = _("✂️ The title was cut to 200 characters.")
+        update["note"] = _("The title was cut to 200 characters.")
     await state.update_data(**update)
     if membership.has_perm(Perm.TASKS_ASSIGN):
         await _ask_assignee(message, membership, state)
@@ -105,7 +105,7 @@ async def got_title(message: Message, membership: Membership, state: FSMContext)
 @router.message(NewTask.title)
 async def title_expected(message: Message) -> None:
     """A photo or a sticker while the title is awaited: ask again (audit B-10)."""
-    await message.answer(_("✍️ Send the task's title, or tap ✖️ Cancel."), reply_markup=_cancel())
+    await message.answer(_("Send the task's title, or tap «Cancel»."), reply_markup=_cancel())
 
 
 async def _ask_assignee(message: Message, membership: Membership, state: FSMContext) -> None:
@@ -193,7 +193,7 @@ async def preview_button(
 ) -> None:
     data = await state.get_data()
     if "title" not in data:  # an old preview, its conversation gone
-        await callback.answer(_("Start again with ➕ New task."), show_alert=True)
+        await callback.answer(_("Start again with «New task»."), show_alert=True)
         return
     action = callback_data.action
     if action == "save":
@@ -291,9 +291,9 @@ def _create(member: Membership, data: dict) -> tuple[cards.Outcome, str]:
     task = cards.load(member, task.pk)
     message = task_messages.task_card(task, member, timezone.now())
     if assignee is not None and assignee.pk != member.pk:
-        header = _("✅ Sent. For: %(name)s") % {"name": assignee}
+        header = _("Sent. For: %(name)s") % {"name": assignee}
     else:
-        header = _("✅ Added to your list.")
+        header = _("Added to your list.")
     return cards.Outcome(message=message, task=task), header
 
 

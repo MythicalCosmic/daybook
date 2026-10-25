@@ -13,9 +13,10 @@ from apps.accounts.services import sync_telegram_user
 class UserMiddleware(BaseMiddleware):
     """Loads (or creates) the User behind every update and activates their language.
 
-    `first_contact` tells handlers that this update made the user: /start then asks for the
-    language once, unless Telegram already says Uzbek (research R1 L2). `telegram_language` is
-    the interface language Telegram reports, a weak hint in Uzbekistan."""
+    Someone new starts in Uzbek, whatever language their Telegram is in (the owner's "uzbek
+    first", 25.10.2026): the greeting offers the other languages with one button. Telegram's
+    interface language is a weak hint in Uzbekistan, where many Uzbek speakers run it in
+    Russian. `first_contact` tells handlers that this update made the user."""
 
     async def __call__(
         self,
@@ -32,11 +33,10 @@ class UserMiddleware(BaseMiddleware):
             username=tg_user.username,
             first_name=tg_user.first_name,
             last_name=tg_user.last_name,
-            language_code=tg_user.language_code,
+            language_code=None,  # a new person starts in Uzbek
         )
         data["user"] = user
         data["first_contact"] = getattr(user, "just_created", False)
-        data["telegram_language"] = (tg_user.language_code or "")[:2].lower()
         with translation.override(user.language):
             return await handler(event, data)
 

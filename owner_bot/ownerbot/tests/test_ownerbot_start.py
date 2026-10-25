@@ -4,6 +4,7 @@ import pytest
 from asgiref.sync import sync_to_async
 
 from apps.accounts.models import User
+from apps.accounts.telegram_chat import LANGUAGE_BUTTON
 from ownerbot.tests import updates
 
 pytestmark = pytest.mark.django_db(transaction=True)
@@ -24,7 +25,10 @@ async def test_start_records_that_the_owner_bot_was_started(dp, bot):
     assert user.owner_bot_blocked_at is None
     [reply] = bot.sent()
     assert "/new" in reply.text  # nobody has a company yet: the bot offers to create one
-    assert reply.reply_markup is None  # no https dashboard address in tests
+    # No https dashboard address in tests: only the language button.
+    assert [[b.text for b in row] for row in reply.reply_markup.inline_keyboard] == [
+        [LANGUAGE_BUTTON]
+    ]
 
 
 async def test_start_offers_the_dashboard_when_it_has_an_https_address(dp, bot, settings):
@@ -33,14 +37,15 @@ async def test_start_offers_the_dashboard_when_it_has_an_https_address(dp, bot, 
     await dp.feed_update(bot, updates.message(updates.tg_user(7002), "/start"))
 
     [reply] = bot.sent()
-    [[button]] = reply.reply_markup.inline_keyboard
+    [[button], [language]] = reply.reply_markup.inline_keyboard
     assert button.web_app.url == "https://app.example.uz/dashboard/"
+    assert language.text == LANGUAGE_BUTTON
 
 
-async def test_start_answers_in_the_users_language(dp, bot):
+async def test_someone_new_starts_in_uzbek_whatever_telegram_says(dp, bot):
     await dp.feed_update(bot, updates.message(updates.tg_user(7003, language_code="ru"), "/start"))
 
-    assert (await user_of(7003)).language == "ru"
+    assert (await user_of(7003)).language == "uz"
 
 
 async def test_blocking_and_unblocking_the_bot_is_recorded(dp, bot):

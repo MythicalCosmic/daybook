@@ -56,8 +56,8 @@ def send_request(time_off_id: int) -> None:
         target=time_off,
         actor=time_off.membership,
         actions=[
-            NotificationAction("approve", lambda person: _("✅ Approve"), "primary"),
-            NotificationAction("reject", lambda person: _("❌ Reject"), "danger"),
+            NotificationAction("approve", lambda person: _("Approve"), "primary"),
+            NotificationAction("reject", lambda person: _("Reject"), "danger"),
         ],
         dedupe_key=f"timeoff.request:{time_off.pk}",
     )

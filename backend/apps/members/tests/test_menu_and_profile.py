@@ -70,17 +70,17 @@ def test_registered_buttons_join_the_menu_for_the_people_who_should_see_them(
     settings.EMPLOYEE_MINIAPP_URL = "https://app.example.com/app/"
     worker = member.registered(company)
     bot_menu.register_menu_button(
-        "📍 Check in", order=10, visible=lambda m: True, web_app_screen="attendance"
+        "Check in", order=10, visible=lambda m: True, web_app_screen="attendance"
     )
-    bot_menu.register_menu_button("💸 Expense", order=20, visible=lambda m: True)
-    bot_menu.register_menu_button("🔒 Hidden", order=5, visible=lambda m: False)
+    bot_menu.register_menu_button("Expense", order=20, visible=lambda m: True)
+    bot_menu.register_menu_button("Hidden", order=5, visible=lambda m: False)
 
     markup = main_menu(worker)
 
     assert texts(markup) == [
-        ["📋 My tasks", "➕ New task"],
-        ["📍 Check in", "💸 Expense"],
-        ["📱 Open app"],
+        ["My tasks", "New task"],
+        ["Check in", "Expense"],
+        ["Open app"],
     ]
     # No keyboard button opens the app itself: Telegram would give it no initData.
     assert all(button.web_app is None for row in markup.keyboard for button in row)
@@ -89,21 +89,19 @@ def test_registered_buttons_join_the_menu_for_the_people_who_should_see_them(
 def test_the_app_opens_from_an_inline_button(settings):
     settings.EMPLOYEE_MINIAPP_URL = "https://app.example.com/app/"
 
-    _text, markup = open_app("attendance", label="📍 Check in")
+    _text, markup = open_app("attendance", label="Check in")
 
     [[button]] = markup.inline_keyboard
-    assert button.text == "📍 Check in"
+    assert button.text == "Check in"
     assert button.web_app.url == "https://app.example.com/app/?screen=attendance"
     [[plain]] = open_app()[1].inline_keyboard
-    assert plain.text == "📱 Open app" and plain.web_app.url == "https://app.example.com/app/"
+    assert plain.text == "Open app" and plain.web_app.url == "https://app.example.com/app/"
 
 
 def test_without_a_member_or_the_app_buttons_stay_plain(company, member, no_buttons):
-    bot_menu.register_menu_button(
-        "📍 Check in", order=1, visible=lambda m: True, web_app_screen="x"
-    )
+    bot_menu.register_menu_button("Check in", order=1, visible=lambda m: True, web_app_screen="x")
 
-    assert texts(main_menu()) == [["📋 My tasks", "➕ New task"]]
+    assert texts(main_menu()) == [["My tasks", "New task"]]
     markup = main_menu(member.registered(company))
     assert markup.keyboard[1][0].web_app is None  # no mini app configured
 

@@ -42,8 +42,17 @@ async def test_a_lead_posts_an_update_from_the_deep_link(dp, bot, company, membe
 
     texts = bot.sent_texts()
     assert "OPEN" in texts[0] and "going" in texts[0]
+    # How it's going, in words; the colours only repeat them (no coloured dots).
+    first = next(r for r in bot.requests if isinstance(r, SendMessage))
+    buttons = [row[0] for row in first.reply_markup.inline_keyboard]
+    assert [(b.text, b.style) for b in buttons] == [
+        ("On track", "success"),
+        ("At risk", None),
+        ("Off track", "danger"),
+        ("Not now", None),
+    ]
     [asked] = [r for r in bot.requests if isinstance(r, EditMessageText)]
-    assert "one or two lines" in asked.text
+    assert asked.text.startswith("At risk. ") and "one or two lines" in asked.text
     update = await ProjectUpdate.objects.aget(project=project)
     assert (update.health, update.text, update.author_id) == (
         "at_risk",

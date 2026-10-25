@@ -8,6 +8,8 @@ import pytest
 from django.conf import settings
 from django.core.management import call_command
 
+from apps.notifications.emoji import has_emoji
+
 LANGUAGES = ("uz", "ru")
 # Placeholders and markup a translation must keep exactly.
 KEPT = re.compile(r"%\(\w+\)[sd]|\{\w+\}|</?\w+>")
@@ -67,6 +69,27 @@ def test_every_message_is_translated(language):
         assert all(sorted(KEPT.findall(form)) == expected for form in forms), entry.msgid
 
 
+@pytest.mark.parametrize("language", LANGUAGES)
+def test_the_catalogues_have_no_emoji(language):
+    """Nothing the bots send carries an emoji (the owner's rule, 25.10.2026): no msgid, plural
+    or translation has one (pictographs, keycaps, U+FE0F), nor a symbol standing in for one."""
+    found = [
+        entry.msgid
+        for entry in catalogue(language)
+        if any(
+            has_emoji(text)
+            for text in (
+                entry.msgctxt or "",
+                entry.msgid,
+                entry.msgid_plural or "",
+                entry.msgstr,
+                *entry.msgstr_plural.values(),
+            )
+        )
+    ]
+    assert found == []
+
+
 @pytest.mark.parametrize(
     ("language", "rule"),
     [(language, rule) for language, rules in WORDING.items() for rule in rules],
@@ -86,8 +109,16 @@ def test_translations_quote_with_guillemets(language):
 
 @pytest.mark.parametrize("language", LANGUAGES)
 def test_the_compiled_catalogues_match_their_sources(language):
-    sources = {entry.msgid: entry.msgstr for entry in catalogue(language).translated_entries()}
-    compiled = {entry.msgid: entry.msgstr for entry in catalogue(language, "mo") if entry.msgid}
+    # Keyed by context too: "Done" is a button, a task status and a group setting.
+    sources = {
+        (entry.msgctxt, entry.msgid): entry.msgstr
+        for entry in catalogue(language).translated_entries()
+    }
+    compiled = {
+        (entry.msgctxt, entry.msgid): entry.msgstr
+        for entry in catalogue(language, "mo")
+        if entry.msgid
+    }
 
     assert compiled == sources
 

@@ -54,7 +54,7 @@ def test_a_request_goes_to_the_approvers(
     [message] = to(sent_messages, manager)
     assert "Ali Valiyev" in message["text"]
     assert "Wedding" in message["text"]
-    assert "days: 3" in message["text"]
+    assert "\nDates: " in message["text"] and "days: 3" in message["text"]
     buttons = [b["callback_data"] for b in message["reply_markup"]["inline_keyboard"][0]]
     # The approvers' copy is an inbox notification: its buttons settle every copy at once.
     assert [InboxAction.unpack(data).key for data in buttons] == ["approve", "reject"]

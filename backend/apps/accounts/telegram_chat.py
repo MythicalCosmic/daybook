@@ -40,57 +40,58 @@ LANGUAGES = ("uz", "ru", "en")
 
 # What the language picker says. Each language's own words, not translations through the
 # catalogue: the confirmation must read right in the language just picked, from the first try.
-PICK_TITLE = {"uz": "🌐 Tilni tanlang:", "ru": "🌐 Выберите язык:", "en": "🌐 Choose a language:"}
-# The first message to someone new, whose language isn't known yet: all three at once (L2).
-FIRST_PICK = "\n".join(
-    [
-        "👋 Assalomu alaykum! Tilni tanlang.",
-        "Здравствуйте! Выберите язык.",
-        "Hello! Please choose a language.",
-    ]
-)
+# The picker names the current language in words; its button is also coloured (no tick marks).
+PICK_TITLE = {
+    "uz": "Tilni tanlang. Hozir: O‘zbekcha.",
+    "ru": "Выберите язык. Сейчас: русский.",
+    "en": "Choose a language. Now: English.",
+}
+# Everyone starts in Uzbek (the owner's "uzbek first", 25.10.2026): the greeting carries this one
+# small button, in all three languages since it is for whoever doesn't read Uzbek.
+LANGUAGE_BUTTON = "Til / Язык / Language"
 CHANGED = {
-    "uz": "✅ Endi o‘zbek tilida yozaman. Ilova ham shu tilda ochiladi. Menyu yangilandi 👇",
-    "ru": "✅ Теперь пишу по-русски. Приложение тоже откроется на русском. Меню обновлено 👇",
-    "en": "✅ I'll write in English from now on. The app will open in English too. Menu updated 👇",
+    "uz": "Endi o‘zbek tilida yozaman. Ilova ham shu tilda ochiladi. Menyu yangilandi.",
+    "ru": "Теперь пишу по-русски. Приложение тоже откроется на русском. Меню обновлено.",
+    "en": "I'll write in English from now on. The app will open in English too. "
+    "The menu is updated.",
 }
 # The owner bot has no reply keyboard to replace: just the words.
 CHANGED_SHORT = {
-    "uz": "✅ Endi o‘zbek tilida yozaman.",
-    "ru": "✅ Теперь пишу по-русски.",
-    "en": "✅ I'll write in English from now on.",
+    "uz": "Endi o‘zbek tilida yozaman.",
+    "ru": "Теперь пишу по-русски.",
+    "en": "I'll write in English from now on.",
 }
 ALREADY = {
     "uz": "O‘zbekcha allaqachon tanlangan",
     "ru": "Русский уже выбран",
     "en": "English is already selected",
 }
-CURRENT = {"uz": "🌐 Til: O‘zbekcha", "ru": "🌐 Язык: русский", "en": "🌐 Language: English"}
+CURRENT = {"uz": "Til: O‘zbekcha", "ru": "Язык: русский", "en": "Language: English"}
 
 # The bots' profiles (L7): the description fills the empty chat before Start (≤512 characters),
 # the short description is the About text and shows on shared links (≤120).
 EMPLOYEE_PROFILE = {
     "uz": (
         "Daybook — jamoangiz uchun ish boti.\n"
-        "📋 Vazifalaringizni shu yerda olasiz va bajarilganini belgilaysiz.\n"
-        "⏰ Muddat yaqinlashganda eslatib turaman.\n"
-        "✅ Menejeringiz natijani shu yerda qabul qiladi.\n"
+        "Vazifalaringizni shu yerda olasiz va bajarilganini belgilaysiz.\n"
+        "Muddat yaqinlashganda eslatib turaman.\n"
+        "Menejeringiz natijani shu yerda qabul qiladi.\n"
         "Boshlash uchun menejeringiz yuborgan taklif havolasini oching.",
         "Jamoangiz uchun vazifalar, eslatmalar va hisobotlar.",
     ),
     "ru": (
         "Daybook — рабочий бот вашей команды.\n"
-        "📋 Здесь вы получаете задачи и отмечаете выполнение.\n"
-        "⏰ Напомню, когда подходит срок.\n"
-        "✅ Руководитель принимает работу прямо здесь.\n"
+        "Здесь вы получаете задачи и отмечаете выполнение.\n"
+        "Напомню, когда подходит срок.\n"
+        "Руководитель принимает работу прямо здесь.\n"
         "Чтобы начать, откройте ссылку-приглашение от руководителя.",
         "Задачи, напоминания и отчёты для вашей команды.",
     ),
     "en": (
         "Daybook — the work bot for your team.\n"
-        "📋 Get your tasks here and mark them done.\n"
-        "⏰ I'll remind you when a deadline is near.\n"
-        "✅ Your manager checks the work right here.\n"
+        "Get your tasks here and mark them done.\n"
+        "I'll remind you when a deadline is near.\n"
+        "Your manager checks the work right here.\n"
         "To start, open the invite link your manager sent you.",
         "Tasks, reminders and reports for your team.",
     ),
@@ -98,25 +99,25 @@ EMPLOYEE_PROFILE = {
 OWNER_PROFILE = {
     "uz": (
         "Biznesingiz egasi uchun bot.\n"
-        "📊 /today — bugungi raqamlar va sizni kutayotgan ishlar.\n"
-        "✅ So‘rov va xarajatlarni shu yerda tasdiqlaysiz.\n"
-        "🔐 Boshqaruv paneliga kirishni shu yerda tasdiqlaysiz.\n"
+        "/today — bugungi raqamlar va sizni kutayotgan ishlar.\n"
+        "So‘rov va xarajatlarni shu yerda tasdiqlaysiz.\n"
+        "Boshqaruv paneliga kirishni shu yerda tasdiqlaysiz.\n"
         "Boshlash uchun /start bosing.",
         "Biznesingiz bir qarashda: raqamlar, tasdiqlar va ogohlantirishlar.",
     ),
     "ru": (
         "Бот владельца вашего бизнеса.\n"
-        "📊 /today — цифры за сегодня и что ждёт вашего решения.\n"
-        "✅ Одобряйте заявки и расходы прямо здесь.\n"
-        "🔐 Подтверждайте вход в панель управления.\n"
+        "/today — цифры за сегодня и что ждёт вашего решения.\n"
+        "Одобряйте заявки и расходы прямо здесь.\n"
+        "Подтверждайте вход в панель управления.\n"
         "Чтобы начать, нажмите /start.",
         "Ваш бизнес на виду: цифры, одобрения и уведомления.",
     ),
     "en": (
         "The owner's bot for your business.\n"
-        "📊 /today: today's numbers and what waits for you.\n"
-        "✅ Approve requests and expenses right here.\n"
-        "🔐 Confirm dashboard sign-ins.\n"
+        "/today: today's numbers and what waits for you.\n"
+        "Approve requests and expenses right here.\n"
+        "Confirm dashboard sign-ins.\n"
         "To start, tap /start.",
         "Your business at a glance: numbers, approvals and alerts.",
     ),

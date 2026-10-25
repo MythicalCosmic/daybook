@@ -46,7 +46,7 @@ def _finish_in_the_app() -> bot_messages.BotMessage:
     there: say it arrived and send the person back to the app (the button reopens it if they
     closed it meanwhile), rather than asking again for a name, phone and position."""
     button = InlineKeyboardButton(
-        text=_("📱 Create account"), web_app=WebAppInfo(url=settings.EMPLOYEE_MINIAPP_URL)
+        text=_("Create account"), web_app=WebAppInfo(url=settings.EMPLOYEE_MINIAPP_URL)
     )
-    text = _("📱 Thanks, your phone number is saved. Now finish your account in the app.")
+    text = _("Thanks, your phone number is saved. Now finish your account in the app.")
     return text, InlineKeyboardMarkup(inline_keyboard=[[button]])

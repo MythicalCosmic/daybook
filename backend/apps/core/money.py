@@ -85,6 +85,7 @@ def to_base(amount: Decimal, rate: Decimal) -> Decimal:
 
 # How each language names the som. USD reads the same in every language.
 SOM = {"uz": "so‘m", "ru": "сум", "en": "UZS"}
+NBSP = chr(0xA0)
 
 
 def format_money(amount: Decimal, currency: str, language: str) -> str:
@@ -92,6 +93,8 @@ def format_money(amount: Decimal, currency: str, language: str) -> str:
 
     `12 500 000 so‘m` (uz), `12 500 000 сум` (ru), `12 500 000 UZS` (en), `$1,250.00` (USD in
     every language). Som amounts drop the tiyin when there are none; dollars always show cents.
+    The digit groups and the currency are joined with no-break spaces (U+00A0, R3 §1.8), so a
+    message never breaks "12 500" or "000 so‘m" across lines.
     """
     value = quantize(amount)
     sign = "-" if value < 0 else ""
@@ -99,12 +102,12 @@ def format_money(amount: Decimal, currency: str, language: str) -> str:
     if currency == Currency.USD:
         return f"{sign}${value:,.2f}"
     whole, cents = divmod(value, 1)
-    text = f"{int(whole):,}".replace(",", " ")
+    text = f"{int(whole):,}".replace(",", NBSP)
     if cents:
         decimal_mark = "." if language == "en" else ","
         text += f"{decimal_mark}{int(cents * 100):02d}"
     suffix = SOM.get(language, SOM["en"]) if currency == Currency.UZS else currency
-    return f"{sign}{text} {suffix}"
+    return f"{sign}{text}{NBSP}{suffix}"
 
 
 class MoneySerializerField(serializers.DecimalField):

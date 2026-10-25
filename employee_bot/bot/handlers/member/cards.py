@@ -12,8 +12,8 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from aiogram import Bot
-from aiogram.exceptions import TelegramAPIError, TelegramBadRequest
-from aiogram.types import CallbackQuery, Message, ReactionTypeEmoji
+from aiogram.exceptions import TelegramBadRequest
+from aiogram.types import CallbackQuery, Message
 from asgiref.sync import sync_to_async
 from django.core.exceptions import PermissionDenied
 from django.utils import timezone
@@ -175,16 +175,6 @@ async def edit_keyboard(callback: CallbackQuery, markup) -> None:
             await callback.message.edit_reply_markup(reply_markup=markup)
 
 
-async def react(bot: Bot, message: Message, emoji: str) -> None:
-    """A reaction on the person's message (👀 while working, 👍 when done): best effort."""
-    with suppress(TelegramAPIError):
-        await bot.set_message_reaction(
-            chat_id=message.chat.id,
-            message_id=message.message_id,
-            reaction=[ReactionTypeEmoji(emoji=emoji)],
-        )
-
-
 def album_seen(group_id: str | None) -> bool:
     """Whether an earlier photo of this album already reached us: the album is one proof, and
     gets one answer (audit B-6). Checked and marked with no await in between."""
@@ -207,9 +197,10 @@ def done_note(task: Task) -> str:
     if task.status == Task.Status.REVIEW:
         checkers = queries.reviewers(task)
         if len(checkers) == 1:
-            return _("🔎 Sent for checking · %(name)s") % {"name": checkers[0]}
-        return _("🔎 Sent for checking")
-    return _("Done! 🎉")
+            # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+            return _("Sent for checking · %(name)s") % {"name": checkers[0]}
+        return _("Sent for checking")
+    return _("Done!")
 
 
 def drop_undo_later(task: Task, member: Membership, message: Message) -> None:

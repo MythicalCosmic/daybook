@@ -10,20 +10,12 @@ from django.conf import settings
 from django.utils import timezone
 from django.utils.dates import WEEKDAYS
 from django.utils.translation import gettext as _
+from django.utils.translation import pgettext
 
 from apps.agenda import queries
 from apps.agenda.callbacks import EvAction, EvCallback
 from apps.agenda.models import Event, EventAttendee
 from apps.members.bot_messages import BotMessage, miniapp_url
-
-KIND_MARKS = {
-    Event.Kind.MEETING: "🗓",
-    Event.Kind.TRAINING: "🎓",
-    Event.Kind.INVENTORY: "📦",
-    Event.Kind.CELEBRATION: "🎉",
-    Event.Kind.DEADLINE: "⏳",
-    Event.Kind.OTHER: "📌",
-}
 
 
 def app_screen(event: Event) -> str:
@@ -32,10 +24,6 @@ def app_screen(event: Event) -> str:
 
 def dashboard_url(event: Event) -> str:
     return f"/c/{event.company_id}/calendar?event={event.pk}"
-
-
-def mark(event: Event) -> str:
-    return KIND_MARKS.get(event.kind, "🗓")
 
 
 def day_label(day: date, today: date) -> str:
@@ -95,15 +83,15 @@ def occurrence_line(occurrence) -> str:
 
 
 def invite_title(event: Event) -> str:
-    return _("%(mark)s You're invited: %(title)s") % {"mark": mark(event), "title": event.title}
+    return _("You're invited: %(title)s") % {"title": event.title}
 
 
 def changed_title(event: Event) -> str:
-    return _("🔁 Event moved: %(title)s") % {"title": event.title}
+    return _("Event moved: %(title)s") % {"title": event.title}
 
 
 def cancelled_title(event: Event) -> str:
-    return _("❌ Event cancelled: %(title)s") % {"title": event.title}
+    return _("Event cancelled: %(title)s") % {"title": event.title}
 
 
 def cancelled_body(event: Event) -> str:
@@ -118,33 +106,35 @@ def reminder_title(occurrence) -> str:
     start = occurrence.start
     minutes = int((start - timezone.now()).total_seconds() // 60)
     if event.all_day or minutes > 120:
-        return _("⏰ Coming up: %(title)s") % {"title": event.title}
+        return _("Coming up: %(title)s") % {"title": event.title}
     if minutes <= 1:
-        return _("⏰ Starting now: %(title)s") % {"title": event.title}
-    return _("⏰ In %(minutes)d min: %(title)s") % {"minutes": minutes, "title": event.title}
+        return _("Starting now: %(title)s") % {"title": event.title}
+    return _("In %(minutes)d min: %(title)s") % {"minutes": minutes, "title": event.title}
 
 
 def going_button() -> str:
-    return _("✅ I'll come")
+    return _("I'll come")
 
 
 def decline_button() -> str:
-    return _("🙅 Can't come")
+    # Translators: the attendee's own answer on a button ("I can't come"), not their status.
+    return pgettext("event answer button", "Can't come")
 
 
 def response_note(response: str) -> str:
     if response == EventAttendee.Response.GOING:
-        return _("✅ You said you'll come.")
+        return _("You said you'll come.")
     if response == EventAttendee.Response.DECLINED:
-        return _("🙅 You said you can't come.")
+        return _("You said you can't come.")
     return ""
 
 
 def event_card(event: Event, *, invite: EventAttendee | None) -> BotMessage:
     """An event in the chat, with "I'll come / Can't come" for an attendee."""
-    lines = [f"{mark(event)} <b>{html.quote(event.title)}</b>", html.quote(event_line(event))]
+    line = event_line(event)  # "tomorrow 10:00 · …" starts a line here: capitalised
+    lines = [f"<b>{html.quote(event.title)}</b>", html.quote(line[:1].upper() + line[1:])]
     if event.cancelled_at is not None:
-        lines += ["", _("❌ This event was cancelled.")]
+        lines += ["", _("This event was cancelled.")]
     if event.description:
         lines += ["", html.quote(event.description[:1500])]
     rows: list[list[InlineKeyboardButton]] = []
@@ -168,7 +158,7 @@ def event_card(event: Event, *, invite: EventAttendee | None) -> BotMessage:
         rows.append(
             [
                 InlineKeyboardButton(
-                    text=_("📱 Open in the app"),
+                    text=_("Open in the app"),
                     web_app=WebAppInfo(url=miniapp_url(app_screen(event))),
                 )
             ]
@@ -179,8 +169,8 @@ def event_card(event: Event, *, invite: EventAttendee | None) -> BotMessage:
 def week(lines: list[tuple[date, list[str]]], *, today: date) -> BotMessage:
     """The next seven days: one block per day that has something."""
     if not lines:
-        return _("📅 Nothing on the calendar for the next seven days."), None
-    text = [_("📅 <b>Your next seven days</b>"), ""]
+        return _("Nothing on the calendar for the next seven days."), None
+    text = [_("<b>Your next seven days</b>"), ""]
     for day, entries in lines:
         text.append(f"<b>{html.quote(day_label(day, today).capitalize())}</b>")
         text += [f"  {html.quote(entry)}" for entry in entries]

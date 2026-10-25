@@ -28,14 +28,14 @@ def app_data(telegram_id: int, language: str) -> Update:
             date=datetime.now(),
             chat=Chat(id=telegram_id, type="private"),
             from_user=updates.tg_user(telegram_id, language_code=language),
-            web_app_data=WebAppData(data="open_app", button_text="📱 Open app"),
+            web_app_data=WebAppData(data="open_app", button_text="Open app"),
         ),
     )
 
 
 @pytest.mark.parametrize(
     ("language", "label"),
-    [("ru", "📱 Открыть приложение"), ("uz", "📱 Ilovani ochish"), ("en", "📱 Open app")],
+    [("ru", "Открыть приложение"), ("uz", "Ilovani ochish"), ("en", "Open app")],
 )
 async def test_start_labels_the_chats_menu_button_in_their_language(
     dp, bot, settings, language, label
@@ -45,10 +45,10 @@ async def test_start_labels_the_chats_menu_button_in_their_language(
     person = updates.tg_user(9_201, language_code=language)
 
     await dp.feed_update(bot, updates.message(person, "/start"))
-    if language != "uz":  # a new person whose Telegram isn't Uzbek picks the language first
-        await dp.feed_update(bot, updates.pick_language(person, language))
+    if language != "uz":  # everyone starts in Uzbek; the greeting's language button changes it
+        await dp.feed_update(bot, updates.pick_language(person, language, mode="welcome"))
 
-    [button] = menu_buttons(bot)
+    button = menu_buttons(bot)[-1]
     assert button.chat_id == 9_201
     assert isinstance(button.menu_button, MenuButtonWebApp)
     assert button.menu_button.text == label
@@ -68,7 +68,7 @@ async def test_the_apps_request_for_a_button_labels_it_too(dp, bot, company, mem
 
     [button] = menu_buttons(bot)
     assert button.chat_id == worker.user.telegram_id
-    assert button.menu_button.text == "📱 Открыть приложение"
+    assert button.menu_button.text == "Открыть приложение"
 
 
 async def test_a_refused_label_never_stops_the_answer(dp, bot, settings, monkeypatch, caplog):

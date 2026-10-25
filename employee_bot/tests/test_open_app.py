@@ -25,9 +25,7 @@ async def test_the_app_button_answers_with_a_button_that_opens_the_app(
     settings.EMPLOYEE_MINIAPP_URL = APP
     worker = await member.aregistered(company)
 
-    await dp.feed_update(
-        bot, updates.message(updates.tg_user(worker.user.telegram_id), "📱 Open app")
-    )
+    await dp.feed_update(bot, updates.message(updates.tg_user(worker.user.telegram_id), "Open app"))
 
     markup = sent(bot)[-1].reply_markup
     assert isinstance(markup, InlineKeyboardMarkup)
@@ -42,7 +40,7 @@ async def test_the_app_button_ends_the_conversation_it_interrupts(
     tg = updates.tg_user(worker.user.telegram_id)
 
     await dp.feed_update(bot, updates.message(tg, "/new"))
-    await dp.feed_update(bot, updates.message(tg, "📱 Open app"))
+    await dp.feed_update(bot, updates.message(tg, "Open app"))
 
     assert sent(bot)[-1].reply_markup.inline_keyboard[0][0].web_app.url == APP
     assert not await Task.objects.filter(assignee=worker).aexists()  # not a task's title
@@ -54,14 +52,14 @@ async def test_a_modules_screen_button_opens_its_screen(
     settings.EMPLOYEE_MINIAPP_URL = APP
     monkeypatch.setattr(bot_menu, "_buttons", {})
     bot_menu.register_menu_button(
-        "💊 Stock", order=10, visible=lambda member: True, web_app_screen="stock"
+        "Stock", order=10, visible=lambda member: True, web_app_screen="stock"
     )
     worker = await member.aregistered(company)
 
-    await dp.feed_update(bot, updates.message(updates.tg_user(worker.user.telegram_id), "💊 Stock"))
+    await dp.feed_update(bot, updates.message(updates.tg_user(worker.user.telegram_id), "Stock"))
 
     [[button]] = sent(bot)[-1].reply_markup.inline_keyboard
-    assert button.text == "💊 Stock"
+    assert button.text == "Stock"
     assert button.web_app.url == f"{APP}?screen=stock"
 
 

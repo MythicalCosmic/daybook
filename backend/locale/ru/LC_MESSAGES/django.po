@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-25 23:42+0500\n"
+"POT-Creation-Date: 2026-10-26 01:45+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -57,11 +57,13 @@ msgstr "Когда фото профиля в последний раз загр
 msgid "Home"
 msgstr "Главная"
 
-#: backend/apps/accounts/telegram_chat.py
+#: backend/apps/accounts/telegram_chat.py backend/apps/members/bot_messages.py
+#: backend/apps/tasks/bot_messages.py employee_bot/bot/handlers/member/tasks.py
 msgid "My tasks"
 msgstr "Мои задачи"
 
-#: backend/apps/accounts/telegram_chat.py
+#: backend/apps/accounts/telegram_chat.py backend/apps/members/bot_messages.py
+#: backend/apps/tasks/bot_messages.py
 msgid "New task"
 msgstr "Новая задача"
 
@@ -167,65 +169,67 @@ msgstr "каждый месяц"
 
 #: backend/apps/agenda/bot_messages.py
 #, python-format
-msgid "%(mark)s You're invited: %(title)s"
-msgstr "%(mark)s Вас приглашают: %(title)s"
+msgid "You're invited: %(title)s"
+msgstr "Вас приглашают: %(title)s"
 
 #: backend/apps/agenda/bot_messages.py
 #, python-format
-msgid "🔁 Event moved: %(title)s"
-msgstr "🔁 Событие перенесено: %(title)s"
+msgid "Event moved: %(title)s"
+msgstr "Событие перенесено: %(title)s"
 
 #: backend/apps/agenda/bot_messages.py
 #, python-format
-msgid "❌ Event cancelled: %(title)s"
-msgstr "❌ Событие отменено: %(title)s"
+msgid "Event cancelled: %(title)s"
+msgstr "Событие отменено: %(title)s"
 
 #: backend/apps/agenda/bot_messages.py
 #, python-format
-msgid "⏰ Coming up: %(title)s"
-msgstr "⏰ Скоро: %(title)s"
+msgid "Coming up: %(title)s"
+msgstr "Скоро: %(title)s"
 
 #: backend/apps/agenda/bot_messages.py
 #, python-format
-msgid "⏰ Starting now: %(title)s"
-msgstr "⏰ Начинается сейчас: %(title)s"
+msgid "Starting now: %(title)s"
+msgstr "Начинается сейчас: %(title)s"
 
 #: backend/apps/agenda/bot_messages.py
 #, python-format
-msgid "⏰ In %(minutes)d min: %(title)s"
-msgstr "⏰ Через %(minutes)d мин: %(title)s"
+msgid "In %(minutes)d min: %(title)s"
+msgstr "Через %(minutes)d мин: %(title)s"
 
 #: backend/apps/agenda/bot_messages.py
-msgid "✅ I'll come"
-msgstr "✅ Приду"
+msgid "I'll come"
+msgstr "Приду"
+
+#. Translators: the attendee's own answer on a button ("I can't come"), not their status.
+#: backend/apps/agenda/bot_messages.py
+msgctxt "event answer button"
+msgid "Can't come"
+msgstr "Не смогу"
 
 #: backend/apps/agenda/bot_messages.py
-msgid "🙅 Can't come"
-msgstr "🙅 Не смогу"
+msgid "You said you'll come."
+msgstr "Вы ответили, что придёте."
 
 #: backend/apps/agenda/bot_messages.py
-msgid "✅ You said you'll come."
-msgstr "✅ Вы ответили, что придёте."
+msgid "You said you can't come."
+msgstr "Вы ответили, что не сможете прийти."
 
-#: backend/apps/agenda/bot_messages.py
-msgid "🙅 You said you can't come."
-msgstr "🙅 Вы ответили, что не сможете прийти."
-
-#: backend/apps/agenda/bot_messages.py
-msgid "❌ This event was cancelled."
-msgstr "❌ Это событие отменено."
+#: backend/apps/agenda/bot_messages.py backend/apps/agenda/services.py
+msgid "This event was cancelled."
+msgstr "Это событие отменено."
 
 #: backend/apps/agenda/bot_messages.py backend/apps/knowledge/bot_messages.py
-msgid "📱 Open in the app"
-msgstr "📱 Открыть в приложении"
+msgid "Open in the app"
+msgstr "Открыть в приложении"
 
 #: backend/apps/agenda/bot_messages.py
-msgid "📅 Nothing on the calendar for the next seven days."
-msgstr "📅 В календаре на ближайшие семь дней ничего нет."
+msgid "Nothing on the calendar for the next seven days."
+msgstr "В календаре на ближайшие семь дней ничего нет."
 
 #: backend/apps/agenda/bot_messages.py
-msgid "📅 <b>Your next seven days</b>"
-msgstr "📅 <b>Ваши планы на ближайшие семь дней</b>"
+msgid "<b>Your next seven days</b>"
+msgstr "<b>Ваши планы на ближайшие семь дней</b>"
 
 #: backend/apps/agenda/bot_messages.py
 msgid "Saved."
@@ -433,10 +437,6 @@ msgid "Pick who sees the event."
 msgstr "Выберите, кто видит событие."
 
 #: backend/apps/agenda/services.py
-msgid "This event was cancelled."
-msgstr "Это событие отменено."
-
-#: backend/apps/agenda/services.py
 msgid "You don't have access to this event."
 msgstr "У вас нет доступа к этому событию."
 
@@ -485,59 +485,63 @@ msgid "Unpinned an announcement"
 msgstr "Объявление откреплено"
 
 #: backend/apps/announcements/bot_messages.py
-msgid ""
-"📣 Send the announcement as one message. Bold, italics and links are kept."
+msgid "Send the announcement as one message. Bold, italics and links are kept."
 msgstr ""
-"📣 Пришлите объявление одним сообщением. Жирный текст, курсив и ссылки "
+"Пришлите объявление одним сообщением. Жирный текст, курсив и ссылки "
 "сохранятся."
 
 #: backend/apps/announcements/bot_messages.py
-msgid "📤 Send to the chosen positions"
-msgstr "📤 Отправить выбранным должностям"
+msgid "Send to the chosen positions"
+msgstr "Отправить выбранным должностям"
 
 #: backend/apps/announcements/bot_messages.py
-msgid "📤 Send to everyone"
-msgstr "📤 Отправить всем"
+msgid "Send to everyone"
+msgstr "Отправить всем"
 
 #: backend/apps/announcements/bot_messages.py
 msgid "Who should get it? Tap positions, or send it to everyone."
 msgstr "Кому отправить? Выберите должности или отправьте всем."
 
 #: backend/apps/announcements/bot_messages.py
-msgid "📣 <b>Preview</b>"
-msgstr "📣 <b>Предпросмотр</b>"
+msgid "<b>Preview</b>"
+msgstr "<b>Предпросмотр</b>"
 
 #: backend/apps/announcements/bot_messages.py
 #, python-format
-msgid "📣 Sent. Recipients: %(count)d. Tap below to see who has read it."
+msgid "Chosen positions: %(names)s"
+msgstr "Выбранные должности: %(names)s"
+
+#: backend/apps/announcements/bot_messages.py
+#, python-format
+msgid "Sent. Recipients: %(count)d. Tap below to see who has read it."
 msgstr ""
-"📣 Отправлено. Получателей: %(count)d. Нажмите ниже, чтобы увидеть, кто "
+"Отправлено. Получателей: %(count)d. Нажмите ниже, чтобы увидеть, кто "
 "прочитал."
 
 #: backend/apps/announcements/bot_messages.py
 #, python-format
-msgid "📣 <b>Reminder</b>: please read this announcement from %(name)s."
+msgid "<b>Reminder</b>: please read this announcement from %(name)s."
 msgstr ""
-"📣 <b>Напоминание</b>: пожалуйста, прочитайте объявление. Автор: %(name)s."
+"<b>Напоминание</b>: пожалуйста, прочитайте объявление. Автор: %(name)s."
 
 #: backend/apps/announcements/bot_messages.py
 #, python-format
-msgid "📣 <b>Announcement</b> · %(name)s"
-msgstr "📣 <b>Объявление</b> · %(name)s"
+msgid "<b>Announcement</b> · %(name)s"
+msgstr "<b>Объявление</b> · %(name)s"
 
 #: backend/apps/announcements/bot_messages.py
 #: backend/apps/knowledge/bot_messages.py
-msgid "✅ I've read it"
-msgstr "✅ Прочитано"
+msgid "I've read it"
+msgstr "Прочитано"
 
 #: backend/apps/announcements/bot_messages.py
-msgid "✅ You have read this."
-msgstr "✅ Вы это прочитали."
+msgid "You have read this."
+msgstr "Вы это прочитали."
 
 #: backend/apps/announcements/bot_messages.py
 #, python-format
-msgid "📣 Read by %(read)d of %(total)d."
-msgstr "📣 Прочитали %(read)d из %(total)d."
+msgid "Read by %(read)d of %(total)d."
+msgstr "Прочитали %(read)d из %(total)d."
 
 #: backend/apps/announcements/bot_messages.py
 #, python-format
@@ -547,11 +551,11 @@ msgstr "Ещё не прочитали: %(names)s"
 #: backend/apps/announcements/bot_messages.py
 #, python-format
 msgid ""
-"📣 A day later, %(unread)d of %(total)d people still haven't read your "
+"A day later, %(unread)d of %(total)d people still haven't read your "
 "announcement “%(title)s”: %(names)s"
 msgstr ""
-"📣 Прошли сутки, а %(unread)d из %(total)d так и не прочитали ваше "
-"объявление «%(title)s»: %(names)s"
+"Прошли сутки, а %(unread)d из %(total)d так и не прочитали ваше объявление "
+"«%(title)s»: %(names)s"
 
 #: backend/apps/announcements/bot_messages.py
 #: backend/apps/groups/bot_messages.py backend/apps/reports/bot_messages.py
@@ -560,14 +564,14 @@ msgid "…and %(count)d more"
 msgstr "…и ещё %(count)d"
 
 #: backend/apps/announcements/bot_messages.py
-msgid "👀 Who has read it?"
-msgstr "👀 Кто прочитал?"
+msgid "Who has read it?"
+msgstr "Кто прочитал?"
 
 #: backend/apps/announcements/bot_messages.py
 #: backend/apps/attendance/bot_messages.py backend/apps/tasks/bot_messages.py
-#: employee_bot/bot/handlers/member/tasks.py
-msgid "✖️ Cancel"
-msgstr "✖️ Отмена"
+#: employee_bot/bot/handlers/member/tasks.py owner_bot/ownerbot/bot_messages.py
+msgid "Cancel"
+msgstr "Отмена"
 
 #: backend/apps/announcements/hooks.py
 #, python-format
@@ -873,12 +877,12 @@ msgid "Rejected a shift swap"
 msgstr "Обмен сменами отклонён"
 
 #: backend/apps/attendance/bot_messages.py
-msgid "📍 Check in / out"
-msgstr "📍 Пришёл / Ушёл"
+msgid "Check in / out"
+msgstr "Приход / уход"
 
 #: backend/apps/attendance/bot_messages.py
-msgid "📍 Send my location"
-msgstr "📍 Отправить геопозицию"
+msgid "Send my location"
+msgstr "Отправить геопозицию"
 
 #: backend/apps/attendance/bot_messages.py
 #, python-format
@@ -938,24 +942,24 @@ msgid "Attendance isn't switched on in your company."
 msgstr "В вашей компании не включён учёт посещаемости."
 
 #: backend/apps/attendance/bot_messages.py
-msgid "📱 Check in in the app"
-msgstr "📱 Отметиться в приложении"
+msgid "Check in in the app"
+msgstr "Отметиться в приложении"
 
 #: backend/apps/attendance/bot_messages.py
 #, python-format
 msgid ""
-"📍 <b>Check in</b>\n"
+"<b>Check in</b>\n"
 "Your shift: %(start)s–%(end)s%(where)s"
 msgstr ""
-"📍 <b>Отметка прихода</b>\n"
+"<b>Отметка прихода</b>\n"
 "Ваша смена: %(start)s–%(end)s%(where)s"
 
 #: backend/apps/attendance/bot_messages.py
 msgid ""
-"📍 <b>Check in</b>\n"
+"<b>Check in</b>\n"
 "No shift is planned for you today; it will be marked as an extra day."
 msgstr ""
-"📍 <b>Отметка прихода</b>\n"
+"<b>Отметка прихода</b>\n"
 "На сегодня у вас нет смены, поэтому день будет отмечен как дополнительный "
 "рабочий."
 
@@ -966,30 +970,30 @@ msgstr "Отправьте геопозицию кнопкой ниже."
 #: backend/apps/attendance/bot_messages.py
 #, python-format
 msgid ""
-"👋 <b>Check out</b>\n"
+"<b>Check out</b>\n"
 "You're in since %(time)s. Send your location to check out."
 msgstr ""
-"👋 <b>Отметка ухода</b>\n"
+"<b>Отметка ухода</b>\n"
 "Вы на работе с %(time)s. Чтобы отметить уход, отправьте геопозицию."
 
 #: backend/apps/attendance/bot_messages.py
-msgid "📸 Now a quick selfie to finish checking in."
-msgstr "📸 Осталось сделать селфи, и приход будет отмечен."
+msgid "Now a quick selfie to finish checking in."
+msgstr "Осталось сделать селфи, и приход будет отмечен."
 
 #: backend/apps/attendance/bot_messages.py
 #, python-format
-msgid "✅ Checked in at %(time)s"
-msgstr "✅ Приход отмечен: %(time)s"
+msgid "Checked in at %(time)s"
+msgstr "Приход отмечен: %(time)s"
 
 #: backend/apps/attendance/bot_messages.py
 #, python-format
-msgid "⏰ %(late)s late. Next time a little earlier!"
-msgstr "⏰ Опоздание: %(late)s. В следующий раз приходите чуть раньше!"
+msgid "%(late)s late. Next time a little earlier!"
+msgstr "Опоздание: %(late)s. В следующий раз приходите чуть раньше!"
 
 #: backend/apps/attendance/bot_messages.py
 #, python-format
-msgid "📌 You were %(distance)s from the branch, so this check-in is marked."
-msgstr "📌 Вы были в %(distance)s от филиала, поэтому этот приход помечен."
+msgid "You were %(distance)s from the branch, so this check-in is marked."
+msgstr "Вы были в %(distance)s от филиала, поэтому этот приход помечен."
 
 #: backend/apps/attendance/bot_messages.py
 msgid "No shift was planned, so it's recorded as an extra day."
@@ -1002,50 +1006,50 @@ msgstr "Хорошей смены!"
 
 #: backend/apps/attendance/bot_messages.py
 #, python-format
-msgid "👋 Checked out at %(time)s. You worked %(worked)s today. Thank you!"
-msgstr "👋 Уход отмечен: %(time)s. Сегодня вы отработали %(worked)s. Спасибо!"
+msgid "Checked out at %(time)s. You worked %(worked)s today. Thank you!"
+msgstr "Уход отмечен: %(time)s. Сегодня вы отработали %(worked)s. Спасибо!"
 
 #: backend/apps/attendance/bot_messages.py
 #, python-format
-msgid "⏱ %(extra)s of overtime is waiting for approval."
-msgstr "⏱ Сверхурочные (%(extra)s) ждут одобрения."
+msgid "%(extra)s of overtime is waiting for approval."
+msgstr "Сверхурочные (%(extra)s) ждут одобрения."
 
 #: backend/apps/attendance/bot_messages.py
 msgid "Okay, nothing changed."
 msgstr "Хорошо, ничего не изменилось."
 
 #: backend/apps/attendance/bot_messages.py
-msgid "📍 Check in"
-msgstr "📍 Отметить приход"
+msgid "Check in"
+msgstr "Отметить приход"
 
 #: backend/apps/attendance/bot_messages.py
 #, python-format
-msgid "🔔 Your shift starts at %(time)s%(where)s."
-msgstr "🔔 Ваша смена начинается в %(time)s%(where)s."
+msgid "Your shift starts at %(time)s%(where)s."
+msgstr "Ваша смена начинается в %(time)s%(where)s."
 
 #: backend/apps/attendance/bot_messages.py
 #, python-format
-msgid "⏰ Your shift started at %(time)s%(where)s. Check in when you arrive."
+msgid "Your shift started at %(time)s%(where)s. Check in when you arrive."
 msgstr ""
-"⏰ Ваша смена началась в %(time)s%(where)s. Отметьте приход, когда будете на "
+"Ваша смена началась в %(time)s%(where)s. Отметьте приход, когда будете на "
 "месте."
 
 #: backend/apps/attendance/bot_messages.py
-msgid "🏠 I'm off today"
-msgstr "🏠 Сегодня не работаю"
+msgid "I'm off today"
+msgstr "Сегодня не работаю"
 
 #: backend/apps/attendance/bot_messages.py
 #, python-format
-msgid "🕕 Your shift ended at %(time)s. Still working?"
-msgstr "🕕 Ваша смена закончилась в %(time)s. Ещё работаете?"
+msgid "Your shift ended at %(time)s. Still working?"
+msgstr "Ваша смена закончилась в %(time)s. Ещё работаете?"
 
 #: backend/apps/attendance/bot_messages.py
-msgid "✅ I'm done now"
-msgstr "✅ Уже ухожу"
+msgid "I'm done now"
+msgstr "Уже ухожу"
 
 #: backend/apps/attendance/bot_messages.py
-msgid "💼 Still here"
-msgstr "💼 Ещё работаю"
+msgid "Still here"
+msgstr "Ещё работаю"
 
 #: backend/apps/attendance/bot_messages.py
 msgid "Got it. Your manager will see that you're off today."
@@ -1057,19 +1061,18 @@ msgstr "Хорошо! Когда закончите, не забудьте от�
 
 #: backend/apps/attendance/bot_messages.py
 #, python-format
-msgid "👋 Checked out at %(time)s. Thank you for today!"
-msgstr "👋 Уход отмечен: %(time)s. Спасибо за сегодняшнюю работу!"
+msgid "Checked out at %(time)s. Thank you for today!"
+msgstr "Уход отмечен: %(time)s. Спасибо за сегодняшнюю работу!"
 
 #: backend/apps/attendance/bot_messages.py
 #, python-format
-msgid "⏰ <b>%(name)s</b> came %(late)s late (shift %(time)s, %(branch)s)."
-msgstr ""
-"⏰ <b>%(name)s</b>: опоздание на %(late)s (смена %(time)s, %(branch)s)."
+msgid "<b>%(name)s</b> came %(late)s late (shift %(time)s, %(branch)s)."
+msgstr "<b>%(name)s</b>: опоздание на %(late)s (смена %(time)s, %(branch)s)."
 
 #: backend/apps/attendance/bot_messages.py
 #, python-format
-msgid "☀️ <b>Who's in · %(branch)s</b>"
-msgstr "☀️ <b>Кто на месте · %(branch)s</b>"
+msgid "<b>Who's in · %(branch)s</b>"
+msgstr "<b>Кто на месте · %(branch)s</b>"
 
 #: backend/apps/attendance/bot_messages.py
 #, python-format
@@ -1078,13 +1081,23 @@ msgstr "Пришли %(present)s из %(rostered)s по графику."
 
 #: backend/apps/attendance/bot_messages.py
 #, python-format
+msgid "On time: %(names)s"
+msgstr "Пришли вовремя: %(names)s"
+
+#: backend/apps/attendance/bot_messages.py owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Late: %(names)s"
+msgstr "Опоздали: %(names)s"
+
+#: backend/apps/attendance/bot_messages.py
+#, python-format
 msgid "Not here yet: %(names)s"
 msgstr "Ещё не пришли: %(names)s"
 
 #: backend/apps/attendance/bot_messages.py
 #, python-format
-msgid "🔁 <b>%(to)s</b> takes the shift %(shift)s%(from)s."
-msgstr "🔁 <b>%(to)s</b> выходит на смену %(shift)s%(from)s."
+msgid "<b>%(to)s</b> takes the shift %(shift)s%(from)s."
+msgstr "<b>%(to)s</b> выходит на смену %(shift)s%(from)s."
 
 #: backend/apps/attendance/bot_messages.py
 #, python-format
@@ -1291,7 +1304,8 @@ msgstr "Запланирована"
 
 #: backend/apps/attendance/models.py backend/apps/finance/models.py
 #: backend/apps/inbox/bot_messages.py backend/apps/projects/models.py
-#: backend/apps/sales/models.py
+#: backend/apps/reminders/bot_messages.py backend/apps/sales/models.py
+#: backend/apps/tasks/bot_messages.py
 msgid "Open"
 msgstr "Открыть"
 
@@ -1440,12 +1454,16 @@ msgid "Edited by a manager"
 msgstr "Изменено руководителем"
 
 #: backend/apps/attendance/notify.py backend/apps/attendance/providers.py
-#: backend/apps/members/providers.py backend/apps/timeoff/providers.py
+#: backend/apps/members/bot_messages.py backend/apps/members/notifications.py
+#: backend/apps/members/providers.py backend/apps/timeoff/bot_messages.py
+#: backend/apps/timeoff/notifications.py backend/apps/timeoff/providers.py
 msgid "Approve"
 msgstr "Одобрить"
 
 #: backend/apps/attendance/notify.py backend/apps/attendance/providers.py
-#: backend/apps/members/providers.py backend/apps/timeoff/providers.py
+#: backend/apps/members/bot_messages.py backend/apps/members/notifications.py
+#: backend/apps/members/providers.py backend/apps/timeoff/bot_messages.py
+#: backend/apps/timeoff/notifications.py backend/apps/timeoff/providers.py
 msgid "Reject"
 msgstr "Отклонить"
 
@@ -2299,7 +2317,7 @@ msgstr "Включённые модули"
 msgid "Unknown timezone: %(value)s"
 msgstr "Неизвестный часовой пояс: %(value)s"
 
-#: backend/apps/companies/models.py
+#: backend/apps/companies/models.py owner_bot/ownerbot/brief.py
 msgid "Finance"
 msgstr "Финансы"
 
@@ -2311,7 +2329,7 @@ msgstr "Продажи и касса"
 msgid "Stock"
 msgstr "Склад"
 
-#: backend/apps/companies/models.py
+#: backend/apps/companies/models.py owner_bot/ownerbot/brief.py
 msgid "Attendance"
 msgstr "Посещаемость"
 
@@ -2905,7 +2923,7 @@ msgstr ""
 "счетах — %(accounts)s, сумм долгов — %(debts)s."
 
 #: backend/apps/finance/defaults.py backend/apps/groups/models.py
-#: backend/apps/sales/hooks.py
+#: backend/apps/sales/hooks.py owner_bot/ownerbot/brief.py
 msgid "Sales"
 msgstr "Продажи"
 
@@ -4215,8 +4233,8 @@ msgstr "Этот долг зарезервирован: %(source)s #%(id)s."
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
-msgid "✅ <b>%(name)s</b> finished <b>%(task)s</b>"
-msgstr "✅ <b>%(name)s</b>: задача <b>%(task)s</b> выполнена"
+msgid "<b>%(name)s</b> finished <b>%(task)s</b>"
+msgstr "<b>%(name)s</b>: задача <b>%(task)s</b> выполнена"
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
@@ -4228,6 +4246,11 @@ msgstr "В %(time)s, вовремя."
 msgid "At %(time)s, %(late)s late."
 msgstr "В %(time)s, просрочено на %(late)s."
 
+#: backend/apps/groups/bot_messages.py backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Report: %(text)s"
+msgstr "Отчёт: %(text)s"
+
 #: backend/apps/groups/bot_messages.py
 msgid "Fixed and sent for a check again."
 msgstr "Исправлено и снова отправлено на проверку."
@@ -4238,23 +4261,23 @@ msgstr "На проверке."
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
-msgid "🚨 <b>%(name)s</b> is %(late)s late with <b>%(task)s</b>."
-msgstr "🚨 <b>%(name)s</b>: задача <b>%(task)s</b> просрочена на %(late)s."
+msgid "<b>%(name)s</b> is %(late)s late with <b>%(task)s</b>."
+msgstr "<b>%(name)s</b>: задача <b>%(task)s</b> просрочена на %(late)s."
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
-msgid "👋 <b>%(name)s</b> joined the team as %(position)s."
-msgstr "👋 В команде новый сотрудник: <b>%(name)s</b>, %(position)s."
+msgid "<b>%(name)s</b> joined the team as %(position)s."
+msgstr "В команде новый сотрудник: <b>%(name)s</b>, %(position)s."
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
-msgid "👋 <b>%(name)s</b> joined the team."
-msgstr "👋 В команде новый сотрудник: <b>%(name)s</b>."
+msgid "<b>%(name)s</b> joined the team."
+msgstr "В команде новый сотрудник: <b>%(name)s</b>."
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
-msgid "🌅 <b>Today's plan</b> · %(date)s"
-msgstr "🌅 <b>План на сегодня</b> · %(date)s"
+msgid "<b>Today's plan</b> · %(date)s"
+msgstr "<b>План на сегодня</b> · %(date)s"
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
@@ -4263,53 +4286,65 @@ msgstr "• %(name)s: %(count)d, первая в %(time)s"
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
-msgid "🌙 <b>How today went</b> · %(date)s"
-msgstr "🌙 <b>Итоги дня</b> · %(date)s"
+msgid "<b>How today went</b> · %(date)s"
+msgstr "<b>Итоги дня</b> · %(date)s"
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
-msgid "✅ Done on time: %(count)d"
-msgstr "✅ Вовремя: %(count)d"
+msgid "Done on time: %(count)d"
+msgstr "Вовремя: %(count)d"
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
-msgid "⏰ Done late: %(count)d"
-msgstr "⏰ С просрочкой: %(count)d"
+msgid "Done late: %(count)d"
+msgstr "С просрочкой: %(count)d"
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
-msgid "❌ Not done: %(count)d"
-msgstr "❌ Не выполнено: %(count)d"
+msgid "Not done: %(count)d"
+msgstr "Не выполнено: %(count)d"
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
-msgid "🔗 This group is now connected to <b>%(company)s</b>."
-msgstr "🔗 Группа подключена к компании <b>%(company)s</b>."
+msgid "This group is now connected to <b>%(company)s</b>."
+msgstr "Группа подключена к компании <b>%(company)s</b>."
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
-msgid "👥 Whose news: %(who)s"
-msgstr "👥 Чьи новости: %(who)s"
+msgid "Whose news: %(who)s"
+msgstr "Чьи новости: %(who)s"
+
+#. Translators: closes the group's settings ("Tayyor" / "Готово"), not a task's status.
+#: backend/apps/groups/bot_messages.py
+msgctxt "group settings"
+msgid "Done"
+msgstr "Готово"
 
 #: backend/apps/groups/bot_messages.py
-msgid "✔️ Done"
-msgstr "✔️ Готово"
+msgid "<b>What should I post here?</b> Tap to turn things on or off."
+msgstr "<b>Что сюда присылать?</b> Нажмите, чтобы включить или выключить."
 
 #: backend/apps/groups/bot_messages.py
-msgid "⚙️ <b>What should I post here?</b> Tap to turn things on or off."
-msgstr "⚙️ <b>Что сюда присылать?</b> Нажмите, чтобы включить или выключить."
+#, python-format
+msgid "Turned on: %(events)s"
+msgstr "Включено: %(events)s"
 
 #: backend/apps/groups/bot_messages.py
-msgid "⬅️ Back"
-msgstr "⬅️ Назад"
+msgid "Turned on: nothing yet"
+msgstr "Включено: пока ничего"
+
+#: backend/apps/groups/bot_messages.py backend/apps/members/bot_messages.py
+#: backend/apps/tasks/bot_messages.py
+msgid "Back"
+msgstr "Назад"
 
 #: backend/apps/groups/bot_messages.py
 msgid ""
-"👥 <b>Whose news should this group get?</b> Pick positions, or leave them "
-"all off for everyone."
+"<b>Whose news should this group get?</b> Pick positions, or leave them all "
+"off for everyone."
 msgstr ""
-"👥 <b>Чьи новости получать этой группе?</b> Выберите должности или не "
-"выбирайте ни одной, чтобы получать про всех."
+"<b>Чьи новости получать этой группе?</b> Выберите должности или не выбирайте "
+"ни одной, чтобы получать про всех."
 
 #: backend/apps/groups/bot_messages.py
 msgid "This company has no positions yet."
@@ -4321,12 +4356,12 @@ msgstr "все"
 
 #: backend/apps/groups/bot_messages.py
 msgid ""
-"👋 Hi! I post this team's task news here: finished work, late tasks and "
-"daily summaries.\n"
+"Hi! I post this team's task news here: finished work, late tasks and daily "
+"summaries.\n"
 "A manager can link me to the company by sending /connect."
 msgstr ""
-"👋 Здравствуйте! Я присылаю сюда новости команды по задачам: выполненные "
-"дела, просрочки и итоги дня.\n"
+"Здравствуйте! Я присылаю сюда новости команды по задачам: выполненные дела, "
+"просрочки и итоги дня.\n"
 "Руководитель может подключить меня к компании командой /connect."
 
 #: backend/apps/groups/bot_messages.py
@@ -4346,11 +4381,11 @@ msgstr ""
 
 #: backend/apps/groups/bot_messages.py
 msgid ""
-"🔌 Disconnected. I won't post here any more. A manager can send /connect to "
+"Disconnected. I won't post here any more. A manager can send /connect to "
 "link this group again."
 msgstr ""
-"🔌 Отключено. Больше не буду сюда писать. Руководитель может снова "
-"подключить группу командой /connect."
+"Отключено. Больше не буду сюда писать. Руководитель может снова подключить "
+"группу командой /connect."
 
 #: backend/apps/groups/bot_messages.py
 msgid "Nothing will be posted here. Send /settings to change that."
@@ -4492,19 +4527,35 @@ msgstr "Такой тип новостей недоступен для этой 
 msgid "You don't have access to this."
 msgstr "У вас нет доступа к этому."
 
+#. Translators: %(title)s is the notification's title, e.g. "Kassa yopilmadi".
 #: backend/apps/inbox/bot_messages.py
 #, python-format
-msgid "✅ %(action)s"
-msgstr "✅ %(action)s"
+msgid "Warning: %(title)s"
+msgstr "Внимание: %(title)s"
 
 #: backend/apps/inbox/bot_messages.py
 #, python-format
-msgid "✅ %(action)s · %(name)s"
-msgstr "✅ %(action)s · %(name)s"
+msgid "Urgent: %(title)s"
+msgstr "Срочно: %(title)s"
+
+#: backend/apps/inbox/bot_messages.py
+#, python-format
+msgid "%(action)s · %(name)s"
+msgstr "%(action)s · %(name)s"
+
+#: backend/apps/inbox/bot_messages.py
+#, python-format
+msgid "Answer: %(action)s"
+msgstr "Ответ: %(action)s"
+
+#: backend/apps/inbox/bot_messages.py
+#, python-format
+msgid "Answer: %(action)s · %(name)s"
+msgstr "Ответ: %(action)s · %(name)s"
 
 #: backend/apps/inbox/bot_messages.py backend/apps/tasks/bot_messages.py
-msgid "📱 Open in app"
-msgstr "📱 В приложении"
+msgid "Open in app"
+msgstr "В приложении"
 
 #: backend/apps/inbox/hooks.py
 msgid "Messages from 911"
@@ -4646,44 +4697,46 @@ msgstr "Изменены настройки базы знаний"
 
 #: backend/apps/knowledge/bot_messages.py
 #, python-format
-msgid "📚 Page updated, please read it again: %(title)s"
-msgstr "📚 Статья обновлена, пожалуйста, прочитайте её ещё раз: %(title)s"
+msgid "Page updated, please read it again: %(title)s"
+msgstr "Статья обновлена, пожалуйста, прочитайте её ещё раз: %(title)s"
 
 #: backend/apps/knowledge/bot_messages.py
 #, python-format
-msgid "📚 New page to read: %(title)s"
-msgstr "📚 Новая статья к прочтению: %(title)s"
+msgid "New page to read: %(title)s"
+msgstr "Новая статья к прочтению: %(title)s"
 
 #: backend/apps/knowledge/bot_messages.py
 #, python-format
-msgid "📚 New page in the knowledge base: %(title)s"
-msgstr "📚 Новая статья в базе знаний: %(title)s"
+msgid "New page in the knowledge base: %(title)s"
+msgstr "Новая статья в базе знаний: %(title)s"
 
 #: backend/apps/knowledge/bot_messages.py
 #, python-format
-msgid "📚 Please read and confirm: %(title)s"
-msgstr "📚 Пожалуйста, прочитайте и подтвердите: %(title)s"
+msgid "Please read and confirm: %(title)s"
+msgstr "Пожалуйста, прочитайте и подтвердите: %(title)s"
 
+#. Translators: a button that sends the page into the chat ("Read it"), not the status.
 #: backend/apps/knowledge/bot_messages.py
-msgid "📖 Read"
-msgstr "📖 Читать"
+msgctxt "knowledge read button"
+msgid "Read"
+msgstr "Читать"
 
 #: backend/apps/knowledge/bot_messages.py
 msgid "The page is longer: open it in the app to read the rest."
 msgstr "Это не вся статья: откройте её в приложении, чтобы дочитать."
 
 #: backend/apps/knowledge/bot_messages.py
-msgid "✅ You've confirmed reading this version."
-msgstr "✅ Вы подтвердили, что прочитали эту версию."
+msgid "You've confirmed reading this version."
+msgstr "Вы подтвердили, что прочитали эту версию."
 
 #: backend/apps/knowledge/bot_messages.py
-msgid "✅ You've read everything you need to. Thank you!"
-msgstr "✅ Вы прочитали всё, что нужно. Спасибо!"
+msgid "You've read everything you need to. Thank you!"
+msgstr "Вы прочитали всё, что нужно. Спасибо!"
 
 #: backend/apps/knowledge/bot_messages.py
 #, python-format
-msgid "📚 <b>Pages to read</b>: %(count)d"
-msgstr "📚 <b>Статьи к прочтению</b>: %(count)d"
+msgid "<b>Pages to read</b>: %(count)d"
+msgstr "<b>Статьи к прочтению</b>: %(count)d"
 
 #: backend/apps/knowledge/bot_messages.py
 msgid "Tap a page to read it here, then confirm with “I've read it”."
@@ -4705,8 +4758,8 @@ msgid "Thank you! Marked as read."
 msgstr "Спасибо! Отмечено как прочитанное."
 
 #: backend/apps/knowledge/bot_messages.py
-msgid "Sent the page below 👇"
-msgstr "Отправил страницу ниже 👇"
+msgid "Sent the page below"
+msgstr "Страница — в сообщении ниже."
 
 #: backend/apps/knowledge/defaults.py
 msgid "Company handbook"
@@ -4801,6 +4854,45 @@ msgstr "Опубликована страница «%(title)s»"
 #, python-format
 msgid "Copied from %(company)s"
 msgstr "Скопировано из компании %(company)s"
+
+#: backend/apps/knowledge/sanitize.py
+msgctxt "knowledge callout"
+msgid "Note"
+msgstr "Заметка"
+
+#: backend/apps/knowledge/sanitize.py
+msgctxt "knowledge callout"
+msgid "Good practice"
+msgstr "Хорошая практика"
+
+#: backend/apps/knowledge/sanitize.py
+msgctxt "knowledge callout"
+msgid "Warning"
+msgstr "Внимание"
+
+#: backend/apps/knowledge/sanitize.py
+msgctxt "knowledge callout"
+msgid "Never do this"
+msgstr "Никогда так не делайте"
+
+#: backend/apps/knowledge/sanitize.py
+msgctxt "knowledge callout"
+msgid "Side note"
+msgstr "Примечание"
+
+#: backend/apps/knowledge/sanitize.py
+msgctxt "knowledge checklist"
+msgid "Done"
+msgstr "Выполнено"
+
+#: backend/apps/knowledge/sanitize.py
+#, python-format
+msgid "Picture: %(alt)s"
+msgstr "Изображение: %(alt)s"
+
+#: backend/apps/knowledge/sanitize.py
+msgid "Picture"
+msgstr "Изображение"
 
 #: backend/apps/knowledge/services.py
 msgid "Only people who manage the knowledge base can do this."
@@ -5018,20 +5110,17 @@ msgid "Reordered positions"
 msgstr "Изменён порядок должностей"
 
 #: backend/apps/members/bot_messages.py
-msgid "📋 My tasks"
-msgstr "📋 Мои задачи"
-
-#: backend/apps/members/bot_messages.py backend/apps/tasks/bot_messages.py
-msgid "➕ New task"
-msgstr "➕ Новая задача"
+msgid "Open app"
+msgstr "Открыть приложение"
 
 #: backend/apps/members/bot_messages.py
-msgid "📱 Open app"
-msgstr "📱 Открыть приложение"
+msgid "To check"
+msgstr "Проверка"
 
 #: backend/apps/members/bot_messages.py
-msgid "🔎 To check"
-msgstr "🔎 Проверка"
+#, python-format
+msgid "Company: %(name)s"
+msgstr "Компания: %(name)s"
 
 #: backend/apps/members/bot_messages.py
 msgid "Type a task or pick from the menu"
@@ -5043,8 +5132,13 @@ msgstr "Нажмите кнопку, чтобы открыть приложен�
 
 #: backend/apps/members/bot_messages.py
 #, python-format
-msgid "📝 <b>Join request</b> · %(company)s"
-msgstr "📝 <b>Заявка на вступление</b> · %(company)s"
+msgid "The «%(button)s» button next to the message field opens it in one tap."
+msgstr "Кнопка «%(button)s» рядом с полем ввода открывает его одним нажатием."
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "<b>Join request</b> · %(company)s"
+msgstr "<b>Заявка на вступление</b> · %(company)s"
 
 #: backend/apps/members/bot_messages.py owner_bot/ownerbot/bot_messages.py
 #, python-format
@@ -5071,35 +5165,24 @@ msgstr "Имя пользователя: @%(username)s"
 msgid "Telegram ID: <code>%(id)s</code>"
 msgstr "Telegram ID: <code>%(id)s</code>"
 
-#: backend/apps/members/bot_messages.py backend/apps/members/notifications.py
-#: backend/apps/timeoff/bot_messages.py backend/apps/timeoff/notifications.py
-msgid "✅ Approve"
-msgstr "✅ Одобрить"
-
-#: backend/apps/members/bot_messages.py backend/apps/members/notifications.py
-#: backend/apps/timeoff/bot_messages.py backend/apps/timeoff/notifications.py
-msgid "❌ Reject"
-msgstr "❌ Отклонить"
-
 #: backend/apps/members/bot_messages.py
-msgid ""
-"👋 Hi! To join your company, open the invite link your manager sent you."
+msgid "Hi! To join your company, open the invite link your manager sent you."
 msgstr ""
-"👋 Здравствуйте! Чтобы присоединиться к компании, откройте ссылку-"
-"приглашение от руководителя."
+"Здравствуйте! Чтобы присоединиться к компании, откройте ссылку-приглашение "
+"от руководителя."
 
 #: backend/apps/members/bot_messages.py
 #, python-format
-msgid "👋 Welcome! You're joining <b>%(company)s</b>."
-msgstr "👋 Добро пожаловать! Вы присоединяетесь к компании <b>%(company)s</b>."
+msgid "Welcome! You're joining <b>%(company)s</b>."
+msgstr "Добро пожаловать! Вы присоединяетесь к компании <b>%(company)s</b>."
 
 #: backend/apps/members/bot_messages.py
 #, python-format
 msgid ""
-"⏳ Your request to join <b>%(company)s</b> is waiting for approval. I'll "
+"Your request to join <b>%(company)s</b> is waiting for approval. I'll "
 "message you as soon as it's decided."
 msgstr ""
-"⏳ Ваша заявка в компанию <b>%(company)s</b> ждёт одобрения. Я напишу, как "
+"Ваша заявка в компанию <b>%(company)s</b> ждёт одобрения. Я напишу, как "
 "только будет решение."
 
 #: backend/apps/members/bot_messages.py
@@ -5116,53 +5199,53 @@ msgstr ""
 
 #: backend/apps/members/bot_messages.py
 #, python-format
-msgid "▶️ Your access to <b>%(company)s</b> is back."
-msgstr "▶️ Ваш доступ к компании <b>%(company)s</b> восстановлен."
+msgid "Your access to <b>%(company)s</b> is back."
+msgstr "Ваш доступ к компании <b>%(company)s</b> восстановлен."
 
 #: backend/apps/members/bot_messages.py
 #, python-format
-msgid "🎉 Your request to join <b>%(company)s</b> was approved!"
-msgstr "🎉 Ваша заявка в компанию <b>%(company)s</b> одобрена!"
+msgid "Your request to join <b>%(company)s</b> was approved!"
+msgstr "Ваша заявка в компанию <b>%(company)s</b> одобрена!"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
-msgid "✅ You're a member of <b>%(company)s</b>."
-msgstr "✅ Вы сотрудник компании <b>%(company)s</b>."
+msgid "You're a member of <b>%(company)s</b>."
+msgstr "Вы сотрудник компании <b>%(company)s</b>."
 
 #: backend/apps/members/bot_messages.py
 #, python-format
-msgid "👋 Welcome to <b>%(company)s</b>!"
-msgstr "👋 Добро пожаловать в команду <b>%(company)s</b>!"
+msgid "Welcome to <b>%(company)s</b>!"
+msgstr "Добро пожаловать в команду <b>%(company)s</b>!"
 
 #: backend/apps/members/bot_messages.py
-msgid "🌐 /language · ❓ /help"
-msgstr "🌐 /language · ❓ /help"
+msgid "Language: /language · Help: /help"
+msgstr "Язык: /language · Помощь: /help"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
-msgid "📋 Open: %(count)d"
-msgstr "📋 Открытых: %(count)d"
+msgid "Open: %(count)d"
+msgstr "Открытых: %(count)d"
 
 #: backend/apps/members/bot_messages.py backend/apps/tasks/bot_messages.py
+#: owner_bot/ownerbot/brief.py
 #, python-format
-msgid "🔴 late: %(count)d"
-msgstr "🔴 просрочено: %(count)d"
+msgid "late: %(count)d"
+msgstr "просрочено: %(count)d"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
-msgid "🔎 to check: %(count)d"
-msgstr "🔎 на проверку: %(count)d"
+msgid "to check: %(count)d"
+msgstr "на проверку: %(count)d"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
 msgid ""
-"👋 You're no longer on the team at <b>%(company)s</b>. Thank you for your "
-"work!"
-msgstr "👋 Вы больше не в команде <b>%(company)s</b>. Спасибо за вашу работу!"
+"You're no longer on the team at <b>%(company)s</b>. Thank you for your work!"
+msgstr "Вы больше не в команде <b>%(company)s</b>. Спасибо за вашу работу!"
 
 #: backend/apps/members/bot_messages.py
-msgid "📱 Thanks, your phone number is saved."
-msgstr "📱 Спасибо, номер телефона сохранён."
+msgid "Thanks, your phone number is saved."
+msgstr "Спасибо, номер телефона сохранён."
 
 #: backend/apps/members/bot_messages.py
 msgid "Please share your own phone number with the button below."
@@ -5170,8 +5253,8 @@ msgstr "Пожалуйста, поделитесь своим номером к�
 
 #: backend/apps/members/bot_messages.py
 #, python-format
-msgid "🎉 Registration complete! Welcome aboard, %(name)s."
-msgstr "🎉 Регистрация завершена! Добро пожаловать в команду, %(name)s."
+msgid "Registration complete! Welcome aboard, %(name)s."
+msgstr "Регистрация завершена! Добро пожаловать в команду, %(name)s."
 
 #: backend/apps/members/bot_messages.py
 msgid ""
@@ -5191,16 +5274,16 @@ msgstr ""
 "руководителю."
 
 #: backend/apps/members/bot_messages.py employee_bot/bot/handlers/contact.py
-msgid "📱 Create account"
-msgstr "📱 Создать аккаунт"
+msgid "Create account"
+msgstr "Создать аккаунт"
 
 #: backend/apps/members/bot_messages.py
 msgid "Open the app to create your account: your name, phone and position."
 msgstr "Откройте приложение, чтобы создать аккаунт: имя, телефон и должность."
 
 #: backend/apps/members/bot_messages.py
-msgid "📱 Share my phone number"
-msgstr "📱 Поделиться номером"
+msgid "Share my phone number"
+msgstr "Поделиться номером"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -5218,25 +5301,25 @@ msgstr "Можно подать заявку снова, открыв ссылк
 
 #: backend/apps/members/bot_messages.py backend/apps/timeoff/bot_messages.py
 #, python-format
-msgid "✅ Approved by %(name)s"
-msgstr "✅ Одобрено: %(name)s"
+msgid "Approved by %(name)s"
+msgstr "Одобрено: %(name)s"
 
 #: backend/apps/members/bot_messages.py backend/apps/timeoff/bot_messages.py
 #, python-format
-msgid "❌ Rejected by %(name)s"
-msgstr "❌ Отклонено: %(name)s"
+msgid "Rejected by %(name)s"
+msgstr "Отклонено: %(name)s"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
-msgid "⛔ Blocked by %(name)s"
-msgstr "⛔ Заблокировано: %(name)s"
+msgid "Blocked by %(name)s"
+msgstr "Заблокировано: %(name)s"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
-msgid "📝 Join request · %(name)s"
-msgstr "📝 Заявка на вступление · %(name)s"
+msgid "Join request · %(name)s"
+msgstr "Заявка на вступление · %(name)s"
 
-#: backend/apps/members/bot_messages.py
+#: backend/apps/members/bot_messages.py backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "Company: %(company)s"
 msgstr "Компания: %(company)s"
@@ -5249,12 +5332,13 @@ msgstr ""
 
 #: backend/apps/members/bot_messages.py
 #, python-format
-msgid "👤 Role: %(role)s"
-msgstr "👤 Роль: %(role)s"
+msgid "Chosen: %(names)s"
+msgstr "Выбрано: %(names)s"
 
-#: backend/apps/members/bot_messages.py backend/apps/tasks/bot_messages.py
-msgid "‹ Back"
-msgstr "‹ Назад"
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "Role: %(role)s"
+msgstr "Роль: %(role)s"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -5271,7 +5355,8 @@ msgid "default"
 msgstr "по умолчанию"
 
 #. Translators: %(company)s is a company's name, as typed: no case endings on it.
-#: backend/apps/members/bot_messages.py
+#: backend/apps/members/bot_messages.py employee_bot/bot/handlers/company.py
+#: employee_bot/bot/middlewares/access.py
 #, python-format
 msgid "Now working in <b>%(company)s</b>."
 msgstr "Теперь вы работаете в компании «<b>%(company)s</b>»."
@@ -5898,6 +5983,11 @@ msgstr "Нельзя отстранить или восстановить сам
 msgid "Only owners can suspend or reinstate an owner."
 msgstr "Отстранить или восстановить владельца может только владелец."
 
+#: backend/apps/notifications/management/commands/relabel_bot_chats.py
+#: employee_bot/bot/middlewares/access.py
+msgid "The menu is updated."
+msgstr "Меню обновлено."
+
 #: backend/apps/projects/ai_tools.py
 msgid ""
 "Projects: every project the asker sees, with progress, health, due date, "
@@ -6036,12 +6126,12 @@ msgstr "Изменены настройки проектов"
 
 #: backend/apps/projects/bot_messages.py
 #, python-format
-msgid "📋 How is %(project)s going this week?"
-msgstr "📋 Как идут дела в проекте %(project)s на этой неделе?"
+msgid "How is %(project)s going this week?"
+msgstr "Как идут дела в проекте %(project)s на этой неделе?"
 
 #: backend/apps/projects/bot_messages.py
-msgid "✖️ Not now"
-msgstr "✖️ Не сейчас"
+msgid "Not now"
+msgstr "Не сейчас"
 
 #: backend/apps/projects/bot_messages.py
 #, python-format
@@ -6050,17 +6140,17 @@ msgid ""
 msgstr "%(health)s. Теперь пару строк для команды: что сделано, что мешает?"
 
 #: backend/apps/projects/bot_messages.py
-msgid "⏭ Post without text"
-msgstr "⏭ Опубликовать без текста"
+msgid "Post without text"
+msgstr "Опубликовать без текста"
 
 #: backend/apps/projects/bot_messages.py
 #, python-format
-msgid "✅ Update posted to %(project)s: %(health)s"
-msgstr "✅ Статус проекта %(project)s опубликован: %(health)s"
+msgid "Update posted to %(project)s: %(health)s"
+msgstr "Статус проекта %(project)s опубликован: %(health)s"
 
 #: backend/apps/projects/bot_messages.py
-msgid "📂 Open the project"
-msgstr "📂 Открыть проект"
+msgid "Open the project"
+msgstr "Открыть проект"
 
 #: backend/apps/projects/bot_messages.py backend/apps/projects/services.py
 msgid "Only the project's lead and members post updates."
@@ -6095,6 +6185,8 @@ msgid "Review"
 msgstr "Проверка"
 
 #: backend/apps/projects/conf.py backend/apps/projects/models.py
+#: backend/apps/reminders/bot_messages.py backend/apps/tasks/bot_messages.py
+#: backend/apps/tasks/services.py
 msgid "Done"
 msgstr "Готово"
 
@@ -6183,17 +6275,17 @@ msgstr "%(key)s · %(project)s: срок был %(day)s."
 msgid "How is %(key)s going?"
 msgstr "Как идут дела в проекте %(key)s?"
 
-#: backend/apps/projects/jobs.py
-msgid "🟢 On track"
-msgstr "🟢 По плану"
+#: backend/apps/projects/jobs.py backend/apps/projects/models.py
+msgid "On track"
+msgstr "По плану"
 
-#: backend/apps/projects/jobs.py
-msgid "🟡 At risk"
-msgstr "🟡 Под угрозой"
+#: backend/apps/projects/jobs.py backend/apps/projects/models.py
+msgid "At risk"
+msgstr "Под угрозой"
 
-#: backend/apps/projects/jobs.py
-msgid "🔴 Off track"
-msgstr "🔴 Отстаёт"
+#: backend/apps/projects/jobs.py backend/apps/projects/models.py
+msgid "Off track"
+msgstr "Отстаёт"
 
 #: backend/apps/projects/jobs.py
 #, python-format
@@ -6210,18 +6302,6 @@ msgstr "Опубликовано: %(health)s"
 #: backend/apps/projects/models.py
 msgid "One of the palette colours chart-1 … chart-8."
 msgstr "Один из цветов палитры: chart-1 … chart-8."
-
-#: backend/apps/projects/models.py
-msgid "On track"
-msgstr "По плану"
-
-#: backend/apps/projects/models.py
-msgid "At risk"
-msgstr "Под угрозой"
-
-#: backend/apps/projects/models.py
-msgid "Off track"
-msgstr "Отстаёт"
 
 #: backend/apps/projects/models.py
 msgid "Planning"
@@ -6653,8 +6733,8 @@ msgstr "Основные настройки напоминаний компан�
 
 #: backend/apps/reminders/bot_messages.py
 #, python-format
-msgid "⏳ Heads-up: <b>%(task)s</b> is due at %(time)s."
-msgstr "⏳ Напоминаю: срок задачи <b>%(task)s</b> — %(time)s."
+msgid "Heads-up: <b>%(task)s</b> is due at %(time)s."
+msgstr "Напоминаю: срок задачи <b>%(task)s</b> — %(time)s."
 
 #: backend/apps/reminders/bot_messages.py
 msgid "Your manager"
@@ -6662,69 +6742,57 @@ msgstr "Ваш руководитель"
 
 #: backend/apps/reminders/bot_messages.py
 #, python-format
-msgid "⏰ <b>%(task)s</b> was due at %(time)s. Please do it now."
+msgid "<b>%(task)s</b> was due at %(time)s. Please do it now."
 msgstr ""
-"⏰ Срок задачи <b>%(task)s</b> был в %(time)s. Пожалуйста, сделайте её "
-"сейчас."
+"Срок задачи <b>%(task)s</b> был в %(time)s. Пожалуйста, сделайте её сейчас."
 
 #: backend/apps/reminders/bot_messages.py
 #, python-format
-msgid "🚨 <b>%(task)s</b> is %(late)s late. %(manager)s has been told."
+msgid "<b>%(task)s</b> is %(late)s late. %(manager)s has been told."
 msgstr ""
-"🚨 Задача <b>%(task)s</b> просрочена на %(late)s. %(manager)s уже в курсе."
+"Задача <b>%(task)s</b> просрочена на %(late)s. %(manager)s уже в курсе."
+
+#: backend/apps/reminders/bot_messages.py
+#, python-format
+msgid "Still not done: <b>%(task)s</b>, %(late)s late. Finish it now, please."
+msgstr ""
+"Всё ещё не выполнено: <b>%(task)s</b>, просрочено на %(late)s. Пожалуйста, "
+"выполните сейчас."
+
+#: backend/apps/reminders/bot_messages.py
+#, python-format
+msgid "Reminder %(step)d: <b>%(task)s</b> is %(late)s late."
+msgstr "Напоминание %(step)d: задача <b>%(task)s</b> просрочена на %(late)s."
 
 #: backend/apps/reminders/bot_messages.py
 #, python-format
 msgid ""
-"❗ Still not done: <b>%(task)s</b>, %(late)s late. Finish it now, please."
-msgstr ""
-"❗ Всё ещё не выполнено: <b>%(task)s</b>, просрочено на %(late)s. "
-"Пожалуйста, выполните сейчас."
-
-#: backend/apps/reminders/bot_messages.py
-#, python-format
-msgid "🔔 Reminder %(step)d: <b>%(task)s</b> is %(late)s late."
-msgstr ""
-"🔔 Напоминание %(step)d: задача <b>%(task)s</b> просрочена на %(late)s."
-
-#: backend/apps/reminders/bot_messages.py
-#, python-format
-msgid ""
-"🚨 <b>%(name)s</b> is %(late)s late with <b>%(task)s</b>. Reminders sent: "
+"<b>%(name)s</b> is %(late)s late with <b>%(task)s</b>. Reminders sent: "
 "%(count)d."
 msgstr ""
-"🚨 <b>%(name)s</b>: задача <b>%(task)s</b> просрочена на %(late)s. "
-"Отправлено напоминаний: %(count)d."
+"<b>%(name)s</b>: задача <b>%(task)s</b> просрочена на %(late)s. Отправлено "
+"напоминаний: %(count)d."
 
 #: backend/apps/reminders/bot_messages.py backend/apps/tasks/bot_messages.py
-msgid "👋 Remind now"
-msgstr "👋 Напомнить сейчас"
+msgid "Remind now"
+msgstr "Напомнить сейчас"
 
 #: backend/apps/reminders/bot_messages.py backend/apps/tasks/bot_messages.py
-msgid "👤 Someone else"
-msgstr "👤 Передать другому"
+msgid "Someone else"
+msgstr "Передать другому"
 
 #: backend/apps/reminders/bot_messages.py
 #, python-format
 msgid ""
-"⛔ <b>%(name)s</b> blocked the bot, so reminders can't reach them. "
-"<b>%(task)s</b> is still open."
+"<b>%(name)s</b> blocked the bot, so reminders can't reach them. <b>%(task)s</"
+"b> is still open."
 msgstr ""
-"⛔ <b>%(name)s</b>: бот заблокирован, напоминания не доходят. Задача "
+"<b>%(name)s</b>: бот заблокирован, напоминания не доходят. Задача "
 "<b>%(task)s</b> всё ещё открыта."
 
 #: backend/apps/reminders/bot_messages.py backend/apps/tasks/bot_messages.py
-#: backend/apps/tasks/services.py
-msgid "✅ Done"
-msgstr "✅ Готово"
-
-#: backend/apps/reminders/bot_messages.py backend/apps/tasks/bot_messages.py
-msgid "⏰ Snooze"
-msgstr "⏰ Отложить"
-
-#: backend/apps/reminders/bot_messages.py backend/apps/tasks/bot_messages.py
-msgid "📋 Open"
-msgstr "📋 Открыть"
+msgid "Snooze"
+msgstr "Отложить"
 
 #: backend/apps/reminders/hooks.py
 msgid "Reminder policies"
@@ -6886,8 +6954,8 @@ msgstr ""
 
 #: backend/apps/reports/bot_messages.py
 #, python-format
-msgid "📊 <b>Last week</b> · %(start)s–%(end)s"
-msgstr "📊 <b>Прошлая неделя</b> · %(start)s–%(end)s"
+msgid "<b>Last week</b> · %(start)s–%(end)s"
+msgstr "<b>Прошлая неделя</b> · %(start)s–%(end)s"
 
 #: backend/apps/reports/bot_messages.py
 #, python-format
@@ -6913,30 +6981,30 @@ msgstr "не выполнено: %(count)d"
 
 #: backend/apps/reports/digest.py
 #, python-format
-msgid "👋 %(name)s, tasks for your shift: %(count)d."
-msgstr "👋 %(name)s, задачи на вашу смену: %(count)d."
+msgid "%(name)s, tasks for your shift: %(count)d."
+msgstr "%(name)s, задачи на вашу смену: %(count)d."
 
 #: backend/apps/reports/digest.py
 #, python-format
-msgid "🌅 Good morning, %(name)s! Tasks for today: %(count)d."
-msgstr "🌅 Доброе утро, %(name)s! Задач на сегодня: %(count)d."
+msgid "Good morning, %(name)s! Tasks for today: %(count)d."
+msgstr "Доброе утро, %(name)s! Задач на сегодня: %(count)d."
 
 #: backend/apps/reports/digest.py
 #, python-format
-msgid "⚠️ Still open from earlier days: %(count)d."
-msgstr "⚠️ Не закрыто с прошлых дней: %(count)d."
+msgid "Still open from earlier days: %(count)d."
+msgstr "Не закрыто с прошлых дней: %(count)d."
 
 #: backend/apps/reports/digest.py backend/apps/tasks/bot_messages.py
 msgid "Tap a task to open it."
 msgstr "Нажмите на задачу, чтобы открыть её."
 
 #: backend/apps/reports/digest.py
-msgid "📋 All my tasks"
-msgstr "📋 Все мои задачи"
+msgid "All my tasks"
+msgstr "Все мои задачи"
 
 #: backend/apps/reports/digest.py
-msgid "📱 Open the app"
-msgstr "📱 Открыть приложение"
+msgid "Open the app"
+msgstr "Открыть приложение"
 
 #: backend/apps/reports/hooks.py
 msgid "Team results"
@@ -7132,10 +7200,10 @@ msgstr "Записан чек"
 msgid "Voided a receipt"
 msgstr "Чек аннулирован"
 
-#: backend/apps/sales/bot_messages.py
+#: backend/apps/sales/bot_messages.py backend/apps/sales/queries.py
 #, python-format
-msgid "💵 %(person)s handed you %(amount)s"
-msgstr "💵 %(person)s: вам передано %(amount)s"
+msgid "%(person)s handed you %(amount)s"
+msgstr "%(person)s: вам передано %(amount)s"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -7144,8 +7212,8 @@ msgstr "Касса: %(till)s. Вы получили деньги?"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
-msgid "⚠️ Handover not received: %(amount)s"
-msgstr "⚠️ Передача не получена: %(amount)s"
+msgid "Handover not received: %(amount)s"
+msgstr "Передача не получена: %(amount)s"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -7162,8 +7230,12 @@ msgstr "Передача %(amount)s не подтверждена уже %(hours
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
-msgid "%(cashier)s → %(receiver)s at %(branch)s. Nobody has confirmed it yet."
-msgstr "%(cashier)s → %(receiver)s, %(branch)s. Пока никто не подтвердил."
+msgid ""
+"Cashier: %(cashier)s · Receiver: %(receiver)s · %(branch)s. Nobody has "
+"confirmed it yet."
+msgstr ""
+"Кассир: %(cashier)s · Получатель: %(receiver)s · %(branch)s. Пока никто не "
+"подтвердил."
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -7207,8 +7279,8 @@ msgstr "%(branch)s. Расхождение: %(difference)s."
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
-msgid "✅ Shift %(shift)s verified"
-msgstr "✅ Смена %(shift)s проверена"
+msgid "Shift %(shift)s verified"
+msgstr "Смена %(shift)s проверена"
 
 #: backend/apps/sales/bot_messages.py
 msgid "No cash difference. Thank you!"
@@ -7260,9 +7332,9 @@ msgid "%(cashier)s hasn't closed the till at %(branch)s (closes at %(time)s)."
 msgstr ""
 "%(cashier)s: касса в филиале %(branch)s не закрыта (закрытие в %(time)s)."
 
-#: backend/apps/sales/bot_messages.py
-msgid "🧾 Your till is still open"
-msgstr "🧾 Ваша касса всё ещё открыта"
+#: backend/apps/sales/bot_messages.py backend/apps/sales/hooks.py
+msgid "Your till is still open"
+msgstr "Ваша касса ещё открыта"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -7291,10 +7363,15 @@ msgstr "После закрытия это больше лимита (%(limit)s)
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
-msgid "🧾 <b>%(shift)s</b> closed · %(branch)s"
-msgstr "🧾 Смена <b>%(shift)s</b> закрыта · %(branch)s"
+msgid "<b>%(shift)s</b> closed · %(branch)s"
+msgstr "Смена <b>%(shift)s</b> закрыта · %(branch)s"
 
 #: backend/apps/sales/bot_messages.py
+#, python-format
+msgid "Cashier: %(name)s"
+msgstr "Кассир: %(name)s"
+
+#: backend/apps/sales/bot_messages.py owner_bot/ownerbot/brief.py
 #, python-format
 msgid "Sales: %(net)s"
 msgstr "Выручка: %(net)s"
@@ -7306,18 +7383,23 @@ msgstr "Расхождение: %(difference)s"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
-msgid "💵 %(cashier)s → %(receiver)s: %(amount)s received ✓ · %(branch)s"
-msgstr "💵 %(cashier)s → %(receiver)s: %(amount)s получено ✓ · %(branch)s"
+msgid "<b>Handover received: %(amount)s</b>"
+msgstr "<b>Передача получена: %(amount)s</b>"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
-msgid "⚠️ %(cashier)s → %(receiver)s: %(amount)s NOT received · %(branch)s"
-msgstr "⚠️ %(cashier)s → %(receiver)s: %(amount)s НЕ получено · %(branch)s"
+msgid "<b>Handover NOT received: %(amount)s</b>"
+msgstr "<b>Передача НЕ получена: %(amount)s</b>"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
-msgid "📊 <b>Sales · %(day)s</b>"
-msgstr "📊 <b>Продажи · %(day)s</b>"
+msgid "Cashier: %(cashier)s · Receiver: %(receiver)s · %(branch)s"
+msgstr "Кассир: %(cashier)s · Получатель: %(receiver)s · %(branch)s"
+
+#: backend/apps/sales/bot_messages.py
+#, python-format
+msgid "<b>Sales · %(day)s</b>"
+msgstr "<b>Продажи · %(day)s</b>"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -7336,8 +7418,8 @@ msgstr "%(change)s к тому же дню прошлой недели"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
-msgid "🧾 <b>%(shift)s</b> is open"
-msgstr "🧾 Смена <b>%(shift)s</b> открыта"
+msgid "<b>%(shift)s</b> is open"
+msgstr "Смена <b>%(shift)s</b> открыта"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -7364,8 +7446,8 @@ msgid "Close the shift in Kassa when the day ends."
 msgstr "В конце дня закройте смену в разделе «Касса»."
 
 #: backend/apps/sales/bot_messages.py
-msgid "🧾 No till is open."
-msgstr "🧾 Открытых касс нет."
+msgid "No till is open."
+msgstr "Открытых касс нет."
 
 #: backend/apps/sales/bot_messages.py
 msgid "Open a shift in Kassa: count the float and start."
@@ -7376,8 +7458,8 @@ msgid "Open Kassa"
 msgstr "Открыть раздел «Касса»"
 
 #: backend/apps/sales/bot_messages.py
-msgid "💵 <b>Cash handed to you</b>"
-msgstr "💵 <b>Вам передали наличные</b>"
+msgid "<b>Cash handed to you</b>"
+msgstr "<b>Вам передали наличные</b>"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -7386,12 +7468,14 @@ msgstr "%(person)s · %(amount)s · %(branch)s, %(time)s"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
-msgid "✅ Received %(amount)s"
-msgstr "✅ Получено %(amount)s"
+msgid "Received %(amount)s"
+msgstr "Получено %(amount)s"
 
+#. Translators: the receiver's own answer ("I didn't get it").
 #: backend/apps/sales/bot_messages.py
-msgid "❌ Not received"
-msgstr "❌ Не получено"
+msgctxt "handover answer button"
+msgid "Not received"
+msgstr "Не получено"
 
 #: backend/apps/sales/bot_messages.py
 msgid "Kassa is for the people who run a till. Nothing waits for you here."
@@ -7401,13 +7485,13 @@ msgstr ""
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
-msgid "✅ Received: %(amount)s. Thank you!"
-msgstr "✅ Получено: %(amount)s. Спасибо!"
+msgid "Received: %(amount)s. Thank you!"
+msgstr "Получено: %(amount)s. Спасибо!"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
-msgid "❌ Marked as not received: %(amount)s. The owners were told."
-msgstr "❌ Отмечено, что деньги не получены: %(amount)s. Владельцам сообщили."
+msgid "Marked as not received: %(amount)s. The owners were told."
+msgstr "Отмечено, что деньги не получены: %(amount)s. Владельцам сообщили."
 
 #: backend/apps/sales/finance_bridge.py
 #, python-format
@@ -7533,10 +7617,6 @@ msgid "Your shift needs another look"
 msgstr "Вашу смену нужно перепроверить"
 
 #: backend/apps/sales/hooks.py
-msgid "Your till is still open"
-msgstr "Ваша касса ещё открыта"
-
-#: backend/apps/sales/hooks.py
 msgid "Sales by day"
 msgstr "Продажи по дням"
 
@@ -7613,8 +7693,8 @@ msgid "Verified by"
 msgstr "Кто проверил"
 
 #: backend/apps/sales/hooks.py
-msgid "🧾 Kassa"
-msgstr "🧾 Касса"
+msgid "Kassa"
+msgstr "Касса"
 
 #: backend/apps/sales/models.py
 msgid "Shift totals from the Z-report"
@@ -7833,17 +7913,17 @@ msgstr "Выберите филиал."
 
 #: backend/apps/sales/queries.py
 #, python-format
-msgid "Sales %(net)s (%(change)s vs last week)"
+msgid "Sales: %(net)s (%(change)s vs last week)"
 msgstr "Продажи: %(net)s (%(change)s к прошлой неделе)"
 
 #: backend/apps/sales/queries.py
 #, python-format
-msgid "%(count)s cash differences above tolerance"
+msgid "Cash differences above tolerance: %(count)s"
 msgstr "Расхождений в кассе выше допустимого: %(count)s"
 
 #: backend/apps/sales/queries.py
 #, python-format
-msgid "%(count)s tills open"
+msgid "Open tills: %(count)s"
 msgstr "Открытых касс: %(count)s"
 
 #: backend/apps/sales/queries.py
@@ -7868,11 +7948,6 @@ msgstr "расхождение %(d)s"
 #: backend/apps/sales/queries.py
 msgid "Dispute"
 msgstr "Оспорить"
-
-#: backend/apps/sales/queries.py
-#, python-format
-msgid "%(person)s handed you %(amount)s"
-msgstr "%(person)s передаёт вам %(amount)s"
 
 #: backend/apps/sales/queries.py
 #, python-format
@@ -8166,6 +8241,21 @@ msgid "This request must come from the dashboard."
 msgstr "Этот запрос должен быть отправлен из панели управления."
 
 #: backend/apps/signin/bot_messages.py
+#, python-format
+msgid "Device: %(device)s"
+msgstr "Устройство: %(device)s"
+
+#: backend/apps/signin/bot_messages.py
+#, python-format
+msgid "IP address: %(ip)s"
+msgstr "IP-адрес: %(ip)s"
+
+#: backend/apps/signin/bot_messages.py
+#, python-format
+msgid "Time: %(time)s"
+msgstr "Время: %(time)s"
+
+#: backend/apps/signin/bot_messages.py
 msgid "Sign in to the dashboard?"
 msgstr "Войти в панель управления?"
 
@@ -8178,12 +8268,12 @@ msgid "Didn't start this? Tap “It wasn't me”."
 msgstr "Это были не вы? Нажмите «Это не я»."
 
 #: backend/apps/signin/bot_messages.py
-msgid "🚫 It wasn't me"
-msgstr "🚫 Это не я"
+msgid "It wasn't me"
+msgstr "Это не я"
 
 #: backend/apps/signin/bot_messages.py
-msgid "⏳ This sign-in code has expired. Get a new one in your browser."
-msgstr "⏳ Срок действия кода входа истёк. Получите новый в браузере."
+msgid "This sign-in code has expired. Get a new one in your browser."
+msgstr "Срок действия кода входа истёк. Получите новый в браузере."
 
 #: backend/apps/signin/bot_messages.py
 msgid "This sign-in code was already used. Get a new one in your browser."
@@ -8206,20 +8296,20 @@ msgid "This sign-in link isn't valid. Get a new one in your browser."
 msgstr "Эта ссылка для входа недействительна. Получите новую в браузере."
 
 #: backend/apps/signin/bot_messages.py
-msgid "✅ Confirmed. Go back to your browser: you're being signed in."
-msgstr "✅ Подтверждено. Вернитесь в браузер: выполняется вход."
+msgid "Confirmed. Go back to your browser: you're being signed in."
+msgstr "Подтверждено. Вернитесь в браузер: выполняется вход."
 
 #: backend/apps/signin/bot_messages.py
 msgid ""
-"❌ That wasn't the number on the screen, so this sign-in was cancelled. If "
-"it was you, start again in your browser."
+"That wasn't the number on the screen, so this sign-in was cancelled. If it "
+"was you, start again in your browser."
 msgstr ""
-"❌ Это не то число, которое было на экране, поэтому вход отменён. Если это "
-"были вы, начните заново в браузере."
+"Это не то число, которое было на экране, поэтому вход отменён. Если это были "
+"вы, начните заново в браузере."
 
 #: backend/apps/signin/bot_messages.py
-msgid "🛡 Cancelled. Nobody was signed in."
-msgstr "🛡 Отменено. Никто не вошёл."
+msgid "Cancelled. Nobody was signed in."
+msgstr "Отменено. Никто не вошёл."
 
 #: backend/apps/signin/bot_messages.py
 msgid "Signed in to the dashboard"
@@ -8235,14 +8325,13 @@ msgid "Log out everywhere"
 msgstr "Выйти на всех устройствах"
 
 #: backend/apps/signin/bot_messages.py
-msgid "✅ You were already signed out everywhere."
-msgstr "✅ Вы уже вышли на всех устройствах."
+msgid "You were already signed out everywhere."
+msgstr "Вы уже вышли на всех устройствах."
 
 #: backend/apps/signin/bot_messages.py
-msgid "✅ Done: signed out on every device. Sign in again whenever you need."
+msgid "Done: signed out on every device. Sign in again whenever you need."
 msgstr ""
-"✅ Готово: выход выполнен на всех устройствах. Входите снова, когда "
-"понадобится."
+"Готово: выход выполнен на всех устройствах. Входите снова, когда понадобится."
 
 #: backend/apps/signin/devices.py
 msgid "Browser"
@@ -8405,16 +8494,15 @@ msgid "Changed the rules for finished tasks"
 msgstr "Изменение правил приёмки выполненных задач"
 
 #: backend/apps/tasks/bot_messages.py
-msgid ""
-"🎉 Nothing on your list. To add a task, tap ➕ New task or just type it."
+msgid "Nothing on your list. To add a task, tap «New task» or just type it."
 msgstr ""
-"🎉 Список пуст. Чтобы добавить задачу, нажмите ➕ Новая задача или просто "
+"Список пуст. Чтобы добавить задачу, нажмите «Новая задача» или просто "
 "напишите её."
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "📋 <b>Your tasks</b>: %(count)d"
-msgstr "📋 <b>Ваши задачи</b>: %(count)d"
+msgid "<b>Your tasks</b>: %(count)d"
+msgstr "<b>Ваши задачи</b>: %(count)d"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
@@ -8428,21 +8516,17 @@ msgstr "позже: %(count)d"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "🔎 being checked: %(count)d"
-msgstr "🔎 на проверке: %(count)d"
+msgid "being checked: %(count)d"
+msgstr "на проверке: %(count)d"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "✅ Nothing is waiting for your check."
-msgstr "✅ Нет работы на проверку."
-
-#: backend/apps/tasks/bot_messages.py employee_bot/bot/handlers/member/tasks.py
-msgid "⬅️ My tasks"
-msgstr "⬅️ Мои задачи"
+msgid "Nothing is waiting for your check."
+msgstr "Нет работы на проверку."
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "🔎 <b>To check</b>: %(count)d"
-msgstr "🔎 <b>На проверку</b>: %(count)d"
+msgid "<b>To check</b>: %(count)d"
+msgstr "<b>На проверку</b>: %(count)d"
 
 #: backend/apps/tasks/bot_messages.py
 msgid "Tap one to see it, then confirm it or send it back."
@@ -8450,14 +8534,15 @@ msgstr "Нажмите, чтобы посмотреть, затем примит
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "↩️ %(name)s has left the team. These tasks they had came back to you:"
-msgstr "↩️ %(name)s больше не в команде. Эти задачи вернулись к вам:"
+msgid "%(name)s has left the team. These tasks they had came back to you:"
+msgstr "%(name)s больше не в команде. Эти задачи вернулись к вам:"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "Status: %(status)s"
 msgstr "Статус: %(status)s"
 
+#. Translators: %(when)s reads like "ertaga, 18:00 (juma, 26-okt)".
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "Due: %(when)s"
@@ -8465,23 +8550,24 @@ msgstr "Срок: %(when)s"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "⏸ Next reminder: %(time)s"
-msgstr "⏸ Следующее напоминание: %(time)s"
+msgid "Next reminder: %(time)s"
+msgstr "Следующее напоминание: %(time)s"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "🎁 Reward: +%(amount)s"
-msgstr "🎁 Премия: +%(amount)s"
+msgid "Reward: +%(amount)s"
+msgstr "Премия: +%(amount)s"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "From: %(name)s"
 msgstr "От: %(name)s"
 
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "For: %(name)s"
-msgstr "Кому: %(name)s"
+msgstr "Исполнитель: %(name)s"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
@@ -8495,252 +8581,263 @@ msgstr "Для завершения нужно: %(proof)s"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "Report: %(text)s"
-msgstr "Отчёт: %(text)s"
+msgid "Can't do it: %(reason)s"
+msgstr "Не получается: %(reason)s"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "⛔ Can't do it: %(reason)s"
-msgstr "⛔ Не получается: %(reason)s"
+msgid "More time asked: %(when)s"
+msgstr "Запрошено время до: %(when)s"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "Start"
+msgstr "Начать"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "Comment"
+msgstr "Комментарий"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "More time"
+msgstr "Нужно время"
+
+#: backend/apps/tasks/bot_messages.py
+msgctxt "task button"
+msgid "Can't do it"
+msgstr "Не получается"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "Undo"
+msgstr "Отменить"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "Confirm"
+msgstr "Принять"
+
+#: backend/apps/tasks/bot_messages.py backend/apps/tasks/feeds.py
+msgid "Send back"
+msgstr "Вернуть"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "New time"
+msgstr "Новый срок"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "15 min"
+msgstr "15 мин"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "1 hour"
+msgstr "1 час"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "Tomorrow 09:00"
+msgstr "Завтра 09:00"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "🕒 More time asked: %(when)s"
-msgstr "🕒 Запрошено время до: %(when)s"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "▶️ Start"
-msgstr "▶️ Начать"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "💬 Comment"
-msgstr "💬 Комментарий"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "🕒 More time"
-msgstr "🕒 Нужно время"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "⛔ Can't do it"
-msgstr "⛔ Не получается"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "↩️ Undo"
-msgstr "↩️ Отменить"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "✅ Confirm"
-msgstr "✅ Принять"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "↩️ Send back"
-msgstr "↩️ Вернуть"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "🕒 New time"
-msgstr "🕒 Новый срок"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "⏰ 15 min"
-msgstr "⏰ 15 мин"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "⏰ 1 hour"
-msgstr "⏰ 1 час"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "🌅 Tomorrow 09:00"
-msgstr "🌅 Завтра 09:00"
+msgid "Moved to %(when)s."
+msgstr "Перенесено: %(when)s."
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "🌅 Moved to %(when)s."
-msgstr "🌅 Перенесено: %(when)s."
-
-#: backend/apps/tasks/bot_messages.py
-#, python-format
-msgid "⏰ Snoozed. Next reminder at %(time)s."
-msgstr "⏰ Отложено. Следующее напоминание в %(time)s."
+msgid "Snoozed. Next reminder at %(time)s."
+msgstr "Отложено. Следующее напоминание в %(time)s."
 
 #. Translators: %(time)s is a clock time; %(due)s reads like "bugun, 18:00".
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "⏰ Snoozed. Next reminder at %(time)s; the deadline stays %(due)s."
-msgstr "⏰ Отложено. Следующее напоминание в %(time)s; срок прежний: %(due)s."
+msgid "Snoozed. Next reminder at %(time)s; the deadline stays %(due)s."
+msgstr "Отложено. Следующее напоминание в %(time)s; срок прежний: %(due)s."
 
 #: backend/apps/tasks/bot_messages.py
-msgid "📷 Send a photo (you can add a note)."
-msgstr "📷 Пришлите фото (можно с подписью)."
+msgid "Send a photo (you can add a note)."
+msgstr "Пришлите фото (можно с подписью)."
 
 #: backend/apps/tasks/bot_messages.py
-msgid "✍️ Send a short report."
-msgstr "✍️ Пришлите короткий отчёт."
+msgid "Send a short report."
+msgstr "Пришлите короткий отчёт."
 
 #: backend/apps/tasks/bot_messages.py
-msgid "📷 Send a photo or a short report."
-msgstr "📷 Пришлите фото или короткий отчёт."
-
-#: backend/apps/tasks/bot_messages.py
-#, python-format
-msgid "📷 Send a photo to complete <b>%(title)s</b>."
-msgstr "📷 Чтобы завершить задачу <b>%(title)s</b>, пришлите фото."
+msgid "Send a photo or a short report."
+msgstr "Пришлите фото или короткий отчёт."
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "✍️ Send a short report to complete <b>%(title)s</b>."
-msgstr "✍️ Чтобы завершить задачу <b>%(title)s</b>, пришлите короткий отчёт."
+msgid "Send a photo to complete <b>%(title)s</b>."
+msgstr "Чтобы завершить задачу <b>%(title)s</b>, пришлите фото."
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "📷 Send a photo or a short report to complete <b>%(title)s</b>."
+msgid "Send a short report to complete <b>%(title)s</b>."
+msgstr "Чтобы завершить задачу <b>%(title)s</b>, пришлите короткий отчёт."
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Send a photo or a short report to complete <b>%(title)s</b>."
 msgstr ""
-"📷 Чтобы завершить задачу <b>%(title)s</b>, пришлите фото или короткий отчёт."
+"Чтобы завершить задачу <b>%(title)s</b>, пришлите фото или короткий отчёт."
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "⚠️ Steps not ticked yet: %(count)d. Tick them all and finish?"
-msgstr "⚠️ Не отмечено шагов: %(count)d. Отметить все и завершить?"
+msgid "Steps not ticked yet: %(count)d. Tick them all and finish?"
+msgstr "Не отмечено шагов: %(count)d. Отметить все и завершить?"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "☑️ Tick all and finish"
-msgstr "☑️ Отметить все и завершить"
+msgid "Tick all and finish"
+msgstr "Отметить все и завершить"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "✖️ None of them"
-msgstr "✖️ Ни к какой"
+msgid "None of them"
+msgstr "Ни к какой"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "📷 Which task is this photo for?"
-msgstr "📷 К какой задаче это фото?"
+msgid "Which task is this photo for?"
+msgstr "К какой задаче это фото?"
 
 #. Translators: %(title)s is the task's title: let a carrier word take any case ending.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "💬 Write your comment on <b>%(title)s</b>:"
-msgstr "💬 Напишите комментарий к задаче <b>%(title)s</b>:"
+msgid "Write your comment on <b>%(title)s</b>:"
+msgstr "Напишите комментарий к задаче <b>%(title)s</b>:"
 
 #: backend/apps/tasks/bot_messages.py
 msgid "What needs to be fixed? Send a short comment."
 msgstr "Что нужно исправить? Напишите короткий комментарий."
 
 #: backend/apps/tasks/bot_messages.py
-msgid "📷 Photo is unclear"
-msgstr "📷 Фото нечёткое"
+msgid "Photo is unclear"
+msgstr "Фото нечёткое"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "🧾 Not finished"
-msgstr "🧾 Не доделано"
+msgid "Not finished"
+msgstr "Не доделано"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "❌ Wrong item"
-msgstr "❌ Не тот товар"
+msgid "Wrong item"
+msgstr "Не тот товар"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "↩️ What needs to be fixed? Tap a reason or write your own."
-msgstr "↩️ Что исправить? Выберите причину или напишите свою."
+msgid "What needs to be fixed? Tap a reason or write your own."
+msgstr "Что исправить? Выберите причину или напишите свою."
 
 #: backend/apps/tasks/bot_messages.py
-msgid "⏰ +30 min"
-msgstr "⏰ +30 мин"
+msgid "+30 min"
+msgstr "+30 мин"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "⏰ +1 hour"
-msgstr "⏰ +1 час"
+msgid "+1 hour"
+msgstr "+1 час"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "⏰ In 1 hour"
-msgstr "⏰ Через 1 час"
+msgid "In 1 hour"
+msgstr "Через 1 час"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "🌆 Today 18:00"
-msgstr "🌆 Сегодня 18:00"
+msgid "Today 18:00"
+msgstr "Сегодня 18:00"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "✍️ Type a time"
-msgstr "✍️ Ввести время"
+msgid "Type a time"
+msgstr "Ввести время"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "🕒 Until when? Write it: 18:30, tomorrow 9:00, Friday."
-msgstr "🕒 До какого времени? Напишите: 18:30, завтра 9:00, пятница."
+msgid "Until when? Write it: 18:30, tomorrow 9:00, Friday."
+msgstr "До какого времени? Напишите: 18:30, завтра 9:00, пятница."
 
 #: backend/apps/tasks/bot_messages.py
-msgid "⏰ The new deadline? Write it: 18:30, tomorrow 9:00, Friday."
-msgstr "⏰ Новый срок? Напишите: 18:30, завтра 9:00, пятница."
+msgid "The new deadline? Write it: 18:30, tomorrow 9:00, Friday."
+msgstr "Новый срок? Напишите: 18:30, завтра 9:00, пятница."
 
 #: backend/apps/tasks/bot_messages.py
-msgid "✖️ Yes, cancel the task"
-msgstr "✖️ Да, отменить задачу"
+msgid "Yes, cancel the task"
+msgstr "Да, отменить задачу"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "🙋 Me"
-msgstr "🙋 Себе"
+msgid "Me"
+msgstr "Себе"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "👤 Who is it for?"
-msgstr "👤 Кому?"
+msgctxt "page"
+msgid "Previous"
+msgstr "Предыдущие"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
-#, python-format
-msgid "🔁 <b>Today's routine task</b> · %(name)s"
-msgstr "🔁 <b>Регулярная задача на сегодня</b> · %(name)s"
+msgctxt "page"
+msgid "Next"
+msgstr "Следующие"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
-#, python-format
-msgid "📨 <b>New task</b> · %(name)s"
-msgstr "📨 <b>Новая задача</b> · %(name)s"
+msgid "Who is it for?"
+msgstr "Кому?"
 
 #. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "🔎 %(name)s finished a task. Please check it."
-msgstr "🔎 %(name)s: задача выполнена. Пожалуйста, проверьте."
+msgid "<b>Today's routine task</b> · %(name)s"
+msgstr "<b>Регулярная задача на сегодня</b> · %(name)s"
 
 #. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "✅ %(name)s completed a task."
-msgstr "✅ %(name)s: задача выполнена."
+msgid "<b>New task</b> · %(name)s"
+msgstr "<b>Новая задача</b> · %(name)s"
 
 #. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "👍 %(name)s confirmed your task."
-msgstr "👍 %(name)s: ваша задача принята."
-
-#: backend/apps/tasks/bot_messages.py
-#, python-format
-msgid "↩️ Your task was sent back: %(reason)s"
-msgstr "↩️ Задачу вернули: %(reason)s"
+msgid "%(name)s finished a task. Please check it."
+msgstr "%(name)s: задача выполнена. Пожалуйста, проверьте."
 
 #. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "👋 %(name)s is waiting for this task."
-msgstr "👋 %(name)s ждёт выполнения этой задачи."
+msgid "<b>Task done</b> · %(name)s"
+msgstr "<b>Задача выполнена</b> · %(name)s"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "late by %(duration)s"
+msgstr "просрочено на %(duration)s"
 
 #. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "💬 <b>%(name)s mentioned you</b>"
-msgstr "💬 <b>Вас упомянули</b> · %(name)s"
+msgid "<b>Your task was accepted</b> · %(name)s"
+msgstr "<b>Ваша задача принята</b> · %(name)s"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Your task was sent back: %(reason)s"
+msgstr "Задачу вернули: %(reason)s"
 
 #. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "💬 <b>New comment</b> · %(name)s"
-msgstr "💬 <b>Новый комментарий</b> · %(name)s"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "💬 Reply"
-msgstr "💬 Ответить"
+msgid "%(name)s is waiting for this task."
+msgstr "%(name)s ждёт выполнения этой задачи."
 
 #. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "🕒 <b>New deadline</b> · %(name)s"
-msgstr "🕒 <b>Новый срок</b> · %(name)s"
+msgid "<b>%(name)s mentioned you</b>"
+msgstr "<b>Вас упомянули</b> · %(name)s"
+
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "<b>New comment</b> · %(name)s"
+msgstr "<b>Новый комментарий</b> · %(name)s"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "Reply"
+msgstr "Ответить"
+
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "<b>New deadline</b> · %(name)s"
+msgstr "<b>Новый срок</b> · %(name)s"
 
 #. Translators: %(when)s reads like "bugun, 18:00" or "25-okt, 18:30".
 #: backend/apps/tasks/bot_messages.py
@@ -8751,14 +8848,14 @@ msgstr "Было: %(when)s"
 #. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "✖️ <b>Task cancelled</b> · %(name)s"
-msgstr "✖️ <b>Задача отменена</b> · %(name)s"
+msgid "<b>Task cancelled</b> · %(name)s"
+msgstr "<b>Задача отменена</b> · %(name)s"
 
 #. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "↪️ <b>Given to someone else</b> · %(name)s"
-msgstr "↪️ <b>Передана другому</b> · %(name)s"
+msgid "<b>Given to someone else</b> · %(name)s"
+msgstr "<b>Передана другому</b> · %(name)s"
 
 #. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
@@ -8769,58 +8866,58 @@ msgstr "Теперь исполнитель: %(name)s"
 #. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "⛔ <b>%(name)s can't do this task</b>"
-msgstr "⛔ <b>Не получается выполнить</b> · %(name)s"
+msgid "<b>%(name)s can't do this task</b>"
+msgstr "<b>Не получается выполнить</b> · %(name)s"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "✖️ Cancel task"
-msgstr "✖️ Отменить задачу"
-
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
-#: backend/apps/tasks/bot_messages.py
-#, python-format
-msgid "✅ <b>More time given</b> · %(name)s"
-msgstr "✅ <b>Время продлено</b> · %(name)s"
+msgid "Cancel task"
+msgstr "Отменить задачу"
 
 #. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "✖️ <b>The deadline stays</b> · %(name)s"
-msgstr "✖️ <b>Срок прежний</b> · %(name)s"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "✖️ <b>Task cancelled</b>"
-msgstr "✖️ <b>Задача отменена</b>"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "↪️ <b>Given to someone else</b>"
-msgstr "↪️ <b>Передана другому</b>"
+msgid "<b>More time given</b> · %(name)s"
+msgstr "<b>Время продлено</b> · %(name)s"
 
 #. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "✅ <b>Accepted</b> · %(name)s"
-msgstr "✅ <b>Принято</b> · %(name)s"
+msgid "<b>The deadline stays</b> · %(name)s"
+msgstr "<b>Срок прежний</b> · %(name)s"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "<b>Task cancelled</b>"
+msgstr "<b>Задача отменена</b>"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "<b>Given to someone else</b>"
+msgstr "<b>Передана другому</b>"
+
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "<b>Accepted</b> · %(name)s"
+msgstr "<b>Принято</b> · %(name)s"
 
 #. Translators: %(time)s is a clock time (14:30); %(late)s a length (25 min, 1 h 5 min).
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "✅ <b>Done</b> · %(time)s, %(late)s late"
-msgstr "✅ <b>Выполнена</b> · %(time)s, просрочено на %(late)s"
+msgid "<b>Done</b> · %(time)s, %(late)s late"
+msgstr "<b>Выполнена</b> · %(time)s, просрочено на %(late)s"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "✅ <b>Done</b> · %(time)s"
-msgstr "✅ <b>Выполнена</b> · %(time)s"
+msgid "<b>Done</b> · %(time)s"
+msgstr "<b>Выполнена</b> · %(time)s"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "↩️ <b>Sent back</b>"
-msgstr "↩️ <b>Возвращена</b>"
+msgid "<b>Sent back</b>"
+msgstr "<b>Возвращена</b>"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "👋 Welcome to %(company)s, %(name)s!"
-msgstr "👋 Добро пожаловать в команду «%(company)s», %(name)s!"
+msgid "Welcome to %(company)s, %(name)s!"
+msgstr "Добро пожаловать в команду «%(company)s», %(name)s!"
 
 #: backend/apps/tasks/bot_messages.py
 msgid "Here are your first tasks to get started. Tap one to open it."
@@ -8829,19 +8926,19 @@ msgstr ""
 
 #: backend/apps/tasks/bot_messages.py
 msgid ""
-"✍️ What needs to be done? You can say when too, e.g. «Order insulin tomorrow "
+"What needs to be done? You can say when too, e.g. «Order insulin tomorrow "
 "18:00 !!»."
 msgstr ""
-"✍️ Что нужно сделать? Можно сразу указать срок, например: «Заказать инсулин "
+"Что нужно сделать? Можно сразу указать срок, например: «Заказать инсулин "
 "завтра в 18:00 !!»."
 
 #: backend/apps/tasks/bot_messages.py
-msgid "⏰ In an hour"
-msgstr "⏰ Через час"
+msgid "In an hour"
+msgstr "Через час"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "♾ No deadline"
-msgstr "♾ Без срока"
+msgid "No deadline"
+msgstr "Без срока"
 
 #: backend/apps/tasks/bot_messages.py
 msgid "I didn't catch the time. Try: 18:30, tomorrow 9:00, Friday, in 2 hours."
@@ -8849,8 +8946,8 @@ msgstr ""
 "Не удалось понять время. Например: 18:30, завтра 9:00, пятница, через 2 часа."
 
 #: backend/apps/tasks/bot_messages.py
-msgid "⏰ When is it due? Pick one or write it: 18:30, tomorrow 9:00, Friday."
-msgstr "⏰ Какой срок? Выберите или напишите: 18:30, завтра 9:00, пятница."
+msgid "When is it due? Pick one or write it: 18:30, tomorrow 9:00, Friday."
+msgstr "Какой срок? Выберите или напишите: 18:30, завтра 9:00, пятница."
 
 #. Translators: %(when)s is a clock time such as 08:00.
 #: backend/apps/tasks/bot_messages.py
@@ -8860,35 +8957,30 @@ msgstr "Сегодня %(when)s уже прошло. Завтра в это же
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "🌅 Tomorrow, %(when)s"
-msgstr "🌅 Завтра, %(when)s"
+msgid "Tomorrow, %(when)s"
+msgstr "Завтра, %(when)s"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "⏰ Another time"
-msgstr "⏰ Другое время"
+msgid "Another time"
+msgstr "Другое время"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
-#: backend/apps/tasks/bot_messages.py
-#, python-format
-msgid "👤 For: %(name)s"
-msgstr "👤 Исполнитель: %(name)s"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "✅ Save"
-msgstr "✅ Сохранить"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "⏰ Change time"
-msgstr "⏰ Изменить время"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "📝 Not a date"
-msgstr "📝 Это не дата"
-
+#. Translators: %(repeat)s is how often, e.g. "Every day".
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "⚠️ late by %(duration)s"
-msgstr "⚠️ просрочено на %(duration)s"
+msgid "Repeats: %(repeat)s"
+msgstr "Повтор: %(repeat)s"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "Save"
+msgstr "Сохранить"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "Change time"
+msgstr "Изменить время"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "Not a date"
+msgstr "Это не дата"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
@@ -8915,10 +9007,43 @@ msgstr "%(days)d д"
 msgid "%(days)d d %(hours)d h"
 msgstr "%(days)d дн. %(hours)d ч"
 
+#. Translators: on a checklist button; %(step)s is the step's own text.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "🔎 To check (%(count)d)"
-msgstr "🔎 Проверка (%(count)d)"
+msgctxt "checklist step"
+msgid "Done: %(step)s"
+msgstr "Готово: %(step)s"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "To check (%(count)d)"
+msgstr "Проверка (%(count)d)"
+
+#: backend/apps/tasks/bot_messages.py
+msgctxt "task list"
+msgid "sent back"
+msgstr "возвращена"
+
+#: backend/apps/tasks/bot_messages.py
+msgctxt "task list"
+msgid "being checked"
+msgstr "на проверке"
+
+#: backend/apps/tasks/bot_messages.py
+msgctxt "task list"
+msgid "late"
+msgstr "просрочена"
+
+#: backend/apps/tasks/bot_messages.py
+msgctxt "task list"
+msgid "urgent"
+msgstr "срочно"
+
+#. Translators: %(priority)s is "Urgent" or "High", as the task's priority reads.
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Priority: %(priority)s"
+msgstr "Приоритет: %(priority)s"
 
 #: backend/apps/tasks/bot_messages.py
 msgctxt "task status"
@@ -8928,10 +9053,6 @@ msgstr "Принято"
 #: backend/apps/tasks/bot_messages.py
 msgid "<b>Accepted automatically</b> · nobody checked it in time"
 msgstr "<b>Принято автоматически</b> · никто не проверил вовремя"
-
-#: backend/apps/tasks/feeds.py
-msgid "Send back"
-msgstr "Вернуть"
 
 #: backend/apps/tasks/feeds.py
 #, python-format
@@ -8975,7 +9096,7 @@ msgstr "Регулярные задачи"
 msgid "Onboarding tasks"
 msgstr "Задачи адаптации"
 
-#: backend/apps/tasks/hooks.py
+#: backend/apps/tasks/hooks.py owner_bot/ownerbot/brief.py
 msgid "Tasks"
 msgstr "Задачи"
 
@@ -9011,7 +9132,7 @@ msgstr "Отчёт"
 msgid "Reward"
 msgstr "Премия"
 
-#: backend/apps/tasks/inbox_actions.py
+#: backend/apps/tasks/inbox_actions.py backend/apps/tasks/services.py
 msgid "More time given"
 msgstr "Время продлено"
 
@@ -9156,7 +9277,7 @@ msgstr "Выполнена"
 
 #: backend/apps/tasks/models.py
 msgid "Urgent"
-msgstr "Срочно"
+msgstr "Срочный"
 
 #: backend/apps/tasks/models.py
 msgid "Out of stock"
@@ -9324,8 +9445,8 @@ msgid "Only open tasks can be changed."
 msgstr "Изменять можно только открытые задачи."
 
 #: backend/apps/tasks/services.py
-msgid "🕒 New deadline set"
-msgstr "🕒 Новый срок установлен"
+msgid "New deadline set"
+msgstr "Новый срок установлен"
 
 #: backend/apps/tasks/services.py
 msgid "This task has already been started."
@@ -9352,8 +9473,8 @@ msgid "You can't cancel this task."
 msgstr "Вы не можете отменить эту задачу."
 
 #: backend/apps/tasks/services.py
-msgid "✖️ Task cancelled"
-msgstr "✖️ Задача отменена"
+msgid "Task cancelled"
+msgstr "Задача отменена"
 
 #: backend/apps/tasks/services.py
 msgid "Only open tasks with a deadline can be snoozed."
@@ -9403,8 +9524,8 @@ msgstr ""
 "Задачи можно назначать только зарегистрированным сотрудникам вашей компании."
 
 #: backend/apps/tasks/services.py
-msgid "👤 Given to someone else"
-msgstr "👤 Передана другому"
+msgid "Given to someone else"
+msgstr "Передана другому"
 
 #: backend/apps/tasks/services.py
 #, python-format
@@ -9448,8 +9569,8 @@ msgstr "Напишите, что мешает."
 
 #: backend/apps/tasks/services.py
 #, python-format
-msgid "⛔ %(name)s can't do a task"
-msgstr "⛔ Не получается выполнить задачу · %(name)s"
+msgid "%(name)s can't do a task"
+msgstr "Не получается выполнить задачу · %(name)s"
 
 #: backend/apps/tasks/services.py
 msgid "Pick: someone else, a new time, or cancel."
@@ -9485,16 +9606,16 @@ msgstr "Запрошено повторно"
 
 #: backend/apps/tasks/services.py
 #, python-format
-msgid "🕒 %(name)s asks for more time"
-msgstr "🕒 Просьба продлить срок · %(name)s"
+msgid "%(name)s asks for more time"
+msgstr "Просьба продлить срок · %(name)s"
 
 #: backend/apps/tasks/services.py
-msgid "✅ Give more time"
-msgstr "✅ Продлить"
+msgid "Give more time"
+msgstr "Продлить"
 
 #: backend/apps/tasks/services.py
-msgid "✖️ Keep the deadline"
-msgstr "✖️ Оставить срок"
+msgid "Keep the deadline"
+msgstr "Оставить срок"
 
 #: backend/apps/tasks/services.py
 msgid "Nobody is waiting for more time on this task."
@@ -9505,12 +9626,8 @@ msgid "The time asked for has already passed. Set a new deadline."
 msgstr "Запрошенное время уже прошло. Установите новый срок."
 
 #: backend/apps/tasks/services.py
-msgid "✅ More time given"
-msgstr "✅ Время продлено"
-
-#: backend/apps/tasks/services.py
-msgid "✖️ Deadline kept"
-msgstr "✖️ Срок оставлен"
+msgid "Deadline kept"
+msgstr "Срок оставлен"
 
 #: backend/apps/tasks/services.py
 msgid "Only whoever gave the task, or a manager, can decide."
@@ -9776,21 +9893,21 @@ msgstr "Удалён праздничный день компании"
 
 #: backend/apps/timeoff/bot_messages.py
 #, python-format
-msgid "🌴 <b>Time off request</b> · %(name)s"
-msgstr "🌴 <b>Заявка на отгул</b> · %(name)s"
+msgid "<b>Time off request</b> · %(name)s"
+msgstr "<b>Заявка на отгул</b> · %(name)s"
 
 #: backend/apps/timeoff/bot_messages.py
 #, python-format
-msgid "📅 %(dates)s · days: %(count)d"
-msgstr "📅 %(dates)s · дней: %(count)d"
+msgid "Dates: %(dates)s · days: %(count)d"
+msgstr "Даты: %(dates)s · дней: %(count)d"
 
 #: backend/apps/timeoff/bot_messages.py
 #, python-format
 msgid ""
-"🌴 Your time off is approved: %(dates)s. No tasks or reminders from me on "
-"those days. Have a good rest!"
+"Your time off is approved: %(dates)s. No tasks or reminders from me on those "
+"days. Have a good rest!"
 msgstr ""
-"🌴 Ваш отгул одобрен: %(dates)s. В эти дни я не буду присылать задачи и "
+"Ваш отгул одобрен: %(dates)s. В эти дни я не буду присылать задачи и "
 "напоминания. Хорошего отдыха!"
 
 #: backend/apps/timeoff/bot_messages.py
@@ -9800,17 +9917,17 @@ msgstr "Ваша заявка на отгул (%(dates)s) отклонена."
 
 #: backend/apps/timeoff/bot_messages.py
 #, python-format
-msgid "🚫 Cancelled by %(name)s"
-msgstr "🚫 Отменено: %(name)s"
+msgid "Cancelled by %(name)s"
+msgstr "Отменено: %(name)s"
 
 #: backend/apps/timeoff/bot_messages.py
 #, python-format
-msgid "🌴 Time off request · %(name)s"
-msgstr "🌴 Заявка на отгул · %(name)s"
+msgid "Time off request · %(name)s"
+msgstr "Заявка на отгул · %(name)s"
 
 #: backend/apps/timeoff/bot_messages.py
-msgid "🌴 Your time off is approved"
-msgstr "🌴 Ваш отгул одобрен"
+msgid "Your time off is approved"
+msgstr "Ваш отгул одобрен"
 
 #: backend/apps/timeoff/bot_messages.py
 msgid "Your time off request was declined"
@@ -9829,9 +9946,9 @@ msgstr ""
 msgid "%(dates)s. Talk to your manager if you need these days."
 msgstr "%(dates)s. Если эти дни вам всё же нужны, поговорите с руководителем."
 
-#: backend/apps/timeoff/bot_messages.py
-msgid "🌴 Time off recorded for you"
-msgstr "🌴 Вам оформлен отгул"
+#: backend/apps/timeoff/bot_messages.py backend/apps/timeoff/hooks.py
+msgid "Time off recorded for you"
+msgstr "Вам оформлен отгул"
 
 #: backend/apps/timeoff/bot_messages.py
 #, python-format
@@ -9867,10 +9984,6 @@ msgstr "Заявки на отгул"
 #: backend/apps/timeoff/hooks.py
 msgid "Time off decided"
 msgstr "Решение по отгулу"
-
-#: backend/apps/timeoff/hooks.py
-msgid "Time off recorded for you"
-msgstr "Вам оформлен отгул"
 
 #: backend/apps/timeoff/hooks.py
 msgid "Time off revoked"
@@ -10071,30 +10184,37 @@ msgstr "Укажите название праздника."
 msgid "Choose at least one branch."
 msgstr "Выберите хотя бы один филиал."
 
-#: employee_bot/bot/handlers/company.py employee_bot/bot/middlewares/access.py
-#, python-format
-msgid "🏢 Now working in <b>%(company)s</b>."
-msgstr "🏢 Теперь вы работаете в компании «<b>%(company)s</b>»."
-
 #: employee_bot/bot/handlers/company.py
 #, python-format
 msgid "You work in one company: <b>%(company)s</b>."
 msgstr "Вы работаете в одной компании: <b>%(company)s</b>."
 
 #: employee_bot/bot/handlers/company.py
-msgid "🏢 Which company are you working in?"
-msgstr "🏢 В какой компании вы работаете?"
+msgid "Which company are you working in?"
+msgstr "В какой компании вы работаете?"
+
+#: employee_bot/bot/handlers/company.py
+#, python-format
+msgid "Now: %(company)s"
+msgstr "Сейчас: %(company)s"
 
 #: employee_bot/bot/handlers/contact.py
-msgid ""
-"📱 Thanks, your phone number is saved. Now finish your account in the app."
+msgid "Thanks, your phone number is saved. Now finish your account in the app."
 msgstr ""
-"📱 Спасибо, ваш номер телефона сохранён. Теперь завершите регистрацию в "
+"Спасибо, ваш номер телефона сохранён. Теперь завершите регистрацию в "
 "приложении."
 
 #: employee_bot/bot/handlers/errors.py owner_bot/ownerbot/handlers/errors.py
-msgid "⚠️ Something went wrong. Please try again in a moment."
-msgstr "⚠️ Что-то пошло не так. Попробуйте ещё раз чуть позже."
+msgid "Something went wrong. Please try again in a moment."
+msgstr "Что-то пошло не так. Попробуйте ещё раз чуть позже."
+
+#: employee_bot/bot/handlers/features/agenda.py
+msgid "you'll come"
+msgstr "вы придёте"
+
+#: employee_bot/bot/handlers/features/agenda.py
+msgid "please answer"
+msgstr "ответьте"
 
 #: employee_bot/bot/handlers/features/attendance.py
 #, python-format
@@ -10131,28 +10251,28 @@ msgid "Here's what I can do:"
 msgstr "Вот что я умею:"
 
 #: employee_bot/bot/handlers/language.py
-msgid "📋 /tasks: your tasks"
-msgstr "📋 /tasks: ваши задачи"
+msgid "/tasks: your tasks"
+msgstr "/tasks: ваши задачи"
 
 #: employee_bot/bot/handlers/language.py
-msgid "➕ /new: add a task (or just type it)"
-msgstr "➕ /new: добавить задачу (или просто напишите её)"
+msgid "/new: add a task (or just type it)"
+msgstr "/new: добавить задачу (или просто напишите её)"
 
 #: employee_bot/bot/handlers/language.py
-msgid "🔎 /check: work waiting for your check"
-msgstr "🔎 /check: работа на вашу проверку"
+msgid "/check: work waiting for your check"
+msgstr "/check: работа на вашу проверку"
 
 #: employee_bot/bot/handlers/language.py
-msgid "📱 The button next to the message field opens the app"
-msgstr "📱 Кнопка рядом с полем ввода открывает приложение"
+msgid "The button next to the message field opens the app"
+msgstr "Кнопка рядом с полем ввода открывает приложение"
 
 #: employee_bot/bot/handlers/language.py
-msgid "🌐 /language: change the language"
-msgstr "🌐 /language: сменить язык"
+msgid "/language: change the language"
+msgstr "/language: сменить язык"
 
 #: employee_bot/bot/handlers/language.py
-msgid "⚙️ <b>Settings</b>"
-msgstr "⚙️ <b>Настройки</b>"
+msgid "<b>Settings</b>"
+msgstr "<b>Настройки</b>"
 
 #: employee_bot/bot/handlers/member/announcements.py
 msgid "This draft has expired. Send /announce to start again."
@@ -10180,111 +10300,116 @@ msgstr "Эту задачу удалили или передали другом�
 msgid "You can't do that."
 msgstr "Это действие вам недоступно."
 
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: employee_bot/bot/handlers/member/cards.py
 #, python-format
-msgid "🔎 Sent for checking · %(name)s"
-msgstr "🔎 Отправлено на проверку · %(name)s"
+msgid "Sent for checking · %(name)s"
+msgstr "Отправлено на проверку · %(name)s"
 
 #: employee_bot/bot/handlers/member/cards.py
-msgid "🔎 Sent for checking"
-msgstr "🔎 Отправлено на проверку"
+msgid "Sent for checking"
+msgstr "Отправлено на проверку"
 
 #: employee_bot/bot/handlers/member/cards.py
-msgid "Done! 🎉"
-msgstr "Готово! 🎉"
+msgid "Done!"
+msgstr "Готово!"
 
 #: employee_bot/bot/handlers/member/home.py
-msgid "➕ Add this as a task?"
-msgstr "➕ Добавить это как задачу?"
+msgid "Add this as a task?"
+msgstr "Добавить это как задачу?"
 
 #: employee_bot/bot/handlers/member/new_task.py
-msgid "✍️ Send the task's title, or tap ✖️ Cancel."
-msgstr "✍️ Пришлите название задачи или нажмите ✖️ Отмена."
+msgid "Send the task's title, or tap «Cancel»."
+msgstr "Пришлите название задачи или нажмите «Отмена»."
 
 #: employee_bot/bot/handlers/member/new_task.py
-msgid "✍️ And what needs to be done?"
-msgstr "✍️ А что нужно сделать?"
+msgid "And what needs to be done?"
+msgstr "А что нужно сделать?"
 
 #: employee_bot/bot/handlers/member/new_task.py
-msgid "✂️ The title was cut to 200 characters."
-msgstr "✂️ Название сокращено до 200 символов."
+msgid "The title was cut to 200 characters."
+msgstr "Название сокращено до 200 символов."
 
 #: employee_bot/bot/handlers/member/new_task.py
-msgid "Start again with ➕ New task."
-msgstr "Начните заново: ➕ Новая задача."
+msgid "Start again with «New task»."
+msgstr "Начните заново: «Новая задача»."
 
 #: employee_bot/bot/handlers/member/new_task.py
 #, python-format
-msgid "✅ Sent. For: %(name)s"
-msgstr "✅ Отправлено. Исполнитель: %(name)s"
+msgid "Sent. For: %(name)s"
+msgstr "Отправлено. Исполнитель: %(name)s"
 
 #: employee_bot/bot/handlers/member/new_task.py
-msgid "✅ Added to your list."
-msgstr "✅ Добавлено в ваш список."
+msgid "Added to your list."
+msgstr "Добавлено в ваш список."
 
 #: employee_bot/bot/handlers/member/tasks.py
-msgid "Started 💪"
-msgstr "Начато 💪"
+msgid "Comment added."
+msgstr "Комментарий добавлен."
 
 #: employee_bot/bot/handlers/member/tasks.py
-msgid "↩️ The task is open again."
-msgstr "↩️ Задача снова открыта."
+msgid "Started"
+msgstr "Начато"
 
 #: employee_bot/bot/handlers/member/tasks.py
-msgid "📷 No task is waiting for a photo right now."
-msgstr "📷 Сейчас ни одна задача не ждёт фото."
+msgid "The task is open again."
+msgstr "Задача снова открыта."
 
 #: employee_bot/bot/handlers/member/tasks.py
-msgid "👌 Okay, no task."
-msgstr "👌 Хорошо, без задачи."
+msgid "No task is waiting for a photo right now."
+msgstr "Сейчас ни одна задача не ждёт фото."
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "Okay, no task."
+msgstr "Хорошо, без задачи."
 
 #: employee_bot/bot/handlers/member/tasks.py
 msgid "Send the photo again, please."
 msgstr "Пожалуйста, пришлите фото ещё раз."
 
 #: employee_bot/bot/handlers/member/tasks.py
-msgid "Confirmed 👍"
-msgstr "Принято 👍"
+msgid "Confirmed"
+msgstr "Принято"
 
 #: employee_bot/bot/handlers/member/tasks.py
-msgid "↩️ Sent back with your comment."
-msgstr "↩️ Возвращено с вашим комментарием."
+msgid "Sent back with your comment."
+msgstr "Возвращено с вашим комментарием."
 
 #: employee_bot/bot/handlers/member/tasks.py
 msgid "Why can't it be done?"
 msgstr "Почему не получается?"
 
 #: employee_bot/bot/handlers/member/tasks.py
-msgid "✍️ What's in the way? Write a few words."
-msgstr "✍️ Что мешает? Напишите пару слов."
+msgid "What's in the way? Write a few words."
+msgstr "Что мешает? Напишите пару слов."
 
 #: employee_bot/bot/handlers/member/tasks.py
-msgid "⛔ Sent. Reminders wait until someone decides."
-msgstr "⛔ Отправлено. Напоминания на паузе, пока не примут решение."
+msgid "Sent. Reminders wait until someone decides."
+msgstr "Отправлено. Напоминания на паузе, пока не примут решение."
 
 #: employee_bot/bot/handlers/member/tasks.py
 msgid "I didn't catch the time."
 msgstr "Не удалось понять время."
 
 #: employee_bot/bot/handlers/member/tasks.py
-msgid "🕒 Asked for more time. The answer comes here."
-msgstr "🕒 Запрос отправлен. Ответ придёт сюда."
+msgid "Asked for more time. The answer comes here."
+msgstr "Запрос отправлен. Ответ придёт сюда."
 
 #: employee_bot/bot/handlers/member/tasks.py
-msgid "🕒 New deadline set."
-msgstr "🕒 Новый срок установлен."
+msgid "New deadline set."
+msgstr "Новый срок установлен."
 
 #: employee_bot/bot/handlers/member/tasks.py
-msgid "👋 Reminder sent."
-msgstr "👋 Напоминание отправлено."
+msgid "Reminder sent."
+msgstr "Напоминание отправлено."
 
 #: employee_bot/bot/handlers/member/tasks.py
-msgid "👤 Given to someone else."
-msgstr "👤 Передана другому."
+msgid "Given to someone else."
+msgstr "Передана другому."
 
 #: employee_bot/bot/handlers/member/tasks.py
-msgid "✖️ Task cancelled."
-msgstr "✖️ Задача отменена."
+msgid "Task cancelled."
+msgstr "Задача отменена."
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Tashkent"
@@ -10303,8 +10428,8 @@ msgid "Dubai"
 msgstr "Дубай"
 
 #: owner_bot/ownerbot/bot_messages.py
-msgid "📊 Open dashboard"
-msgstr "📊 Открыть панель управления"
+msgid "Open dashboard"
+msgstr "Открыть панель управления"
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "there"
@@ -10312,8 +10437,8 @@ msgstr "уважаемый пользователь"
 
 #: owner_bot/ownerbot/bot_messages.py
 #, python-format
-msgid "Hello, %(name)s! 👋"
-msgstr "Здравствуйте, %(name)s! 👋"
+msgid "Hello, %(name)s!"
+msgstr "Здравствуйте, %(name)s!"
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Your companies:"
@@ -10350,7 +10475,7 @@ msgstr ""
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Start with /new to create your company."
-msgstr "Чтобы создать компанию, начните с /new."
+msgstr "Чтобы создать компанию, отправьте /new."
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Your dashboard: every task, sale, payment and person in one place."
@@ -10366,10 +10491,6 @@ msgstr "Откройте панель управления: %(url)s"
 #: owner_bot/ownerbot/bot_messages.py
 msgid "The dashboard address isn't set on this server yet."
 msgstr "Адрес панели управления на этом сервере ещё не настроен."
-
-#: owner_bot/ownerbot/bot_messages.py
-msgid "Cancel"
-msgstr "Отмена"
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "New company"
@@ -10406,8 +10527,8 @@ msgid "Tashkent fits all of Uzbekistan."
 msgstr "Ташкентское время подходит для всего Узбекистана."
 
 #: owner_bot/ownerbot/bot_messages.py
-msgid "⌨️ Type another"
-msgstr "⌨️ Ввести другой"
+msgid "Type another"
+msgstr "Ввести другой"
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Send the timezone or city, like Asia/Samarkand or Bishkek."
@@ -10444,12 +10565,12 @@ msgid "You can change all of this later in the dashboard settings."
 msgstr "Всё это можно изменить позже в настройках панели управления."
 
 #: owner_bot/ownerbot/bot_messages.py
-msgid "✅ Create"
-msgstr "✅ Создать"
+msgid "Create"
+msgstr "Создать"
 
 #: owner_bot/ownerbot/bot_messages.py
-msgid "✏️ Change name"
-msgstr "✏️ Изменить название"
+msgid "Change name"
+msgstr "Изменить название"
 
 #: owner_bot/ownerbot/bot_messages.py
 #, python-format
@@ -10461,8 +10582,8 @@ msgid "You are its owner. Next: add your branches and invite your staff."
 msgstr "Вы её владелец. Дальше: добавьте филиалы и пригласите сотрудников."
 
 #: owner_bot/ownerbot/bot_messages.py
-msgid "🚀 Open Get started"
-msgstr "🚀 Открыть «Начало работы»"
+msgid "Open Get started"
+msgstr "Открыть «Начало работы»"
 
 #: owner_bot/ownerbot/bot_messages.py
 #, python-format
@@ -10486,8 +10607,8 @@ msgstr "Какую компанию показать?"
 
 #: owner_bot/ownerbot/bot_messages.py
 #, python-format
-msgid "📥 Approvals (%(count)d)"
-msgstr "📥 На одобрение (%(count)d)"
+msgid "Approvals (%(count)d)"
+msgstr "На одобрение (%(count)d)"
 
 #: owner_bot/ownerbot/brief.py
 msgid "open"
@@ -10519,6 +10640,109 @@ msgstr "открыт в %(time)s"
 #, python-format
 msgid "not opened yet (opens %(time)s)"
 msgstr "ещё не открыт (откроется в %(time)s)"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "At work: %(present)d/%(rostered)d"
+msgstr "На работе: %(present)d/%(rostered)d"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Tasks: %(done)d/%(total)d"
+msgstr "Задачи: %(done)d/%(total)d"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "and %(count)d more"
+msgstr "и ещё %(count)d"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Done today: %(done)d of %(total)d"
+msgstr "Выполнено сегодня: %(done)d из %(total)d"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Late: %(count)d"
+msgstr "Просрочено: %(count)d"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Waiting for check: %(count)d"
+msgstr "На проверке: %(count)d"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "On time over 7 days: %(percent)s%%"
+msgstr "Вовремя за 7 дней: %(percent)s%%"
+
+#: owner_bot/ownerbot/brief.py
+msgid "Most overdue:"
+msgstr "Больше всего просрочены:"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Not in yet: %(names)s"
+msgstr "Ещё не пришли: %(names)s"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Absent: %(names)s"
+msgstr "Не вышли на работу: %(names)s"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Balance: %(amount)s"
+msgstr "Остаток: %(amount)s"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Yesterday: income %(income)s, spending %(spending)s"
+msgstr "Вчера: приход %(income)s, расход %(spending)s"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Overdue to receive: %(amount)s (%(count)d)"
+msgstr "Просрочено к получению: %(amount)s (%(count)d)"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Overdue to pay: %(amount)s (%(count)d)"
+msgstr "Просрочено к оплате: %(amount)s (%(count)d)"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Payments due today: %(count)d"
+msgstr "Платежей сегодня: %(count)d"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Team: %(count)d"
+msgstr "В команде: %(count)d"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Join requests: %(count)d"
+msgstr "Заявки на вступление: %(count)d"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "New this week: %(names)s"
+msgstr "Новые на этой неделе: %(names)s"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Off today: %(names)s"
+msgstr "Сегодня не работают: %(names)s"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Access paused: %(count)d"
+msgstr "Доступ приостановлен: %(count)d"
+
+#: owner_bot/ownerbot/brief.py
+msgid "People"
+msgstr "Сотрудники"
 
 #: owner_bot/ownerbot/brief.py
 #, python-format

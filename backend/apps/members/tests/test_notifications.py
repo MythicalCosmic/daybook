@@ -124,7 +124,7 @@ def test_approved_requester_gets_the_main_menu(company, sent_messages):
     [message] = sent_messages
     assert message["chat_id"] == request.user.telegram_id
     assert "was approved" in message["text"]
-    assert message["reply_markup"]["keyboard"][0][0]["text"] == "📋 My tasks"
+    assert message["reply_markup"]["keyboard"][0][0]["text"] == "My tasks"
 
 
 def test_approved_before_registering_gets_the_create_account_button(

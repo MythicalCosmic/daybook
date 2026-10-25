@@ -22,6 +22,7 @@ from aiogram.types import CallbackQuery, Message
 from asgiref.sync import sync_to_async
 from django.core.exceptions import PermissionDenied
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from apps.accounts.models import User
 from apps.agenda import aggregate, bot_messages, queries, services
@@ -121,10 +122,10 @@ def _week(membership: Membership) -> BotMessage:
     responses = dict(
         EventAttendee.objects.filter(membership=membership).values_list("event_id", "response")
     )
-    marks = {
-        EventAttendee.Response.GOING: "✅ ",
-        EventAttendee.Response.DECLINED: "🙅 ",
-        EventAttendee.Response.PENDING: "❔ ",
+    # After an event the person was invited to, what they answered (declined ones are left out).
+    notes = {
+        EventAttendee.Response.GOING: _("you'll come"),
+        EventAttendee.Response.PENDING: _("please answer"),
     }
     days: dict = {}
     for item in items:
@@ -139,7 +140,8 @@ def _week(membership: Membership) -> BotMessage:
             event_id = int(item["id"].split(":", 1)[1].split("-", 1)[0])
             if responses.get(event_id) == EventAttendee.Response.DECLINED:
                 continue
-            label = marks.get(responses.get(event_id), "") + label
+            if note := notes.get(responses.get(event_id)):
+                label = f"{label} · {note}"
         day = max(first, today.isoformat())
         while day <= min(last_day, last.isoformat()):
             days.setdefault(day, []).append(label)

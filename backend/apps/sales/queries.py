@@ -1169,13 +1169,13 @@ def brief_section(company, day: date, now: datetime, branch_ids: list[int] | Non
         )
     )
     lines = [
-        _("Sales %(net)s (%(change)s vs last week)")
+        _("Sales: %(net)s (%(change)s vs last week)")
         % {"net": msg.money(net), "change": _percent(net, previous)},
     ]
     if differences:
-        lines.append(_("%(count)s cash differences above tolerance") % {"count": len(differences)})
+        lines.append(_("Cash differences above tolerance: %(count)s") % {"count": len(differences)})
     if open_count:
-        lines.append(_("%(count)s tills open") % {"count": open_count})
+        lines.append(_("Open tills: %(count)s") % {"count": open_count})
     return {
         "net": m(net),
         "prev_net": m(previous),

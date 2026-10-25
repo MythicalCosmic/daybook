@@ -172,7 +172,7 @@ async def create(callback: CallbackQuery, state: FSMContext, user: User) -> None
         await callback.message.edit_reply_markup(reply_markup=None)
     text, markup = bot_messages.created(company.pk, company.name)
     await callback.message.answer(text, reply_markup=markup)
-    await callback.answer("🎉")
+    await callback.answer()
 
 
 @router.callback_query(NewCompanyStep.filter())

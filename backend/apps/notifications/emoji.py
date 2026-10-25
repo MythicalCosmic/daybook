@@ -1,0 +1,124 @@
+"""What the bots send carries no emoji (the owner's rule, 25.10.2026). Structure comes from a bold
+first line and "Label: value" lines; statuses and priorities are words; buttons are plain verbs.
+
+    has_emoji(text)     whether `text` has an emoji character (or a symbol used in place of one)
+    strip_emoji(text)   `text` without its emoji and the spaces that set them apart
+    plain_label(text)   a keyboard label to compare: no emoji, single spaces. "📋 Vazifalarim"
+                        and "Vazifalarim" are the same button, so the keyboards people still
+                        have on their phones from before keep working.
+
+An emoji character here is one with Unicode's Extended_Pictographic property (Unicode 17, the
+ranges below, generated from `\\p{Extended_Pictographic}`), the emoji variation selector
+U+FE0F, the keycap mark U+20E3, a regional indicator (flags), a skin tone or a tag character.
+Typographic punctuation (· — « » … :) is not. SUBSTITUTES are the symbols people put where an
+emoji was (ticks, the menu's triangle, arrows, stars): not emoji to Unicode, but no better in a
+message, so `has_emoji` and the tests count them too.
+"""
+
+import re
+
+# Extended_Pictographic, Unicode 17.0.
+PICTOGRAPHIC = (
+    (0x00A9, 0x00A9), (0x00AE, 0x00AE), (0x203C, 0x203C), (0x2049, 0x2049), (0x2122, 0x2122),
+    (0x2139, 0x2139), (0x2194, 0x2199), (0x21A9, 0x21AA), (0x231A, 0x231B), (0x2328, 0x2328),
+    (0x23CF, 0x23CF), (0x23E9, 0x23F3), (0x23F8, 0x23FA), (0x24C2, 0x24C2), (0x25AA, 0x25AB),
+    (0x25B6, 0x25B6), (0x25C0, 0x25C0), (0x25FB, 0x25FE), (0x2600, 0x2604), (0x260E, 0x260E),
+    (0x2611, 0x2611), (0x2614, 0x2615), (0x2618, 0x2618), (0x261D, 0x261D), (0x2620, 0x2620),
+    (0x2622, 0x2623), (0x2626, 0x2626), (0x262A, 0x262A), (0x262E, 0x262F), (0x2638, 0x263A),
+    (0x2640, 0x2640), (0x2642, 0x2642), (0x2648, 0x2653), (0x265F, 0x2660), (0x2663, 0x2663),
+    (0x2665, 0x2666), (0x2668, 0x2668), (0x267B, 0x267B), (0x267E, 0x267F), (0x2692, 0x2697),
+    (0x2699, 0x2699), (0x269B, 0x269C), (0x26A0, 0x26A1), (0x26A7, 0x26A7), (0x26AA, 0x26AB),
+    (0x26B0, 0x26B1), (0x26BD, 0x26BE), (0x26C4, 0x26C5), (0x26C8, 0x26C8), (0x26CE, 0x26CF),
+    (0x26D1, 0x26D1), (0x26D3, 0x26D4), (0x26E9, 0x26EA), (0x26F0, 0x26F5), (0x26F7, 0x26FA),
+    (0x26FD, 0x26FD), (0x2702, 0x2702), (0x2705, 0x2705), (0x2708, 0x270D), (0x270F, 0x270F),
+    (0x2712, 0x2712), (0x2714, 0x2714), (0x2716, 0x2716), (0x271D, 0x271D), (0x2721, 0x2721),
+    (0x2728, 0x2728), (0x2733, 0x2734), (0x2744, 0x2744), (0x2747, 0x2747), (0x274C, 0x274C),
+    (0x274E, 0x274E), (0x2753, 0x2755), (0x2757, 0x2757), (0x2763, 0x2764), (0x2795, 0x2797),
+    (0x27A1, 0x27A1), (0x27B0, 0x27B0), (0x27BF, 0x27BF), (0x2934, 0x2935), (0x2B05, 0x2B07),
+    (0x2B1B, 0x2B1C), (0x2B50, 0x2B50), (0x2B55, 0x2B55), (0x3030, 0x3030), (0x303D, 0x303D),
+    (0x3297, 0x3297), (0x3299, 0x3299), (0x1F004, 0x1F004), (0x1F02C, 0x1F02F),
+    (0x1F094, 0x1F09F), (0x1F0AF, 0x1F0B0), (0x1F0C0, 0x1F0C0), (0x1F0CF, 0x1F0D0),
+    (0x1F0F6, 0x1F0FF), (0x1F170, 0x1F171), (0x1F17E, 0x1F17F), (0x1F18E, 0x1F18E),
+    (0x1F191, 0x1F19A), (0x1F1AE, 0x1F1E5), (0x1F201, 0x1F20F), (0x1F21A, 0x1F21A),
+    (0x1F22F, 0x1F22F), (0x1F232, 0x1F23A), (0x1F23C, 0x1F23F), (0x1F249, 0x1F25F),
+    (0x1F266, 0x1F321), (0x1F324, 0x1F393), (0x1F396, 0x1F397), (0x1F399, 0x1F39B),
+    (0x1F39E, 0x1F3F0), (0x1F3F3, 0x1F3F5), (0x1F3F7, 0x1F3FA), (0x1F400, 0x1F4FD),
+    (0x1F4FF, 0x1F53D), (0x1F549, 0x1F54E), (0x1F550, 0x1F567), (0x1F56F, 0x1F570),
+    (0x1F573, 0x1F57A), (0x1F587, 0x1F587), (0x1F58A, 0x1F58D), (0x1F590, 0x1F590),
+    (0x1F595, 0x1F596), (0x1F5A4, 0x1F5A5), (0x1F5A8, 0x1F5A8), (0x1F5B1, 0x1F5B2),
+    (0x1F5BC, 0x1F5BC), (0x1F5C2, 0x1F5C4), (0x1F5D1, 0x1F5D3), (0x1F5DC, 0x1F5DE),
+    (0x1F5E1, 0x1F5E1), (0x1F5E3, 0x1F5E3), (0x1F5E8, 0x1F5E8), (0x1F5EF, 0x1F5EF),
+    (0x1F5F3, 0x1F5F3), (0x1F5FA, 0x1F64F), (0x1F680, 0x1F6C5), (0x1F6CB, 0x1F6D2),
+    (0x1F6D5, 0x1F6E5), (0x1F6E9, 0x1F6E9), (0x1F6EB, 0x1F6F0), (0x1F6F3, 0x1F6FF),
+    (0x1F7DA, 0x1F7FF), (0x1F80C, 0x1F80F), (0x1F848, 0x1F84F), (0x1F85A, 0x1F85F),
+    (0x1F888, 0x1F88F), (0x1F8AE, 0x1F8AF), (0x1F8BC, 0x1F8BF), (0x1F8C2, 0x1F8CF),
+    (0x1F8D9, 0x1F8FF), (0x1F90C, 0x1F93A), (0x1F93C, 0x1F945), (0x1F947, 0x1F9FF),
+    (0x1FA58, 0x1FA5F), (0x1FA6E, 0x1FAFF), (0x1FC00, 0x1FFFD),
+)  # fmt: skip
+# Parts of emoji sequences: the emoji variation selector, the keycap mark, regional indicators,
+# skin tones, tag characters.
+SEQUENCE_PARTS = (
+    (0xFE0F, 0xFE0F), (0x20E3, 0x20E3), (0x1F1E6, 0x1F1FF), (0x1F3FB, 0x1F3FF),
+    (0xE0020, 0xE007F),
+)  # fmt: skip
+# Symbols that stand in for an emoji: ticks, crosses, arrows, stars, boxes, dots, the menu
+# triangle (U+2713, U+2717, U+2718, U+25B8, U+25B9, U+25BA, U+25BB, U+2192, U+2190, U+2191,
+# U+2193, U+21D2, U+21D0, U+2605, U+2606, U+2610, U+2612, U+25CF, U+25C9, U+25CB, U+25C6,
+# U+25C7, U+25A0, U+25A1).
+SUBSTITUTES = "".join(
+    chr(code)
+    for code in (
+        0x2713, 0x2717, 0x2718, 0x25B8, 0x25B9, 0x25BA, 0x25BB, 0x2192, 0x2190, 0x2191, 0x2193,
+        0x21D2, 0x21D0, 0x2605, 0x2606, 0x2610, 0x2612, 0x25CF, 0x25C9, 0x25CB, 0x25C6, 0x25C7,
+        0x25A0, 0x25A1,
+    )
+)  # fmt: skip
+VS16, KEYCAP, ZWJ, NBSP = chr(0xFE0F), chr(0x20E3), chr(0x200D), chr(0xA0)
+
+
+def _class(ranges) -> str:
+    return "".join(
+        re.escape(chr(low)) + (f"-{re.escape(chr(high))}" if high != low else "")
+        for low, high in ranges
+    )
+
+
+_EMOJI_CHARS = _class(PICTOGRAPHIC + SEQUENCE_PARTS)
+EMOJI = re.compile(f"[{_EMOJI_CHARS}]")
+EMOJI_OR_SUBSTITUTE = re.compile(f"[{_EMOJI_CHARS}{re.escape(SUBSTITUTES)}]")
+# One emoji as people see it, a keycap or pictographs joined by ZWJ with their selectors and
+# skin tones, with the spaces around it.
+_SPACE = f"[ \t{NBSP}]*"
+_CLUSTER = re.compile(
+    f"(?P<before>{_SPACE})"
+    f"(?P<emoji>[0-9#*]{VS16}?{KEYCAP}|[{_EMOJI_CHARS}{ZWJ}]+)"
+    f"(?P<after>{_SPACE})"
+)
+_SPACES = re.compile(r"\s+")
+
+
+def has_emoji(text: str | None) -> bool:
+    return bool(text) and EMOJI_OR_SUBSTITUTE.search(text) is not None
+
+
+def strip_emoji(text: str) -> str:
+    """`text` without emoji. At the start of a line an emoji goes with the space after it
+    ("✅ Done" becomes "Done"), at the end with the space before it, between words it leaves
+    one space."""
+
+    def replace(match: re.Match) -> str:
+        start, end = match.start(), match.end()
+        line_start = start == 0 or text[start - 1] == "\n"
+        line_end = end == len(text) or text[end] == "\n"
+        if line_end:
+            return ""
+        if line_start:
+            return match["before"]  # the line's indentation
+        return " " if match["before"] and match["after"] else ""
+
+    return _CLUSTER.sub(replace, text)
+
+
+def plain_label(text: str | None) -> str:
+    """A keyboard label as the bot compares it: without emoji, its spaces collapsed."""
+    return _SPACES.sub(" ", strip_emoji(text or "")).strip()

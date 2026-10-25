@@ -17,7 +17,7 @@ from django.utils import timezone
 
 from apps.accounts.models import User
 from ownerbot import bot_messages, brief
-from ownerbot.handlers import new_company, signin
+from ownerbot.handlers import language, new_company, signin
 
 router = Router(name="start")
 
@@ -40,7 +40,8 @@ async def cmd_start(
     await state.clear()
     companies = await sync_to_async(brief.companies_summary)(user)
     text, markup = bot_messages.welcome(user, companies)
-    await message.answer(text, reply_markup=markup)
+    # Everyone starts in Uzbek; this one small button offers the other languages.
+    await message.answer(text, reply_markup=language.with_language_button(markup))
 
 
 @router.my_chat_member(F.chat.type == ChatType.PRIVATE)

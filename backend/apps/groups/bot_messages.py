@@ -8,6 +8,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext as _
+from django.utils.translation import pgettext
 
 from apps.companies.models import Company
 from apps.groups.callbacks import GroupAction, GroupCallback
@@ -31,7 +32,7 @@ def task_done(task: Task) -> BotMessage:
         "task": html.quote(display_title(task)),
         "time": at,
     }
-    lines = [_("✅ <b>%(name)s</b> finished <b>%(task)s</b>") % values]
+    lines = [_("<b>%(name)s</b> finished <b>%(task)s</b>") % values]
     if task.due_at is None or task.completed_at <= task.due_at:
         lines.append(_("At %(time)s, on time.") % values)
     else:
@@ -40,7 +41,7 @@ def task_done(task: Task) -> BotMessage:
             % (values | {"late": format_duration(task.completed_at - task.due_at)})
         )
     if task.proof_text:
-        lines.append(f"📝 {html.quote(task.proof_text)}")
+        lines.append(_("Report: %(text)s") % {"text": html.quote(task.proof_text)})
     if task.status == Task.Status.REVIEW:
         # A redo after a send-back (audit B-17) shouldn't read like the first post again.
         if task.activity.filter(kind=Activity.Kind.RETURNED).exists():
@@ -51,7 +52,7 @@ def task_done(task: Task) -> BotMessage:
 
 
 def late(task: Task, now: datetime) -> BotMessage:
-    text = _("🚨 <b>%(name)s</b> is %(late)s late with <b>%(task)s</b>.") % {
+    text = _("<b>%(name)s</b> is %(late)s late with <b>%(task)s</b>.") % {
         "name": html.quote(str(task.assignee)),
         "late": format_duration(now - task.due_at),
         "task": html.quote(display_title(task)),
@@ -62,17 +63,17 @@ def late(task: Task, now: datetime) -> BotMessage:
 def member_joined(member: Membership) -> BotMessage:
     values = {"name": html.quote(str(member))}
     if member.position:
-        text = _("👋 <b>%(name)s</b> joined the team as %(position)s.") % (
+        text = _("<b>%(name)s</b> joined the team as %(position)s.") % (
             values | {"position": html.quote(member.position.name)}
         )
     else:
-        text = _("👋 <b>%(name)s</b> joined the team.") % values
+        text = _("<b>%(name)s</b> joined the team.") % values
     return text, None
 
 
 def morning(company: Company, day: date, rows: list[PlanRow]) -> BotMessage:
     zone = ZoneInfo(company.timezone)
-    lines = [_("🌅 <b>Today's plan</b> · %(date)s") % {"date": day.strftime("%d.%m")}, ""]
+    lines = [_("<b>Today's plan</b> · %(date)s") % {"date": day.strftime("%d.%m")}, ""]
     for row in rows:
         lines.append(
             _("• %(name)s: %(count)d, the first at %(time)s")
@@ -87,11 +88,11 @@ def morning(company: Company, day: date, rows: list[PlanRow]) -> BotMessage:
 
 def evening(day: date, stats: DayStats) -> BotMessage:
     lines = [
-        _("🌙 <b>How today went</b> · %(date)s") % {"date": day.strftime("%d.%m")},
+        _("<b>How today went</b> · %(date)s") % {"date": day.strftime("%d.%m")},
         "",
-        _("✅ Done on time: %(count)d") % {"count": stats.on_time},
-        _("⏰ Done late: %(count)d") % {"count": stats.late},
-        _("❌ Not done: %(count)d") % {"count": len(stats.not_done)},
+        _("Done on time: %(count)d") % {"count": stats.on_time},
+        _("Done late: %(count)d") % {"count": stats.late},
+        _("Not done: %(count)d") % {"count": len(stats.not_done)},
     ]
     if stats.not_done:
         lines.append("")
@@ -103,7 +104,7 @@ def evening(day: date, stats: DayStats) -> BotMessage:
 
 
 def connected(group: TelegramGroup) -> BotMessage:
-    header = _("🔗 This group is now connected to <b>%(company)s</b>.") % {
+    header = _("This group is now connected to <b>%(company)s</b>.") % {
         "company": html.quote(group.company.name)
     }
     text, markup = settings(group)
@@ -111,20 +112,31 @@ def connected(group: TelegramGroup) -> BotMessage:
 
 
 def settings(group: TelegramGroup) -> BotMessage:
+    """The switches: what is on shows green and is listed in the text ("Turned on: …"), so it
+    reads the same where buttons have no colour."""
     rows = [
         [
             _button(
-                f"{'✅' if event in group.events else '▫️'} {event.label}",
+                str(event.label),
                 GroupAction.TOGGLE,
+                chosen=event in group.events,
                 event=event,
             )
         ]
         for event in available_events(group.company, group.events)
     ]
-    rows.append([_button(_("👥 Whose news: %(who)s") % {"who": _who(group)}, GroupAction.WHO)])
-    rows.append([_button(_("✔️ Done"), GroupAction.CLOSE)])
-    text = _("⚙️ <b>What should I post here?</b> Tap to turn things on or off.")
-    return text, InlineKeyboardMarkup(inline_keyboard=rows)
+    rows.append([_button(_("Whose news: %(who)s") % {"who": _who(group)}, GroupAction.WHO)])
+    # Translators: closes the group's settings ("Tayyor" / "Готово"), not a task's status.
+    rows.append([_button(pgettext("group settings", "Done"), GroupAction.CLOSE)])
+    chosen = [str(GroupEvent(event).label) for event in group.events]
+    lines = [
+        _("<b>What should I post here?</b> Tap to turn things on or off."),
+        "",
+        _("Turned on: %(events)s") % {"events": html.quote(", ".join(chosen))}
+        if chosen
+        else _("Turned on: nothing yet"),
+    ]
+    return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def positions_picker(group: TelegramGroup) -> BotMessage:
@@ -135,20 +147,23 @@ def positions_picker(group: TelegramGroup) -> BotMessage:
     rows = [
         [
             _button(
-                f"{'✅' if position.pk in chosen else '▫️'} {position.name}",
+                position.name,
                 GroupAction.POSITION,
+                chosen=position.pk in chosen,
                 position_id=position.pk,
             )
         ]
         for position in positions
     ]
-    rows.append([_button(_("⬅️ Back"), GroupAction.BACK)])
+    rows.append([_button(_("Back"), GroupAction.BACK)])
     text = _(
-        "👥 <b>Whose news should this group get?</b> "
+        "<b>Whose news should this group get?</b> "
         "Pick positions, or leave them all off for everyone."
     )
     if not rows[:-1]:
         text += "\n\n" + _("This company has no positions yet.")
+    else:
+        text += "\n\n" + _("Whose news: %(who)s") % {"who": html.quote(_who(group))}
     return text, InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -159,15 +174,20 @@ def _who(group: TelegramGroup) -> str:
     return names if len(names) <= WHO_LIMIT else f"{names[: WHO_LIMIT - 1]}…"
 
 
-def _button(text: str, action: GroupAction, **fields) -> InlineKeyboardButton:
+def _button(
+    text: str, action: GroupAction, *, chosen: bool = False, **fields
+) -> InlineKeyboardButton:
+    """A settings button; a switch that is on is green (`chosen`)."""
     return InlineKeyboardButton(
-        text=text, callback_data=GroupCallback(action=action, **fields).pack()
+        text=text,
+        callback_data=GroupCallback(action=action, **fields).pack(),
+        style="success" if chosen else None,
     )
 
 
 def welcome() -> BotMessage:
     text = _(
-        "👋 Hi! I post this team's task news here: finished work, late tasks and daily summaries."
+        "Hi! I post this team's task news here: finished work, late tasks and daily summaries."
         "\nA manager can link me to the company by sending /connect."
     )
     return text, None
@@ -187,7 +207,7 @@ def anonymous() -> BotMessage:
 
 def disconnected() -> BotMessage:
     text = _(
-        "🔌 Disconnected. I won't post here any more. "
+        "Disconnected. I won't post here any more. "
         "A manager can send /connect to link this group again."
     )
     return text, None

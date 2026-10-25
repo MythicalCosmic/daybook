@@ -78,12 +78,10 @@ async def test_start_sends_a_registered_deep_link_to_its_handler(dp, bot, opened
 async def test_an_unclaimed_parameter_is_still_an_invite(dp, bot, opened, company):
     stranger = updates.tg_user(702)
     await dp.feed_update(bot, updates.message(stranger, "/start other_42"))
-    await dp.feed_update(bot, updates.pick_language(stranger))  # a new person picks first
-    assert "invalid or has expired" in bot.sent_texts()[-1]
+    assert "taklif havolasi noto‘g‘ri" in bot.sent_texts()[-1]  # someone new hears Uzbek
 
     tg = updates.tg_user(703)
     await dp.feed_update(bot, updates.message(tg, f"/start {company.invite_start_param}"))
-    await dp.feed_update(bot, updates.pick_language(tg))  # a new person picks first
     assert await Membership.objects.filter(user__telegram_id=703, company=company).aexists()
     assert opened == []
 

@@ -8,6 +8,7 @@ from apps.inbox import delivery
 from apps.inbox.callbacks import InboxAction
 from apps.inbox.models import Notification
 from apps.inbox.services import NotificationAction, notify
+from apps.notifications.emoji import has_emoji
 from apps.notifications.telegram import BotName
 
 pytestmark = [pytest.mark.django_db, pytest.mark.usefixtures("handlers")]
@@ -111,10 +112,13 @@ def test_the_copy_is_escaped_and_carries_the_buttons(owner, telegram):
     )
 
 
-def test_critical_copies_stand_out(owner, telegram):
+def test_critical_and_warning_copies_say_so_in_words(owner, telegram):
     send([owner], severity="critical")
+    send([owner], severity="warning", title="Till")
 
-    assert telegram.sent[0]["text"].startswith("🚨 <b>")
+    assert telegram.sent[0]["text"].startswith("<b>Urgent: Claim from &lt;Ali&gt;</b>")
+    assert telegram.sent[1]["text"].startswith("<b>Warning: Till</b>")
+    assert not any(has_emoji(message["text"]) for message in telegram.sent)
 
 
 def test_owner_copies_open_the_dashboard(owner, telegram, settings):
@@ -135,7 +139,7 @@ def test_employee_copies_open_the_mini_app(company, member, telegram, settings):
 
     [[button]] = telegram.sent[0]["markup"]["inline_keyboard"]
     assert button["web_app"]["url"] == "https://app.example.uz/app/?screen=payslip%3A12"
-    assert button["text"] == "📱 Open in app"  # as on the task messages
+    assert button["text"] == "Open in app"  # as on the task messages
 
 
 def test_no_open_button_without_an_https_address(owner, telegram, settings):
@@ -197,12 +201,14 @@ def test_someone_who_lost_access_since_hears_nothing(owner, telegram):
     assert telegram.sent == []
 
 
-def test_an_outcome_with_its_own_mark_gets_no_second_tick():
-    from apps.inbox.bot_messages import outcome_line
+def test_an_outcome_reads_as_what_happened_and_who_did_it():
+    from apps.inbox.bot_messages import answered_line, outcome_line
 
-    assert outcome_line("Approved", "Dilnoza") == "✅ Approved · Dilnoza"
-    assert outcome_line("Approved", "") == "✅ Approved"
-    # Tasks settle with marked outcomes; "✅ 🕒 New deadline set" read like a glitch.
-    assert outcome_line("🕒 New deadline set", "Bekzod") == "🕒 New deadline set · Bekzod"
-    assert outcome_line(_("✅ More time given"), "Bekzod") == "✅ More time given · Bekzod"
-    assert outcome_line("✖️ Task cancelled", "") == "✖️ Task cancelled"
+    assert outcome_line("Approved", "Dilnoza") == "Approved · Dilnoza"
+    assert outcome_line("Approved", "") == "Approved"
+    assert outcome_line("New deadline set", "Bekzod") == "New deadline set · Bekzod"
+    assert outcome_line(_("More time given"), "Bekzod") == "More time given · Bekzod"
+    assert outcome_line("Task cancelled", "") == "Task cancelled"
+    # A bare button label ("Approve") is said to be the answer, not left to look like a button.
+    assert answered_line("Approve", "Dilnoza") == "Answer: Approve · Dilnoza"
+    assert answered_line("Approve", "") == "Answer: Approve"

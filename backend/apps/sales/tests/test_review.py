@@ -14,6 +14,7 @@ from django.test.utils import CaptureQueriesContext
 from apps.finance import services as finance
 from apps.finance.models import LIVE_STATUSES, MoneyAccount, Transaction
 from apps.members.permissions import Perm
+from apps.notifications.emoji import has_emoji
 from apps.sales import queries, services
 from apps.sales.models import CashMovement, Sale
 from apps.sales.tests.factories import jpeg, make_member, make_shop, open_and_close, scoped_role
@@ -379,8 +380,9 @@ def test_handover_answers_reach_the_cash_groups(shop, django_capture_on_commit_c
         services.decline_handover(second, by=shop.manager, reason="Not in the envelope")
     texts = [call.args[2] for call in broadcast.call_args_list]
     assert [call.args[1] for call in broadcast.call_args_list] == ["cash", "cash"]
-    assert "✓" in texts[0] and "300" in texts[0]
-    assert "NOT" in texts[1]
+    assert texts[0].startswith("<b>Handover received: 300") and "Cashier: " in texts[0]
+    assert texts[1].startswith("<b>Handover NOT received:")
+    assert not any(has_emoji(text) for text in texts)
 
 
 def test_group_posts_escape_names(shop, django_capture_on_commit_callbacks):

@@ -42,7 +42,7 @@ def test_every_kind_of_keyboard_survives_the_trip():
         InlineKeyboardMarkup(
             inline_keyboard=[[InlineKeyboardButton(text="Open", callback_data="task:open:1")]]
         ),
-        ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text="📋 My tasks")]]),
+        ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text="My tasks")]]),
         ReplyKeyboardRemove(),
     ]
 

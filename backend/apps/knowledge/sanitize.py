@@ -21,6 +21,9 @@ import re
 from collections.abc import Callable
 from html.parser import HTMLParser
 
+from django.utils.translation import gettext as _
+from django.utils.translation import pgettext, pgettext_lazy
+
 MAX_BODY_CHARS = 400_000
 
 # Tags and the attributes each may keep. Values are checked again in `_attr`.
@@ -235,11 +238,20 @@ def clean(raw: str) -> str:
 
 class _Render(HTMLParser):
     """A (clean) body as lines: plain text (`telegram=False`) or the subset of HTML Telegram
-    renders (<b>, <i>, <u>, <s>, <code>, <pre>, <a>, <blockquote>). Lists keep their bullets,
-    numbers and checkboxes; table rows become one line with " · " between cells."""
+    renders (<b>, <i>, <u>, <s>, <code>, <pre>, <a>, <blockquote>). Lists keep their bullets
+    and numbers; checklist items are "[x]" / "[ ]" in text and bullets in Telegram (a ticked one
+    starts with "Done: "), callouts start with their name in bold ("Warning: …"), pictures are
+    their alt text. No emoji: the bots send none."""
 
     INLINE = {"strong": "b", "b": "b", "em": "i", "i": "i", "u": "u", "s": "s", "strike": "s"}
-    CALLOUT_MARKS = {"warning": "⚠️", "danger": "⛔️", "success": "✅", "note": "📝"}
+    # The callout kinds as the dashboard's editor names them (knowledge.callout.* there).
+    CALLOUT_LABELS = {
+        "info": pgettext_lazy("knowledge callout", "Note"),
+        "success": pgettext_lazy("knowledge callout", "Good practice"),
+        "warning": pgettext_lazy("knowledge callout", "Warning"),
+        "danger": pgettext_lazy("knowledge callout", "Never do this"),
+        "note": pgettext_lazy("knowledge callout", "Side note"),
+    }
 
     def __init__(self, *, telegram: bool):
         super().__init__(convert_charrefs=True)
@@ -311,8 +323,8 @@ class _Render(HTMLParser):
         elif tag == "div" and attributes.get("data-callout"):
             self.start_block(gap=True)
             self.tag("<blockquote>")
-            mark = self.CALLOUT_MARKS.get(attributes["data-callout"], "💡")
-            self.line += f"{mark} "
+            label = self.CALLOUT_LABELS.get(attributes["data-callout"], self.CALLOUT_LABELS["info"])
+            self.tag(f"<b>{html.escape(str(label), quote=False)}:</b> ")
             self.quotes.append("callout")
         elif tag in ("ul", "ol"):
             self.start_block(gap=not self.lists)
@@ -323,7 +335,12 @@ class _Render(HTMLParser):
             indent = "   " * max(0, len(self.lists) - 1)
             if kind == "task":
                 checked = attributes.get("data-checked") == "true"
-                mark = ("☑️ " if checked else "◻️ ") if self.telegram else ("☑ " if checked else "☐ ")
+                if not self.telegram:
+                    mark = "[x] " if checked else "[ ] "
+                elif checked:
+                    mark = f"• {pgettext('knowledge checklist', 'Done')}: "
+                else:
+                    mark = "• "
             elif kind == "ol":
                 mark = f"{number}. "
                 self.lists[-1][1] = number + 1
@@ -350,12 +367,15 @@ class _Render(HTMLParser):
             self.end_block()
         elif tag == "img":
             alt = attributes.get("alt") or ""
-            self.line += (
-                f"🖼 {html.escape(alt, quote=False)}".rstrip()
-                if self.telegram
-                else f"[{alt or '🖼'}]"
-            )
-            self.has_text = True
+            if self.telegram:
+                if alt:
+                    self.line += _("Picture: %(alt)s") % {"alt": html.escape(alt, quote=False)}
+                else:
+                    self.line += _("Picture")
+                self.has_text = True
+            elif alt:
+                self.line += f"[{alt}]"
+                self.has_text = True
 
     def handle_endtag(self, tag):
         if tag in self.INLINE:
@@ -413,7 +433,8 @@ def to_text(body: str) -> str:
     return renderer.result()
 
 
-LIST_MARK = re.compile(r"^(?:[☐☑•]|\d{1,3}\.)\s+")
+# Bullets, numbers and checklist marks; also the ballot boxes text from before 26.10.2026 has.
+LIST_MARK = re.compile(r"^(?:[\u2610\u2611•]|\[[ x]\]|\d{1,3}\.)\s+")
 SENTENCE_END = (".", "!", "?", ":", "…", ";")
 
 

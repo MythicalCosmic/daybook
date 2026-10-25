@@ -5,10 +5,12 @@ import pytest
 from aiogram.methods import AnswerCallbackQuery, EditMessageText, SendMessage
 from asgiref.sync import sync_to_async
 
+from apps.accounts.models import User
 from apps.inbox.callbacks import InboxAction
 from apps.inbox.models import Notification
 from apps.members.bot_menu import registered
 from apps.members.bot_messages import main_menu
+from apps.notifications.emoji import has_emoji
 from apps.sales import bot_messages, services
 from apps.sales.callbacks import HandoverAnswer, SalesHandover
 from apps.sales.models import CashMovement
@@ -55,20 +57,20 @@ async def test_cashiers_see_the_button_in_their_menu(company, member):
         return texts(shop.cashier), texts(shop.manager)
 
     cashier, manager = await menus()
-    assert "🧾 Kassa" in cashier
-    assert "🧾 Kassa" not in manager  # managers don't run a till by default
+    assert "Kassa" in cashier
+    assert "Kassa" not in manager  # managers don't run a till by default
 
 
 async def test_the_summary_shows_the_open_till_without_expected_cash(dp, bot):
     shop, _movement = await shop_with_handover()
     await dp.feed_update(
-        bot, updates.message(updates.tg_user(shop.cashier.user.telegram_id), "🧾 Kassa")
+        bot, updates.message(updates.tg_user(shop.cashier.user.telegram_id), "Kassa")
     )
     [reply] = sent(bot)
     assert "CHL-1" in reply.text and "is open" in reply.text
-    assert "200 000" in reply.text  # the float the cashier counted
-    assert "50 000" in reply.text  # payouts
-    assert "3 500 000" in reply.text  # handed over
+    assert "200\u00a0000" in reply.text  # the float the cashier counted
+    assert "50\u00a0000" in reply.text  # payouts
+    assert "3\u00a0500\u00a0000" in reply.text  # handed over
     # Nothing that tells how much cash there should be (opening + sales - movements).
     assert "expected" not in reply.text.lower()
 
@@ -76,7 +78,7 @@ async def test_the_summary_shows_the_open_till_without_expected_cash(dp, bot):
 async def test_the_receiver_confirms_from_the_summary(dp, bot):
     shop, movement = await shop_with_handover()
     user = updates.tg_user(shop.manager.user.telegram_id)
-    await dp.feed_update(bot, updates.message(user, "🧾 Kassa"))
+    await dp.feed_update(bot, updates.message(user, "Kassa"))
     [reply] = sent(bot)
     assert "Cash handed to you" in reply.text and "Madina" in reply.text
     buttons = [b.callback_data for row in reply.reply_markup.inline_keyboard for b in row]
@@ -92,6 +94,19 @@ async def test_the_receiver_confirms_from_the_summary(dp, bot):
     assert movement.confirmed_at is not None and movement.transfer_id is not None
     [edit] = [r for r in bot.requests if isinstance(r, EditMessageText)]
     assert "Received" in edit.text and edit.reply_markup is None
+
+
+async def test_the_receivers_buttons_say_it_in_their_words(dp, bot):
+    shop, _movement = await shop_with_handover()
+    await User.objects.filter(pk=shop.manager.user_id).aupdate(language="uz")
+    user = updates.tg_user(shop.manager.user.telegram_id)
+
+    await dp.feed_update(bot, updates.message(user, "Kassa"))
+
+    [reply] = sent(bot)
+    received, not_received = reply.reply_markup.inline_keyboard[-1]
+    assert received.text.endswith(" oldim") and not_received.text == "Olmadim"
+    assert not has_emoji(reply.text)
 
 
 async def test_someone_else_cannot_answer(dp, bot):
@@ -144,6 +159,6 @@ async def test_without_a_till_the_summary_says_how_to_open_one(dp, bot):
         return shop.colleague
 
     person = await cashier()
-    await dp.feed_update(bot, updates.message(updates.tg_user(person.user.telegram_id), "🧾 Kassa"))
+    await dp.feed_update(bot, updates.message(updates.tg_user(person.user.telegram_id), "Kassa"))
     [reply] = sent(bot)
     assert "No till is open" in reply.text

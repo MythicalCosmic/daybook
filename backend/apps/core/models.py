@@ -2,7 +2,7 @@ from django.db import models
 
 
 class Language(models.TextChoices):
-    UZ = "uz", "O'zbekcha"
+    UZ = "uz", "O‘zbekcha"
     RU = "ru", "Русский"
     EN = "en", "English"
 

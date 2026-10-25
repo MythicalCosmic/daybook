@@ -172,7 +172,7 @@ def test_the_evening_post_goes_out_once_after_closing(hours):
         assert scan.post_evening(shop.company, late) == 1
         assert scan.post_evening(shop.company, late + timedelta(minutes=15)) == 0
     [(args, _kwargs)] = broadcast.call_args_list
-    assert args[1] == "sales" and "1 500 000" in args[2]
+    assert args[1] == "sales" and "1\u00a0500\u00a0000" in args[2]
     assert SalesSettings.objects.get(company=shop.company).evening_posted_on == day
 
 

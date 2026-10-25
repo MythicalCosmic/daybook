@@ -9,6 +9,7 @@ from asgiref.sync import sync_to_async
 
 from apps.companies.tests.factories import CompanyFactory
 from apps.console import registry
+from apps.notifications.emoji import has_emoji
 from ownerbot.callbacks import TodayPick
 from ownerbot.commands import set_commands
 from ownerbot.tests import updates
@@ -33,7 +34,8 @@ async def test_today_shows_branches_sections_and_approvals(
     settings.DASHBOARD_URL = "https://app.example.uz/dashboard/"
 
     def tasks_section(company, day, now, branch_ids):
-        return {"emoji": "✅", "title": "Tasks", "lines": ["18 of 24 done", "3 late"]}
+        # A section may still bring an emoji: the bot leaves it out.
+        return {"emoji": chr(0x2705), "title": "Tasks", "lines": ["18 of 24 done", "3 late"]}
 
     isolated_registries.register_brief_section(
         "tasks.today", perm=None, order=10, build=tasks_section
@@ -47,8 +49,9 @@ async def test_today_shows_branches_sections_and_approvals(
     [reply] = bot.sent()
     assert "Demo Dorixona" in reply.text
     assert "Chilonzor" in reply.text
-    assert "Tasks" in reply.text and "18 of 24 done" in reply.text
+    assert "<b>Tasks</b>\n    18 of 24 done\n    3 late" in reply.text
     assert "Nothing waits for your decision." in reply.text
+    assert not has_emoji(reply.text)
     [[opened]] = reply.reply_markup.inline_keyboard
     assert opened.web_app.url == f"https://app.example.uz/dashboard/c/{owner.company_id}"
 
@@ -125,3 +128,63 @@ async def test_commands_and_the_menu_button(bot, settings):
         MenuButtonCommands,
     )
     assert registry  # the registry module is importable from the bot
+
+
+async def test_figures_from_modules_read_in_words(dp, bot, owner, monkeypatch):
+    """The tasks, attendance, finance and people sections send figures for the dashboard; the
+    chat gets them in words, and a section of figures the bot has no words for stays out."""
+    sections = {
+        "tasks": {
+            "done": 3,
+            "total": 5,
+            "late": 2,
+            "review": 1,
+            "on_time_7d": "80.0",
+            "late_tasks": [{"id": 1, "title": "Count the till", "assignee": {"name": "Ali"}}],
+        },
+        "attendance": {
+            "present": 4,
+            "rostered": 6,
+            "late": [{"id": 1, "name": "Ali"}],
+            "absent": [],
+            "not_in_yet": [{"id": 2, "name": "Vali"}],
+        },
+        "finance": {
+            "currency": "UZS",
+            "cash": "1500000.00",
+            "income_yesterday": "200000.00",
+            "expense_yesterday": "50000.00",
+            "receivable_overdue": "0",
+            "receivable_overdue_count": 0,
+            "payable_overdue": "700000.00",
+            "payable_overdue_count": 1,
+            "due_today_count": 0,
+            "url": "/c/1/finance",
+        },
+        "members.people": {
+            "pending_requests": 2,
+            "joined_this_week": [],
+            "off_today": [{"id": 3, "name": "Madina"}],
+            "suspended": 0,
+            "headcount": 15,
+        },
+        "insights.raw": {"score": 7, "items": [1, 2]},
+    }
+    monkeypatch.setattr(
+        registry, "collect_brief_sections", lambda *args, **kwargs: list(sections.items())
+    )
+
+    await dp.feed_update(bot, updates.message(updates.tg_user(7501), "/today"))
+
+    [reply] = bot.sent()
+    text = reply.text.replace(chr(0xA0), " ")
+    assert "<b>Tasks</b>\n    Done today: 3 of 5\n    Late: 2\n    Waiting for check: 1" in text
+    assert "On time over 7 days: 80.0%" in text
+    assert "Most overdue:" in text and "Count the till · Ali" in text
+    assert "<b>Attendance</b>\n    At work: 4/6\n    Late: Ali\n    Not in yet: Vali" in text
+    assert "<b>Finance</b>\n    Balance: 1 500 000 UZS" in text
+    assert "Overdue to pay:" in text and "Overdue to receive" not in text
+    assert "<b>People</b>\n    Team: 15\n    Join requests: 2\n    Off today: Madina" in text
+    # No raw data anywhere: no keys, brackets or the section nobody put into words.
+    for raw in ("score", "late_tasks", "{", "[", "url:", "/c/1/finance"):
+        assert raw not in text

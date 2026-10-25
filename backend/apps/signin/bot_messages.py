@@ -38,15 +38,23 @@ def _clock(moment: datetime, user: User) -> str:
     return timezone.localtime(moment, user_timezone(user)).strftime("%H:%M")
 
 
+def _where(device: str, ip: str, time: str) -> list[str]:
+    """Where a sign-in comes from, a fact per line ("Qurilma: Chrome · Windows"), plain text."""
+    lines = [_("Device: %(device)s") % {"device": device}]
+    if ip:
+        lines.append(_("IP address: %(ip)s") % {"ip": ip})
+    lines.append(_("Time: %(time)s") % {"time": time})
+    return lines
+
+
 def login_prompt(prompt, user: User) -> BotMessage:
     """The question under `/start login_…`: where the sign-in comes from, three numbers."""
-    origin = " · ".join(part for part in (prompt.ip, _clock(prompt.created_at, user)) if part)
+    where = _where(prompt.device.label, prompt.ip, _clock(prompt.created_at, user))
     text = "\n".join(
         (
-            "🔐 <b>" + html.quote(_("Sign in to the dashboard?")) + "</b>",
+            "<b>" + html.quote(_("Sign in to the dashboard?")) + "</b>",
             "",
-            "💻 " + html.quote(prompt.device.label),
-            "🌐 " + html.quote(origin),
+            *(html.quote(line) for line in where),
             "",
             html.quote(_("Tap the number you see on your screen.")),
             html.quote(_("Didn't start this? Tap “It wasn't me”.")),
@@ -58,7 +66,7 @@ def login_prompt(prompt, user: User) -> BotMessage:
         for number in prompt.choices
     ]
     not_me = InlineKeyboardButton(
-        text=_("🚫 It wasn't me"), callback_data=LoginTap(link=link, pick=NOT_ME).pack()
+        text=_("It wasn't me"), callback_data=LoginTap(link=link, pick=NOT_ME).pack()
     )
     return text, InlineKeyboardMarkup(inline_keyboard=[numbers, [not_me]])
 
@@ -66,7 +74,7 @@ def login_prompt(prompt, user: User) -> BotMessage:
 def link_refused(reason: str) -> str:
     """Why `/start login_…` can't go on."""
     messages = {
-        "expired": _("⏳ This sign-in code has expired. Get a new one in your browser."),
+        "expired": _("This sign-in code has expired. Get a new one in your browser."),
         "used": _("This sign-in code was already used. Get a new one in your browser."),
         "denied": _("This sign-in was cancelled. Get a new code in your browser."),
         "no_access": _(
@@ -80,12 +88,12 @@ def link_refused(reason: str) -> str:
 def login_outcome(outcome: str) -> str:
     """What replaces the prompt after a tap."""
     messages = {
-        "approved": _("✅ Confirmed. Go back to your browser: you're being signed in."),
+        "approved": _("Confirmed. Go back to your browser: you're being signed in."),
         "wrong_number": _(
-            "❌ That wasn't the number on the screen, so this sign-in was cancelled. "
+            "That wasn't the number on the screen, so this sign-in was cancelled. "
             "If it was you, start again in your browser."
         ),
-        "denied": _("🛡 Cancelled. Nobody was signed in."),
+        "denied": _("Cancelled. Nobody was signed in."),
         "no_access": link_refused("no_access"),
         "expired": link_refused("expired"),
         "used": link_refused("used"),
@@ -96,19 +104,13 @@ def login_outcome(outcome: str) -> str:
 def signed_in(session: DeviceSession) -> BotMessage:
     """After every desktop sign-in: where, and a way out if it wasn't them."""
     device = devices.describe(session.user_agent)
-    place = " · ".join(
-        part
-        for part in (
-            device.label,
-            devices.masked_ip(session.ip),
-            _clock(session.created_at, session.user),
-        )
-        if part
+    where = _where(
+        device.label, devices.masked_ip(session.ip), _clock(session.created_at, session.user)
     )
     text = "\n".join(
         (
-            "🔓 <b>" + html.quote(_("Signed in to the dashboard")) + "</b>",
-            html.quote(place),
+            "<b>" + html.quote(_("Signed in to the dashboard")) + "</b>",
+            *(html.quote(line) for line in where),
             "",
             html.quote(_("Not you? Log out everywhere and nobody stays signed in.")),
         )
@@ -122,5 +124,5 @@ def signed_in(session: DeviceSession) -> BotMessage:
 
 def logged_out_everywhere(count: int) -> str:
     if count == 0:
-        return _("✅ You were already signed out everywhere.")
-    return _("✅ Done: signed out on every device. Sign in again whenever you need.")
+        return _("You were already signed out everywhere.")
+    return _("Done: signed out on every device. Sign in again whenever you need.")

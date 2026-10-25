@@ -1,6 +1,6 @@
 """Extra buttons in the employee bot's main menu, registered by the modules that answer them.
 
-    register_menu_button(gettext_noop("📍 Keldim"), order=10,
+    register_menu_button(gettext_noop("Keldim"), order=10,
                          visible=lambda member: member.company.has_feature("attendance"),
                          web_app_screen="attendance")
 

@@ -297,14 +297,12 @@ register_exporter(
 )
 
 
-# A "🧾 Kassa" button in the employee bot's menu for people who run a till.
+# A "Kassa" button in the employee bot's menu for people who run a till.
 def _runs_a_till(member) -> bool:
     return member.company.has_feature(FEATURE) and member.has_perm(Perm.SALES_OPERATE)
 
 
-register_menu_button(
-    gettext_noop("🧾 Kassa"), order=20, visible=_runs_a_till, web_app_screen="kassa"
-)
+register_menu_button(gettext_noop("Kassa"), order=20, visible=_runs_a_till, web_app_screen="kassa")
 
 
 # Defaults: a new company (when it starts with sales on) and every new branch get their tills.

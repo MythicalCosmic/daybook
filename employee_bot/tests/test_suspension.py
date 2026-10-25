@@ -23,7 +23,7 @@ async def suspended_worker(company, member, until):
     return owner, worker
 
 
-@pytest.mark.parametrize("text", ["📋 My tasks", "hello", "/start"])
+@pytest.mark.parametrize("text", ["My tasks", "hello", "/start"])
 async def test_every_message_gets_the_paused_answer(dp, bot, company, member, text):
     _owner, worker = await suspended_worker(company, member, date(2099, 3, 1))
 

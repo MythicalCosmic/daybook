@@ -20,7 +20,7 @@ ITEMS = [
         "days_ago": 1,
         "author": "owner",
         "text": (
-            "<b>Ertadan yangi referent narxlar</b> 💊\n\n"
+            "<b>Ertadan yangi referent narxlar</b>\n\n"
             "Retseptli dorilarning referent narxlari yangilandi. Ertalab smenani ochishda narx "
             "yorliqlarini yangi ro‘yxat bo‘yicha tekshiring: ustama xarid narxidan "
             "<b>20\u00a0%</b> dan oshmasin.\n\nSavollar bo‘lsa, mudiringizga yozing."
@@ -33,7 +33,7 @@ ITEMS = [
         "author": "manager",
         "text": (
             "Hurmatli jamoa! Shanba kuni Chilonzorda <b>sanitariya kuni</b>: soat 07:00 da "
-            "dezinfeksiya, dorixona 08:00 da ochiladi. Muzlatgichlarni oldindan bo‘shatmang. 🧼"
+            "dezinfeksiya, dorixona 08:00 da ochiladi. Muzlatgichlarni oldindan bo‘shatmang."
         ),
         "branches": ["Chilonzor"],
         "read_share": 0.86,
@@ -42,7 +42,7 @@ ITEMS = [
         "days_ago": 6,
         "author": "owner",
         "text": (
-            "🎉 Sentabr natijalari: Yunusobod rejani <b>104%</b> bajardi, tungi smenada "
+            "Sentabr natijalari: Yunusobod rejani <b>104%</b> bajardi, tungi smenada "
             "birorta kassa farqi bo‘lmadi! Rahmat, jamoa!"
         ),
         "read_share": 0.95,
@@ -134,7 +134,7 @@ def seed(company, people, now) -> None:
         company=company,
         author=people["manager"],
         text=(
-            "⏰ Eslatma: ertaga <b>Chilonzor</b> dorixonasida sanitariya kuni. "
+            "Eslatma: ertaga <b>Chilonzor</b> dorixonasida sanitariya kuni. "
             "Smena soat 07:00 da boshlanadi, kechikmang!"
         ),
         status=Announcement.Status.SCHEDULED,

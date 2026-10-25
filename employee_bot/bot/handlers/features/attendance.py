@@ -1,4 +1,4 @@
-"""Employee bot, Package F. Attendance: `/checkin` and the "📍 Keldim / Ketdim" button
+"""Employee bot, Package F. Attendance: `/checkin` and the "Keldim / Ketdim" button
 (a location share as the fallback), shift-start nudges, "still working?", swap and cover
 requests.
 

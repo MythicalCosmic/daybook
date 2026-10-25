@@ -41,14 +41,14 @@ def _web_app_button(text: str, path: str = "") -> InlineKeyboardButton | None:
 
 def dashboard_keyboard(path: str = "") -> InlineKeyboardMarkup | None:
     """The "Open dashboard" button."""
-    button = _web_app_button(_("📊 Open dashboard"), path)
+    button = _web_app_button(_("Open dashboard"), path)
     return InlineKeyboardMarkup(inline_keyboard=[[button]]) if button else None
 
 
 def welcome(user: User, companies: list[dict] | None = None) -> BotMessage:
     """`/start`: hello, the person's companies, and what the bot can do."""
     name = user.first_name or _("there")
-    lines = [_("Hello, %(name)s! 👋") % {"name": html.quote(name)}, ""]
+    lines = [_("Hello, %(name)s!") % {"name": html.quote(name)}, ""]
     if companies:
         lines.append(_("Your companies:"))
         for row in companies:
@@ -100,13 +100,13 @@ def cancel_row() -> list[InlineKeyboardButton]:
 
 
 def signup_closed(reason: str) -> str:
-    return "🔒 " + html.quote(reason)
+    return html.quote(reason)
 
 
 def ask_code() -> BotMessage:
     text = "\n".join(
         (
-            "🏢 <b>" + html.quote(_("New company")) + "</b>",
+            "<b>" + html.quote(_("New company")) + "</b>",
             "",
             html.quote(_("Send the signup code you were given (like K7M2-QX9P).")),
         )
@@ -121,7 +121,7 @@ def bad_code() -> str:
 def ask_name() -> BotMessage:
     text = "\n".join(
         (
-            "🏢 <b>" + html.quote(_("New company")) + "</b>",
+            "<b>" + html.quote(_("New company")) + "</b>",
             "",
             html.quote(_("What is your company called? Send its name, as staff know it.")),
         )
@@ -143,16 +143,18 @@ def _offset(zone: str, now: datetime) -> str:
 def ask_timezone(name: str, now: datetime) -> BotMessage:
     text = "\n".join(
         (
-            "🏢 <b>" + html.quote(name) + "</b>",
+            "<b>" + html.quote(name) + "</b>",
             "",
             html.quote(_("Which timezone does the company work in?")),
             html.quote(_("Tashkent fits all of Uzbekistan.")),
         )
     )
+    # Tashkent, the usual answer, is green.
     buttons = [
         InlineKeyboardButton(
-            text=("✅ " if zone == "Asia/Tashkent" else "") + f"{_(city)} ({_offset(zone, now)})",
+            text=f"{_(city)} ({_offset(zone, now)})",
             callback_data=NewCompanyStep(action="tz", value=zone).pack(),
+            style="success" if zone == "Asia/Tashkent" else None,
         )
         for zone, city in TIMEZONES
     ]
@@ -160,7 +162,7 @@ def ask_timezone(name: str, now: datetime) -> BotMessage:
     rows.append(
         [
             InlineKeyboardButton(
-                text=_("⌨️ Type another"), callback_data=NewCompanyStep(action="type_tz").pack()
+                text=_("Type another"), callback_data=NewCompanyStep(action="type_tz").pack()
             )
         ]
     )
@@ -180,7 +182,7 @@ def confirm(name: str, zone: str, language: str, now: datetime) -> BotMessage:
     languages = {"uz": "O‘zbekcha", "ru": "Русский", "en": "English"}
     text = "\n".join(
         (
-            "🏢 <b>" + html.quote(_("Create this company?")) + "</b>",
+            "<b>" + html.quote(_("Create this company?")) + "</b>",
             "",
             _("Name: %(name)s") % {"name": f"<b>{html.quote(name)}</b>"},
             _("Timezone: %(zone)s") % {"zone": f"{html.quote(zone)} ({_offset(zone, now)})"},
@@ -193,10 +195,10 @@ def confirm(name: str, zone: str, language: str, now: datetime) -> BotMessage:
     rows = [
         [
             InlineKeyboardButton(
-                text=_("✅ Create"), callback_data=NewCompanyStep(action="create").pack()
+                text=_("Create"), callback_data=NewCompanyStep(action="create").pack()
             ),
             InlineKeyboardButton(
-                text=_("✏️ Change name"), callback_data=NewCompanyStep(action="rename").pack()
+                text=_("Change name"), callback_data=NewCompanyStep(action="rename").pack()
             ),
         ],
         cancel_row(),
@@ -207,12 +209,12 @@ def confirm(name: str, zone: str, language: str, now: datetime) -> BotMessage:
 def created(company_id: int, name: str) -> BotMessage:
     text = "\n".join(
         (
-            "🎉 <b>" + html.quote(_("%(name)s is ready.") % {"name": name}) + "</b>",
+            "<b>" + html.quote(_("%(name)s is ready.") % {"name": name}) + "</b>",
             "",
             html.quote(_("You are its owner. Next: add your branches and invite your staff.")),
         )
     )
-    button = _web_app_button(_("🚀 Open Get started"), f"c/{company_id}/get-started")
+    button = _web_app_button(_("Open Get started"), f"c/{company_id}/get-started")
     if button is None:
         url = dashboard_url(f"c/{company_id}/get-started")
         if url:
@@ -244,11 +246,11 @@ def today_keyboard(company_id: int, waiting: int) -> InlineKeyboardMarkup | None
     rows = []
     if waiting:
         approvals = _web_app_button(
-            _("📥 Approvals (%(count)d)") % {"count": waiting}, f"c/{company_id}?inbox=needs"
+            _("Approvals (%(count)d)") % {"count": waiting}, f"c/{company_id}?inbox=needs"
         )
         if approvals:
             rows.append([approvals])
-    opened = _web_app_button(_("📊 Open dashboard"), f"c/{company_id}")
+    opened = _web_app_button(_("Open dashboard"), f"c/{company_id}")
     if opened:
         rows.append([opened])
     return InlineKeyboardMarkup(inline_keyboard=rows) if rows else None
