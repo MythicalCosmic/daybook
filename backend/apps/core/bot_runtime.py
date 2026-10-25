@@ -13,6 +13,9 @@ them. Two pieces fix that, and neither changes a handler:
 - `OrderedDispatcher`: one person's updates are handled one at a time, in the order Telegram
   sent them, so a quick second tap or message never overtakes the first; different people's
   run side by side.
+
+And `WaitOnFloodLimit` (on each bot's session): past Telegram's rate for one bot, a reply waits
+the seconds Telegram asks for and goes, instead of being dropped.
 """
 
 import asyncio
@@ -22,6 +25,8 @@ from concurrent.futures import ThreadPoolExecutor
 from weakref import WeakValueDictionary
 
 from aiogram import Dispatcher
+from aiogram.client.session.middlewares.base import BaseRequestMiddleware
+from aiogram.exceptions import TelegramRetryAfter
 from aiogram.types import Update
 from asgiref.sync import SyncToAsync, ThreadSensitiveContext
 from django.conf import settings
@@ -124,3 +129,27 @@ class OrderedDispatcher(Dispatcher):
             turn = self._turns[person] = asyncio.Lock()
         async with turn:
             return await super().feed_update(bot, update, **kwargs)
+
+
+class WaitOnFloodLimit(BaseRequestMiddleware):
+    """Telegram's flood limit ("Too Many Requests: retry after N"): wait the N seconds it asks
+    for and send again, a few times, instead of dropping the reply. Hundreds of people tapping
+    in the same minute can pass Telegram's rate for one bot; their replies then come a little
+    later, not never. Only this person's next update waits meanwhile (`OrderedDispatcher`).
+    A wait longer than `ceiling` seconds gives up at once, as before (the error is logged)."""
+
+    def __init__(self, attempts: int = 3, ceiling: float = 20, sleep=asyncio.sleep) -> None:
+        self.attempts = attempts
+        self.ceiling = ceiling
+        self.sleep = sleep
+
+    async def __call__(self, make_request, bot, method):
+        attempt = 1
+        while True:
+            try:
+                return await make_request(bot, method)
+            except TelegramRetryAfter as exc:
+                if attempt >= self.attempts or exc.retry_after > self.ceiling:
+                    raise
+                attempt += 1
+                await self.sleep(exc.retry_after)
