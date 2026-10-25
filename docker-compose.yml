@@ -19,6 +19,14 @@ x-healthcheck: &healthcheck
   retries: 12
   start_period: 20s
 
+# Container logs rotate: gunicorn writes a line per request, a few hundred thousand a day once a
+# few hundred people use it, and Docker keeps them forever otherwise.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 50m
+    max-file: "5"
+
 x-app: &app
   build: .
   image: trello911:latest
@@ -34,6 +42,7 @@ x-app: &app
   volumes:
     - media:/app/backend/media
     - private_media:/app/backend/private_media
+  logging: *logging
   restart: unless-stopped
   profiles: ["app"]
 

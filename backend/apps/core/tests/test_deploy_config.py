@@ -123,6 +123,16 @@ def test_postgres_has_room_for_every_connection_the_stack_keeps(monkeypatch):
     assert kept + web["workers"] * web["threads"] <= max_connections
 
 
+def test_the_apps_logs_rotate():
+    """gunicorn logs every request; Docker would keep them all."""
+    services = compose("docker-compose.yml")["services"]
+    app = [name for name, service in services.items() if service.get("image") == "trello911:latest"]
+
+    assert {"backend", "worker", "employee_bot", "owner_bot", "stream", "beat"} <= set(app)
+    for name in app:
+        assert services[name]["logging"]["options"]["max-size"], name
+
+
 @pytest.mark.parametrize("service", ["worker", "ai-worker"])
 def test_celery_workers_take_one_job_at_a_time(service):
     command = compose("docker-compose.yml")["services"][service]["command"]
