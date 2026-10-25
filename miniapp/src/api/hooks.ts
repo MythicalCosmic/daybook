@@ -3,28 +3,7 @@ import { useCallback } from "react";
 
 import { isPending, usePendingVersion } from "../lib/delayedSend";
 import { api, ApiError } from "./client";
-import type {
-  Activity,
-  BlockerReason,
-  BlockerResolution,
-  Comment,
-  Holiday,
-  Language,
-  Me,
-  MemberBrief,
-  Membership,
-  Page,
-  Period,
-  Position,
-  Priority,
-  Proof,
-  Repeat,
-  SnoozePreset,
-  Summary,
-  Task,
-  TeamStats,
-  TimeOff,
-} from "./types";
+import type { Activity, BlockerReason, BlockerResolution, Comment, FinishRule, Holiday, Language, Me, MemberBrief, Membership, Page, Period, Position, Priority, Proof, Repeat, SnoozePreset, Summary, Task, TeamStats, TimeOff } from "./types";
 
 export const keys = {
   me: ["me"] as const,
@@ -346,10 +325,25 @@ export type NewTask = {
   assignee_id?: number | null;
   priority?: Priority;
   proof?: Proof;
+  /** Left out: the company's "When someone finishes a task" decides (§15.3). */
   needs_confirmation?: boolean;
   description?: string;
   checklist?: string[];
 };
+
+/**
+ * The company's "When someone finishes a task" (auto, proof, ask): "I'll check it" starts from it
+ * when a manager gives a task. A backend without the endpoint reads as "auto" (the old default).
+ */
+export function useFinishRule(company: number, enabled: boolean) {
+  return useQuery({
+    queryKey: ["finishRule", company] as const,
+    queryFn: () => api<{ on_finish: FinishRule }>(`${tasksPath(company)}/finish-rule/`),
+    enabled,
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+}
 
 export function useCreateTask(company: number) {
   const refresh = useRefreshAfterTaskChange(company);

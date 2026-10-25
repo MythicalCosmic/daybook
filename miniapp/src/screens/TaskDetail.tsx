@@ -176,7 +176,9 @@ function Detail({ task, comments, ctx }: { task: Task; comments: Comment[]; ctx:
     ? { label: t("status.late"), tone: "accent" }
     : task.status === "done" && task.confirmed_by
       ? { label: t("status.checked"), tone: "sage" }
-      : {
+      : task.status === "done" && task.accepted_automatically
+        ? { label: t("status.accepted"), tone: "sage" }
+        : {
           label: t(`status.${task.status}`),
           tone: { todo: "neutral", in_progress: "sage", review: "neutral", returned: "accent", done: "sage", cancelled: "neutral" }[task.status],
         };
@@ -416,7 +418,11 @@ function StatusBanner({ task, comments, activity, ctx }: { task: Task; comments:
       icon: <Check size={17} strokeWidth={3} />,
       title: task.confirmed_by
         ? t("detail.banner.checked", { name: task.confirmed_by.name, time: at(task.confirmed_at) })
-        : t("detail.banner.done", { time: at(task.completed_at) }),
+        : task.accepted_automatically
+          ? t("detail.banner.accepted", { time: at(task.confirmed_at ?? task.completed_at) })
+          : t("detail.banner.done", { time: at(task.completed_at) }),
+      // Accepted by the company's wait for a review: nobody checked it in time.
+      note: task.accepted_automatically && !task.confirmed_by && task.confirmed_at ? t("detail.banner.acceptedAfterWait") : undefined,
     };
   } else if (task.status === "cancelled") {
     banner = { tone: "", icon: <X size={17} strokeWidth={2.6} />, title: t("detail.banner.cancelled") };

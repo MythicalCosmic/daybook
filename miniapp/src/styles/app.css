@@ -1582,6 +1582,9 @@ textarea.input {
 .gate-hint-app {
   position: relative;
   flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 7px 12px;
   border-radius: 999px;
   background: var(--tg-theme-button-color, #2481cc);

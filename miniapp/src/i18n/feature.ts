@@ -58,7 +58,7 @@ export function featureText(
   key: string,
   vars?: Vars,
 ): string {
-  return translateFrom([messages[lang], messages.en, DICTIONARIES[lang], DICTIONARIES.en], lang, key, vars);
+  return translateFrom([messages[lang], messages.uz, messages.en, DICTIONARIES[lang], DICTIONARIES.uz, DICTIONARIES.en], lang, key, vars);
 }
 
 /** The feature's translator in the person's language. */

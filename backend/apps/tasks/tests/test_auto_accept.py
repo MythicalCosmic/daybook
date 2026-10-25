@@ -498,6 +498,15 @@ def test_the_routines_api_takes_null_for_the_rule(company, manager, worker, owne
     )
 
 
+def test_the_mini_app_reads_the_rule_for_i_will_check_it(company, manager, api_as):
+    rule(company, OnFinish.ASK)
+
+    response = api_as(manager).get(f"/api/v1/companies/{company.pk}/tasks/finish-rule/")
+
+    assert response.status_code == 200
+    assert response.json() == {"on_finish": "ask"}
+
+
 def test_a_template_made_by_hand_keeps_its_choice(company, manager, worker):
     template = TaskTemplateFactory(
         company=company, needs_confirmation=True, assignees=[worker], weekdays=list(range(7))

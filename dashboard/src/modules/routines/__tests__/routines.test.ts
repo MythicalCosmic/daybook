@@ -239,13 +239,40 @@ describe("RoutineEditor", () => {
       position_ids: [],
       branch_id: 1,
       proof: "photo",
-      needs_confirmation: true,
       checklist: ["Lights on", "Count the till"],
       is_active: true,
     });
     expect(patch?.body).not.toHaveProperty("onboarding");
+    // Untouched, the routine's own "Check each one" stays as it is (and its rule with it, §15.3).
+    expect(patch?.body).not.toHaveProperty("needs_confirmation");
     expect(toasts.at(-1)?.title).toBe("Saved");
     wrapper.unmount();
+  });
+
+  it("sends the check choice only once touched, and a new routine follows the company's rule", async () => {
+    const calls = stub({
+      "GET tasks/options/": () => json(options),
+      "GET tasks/settings/": () => json({ on_finish: "proof", auto_accept_after_hours: null }),
+      "GET routines/32/preview/": () => json({ day: "2026-10-22", due: true, holiday: false, people: [] }),
+      "PATCH routines/32/": (call) => json(routine({ ...(call.body as object) })),
+    });
+    const app = await testApp("/c/1/routines/32");
+    const { wrapper } = mountWithProviders(RoutineEditor, { plugins: app.plugins, props: { open: true, routine: routine() } });
+    await flushPromises();
+    const toggle = () => [...document.body.querySelectorAll<HTMLButtonElement>("[role=switch]")].find((el) => el.closest("label")?.textContent?.includes("Check each one"))!;
+    toggle().click();
+    await flushPromises();
+    [...document.body.querySelectorAll("button")].find((b) => b.textContent?.trim() === "Save")!.click();
+    await flushPromises();
+    expect(calls.find((c) => c.method === "PATCH")?.body).toMatchObject({ needs_confirmation: false });
+    wrapper.unmount();
+    document.body.innerHTML = "";
+
+    const fresh = mountWithProviders(RoutineEditor, { plugins: app.plugins, props: { open: true, routine: null } });
+    await flushPromises();
+    expect(document.body.textContent).toContain("Company rule: accepted at once with a photo or a short report; without one, it's checked");
+    expect(toggle().getAttribute("aria-checked")).toBe("true");
+    fresh.wrapper.unmount();
   });
 
   it("sends onboarding tasks as a day after approval instead of weekdays", async () => {

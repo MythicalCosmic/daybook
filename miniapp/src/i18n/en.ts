@@ -542,6 +542,13 @@ const en = {
   "me.group.work": "Work",
   "me.group.documents": "Documents",
   "plus.title": "Quick add",
+  "toast.accepted": "Accepted",
+  "status.accepted": "Accepted",
+  "detail.banner.accepted": "Accepted automatically at {time}",
+  "detail.banner.acceptedAfterWait": "Nobody checked it in time, so it was accepted.",
+  "meta.acceptedAt": "Accepted · {time}",
+  "complete.withProof": "With a photo or a note it's accepted at once. Without them, it goes for checking.",
+  "add.illCheckRule": "Company rule: accepted at once with a photo or a note",
 };
 
 export default en;

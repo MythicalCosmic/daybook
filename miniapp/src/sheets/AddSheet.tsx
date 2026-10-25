@@ -1,7 +1,7 @@
 import { CalendarClock, Camera, ChevronDown, Eye, Flag, Plus, Repeat as RepeatIcon, X } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 
-import { useCreateTask, useMembers, type NewTask } from "../api/hooks";
+import { type NewTask, useCreateTask, useFinishRule, useMembers } from "../api/hooks";
 import type { QuickAdd, Repeat } from "../api/types";
 import { FeatureSlot } from "../features/FeatureSlot";
 import { useI18n } from "../i18n";
@@ -35,6 +35,7 @@ export function AddSheet() {
   const ids = useId();
   const canAssign = member.permissions.includes("tasks.assign");
   const members = useMembers(member.companyId, canAssign);
+  const finishRule = useFinishRule(member.companyId, canAssign).data?.on_finish ?? "auto";
 
   const [now] = useState(() => new Date());
   const hour = hourIn(now, member.timeZone);
@@ -48,7 +49,8 @@ export function AddSheet() {
   const [assignee, setAssignee] = useState<number | null>(null);
   const [urgentChoice, setUrgentChoice] = useState<boolean | null>(null);
   const [needsPhoto, setNeedsPhoto] = useState(false);
-  const [illCheck, setIllCheck] = useState(false);
+  // "I'll check it": null until tapped, and then the company's rule decides (§15.3).
+  const [illCheck, setIllCheck] = useState<boolean | null>(null);
   const [details, setDetails] = useState(false);
   const [description, setDescription] = useState("");
   const [steps, setSteps] = useState<string[]>([]);
@@ -67,6 +69,7 @@ export function AddSheet() {
     [members.data, member.id],
   );
   const forName = assignee === null ? null : people.find((person) => person.id === assignee)?.name ?? null;
+  const checking = illCheck ?? finishRule !== "auto";
   const urgent = urgentChoice ?? read?.priority === "urgent";
 
   // What the manual "When" means: a past time today rolls to tomorrow, and says so (as the bot does).
@@ -106,7 +109,7 @@ export function AddSheet() {
     if (assignee !== null) {
       task.assignee_id = assignee;
       if (needsPhoto) task.proof = "photo";
-      if (illCheck) task.needs_confirmation = true;
+      if (illCheck !== null) task.needs_confirmation = illCheck;
     }
     if (description.trim()) task.description = description.trim();
     if (filledSteps.length) task.checklist = filledSteps;
@@ -254,13 +257,15 @@ export function AddSheet() {
               <Camera size={16} strokeWidth={2.5} aria-hidden />
               <span>{t("proof.tag.photo")}</span>
             </button>
-            <button type="button" className="ui-chip" aria-pressed={illCheck} onClick={() => setIllCheck(!illCheck)}>
+            <button type="button" className="ui-chip" aria-pressed={checking} onClick={() => setIllCheck(!checking)}>
               <Eye size={16} strokeWidth={2.5} aria-hidden />
               <span>{t("add.illCheck")}</span>
             </button>
           </>
         )}
       </div>
+
+      {assignee !== null && illCheck === null && finishRule === "proof" && <span className="field-note">{t("add.illCheckRule")}</span>}
 
       {assignee === null && due && !read?.repeat && (
         <div className="field">

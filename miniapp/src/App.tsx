@@ -48,7 +48,7 @@ export function App() {
   const me = useMe({ enabled: signedIn });
   // Read once at launch: `?screen=payslip:12` or a startapp parameter picks the first screen.
   const [launch] = useState<ScreenLink | null>(() => readScreenLink());
-  // A link from the bot ("📱 Open in app" on a task) goes straight there: no splash to sit through.
+  // A link from the bot ("Open in app" on a task) goes straight there: no splash to sit through.
   const [splashOver, setSplashOver] = useState(() => launch !== null);
   useEffect(() => {
     if (splashOver) return;
@@ -67,9 +67,9 @@ export function App() {
     }
   }, [chosen]);
 
-  const language = asLang(
-    chosen ?? window.Telegram?.WebApp?.initDataUnsafe?.user?.language_code ?? lastLanguage() ?? navigator.language.slice(0, 2),
-  );
+  // Uzbek first: before `me` says otherwise, the language last used here, else Uzbek (never the
+  // phone's or Telegram's language, which a new account doesn't take either).
+  const language = asLang(chosen ?? lastLanguage() ?? "uz");
   // The page says which language it's in: screen readers, hyphenation and the time picker's
   // 24-hour clock follow it (audit M-4).
   useEffect(() => {

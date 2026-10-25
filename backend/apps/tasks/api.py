@@ -24,11 +24,12 @@ from apps.members.models import Membership, Position
 from apps.members.permissions import Perm
 from apps.reminders.models import ReminderLog
 from apps.reminders.policies import escalation_recipients, policy_for
-from apps.tasks import dashboard, dates, queries, quickadd, rules, services, stats
+from apps.tasks import conf, dashboard, dates, queries, quickadd, rules, services, stats
 from apps.tasks.conf import REVIEW_RULE_HELP
 from apps.tasks.models import (
     Activity,
     ChecklistItem,
+    OnFinish,
     Proof,
     Repeat,
     Task,
@@ -320,6 +321,14 @@ def _calendar_range(params) -> tuple[date, date]:
     return start, end
 
 
+class FinishRuleSerializer(serializers.Serializer):
+    on_finish = serializers.ChoiceField(
+        OnFinish.choices,
+        help_text="auto: accepted at once; proof: accepted at once with a photo or text, "
+        "otherwise checked; ask: always checked.",
+    )
+
+
 class TaskCreateSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=200)
     description = serializers.CharField(allow_blank=True, default="")
@@ -582,6 +591,13 @@ class TaskViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
         ],
         responses=CalendarSerializer,
     )
+    @extend_schema(responses=FinishRuleSerializer)
+    @action(detail=False, methods=["get"], url_path="finish-rule", url_name="finish-rule")
+    def finish_rule(self, request, company_id):
+        """The company's "When someone finishes a task" (auto, proof or ask): the mini app's
+        "I'll check it" starts from it when someone gives a task (PLAN-OWNER §15.3)."""
+        return Response({"on_finish": conf.get_settings(self.membership.company).on_finish})
+
     @action(detail=False, methods=["get"])
     def calendar(self, request, company_id):
         """The signed-in member's own tasks due between two days, with counts per day (the

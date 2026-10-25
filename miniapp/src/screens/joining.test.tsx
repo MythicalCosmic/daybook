@@ -216,9 +216,18 @@ describe("opening the app", () => {
     );
   }
 
+  it("speaks Uzbek when nothing else is known, whatever the phone or Telegram is in", async () => {
+    await loadApp({ platform: "android", initData: "", sendData: vi.fn(), close: vi.fn(), initDataUnsafe: { user: { language_code: "en" } } });
+    expect(await screen.findByText("Daybookni chatdan oching")).toBeTruthy();
+    // The phone's button, as the bot labels it: words only, no emoji.
+    expect(document.querySelector(".gate-hint-app")?.textContent).toBe("Ilovani ochish");
+  }, 20_000);
+
   it("inside Telegram without a sign-in, points to the chat's buttons and asks the bot for one", async () => {
     const sendData = vi.fn();
+    localStorage.setItem("daybook.lang", "en");
     await loadApp({ platform: "android", initData: "", sendData, close: vi.fn() });
+    localStorage.removeItem("daybook.lang");
     expect(await screen.findByText("Open Daybook from the chat")).toBeTruthy();
     expect(screen.getByText(/button at the bottom left of the chat/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Send me a button" }));
@@ -239,6 +248,12 @@ describe("opening the app", () => {
 
   it("in a browser, says the app lives in Telegram", async () => {
     await loadApp({ platform: "unknown", initData: "" });
+    // Uzbek first, then English when it was the language used last.
+    expect(await screen.findByText("Daybookni Telegramda oching")).toBeTruthy();
+    cleanup();
+    localStorage.setItem("daybook.lang", "en");
+    await loadApp({ platform: "unknown", initData: "" });
+    localStorage.removeItem("daybook.lang");
     expect(await screen.findByText("Open Daybook in Telegram")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Send me a button" })).toBeNull();
   }, 20_000);
