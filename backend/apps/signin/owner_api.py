@@ -1,6 +1,6 @@
 """Owner sign-in endpoints under `/api/v1/owner/auth/` (docs/PLAN-OWNER.md §4.3, §7).
 
-POST login-links/                 a QR / deep link with a match number (public, 10/min/IP)
+POST login-links/                 a QR / deep link with a match number (public)
 GET  login-links/{id}/            {status} for the browser holding the poll token
 POST login-links/{id}/claim/      once, when approved: {access} + the refresh cookie
 POST telegram/                    Mini App initData → {access}, no cookie (inside Telegram)
@@ -17,14 +17,16 @@ from rest_framework import serializers, status
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.throttling import ScopedRateThrottle, SimpleRateThrottle
+from rest_framework.throttling import SimpleRateThrottle
 from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import TokenBackendError
 
 from apps.accounts.models import User
+from apps.core.throttles import AddressRateThrottle, throttle_person
 from apps.signin import devices, links, services
 from apps.signin.auth import FromDashboard, OwnerJWTAuthentication
 from apps.signin.models import DeviceSession, LoginLink
-from apps.signin.tokens import SESSION_CLAIM
+from apps.signin.tokens import SESSION_CLAIM, owner_token_backend
 
 POLL_HEADER = "X-Login-Poll"
 
@@ -38,12 +40,15 @@ class DevLoginSerializer(serializers.Serializer):
 
 
 class CookieAuthView(APIView):
-    """Public endpoints that work with the refresh cookie, never with a Bearer token."""
+    """Public endpoints that work with the refresh cookie, never with a Bearer token.
+
+    Per address only a ceiling against floods (a pharmacy chain's managers may share one
+    mobile operator's address); a refresh also counts per session once its token checks out."""
 
     authentication_classes = ()
     permission_classes = (AllowAny, FromDashboard)
-    throttle_classes = (ScopedRateThrottle,)
-    throttle_scope = "owner_auth"
+    throttle_classes = (AddressRateThrottle,)
+    address_throttle_scope = "owner_auth_address"
 
     def get_authenticate_header(self, request):
         # Makes a refused cookie a 401 (sign in again) rather than a 403.
@@ -63,6 +68,8 @@ class RefreshView(CookieAuthView):
     )
     def post(self, request):
         raw = request.COOKIES.get(services.REFRESH_COOKIE)
+        if session := _session_of(raw):
+            throttle_person(self, request, "owner_refresh", session)
         try:
             if not raw:
                 raise services.RefreshFailed("No refresh cookie.")
@@ -78,6 +85,18 @@ class RefreshView(CookieAuthView):
         if refresh is not None:
             services.set_refresh_cookie(response, refresh)
         return response
+
+
+def _session_of(raw: str | None) -> str | None:
+    """Which session a refresh cookie belongs to, when its signature checks out."""
+    if not raw:
+        return None
+    try:
+        payload = owner_token_backend().decode(raw)
+    except TokenBackendError:
+        return None
+    session = payload.get(SESSION_CLAIM)
+    return f"session{session}" if session else f"user{payload.get('user_id')}"
 
 
 class LogoutView(CookieAuthView):
@@ -143,8 +162,9 @@ class LoginLinksView(APIView):
 
     authentication_classes = ()
     permission_classes = (AllowAny, FromDashboard)
-    throttle_classes = (ScopedRateThrottle,)
-    throttle_scope = "login_link"
+    # Nobody is known yet, so per address; generous, since managers may share one.
+    throttle_classes = (AddressRateThrottle,)
+    address_throttle_scope = "login_link"
 
     @extend_schema(
         request=None,
@@ -200,8 +220,8 @@ class LoginLinkClaimView(APIView):
 
     authentication_classes = ()
     permission_classes = (AllowAny, FromDashboard)
-    throttle_classes = (ScopedRateThrottle,)
-    throttle_scope = "login_claim"
+    throttle_classes = (AddressRateThrottle,)
+    address_throttle_scope = "login_claim_address"
 
     @extend_schema(
         parameters=[_POLL],
@@ -214,6 +234,8 @@ class LoginLinkClaimView(APIView):
         },
     )
     def post(self, request, link_id):
+        # A link is claimed once; guesses at its poll token are counted per link.
+        throttle_person(self, request, "login_claim", f"link{link_id}")
         try:
             issued = links.claim(link_id, request.headers.get(POLL_HEADER, ""), request)
         except links.ClaimRefused as refused:
@@ -251,9 +273,10 @@ class TelegramLoginView(APIView):
 
     authentication_classes = ()
     permission_classes = (AllowAny,)
-    throttle_classes = (ScopedRateThrottle,)
-    # Its own bucket: dashboard tabs refreshing from the same office can't lock out the mini app.
-    throttle_scope = "owner_telegram"
+    # Per Telegram user once the signature checks out; per address only a flood ceiling, in a
+    # bucket of its own, so dashboard tabs refreshing from the same office never touch it.
+    throttle_classes = (AddressRateThrottle,)
+    address_throttle_scope = "owner_telegram_address"
 
     def get_authenticate_header(self, request):
         return 'Bearer realm="dashboard"'
@@ -284,6 +307,7 @@ class TelegramLoginView(APIView):
                 },
                 status=status.HTTP_401_UNAUTHORIZED,
             )
+        throttle_person(self, request, "owner_telegram", user.telegram_id)
         return Response({"access": services.issue_access(user)})
 
 

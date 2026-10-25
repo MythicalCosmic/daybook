@@ -3,6 +3,7 @@
 import time
 
 import pytest
+from rest_framework.throttling import SimpleRateThrottle
 
 from apps.accounts.tests.telegram import signed_init_data
 from apps.signin.models import DeviceSession
@@ -107,8 +108,11 @@ def test_bad_input(client, tokens):
     assert login(client, "not init data").status_code == 401
 
 
-def test_it_is_throttled_per_client_ip(client, tokens, owner):
-    """30 a minute per IP (§7.1); behind the proxy the client is the last forwarded hop."""
+def test_it_is_throttled_per_client_ip(client, tokens, owner, monkeypatch):
+    """A flood ceiling per address (behind the proxy the client is the last forwarded hop),
+    lowered here; the shipped one fits a shift behind one carrier address and the limit per
+    person is apps/core/tests/test_throttles.py's."""
+    monkeypatch.setitem(SimpleRateThrottle.THROTTLE_RATES, "owner_telegram_address", "30/min")
     for _ in range(30):
         assert (
             client.post(
@@ -132,8 +136,10 @@ def test_it_is_throttled_per_client_ip(client, tokens, owner):
     assert elsewhere.status_code == 200
 
 
-def test_it_counts_apart_from_the_dashboards_cookie_endpoints(client, tokens, owner):
-    """Refresh, logout and the dev login share `owner_auth`; this has `owner_telegram`."""
+def test_it_counts_apart_from_the_dashboards_cookie_endpoints(client, tokens, owner, monkeypatch):
+    """Refresh, logout and the dev login share `owner_auth_address`; this has its own."""
+    monkeypatch.setitem(SimpleRateThrottle.THROTTLE_RATES, "owner_auth_address", "30/min")
+    monkeypatch.setitem(SimpleRateThrottle.THROTTLE_RATES, "owner_telegram_address", "30/min")
     for _ in range(30):
         client.post(REFRESH, REMOTE_ADDR="10.0.0.7", **DASHBOARD)
     assert client.post(REFRESH, REMOTE_ADDR="10.0.0.7", **DASHBOARD).status_code == 429

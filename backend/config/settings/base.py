@@ -1,3 +1,4 @@
+import re
 from datetime import timedelta
 from decimal import Decimal
 from pathlib import Path
@@ -187,6 +188,18 @@ CELERY_BEAT_SCHEDULE = {
 # Plus every app's own entries (apps/<app>/beat.py); a key used twice stops the settings.
 CELERY_BEAT_SCHEDULE = collect("beat.py", "SCHEDULE", CELERY_BEAT_SCHEDULE)
 
+
+def rate_overrides(value: str) -> dict[str, str]:
+    """THROTTLE_RATES="telegram_auth=60/min,login_link=200/min" as {scope: rate}."""
+    rates = {}
+    for item in filter(None, (part.strip() for part in value.split(","))):
+        scope, _, rate = (side.strip() for side in item.partition("="))
+        if not scope or not re.fullmatch(r"\d+/[smhd][a-z]*", rate):
+            raise ImproperlyConfigured(f"THROTTLE_RATES: write {item!r} as name=60/min.")
+        rates[scope] = rate
+    return rates
+
+
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -196,19 +209,34 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "DEFAULT_PAGINATION_CLASS": "apps.core.api.Pagination",
     "EXCEPTION_HANDLER": "apps.core.api.exception_handler",
+    # Per person once we know who it is; per address only a ceiling against floods, sized for
+    # hundreds of people behind one carrier-grade NAT address (apps.core.throttles). Override
+    # any of them with THROTTLE_RATES="telegram_auth=60/min,login_link=200/min".
     "DEFAULT_THROTTLE_RATES": {
-        "telegram_auth": "30/min",
-        "login_link": "10/min",
+        # Mini app sign-in: per Telegram user (signature checked), and per address.
+        "telegram_auth": "60/min",
+        "telegram_auth_address": "1200/min",
+        # The dashboard inside Telegram: per Telegram user, and per address.
+        "owner_telegram": "60/min",
+        "owner_telegram_address": "1200/min",
+        # Dashboard refresh: per session (its token checked); refresh, logout and the dev
+        # login together per address.
+        "owner_refresh": "60/min",
+        "owner_auth_address": "1200/min",
+        # Desktop sign-in links: nobody is known yet, so per address; claims per link too.
+        "login_link": "300/min",
         "login_poll": "60/min",
         "login_claim": "10/min",
-        "owner_auth": "30/min",
-        "owner_telegram": "30/min",
-        "ai_turn": "20/min",
-        "ai_receipt": "30/min",
+        "login_claim_address": "300/min",
+        # Per signed-in person.
+        "task_parse": "300/min",
         "export_create": "10/min",
-    },
+    }
+    | rate_overrides(env("THROTTLE_RATES", default="")),
     # Caddy sits in front: throttles and stored IPs use the client's address, not Caddy's.
-    "NUM_PROXIES": 1,
+    # Caddy replaces any X-Forwarded-For a client sends, so the last hop is the client. Put a
+    # CDN or another proxy in front and this must count it too (and Caddy must trust it).
+    "NUM_PROXIES": env.int("NUM_PROXIES", default=1),
 }
 
 SIMPLE_JWT = {
@@ -282,6 +310,9 @@ MINIAPP_INIT_DATA_MAX_AGE = env.int("MINIAPP_INIT_DATA_MAX_AGE", default=24 * 60
 BOT_FSM_REDIS_URL = env("BOT_FSM_REDIS_URL", default="")
 # Log outgoing bot messages instead of sending them (local runs with a fake token).
 TELEGRAM_DRY_RUN = env.bool("TELEGRAM_DRY_RUN", default=False)
+# Threads each bot runs its Django calls on (apps.core.bot_runtime): how many people's updates
+# reach the database at once. Each keeps a database connection.
+BOT_DB_THREADS = env.int("BOT_DB_THREADS", default=16)
 PLATFORM_ADMIN_TG_IDS = env.list("PLATFORM_ADMIN_TG_IDS", cast=int, default=[])
 
 # Field encryption (apps.core.crypto): Fernet keys, comma-separated, newest first, for

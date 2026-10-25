@@ -22,8 +22,15 @@
 
 	# Everything else: the API, the admin, the mini app at /app/ and the dashboard at /dashboard/.
 	# Private files go through Django too (/api/v1/files/…), behind signed links.
+	# Connections to gunicorn are kept open between requests, and closed by Caddy before
+	# gunicorn would close them (GUNICORN_KEEPALIVE, 75 s), so none is ever reused just as the
+	# other side drops it.
 	handle {
 		encode zstd gzip
-		reverse_proxy backend:8000
+		reverse_proxy backend:8000 {
+			transport http {
+				keepalive 60s
+			}
+		}
 	}
 }

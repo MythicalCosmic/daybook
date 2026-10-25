@@ -88,8 +88,8 @@ When HTTPS works, set `DJANGO_SECURE_HSTS_SECONDS=31536000` in `.env` and run `m
 | Service | What it does |
 |---|---|
 | `caddy` | HTTPS, uploaded photos at `/media/` (sandboxed: browsers never run them), AI answer streams to `stream`, everything else to Django |
-| `backend` | Django with gunicorn: API, admin, the mini app at `/app/`, the owner dashboard at `/dashboard/`, signed private file downloads. When it starts it applies migrations and fills in default rows for every company (`ensure_company_defaults`) |
-| `worker` | Celery on the `celery` and `default` queues: notifications, group posts, exports, reports |
+| `backend` | Django with gunicorn (12 processes of 4 threads, `backend/config/gunicorn.conf.py`): API, admin, the mini app at `/app/`, the owner dashboard at `/dashboard/`, signed private file downloads. When it starts it applies migrations and fills in default rows for every company (`ensure_company_defaults`) |
+| `worker` | Celery on the `celery` and `default` queues (8 processes, one job each at a time): notifications, group posts, exports, reports |
 | `ai-worker` | Celery on the `ai` queue (four at a time): AI answers, receipt reading, briefings. AI calls take seconds, so they never hold up reminders |
 | `stream` | uvicorn (ASGI) on port 8001: live AI answers as server-sent events at `/api/v1/owner/ai/turns/…` |
 | `beat` | Celery beat: daily tasks, reminders, digests, reports and every module's schedule |
@@ -99,6 +99,48 @@ When HTTPS works, set `DJANGO_SECURE_HSTS_SECONDS=31536000` in `.env` and run `m
 | `backup` | a compressed database dump and an archive of the private files every night |
 
 Uploads live in two volumes: `trello911_media` (proof photos, logos, avatars: public at unguessable addresses) and `trello911_private_media` (receipts, Z-reports, documents, contracts, payslips and exports: never served by Caddy, only through short-lived signed links that re-check the person's access).
+
+## Performance
+
+The defaults are sized for one server with 12 vCPU and 47 GB of memory serving a few hundred people at once, where a whole shift opens the mini app in the same minute from mobile networks (carrier-grade NAT puts hundreds of them behind one public address).
+
+- **gunicorn** runs threaded workers: `GUNICORN_WORKERS` (default: the CPU count, at most 12) processes of `GUNICORN_THREADS` (4) threads. Also `GUNICORN_TIMEOUT` (60 s), `GUNICORN_KEEPALIVE` (75 s, longer than Caddy keeps an idle connection to it), `GUNICORN_MAX_REQUESTS` (5000, with jitter, so processes are replaced now and then) and `GUNICORN_ACCESS_LOG` (`-`, the container log). All go in `.env`.
+- **Database connections.** Every gunicorn thread, Celery process and bot thread keeps one connection (`DB_CONN_MAX_AGE`, 60 s, with health checks). Production Postgres allows `POSTGRES_MAX_CONNECTIONS` (200): 48 for gunicorn, 12 for the Celery workers, 32 for the two bots, a few for the stream and beat, and room for a deploy, when the old and new backend overlap. Raise it together with workers or threads. psycopg's connection pool was measured too and was slower than persistent connections here, so it isn't used.
+- **Postgres** also gets `POSTGRES_SHARED_BUFFERS` (2GB) and `POSTGRES_EFFECTIVE_CACHE_SIZE` (16GB), SSD costs and no JIT (docker-compose.prod.yml).
+- **The bots** run each update's database calls on a pool of `BOT_DB_THREADS` (16) threads per bot, so many people are served at once; one person's updates are still handled in order (`apps/core/bot_runtime.py`).
+- **Celery**: `CELERY_CONCURRENCY` (8 processes), `CELERY_PREFETCH` (1: a long export never holds reminders queued behind it), `CELERY_MAX_TASKS_PER_CHILD` (1000). Digests are sent at about 25 a second, under Telegram's limit of 30 a second per bot.
+- **Rate limits** count per person once the server knows who it is (the Telegram signature or the session token checked out): mini app sign-in 60 a minute per Telegram user, the dashboard inside Telegram 60, dashboard refreshes 60 per session. Per address there is only a ceiling against floods, sized for a whole shift behind one mobile operator's address: 1200 sign-ins a minute, 300 desktop sign-in links. Override any of them with `THROTTLE_RATES`, e.g. `THROTTLE_RATES=telegram_auth_address=2000/min,login_link=600/min` (names in `backend/config/settings/base.py`). Behind Caddy alone the client address is the last `X-Forwarded-For` hop (`NUM_PROXIES=1`); put a CDN in front and raise it to 2 (and make Caddy trust the CDN).
+- **The apps' files** are served by WhiteNoise, compressed. Fingerprinted assets are cached for a year (`immutable`); the mini app's page is checked again on every open, so a phone never asks for the assets of an older deploy.
+
+## Load test
+
+`scripts/loadtest/loadtest.py` plays N people opening the mini app at once (sign in with Telegram launch data → me, the day's numbers and their board → open a task and its comments → finish it → board and numbers again → a comment) and M managers in the dashboard (sign in inside Telegram → pulse, task list and numbers → reviews → overview, three rounds). It reports p50/p95/p99 per endpoint, throughput and failures; any 429, 5xx, timeout or connection error is a failure and makes it exit with 1. It needs only aiohttp, which the app already has.
+
+The people come from a company of their own, made by `manage.py loadtest_people` (300 workers and 20 managers by default, Telegram ids from 990 000 000 001, which Telegram never gives anyone). Run it again before every run: it gives everyone fresh open tasks. Nothing is sent to them (no notifications are made when it writes the rows, and they are marked as having blocked both bots); `--delete` removes them afterwards and switches the company off.
+
+Against the server, from any machine with Python and aiohttp (the token is read from the environment and never printed):
+
+```bash
+make prod-manage cmd="loadtest_people --people 300 --managers 20"
+EMPLOYEE_BOT_TOKEN=<the employee bot's token> python3 scripts/loadtest/loadtest.py \
+    --base-url https://<your domain> --users 300 --dashboard-users 20 --ramp 60 --json result.json
+make prod-manage cmd="loadtest_people --delete"
+```
+
+`--ramp` is how many seconds the people take to arrive (60: a shift opening the app in the same minute; 10: a stress test), `--think` the pause between their steps, `--max-seconds` cuts the run off. Run it in a quiet hour: it is real load, and the few notifications it causes go to chats that don't exist, which Telegram refuses. Locally, against gunicorn without Caddy, `--distinct-ips` gives each person an address of their own.
+
+`scripts/loadtest/bot_burst.py` sends the employee bot's real dispatcher one update from each of N people at once (Telegram replaced by a stand-in with a 40 ms round trip) and reports how long they took; use a development database, never production.
+
+Measured on 2026-10-26 on a laptop (Intel i5-13420H, 12 threads, 15 GB, shared with the desktop; the load test ran on the same machine), production settings with `DJANGO_DEBUG=false`, package a's Postgres and Redis. Before is `main` at 3d6e45c as it ran then (3 sync gunicorn workers); after is this setup. 3400 requests per run.
+
+| 300 app users + 20 dashboard users | Before | After |
+|---|---|---|
+| A shift arriving over 60 s, all behind one address | 270 of 300 sign-ins refused (429) | 0 failed; p50 63 ms, p95 210 ms, p99 406 ms; opening the app p50 0.12 s, p95 0.51 s |
+| The same, each person on their own address | p50 1.8 s, p95 3.1 s, p99 3.3 s; opening the app p50 4.4 s, p95 8.8 s | (as above: the address no longer matters) |
+| Everyone within 10 s (stress), each on their own address | 42.7 requests/s; p50 7.4 s, p95 14.6 s, p99 14.9 s; opening the app p50 13.7 s, p95 26.8 s | 116.9 requests/s; p50 1.6 s, p95 3.4 s, p99 4.1 s; opening the app p50 3.8 s, p95 8.7 s |
+| Everyone within 10 s, all behind one address | 270 of 300 sign-ins refused | 101.9 requests/s, 0 failed; p50 2.4 s, p95 4.3 s, p99 5.3 s |
+
+The employee bot, 300 people sending /tasks at the same moment: 14.9 s for all of them before (one thread for every database call; p50 10.5 s, p99 14.5 s), 11.0 s after (p50 6.8 s, p99 10.5 s). What is left is Python's own work in the one bot process.
 
 ## Updating
 

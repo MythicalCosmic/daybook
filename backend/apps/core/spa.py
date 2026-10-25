@@ -47,6 +47,18 @@ class SpaWhiteNoiseMiddleware(WhiteNoiseMiddleware):
 
     def __init__(self, get_response=None, settings=django_settings):
         super().__init__(get_response, settings)
+        configured = self.add_headers_function
+
+        def add_headers(headers, path, url):
+            if configured:
+                configured(headers, path, url)
+            # The mini app's page is checked again on every open (a quick 304 when nothing
+            # changed): a phone holding an old page after a deploy would ask for assets that
+            # are gone. Its fingerprinted assets stay cached for good (immutable_file_test).
+            if url.startswith("/app/") and url.endswith(("/", ".html")):
+                headers["Cache-Control"] = "no-cache"
+
+        self.add_headers_function = add_headers
         if settings.MINIAPP_DIST.is_dir():
             self.add_files(str(settings.MINIAPP_DIST), prefix="app/")
         assets = settings.DASHBOARD_DIST / "assets"

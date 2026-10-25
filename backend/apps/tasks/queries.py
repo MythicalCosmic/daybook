@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
-from django.db.models import Q, QuerySet
+from django.db.models import Prefetch, Q, QuerySet
 from django.utils import timezone
 
 from apps.members.models import Membership
@@ -28,6 +28,27 @@ TASK_RELATIONS = (
     "card",  # the project card (apps.projects), for its key in messages
     "branch",
 )
+
+
+def with_relations(tasks: QuerySet[Task]) -> QuerySet[Task]:
+    """`TASK_RELATIONS` without one big join: the assignee (on every row) is joined, the rest
+    comes with one small query per relation a page uses (none for a relation every task leaves
+    empty). Postgres took longer to plan the 17-table join than to run it: 10 to 20 ms for one
+    person's tasks, 250 ms for a dashboard page of 50. The number of queries doesn't grow with
+    the rows."""
+    people = Membership.objects.select_related("user", "position")
+    return tasks.select_related("assignee__user", "assignee__position").prefetch_related(
+        "company",
+        Prefetch("created_by", queryset=people),
+        Prefetch("confirmed_by", queryset=people),
+        Prefetch("escalate_to", queryset=Membership.objects.select_related("user")),
+        Prefetch("template", queryset=TaskTemplate.objects.select_related("reminder_policy")),
+        "reminder_policy",
+        "project",
+        "card",
+        "branch",
+    )
+
 
 # Routine work: the daily task a routine made for one person. Everything else is a one-off task
 # (given by hand, someone's own, a project card), and the dashboard keeps the two apart: the Tasks
@@ -62,7 +83,7 @@ def visible_tasks(member: Membership) -> QuerySet[Task]:
     - With tasks.confirm: also work waiting for a check, in their branch scope.
     - Then every filter other apps registered (apps.tasks.visibility), which only narrow it.
     """
-    tasks = Task.objects.for_company(member.company_id).select_related(*TASK_RELATIONS)
+    tasks = with_relations(Task.objects.for_company(member.company_id))
     others_personal = Q(kind=Task.Kind.PERSONAL) & ~Q(assignee=member)
     role = member.role
     if not (role is not None and role.is_owner and member.company.owner_sees_personal_tasks):
@@ -87,9 +108,8 @@ def todays_tasks(member: Membership, now: datetime) -> QuerySet[Task]:
     tz = ZoneInfo(member.company.timezone)
     tomorrow = timezone.localtime(now, tz).date() + timedelta(days=1)
     end_of_today = datetime.combine(tomorrow, time.min, tzinfo=tz)
-    return (
+    return with_relations(
         Task.objects.for_company(member.company_id)
-        .select_related(*TASK_RELATIONS)
         .filter(assignee=member, status__in=Task.OPEN_STATUSES)
         .filter(Q(due_at__lt=end_of_today) | Q(due_at__isnull=True))
     )
@@ -98,10 +118,10 @@ def todays_tasks(member: Membership, now: datetime) -> QuerySet[Task]:
 def open_work(member: Membership) -> QuerySet[Task]:
     """Everything still on the member's plate, whatever its deadline (audit B-1): open tasks
     and their own work waiting for a check."""
-    return (
-        Task.objects.for_company(member.company_id)
-        .select_related(*TASK_RELATIONS)
-        .filter(assignee=member, status__in=(*Task.OPEN_STATUSES, Task.Status.REVIEW))
+    return with_relations(
+        Task.objects.for_company(member.company_id).filter(
+            assignee=member, status__in=(*Task.OPEN_STATUSES, Task.Status.REVIEW)
+        )
     )
 
 
@@ -109,9 +129,8 @@ def board_tasks(member: Membership, now: datetime) -> QuerySet[Task]:
     """The member's own board: everything still open or being checked, plus today's finished."""
     tz = ZoneInfo(member.company.timezone)
     start_of_today = datetime.combine(timezone.localtime(now, tz).date(), time.min, tzinfo=tz)
-    return (
+    return with_relations(
         Task.objects.for_company(member.company_id)
-        .select_related(*TASK_RELATIONS)
         .filter(assignee=member)
         .filter(
             Q(status__in=(*Task.OPEN_STATUSES, Task.Status.REVIEW))

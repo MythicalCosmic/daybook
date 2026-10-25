@@ -7,6 +7,7 @@ from aiogram.fsm.storage.base import BaseStorage, DefaultKeyBuilder
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage
 
+from apps.core.bot_runtime import OrderedDispatcher
 from ownerbot.config import Settings, load_settings
 from ownerbot.handlers import register_all_handlers
 from ownerbot.middlewares import register_all_middlewares
@@ -33,7 +34,8 @@ def create_storage(settings: Settings | None = None) -> BaseStorage:
 
 
 def create_dispatcher(settings: Settings | None = None) -> Dispatcher:
-    dp = Dispatcher(storage=create_storage(settings))
+    # Many people's updates at once, each person's in order (apps.core.bot_runtime).
+    dp = OrderedDispatcher(storage=create_storage(settings))
     register_all_middlewares(dp)
     register_all_handlers(dp)
     return dp
