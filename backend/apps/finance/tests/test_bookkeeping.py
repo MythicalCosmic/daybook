@@ -233,7 +233,7 @@ class TestEntries:
             )
         notes = Notification.objects.filter(kind="finance.large_expense")
         assert [note.recipient for note in notes] == [owner]
-        assert "2 000 000" in notes[0].title
+        assert "2\u00a0000\u00a0000" in notes[0].title
 
     def test_editing_a_pending_entry_moves_no_balance(self, books, owner, cash, day):
         row = services.record_transaction(

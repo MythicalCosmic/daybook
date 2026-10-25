@@ -164,9 +164,10 @@ def morning(
         "count": len(tasks) - overdue,
     }
     if shift_start is not None and shift_start.time() >= NOON:
-        lines = [_("%(name)s, tasks for your shift: %(count)d.") % values]
+        first = _("%(name)s, tasks for your shift: %(count)d.") % values
     else:
-        lines = [_("Good morning, %(name)s! Tasks for today: %(count)d.") % values]
+        first = _("Good morning, %(name)s! Tasks for today: %(count)d.") % values
+    lines = [f"<b>{first}</b>"]  # a bold first line, no emoji
     if overdue:
         lines.append(_("Still open from earlier days: %(count)d.") % {"count": overdue})
     lines.append(_("Tap a task to open it."))

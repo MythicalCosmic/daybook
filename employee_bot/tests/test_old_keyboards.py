@@ -121,17 +121,21 @@ async def test_the_app_keeps_one_helper_message(dp, bot, company, member, settin
     worker = await member.aregistered(company)
     tg = await speaking(worker, "uz")
 
-    await dp.feed_update(bot, updates.message(tg, "Ilovani ochish"))
+    tap = updates.message(tg, "Ilovani ochish")
+    await dp.feed_update(bot, tap)
     first = sent(bot)[-1]
     assert first.reply_markup.inline_keyboard[0][0].web_app.url == APP
     assert "«Ilovani ochish»" in first.text  # the chat's own menu button, one tap next time
     first_id = bot.requests.index(first) + 1  # the mocked bot numbers messages by request
-    assert not [r for r in bot.requests if isinstance(r, DeleteMessage)]
+    # The tap's own message goes too; there was no helper before.
+    deleted = [r.message_id for r in bot.requests if isinstance(r, DeleteMessage)]
+    assert deleted == [tap.message.message_id]
 
-    await dp.feed_update(bot, updates.message(tg, "📱 Ilovani ochish"))  # an old keyboard
+    old_tap = updates.message(tg, "📱 Ilovani ochish")  # an old keyboard
+    await dp.feed_update(bot, old_tap)
 
-    [deleted] = [r for r in bot.requests if isinstance(r, DeleteMessage)]
-    assert deleted.message_id == first_id
+    deleted = [r.message_id for r in bot.requests if isinstance(r, DeleteMessage)]
+    assert deleted == [tap.message.message_id, first_id, old_tap.message.message_id]
     helper, menu = sent(bot)[-2:]
     assert helper.reply_markup.inline_keyboard[0][0].web_app.url == APP
     assert isinstance(menu.reply_markup, ReplyKeyboardMarkup)  # and today's keyboard, once

@@ -68,9 +68,9 @@ async def test_the_summary_shows_the_open_till_without_expected_cash(dp, bot):
     )
     [reply] = sent(bot)
     assert "CHL-1" in reply.text and "is open" in reply.text
-    assert "200 000" in reply.text  # the float the cashier counted
-    assert "50 000" in reply.text  # payouts
-    assert "3 500 000" in reply.text  # handed over
+    assert "200\u00a0000" in reply.text  # the float the cashier counted
+    assert "50\u00a0000" in reply.text  # payouts
+    assert "3\u00a0500\u00a0000" in reply.text  # handed over
     # Nothing that tells how much cash there should be (opening + sales - movements).
     assert "expected" not in reply.text.lower()
 

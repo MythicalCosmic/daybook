@@ -56,14 +56,14 @@ def test_to_base_rounds_half_up_to_cents(amount, rate, expected):
 @pytest.mark.parametrize(
     ("amount", "currency", "language", "expected"),
     [
-        ("12500000", "UZS", "uz", "12 500 000 so‘m"),
-        ("12500000", "UZS", "ru", "12 500 000 сум"),
-        ("12500000", "UZS", "en", "12 500 000 UZS"),
-        ("12500000.50", "UZS", "uz", "12 500 000,50 so‘m"),
-        ("12500000.5", "UZS", "en", "12 500 000.50 UZS"),
-        ("999", "UZS", "uz", "999 so‘m"),
-        ("0", "UZS", "ru", "0 сум"),
-        ("-45000", "UZS", "uz", "-45 000 so‘m"),
+        ("12500000", "UZS", "uz", "12\u00a0500\u00a0000\u00a0so‘m"),
+        ("12500000", "UZS", "ru", "12\u00a0500\u00a0000\u00a0сум"),
+        ("12500000", "UZS", "en", "12\u00a0500\u00a0000\u00a0UZS"),
+        ("12500000.50", "UZS", "uz", "12\u00a0500\u00a0000,50\u00a0so‘m"),
+        ("12500000.5", "UZS", "en", "12\u00a0500\u00a0000.50\u00a0UZS"),
+        ("999", "UZS", "uz", "999\u00a0so‘m"),
+        ("0", "UZS", "ru", "0\u00a0сум"),
+        ("-45000", "UZS", "uz", "-45\u00a0000\u00a0so‘m"),
         ("1250", "USD", "uz", "$1,250.00"),
         ("1250", "USD", "ru", "$1,250.00"),
         ("1250.456", "USD", "en", "$1,250.46"),
@@ -71,6 +71,7 @@ def test_to_base_rounds_half_up_to_cents(amount, rate, expected):
     ],
 )
 def test_format_money(amount, currency, language, expected):
+    # No-break spaces between the digit groups and before the currency (R3 §1.8).
     assert format_money(Decimal(amount), currency, language) == expected
 
 

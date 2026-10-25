@@ -61,8 +61,9 @@ async def open_a_screen(message: Message, button: Registered) -> None:
 
 
 async def send_helper(message: Message, text: str, markup: InlineKeyboardMarkup) -> Message:
-    """Send the helper with its app button, deleting the chat's previous one first, so taps on
-    the menu's app buttons never pile up messages."""
+    """Send the helper with its app button, deleting the chat's previous one first, and the
+    tap's own message after it (a bot may delete incoming messages in a private chat), so taps
+    on the menu's app buttons never pile up messages."""
     key = HELPER_KEY.format(chat_id=message.chat.id)
     previous = await cache.aget(key)
     if previous:
@@ -70,4 +71,6 @@ async def send_helper(message: Message, text: str, markup: InlineKeyboardMarkup)
             await message.bot.delete_message(chat_id=message.chat.id, message_id=previous)
     sent = await message.answer(text, reply_markup=markup)
     await cache.aset(key, sent.message_id, HELPER_TTL)
+    with suppress(TelegramAPIError):
+        await message.delete()
     return sent

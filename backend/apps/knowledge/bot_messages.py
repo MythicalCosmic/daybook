@@ -10,6 +10,7 @@ from apps.knowledge import sanitize
 from apps.knowledge.callbacks import KbAction, KbCallback
 from apps.knowledge.models import Page
 from apps.members.bot_messages import BotMessage, miniapp_url
+from apps.notifications.emoji import strip_emoji
 
 LIST_LIMIT = 10
 
@@ -42,7 +43,9 @@ def reminder_title(page: Page) -> str:
 
 
 def page_excerpt(page: Page) -> str:
-    return f"{page.space.name} · {sanitize.excerpt(page.body_text, 240)}"
+    """The space and the page's first lines for a notification. Pages saved before 25.10.2026
+    keep emoji callout marks in their stored text until edited; the excerpt drops them."""
+    return f"{page.space.name} · {strip_emoji(sanitize.excerpt(page.body_text, 240))}"
 
 
 def read_button() -> str:
