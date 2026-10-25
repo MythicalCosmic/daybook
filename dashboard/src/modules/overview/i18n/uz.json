@@ -3,7 +3,7 @@
   "overview.greeting.morning": "Xayrli tong, {name}",
   "overview.greeting.afternoon": "Xayrli kun, {name}",
   "overview.greeting.evening": "Xayrli kech, {name}",
-  "overview.greeting.night": "Kechgacha ishlayapsiz, {name}",
+  "overview.greeting.night": "Hali ham ishdasiz, {name}",
   "overview.empty.title": "Modullar yoqilgani sari bu sahifa to‘lib boradi",
   "overview.empty.body": "Savdo, davomat, moliya va boshqa modullar bu yerga o‘z kartalarini qo‘shadi.",
   "overview.branches.title": "Bugun filiallarda",

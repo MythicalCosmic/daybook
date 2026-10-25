@@ -39,6 +39,13 @@ describe("Home", () => {
     expect(navigationState().stack.at(-1)?.params?.id).toBe(blocked.id);
   });
 
+  it("greets a night shift with good evening, not good morning", () => {
+    vi.setSystemTime(new Date("2026-10-26T02:30:00+05:00"));
+    show();
+    expect(screen.getByText(/^Good evening/)).toBeTruthy();
+    expect(screen.queryByText(/^Good morning/)).toBeNull();
+  });
+
   it("doesn't say nothing is due today right above late work", () => {
     show({ board: [makeTask({ due_at: "2026-10-20T18:00:00+05:00" })] });
     expect(screen.getByText("No new tasks today")).toBeTruthy();
