@@ -5,6 +5,7 @@ work nobody reviewed, its audit row and notice, the settings API, and what peopl
 from datetime import timedelta
 
 import pytest
+from django.core.exceptions import PermissionDenied
 from django.core.files.base import ContentFile
 from django.utils import timezone, translation
 
@@ -537,3 +538,12 @@ def test_the_mini_apps_routine_api_follows_the_rule_too(company, manager, worker
     edited = client.patch(f"{url}{default.json()['id']}/", {"title": "Shelves, all"}, format="json")
     assert edited.status_code == 200
     assert TaskTemplate.objects.get(title="Shelves, all").accept_with_proof is True
+
+
+def test_the_service_refuses_an_unknown_rule_and_changes_nothing(company, owner, manager):
+    with pytest.raises(ValueError):
+        services.update_settings(company, by=owner, on_finish="sometimes")
+    with pytest.raises(PermissionDenied):
+        services.update_settings(company, by=manager, on_finish=OnFinish.ASK)
+
+    assert conf.get_settings(company).on_finish == OnFinish.AUTO

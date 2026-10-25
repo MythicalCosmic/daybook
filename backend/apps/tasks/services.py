@@ -29,6 +29,7 @@ from apps.tasks.audit_actions import TasksAction
 from apps.tasks.models import (
     Activity,
     ChecklistItem,
+    OnFinish,
     Proof,
     Repeat,
     Task,
@@ -1436,6 +1437,8 @@ def update_settings(company, *, by: Membership, **changes) -> TasksSettings:
         raise PermissionDenied(_("You can't change the company's settings."))
     if unknown := changes.keys() - SETTINGS_FIELDS:
         raise ValueError(f"Not a tasks setting: {sorted(unknown)}")
+    if "on_finish" in changes and changes["on_finish"] not in OnFinish.values:
+        raise ValueError(f"Not a rule for finished work: {changes['on_finish']!r}")
     row = TasksSettings.objects.select_for_update().get(pk=conf.get_settings(company).pk)
     low, high = TasksSettings.AUTO_ACCEPT_HOURS
     hours = changes.get("auto_accept_after_hours")
