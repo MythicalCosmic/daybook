@@ -18,12 +18,18 @@ type Session = {
 
 const SessionContext = createContext<Session | null>(null);
 
-/** Which membership the app shows: the chosen company if still approved, else the most useful. */
+/**
+ * Which membership the app shows: the company chosen on a phone if still approved, else the one
+ * the server says the person works in (`bot_company`, the bot's company: the one picked last, else
+ * a company they own with the most branches, which a first visit to the dashboard opens too),
+ * else the first.
+ */
 function pickMembership(me: Me, preferred: number | null): Membership | null {
   const memberships = me.memberships;
   const approved = memberships.filter((m) => m.status === "approved");
   return (
     approved.find((m) => m.company.id === preferred) ??
+    approved.find((m) => m.company.id === me.bot_company) ??
     approved[0] ??
     // A suspended person (§13.4) sees the "Access paused" screen, ahead of older states.
     memberships.find(isSuspended) ??
@@ -87,6 +93,8 @@ export function SessionProvider({ me, children }: { me: Me; children: ReactNode 
           // Not remembered across launches, which is fine.
         }
         void cloudStorage.set(CLOUD_KEY, String(companyId));
+        // The bot keeps its own pick (/company): its menu names the company, and moving it from
+        // here would leave that menu out of date until /start.
       },
     }),
     [me, preferred],

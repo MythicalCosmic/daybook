@@ -185,7 +185,7 @@ const uz: Partial<Record<Key, string>> = {
   "day.yesterday": "Kecha",
   "due.left": "{duration} qoldi",
   "priority.urgent": "Shoshilinch",
-  "priority.high": "Muhim",
+  "priority.high": "Yuqori",
   "seen.at": "Ko‘rdi · {time}",
   "seen.not": "Hali ko‘rmadi",
 
@@ -420,6 +420,7 @@ const uz: Partial<Record<Key, string>> = {
   "add.date": "Kun",
   "add.rolled": "Bugungi {time} o‘tib ketgan, shuning uchun ertaga bo‘ladi.",
   "add.passed": "Yozilgan vaqt o‘tib ketgan. Muddatni tanlang.",
+  "add.passedTomorrow": "Ertaga, {time}",
   "add.options": "Qo‘shimcha",
   "add.more": "Tavsif va nazorat ro‘yxati",
   "add.description": "Tavsif (ixtiyoriy)",

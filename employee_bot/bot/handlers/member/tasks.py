@@ -574,7 +574,7 @@ async def block_with_note(message: Message, membership: Membership, state: FSMCo
     TaskCallback.filter(F.action.in_({TaskAction.MORE_TIME, TaskAction.NEW_DUE}))
 )
 async def time_choices(
-    callback: CallbackQuery, callback_data: TaskCallback, membership: Membership
+    callback: CallbackQuery, callback_data: TaskCallback, membership: Membership, state: FSMContext
 ) -> None:
     task = await cards.find(membership, callback_data.task_id)
     if task is None:
@@ -583,6 +583,15 @@ async def time_choices(
     kind = "more" if callback_data.action == TaskAction.MORE_TIME else "due"
     keyboard = await sync_to_async(task_messages.when_keyboard)(task, kind, timezone.now())
     await cards.edit_keyboard(callback, keyboard)
+    # A time typed while the choices show ("ertaga 10:00") is read too, not only after ✍️.
+    await state.set_state(TaskTime.typed)
+    await state.update_data(
+        kind=kind,
+        task_id=task.pk,
+        chat_id=callback.message.chat.id,
+        message_id=callback.message.message_id,
+        via="choices",
+    )
     await callback.answer()
 
 
@@ -600,11 +609,14 @@ async def time_chosen(
             task_id=callback_data.task_id,
             chat_id=callback.message.chat.id,
             message_id=callback.message.message_id,
+            via="asked",
         )
         text, markup = task_messages.ask_typed_time(callback_data.kind)
         await callback.message.answer(text, reply_markup=markup)
         await callback.answer()
         return
+    if await state.get_state() == TaskTime.typed.state:
+        await state.clear()
     task = await cards.find(membership, callback_data.task_id)
     if task is None:
         await callback.answer(cards.gone(), show_alert=True)
@@ -623,6 +635,17 @@ async def time_typed(message: Message, membership: Membership, state: FSMContext
         return
     found = dates.read_when(message.text, now=cards.local_now(membership))
     if found.title or found.due_at is None:
+        if data.get("via") == "choices":
+            # Nobody asked them to type a time (the choices were left alone): it's anything
+            # else they meant, e.g. a new task, so it gets the usual answer.
+            from bot.handlers.member import home
+
+            await state.clear()
+            if reply := await IsTaskReply()(message, bot):
+                await reply_comments(message, membership, reply["task_id"], bot)
+            else:
+                await home.plain_text(message, membership, state, bot)
+            return
         text, markup = task_messages.ask_typed_time(data["kind"])
         await message.answer(_("I didn't catch the time.") + "\n" + text, reply_markup=markup)
         return

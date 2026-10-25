@@ -323,7 +323,7 @@ describe("the reviews page", () => {
     expect(card.querySelector("blockquote")?.textContent).toBe("Done: 12 boxes");
     expect(card.querySelector("img")).toBeNull();
     // How late it came in, on the card (R2 T29): only the late one says so.
-    expect([...document.body.querySelectorAll("[data-testid=late-by]")].map((el) => el.textContent?.trim())).toEqual(["· late 2 h"]);
+    expect([...document.body.querySelectorAll("[data-testid=late-by]")].map((el) => el.textContent?.trim())).toEqual(["· 2 h late"]);
     wrapper.unmount();
   });
 });

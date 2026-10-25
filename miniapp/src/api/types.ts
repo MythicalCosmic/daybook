@@ -36,6 +36,11 @@ export type QuickAdd = {
   priority: Priority | null;
   repeat: Exclude<Schemas["RepeatEnum"], "none"> | null;
   repeat_weekdays?: number[] | null;
+  /** A time alone that had already passed today: `due_at` is that time tomorrow. */
+  rolled?: boolean;
+  /** The moment typed has already passed ("bugun 02:00" at 04:40): no `due_at`; `passed_at` is it. */
+  past?: boolean;
+  passed_at?: string | null;
 };
 
 export type SnoozePreset = "15m" | "1h" | "tomorrow_morning";

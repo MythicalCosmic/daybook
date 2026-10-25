@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='task',
             name='blocker',
-            field=models.CharField(blank=True, choices=[('no_stock', 'Out of stock'), ('no_access', 'No access'), ('broken', 'Something is broken'), ('not_mine', 'Not my task'), ('other', 'Another reason')], max_length=10),
+            field=models.CharField(blank=True, choices=[('no_stock', 'Out of stock'), ('no_access', 'No access'), ('broken', 'Equipment broken'), ('not_mine', 'Not my task'), ('other', 'Another reason')], max_length=10),
         ),
         migrations.AddField(
             model_name='task',

@@ -295,7 +295,7 @@ describe("TaskDrawer", () => {
     const link = document.body.querySelector<HTMLAnchorElement>('a[href$="/c/1/projects/13/board?card=7"]');
     expect(link?.textContent).toContain("OPEN-22");
     // Finished 2 h 10 min after the deadline: the header says so instead of repeating the deadline.
-    expect(text).toContain("late 2 h");
+    expect(text).toContain("2 h late");
     // Nothing left to do: no empty actions row.
     const pill = [...document.body.querySelectorAll("section")][0]!;
     expect(pill.querySelectorAll("div.empty\\:hidden button").length).toBe(0);

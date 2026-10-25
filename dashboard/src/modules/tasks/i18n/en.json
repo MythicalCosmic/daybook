@@ -94,7 +94,7 @@
   "tasks.due.today": "today, {time}",
   "tasks.due.tomorrow": "tomorrow, {time}",
   "tasks.due.yesterday": "yesterday, {time}",
-  "tasks.due.lateBy": "late {time}",
+  "tasks.due.lateBy": "{time} late",
   "tasks.due.change": "Change the deadline",
   "tasks.due.clear": "No deadline",
   "tasks.unit.min": "min",

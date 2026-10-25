@@ -44,9 +44,9 @@ export function LateCard({
   else if (reminder?.next_at && reminder.sent > 0)
     subtitle =
       total > 0
-        ? t("detail.reminders.progress", { sent: reminder.sent, total, time: at(reminder.next_at) })
-        : t("detail.reminders.sentSoFar", { sent: reminder.sent, time: at(reminder.next_at) });
-  else if (reminder?.next_at) subtitle = t("detail.reminders.first", { time: at(reminder.next_at) });
+        ? t("detail.reminders.progress", { sent: reminder.sent, total, time: at(nextReminder(reminder.next_at, ctx.now)) })
+        : t("detail.reminders.sentSoFar", { sent: reminder.sent, time: at(nextReminder(reminder.next_at, ctx.now)) });
+  else if (reminder?.next_at) subtitle = t("detail.reminders.first", { time: at(nextReminder(reminder.next_at, ctx.now)) });
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16, padding: 18, borderRadius: "var(--radius-lg)", background: "var(--color-accent-100)", color: "var(--color-accent-900)" }}>
@@ -135,27 +135,38 @@ export function ReminderNote({ task, reminder, ctx }: { task: Task; reminder: Re
   );
 }
 
+/**
+ * When the next reminder goes: never a moment already gone. A reminder run that is behind (the
+ * server catches up within a minute) would otherwise promise "next at 04:47" at 05:06, and an
+ * escalation time in the past.
+ */
+function nextReminder(nextAt: string, now: Date): Date {
+  return new Date(Math.max(Date.parse(nextAt), +now));
+}
+
 function timeline(task: Task, reminder: ReminderInfo, ctx: ViewContext): Node[] {
   const total = reminder.escalate_after;
   if (total === 0 || !task.due_at) return [];
   const at = (moment: number) => clock(new Date(moment), ctx.timeZone, ctx.locale);
   const due = Date.parse(task.due_at);
   const every = reminder.every_minutes * MINUTE;
-  const next = reminder.next_at ? Date.parse(reminder.next_at) : null;
+  const next = reminder.next_at ? +nextReminder(reminder.next_at, ctx.now) : null;
   // Past reminders went out roughly on the interval; upcoming ones count from the next.
   const moment = (step: number) =>
     step <= reminder.sent ? due + (step - 1) * every : next !== null ? next + (step - reminder.sent - 1) * every : null;
 
   const nodes: Node[] = [];
+  const sentTimes = reminder.sent_times ?? [];
   for (let step = 1; step <= total; step += 1) {
     const when = moment(step);
     const state = step <= reminder.sent ? "sent" : step === reminder.sent + 1 && next !== null ? "next" : "future";
+    // A reminder that went out shows when it really did (the server's log); never a computed
+    // "22:51", which quiet hours and snoozes would make up (audit M-5). Coming ones count from the next.
+    const sentAt = state === "sent" ? sentTimes[step - 1] : undefined;
     nodes.push({
       key: String(step),
       mark: String(step),
-      // A reminder that went out shows no time: quiet hours and snoozes move them, and a computed
-      // "22:51" inside quiet hours would be invented (audit M-5). Coming ones count from the next.
-      time: when === null || state === "sent" ? "" : at(when),
+      time: sentAt ? at(Date.parse(sentAt)) : when === null || state === "sent" ? "" : at(when),
       caption: state === "sent" ? ctx.t("detail.node.sent") : state === "next" ? ctx.t("detail.node.next") : "",
       state,
     });

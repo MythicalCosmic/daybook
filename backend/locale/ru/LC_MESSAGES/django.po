@@ -4233,6 +4233,10 @@ msgid "Waiting for a check."
 msgstr "На проверке."
 
 #: backend/apps/groups/bot_messages.py
+msgid "Fixed and sent for a check again."
+msgstr "Исправлено и снова отправлено на проверку."
+
+#: backend/apps/groups/bot_messages.py
 #, python-format
 msgid "🚨 <b>%(name)s</b> is %(late)s late with <b>%(task)s</b>."
 msgstr "🚨 <b>%(name)s</b>: задача <b>%(task)s</b> просрочена на %(late)s."
@@ -8423,7 +8427,7 @@ msgid "🔎 <b>To check</b>: %(count)d"
 msgstr "🔎 <b>На проверку</b>: %(count)d"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "Tap one to see it, then accept it or send it back."
+msgid "Tap one to see it, then confirm it or send it back."
 msgstr "Нажмите, чтобы посмотреть, затем примите или верните."
 
 #: backend/apps/tasks/bot_messages.py
@@ -9117,7 +9121,7 @@ msgstr "Выполнена"
 
 #: backend/apps/tasks/models.py
 msgid "Urgent"
-msgstr "Срочный"
+msgstr "Срочно"
 
 #: backend/apps/tasks/models.py
 msgid "Out of stock"
@@ -9128,7 +9132,7 @@ msgid "No access"
 msgstr "Нет доступа"
 
 #: backend/apps/tasks/models.py
-msgid "Something is broken"
+msgid "Equipment broken"
 msgstr "Сломалось оборудование"
 
 #: backend/apps/tasks/models.py

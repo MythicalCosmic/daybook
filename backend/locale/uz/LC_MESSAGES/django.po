@@ -4303,6 +4303,10 @@ msgid "Waiting for a check."
 msgstr "Tekshiruvda."
 
 #: backend/apps/groups/bot_messages.py
+msgid "Fixed and sent for a check again."
+msgstr "Tuzatildi va qayta tekshiruvga yuborildi."
+
+#: backend/apps/groups/bot_messages.py
 #, python-format
 msgid "🚨 <b>%(name)s</b> is %(late)s late with <b>%(task)s</b>."
 msgstr "🚨 <b>%(task)s</b>: <b>%(name)s</b> %(late)s kechikmoqda."
@@ -8529,7 +8533,7 @@ msgid "🔎 <b>To check</b>: %(count)d"
 msgstr "🔎 <b>Tekshirish</b>: %(count)d"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "Tap one to see it, then accept it or send it back."
+msgid "Tap one to see it, then confirm it or send it back."
 msgstr "Ko‘rish uchun bosing, so‘ng qabul qiling yoki qaytaring."
 
 #: backend/apps/tasks/bot_messages.py
@@ -9239,7 +9243,7 @@ msgid "No access"
 msgstr "Kirish imkoni yo‘q"
 
 #: backend/apps/tasks/models.py
-msgid "Something is broken"
+msgid "Equipment broken"
 msgstr "Uskuna buzilgan"
 
 #: backend/apps/tasks/models.py

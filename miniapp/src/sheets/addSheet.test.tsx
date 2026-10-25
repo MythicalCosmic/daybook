@@ -122,6 +122,19 @@ describe("quick add in the (+) sheet", () => {
     await waitFor(() => expect(created()[0]).toMatchObject({ title: "Dorilarni sanash bugun 01:00", due_at: "2026-10-21T06:00:00.000Z" }));
   });
 
+  it("offers the same time tomorrow when the server says which moment has passed", async () => {
+    // "bugun 09:00" at 10:00: the server names the moment (as the bot offers "Tomorrow, 09:00").
+    answer({ title: "Inventar", due_at: null, due_label: null, priority: null, repeat: null, rolled: false, past: true, passed_at: "2026-10-21T09:00:00+05:00" });
+    openSheet();
+    type("bugun 09:00 inventar");
+    expect(await screen.findByText("The time you typed has already passed. Choose when it's due.")).toBeTruthy();
+    fireEvent.click(await screen.findByRole("button", { name: "Tomorrow, 09:00" }));
+    expect(title().value).toBe("Inventar");
+    expect(screen.getByRole("button", { name: "Tomorrow" }).getAttribute("aria-pressed")).toBe("true");
+    add();
+    await waitFor(() => expect(created()[0]).toMatchObject({ title: "Inventar", due_at: "2026-10-22T04:00:00.000Z" }));
+  });
+
   it("says nothing about the time for a plain title", async () => {
     answer({ title: "nimadir", due_at: null, due_label: null, priority: null, repeat: null });
     openSheet();

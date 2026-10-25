@@ -104,6 +104,22 @@ describe("what the task screen shows", () => {
     expect(returnInfo(task, comments, undefined)).toEqual({ name: "Bekzod Mirzayev", reason: "Add the terminal total, please" });
   });
 
+  it("takes who sent it back and why from the task itself when the server says", () => {
+    const task = makeTask({
+      status: "returned",
+      actions: ["complete"],
+      returned_by: { id: 4, name: "Farrux Yo‘ldoshev", position: null },
+      returned_reason: "Photo is unclear",
+    });
+    // A later comment by someone else, and no feed entry: the task's own fields still win.
+    const comments = [
+      { id: 3, author: { id: 3, name: "Bekzod Mirzayev", position: null }, text: "Ok, thanks", created_at: "2026-10-21T09:20:00+05:00" },
+    ] as Comment[];
+    show(task, { comments, activity: [] });
+    expect(screen.getByText("Farrux Yo‘ldoshev sent this back")).toBeTruthy();
+    expect(screen.getByText("“Photo is unclear”")).toBeTruthy();
+  });
+
   it("tells the giver whether the worker has opened it", () => {
     show(makeTask({ seen_at: "2026-10-21T09:12:00+05:00", actions: ["edit", "cancel"] }), { me: manager() });
     expect(screen.getByText("Seen 09:12")).toBeTruthy();

@@ -419,6 +419,7 @@ const en = {
   "add.date": "Day",
   "add.rolled": "Today's {time} has passed, so it's set for tomorrow.",
   "add.passed": "The time you typed has already passed. Choose when it's due.",
+  "add.passedTomorrow": "Tomorrow, {time}",
   "add.options": "Options",
   "add.more": "Description and checklist",
   "add.description": "Description (optional)",
