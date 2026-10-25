@@ -202,6 +202,8 @@ def album_seen(group_id: str | None) -> bool:
 
 def done_note(task: Task) -> str:
     """What finishing said (audit B-5): sent for checking is not done."""
+    if accepted := task_messages.accepted_note(task):  # accepted at once (PLAN-OWNER §15.3)
+        return accepted
     if task.status == Task.Status.REVIEW:
         checkers = queries.reviewers(task)
         if len(checkers) == 1:

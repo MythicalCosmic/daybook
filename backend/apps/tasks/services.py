@@ -23,7 +23,7 @@ from apps.members.scope import allows, branch_ids
 from apps.reminders.models import ReminderPolicy
 from apps.reminders.policies import escalation_recipients, policy_for
 from apps.reminders.schedule import first_reminder_at
-from apps.tasks import dates, generation, queries, rules
+from apps.tasks import conf, dates, generation, queries, rules
 from apps.tasks import tasks as jobs
 from apps.tasks.audit_actions import TasksAction
 from apps.tasks.models import (
@@ -33,6 +33,7 @@ from apps.tasks.models import (
     Repeat,
     Task,
     TaskComment,
+    TasksSettings,
     TaskTemplate,
     Weekday,
 )
@@ -69,7 +70,7 @@ def create_task(
     due_at=None,
     priority: str = Task.Priority.NORMAL,
     proof: str = Proof.NONE,
-    needs_confirmation: bool = False,
+    needs_confirmation: bool | None = None,
     checklist: list[str] = (),
     repeat: str = Repeat.NONE,
     reward: Decimal | None = None,
@@ -81,15 +82,19 @@ def create_task(
     a card on that board: shared work even when someone gives it to themselves, and
     `apps.projects` gives it its number and board place when it is saved (the first list when
     no list is given). The board's own rights (who may add cards) are the caller's to check;
-    here a project only widens who may hand out the work (`_ensure_may_assign`)."""
+    here a project only widens who may hand out the work (`_ensure_may_assign`).
+
+    `needs_confirmation` None follows the company's "When someone finishes a task"
+    (`conf.review_rule`); True or False is the giver's own choice and wins."""
     _ensure_registered(by)
     assignee = assignee or by
     _check_project(by, project, project_list, milestone)
     for_self = assignee.pk == by.pk
     if for_self:
-        needs_confirmation = False
+        needs_confirmation, accept_with_proof = False, False
     else:
         _ensure_may_assign(by, assignee, project)
+        needs_confirmation, accept_with_proof = conf.review_rule(by.company, needs_confirmation)
     # Board work is shared work: a card someone gives themselves is still the project's.
     kind = Task.Kind.PERSONAL if for_self and project is None else Task.Kind.ASSIGNED
     if repeat != Repeat.NONE:
@@ -108,6 +113,7 @@ def create_task(
         priority=priority,
         proof=proof,
         needs_confirmation=needs_confirmation,
+        accept_with_proof=accept_with_proof,
         # Where the work happens: the assignee's branch today, kept even if they move later.
         branch_id=assignee.home_branch_id,
         project=project,
@@ -196,7 +202,8 @@ def complete_task(
         task.proof_thumb = ""  # the old preview, if any, belongs to the old photo
         transaction.on_commit(partial(jobs.make_proof_thumb.delay, task.pk))
     task.completed_at = timezone.now()
-    task.status = Task.Status.REVIEW if task.needs_confirmation else Task.Status.DONE
+    needs_review = _needs_review(task, proof_text, proof_photo)
+    task.status = Task.Status.REVIEW if needs_review else Task.Status.DONE
     task.next_reminder_at = None
     _clear_blocker(task, by, outcome=_("✅ Done"))
     _clear_extension(task, by, outcome=_("✅ Done"))
@@ -1125,6 +1132,11 @@ def _ensure_template_in_scope(template: TaskTemplate, by: Membership) -> None:
 
 
 def _apply_template(template: TaskTemplate, by: Membership, fields: dict) -> None:
+    if not template.pk or "needs_confirmation" in fields:
+        # A new routine, or None sent, follows the company's rule; True or False is its own.
+        template.needs_confirmation, template.accept_with_proof = conf.review_rule(
+            by.company, fields.pop("needs_confirmation", None)
+        )
     if "title" in fields:
         title = (fields.pop("title") or "").strip()
         if not title:
@@ -1301,6 +1313,15 @@ def _reminders_left(task: Task) -> bool:
     return policy.max_reminders == 0 or task.reminders_sent < policy.max_reminders
 
 
+def _needs_review(task: Task, proof_text: str, proof_photo: File | None) -> bool:
+    """Whether finished work waits for a check: only when its giver (or the company's rule)
+    asked for one, and not when the rule accepts it with the photo or text proof it came
+    with (PLAN-OWNER §15.3)."""
+    if not task.needs_confirmation:
+        return False
+    return not (task.accept_with_proof and (proof_text or proof_photo is not None))
+
+
 def _missing_proof(proof: str, text: str, photo: File | None) -> str | None:
     if proof == Proof.PHOTO and photo is None:
         return _("Attach a photo to complete this task.")
@@ -1398,3 +1419,111 @@ def _check_project(by: Membership, project, project_list, milestone) -> None:
 def _ensure_registered(member: Membership) -> None:
     if not _is_registered(member):
         raise PermissionDenied(_("Finish registration first."))
+
+
+# The company's rules for finished work (PLAN-OWNER §15.3) ----------------------------------
+
+SETTINGS_FIELDS = frozenset({"on_finish", "auto_accept_after_hours"})
+# Overdue reviews one run accepts per company; the next run takes the rest.
+AUTO_ACCEPT_BATCH = 200
+
+
+@transaction.atomic
+def update_settings(company, *, by: Membership, **changes) -> TasksSettings:
+    """ "When someone finishes a task" and the wait after which work nobody reviewed is
+    accepted. Needs company.settings; what changed is audited."""
+    if not by.has_perm(Perm.COMPANY_SETTINGS):
+        raise PermissionDenied(_("You can't change the company's settings."))
+    if unknown := changes.keys() - SETTINGS_FIELDS:
+        raise ValueError(f"Not a tasks setting: {sorted(unknown)}")
+    row = TasksSettings.objects.select_for_update().get(pk=conf.get_settings(company).pk)
+    low, high = TasksSettings.AUTO_ACCEPT_HOURS
+    hours = changes.get("auto_accept_after_hours")
+    if hours is not None and not low <= hours <= high:
+        raise DomainError(
+            _("Pick between %(low)d and %(high)d hours.") % {"low": low, "high": high}
+        )
+    before = {name: getattr(row, name) for name in changes}
+    for name, value in changes.items():
+        setattr(row, name, value)
+    row.save()
+    if changed := audit.diff(before, {name: getattr(row, name) for name in changes}):
+        audit.record(
+            TasksAction.SETTINGS_CHANGED,
+            company_id=row.company_id,
+            actor=by.user,
+            target=row,
+            changes=changed,
+        )
+    return row
+
+
+def accept_overdue_reviews(now: datetime | None = None) -> int:
+    """Finished work nobody reviewed within the company's wait ("If nobody reviews it within
+    N hours, accept it automatically") is accepted: audited as such, and whoever should have
+    checked it hears. Safe to run again: only work still waiting for a check is taken, so work
+    sent back, cancelled or checked meanwhile stays as it is. Returns how many were accepted."""
+    now = now or timezone.now()
+    accepted = 0
+    waits = TasksSettings.objects.filter(
+        auto_accept_after_hours__isnull=False, company__is_active=True
+    ).values_list("company_id", "auto_accept_after_hours")
+    for company_id, hours in waits:
+        overdue = (
+            Task.objects.filter(
+                company_id=company_id,
+                status=Task.Status.REVIEW,
+                completed_at__lte=now - timedelta(hours=hours),
+            )
+            .order_by("completed_at", "pk")
+            .values_list("pk", flat=True)[:AUTO_ACCEPT_BATCH]
+        )
+        for task_id in list(overdue):
+            accepted += _accept_unreviewed(task_id, hours, now)
+    return accepted
+
+
+@transaction.atomic
+def _accept_unreviewed(task_id: int, hours: int, now: datetime) -> bool:
+    task = (
+        Task.objects.select_for_update(of=("self",))
+        .select_related(*TASK_RELATIONS)
+        .filter(pk=task_id)
+        .first()
+    )
+    # Checked again under the lock: a review (or a Send back) may have landed meanwhile.
+    if (
+        task is None
+        or task.status != Task.Status.REVIEW
+        or task.completed_at is None
+        or task.completed_at > now - timedelta(hours=hours)
+    ):
+        return False
+    task.status = Task.Status.DONE
+    task.confirmed_at = now
+    task.confirmed_by = None
+    task.save(update_fields=["status", "confirmed_at", "confirmed_by", "updated_at"])
+    audit.record(
+        TasksAction.AUTO_ACCEPTED, company_id=task.company_id, actor=None, target=task, hours=hours
+    )
+    checkers = queries.reviewers(task)
+    if checkers:
+        values = {"title": task.title, "hours": hours, "name": str(task.assignee)}
+        inbox.notify(
+            checkers,
+            "tasks.auto_accepted",
+            title=lambda person: _("Accepted automatically: %(title)s") % values,
+            body=lambda person: (
+                _(
+                    "Nobody checked it within %(hours)d hours, so it was accepted.\nDone by: %(name)s"
+                )
+                % values
+            ),
+            url=f"/c/{task.company_id}/tasks?task={task.pk}",
+            app_screen=f"task:{task.pk}",
+            target=task,
+            data={"hours": hours},
+            dedupe_key=f"tasks.auto_accepted:{task.pk}",
+        )
+    _refresh_copies(task)
+    return True

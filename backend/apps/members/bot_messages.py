@@ -543,3 +543,13 @@ def _setup_button(
         text=text,
         callback_data=JoinSetup(step=step, membership_id=membership.pk, **fields).pack(),
     )
+
+
+def company_switched(membership: Membership) -> BotMessage:
+    """The bot's chat after the person switched company in the mini app or the dashboard: where
+    they work now, with that company's main menu (its modules differ per company)."""
+    # Translators: %(company)s is a company's name, as typed: no case endings on it.
+    text = _("Now working in <b>%(company)s</b>.") % {
+        "company": html.quote(membership.company.name)
+    }
+    return text, main_menu(membership)

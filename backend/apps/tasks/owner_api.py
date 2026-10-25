@@ -24,7 +24,7 @@ from apps.members.models import Membership, Position
 from apps.members.permissions import Perm
 from apps.members.scope import restrict
 from apps.reminders.models import ReminderPolicy
-from apps.tasks import dashboard, generation, queries, services
+from apps.tasks import conf, dashboard, generation, queries, services
 from apps.tasks.api import (
     BlockerResolveSerializer,
     ExtensionDecideSerializer,
@@ -49,6 +49,7 @@ from apps.tasks.owner_serializers import (
     TaskDetailSerializer,
     TaskReviewSerializer,
     TaskRowSerializer,
+    TasksSettingsSerializer,
     TaskUpdateSerializer,
     person,
     routine_ref,
@@ -673,6 +674,25 @@ def _range(params, *, max_days: int = 62) -> tuple[date, date]:
             {"to": [_("Pick at most %(days)d days.") % {"days": max_days}]}
         )
     return start, end
+
+
+class TasksSettingsView(OwnerAPIView):
+    """The company's rules for finished work (PLAN-OWNER §15.3). Anyone in the dashboard reads
+    them (the create dialogs start from them); company.settings changes them, audited."""
+
+    perm = None
+    perms_by_action = {"patch": Perm.COMPANY_SETTINGS}
+
+    @extend_schema(responses=TasksSettingsSerializer)
+    def get(self, request, company_id):
+        return Response(TasksSettingsSerializer(conf.get_settings(self.company)).data)
+
+    @extend_schema(request=TasksSettingsSerializer, responses=TasksSettingsSerializer)
+    def patch(self, request, company_id):
+        data = TasksSettingsSerializer(data=request.data, partial=True)
+        data.is_valid(raise_exception=True)
+        row = services.update_settings(self.company, by=self.membership, **data.validated_data)
+        return Response(TasksSettingsSerializer(row).data)
 
 
 class ProofWallView(OwnerAPIView):

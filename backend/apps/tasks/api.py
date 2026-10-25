@@ -25,6 +25,7 @@ from apps.members.permissions import Perm
 from apps.reminders.models import ReminderLog
 from apps.reminders.policies import escalation_recipients, policy_for
 from apps.tasks import dashboard, dates, queries, quickadd, rules, services, stats
+from apps.tasks.conf import REVIEW_RULE_HELP
 from apps.tasks.models import (
     Activity,
     ChecklistItem,
@@ -117,6 +118,7 @@ class TaskSerializer(serializers.ModelSerializer):
     extension = serializers.SerializerMethodField()
     returned_reason = serializers.SerializerMethodField()
     returned_by = serializers.SerializerMethodField()
+    accepted_automatically = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -132,6 +134,8 @@ class TaskSerializer(serializers.ModelSerializer):
             "for_date",
             "proof",
             "needs_confirmation",
+            "accept_with_proof",
+            "accepted_automatically",
             "proof_text",
             "proof_photo",
             "proof_thumb",
@@ -157,6 +161,12 @@ class TaskSerializer(serializers.ModelSerializer):
             "created_at",
         )
         read_only_fields = fields
+
+    def get_accepted_automatically(self, task: Task) -> bool:
+        """Done and accepted without anyone checking it: at once (no check asked for, or the
+        company's rule took its proof), or after the company's wait (`confirmed_at` is then
+        when). The person who did it reads "Accepted"."""
+        return rules.accepted_automatically(task)
 
     @extend_schema_field(serializers.CharField(allow_null=True))
     def get_returned_reason(self, task: Task) -> str | None:
@@ -319,7 +329,11 @@ class TaskCreateSerializer(serializers.Serializer):
     due_at = serializers.DateTimeField(allow_null=True, default=None)
     priority = serializers.ChoiceField(Task.Priority.choices, default=Task.Priority.NORMAL)
     proof = serializers.ChoiceField(Proof.choices, default=Proof.NONE)
-    needs_confirmation = serializers.BooleanField(default=False)
+    needs_confirmation = serializers.BooleanField(
+        allow_null=True,
+        default=None,
+        help_text=REVIEW_RULE_HELP,
+    )
     checklist = serializers.ListField(
         child=serializers.CharField(max_length=200), default=list, max_length=50
     )
@@ -780,6 +794,11 @@ class TaskTemplateSerializer(serializers.ModelSerializer):
     )
     weekdays = serializers.ListField(
         child=serializers.ChoiceField(Weekday.choices), allow_empty=False, required=False
+    )
+    needs_confirmation = serializers.BooleanField(
+        allow_null=True,
+        required=False,
+        help_text=REVIEW_RULE_HELP,
     )
 
     class Meta:

@@ -12,6 +12,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 
+from apps.accounts import company_switch
 from apps.accounts.models import User
 from apps.accounts.services import approved_memberships, bot_membership, sync_telegram_user
 from apps.accounts.tasks import relabel_employee_chat
@@ -137,6 +138,10 @@ class MeView(RetrieveUpdateAPIView):
 
     def perform_update(self, serializer):
         before = serializer.instance.language
+        company_before = company_switch.bot_company_id(serializer.instance)
         user = serializer.save()
         if user.language != before:
             transaction.on_commit(partial(relabel_employee_chat.delay, user.pk))
+        if "bot_company_id" in serializer.validated_data:
+            # A switch in the mini app: the bot works in that company from now on, and says so.
+            company_switch.follow(user, company_before)

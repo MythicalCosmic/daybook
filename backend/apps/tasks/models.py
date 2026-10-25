@@ -2,6 +2,7 @@ import uuid
 from datetime import date, datetime
 
 from django.contrib.postgres.fields import ArrayField
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.db.models import F
 from django.utils import timezone
@@ -63,6 +64,13 @@ class TaskTemplate(TenantModel):
     )
     proof = models.CharField(max_length=8, choices=Proof.choices, default=Proof.NONE)
     needs_confirmation = models.BooleanField(default=False)
+    accept_with_proof = models.BooleanField(
+        default=False,
+        help_text=_(
+            "With needs_confirmation: a run finished with a photo or text proof is accepted "
+            "automatically; without one, someone checks it."
+        ),
+    )
     is_active = models.BooleanField(default=True)
     personal = models.BooleanField(
         default=False,
@@ -188,6 +196,13 @@ class Task(TenantModel):
     due_at = models.DateTimeField(null=True, blank=True)
     proof = models.CharField(max_length=8, choices=Proof.choices, default=Proof.NONE)
     needs_confirmation = models.BooleanField(default=False)
+    accept_with_proof = models.BooleanField(
+        default=False,
+        help_text=_(
+            "With needs_confirmation: finished with a photo or text proof, it is accepted "
+            "automatically; without one, someone checks it."
+        ),
+    )
     proof_text = models.TextField(blank=True)
     proof_photo = models.FileField(upload_to=proof_upload_to, blank=True)
     proof_thumb = models.FileField(
@@ -375,3 +390,43 @@ class TaskMessage(models.Model):
 
     def __str__(self):
         return f"{self.kind} of {self.task_id} in {self.chat_id}"
+
+
+class OnFinish(models.TextChoices):
+    """What happens when someone finishes work someone else gave them (PLAN-OWNER §15.3)."""
+
+    AUTO = "auto", _("Accept it automatically")
+    PROOF = "proof", _("Accept automatically only with a photo or text proof, otherwise ask")
+    ASK = "ask", _("Always ask the person who gave it")
+
+
+class TasksSettings(models.Model):
+    """The company's rules for finished work (`apps.tasks.conf.get_settings`). `on_finish` is
+    the default of new tasks and routines; a task's or routine's own choice wins."""
+
+    AUTO_ACCEPT_HOURS = (4, 72)
+
+    company = models.OneToOneField(
+        "companies.Company", on_delete=models.CASCADE, related_name="tasks_settings"
+    )
+    on_finish = models.CharField(
+        max_length=8,
+        choices=OnFinish.choices,
+        default=OnFinish.AUTO,
+        help_text=_("When someone finishes a task."),
+    )
+    auto_accept_after_hours = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(AUTO_ACCEPT_HOURS[0]),
+            MaxValueValidator(AUTO_ACCEPT_HOURS[1]),
+        ],
+        help_text=_("If nobody reviews it within this many hours, accept it automatically."),
+    )
+
+    class Meta:
+        verbose_name_plural = "tasks settings"
+
+    def __str__(self):
+        return f"Task settings of {self.company_id}"
