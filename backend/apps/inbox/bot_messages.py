@@ -72,5 +72,6 @@ def _open_button(item: Notification, audience: str) -> InlineKeyboardButton | No
         base = settings.EMPLOYEE_MINIAPP_URL
         joiner = "&" if urlsplit(base).query else "?"
         url = f"{base}{joiner}{urlencode({'screen': item.app_screen})}"
-        return InlineKeyboardButton(text=_("Open"), web_app=WebAppInfo(url=url))
+        # Worded like the task messages' button, which opens the same app.
+        return InlineKeyboardButton(text=_("📱 Open in app"), web_app=WebAppInfo(url=url))
     return None

@@ -135,6 +135,7 @@ def test_employee_copies_open_the_mini_app(company, member, telegram, settings):
 
     [[button]] = telegram.sent[0]["markup"]["inline_keyboard"]
     assert button["web_app"]["url"] == "https://app.example.uz/app/?screen=payslip%3A12"
+    assert button["text"] == "📱 Open in app"  # as on the task messages
 
 
 def test_no_open_button_without_an_https_address(owner, telegram, settings):
