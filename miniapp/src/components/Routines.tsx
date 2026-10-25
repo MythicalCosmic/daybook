@@ -1,7 +1,7 @@
 import { CheckCheck, ChevronDown, Eye, Repeat, Undo2 } from "lucide-react";
 import { useState } from "react";
 
-import type { Task } from "../api/types";
+import type { FinishRule, Task } from "../api/types";
 import { useConfirmTasks } from "../lib/actions";
 import { byFinished, finishedAt, groupByRoutine, isRoutine, routineProgress, type RoutineGroup } from "../lib/routines";
 import { groupTasks, repeatLabel, rowMeta, shortMoment, type ViewContext } from "../lib/taskView";
@@ -106,6 +106,7 @@ export function ReviewQueue({
   onRetry,
   ctx,
   onOpen,
+  rule,
 }: {
   tasks: Task[] | undefined;
   loading: boolean;
@@ -113,18 +114,25 @@ export function ReviewQueue({
   onRetry: () => void;
   ctx: ViewContext;
   onOpen: Open;
+  /** The company's rule for finished work: why only some of it waits here (PLAN-OWNER §15.3). */
+  rule?: FinishRule;
 }) {
   const { t } = ctx;
   if (loading) return <RowSkeleton count={3} />;
   if (!tasks && error) return <LoadError compact error={error} onRetry={onRetry} />;
   if (!tasks?.length) {
-    return <EmptyState compact tone="sage" icon={Eye} title={t("tasks.empty.review")} body={t("tasks.empty.reviewBody")} />;
+    return <EmptyState compact tone="sage" icon={Eye} title={t("tasks.empty.review")} body={rule ? t(`review.rule.${rule}`) : t("tasks.empty.reviewBody")} />;
   }
   const routines = groupByRoutine(tasks.filter(isRoutine));
   const runs = routines.reduce((sum, group) => sum + group.tasks.length, 0);
   const oneOff = tasks.filter((task) => !isRoutine(task));
   return (
     <>
+      {rule && (
+        <p className="routine-hint" data-testid="review-rule">
+          {t(`review.rule.${rule}`)}
+        </p>
+      )}
       {routines.length > 0 && (
         <>
           <div className="section-head section-head--small section-head--count">

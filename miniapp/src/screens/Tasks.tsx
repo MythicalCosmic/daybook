@@ -1,7 +1,7 @@
 import { CheckCheck, ChevronDown, ClipboardList, ListPlus, Plus, Send } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { useBoard, useGivenByMe, useReviewQueue } from "../api/hooks";
+import { useBoard, useFinishRule, useGivenByMe, useReviewQueue } from "../api/hooks";
 import type { Task } from "../api/types";
 import { ReviewQueue, RoutinesTab } from "../components/Routines";
 import { RowSkeleton, TaskRow } from "../components/TaskRow";
@@ -54,6 +54,7 @@ export function Tasks() {
   const canAssign = member.permissions.includes("tasks.assign");
   const board = useBoard(member.companyId);
   const reviews = useReviewQueue(member.companyId, canReview);
+  const finishRule = useFinishRule(member.companyId, canReview);
   const given = useGivenByMe(member.companyId, canAssign);
 
   const tasks = board.data ?? [];
@@ -112,7 +113,7 @@ export function Tasks() {
       </div>
 
       {tab === "review" ? (
-        <ReviewQueue tasks={reviews.data} loading={reviews.isPending} error={reviews.error} onRetry={() => void reviews.refetch()} ctx={ctx} onOpen={open} />
+        <ReviewQueue tasks={reviews.data} loading={reviews.isPending} error={reviews.error} onRetry={() => void reviews.refetch()} ctx={ctx} onOpen={open} rule={finishRule.data?.on_finish} />
       ) : tab === "given" ? (
         <GivenByMe tasks={given.data} loading={given.isPending} error={given.error} onRetry={() => void given.refetch()} ctx={ctx} onOpen={open} onAdd={add} />
       ) : board.isPending ? (
