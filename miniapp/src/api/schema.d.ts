@@ -18,6 +18,9 @@ export interface paths {
          *
          *     Only an access token: the mini app signs in again with fresh init data when it expires,
          *     so no refresh token (and no blacklist row) is made every time the app opens.
+         *
+         *     Limited per Telegram user once the signature checks out; per address only by a ceiling
+         *     that a whole shift behind one mobile operator's NAT address never reaches.
          */
         post: operations["v1_auth_telegram_create"];
         delete?: never;
