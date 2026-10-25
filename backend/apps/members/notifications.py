@@ -52,8 +52,8 @@ def send_join_request(membership_id: int) -> None:
         url=f"/c/{company.pk}/people/requests?request={membership.pk}",
         target=membership,
         actions=[
-            NotificationAction("approve", lambda person: _("✅ Approve"), "primary"),
-            NotificationAction("reject", lambda person: _("❌ Reject"), "danger"),
+            NotificationAction("approve", lambda person: _("Approve"), "primary"),
+            NotificationAction("reject", lambda person: _("Reject"), "danger"),
         ],
         # One copy per request: a person asking again after a refusal is a new request.
         dedupe_key=f"members.join:{membership.pk}:{int(membership.updated_at.timestamp())}",

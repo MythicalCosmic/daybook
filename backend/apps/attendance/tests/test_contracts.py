@@ -309,7 +309,7 @@ def test_registrations_are_app_prefixed_and_complete():
         "attendance.open_shift",
     ):
         assert kind in KINDS
-    assert any(button.msgid == "📍 Check in / out" for button in bot_menu.registered())
+    assert any(button.msgid == "Check in / out" for button in bot_menu.registered())
     assert queries.off_day_people in offdays.providers()
 
 

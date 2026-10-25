@@ -147,7 +147,7 @@ def test_the_digest_speaks_each_persons_language(company, member, sent_messages)
     post_morning_digests(MORNING)
 
     [message] = to(sent_messages, person)
-    assert message["text"].startswith("🌅 Доброе утро, Олег! Задач на сегодня: 1.")
+    assert message["text"].startswith("Доброе утро, Олег! Задач на сегодня: 1.")
 
 
 # When it comes (audit X-9) and what it says --------------------------------------------
@@ -171,7 +171,7 @@ def test_the_night_shift_hears_before_its_shift_not_at_nine(rostered, member, se
     assert post_morning_digests(at(WEDNESDAY, 19, 46)) == 1
 
     [message] = to(sent_messages, nigora)
-    assert message["text"].startswith("👋 Nigora, tasks for your shift: 1.")
+    assert message["text"].startswith("Nigora, tasks for your shift: 1.")
 
 
 def test_a_rostered_day_off_gets_nothing(rostered, member, sent_messages):

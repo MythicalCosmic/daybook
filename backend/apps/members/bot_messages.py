@@ -25,16 +25,16 @@ type BotMessage = tuple[
 ]
 
 # Main menu labels. The bot matches incoming text against every translation of these.
-MENU_MY_TASKS = gettext_noop("📋 My tasks")
-MENU_NEW_TASK = gettext_noop("➕ New task")
-MENU_APP = gettext_noop("📱 Open app")
-MENU_TO_CHECK = gettext_noop("🔎 To check")
+MENU_MY_TASKS = gettext_noop("My tasks")
+MENU_NEW_TASK = gettext_noop("New task")
+MENU_APP = gettext_noop("Open app")
+MENU_TO_CHECK = gettext_noop("To check")
 # The company switch of someone in several companies: "🏢 Demo Dorixona ▸" (audit X-1).
-COMPANY_BUTTON = "🏢 {name} ▸"
+COMPANY_BUTTON = "{name} ▸"
 
 
 def main_menu(membership: Membership | None = None) -> ReplyKeyboardMarkup:
-    """The persistent menu: tasks first, "🔎 To check" for whoever checks work, then the buttons
+    """The persistent menu: tasks first, "To check" for whoever checks work, then the buttons
     modules registered for this person (apps.members.bot_menu), the company switch for someone
     in several companies, and the app.
 
@@ -90,7 +90,7 @@ def company_button(company) -> str:
 
 
 def is_company_button(text: str | None) -> bool:
-    return bool(text) and text.startswith("🏢 ") and text.endswith(" ▸")
+    return bool(text) and text.startswith("") and text.endswith(" ▸")
 
 
 def open_app(screen: str | None = None, label: str | None = None) -> BotMessage:
@@ -116,7 +116,7 @@ def join_request(membership: Membership) -> BotMessage:
     user = membership.user
     name = html.quote(membership.full_name or user.get_full_name() or str(user))
     lines = [
-        _("📝 <b>Join request</b> · %(company)s")
+        _("<b>Join request</b> · %(company)s")
         % {"company": html.quote(membership.company.name)},
         "",
         _("Name: %(name)s") % {"name": f'<a href="tg://user?id={user.telegram_id}">{name}</a>'},
@@ -139,13 +139,13 @@ def join_request(membership: Membership) -> BotMessage:
 
     buttons = [
         InlineKeyboardButton(
-            text=_("✅ Approve"),
+            text=_("Approve"),
             callback_data=JoinDecision(
                 action=JoinAction.APPROVE, membership_id=membership.pk
             ).pack(),
         ),
         InlineKeyboardButton(
-            text=_("❌ Reject"),
+            text=_("Reject"),
             callback_data=JoinDecision(
                 action=JoinAction.REJECT, membership_id=membership.pk
             ).pack(),
@@ -157,15 +157,15 @@ def join_request(membership: Membership) -> BotMessage:
 def status(membership: Membership | None) -> BotMessage | None:
     """The reply for someone using the bot. None means stay silent (blocked people)."""
     if membership is None or membership.status == Membership.Status.LEFT:
-        return _("👋 Hi! To join your company, open the invite link your manager sent you."), None
+        return _("Hi! To join your company, open the invite link your manager sent you."), None
     if membership.status == Membership.Status.PENDING:
         company = {"company": html.quote(membership.company.name)}
         if not membership.is_onboarded:
-            header = _("👋 Welcome! You're joining <b>%(company)s</b>.") % company
+            header = _("Welcome! You're joining <b>%(company)s</b>.") % company
             return _compose(header, _create_account_prompt())
         text = (
             _(
-                "⏳ Your request to join <b>%(company)s</b> is waiting for approval. "
+                "Your request to join <b>%(company)s</b> is waiting for approval. "
                 "I'll message you as soon as it's decided."
             )
             % company
@@ -183,7 +183,7 @@ def status(membership: Membership | None) -> BotMessage | None:
 def paused(membership: Membership) -> BotMessage:
     """What a suspended person hears, whatever they send."""
     text = paused_text(membership, company=f"<b>{html.quote(membership.company.name)}</b>")
-    return f"⏸ {text}", ReplyKeyboardRemove()
+    return f"{text}", ReplyKeyboardRemove()
 
 
 def paused_text(membership: Membership, *, company: str | None = None) -> str:
@@ -198,7 +198,7 @@ def paused_text(membership: Membership, *, company: str | None = None) -> str:
 
 
 def reinstated(membership: Membership) -> BotMessage:
-    header = _("▶️ Your access to <b>%(company)s</b> is back.") % {
+    header = _("Your access to <b>%(company)s</b> is back.") % {
         "company": html.quote(membership.company.name)
     }
     return _compose(header, _next_step(membership))
@@ -206,7 +206,7 @@ def reinstated(membership: Membership) -> BotMessage:
 
 def decision_for_requester(membership: Membership) -> BotMessage | None:
     if membership.status == Membership.Status.APPROVED:
-        header = _("🎉 Your request to join <b>%(company)s</b> was approved!") % {
+        header = _("Your request to join <b>%(company)s</b> was approved!") % {
             "company": html.quote(membership.company.name)
         }
         return _compose(header, _next_step(membership))
@@ -218,14 +218,14 @@ def decision_for_requester(membership: Membership) -> BotMessage | None:
 def member_home(membership: Membership) -> BotMessage:
     company = {"company": html.quote(membership.company.name)}
     if membership.is_onboarded:
-        header = _("✅ You're a member of <b>%(company)s</b>.") % company
+        header = _("You're a member of <b>%(company)s</b>.") % company
         if summary := _work_summary(membership):
             header += "\n" + summary
     else:
-        header = _("👋 Welcome to <b>%(company)s</b>!") % company
+        header = _("Welcome to <b>%(company)s</b>!") % company
     text, markup = _compose(header, _next_step(membership))
     if membership.is_onboarded and membership.status == Membership.Status.APPROVED:
-        text += "\n\n" + _("🌐 /language · ❓ /help")
+        text += "\n\n" + _("/language · /help")
     return text, markup
 
 
@@ -241,25 +241,25 @@ def _work_summary(membership: Membership) -> str:
     if not total and not checks_work(membership):
         return ""
     late = work.filter(status__in=Task.OPEN_STATUSES, due_at__lt=timezone.now()).count()
-    parts = [_("📋 Open: %(count)d") % {"count": total}]
+    parts = [_("Open: %(count)d") % {"count": total}]
     if late:
-        parts.append(_("🔴 late: %(count)d") % {"count": late})
+        parts.append(_("late: %(count)d") % {"count": late})
     if checks_work(membership):
         waiting = queries.awaiting_review_by(membership).count()
         if waiting:
-            parts.append(_("🔎 to check: %(count)d") % {"count": waiting})
+            parts.append(_("to check: %(count)d") % {"count": waiting})
     return " · ".join(parts)
 
 
 def offboarded(membership: Membership) -> BotMessage:
-    text = _("👋 You're no longer on the team at <b>%(company)s</b>. Thank you for your work!") % {
+    text = _("You're no longer on the team at <b>%(company)s</b>. Thank you for your work!") % {
         "company": html.quote(membership.company.name)
     }
     return text, ReplyKeyboardRemove()
 
 
 def phone_saved(membership: Membership) -> BotMessage:
-    return _compose(_("📱 Thanks, your phone number is saved."), _next_step(membership))
+    return _compose(_("Thanks, your phone number is saved."), _next_step(membership))
 
 
 def foreign_contact() -> BotMessage:
@@ -267,7 +267,7 @@ def foreign_contact() -> BotMessage:
 
 
 def onboarding_complete(membership: Membership) -> BotMessage:
-    header = _("🎉 Registration complete! Welcome aboard, %(name)s.") % {
+    header = _("Registration complete! Welcome aboard, %(name)s.") % {
         "name": html.quote(membership.first_name)
     }
     return _compose(header, _menu_prompt(membership))
@@ -291,14 +291,14 @@ def _create_account_prompt() -> BotMessage:
     if not settings.EMPLOYEE_MINIAPP_URL:
         return _("Accounts are created in the app, which isn't set up yet. Ask your manager."), None
     button = InlineKeyboardButton(
-        text=_("📱 Create account"), web_app=WebAppInfo(url=settings.EMPLOYEE_MINIAPP_URL)
+        text=_("Create account"), web_app=WebAppInfo(url=settings.EMPLOYEE_MINIAPP_URL)
     )
     text = _("Open the app to create your account: your name, phone and position.")
     return text, InlineKeyboardMarkup(inline_keyboard=[[button]])
 
 
 def _share_phone_keyboard() -> ReplyKeyboardMarkup:
-    button = KeyboardButton(text=_("📱 Share my phone number"), request_contact=True)
+    button = KeyboardButton(text=_("Share my phone number"), request_contact=True)
     return ReplyKeyboardMarkup(keyboard=[[button]], resize_keyboard=True, one_time_keyboard=True)
 
 
@@ -324,11 +324,11 @@ def _declined(membership: Membership) -> str:
 def _outcome(membership: Membership) -> str:
     by = {"name": html.quote(str(membership.decided_by)) if membership.decided_by else "—"}
     if membership.status == Membership.Status.APPROVED:
-        return _("✅ Approved by %(name)s") % by
+        return _("Approved by %(name)s") % by
     if membership.status == Membership.Status.REJECTED:
-        return _("❌ Rejected by %(name)s") % by
+        return _("Rejected by %(name)s") % by
     if membership.status == Membership.Status.BLOCKED:
-        return _("⛔ Blocked by %(name)s") % by
+        return _("Blocked by %(name)s") % by
     return str(membership.get_status_display())
 
 
@@ -337,7 +337,7 @@ def _outcome(membership: Membership) -> str:
 
 def join_request_title(membership: Membership) -> str:
     """The inbox copy's title (plain text: the inbox escapes it)."""
-    return _("📝 Join request · %(name)s") % {"name": _requester_name(membership)}
+    return _("Join request · %(name)s") % {"name": _requester_name(membership)}
 
 
 def join_request_body(membership: Membership) -> str:
@@ -373,7 +373,7 @@ def join_setup(
     rows = []
     row: list[InlineKeyboardButton] = []
     for branch in branches:
-        mark = "✅" if branch.pk in chosen else "▫️"
+        mark = "" if branch.pk in chosen else ""
         row.append(
             _setup_button(
                 f"{mark} {branch.name}",
@@ -394,7 +394,7 @@ def join_setup(
     rows.append(
         [
             _setup_button(
-                _("👤 Role: %(role)s") % {"role": role_name},
+                _("Role: %(role)s") % {"role": role_name},
                 JoinStep.ROLES,
                 membership,
                 nid=nid,
@@ -406,7 +406,7 @@ def join_setup(
     rows.append(
         [
             _setup_button(
-                _("✅ Approve"),
+                _("Approve"),
                 JoinStep.APPROVE,
                 membership,
                 nid=nid,
@@ -433,7 +433,7 @@ def join_home(
     rows = [
         [
             _setup_button(
-                f"🏠 {branch.name}",
+                f"{branch.name}",
                 JoinStep.HOME,
                 membership,
                 nid=nid,
@@ -481,7 +481,7 @@ def join_roles(
         rows.append(
             [
                 _setup_button(
-                    f"{'✅ ' if selected else ''}{label}",
+                    f"{'' if selected else ''}{label}",
                     JoinStep.ROLE,
                     membership,
                     nid=nid,
@@ -518,7 +518,7 @@ def _pack(chosen: list[int], branches: list) -> str:
 def _join_header(membership: Membership) -> str:
     user = membership.user
     lines = [
-        _("📝 <b>Join request</b> · %(company)s")
+        _("<b>Join request</b> · %(company)s")
         % {"company": html.quote(membership.company.name)},
         _("Name: %(name)s") % {"name": html.quote(_requester_name(membership))},
     ]

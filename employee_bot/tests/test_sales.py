@@ -55,14 +55,14 @@ async def test_cashiers_see_the_button_in_their_menu(company, member):
         return texts(shop.cashier), texts(shop.manager)
 
     cashier, manager = await menus()
-    assert "🧾 Kassa" in cashier
-    assert "🧾 Kassa" not in manager  # managers don't run a till by default
+    assert "Kassa" in cashier
+    assert "Kassa" not in manager  # managers don't run a till by default
 
 
 async def test_the_summary_shows_the_open_till_without_expected_cash(dp, bot):
     shop, _movement = await shop_with_handover()
     await dp.feed_update(
-        bot, updates.message(updates.tg_user(shop.cashier.user.telegram_id), "🧾 Kassa")
+        bot, updates.message(updates.tg_user(shop.cashier.user.telegram_id), "Kassa")
     )
     [reply] = sent(bot)
     assert "CHL-1" in reply.text and "is open" in reply.text
@@ -76,7 +76,7 @@ async def test_the_summary_shows_the_open_till_without_expected_cash(dp, bot):
 async def test_the_receiver_confirms_from_the_summary(dp, bot):
     shop, movement = await shop_with_handover()
     user = updates.tg_user(shop.manager.user.telegram_id)
-    await dp.feed_update(bot, updates.message(user, "🧾 Kassa"))
+    await dp.feed_update(bot, updates.message(user, "Kassa"))
     [reply] = sent(bot)
     assert "Cash handed to you" in reply.text and "Madina" in reply.text
     buttons = [b.callback_data for row in reply.reply_markup.inline_keyboard for b in row]
@@ -144,6 +144,6 @@ async def test_without_a_till_the_summary_says_how_to_open_one(dp, bot):
         return shop.colleague
 
     person = await cashier()
-    await dp.feed_update(bot, updates.message(updates.tg_user(person.user.telegram_id), "🧾 Kassa"))
+    await dp.feed_update(bot, updates.message(updates.tg_user(person.user.telegram_id), "Kassa"))
     [reply] = sent(bot)
     assert "No till is open" in reply.text

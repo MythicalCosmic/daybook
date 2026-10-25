@@ -44,10 +44,10 @@ async def test_a_manager_announces_to_one_position(dp, bot, company, member, sen
     preview = sent(bot)[-1]
     assert "Inventory on Friday at 8:00." in preview.text
     assert labels(preview.reply_markup) == [
-        "▫️ Cashier",
-        "▫️ Courier",
-        "📤 Send to everyone",
-        "✖️ Cancel",
+        "Cashier",
+        "Courier",
+        "Send to everyone",
+        "Cancel",
     ]
 
     await dp.feed_update(
@@ -55,9 +55,9 @@ async def test_a_manager_announces_to_one_position(dp, bot, company, member, sen
     )
     [picked] = [r for r in bot.requests if isinstance(r, EditMessageReplyMarkup)]
     assert labels(picked.reply_markup)[:3] == [
-        "✅ Cashier",
-        "▫️ Courier",
-        "📤 Send to the chosen positions",
+        "Cashier",
+        "Courier",
+        "Send to the chosen positions",
     ]
 
     await dp.feed_update(bot, updates.callback(tg, press(AnnounceAction.SEND)))
@@ -81,7 +81,7 @@ async def test_a_manager_announces_to_one_position(dp, bot, company, member, sen
     await dp.feed_update(
         bot, updates.callback(tg, press(AnnounceAction.WHO, announcement_id=announcement.pk))
     )
-    assert sent(bot)[-1].text == "📣 Read by 1 of 1."
+    assert sent(bot)[-1].text == "Read by 1 of 1."
 
 
 async def test_only_managers_announce(dp, bot, company, member):

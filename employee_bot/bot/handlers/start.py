@@ -88,7 +88,7 @@ async def first_language(
     await sync_to_async(set_language)(user, code)
     args = (await state.get_data()).get("start_args")
     await state.clear()
-    await callback.answer(f"✅ {LANGUAGE_NAMES[code]}")
+    await callback.answer(f"{LANGUAGE_NAMES[code]}")
     with suppress(TelegramAPIError):
         await callback.message.delete()
     with translation.override(code):
@@ -107,7 +107,7 @@ async def welcome_language(
     """The Uzbek welcome's [Русский] [English] row: the welcome again, in place, in that one."""
     code = callback_data.code if callback_data.code in LANGUAGES else "uz"
     await sync_to_async(set_language)(user, code)
-    await callback.answer(f"✅ {LANGUAGE_NAMES[code]}")
+    await callback.answer(f"{LANGUAGE_NAMES[code]}")
     membership = await sync_to_async(bot_membership)(user)
     with translation.override(code):
         reply = await sync_to_async(bot_messages.status)(membership)

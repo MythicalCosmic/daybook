@@ -72,7 +72,7 @@ def test_the_other_checkers_request_says_who_accepted(
         services.confirm_task(task, by=first)
 
     copy = edits_to(telegram, second)[-1]  # drawn again at each change; this is the last
-    assert copy["text"].startswith(f"✅ <b>Accepted</b> · {first}")
+    assert copy["text"].startswith(f"<b>Accepted</b> · {first}")
     assert TaskAction.CONFIRM not in actions(copy["markup"])
 
 
@@ -121,7 +121,7 @@ def test_done_takes_the_last_reminder_away_and_updates_the_late_alert(
     alert = [edit for edit in edits_to(telegram, manager) if edit["id"] == escalation.message_id][
         -1
     ]
-    assert alert["text"].startswith("✅ <b>Done</b>") and "late" in alert["text"]
+    assert alert["text"].startswith("<b>Done</b>") and "late" in alert["text"]
 
 
 def test_a_cant_do_it_stays_a_question_until_someone_answers(

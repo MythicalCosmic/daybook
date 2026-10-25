@@ -45,7 +45,7 @@ async def test_language_is_picked_and_the_menu_follows(dp, bot):
 
     user = await sync_to_async(User.objects.get)(telegram_id=7101)
     assert user.language == "ru"
-    assert bot.sent()[-1].text == "✅ Теперь пишу по-русски."
+    assert bot.sent()[-1].text == "Теперь пишу по-русски."
     [menu] = [r for r in bot.requests if isinstance(r, SetMyCommands)]
     assert menu.scope.chat_id == 7101
     assert any(isinstance(r, SetChatMenuButton) for r in bot.requests)

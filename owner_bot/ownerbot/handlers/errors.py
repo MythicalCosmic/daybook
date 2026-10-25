@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 async def on_error(event: ErrorEvent, user: User | None = None) -> bool:
     logger.error("Update %s failed", event.update.update_id, exc_info=event.exception)
     with translation.override(user.language if user is not None else "uz"):
-        text = _("⚠️ Something went wrong. Please try again in a moment.")
+        text = _("Something went wrong. Please try again in a moment.")
     update = event.update
     with suppress(TelegramAPIError):
         if update.callback_query is not None:

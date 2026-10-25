@@ -2,7 +2,7 @@
 bot: members, newcomers and people waiting for approval alike.
 
     /language (also /til, /lang)  the picker: O‘zbekcha · Русский · English
-    /settings                     ⚙️ language (and company, for someone in several)
+    /settings language (and company, for someone in several)
     /help                         what the bot does
 
 A new language is saved at once, and the chat follows: its command menu, menu button and
@@ -76,7 +76,7 @@ async def pick_language(
     if not await sync_to_async(set_language)(user, code):
         await callback.answer(ALREADY[code])
         return
-    await callback.answer(f"✅ {LANGUAGE_NAMES[code]}")
+    await callback.answer(f"{LANGUAGE_NAMES[code]}")
     with suppress(TelegramAPIError):  # under 48 hours old, so it can go
         await callback.message.delete()
     membership = await sync_to_async(bot_membership)(user)
@@ -87,11 +87,11 @@ async def pick_language(
 async def show_help(message: Message) -> None:
     lines = [
         _("Here's what I can do:"),
-        _("📋 /tasks: your tasks"),
-        _("➕ /new: add a task (or just type it)"),
-        _("🔎 /check: work waiting for your check"),
-        _("📱 The button next to the message field opens the app"),
-        _("🌐 /language: change the language"),
+        _("/tasks: your tasks"),
+        _("/new: add a task (or just type it)"),
+        _("/check: work waiting for your check"),
+        _("The button next to the message field opens the app"),
+        _("/language: change the language"),
     ]
     await message.answer("\n".join(lines))
 
@@ -110,8 +110,8 @@ async def show_settings(message: Message, user: User) -> None:
     if len(await sync_to_async(approved_memberships)(user)) > 1:
         membership = await sync_to_async(bot_membership)(user)
         rows.append(
-            [InlineKeyboardButton(text=f"🏢 {membership.company.name} ›", callback_data="co_open")]
+            [InlineKeyboardButton(text=f"{membership.company.name} ›", callback_data="co_open")]
         )
     with translation.override(user.language):
-        text = _("⚙️ <b>Settings</b>")
+        text = _("<b>Settings</b>")
     await message.answer(text, reply_markup=InlineKeyboardMarkup(inline_keyboard=rows))

@@ -14,8 +14,8 @@ from apps.inbox.callbacks import InboxAction
 from apps.inbox.models import Notification
 
 SEVERITY_MARK = {
-    Notification.Severity.WARNING: "⚠️ ",
-    Notification.Severity.CRITICAL: "🚨 ",
+    Notification.Severity.WARNING: "",
+    Notification.Severity.CRITICAL: "",
 }
 BUTTONS_PER_ROW = 3
 
@@ -50,15 +50,15 @@ def notification(
 
 
 def outcome_line(label: str, actor_name: str) -> str:
-    """ "✅ Approved · Dilnoza", or just "✅ Approved" when the system decided. An outcome that
-    brings its own mark ("🕒 New deadline set", "✖️ Task cancelled") keeps it alone, instead of
-    reading "✅ 🕒 New deadline set"."""
+    """ "Approved · Dilnoza", or just "Approved" when the system decided. An outcome that
+    brings its own mark ("New deadline set", "Task cancelled") keeps it alone, instead of
+    reading "New deadline set"."""
     label = str(label)
     if label[:1] and not label[:1].isalnum():
         return f"{label} · {actor_name}" if actor_name else label
     if not actor_name:
-        return _("✅ %(action)s") % {"action": label}
-    return _("✅ %(action)s · %(name)s") % {"action": label, "name": actor_name}
+        return _("%(action)s") % {"action": label}
+    return _("%(action)s · %(name)s") % {"action": label, "name": actor_name}
 
 
 def _open_button(item: Notification, audience: str) -> InlineKeyboardButton | None:
@@ -73,5 +73,5 @@ def _open_button(item: Notification, audience: str) -> InlineKeyboardButton | No
         joiner = "&" if urlsplit(base).query else "?"
         url = f"{base}{joiner}{urlencode({'screen': item.app_screen})}"
         # Worded like the task messages' button, which opens the same app.
-        return InlineKeyboardButton(text=_("📱 Open in app"), web_app=WebAppInfo(url=url))
+        return InlineKeyboardButton(text=_("Open in app"), web_app=WebAppInfo(url=url))
     return None

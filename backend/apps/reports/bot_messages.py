@@ -15,7 +15,7 @@ def weekly(report: TeamReport) -> BotMessage:
     last_day = report.end - timedelta(days=1)
     totals = report.totals
     lines = [
-        _("📊 <b>Last week</b> · %(start)s–%(end)s")
+        _("<b>Last week</b> · %(start)s–%(end)s")
         % {"start": report.start.strftime("%d.%m"), "end": last_day.strftime("%d.%m")},
         "",
         _("On time: <b>%(percent)s</b>, %(on_time)d of %(total)d tasks.")

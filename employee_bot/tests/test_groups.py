@@ -71,8 +71,8 @@ async def test_a_manager_adding_the_bot_links_the_group(dp, bot, company, manage
     labels = toggles(reply.reply_markup)
     # every event the company can use, whose news, then Done
     assert len(labels) == len(available_events(company)) + 2
-    assert labels[0].startswith("✅")  # daily tasks done is on by default
-    assert labels[1].startswith("▫️")  # assigned tasks done is not
+    assert labels[0].startswith("")  # daily tasks done is on by default
+    assert labels[1].startswith("")  # assigned tasks done is not
 
 
 async def test_anyone_else_adding_the_bot_gets_told_how_to_link_it(dp, bot, worker):
@@ -143,7 +143,7 @@ async def test_a_manager_chooses_what_the_group_gets(dp, bot, company, manager):
     assert group.events == [GroupEvent.LATE, GroupEvent.MORNING]
     [edit] = [r for r in bot.requests if isinstance(r, EditMessageReplyMarkup)]
     morning = list(GroupEvent).index(GroupEvent.MORNING)
-    assert toggles(edit.reply_markup)[morning].startswith("✅")
+    assert toggles(edit.reply_markup)[morning].startswith("")
 
     await dp.feed_update(bot, updates.group_callback(tg(manager), press(GroupAction.CLOSE)))
 
@@ -161,7 +161,7 @@ async def test_a_manager_narrows_the_group_to_some_positions(dp, bot, company, m
     await dp.feed_update(bot, updates.group_callback(tg(manager), press(GroupAction.WHO)))
 
     [picker] = [r for r in bot.requests if isinstance(r, EditMessageText)]
-    assert toggles(picker.reply_markup) == ["▫️ Cashier", "▫️ Courier", "⬅️ Back"]
+    assert toggles(picker.reply_markup) == ["Cashier", "Courier", "Back"]
 
     await dp.feed_update(
         bot,
@@ -172,7 +172,7 @@ async def test_a_manager_narrows_the_group_to_some_positions(dp, bot, company, m
 
     assert [p.pk async for p in group.positions.all()] == [cashier.pk]
     [edit] = [r for r in bot.requests if isinstance(r, EditMessageReplyMarkup)]
-    assert toggles(edit.reply_markup)[0] == "✅ Cashier"
+    assert toggles(edit.reply_markup)[0] == "Cashier"
 
     await dp.feed_update(bot, updates.group_callback(tg(manager), press(GroupAction.BACK)))
 
@@ -242,7 +242,7 @@ async def test_an_upgrade_to_a_supergroup_keeps_the_link(dp, bot, company, manag
 async def test_group_chatter_never_reaches_the_personal_menus(dp, bot, company, worker):
     await make_group(company=company, chat_id=updates.GROUP_ID)
 
-    for text in ("📋 My tasks", "/tasks", "/start", "hello everyone"):
+    for text in ("My tasks", "/tasks", "/start", "hello everyone"):
         await dp.feed_update(bot, updates.group_message(tg(worker), text))
 
     assert sent(bot) == []

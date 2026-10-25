@@ -150,8 +150,8 @@ def update_task(task: Task, *, by: Membership, **changes) -> Task:
         _restart_reminders(task)
     if moved:
         # A new deadline answers "can't do it" and "need more time" alike.
-        _clear_blocker(task, by, outcome=_("🕒 New deadline set"))
-        _clear_extension(task, by, outcome=_("🕒 New deadline set"))
+        _clear_blocker(task, by, outcome=_("New deadline set"))
+        _clear_extension(task, by, outcome=_("New deadline set"))
     task.save()
     after = {field: audit.plain(getattr(task, field)) for field in changes}
     if changed := audit.diff(before, after):
@@ -198,8 +198,8 @@ def complete_task(
     task.completed_at = timezone.now()
     task.status = Task.Status.REVIEW if task.needs_confirmation else Task.Status.DONE
     task.next_reminder_at = None
-    _clear_blocker(task, by, outcome=_("✅ Done"))
-    _clear_extension(task, by, outcome=_("✅ Done"))
+    _clear_blocker(task, by, outcome=_("Done"))
+    _clear_extension(task, by, outcome=_("Done"))
     task.save()
     if task.status == Task.Status.REVIEW:
         _add_to_feed(Activity.Kind.REVIEW, task, queries.reviewers(task), by)
@@ -292,8 +292,8 @@ def cancel_task(task: Task, *, by: Membership, stop_repeating: bool = False) -> 
         raise DomainError(_already(task))
     task.status = Task.Status.CANCELLED
     task.next_reminder_at = None
-    _clear_blocker(task, by, outcome=_("✖️ Task cancelled"))
-    _clear_extension(task, by, outcome=_("✖️ Task cancelled"))
+    _clear_blocker(task, by, outcome=_("Task cancelled"))
+    _clear_extension(task, by, outcome=_("Task cancelled"))
     task.save()
     _audit(AuditLog.Action.TASK_CANCELLED, task, by)
     if stop_repeating and task.template is not None and task.template.personal:
@@ -526,8 +526,8 @@ def _reassign(task: Task, *, by: Membership, assignee: Membership) -> Task:
     task.last_reminder_message_id = None
     task.last_nudged_at = None
     task.seen_at = None  # the new person hasn't seen it yet
-    _clear_blocker(task, by, outcome=_("👤 Given to someone else"))
-    _clear_extension(task, by, outcome=_("👤 Given to someone else"))
+    _clear_blocker(task, by, outcome=_("Given to someone else"))
+    _clear_extension(task, by, outcome=_("Given to someone else"))
     _restart_reminders(task)
     try:
         with transaction.atomic():
@@ -625,7 +625,7 @@ def report_blocker(task: Task, *, by: Membership, reason_code: str, note: str = 
         inbox.notify(
             givers,
             "tasks.blocked",
-            title=lambda person: _("⛔ %(name)s can't do a task") % {"name": by},
+            title=lambda person: _("%(name)s can't do a task") % {"name": by},
             body=lambda person: _blocker_body(task, reason, note),
             url=f"/c/{task.company_id}/tasks?task={task.pk}",
             app_screen=f"task:{task.pk}",
@@ -668,15 +668,15 @@ def resolve_blocker(
         old_due = task.due_at
         _apply_changes(task, {"due_at": due_at})
         _restart_reminders(task)
-        _clear_blocker(task, by, outcome=_("🕒 New deadline set"))
+        _clear_blocker(task, by, outcome=_("New deadline set"))
         task.save()
         changes = {"due_at": [audit.plain(old_due), audit.plain(task.due_at)]}
         _audit(AuditLog.Action.TASK_CHANGED, task, by, changes=changes)
     else:
         task.status = Task.Status.CANCELLED
         task.next_reminder_at = None
-        _clear_blocker(task, by, outcome=_("✖️ Task cancelled"))
-        _clear_extension(task, by, outcome=_("✖️ Task cancelled"))
+        _clear_blocker(task, by, outcome=_("Task cancelled"))
+        _clear_extension(task, by, outcome=_("Task cancelled"))
         task.save()
         _audit(AuditLog.Action.TASK_CANCELLED, task, by)
     _audit(TasksAction.UNBLOCKED, task, by, reason=action)
@@ -714,15 +714,15 @@ def request_extension(task: Task, *, by: Membership, until: datetime, note: str 
         inbox.notify(
             givers,
             "tasks.extension",
-            title=lambda person: _("🕒 %(name)s asks for more time") % {"name": by},
+            title=lambda person: _("%(name)s asks for more time") % {"name": by},
             body=lambda person: _extension_body(task, person, now),
             url=f"/c/{task.company_id}/tasks?task={task.pk}",
             app_screen=f"task:{task.pk}",
             target=task,
             actor=by,
             actions=[
-                inbox.NotificationAction("approve", _("✅ Give more time"), "primary"),
-                inbox.NotificationAction("decline", _("✖️ Keep the deadline")),
+                inbox.NotificationAction("approve", _("Give more time"), "primary"),
+                inbox.NotificationAction("decline", _("Keep the deadline")),
             ],
         )
     _refresh_copies(task)
@@ -744,10 +744,10 @@ def decide_extension(task: Task, *, by: Membership, approve: bool) -> Task:
             raise DomainError(_("The time asked for has already passed. Set a new deadline."))
         task.due_at = until
         _restart_reminders(task)
-    outcome = _("✅ More time given") if approve else _("✖️ Deadline kept")
+    outcome = _("More time given") if approve else _("Deadline kept")
     _clear_extension(task, by, outcome=outcome)
     if approve:
-        _clear_blocker(task, by, outcome=_("🕒 New deadline set"))
+        _clear_blocker(task, by, outcome=_("New deadline set"))
     task.save()
     _audit(
         TasksAction.EXTENSION_DECIDED,

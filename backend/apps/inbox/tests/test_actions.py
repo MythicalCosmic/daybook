@@ -50,9 +50,9 @@ def test_the_registered_handler_runs_and_every_copy_is_settled(
     assert mine.acted_by == approvers[0].user and mine.read_at is not None
     assert colleagues.acted_at is not None  # nobody else can approve it twice
     edits = {edit["message_id"]: edit for edit in telegram.edited}
-    assert edits[mine.telegram_message_id]["text"].endswith(f"✅ Claim approved · {approvers[0]}")
+    assert edits[mine.telegram_message_id]["text"].endswith(f"Claim approved · {approvers[0]}")
     # Each copy is settled in its reader's language; the colleague reads Russian.
-    assert edits[colleagues.telegram_message_id]["text"].endswith(f"✅ Одобрить · {approvers[0]}")
+    assert edits[colleagues.telegram_message_id]["text"].endswith(f"Одобрить · {approvers[0]}")
     assert all(edit["markup"] is None for edit in telegram.edited)  # the buttons are gone
 
 
@@ -174,7 +174,7 @@ def test_settle_closes_every_open_copy_and_edits_telegram(
     untouched.refresh_from_db()
     assert untouched.acted_at is None
     edits = {edit["message_id"]: edit for edit in telegram.edited}
-    assert edits[first.telegram_message_id]["text"].endswith(f"✅ Approve · {decider}")
+    assert edits[first.telegram_message_id]["text"].endswith(f"Approve · {decider}")
     assert edits[second.telegram_message_id]["markup"] is None  # the buttons are gone
     assert services.settle(claim, outcome="Approved", by=decider) == 0  # nothing left open
     with pytest.raises(DomainError, match="already been handled"):
@@ -193,8 +193,8 @@ def test_settle_by_the_system_names_nobody_and_renders_per_recipient(
     first.refresh_from_db()
     second.refresh_from_db()
     edits = {edit["message_id"]: edit["text"] for edit in telegram.edited}
-    assert edits[first.telegram_message_id].endswith(f"✅ Expired for {approvers[0].pk}")
-    assert edits[second.telegram_message_id].endswith(f"✅ Expired for {approvers[1].pk}")
+    assert edits[first.telegram_message_id].endswith(f"Expired for {approvers[0].pk}")
+    assert edits[second.telegram_message_id].endswith(f"Expired for {approvers[1].pk}")
     # nobody decided: no actor
     assert first.acted_by is None
 

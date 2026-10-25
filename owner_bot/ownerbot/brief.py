@@ -28,7 +28,7 @@ from apps.members import scope
 from apps.members.models import Membership
 from ownerbot import bot_messages
 
-STATUS_ICONS = {"open": "🟢", "not_opened": "🔴", "closed": "⚪", "day_off": "💤"}
+STATUS_ICONS = {"open": "", "not_opened": "", "closed": "", "day_off": ""}
 
 
 def memberships(user: User) -> list[Membership]:
@@ -88,13 +88,13 @@ def branch_lines(cards: list[dict], currency: str) -> list[str]:
         parts.append(html.quote(_status(card)))
         facts = []
         if sales := card.get("sales"):
-            facts.append("💰 " + _money(sales.get("net", "0"), currency))
+            facts.append("" + _money(sales.get("net", "0"), currency))
         if attendance := card.get("attendance"):
-            facts.append(f"👥 {attendance.get('checked_in', 0)}/{attendance.get('rostered', 0)}")
+            facts.append(f"{attendance.get('checked_in', 0)}/{attendance.get('rostered', 0)}")
         if tasks := card.get("tasks"):
-            done = f"✅ {tasks.get('done', 0)}/{tasks.get('total', 0)}"
+            done = f"{tasks.get('done', 0)}/{tasks.get('total', 0)}"
             if tasks.get("late"):
-                done += " · ⏰ " + str(tasks["late"])
+                done += " ·" + str(tasks["late"])
             facts.append(done)
         line = " — ".join(parts)
         if facts:
@@ -122,12 +122,12 @@ def today(member: Membership, now: datetime | None = None) -> bot_messages.BotMe
     now = now or timezone.now()
     company = member.company
     local = timezone.localtime(now, zoneinfo.ZoneInfo(company.timezone))
-    lines = [f"📊 <b>{html.quote(company.name)}</b> · {local:%d.%m.%Y %H:%M}"]
+    lines = [f"<b>{html.quote(company.name)}</b> · {local:%d.%m.%Y %H:%M}"]
     cards = console.branches_today(member, now)
     if cards:
         lines += [
             "",
-            "🏪 <b>" + html.quote(_("Branches")) + "</b>",
+            "<b>" + html.quote(_("Branches")) + "</b>",
             *branch_lines(cards, company.base_currency),
         ]
     for _key, data in registry.collect_brief_sections(
@@ -138,7 +138,7 @@ def today(member: Membership, now: datetime | None = None) -> bot_messages.BotMe
     lines.append("")
     if waiting:
         lines.append(
-            "📥 "
+            ""
             + html.quote(
                 ngettext(
                     "%(count)d decision waits for you.",
@@ -149,5 +149,5 @@ def today(member: Membership, now: datetime | None = None) -> bot_messages.BotMe
             )
         )
     else:
-        lines.append("📥 " + html.quote(_("Nothing waits for your decision.")))
+        lines.append("" + html.quote(_("Nothing waits for your decision.")))
     return "\n".join(lines), bot_messages.today_keyboard(company.pk, waiting)

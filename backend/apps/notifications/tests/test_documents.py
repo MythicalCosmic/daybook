@@ -142,11 +142,11 @@ def test_unknown_storages_are_refused(session):
 
 
 def test_editing_replaces_text_and_keyboard(session):
-    telegram.edit_message(telegram.BotName.OWNER, 5, 321, "✅ Approved by Olim", MARKUP)
+    telegram.edit_message(telegram.BotName.OWNER, 5, 321, "Approved by Olim", MARKUP)
 
     [request] = session.requests
     assert isinstance(request, EditMessageText)
-    assert (request.chat_id, request.message_id, request.text) == (5, 321, "✅ Approved by Olim")
+    assert (request.chat_id, request.message_id, request.text) == (5, 321, "Approved by Olim")
 
 
 def test_editing_a_photo_message_edits_its_caption(session):
@@ -156,12 +156,12 @@ def test_editing_a_photo_message_edits_its_caption(session):
     )
     session.fail_only = EditMessageText
 
-    telegram.edit_message(telegram.BotName.EMPLOYEE, 5, 321, "✅ Approved", MARKUP)
+    telegram.edit_message(telegram.BotName.EMPLOYEE, 5, 321, "Approved", MARKUP)
 
     first, second = session.requests
     assert isinstance(first, EditMessageText)
     assert isinstance(second, EditMessageCaption)
-    assert (second.chat_id, second.message_id, second.caption) == (5, 321, "✅ Approved")
+    assert (second.chat_id, second.message_id, second.caption) == (5, 321, "Approved")
     assert second.reply_markup.inline_keyboard[0][0].text == "Approve"
 
 

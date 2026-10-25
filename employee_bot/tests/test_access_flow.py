@@ -62,7 +62,7 @@ async def test_approvers_hear_once_the_account_is_created(dp, bot, company, memb
     assert "Ali Valiyev" in message["text"]
     assert "+998901234567" in message["text"]
     buttons = message["reply_markup"]["inline_keyboard"][0]
-    assert [b["text"] for b in buttons] == ["✅ Approve", "❌ Reject"]
+    assert [b["text"] for b in buttons] == ["Approve", "Reject"]
 
 
 async def test_invalid_invite_link_is_explained(dp, bot, db):
@@ -282,7 +282,7 @@ async def test_several_branches_ask_for_branches_then_the_home_branch(dp, bot, c
         return [
             b
             for b in buttons
-            if JoinSetup.unpack(b.callback_data).step == "b" and b.text.startswith("▫️")
+            if JoinSetup.unpack(b.callback_data).step == "b" and b.text.startswith("")
         ]
 
     for _ in range(2):  # choose both branches, one tap each
@@ -344,7 +344,7 @@ def app_data(telegram_id: int, data: str = "open_app") -> Update:
             date=datetime.now(),
             chat=Chat(id=telegram_id, type="private"),
             from_user=updates.tg_user(telegram_id),
-            web_app_data=WebAppData(data=data, button_text="📱 Open app"),
+            web_app_data=WebAppData(data=data, button_text="Open app"),
         ),
     )
 

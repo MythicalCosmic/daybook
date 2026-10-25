@@ -24,9 +24,9 @@ from apps.members.bot_messages import main_menu, miniapp_url
 from apps.members.models import Membership
 
 # The main-menu button (apps.members.bot_menu); "📍 Keldim / Ketdim" in Uzbek.
-MENU_CHECK = gettext_noop("📍 Check in / out")
-SEND_LOCATION = gettext_noop("📍 Send my location")
-CANCEL = gettext_noop("✖️ Cancel")
+MENU_CHECK = gettext_noop("Check in / out")
+SEND_LOCATION = gettext_noop("Send my location")
+CANCEL = gettext_noop("Cancel")
 # The mini app screen the button and the nudges open.
 APP_SCREEN = "attendance"
 
@@ -96,7 +96,7 @@ def location_keyboard() -> ReplyKeyboardMarkup:
     rows = [[KeyboardButton(text=_(SEND_LOCATION), request_location=True)]]
     url = _app_url()
     if url:
-        rows.append([KeyboardButton(text=_("📱 Check in in the app"), web_app=WebAppInfo(url=url))])
+        rows.append([KeyboardButton(text=_("Check in in the app"), web_app=WebAppInfo(url=url))])
     rows.append([KeyboardButton(text=_(CANCEL))])
     return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True, one_time_keyboard=True)
 
@@ -106,14 +106,14 @@ def prompt_check_in(day: dict) -> tuple[str, ReplyKeyboardMarkup]:
     shift = day.get("shift")
     if shift:
         where = f" · {html.quote(shift['branch']['name'])}" if shift.get("branch") else ""
-        head = _("📍 <b>Check in</b>\nYour shift: %(start)s–%(end)s%(where)s") % {
+        head = _("<b>Check in</b>\nYour shift: %(start)s–%(end)s%(where)s") % {
             "start": shift["start"],
             "end": shift["end"],
             "where": where,
         }
     else:
         head = _(
-            "📍 <b>Check in</b>\nNo shift is planned for you today; "
+            "<b>Check in</b>\nNo shift is planned for you today; "
             "it will be marked as an extra day."
         )
     return f"{head}\n\n{_('Send your location with the button below.')}", location_keyboard()
@@ -122,30 +122,30 @@ def prompt_check_in(day: dict) -> tuple[str, ReplyKeyboardMarkup]:
 def prompt_check_out(record: AttendanceRecord) -> tuple[str, ReplyKeyboardMarkup]:
     company = record.company
     since = clock.hhmm(company, record.check_in_at)
-    text = _("👋 <b>Check out</b>\nYou're in since %(time)s. Send your location to check out.") % {
+    text = _("<b>Check out</b>\nYou're in since %(time)s. Send your location to check out.") % {
         "time": since
     }
     return text, location_keyboard()
 
 
 def selfie_prompt() -> str:
-    return _("📸 Now a quick selfie to finish checking in.")
+    return _("Now a quick selfie to finish checking in.")
 
 
 def checked_in(record: AttendanceRecord, membership: Membership) -> tuple[str, ReplyKeyboardMarkup]:
     company = record.company
     lines = [
-        _("✅ Checked in at %(time)s") % {"time": clock.hhmm(company, record.check_in_at)}
+        _("Checked in at %(time)s") % {"time": clock.hhmm(company, record.check_in_at)}
         + (f" · {html.quote(record.branch.name)}" if record.branch_id else "")
     ]
     if record.is_late:
         lines.append(
-            _("⏰ %(late)s late. Next time a little earlier!")
+            _("%(late)s late. Next time a little earlier!")
             % {"late": duration(record.late_minutes)}
         )
     if AttendanceRecord.Flag.OUTSIDE_GEOFENCE in record.flags:
         lines.append(
-            _("📌 You were %(distance)s from the branch, so this check-in is marked.")
+            _("You were %(distance)s from the branch, so this check-in is marked.")
             % {"distance": distance(record.in_distance_m)}
         )
     if AttendanceRecord.Flag.UNSCHEDULED in record.flags:
@@ -158,12 +158,12 @@ def checked_out(
     record: AttendanceRecord, membership: Membership
 ) -> tuple[str, ReplyKeyboardMarkup]:
     company = record.company
-    text = _("👋 Checked out at %(time)s. You worked %(worked)s today. Thank you!") % {
+    text = _("Checked out at %(time)s. You worked %(worked)s today. Thank you!") % {
         "time": clock.hhmm(company, record.check_out_at),
         "worked": duration(record.worked_minutes),
     }
     if record.overtime_minutes:
-        text += "\n" + _("⏱ %(extra)s of overtime is waiting for approval.") % {
+        text += "\n" + _("%(extra)s of overtime is waiting for approval.") % {
             "extra": duration(record.overtime_minutes)
         }
     return text, main_menu(membership)
@@ -174,22 +174,22 @@ def cancelled(membership: Membership) -> tuple[str, ReplyKeyboardMarkup]:
 
 
 def refused(message: str, membership: Membership) -> tuple[str, ReplyKeyboardMarkup]:
-    return f"⚠️ {html.quote(message)}", main_menu(membership)
+    return f"{html.quote(message)}", main_menu(membership)
 
 
 # Nudges ---------------------------------------------------------------------------------
 
 
 def _check_in_button() -> InlineKeyboardButton:
-    return app_button(_("📍 Check in")) or InlineKeyboardButton(
-        text=_("📍 Check in"),
+    return app_button(_("Check in")) or InlineKeyboardButton(
+        text=_("Check in"),
         callback_data=AttendanceButton(action=AttendanceAction.CHECK_IN).pack(),
     )
 
 
 def pre_shift(shift: WorkShift) -> tuple[str, InlineKeyboardMarkup]:
     where = f" · {html.quote(shift.branch.name)}" if shift.branch_id else ""
-    text = _("🔔 Your shift starts at %(time)s%(where)s.") % {
+    text = _("Your shift starts at %(time)s%(where)s.") % {
         "time": clock.hhmm(shift.company, shift.starts_at),
         "where": where,
     }
@@ -198,12 +198,12 @@ def pre_shift(shift: WorkShift) -> tuple[str, InlineKeyboardMarkup]:
 
 def late_nudge(shift: WorkShift) -> tuple[str, InlineKeyboardMarkup]:
     where = f" · {html.quote(shift.branch.name)}" if shift.branch_id else ""
-    text = _("⏰ Your shift started at %(time)s%(where)s. Check in when you arrive.") % {
+    text = _("Your shift started at %(time)s%(where)s. Check in when you arrive.") % {
         "time": clock.hhmm(shift.company, shift.starts_at),
         "where": where,
     }
     off = InlineKeyboardButton(
-        text=_("🏠 I'm off today"),
+        text=_("I'm off today"),
         callback_data=AttendanceButton(action=AttendanceAction.OFF_TODAY, ref=shift.pk).pack(),
     )
     return text, InlineKeyboardMarkup(inline_keyboard=[[_check_in_button()], [off]])
@@ -211,16 +211,16 @@ def late_nudge(shift: WorkShift) -> tuple[str, InlineKeyboardMarkup]:
 
 def still_working(record: AttendanceRecord) -> tuple[str, InlineKeyboardMarkup]:
     shift = record.shift
-    text = _("🕕 Your shift ended at %(time)s. Still working?") % {
+    text = _("Your shift ended at %(time)s. Still working?") % {
         "time": clock.hhmm(record.company, shift.ends_at if shift else record.check_in_at)
     }
     buttons = [
         InlineKeyboardButton(
-            text=_("✅ I'm done now"),
+            text=_("I'm done now"),
             callback_data=AttendanceButton(action=AttendanceAction.DONE_NOW, ref=record.pk).pack(),
         ),
         InlineKeyboardButton(
-            text=_("💼 Still here"),
+            text=_("Still here"),
             callback_data=AttendanceButton(
                 action=AttendanceAction.STILL_HERE, ref=record.pk
             ).pack(),
@@ -238,7 +238,7 @@ def still_here_ack() -> str:
 
 
 def done_now(record: AttendanceRecord) -> str:
-    return _("👋 Checked out at %(time)s. Thank you for today!") % {
+    return _("Checked out at %(time)s. Thank you for today!") % {
         "time": clock.hhmm(record.company, record.check_out_at)
     }
 
@@ -248,7 +248,7 @@ def done_now(record: AttendanceRecord) -> str:
 
 def late_post(record: AttendanceRecord) -> str:
     shift = record.shift
-    return _("⏰ <b>%(name)s</b> came %(late)s late (shift %(time)s, %(branch)s).") % {
+    return _("<b>%(name)s</b> came %(late)s late (shift %(time)s, %(branch)s).") % {
         "name": html.quote(str(record.membership)),
         "late": duration(record.late_minutes),
         "time": clock.hhmm(record.company, shift.starts_at) if shift else "—",
@@ -260,14 +260,14 @@ def morning_post(
     branch, present: list[str], late: list[str], missing: list[str], rostered: int
 ) -> str:
     lines = [
-        _("☀️ <b>Who's in · %(branch)s</b>") % {"branch": html.quote(branch.name)},
+        _("<b>Who's in · %(branch)s</b>") % {"branch": html.quote(branch.name)},
         _("%(present)s of %(rostered)s on shift are here.")
         % {"present": len(present) + len(late), "rostered": rostered},
     ]
     if present:
-        lines.append("✅ " + ", ".join(html.quote(name) for name in present))
+        lines.append("" + ", ".join(html.quote(name) for name in present))
     if late:
-        lines.append("⏰ " + ", ".join(html.quote(name) for name in late))
+        lines.append("" + ", ".join(html.quote(name) for name in late))
     if missing:
         lines.append(
             _("Not here yet: %(names)s") % {"names": ", ".join(html.quote(n) for n in missing)}
@@ -277,7 +277,7 @@ def morning_post(
 
 def swap_post(swap: ShiftSwap) -> str:
     shift = swap.shift
-    return _("🔁 <b>%(to)s</b> takes the shift %(shift)s%(from)s.") % {
+    return _("<b>%(to)s</b> takes the shift %(shift)s%(from)s.") % {
         "to": html.quote(str(swap.accepted_by)),
         "shift": shift_line(shift),
         "from": (" " + _("instead of %(name)s") % {"name": html.quote(str(swap.requested_by))})

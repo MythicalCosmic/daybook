@@ -14,7 +14,7 @@ from apps.members.bot_messages import BotMessage, miniapp_url
 from apps.projects.callbacks import ProjectUpdateCallback, UpdateStep
 from apps.projects.models import Health, Project, ProjectUpdate
 
-HEALTH_ICONS = {Health.ON_TRACK: "🟢", Health.AT_RISK: "🟡", Health.OFF_TRACK: "🔴"}
+HEALTH_ICONS = {Health.ON_TRACK: "", Health.AT_RISK: "", Health.OFF_TRACK: ""}
 
 
 def health_label(health: str) -> str:
@@ -26,7 +26,7 @@ def _title(project: Project) -> str:
 
 
 def ask_health(project: Project) -> BotMessage:
-    text = _("📋 How is %(project)s going this week?") % {"project": _title(project)}
+    text = _("How is %(project)s going this week?") % {"project": _title(project)}
     buttons = [
         InlineKeyboardButton(
             text=health_label(health),
@@ -37,7 +37,7 @@ def ask_health(project: Project) -> BotMessage:
         for health in Health.values
     ]
     stop = InlineKeyboardButton(
-        text=_("✖️ Not now"),
+        text=_("Not now"),
         callback_data=ProjectUpdateCallback(step=UpdateStep.STOP, project_id=project.pk).pack(),
     )
     return text, InlineKeyboardMarkup(inline_keyboard=[[b] for b in buttons] + [[stop]])
@@ -48,7 +48,7 @@ def ask_text(project: Project, health: str) -> BotMessage:
         "health": health_label(health)
     }
     skip = InlineKeyboardButton(
-        text=_("⏭ Post without text"),
+        text=_("Post without text"),
         callback_data=ProjectUpdateCallback(
             step=UpdateStep.SKIP, project_id=project.pk, health=health
         ).pack(),
@@ -57,14 +57,14 @@ def ask_text(project: Project, health: str) -> BotMessage:
 
 
 def posted(project: Project, update: ProjectUpdate) -> BotMessage:
-    text = _("✅ Update posted to %(project)s: %(health)s") % {
+    text = _("Update posted to %(project)s: %(health)s") % {
         "project": _title(project),
         "health": health_label(update.health),
     }
     url = miniapp_url(f"projects.updates:{project.pk}")
     if not url.startswith("https://"):
         return text, None
-    button = InlineKeyboardButton(text=_("📂 Open the project"), web_app=WebAppInfo(url=url))
+    button = InlineKeyboardButton(text=_("Open the project"), web_app=WebAppInfo(url=url))
     return text, InlineKeyboardMarkup(inline_keyboard=[[button]])
 
 

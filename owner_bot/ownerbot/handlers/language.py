@@ -66,7 +66,7 @@ async def pick_language(
     if not await sync_to_async(set_language)(user, code):
         await callback.answer(ALREADY[code])
         return
-    await callback.answer(f"✅ {LANGUAGE_NAMES[code]}")
+    await callback.answer(f"{LANGUAGE_NAMES[code]}")
     with suppress(TelegramAPIError):
         await callback.message.delete()
     chat_id = callback.message.chat.id

@@ -42,7 +42,7 @@ def is_menu_command(message: Message) -> bool:
 
 def is_menu_button(message: Message) -> bool:
     """A main-menu button a module registered (apps.members.bot_menu), the app's or the
-    checker's button, or the company switch ("🏢 Demo Dorixona ▸"), in any language."""
+    checker's button, or the company switch ("Demo Dorixona ▸"), in any language."""
     text = message.text
     if not text:
         return False
@@ -70,7 +70,7 @@ class MenuCommandMiddleware(BaseMiddleware):
     while the bot waits for a task title would become the title. A menu command ends the
     conversation instead and is routed as if there had been none; other text, photos and
     commands outside the menu (a feature's own "/cancel") still reach the conversation. A menu
-    button a module registered ("📍 Keldim") counts as a menu command.
+    button a module registered ("Keldim") counts as a menu command.
     """
 
     async def __call__(

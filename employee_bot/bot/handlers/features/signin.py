@@ -44,7 +44,7 @@ async def tapped(callback: CallbackQuery, callback_data: LoginTap, user: User) -
     )
     with suppress(TelegramBadRequest):
         await callback.message.edit_text(text, reply_markup=None)
-    await callback.answer("✅" if signed_in else None)
+    await callback.answer("" if signed_in else None)
 
 
 @router.callback_query(SessionsAction.filter(F.action == "all"))

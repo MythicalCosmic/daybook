@@ -34,7 +34,7 @@ def signed(amount: Decimal | None, currency: str = "UZS") -> str:
 
 
 def handover_title(cashier: str, amount: Decimal, currency: str) -> str:
-    return _("💵 %(person)s handed you %(amount)s") % {
+    return _("%(person)s handed you %(amount)s") % {
         "person": cashier,
         "amount": money(amount, currency),
     }
@@ -46,7 +46,7 @@ def handover_body(till: str, reason: str) -> str:
 
 
 def handover_declined_title(amount: Decimal, currency: str) -> str:
-    return _("⚠️ Handover not received: %(amount)s") % {"amount": money(amount, currency)}
+    return _("Handover not received: %(amount)s") % {"amount": money(amount, currency)}
 
 
 def handover_declined_body(receiver: str, cashier: str, till: str, reason: str) -> str:
@@ -123,7 +123,7 @@ def closed_body(branch: str, difference: Decimal | None) -> str:
 
 
 def verified_title(code: str) -> str:
-    return _("✅ Shift %(shift)s verified") % {"shift": code}
+    return _("Shift %(shift)s verified") % {"shift": code}
 
 
 def verified_body(difference: Decimal | None) -> str:
@@ -175,7 +175,7 @@ def not_closed_body(cashier: str, branch: str, closes_at: str) -> str:
 
 
 def till_open_title() -> str:
-    return _("🧾 Your till is still open")
+    return _("Your till is still open")
 
 
 def till_open_body(code: str, branch: str) -> str:
@@ -213,7 +213,7 @@ def over_limit_body(limit: Decimal) -> str:
 def group_shift_closed(code: str, branch: str, cashier: str, net: Decimal, difference) -> str:
     # Group posts are Telegram HTML: names are escaped.
     lines = [
-        _("🧾 <b>%(shift)s</b> closed · %(branch)s") % {"shift": code, "branch": escape(branch)},
+        _("<b>%(shift)s</b> closed · %(branch)s") % {"shift": code, "branch": escape(branch)},
         escape(cashier),
         _("Sales: %(net)s") % {"net": money(net)},
     ]
@@ -233,12 +233,12 @@ def group_handover(
         "branch": escape(branch),
     }
     if received:
-        return _("💵 %(cashier)s → %(receiver)s: %(amount)s received ✓ · %(branch)s") % values
-    return _("⚠️ %(cashier)s → %(receiver)s: %(amount)s NOT received · %(branch)s") % values
+        return _("%(cashier)s → %(receiver)s: %(amount)s received ✓ · %(branch)s") % values
+    return _("%(cashier)s → %(receiver)s: %(amount)s NOT received · %(branch)s") % values
 
 
 def group_evening(day_label: str, rows: list[tuple[str, Decimal, int]], total: Decimal, change):
-    lines = [_("📊 <b>Sales · %(day)s</b>") % {"day": day_label}]
+    lines = [_("<b>Sales · %(day)s</b>") % {"day": day_label}]
     for name, net, receipts in rows:
         lines.append(
             _("%(branch)s: %(net)s (%(receipts)s receipts)")
@@ -268,7 +268,7 @@ def verify_label() -> str:
 
 # The "🧾 Kassa" menu button -----------------------------------------------------------------
 
-KASSA_BUTTON = "🧾 Kassa"
+KASSA_BUTTON = "Kassa"
 
 
 def kassa_status(membership):
@@ -293,7 +293,7 @@ def kassa_status(membership):
             since = local(company, shift.opened_at).strftime("%H:%M")
             moved = cash.movement_totals_by_kind(shift)
             lines += [
-                _("🧾 <b>%(shift)s</b> is open") % {"shift": shift.code},
+                _("<b>%(shift)s</b> is open") % {"shift": shift.code},
                 _("%(branch)s · %(till)s · since %(time)s")
                 % {
                     "branch": django_html.escape(shift.branch.name),
@@ -310,7 +310,7 @@ def kassa_status(membership):
             lines.append(_("Close the shift in Kassa when the day ends."))
         else:
             lines += [
-                _("🧾 No till is open."),
+                _("No till is open."),
                 _("Open a shift in Kassa: count the float and start."),
             ]
         url = miniapp_url("kassa")
@@ -320,7 +320,7 @@ def kassa_status(membership):
     if pending:
         if lines:
             lines.append("")
-        lines.append(_("💵 <b>Cash handed to you</b>"))
+        lines.append(_("<b>Cash handed to you</b>"))
         for movement in pending:
             lines.append(
                 _("%(person)s · %(amount)s · %(branch)s, %(time)s")
@@ -335,13 +335,13 @@ def kassa_status(membership):
             rows.append(
                 [
                     InlineKeyboardButton(
-                        text=_("✅ Received %(amount)s") % {"amount": label},
+                        text=_("Received %(amount)s") % {"amount": label},
                         callback_data=SalesHandover(
                             answer=HandoverAnswer.RECEIVED, movement_id=movement.pk
                         ).pack(),
                     ),
                     InlineKeyboardButton(
-                        text=_("❌ Not received"),
+                        text=_("Not received"),
                         callback_data=SalesHandover(
                             answer=HandoverAnswer.NOT_RECEIVED, movement_id=movement.pk
                         ).pack(),
@@ -356,7 +356,7 @@ def kassa_status(membership):
 
 def handover_answered(answer: str, amount, currency: str) -> str:
     if answer == "ok":
-        return _("✅ Received: %(amount)s. Thank you!") % {"amount": money(amount, currency)}
-    return _("❌ Marked as not received: %(amount)s. The owners were told.") % {
+        return _("Received: %(amount)s. Thank you!") % {"amount": money(amount, currency)}
+    return _("Marked as not received: %(amount)s. The owners were told.") % {
         "amount": money(amount, currency)
     }

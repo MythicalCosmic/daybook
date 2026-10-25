@@ -303,7 +303,7 @@ def _runs_a_till(member) -> bool:
 
 
 register_menu_button(
-    gettext_noop("🧾 Kassa"), order=20, visible=_runs_a_till, web_app_screen="kassa"
+    gettext_noop("Kassa"), order=20, visible=_runs_a_till, web_app_screen="kassa"
 )
 
 

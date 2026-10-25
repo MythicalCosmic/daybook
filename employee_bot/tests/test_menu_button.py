@@ -28,14 +28,14 @@ def app_data(telegram_id: int, language: str) -> Update:
             date=datetime.now(),
             chat=Chat(id=telegram_id, type="private"),
             from_user=updates.tg_user(telegram_id, language_code=language),
-            web_app_data=WebAppData(data="open_app", button_text="📱 Open app"),
+            web_app_data=WebAppData(data="open_app", button_text="Open app"),
         ),
     )
 
 
 @pytest.mark.parametrize(
     ("language", "label"),
-    [("ru", "📱 Открыть приложение"), ("uz", "📱 Ilovani ochish"), ("en", "📱 Open app")],
+    [("ru", "Открыть приложение"), ("uz", "Ilovani ochish"), ("en", "Open app")],
 )
 async def test_start_labels_the_chats_menu_button_in_their_language(
     dp, bot, settings, language, label
@@ -68,7 +68,7 @@ async def test_the_apps_request_for_a_button_labels_it_too(dp, bot, company, mem
 
     [button] = menu_buttons(bot)
     assert button.chat_id == worker.user.telegram_id
-    assert button.menu_button.text == "📱 Открыть приложение"
+    assert button.menu_button.text == "Открыть приложение"
 
 
 async def test_a_refused_label_never_stops_the_answer(dp, bot, settings, monkeypatch, caplog):

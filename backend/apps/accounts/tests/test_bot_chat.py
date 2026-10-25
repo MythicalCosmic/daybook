@@ -75,7 +75,7 @@ def test_relabel_sets_the_menus_and_sends_the_new_keyboard(bot_double, company, 
     assert calls["SetMyCommands"].scope.chat_id == worker.user.telegram_id
     assert [c.command for c in calls["SetMyCommands"].commands][-2:] == ["language", "help"]
     message = calls["SendMessage"]
-    assert message.text.startswith("✅ Теперь пишу по-русски")
+    assert message.text.startswith("Теперь пишу по-русски")
     assert message.disable_notification is True
     assert message.reply_markup.keyboard  # the main menu, in Russian
 

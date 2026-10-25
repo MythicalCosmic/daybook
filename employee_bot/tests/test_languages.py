@@ -22,7 +22,7 @@ from tests import updates
 
 pytestmark = pytest.mark.django_db(transaction=True)
 
-GREETING = "👋 Hi! To join your company, open the invite link your manager sent you."
+GREETING = "Hi! To join your company, open the invite link your manager sent you."
 
 
 def sent(bot) -> list[SendMessage]:
@@ -112,9 +112,9 @@ async def test_language_command_relabels_the_whole_chat(dp, bot, company, member
     [button] = [r for r in bot.requests if isinstance(r, SetChatMenuButton)]
     assert button.chat_id == worker.user.telegram_id
     confirmation = sent(bot)[-1]
-    assert confirmation.text.startswith("✅ Теперь пишу по-русски")
+    assert confirmation.text.startswith("Теперь пишу по-русски")
     assert isinstance(confirmation.reply_markup, ReplyKeyboardMarkup)
-    assert confirmation.reply_markup.keyboard[0][0].text == said("ru", "📋 My tasks")
+    assert confirmation.reply_markup.keyboard[0][0].text == said("ru", "My tasks")
 
 
 async def test_the_same_language_only_says_so(dp, bot, company, member):
@@ -133,7 +133,7 @@ async def test_the_same_language_only_says_so(dp, bot, company, member):
 async def test_the_language_command_has_short_forms(dp, bot, company, member, command):
     worker = await member.aregistered(company)
     await dp.feed_update(bot, updates.message(updates.tg_user(worker.user.telegram_id), command))
-    assert sent(bot)[-1].text == "🌐 Choose a language:"
+    assert sent(bot)[-1].text == "Choose a language:"
 
 
 async def test_help_and_settings(dp, bot, company, member):
@@ -145,7 +145,7 @@ async def test_help_and_settings(dp, bot, company, member):
 
     await dp.feed_update(bot, updates.message(tg, "/settings"))
     settings_reply = sent(bot)[-1]
-    assert settings_reply.reply_markup.inline_keyboard[0][0].text == "🌐 Language: English ›"
+    assert settings_reply.reply_markup.inline_keyboard[0][0].text == "Language: English ›"
 
 
 async def test_someone_waiting_for_approval_can_change_the_language(dp, bot, company, member):

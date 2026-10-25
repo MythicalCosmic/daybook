@@ -1,6 +1,6 @@
 """Someone in several companies picks the one the bot's lists and new tasks use (audit X-1).
 
-    /company, the menu's "🏢 Demo Dorixona ▸" button, or Settings, then Company
+    /company, the menu's "Demo Dorixona ▸" button, or Settings, then Company
 
 A task's own buttons always act in that task's company (bot.middlewares.access), so a push
 from either company works whatever is picked here.
@@ -56,10 +56,10 @@ async def pick_company(callback: CallbackQuery, callback_data: CompanyCallback, 
         await callback.answer(_("You don't have access to this."), show_alert=True)
         return
     name, (text, markup) = home
-    await callback.answer(f"🏢 {name}")
+    await callback.answer(f"{name}")
     with suppress(TelegramAPIError):
         await callback.message.edit_text(
-            _("🏢 Now working in <b>%(company)s</b>.") % {"company": html.quote(name)}
+            _("Now working in <b>%(company)s</b>.") % {"company": html.quote(name)}
         )
     # The main menu differs per company (its modules), so it comes again with the home message.
     await callback.message.answer(text, reply_markup=markup)
@@ -83,7 +83,7 @@ def _picker(user: User) -> bot_messages.BotMessage:
         ]
         for m in memberships
     ]
-    return _("🏢 Which company are you working in?"), InlineKeyboardMarkup(inline_keyboard=rows)
+    return _("Which company are you working in?"), InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def _switch(user: User, company_id: int) -> tuple[str, bot_messages.BotMessage] | None:

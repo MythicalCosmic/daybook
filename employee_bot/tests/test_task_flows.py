@@ -2,7 +2,7 @@
 was asked on (albums and files too), "which task is this photo for?", comments by button and by
 reply, quick add with "what I understood", managers giving work, lists with pages and the "to
 check" list, people in two companies, "can't do it", "need more time", and the small things
-(thanks get a 👍, a failing handler still answers)."""
+(thanks get a, a failing handler still answers)."""
 
 from datetime import timedelta
 from zoneinfo import ZoneInfo
@@ -89,7 +89,7 @@ async def test_done_can_be_undone_from_the_card(dp, bot, company, member):
     await dp.feed_update(bot, updates.callback(tg, press(TaskAction.UNDO, task.pk)))
 
     assert (await reload(task)).status == Task.Status.TODO
-    assert answers(bot)[-1].text == "↩️ The task is open again."
+    assert answers(bot)[-1].text == "The task is open again."
 
 
 async def test_work_sent_for_checking_says_so(dp, bot, company, member):
@@ -102,7 +102,7 @@ async def test_work_sent_for_checking_says_so(dp, bot, company, member):
         updates.callback(updates.tg_user(worker.user.telegram_id), press(TaskAction.DONE, task.pk)),
     )
 
-    assert answers(bot)[-1].text == f"🔎 Sent for checking · {manager}"  # audit B-5
+    assert answers(bot)[-1].text == f"Sent for checking · {manager}"  # audit B-5
 
 
 async def test_steps_are_ticked_on_the_card_and_done_asks_first(dp, bot, company, member):
@@ -118,7 +118,7 @@ async def test_steps_are_ticked_on_the_card_and_done_asks_first(dp, bot, company
         for row in of(bot, EditMessageText)[-1].reply_markup.inline_keyboard
         if (row[0].callback_data or "").startswith("tstep:")
     ]
-    assert step_rows == ["⬜ Count the till", "⬜ Fridge reading"]
+    assert step_rows == ["Count the till", "Fridge reading"]
 
     await dp.feed_update(
         bot, updates.callback(tg, StepCallback(task_id=task.pk, item_id=first.pk).pack())
@@ -172,7 +172,7 @@ async def test_the_proof_photo_lands_on_the_card_it_was_asked_on(
 
     assert (await reload(task)).status == Task.Status.DONE
     reactions = [r.reaction[0].emoji for r in of(bot, SetMessageReaction)]
-    assert reactions == ["👀", "👍", "👌"]  # working, done, and the album's extra photo
+    assert reactions == ["", "", ""]  # working, done, and the album's extra photo
     assert "Front shelf" in of(bot, EditMessageText)[-1].text  # the card, done
 
 
@@ -206,7 +206,7 @@ async def test_a_photo_first_asks_which_task_it_is_for(dp, bot, company, member,
 
     await dp.feed_update(bot, updates.photo(tg, caption="done"))
     question = of(bot, SendMessage)[-1]
-    assert question.text == "📷 Which task is this photo for?"
+    assert question.text == "Which task is this photo for?"
     assert "Price tags" in question.reply_markup.inline_keyboard[0][0].text
 
     await dp.feed_update(bot, updates.callback(tg, PhotoCallback(task_id=task.pk).pack()))
@@ -230,13 +230,13 @@ async def test_a_comment_by_button_and_by_reply(dp, bot, company, member, sent_m
 
     card = TaskCallback(action=TaskAction.OPEN, task_id=task.pk).pack()
     markup = InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text="📋 Open", callback_data=card)]]
+        inline_keyboard=[[InlineKeyboardButton(text="Open", callback_data=card)]]
     )
     await dp.feed_update(bot, updates.reply(tg, "Ertalab yozaman", markup))
 
     texts = [c async for c in TaskComment.objects.filter(task=task).values_list("text", flat=True)]
     assert texts == ["Terminal cheki topilmayapti", "Ertalab yozaman"]
-    assert [r.reaction[0].emoji for r in of(bot, SetMessageReaction)] == ["👍", "👍"]
+    assert [r.reaction[0].emoji for r in of(bot, SetMessageReaction)] == ["", ""]
     assert any(m["chat_id"] == manager.user.telegram_id for m in sent_messages)  # it reached them
 
 
@@ -250,8 +250,8 @@ async def test_the_title_can_carry_the_deadline(dp, bot, company, member):
     await dp.feed_update(bot, updates.message(tg, "/new"))
     await dp.feed_update(bot, updates.message(tg, "Kassani sanash 25.12 10:00!!"))
     preview = of(bot, SendMessage)[-1]
-    assert "📝 <b>Kassani sanash</b>" in preview.text
-    assert "10:00" in preview.text and "⚡" in preview.text
+    assert "<b>Kassani sanash</b>" in preview.text
+    assert "10:00" in preview.text and "" in preview.text
     await dp.feed_update(bot, updates.callback(tg, QuickAddCallback(action="save").pack()))
 
     task = await Task.objects.aget(assignee=worker)
@@ -297,7 +297,7 @@ async def test_a_manager_gives_work_from_new_task(dp, bot, company, member):
     await dp.feed_update(bot, updates.message(tg, "/new"))
     await dp.feed_update(bot, updates.message(tg, "Kassa lentasini olib kel"))
     picker = of(bot, SendMessage)[-1]
-    assert picker.reply_markup.inline_keyboard[0][0].text == "🙋 Me"
+    assert picker.reply_markup.inline_keyboard[0][0].text == "Me"
     await dp.feed_update(
         bot, updates.callback(tg, PickCallback(task_id=0, member_id=worker.pk).pack())
     )
@@ -328,7 +328,7 @@ async def test_thanks_and_stickers_get_a_thumbs_up(dp, bot, company, member):
     await dp.feed_update(bot, updates.sticker(tg))
 
     assert of(bot, SendMessage) == []
-    assert [r.reaction[0].emoji for r in of(bot, SetMessageReaction)] == ["👍", "👍"]
+    assert [r.reaction[0].emoji for r in of(bot, SetMessageReaction)] == ["", ""]
 
 
 # Lists ----------------------------------------------------------------------------------
@@ -342,11 +342,11 @@ async def test_long_lists_have_pages_and_checkers_have_their_list(dp, bot, compa
     await make_task(assignee=worker, created_by=manager, status=Task.Status.REVIEW)
     tg = updates.tg_user(manager.user.telegram_id)
 
-    await dp.feed_update(bot, updates.message(tg, "📋 My tasks"))
+    await dp.feed_update(bot, updates.message(tg, "My tasks"))
     listing = of(bot, SendMessage)[-1]
     labels = [row[0].text for row in listing.reply_markup.inline_keyboard]
     assert "1/2" in [b.text for row in listing.reply_markup.inline_keyboard for b in row]
-    assert "🔎 To check (1)" in [
+    assert "To check (1)" in [
         b.text for row in listing.reply_markup.inline_keyboard for b in row
     ]
     assert len([label for label in labels if "Count" in label]) == 8
@@ -393,7 +393,7 @@ async def test_a_push_from_the_other_company_works(dp, bot, member):
 
 
 async def test_a_push_from_the_other_company_brings_its_menu(dp, bot, member):
-    """Final review: the tap moved the lists to the shop, but the menu still said "🏢 Supplier ▸"
+    """Final review: the tap moved the lists to the shop, but the menu still said "Supplier ▸"
     (and showed the supplier's modules) until /start."""
     from aiogram.types import ReplyKeyboardMarkup
 
@@ -412,7 +412,7 @@ async def test_a_push_from_the_other_company_brings_its_menu(dp, bot, member):
     await dp.feed_update(bot, updates.callback(tg, press(TaskAction.CONFIRM, task.pk)))
 
     note = of(bot, SendMessage)[-1]
-    assert note.text == f"🏢 Now working in <b>{shop.name}</b>."
+    assert note.text == f"Now working in <b>{shop.name}</b>."
     assert isinstance(note.reply_markup, ReplyKeyboardMarkup)
     labels = [button.text for row in note.reply_markup.keyboard for button in row]
     assert any(shop.name in label for label in labels)
@@ -512,7 +512,7 @@ async def test_a_manager_sets_a_new_time_from_the_card(dp, bot, company, member)
 
 
 async def test_a_time_typed_while_the_choices_show_is_read(dp, bot, company, member):
-    """Final review: typing "tomorrow 10:00" under the choices (without ✍️ first) used to fall
+    """Final review: typing "tomorrow 10:00" under the choices (without first) used to fall
     through to the home message and leave the deadline as it was."""
     worker = await member.aregistered(company)
     manager = await member.aregistered(company, "Manager")
@@ -528,7 +528,7 @@ async def test_a_time_typed_while_the_choices_show_is_read(dp, bot, company, mem
     local = timezone.localtime(task.due_at, tz)
     # "tomorrow" after midnight is the coming morning (research R2), so only the hour is fixed
     assert (local.hour, local.minute) == (10, 0) and task.due_at > due
-    assert of(bot, SendMessage)[-1].text == "🕒 New deadline set."
+    assert of(bot, SendMessage)[-1].text == "New deadline set."
 
 
 async def test_a_preset_after_the_choices_leaves_no_time_question_behind(dp, bot, company, member):
@@ -551,7 +551,7 @@ async def test_a_preset_after_the_choices_leaves_no_time_question_behind(dp, bot
 
 async def test_other_text_after_the_choices_is_not_trapped_as_a_time(dp, bot, company, member):
     """Choices opened and left alone: a new task typed later gets the usual "Add this as a
-    task?", while after ✍️ (asked to type a time) a non-time still asks again."""
+    task?", while after (asked to type a time) a non-time still asks again."""
     worker = await member.aregistered(company)
     manager = await member.aregistered(company, "Manager")
     task = await make_task(
@@ -561,14 +561,14 @@ async def test_other_text_after_the_choices_is_not_trapped_as_a_time(dp, bot, co
 
     await dp.feed_update(bot, updates.callback(boss, press(TaskAction.NEW_DUE, task.pk)))
     await dp.feed_update(bot, updates.message(boss, "Order the insulin"))
-    assert of(bot, SendMessage)[-1].text.startswith("➕ Add this as a task?")
+    assert of(bot, SendMessage)[-1].text.startswith("Add this as a task?")
 
     # A reply to a task message under the open choices is still a comment.
     await dp.feed_update(bot, updates.callback(boss, press(TaskAction.STOP)))
     await dp.feed_update(bot, updates.callback(boss, press(TaskAction.NEW_DUE, task.pk)))
     card = TaskCallback(action=TaskAction.OPEN, task_id=task.pk).pack()
     markup = InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text="📋 Open", callback_data=card)]]
+        inline_keyboard=[[InlineKeyboardButton(text="Open", callback_data=card)]]
     )
     await dp.feed_update(bot, updates.reply(boss, "Call me first", markup))
     texts = [c async for c in TaskComment.objects.filter(task=task).values_list("text", flat=True)]
@@ -592,7 +592,7 @@ async def test_snooze_choices_in_place(dp, bot, company, member):
 
     await dp.feed_update(bot, updates.callback(tg, press(TaskAction.SNOOZE_MENU, task.pk)))
     choices = of(bot, EditMessageReplyMarkup)[-1].reply_markup
-    assert [b.text for b in choices.inline_keyboard[0]] == ["⏰ 15 min", "⏰ 1 hour"]
+    assert [b.text for b in choices.inline_keyboard[0]] == ["15 min", "1 hour"]
 
     await dp.feed_update(
         bot, updates.callback(tg, SnoozeCallback(task_id=task.pk, preset="15m").pack())
@@ -621,4 +621,4 @@ async def test_a_failing_handler_still_answers_the_tap(dp, bot, company, member,
         ),
     )
 
-    assert answers(bot)[-1].text == "⚠️ Something went wrong. Please try again in a moment."
+    assert answers(bot)[-1].text == "Something went wrong. Please try again in a moment."

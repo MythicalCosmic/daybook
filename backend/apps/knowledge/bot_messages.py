@@ -28,16 +28,16 @@ def display_title(page: Page) -> str:
 
 def published_title(page: Page, *, updated: bool) -> str:
     if updated:
-        return _("📚 Page updated, please read it again: %(title)s") % {
+        return _("Page updated, please read it again: %(title)s") % {
             "title": display_title(page)
         }
     if page.require_ack:
-        return _("📚 New page to read: %(title)s") % {"title": display_title(page)}
-    return _("📚 New page in the knowledge base: %(title)s") % {"title": display_title(page)}
+        return _("New page to read: %(title)s") % {"title": display_title(page)}
+    return _("New page in the knowledge base: %(title)s") % {"title": display_title(page)}
 
 
 def reminder_title(page: Page) -> str:
-    return _("📚 Please read and confirm: %(title)s") % {"title": display_title(page)}
+    return _("Please read and confirm: %(title)s") % {"title": display_title(page)}
 
 
 def page_excerpt(page: Page) -> str:
@@ -46,14 +46,14 @@ def page_excerpt(page: Page) -> str:
 
 
 def read_button() -> str:
-    return _("📖 Read")
+    return _("Read")
 
 
 def _web_app_button(page: Page) -> InlineKeyboardButton | None:
     if not settings.EMPLOYEE_MINIAPP_URL.startswith("https://"):
         return None
     return InlineKeyboardButton(
-        text=_("📱 Open in the app"), web_app=WebAppInfo(url=miniapp_url(app_screen(page)))
+        text=_("Open in the app"), web_app=WebAppInfo(url=miniapp_url(app_screen(page)))
     )
 
 
@@ -61,16 +61,16 @@ def page_message(page: Page, *, read: bool) -> BotMessage:
     """The page itself, in the chat, with "I've read it" when the page asks for it."""
     body, cut = sanitize.to_telegram(page.body)
     space = html.quote(f"{page.space.icon} {page.space.name}".strip())
-    lines = [f"📚 <b>{html.quote(display_title(page))}</b>", f"<i>{space}</i>", "", body]
+    lines = [f"<b>{html.quote(display_title(page))}</b>", f"<i>{space}</i>", "", body]
     if cut:
         lines += ["", _("The page is longer: open it in the app to read the rest.")]
     rows: list[list[InlineKeyboardButton]] = []
     if page.require_ack:
         if read:
-            lines += ["", _("✅ You've confirmed reading this version.")]
+            lines += ["", _("You've confirmed reading this version.")]
         else:
             ack = KbCallback(action=KbAction.ACK, page_id=page.pk, version=page.version)
-            rows.append([InlineKeyboardButton(text=_("✅ I've read it"), callback_data=ack.pack())])
+            rows.append([InlineKeyboardButton(text=_("I've read it"), callback_data=ack.pack())])
     if button := _web_app_button(page):
         rows.append([button])
     markup = InlineKeyboardMarkup(inline_keyboard=rows) if rows else None
@@ -84,13 +84,13 @@ def acked(page: Page) -> BotMessage:
 def to_read(pages: list[Page]) -> BotMessage:
     """The pages someone still has to confirm, one button each."""
     if not pages:
-        return _("✅ You've read everything you need to. Thank you!"), None
-    lines = [_("📚 <b>Pages to read</b>: %(count)d") % {"count": len(pages)}, ""]
+        return _("You've read everything you need to. Thank you!"), None
+    lines = [_("<b>Pages to read</b>: %(count)d") % {"count": len(pages)}, ""]
     lines.append(_("Tap a page to read it here, then confirm with “I've read it”."))
     rows = [
         [
             InlineKeyboardButton(
-                text=f"📖 {display_title(page)}"[:60],
+                text=f"{display_title(page)}"[:60],
                 callback_data=KbCallback(action=KbAction.OPEN, page_id=page.pk).pack(),
             )
         ]
@@ -111,4 +111,4 @@ def thanks() -> str:
 
 
 def sent_below() -> str:
-    return _("Sent the page below 👇")
+    return _("Sent the page below")

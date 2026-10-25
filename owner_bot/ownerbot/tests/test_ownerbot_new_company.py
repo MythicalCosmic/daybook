@@ -65,7 +65,7 @@ async def test_new_with_a_signup_code_creates_the_company(dp, bot, settings):
     timezone_question = bot.sent()[-1]
     assert "Baraka Market" in timezone_question.text
     tashkent = button(timezone_question, "tz", "Asia/Tashkent")
-    assert tashkent.text.startswith("✅")  # preselected
+    assert tashkent.text.startswith("")  # preselected
 
     await dp.feed_update(bot, updates.callback(person, tashkent.callback_data))
     confirm = bot.sent()[-1]

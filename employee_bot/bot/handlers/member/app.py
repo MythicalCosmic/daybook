@@ -1,4 +1,4 @@
-"""The main menu's mini app buttons: "📱 Open app" and the module buttons with a screen.
+"""The main menu's mini app buttons: "Open app" and the module buttons with a screen.
 
 Telegram gives a Mini App opened from a keyboard button no initData, so the app couldn't sign
 the person in: these buttons send their text, and the bot answers with an inline button that

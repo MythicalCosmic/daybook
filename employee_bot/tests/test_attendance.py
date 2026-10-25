@@ -98,9 +98,9 @@ async def test_checkin_command_then_location(dp, bot, company, member):
 async def test_menu_button_then_check_out(dp, bot, company, member):
     worker, _manager = await shop_with_shift(company, member)
     tg = updates.tg_user(worker.user.telegram_id)
-    await dp.feed_update(bot, updates.message(tg, "📍 Check in / out"))
+    await dp.feed_update(bot, updates.message(tg, "Check in / out"))
     await dp.feed_update(bot, location(tg))
-    await dp.feed_update(bot, updates.message(tg, "📍 Check in / out"))
+    await dp.feed_update(bot, updates.message(tg, "Check in / out"))
     assert "Check out" in sent(bot)[-1].text
     await dp.feed_update(bot, location(tg))
     assert "Checked out at" in sent(bot)[-1].text
@@ -112,7 +112,7 @@ async def test_menu_button_ends_another_conversation(dp, bot, company, member):
     worker, _manager = await shop_with_shift(company, member)
     tg = updates.tg_user(worker.user.telegram_id)
     await dp.feed_update(bot, updates.message(tg, "/new"))
-    await dp.feed_update(bot, updates.message(tg, "📍 Check in / out"))
+    await dp.feed_update(bot, updates.message(tg, "Check in / out"))
     assert "Check in" in sent(bot)[-1].text
 
 
@@ -137,7 +137,7 @@ async def test_text_instead_of_location_and_cancel(dp, bot, company, member):
     await dp.feed_update(bot, updates.message(tg, "/checkin"))
     await dp.feed_update(bot, updates.message(tg, "I'm here"))
     assert "share where you are" in sent(bot)[-1].text
-    await dp.feed_update(bot, updates.message(tg, "✖️ Cancel"))
+    await dp.feed_update(bot, updates.message(tg, "Cancel"))
     assert "nothing changed" in sent(bot)[-1].text
     assert not await AttendanceRecord.objects.filter(membership=worker).aexists()
 

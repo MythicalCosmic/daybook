@@ -64,7 +64,7 @@ def test_read_button_sends_the_page_into_the_chat(
     with django_capture_on_commit_callbacks(execute=True):
         message = run_action(note.pk, "read", by=cashier)
 
-    assert message == "Sent the page below 👇"
+    assert message == "Sent the page below"
     sent = [m for m in sent_messages if "Count the float" in m["text"]]
     assert sent and sent[0]["chat_id"] == cashier.user.telegram_id
     assert "<b>Steps</b>" in sent[0]["text"]

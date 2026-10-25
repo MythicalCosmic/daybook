@@ -11,7 +11,7 @@ from apps.notifications.telegram import BotName, serialize_markup
 
 
 def read_in_chat(notification, by: Membership, reason: str) -> str:
-    """ "📖 Read": the page arrives in the chat, with "I've read it" when it asks for that."""
+    """ "Read": the page arrives in the chat, with "I've read it" when it asks for that."""
     page = (
         Page.objects.select_related("space")
         .filter(company_id=notification.company_id, pk=notification.target_id)

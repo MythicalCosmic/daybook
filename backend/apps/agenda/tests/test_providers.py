@@ -66,7 +66,7 @@ def test_invite_buttons_answer_for_the_person(company, owner, alisher):
 
     message = run_action(note.pk, "going", by=alisher)
 
-    assert message == "✅ You said you'll come."
+    assert message == "You said you'll come."
     assert EventAttendee.objects.get(event=event, membership=alisher).response == "going"
 
 

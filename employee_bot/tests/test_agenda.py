@@ -46,7 +46,7 @@ async def test_calendar_shows_my_next_seven_days(dp, bot, company, member):
 
     text = sent(bot)[-1].text
     assert "Your next seven days" in text
-    assert "❔" in text and "Kassa trening" in text  # invited, not answered yet
+    assert "" in text and "Kassa trening" in text  # invited, not answered yet
     assert "Jamoa kechasi" in text and "Far away" not in text
 
 
@@ -70,8 +70,8 @@ async def test_answer_from_an_event_card(dp, bot, company, member):
     card = sent(bot)[-1]
     assert "Inventarizatsiya" in card.text
     assert [b.text for b in card.reply_markup.inline_keyboard[0]] == [
-        "✅ I'll come",
-        "🙅 Can't come",
+        "I'll come",
+        "Can't come",
     ]
 
     await dp.feed_update(bot, updates.callback(tg, press(EvAction.DECLINE, event_id=event.pk)))

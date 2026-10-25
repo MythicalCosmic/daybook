@@ -22,7 +22,7 @@ from apps.tasks.models import Task
 
 
 def heads_up(task: Task) -> BotMessage:
-    text = _("⏳ Heads-up: <b>%(task)s</b> is due at %(time)s.") % {
+    text = _("Heads-up: <b>%(task)s</b> is due at %(time)s.") % {
         "task": html.quote(display_title(task)),
         "time": _clock(task),
     }
@@ -43,24 +43,24 @@ def reminder(
     if custom is not None:
         text = _fill(custom, task, values)
     elif step == 1:
-        text = _("⏰ <b>%(task)s</b> was due at %(time)s. Please do it now.") % values
+        text = _("<b>%(task)s</b> was due at %(time)s. Please do it now.") % values
     elif (
         policy.escalate_after and step == policy.escalate_after and task.kind != Task.Kind.PERSONAL
     ):
-        text = _("🚨 <b>%(task)s</b> is %(late)s late. %(manager)s has been told.") % values
+        text = _("<b>%(task)s</b> is %(late)s late. %(manager)s has been told.") % values
     elif policy.escalate_after and step > policy.escalate_after and task.kind != Task.Kind.PERSONAL:
         text = (
-            _("❗ Still not done: <b>%(task)s</b>, %(late)s late. Finish it now, please.") % values
+            _("Still not done: <b>%(task)s</b>, %(late)s late. Finish it now, please.") % values
         )
     else:
-        text = _("🔔 Reminder %(step)d: <b>%(task)s</b> is %(late)s late.") % values
+        text = _("Reminder %(step)d: <b>%(task)s</b> is %(late)s late.") % values
     snoozes_left = policy.max_snoozes - task.snooze_count
     return text, _keyboard(task, snooze=snoozes_left > 0 or task.kind == Task.Kind.PERSONAL)
 
 
 def escalation(task: Task, now: datetime, manager: Membership | None = None) -> BotMessage:
     text = _(
-        "🚨 <b>%(name)s</b> is %(late)s late with <b>%(task)s</b>. Reminders sent: %(count)d."
+        "<b>%(name)s</b> is %(late)s late with <b>%(task)s</b>. Reminders sent: %(count)d."
     ) % {
         "name": html.quote(str(task.assignee)),
         "late": format_duration(now - task.due_at),
@@ -71,9 +71,9 @@ def escalation(task: Task, now: datetime, manager: Membership | None = None) -> 
     if manager is not None:
         actions = []
         if rules.can_nudge(task, manager):
-            actions.append(_button(_("👋 Remind now"), TaskAction.NUDGE, task.pk))
+            actions.append(_button(_("Remind now"), TaskAction.NUDGE, task.pk))
         if rules.can_reassign(task, manager):
-            actions.append(_button(_("👤 Someone else"), TaskAction.REASSIGN, task.pk))
+            actions.append(_button(_("Someone else"), TaskAction.REASSIGN, task.pk))
         if actions:
             rows.append(actions)
     rows.append([open_button(task)])
@@ -82,7 +82,7 @@ def escalation(task: Task, now: datetime, manager: Membership | None = None) -> 
 
 def blocked(member: Membership, task: Task) -> BotMessage:
     text = _(
-        "⛔ <b>%(name)s</b> blocked the bot, so reminders can't reach them. "
+        "<b>%(name)s</b> blocked the bot, so reminders can't reach them. "
         "<b>%(task)s</b> is still open."
     ) % {"name": html.quote(str(member)), "task": html.quote(display_title(task))}
     return text, _open_keyboard(task)
@@ -117,17 +117,17 @@ def _clock(task: Task) -> str:
 def _keyboard(task: Task, snooze: bool) -> InlineKeyboardMarkup:
     """Done and Snooze (its choices open in place), then the task: two buttons a row at most
     (research R1 F7)."""
-    first = [_button(_("✅ Done"), TaskAction.DONE, task.pk)]
+    first = [_button(_("Done"), TaskAction.DONE, task.pk)]
     if snooze:
-        first.append(_button(_("⏰ Snooze"), TaskAction.SNOOZE_MENU, task.pk))
-    second = [_button(_("📋 Open"), TaskAction.OPEN, task.pk)]
+        first.append(_button(_("Snooze"), TaskAction.SNOOZE_MENU, task.pk))
+    second = [_button(_("Open"), TaskAction.OPEN, task.pk)]
     if app := app_button(task):
         second.append(app)
     return InlineKeyboardMarkup(inline_keyboard=[first, second])
 
 
 def _open_keyboard(task: Task) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[[_button(_("📋 Open"), TaskAction.OPEN, task.pk)]])
+    return InlineKeyboardMarkup(inline_keyboard=[[_button(_("Open"), TaskAction.OPEN, task.pk)]])
 
 
 def _button(text: str, action: TaskAction, task_id: int) -> InlineKeyboardButton:

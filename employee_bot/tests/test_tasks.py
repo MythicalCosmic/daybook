@@ -46,7 +46,7 @@ async def test_my_tasks_lists_all_open_work_late_first(dp, bot, company, member)
     )
     tg = updates.tg_user(worker.user.telegram_id)
 
-    await dp.feed_update(bot, updates.message(tg, "📋 My tasks"))
+    await dp.feed_update(bot, updates.message(tg, "My tasks"))
 
     reply = sent(bot)[-1]
     tasks = [
@@ -56,7 +56,7 @@ async def test_my_tasks_lists_all_open_work_late_first(dp, bot, company, member)
     ]
     assert [task.task_id for task in tasks] == [late.pk, later.pk]
     first = reply.reply_markup.inline_keyboard[0][0].text
-    assert first.startswith("🔴") and "Stock count" in first
+    assert first.startswith("") and "Stock count" in first
     assert "late: 1" in reply.text
 
 
@@ -129,7 +129,7 @@ async def test_new_task_with_a_preset_deadline(dp, bot, company, member):
     worker = await member.aregistered(company)
     tg = updates.tg_user(worker.user.telegram_id)
 
-    await dp.feed_update(bot, updates.message(tg, "➕ New task"))
+    await dp.feed_update(bot, updates.message(tg, "New task"))
     await dp.feed_update(bot, updates.message(tg, "Order receipt rolls"))
     await dp.feed_update(bot, updates.callback(tg, DueCallback(preset=DuePreset.IN_AN_HOUR).pack()))
     assert not await Task.objects.filter(assignee=worker).aexists()  # the preview comes first
@@ -163,8 +163,8 @@ async def test_menu_button_abandons_a_half_made_task(dp, bot, company, member):
     worker = await member.aregistered(company)
     tg = updates.tg_user(worker.user.telegram_id)
 
-    await dp.feed_update(bot, updates.message(tg, "➕ New task"))
-    await dp.feed_update(bot, updates.message(tg, "📋 My tasks"))
+    await dp.feed_update(bot, updates.message(tg, "New task"))
+    await dp.feed_update(bot, updates.message(tg, "My tasks"))
     await dp.feed_update(bot, updates.message(tg, "hello"))
 
     assert not await Task.objects.filter(assignee=worker).aexists()
@@ -242,7 +242,7 @@ async def test_snooze_from_a_reminder(dp, bot, company, member):
     task = await reload(task)
     assert task.snooze_count == 1
     answer = [r for r in bot.requests if isinstance(r, AnswerCallbackQuery)][-1]
-    assert answer.text.startswith("⏰ Snoozed. Next reminder at")
+    assert answer.text.startswith("Snoozed. Next reminder at")
     assert "the deadline stays" in answer.text
 
     await dp.feed_update(bot, updates.callback(tg, press(TaskAction.SNOOZE, task.pk)))

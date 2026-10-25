@@ -777,12 +777,12 @@ def _policies(company) -> tuple[ReminderPolicy, ReminderPolicy]:
             ReminderText(
                 policy=strict,
                 from_step=2,
-                text="⚠️ {task} {late} kechikdi. Mudirga xabar berildi.",
+                text="{task} {late} kechikdi. Mudirga xabar berildi.",
             ),
             ReminderText(
                 policy=strict,
                 from_step=5,
-                text="🚨 {name}, {task} hali ham bajarilmagan. Mudir kutyapti.",
+                text="{name}, {task} hali ham bajarilmagan. Mudir kutyapti.",
             ),
         ]
     )

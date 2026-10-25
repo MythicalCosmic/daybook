@@ -122,9 +122,9 @@ def _week(membership: Membership) -> BotMessage:
         EventAttendee.objects.filter(membership=membership).values_list("event_id", "response")
     )
     marks = {
-        EventAttendee.Response.GOING: "✅ ",
-        EventAttendee.Response.DECLINED: "🙅 ",
-        EventAttendee.Response.PENDING: "❔ ",
+        EventAttendee.Response.GOING: "",
+        EventAttendee.Response.DECLINED: "",
+        EventAttendee.Response.PENDING: "",
     }
     days: dict = {}
     for item in items:

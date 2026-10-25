@@ -101,7 +101,7 @@ async def test_a_conversation_in_progress_does_not_swallow_the_link(dp, bot, own
     made = await new_link()
     person = updates.tg_user(OWNER_TG)
     # Start creating a task (a conversation waiting for its title)…
-    await dp.feed_update(bot, updates.message(person, "➕ New task"))
+    await dp.feed_update(bot, updates.message(person, "New task"))
 
     await dp.feed_update(bot, updates.message(person, f"/start login_{made.code}"))
 

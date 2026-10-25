@@ -84,7 +84,7 @@ def _resolve(
 
 @sync_to_async
 def _switched(membership: Membership) -> bot_messages.BotMessage:
-    text = _("🏢 Now working in <b>%(company)s</b>.") % {
+    text = _("Now working in <b>%(company)s</b>.") % {
         "company": html.quote(membership.company.name)
     }
     return text, bot_messages.main_menu(membership)

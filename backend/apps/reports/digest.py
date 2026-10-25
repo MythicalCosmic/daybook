@@ -164,19 +164,19 @@ def morning(
         "count": len(tasks) - overdue,
     }
     if shift_start is not None and shift_start.time() >= NOON:
-        lines = [_("👋 %(name)s, tasks for your shift: %(count)d.") % values]
+        lines = [_("%(name)s, tasks for your shift: %(count)d.") % values]
     else:
-        lines = [_("🌅 Good morning, %(name)s! Tasks for today: %(count)d.") % values]
+        lines = [_("Good morning, %(name)s! Tasks for today: %(count)d.") % values]
     if overdue:
-        lines.append(_("⚠️ Still open from earlier days: %(count)d.") % {"count": overdue})
+        lines.append(_("Still open from earlier days: %(count)d.") % {"count": overdue})
     lines.append(_("Tap a task to open it."))
     rows = [[task_button(task, now)] for task in tasks[:DIGEST_LIMIT]]
     last = []
     if len(tasks) > DIGEST_LIMIT:
-        last.append(list_button(_("📋 All my tasks")))
+        last.append(list_button(_("All my tasks")))
     if settings.EMPLOYEE_MINIAPP_URL.startswith("https://"):
         url = miniapp_url("tasks")
-        last.append(InlineKeyboardButton(text=_("📱 Open the app"), web_app=WebAppInfo(url=url)))
+        last.append(InlineKeyboardButton(text=_("Open the app"), web_app=WebAppInfo(url=url)))
     if last:
         rows.append(last)
     return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=rows)

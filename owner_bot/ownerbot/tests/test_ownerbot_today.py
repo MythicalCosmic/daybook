@@ -33,7 +33,7 @@ async def test_today_shows_branches_sections_and_approvals(
     settings.DASHBOARD_URL = "https://app.example.uz/dashboard/"
 
     def tasks_section(company, day, now, branch_ids):
-        return {"emoji": "✅", "title": "Tasks", "lines": ["18 of 24 done", "3 late"]}
+        return {"emoji": "", "title": "Tasks", "lines": ["18 of 24 done", "3 late"]}
 
     isolated_registries.register_brief_section(
         "tasks.today", perm=None, order=10, build=tasks_section

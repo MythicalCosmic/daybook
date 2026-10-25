@@ -39,7 +39,7 @@ async def test_kb_lists_the_pages_to_read(dp, bot, company, member):
 
     reply = sent(bot)[-1]
     assert "Pages to read" in reply.text
-    assert [row[0].text for row in reply.reply_markup.inline_keyboard] == ["📖 Ish tartibi"]
+    assert [row[0].text for row in reply.reply_markup.inline_keyboard] == ["Ish tartibi"]
 
 
 async def test_nothing_to_read(dp, bot, company, member):
@@ -65,7 +65,7 @@ async def test_read_a_page_in_the_chat_and_confirm(dp, bot, company, member):
     shown = sent(bot)[-1]
     assert "<b>Ochish</b>" in shown.text and "<b>sanang</b>" in shown.text
     [[ack_button]] = shown.reply_markup.inline_keyboard
-    assert ack_button.text == "✅ I've read it"
+    assert ack_button.text == "I've read it"
 
     await dp.feed_update(bot, updates.callback(tg, ack_button.callback_data))
 
@@ -85,7 +85,7 @@ async def test_confirming_an_outdated_version_sends_the_new_one(dp, bot, company
 
     assert not await PageAck.objects.filter(page=page).aexists()
     assert answers(bot)[-1].show_alert is True
-    assert sent(bot)[-1].reply_markup.inline_keyboard[0][0].text == "✅ I've read it"
+    assert sent(bot)[-1].reply_markup.inline_keyboard[0][0].text == "I've read it"
 
 
 async def test_a_page_for_other_positions_isnt_shown(dp, bot, company, member):

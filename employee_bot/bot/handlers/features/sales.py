@@ -4,7 +4,7 @@ confirmations ([Received] [Not received]) and shift results for cashiers.
 Registered inside the member router, after the state-bound tasks and announcements routers
 and before the home router (docs/PLAN-OWNER.md §10.2, rule 20).
 
-- The "🧾 Kassa" menu button (registered by `apps.sales.hooks` for people who run a till) opens
+- The "Kassa" menu button (registered by `apps.sales.hooks` for people who run a till) opens
   the mini app's Kassa when the bot has an https mini app address; otherwise its text arrives
   here and gets a summary: the open till (never the expected cash: the count is blind), or how
   to open one, plus the handovers waiting for this person with [Received] [Not received].
