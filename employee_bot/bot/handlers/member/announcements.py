@@ -57,9 +57,10 @@ async def pick(
     data = await state.get_data()
     chosen = set(data["positions"]) ^ {callback_data.position_id}
     await state.update_data(positions=sorted(chosen))
-    _text, markup = await _preview(membership, data["text"], chosen)
+    # The text too: its "Chosen positions: …" line says what the green buttons are.
+    text, markup = await _preview(membership, data["text"], chosen)
     with suppress(TelegramBadRequest):
-        await callback.message.edit_reply_markup(reply_markup=markup)
+        await callback.message.edit_text(text, reply_markup=markup)
     await callback.answer()
 
 

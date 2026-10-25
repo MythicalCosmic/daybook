@@ -14,6 +14,7 @@ from apps.groups.callbacks import GroupAction, GroupCallback
 from apps.groups.models import DEFAULT_EVENTS, GroupEvent, TelegramGroup, available_events
 from apps.groups.tests.factories import TelegramGroupFactory
 from apps.members.tests.factories import PositionFactory
+from apps.notifications.emoji import has_emoji
 from bot.commands import set_commands
 from tests import updates
 from tests.mocked_bot import BOT_USERNAME
@@ -34,6 +35,11 @@ def alerts(bot) -> list[str]:
 
 def toggles(markup) -> list[str]:
     return [row[0].text for row in markup.inline_keyboard]
+
+
+def turned_on(markup) -> list[str]:
+    """The switches that are on: they are green ("success"), with no mark in their words."""
+    return [row[0].text for row in markup.inline_keyboard if row[0].style == "success"]
 
 
 def press(action: GroupAction, event: str = "") -> str:
@@ -71,8 +77,12 @@ async def test_a_manager_adding_the_bot_links_the_group(dp, bot, company, manage
     labels = toggles(reply.reply_markup)
     # every event the company can use, whose news, then Done
     assert len(labels) == len(available_events(company)) + 2
-    assert labels[0].startswith("")  # daily tasks done is on by default
-    assert labels[1].startswith("")  # assigned tasks done is not
+    assert not any(has_emoji(label) for label in labels)
+    on = turned_on(reply.reply_markup)
+    assert "Daily tasks done" in on  # on by default
+    assert "Assigned tasks done" not in on
+    # The text says what is on, for apps that show no button colours.
+    assert "Turned on: Daily tasks done" in reply.text
 
 
 async def test_anyone_else_adding_the_bot_gets_told_how_to_link_it(dp, bot, worker):
@@ -141,13 +151,13 @@ async def test_a_manager_chooses_what_the_group_gets(dp, bot, company, manager):
 
     group = await linked()
     assert group.events == [GroupEvent.LATE, GroupEvent.MORNING]
-    [edit] = [r for r in bot.requests if isinstance(r, EditMessageReplyMarkup)]
-    morning = list(GroupEvent).index(GroupEvent.MORNING)
-    assert toggles(edit.reply_markup)[morning].startswith("")
+    [edit] = [r for r in bot.requests if isinstance(r, EditMessageText)]
+    assert turned_on(edit.reply_markup) == ["Late tasks", "Morning plan"]
+    assert "Turned on: Late tasks, Morning plan" in edit.text
 
     await dp.feed_update(bot, updates.group_callback(tg(manager), press(GroupAction.CLOSE)))
 
-    [done] = [r for r in bot.requests if isinstance(r, EditMessageText)]
+    done = [r for r in bot.requests if isinstance(r, EditMessageText)][-1]
     assert "Late tasks" in done.text
     assert "Morning plan" in done.text
     assert done.reply_markup is None
@@ -171,8 +181,10 @@ async def test_a_manager_narrows_the_group_to_some_positions(dp, bot, company, m
     )
 
     assert [p.pk async for p in group.positions.all()] == [cashier.pk]
-    [edit] = [r for r in bot.requests if isinstance(r, EditMessageReplyMarkup)]
+    edit = [r for r in bot.requests if isinstance(r, EditMessageText)][-1]
     assert toggles(edit.reply_markup)[0] == "Cashier"
+    assert turned_on(edit.reply_markup) == ["Cashier"]
+    assert "Whose news: Cashier" in edit.text
 
     await dp.feed_update(bot, updates.group_callback(tg(manager), press(GroupAction.BACK)))
 
@@ -208,7 +220,7 @@ async def test_only_managers_change_the_settings(dp, bot, company, worker):
 
     assert alerts(bot)
     assert (await linked()).events == [GroupEvent.LATE]
-    assert not [r for r in bot.requests if isinstance(r, EditMessageReplyMarkup)]
+    assert not [r for r in bot.requests if isinstance(r, (EditMessageReplyMarkup, EditMessageText))]
 
 
 async def test_settings_in_a_group_that_isnt_linked(dp, bot, manager):

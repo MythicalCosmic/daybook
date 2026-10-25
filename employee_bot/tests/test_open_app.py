@@ -25,9 +25,7 @@ async def test_the_app_button_answers_with_a_button_that_opens_the_app(
     settings.EMPLOYEE_MINIAPP_URL = APP
     worker = await member.aregistered(company)
 
-    await dp.feed_update(
-        bot, updates.message(updates.tg_user(worker.user.telegram_id), "Open app")
-    )
+    await dp.feed_update(bot, updates.message(updates.tg_user(worker.user.telegram_id), "Open app"))
 
     markup = sent(bot)[-1].reply_markup
     assert isinstance(markup, InlineKeyboardMarkup)

@@ -8,6 +8,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext as _
+from django.utils.translation import pgettext
 
 from apps.companies.models import Company
 from apps.groups.callbacks import GroupAction, GroupCallback
@@ -40,7 +41,7 @@ def task_done(task: Task) -> BotMessage:
             % (values | {"late": format_duration(task.completed_at - task.due_at)})
         )
     if task.proof_text:
-        lines.append(f"{html.quote(task.proof_text)}")
+        lines.append(_("Report: %(text)s") % {"text": html.quote(task.proof_text)})
     if task.status == Task.Status.REVIEW:
         # A redo after a send-back (audit B-17) shouldn't read like the first post again.
         if task.activity.filter(kind=Activity.Kind.RETURNED).exists():
@@ -111,20 +112,31 @@ def connected(group: TelegramGroup) -> BotMessage:
 
 
 def settings(group: TelegramGroup) -> BotMessage:
+    """The switches: what is on shows green and is listed in the text ("Turned on: …"), so it
+    reads the same where buttons have no colour."""
     rows = [
         [
             _button(
-                f"{'' if event in group.events else ''} {event.label}",
+                str(event.label),
                 GroupAction.TOGGLE,
+                chosen=event in group.events,
                 event=event,
             )
         ]
         for event in available_events(group.company, group.events)
     ]
     rows.append([_button(_("Whose news: %(who)s") % {"who": _who(group)}, GroupAction.WHO)])
-    rows.append([_button(_("Done"), GroupAction.CLOSE)])
-    text = _("<b>What should I post here?</b> Tap to turn things on or off.")
-    return text, InlineKeyboardMarkup(inline_keyboard=rows)
+    # Translators: closes the group's settings ("Tayyor" / "Готово"), not a task's status.
+    rows.append([_button(pgettext("group settings", "Done"), GroupAction.CLOSE)])
+    chosen = [str(GroupEvent(event).label) for event in group.events]
+    lines = [
+        _("<b>What should I post here?</b> Tap to turn things on or off."),
+        "",
+        _("Turned on: %(events)s") % {"events": html.quote(", ".join(chosen))}
+        if chosen
+        else _("Turned on: nothing yet"),
+    ]
+    return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def positions_picker(group: TelegramGroup) -> BotMessage:
@@ -135,8 +147,9 @@ def positions_picker(group: TelegramGroup) -> BotMessage:
     rows = [
         [
             _button(
-                f"{'' if position.pk in chosen else ''} {position.name}",
+                position.name,
                 GroupAction.POSITION,
+                chosen=position.pk in chosen,
                 position_id=position.pk,
             )
         ]
@@ -149,6 +162,8 @@ def positions_picker(group: TelegramGroup) -> BotMessage:
     )
     if not rows[:-1]:
         text += "\n\n" + _("This company has no positions yet.")
+    else:
+        text += "\n\n" + _("Whose news: %(who)s") % {"who": html.quote(_who(group))}
     return text, InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -159,9 +174,14 @@ def _who(group: TelegramGroup) -> str:
     return names if len(names) <= WHO_LIMIT else f"{names[: WHO_LIMIT - 1]}…"
 
 
-def _button(text: str, action: GroupAction, **fields) -> InlineKeyboardButton:
+def _button(
+    text: str, action: GroupAction, *, chosen: bool = False, **fields
+) -> InlineKeyboardButton:
+    """A settings button; a switch that is on is green (`chosen`)."""
     return InlineKeyboardButton(
-        text=text, callback_data=GroupCallback(action=action, **fields).pack()
+        text=text,
+        callback_data=GroupCallback(action=action, **fields).pack(),
+        style="success" if chosen else None,
     )
 
 

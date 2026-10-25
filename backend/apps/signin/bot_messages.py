@@ -38,15 +38,23 @@ def _clock(moment: datetime, user: User) -> str:
     return timezone.localtime(moment, user_timezone(user)).strftime("%H:%M")
 
 
+def _where(device: str, ip: str, time: str) -> list[str]:
+    """Where a sign-in comes from, a fact per line ("Qurilma: Chrome · Windows"), plain text."""
+    lines = [_("Device: %(device)s") % {"device": device}]
+    if ip:
+        lines.append(_("IP address: %(ip)s") % {"ip": ip})
+    lines.append(_("Time: %(time)s") % {"time": time})
+    return lines
+
+
 def login_prompt(prompt, user: User) -> BotMessage:
     """The question under `/start login_…`: where the sign-in comes from, three numbers."""
-    origin = " · ".join(part for part in (prompt.ip, _clock(prompt.created_at, user)) if part)
+    where = _where(prompt.device.label, prompt.ip, _clock(prompt.created_at, user))
     text = "\n".join(
         (
             "<b>" + html.quote(_("Sign in to the dashboard?")) + "</b>",
             "",
-            "" + html.quote(prompt.device.label),
-            "" + html.quote(origin),
+            *(html.quote(line) for line in where),
             "",
             html.quote(_("Tap the number you see on your screen.")),
             html.quote(_("Didn't start this? Tap “It wasn't me”.")),
@@ -96,19 +104,13 @@ def login_outcome(outcome: str) -> str:
 def signed_in(session: DeviceSession) -> BotMessage:
     """After every desktop sign-in: where, and a way out if it wasn't them."""
     device = devices.describe(session.user_agent)
-    place = " · ".join(
-        part
-        for part in (
-            device.label,
-            devices.masked_ip(session.ip),
-            _clock(session.created_at, session.user),
-        )
-        if part
+    where = _where(
+        device.label, devices.masked_ip(session.ip), _clock(session.created_at, session.user)
     )
     text = "\n".join(
         (
             "<b>" + html.quote(_("Signed in to the dashboard")) + "</b>",
-            html.quote(place),
+            *(html.quote(line) for line in where),
             "",
             html.quote(_("Not you? Log out everywhere and nobody stays signed in.")),
         )

@@ -33,7 +33,6 @@ class Outcome:
 
     message: BotMessage | None = None
     alert: str | None = None
-    keep_text: bool = False  # only the buttons changed
 
 
 # `user` is missing when someone posts as the group itself (an anonymous admin).
@@ -90,12 +89,10 @@ async def settings_button(
     outcome = await _press(callback.message.chat.id, callback_data, user)
     if outcome.message is not None and isinstance(callback.message, Message):
         text, markup = outcome.message
-        # Unchanged or too old to edit: nothing more to do.
+        # The text changes with the buttons: it lists what is turned on. Unchanged or too old
+        # to edit: nothing more to do.
         with suppress(TelegramBadRequest):
-            if outcome.keep_text:
-                await callback.message.edit_reply_markup(reply_markup=markup)
-            else:
-                await callback.message.edit_text(text, reply_markup=markup)
+            await callback.message.edit_text(text, reply_markup=markup)
     await callback.answer(outcome.alert, show_alert=outcome.alert is not None)
 
 
@@ -146,15 +143,14 @@ def _press(chat_id: int, data: GroupCallback, user: User) -> Outcome:
     group, refusal = _for_manager(chat_id, user)
     if group is None:
         return Outcome(alert=refusal[0])
-    keep_text = False
     try:
         match data.action:
             case GroupAction.TOGGLE if data.event in GroupEvent.values:
                 group = services.toggle_event(group, GroupEvent(data.event), by=user)
-                build, keep_text = bot_messages.settings, True
+                build = bot_messages.settings
             case GroupAction.POSITION:
                 group = services.toggle_position(group, data.position_id, by=user)
-                build, keep_text = bot_messages.positions_picker, True
+                build = bot_messages.positions_picker
             case GroupAction.WHO:
                 build = bot_messages.positions_picker
             case GroupAction.BACK:
@@ -166,7 +162,7 @@ def _press(chat_id: int, data: GroupCallback, user: User) -> Outcome:
     except (PermissionDenied, DomainError) as exc:
         return Outcome(alert=str(exc))
     with translation.override(group.company.default_language):
-        return Outcome(message=build(group), keep_text=keep_text)
+        return Outcome(message=build(group))
 
 
 def _for_manager(chat_id: int, user: User | None) -> tuple[TelegramGroup | None, BotMessage | None]:

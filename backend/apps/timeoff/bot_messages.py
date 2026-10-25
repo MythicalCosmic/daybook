@@ -13,7 +13,8 @@ def request(time_off: TimeOff) -> BotMessage:
     """What approvers see. Once decided, it shows the outcome instead of buttons."""
     lines = [
         _("<b>Time off request</b> · %(name)s") % {"name": html.quote(str(time_off.membership))},
-        _("%(dates)s · days: %(count)d") % {"dates": dates(time_off), "count": time_off.days},
+        _("Dates: %(dates)s · days: %(count)d")
+        % {"dates": dates(time_off), "count": time_off.days},
     ]
     if time_off.reason:
         lines.append(_("Reason: %(reason)s") % {"reason": html.quote(time_off.reason)})
@@ -72,7 +73,7 @@ def request_title(time_off: TimeOff) -> str:
 
 def request_body(time_off: TimeOff) -> str:
     lines = [
-        _("%(dates)s · days: %(count)d") % {"dates": dates(time_off), "count": time_off.days}
+        _("Dates: %(dates)s · days: %(count)d") % {"dates": dates(time_off), "count": time_off.days}
     ]
     if time_off.reason:
         lines.append(_("Reason: %(reason)s") % {"reason": time_off.reason})

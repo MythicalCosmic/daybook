@@ -14,11 +14,12 @@ from apps.members.bot_messages import BotMessage, miniapp_url
 from apps.projects.callbacks import ProjectUpdateCallback, UpdateStep
 from apps.projects.models import Health, Project, ProjectUpdate
 
-HEALTH_ICONS = {Health.ON_TRACK: "", Health.AT_RISK: "", Health.OFF_TRACK: ""}
+# The health buttons' colours; the words say it as well ("On track", "At risk", "Off track").
+HEALTH_STYLES = {Health.ON_TRACK: "success", Health.OFF_TRACK: "danger"}
 
 
 def health_label(health: str) -> str:
-    return f"{HEALTH_ICONS.get(health, '')} {Health(health).label}".strip()
+    return str(Health(health).label)
 
 
 def _title(project: Project) -> str:
@@ -33,6 +34,7 @@ def ask_health(project: Project) -> BotMessage:
             callback_data=ProjectUpdateCallback(
                 step=UpdateStep.HEALTH, project_id=project.pk, health=health
             ).pack(),
+            style=HEALTH_STYLES.get(health),
         )
         for health in Health.values
     ]

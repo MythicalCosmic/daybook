@@ -65,7 +65,6 @@ def setup_brief(company, day, now, branch_ids) -> dict | None:
     if not steps or done == len(steps):
         return None
     return {
-        "emoji": "🚀",
         "title": str(_("Get started")),
         "lines": [str(_("%(done)d of %(total)d steps done")) % {"done": done, "total": len(steps)}],
     }

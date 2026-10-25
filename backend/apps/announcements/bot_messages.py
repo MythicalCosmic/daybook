@@ -18,11 +18,13 @@ def ask_text() -> BotMessage:
 
 
 def preview(text: str, positions: list[Position], chosen: set[int]) -> BotMessage:
+    # A chosen position is a green button, and the text lists the choice (no tick marks).
     rows = [
         [
             _button(
-                f"{'' if position.pk in chosen else ''} {position.name}",
+                position.name,
                 AnnounceAction.PICK,
+                style="success" if position.pk in chosen else None,
                 position_id=position.pk,
             )
         ]
@@ -35,6 +37,8 @@ def preview(text: str, positions: list[Position], chosen: set[int]) -> BotMessag
     lines = [_("<b>Preview</b>"), "", text]
     if hint:
         lines += ["", hint]
+    if names := [position.name for position in positions if position.pk in chosen]:
+        lines.append(_("Chosen positions: %(names)s") % {"names": html.quote(", ".join(names))})
     return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -98,7 +102,9 @@ def _cancel() -> InlineKeyboardButton:
     return _button(_("Cancel"), AnnounceAction.CANCEL)
 
 
-def _button(text: str, action: AnnounceAction, **fields) -> InlineKeyboardButton:
+def _button(
+    text: str, action: AnnounceAction, *, style: str | None = None, **fields
+) -> InlineKeyboardButton:
     return InlineKeyboardButton(
-        text=text, callback_data=AnnounceCallback(action=action, **fields).pack()
+        text=text, callback_data=AnnounceCallback(action=action, **fields).pack(), style=style
     )

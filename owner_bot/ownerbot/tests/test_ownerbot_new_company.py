@@ -4,6 +4,7 @@ import pytest
 from aiogram.methods import SendMessage
 from asgiref.sync import sync_to_async
 
+from apps.accounts.tests.factories import UserFactory
 from apps.companies.models import Branch, Company
 from apps.finance.models import MoneyAccount
 from apps.members.models import Membership
@@ -32,6 +33,13 @@ def make_code() -> str:
 
 
 @sync_to_async
+def speaks(telegram_id: int, language: str = "en") -> None:
+    """Someone who already chose `language`: these conversations are read in English (and one in
+    Russian); a person writing for the first time starts in Uzbek."""
+    UserFactory(telegram_id=telegram_id, language=language)
+
+
+@sync_to_async
 def company_named(name: str) -> dict | None:
     company = Company.objects.filter(name=name).first()
     if company is None:
@@ -50,6 +58,7 @@ async def test_new_with_a_signup_code_creates_the_company(dp, bot, settings):
     settings.COMPANY_SIGNUP = "code"
     settings.DASHBOARD_URL = "https://app.example.uz/dashboard/"
     person = updates.tg_user(7401, first_name="Malika")
+    await speaks(7401)
     code = await make_code()
 
     await dp.feed_update(bot, updates.message(person, "/new"))
@@ -65,7 +74,8 @@ async def test_new_with_a_signup_code_creates_the_company(dp, bot, settings):
     timezone_question = bot.sent()[-1]
     assert "Baraka Market" in timezone_question.text
     tashkent = button(timezone_question, "tz", "Asia/Tashkent")
-    assert tashkent.text.startswith("")  # preselected
+    assert tashkent.style == "success"  # the usual answer stands out, with no mark in its words
+    assert tashkent.text.startswith("Tashkent (UTC+5)")
 
     await dp.feed_update(bot, updates.callback(person, tashkent.callback_data))
     confirm = bot.sent()[-1]
@@ -93,6 +103,7 @@ async def test_a_deep_link_brings_the_code(dp, bot, settings):
     settings.COMPANY_SIGNUP = "code"
     code = await make_code()
     person = updates.tg_user(7402)
+    await speaks(7402)
 
     await dp.feed_update(bot, updates.message(person, f"/start new_{signup.normalize(code)}"))
 
@@ -101,6 +112,7 @@ async def test_a_deep_link_brings_the_code(dp, bot, settings):
 
 async def test_a_bad_deep_link_code_asks_for_one(dp, bot, settings):
     settings.COMPANY_SIGNUP = "code"
+    await speaks(7403)
 
     await dp.feed_update(bot, updates.message(updates.tg_user(7403), "/start new_NOPE1234"))
 
@@ -110,7 +122,8 @@ async def test_a_bad_deep_link_code_asks_for_one(dp, bot, settings):
 
 async def test_open_signup_needs_no_code_and_takes_a_typed_timezone(dp, bot, settings):
     settings.COMPANY_SIGNUP = "open"
-    person = updates.tg_user(7404, language_code="ru")  # who is answered in Russian
+    person = updates.tg_user(7404, language_code="ru")
+    await speaks(7404, "ru")  # who is answered in Russian
 
     await dp.feed_update(bot, updates.message(person, "/new"))
     assert "Как называется ваша компания?" in last_text(bot)
@@ -128,8 +141,18 @@ async def test_open_signup_needs_no_code_and_takes_a_typed_timezone(dp, bot, set
     assert made["company"].default_language == "ru"
 
 
+async def test_someone_new_is_asked_in_uzbek(dp, bot, settings):
+    settings.COMPANY_SIGNUP = "code"
+    person = updates.tg_user(7410, language_code="ru")  # Telegram in Russian, still Uzbek first
+
+    await dp.feed_update(bot, updates.message(person, "/new"))
+
+    assert last_text(bot).startswith("<b>Yangi kompaniya</b>")
+
+
 async def test_signup_off_refuses(dp, bot, settings):
     settings.COMPANY_SIGNUP = "off"
+    await speaks(7405)
 
     await dp.feed_update(bot, updates.message(updates.tg_user(7405), "/new"))
 
@@ -151,6 +174,7 @@ async def test_cancel_and_stale_buttons(dp, bot, settings):
 async def test_a_command_ends_the_conversation(dp, bot, settings, company, member):
     settings.COMPANY_SIGNUP = "open"
     person = updates.tg_user(7407)
+    await speaks(7407)
     await dp.feed_update(bot, updates.message(person, "/new"))
 
     await dp.feed_update(bot, updates.message(person, "/today"))

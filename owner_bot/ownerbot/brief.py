@@ -7,8 +7,9 @@ Built from what the owner may see there:
 - every brief section the modules registered (`register_brief_section`), in their order;
 - how many approvals wait in "Needs you".
 
-A brief section's `build` returns a dict; `/today` shows `{"title": str, "lines": [str],
-"emoji": str}` (each optional), or `{"text": str}`, and falls back to "key: value" lines.
+A brief section's `build` returns a dict; `/today` shows `{"title": str, "lines": [str]}`
+(each optional; the title in bold), or `{"text": str}`, and falls back to "key: value" lines. An
+"emoji" key is ignored: the bots send no emoji.
 """
 
 import zoneinfo
@@ -27,8 +28,6 @@ from apps.core.money import format_money
 from apps.members import scope
 from apps.members.models import Membership
 from ownerbot import bot_messages
-
-STATUS_ICONS = {"open": "", "not_opened": "", "closed": "", "day_off": ""}
 
 
 def memberships(user: User) -> list[Membership]:
@@ -82,21 +81,30 @@ def _money(amount: str, currency: str) -> str:
 
 
 def branch_lines(cards: list[dict], currency: str) -> list[str]:
+    """A branch per line, its status in words ("Chilonzor — ochilgan: soat 08:55"), and under it
+    what its modules report, each fact with its label ("Savdo: …", "Ishda: 4/5")."""
     lines = []
     for card in cards:
-        parts = [f"{STATUS_ICONS.get(card['status'], '•')} <b>{html.quote(card['name'])}</b>"]
-        parts.append(html.quote(_status(card)))
+        line = f"<b>{html.quote(card['name'])}</b> — {html.quote(_status(card))}"
         facts = []
         if sales := card.get("sales"):
-            facts.append("" + _money(sales.get("net", "0"), currency))
+            facts.append(_("Sales: %(net)s") % {"net": _money(sales.get("net", "0"), currency)})
         if attendance := card.get("attendance"):
-            facts.append(f"{attendance.get('checked_in', 0)}/{attendance.get('rostered', 0)}")
+            facts.append(
+                _("At work: %(present)d/%(rostered)d")
+                % {
+                    "present": attendance.get("checked_in", 0),
+                    "rostered": attendance.get("rostered", 0),
+                }
+            )
         if tasks := card.get("tasks"):
-            done = f"{tasks.get('done', 0)}/{tasks.get('total', 0)}"
+            done = _("Tasks: %(done)d/%(total)d") % {
+                "done": tasks.get("done", 0),
+                "total": tasks.get("total", 0),
+            }
             if tasks.get("late"):
-                done += " ·" + str(tasks["late"])
+                done += ", " + _("late: %(count)d") % {"count": tasks["late"]}
             facts.append(done)
-        line = " — ".join(parts)
         if facts:
             line += "\n    " + html.quote(" · ".join(facts))
         lines.append(line)
@@ -105,16 +113,15 @@ def branch_lines(cards: list[dict], currency: str) -> list[str]:
 
 def section_lines(data: dict) -> list[str]:
     title = data.get("title")
-    emoji = data.get("emoji") or "•"
     body = data.get("lines")
     if body is None and data.get("text"):
         body = [data["text"]]
     out = []
     if title:
-        out.append(f"{emoji} <b>{html.quote(str(title))}</b>")
+        out.append(f"<b>{html.quote(str(title))}</b>")
     out += [f"    {html.quote(str(line))}" for line in body or ()]
     if not out:
-        out = [html.quote(f"{key}: {value}") for key, value in data.items()]
+        out = [html.quote(f"{key}: {value}") for key, value in data.items() if key != "emoji"]
     return out
 
 
@@ -138,8 +145,7 @@ def today(member: Membership, now: datetime | None = None) -> bot_messages.BotMe
     lines.append("")
     if waiting:
         lines.append(
-            ""
-            + html.quote(
+            html.quote(
                 ngettext(
                     "%(count)d decision waits for you.",
                     "%(count)d decisions wait for you.",
@@ -149,5 +155,5 @@ def today(member: Membership, now: datetime | None = None) -> bot_messages.BotMe
             )
         )
     else:
-        lines.append("" + html.quote(_("Nothing waits for your decision.")))
+        lines.append(html.quote(_("Nothing waits for your decision.")))
     return "\n".join(lines), bot_messages.today_keyboard(company.pk, waiting)

@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-25 23:31+0500\n"
+"POT-Creation-Date: 2026-10-26 00:18+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -169,8 +169,8 @@ msgstr "каждый месяц"
 
 #: backend/apps/agenda/bot_messages.py
 #, python-format
-msgid "%(mark)s You're invited: %(title)s"
-msgstr "%(mark)s Вас приглашают: %(title)s"
+msgid "You're invited: %(title)s"
+msgstr "Вас приглашают: %(title)s"
 
 #: backend/apps/agenda/bot_messages.py
 #, python-format
@@ -201,9 +201,11 @@ msgstr "Через %(minutes)d мин: %(title)s"
 msgid "I'll come"
 msgstr "Приду"
 
-#: backend/apps/agenda/bot_messages.py backend/apps/agenda/models.py
+#. Translators: the attendee's own answer on a button ("I can't come"), not their status.
+#: backend/apps/agenda/bot_messages.py
+msgctxt "event answer button"
 msgid "Can't come"
-msgstr "Не сможет"
+msgstr "Не смогу"
 
 #: backend/apps/agenda/bot_messages.py
 msgid "You said you'll come."
@@ -324,6 +326,10 @@ msgstr "Нет ответа"
 #: backend/apps/agenda/models.py
 msgid "Going"
 msgstr "Придёт"
+
+#: backend/apps/agenda/models.py
+msgid "Can't come"
+msgstr "Не сможет"
 
 #: backend/apps/agenda/models.py
 msgid "The occurrence the last reminder was for."
@@ -447,7 +453,6 @@ msgid "This event is over."
 msgstr "Это событие уже прошло."
 
 #: backend/apps/announcements/admin.py backend/apps/finance/models.py
-#: backend/apps/knowledge/bot_messages.py
 msgid "Read"
 msgstr "Прочитано"
 
@@ -500,6 +505,11 @@ msgstr "Кому отправить? Выберите должности или 
 #: backend/apps/announcements/bot_messages.py
 msgid "<b>Preview</b>"
 msgstr "<b>Предпросмотр</b>"
+
+#: backend/apps/announcements/bot_messages.py
+#, python-format
+msgid "Chosen positions: %(names)s"
+msgstr "Выбранные должности: %(names)s"
 
 #: backend/apps/announcements/bot_messages.py
 #, python-format
@@ -1068,6 +1078,16 @@ msgstr "<b>Кто на месте · %(branch)s</b>"
 #, python-format
 msgid "%(present)s of %(rostered)s on shift are here."
 msgstr "Пришли %(present)s из %(rostered)s по графику."
+
+#: backend/apps/attendance/bot_messages.py
+#, python-format
+msgid "On time: %(names)s"
+msgstr "Пришли вовремя: %(names)s"
+
+#: backend/apps/attendance/bot_messages.py
+#, python-format
+msgid "Late: %(names)s"
+msgstr "Опоздали: %(names)s"
 
 #: backend/apps/attendance/bot_messages.py
 #, python-format
@@ -4226,6 +4246,11 @@ msgstr "В %(time)s, вовремя."
 msgid "At %(time)s, %(late)s late."
 msgstr "В %(time)s, просрочено на %(late)s."
 
+#: backend/apps/groups/bot_messages.py backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Report: %(text)s"
+msgstr "Отчёт: %(text)s"
+
 #: backend/apps/groups/bot_messages.py
 msgid "Fixed and sent for a check again."
 msgstr "Исправлено и снова отправлено на проверку."
@@ -4289,9 +4314,9 @@ msgstr "Группа подключена к компании <b>%(company)s</b>
 msgid "Whose news: %(who)s"
 msgstr "Чьи новости: %(who)s"
 
-#: backend/apps/groups/bot_messages.py backend/apps/projects/conf.py
-#: backend/apps/projects/models.py backend/apps/reminders/bot_messages.py
-#: backend/apps/tasks/bot_messages.py backend/apps/tasks/services.py
+#. Translators: closes the group's settings ("Tayyor" / "Готово"), not a task's status.
+#: backend/apps/groups/bot_messages.py
+msgctxt "group settings"
 msgid "Done"
 msgstr "Готово"
 
@@ -4300,6 +4325,16 @@ msgid "<b>What should I post here?</b> Tap to turn things on or off."
 msgstr "<b>Что сюда присылать?</b> Нажмите, чтобы включить или выключить."
 
 #: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "Turned on: %(events)s"
+msgstr "Включено: %(events)s"
+
+#: backend/apps/groups/bot_messages.py
+msgid "Turned on: nothing yet"
+msgstr "Включено: пока ничего"
+
+#: backend/apps/groups/bot_messages.py backend/apps/members/bot_messages.py
+#: backend/apps/tasks/bot_messages.py
 msgid "Back"
 msgstr "Назад"
 
@@ -4492,15 +4527,31 @@ msgstr "Такой тип новостей недоступен для этой 
 msgid "You don't have access to this."
 msgstr "У вас нет доступа к этому."
 
+#. Translators: %(title)s is the notification's title, e.g. "Kassa yopilmadi".
 #: backend/apps/inbox/bot_messages.py
 #, python-format
-msgid "%(action)s"
-msgstr "%(action)s"
+msgid "Warning: %(title)s"
+msgstr "Внимание: %(title)s"
+
+#: backend/apps/inbox/bot_messages.py
+#, python-format
+msgid "Urgent: %(title)s"
+msgstr "Срочно: %(title)s"
 
 #: backend/apps/inbox/bot_messages.py
 #, python-format
 msgid "%(action)s · %(name)s"
 msgstr "%(action)s · %(name)s"
+
+#: backend/apps/inbox/bot_messages.py
+#, python-format
+msgid "Answer: %(action)s"
+msgstr "Ответ: %(action)s"
+
+#: backend/apps/inbox/bot_messages.py
+#, python-format
+msgid "Answer: %(action)s · %(name)s"
+msgstr "Ответ: %(action)s · %(name)s"
 
 #: backend/apps/inbox/bot_messages.py backend/apps/tasks/bot_messages.py
 msgid "Open in app"
@@ -4664,6 +4715,12 @@ msgstr "Новая статья в базе знаний: %(title)s"
 msgid "Please read and confirm: %(title)s"
 msgstr "Пожалуйста, прочитайте и подтвердите: %(title)s"
 
+#. Translators: a button that sends the page into the chat ("Read it"), not the status.
+#: backend/apps/knowledge/bot_messages.py
+msgctxt "knowledge read button"
+msgid "Read"
+msgstr "Читать"
+
 #: backend/apps/knowledge/bot_messages.py
 msgid "The page is longer: open it in the app to read the rest."
 msgstr "Это не вся статья: откройте её в приложении, чтобы дочитать."
@@ -4702,7 +4759,7 @@ msgstr "Спасибо! Отмечено как прочитанное."
 
 #: backend/apps/knowledge/bot_messages.py
 msgid "Sent the page below"
-msgstr "Отправил страницу ниже"
+msgstr "Страница — в сообщении ниже."
 
 #: backend/apps/knowledge/defaults.py
 msgid "Company handbook"
@@ -4797,6 +4854,45 @@ msgstr "Опубликована страница «%(title)s»"
 #, python-format
 msgid "Copied from %(company)s"
 msgstr "Скопировано из компании %(company)s"
+
+#: backend/apps/knowledge/sanitize.py
+msgctxt "knowledge callout"
+msgid "Note"
+msgstr "Заметка"
+
+#: backend/apps/knowledge/sanitize.py
+msgctxt "knowledge callout"
+msgid "Good practice"
+msgstr "Хорошая практика"
+
+#: backend/apps/knowledge/sanitize.py
+msgctxt "knowledge callout"
+msgid "Warning"
+msgstr "Внимание"
+
+#: backend/apps/knowledge/sanitize.py
+msgctxt "knowledge callout"
+msgid "Never do this"
+msgstr "Никогда так не делайте"
+
+#: backend/apps/knowledge/sanitize.py
+msgctxt "knowledge callout"
+msgid "Side note"
+msgstr "Примечание"
+
+#: backend/apps/knowledge/sanitize.py
+msgctxt "knowledge checklist"
+msgid "Done"
+msgstr "Выполнено"
+
+#: backend/apps/knowledge/sanitize.py
+#, python-format
+msgid "Picture: %(alt)s"
+msgstr "Изображение: %(alt)s"
+
+#: backend/apps/knowledge/sanitize.py
+msgid "Picture"
+msgstr "Изображение"
 
 #: backend/apps/knowledge/services.py
 msgid "Only people who manage the knowledge base can do this."
@@ -5022,12 +5118,22 @@ msgid "To check"
 msgstr "Проверка"
 
 #: backend/apps/members/bot_messages.py
+#, python-format
+msgid "Company: %(name)s"
+msgstr "Компания: %(name)s"
+
+#: backend/apps/members/bot_messages.py
 msgid "Type a task or pick from the menu"
 msgstr "Напишите задачу или выберите в меню"
 
 #: backend/apps/members/bot_messages.py
 msgid "Tap the button to open the app."
 msgstr "Нажмите кнопку, чтобы открыть приложение."
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "The «%(button)s» button next to the message field opens it in one tap."
+msgstr "Кнопка «%(button)s» рядом с полем ввода открывает его одним нажатием."
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -5112,8 +5218,8 @@ msgid "Welcome to <b>%(company)s</b>!"
 msgstr "Добро пожаловать в команду <b>%(company)s</b>!"
 
 #: backend/apps/members/bot_messages.py
-msgid "/language · /help"
-msgstr "/language · /help"
+msgid "Language: /language · Help: /help"
+msgstr "Язык: /language · Помощь: /help"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -5121,6 +5227,7 @@ msgid "Open: %(count)d"
 msgstr "Открытых: %(count)d"
 
 #: backend/apps/members/bot_messages.py backend/apps/tasks/bot_messages.py
+#: owner_bot/ownerbot/brief.py
 #, python-format
 msgid "late: %(count)d"
 msgstr "просрочено: %(count)d"
@@ -5212,7 +5319,7 @@ msgstr "Заблокировано: %(name)s"
 msgid "Join request · %(name)s"
 msgstr "Заявка на вступление · %(name)s"
 
-#: backend/apps/members/bot_messages.py
+#: backend/apps/members/bot_messages.py backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "Company: %(company)s"
 msgstr "Компания: %(company)s"
@@ -5225,12 +5332,13 @@ msgstr ""
 
 #: backend/apps/members/bot_messages.py
 #, python-format
+msgid "Chosen: %(names)s"
+msgstr "Выбрано: %(names)s"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
 msgid "Role: %(role)s"
 msgstr "Роль: %(role)s"
-
-#: backend/apps/members/bot_messages.py backend/apps/tasks/bot_messages.py
-msgid "‹ Back"
-msgstr "‹ Назад"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -6063,6 +6171,12 @@ msgstr "В работе"
 #: backend/apps/projects/conf.py
 msgid "Review"
 msgstr "Проверка"
+
+#: backend/apps/projects/conf.py backend/apps/projects/models.py
+#: backend/apps/reminders/bot_messages.py backend/apps/tasks/bot_messages.py
+#: backend/apps/tasks/services.py
+msgid "Done"
+msgstr "Готово"
 
 #: backend/apps/projects/hooks.py
 msgid "Project milestones"
@@ -7077,7 +7191,7 @@ msgstr "Чек аннулирован"
 #: backend/apps/sales/bot_messages.py backend/apps/sales/queries.py
 #, python-format
 msgid "%(person)s handed you %(amount)s"
-msgstr "%(person)s передаёт вам %(amount)s"
+msgstr "%(person)s: вам передано %(amount)s"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -7104,8 +7218,12 @@ msgstr "Передача %(amount)s не подтверждена уже %(hours
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
-msgid "%(cashier)s → %(receiver)s at %(branch)s. Nobody has confirmed it yet."
-msgstr "%(cashier)s → %(receiver)s, %(branch)s. Пока никто не подтвердил."
+msgid ""
+"Cashier: %(cashier)s · Receiver: %(receiver)s · %(branch)s. Nobody has "
+"confirmed it yet."
+msgstr ""
+"Кассир: %(cashier)s · Получатель: %(receiver)s · %(branch)s. Пока никто не "
+"подтвердил."
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -7238,6 +7356,11 @@ msgstr "Смена <b>%(shift)s</b> закрыта · %(branch)s"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
+msgid "Cashier: %(name)s"
+msgstr "Кассир: %(name)s"
+
+#: backend/apps/sales/bot_messages.py owner_bot/ownerbot/brief.py
+#, python-format
 msgid "Sales: %(net)s"
 msgstr "Выручка: %(net)s"
 
@@ -7248,13 +7371,18 @@ msgstr "Расхождение: %(difference)s"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
-msgid "%(cashier)s → %(receiver)s: %(amount)s received ✓ · %(branch)s"
-msgstr "%(cashier)s → %(receiver)s: %(amount)s получено ✓ · %(branch)s"
+msgid "<b>Handover received: %(amount)s</b>"
+msgstr "<b>Передача получена: %(amount)s</b>"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
-msgid "%(cashier)s → %(receiver)s: %(amount)s NOT received · %(branch)s"
-msgstr "%(cashier)s → %(receiver)s: %(amount)s НЕ получено · %(branch)s"
+msgid "<b>Handover NOT received: %(amount)s</b>"
+msgstr "<b>Передача НЕ получена: %(amount)s</b>"
+
+#: backend/apps/sales/bot_messages.py
+#, python-format
+msgid "Cashier: %(cashier)s · Receiver: %(receiver)s · %(branch)s"
+msgstr "Кассир: %(cashier)s · Получатель: %(receiver)s · %(branch)s"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -7330,6 +7458,12 @@ msgstr "%(person)s · %(amount)s · %(branch)s, %(time)s"
 #, python-format
 msgid "Received %(amount)s"
 msgstr "Получено %(amount)s"
+
+#. Translators: the receiver's own answer ("I didn't get it").
+#: backend/apps/sales/bot_messages.py
+msgctxt "handover answer button"
+msgid "Not received"
+msgstr "Не получено"
 
 #: backend/apps/sales/bot_messages.py
 msgid "Kassa is for the people who run a till. Nothing waits for you here."
@@ -8095,6 +8229,21 @@ msgid "This request must come from the dashboard."
 msgstr "Этот запрос должен быть отправлен из панели управления."
 
 #: backend/apps/signin/bot_messages.py
+#, python-format
+msgid "Device: %(device)s"
+msgstr "Устройство: %(device)s"
+
+#: backend/apps/signin/bot_messages.py
+#, python-format
+msgid "IP address: %(ip)s"
+msgstr "IP-адрес: %(ip)s"
+
+#: backend/apps/signin/bot_messages.py
+#, python-format
+msgid "Time: %(time)s"
+msgstr "Время: %(time)s"
+
+#: backend/apps/signin/bot_messages.py
 msgid "Sign in to the dashboard?"
 msgstr "Войти в панель управления?"
 
@@ -8325,10 +8474,10 @@ msgid "Decided about more time for a task"
 msgstr "Решение о дополнительном времени"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "Nothing on your list. To add a task, tap New task or just type it."
+msgid "Nothing on your list. To add a task, tap «New task» or just type it."
 msgstr ""
-"Список пуст. Чтобы добавить задачу, нажмите Новая задача или просто напишите "
-"её."
+"Список пуст. Чтобы добавить задачу, нажмите «Новая задача» или просто "
+"напишите её."
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
@@ -8373,6 +8522,7 @@ msgstr "%(name)s больше не в команде. Эти задачи вер
 msgid "Status: %(status)s"
 msgstr "Статус: %(status)s"
 
+#. Translators: %(when)s reads like "ertaga, 18:00 (juma, 26-okt)".
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "Due: %(when)s"
@@ -8397,7 +8547,7 @@ msgstr "От: %(name)s"
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "For: %(name)s"
-msgstr "Кому: %(name)s"
+msgstr "Исполнитель: %(name)s"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
@@ -8408,11 +8558,6 @@ msgstr "Чек-лист: %(done)d из %(total)d"
 #, python-format
 msgid "Proof needed: %(proof)s"
 msgstr "Для завершения нужно: %(proof)s"
-
-#: backend/apps/tasks/bot_messages.py
-#, python-format
-msgid "Report: %(text)s"
-msgstr "Отчёт: %(text)s"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
@@ -8436,7 +8581,8 @@ msgstr "Комментарий"
 msgid "More time"
 msgstr "Нужно время"
 
-#: backend/apps/tasks/bot_messages.py backend/apps/tasks/models.py
+#: backend/apps/tasks/bot_messages.py
+msgctxt "task button"
 msgid "Can't do it"
 msgstr "Не получается"
 
@@ -8592,6 +8738,16 @@ msgid "Me"
 msgstr "Себе"
 
 #: backend/apps/tasks/bot_messages.py
+msgctxt "page"
+msgid "Previous"
+msgstr "Предыдущие"
+
+#: backend/apps/tasks/bot_messages.py
+msgctxt "page"
+msgid "Next"
+msgstr "Следующие"
+
+#: backend/apps/tasks/bot_messages.py
 msgid "Who is it for?"
 msgstr "Кому?"
 
@@ -8616,14 +8772,19 @@ msgstr "%(name)s: задача выполнена. Пожалуйста, про�
 #. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "%(name)s completed a task."
-msgstr "%(name)s: задача выполнена."
+msgid "<b>Task done</b> · %(name)s"
+msgstr "<b>Задача выполнена</b> · %(name)s"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "late by %(duration)s"
+msgstr "просрочено на %(duration)s"
 
 #. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "%(name)s confirmed your task."
-msgstr "%(name)s: ваша задача принята."
+msgid "<b>Your task was accepted</b> · %(name)s"
+msgstr "<b>Ваша задача принята</b> · %(name)s"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
@@ -8783,6 +8944,12 @@ msgstr "Завтра, %(when)s"
 msgid "Another time"
 msgstr "Другое время"
 
+#. Translators: %(repeat)s is how often, e.g. "Every day".
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Repeats: %(repeat)s"
+msgstr "Повтор: %(repeat)s"
+
 #: backend/apps/tasks/bot_messages.py
 msgid "Save"
 msgstr "Сохранить"
@@ -8794,11 +8961,6 @@ msgstr "Изменить время"
 #: backend/apps/tasks/bot_messages.py
 msgid "Not a date"
 msgstr "Это не дата"
-
-#: backend/apps/tasks/bot_messages.py
-#, python-format
-msgid "late by %(duration)s"
-msgstr "просрочено на %(duration)s"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
@@ -8825,10 +8987,43 @@ msgstr "%(days)d д"
 msgid "%(days)d d %(hours)d h"
 msgstr "%(days)d дн. %(hours)d ч"
 
+#. Translators: on a checklist button; %(step)s is the step's own text.
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgctxt "checklist step"
+msgid "Done: %(step)s"
+msgstr "Готово: %(step)s"
+
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "To check (%(count)d)"
 msgstr "Проверка (%(count)d)"
+
+#: backend/apps/tasks/bot_messages.py
+msgctxt "task list"
+msgid "sent back"
+msgstr "возвращена"
+
+#: backend/apps/tasks/bot_messages.py
+msgctxt "task list"
+msgid "being checked"
+msgstr "на проверке"
+
+#: backend/apps/tasks/bot_messages.py
+msgctxt "task list"
+msgid "late"
+msgstr "просрочена"
+
+#: backend/apps/tasks/bot_messages.py
+msgctxt "task list"
+msgid "urgent"
+msgstr "срочно"
+
+#. Translators: %(priority)s is "Urgent" or "High", as the task's priority reads.
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Priority: %(priority)s"
+msgstr "Приоритет: %(priority)s"
 
 #: backend/apps/tasks/feeds.py
 #, python-format
@@ -9041,7 +9236,7 @@ msgstr "Выполнена"
 
 #: backend/apps/tasks/models.py
 msgid "Urgent"
-msgstr "Срочно"
+msgstr "Срочный"
 
 #: backend/apps/tasks/models.py
 msgid "Out of stock"
@@ -9111,6 +9306,10 @@ msgstr "Карточка задачи"
 #: backend/apps/tasks/models.py
 msgid "Check request"
 msgstr "Запрос на проверку"
+
+#: backend/apps/tasks/models.py
+msgid "Can't do it"
+msgstr "Не получается"
 
 #: backend/apps/tasks/models.py
 msgid "Late alert"
@@ -9607,8 +9806,8 @@ msgstr "<b>Заявка на отгул</b> · %(name)s"
 
 #: backend/apps/timeoff/bot_messages.py
 #, python-format
-msgid "%(dates)s · days: %(count)d"
-msgstr "%(dates)s · дней: %(count)d"
+msgid "Dates: %(dates)s · days: %(count)d"
+msgstr "Даты: %(dates)s · дней: %(count)d"
 
 #: backend/apps/timeoff/bot_messages.py
 #, python-format
@@ -9907,6 +10106,11 @@ msgstr "Вы работаете в одной компании: <b>%(company)s</
 msgid "Which company are you working in?"
 msgstr "В какой компании вы работаете?"
 
+#: employee_bot/bot/handlers/company.py
+#, python-format
+msgid "Now: %(company)s"
+msgstr "Сейчас: %(company)s"
+
 #: employee_bot/bot/handlers/contact.py
 msgid "Thanks, your phone number is saved. Now finish your account in the app."
 msgstr ""
@@ -9916,6 +10120,14 @@ msgstr ""
 #: employee_bot/bot/handlers/errors.py owner_bot/ownerbot/handlers/errors.py
 msgid "Something went wrong. Please try again in a moment."
 msgstr "Что-то пошло не так. Попробуйте ещё раз чуть позже."
+
+#: employee_bot/bot/handlers/features/agenda.py
+msgid "you'll come"
+msgstr "вы придёте"
+
+#: employee_bot/bot/handlers/features/agenda.py
+msgid "please answer"
+msgstr "ответьте"
 
 #: employee_bot/bot/handlers/features/attendance.py
 #, python-format
@@ -10001,22 +10213,18 @@ msgstr "Эту задачу удалили или передали другом�
 msgid "You can't do that."
 msgstr "Это действие вам недоступно."
 
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: employee_bot/bot/handlers/member/cards.py
-#, fuzzy, python-format
-#| msgid "Sent for checking · %(name)s"
-msgid "🔎 Sent for checking · %(name)s"
+#, python-format
+msgid "Sent for checking · %(name)s"
 msgstr "Отправлено на проверку · %(name)s"
 
 #: employee_bot/bot/handlers/member/cards.py
-#, fuzzy
-#| msgid "Sent for checking"
-msgid "🔎 Sent for checking"
+msgid "Sent for checking"
 msgstr "Отправлено на проверку"
 
 #: employee_bot/bot/handlers/member/cards.py
-#, fuzzy
-#| msgid "Done!"
-msgid "Done! 🎉"
+msgid "Done!"
 msgstr "Готово!"
 
 #: employee_bot/bot/handlers/member/home.py
@@ -10024,8 +10232,8 @@ msgid "Add this as a task?"
 msgstr "Добавить это как задачу?"
 
 #: employee_bot/bot/handlers/member/new_task.py
-msgid "Send the task's title, or tap Cancel."
-msgstr "Пришлите название задачи или нажмите Отмена."
+msgid "Send the task's title, or tap «Cancel»."
+msgstr "Пришлите название задачи или нажмите «Отмена»."
 
 #: employee_bot/bot/handlers/member/new_task.py
 msgid "And what needs to be done?"
@@ -10036,8 +10244,8 @@ msgid "The title was cut to 200 characters."
 msgstr "Название сокращено до 200 символов."
 
 #: employee_bot/bot/handlers/member/new_task.py
-msgid "Start again with New task."
-msgstr "Начните заново: Новая задача."
+msgid "Start again with «New task»."
+msgstr "Начните заново: «Новая задача»."
 
 #: employee_bot/bot/handlers/member/new_task.py
 #, python-format
@@ -10047,6 +10255,10 @@ msgstr "Отправлено. Исполнитель: %(name)s"
 #: employee_bot/bot/handlers/member/new_task.py
 msgid "Added to your list."
 msgstr "Добавлено в ваш список."
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "Comment added."
+msgstr "Комментарий добавлен."
 
 #: employee_bot/bot/handlers/member/tasks.py
 msgid "Started"
@@ -10112,6 +10324,10 @@ msgstr "Передана другому."
 msgid "Task cancelled."
 msgstr "Задача отменена."
 
+#: employee_bot/bot/middlewares/access.py
+msgid "The menu is updated."
+msgstr "Меню обновлено."
+
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Tashkent"
 msgstr "Ташкент"
@@ -10176,7 +10392,7 @@ msgstr ""
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Start with /new to create your company."
-msgstr "Чтобы создать компанию, начните с /new."
+msgstr "Чтобы создать компанию, отправьте /new."
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Your dashboard: every task, sale, payment and person in one place."
@@ -10341,6 +10557,16 @@ msgstr "открыт в %(time)s"
 #, python-format
 msgid "not opened yet (opens %(time)s)"
 msgstr "ещё не открыт (откроется в %(time)s)"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "At work: %(present)d/%(rostered)d"
+msgstr "На работе: %(present)d/%(rostered)d"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Tasks: %(done)d/%(total)d"
+msgstr "Задачи: %(done)d/%(total)d"
 
 #: owner_bot/ownerbot/brief.py
 #, python-format

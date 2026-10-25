@@ -109,8 +109,16 @@ def test_translations_quote_with_guillemets(language):
 
 @pytest.mark.parametrize("language", LANGUAGES)
 def test_the_compiled_catalogues_match_their_sources(language):
-    sources = {entry.msgid: entry.msgstr for entry in catalogue(language).translated_entries()}
-    compiled = {entry.msgid: entry.msgstr for entry in catalogue(language, "mo") if entry.msgid}
+    # Keyed by context too: "Done" is a button, a task status and a group setting.
+    sources = {
+        (entry.msgctxt, entry.msgid): entry.msgstr
+        for entry in catalogue(language).translated_entries()
+    }
+    compiled = {
+        (entry.msgctxt, entry.msgid): entry.msgstr
+        for entry in catalogue(language, "mo")
+        if entry.msgid
+    }
 
     assert compiled == sources
 

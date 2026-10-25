@@ -10,6 +10,7 @@ from decimal import Decimal
 from django.utils import translation
 from django.utils.html import escape
 from django.utils.translation import gettext as _
+from django.utils.translation import pgettext
 
 from apps.core.money import format_money
 
@@ -66,11 +67,9 @@ def handover_late_title(amount: Decimal, currency: str, hours: int) -> str:
 
 
 def handover_late_body(cashier: str, receiver: str, branch: str) -> str:
-    return _("%(cashier)s → %(receiver)s at %(branch)s. Nobody has confirmed it yet.") % {
-        "cashier": cashier,
-        "receiver": receiver,
-        "branch": branch,
-    }
+    return _(
+        "Cashier: %(cashier)s · Receiver: %(receiver)s · %(branch)s. Nobody has confirmed it yet."
+    ) % {"cashier": cashier, "receiver": receiver, "branch": branch}
 
 
 # Shifts --------------------------------------------------------------------------------
@@ -214,7 +213,7 @@ def group_shift_closed(code: str, branch: str, cashier: str, net: Decimal, diffe
     # Group posts are Telegram HTML: names are escaped.
     lines = [
         _("<b>%(shift)s</b> closed · %(branch)s") % {"shift": code, "branch": escape(branch)},
-        escape(cashier),
+        _("Cashier: %(name)s") % {"name": escape(cashier)},
         _("Sales: %(net)s") % {"net": money(net)},
     ]
     if difference is not None:
@@ -233,8 +232,11 @@ def group_handover(
         "branch": escape(branch),
     }
     if received:
-        return _("%(cashier)s → %(receiver)s: %(amount)s received ✓ · %(branch)s") % values
-    return _("%(cashier)s → %(receiver)s: %(amount)s NOT received · %(branch)s") % values
+        head = _("<b>Handover received: %(amount)s</b>")
+    else:
+        head = _("<b>Handover NOT received: %(amount)s</b>")
+    people = _("Cashier: %(cashier)s · Receiver: %(receiver)s · %(branch)s")
+    return f"{head % values}\n{people % values}"
 
 
 def group_evening(day_label: str, rows: list[tuple[str, Decimal, int]], total: Decimal, change):
@@ -266,7 +268,7 @@ def verify_label() -> str:
     return _("Verify")
 
 
-# The "🧾 Kassa" menu button -----------------------------------------------------------------
+# The "Kassa" menu button -----------------------------------------------------------------
 
 KASSA_BUTTON = "Kassa"
 
@@ -341,7 +343,8 @@ def kassa_status(membership):
                         ).pack(),
                     ),
                     InlineKeyboardButton(
-                        text=_("Not received"),
+                        # Translators: the receiver's own answer ("I didn't get it").
+                        text=pgettext("handover answer button", "Not received"),
                         callback_data=SalesHandover(
                             answer=HandoverAnswer.NOT_RECEIVED, movement_id=movement.pk
                         ).pack(),

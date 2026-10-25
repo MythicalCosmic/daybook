@@ -117,6 +117,7 @@ def test_right_number_then_one_claim_end_to_end(
     [notice] = sent_messages
     assert notice["bot"] == "employee" and notice["chat_id"] == owner.user.telegram_id
     assert "Signed in to the dashboard" in notice["text"]
+    assert "\nDevice: " in notice["text"] and "\nTime: " in notice["text"]
     [[button]] = notice["reply_markup"]["inline_keyboard"]
     assert SessionsAction.unpack(button["callback_data"]).session == session.pk
 

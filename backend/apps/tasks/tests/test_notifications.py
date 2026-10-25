@@ -1,4 +1,8 @@
+from datetime import timedelta
+from decimal import Decimal
+
 import pytest
+from django.utils import timezone
 
 from apps.tasks import services
 from apps.tasks.callbacks import TaskAction, TaskCallback
@@ -84,13 +88,64 @@ def test_the_owner_checks_when_nobody_else_may(company, member, worker, sent_mes
 
 
 def test_creator_hears_when_an_assigned_task_is_done(manager, worker, sent_messages):
-    task = TaskFactory(assignee=worker, created_by=manager, status=Task.Status.DONE)
+    """Audit B-19: two short lines and the open button, not the whole card again."""
+    task = TaskFactory(
+        assignee=worker, created_by=manager, status=Task.Status.DONE, title="Count the till"
+    )
 
     send_task_completed(task.pk)
 
     [message] = sent_messages
     assert message["chat_id"] == manager.user.telegram_id
-    assert "completed a task" in message["text"]
+    assert message["text"].splitlines() == [f"<b>Task done</b> · {worker}", "Count the till"]
+    assert actions(message) == [TaskAction.OPEN]
+
+
+def test_the_done_notice_says_how_late_and_the_report(manager, worker, sent_messages):
+    done = timezone.now()
+    task = TaskFactory(
+        assignee=worker,
+        created_by=manager,
+        status=Task.Status.DONE,
+        title="Count the till",
+        due_at=done - timedelta(minutes=25),
+        completed_at=done,
+        proof_text="All counted",
+    )
+
+    send_task_completed(task.pk)
+
+    [message] = sent_messages
+    assert message["text"].splitlines()[1:] == [
+        "Count the till · late by 25 min",
+        "Report: All counted",
+    ]
+    assert "Status:" not in message["text"]
+
+
+def test_assignee_hears_the_acceptance_in_two_lines(manager, worker, sent_messages, settings):
+    """Audit B-19: who accepted it, the title and the reward, with "Open in app"."""
+    settings.EMPLOYEE_MINIAPP_URL = "https://app.example/app/"
+    task = TaskFactory(
+        assignee=worker,
+        created_by=manager,
+        status=Task.Status.REVIEW,
+        title="Tidy the window",
+        reward=Decimal("20000"),
+    )
+    services.confirm_task(task, by=manager)
+
+    send_task_reviewed(task.pk)
+
+    [message] = sent_messages
+    assert message["chat_id"] == worker.user.telegram_id
+    lines = message["text"].splitlines()
+    assert lines[:2] == [f"<b>Your task was accepted</b> · {manager}", "Tidy the window"]
+    assert lines[2].startswith("Reward: +20")
+    assert len(lines) == 3
+    [[button]] = message["reply_markup"]["inline_keyboard"]
+    assert button["text"] == "Open in app"
+    assert button["web_app"]["url"].endswith(f"screen=task%3A{task.pk}")
 
 
 def test_personal_task_done_tells_nobody(worker, sent_messages):

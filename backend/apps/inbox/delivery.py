@@ -108,8 +108,13 @@ def edit_after_action(
         kind = registry.KINDS.get(item.kind)
         audience = kind.audience if kind else "employee"
         with translation.override(user.language):
-            label = _label(item, key) if outcome is None else _render(outcome, item.recipient)
-            line = messages.get(item.pk) or bot_messages.outcome_line(label, actor_name)
+            if outcome is None:
+                line = messages.get(item.pk) or bot_messages.answered_line(
+                    _label(item, key), actor_name
+                )
+            else:
+                label = _render(outcome, item.recipient)
+                line = messages.get(item.pk) or bot_messages.outcome_line(label, actor_name)
             text, markup = bot_messages.notification(item, audience=audience, outcome=line)
         edit_telegram_message.delay(
             item.telegram_bot or BotName.EMPLOYEE,

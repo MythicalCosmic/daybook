@@ -33,7 +33,7 @@ def search(member: Membership, q: str, limit: int) -> list[SearchHit]:
         SearchHit(
             type="agenda.event",
             id=event.pk,
-            title=f"{bot_messages.mark(event)} {event.title}",
+            title=event.title,
             subtitle=bot_messages.event_line(event),
             url=bot_messages.dashboard_url(event),
         )

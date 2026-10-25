@@ -1,9 +1,9 @@
 """Telegram texts and keyboards about tasks, used by the bot and by backend notifications.
 
-Cards follow research R1 C1, C2, C3, F3 and F6: the status mark and the bold title first, a few
-short lines, at most two buttons a row, and "Open in app" for what the chat can't do
-(comments, photos, "How to do this"). Times are the company's, as R3 §1.7 writes them
-("bugun, 18:30").
+Cards follow research R1 C1, C2, C3 and F3, without emoji (the owner's rule, 25.10.2026): the
+bold title first, then short "Label: value" lines with the status and priority in words, at most
+two buttons a row, and "Open in app" for what the chat can't do (comments, photos, "How to do
+this"). Times are the company's, as R3 §1.7 writes them ("bugun, 18:30").
 """
 
 from datetime import datetime, timedelta
@@ -14,6 +14,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from django.conf import settings
 from django.utils import timezone, translation
 from django.utils.translation import gettext as _
+from django.utils.translation import pgettext
 
 from apps.companies.models import Company
 from apps.core.money import format_money
@@ -62,7 +63,7 @@ def task_list(tasks: list[Task], now: datetime, *, page: int = 0, reviews: int =
         footer.append(_reviews_button(reviews))
     footer.append(_button(_("New task"), TaskAction.NEW))
     if not ordered:
-        text = _("Nothing on your list. To add a task, tap New task or just type it.")
+        text = _("Nothing on your list. To add a task, tap «New task» or just type it.")
         return text, InlineKeyboardMarkup(inline_keyboard=[footer])
     counts = _counts(ordered, now)
     lines = [_("<b>Your tasks</b>: %(count)d") % {"count": len(ordered)}]
@@ -138,16 +139,15 @@ def task_card(task: Task, member: Membership, now: datetime, header: str = "") -
 
 def card_text(task: Task, member: Membership, now: datetime, header: str = "") -> str:
     lines = [header, ""] if header else []
-    lines.append(f"{_icon(task, now)} <b>{html.quote(display_title(task))}</b>")
-    if task.priority in (Task.Priority.URGENT, Task.Priority.HIGH):
-        mark = "" if task.priority == Task.Priority.URGENT else ""
-        lines.append(f"{mark} {task.get_priority_display()}")
-    if several_companies(member):
-        lines.append(f"{html.quote(task.company.name)}")
+    lines.append(f"<b>{html.quote(display_title(task))}</b>")
     if task.description:
         lines.append(_description(task.description))
     lines.append("")
     lines.append(_("Status: %(status)s") % {"status": task.get_status_display()})
+    if task.priority in (Task.Priority.URGENT, Task.Priority.HIGH):
+        lines.append(_priority_line(task.get_priority_display()))
+    if several_companies(member):
+        lines.append(_("Company: %(company)s") % {"company": html.quote(task.company.name)})
     if task.due_at:
         lines.append(_("Due: %(when)s") % {"when": format_due(task, now)})
     if task.is_open and task.snoozed_until and task.snoozed_until > now:
@@ -202,7 +202,7 @@ def card_keyboard(task: Task, member: Membership, now: datetime) -> InlineKeyboa
             extra = []
             if task.due_at is not None and task.extension_until is None:
                 extra.append(_button(_("More time"), TaskAction.MORE_TIME, task.pk))
-            extra.append(_button(_("Can't do it"), TaskAction.BLOCK, task.pk))
+            extra.append(_button(pgettext("task button", "Can't do it"), TaskAction.BLOCK, task.pk))
             rows.append(extra)
     elif mine and rules.can_undo(task, member, now):
         rows.append([_button(_("Undo"), TaskAction.UNDO, task.pk)])
@@ -279,7 +279,7 @@ def snooze_keyboard(task: Task, member: Membership) -> InlineKeyboardMarkup:
                 )
             ]
         )
-    rows.append([_button(_("‹ Back"), TaskAction.BACK, task.pk)])
+    rows.append([_button(_("Back"), TaskAction.BACK, task.pk)])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -327,7 +327,7 @@ def unticked_prompt(task: Task, member: Membership, now: datetime, left: int) ->
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [_button(_("Tick all and finish"), TaskAction.TICK_ALL, task.pk, style="success")],
-            [_button(_("‹ Back"), TaskAction.BACK, task.pk)],
+            [_button(_("Back"), TaskAction.BACK, task.pk)],
         ]
     )
     return f"{card_text(task, member, now)}\n\n<b>{line}</b>", keyboard
@@ -352,9 +352,7 @@ def which_photo_task(tasks: list[Task], now: datetime) -> BotMessage:
 def comment_prompt(task: Task) -> BotMessage:
     """Ask for a comment, with the reply field open and Cancel kept (Bot API 10.3)."""
     # Translators: %(title)s is the task's title: let a carrier word take any case ending.
-    text = _("Write your comment on <b>%(title)s</b>:") % {
-        "title": html.quote(display_title(task))
-    }
+    text = _("Write your comment on <b>%(title)s</b>:") % {"title": html.quote(display_title(task))}
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[[_button(_("Cancel"), TaskAction.STOP)]], force_reply=True
     )
@@ -386,12 +384,9 @@ def return_prompt(task: Task, member: Membership, now: datetime) -> BotMessage:
         ]
         for code, label in return_reasons()
     ]
-    rows.append([_button(_("‹ Back"), TaskAction.BACK, task.pk)])
+    rows.append([_button(_("Back"), TaskAction.BACK, task.pk)])
     text = f"{card_text(task, member, now)}\n\n<b>{line}</b>"
     return text, InlineKeyboardMarkup(inline_keyboard=rows, force_reply=True)
-
-
-BLOCK_MARKS = {"no_stock": "", "no_access": "", "broken": "", "not_mine": "", "other": ""}
 
 
 def block_keyboard(task: Task) -> InlineKeyboardMarkup:
@@ -399,13 +394,13 @@ def block_keyboard(task: Task) -> InlineKeyboardMarkup:
     rows = [
         [
             InlineKeyboardButton(
-                text=f"{BLOCK_MARKS[code]} {label}",
+                text=str(label),
                 callback_data=ReasonCallback(kind="block", task_id=task.pk, code=code).pack(),
             )
         ]
         for code, label in Task.Blocker.choices
     ]
-    rows.append([_button(_("‹ Back"), TaskAction.BACK, task.pk)])
+    rows.append([_button(_("Back"), TaskAction.BACK, task.pk)])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -428,7 +423,7 @@ def when_keyboard(task: Task, kind: str, now: datetime) -> InlineKeyboardMarkup:
     rows = [
         first,
         [choice(_("Tomorrow 09:00"), "tomorrow"), choice(_("Type a time"), "type")],
-        [_button(_("‹ Back"), TaskAction.BACK, task.pk)],
+        [_button(_("Back"), TaskAction.BACK, task.pk)],
     ]
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
@@ -446,7 +441,7 @@ def cancel_keyboard(task: Task) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [_button(_("Yes, cancel the task"), TaskAction.CANCEL_YES, task.pk, style="danger")],
-            [_button(_("‹ Back"), TaskAction.BACK, task.pk)],
+            [_button(_("Back"), TaskAction.BACK, task.pk)],
         ]
     )
 
@@ -472,7 +467,7 @@ def person_picker(
         rows.append(
             [
                 InlineKeyboardButton(
-                    text=f"{label}",
+                    text=label,
                     callback_data=PickCallback(task_id=task_id, member_id=person.pk).pack(),
                 )
             ]
@@ -482,7 +477,7 @@ def person_picker(
         if page > 0:
             nav.append(
                 InlineKeyboardButton(
-                    text="‹",
+                    text=pgettext("page", "Previous"),
                     callback_data=PickCallback(task_id=task_id, member_id=-1, page=page - 1).pack(),
                 )
             )
@@ -495,13 +490,13 @@ def person_picker(
         if page < pages - 1:
             nav.append(
                 InlineKeyboardButton(
-                    text="›",
+                    text=pgettext("page", "Next"),
                     callback_data=PickCallback(task_id=task_id, member_id=-1, page=page + 1).pack(),
                 )
             )
         rows.append(nav)
     if task_id:
-        rows.append([_button(_("‹ Back"), TaskAction.BACK, task_id)])
+        rows.append([_button(_("Back"), TaskAction.BACK, task_id)])
     else:
         rows.append([_button(_("Cancel"), TaskAction.STOP)])
     return InlineKeyboardMarkup(inline_keyboard=rows)
@@ -534,15 +529,32 @@ def review_request(task: Task, reviewer: Membership, now: datetime) -> BotMessag
 
 
 def task_completed(task: Task, creator: Membership, now: datetime) -> BotMessage:
+    """To whoever gave the task, once it's done (audit B-19): two or three short lines and the
+    open button, not the whole card; the proof photo, if any, travels with it."""
     # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
-    header = _("%(name)s completed a task.") % {"name": html.quote(str(task.assignee))}
-    return task_card(task, creator, now, header)
+    lines = [_("<b>Task done</b> · %(name)s") % {"name": html.quote(str(task.assignee))}]
+    title = html.quote(display_title(task))
+    if task.due_at and task.completed_at and task.completed_at > task.due_at:
+        late = format_duration(task.completed_at - task.due_at)
+        title += " · " + _("late by %(duration)s") % {"duration": late}
+    lines.append(title)
+    if task.proof_text:
+        lines.append(_("Report: %(text)s") % {"text": html.quote(_cut(task.proof_text))})
+    return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=[[open_button(task)]])
 
 
 def task_confirmed(task: Task, now: datetime) -> BotMessage:
+    """To the assignee, once their work is accepted (audit B-19): who accepted it, the title
+    and the reward, with the open button; their card itself is redrawn in place (C5)."""
     # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
-    header = _("%(name)s confirmed your task.") % {"name": html.quote(str(task.confirmed_by))}
-    return task_card(task, task.assignee, now, header)
+    header = _("<b>Your task was accepted</b> · %(name)s") % {
+        "name": html.quote(str(task.confirmed_by or ""))
+    }
+    lines = [header.rstrip(" ·"), html.quote(display_title(task))]
+    if task.reward:
+        reward = format_money(task.reward, task.company.base_currency, translation.get_language())
+        lines.append(_("Reward: +%(amount)s") % {"amount": reward.replace(" ", NBSP)})
+    return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=[[open_button(task)]])
 
 
 def task_returned(task: Task, reason: str, now: datetime) -> BotMessage:
@@ -569,9 +581,9 @@ def comment_notice(
     else:
         # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
         header = _("<b>New comment</b> · %(name)s") % {"name": name}
-    lines = [header, f"{_icon(task, timezone.now())} <b>{html.quote(display_title(task))}</b>"]
+    lines = [header, f"<b>{html.quote(display_title(task))}</b>"]
     if several_companies(recipient):
-        lines.append(f"{html.quote(task.company.name)}")
+        lines.append(_("Company: %(company)s") % {"company": html.quote(task.company.name)})
     lines.append(_quote(text))
     rows = [[_button(_("Reply"), TaskAction.COMMENT, task.pk), open_button(task)]]
     return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=rows)
@@ -711,9 +723,7 @@ def onboarding_welcome(member: Membership, tasks: list[Task], now: datetime) -> 
 
 
 def ask_title() -> BotMessage:
-    text = _(
-        "What needs to be done? You can say when too, e.g. «Order insulin tomorrow 18:00 !!»."
-    )
+    text = _("What needs to be done? You can say when too, e.g. «Order insulin tomorrow 18:00 !!».")
     return text, stop_keyboard(placeholder=True)
 
 
@@ -771,13 +781,15 @@ def quick_add_preview(
     """What the bot understood before it saves (research R2 T2): the title, the deadline with
     its weekday and date, and "Not a date" to keep the words as they were typed."""
     lines = [f"<b>{html.quote(title)}</b>"]
-    lines.append(f"{due}" if due else _("No deadline"))
+    # Translators: %(when)s reads like "ertaga, 18:00 (juma, 26-okt)".
+    lines.append(_("Due: %(when)s") % {"when": due} if due else _("No deadline"))
     if note:
         lines.append(note)
     if repeat:
-        lines.append(f"{repeat}")
+        # Translators: %(repeat)s is how often, e.g. "Every day".
+        lines.append(_("Repeats: %(repeat)s") % {"repeat": repeat})
     if urgent:
-        lines.append(f"{Task.Priority.URGENT.label}")
+        lines.append(_priority_line(Task.Priority.URGENT.label))
     if assignee:
         # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
         lines.append(_("For: %(name)s") % {"name": html.quote(assignee)})
@@ -817,9 +829,7 @@ def format_due(task: Task, now: datetime) -> str:
     """The deadline for the middle of a line ("bugun, 18:30"), and how late it is."""
     text = _short(task, task.due_at, now)
     if task.is_overdue(now):
-        text += " · " + _("late by %(duration)s") % {
-            "duration": format_duration(now - task.due_at)
-        }
+        text += " · " + _("late by %(duration)s") % {"duration": format_duration(now - task.due_at)}
     return text
 
 
@@ -873,16 +883,20 @@ def _quote(text: str) -> str:
 
 
 def _step_rows(task: Task) -> list[list[InlineKeyboardButton]]:
-    """The checklist on the card (audit X-5): one tap ticks a step, in place."""
+    """The checklist on the card (audit X-5): one tap ticks a step, in place. A ticked step
+    says so in words ("Bajarildi: …") and is green where Telegram colours buttons."""
     rows = []
     for item in list(task.checklist.all())[:STEPS_ON_CARD]:
-        mark = "" if item.is_done else ""
         text = item.text if len(item.text) <= STEP_LABEL else f"{item.text[: STEP_LABEL - 1]}…"
+        if item.is_done:
+            # Translators: on a checklist button; %(step)s is the step's own text.
+            text = pgettext("checklist step", "Done: %(step)s") % {"step": text}
         rows.append(
             [
                 InlineKeyboardButton(
-                    text=f"{mark} {text}",
+                    text=text,
                     callback_data=StepCallback(task_id=task.pk, item_id=item.pk).pack(),
+                    style="success" if item.is_done else None,
                 )
             ]
         )
@@ -951,7 +965,8 @@ def _page_rows(
         if page > 0:
             nav.append(
                 InlineKeyboardButton(
-                    text="‹", callback_data=ListCallback(view=view, page=page - 1).pack()
+                    text=pgettext("page", "Previous"),
+                    callback_data=ListCallback(view=view, page=page - 1).pack(),
                 )
             )
         nav.append(
@@ -963,7 +978,8 @@ def _page_rows(
         if page < pages - 1:
             nav.append(
                 InlineKeyboardButton(
-                    text="›", callback_data=ListCallback(view=view, page=page + 1).pack()
+                    text=pgettext("page", "Next"),
+                    callback_data=ListCallback(view=view, page=page + 1).pack(),
                 )
             )
         rows.append(nav)
@@ -978,10 +994,12 @@ def _reviews_button(count: int) -> InlineKeyboardButton:
 
 
 def _list_label(task: Task, now: datetime, *, review: bool = False) -> str:
-    """The title first, then when (audit B-12): "Muzlatgich harorati… · 09:00"."""
+    """The title first, then when (audit B-12), then a word for what stands out: "Muzlatgich
+    harorati… · 09:00, kechikkan". Words, not marks: sent back, being checked, late, urgent."""
     full = display_title(task)
-    title = full if len(full) <= TITLE_IN_LIST else f"{full[: TITLE_IN_LIST - 1]}…"
-    mark = "" if task.priority == Task.Priority.URGENT else ""
+    note = "" if review else _list_note(task, now)
+    limit = TITLE_IN_LIST - (len(note) // 2 if note else 0)
+    title = full if len(full) <= limit else f"{full[: limit - 1].rstrip()}…"
     if review:
         when = str(task.assignee)
     elif task.due_at is None:
@@ -990,25 +1008,31 @@ def _list_label(task: Task, now: datetime, *, review: bool = False) -> str:
         tz = ZoneInfo(task.company.timezone)
         due, today = timezone.localtime(task.due_at, tz), timezone.localtime(now, tz)
         when = f"{due:%H:%M}" if due.date() == today.date() else _short(task, task.due_at, now)
-    label = f"{_icon(task, now)}{mark} {title}"
-    return f"{label} · {when}" if when else label
+    tail = ", ".join(part for part in (when, note) if part)
+    return f"{title} · {tail}" if tail else title
 
 
-def _icon(task: Task, now: datetime) -> str:
-    """One emoji, one meaning (research R1 F6)."""
-    if task.status == Task.Status.DONE:
-        return ""
-    if task.status == Task.Status.REVIEW:
-        return ""
-    if task.status == Task.Status.CANCELLED:
-        return ""
-    if task.blocked_at is not None:
-        return ""
+def _list_note(task: Task, now: datetime) -> str:
+    """The one word a list entry adds after its time, for what needs attention first."""
     if task.status == Task.Status.RETURNED:
-        return ""
-    if task.is_overdue(now):
-        return ""
-    return "" if task.status == Task.Status.IN_PROGRESS else ""
+        return pgettext("task list", "sent back")
+    if task.status == Task.Status.REVIEW:
+        return pgettext("task list", "being checked")
+    if task.is_open and task.is_overdue(now):
+        return pgettext("task list", "late")
+    if task.priority == Task.Priority.URGENT:
+        return pgettext("task list", "urgent")
+    return ""
+
+
+def _priority_line(priority: str) -> str:
+    # Translators: %(priority)s is "Urgent" or "High", as the task's priority reads.
+    return _("Priority: %(priority)s") % {"priority": priority}
+
+
+def _cut(text: str, limit: int = DESCRIPTION_SHORT) -> str:
+    text = " ".join(text.split())
+    return text if len(text) <= limit else f"{text[: limit - 1].rstrip()}…"
 
 
 def _button(

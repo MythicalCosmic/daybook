@@ -49,15 +49,8 @@ def send_task_completed(task_id: int, completed_at: str | None = None) -> None:
         and task.kind == Task.Kind.ASSIGNED
         and task.created_by is not None
     ):
-        _send(
-            task.created_by,
-            bot_messages.task_completed,
-            task,
-            task.created_by,
-            now,
-            photo=photo,
-            about=task,
-        )
+        # A short notice (audit B-19), not a copy of the card: C5 never redraws it into one.
+        _send(task.created_by, bot_messages.task_completed, task, task.created_by, now, photo=photo)
 
 
 def send_task_reviewed(task_id: int) -> None:
@@ -66,7 +59,8 @@ def send_task_reviewed(task_id: int) -> None:
         return
     now = timezone.now()
     if task.status == Task.Status.DONE:
-        _send(task.assignee, bot_messages.task_confirmed, task, now, about=task)
+        # A short notice (audit B-19); the person's card itself is redrawn in place (C5).
+        _send(task.assignee, bot_messages.task_confirmed, task, now)
     elif task.status == Task.Status.RETURNED:
         reason = task.comments.order_by("-created_at").values_list("text", flat=True).first()
         _send(task.assignee, bot_messages.task_returned, task, reason or "", now, about=task)

@@ -100,7 +100,7 @@ def cancel_row() -> list[InlineKeyboardButton]:
 
 
 def signup_closed(reason: str) -> str:
-    return "" + html.quote(reason)
+    return html.quote(reason)
 
 
 def ask_code() -> BotMessage:
@@ -149,10 +149,12 @@ def ask_timezone(name: str, now: datetime) -> BotMessage:
             html.quote(_("Tashkent fits all of Uzbekistan.")),
         )
     )
+    # Tashkent, the usual answer, is green.
     buttons = [
         InlineKeyboardButton(
-            text=("" if zone == "Asia/Tashkent" else "") + f"{_(city)} ({_offset(zone, now)})",
+            text=f"{_(city)} ({_offset(zone, now)})",
             callback_data=NewCompanyStep(action="tz", value=zone).pack(),
+            style="success" if zone == "Asia/Tashkent" else None,
         )
         for zone, city in TIMEZONES
     ]

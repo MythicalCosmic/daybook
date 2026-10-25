@@ -1,8 +1,10 @@
 """Page bodies: the allow-list, plain text for search, and the Telegram rendering."""
 
 import pytest
+from django.utils import translation
 
 from apps.knowledge import sanitize
+from apps.notifications.emoji import has_emoji
 
 TASKS = (
     '<ul data-type="taskList"><li data-type="taskItem" data-checked="true"><label>'
@@ -108,7 +110,7 @@ def test_plain_text_keeps_lists_checkboxes_and_tables():
     )
 
     assert sanitize.to_text(body) == (
-        "Close\nSteps:\n1. Z report\n2. Count\n☑ Count the float\n☐ Open the shift\nCash · Card"
+        "Close\nSteps:\n1. Z report\n2. Count\n[x] Count the float\n[ ] Open the shift\nCash · Card"
     )
 
 
@@ -123,11 +125,37 @@ def test_telegram_rendering_uses_only_what_telegram_understands():
     assert not cut
     assert text == (
         '<b>Till</b>\n\nUse <b>F1</b> <a href="https://t.me/x">here</a>\n\n'
-        "<blockquote>⚠️ Never leave it open</blockquote>\n\n"
-        "☑️ Count the float\n◻️ Open the shift"
+        "<blockquote><b>Warning:</b> Never leave it open</blockquote>\n\n"
+        "• Done: Count the float\n• Open the shift"
     )
     for tag in ("<p>", "<h2>", "<div", "<ul", "<li"):
         assert tag not in text
+
+
+def test_telegram_rendering_says_in_words_what_icons_used_to_say():
+    """The bots send no emoji: a callout starts with its name, a ticked step says so, a picture
+    is its alt text, all in the reader's language."""
+    body = sanitize.clean(
+        '<div data-callout="danger"><p>Muzlatgichni ochiq qoldirmang</p></div>'
+        '<p><img data-image-id="3" alt="Kassa"></p><p><img data-image-id="4"></p>' + TASKS
+    )
+
+    with translation.override("uz"):
+        text, _cut = sanitize.to_telegram(body)
+
+    callout = "<blockquote><b>Hech qachon qilmang:</b> Muzlatgichni ochiq qoldirmang</blockquote>"
+    assert callout in text
+    assert "Rasm: Kassa" in text
+    assert "\nRasm" in text
+    assert "• Bajarildi: Count the float\n• Open the shift" in text
+    assert not has_emoji(text)
+
+
+def test_excerpts_drop_checklist_marks_old_and_new():
+    old = f"{chr(0x2611)} Kassa\n{chr(0x2610)} Terminal"  # the ballot boxes body_text used to have
+
+    assert sanitize.excerpt(old) == "Kassa · Terminal"
+    assert sanitize.excerpt("[x] Kassa\n[ ] Terminal") == "Kassa · Terminal"
 
 
 def test_a_long_page_is_cut_for_telegram_as_safe_plain_text():

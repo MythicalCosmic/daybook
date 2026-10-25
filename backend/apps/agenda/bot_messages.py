@@ -10,20 +10,12 @@ from django.conf import settings
 from django.utils import timezone
 from django.utils.dates import WEEKDAYS
 from django.utils.translation import gettext as _
+from django.utils.translation import pgettext
 
 from apps.agenda import queries
 from apps.agenda.callbacks import EvAction, EvCallback
 from apps.agenda.models import Event, EventAttendee
 from apps.members.bot_messages import BotMessage, miniapp_url
-
-KIND_MARKS = {
-    Event.Kind.MEETING: "",
-    Event.Kind.TRAINING: "",
-    Event.Kind.INVENTORY: "",
-    Event.Kind.CELEBRATION: "",
-    Event.Kind.DEADLINE: "",
-    Event.Kind.OTHER: "",
-}
 
 
 def app_screen(event: Event) -> str:
@@ -32,10 +24,6 @@ def app_screen(event: Event) -> str:
 
 def dashboard_url(event: Event) -> str:
     return f"/c/{event.company_id}/calendar?event={event.pk}"
-
-
-def mark(event: Event) -> str:
-    return KIND_MARKS.get(event.kind, "")
 
 
 def day_label(day: date, today: date) -> str:
@@ -95,7 +83,7 @@ def occurrence_line(occurrence) -> str:
 
 
 def invite_title(event: Event) -> str:
-    return _("%(mark)s You're invited: %(title)s") % {"mark": mark(event), "title": event.title}
+    return _("You're invited: %(title)s") % {"title": event.title}
 
 
 def changed_title(event: Event) -> str:
@@ -129,7 +117,8 @@ def going_button() -> str:
 
 
 def decline_button() -> str:
-    return _("Can't come")
+    # Translators: the attendee's own answer on a button ("I can't come"), not their status.
+    return pgettext("event answer button", "Can't come")
 
 
 def response_note(response: str) -> str:
@@ -142,7 +131,8 @@ def response_note(response: str) -> str:
 
 def event_card(event: Event, *, invite: EventAttendee | None) -> BotMessage:
     """An event in the chat, with "I'll come / Can't come" for an attendee."""
-    lines = [f"{mark(event)} <b>{html.quote(event.title)}</b>", html.quote(event_line(event))]
+    line = event_line(event)  # "tomorrow 10:00 · …" starts a line here: capitalised
+    lines = [f"<b>{html.quote(event.title)}</b>", html.quote(line[:1].upper() + line[1:])]
     if event.cancelled_at is not None:
         lines += ["", _("This event was cancelled.")]
     if event.description:

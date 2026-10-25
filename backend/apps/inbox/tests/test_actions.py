@@ -52,7 +52,9 @@ def test_the_registered_handler_runs_and_every_copy_is_settled(
     edits = {edit["message_id"]: edit for edit in telegram.edited}
     assert edits[mine.telegram_message_id]["text"].endswith(f"Claim approved · {approvers[0]}")
     # Each copy is settled in its reader's language; the colleague reads Russian.
-    assert edits[colleagues.telegram_message_id]["text"].endswith(f"Одобрить · {approvers[0]}")
+    assert edits[colleagues.telegram_message_id]["text"].endswith(
+        f"Ответ: Одобрить · {approvers[0]}"
+    )
     assert all(edit["markup"] is None for edit in telegram.edited)  # the buttons are gone
 
 

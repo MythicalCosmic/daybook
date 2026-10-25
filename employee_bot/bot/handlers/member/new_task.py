@@ -74,7 +74,7 @@ async def got_title(message: Message, membership: Membership, state: FSMContext)
         await message.answer(_("Okay, cancelled."))
         return
     if raw.startswith("/"):
-        await message.answer(_("Send the task's title, or tap Cancel."))
+        await message.answer(_("Send the task's title, or tap «Cancel»."))
         return
     found = quickadd.parse(raw, now=cards.local_now(membership), lang=translation.get_language())
     data = await state.get_data()
@@ -105,7 +105,7 @@ async def got_title(message: Message, membership: Membership, state: FSMContext)
 @router.message(NewTask.title)
 async def title_expected(message: Message) -> None:
     """A photo or a sticker while the title is awaited: ask again (audit B-10)."""
-    await message.answer(_("Send the task's title, or tap Cancel."), reply_markup=_cancel())
+    await message.answer(_("Send the task's title, or tap «Cancel»."), reply_markup=_cancel())
 
 
 async def _ask_assignee(message: Message, membership: Membership, state: FSMContext) -> None:
@@ -193,7 +193,7 @@ async def preview_button(
 ) -> None:
     data = await state.get_data()
     if "title" not in data:  # an old preview, its conversation gone
-        await callback.answer(_("Start again with New task."), show_alert=True)
+        await callback.answer(_("Start again with «New task»."), show_alert=True)
         return
     action = callback_data.action
     if action == "save":

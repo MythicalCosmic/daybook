@@ -152,3 +152,33 @@ def test_a_cant_do_it_stays_a_question_until_someone_answers(
 
     answered = [edit for edit in edits_to(telegram, manager) if edit["id"] == notice.message_id]
     assert TaskAction.CANCEL not in actions(answered[-1]["markup"])
+
+
+def test_acceptance_is_a_short_notice_and_the_card_follows_in_place(
+    company, member, telegram, django_capture_on_commit_callbacks
+):
+    """Audit B-19: "… accepted your task" is two lines with the open button, not a second copy
+    of the card; the card the person already has is drawn again where it is (C5), and the
+    notice is never redrawn into a card."""
+    manager = member.registered(company, "Manager")
+    worker = member.registered(company)
+    with django_capture_on_commit_callbacks(execute=True):
+        task = services.create_task(
+            by=manager, title="Tidy the window", assignee=worker, needs_confirmation=True
+        )
+    [card] = TaskMessage.objects.filter(task=task, member=worker)
+
+    with django_capture_on_commit_callbacks(execute=True):
+        services.complete_task(task, by=worker)
+    with django_capture_on_commit_callbacks(execute=True):
+        services.confirm_task(task, by=manager)
+
+    notice = [m for m in telegram["sent"] if m["chat_id"] == worker.user.telegram_id][-1]
+    assert notice["text"].splitlines() == [
+        f"<b>Your task was accepted</b> · {manager}",
+        "Tidy the window",
+    ]
+    assert list(TaskMessage.objects.filter(task=task, member=worker)) == [card]
+    redrawn = [edit for edit in edits_to(telegram, worker) if edit["id"] == card.message_id]
+    assert "Status: Done" in redrawn[-1]["text"]
+    assert not [edit for edit in telegram["edits"] if edit["id"] == notice["id"]]

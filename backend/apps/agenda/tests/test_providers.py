@@ -34,7 +34,7 @@ def test_search_finds_upcoming_events_first(company, owner):
 
     hits = providers.search(owner, "kassa", 5)
 
-    assert [hit.title.split(" ", 1)[1] for hit in hits] == ["Kassa training", "Kassa audit"]
+    assert [hit.title for hit in hits] == ["Kassa training", "Kassa audit"]  # no kind icon
     assert hits[0].url.startswith(f"/c/{company.pk}/calendar?event=")
 
 

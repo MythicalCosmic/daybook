@@ -23,7 +23,7 @@ from apps.attendance.models import AttendanceRecord, ShiftSwap, WorkShift
 from apps.members.bot_messages import main_menu, miniapp_url
 from apps.members.models import Membership
 
-# The main-menu button (apps.members.bot_menu); "📍 Keldim / Ketdim" in Uzbek.
+# The main-menu button (apps.members.bot_menu); "Keldim / Ketdim" in Uzbek.
 MENU_CHECK = gettext_noop("Check in / out")
 SEND_LOCATION = gettext_noop("Send my location")
 CANCEL = gettext_noop("Cancel")
@@ -113,8 +113,7 @@ def prompt_check_in(day: dict) -> tuple[str, ReplyKeyboardMarkup]:
         }
     else:
         head = _(
-            "<b>Check in</b>\nNo shift is planned for you today; "
-            "it will be marked as an extra day."
+            "<b>Check in</b>\nNo shift is planned for you today; it will be marked as an extra day."
         )
     return f"{head}\n\n{_('Send your location with the button below.')}", location_keyboard()
 
@@ -134,10 +133,10 @@ def selfie_prompt() -> str:
 
 def checked_in(record: AttendanceRecord, membership: Membership) -> tuple[str, ReplyKeyboardMarkup]:
     company = record.company
-    lines = [
-        _("Checked in at %(time)s") % {"time": clock.hhmm(company, record.check_in_at)}
-        + (f" · {html.quote(record.branch.name)}" if record.branch_id else "")
-    ]
+    first = _("Checked in at %(time)s") % {"time": clock.hhmm(company, record.check_in_at)}
+    if record.branch_id:
+        first += f" · {html.quote(record.branch.name)}"
+    lines = [f"<b>{first}</b>"]
     if record.is_late:
         lines.append(
             _("%(late)s late. Next time a little earlier!")
@@ -174,7 +173,7 @@ def cancelled(membership: Membership) -> tuple[str, ReplyKeyboardMarkup]:
 
 
 def refused(message: str, membership: Membership) -> tuple[str, ReplyKeyboardMarkup]:
-    return f"{html.quote(message)}", main_menu(membership)
+    return html.quote(message), main_menu(membership)
 
 
 # Nudges ---------------------------------------------------------------------------------
@@ -265,9 +264,9 @@ def morning_post(
         % {"present": len(present) + len(late), "rostered": rostered},
     ]
     if present:
-        lines.append("" + ", ".join(html.quote(name) for name in present))
+        lines.append(_("On time: %(names)s") % {"names": ", ".join(html.quote(n) for n in present)})
     if late:
-        lines.append("" + ", ".join(html.quote(name) for name in late))
+        lines.append(_("Late: %(names)s") % {"names": ", ".join(html.quote(n) for n in late)})
     if missing:
         lines.append(
             _("Not here yet: %(names)s") % {"names": ", ".join(html.quote(n) for n in missing)}

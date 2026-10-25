@@ -45,7 +45,7 @@ SCHEDULE = """
 </tbody></table>
 <h2>Smena qoidalari</h2>
 <ol>
-<li><p>Smenadan <strong>10 daqiqa oldin</strong> keling va botda “📍 Keldim” tugmasini
+<li><p>Smenadan <strong>10 daqiqa oldin</strong> keling va botda «Keldim / Ketdim» tugmasini
 bosing.</p></li>
 <li><p>Dorixonada doim kamida bitta farmatsevt yoki provizor bo‘lishi shart: tushlikni
 hamkasbingiz bilan kelishib oling.</p></li>

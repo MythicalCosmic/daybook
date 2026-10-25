@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-25 23:31+0500\n"
+"POT-Creation-Date: 2026-10-26 00:18+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -168,8 +168,8 @@ msgstr "har oy"
 
 #: backend/apps/agenda/bot_messages.py
 #, python-format
-msgid "%(mark)s You're invited: %(title)s"
-msgstr "%(mark)s Siz taklif qilindingiz: %(title)s"
+msgid "You're invited: %(title)s"
+msgstr "Siz taklif qilindingiz: %(title)s"
 
 #: backend/apps/agenda/bot_messages.py
 #, python-format
@@ -200,9 +200,11 @@ msgstr "%(minutes)d daqiqadan keyin: %(title)s"
 msgid "I'll come"
 msgstr "Boraman"
 
-#: backend/apps/agenda/bot_messages.py backend/apps/agenda/models.py
+#. Translators: the attendee's own answer on a button ("I can't come"), not their status.
+#: backend/apps/agenda/bot_messages.py
+msgctxt "event answer button"
 msgid "Can't come"
-msgstr "Bora olmaydi"
+msgstr "Bora olmayman"
 
 #: backend/apps/agenda/bot_messages.py
 msgid "You said you'll come."
@@ -324,6 +326,10 @@ msgstr "Javob bermagan"
 #: backend/apps/agenda/models.py
 msgid "Going"
 msgstr "Boradi"
+
+#: backend/apps/agenda/models.py
+msgid "Can't come"
+msgstr "Bora olmaydi"
 
 #: backend/apps/agenda/models.py
 msgid "The occurrence the last reminder was for."
@@ -448,7 +454,6 @@ msgid "This event is over."
 msgstr "Bu tadbir tugagan."
 
 #: backend/apps/announcements/admin.py backend/apps/finance/models.py
-#: backend/apps/knowledge/bot_messages.py
 msgid "Read"
 msgstr "O‘qilgan"
 
@@ -501,6 +506,11 @@ msgstr "Kimlar olsin? Lavozimlarni tanlang yoki hammaga yuboring."
 #: backend/apps/announcements/bot_messages.py
 msgid "<b>Preview</b>"
 msgstr "<b>Oldindan ko‘rish</b>"
+
+#: backend/apps/announcements/bot_messages.py
+#, python-format
+msgid "Chosen positions: %(names)s"
+msgstr "Tanlangan lavozimlar: %(names)s"
 
 #: backend/apps/announcements/bot_messages.py
 #, python-format
@@ -1073,6 +1083,16 @@ msgstr "<b>Kim ishda · %(branch)s</b>"
 #, python-format
 msgid "%(present)s of %(rostered)s on shift are here."
 msgstr "Smenadagi %(rostered)s kishidan %(present)s tasi ishda."
+
+#: backend/apps/attendance/bot_messages.py
+#, python-format
+msgid "On time: %(names)s"
+msgstr "O‘z vaqtida kelganlar: %(names)s"
+
+#: backend/apps/attendance/bot_messages.py
+#, python-format
+msgid "Late: %(names)s"
+msgstr "Kechikib kelganlar: %(names)s"
 
 #: backend/apps/attendance/bot_messages.py
 #, python-format
@@ -4296,6 +4316,11 @@ msgstr "Soat %(time)s, o‘z vaqtida."
 msgid "At %(time)s, %(late)s late."
 msgstr "Soat %(time)s, %(late)s kechikib."
 
+#: backend/apps/groups/bot_messages.py backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Report: %(text)s"
+msgstr "Hisobot: %(text)s"
+
 #: backend/apps/groups/bot_messages.py
 msgid "Fixed and sent for a check again."
 msgstr "Tuzatildi va qayta tekshiruvga yuborildi."
@@ -4359,17 +4384,27 @@ msgstr "Bu guruh endi <b>%(company)s</b> kompaniyasiga ulandi."
 msgid "Whose news: %(who)s"
 msgstr "Kimning yangiliklari: %(who)s"
 
-#: backend/apps/groups/bot_messages.py backend/apps/projects/conf.py
-#: backend/apps/projects/models.py backend/apps/reminders/bot_messages.py
-#: backend/apps/tasks/bot_messages.py backend/apps/tasks/services.py
+#. Translators: closes the group's settings ("Tayyor" / "Готово"), not a task's status.
+#: backend/apps/groups/bot_messages.py
+msgctxt "group settings"
 msgid "Done"
-msgstr "Bajarildi"
+msgstr "Tayyor"
 
 #: backend/apps/groups/bot_messages.py
 msgid "<b>What should I post here?</b> Tap to turn things on or off."
 msgstr "<b>Bu yerga nimalarni yozay?</b> Yoqish yoki o‘chirish uchun bosing."
 
 #: backend/apps/groups/bot_messages.py
+#, python-format
+msgid "Turned on: %(events)s"
+msgstr "Yoqilgan: %(events)s"
+
+#: backend/apps/groups/bot_messages.py
+msgid "Turned on: nothing yet"
+msgstr "Yoqilgan: hali hech narsa"
+
+#: backend/apps/groups/bot_messages.py backend/apps/members/bot_messages.py
+#: backend/apps/tasks/bot_messages.py
 msgid "Back"
 msgstr "Orqaga"
 
@@ -4560,15 +4595,31 @@ msgstr "Bu kompaniya uchun bunday xabar turi mavjud emas."
 msgid "You don't have access to this."
 msgstr "Bunga kirish huquqingiz yo‘q."
 
+#. Translators: %(title)s is the notification's title, e.g. "Kassa yopilmadi".
 #: backend/apps/inbox/bot_messages.py
 #, python-format
-msgid "%(action)s"
-msgstr "%(action)s"
+msgid "Warning: %(title)s"
+msgstr "Diqqat: %(title)s"
+
+#: backend/apps/inbox/bot_messages.py
+#, python-format
+msgid "Urgent: %(title)s"
+msgstr "Shoshilinch: %(title)s"
 
 #: backend/apps/inbox/bot_messages.py
 #, python-format
 msgid "%(action)s · %(name)s"
 msgstr "%(action)s · %(name)s"
+
+#: backend/apps/inbox/bot_messages.py
+#, python-format
+msgid "Answer: %(action)s"
+msgstr "Javob: %(action)s"
+
+#: backend/apps/inbox/bot_messages.py
+#, python-format
+msgid "Answer: %(action)s · %(name)s"
+msgstr "Javob: %(action)s · %(name)s"
 
 #: backend/apps/inbox/bot_messages.py backend/apps/tasks/bot_messages.py
 msgid "Open in app"
@@ -4732,6 +4783,12 @@ msgstr "Bilimlar bazasida yangi sahifa: %(title)s"
 msgid "Please read and confirm: %(title)s"
 msgstr "Iltimos, o‘qing va tasdiqlang: %(title)s"
 
+#. Translators: a button that sends the page into the chat ("Read it"), not the status.
+#: backend/apps/knowledge/bot_messages.py
+msgctxt "knowledge read button"
+msgid "Read"
+msgstr "O‘qish"
+
 #: backend/apps/knowledge/bot_messages.py
 msgid "The page is longer: open it in the app to read the rest."
 msgstr "Sahifa bundan uzunroq: qolganini o‘qish uchun uni ilovada oching."
@@ -4866,6 +4923,45 @@ msgstr "«%(title)s» sahifasini e’lon qildi"
 #, python-format
 msgid "Copied from %(company)s"
 msgstr "%(company)s kompaniyasidan ko‘chirildi"
+
+#: backend/apps/knowledge/sanitize.py
+msgctxt "knowledge callout"
+msgid "Note"
+msgstr "Eslatma"
+
+#: backend/apps/knowledge/sanitize.py
+msgctxt "knowledge callout"
+msgid "Good practice"
+msgstr "Yaxshi amaliyot"
+
+#: backend/apps/knowledge/sanitize.py
+msgctxt "knowledge callout"
+msgid "Warning"
+msgstr "Ogohlantirish"
+
+#: backend/apps/knowledge/sanitize.py
+msgctxt "knowledge callout"
+msgid "Never do this"
+msgstr "Hech qachon qilmang"
+
+#: backend/apps/knowledge/sanitize.py
+msgctxt "knowledge callout"
+msgid "Side note"
+msgstr "Qo‘shimcha izoh"
+
+#: backend/apps/knowledge/sanitize.py
+msgctxt "knowledge checklist"
+msgid "Done"
+msgstr "Bajarildi"
+
+#: backend/apps/knowledge/sanitize.py
+#, python-format
+msgid "Picture: %(alt)s"
+msgstr "Rasm: %(alt)s"
+
+#: backend/apps/knowledge/sanitize.py
+msgid "Picture"
+msgstr "Rasm"
 
 #: backend/apps/knowledge/services.py
 msgid "Only people who manage the knowledge base can do this."
@@ -5092,12 +5188,22 @@ msgid "To check"
 msgstr "Tekshirish"
 
 #: backend/apps/members/bot_messages.py
+#, python-format
+msgid "Company: %(name)s"
+msgstr "Kompaniya: %(name)s"
+
+#: backend/apps/members/bot_messages.py
 msgid "Type a task or pick from the menu"
 msgstr "Vazifani yozing yoki menyudan tanlang"
 
 #: backend/apps/members/bot_messages.py
 msgid "Tap the button to open the app."
 msgstr "Ilovani ochish uchun tugmani bosing."
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "The «%(button)s» button next to the message field opens it in one tap."
+msgstr "Xabar maydoni yonidagi «%(button)s» tugmasi uni bir bosishda ochadi."
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -5184,8 +5290,8 @@ msgid "Welcome to <b>%(company)s</b>!"
 msgstr "<b>%(company)s</b> jamoasiga xush kelibsiz!"
 
 #: backend/apps/members/bot_messages.py
-msgid "/language · /help"
-msgstr "/language · /help"
+msgid "Language: /language · Help: /help"
+msgstr "Til: /language · Yordam: /help"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -5193,6 +5299,7 @@ msgid "Open: %(count)d"
 msgstr "Ochiq: %(count)d"
 
 #: backend/apps/members/bot_messages.py backend/apps/tasks/bot_messages.py
+#: owner_bot/ownerbot/brief.py
 #, python-format
 msgid "late: %(count)d"
 msgstr "kechikkan: %(count)d"
@@ -5290,7 +5397,7 @@ msgstr "%(name)s blokladi"
 msgid "Join request · %(name)s"
 msgstr "Qo‘shilish so‘rovi · %(name)s"
 
-#: backend/apps/members/bot_messages.py
+#: backend/apps/members/bot_messages.py backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "Company: %(company)s"
 msgstr "Kompaniya: %(company)s"
@@ -5303,12 +5410,13 @@ msgstr ""
 
 #: backend/apps/members/bot_messages.py
 #, python-format
+msgid "Chosen: %(names)s"
+msgstr "Tanlangan: %(names)s"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
 msgid "Role: %(role)s"
 msgstr "Rol: %(role)s"
-
-#: backend/apps/members/bot_messages.py backend/apps/tasks/bot_messages.py
-msgid "‹ Back"
-msgstr "‹ Orqaga"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -6140,6 +6248,12 @@ msgstr "Jarayonda"
 #: backend/apps/projects/conf.py
 msgid "Review"
 msgstr "Tekshiruv"
+
+#: backend/apps/projects/conf.py backend/apps/projects/models.py
+#: backend/apps/reminders/bot_messages.py backend/apps/tasks/bot_messages.py
+#: backend/apps/tasks/services.py
+msgid "Done"
+msgstr "Bajarildi"
 
 #: backend/apps/projects/hooks.py
 msgid "Project milestones"
@@ -7189,8 +7303,12 @@ msgstr "%(amount)s topshirilgani %(hours)s soatdan beri tasdiqlanmagan"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
-msgid "%(cashier)s → %(receiver)s at %(branch)s. Nobody has confirmed it yet."
-msgstr "%(cashier)s → %(receiver)s, %(branch)s. Hali hech kim tasdiqlamadi."
+msgid ""
+"Cashier: %(cashier)s · Receiver: %(receiver)s · %(branch)s. Nobody has "
+"confirmed it yet."
+msgstr ""
+"Kassir: %(cashier)s · Qabul qiluvchi: %(receiver)s · %(branch)s. Hali hech "
+"kim tasdiqlamadi."
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -7325,6 +7443,11 @@ msgstr "<b>%(shift)s</b> smenasi yopildi · %(branch)s"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
+msgid "Cashier: %(name)s"
+msgstr "Kassir: %(name)s"
+
+#: backend/apps/sales/bot_messages.py owner_bot/ownerbot/brief.py
+#, python-format
 msgid "Sales: %(net)s"
 msgstr "Savdo: %(net)s"
 
@@ -7335,13 +7458,18 @@ msgstr "Naqd farqi: %(difference)s"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
-msgid "%(cashier)s → %(receiver)s: %(amount)s received ✓ · %(branch)s"
-msgstr "%(cashier)s → %(receiver)s: %(amount)s olindi ✓ · %(branch)s"
+msgid "<b>Handover received: %(amount)s</b>"
+msgstr "<b>Topshirilgan pul olindi: %(amount)s</b>"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
-msgid "%(cashier)s → %(receiver)s: %(amount)s NOT received · %(branch)s"
-msgstr "%(cashier)s → %(receiver)s: %(amount)s OLINMADI · %(branch)s"
+msgid "<b>Handover NOT received: %(amount)s</b>"
+msgstr "<b>Topshirilgan pul OLINMADI: %(amount)s</b>"
+
+#: backend/apps/sales/bot_messages.py
+#, python-format
+msgid "Cashier: %(cashier)s · Receiver: %(receiver)s · %(branch)s"
+msgstr "Kassir: %(cashier)s · Qabul qiluvchi: %(receiver)s · %(branch)s"
 
 #: backend/apps/sales/bot_messages.py
 #, python-format
@@ -7419,6 +7547,12 @@ msgstr "%(person)s · %(amount)s · %(branch)s, %(time)s"
 #, python-format
 msgid "Received %(amount)s"
 msgstr "%(amount)s oldim"
+
+#. Translators: the receiver's own answer ("I didn't get it").
+#: backend/apps/sales/bot_messages.py
+msgctxt "handover answer button"
+msgid "Not received"
+msgstr "Olmadim"
 
 #: backend/apps/sales/bot_messages.py
 msgid "Kassa is for the people who run a till. Nothing waits for you here."
@@ -8195,6 +8329,21 @@ msgid "This request must come from the dashboard."
 msgstr "Bu so‘rov boshqaruv panelidan yuborilishi kerak."
 
 #: backend/apps/signin/bot_messages.py
+#, python-format
+msgid "Device: %(device)s"
+msgstr "Qurilma: %(device)s"
+
+#: backend/apps/signin/bot_messages.py
+#, python-format
+msgid "IP address: %(ip)s"
+msgstr "IP manzil: %(ip)s"
+
+#: backend/apps/signin/bot_messages.py
+#, python-format
+msgid "Time: %(time)s"
+msgstr "Vaqt: %(time)s"
+
+#: backend/apps/signin/bot_messages.py
 msgid "Sign in to the dashboard?"
 msgstr "Boshqaruv paneliga kirasizmi?"
 
@@ -8432,10 +8581,10 @@ msgid "Decided about more time for a task"
 msgstr "Qo‘shimcha vaqt bo‘yicha qaror"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "Nothing on your list. To add a task, tap New task or just type it."
+msgid "Nothing on your list. To add a task, tap «New task» or just type it."
 msgstr ""
-"Ro‘yxatingiz bo‘sh. Vazifa qo‘shish uchun Yangi vazifa tugmasini bosing yoki "
-"shunchaki yozing."
+"Ro‘yxatingiz bo‘sh. Vazifa qo‘shish uchun «Yangi vazifa» tugmasini bosing "
+"yoki shunchaki yozing."
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
@@ -8480,6 +8629,7 @@ msgstr "%(name)s jamoadan ketdi. Uning vazifalari sizga qaytdi:"
 msgid "Status: %(status)s"
 msgstr "Holati: %(status)s"
 
+#. Translators: %(when)s reads like "ertaga, 18:00 (juma, 26-okt)".
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "Due: %(when)s"
@@ -8504,7 +8654,7 @@ msgstr "Kimdan: %(name)s"
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "For: %(name)s"
-msgstr "Kimga: %(name)s"
+msgstr "Ijrochi: %(name)s"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
@@ -8515,11 +8665,6 @@ msgstr "Nazorat ro‘yxati: %(done)d/%(total)d"
 #, python-format
 msgid "Proof needed: %(proof)s"
 msgstr "Yakunlash uchun kerak: %(proof)s"
-
-#: backend/apps/tasks/bot_messages.py
-#, python-format
-msgid "Report: %(text)s"
-msgstr "Hisobot: %(text)s"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
@@ -8543,9 +8688,10 @@ msgstr "Izoh"
 msgid "More time"
 msgstr "Vaqt so‘rash"
 
-#: backend/apps/tasks/bot_messages.py backend/apps/tasks/models.py
+#: backend/apps/tasks/bot_messages.py
+msgctxt "task button"
 msgid "Can't do it"
-msgstr "Bajarib bo‘lmaydi"
+msgstr "Bajara olmayman"
 
 #: backend/apps/tasks/bot_messages.py
 msgid "Undo"
@@ -8700,6 +8846,16 @@ msgid "Me"
 msgstr "O‘zimga"
 
 #: backend/apps/tasks/bot_messages.py
+msgctxt "page"
+msgid "Previous"
+msgstr "Oldingi"
+
+#: backend/apps/tasks/bot_messages.py
+msgctxt "page"
+msgid "Next"
+msgstr "Keyingi"
+
+#: backend/apps/tasks/bot_messages.py
 msgid "Who is it for?"
 msgstr "Kimga?"
 
@@ -8724,14 +8880,19 @@ msgstr "%(name)s vazifani bajardi. Iltimos, tekshiring."
 #. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "%(name)s completed a task."
-msgstr "%(name)s vazifani bajardi."
+msgid "<b>Task done</b> · %(name)s"
+msgstr "<b>Vazifa bajarildi</b> · %(name)s"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "late by %(duration)s"
+msgstr "%(duration)s kechikdi"
 
 #. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/tasks/bot_messages.py
 #, python-format
-msgid "%(name)s confirmed your task."
-msgstr "%(name)s vazifangizni qabul qildi."
+msgid "<b>Your task was accepted</b> · %(name)s"
+msgstr "<b>Vazifangiz qabul qilindi</b> · %(name)s"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
@@ -8892,6 +9053,12 @@ msgstr "Ertaga, %(when)s"
 msgid "Another time"
 msgstr "Boshqa vaqt"
 
+#. Translators: %(repeat)s is how often, e.g. "Every day".
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Repeats: %(repeat)s"
+msgstr "Takrorlanadi: %(repeat)s"
+
 #: backend/apps/tasks/bot_messages.py
 msgid "Save"
 msgstr "Saqlash"
@@ -8903,11 +9070,6 @@ msgstr "Vaqtni o‘zgartirish"
 #: backend/apps/tasks/bot_messages.py
 msgid "Not a date"
 msgstr "Bu sana emas"
-
-#: backend/apps/tasks/bot_messages.py
-#, python-format
-msgid "late by %(duration)s"
-msgstr "%(duration)s kechikdi"
 
 #: backend/apps/tasks/bot_messages.py
 #, python-format
@@ -8934,10 +9096,43 @@ msgstr "%(days)d kun"
 msgid "%(days)d d %(hours)d h"
 msgstr "%(days)d kun %(hours)d soat"
 
+#. Translators: on a checklist button; %(step)s is the step's own text.
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgctxt "checklist step"
+msgid "Done: %(step)s"
+msgstr "Bajarildi: %(step)s"
+
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "To check (%(count)d)"
 msgstr "Tekshirish (%(count)d)"
+
+#: backend/apps/tasks/bot_messages.py
+msgctxt "task list"
+msgid "sent back"
+msgstr "qaytarildi"
+
+#: backend/apps/tasks/bot_messages.py
+msgctxt "task list"
+msgid "being checked"
+msgstr "tekshiruvda"
+
+#: backend/apps/tasks/bot_messages.py
+msgctxt "task list"
+msgid "late"
+msgstr "kechikkan"
+
+#: backend/apps/tasks/bot_messages.py
+msgctxt "task list"
+msgid "urgent"
+msgstr "shoshilinch"
+
+#. Translators: %(priority)s is "Urgent" or "High", as the task's priority reads.
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "Priority: %(priority)s"
+msgstr "Muhimligi: %(priority)s"
 
 #: backend/apps/tasks/feeds.py
 #, python-format
@@ -9221,6 +9416,10 @@ msgstr "Vazifa kartasi"
 #: backend/apps/tasks/models.py
 msgid "Check request"
 msgstr "Tekshiruv so‘rovi"
+
+#: backend/apps/tasks/models.py
+msgid "Can't do it"
+msgstr "Bajarib bo‘lmaydi"
 
 #: backend/apps/tasks/models.py
 msgid "Late alert"
@@ -9719,8 +9918,8 @@ msgstr "<b>Dam olish so‘rovi</b> · %(name)s"
 
 #: backend/apps/timeoff/bot_messages.py
 #, python-format
-msgid "%(dates)s · days: %(count)d"
-msgstr "%(dates)s · %(count)d kun"
+msgid "Dates: %(dates)s · days: %(count)d"
+msgstr "Sanalar: %(dates)s · %(count)d kun"
 
 #: backend/apps/timeoff/bot_messages.py
 #, python-format
@@ -10024,6 +10223,11 @@ msgstr "Siz bitta kompaniyada ishlaysiz: <b>%(company)s</b>."
 msgid "Which company are you working in?"
 msgstr "Qaysi kompaniyada ishlayapsiz?"
 
+#: employee_bot/bot/handlers/company.py
+#, python-format
+msgid "Now: %(company)s"
+msgstr "Hozir: %(company)s"
+
 #: employee_bot/bot/handlers/contact.py
 msgid "Thanks, your phone number is saved. Now finish your account in the app."
 msgstr ""
@@ -10032,6 +10236,14 @@ msgstr ""
 #: employee_bot/bot/handlers/errors.py owner_bot/ownerbot/handlers/errors.py
 msgid "Something went wrong. Please try again in a moment."
 msgstr "Nimadir xato ketdi. Birozdan keyin qayta urinib ko‘ring."
+
+#: employee_bot/bot/handlers/features/agenda.py
+msgid "you'll come"
+msgstr "borasiz"
+
+#: employee_bot/bot/handlers/features/agenda.py
+msgid "please answer"
+msgstr "javob bering"
 
 #: employee_bot/bot/handlers/features/attendance.py
 #, python-format
@@ -10118,22 +10330,18 @@ msgstr "Bu vazifa o‘chirilgan yoki boshqa xodimga berilgan."
 msgid "You can't do that."
 msgstr "Buni qila olmaysiz."
 
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: employee_bot/bot/handlers/member/cards.py
-#, fuzzy, python-format
-#| msgid "Sent for checking · %(name)s"
-msgid "🔎 Sent for checking · %(name)s"
+#, python-format
+msgid "Sent for checking · %(name)s"
 msgstr "Tekshiruvga yuborildi · %(name)s"
 
 #: employee_bot/bot/handlers/member/cards.py
-#, fuzzy
-#| msgid "Sent for checking"
-msgid "🔎 Sent for checking"
+msgid "Sent for checking"
 msgstr "Tekshiruvga yuborildi"
 
 #: employee_bot/bot/handlers/member/cards.py
-#, fuzzy
-#| msgid "Done!"
-msgid "Done! 🎉"
+msgid "Done!"
 msgstr "Bajarildi!"
 
 #: employee_bot/bot/handlers/member/home.py
@@ -10141,8 +10349,8 @@ msgid "Add this as a task?"
 msgstr "Buni vazifa qilib qo‘shaymi?"
 
 #: employee_bot/bot/handlers/member/new_task.py
-msgid "Send the task's title, or tap Cancel."
-msgstr "Vazifa nomini yuboring yoki Bekor qilish tugmasini bosing."
+msgid "Send the task's title, or tap «Cancel»."
+msgstr "Vazifa nomini yuboring yoki «Bekor qilish» tugmasini bosing."
 
 #: employee_bot/bot/handlers/member/new_task.py
 msgid "And what needs to be done?"
@@ -10153,8 +10361,8 @@ msgid "The title was cut to 200 characters."
 msgstr "Nomi 200 belgigacha qisqartirildi."
 
 #: employee_bot/bot/handlers/member/new_task.py
-msgid "Start again with New task."
-msgstr "Yangi vazifa tugmasi bilan qaytadan boshlang."
+msgid "Start again with «New task»."
+msgstr "«Yangi vazifa» tugmasi bilan qaytadan boshlang."
 
 #: employee_bot/bot/handlers/member/new_task.py
 #, python-format
@@ -10164,6 +10372,10 @@ msgstr "Yuborildi. Ijrochi: %(name)s"
 #: employee_bot/bot/handlers/member/new_task.py
 msgid "Added to your list."
 msgstr "Ro‘yxatingizga qo‘shildi."
+
+#: employee_bot/bot/handlers/member/tasks.py
+msgid "Comment added."
+msgstr "Izoh qo‘shildi."
 
 #: employee_bot/bot/handlers/member/tasks.py
 msgid "Started"
@@ -10229,6 +10441,10 @@ msgstr "Boshqa xodimga berildi."
 msgid "Task cancelled."
 msgstr "Vazifa bekor qilindi."
 
+#: employee_bot/bot/middlewares/access.py
+msgid "The menu is updated."
+msgstr "Menyu yangilandi."
+
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Tashkent"
 msgstr "Toshkent"
@@ -10290,7 +10506,7 @@ msgstr ""
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Start with /new to create your company."
-msgstr "Kompaniyangizni yaratish uchun /new dan boshlang."
+msgstr "Kompaniyangizni yaratish uchun /new buyrug‘ini yuboring."
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Your dashboard: every task, sale, payment and person in one place."
@@ -10459,6 +10675,16 @@ msgstr "ochilgan: soat %(time)s"
 #, python-format
 msgid "not opened yet (opens %(time)s)"
 msgstr "hali ochilmagan (ochilish vaqti: %(time)s)"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "At work: %(present)d/%(rostered)d"
+msgstr "Ishda: %(present)d/%(rostered)d"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Tasks: %(done)d/%(total)d"
+msgstr "Vazifalar: %(done)d/%(total)d"
 
 #: owner_bot/ownerbot/brief.py
 #, python-format

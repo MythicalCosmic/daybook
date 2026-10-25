@@ -30,12 +30,13 @@ async def start_login(message: Message, payload: str, *, user: User, state: FSMC
 
 @router.callback_query(LoginTap.filter())
 async def tapped(callback: CallbackQuery, callback_data: LoginTap, user: User) -> None:
-    text, signed_in = await sync_to_async(bot_flow.tap)(
+    text, _signed_in = await sync_to_async(bot_flow.tap)(
         user, callback_data.link, callback_data.pick
     )
     with suppress(TelegramBadRequest):
         await callback.message.edit_text(text, reply_markup=None)
-    await callback.answer("" if signed_in else None)
+    # The prompt itself now says what happened: no toast on top of it.
+    await callback.answer()
 
 
 @router.callback_query(SessionsAction.filter(F.action == "all"))

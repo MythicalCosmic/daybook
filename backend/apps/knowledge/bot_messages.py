@@ -4,6 +4,7 @@ from aiogram import html
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from django.conf import settings
 from django.utils.translation import gettext as _
+from django.utils.translation import pgettext
 
 from apps.knowledge import sanitize
 from apps.knowledge.callbacks import KbAction, KbCallback
@@ -23,14 +24,14 @@ def dashboard_url(page: Page) -> str:
 
 
 def display_title(page: Page) -> str:
-    return f"{page.emoji} {page.title}".strip()
+    """The title as the bots write it: without the page's icon (the bots send no emoji; the
+    mini app and the dashboard show the icon)."""
+    return page.title
 
 
 def published_title(page: Page, *, updated: bool) -> str:
     if updated:
-        return _("Page updated, please read it again: %(title)s") % {
-            "title": display_title(page)
-        }
+        return _("Page updated, please read it again: %(title)s") % {"title": display_title(page)}
     if page.require_ack:
         return _("New page to read: %(title)s") % {"title": display_title(page)}
     return _("New page in the knowledge base: %(title)s") % {"title": display_title(page)}
@@ -41,12 +42,12 @@ def reminder_title(page: Page) -> str:
 
 
 def page_excerpt(page: Page) -> str:
-    space = f"{page.space.icon} {page.space.name}".strip()
-    return f"{space} · {sanitize.excerpt(page.body_text, 240)}"
+    return f"{page.space.name} · {sanitize.excerpt(page.body_text, 240)}"
 
 
 def read_button() -> str:
-    return _("Read")
+    # Translators: a button that sends the page into the chat ("Read it"), not the status.
+    return pgettext("knowledge read button", "Read")
 
 
 def _web_app_button(page: Page) -> InlineKeyboardButton | None:
@@ -60,7 +61,7 @@ def _web_app_button(page: Page) -> InlineKeyboardButton | None:
 def page_message(page: Page, *, read: bool) -> BotMessage:
     """The page itself, in the chat, with "I've read it" when the page asks for it."""
     body, cut = sanitize.to_telegram(page.body)
-    space = html.quote(f"{page.space.icon} {page.space.name}".strip())
+    space = html.quote(page.space.name)
     lines = [f"<b>{html.quote(display_title(page))}</b>", f"<i>{space}</i>", "", body]
     if cut:
         lines += ["", _("The page is longer: open it in the app to read the rest.")]
@@ -90,7 +91,7 @@ def to_read(pages: list[Page]) -> BotMessage:
     rows = [
         [
             InlineKeyboardButton(
-                text=f"{display_title(page)}"[:60],
+                text=display_title(page)[:60],
                 callback_data=KbCallback(action=KbAction.OPEN, page_id=page.pk).pack(),
             )
         ]

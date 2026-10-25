@@ -4,7 +4,9 @@ import pytest
 from aiogram.methods import AnswerCallbackQuery, EditMessageReplyMarkup, EditMessageText
 from asgiref.sync import sync_to_async
 from django.test import RequestFactory
+from django.utils import translation
 
+from apps.signin import bot_messages as signin_messages
 from apps.signin import links, services
 from apps.signin.callbacks import NOT_ME, LoginTap, SessionsAction
 from apps.signin.models import DeviceSession, LoginLink
@@ -103,7 +105,9 @@ async def test_a_stranger_who_never_used_the_bot_is_refused(dp, bot, usernames):
 
     await dp.feed_update(bot, updates.message(updates.tg_user(7399), f"/start login_{made.code}"))
 
-    assert "don't have access" in bot.sent()[0].text
+    # Someone new hears it in Uzbek first.
+    with translation.override("uz"):
+        assert bot.sent()[0].text == signin_messages.link_refused("no_access")
 
 
 async def test_an_unknown_code(dp, bot, owner):

@@ -30,7 +30,7 @@ registry.register_copy_part(
     copy=providers.copy_spaces,
 )
 
-# "New page to read: …" and the reminder; "📖 Read" sends the page into the chat.
+# "New page to read: …" and the reminder; "Read" sends the page into the chat.
 register_kind(
     services.KIND_PUBLISHED,
     label=_("New pages in the knowledge base"),

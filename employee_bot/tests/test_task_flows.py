@@ -2,7 +2,8 @@
 was asked on (albums and files too), "which task is this photo for?", comments by button and by
 reply, quick add with "what I understood", managers giving work, lists with pages and the "to
 check" list, people in two companies, "can't do it", "need more time", and the small things
-(thanks get a, a failing handler still answers)."""
+(thanks get no answer, a failing handler still answers). The bot sends no emoji, reactions
+included."""
 
 from datetime import timedelta
 from zoneinfo import ZoneInfo
@@ -171,9 +172,9 @@ async def test_the_proof_photo_lands_on_the_card_it_was_asked_on(
     await dp.feed_update(bot, updates.photo(tg, media_group_id="album-1"))  # the album's second
 
     assert (await reload(task)).status == Task.Status.DONE
-    reactions = [r.reaction[0].emoji for r in of(bot, SetMessageReaction)]
-    assert reactions == ["", "", ""]  # working, done, and the album's extra photo
-    assert "Front shelf" in of(bot, EditMessageText)[-1].text  # the card, done
+    assert of(bot, SetMessageReaction) == []  # no reactions any more: the card says it
+    card = of(bot, EditMessageText)[-1].text
+    assert "Front shelf" in card and "Status: Done" in card  # the card, done
 
 
 async def test_a_photo_sent_as_a_file_is_proof_too(dp, bot, company, member, real_photos):
@@ -236,8 +237,27 @@ async def test_a_comment_by_button_and_by_reply(dp, bot, company, member, sent_m
 
     texts = [c async for c in TaskComment.objects.filter(task=task).values_list("text", flat=True)]
     assert texts == ["Terminal cheki topilmayapti", "Ertalab yozaman"]
-    assert [r.reaction[0].emoji for r in of(bot, SetMessageReaction)] == ["", ""]
+    assert of(bot, SetMessageReaction) == []
+    said = [m.text for m in of(bot, SendMessage) if m.text == "Comment added."]
+    assert len(said) == 2  # a word instead of a reaction, both ways
     assert any(m["chat_id"] == manager.user.telegram_id for m in sent_messages)  # it reached them
+
+
+async def test_a_ready_reason_goes_back_whole(dp, bot, company, member):
+    """The reason chips once started with an emoji the handler cut off; their words now go back
+    as they are."""
+    worker = await member.aregistered(company)
+    manager = await member.aregistered(company, "Manager")
+    task = await make_task(assignee=worker, created_by=manager, status=Task.Status.REVIEW)
+    boss = updates.tg_user(manager.user.telegram_id)
+
+    await dp.feed_update(bot, updates.callback(boss, press(TaskAction.RETURN, task.pk)))
+    reason = ReasonCallback(kind="return", task_id=task.pk, code="photo").pack()
+    await dp.feed_update(bot, updates.callback(boss, reason))
+
+    assert (await reload(task)).status == Task.Status.RETURNED
+    comment = await TaskComment.objects.filter(task=task).alatest("created_at")
+    assert comment.text == "Photo is unclear"
 
 
 # New tasks ------------------------------------------------------------------------------
@@ -251,7 +271,8 @@ async def test_the_title_can_carry_the_deadline(dp, bot, company, member):
     await dp.feed_update(bot, updates.message(tg, "Kassani sanash 25.12 10:00!!"))
     preview = of(bot, SendMessage)[-1]
     assert "<b>Kassani sanash</b>" in preview.text
-    assert "10:00" in preview.text and "" in preview.text
+    assert "Due: " in preview.text and "10:00" in preview.text
+    assert "Priority: Urgent" in preview.text
     await dp.feed_update(bot, updates.callback(tg, QuickAddCallback(action="save").pack()))
 
     task = await Task.objects.aget(assignee=worker)
@@ -278,7 +299,7 @@ async def test_a_time_that_has_passed_offers_tomorrow(dp, bot, company, member):
     worker = await member.aregistered(company)
     tg = updates.tg_user(worker.user.telegram_id)
     await dp.feed_update(bot, updates.message(tg, "/new"))
-    await dp.feed_update(bot, updates.message(tg, "Kassa"))
+    await dp.feed_update(bot, updates.message(tg, "Kassani sanash"))
 
     await dp.feed_update(bot, updates.message(tg, "bugun 00:00"))
     assert "has already passed today" in of(bot, SendMessage)[-1].text
@@ -320,15 +341,17 @@ async def test_plain_text_is_offered_as_a_task(dp, bot, company, member):
     assert (await Task.objects.aget(assignee=worker)).title == "Vitrinani artish"
 
 
-async def test_thanks_and_stickers_get_a_thumbs_up(dp, bot, company, member):
+async def test_thanks_stickers_and_emoji_get_no_answer(dp, bot, company, member):
+    """Neither the home screen nor a reaction (the bot sends no emoji): nothing to answer."""
     worker = await member.aregistered(company)
     tg = updates.tg_user(worker.user.telegram_id)
 
     await dp.feed_update(bot, updates.message(tg, "Rahmat!"))
     await dp.feed_update(bot, updates.sticker(tg))
+    await dp.feed_update(bot, updates.message(tg, chr(0x1F44D) + chr(0x1F64F)))
 
     assert of(bot, SendMessage) == []
-    assert [r.reaction[0].emoji for r in of(bot, SetMessageReaction)] == ["", ""]
+    assert of(bot, SetMessageReaction) == []
 
 
 # Lists ----------------------------------------------------------------------------------
@@ -346,9 +369,7 @@ async def test_long_lists_have_pages_and_checkers_have_their_list(dp, bot, compa
     listing = of(bot, SendMessage)[-1]
     labels = [row[0].text for row in listing.reply_markup.inline_keyboard]
     assert "1/2" in [b.text for row in listing.reply_markup.inline_keyboard for b in row]
-    assert "To check (1)" in [
-        b.text for row in listing.reply_markup.inline_keyboard for b in row
-    ]
+    assert "To check (1)" in [b.text for row in listing.reply_markup.inline_keyboard for b in row]
     assert len([label for label in labels if "Count" in label]) == 8
 
     await dp.feed_update(bot, updates.callback(tg, ListCallback(view="mine", page=1).pack()))

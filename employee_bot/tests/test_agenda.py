@@ -46,7 +46,8 @@ async def test_calendar_shows_my_next_seven_days(dp, bot, company, member):
 
     text = sent(bot)[-1].text
     assert "Your next seven days" in text
-    assert "" in text and "Kassa trening" in text  # invited, not answered yet
+    assert "Kassa trening · please answer" in text  # invited, not answered yet
+    assert "Jamoa kechasi" in text and "Jamoa kechasi ·" not in text  # not invited: no note
     assert "Jamoa kechasi" in text and "Far away" not in text
 
 

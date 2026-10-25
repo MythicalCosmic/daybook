@@ -9,6 +9,7 @@ from asgiref.sync import sync_to_async
 
 from apps.companies.tests.factories import CompanyFactory
 from apps.console import registry
+from apps.notifications.emoji import has_emoji
 from ownerbot.callbacks import TodayPick
 from ownerbot.commands import set_commands
 from ownerbot.tests import updates
@@ -33,7 +34,8 @@ async def test_today_shows_branches_sections_and_approvals(
     settings.DASHBOARD_URL = "https://app.example.uz/dashboard/"
 
     def tasks_section(company, day, now, branch_ids):
-        return {"emoji": "", "title": "Tasks", "lines": ["18 of 24 done", "3 late"]}
+        # A section may still bring an emoji: the bot leaves it out.
+        return {"emoji": chr(0x2705), "title": "Tasks", "lines": ["18 of 24 done", "3 late"]}
 
     isolated_registries.register_brief_section(
         "tasks.today", perm=None, order=10, build=tasks_section
@@ -47,8 +49,9 @@ async def test_today_shows_branches_sections_and_approvals(
     [reply] = bot.sent()
     assert "Demo Dorixona" in reply.text
     assert "Chilonzor" in reply.text
-    assert "Tasks" in reply.text and "18 of 24 done" in reply.text
+    assert "<b>Tasks</b>\n    18 of 24 done\n    3 late" in reply.text
     assert "Nothing waits for your decision." in reply.text
+    assert not has_emoji(reply.text)
     [[opened]] = reply.reply_markup.inline_keyboard
     assert opened.web_app.url == f"https://app.example.uz/dashboard/c/{owner.company_id}"
 

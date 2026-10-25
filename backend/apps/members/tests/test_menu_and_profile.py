@@ -99,9 +99,7 @@ def test_the_app_opens_from_an_inline_button(settings):
 
 
 def test_without_a_member_or_the_app_buttons_stay_plain(company, member, no_buttons):
-    bot_menu.register_menu_button(
-        "Check in", order=1, visible=lambda m: True, web_app_screen="x"
-    )
+    bot_menu.register_menu_button("Check in", order=1, visible=lambda m: True, web_app_screen="x")
 
     assert texts(main_menu()) == [["My tasks", "New task"]]
     markup = main_menu(member.registered(company))

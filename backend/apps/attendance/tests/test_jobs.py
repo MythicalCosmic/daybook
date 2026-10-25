@@ -11,6 +11,7 @@ from apps.attendance.tests.conftest import DAY, local
 from apps.attendance.tests.factories import assign, shift_at, weekly_schedule
 from apps.inbox.models import Notification
 from apps.members.models import Membership
+from apps.notifications.emoji import has_emoji
 from apps.timeoff.models import TimeOff
 
 pytestmark = pytest.mark.django_db
@@ -177,6 +178,12 @@ def test_morning_post_once_per_branch(staff, no_location, monkeypatch):
     event, text, branch_id = posted[0]
     assert event == "attendance" and branch_id == staff.ali.home_branch_id
     assert "1 of 2" in text and "Vali" in text
+    # Who came on time and who is missing, in words (no tick and clock marks).
+    lines = text.splitlines()
+    assert lines[0].startswith("<b>Who's in · ")
+    assert any(line.startswith("On time: ") for line in lines)
+    assert any(line.startswith("Not here yet: ") and "Vali" in line for line in lines)
+    assert not has_emoji(text)
 
 
 def test_jobs_walk_companies_with_the_module_on(staff, other_company, freeze):

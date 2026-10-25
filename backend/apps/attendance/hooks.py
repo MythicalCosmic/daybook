@@ -210,7 +210,7 @@ register_kind(
     severity="warning",
 )
 
-# "📍 Keldim / Ketdim" in the employee bot's menu (opens the mini app's check-in when it has
+# "Keldim / Ketdim" in the employee bot's menu (opens the mini app's check-in when it has
 # an https address; otherwise the bot asks for a location share).
 bot_menu.register_menu_button(
     bot_messages.MENU_CHECK,

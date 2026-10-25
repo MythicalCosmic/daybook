@@ -4,8 +4,10 @@ import pytest
 from aiogram.methods import AnswerCallbackQuery, EditMessageText, SendMessage
 from asgiref.sync import sync_to_async
 from django.test import RequestFactory
+from django.utils import translation
 
-from apps.signin import links, services
+from apps.notifications.emoji import has_emoji
+from apps.signin import bot_messages, links, services
 from apps.signin.callbacks import NOT_ME, LoginTap, SessionsAction
 from apps.signin.models import DeviceSession, LoginLink
 from bot import deeplinks
@@ -60,7 +62,9 @@ async def test_the_employee_bot_confirms_with_the_right_number(dp, bot, owner):
     await dp.feed_update(bot, updates.message(person, f"/start login_{made.code}"))
 
     [prompt] = sent(bot)
-    assert "Chrome · Windows" in prompt.text and "213.230.x.x" in prompt.text
+    # Where it comes from, a labelled fact per line (no device or globe pictures).
+    assert "\nDevice: Chrome · Windows\nIP address: 213.230.x.x\nTime: " in prompt.text
+    assert not has_emoji(prompt.text)
     numbers = prompt.reply_markup.inline_keyboard[0]
     right = next(b for b in numbers if b.text == made.link.match_code)
 
@@ -94,7 +98,9 @@ async def test_people_who_are_not_members_get_a_clear_answer(dp, bot, employee_b
     await dp.feed_update(bot, updates.message(updates.tg_user(8899), f"/start login_{made.code}"))
 
     [reply] = sent(bot)
-    assert "don't have access" in reply.text
+    # Someone new hears it in Uzbek first.
+    with translation.override("uz"):
+        assert reply.text == bot_messages.link_refused("no_access")
 
 
 async def test_a_conversation_in_progress_does_not_swallow_the_link(dp, bot, owner):
