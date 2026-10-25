@@ -177,6 +177,22 @@ async def test_the_proof_photo_lands_on_the_card_it_was_asked_on(
     assert "Front shelf" in card and "Status: Done" in card  # the card, done
 
 
+async def test_a_proof_far_below_its_card_says_which_task_it_finished(
+    dp, bot, company, member, real_photos
+):
+    worker = await member.aregistered(company)
+    task = await make_task(assignee=worker, title="Front shelf", proof=Proof.PHOTO)
+    tg = updates.tg_user(worker.user.telegram_id)
+    await dp.feed_update(bot, updates.callback(tg, press(TaskAction.DONE, task.pk)))
+    await dp.feed_update(bot, updates.sticker(tg))  # asked again: the card is no longer above
+
+    await dp.feed_update(bot, updates.photo(tg))
+
+    assert (await reload(task)).status == Task.Status.DONE
+    note = of(bot, SendMessage)[-1].text
+    assert note.startswith("<b>") and note.endswith("</b>\nFront shelf")
+
+
 async def test_a_photo_sent_as_a_file_is_proof_too(dp, bot, company, member, real_photos):
     worker = await member.aregistered(company)
     task = await make_task(assignee=worker, proof=Proof.PHOTO)
