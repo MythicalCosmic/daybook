@@ -22,7 +22,7 @@
   "tasks.status.returned": "Qaytarildi",
   "tasks.status.done": "Bajarildi",
   "tasks.status.cancelled": "Bekor qilindi",
-  "tasks.status.late": "Kechikdi",
+  "tasks.status.late": "Kechikkan",
   "tasks.priority.urgent": "Shoshilinch",
   "tasks.priority.high": "Yuqori",
   "tasks.priority.normal": "Oddiy",

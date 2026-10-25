@@ -378,11 +378,15 @@ function dueLine(task: Task, ctx: ViewContext): string {
 }
 
 /**
- * Who sent it back and why: the return itself (the feed's "sent back" entry carries the reason),
- * never simply the latest comment, which may be the worker's own reply (audit M-1). Without the
- * entry (the reviewer's own view), the latest comment by someone other than the worker.
+ * Who sent it back and why: what the task itself says (`returned_by`, `returned_reason`), else the
+ * return in the feed (its "sent back" entry carries the reason), never simply the latest comment,
+ * which may be the worker's own reply (audit M-1). Without either (an older backend), the latest
+ * comment by someone other than the worker.
  */
 export function returnInfo(task: Task, comments: Comment[], activity: Activity[] | undefined): { name: string; reason: string | null } {
+  if (task.returned_by || task.returned_reason) {
+    return { name: task.returned_by?.name ?? task.created_by?.name ?? "", reason: task.returned_reason || null };
+  }
   const entry = activity?.find((item) => item.kind === "returned" && item.task.id === task.id);
   if (entry) return { name: entry.actor?.name ?? task.created_by?.name ?? "", reason: entry.text || null };
   const byReviewer = [...comments].reverse().find((comment) => comment.author && comment.author.id !== task.assignee.id);

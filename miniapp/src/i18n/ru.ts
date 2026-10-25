@@ -197,7 +197,7 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
   "day.yesterday": "Вчера",
   "due.left": "осталось {duration}",
   "priority.urgent": "Срочно",
-  "priority.high": "Важно",
+  "priority.high": "Высокий",
   "seen.at": "Просмотрено: {time}",
   "seen.not": "Ещё не просмотрено",
 
@@ -432,6 +432,7 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
   "add.date": "День",
   "add.rolled": "Сегодня {time} уже прошло, поэтому срок — завтра.",
   "add.passed": "Указанное время уже прошло. Выберите срок.",
+  "add.passedTomorrow": "Завтра, {time}",
   "add.options": "Параметры",
   "add.more": "Описание и чек-лист",
   "add.description": "Описание (по желанию)",

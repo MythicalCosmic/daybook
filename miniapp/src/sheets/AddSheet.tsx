@@ -58,8 +58,10 @@ export function AddSheet() {
   const quick = useQuickAdd(member.companyId, title);
   const read = applied(quick.result, dismissed);
   const readsDue = Boolean(read?.due_at);
-  // "bugun 01:00" typed at 03:00: nothing is read from it, and the sheet says why.
+  // "bugun 01:00" typed at 03:00: nothing is read from it, and the sheet says why. When the
+  // server says which moment that was, the same time tomorrow is one tap away (as in the bot).
   const passed = !quick.stale && readPassed(title, quick.result);
+  const passedAt = !quick.stale && quick.result?.past && quick.result.passed_at ? quick.result.passed_at : null;
   const people = useMemo(
     () => (members.data ?? []).filter((person) => person.id !== member.id),
     [members.data, member.id],
@@ -183,10 +185,28 @@ export function AddSheet() {
       {!readsDue && (
         <div className="field">
           <span className="field-label" id={`${ids}-when`}>{t("add.when")}</span>
-          {passed && (
+          {(passed || passedAt) && (
             <span className="field-note" role="status">
               {t("add.passed")}
             </span>
+          )}
+          {passedAt && (
+            <div className="ui-chips" style={{ marginBottom: 8 }}>
+              <button
+                type="button"
+                className="ui-chip"
+                onClick={() => {
+                  haptic.select();
+                  const words = quick.result?.title.trim();
+                  if (words) setTitle(words);
+                  setWhen("tomorrow");
+                  setTime(clock(passedAt, member.timeZone, "en-GB"));
+                }}
+              >
+                <CalendarClock size={16} strokeWidth={2.5} aria-hidden />
+                <span className="num">{t("add.passedTomorrow", { time: clock(passedAt, member.timeZone, locale) })}</span>
+              </button>
+            </div>
           )}
           <div className="ui-chips" role="group" aria-labelledby={`${ids}-when`}>
             {(["today", "tomorrow", "date", "none"] as const).map((option) => (

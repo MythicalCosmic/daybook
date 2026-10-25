@@ -76,3 +76,28 @@ describe("the late card's escalation", () => {
     expect(container.textContent).toContain("If it's still not done at 16:50, your manager gets a message.");
   });
 });
+
+describe("the late card's timeline", () => {
+  it("shows when each reminder really went out, from the server's log", () => {
+    show(reminder({ sent: 2, escalate_after: 3, escalated_at: null, next_at: "2026-10-21T16:50:00+05:00", sent_times: ["2026-10-21T09:04:00+05:00", "2026-10-21T08:10:00Z"] }));
+    expect(screen.getByText("09:04")).toBeTruthy();
+    expect(screen.getByText("13:10")).toBeTruthy();
+  });
+
+  it("shows no made-up time for a reminder the log doesn't have", () => {
+    const { container } = show(reminder({ sent: 2, escalate_after: 3, escalated_at: null, next_at: "2026-10-21T16:50:00+05:00", sent_times: [] }));
+    // Computed from the deadline these would read 09:00 and 09:10.
+    expect(container.textContent).not.toContain("09:10");
+    expect(screen.getAllByText("Sent")).toHaveLength(2);
+  });
+});
+
+describe("the late card when the reminder run is behind", () => {
+  it("never promises a next reminder, or a message to the manager, at a time already gone", () => {
+    // 16:40 now; the next reminder was due at 16:20 and hasn't gone yet.
+    const { container } = show(reminder({ sent: 1, max_reminders: 8, escalate_after: 3, escalated_at: null, next_at: "2026-10-21T16:20:00+05:00", escalate_to: "Bekzod Mirzayev" }));
+    expect(container.textContent).toContain("Reminder 1 of 8 sent · next at 16:40");
+    expect(container.textContent).toContain("If it's still not done at 16:50, Bekzod Mirzayev gets a message.");
+    expect(container.textContent).not.toContain("16:20");
+  });
+});

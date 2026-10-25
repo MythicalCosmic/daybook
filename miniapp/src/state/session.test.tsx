@@ -45,4 +45,15 @@ describe("the company the app opens in", () => {
     );
     expect(screen.getByText("Demo Dorixona")).toBeTruthy();
   });
+
+  it("is the one the bot and the dashboard use when nothing was chosen on a phone", async () => {
+    // The server's choice (a company they own, the most branches), not simply the first listed.
+    render(
+      <SessionProvider me={{ ...twoCompanies(), bot_company: 2 }}>
+        <Company />
+      </SessionProvider>,
+    );
+    expect(await screen.findByText("Demo Distribyutor")).toBeTruthy();
+    expect(screen.queryByText("Demo Dorixona")).toBeNull();
+  });
 });
