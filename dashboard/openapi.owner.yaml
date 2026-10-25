@@ -13016,6 +13016,62 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedTaskReviewList'
           description: ''
+  /api/v1/owner/companies/{company_id}/tasks/settings/:
+    get:
+      operationId: companies_tasks_settings_retrieve
+      description: |-
+        The company's rules for finished work (PLAN-OWNER §15.3). Anyone in the dashboard reads
+        them (the create dialogs start from them); company.settings changes them, audited.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TasksSettings'
+          description: ''
+    patch:
+      operationId: companies_tasks_settings_partial_update
+      description: |-
+        The company's rules for finished work (PLAN-OWNER §15.3). Anyone in the dashboard reads
+        them (the create dialogs start from them); company.settings changes them, audited.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTasksSettingsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTasksSettingsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTasksSettingsRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TasksSettings'
+          description: ''
   /api/v1/owner/companies/{company_id}/tasks/summary/:
     get:
       operationId: companies_tasks_summary_retrieve
@@ -18658,6 +18714,16 @@ components:
           default: false
       required:
       - reason
+    OnFinishEnum:
+      enum:
+      - auto
+      - proof
+      - ask
+      type: string
+      description: |-
+        * `auto` - Accept it automatically
+        * `proof` - Accept automatically only with a photo or text proof, otherwise ask
+        * `ask` - Always ask the person who gave it
     OptionalReasonRequest:
       type: object
       properties:
@@ -18776,12 +18842,20 @@ components:
           readOnly: true
         language:
           $ref: '#/components/schemas/LanguageEnum'
+        bot_company:
+          type: integer
+          nullable: true
+          description: 'The company the person works in, the same in the bot, the
+            mini app and the dashboard (the employee `me` has the same field). Set
+            it when the person switches company: the bot follows and says so in its
+            chat.'
         companies:
           type: array
           items:
             $ref: '#/components/schemas/OwnerMeCompany'
           readOnly: true
       required:
+      - bot_company
       - companies
       - language
       - user
@@ -20115,6 +20189,13 @@ components:
       properties:
         language:
           $ref: '#/components/schemas/LanguageEnum'
+        bot_company:
+          type: integer
+          nullable: true
+          description: 'The company the person works in, the same in the bot, the
+            mini app and the dashboard (the employee `me` has the same field). Set
+            it when the person switches company: the bot follows and says so in its
+            chat.'
     PatchedPaymentMethodRequest:
       type: object
       properties:
@@ -20461,6 +20542,9 @@ components:
           $ref: '#/components/schemas/ProofEnum'
         needs_confirmation:
           type: boolean
+          nullable: true
+          description: 'Empty: the company''s rule for finished work decides (tasks
+            settings); true always asks for a check, false never does.'
         checklist:
           type: array
           items:
@@ -20668,6 +20752,28 @@ components:
           format: decimal
           pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
           nullable: true
+    PatchedTasksSettingsRequest:
+      type: object
+      description: |-
+        "When someone finishes a task" (`on_finish`: auto, proof or ask) and "If nobody reviews
+        it within N hours, accept it automatically" (`auto_accept_after_hours`, 4 to 72, or null
+        for never).
+      properties:
+        on_finish:
+          allOf:
+          - $ref: '#/components/schemas/OnFinishEnum'
+          description: |-
+            When someone finishes a task.
+
+            * `auto` - Accept it automatically
+            * `proof` - Accept automatically only with a photo or text proof, otherwise ask
+            * `ask` - Always ask the person who gave it
+        auto_accept_after_hours:
+          type: integer
+          maximum: 72
+          minimum: 4
+          nullable: true
+          description: 'Hours; null: never.'
     PatchedTemplateRequest:
       type: object
       properties:
@@ -24092,6 +24198,11 @@ components:
         needs_confirmation:
           type: boolean
           readOnly: true
+        accept_with_proof:
+          type: boolean
+          readOnly: true
+          description: 'With needs_confirmation: a run finished with a photo or text
+            proof is accepted automatically; without one, someone checks it.'
         checklist:
           type: array
           items:
@@ -24143,6 +24254,7 @@ components:
           format: date-time
           readOnly: true
       required:
+      - accept_with_proof
       - assignees
       - branch
       - checklist
@@ -24391,6 +24503,9 @@ components:
           $ref: '#/components/schemas/ProofEnum'
         needs_confirmation:
           type: boolean
+          nullable: true
+          description: 'Empty: the company''s rule for finished work decides (tasks
+            settings); true always asks for a check, false never does.'
         checklist:
           type: array
           items:
@@ -25862,7 +25977,9 @@ components:
           default: none
         needs_confirmation:
           type: boolean
-          default: false
+          nullable: true
+          description: 'Empty: the company''s rule for finished work decides (tasks
+            settings); true always asks for a check, false never does.'
         checklist:
           type: array
           items:
@@ -25955,6 +26072,17 @@ components:
           readOnly: true
         needs_confirmation:
           type: boolean
+          readOnly: true
+        accept_with_proof:
+          type: boolean
+          readOnly: true
+          description: 'With needs_confirmation: finished with a photo or text proof,
+            it is accepted automatically; without one, someone checks it.'
+        accepted_automatically:
+          type: boolean
+          description: |-
+            Done and accepted without anyone checking it: at once, or after the company's wait
+            for a review (`confirmed_at` is then when).
           readOnly: true
         has_proof:
           type: boolean
@@ -26054,6 +26182,8 @@ components:
           nullable: true
           description: When a manager last pressed "Nudge now".
       required:
+      - accept_with_proof
+      - accepted_automatically
       - actions
       - assignee
       - blocker
@@ -26320,6 +26450,17 @@ components:
         needs_confirmation:
           type: boolean
           readOnly: true
+        accept_with_proof:
+          type: boolean
+          readOnly: true
+          description: 'With needs_confirmation: finished with a photo or text proof,
+            it is accepted automatically; without one, someone checks it.'
+        accepted_automatically:
+          type: boolean
+          description: |-
+            Done and accepted without anyone checking it: at once, or after the company's wait
+            for a review (`confirmed_at` is then when).
+          readOnly: true
         has_proof:
           type: boolean
           readOnly: true
@@ -26387,6 +26528,8 @@ components:
           type: string
           readOnly: true
       required:
+      - accept_with_proof
+      - accepted_automatically
       - assignee
       - blocker
       - branch
@@ -26484,6 +26627,17 @@ components:
         needs_confirmation:
           type: boolean
           readOnly: true
+        accept_with_proof:
+          type: boolean
+          readOnly: true
+          description: 'With needs_confirmation: finished with a photo or text proof,
+            it is accepted automatically; without one, someone checks it.'
+        accepted_automatically:
+          type: boolean
+          description: |-
+            Done and accepted without anyone checking it: at once, or after the company's wait
+            for a review (`confirmed_at` is then when).
+          readOnly: true
         has_proof:
           type: boolean
           readOnly: true
@@ -26545,6 +26699,8 @@ components:
           nullable: true
           readOnly: true
       required:
+      - accept_with_proof
+      - accepted_automatically
       - assignee
       - blocker
       - branch
@@ -26757,6 +26913,28 @@ components:
           maxLength: 1000
       required:
       - reason
+    TasksSettings:
+      type: object
+      description: |-
+        "When someone finishes a task" (`on_finish`: auto, proof or ask) and "If nobody reviews
+        it within N hours, accept it automatically" (`auto_accept_after_hours`, 4 to 72, or null
+        for never).
+      properties:
+        on_finish:
+          allOf:
+          - $ref: '#/components/schemas/OnFinishEnum'
+          description: |-
+            When someone finishes a task.
+
+            * `auto` - Accept it automatically
+            * `proof` - Accept automatically only with a photo or text proof, otherwise ask
+            * `ask` - Always ask the person who gave it
+        auto_accept_after_hours:
+          type: integer
+          maximum: 72
+          minimum: 4
+          nullable: true
+          description: 'Hours; null: never.'
     TelegramLoginRequest:
       type: object
       properties:
