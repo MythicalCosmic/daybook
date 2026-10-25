@@ -27,6 +27,7 @@ import { computed, defineAsyncComponent, onMounted, ref, type Component } from "
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
+import LanguageChoice from "@/components/LanguageChoice.vue";
 import ProgressRing from "@/components/ProgressRing.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UiButton from "@/components/UiButton.vue";
@@ -247,6 +248,8 @@ const steps = computed(() => [
           <ShieldCheck :size="14" class="text-success" />
           {{ t("auth.login.secure") }}
         </p>
+        <!-- Uzbek until the reader picks another language (nothing else is known before sign-in). -->
+        <LanguageChoice class="mt-3" data-testid="login-languages" />
       </section>
     </div>
   </div>

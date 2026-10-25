@@ -5,10 +5,9 @@
  */
 import { useI18n } from "vue-i18n";
 
-import { LANGUAGES } from "@/api/types";
-import { setLanguage } from "@/i18n";
+import LanguageChoice from "./LanguageChoice.vue";
 
-const { t, locale } = useI18n();
+const { t } = useI18n();
 </script>
 
 <template>
@@ -28,22 +27,7 @@ const { t, locale } = useI18n();
         <slot />
       </div>
       <p class="mt-6 text-center text-sm text-muted">{{ t("shell.login.tagline") }}</p>
-      <div class="mt-3 flex flex-wrap items-center justify-center gap-1" role="group" :aria-label="t('shell.topbar.language')">
-        <button
-          v-for="language in LANGUAGES"
-          :key="language"
-          type="button"
-          :lang="language"
-          :aria-pressed="locale === language"
-          :class="[
-            'min-h-9 rounded-full px-3 text-sm transition-colors',
-            locale === language ? 'bg-surface font-semibold text-fg ring-1 ring-line' : 'text-muted hover:text-fg',
-          ]"
-          @click="setLanguage(language).catch(() => undefined)"
-        >
-          {{ t(`shell.language.${language}`) }}
-        </button>
-      </div>
+      <LanguageChoice class="mt-3" />
     </div>
   </div>
 </template>
