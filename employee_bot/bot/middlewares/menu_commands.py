@@ -7,8 +7,11 @@ from aiogram import BaseMiddleware
 from aiogram.enums import ChatType
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, TelegramObject
+from asgiref.sync import sync_to_async
 
-from apps.members.bot_menu import registered
+from apps.accounts.services import bot_membership
+from apps.members import bot_menu
+from apps.members.bot_menu import MenuButton, registered
 from apps.members.bot_messages import (
     MENU_APP,
     MENU_MY_TASKS,
@@ -76,6 +79,28 @@ def interrupts(message: Message) -> bool:
     return (command in menu_commands() and command != "start") or is_menu_button(message)
 
 
+def module_button(text: str | None) -> MenuButton | None:
+    """The module's button `text` is, in any language ("Kassa"), if it is one."""
+    return next((b for b in registered() if text and is_label(text, b.msgid)), None)
+
+
+def sees(user, button: MenuButton) -> bool:
+    """Whether `user` has `button` on their menu. A module label is a plain word since labels
+    lost their emoji ("Kassa"), so typed as a task title by someone without that button, it is
+    just text."""
+    membership = bot_membership(user)
+    return membership is not None and button in bot_menu.buttons_for(membership)
+
+
+async def interrupts_for(message: Message, user) -> bool:
+    if not interrupts(message):
+        return False
+    button = module_button(message.text) if command_of(message) is None else None
+    if button is None or user is None:
+        return True
+    return await sync_to_async(sees)(user, button)
+
+
 class MenuCommandMiddleware(BaseMiddleware):
     """A command from the menu does what it says, whatever conversation the person was in.
 
@@ -98,7 +123,7 @@ class MenuCommandMiddleware(BaseMiddleware):
             isinstance(event, Message)
             and event.chat.type == ChatType.PRIVATE
             and data.get("raw_state") is not None
-            and interrupts(event)
+            and await interrupts_for(event, data.get("user"))
         ):
             state: FSMContext | None = data.get("state")
             if state is not None:

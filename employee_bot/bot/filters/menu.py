@@ -8,11 +8,16 @@ from django.utils.translation import gettext
 
 from apps.notifications.emoji import has_emoji, plain_label
 
+# Labels whose words changed after keyboards carrying them went out: what those keyboards still
+# send, by msgid. The Russian check-in button said "Пришёл / Ушёл" (masculine) until 26.10.2026.
+OLD_LABELS = {"Check in / out": ("Пришёл / Ушёл",)}
+
 
 @cache
 def translations(msgid: str) -> frozenset[str]:
-    """`msgid` in every language the bot speaks, as `plain_label` writes it."""
-    texts = {plain_label(msgid)}
+    """`msgid` in every language the bot speaks, as `plain_label` writes it, and what older
+    keyboards said for it."""
+    texts = {plain_label(msgid), *(plain_label(old) for old in OLD_LABELS.get(msgid, ()))}
     for code, _name in settings.LANGUAGES:
         with translation.override(code):
             texts.add(plain_label(gettext(msgid)))

@@ -107,6 +107,24 @@ pytestmark_db = pytest.mark.django_db(transaction=True)
 
 
 @pytestmark_db
+@pytest.mark.parametrize(("has_the_button", "becomes_the_title"), [(False, True), (True, False)])
+async def test_a_module_label_ends_a_conversation_only_for_who_has_it(
+    dp, bot, company, member, monkeypatch, has_the_button, becomes_the_title
+):
+    """Labels lost their emoji, so "Kassa" is also a word someone may type as a task title: it
+    is the till's button only for whoever has that button."""
+    monkeypatch.setattr(bot_menu, "_buttons", {})
+    bot_menu.register_menu_button("Kassa", order=20, visible=lambda member: has_the_button)
+    worker = await member.aregistered(company)
+    tg = updates.tg_user(worker.user.telegram_id)
+
+    await dp.feed_update(bot, updates.message(tg, "/new"))
+    await dp.feed_update(bot, updates.message(tg, "Kassa"))
+
+    assert (ASKS_FOR_DUE in bot.sent_texts()[-1]) is becomes_the_title
+
+
+@pytestmark_db
 async def test_a_menu_command_ends_the_conversation_it_interrupts(dp, bot, company, member):
     worker = await member.aregistered(company)
     tg = updates.tg_user(worker.user.telegram_id)

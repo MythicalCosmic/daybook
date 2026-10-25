@@ -525,7 +525,7 @@ def review_request(task: Task, reviewer: Membership, now: datetime) -> BotMessag
     header = _("%(name)s finished a task. Please check it.") % {
         "name": html.quote(str(task.assignee))
     }
-    return task_card(task, reviewer, now, header)
+    return task_card(task, reviewer, now, f"<b>{header}</b>")
 
 
 def task_completed(task: Task, creator: Membership, now: datetime) -> BotMessage:
@@ -699,9 +699,10 @@ def _copy_header(task: Task, member: Membership, kind: str, now: datetime) -> st
             return _("<b>Sent back</b>")
         if task.status == Task.Status.REVIEW:
             # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
-            return _("%(name)s finished a task. Please check it.") % {
+            header = _("%(name)s finished a task. Please check it.") % {
                 "name": html.quote(str(task.assignee))
             }
+            return f"<b>{header}</b>"
     return ""
 
 
@@ -781,6 +782,8 @@ def quick_add_preview(
     """What the bot understood before it saves (research R2 T2): the title, the deadline with
     its weekday and date, and "Not a date" to keep the words as they were typed."""
     lines = [f"<b>{html.quote(title)}</b>"]
+    if due:  # after "Muddat:", so lowercase (R3 §1.6): "Muddat: ertaga, 27-oktabr …"
+        due = due[:1].lower() + due[1:]
     # Translators: %(when)s reads like "ertaga, 18:00 (juma, 26-okt)".
     lines.append(_("Due: %(when)s") % {"when": due} if due else _("No deadline"))
     if note:

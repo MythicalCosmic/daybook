@@ -61,6 +61,17 @@ async def test_an_old_button_still_works_and_brings_the_new_keyboard(
     assert not any(has_emoji(label) for label in labels)
 
 
+def test_a_label_whose_words_changed_still_matches():
+    """The Russian check-in button was masculine ("Пришёл / Ушёл"); now it reads "Приход /
+    уход", and old keyboards still send the old words."""
+    from apps.attendance.bot_messages import MENU_CHECK
+    from bot.filters.menu import is_label
+
+    for text in ("📍 Пришёл / Ушёл", "Пришёл / Ушёл", "Приход / уход", "📍 Keldim / Ketdim"):
+        assert is_label(text, MENU_CHECK), text
+    assert not is_label("Пришёл", MENU_CHECK)
+
+
 async def test_the_new_keyboard_has_no_emoji_anywhere(dp, bot, company, member, settings):
     settings.EMPLOYEE_MINIAPP_URL = APP
     worker = await member.aregistered(company, "Owner")

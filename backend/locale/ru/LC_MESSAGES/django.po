@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 00:18+0500\n"
+"POT-Creation-Date: 2026-10-26 00:41+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -878,7 +878,7 @@ msgstr "Обмен сменами отклонён"
 
 #: backend/apps/attendance/bot_messages.py
 msgid "Check in / out"
-msgstr "Пришёл / Ушёл"
+msgstr "Приход / уход"
 
 #: backend/apps/attendance/bot_messages.py
 msgid "Send my location"
@@ -1084,7 +1084,7 @@ msgstr "Пришли %(present)s из %(rostered)s по графику."
 msgid "On time: %(names)s"
 msgstr "Пришли вовремя: %(names)s"
 
-#: backend/apps/attendance/bot_messages.py
+#: backend/apps/attendance/bot_messages.py owner_bot/ownerbot/brief.py
 #, python-format
 msgid "Late: %(names)s"
 msgstr "Опоздали: %(names)s"
@@ -2317,7 +2317,7 @@ msgstr "Включённые модули"
 msgid "Unknown timezone: %(value)s"
 msgstr "Неизвестный часовой пояс: %(value)s"
 
-#: backend/apps/companies/models.py
+#: backend/apps/companies/models.py owner_bot/ownerbot/brief.py
 msgid "Finance"
 msgstr "Финансы"
 
@@ -2329,7 +2329,7 @@ msgstr "Продажи и касса"
 msgid "Stock"
 msgstr "Склад"
 
-#: backend/apps/companies/models.py
+#: backend/apps/companies/models.py owner_bot/ownerbot/brief.py
 msgid "Attendance"
 msgstr "Посещаемость"
 
@@ -2923,7 +2923,7 @@ msgstr ""
 "счетах — %(accounts)s, сумм долгов — %(debts)s."
 
 #: backend/apps/finance/defaults.py backend/apps/groups/models.py
-#: backend/apps/sales/hooks.py
+#: backend/apps/sales/hooks.py owner_bot/ownerbot/brief.py
 msgid "Sales"
 msgstr "Продажи"
 
@@ -9063,7 +9063,7 @@ msgstr "Регулярные задачи"
 msgid "Onboarding tasks"
 msgstr "Задачи адаптации"
 
-#: backend/apps/tasks/hooks.py
+#: backend/apps/tasks/hooks.py owner_bot/ownerbot/brief.py
 msgid "Tasks"
 msgstr "Задачи"
 
@@ -10567,6 +10567,99 @@ msgstr "На работе: %(present)d/%(rostered)d"
 #, python-format
 msgid "Tasks: %(done)d/%(total)d"
 msgstr "Задачи: %(done)d/%(total)d"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "and %(count)d more"
+msgstr "и ещё %(count)d"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Done today: %(done)d of %(total)d"
+msgstr "Выполнено сегодня: %(done)d из %(total)d"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Late: %(count)d"
+msgstr "Просрочено: %(count)d"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Waiting for check: %(count)d"
+msgstr "На проверке: %(count)d"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "On time over 7 days: %(percent)s%%"
+msgstr "Вовремя за 7 дней: %(percent)s%%"
+
+#: owner_bot/ownerbot/brief.py
+msgid "Most overdue:"
+msgstr "Больше всего просрочены:"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Not in yet: %(names)s"
+msgstr "Ещё не пришли: %(names)s"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Absent: %(names)s"
+msgstr "Не вышли на работу: %(names)s"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Balance: %(amount)s"
+msgstr "Остаток: %(amount)s"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Yesterday: income %(income)s, spending %(spending)s"
+msgstr "Вчера: приход %(income)s, расход %(spending)s"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Overdue to receive: %(amount)s (%(count)d)"
+msgstr "Просрочено к получению: %(amount)s (%(count)d)"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Overdue to pay: %(amount)s (%(count)d)"
+msgstr "Просрочено к оплате: %(amount)s (%(count)d)"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Payments due today: %(count)d"
+msgstr "Платежей сегодня: %(count)d"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Team: %(count)d"
+msgstr "В команде: %(count)d"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Join requests: %(count)d"
+msgstr "Заявки на вступление: %(count)d"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "New this week: %(names)s"
+msgstr "Новые на этой неделе: %(names)s"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Off today: %(names)s"
+msgstr "Сегодня не работают: %(names)s"
+
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Access paused: %(count)d"
+msgstr "Доступ приостановлен: %(count)d"
+
+#: owner_bot/ownerbot/brief.py
+msgid "People"
+msgstr "Сотрудники"
 
 #: owner_bot/ownerbot/brief.py
 #, python-format

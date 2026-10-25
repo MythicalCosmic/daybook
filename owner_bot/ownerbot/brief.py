@@ -8,8 +8,10 @@ Built from what the owner may see there:
 - how many approvals wait in "Needs you".
 
 A brief section's `build` returns a dict; `/today` shows `{"title": str, "lines": [str]}`
-(each optional; the title in bold), or `{"text": str}`, and falls back to "key: value" lines. An
-"emoji" key is ignored: the bots send no emoji.
+(each optional; the title in bold), or `{"text": str}`. The sections that send figures for the
+dashboard (tasks, attendance, finance, people) are put into words here (`FIGURES`); one the bot
+has no words for is left out, never shown as raw data. An "emoji" key is ignored: the bots send
+no emoji.
 """
 
 import zoneinfo
@@ -111,18 +113,130 @@ def branch_lines(cards: list[dict], currency: str) -> list[str]:
     return lines
 
 
-def section_lines(data: dict) -> list[str]:
-    title = data.get("title")
-    body = data.get("lines")
-    if body is None and data.get("text"):
-        body = [data["text"]]
+def section_lines(data: dict, key: str = "", currency: str = "UZS") -> list[str]:
+    """A brief section as lines: its own title and lines, or the words for the figures a module
+    sends (tasks, attendance, money, people). A section of figures the bot has no words for is
+    left out rather than shown as raw data."""
+    if key in FIGURES and not any(data.get(field) for field in ("title", "lines", "text")):
+        title, body = FIGURES[key](data, currency)
+    else:
+        title = data.get("title") or SECTION_TITLES.get(key, lambda: None)()
+        body = data.get("lines")
+        if body is None and data.get("text"):
+            body = [data["text"]]
     out = []
     if title:
         out.append(f"<b>{html.quote(str(title))}</b>")
     out += [f"    {html.quote(str(line))}" for line in body or ()]
-    if not out:
-        out = [html.quote(f"{key}: {value}") for key, value in data.items() if key != "emoji"]
-    return out
+    return out if body else []
+
+
+def _names(people: list, limit: int = 5) -> str:
+    names = [str(person.get("name", "")) for person in people or [] if isinstance(person, dict)]
+    shown = ", ".join(names[:limit])
+    if len(names) > limit:
+        shown += " " + _("and %(count)d more") % {"count": len(names) - limit}
+    return shown
+
+
+def _tasks(data: dict, currency: str) -> tuple[str, list[str]]:
+    lines = [
+        _("Done today: %(done)d of %(total)d")
+        % {"done": data.get("done", 0), "total": data.get("total", 0)}
+    ]
+    if data.get("late"):
+        lines.append(_("Late: %(count)d") % {"count": data["late"]})
+    if data.get("review"):
+        lines.append(_("Waiting for check: %(count)d") % {"count": data["review"]})
+    if data.get("on_time_7d") is not None:
+        lines.append(_("On time over 7 days: %(percent)s%%") % {"percent": data["on_time_7d"]})
+    worst = [task for task in data.get("late_tasks") or [] if isinstance(task, dict)][:3]
+    if worst:
+        lines.append(_("Most overdue:"))
+        lines += [
+            "    "
+            + " · ".join(
+                part
+                for part in (task.get("title"), (task.get("assignee") or {}).get("name"))
+                if part
+            )
+            for task in worst
+        ]
+    return _("Tasks"), lines
+
+
+def _attendance(data: dict, currency: str) -> tuple[str, list[str]]:
+    lines = [
+        _("At work: %(present)d/%(rostered)d")
+        % {"present": data.get("present", 0), "rostered": data.get("rostered", 0)}
+    ]
+    if data.get("late"):
+        lines.append(_("Late: %(names)s") % {"names": _names(data["late"])})
+    if data.get("not_in_yet"):
+        lines.append(_("Not in yet: %(names)s") % {"names": _names(data["not_in_yet"])})
+    if data.get("absent"):
+        lines.append(_("Absent: %(names)s") % {"names": _names(data["absent"])})
+    return _("Attendance"), lines
+
+
+def _finance(data: dict, currency: str) -> tuple[str, list[str]]:
+    currency = data.get("currency") or currency
+    lines = []
+    if data.get("cash") is not None:
+        lines.append(_("Balance: %(amount)s") % {"amount": _money(data["cash"], currency)})
+    if data.get("income_yesterday") is not None or data.get("expense_yesterday") is not None:
+        lines.append(
+            _("Yesterday: income %(income)s, spending %(spending)s")
+            % {
+                "income": _money(data.get("income_yesterday") or "0", currency),
+                "spending": _money(data.get("expense_yesterday") or "0", currency),
+            }
+        )
+    if data.get("receivable_overdue_count"):
+        lines.append(
+            _("Overdue to receive: %(amount)s (%(count)d)")
+            % {
+                "amount": _money(data.get("receivable_overdue") or "0", currency),
+                "count": data["receivable_overdue_count"],
+            }
+        )
+    if data.get("payable_overdue_count"):
+        lines.append(
+            _("Overdue to pay: %(amount)s (%(count)d)")
+            % {
+                "amount": _money(data.get("payable_overdue") or "0", currency),
+                "count": data["payable_overdue_count"],
+            }
+        )
+    if data.get("due_today_count"):
+        lines.append(_("Payments due today: %(count)d") % {"count": data["due_today_count"]})
+    return _("Finance"), lines
+
+
+def _people(data: dict, currency: str) -> tuple[str, list[str]]:
+    lines = []
+    if data.get("headcount") is not None:
+        lines.append(_("Team: %(count)d") % {"count": data["headcount"]})
+    if data.get("pending_requests"):
+        lines.append(_("Join requests: %(count)d") % {"count": data["pending_requests"]})
+    if data.get("joined_this_week"):
+        lines.append(_("New this week: %(names)s") % {"names": _names(data["joined_this_week"])})
+    if data.get("off_today"):
+        lines.append(_("Off today: %(names)s") % {"names": _names(data["off_today"])})
+    if data.get("suspended"):
+        lines.append(_("Access paused: %(count)d") % {"count": data["suspended"]})
+    return _("People"), lines
+
+
+# The sections whose data is figures (the dashboard draws them), in words for the chat.
+FIGURES = {
+    "tasks": _tasks,
+    "attendance": _attendance,
+    "finance": _finance,
+    "members.people": _people,
+}
+# A title for the sections that send lines without one.
+SECTION_TITLES = {"sales": lambda: _("Sales")}
 
 
 def today(member: Membership, now: datetime | None = None) -> bot_messages.BotMessage:
@@ -137,10 +251,11 @@ def today(member: Membership, now: datetime | None = None) -> bot_messages.BotMe
             "<b>" + html.quote(_("Branches")) + "</b>",
             *branch_lines(cards, company.base_currency),
         ]
-    for _key, data in registry.collect_brief_sections(
+    for key, data in registry.collect_brief_sections(
         member, local.date(), now, branch_ids=scope.branch_ids(member)
     ):
-        lines += ["", *section_lines(data)]
+        if section := section_lines(data, key, company.base_currency):
+            lines += ["", *section]
     waiting = registry.queue_total(member)
     lines.append("")
     if waiting:
