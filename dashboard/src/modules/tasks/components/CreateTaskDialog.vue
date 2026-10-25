@@ -33,7 +33,7 @@ import { toast } from "@/components/useToast";
 import { addDays, todayIn, zonedNow } from "@/lib/dates";
 import { useCompanyStore } from "@/stores/company";
 
-import { useCompanyId, useCreateTasks, useTaskOptions } from "../api";
+import { useCompanyId, useCreateTasks, useTaskOptions, useTasksSettings } from "../api";
 import { zonedIso } from "../meta";
 import { resultKey, useQuickAdd } from "../quickAdd";
 import type { ProofKind, TaskPriority } from "../types";
@@ -48,6 +48,7 @@ const company = useCompanyStore();
 const companyId = useCompanyId();
 const options = useTaskOptions();
 const create = useCreateTasks();
+const rules = useTasksSettings();
 
 type Audience = "people" | "positions" | "branches";
 type DuePreset = "parsed" | "hour" | "today" | "tomorrow_am" | "tomorrow_pm" | "three_days" | "none" | "custom";
@@ -65,7 +66,14 @@ const customTime = ref<string | null>("18:00");
 /** A priority picked by hand; null = what the title says, else normal. */
 const priorityChoice = ref<TaskPriority | null>(null);
 const proof = ref<ProofKind>("none");
-const needsConfirmation = ref(false);
+/** "Check it when it's done": null until touched, and then the company's rule decides (§15.3). */
+const needsConfirmation = ref<boolean | null>(null);
+const rule = computed(() => rules.data.value?.on_finish ?? "auto");
+const confirmShown = computed(() => needsConfirmation.value ?? rule.value !== "auto");
+const confirmHint = computed(() => {
+  if (needsConfirmation.value !== null) return t("tasks.create.confirmHint");
+  return t({ auto: "tasks.create.ruleAuto", proof: "tasks.create.ruleProof", ask: "tasks.create.ruleAsk" }[rule.value]);
+});
 const checklist = ref<string[]>([]);
 const reward = ref<string | null>(null);
 const showErrors = ref(false);
@@ -103,7 +111,7 @@ function reset(): void {
   customTime.value = "18:00";
   priorityChoice.value = null;
   proof.value = "none";
-  needsConfirmation.value = false;
+  needsConfirmation.value = null;
   checklist.value = [];
   reward.value = null;
   showErrors.value = false;
@@ -111,10 +119,6 @@ function reset(): void {
   quick.reset();
 }
 watch(open, (value) => value && reset(), { immediate: true });
-// Proof photos are worth a look: asking for a photo suggests confirming it too.
-watch(proof, (value) => {
-  if (value === "photo") needsConfirmation.value = true;
-});
 
 const due = computed<DuePreset>({
   get: () => {
@@ -331,7 +335,13 @@ async function submit(): Promise<void> {
         <FormField :label="t('tasks.field.proof')">
           <SelectBox v-model="proof" :options="proofOptions" />
         </FormField>
-        <ToggleSwitch v-model="needsConfirmation" layout="row" :label="t('tasks.create.confirm')" :description="t('tasks.create.confirmHint')" />
+        <ToggleSwitch
+          :model-value="confirmShown"
+          layout="row"
+          :label="t('tasks.create.confirm')"
+          :description="confirmHint"
+          @update:model-value="(value: boolean) => (needsConfirmation = value)"
+        />
         <FormField :label="t('tasks.field.reward')" :hint="reward ? t('tasks.reward.perPerson') : t('tasks.reward.hint')" optional>
           <MoneyInput v-model="reward" />
         </FormField>

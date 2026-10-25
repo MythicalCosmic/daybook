@@ -244,6 +244,9 @@ def timeline(task: Task, viewer: Membership) -> list[dict]:
             }
         )
     if task.completed_at:
+        # Accepted the moment it was finished (no check asked for, or the rule took its proof):
+        # the timeline says so on the same line (PLAN-OWNER §15.3).
+        at_once = rules.accepted_automatically(task) and task.confirmed_at is None
         entries.append(
             {
                 "at": task.completed_at,
@@ -251,7 +254,7 @@ def timeline(task: Task, viewer: Membership) -> list[dict]:
                 "actor": task.assignee,
                 "action": "completed",
                 "text": task.proof_text,
-                "meta": {},
+                "meta": {"accepted": "auto"} if at_once else {},
             }
         )
     actors = {}
@@ -273,7 +276,7 @@ def timeline(task: Task, viewer: Membership) -> list[dict]:
                 "meta": {
                     key: value
                     for key, value in (row.details or {}).items()
-                    if key in ("changes", "reason", "assignee")
+                    if key in ("changes", "reason", "assignee", "hours")
                 },
             }
         )

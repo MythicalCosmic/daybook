@@ -277,5 +277,9 @@
   "routines.onTime30": "o‘z vaqtida, 30 kun",
   "routines.late30": "{n} ta kechikkan | {n} ta kechikkan | {n} ta kechikkan",
   "routines.share30Hint": "Oxirgi 30 kun: muddati kelgan {made} · o‘z vaqtida {onTime} · kechikib {late} · bajarilmagan {missed}",
-  "routines.confirm.decidedElsewhere": "{n} tasini boshqa rahbar allaqachon tekshirgan | {n} tasini boshqa rahbar allaqachon tekshirgan | {n} tasini boshqa rahbar allaqachon tekshirgan"
+  "routines.confirm.decidedElsewhere": "{n} tasini boshqa rahbar allaqachon tekshirgan | {n} tasini boshqa rahbar allaqachon tekshirgan | {n} tasini boshqa rahbar allaqachon tekshirgan",
+  "routines.editor.ruleAuto": "Kompaniya qoidasi: har bir bajarilgan vazifa avtomatik qabul qilinadi",
+  "routines.editor.ruleProof": "Kompaniya qoidasi: rasm yoki qisqa hisobot bilan darhol qabul qilinadi, ularsiz tekshiriladi",
+  "routines.editor.ruleAsk": "Kompaniya qoidasi: har bir bajarilgan vazifa tekshiruvni kutadi",
+  "routines.editor.acceptWithProof": "Rasm yoki qisqa hisobot bilan darhol qabul qilinadi, ularsiz tekshiriladi"
 }

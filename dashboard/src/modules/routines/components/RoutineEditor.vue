@@ -29,7 +29,7 @@ import { toast } from "@/components/useToast";
 import WeekdayPicker from "@/components/WeekdayPicker.vue";
 import { isApiError } from "@/api/http";
 
-import { useDeleteRoutine, usePlanOptions, useSaveRoutine } from "../api";
+import { useDeleteRoutine, useFinishRule, usePlanOptions, useSaveRoutine } from "../api";
 import { afterSave, missesToday, nextRunOf, runLabel } from "../lib";
 import type { ProofKind, Routine, RoutineInput } from "../types";
 import { useRunWords } from "../useRunWords";
@@ -60,7 +60,21 @@ const people = ref<number[]>([]);
 const positions = ref<number[]>([]);
 const branch = ref<number | null>(null);
 const proof = ref<ProofKind>("none");
-const needsConfirmation = ref(false);
+/** "Check each one": null on a new routine until touched (the company's rule decides, §15.3). */
+const needsConfirmation = ref<boolean | null>(null);
+const confirmTouched = ref(false);
+const finishRule = useFinishRule();
+const rule = computed(() => finishRule.data.value?.on_finish ?? "auto");
+const confirmShown = computed(() => needsConfirmation.value ?? rule.value !== "auto");
+const confirmHint = computed(() => {
+  if (confirmTouched.value) return undefined;
+  if (props.routine) return props.routine.needs_confirmation && props.routine.accept_with_proof ? t("routines.editor.acceptWithProof") : undefined;
+  return t({ auto: "routines.editor.ruleAuto", proof: "routines.editor.ruleProof", ask: "routines.editor.ruleAsk" }[rule.value]);
+});
+function setConfirmation(value: boolean): void {
+  needsConfirmation.value = value;
+  confirmTouched.value = true;
+}
 const checklist = ref<string[]>([]);
 const policy = ref<number | null>(null);
 const escalateTo = ref<number | null>(null);
@@ -79,7 +93,8 @@ function load(): void {
   positions.value = routine?.positions.map((p) => p.id) ?? [];
   branch.value = routine?.branch?.id ?? null;
   proof.value = routine?.proof ?? "none";
-  needsConfirmation.value = routine?.needs_confirmation ?? false;
+  needsConfirmation.value = routine ? routine.needs_confirmation : null;
+  confirmTouched.value = false;
   checklist.value = routine ? [...routine.checklist] : [];
   policy.value = routine?.reminder_policy?.id ?? null;
   escalateTo.value = routine?.escalate_to?.id ?? null;
@@ -138,7 +153,8 @@ function input(): RoutineInput {
     description: description.value.trim(),
     due_time: dueTime.value ?? "09:00",
     proof: proof.value,
-    needs_confirmation: needsConfirmation.value,
+    // Sent when touched; a new routine sends null (the company's rule), an edit leaves it be.
+    ...(confirmTouched.value ? { needs_confirmation: needsConfirmation.value } : props.routine ? {} : { needs_confirmation: null }),
     checklist: checklist.value.map((step) => step.trim()).filter(Boolean),
     branch_id: branch.value,
     assignee_ids: people.value,
@@ -270,7 +286,14 @@ async function onDelete(): Promise<void> {
               <SelectBox v-model="proof" :options="proofOptions" />
             </FormField>
             <div class="flex items-end pb-1">
-              <ToggleSwitch v-model="needsConfirmation" :label="t('routines.field.needsConfirmation')" />
+              <ToggleSwitch
+                :model-value="confirmShown"
+                layout="row"
+                class="w-full"
+                :label="t('routines.field.needsConfirmation')"
+                :description="confirmHint"
+                @update:model-value="setConfirmation"
+              />
             </div>
           </div>
           <FormField :label="t('routines.field.checklist')" :hint="t('routines.editor.checklistHint')" optional>

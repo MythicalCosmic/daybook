@@ -7,6 +7,7 @@ Inside a company (`company_urls.py`, `/api/v1/owner/companies/<id>/`): `pulse/`,
 
 from datetime import UTC, datetime
 
+from django.db import transaction
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.utils.translation import gettext as _
@@ -21,6 +22,8 @@ from rest_framework import mixins, serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
+from apps.accounts import company_switch
+from apps.accounts.services import approved_memberships
 from apps.console import pulse, queries, registry, services
 from apps.console.base import OwnerAPIView, OwnerUserAPIView, OwnerViewSet
 from apps.console.models import SavedView
@@ -85,14 +88,33 @@ class OwnerMeUserSerializer(serializers.Serializer):
     photo_url = serializers.CharField(allow_null=True)
 
 
+BOT_COMPANY_HELP = (
+    "The company the person works in, the same in the bot, the mini app and the dashboard (the "
+    "employee `me` has the same field). Set it when the person switches company: the bot follows "
+    "and says so in its chat."
+)
+
+
 class OwnerMeSerializer(serializers.Serializer):
     user = OwnerMeUserSerializer(read_only=True)
     language = serializers.ChoiceField(Language.choices)
+    bot_company = serializers.IntegerField(allow_null=True, help_text=BOT_COMPANY_HELP)
     companies = OwnerMeCompanySerializer(many=True, read_only=True)
 
 
 class OwnerMeUpdateSerializer(serializers.Serializer):
-    language = serializers.ChoiceField(Language.choices)
+    language = serializers.ChoiceField(Language.choices, required=False)
+    bot_company = serializers.IntegerField(
+        allow_null=True, required=False, help_text=BOT_COMPANY_HELP
+    )
+
+    def validate_bot_company(self, value: int | None) -> int | None:
+        user = self.context["user"]
+        if value is not None and value not in {
+            member.company_id for member in approved_memberships(user)
+        }:
+            raise ValidationError(_("You don't work in that company."))
+        return value
 
 
 class MeView(OwnerUserAPIView):
@@ -104,11 +126,20 @@ class MeView(OwnerUserAPIView):
 
     @extend_schema(request=OwnerMeUpdateSerializer, responses=OwnerMeSerializer)
     def patch(self, request):
-        serializer = OwnerMeUpdateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
         user = request.user
-        user.language = serializer.validated_data["language"]
-        user.save(update_fields=["language"])
+        serializer = OwnerMeUpdateSerializer(data=request.data, context={"user": user})
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        with transaction.atomic():
+            if "language" in data:
+                user.language = data["language"]
+                user.save(update_fields=["language"])
+            if "bot_company" in data:
+                # A switch in the dashboard: the bot works in that company from now on.
+                before = company_switch.bot_company_id(user)
+                user.bot_company_id = data["bot_company"]
+                user.save(update_fields=["bot_company"])
+                company_switch.follow(user, before)
         return Response(self._me(user))
 
     def _me(self, user) -> dict:
@@ -123,6 +154,7 @@ class MeView(OwnerUserAPIView):
                 "photo_url": user.photo.url if user.photo else None,
             },
             "language": user.language,
+            "bot_company": company_switch.bot_company_id(user),
             "companies": queries.me_companies(user),
         }
 

@@ -21,7 +21,7 @@ document.documentElement.dataset.theme = params.get("theme") === "dark" ? "dark"
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <I18nProvider lang={asLang(params.get("lang") ?? "en")}>
+    <I18nProvider lang={asLang(params.get("lang") ?? "uz")}>
       <ToastProvider>
         <Kitchen section={params.get("section")} />
       </ToastProvider>

@@ -14,6 +14,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from django.conf import settings
 from django.utils import timezone, translation
 from django.utils.translation import gettext as _
+from django.utils.translation import pgettext
 
 from apps.companies.models import Company
 from apps.core.money import format_money
@@ -147,7 +148,7 @@ def card_text(task: Task, member: Membership, now: datetime, header: str = "") -
     if task.description:
         lines.append(_description(task.description))
     lines.append("")
-    lines.append(_("Status: %(status)s") % {"status": task.get_status_display()})
+    lines.append(_("Status: %(status)s") % {"status": status_label(task)})
     if task.due_at:
         lines.append(_("Due: %(when)s") % {"when": format_due(task, now)})
     if task.is_open and task.snoozed_until and task.snoozed_until > now:
@@ -673,6 +674,8 @@ def _copy_header(task: Task, member: Membership, kind: str, now: datetime) -> st
     if kind not in ("review", "escalation", "blocked"):
         return ""
     if task.status == Task.Status.DONE:
+        if header := accepted_header(task):
+            return header
         if task.confirmed_by_id:
             # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
             return _("✅ <b>Accepted</b> · %(name)s") % {"name": html.quote(str(task.confirmed_by))}
@@ -1019,3 +1022,28 @@ def _button(
         callback_data=TaskCallback(action=action, task_id=task_id).pack(),
         style=style,
     )
+
+
+# Accepted automatically (PLAN-OWNER §15.3) ---------------------------------------------------
+
+
+def status_label(task: Task) -> str:
+    """The card's status: "Accepted" for finished work nobody had to check (the person who did
+    it reads that at once, not "sent for checking"), else the task's status."""
+    if rules.accepted_automatically(task):
+        return pgettext("task status", "Accepted")
+    return task.get_status_display()
+
+
+def accepted_note(task: Task) -> str | None:
+    """What finishing says when the work was accepted at once; None when it wasn't."""
+    if rules.accepted_automatically(task):
+        return pgettext("task status", "Accepted")
+    return None
+
+
+def accepted_header(task: Task) -> str:
+    """The checker's copy of work the company's wait accepted: nobody reviewed it in time."""
+    if rules.accepted_automatically(task) and task.confirmed_at is not None:
+        return _("<b>Accepted automatically</b> · nobody checked it in time")
+    return ""

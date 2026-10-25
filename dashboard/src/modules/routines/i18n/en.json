@@ -277,5 +277,9 @@
   "routines.onTime30": "on time, 30 days",
   "routines.late30": "{n} late | {n} late | {n} late",
   "routines.share30Hint": "Last 30 days: {made} due · {onTime} on time · {late} late · {missed} not done",
-  "routines.confirm.decidedElsewhere": "{n} were already checked by someone else | {n} was already checked by someone else | {n} were already checked by someone else"
+  "routines.confirm.decidedElsewhere": "{n} were already checked by someone else | {n} was already checked by someone else | {n} were already checked by someone else",
+  "routines.editor.ruleAuto": "Company rule: each run is accepted automatically when it's done",
+  "routines.editor.ruleProof": "Company rule: accepted at once with a photo or a short report; without one, it's checked",
+  "routines.editor.ruleAsk": "Company rule: every run waits for a check",
+  "routines.editor.acceptWithProof": "Accepted at once with a photo or a short report; without one, it's checked"
 }

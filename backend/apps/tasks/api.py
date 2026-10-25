@@ -24,10 +24,12 @@ from apps.members.models import Membership, Position
 from apps.members.permissions import Perm
 from apps.reminders.models import ReminderLog
 from apps.reminders.policies import escalation_recipients, policy_for
-from apps.tasks import dashboard, dates, queries, quickadd, rules, services, stats
+from apps.tasks import conf, dashboard, dates, queries, quickadd, rules, services, stats
+from apps.tasks.conf import REVIEW_RULE_HELP
 from apps.tasks.models import (
     Activity,
     ChecklistItem,
+    OnFinish,
     Proof,
     Repeat,
     Task,
@@ -117,6 +119,7 @@ class TaskSerializer(serializers.ModelSerializer):
     extension = serializers.SerializerMethodField()
     returned_reason = serializers.SerializerMethodField()
     returned_by = serializers.SerializerMethodField()
+    accepted_automatically = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -132,6 +135,8 @@ class TaskSerializer(serializers.ModelSerializer):
             "for_date",
             "proof",
             "needs_confirmation",
+            "accept_with_proof",
+            "accepted_automatically",
             "proof_text",
             "proof_photo",
             "proof_thumb",
@@ -157,6 +162,12 @@ class TaskSerializer(serializers.ModelSerializer):
             "created_at",
         )
         read_only_fields = fields
+
+    def get_accepted_automatically(self, task: Task) -> bool:
+        """Done and accepted without anyone checking it: at once (no check asked for, or the
+        company's rule took its proof), or after the company's wait (`confirmed_at` is then
+        when). The person who did it reads "Accepted"."""
+        return rules.accepted_automatically(task)
 
     @extend_schema_field(serializers.CharField(allow_null=True))
     def get_returned_reason(self, task: Task) -> str | None:
@@ -310,6 +321,14 @@ def _calendar_range(params) -> tuple[date, date]:
     return start, end
 
 
+class FinishRuleSerializer(serializers.Serializer):
+    on_finish = serializers.ChoiceField(
+        OnFinish.choices,
+        help_text="auto: accepted at once; proof: accepted at once with a photo or text, "
+        "otherwise checked; ask: always checked.",
+    )
+
+
 class TaskCreateSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=200)
     description = serializers.CharField(allow_blank=True, default="")
@@ -319,7 +338,11 @@ class TaskCreateSerializer(serializers.Serializer):
     due_at = serializers.DateTimeField(allow_null=True, default=None)
     priority = serializers.ChoiceField(Task.Priority.choices, default=Task.Priority.NORMAL)
     proof = serializers.ChoiceField(Proof.choices, default=Proof.NONE)
-    needs_confirmation = serializers.BooleanField(default=False)
+    needs_confirmation = serializers.BooleanField(
+        allow_null=True,
+        default=None,
+        help_text=REVIEW_RULE_HELP,
+    )
     checklist = serializers.ListField(
         child=serializers.CharField(max_length=200), default=list, max_length=50
     )
@@ -568,6 +591,13 @@ class TaskViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
         ],
         responses=CalendarSerializer,
     )
+    @extend_schema(responses=FinishRuleSerializer)
+    @action(detail=False, methods=["get"], url_path="finish-rule", url_name="finish-rule")
+    def finish_rule(self, request, company_id):
+        """The company's "When someone finishes a task" (auto, proof or ask): the mini app's
+        "I'll check it" starts from it when someone gives a task (PLAN-OWNER §15.3)."""
+        return Response({"on_finish": conf.get_settings(self.membership.company).on_finish})
+
     @action(detail=False, methods=["get"])
     def calendar(self, request, company_id):
         """The signed-in member's own tasks due between two days, with counts per day (the
@@ -781,6 +811,11 @@ class TaskTemplateSerializer(serializers.ModelSerializer):
     weekdays = serializers.ListField(
         child=serializers.ChoiceField(Weekday.choices), allow_empty=False, required=False
     )
+    needs_confirmation = serializers.BooleanField(
+        allow_null=True,
+        required=False,
+        help_text=REVIEW_RULE_HELP,
+    )
 
     class Meta:
         model = TaskTemplate
@@ -837,13 +872,17 @@ class TaskTemplateViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def perform_create(self, serializer):
-        template = serializer.save(company=self.membership.company, created_by=self.membership)
+        template = serializer.save(
+            company=self.membership.company,
+            created_by=self.membership,
+            **self._review_rule(serializer, new=True),
+        )
         self._audit(AuditLog.Action.TEMPLATE_CREATED, template)
 
     @transaction.atomic
     def perform_update(self, serializer):
         before = audit.snapshot(serializer.instance)
-        template = serializer.save()
+        template = serializer.save(**self._review_rule(serializer, new=False))
         if changes := audit.diff(before, audit.snapshot(template)):
             self._audit(AuditLog.Action.TEMPLATE_CHANGED, template, changes=changes)
 
@@ -851,6 +890,16 @@ class TaskTemplateViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, template):
         self._audit(AuditLog.Action.TEMPLATE_DELETED, template)
         template.delete()
+
+    def _review_rule(self, serializer, *, new: bool) -> dict:
+        """`needs_confirmation` as the routine forms send it: left out or null on a new routine
+        follows the company's rule for finished work (PLAN-OWNER §15.3), null on an edit goes back
+        to it, true or false is the routine's own; left out on an edit changes nothing."""
+        if not new and "needs_confirmation" not in serializer.validated_data:
+            return {}
+        choice = serializer.validated_data.pop("needs_confirmation", None)
+        needs, with_proof = conf.review_rule(self.membership.company, choice)
+        return {"needs_confirmation": needs, "accept_with_proof": with_proof}
 
     def _audit(self, action: AuditLog.Action, template: TaskTemplate, **details) -> None:
         audit.record(

@@ -50,6 +50,8 @@ export function withoutQueueItem(view: QueueView, item: { kind: string; id: numb
 export const shellApi = {
   me: () => http.get<Me>("/owner/me/"),
   setLanguage: (language: Language) => http.patch<Me>("/owner/me/", { language }, { toast: false }),
+  /** One company everywhere: the bot follows a company picked in the switcher (and says so). */
+  setBotCompany: (companyId: number) => http.patch<Me>("/owner/me/", { bot_company: companyId }, { toast: false }),
 
   devLogin: (telegramId: number) =>
     request<AccessResponse>("/owner/auth/dev-login/", { method: "POST", json: { telegram_id: telegramId }, anonymous: true }),

@@ -542,6 +542,13 @@ const uz: Partial<Record<Key, string>> = {
   "me.group.work": "Ish",
   "me.group.documents": "Hujjatlar",
   "plus.title": "Tez qo‘shish",
+  "toast.accepted": "Qabul qilindi",
+  "status.accepted": "Qabul qilindi",
+  "detail.banner.accepted": "Avtomatik qabul qilindi · {time}",
+  "detail.banner.acceptedAfterWait": "Hech kim o‘z vaqtida tekshirmadi, shuning uchun qabul qilindi.",
+  "meta.acceptedAt": "Qabul qilindi · {time}",
+  "complete.withProof": "Rasm yoki izoh bilan darhol qabul qilinadi. Ularsiz tekshiruvga yuboriladi.",
+  "add.illCheckRule": "Kompaniya qoidasi: rasm yoki izoh bilan darhol qabul qilinadi",
 };
 
 export default uz;

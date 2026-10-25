@@ -48,7 +48,7 @@ export function translateFrom(chain: readonly Dictionary[], lang: Lang, key: str
 }
 
 export function translate(lang: Lang, key: string, vars?: Vars): string {
-  return translateFrom([DICTIONARIES[lang], DICTIONARIES.en], lang, key, vars);
+  return translateFrom([DICTIONARIES[lang], DICTIONARIES.uz, DICTIONARIES.en], lang, key, vars);
 }
 
 type I18n = { lang: Lang; locale: string; t: Translate };

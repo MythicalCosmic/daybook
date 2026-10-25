@@ -44,19 +44,20 @@ export function isLanguage(value: unknown): value is Language {
   return typeof value === "string" && (LANGUAGES as readonly string[]).includes(value);
 }
 
-/** Before `me` arrives: the last choice in this browser, else the browser's language, else Uzbek. */
+/**
+ * Before `me` arrives (the sign-in page, a first visit): the last choice in this browser, else
+ * Uzbek. Uzbek first, whatever language the browser is in; the sign-in page offers the others.
+ */
 export function initialLanguage(): Language {
   const saved = readStored<Language | null>("language", null, (v): v is Language | null => v === null || isLanguage(v));
-  if (saved) return saved;
-  const browser = typeof navigator !== "undefined" ? navigator.language.slice(0, 2).toLowerCase() : "uz";
-  return isLanguage(browser) ? browser : "uz";
+  return saved ?? "uz";
 }
 
 export const i18n = createI18n({
   legacy: false,
   globalInjection: true,
   locale: initialLanguage(),
-  fallbackLocale: "en",
+  fallbackLocale: "uz",
   messages: { uz: {}, ru: {}, en: {} } as Record<Language, Messages>,
   // Flat keys: a dot is part of the key, never a path.
   messageResolver: (messages, path) => {

@@ -2,7 +2,7 @@
 
 from celery import shared_task
 
-from apps.accounts import photos, telegram_chat
+from apps.accounts import company_switch, photos, telegram_chat
 
 
 @shared_task
@@ -15,3 +15,9 @@ def refresh_telegram_photos() -> int:
 def relabel_employee_chat(user_id: int) -> None:
     """A language changed in the mini app: the bot's menus and keyboard follow."""
     telegram_chat.relabel_employee_chat(user_id)
+
+
+@shared_task
+def announce_company(user_id: int, company_id: int) -> None:
+    """The company changed in the mini app or the dashboard: the bot's chat follows."""
+    company_switch.announce(user_id, company_id)

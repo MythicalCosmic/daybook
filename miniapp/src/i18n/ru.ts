@@ -566,6 +566,13 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
   "me.group.work": "Работа",
   "me.group.documents": "Документы",
   "plus.title": "Быстро добавить",
+  "toast.accepted": "Принято",
+  "status.accepted": "Принято",
+  "detail.banner.accepted": "Принято автоматически · {time}",
+  "detail.banner.acceptedAfterWait": "Никто не проверил вовремя, поэтому работа принята.",
+  "meta.acceptedAt": "Принято · {time}",
+  "complete.withProof": "С фото или комментарием работа принимается сразу. Без них она уходит на проверку.",
+  "add.illCheckRule": "Правило компании: с фото или комментарием принимается сразу",
 };
 
 export default ru;

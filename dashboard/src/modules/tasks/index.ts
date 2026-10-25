@@ -71,6 +71,9 @@ export default defineModule({
     { id: "tasks.branches_now", span: 2, order: 39, kind: "card", perm: "tasks.view_all", component: defineAsyncComponent(() => import("./widgets/BranchesNowWidget.vue")) },
     { id: "tasks.top_bottom", span: 2, order: 41, kind: "card", perm: "reports.view", component: defineAsyncComponent(() => import("./widgets/TopBottomWidget.vue")) },
   ],
+  settings: [
+    { id: "tasks", title: "tasks.settings.title", perm: "company.settings", order: 15, icon: ListChecks, component: defineAsyncComponent(() => import("./components/TasksSettingsPanel.vue")) },
+  ],
   personTabs: [
     { id: "tasks", title: "tasks.person.title", perm: "tasks.view_all", order: 20, component: defineAsyncComponent(() => import("./components/PersonTasksTab.vue")) },
   ],

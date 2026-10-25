@@ -6,6 +6,7 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
+import { shellApi } from "@/api/shell";
 import { pathInCompany } from "@/app/navigation";
 import { lazyPart } from "@/components/lazyPart";
 import { hasExtension } from "@/core/extensions";
@@ -34,6 +35,9 @@ export function useCompanySwitcher() {
   function openCompany(id: number): void {
     if (id === company.currentId && !companyless.value) return;
     void router.push(companyless.value ? `/c/${id}` : pathInCompany(router, route, id));
+    // A pick here (not a link to another company's page) moves the bot to that company as well;
+    // best effort, the dashboard works in the picked company either way.
+    void shellApi.setBotCompany(id).catch(() => undefined);
   }
 
   return { company, companyless, onPortfolio, hasPortfolio, canCreate, current, label, elsewhere, openCompany };

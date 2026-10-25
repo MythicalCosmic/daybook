@@ -189,7 +189,7 @@ async function reassignMany(selected: string[], clear: () => void): Promise<void
       <PersonCell :person="row.assignee" :subtitle="row.assignee.position" size="sm" link />
     </template>
     <template #cell-status="{ row }">
-      <TaskStatusPill :status="row.status" :overdue="row.is_overdue" />
+      <TaskStatusPill :status="row.status" :overdue="row.is_overdue" :accepted="row.accepted_automatically" />
     </template>
     <template #cell-due_at="{ row }">
       <DueLabel :due="row.due_at" :overdue="row.is_overdue" />

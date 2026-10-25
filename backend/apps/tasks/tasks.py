@@ -25,6 +25,14 @@ def generate_daily_tasks() -> None:
 
 
 @shared_task
+def accept_overdue_reviews() -> int:
+    """Finished work nobody reviewed within the company's wait is accepted (PLAN-OWNER §15.3)."""
+    from apps.tasks import services  # services imports this module
+
+    return services.accept_overdue_reviews()
+
+
+@shared_task
 def notify_task_assigned(task_id: int) -> None:
     notifications.send_task_assigned(task_id)
 

@@ -62,6 +62,17 @@ describe("finishing with proof", () => {
     expect(await screen.findByRole("button", { name: "Undo" })).toBeTruthy();
   });
 
+  it("offers a photo when a photo or a note would get it accepted at once (§15.3)", () => {
+    const task = makeTask({ proof: "none", needs_confirmation: true, accept_with_proof: true });
+    open(task, { kind: "complete", taskId: task.id });
+    expect(document.querySelector('.sheet input[type="file"]')).toBeTruthy();
+    expect(screen.getByText("With a photo or a note it's accepted at once. Without them, it goes for checking.")).toBeTruthy();
+    // Nothing added yet: it goes for checking; a note gets it accepted at once.
+    expect(screen.getByRole("button", { name: "Send for checking" })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText(/^Note/), { target: { value: "All shelves done" } });
+    expect(screen.getByRole("button", { name: "Mark as done" })).toBeTruthy();
+  });
+
   it("starts a sent-back report from the one that went with it", () => {
     const task = makeTask({ proof: "text", status: "returned", proof_text: "Till: 4 250 000" });
     open(task, { kind: "complete", taskId: task.id });

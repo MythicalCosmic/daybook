@@ -303,6 +303,7 @@ def _copy_templates(source, target, by: Membership, *, onboarding: bool) -> int:
             due_time=template.due_time,
             proof=template.proof,
             needs_confirmation=template.needs_confirmation,
+            accept_with_proof=template.accept_with_proof,
             is_active=template.is_active and (bool(matched) or onboarding),
             created_by=by,
             reminder_policy=policies.get(template.reminder_policy.name.lower())

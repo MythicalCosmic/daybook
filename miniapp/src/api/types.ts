@@ -20,12 +20,19 @@ export type Extension = { until: string; note: string; at: string };
  * schema is regenerated, and a field the backend doesn't send yet is `undefined`, never `null`:
  * the screens hide what the backend can't tell rather than claim "not seen".
  */
-export type Task = Schemas["Task"] & {
+export type Task = Omit<Schemas["Task"], "accept_with_proof" | "accepted_automatically"> & {
   snoozed_until?: string | null;
   blocker?: Blocker | null;
   extension?: Extension | null;
   seen_at?: string | null;
+  /** With needs_confirmation: finished with a photo or a note, it's accepted at once (§15.3). */
+  accept_with_proof?: boolean;
+  /** Done and accepted without anyone checking it: at once, or after the company's wait. */
+  accepted_automatically?: boolean;
 };
+
+/** The company's "When someone finishes a task" (`GET tasks/finish-rule/`). */
+export type FinishRule = "auto" | "proof" | "ask";
 
 /** `POST tasks/parse/`: what quick add read in the typed text (nothing is saved). */
 export type QuickAdd = {

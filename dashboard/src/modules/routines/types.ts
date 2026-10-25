@@ -50,6 +50,8 @@ export interface Routine {
   due_after_days: number;
   proof: ProofKind;
   needs_confirmation: boolean;
+  /** With needs_confirmation: a run finished with a photo or text proof is accepted at once. */
+  accept_with_proof?: boolean;
   checklist: string[];
   branch: BranchRef | null;
   assignees: RoutinePerson[];
@@ -73,7 +75,8 @@ export interface RoutineInput {
   onboarding?: boolean;
   due_after_days?: number;
   proof?: ProofKind;
-  needs_confirmation?: boolean;
+  /** null: the company's rule for finished work decides; left out on an edit: unchanged. */
+  needs_confirmation?: boolean | null;
   checklist?: string[];
   branch_id?: number | null;
   assignee_ids?: number[];

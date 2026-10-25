@@ -48,7 +48,7 @@ function title(entry: TaskTimelineEntry): string {
     case "comment":
       return t("tasks.timeline.comment", { name: who });
     case "completed":
-      return t("tasks.timeline.completed", { name: who });
+      return entry.meta.accepted === "auto" ? t("tasks.timeline.completedAccepted", { name: who }) : t("tasks.timeline.completed", { name: who });
     case "heads_up":
       return t("tasks.timeline.headsUp", { name: who });
     case "reminder":
@@ -58,6 +58,8 @@ function title(entry: TaskTimelineEntry): string {
     case "blocked":
       return t("tasks.timeline.blocked", { name: who });
     default:
+      // Accepted by the company's wait for a review: nobody did it, so no name in front.
+      if (entry.action === "tasks.auto_accepted") return t("tasks.timeline.autoAccepted", { n: Number(entry.meta.hours ?? 0) });
       return `${who} · ${entry.text}`;
   }
 }

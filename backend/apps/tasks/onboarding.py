@@ -75,6 +75,7 @@ def assign_onboarding(membership: Membership, *, now: datetime | None = None) ->
             due_at=due_at,
             proof=template.proof,
             needs_confirmation=template.needs_confirmation,
+            accept_with_proof=template.accept_with_proof,
             reminder_policy=template.reminder_policy,
             escalate_to=template.escalate_to,
             branch_id=membership.home_branch_id,

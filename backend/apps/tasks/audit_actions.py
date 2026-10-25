@@ -16,3 +16,5 @@ class TasksAction(models.TextChoices):
     UNBLOCKED = "tasks.unblocked", _("Decided about a task someone couldn't do")
     EXTENSION_ASKED = "tasks.extension_asked", _("Asked for more time")
     EXTENSION_DECIDED = "tasks.extension_decided", _("Decided about more time for a task")
+    AUTO_ACCEPTED = "tasks.auto_accepted", _("Accepted automatically: nobody reviewed it in time")
+    SETTINGS_CHANGED = "tasks.settings_changed", _("Changed the rules for finished tasks")

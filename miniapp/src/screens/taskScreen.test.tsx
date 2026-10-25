@@ -373,6 +373,9 @@ describe("a link to a task in my other company", () => {
     renderApp(<TaskDetail taskId={4040} />, { me });
     expect(await screen.findByRole("heading", { name: "Count the till" })).toBeTruthy();
     expect(localStorage.getItem("daybook.company")).toBe("2");
+    // Only looking at a link: the bot keeps its own company (one company everywhere moves it only
+    // on a pick in the company sheet).
+    expect(callsTo("/me/")).toEqual([]);
     localStorage.removeItem("daybook.company");
   });
 });

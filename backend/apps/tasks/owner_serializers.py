@@ -16,7 +16,8 @@ from apps.tasks.api import (
     blocker_of,
     extension_of,
 )
-from apps.tasks.models import ChecklistItem, Proof, Task, TaskComment, TaskTemplate
+from apps.tasks.conf import REVIEW_RULE_HELP
+from apps.tasks.models import ChecklistItem, Proof, Task, TaskComment, TasksSettings, TaskTemplate
 
 
 def person(member: Membership | None) -> dict | None:
@@ -91,6 +92,7 @@ class TaskRowSerializer(serializers.ModelSerializer):
     moves = serializers.SerializerMethodField()
     blocker = serializers.SerializerMethodField()
     extension = serializers.SerializerMethodField()
+    accepted_automatically = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
@@ -110,6 +112,8 @@ class TaskRowSerializer(serializers.ModelSerializer):
             "project",
             "proof",
             "needs_confirmation",
+            "accept_with_proof",
+            "accepted_automatically",
             "has_proof",
             "proof_thumb",
             "proof_photo",
@@ -125,6 +129,11 @@ class TaskRowSerializer(serializers.ModelSerializer):
             "extension",
         )
         read_only_fields = fields
+
+    def get_accepted_automatically(self, task: Task) -> bool:
+        """Done and accepted without anyone checking it: at once, or after the company's wait
+        for a review (`confirmed_at` is then when)."""
+        return rules.accepted_automatically(task)
 
     @extend_schema_field(TaskBlockerSerializer(allow_null=True))
     def get_blocker(self, task: Task) -> dict | None:
@@ -307,7 +316,11 @@ class TaskCreateSerializer(serializers.Serializer):
     due_at = serializers.DateTimeField(allow_null=True, default=None)
     priority = serializers.ChoiceField(Task.Priority.choices, default=Task.Priority.NORMAL)
     proof = serializers.ChoiceField(Proof.choices, default=Proof.NONE)
-    needs_confirmation = serializers.BooleanField(default=False)
+    needs_confirmation = serializers.BooleanField(
+        allow_null=True,
+        default=None,
+        help_text=REVIEW_RULE_HELP,
+    )
     checklist = serializers.ListField(
         child=serializers.CharField(max_length=200), default=list, max_length=50
     )
@@ -451,6 +464,7 @@ class RoutineSerializer(serializers.ModelSerializer):
             "due_after_days",
             "proof",
             "needs_confirmation",
+            "accept_with_proof",
             "checklist",
             "branch",
             "assignees",
@@ -521,7 +535,11 @@ class RoutineWriteSerializer(serializers.Serializer):
     onboarding = serializers.BooleanField(required=False)
     due_after_days = serializers.IntegerField(min_value=0, max_value=90, required=False)
     proof = serializers.ChoiceField(Proof.choices, required=False)
-    needs_confirmation = serializers.BooleanField(required=False)
+    needs_confirmation = serializers.BooleanField(
+        allow_null=True,
+        required=False,
+        help_text=REVIEW_RULE_HELP,
+    )
     checklist = serializers.ListField(
         child=serializers.CharField(max_length=200, allow_blank=True), required=False, max_length=50
     )
@@ -575,9 +593,31 @@ def run_row(task: Task, state: str, member: Membership) -> dict:
         "completed_at": completed,
         "on_time": completed <= task.due_at if completed and task.due_at else None,
         "proof": task.proof,
+        "accepted_automatically": rules.accepted_automatically(task),
         "proof_text": task.proof_text,
         "proof_thumb": file_url(task.proof_thumb) or file_url(task.proof_photo),
         "proof_photo": file_url(task.proof_photo),
         "checklist": {"done": sum(item.is_done for item in items), "total": len(items)},
         "can_confirm": task.status == Task.Status.REVIEW and rules.can_review(task, member),
     }
+
+
+# The company's rules for finished work (PLAN-OWNER §15.3) ----------------------------------
+
+
+class TasksSettingsSerializer(serializers.ModelSerializer):
+    """ "When someone finishes a task" (`on_finish`: auto, proof or ask) and "If nobody reviews
+    it within N hours, accept it automatically" (`auto_accept_after_hours`, 4 to 72, or null
+    for never)."""
+
+    auto_accept_after_hours = serializers.IntegerField(
+        allow_null=True,
+        required=False,
+        min_value=TasksSettings.AUTO_ACCEPT_HOURS[0],
+        max_value=TasksSettings.AUTO_ACCEPT_HOURS[1],
+        help_text="Hours; null: never.",
+    )
+
+    class Meta:
+        model = TasksSettings
+        fields = ("on_finish", "auto_accept_after_hours")

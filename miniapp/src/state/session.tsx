@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
+import { api } from "../api/client";
 import { isSuspended } from "../api/membership";
 import type { Me, Membership } from "../api/types";
 import { cloudStorage } from "../telegram";
@@ -13,7 +14,10 @@ type Session = {
   membership: Membership | null;
   /** Approved memberships the person can switch between. */
   companies: Membership[];
+  /** The person picked another company here: the app works in it, and so does the bot. */
   switchCompany: (companyId: number) => void;
+  /** A link opened a task of another company: the app shows that company, the bot keeps its own. */
+  showCompany: (companyId: number) => void;
 };
 
 const SessionContext = createContext<Session | null>(null);
@@ -80,25 +84,31 @@ export function SessionProvider({ me, children }: { me: Me; children: ReactNode 
     };
     // Only at launch: later choices are made here and saved by switchCompany.
   }, []);
-  const value = useMemo<Session>(
-    () => ({
+  const value = useMemo<Session>(() => {
+    const showCompany = (companyId: number) => {
+      setPreferred(companyId);
+      try {
+        localStorage.setItem(STORAGE_KEY, String(companyId));
+      } catch {
+        // Not remembered across launches, which is fine.
+      }
+      void cloudStorage.set(CLOUD_KEY, String(companyId));
+    };
+    return {
       me,
       membership: pickMembership(me, preferred),
       companies: me.memberships.filter((m) => m.status === "approved" && m.is_onboarded),
+      showCompany,
       switchCompany: (companyId) => {
-        setPreferred(companyId);
-        try {
-          localStorage.setItem(STORAGE_KEY, String(companyId));
-        } catch {
-          // Not remembered across launches, which is fine.
-        }
-        void cloudStorage.set(CLOUD_KEY, String(companyId));
-        // The bot keeps its own pick (/company): its menu names the company, and moving it from
-        // here would leave that menu out of date until /start.
+        const moved = companyId !== pickMembership(me, preferred)?.company.id;
+        showCompany(companyId);
+        // One company everywhere: the bot works in the company picked here from now on and says so
+        // in its chat, with that company's menu. Only a pick here moves it, never a link opened
+        // to another company's task (showCompany). Best effort: the app works in it either way.
+        if (moved) void api<Me>("/me/", { method: "PATCH", json: { bot_company: companyId } }).catch(() => undefined);
       },
-    }),
-    [me, preferred],
-  );
+    };
+  }, [me, preferred]);
   return <SessionContext.Provider value={value}>{ready ? children : null}</SessionContext.Provider>;
 }
 

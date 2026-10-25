@@ -1292,6 +1292,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/tasks/finish-rule/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The company's "When someone finishes a task" (auto, proof or ask): the mini app's
+         *     "I'll check it" starts from it when someone gives a task (PLAN-OWNER §15.3).
+         */
+        get: operations["v1_companies_tasks_finish_rule_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/tasks/parse/": {
         parameters: {
             query?: never;
@@ -2560,7 +2580,8 @@ export interface components {
             assignee_ids?: number[];
             position_ids?: number[];
             proof?: components["schemas"]["ProofEnum"];
-            needs_confirmation?: boolean;
+            /** @description Empty: the company's rule for finished work decides (tasks settings); true always asks for a check, false never does. */
+            needs_confirmation?: boolean | null;
             is_active?: boolean;
         };
         PatchedTaskUpdateRequest: {
@@ -3238,6 +3259,14 @@ export interface components {
             readonly for_date: string | null;
             readonly proof: components["schemas"]["ProofEnum"];
             readonly needs_confirmation: boolean;
+            /** @description With needs_confirmation: finished with a photo or text proof, it is accepted automatically; without one, someone checks it. */
+            readonly accept_with_proof: boolean;
+            /**
+             * @description Done and accepted without anyone checking it: at once (no check asked for, or the
+             *     company's rule took its proof), or after the company's wait (`confirmed_at` is then
+             *     when). The person who did it reads "Accepted".
+             */
+            readonly accepted_automatically: boolean;
             readonly proof_text: string;
             /** Format: uri */
             readonly proof_photo: string | null;
@@ -3304,8 +3333,8 @@ export interface components {
             priority: components["schemas"]["PriorityEnum"];
             /** @default none */
             proof: components["schemas"]["ProofEnum"];
-            /** @default false */
-            needs_confirmation: boolean;
+            /** @description Empty: the company's rule for finished work decides (tasks settings); true always asks for a check, false never does. */
+            needs_confirmation?: boolean | null;
             checklist?: string[];
             /**
              * @description Personal tasks only; needs due_at.
@@ -3392,7 +3421,8 @@ export interface components {
             assignee_ids?: number[];
             position_ids?: number[];
             proof?: components["schemas"]["ProofEnum"];
-            needs_confirmation?: boolean;
+            /** @description Empty: the company's rule for finished work decides (tasks settings); true always asks for a check, false never does. */
+            needs_confirmation?: boolean | null;
             is_active?: boolean;
         };
         TaskTemplateRequest: {
@@ -3407,7 +3437,8 @@ export interface components {
             assignee_ids?: number[];
             position_ids?: number[];
             proof?: components["schemas"]["ProofEnum"];
-            needs_confirmation?: boolean;
+            /** @description Empty: the company's rule for finished work decides (tasks settings); true always asks for a check, false never does. */
+            needs_confirmation?: boolean | null;
             is_active?: boolean;
         };
         TeamRow: {
@@ -5706,12 +5737,7 @@ export interface operations {
     };
     v1_companies_tasks_calendar_retrieve: {
         parameters: {
-            query: {
-                /** @description First day, YYYY-MM-DD. */
-                from: string;
-                /** @description Last day, YYYY-MM-DD (≤ 42 days). */
-                to: string;
-            };
+            query?: never;
             header?: never;
             path: {
                 company_id: string;
@@ -5725,7 +5751,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Calendar"];
+                    "application/json": components["schemas"]["Task"];
                 };
             };
         };
@@ -5753,6 +5779,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ConfirmManyResponse"];
+                };
+            };
+        };
+    };
+    v1_companies_tasks_finish_rule_retrieve: {
+        parameters: {
+            query: {
+                /** @description First day, YYYY-MM-DD. */
+                from: string;
+                /** @description Last day, YYYY-MM-DD (≤ 42 days). */
+                to: string;
+            };
+            header?: never;
+            path: {
+                company_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Calendar"];
                 };
             };
         };

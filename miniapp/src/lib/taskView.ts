@@ -78,7 +78,9 @@ export function rowMeta(task: Task, ctx: ViewContext): string {
     const at = clock(task.confirmed_at ?? task.completed_at ?? task.created_at, timeZone, locale);
     return task.confirmed_by
       ? t("meta.checkedBy", { name: task.confirmed_by.name, time: at })
-      : t("meta.doneAt", { time: at });
+      : task.accepted_automatically
+        ? t("meta.acceptedAt", { time: at })
+        : t("meta.doneAt", { time: at });
   }
   if (task.status === "review") {
     return task.kind === "assigned" && task.created_by

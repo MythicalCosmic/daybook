@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { allLanguages, ensureModuleMessages, i18n, isLanguage, isShellKey, mergeModuleMessages, russianPlural, setLanguage, t } from "@/i18n";
+import { allLanguages, ensureModuleMessages, i18n, initialLanguage, isLanguage, isShellKey, mergeModuleMessages, russianPlural, setLanguage, t } from "@/i18n";
 import { defineModule } from "@/core/modules";
 
 afterEach(() => setLanguage("en"));
@@ -145,6 +145,19 @@ describe("i18n", () => {
       vi.doUnmock("@/i18n/ru.json");
       vi.resetModules();
     }
+  });
+
+  it("speaks Uzbek before anything else is known, whatever the browser's language", () => {
+    const browser = vi.spyOn(navigator, "language", "get").mockReturnValue("en-US");
+    localStorage.removeItem("daybook.console.language");
+    expect(initialLanguage()).toBe("uz");
+    expect(i18n.global.fallbackLocale.value).toBe("uz");
+    browser.mockRestore();
+  });
+
+  it("keeps the language chosen in this browser", async () => {
+    await setLanguage("ru");
+    expect(initialLanguage()).toBe("ru");
   });
 
   it("has small guards", () => {

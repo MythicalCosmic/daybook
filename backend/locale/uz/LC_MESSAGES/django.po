@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-25 05:35+0500\n"
+"POT-Creation-Date: 2026-10-25 23:42+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -18,7 +18,7 @@ msgstr ""
 msgid "Telegram"
 msgstr "Telegram"
 
-#: backend/apps/accounts/api.py
+#: backend/apps/accounts/api.py backend/apps/console/owner_api.py
 msgid "You don't work in that company."
 msgstr "Siz bu kompaniyada ishlamaysiz."
 
@@ -5351,6 +5351,12 @@ msgstr "<b>Qaysi rol?</b> Xodim nimalar qila olishi shunga bog‘liq."
 msgid "default"
 msgstr "standart"
 
+#. Translators: %(company)s is a company's name, as typed: no case endings on it.
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "Now working in <b>%(company)s</b>."
+msgstr "Endi <b>%(company)s</b> kompaniyasida ishlayapsiz."
+
 #: backend/apps/members/hooks.py
 msgid "Join request"
 msgstr "Qo‘shilish so‘rovi"
@@ -8496,6 +8502,14 @@ msgstr "Qo‘shimcha vaqt so‘radi"
 msgid "Decided about more time for a task"
 msgstr "Qo‘shimcha vaqt bo‘yicha qaror"
 
+#: backend/apps/tasks/audit_actions.py
+msgid "Accepted automatically: nobody reviewed it in time"
+msgstr "Avtomatik qabul qilindi: hech kim o‘z vaqtida tekshirmadi"
+
+#: backend/apps/tasks/audit_actions.py
+msgid "Changed the rules for finished tasks"
+msgstr "Bajarilgan vazifalar qoidasini o‘zgartirdi"
+
 #: backend/apps/tasks/bot_messages.py
 msgid ""
 "🎉 Nothing on your list. To add a task, tap ➕ New task or just type it."
@@ -9016,6 +9030,15 @@ msgstr "%(days)d kun %(hours)d soat"
 msgid "🔎 To check (%(count)d)"
 msgstr "🔎 Tekshirish (%(count)d)"
 
+#: backend/apps/tasks/bot_messages.py
+msgctxt "task status"
+msgid "Accepted"
+msgstr "Qabul qilindi"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "<b>Accepted automatically</b> · nobody checked it in time"
+msgstr "<b>Avtomatik qabul qilindi</b> · hech kim o‘z vaqtida tekshirmadi"
+
 #: backend/apps/tasks/feeds.py
 msgid "Send back"
 msgstr "Qaytarish"
@@ -9038,6 +9061,10 @@ msgstr "Xodim vazifani bajara olmayapti"
 #: backend/apps/tasks/hooks.py
 msgid "Someone asks for more time"
 msgstr "Xodim qo‘shimcha vaqt so‘rayapti"
+
+#: backend/apps/tasks/hooks.py
+msgid "Work accepted automatically without a review"
+msgstr "Tekshirilmasdan avtomatik qabul qilingan ish"
 
 #: backend/apps/tasks/hooks.py
 msgid "Tasks to check"
@@ -9168,6 +9195,14 @@ msgid "Everyone holding one of these positions gets the task."
 msgstr "Shu lavozimlardan birida ishlaydigan har bir xodim vazifani oladi."
 
 #: backend/apps/tasks/models.py
+msgid ""
+"With needs_confirmation: a run finished with a photo or text proof is "
+"accepted automatically; without one, someone checks it."
+msgstr ""
+"Tekshirish yoqilganda: rasm yoki hisobot bilan bajarilgan vazifa avtomatik "
+"qabul qilinadi, ularsiz esa kimdir tekshiradi."
+
+#: backend/apps/tasks/models.py
 msgid "Made by an employee for themselves; it repeats a personal task."
 msgstr "Xodim o‘zi uchun yaratgan; shaxsiy vazifani takrorlaydi."
 
@@ -9259,6 +9294,14 @@ msgid "For daily tasks: the local day it belongs to."
 msgstr "Muntazam vazifalar uchun: u tegishli bo‘lgan mahalliy kun."
 
 #: backend/apps/tasks/models.py
+msgid ""
+"With needs_confirmation: finished with a photo or text proof, it is accepted "
+"automatically; without one, someone checks it."
+msgstr ""
+"Tekshirish yoqilganda: rasm yoki hisobot bilan bajarilsa, avtomatik qabul "
+"qilinadi, ularsiz esa kimdir tekshiradi."
+
+#: backend/apps/tasks/models.py
 msgid "A small preview of the proof photo, made after it's uploaded."
 msgstr "Dalil rasmining kichik nusxasi, rasm yuklangandan keyin yaratiladi."
 
@@ -9310,6 +9353,27 @@ msgstr "Bajarib bo‘lmaydi"
 #: backend/apps/tasks/models.py
 msgid "Late alert"
 msgstr "Kechikish haqida xabar"
+
+#: backend/apps/tasks/models.py
+msgid "Accept it automatically"
+msgstr "Avtomatik qabul qilish"
+
+#: backend/apps/tasks/models.py
+msgid "Accept automatically only with a photo or text proof, otherwise ask"
+msgstr ""
+"Faqat rasm yoki hisobot bo‘lsa avtomatik qabul qilish, aks holda so‘rash"
+
+#: backend/apps/tasks/models.py
+msgid "Always ask the person who gave it"
+msgstr "Har doim vazifani bergan odamdan so‘rash"
+
+#: backend/apps/tasks/models.py
+msgid "When someone finishes a task."
+msgstr "Kimdir vazifani bajarganda."
+
+#: backend/apps/tasks/models.py
+msgid "If nobody reviews it within this many hours, accept it automatically."
+msgstr "Shuncha soat ichida hech kim tekshirmasa, avtomatik qabul qilish."
 
 #: backend/apps/tasks/owner_api.py
 msgid "Use without or only."
@@ -9759,6 +9823,29 @@ msgstr "Bu ro‘yxat yoki bosqich boshqa doskada."
 #: backend/apps/tasks/services.py backend/apps/timeoff/services.py
 msgid "Finish registration first."
 msgstr "Avval ro‘yxatdan o‘tishni yakunlang."
+
+#: backend/apps/tasks/services.py
+msgid "You can't change the company's settings."
+msgstr "Kompaniya sozlamalarini o‘zgartira olmaysiz."
+
+#: backend/apps/tasks/services.py
+#, python-format
+msgid "Pick between %(low)d and %(high)d hours."
+msgstr "%(low)d–%(high)d soat oralig‘ida tanlang."
+
+#: backend/apps/tasks/services.py
+#, python-format
+msgid "Accepted automatically: %(title)s"
+msgstr "Avtomatik qabul qilindi: %(title)s"
+
+#: backend/apps/tasks/services.py
+#, python-format
+msgid ""
+"Nobody checked it within %(hours)d hours, so it was accepted.\n"
+"Done by: %(name)s"
+msgstr ""
+"%(hours)d soat ichida hech kim tekshirmadi, shuning uchun qabul qilindi.\n"
+"Bajardi: %(name)s"
 
 #: backend/apps/timeoff/admin.py
 msgid "Approve selected time off"

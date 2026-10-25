@@ -1,4 +1,4 @@
-import { Ban, CirclePause, Clock3, DoorOpen, KeyRound, MessageCircle, Mic, Send, SendHorizontal, WifiOff, type LucideIcon } from "lucide-react";
+import { Ban, CirclePause, Clock3, DoorOpen, KeyRound, MessageCircle, Mic, Send, SendHorizontal, Smartphone, WifiOff, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { suspendedUntil } from "../api/membership";
@@ -169,7 +169,8 @@ function ChatBarHint() {
     <div className="gate-hint" aria-hidden>
       <span className="gate-hint-app">
         <span className="gate-hint-ring" />
-        📱 {t("error.unsignedButton")}
+        <Smartphone size={15} strokeWidth={2.4} aria-hidden />
+        {t("error.unsignedButton")}
       </span>
       <span className="gate-hint-field">{t("error.unsignedField")}</span>
       <Mic size={20} strokeWidth={2.2} className="gate-hint-mic" />

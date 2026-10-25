@@ -167,7 +167,8 @@ TILL = "Pharmacist"  # sells at the counter and runs its till (docs/PLAN-OWNER.m
 # Demo Dorixona. The first six are the `people` every demo.py gets (rule 22).
 PEOPLE = [
     P("owner", 1001, "Dilnoza", "Karimova", OFFICE, "Owner", "CY", 1100, None),
-    P("manager", 1002, "Bekzod", "Mirzayev", HEAD, "Manager", "CY", 760, "head5"),
+    # The head of Chilonzor: a branch head's role, so he sees and runs Chilonzor only (X-12).
+    P("manager", 1002, "Bekzod", "Mirzayev", HEAD, BRANCH_MANAGER, "C", 760, "head5"),
     P("worker", 4242, "Alisher", "Valiyev", PHARMACIST, TILL, "C", 380, "chl_open_a"),
     P("madina", 1004, "Madina", "Saidova", SENIOR, TILL, "C", 230, "chl_close_a"),
     P("jasur", 1005, "Jasur", "Tursunov", COURIER, "Employee", "CY", 140, "courier"),

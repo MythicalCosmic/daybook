@@ -400,8 +400,11 @@ const fieldLabels = computed(() => ({
   reward: t("tasks.field.reward"),
   assignee: t("tasks.field.assignee"),
   status: t("tasks.field.status"),
+  // Accepted by the company's wait for a review (§15.3): how long it waited.
+  hours: t("tasks.field.waited"),
 }));
 const formatAudit = (field: string, value: unknown) => {
+  if (field === "hours" && typeof value === "number") return t("tasks.accepted.hours", { n: value });
   if (field === "due_at" && typeof value === "string") return fmt.instant(value);
   if (field === "reward" && typeof value === "string") return fmt.money(value);
   if (field === "priority" && typeof value === "string") return t(`tasks.priority.${value}`);
@@ -429,7 +432,7 @@ const formatAudit = (field: string, value: unknown) => {
       <!-- Status and actions -->
       <section class="flex flex-col gap-3 border-b border-line px-5 py-4">
         <div class="flex flex-wrap items-center gap-2">
-          <TaskStatusPill :status="task.status" :overdue="task.is_overdue" size="md" />
+          <TaskStatusPill :status="task.status" :overdue="task.is_overdue" :accepted="task.accepted_automatically" size="md" />
           <PriorityFlag :priority="task.priority" :size="13" />
           <span v-if="task.reward" class="inline-flex items-center gap-1 rounded-full bg-success-soft px-2 py-0.5 text-sm font-semibold text-success"><Gift :size="13" /><MoneyText :value="task.reward" sign="always" /></span>
           <span class="flex-1" />
@@ -620,6 +623,10 @@ const formatAudit = (field: string, value: unknown) => {
           <template v-if="task.confirmed_by">
             <dt class="text-muted">{{ t("tasks.field.confirmedBy") }}</dt>
             <dd class="min-w-0 text-fg">{{ task.confirmed_by.name }} · <RelativeTime :value="task.confirmed_at" class="text-muted" /></dd>
+          </template>
+          <template v-else-if="task.accepted_automatically">
+            <dt class="text-muted">{{ t("tasks.status.accepted") }}</dt>
+            <dd class="min-w-0 text-fg">{{ task.confirmed_at ? t("tasks.accepted.afterWait") : t("tasks.accepted.atOnce") }}</dd>
           </template>
           <dt class="text-muted">{{ t("tasks.field.created") }}</dt>
           <dd class="min-w-0 text-muted"><RelativeTime :value="task.created_at" /></dd>

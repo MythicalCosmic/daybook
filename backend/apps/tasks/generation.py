@@ -210,6 +210,7 @@ def build_tasks(
             due_at=due_at,
             proof=template.proof,
             needs_confirmation=template.needs_confirmation,
+            accept_with_proof=template.accept_with_proof,
             reminder_policy=template.reminder_policy,
             escalate_to=template.escalate_to,
             next_reminder_at=first_reminder,

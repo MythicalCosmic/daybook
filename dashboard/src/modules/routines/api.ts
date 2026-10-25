@@ -47,6 +47,9 @@ export const routinesApi = {
   /** Confirm runs, each on its own (the tasks bulk endpoint: same rules as confirming one). */
   confirm: (cid: number, ids: number[]) => http.post<BulkResult>(ownerPath(cid, "tasks/bulk/"), { ids, action: "confirm" }),
   sendBack: (cid: number, id: number, reason: string) => http.post<unknown>(ownerPath(cid, `tasks/${id}/return/`), { reason }),
+  /** The company's rule for finished work, which a new routine starts with (PLAN-OWNER §15.3). */
+  finishRule: (cid: number, signal?: AbortSignal) =>
+    http.get<{ on_finish: "auto" | "proof" | "ask"; auto_accept_after_hours: number | null }>(ownerPath(cid, "tasks/settings/"), undefined, { signal }),
 };
 
 export const routineKeys = {
@@ -64,6 +67,17 @@ export const routineKeys = {
 function useCompanyId() {
   const company = useCompanyStore();
   return computed(() => company.currentId ?? 0);
+}
+
+/** The company's rule for finished work, cached with the tasks module's copy of it. */
+export function useFinishRule() {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => qk(cid.value, TASKS, "settings")),
+    queryFn: ({ signal }) => routinesApi.finishRule(cid.value, signal),
+    enabled: computed(() => cid.value > 0),
+    staleTime: 60_000,
+  });
 }
 
 export function useRoutines(params: MaybeRefOrGetter<{ onboarding?: boolean; q?: string; active?: boolean }>) {

@@ -1,6 +1,11 @@
 <script setup lang="ts">
-/** The frame around sign-in pages: warm ground, soft brand light, the wordmark, one centered card. */
+/**
+ * The frame around sign-in pages: warm ground, soft brand light, the wordmark, one centered card,
+ * and the three languages (Uzbek first, the default when nothing else is known).
+ */
 import { useI18n } from "vue-i18n";
+
+import LanguageChoice from "./LanguageChoice.vue";
 
 const { t } = useI18n();
 </script>
@@ -22,6 +27,7 @@ const { t } = useI18n();
         <slot />
       </div>
       <p class="mt-6 text-center text-sm text-muted">{{ t("shell.login.tagline") }}</p>
+      <LanguageChoice class="mt-3" />
     </div>
   </div>
 </template>

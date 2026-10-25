@@ -38,6 +38,18 @@ def can_undo(task: Task, member: Membership, now: datetime) -> bool:
     )
 
 
+def accepted_automatically(task: Task) -> bool:
+    """Finished work someone else gave that nobody checked: accepted the moment it was done
+    (no check asked for, or the company's rule took its proof), or after the company's wait
+    for a review (`confirmed_at` set, nobody's name on it). One's own tasks are just done."""
+    return (
+        task.status == Task.Status.DONE
+        and task.confirmed_by_id is None
+        and task.kind != Task.Kind.PERSONAL
+        and task.created_by_id != task.assignee_id
+    )
+
+
 def can_review(task: Task, member: Membership) -> bool:
     """Confirm or return finished work: whoever assigned it, or anyone allowed to confirm."""
     if task.company_id != member.company_id or is_assignee(task, member):

@@ -16,8 +16,9 @@ export function errorText(error: unknown, t: Translate): string {
 }
 
 /**
- * "Done" or "Sent for checking" with Undo for a few seconds: the server reopens it for the person
- * who finished it, within a minute, before anyone confirmed it (R2 T38).
+ * "Done", "Accepted" (given work nobody has to check, PLAN-OWNER §15.3) or "Sent for checking",
+ * with Undo for a few seconds: the server reopens it for the person who finished it, within a
+ * minute, before anyone confirmed it (R2 T38).
  */
 export function useDoneToast(): (done: Task) => void {
   const client = useQueryClient();
@@ -25,7 +26,7 @@ export function useDoneToast(): (done: Task) => void {
   const { t } = useI18n();
   const { companyId } = useMember();
   return (done) => {
-    toast(done.status === "review" ? t("toast.sentForCheck") : t("toast.doneShort"), {
+    toast(done.status === "review" ? t("toast.sentForCheck") : done.accepted_automatically ? t("toast.accepted") : t("toast.doneShort"), {
       tone: "success",
       action: {
         label: t("ui.toast.undo"),

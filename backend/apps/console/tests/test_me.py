@@ -31,7 +31,7 @@ def test_me_lists_only_companies_with_dashboard_access(company, other_company, m
         "photo_url": None,
     }
     assert response.data["language"] == "en"
-    assert set(response.data) == {"user", "language", "companies"}  # no platform-admin flag
+    assert set(response.data) == {"user", "language", "bot_company", "companies"}  # no admin flag
 
 
 def test_a_company_entry_has_everything_the_shell_needs(company, member, owner_api):

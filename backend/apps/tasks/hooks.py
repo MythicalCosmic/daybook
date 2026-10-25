@@ -36,6 +36,14 @@ register_kind(
 )
 register_action("tasks.extension", "approve", inbox_actions.approve_extension)
 register_action("tasks.extension", "decline", inbox_actions.decline_extension)
+# Finished work nobody reviewed in time was accepted (PLAN-OWNER §15.3): whoever should have
+# checked it hears, in the inbox and through the employee bot, where review requests come.
+register_kind(
+    "tasks.auto_accepted",
+    label=_("Work accepted automatically without a review"),
+    audience="employee",
+    default_telegram=True,
+)
 
 
 def _task_in_scope(member, task_id: int) -> bool:

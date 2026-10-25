@@ -111,6 +111,8 @@ export interface MeUser {
 export interface Me {
   user: MeUser;
   language: Language;
+  /** The company the person works in, the same in the bot, the mini app and the dashboard. */
+  bot_company?: number | null;
   companies: Company[];
 }
 

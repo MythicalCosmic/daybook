@@ -62,7 +62,10 @@ function CompleteForm({ task }: { task: Task }) {
   const preview = useObjectUrl(photo);
   useDraftGuard(Boolean(photo) || note.trim() !== (task.status === "returned" ? task.proof_text.trim() : ""));
 
-  const wantsPhoto = task.proof === "photo" || task.proof === "any";
+  // The company's rule may accept it at once with a photo or a note (§15.3): offer the photo.
+  const withProof = Boolean(task.needs_confirmation && task.accept_with_proof);
+  const wantsPhoto = task.proof === "photo" || task.proof === "any" || withProof;
+  const goesForCheck = task.needs_confirmation && !(withProof && (photo || note.trim()));
   const missing =
     (task.proof === "photo" && !photo) ||
     (task.proof === "text" && !note.trim()) ||
@@ -135,9 +138,9 @@ function CompleteForm({ task }: { task: Task }) {
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <button className="btn btn-primary btn-lg btn-block" disabled={missing || action.isPending} onClick={submit}>
-          {task.needs_confirmation ? t("complete.send") : t("complete.markDone")}
+          {goesForCheck ? t("complete.send") : t("complete.markDone")}
         </button>
-        <div className="muted" style={{ fontSize: 14, textAlign: "center" }}>{t("complete.hint")}</div>
+        <div className="muted" style={{ fontSize: 14, textAlign: "center" }}>{withProof ? t("complete.withProof") : t("complete.hint")}</div>
       </div>
     </>
   );

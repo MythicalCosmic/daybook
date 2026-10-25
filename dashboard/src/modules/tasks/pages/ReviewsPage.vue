@@ -12,6 +12,7 @@
 import { Ban, Check, ChevronRight, ClipboardCheck, FileText, Hourglass, Repeat, RotateCcw, X } from "@lucide/vue";
 import { computed, nextTick, onBeforeUnmount, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { RouterLink } from "vue-router";
 import { useRouter } from "vue-router";
 
 import { isApiError } from "@/api/http";
@@ -36,7 +37,7 @@ import { useFormat } from "@/lib/useFormat";
 import { patchQuery } from "@/lib/useRouteState";
 import { useCompanyStore } from "@/stores/company";
 
-import { tasksApi, useRefreshTasks, useReviews, useTaskList } from "../api";
+import { tasksApi, useRefreshTasks, useReviews, useTaskList, useTasksSettings } from "../api";
 import TaskDrawer from "../components/TaskDrawer.vue";
 import { BLOCKED_PARAMS, EXTENSION_PARAMS } from "../filters";
 import { cardKey, lateness, minutesBetween } from "../meta";
@@ -55,6 +56,13 @@ const tap = computed(() => (isPhone.value ? "lg" : "sm"));
 const refresh = useRefreshTasks();
 
 const query = useReviews();
+// "All checked" with the company's rule for finished work (§15.3): with "accept automatically", only
+// work whose giver asked for a check comes here, which an owner should not have to guess.
+const finishRule = useTasksSettings();
+const ruleNote = computed(() => {
+  const rule = finishRule.data.value?.on_finish;
+  return rule ? t(`tasks.reviews.rule.${rule}`) : "";
+});
 const routineChecks = usePulseCount("tasks.routine_review");
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const hidden = ref<Set<number>>(new Set());
@@ -291,6 +299,10 @@ const missing = (task: TaskReview) => (task.proof === "none" ? { text: t("tasks.
     <ErrorState v-else-if="query.isError.value" class="ui-card" :error="query.error.value" :retry="() => query.refetch()" />
     <div v-else-if="query.data.value && !total" class="ui-card">
       <EmptyState tone="success" size="lg" :icon="ClipboardCheck" :title="t('tasks.reviews.emptyTitle')" :description="t('tasks.reviews.emptyBody')">
+        <p v-if="ruleNote" class="max-w-[440px] text-balance text-sm text-muted" data-testid="reviews-rule">
+          {{ ruleNote }}
+          <RouterLink v-if="company.can('company.settings')" :to="`/c/${company.currentId}/settings/tasks`" class="font-medium text-primary hover:underline">{{ t("tasks.reviews.ruleLink") }}</RouterLink>
+        </p>
         <UiButton :to="`/c/${company.currentId}/tasks`" :icon-right="ChevronRight">{{ t("tasks.reviews.toTasks") }}</UiButton>
       </EmptyState>
     </div>
