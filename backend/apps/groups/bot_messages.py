@@ -16,7 +16,7 @@ from apps.groups.reports import DayStats, PlanRow
 from apps.members.bot_messages import BotMessage
 from apps.members.models import Membership, Position
 from apps.tasks.bot_messages import display_title, format_duration
-from apps.tasks.models import Task
+from apps.tasks.models import Activity, Task
 
 NOT_DONE_LIMIT = 15
 # Longer lists of positions are cut short on the settings button.
@@ -42,7 +42,11 @@ def task_done(task: Task) -> BotMessage:
     if task.proof_text:
         lines.append(f"📝 {html.quote(task.proof_text)}")
     if task.status == Task.Status.REVIEW:
-        lines.append(_("Waiting for a check."))
+        # A redo after a send-back (audit B-17) shouldn't read like the first post again.
+        if task.activity.filter(kind=Activity.Kind.RETURNED).exists():
+            lines.append(_("Fixed and sent for a check again."))
+        else:
+            lines.append(_("Waiting for a check."))
     return "\n".join(lines), None
 
 

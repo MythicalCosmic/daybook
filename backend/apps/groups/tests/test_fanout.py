@@ -143,6 +143,23 @@ def test_work_waiting_for_a_check_says_so(company, worker, manager, sent_message
     assert "Waiting for a check" in post["text"]
 
 
+def test_a_redo_after_a_send_back_says_so(company, worker, manager, sent_messages):
+    """Audit B-17: the second "finished" post read exactly like the first one."""
+    from apps.tasks.models import Activity
+
+    group = TelegramGroupFactory(company=company, events=[GroupEvent.TASKS_DONE])
+    task = finished(worker, created_by=manager, status=Task.Status.REVIEW)
+    Activity.objects.create(
+        company=company, recipient=worker, actor=manager, kind=Activity.Kind.RETURNED, task=task
+    )
+
+    announce_task_done(task.pk)
+
+    [post] = posts(sent_messages, group)
+    assert "Fixed and sent for a check again." in post["text"]
+    assert "Waiting for a check" not in post["text"]
+
+
 def test_personal_tasks_stay_personal(company, worker, sent_messages):
     TelegramGroupFactory(company=company, events=list(GroupEvent))
     task = finished(worker)

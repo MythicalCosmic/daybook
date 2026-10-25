@@ -4233,6 +4233,10 @@ msgid "Waiting for a check."
 msgstr "На проверке."
 
 #: backend/apps/groups/bot_messages.py
+msgid "Fixed and sent for a check again."
+msgstr "Исправлено и снова отправлено на проверку."
+
+#: backend/apps/groups/bot_messages.py
 #, python-format
 msgid "🚨 <b>%(name)s</b> is %(late)s late with <b>%(task)s</b>."
 msgstr "🚨 <b>%(name)s</b>: задача <b>%(task)s</b> просрочена на %(late)s."
