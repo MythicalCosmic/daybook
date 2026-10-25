@@ -92,4 +92,4 @@ async def test_strangers_cannot_store_a_phone(dp, bot, db):
 
     user = await User.objects.aget(telegram_id=602)
     assert user.phone == ""
-    assert "open the invite link" in last_message(bot).text
+    assert "taklif havolasini oching" in last_message(bot).text  # someone new hears Uzbek

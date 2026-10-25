@@ -40,19 +40,20 @@ LANGUAGES = ("uz", "ru", "en")
 
 # What the language picker says. Each language's own words, not translations through the
 # catalogue: the confirmation must read right in the language just picked, from the first try.
-PICK_TITLE = {"uz": "Tilni tanlang:", "ru": "Выберите язык:", "en": "Choose a language:"}
-# The first message to someone new, whose language isn't known yet: all three at once (L2).
-FIRST_PICK = "\n".join(
-    [
-        "Assalomu alaykum! Tilni tanlang.",
-        "Здравствуйте! Выберите язык.",
-        "Hello! Please choose a language.",
-    ]
-)
+# The picker names the current language in words; its button is also coloured (no tick marks).
+PICK_TITLE = {
+    "uz": "Tilni tanlang. Hozir: O‘zbekcha.",
+    "ru": "Выберите язык. Сейчас: русский.",
+    "en": "Choose a language. Now: English.",
+}
+# Everyone starts in Uzbek (the owner's "uzbek first", 25.10.2026): the greeting carries this one
+# small button, in all three languages since it is for whoever doesn't read Uzbek.
+LANGUAGE_BUTTON = "Til / Язык / Language"
 CHANGED = {
-    "uz": "Endi o‘zbek tilida yozaman. Ilova ham shu tilda ochiladi. Menyu yangilandi",
-    "ru": "Теперь пишу по-русски. Приложение тоже откроется на русском. Меню обновлено",
-    "en": "I'll write in English from now on. The app will open in English too. Menu updated",
+    "uz": "Endi o‘zbek tilida yozaman. Ilova ham shu tilda ochiladi. Menyu yangilandi.",
+    "ru": "Теперь пишу по-русски. Приложение тоже откроется на русском. Меню обновлено.",
+    "en": "I'll write in English from now on. The app will open in English too. "
+    "The menu is updated.",
 }
 # The owner bot has no reply keyboard to replace: just the words.
 CHANGED_SHORT = {

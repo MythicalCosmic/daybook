@@ -45,10 +45,10 @@ async def test_start_labels_the_chats_menu_button_in_their_language(
     person = updates.tg_user(9_201, language_code=language)
 
     await dp.feed_update(bot, updates.message(person, "/start"))
-    if language != "uz":  # a new person whose Telegram isn't Uzbek picks the language first
-        await dp.feed_update(bot, updates.pick_language(person, language))
+    if language != "uz":  # everyone starts in Uzbek; the greeting's language button changes it
+        await dp.feed_update(bot, updates.pick_language(person, language, mode="welcome"))
 
-    [button] = menu_buttons(bot)
+    button = menu_buttons(bot)[-1]
     assert button.chat_id == 9_201
     assert isinstance(button.menu_button, MenuButtonWebApp)
     assert button.menu_button.text == label

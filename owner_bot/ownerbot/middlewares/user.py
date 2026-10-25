@@ -41,7 +41,7 @@ def load_user(tg_user: TelegramUser, *, talking: bool) -> User:
         username=tg_user.username,
         first_name=tg_user.first_name,
         last_name=tg_user.last_name,
-        language_code=tg_user.language_code,
+        language_code=None,  # a new person starts in Uzbek (the owner's "uzbek first")
     )
     if talking and (user.owner_bot_started_at is None or user.owner_bot_blocked_at is not None):
         user.owner_bot_started_at = user.owner_bot_started_at or timezone.now()

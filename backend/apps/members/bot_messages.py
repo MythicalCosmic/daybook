@@ -24,13 +24,16 @@ type BotMessage = tuple[
     str, InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove | None
 ]
 
-# Main menu labels. The bot matches incoming text against every translation of these.
+# Main menu labels. The bot matches incoming text against every translation of these, without
+# emoji (bot.filters.menu): keyboards from before 25.10.2026 still send "📋 Vazifalarim".
 MENU_MY_TASKS = gettext_noop("My tasks")
 MENU_NEW_TASK = gettext_noop("New task")
 MENU_APP = gettext_noop("Open app")
 MENU_TO_CHECK = gettext_noop("To check")
-# The company switch of someone in several companies: "🏢 Demo Dorixona ▸" (audit X-1).
-COMPANY_BUTTON = "{name} ▸"
+# The company switch of someone in several companies (audit X-1): "Kompaniya: Demo Dorixona".
+# Keyboards from before 25.10.2026 send "🏢 Demo Dorixona ▸".
+COMPANY_BUTTON = gettext_noop("Company: %(name)s")
+OLD_COMPANY_BUTTON = ("🏢 ", " ▸")
 
 
 def main_menu(membership: Membership | None = None) -> ReplyKeyboardMarkup:
@@ -86,11 +89,29 @@ def several_companies(membership: Membership) -> bool:
 
 
 def company_button(company) -> str:
-    return COMPANY_BUTTON.format(name=company.name)
+    return _(COMPANY_BUTTON) % {"name": company.name}
 
 
 def is_company_button(text: str | None) -> bool:
-    return bool(text) and text.startswith("") and text.endswith(" ▸")
+    """The company switch, in any language, also as old keyboards still write it."""
+    if not text:
+        return False
+    start, end = OLD_COMPANY_BUTTON
+    if text.startswith(start) and text.endswith(end):
+        return True
+    return any(text.startswith(prefix) for prefix in _company_prefixes())
+
+
+def _company_prefixes() -> list[str]:
+    from django.utils import translation
+
+    prefixes = []
+    for code, _name in settings.LANGUAGES:
+        with translation.override(code):
+            prefix = _(COMPANY_BUTTON).split("%(name)s")[0]
+        if prefix.strip():
+            prefixes.append(prefix)
+    return prefixes
 
 
 def open_app(screen: str | None = None, label: str | None = None) -> BotMessage:
@@ -99,7 +120,12 @@ def open_app(screen: str | None = None, label: str | None = None) -> BotMessage:
     button = InlineKeyboardButton(
         text=label or _(MENU_APP), web_app=WebAppInfo(url=miniapp_url(screen))
     )
-    return _("Tap the button to open the app."), InlineKeyboardMarkup(inline_keyboard=[[button]])
+    text = _("Tap the button to open the app.")
+    if settings.EMPLOYEE_MINIAPP_URL.startswith("https://"):  # the chat's menu button opens it
+        text += " " + _(
+            "The «%(button)s» button next to the message field opens it in one tap."
+        ) % {"button": _(MENU_APP)}
+    return text, InlineKeyboardMarkup(inline_keyboard=[[button]])
 
 
 def miniapp_url(screen: str | None = None) -> str:
@@ -116,8 +142,7 @@ def join_request(membership: Membership) -> BotMessage:
     user = membership.user
     name = html.quote(membership.full_name or user.get_full_name() or str(user))
     lines = [
-        _("<b>Join request</b> · %(company)s")
-        % {"company": html.quote(membership.company.name)},
+        _("<b>Join request</b> · %(company)s") % {"company": html.quote(membership.company.name)},
         "",
         _("Name: %(name)s") % {"name": f'<a href="tg://user?id={user.telegram_id}">{name}</a>'},
     ]
@@ -183,7 +208,7 @@ def status(membership: Membership | None) -> BotMessage | None:
 def paused(membership: Membership) -> BotMessage:
     """What a suspended person hears, whatever they send."""
     text = paused_text(membership, company=f"<b>{html.quote(membership.company.name)}</b>")
-    return f"{text}", ReplyKeyboardRemove()
+    return text, ReplyKeyboardRemove()
 
 
 def paused_text(membership: Membership, *, company: str | None = None) -> str:
@@ -225,7 +250,7 @@ def member_home(membership: Membership) -> BotMessage:
         header = _("Welcome to <b>%(company)s</b>!") % company
     text, markup = _compose(header, _next_step(membership))
     if membership.is_onboarded and membership.status == Membership.Status.APPROVED:
-        text += "\n\n" + _("/language · /help")
+        text += "\n\n" + _("Language: /language · Help: /help")
     return text, markup
 
 
@@ -368,17 +393,21 @@ def join_setup(
         "",
         _("<b>Where will %(name)s work?</b> Tap the branches, then approve.") % {"name": name},
     ]
+    # The choice in words; the chosen buttons are coloured too (no tick marks).
+    names = [html.quote(branch.name) for branch in branches if branch.pk in chosen]
+    if names:
+        lines.append(_("Chosen: %(names)s") % {"names": ", ".join(names)})
     packed = _pack(chosen, branches)
     role_id = role.pk if role is not None and not role.is_default else 0
     rows = []
     row: list[InlineKeyboardButton] = []
     for branch in branches:
-        mark = "" if branch.pk in chosen else ""
         row.append(
             _setup_button(
-                f"{mark} {branch.name}",
+                branch.name,
                 JoinStep.BRANCH,
                 membership,
+                style="success" if branch.pk in chosen else None,
                 nid=nid,
                 branches=packed,
                 role=role_id,
@@ -413,7 +442,7 @@ def join_setup(
                 branches=packed,
                 role=role_id,
             ),
-            _setup_button(_("‹ Back"), JoinStep.BACK, membership, nid=nid),
+            _setup_button(_("Back"), JoinStep.BACK, membership, nid=nid),
         ]
     )
     return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=rows)
@@ -433,7 +462,7 @@ def join_home(
     rows = [
         [
             _setup_button(
-                f"{branch.name}",
+                branch.name,
                 JoinStep.HOME,
                 membership,
                 nid=nid,
@@ -448,7 +477,7 @@ def join_home(
     rows.append(
         [
             _setup_button(
-                _("‹ Back"),
+                _("Back"),
                 JoinStep.ROLE,
                 membership,
                 nid=nid,
@@ -478,12 +507,15 @@ def join_roles(
         value = 0 if role.is_default else role.pk
         selected = value == current_id
         label = role.name + (" · " + _("default") if role.is_default else "")
+        if selected:  # in words; its button is coloured too
+            lines.append(_("Chosen: %(names)s") % {"names": html.quote(label)})
         rows.append(
             [
                 _setup_button(
-                    f"{'' if selected else ''}{label}",
+                    label,
                     JoinStep.ROLE,
                     membership,
+                    style="success" if selected else None,
                     nid=nid,
                     branches=packed,
                     role=current_id,
@@ -518,8 +550,7 @@ def _pack(chosen: list[int], branches: list) -> str:
 def _join_header(membership: Membership) -> str:
     user = membership.user
     lines = [
-        _("<b>Join request</b> · %(company)s")
-        % {"company": html.quote(membership.company.name)},
+        _("<b>Join request</b> · %(company)s") % {"company": html.quote(membership.company.name)},
         _("Name: %(name)s") % {"name": html.quote(_requester_name(membership))},
     ]
     if membership.position:
@@ -537,9 +568,10 @@ def _requester_name(membership: Membership) -> str:
 
 
 def _setup_button(
-    text: str, step: JoinStep, membership: Membership, **fields
+    text: str, step: JoinStep, membership: Membership, *, style: str | None = None, **fields
 ) -> InlineKeyboardButton:
     return InlineKeyboardButton(
         text=text,
         callback_data=JoinSetup(step=step, membership_id=membership.pk, **fields).pack(),
+        style=style,
     )

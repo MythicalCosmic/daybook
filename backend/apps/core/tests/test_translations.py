@@ -8,6 +8,8 @@ import pytest
 from django.conf import settings
 from django.core.management import call_command
 
+from apps.notifications.emoji import has_emoji
+
 LANGUAGES = ("uz", "ru")
 # Placeholders and markup a translation must keep exactly.
 KEPT = re.compile(r"%\(\w+\)[sd]|\{\w+\}|</?\w+>")
@@ -65,6 +67,27 @@ def test_every_message_is_translated(language):
         forms = entry.msgstr_plural.values() if entry.msgid_plural else [entry.msgstr]
         expected = sorted(KEPT.findall(entry.msgid_plural or entry.msgid))
         assert all(sorted(KEPT.findall(form)) == expected for form in forms), entry.msgid
+
+
+@pytest.mark.parametrize("language", LANGUAGES)
+def test_the_catalogues_have_no_emoji(language):
+    """Nothing the bots send carries an emoji (the owner's rule, 25.10.2026): no msgid, plural
+    or translation has one (pictographs, keycaps, U+FE0F), nor a symbol standing in for one."""
+    found = [
+        entry.msgid
+        for entry in catalogue(language)
+        if any(
+            has_emoji(text)
+            for text in (
+                entry.msgctxt or "",
+                entry.msgid,
+                entry.msgid_plural or "",
+                entry.msgstr,
+                *entry.msgstr_plural.values(),
+            )
+        )
+    ]
+    assert found == []
 
 
 @pytest.mark.parametrize(

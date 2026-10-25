@@ -4,8 +4,9 @@ from aiogram.filters.callback_data import CallbackData
 
 
 class LangCallback(CallbackData, prefix="lang"):
-    """A language picked: in the picker ("set"), on first contact ("first"), on the Uzbek
-    welcome's row ("welcome"); "open" turns a message into the picker."""
+    """A language picked: in the picker ("set"), on the greeting ("welcome", after its
+    "Til / Язык / Language" button, "langs", showed the three), on the first-contact picker
+    older chats still have ("first"); "open" turns a message into the picker."""
 
     code: str
     mode: str = "set"

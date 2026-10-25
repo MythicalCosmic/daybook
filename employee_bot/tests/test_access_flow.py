@@ -68,9 +68,9 @@ async def test_approvers_hear_once_the_account_is_created(dp, bot, company, memb
 async def test_invalid_invite_link_is_explained(dp, bot, db):
     nobody = updates.tg_user(503)
     await dp.feed_update(bot, updates.message(nobody, "/start c_nope"))
-    await dp.feed_update(bot, updates.pick_language(nobody))
 
-    assert "invalid or has expired" in bot.sent_texts()[-1]
+    # Someone new is answered in Uzbek.
+    assert "taklif havolasi noto‘g‘ri" in bot.sent_texts()[-1]
 
 
 async def test_plain_start_without_membership_asks_for_invite_link(dp, bot, db):
@@ -279,16 +279,18 @@ async def test_several_branches_ask_for_branches_then_the_home_branch(dp, bot, c
     assert (await state_of(request))[0] == Membership.Status.PENDING
 
     def unchosen(buttons):
+        # A chosen branch is coloured, and the text names it (no tick marks).
         return [
             b
             for b in buttons
-            if JoinSetup.unpack(b.callback_data).step == "b" and b.text.startswith("")
+            if JoinSetup.unpack(b.callback_data).step == "b" and b.style != "success"
         ]
 
     for _ in range(2):  # choose both branches, one tap each
         await dp.feed_update(bot, updates.callback(presser, unchosen(buttons)[0].callback_data))
-        _edit, buttons = last_markup(bot)
+        edit, buttons = last_markup(bot)
     assert unchosen(buttons) == []
+    assert f"Chosen: {first_branch}, Yunusobod" in edit.text
     approve = next(b for b in buttons if JoinSetup.unpack(b.callback_data).step == "ok")
     assert JoinSetup.unpack(approve.callback_data).branches == "3"  # both bits of the mask
     await dp.feed_update(bot, updates.callback(presser, approve.callback_data))

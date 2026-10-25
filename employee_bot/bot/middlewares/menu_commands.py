@@ -9,9 +9,15 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, TelegramObject
 
 from apps.members.bot_menu import registered
-from apps.members.bot_messages import MENU_APP, MENU_TO_CHECK, is_company_button
+from apps.members.bot_messages import (
+    MENU_APP,
+    MENU_MY_TASKS,
+    MENU_NEW_TASK,
+    MENU_TO_CHECK,
+    is_company_button,
+)
 from bot.commands import private_commands
-from bot.filters.menu import translations
+from bot.filters.menu import is_label
 
 # How Telegram writes a command: "/name", optionally "@bot", then a space or the end.
 COMMAND = re.compile(r"/(?P<command>[A-Za-z0-9_]{1,32})(?:@[A-Za-z0-9_]+)?(?:\s|$)")
@@ -42,15 +48,24 @@ def is_menu_command(message: Message) -> bool:
 
 def is_menu_button(message: Message) -> bool:
     """A main-menu button a module registered (apps.members.bot_menu), the app's or the
-    checker's button, or the company switch ("Demo Dorixona ▸"), in any language."""
-    text = message.text
+    checker's button, or the company switch ("Kompaniya: Demo Dorixona"), in any language,
+    also as the keyboards from before 25.10.2026 write them ("📱 Ilovani ochish")."""
+    return _is_menu_text(message.text)
+
+
+def is_main_menu_label(text: str | None) -> bool:
+    """Any button of the main menu, the two task buttons included."""
+    return bool(text) and (
+        is_label(text, MENU_MY_TASKS) or is_label(text, MENU_NEW_TASK) or _is_menu_text(text)
+    )
+
+
+def _is_menu_text(text: str | None) -> bool:
     if not text:
         return False
-    if text in translations(MENU_APP) or text in translations(MENU_TO_CHECK):
+    if is_label(text, MENU_APP) or is_label(text, MENU_TO_CHECK):
         return True
-    return is_company_button(text) or any(
-        text in translations(button.msgid) for button in registered()
-    )
+    return is_company_button(text) or any(is_label(text, button.msgid) for button in registered())
 
 
 def interrupts(message: Message) -> bool:
