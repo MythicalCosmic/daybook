@@ -107,7 +107,8 @@ function useTaskInOtherCompany(taskId: number, error: unknown): boolean {
       for (const other of others) {
         try {
           await api<Task>(`/companies/${other.company.id}/tasks/${taskId}/`);
-          if (live) latest.current.session.switchCompany(other.company.id);
+          // Only looking at a link: the app shows that company, the bot keeps its own.
+          if (live) latest.current.session.showCompany(other.company.id);
           break;
         } catch {
           // Not in this one either.
