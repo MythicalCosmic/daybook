@@ -42,6 +42,19 @@ def test_init_data_is_exchanged_for_an_access_token_only(api, settings):
     assert response.data["telegram_id"] == 42
 
 
+def test_an_account_the_mini_app_makes_speaks_uzbek_and_an_old_one_keeps_its_language(
+    api, settings
+):
+    settings.EMPLOYEE_BOT_TOKEN = BOT_TOKEN  # the signed user's Telegram is in Russian
+
+    api.post("/api/v1/auth/telegram/", {"init_data": signed_init_data(user_id=43)}, format="json")
+    UserFactory(telegram_id=44, language="en")
+    api.post("/api/v1/auth/telegram/", {"init_data": signed_init_data(user_id=44)}, format="json")
+
+    assert User.objects.get(telegram_id=43).language == "uz"
+    assert User.objects.get(telegram_id=44).language == "en"
+
+
 def test_the_refresh_route_is_gone(api):
     assert api.post("/api/v1/auth/refresh/", {"refresh": "x"}, format="json").status_code == 404
 

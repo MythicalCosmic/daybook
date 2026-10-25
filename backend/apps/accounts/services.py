@@ -14,9 +14,8 @@ def sync_telegram_user(
 ) -> User:
     """Return the User for a Telegram account, creating it or refreshing its profile.
 
-    A new account speaks Uzbek, whatever language Telegram is in (the owner's "Uzbek first"):
-    the person picks another one in the bot or the mini app. A user made just now carries
-    `just_created = True` (not stored), for the bot's first greeting."""
+    A user made just now carries `just_created = True` (not stored): the employee bot asks
+    such a person for their language once (research R1 L2)."""
     profile = {
         "telegram_username": username or "",
         "first_name": (first_name or "")[:150],
@@ -27,7 +26,7 @@ def sync_telegram_user(
         user = User(
             username=f"tg{telegram_id}",
             telegram_id=telegram_id,
-            language=Language.UZ,
+            language=_language(language_code),
             **profile,
         )
         user.set_unusable_password()
@@ -151,3 +150,8 @@ def save_verified_phone(user: User, *, contact_user_id: int | None, phone_number
     user.phone = "+" + "".join(char for char in phone_number if char.isdigit())
     user.save(update_fields=["phone"])
     return True
+
+
+def _language(language_code: str | None) -> str:
+    code = (language_code or "")[:2].lower()
+    return code if code in Language.values else Language.UZ

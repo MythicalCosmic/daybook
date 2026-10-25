@@ -116,7 +116,9 @@ class TelegramAuthView(APIView):
             username=tg_user.username,
             first_name=tg_user.first_name,
             last_name=tg_user.last_name,
-            language_code=tg_user.language_code,
+            # Uzbek first: an account the mini app makes speaks Uzbek whatever language Telegram
+            # is in (the person picks another in Profile); an existing account keeps its own.
+            language_code=None,
         )
         return Response({"access": str(AccessToken.for_user(user))})
 

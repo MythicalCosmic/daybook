@@ -23,7 +23,7 @@ def test_first_contact_creates_a_user_without_a_password():
     assert user.username == "tg777"
     assert user.telegram_username == "ali"
     assert user.get_full_name() == "Ali Valiyev"
-    assert user.language == "uz"  # Uzbek first, even with Telegram in Russian
+    assert user.language == "ru"
     assert not user.has_usable_password()
 
 
@@ -37,7 +37,7 @@ def test_profile_changes_are_saved():
     assert User.objects.count() == 1
 
 
-def test_the_language_someone_picked_stays_theirs():
+def test_language_is_only_taken_from_telegram_on_first_contact():
     user = sync(language_code="ru")
     user.language = "en"
     user.save()
@@ -45,6 +45,6 @@ def test_the_language_someone_picked_stays_theirs():
     assert sync(language_code="ru").language == "en"
 
 
-@pytest.mark.parametrize("language_code", ["ru", "en", "de", None, ""])
-def test_a_new_account_speaks_uzbek(language_code):
+@pytest.mark.parametrize("language_code", ["de", None, ""])
+def test_unsupported_language_falls_back_to_uzbek(language_code):
     assert sync(language_code=language_code).language == "uz"
