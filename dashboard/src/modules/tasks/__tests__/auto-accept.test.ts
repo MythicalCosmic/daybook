@@ -261,8 +261,9 @@ describe("the empty reviews page says the company's rule", () => {
     await flushPromises();
     expect(text()).toContain("Count the stockroom");
     const note = document.body.querySelector("[data-testid=reviews-rule-top]");
-    expect(note?.textContent).toContain("Company rule: finished work is accepted automatically; only tasks that ask for a check come here.");
-    expect(note?.textContent).toContain("If nobody checks it within 8 h, it is accepted automatically.");
+    expect(note?.textContent).toContain(
+      "Company rule: finished work is accepted automatically; only tasks that ask for a check come here. If nobody checks it within 8 h, it is accepted automatically.",
+    );
     expect(document.body.querySelector("[data-testid=reviews-rule]")).toBeNull();
     wrapper.unmount();
   });

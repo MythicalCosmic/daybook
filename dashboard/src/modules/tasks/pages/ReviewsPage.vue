@@ -261,7 +261,7 @@ const missing = (task: TaskReview) => (task.proof === "none" ? { text: t("tasks.
 
     <!-- The company's rule above the work too, not only on the empty page: why these and not all. -->
     <p v-if="ruleNote && query.data.value && total" class="-mt-2 max-w-[860px] text-sm text-muted" data-testid="reviews-rule-top">
-      {{ ruleNote }}<template v-if="waitNote"> {{ waitNote }}</template>
+      {{ [ruleNote, waitNote].filter(Boolean).join(" ") }}
       <RouterLink v-if="company.can('company.settings')" :to="`/c/${company.currentId}/settings/tasks`" class="ml-1 font-medium text-primary hover:underline">{{ t("tasks.reviews.ruleLink") }}</RouterLink>
     </p>
 
