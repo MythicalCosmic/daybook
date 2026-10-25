@@ -370,5 +370,7 @@
   "tasks.settings.timeoutHint": "Work still waiting for a check after this long is accepted automatically, and the person who should have checked it is told.",
   "tasks.settings.never": "Never accept it automatically",
   "tasks.settings.afterHours": "Accept it automatically after {n} hours",
-  "tasks.settings.saved": "Saved"
+  "tasks.settings.saved": "Saved",
+  "tasks.field.waited": "Waited for a check",
+  "tasks.accepted.hours": "{n} hours"
 }

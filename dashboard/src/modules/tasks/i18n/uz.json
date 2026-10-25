@@ -370,5 +370,7 @@
   "tasks.settings.timeoutHint": "Shuncha vaqtdan keyin ham tekshirilmagan ish avtomatik qabul qilinadi va tekshirishi kerak bo‘lgan odamga xabar beriladi.",
   "tasks.settings.never": "Hech qachon avtomatik qabul qilinmaydi",
   "tasks.settings.afterHours": "{n} soatdan keyin avtomatik qabul qilish",
-  "tasks.settings.saved": "Saqlandi"
+  "tasks.settings.saved": "Saqlandi",
+  "tasks.field.waited": "Kutish vaqti",
+  "tasks.accepted.hours": "{n} soat"
 }

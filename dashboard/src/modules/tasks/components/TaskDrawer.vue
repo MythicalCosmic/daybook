@@ -400,8 +400,11 @@ const fieldLabels = computed(() => ({
   reward: t("tasks.field.reward"),
   assignee: t("tasks.field.assignee"),
   status: t("tasks.field.status"),
+  // Accepted by the company's wait for a review (§15.3): how long it waited.
+  hours: t("tasks.field.waited"),
 }));
 const formatAudit = (field: string, value: unknown) => {
+  if (field === "hours" && typeof value === "number") return t("tasks.accepted.hours", { n: value });
   if (field === "due_at" && typeof value === "string") return fmt.instant(value);
   if (field === "reward" && typeof value === "string") return fmt.money(value);
   if (field === "priority" && typeof value === "string") return t(`tasks.priority.${value}`);

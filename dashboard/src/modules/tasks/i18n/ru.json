@@ -370,5 +370,7 @@
   "tasks.settings.timeoutHint": "Работа, которая ждёт проверки дольше этого срока, принимается автоматически, а проверяющий получает сообщение.",
   "tasks.settings.never": "Не принимать автоматически",
   "tasks.settings.afterHours": "Принять автоматически через {n} ч",
-  "tasks.settings.saved": "Сохранено"
+  "tasks.settings.saved": "Сохранено",
+  "tasks.field.waited": "Ожидание проверки",
+  "tasks.accepted.hours": "{n} ч"
 }
