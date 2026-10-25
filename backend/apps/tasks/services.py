@@ -1529,4 +1529,7 @@ def _accept_unreviewed(task_id: int, hours: int, now: datetime) -> bool:
             dedupe_key=f"tasks.auto_accepted:{task.pk}",
         )
     _refresh_copies(task)
+    # The person who did it hears, as when someone accepts it ("Your task was accepted", no
+    # name); otherwise only their old card would change, where nobody looks hours later.
+    transaction.on_commit(partial(jobs.notify_task_reviewed.delay, task.pk))
     return True

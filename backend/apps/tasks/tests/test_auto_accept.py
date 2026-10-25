@@ -297,6 +297,20 @@ def test_the_checker_hears_in_plain_words(company, manager, worker):
     assert not any(ord(char) > 0x2FFF for char in notice.title + notice.body)  # no emoji
 
 
+def test_the_person_who_did_it_hears_it_was_accepted(
+    company, manager, worker, sent_messages, django_capture_on_commit_callbacks
+):
+    rule(company, OnFinish.ASK, hours=4)
+    waiting(manager, worker, hours_ago=5, title="Count the cash")
+
+    with django_capture_on_commit_callbacks(execute=True):
+        services.accept_overdue_reviews()
+
+    to_worker = [m["text"] for m in sent_messages if m["chat_id"] == worker.user.telegram_id]
+    # As when someone accepts it, only without a name: nobody did.
+    assert to_worker == ["<b>Your task was accepted</b>\nCount the cash"]
+
+
 def test_the_timeout_is_idempotent(company, manager, worker):
     rule(company, OnFinish.ASK, hours=4)
     waiting(manager, worker, hours_ago=6)
