@@ -297,6 +297,9 @@ MINIAPP_INIT_DATA_MAX_AGE = env.int("MINIAPP_INIT_DATA_MAX_AGE", default=24 * 60
 BOT_FSM_REDIS_URL = env("BOT_FSM_REDIS_URL", default="")
 # Log outgoing bot messages instead of sending them (local runs with a fake token).
 TELEGRAM_DRY_RUN = env.bool("TELEGRAM_DRY_RUN", default=False)
+# Threads each bot runs its Django calls on (apps.core.bot_runtime): how many people's updates
+# reach the database at once. Each keeps a database connection.
+BOT_DB_THREADS = env.int("BOT_DB_THREADS", default=16)
 PLATFORM_ADMIN_TG_IDS = env.list("PLATFORM_ADMIN_TG_IDS", cast=int, default=[])
 
 # Field encryption (apps.core.crypto): Fernet keys, comma-separated, newest first, for

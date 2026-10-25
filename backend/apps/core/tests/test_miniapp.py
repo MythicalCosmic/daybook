@@ -26,10 +26,15 @@ def test_built_mini_app_is_served_at_app(tmp_path, settings, rf):
 
     assert page.status_code == 200
     assert body(page) == b"<html>daybook</html>"
-    # The page itself must refresh quickly; fingerprinted assets can be cached for good.
-    assert "immutable" not in page.get("Cache-Control", "")
+    # The page is checked again on every open (after a deploy it names new assets);
+    # fingerprinted assets are cached for good, so phones never fetch them twice.
+    assert page["Cache-Control"] == "no-cache"
+    assert page["Last-Modified"]
     assert asset.status_code == 200
     assert "immutable" in asset["Cache-Control"]
+    assert "max-age=315360000" in asset["Cache-Control"]
+    revalidated = middleware(rf.get("/app/", HTTP_IF_MODIFIED_SINCE=page["Last-Modified"]))
+    assert revalidated.status_code == 304
 
 
 def test_missing_build_is_not_an_error(tmp_path, settings, rf):

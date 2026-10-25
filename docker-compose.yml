@@ -83,7 +83,7 @@ services:
     command: >-
       sh -c "python manage.py migrate --noinput
       && { python manage.py ensure_company_defaults || echo 'Company defaults failed (see the log above); starting anyway.' >&2; }
-      && exec gunicorn config.wsgi --bind 0.0.0.0:8000 --workers 3 --access-logfile -"
+      && exec gunicorn -c config/gunicorn.conf.py config.wsgi"
     ports:
       - "127.0.0.1:28000:8000"
     healthcheck:
@@ -99,15 +99,20 @@ services:
           request = urllib.request.Request("http://127.0.0.1:8000/health/", headers=headers)
           urllib.request.urlopen(request, timeout=4)
 
-  # Notifications, group posts, exports and everything else except AI calls.
+  # Notifications, group posts, exports and everything else except AI calls. Most jobs wait
+  # on Telegram, so more processes than the default; each takes one job at a time
+  # (prefetch 1), so a long export never holds reminders queued behind it.
   worker:
     <<: *app
-    command: celery -A config worker -Q celery,default -l info
+    command: >-
+      sh -c "exec celery -A config worker -Q celery,default -l info
+      --concurrency $${CELERY_CONCURRENCY:-8} --prefetch-multiplier $${CELERY_PREFETCH:-1}
+      --max-tasks-per-child $${CELERY_MAX_TASKS_PER_CHILD:-1000}"
 
   # AI calls take seconds each; they get their own queue and worker so reminders never wait.
   ai-worker:
     <<: *app
-    command: celery -A config worker -Q ai -c 4 -l info
+    command: celery -A config worker -Q ai -c 4 --prefetch-multiplier 1 -l info
 
   beat:
     <<: *app

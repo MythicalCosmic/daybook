@@ -3,12 +3,14 @@ from typing import Any
 
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
-from asgiref.sync import sync_to_async
-from django.db import close_old_connections
+
+from apps.core.bot_runtime import DatabaseContext
 
 
 class DjangoConnectionMiddleware(BaseMiddleware):
-    """Drops stale or broken DB connections around each update, as Django does per request."""
+    """Runs the update's Django calls on the bots' shared pool of threads, so many people's
+    updates are handled at once, each call with a healthy connection as Django gives each
+    request (apps.core.bot_runtime)."""
 
     async def __call__(
         self,
@@ -16,8 +18,5 @@ class DjangoConnectionMiddleware(BaseMiddleware):
         event: TelegramObject,
         data: dict[str, Any],
     ) -> Any:
-        await sync_to_async(close_old_connections)()
-        try:
+        async with DatabaseContext():
             return await handler(event, data)
-        finally:
-            await sync_to_async(close_old_connections)()

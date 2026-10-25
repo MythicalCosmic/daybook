@@ -12,6 +12,7 @@ from aiogram.fsm.storage.base import BaseStorage
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage
 
+from apps.core.bot_runtime import OrderedDispatcher
 from bot.commands import set_commands
 from bot.handlers import register_all_handlers
 from bot.middlewares import register_all_middlewares
@@ -35,7 +36,8 @@ def create_storage() -> BaseStorage:
 
 
 def create_dispatcher() -> Dispatcher:
-    dp = Dispatcher(storage=create_storage())
+    # Many people's updates at once, each person's in order (apps.core.bot_runtime).
+    dp = OrderedDispatcher(storage=create_storage())
     register_all_middlewares(dp)
     register_all_handlers(dp)
     return dp
