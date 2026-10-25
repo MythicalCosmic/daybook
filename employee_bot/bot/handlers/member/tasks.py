@@ -590,6 +590,7 @@ async def time_choices(
         task_id=task.pk,
         chat_id=callback.message.chat.id,
         message_id=callback.message.message_id,
+        via="choices",
     )
     await callback.answer()
 
@@ -608,6 +609,7 @@ async def time_chosen(
             task_id=callback_data.task_id,
             chat_id=callback.message.chat.id,
             message_id=callback.message.message_id,
+            via="asked",
         )
         text, markup = task_messages.ask_typed_time(callback_data.kind)
         await callback.message.answer(text, reply_markup=markup)
@@ -633,6 +635,17 @@ async def time_typed(message: Message, membership: Membership, state: FSMContext
         return
     found = dates.read_when(message.text, now=cards.local_now(membership))
     if found.title or found.due_at is None:
+        if data.get("via") == "choices":
+            # Nobody asked them to type a time (the choices were left alone): it's anything
+            # else they meant, e.g. a new task, so it gets the usual answer.
+            from bot.handlers.member import home
+
+            await state.clear()
+            if reply := await IsTaskReply()(message, bot):
+                await reply_comments(message, membership, reply["task_id"], bot)
+            else:
+                await home.plain_text(message, membership, state, bot)
+            return
         text, markup = task_messages.ask_typed_time(data["kind"])
         await message.answer(_("I didn't catch the time.") + "\n" + text, reply_markup=markup)
         return

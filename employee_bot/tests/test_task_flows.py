@@ -549,6 +549,39 @@ async def test_a_preset_after_the_choices_leaves_no_time_question_behind(dp, bot
     assert "didn't catch the time" not in (of(bot, SendMessage)[-1].text or "")
 
 
+async def test_other_text_after_the_choices_is_not_trapped_as_a_time(dp, bot, company, member):
+    """Choices opened and left alone: a new task typed later gets the usual "Add this as a
+    task?", while after ✍️ (asked to type a time) a non-time still asks again."""
+    worker = await member.aregistered(company)
+    manager = await member.aregistered(company, "Manager")
+    task = await make_task(
+        assignee=worker, created_by=manager, due_at=timezone.now() + timedelta(hours=1)
+    )
+    boss = updates.tg_user(manager.user.telegram_id)
+
+    await dp.feed_update(bot, updates.callback(boss, press(TaskAction.NEW_DUE, task.pk)))
+    await dp.feed_update(bot, updates.message(boss, "Order the insulin"))
+    assert of(bot, SendMessage)[-1].text.startswith("➕ Add this as a task?")
+
+    # A reply to a task message under the open choices is still a comment.
+    await dp.feed_update(bot, updates.callback(boss, press(TaskAction.STOP)))
+    await dp.feed_update(bot, updates.callback(boss, press(TaskAction.NEW_DUE, task.pk)))
+    card = TaskCallback(action=TaskAction.OPEN, task_id=task.pk).pack()
+    markup = InlineKeyboardMarkup(
+        inline_keyboard=[[InlineKeyboardButton(text="📋 Open", callback_data=card)]]
+    )
+    await dp.feed_update(bot, updates.reply(boss, "Call me first", markup))
+    texts = [c async for c in TaskComment.objects.filter(task=task).values_list("text", flat=True)]
+    assert texts == ["Call me first"]
+
+    await dp.feed_update(bot, updates.callback(boss, press(TaskAction.STOP)))
+    await dp.feed_update(
+        bot, updates.callback(boss, WhenCallback(kind="due", task_id=task.pk, choice="type").pack())
+    )
+    await dp.feed_update(bot, updates.message(boss, "Order the insulin"))
+    assert of(bot, SendMessage)[-1].text.startswith("I didn't catch the time.")
+
+
 async def test_snooze_choices_in_place(dp, bot, company, member):
     worker = await member.aregistered(company)
     manager = await member.aregistered(company, "Manager")
