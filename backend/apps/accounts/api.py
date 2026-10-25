@@ -8,7 +8,6 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 
@@ -16,6 +15,7 @@ from apps.accounts.models import User
 from apps.accounts.services import approved_memberships, bot_membership, sync_telegram_user
 from apps.accounts.tasks import relabel_employee_chat
 from apps.accounts.telegram_auth import InvalidInitData, validate_init_data
+from apps.core.throttles import AddressRateThrottle, throttle_person
 from apps.members.api import MembershipSerializer
 from apps.members.models import Membership
 
@@ -94,12 +94,15 @@ class TelegramAuthView(APIView):
 
     Only an access token: the mini app signs in again with fresh init data when it expires,
     so no refresh token (and no blacklist row) is made every time the app opens.
+
+    Limited per Telegram user once the signature checks out; per address only by a ceiling
+    that a whole shift behind one mobile operator's NAT address never reaches.
     """
 
     authentication_classes = ()
     permission_classes = (AllowAny,)
-    throttle_classes = (ScopedRateThrottle,)
-    throttle_scope = "telegram_auth"
+    throttle_classes = (AddressRateThrottle,)
+    address_throttle_scope = "telegram_auth_address"
 
     @extend_schema(request=TelegramAuthSerializer, responses=AccessTokenSerializer)
     def post(self, request):
@@ -109,6 +112,7 @@ class TelegramAuthView(APIView):
             tg_user = validate_init_data(serializer.validated_data["init_data"])
         except InvalidInitData as exc:
             raise AuthenticationFailed(str(exc)) from exc
+        throttle_person(self, request, "telegram_auth", tg_user.id)
 
         user = sync_telegram_user(
             telegram_id=tg_user.id,

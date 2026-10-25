@@ -196,19 +196,34 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
     "DEFAULT_PAGINATION_CLASS": "apps.core.api.Pagination",
     "EXCEPTION_HANDLER": "apps.core.api.exception_handler",
+    # Per person once we know who it is; per address only a ceiling against floods, sized for
+    # hundreds of people behind one carrier-grade NAT address (apps.core.throttles). Override
+    # any of them with THROTTLE_RATES="telegram_auth=60/min,login_link=200/min".
     "DEFAULT_THROTTLE_RATES": {
-        "telegram_auth": "30/min",
-        "login_link": "10/min",
+        # Mini app sign-in: per Telegram user (signature checked), and per address.
+        "telegram_auth": "60/min",
+        "telegram_auth_address": "1200/min",
+        # The dashboard inside Telegram: per Telegram user, and per address.
+        "owner_telegram": "60/min",
+        "owner_telegram_address": "1200/min",
+        # Dashboard refresh: per session (its token checked); refresh, logout and the dev
+        # login together per address.
+        "owner_refresh": "60/min",
+        "owner_auth_address": "1200/min",
+        # Desktop sign-in links: nobody is known yet, so per address; claims per link too.
+        "login_link": "300/min",
         "login_poll": "60/min",
         "login_claim": "10/min",
-        "owner_auth": "30/min",
-        "owner_telegram": "30/min",
-        "ai_turn": "20/min",
-        "ai_receipt": "30/min",
+        "login_claim_address": "300/min",
+        # Per signed-in person.
+        "task_parse": "300/min",
         "export_create": "10/min",
-    },
+    }
+    | env.dict("THROTTLE_RATES", default={}),
     # Caddy sits in front: throttles and stored IPs use the client's address, not Caddy's.
-    "NUM_PROXIES": 1,
+    # Caddy replaces any X-Forwarded-For a client sends, so the last hop is the client. Put a
+    # CDN or another proxy in front and this must count it too (and Caddy must trust it).
+    "NUM_PROXIES": env.int("NUM_PROXIES", default=1),
 }
 
 SIMPLE_JWT = {

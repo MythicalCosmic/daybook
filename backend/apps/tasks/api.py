@@ -464,7 +464,6 @@ class ParseThrottle(UserRateThrottle):
     """Quick add parses as people type (after a 250 ms pause): generous, but bounded."""
 
     scope = "task_parse"
-    rate = "120/min"
 
 
 def parsed(text: str, company) -> dict:

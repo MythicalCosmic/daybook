@@ -4,6 +4,7 @@ from datetime import timedelta
 
 import pytest
 from django.utils import timezone
+from rest_framework.throttling import SimpleRateThrottle
 
 from apps.accounts.tests.factories import UserFactory
 from apps.members.models import Membership
@@ -289,7 +290,9 @@ def test_unknown_and_malformed_codes(browser, owner):
     assert links.decide("00000000000000000000000000000000", owner.user, "47") == "unknown"
 
 
-def test_link_creation_is_throttled_per_client_ip(browser, settings):
+def test_link_creation_is_throttled_per_client_ip(browser, monkeypatch):
+    # Lowered here; the shipped ceiling fits managers sharing a carrier address.
+    monkeypatch.setitem(SimpleRateThrottle.THROTTLE_RATES, "login_link", "10/min")
     for _ in range(10):
         browser.start(REMOTE_ADDR="10.0.0.1")
     blocked = browser.client.post(
@@ -329,12 +332,26 @@ def test_polling_is_throttled_per_link(browser):
     assert browser.poll().status_code == 200
 
 
-def test_claiming_is_throttled_per_ip(browser):
+def test_claiming_is_throttled_per_link(browser):
     browser.start()
     for _ in range(10):
         browser.claim(token="guess", REMOTE_ADDR="10.0.0.7")
 
+    # Guesses at one link's poll token are counted per link, whatever the address.
     assert browser.claim(REMOTE_ADDR="10.0.0.7").status_code == 429
+    assert browser.claim(REMOTE_ADDR="10.0.0.8").status_code == 429
+    browser.start()
+    assert browser.claim(token="guess", REMOTE_ADDR="10.0.0.7").status_code == 404
+
+
+def test_claims_from_one_address_have_a_ceiling(browser, monkeypatch):
+    monkeypatch.setitem(SimpleRateThrottle.THROTTLE_RATES, "login_claim_address", "3/min")
+    for _ in range(3):
+        browser.start()
+        browser.claim(token="guess", REMOTE_ADDR="10.0.0.7")
+    browser.start()
+
+    assert browser.claim(token="guess", REMOTE_ADDR="10.0.0.7").status_code == 429
 
 
 def test_the_hourly_job_stores_expiry_and_deletes_old_links(browser, owner):
