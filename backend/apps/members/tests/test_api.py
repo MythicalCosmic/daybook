@@ -150,7 +150,8 @@ def test_onboarding_rejects_blank_names(newcomer):
     assert "first_name" in response.data
 
 
-def test_schema_documents_the_mini_app_api(client):
+def test_schema_documents_the_mini_app_api(client, settings):
+    settings.DEBUG = True  # in production only staff may read it (core/tests/test_urls.py)
     response = client.get("/api/schema/")
 
     assert response.status_code == 200

@@ -2,6 +2,7 @@ import logging
 from zoneinfo import ZoneInfo
 
 from aiogram.exceptions import (
+    TelegramBadRequest,
     TelegramForbiddenError,
     TelegramNetworkError,
     TelegramRetryAfter,
@@ -48,6 +49,9 @@ def send_task_message(self, task_id, member_id, kind, chat_id, text, reply_marku
         raise self.retry(countdown=exc.retry_after) from exc
     except TelegramForbiddenError:
         logger.info("Chat %s blocked the employee bot or never started it", chat_id)
+    except TelegramBadRequest as exc:
+        # E.g. "chat not found": nobody with that id ever opened the bot. Sending again won't help.
+        logger.warning("Task %s message to chat %s not delivered: %s", task_id, chat_id, exc)
 
 
 @shared_task
