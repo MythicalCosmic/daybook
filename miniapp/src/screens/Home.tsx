@@ -46,7 +46,8 @@ export function Home() {
     .slice(0, 3);
   const news = (activity.data ?? []).filter((item) => !item.is_read).slice(0, 2);
   const hour = hourIn(ctx.now, ctx.timeZone);
-  const greeting = hour < 12 ? "home.morning" : hour < 18 ? "home.afternoon" : "home.evening";
+  // Before 05:00 is still the night (night shifts open the app then): "good evening", not "good morning".
+  const greeting = hour < 5 ? "home.evening" : hour < 12 ? "home.morning" : hour < 18 ? "home.afternoon" : "home.evening";
   const numbers = summary.data;
   // Nothing due today: the progress card says so, and an empty "Up next" would say it twice.
   const showUpNext = !numbers || numbers.today_total > 0;

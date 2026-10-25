@@ -70,6 +70,7 @@ import { allLanguages, loadAllLanguages, loadModuleTitles } from "@/i18n";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useCompanyStore } from "@/stores/company";
 import { usePaletteStore } from "@/stores/palette";
+import { useSessionStore } from "@/stores/session";
 import { useUiStore } from "@/stores/ui";
 
 import { isTextKey, markPaletteMounted } from "./paletteLoader";
@@ -88,6 +89,7 @@ const route = useRoute();
 const router = useRouter();
 const palette = usePaletteStore();
 const company = useCompanyStore();
+const session = useSessionStore();
 const ui = useUiStore();
 
 type Section = "recent" | "jump" | "results" | "actions" | "companies" | "ai";
@@ -292,7 +294,7 @@ const companyItems = computed<Item[]>(() =>
       run: () => {
         void router.push(pathInCompany(router, route, c.id));
         // A pick, like the switcher's: the bot works in that company too (one company everywhere).
-        void shellApi.setBotCompany(c.id).catch(() => undefined);
+        session.setBotCompany(c.id);
       },
     })),
 );

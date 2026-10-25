@@ -12,7 +12,7 @@ from aiogram.fsm.storage.base import BaseStorage
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage
 
-from apps.core.bot_runtime import OrderedDispatcher
+from apps.core.bot_runtime import OrderedDispatcher, WaitOnFloodLimit
 from bot.commands import set_commands
 from bot.handlers import register_all_handlers
 from bot.middlewares import register_all_middlewares
@@ -23,10 +23,13 @@ logger = logging.getLogger(__name__)
 
 def create_bot() -> Bot:
     # No link previews: a URL in a task or a comment would push the card's buttons down (R1 F2).
-    return Bot(
+    bot = Bot(
         token=settings.BOT_TOKEN,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML, link_preview_is_disabled=True),
     )
+    # Past Telegram's rate (hundreds of people at once) replies wait and go, not get dropped.
+    bot.session.middleware(WaitOnFloodLimit())
+    return bot
 
 
 def create_storage() -> BaseStorage:

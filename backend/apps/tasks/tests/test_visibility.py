@@ -239,3 +239,18 @@ def test_review_requests_and_late_alerts_reach_only_confirmers_who_see_the_task(
     # Whoever the reviewers are, each can open the task they're asked about.
     for reviewer in queries.reviewers(routine):
         assert routine.pk in visible(reviewer)
+
+
+def test_work_someone_gave_themselves_is_checked_by_someone_else(company, member):
+    """Nobody can check their own work, so they aren't the one asked (nor told it was accepted
+    after the wait): a board card a manager gave themselves goes to the other checkers."""
+    manager = member.registered(company, "Manager")
+    other = member.registered(company, "Manager")
+    own = TaskFactory(
+        assignee=manager, created_by=manager, kind=Task.Kind.ASSIGNED, status=Task.Status.REVIEW
+    )
+
+    reviewers = {person.pk for person in queries.reviewers(own)}
+
+    assert manager.pk not in reviewers
+    assert other.pk in reviewers

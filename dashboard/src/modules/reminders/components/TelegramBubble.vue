@@ -22,6 +22,14 @@ const sample = computed(() => ({
   late: t("reminders.sample.late", { n: 20 * props.step }),
 }));
 
+/** The reminder's buttons, in the bot's order (apps/reminders/bot_messages.py `_keyboard`). */
+const buttons = computed(() => [
+  t("reminders.bubble.done"),
+  ...(props.snooze ? [t("reminders.bubble.snooze")] : []),
+  t("reminders.bubble.open"),
+  t("reminders.bubble.app"),
+]);
+
 const segments = computed<Segment[]>(() => {
   const out: Segment[] = [];
   const pattern = /\{(name|task|due|late)\}/g;
@@ -45,10 +53,9 @@ const segments = computed<Segment[]>(() => {
       </p>
       <p class="mt-0.5 text-right text-[10px] text-subtle">{{ time }}</p>
     </div>
-    <div class="grid w-full max-w-[340px] grid-cols-3 gap-1">
-      <span class="truncate rounded-[8px] bg-surface/80 px-2 py-1 text-center text-xs font-medium text-fg ring-1 ring-line">✅ {{ t("reminders.bubble.done") }}</span>
-      <span v-if="snooze" class="truncate rounded-[8px] bg-surface/80 px-2 py-1 text-center text-xs font-medium text-fg ring-1 ring-line">⏰ {{ t("reminders.bubble.snooze", { n: snooze }) }}</span>
-      <span class="truncate rounded-[8px] bg-surface/80 px-2 py-1 text-center text-xs font-medium text-fg ring-1 ring-line">📋 {{ t("reminders.bubble.open") }}</span>
+    <!-- The bot's buttons as it sends them: plain words, two a row (Done, Snooze / Open, the app). -->
+    <div class="grid w-full max-w-[340px] grid-cols-2 gap-1" data-testid="bubble-buttons">
+      <span v-for="label in buttons" :key="label" class="truncate rounded-[8px] bg-surface/80 px-2 py-1 text-center text-xs font-medium text-fg ring-1 ring-line">{{ label }}</span>
     </div>
   </div>
 </template>

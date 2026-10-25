@@ -5282,7 +5282,7 @@ msgstr "<b>%(company)s</b> kompaniyasiga qo‘shilish so‘rovingiz tasdiqlandi!
 #: backend/apps/members/bot_messages.py
 #, python-format
 msgid "You're a member of <b>%(company)s</b>."
-msgstr "Siz <b>%(company)s</b> xodimisiz."
+msgstr "Siz <b>%(company)s</b> jamoasidasiz."
 
 #: backend/apps/members/bot_messages.py
 #, python-format

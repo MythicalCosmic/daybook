@@ -7,7 +7,7 @@ from aiogram.fsm.storage.base import BaseStorage, DefaultKeyBuilder
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage
 
-from apps.core.bot_runtime import OrderedDispatcher
+from apps.core.bot_runtime import OrderedDispatcher, WaitOnFloodLimit
 from ownerbot.config import Settings, load_settings
 from ownerbot.handlers import register_all_handlers
 from ownerbot.middlewares import register_all_middlewares
@@ -16,10 +16,13 @@ from ownerbot.middlewares import register_all_middlewares
 def create_bot(settings: Settings | None = None) -> Bot:
     settings = settings or load_settings()
     # No link previews: a URL in a notification would push its buttons down (research R1 F2).
-    return Bot(
+    bot = Bot(
         token=settings.BOT_TOKEN,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML, link_preview_is_disabled=True),
     )
+    # Past Telegram's rate (many owners at once) replies wait and go, not get dropped.
+    bot.session.middleware(WaitOnFloodLimit())
+    return bot
 
 
 def create_storage(settings: Settings | None = None) -> BaseStorage:

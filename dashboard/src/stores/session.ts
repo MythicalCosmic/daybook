@@ -74,5 +74,15 @@ export const useSessionStore = defineStore("session", () => {
     if (me.value) me.value = { ...me.value, language };
   }
 
-  return { accessToken, me, status, signedIn, companies, setAccess, loadMe, boot, devLogin, endSession, logout, setLanguage };
+  /**
+   * A company picked here (the switcher, the palette): the bot works in it too (one company
+   * everywhere), and "/" in this tab opens it from now on, not the one picked before the page
+   * loaded. Best effort: the dashboard works in the picked company either way.
+   */
+  function setBotCompany(companyId: number): void {
+    if (me.value) me.value = { ...me.value, bot_company: companyId };
+    void shellApi.setBotCompany(companyId).catch(() => undefined);
+  }
+
+  return { accessToken, me, status, signedIn, companies, setAccess, loadMe, boot, devLogin, endSession, logout, setLanguage, setBotCompany };
 });

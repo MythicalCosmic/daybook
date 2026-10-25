@@ -214,7 +214,7 @@
   "tasks.calendar.dayCounts": "{total} due · {done} done · {late} late",
   "tasks.calendar.truncated": "Too many tasks to show at once: narrow the filters to see them all.",
   "tasks.reviews.title": "Waiting for check",
-  "tasks.reviews.description": "Finished one-off tasks with their proof, oldest first",
+  "tasks.reviews.description": "Finished one-off tasks waiting for your check, oldest first",
   "tasks.reviews.keyAccept": "confirm",
   "tasks.reviews.keyReturn": "send back",
   "tasks.reviews.keyMove": "move",
@@ -376,5 +376,6 @@
   "tasks.reviews.rule.auto": "Company rule: finished work is accepted automatically; only tasks that ask for a check come here.",
   "tasks.reviews.rule.proof": "Company rule: work finished with a photo or a report is accepted automatically; the rest comes here.",
   "tasks.reviews.rule.ask": "Company rule: every finished task waits here for a check.",
+  "tasks.reviews.ruleWait": "If nobody checks it within {n} h, it is accepted automatically.",
   "tasks.reviews.ruleLink": "Change"
 }

@@ -9,7 +9,7 @@ offers choices and says the deadline stays (R1 N4); replies to a task message be
 
 from datetime import datetime, timedelta
 
-from aiogram import Bot, F, Router
+from aiogram import Bot, F, Router, html
 from aiogram.filters import Command, Filter, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
@@ -298,7 +298,8 @@ async def _finish_proof(
     await cards.edit_at(bot, data["chat_id"], data["message_id"], outcome.message)
     note = await sync_to_async(cards.done_note)(outcome.task)
     if message.message_id != data["message_id"] + 1:
-        # The card isn't just above the photo: say where it went.
+        # The card isn't just above the photo: say where it went, and for which task.
+        note = f"<b>{html.quote(note)}</b>\n{html.quote(outcome.task.title)}"
         await message.answer(note, reply_markup=_list_keyboard())
     await sync_to_async(_drop_undo_at)(outcome.task, member, data["chat_id"], data["message_id"])
 
@@ -433,12 +434,23 @@ async def write_comment(message: Message, membership: Membership, state: FSMCont
 # Checking: accept, or send back with a reason (R1 C8) -------------------------------------
 
 
+async def _checked(outcome: Outcome, membership: Membership) -> Outcome:
+    """After a check the checker's message keeps saying what happened above the card
+    ("Accepted · Name", "Sent back"), as the copy the backend refreshed a moment earlier
+    does; the plain card would drop it."""
+    if outcome.done and outcome.message is not None:
+        outcome.message = await sync_to_async(task_messages.copy_of)(
+            outcome.task, membership, "review", timezone.now()
+        )
+    return outcome
+
+
 @router.callback_query(TaskCallback.filter(F.action == TaskAction.CONFIRM))
 async def confirm_task(
     callback: CallbackQuery, callback_data: TaskCallback, membership: Membership
 ) -> None:
     outcome = await cards.act(membership, callback_data.task_id, services.confirm_task)
-    await cards.show(callback, outcome, success=_("Confirmed"))
+    await cards.show(callback, await _checked(outcome, membership), success=_("Confirmed"))
 
 
 @router.callback_query(TaskCallback.filter(F.action == TaskAction.RETURN))
@@ -474,6 +486,7 @@ async def send_back_with_a_reason(
     outcome = await cards.act(
         membership, callback_data.task_id, services.return_task, reason=reason
     )
+    outcome = await _checked(outcome, membership)
     await cards.show(callback, outcome, success=_("Sent back with your comment."))
 
 
@@ -493,6 +506,7 @@ async def send_back(message: Message, membership: Membership, state: FSMContext,
     if outcome.alert:
         await message.answer(outcome.alert)
         return
+    outcome = await _checked(outcome, membership)
     if outcome.message and "message_id" in data:
         await cards.edit_at(bot, data["chat_id"], data["message_id"], outcome.message)
     await message.answer(_("Sent back with your comment."))

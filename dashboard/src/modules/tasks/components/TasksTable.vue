@@ -4,7 +4,7 @@
  * bulk bar (reassign, move the deadline, priority, nudge, confirm, cancel), cards on phones. Rows
  * open the drawer (`?task=`).
  */
-import { BellRing, CalendarClock, CheckCheck, Eye, EyeOff, Flag, FolderKanban, Gift, Inbox, Repeat, UserRoundCog, X } from "@lucide/vue";
+import { BellRing, CalendarClock, Check, CheckCheck, Eye, EyeOff, Flag, FolderKanban, Gift, Inbox, Repeat, UserRoundCog, X } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -72,7 +72,7 @@ const columns = computed<TableColumn<TaskRow>[]>(() => [
   { id: "branch", header: t("tasks.col.branch"), width: 130, value: (row) => row.branch?.name ?? "" },
   { id: "routine", header: t("tasks.col.routine"), width: 190, value: (row) => row.routine?.title ?? "" },
   { id: "created_by", header: t("tasks.col.givenBy"), width: 170, value: (row) => row.created_by?.name ?? "" },
-  { id: "proof", header: t("tasks.col.proof"), width: 90, align: "center", value: (row) => (row.has_proof ? "✓" : "") },
+  { id: "proof", header: t("tasks.col.proof"), width: 90, align: "center", value: (row) => (row.has_proof ? t("common.yes") : "") },
   { id: "reward", header: t("tasks.col.reward"), width: 140, numeric: true, value: (row) => row.reward ?? "" },
   { id: "completed_at", header: t("tasks.col.finished"), sortable: true, width: 160, value: (row) => row.completed_at, csv: (row) => (row.completed_at ? fmt.instant(row.completed_at) : "") },
   // When the assignee first opened it (contract 10): a column to turn on.
@@ -202,7 +202,7 @@ async function reassignMany(selected: string[], clear: () => void): Promise<void
     </template>
     <template #cell-proof="{ row }">
       <img v-if="row.proof_thumb" :src="row.proof_thumb" alt="" loading="lazy" class="mx-auto size-8 rounded-[6px] border border-line object-cover" />
-      <span v-else-if="row.has_proof" class="text-success">✓</span>
+      <Check v-else-if="row.has_proof" :size="16" class="mx-auto text-success" :aria-label="t('common.yes')" />
       <span v-else class="text-subtle">—</span>
     </template>
     <template #cell-reward="{ row }">

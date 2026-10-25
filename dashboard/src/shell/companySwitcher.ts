@@ -6,11 +6,11 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
-import { shellApi } from "@/api/shell";
 import { pathInCompany } from "@/app/navigation";
 import { lazyPart } from "@/components/lazyPart";
 import { hasExtension } from "@/core/extensions";
 import { useCompanyStore } from "@/stores/company";
+import { useSessionStore } from "@/stores/session";
 
 export type SwitcherVariant = "sidebar" | "rail" | "compact";
 
@@ -22,6 +22,7 @@ export function useCompanySwitcher() {
   const route = useRoute();
   const router = useRouter();
   const company = useCompanyStore();
+  const session = useSessionStore();
 
   const companyless = computed(() => route.matched.some((record) => record.meta.companyless));
   const onPortfolio = computed(() => route.name === "portfolio");
@@ -37,7 +38,7 @@ export function useCompanySwitcher() {
     void router.push(companyless.value ? `/c/${id}` : pathInCompany(router, route, id));
     // A pick here (not a link to another company's page) moves the bot to that company as well;
     // best effort, the dashboard works in the picked company either way.
-    void shellApi.setBotCompany(id).catch(() => undefined);
+    session.setBotCompany(id);
   }
 
   return { company, companyless, onPortfolio, hasPortfolio, canCreate, current, label, elsewhere, openCompany };

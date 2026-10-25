@@ -7,12 +7,14 @@ from datetime import datetime
 
 import pytest
 from aiogram import BaseMiddleware, Bot, Dispatcher, Router
+from aiogram.exceptions import TelegramRetryAfter
+from aiogram.methods import SendMessage
 from aiogram.types import Chat, Message, Update
 from aiogram.types import User as TgUser
 from asgiref.sync import sync_to_async
 
 from apps.core import bot_runtime
-from apps.core.bot_runtime import DatabaseContext, OrderedDispatcher, person_of
+from apps.core.bot_runtime import DatabaseContext, OrderedDispatcher, WaitOnFloodLimit, person_of
 
 
 class Database(BaseMiddleware):
@@ -155,3 +157,53 @@ def test_every_call_on_the_pool_starts_and_ends_like_a_request(monkeypatch):
 def test_whose_update_it_is():
     assert person_of(update(1, 7)) == 7
     assert person_of(Update(update_id=2)) is None
+
+
+# Telegram's flood limit -------------------------------------------------------------------
+
+
+def flood_limit(*outcomes):
+    """A request that answers with `outcomes` in turn: a number is "retry after N seconds"."""
+    queue = list(outcomes)
+
+    async def make_request(bot, method):
+        outcome = queue.pop(0)
+        if isinstance(outcome, int):
+            raise TelegramRetryAfter(method, "Too Many Requests", outcome)
+        return outcome
+
+    return make_request
+
+
+def recording_sleep():
+    waits = []
+
+    async def sleep(seconds):
+        waits.append(seconds)
+
+    return waits, sleep
+
+
+async def test_past_the_flood_limit_a_reply_waits_and_goes(bot):
+    waits, sleep = recording_sleep()
+    middleware = WaitOnFloodLimit(sleep=sleep)
+
+    sent = await middleware(flood_limit(3, 1, "sent"), bot, SendMessage(chat_id=7, text="hi"))
+
+    assert sent == "sent"
+    assert waits == [3, 1]
+
+
+async def test_the_flood_limit_wait_gives_up_after_a_few_tries_or_a_long_wait(bot):
+    waits, sleep = recording_sleep()
+    middleware = WaitOnFloodLimit(attempts=3, ceiling=20, sleep=sleep)
+    method = SendMessage(chat_id=7, text="hi")
+
+    with pytest.raises(TelegramRetryAfter):
+        await middleware(flood_limit(2, 2, 2, "never"), bot, method)
+    assert waits == [2, 2]
+
+    waits.clear()
+    with pytest.raises(TelegramRetryAfter):
+        await middleware(flood_limit(60, "never"), bot, method)
+    assert waits == []  # a minute's wait isn't worth holding the person's next update

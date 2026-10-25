@@ -274,4 +274,13 @@ describe("To check", () => {
     fireEvent.click(screen.getByRole("button", { name: "Open Alisher Valiyev's run" }));
     expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }));
   });
+
+  it("says the company's rule above the work, and on the empty list", () => {
+    renderWith(<ReviewQueue tasks={queue()} loading={false} error={null} onRetry={() => undefined} ctx={ctx()} onOpen={() => undefined} rule="auto" />);
+    expect(screen.getByTestId("review-rule").textContent).toBe("Company rule: finished work is accepted automatically; only tasks that ask for a check come here.");
+    cleanup();
+    renderWith(<ReviewQueue tasks={[]} loading={false} error={null} onRetry={() => undefined} ctx={ctx()} onOpen={() => undefined} rule="ask" />);
+    expect(screen.getByText("Nothing to check")).toBeTruthy();
+    expect(screen.getByText("Company rule: every finished task waits here for a check.")).toBeTruthy();
+  });
 });

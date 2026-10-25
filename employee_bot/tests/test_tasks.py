@@ -185,6 +185,8 @@ async def test_manager_confirms_from_the_review_message(dp, bot, company, member
     task = await reload(task)
     assert task.status == Task.Status.DONE
     assert task.confirmed_by_id == manager.pk
+    # The checker's message keeps saying who accepted it, as the backend's copy does.
+    assert edits(bot)[-1].text.startswith("<b>Accepted</b> · ")
 
 
 async def test_manager_sends_back_with_a_reason(dp, bot, company, member):
@@ -200,6 +202,7 @@ async def test_manager_sends_back_with_a_reason(dp, bot, company, member):
     assert task.status == Task.Status.RETURNED
     comment = await task.comments.afirst()
     assert comment.text == "Retake it in daylight"
+    assert edits(bot)[-1].text.startswith("<b>Sent back</b>")
 
 
 async def test_colleague_cannot_confirm_from_a_forwarded_button(dp, bot, company, member):
