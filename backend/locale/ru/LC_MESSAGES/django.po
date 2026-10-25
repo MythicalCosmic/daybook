@@ -5210,7 +5210,7 @@ msgstr "Ваша заявка в компанию <b>%(company)s</b> одобр�
 #: backend/apps/members/bot_messages.py
 #, python-format
 msgid "You're a member of <b>%(company)s</b>."
-msgstr "Вы сотрудник компании <b>%(company)s</b>."
+msgstr "Вы в команде <b>%(company)s</b>."
 
 #: backend/apps/members/bot_messages.py
 #, python-format
