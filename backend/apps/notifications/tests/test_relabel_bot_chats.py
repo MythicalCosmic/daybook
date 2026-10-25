@@ -51,3 +51,28 @@ def test_without_a_bot_it_only_counts(company, member, settings):
     call_command("relabel_bot_chats", stdout=out)
 
     assert "1 chats to relabel" in out.getvalue()
+
+
+def test_send_menu_gives_members_todays_keyboard(company, member, settings, monkeypatch):
+    settings.EMPLOYEE_BOT_TOKEN = "42:TEST"
+    settings.TELEGRAM_DRY_RUN = False
+    worker = member.registered(company)
+    newcomer = member(company, status="pending")
+    User.objects.filter(pk=worker.user_id).update(language="uz")
+    sent = {}
+
+    async def record(bot, chat_id, labels, *, silent):
+        sent[chat_id] = (labels, silent)
+
+    monkeypatch.setattr(relabel_bot_chats, "send_labels", record)
+    monkeypatch.setattr(relabel_bot_chats, "PAUSE", 0)
+
+    call_command("relabel_bot_chats", "--send-menu", stdout=StringIO())
+
+    labels, silent = sent[worker.user.telegram_id]
+    text, keyboard = labels.message
+    assert text == "Menyu yangilandi."
+    assert silent  # nobody's phone buzzes for it
+    assert keyboard.keyboard[0][0].text == "Vazifalarim"
+    assert not any(has_emoji(b.text) for row in keyboard.keyboard for b in row)
+    assert sent[newcomer.user.telegram_id][0].message is None  # no menu before they're in

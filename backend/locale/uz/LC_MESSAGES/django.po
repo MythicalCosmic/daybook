@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 00:55+0500\n"
+"POT-Creation-Date: 2026-10-26 01:27+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -6050,6 +6050,11 @@ msgstr "O‘zingizni chetlata yoki ishga qaytara olmaysiz."
 msgid "Only owners can suspend or reinstate an owner."
 msgstr "Egani faqat egalar chetlata yoki ishga qaytara oladi."
 
+#: backend/apps/notifications/management/commands/relabel_bot_chats.py
+#: employee_bot/bot/middlewares/access.py
+msgid "The menu is updated."
+msgstr "Menyu yangilandi."
+
 #: backend/apps/projects/ai_tools.py
 msgid ""
 "Projects: every project the asker sees, with progress, health, due date, "
@@ -10440,10 +10445,6 @@ msgstr "Boshqa xodimga berildi."
 #: employee_bot/bot/handlers/member/tasks.py
 msgid "Task cancelled."
 msgstr "Vazifa bekor qilindi."
-
-#: employee_bot/bot/middlewares/access.py
-msgid "The menu is updated."
-msgstr "Menyu yangilandi."
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Tashkent"
