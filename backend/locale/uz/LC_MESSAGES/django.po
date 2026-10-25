@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-25 04:28+0500\n"
+"POT-Creation-Date: 2026-10-25 05:35+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -4299,12 +4299,12 @@ msgid "At %(time)s, %(late)s late."
 msgstr "Soat %(time)s, %(late)s kechikib."
 
 #: backend/apps/groups/bot_messages.py
-msgid "Waiting for a check."
-msgstr "Tekshiruvda."
-
-#: backend/apps/groups/bot_messages.py
 msgid "Fixed and sent for a check again."
 msgstr "Tuzatildi va qayta tekshiruvga yuborildi."
+
+#: backend/apps/groups/bot_messages.py
+msgid "Waiting for a check."
+msgstr "Tekshiruvda."
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
@@ -4570,6 +4570,10 @@ msgstr "✅ %(action)s"
 #, python-format
 msgid "✅ %(action)s · %(name)s"
 msgstr "✅ %(action)s · %(name)s"
+
+#: backend/apps/inbox/bot_messages.py backend/apps/tasks/bot_messages.py
+msgid "📱 Open in app"
+msgstr "📱 Ilovada ochish"
 
 #: backend/apps/inbox/hooks.py
 msgid "Messages from 911"
@@ -8629,10 +8633,6 @@ msgid "🕒 New time"
 msgstr "🕒 Yangi muddat"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "📱 Open in app"
-msgstr "📱 Ilovada ochish"
-
-#: backend/apps/tasks/bot_messages.py
 msgid "⏰ 15 min"
 msgstr "⏰ 15 daqiqa"
 
@@ -10103,7 +10103,7 @@ msgstr "Bayram nomini yozing."
 msgid "Choose at least one branch."
 msgstr "Kamida bitta filialni tanlang."
 
-#: employee_bot/bot/handlers/company.py
+#: employee_bot/bot/handlers/company.py employee_bot/bot/middlewares/access.py
 #, python-format
 msgid "🏢 Now working in <b>%(company)s</b>."
 msgstr "🏢 Endi <b>%(company)s</b> kompaniyasida ishlayapsiz."
