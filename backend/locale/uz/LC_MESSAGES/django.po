@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 00:41+0500\n"
+"POT-Creation-Date: 2026-10-26 00:55+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -7992,18 +7992,18 @@ msgstr "Filialni tanlang."
 
 #: backend/apps/sales/queries.py
 #, python-format
-msgid "Sales %(net)s (%(change)s vs last week)"
+msgid "Sales: %(net)s (%(change)s vs last week)"
 msgstr "Savdo: %(net)s (o‘tgan haftaga nisbatan %(change)s)"
 
 #: backend/apps/sales/queries.py
 #, python-format
-msgid "%(count)s cash differences above tolerance"
-msgstr "%(count)s ta kassa farqi ruxsat etilgan chegaradan oshgan"
+msgid "Cash differences above tolerance: %(count)s"
+msgstr "Ruxsat etilganidan katta kassa farqlari: %(count)s"
 
 #: backend/apps/sales/queries.py
 #, python-format
-msgid "%(count)s tills open"
-msgstr "%(count)s ta kassa ochiq"
+msgid "Open tills: %(count)s"
+msgstr "Ochiq kassalar: %(count)s"
 
 #: backend/apps/sales/queries.py
 msgctxt "shift status"

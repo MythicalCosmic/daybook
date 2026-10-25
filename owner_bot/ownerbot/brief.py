@@ -149,7 +149,10 @@ def _tasks(data: dict, currency: str) -> tuple[str, list[str]]:
     if data.get("review"):
         lines.append(_("Waiting for check: %(count)d") % {"count": data["review"]})
     if data.get("on_time_7d") is not None:
-        lines.append(_("On time over 7 days: %(percent)s%%") % {"percent": data["on_time_7d"]})
+        percent = str(data["on_time_7d"])
+        if (get_language() or "uz") != "en":  # a decimal comma in uz and ru: 82,4
+            percent = percent.replace(".", ",")
+        lines.append(_("On time over 7 days: %(percent)s%%") % {"percent": percent})
     worst = [task for task in data.get("late_tasks") or [] if isinstance(task, dict)][:3]
     if worst:
         lines.append(_("Most overdue:"))
