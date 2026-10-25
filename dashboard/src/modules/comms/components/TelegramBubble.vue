@@ -21,7 +21,7 @@ const html = computed(() => toDisplay(props.text));
   <div class="chat rounded-[14px] p-4">
     <div class="bubble max-w-[420px] rounded-[16px] rounded-bl-[6px] px-3.5 pb-2 pt-2.5 shadow-xs">
       <p class="mb-1.5 text-[13px] font-semibold text-[var(--tg-accent)]">
-        📣 {{ reminder ? t("comms.bubble.reminder", { name: author || t("comms.bubble.manager") }) : t("comms.bubble.header", { name: author || t("comms.bubble.manager") }) }}
+        {{ reminder ? t("comms.bubble.reminder", { name: author || t("comms.bubble.manager") }) : t("comms.bubble.header", { name: author || t("comms.bubble.manager") }) }}
       </p>
       <!-- eslint-disable-next-line vue/no-v-html -- toDisplay keeps only Telegram's tags and escapes text -->
       <div v-if="text" class="message text-[14.5px] leading-[1.45] text-fg" v-html="html" />
@@ -29,7 +29,7 @@ const html = computed(() => toDisplay(props.text));
       <p class="mt-1 flex items-center justify-end gap-1 text-[11px] text-subtle">{{ time }}<CheckCheck :size="13" class="text-[var(--tg-accent)]" aria-hidden="true" /></p>
     </div>
     <div class="mt-1 max-w-[420px] rounded-[12px] bg-[color-mix(in_srgb,var(--c-surface)_72%,transparent)] py-2 text-center text-[13px] font-semibold text-[var(--tg-accent)] backdrop-blur">
-      ✅ {{ t("comms.bubble.read") }}
+      {{ t("comms.bubble.read") }}
     </div>
   </div>
 </template>

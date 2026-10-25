@@ -2209,7 +2209,7 @@ export interface components {
             }[];
         };
         /**
-         * @description * `uz` - O'zbekcha
+         * @description * `uz` - O‘zbekcha
          *     * `ru` - Русский
          *     * `en` - English
          * @enum {string}

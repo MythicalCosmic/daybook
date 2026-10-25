@@ -17964,7 +17964,7 @@ components:
       - en
       type: string
       description: |-
-        * `uz` - O'zbekcha
+        * `uz` - O‘zbekcha
         * `ru` - Русский
         * `en` - English
     LockRequest:
