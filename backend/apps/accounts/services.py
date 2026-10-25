@@ -151,5 +151,3 @@ def save_verified_phone(user: User, *, contact_user_id: int | None, phone_number
     user.phone = "+" + "".join(char for char in phone_number if char.isdigit())
     user.save(update_fields=["phone"])
     return True
-
-

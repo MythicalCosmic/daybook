@@ -1515,7 +1515,8 @@ def _accept_unreviewed(task_id: int, hours: int, now: datetime) -> bool:
             title=lambda person: _("Accepted automatically: %(title)s") % values,
             body=lambda person: (
                 _(
-                    "Nobody checked it within %(hours)d hours, so it was accepted.\nDone by: %(name)s"
+                    "Nobody checked it within %(hours)d hours, so it was accepted.\n"
+                    "Done by: %(name)s"
                 )
                 % values
             ),

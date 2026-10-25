@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-25 05:35+0500\n"
+"POT-Creation-Date: 2026-10-25 23:42+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -20,7 +20,7 @@ msgstr ""
 msgid "Telegram"
 msgstr "Telegram"
 
-#: backend/apps/accounts/api.py
+#: backend/apps/accounts/api.py backend/apps/console/owner_api.py
 msgid "You don't work in that company."
 msgstr "Вы не работаете в этой компании."
 
@@ -5270,6 +5270,12 @@ msgstr "<b>Какая роль?</b> От неё зависит, что сотр�
 msgid "default"
 msgstr "по умолчанию"
 
+#. Translators: %(company)s is a company's name, as typed: no case endings on it.
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "Now working in <b>%(company)s</b>."
+msgstr "Теперь вы работаете в компании «<b>%(company)s</b>»."
+
 #: backend/apps/members/hooks.py
 msgid "Join request"
 msgstr "Заявка на вступление"
@@ -8390,6 +8396,14 @@ msgstr "Запрос дополнительного времени"
 msgid "Decided about more time for a task"
 msgstr "Решение о дополнительном времени"
 
+#: backend/apps/tasks/audit_actions.py
+msgid "Accepted automatically: nobody reviewed it in time"
+msgstr "Принято автоматически: никто не проверил вовремя"
+
+#: backend/apps/tasks/audit_actions.py
+msgid "Changed the rules for finished tasks"
+msgstr "Изменение правил приёмки выполненных задач"
+
 #: backend/apps/tasks/bot_messages.py
 msgid ""
 "🎉 Nothing on your list. To add a task, tap ➕ New task or just type it."
@@ -8906,6 +8920,15 @@ msgstr "%(days)d дн. %(hours)d ч"
 msgid "🔎 To check (%(count)d)"
 msgstr "🔎 Проверка (%(count)d)"
 
+#: backend/apps/tasks/bot_messages.py
+msgctxt "task status"
+msgid "Accepted"
+msgstr "Принято"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "<b>Accepted automatically</b> · nobody checked it in time"
+msgstr "<b>Принято автоматически</b> · никто не проверил вовремя"
+
 #: backend/apps/tasks/feeds.py
 msgid "Send back"
 msgstr "Вернуть"
@@ -8931,6 +8954,10 @@ msgstr "Сотрудник не может выполнить задачу"
 #: backend/apps/tasks/hooks.py
 msgid "Someone asks for more time"
 msgstr "Сотрудник просит больше времени"
+
+#: backend/apps/tasks/hooks.py
+msgid "Work accepted automatically without a review"
+msgstr "Работа принята автоматически без проверки"
 
 #: backend/apps/tasks/hooks.py
 msgid "Tasks to check"
@@ -9061,6 +9088,14 @@ msgid "Everyone holding one of these positions gets the task."
 msgstr "Задачу получает каждый, кто занимает одну из этих должностей."
 
 #: backend/apps/tasks/models.py
+msgid ""
+"With needs_confirmation: a run finished with a photo or text proof is "
+"accepted automatically; without one, someone checks it."
+msgstr ""
+"Если нужна проверка: выполнение с фото или отчётом принимается "
+"автоматически, без них его проверяют."
+
+#: backend/apps/tasks/models.py
 msgid "Made by an employee for themselves; it repeats a personal task."
 msgstr "Создан сотрудником для себя; повторяет личную задачу."
 
@@ -9148,6 +9183,14 @@ msgid "For daily tasks: the local day it belongs to."
 msgstr "Для регулярных задач: местная дата, к которой она относится."
 
 #: backend/apps/tasks/models.py
+msgid ""
+"With needs_confirmation: finished with a photo or text proof, it is accepted "
+"automatically; without one, someone checks it."
+msgstr ""
+"Если нужна проверка: с фото или отчётом задача принимается автоматически, "
+"без них её проверяют."
+
+#: backend/apps/tasks/models.py
 msgid "A small preview of the proof photo, made after it's uploaded."
 msgstr "Миниатюра фотоотчёта, создаётся после загрузки."
 
@@ -9199,6 +9242,26 @@ msgstr "Не получается"
 #: backend/apps/tasks/models.py
 msgid "Late alert"
 msgstr "Сообщение о просрочке"
+
+#: backend/apps/tasks/models.py
+msgid "Accept it automatically"
+msgstr "Принимать автоматически"
+
+#: backend/apps/tasks/models.py
+msgid "Accept automatically only with a photo or text proof, otherwise ask"
+msgstr "Принимать автоматически только с фото или отчётом, иначе спрашивать"
+
+#: backend/apps/tasks/models.py
+msgid "Always ask the person who gave it"
+msgstr "Всегда спрашивать того, кто дал задачу"
+
+#: backend/apps/tasks/models.py
+msgid "When someone finishes a task."
+msgstr "Когда сотрудник выполняет задачу."
+
+#: backend/apps/tasks/models.py
+msgid "If nobody reviews it within this many hours, accept it automatically."
+msgstr "Если никто не проверит за столько часов, принять автоматически."
 
 #: backend/apps/tasks/owner_api.py
 msgid "Use without or only."
@@ -9646,6 +9709,29 @@ msgstr "Эта колонка или этап относится к другой
 #: backend/apps/tasks/services.py backend/apps/timeoff/services.py
 msgid "Finish registration first."
 msgstr "Сначала завершите регистрацию."
+
+#: backend/apps/tasks/services.py
+msgid "You can't change the company's settings."
+msgstr "Вы не можете менять настройки компании."
+
+#: backend/apps/tasks/services.py
+#, python-format
+msgid "Pick between %(low)d and %(high)d hours."
+msgstr "Выберите от %(low)d до %(high)d часов."
+
+#: backend/apps/tasks/services.py
+#, python-format
+msgid "Accepted automatically: %(title)s"
+msgstr "Принято автоматически: %(title)s"
+
+#: backend/apps/tasks/services.py
+#, python-format
+msgid ""
+"Nobody checked it within %(hours)d hours, so it was accepted.\n"
+"Done by: %(name)s"
+msgstr ""
+"Никто не проверил работу за %(hours)d ч, поэтому она принята.\n"
+"Исполнитель: %(name)s"
 
 #: backend/apps/timeoff/admin.py
 msgid "Approve selected time off"
