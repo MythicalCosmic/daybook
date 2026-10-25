@@ -13,7 +13,7 @@ keyword with no default, so "all branches" is never an accident:
     shifts(company, start, end, branch_ids=scope.branch_ids(member))
 """
 
-from django.db.models import QuerySet
+from django.db.models import QuerySet, prefetch_related_objects
 
 from apps.members.models import Membership
 from apps.members.permissions import Perm
@@ -27,9 +27,12 @@ def branch_ids(membership: Membership) -> BranchScope:
     if membership.status != Membership.Status.APPROVED:
         return []
     prefetched = getattr(membership, "_prefetched_objects_cache", {}).get("branches")
-    if prefetched is not None:
-        return sorted(branch.pk for branch in prefetched)
-    return list(membership.branches.order_by("pk").values_list("pk", flat=True))
+    if prefetched is None:
+        # Loaded once per membership object: a request asks several times (visible tasks,
+        # projects, the review queue). Changing the branches (set, add, remove) drops it.
+        prefetch_related_objects([membership], "branches")
+        prefetched = membership._prefetched_objects_cache["branches"]
+    return sorted(branch.pk for branch in prefetched)
 
 
 def allows(scope: BranchScope, branch_id: int | None) -> bool:

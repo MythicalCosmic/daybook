@@ -3,6 +3,7 @@ per address only a ceiling that a whole shift on one mobile operator's address n
 
 import pytest
 from django.core.cache import cache
+from django.core.exceptions import ImproperlyConfigured
 from django.test import RequestFactory
 from rest_framework.settings import api_settings
 from rest_framework.test import APIClient
@@ -14,6 +15,7 @@ from apps.core.throttles import AddressRateThrottle
 from apps.signin import services as signin
 from apps.signin.services import REFRESH_COOKIE
 from apps.tasks.api import ParseThrottle
+from config.settings.base import rate_overrides
 
 pytestmark = pytest.mark.django_db
 
@@ -182,3 +184,15 @@ def test_rates_suit_a_shift_behind_one_address():
         assert per_minute(scope) >= 30
     assert ParseThrottle().rate == api_settings.DEFAULT_THROTTLE_RATES["task_parse"]
     assert per_minute("task_parse") >= 240
+
+
+def test_rates_can_be_overridden_from_the_environment():
+    assert rate_overrides("") == {}
+    assert rate_overrides(" telegram_auth_address = 2000/min , login_link=600/minute ,") == {
+        "telegram_auth_address": "2000/min",
+        "login_link": "600/minute",
+    }
+    with pytest.raises(ImproperlyConfigured):
+        rate_overrides("telegram_auth=lots")
+    with pytest.raises(ImproperlyConfigured):
+        rate_overrides("=60/min")

@@ -1,3 +1,4 @@
+import re
 from datetime import timedelta
 from decimal import Decimal
 from pathlib import Path
@@ -187,6 +188,18 @@ CELERY_BEAT_SCHEDULE = {
 # Plus every app's own entries (apps/<app>/beat.py); a key used twice stops the settings.
 CELERY_BEAT_SCHEDULE = collect("beat.py", "SCHEDULE", CELERY_BEAT_SCHEDULE)
 
+
+def rate_overrides(value: str) -> dict[str, str]:
+    """THROTTLE_RATES="telegram_auth=60/min,login_link=200/min" as {scope: rate}."""
+    rates = {}
+    for item in filter(None, (part.strip() for part in value.split(","))):
+        scope, _, rate = (side.strip() for side in item.partition("="))
+        if not scope or not re.fullmatch(r"\d+/[smhd][a-z]*", rate):
+            raise ImproperlyConfigured(f"THROTTLE_RATES: write {item!r} as name=60/min.")
+        rates[scope] = rate
+    return rates
+
+
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -219,7 +232,7 @@ REST_FRAMEWORK = {
         "task_parse": "300/min",
         "export_create": "10/min",
     }
-    | env.dict("THROTTLE_RATES", default={}),
+    | rate_overrides(env("THROTTLE_RATES", default="")),
     # Caddy sits in front: throttles and stored IPs use the client's address, not Caddy's.
     # Caddy replaces any X-Forwarded-For a client sends, so the last hop is the client. Put a
     # CDN or another proxy in front and this must count it too (and Caddy must trust it).
