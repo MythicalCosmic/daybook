@@ -214,7 +214,7 @@
   "tasks.calendar.dayCounts": "{total} ta muddat · {done} ta bajarildi · {late} ta kechikdi",
   "tasks.calendar.truncated": "Vazifalar juda ko‘p, hammasini ko‘rish uchun filtrlarni toraytiring.",
   "tasks.reviews.title": "Tekshiruvda",
-  "tasks.reviews.description": "Dalili bilan bajarilgan bir martalik vazifalar, eng eskisidan boshlab",
+  "tasks.reviews.description": "Tekshiruvingizni kutayotgan bajarilgan bir martalik vazifalar, eng eskisidan boshlab",
   "tasks.reviews.keyAccept": "qabul",
   "tasks.reviews.keyReturn": "qaytarish",
   "tasks.reviews.keyMove": "o‘tish",

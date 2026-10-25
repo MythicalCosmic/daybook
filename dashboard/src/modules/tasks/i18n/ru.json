@@ -214,7 +214,7 @@
   "tasks.calendar.dayCounts": "сроков: {total} · выполнено: {done} · просрочено: {late}",
   "tasks.calendar.truncated": "Задач слишком много, чтобы показать все: сузьте фильтры.",
   "tasks.reviews.title": "На проверке",
-  "tasks.reviews.description": "Выполненные разовые задачи с отчётами, сначала самые старые",
+  "tasks.reviews.description": "Выполненные разовые задачи, которые ждут вашей проверки, сначала самые старые",
   "tasks.reviews.keyAccept": "принять",
   "tasks.reviews.keyReturn": "вернуть",
   "tasks.reviews.keyMove": "переход",
