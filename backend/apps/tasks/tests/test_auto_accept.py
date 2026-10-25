@@ -12,7 +12,7 @@ from apps.audit.models import AuditLog
 from apps.inbox.models import Notification
 from apps.tasks import bot_messages, conf, generation, rules, services
 from apps.tasks.audit_actions import TasksAction
-from apps.tasks.models import OnFinish, Proof, Task, TasksSettings
+from apps.tasks.models import OnFinish, Proof, Task, TasksSettings, TaskTemplate
 from apps.tasks.tests.factories import TaskFactory, TaskTemplateFactory, jpeg
 
 pytestmark = pytest.mark.django_db
@@ -513,3 +513,27 @@ def test_a_template_made_by_hand_keeps_its_choice(company, manager, worker):
     )
 
     assert (template.needs_confirmation, template.accept_with_proof) == (True, False)
+
+
+def test_the_mini_apps_routine_api_follows_the_rule_too(company, manager, worker, api_as):
+    rule(company, OnFinish.PROOF)
+    url = f"/api/v1/companies/{company.pk}/task-templates/"
+    client = api_as(manager)
+
+    default = client.post(url, {"title": "Shelves", "due_time": "09:00"}, format="json")
+    null = client.post(
+        url, {"title": "Till", "due_time": "10:00", "needs_confirmation": None}, format="json"
+    )
+    own = client.post(
+        url, {"title": "Fridge", "due_time": "11:00", "needs_confirmation": False}, format="json"
+    )
+
+    assert {default.status_code, null.status_code, own.status_code} == {201}
+    rules_of = {
+        t.title: (t.needs_confirmation, t.accept_with_proof)
+        for t in TaskTemplate.objects.filter(company=company)
+    }
+    assert rules_of == {"Shelves": (True, True), "Till": (True, True), "Fridge": (False, False)}
+    edited = client.patch(f"{url}{default.json()['id']}/", {"title": "Shelves, all"}, format="json")
+    assert edited.status_code == 200
+    assert TaskTemplate.objects.get(title="Shelves, all").accept_with_proof is True

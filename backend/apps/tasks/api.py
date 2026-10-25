@@ -872,13 +872,17 @@ class TaskTemplateViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def perform_create(self, serializer):
-        template = serializer.save(company=self.membership.company, created_by=self.membership)
+        template = serializer.save(
+            company=self.membership.company,
+            created_by=self.membership,
+            **self._review_rule(serializer, new=True),
+        )
         self._audit(AuditLog.Action.TEMPLATE_CREATED, template)
 
     @transaction.atomic
     def perform_update(self, serializer):
         before = audit.snapshot(serializer.instance)
-        template = serializer.save()
+        template = serializer.save(**self._review_rule(serializer, new=False))
         if changes := audit.diff(before, audit.snapshot(template)):
             self._audit(AuditLog.Action.TEMPLATE_CHANGED, template, changes=changes)
 
@@ -886,6 +890,16 @@ class TaskTemplateViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, template):
         self._audit(AuditLog.Action.TEMPLATE_DELETED, template)
         template.delete()
+
+    def _review_rule(self, serializer, *, new: bool) -> dict:
+        """`needs_confirmation` as the routine forms send it: left out or null on a new routine
+        follows the company's rule for finished work (PLAN-OWNER §15.3), null on an edit goes back
+        to it, true or false is the routine's own; left out on an edit changes nothing."""
+        if not new and "needs_confirmation" not in serializer.validated_data:
+            return {}
+        choice = serializer.validated_data.pop("needs_confirmation", None)
+        needs, with_proof = conf.review_rule(self.membership.company, choice)
+        return {"needs_confirmation": needs, "accept_with_proof": with_proof}
 
     def _audit(self, action: AuditLog.Action, template: TaskTemplate, **details) -> None:
         audit.record(
