@@ -6,20 +6,14 @@ from aiogram.enums import ChatType
 from aiogram.exceptions import TelegramAPIError
 from aiogram.filters import CommandObject, CommandStart
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
+from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
 from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.utils import translation
 
 from apps.accounts.models import User
 from apps.accounts.services import bot_membership, set_language
-from apps.accounts.telegram_chat import (
-    LANGUAGE_BUTTON,
-    LANGUAGE_NAMES,
-    LANGUAGES,
-    language_of,
-    relabel,
-)
+from apps.accounts.telegram_chat import LANGUAGE_NAMES, LANGUAGES, language_of, relabel
 from apps.companies.services import find_by_invite
 from apps.core.exceptions import DomainError
 from apps.members import bot_messages, services
@@ -28,6 +22,7 @@ from bot import deeplinks
 from bot.callbacks import LangCallback
 from bot.commands import menu_button
 from bot.handlers.language import language_row
+from bot.keyboards import is_language_row, with_language_button
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +68,7 @@ async def show_languages(callback: CallbackQuery, user: User) -> None:
     """The greeting's "Til / Язык / Language": the three languages take the button's place, in
     the same message."""
     markup = callback.message.reply_markup
-    rows = [row for row in (markup.inline_keyboard if markup else []) if not _is_language_row(row)]
+    rows = [row for row in (markup.inline_keyboard if markup else []) if not is_language_row(row)]
     rows.append(language_row(language_of(user.language), mode="welcome"))
     with suppress(TelegramAPIError):
         await callback.message.edit_reply_markup(
@@ -150,24 +145,6 @@ async def set_menu_button(bot: Bot, chat_id: int, user: User) -> None:
         await bot.set_chat_menu_button(chat_id=chat_id, menu_button=button)
     except TelegramAPIError as exc:
         logger.warning("Couldn't label the menu button of chat %s: %s", chat_id, exc)
-
-
-def with_language_button(markup):
-    """The greeting's last row: "Til / Язык / Language", which opens the three languages. A
-    message whose keyboard is the main menu can't carry inline buttons, so it goes without (a
-    member finds /language in the menu and on the home message)."""
-    if markup is not None and not isinstance(markup, InlineKeyboardMarkup):
-        return markup
-    button = InlineKeyboardButton(
-        text=LANGUAGE_BUTTON, callback_data=LangCallback(code="", mode="langs").pack()
-    )
-    rows = [row for row in (markup.inline_keyboard if markup else []) if not _is_language_row(row)]
-    return InlineKeyboardMarkup(inline_keyboard=[*rows, [button]])
-
-
-def _is_language_row(row: list[InlineKeyboardButton]) -> bool:
-    prefix = f"{LangCallback.__prefix__}:"
-    return any((button.callback_data or "").startswith(prefix) for button in row)
 
 
 @sync_to_async

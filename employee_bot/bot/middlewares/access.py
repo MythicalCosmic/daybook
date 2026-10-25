@@ -13,6 +13,7 @@ from apps.members import bot_messages
 from apps.members.models import Membership
 from apps.tasks.models import Task
 from bot.filters.menu import is_old_label
+from bot.keyboards import with_language_button
 from bot.task_refs import task_id_of_event
 
 
@@ -59,7 +60,8 @@ class MemberAccessMiddleware(BaseMiddleware):
         if reply is not None:
             if isinstance(event, Message):
                 text, markup = reply
-                await event.answer(text, reply_markup=markup)
+                # Not a member yet, so maybe new: the way to the other languages goes along.
+                await event.answer(text, reply_markup=with_language_button(markup))
             elif isinstance(event, CallbackQuery):
                 await event.answer(await _alert(membership), show_alert=True)
         return None
