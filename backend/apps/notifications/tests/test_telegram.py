@@ -1,4 +1,4 @@
-from aiogram.exceptions import TelegramForbiddenError
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.methods import SendMessage
 from aiogram.types import (
     InlineKeyboardButton,
@@ -48,6 +48,18 @@ def test_every_kind_of_keyboard_survives_the_trip():
 
     for markup in keyboards:
         assert telegram._deserialize_markup(telegram.serialize_markup(markup)) == markup
+
+
+def test_a_chat_telegram_doesnt_know_is_a_warning_not_a_failure(monkeypatch, caplog):
+    def unknown(*args):
+        raise TelegramBadRequest(SendMessage(chat_id=1, text="hi"), "chat not found")
+
+    monkeypatch.setattr(telegram, "send_message", unknown)
+
+    result = send_telegram_message.apply(args=(telegram.BotName.EMPLOYEE, 1, "hi"))
+
+    assert result.successful()
+    assert "not delivered" in caplog.text
 
 
 def test_task_gives_up_quietly_when_the_user_blocked_the_bot(monkeypatch):

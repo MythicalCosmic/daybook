@@ -1,6 +1,7 @@
 import logging
 
 from aiogram.exceptions import (
+    TelegramBadRequest,
     TelegramForbiddenError,
     TelegramNetworkError,
     TelegramRetryAfter,
@@ -33,6 +34,9 @@ def send_telegram_message(
         raise self.retry(countdown=exc.retry_after) from exc
     except TelegramForbiddenError:
         logger.info("Chat %s blocked the %s bot or never started it", chat_id, bot)
+    except TelegramBadRequest as exc:
+        # E.g. "chat not found": nobody with that id ever opened the bot. Sending again won't help.
+        logger.warning("Message to chat %s not delivered: %s", chat_id, exc)
 
 
 @shared_task(**RETRYING)
@@ -53,6 +57,8 @@ def send_telegram_document(
         raise self.retry(countdown=exc.retry_after) from exc
     except TelegramForbiddenError:
         logger.info("Chat %s blocked the %s bot or never started it", chat_id, bot)
+    except TelegramBadRequest as exc:
+        logger.warning("Document to chat %s not delivered: %s", chat_id, exc)
 
 
 @shared_task(**RETRYING)
