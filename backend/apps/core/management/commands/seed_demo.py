@@ -44,9 +44,18 @@ from apps.core import demo_plan as plan
 from apps.core.demo_time import quiet, run_hooks
 from apps.core.management.commands.ensure_company_defaults import ensure_company_defaults
 from apps.members.models import AccessRole, Membership, Position
-from apps.members.permissions import Perm
+from apps.members.permissions import DEFAULT_ROLES, Perm
 from apps.reminders.models import ReminderLog
-from apps.tasks.models import Activity, ChecklistItem, Proof, Task, TaskComment, TaskTemplate
+from apps.tasks.models import (
+    Activity,
+    ChecklistItem,
+    OnFinish,
+    Proof,
+    Task,
+    TaskComment,
+    TasksSettings,
+    TaskTemplate,
+)
 from apps.timeoff.models import TimeOff
 
 SLUG, SMALL_SLUG = plan.PHARMACY, plan.DISTRIBUTOR
@@ -62,21 +71,23 @@ SMALL_FEATURES = [
     Feature.PAYROLL,
     Feature.AI,
 ]
-# Yunusobod's head sees and runs only her pharmacy.
+# A pharmacy's head (Chilonzor's, Yunusobod's) runs it like a manager but sees and runs only
+# the branches they work in: the Manager role without "every branch" (audit X-12).
 BRANCH_MANAGER_PERMISSIONS = [
-    Perm.MEMBERS_VIEW,
-    Perm.MEMBERS_APPROVE,
-    Perm.TASKS_VIEW_ALL,
-    Perm.TASKS_ASSIGN,
-    Perm.TASKS_CONFIRM,
-    Perm.REPORTS_VIEW,
-    Perm.TIME_OFF_APPROVE,
-    Perm.ANNOUNCE,
-    Perm.DASHBOARD_ACCESS,
-    Perm.ATTENDANCE_VIEW,
-    Perm.SALES_VIEW,
-    Perm.FINANCE_CLAIM,
+    Perm(perm)
+    for perm in next(role for role in DEFAULT_ROLES if role["name"] == "Manager")["permissions"]
+    if perm != Perm.BRANCHES_ALL
 ]
+
+
+def accept_finished_work(company) -> None:
+    """The demo companies accept finished work automatically, like every new company
+    (PLAN-OWNER §15.3); work a routine or a task asks to check still waits for its check."""
+    TasksSettings.objects.update_or_create(
+        company=company, defaults={"on_finish": OnFinish.AUTO, "auto_accept_after_hours": None}
+    )
+
+
 # The steps of the shift handover routine.
 HANDOVER_STEPS = [
     "Kassa qoldig‘ini sanash",
@@ -441,6 +452,7 @@ class Command(BaseCommand):
 
     def _build_pharmacy(self, now) -> tuple[Company, dict[str, Membership]]:
         company = create_company(name=NAME, slug=SLUG, timezone="Asia/Tashkent")
+        accept_finished_work(company)
         # Both pharmacies open every day (§14.3); the distributor keeps Monday to Saturday.
         company.workdays = every_weekday()
         company.save(update_fields=["workdays", "updated_at"])
@@ -675,6 +687,7 @@ class Command(BaseCommand):
 
     def _build_distributor(self, now, *, owner: User) -> tuple[Company, dict[str, Membership]]:
         company = create_company(name=SMALL_NAME, slug=SMALL_SLUG, timezone="Asia/Tashkent")
+        accept_finished_work(company)
         [sergeli] = self._branches(company, [SMALL_BRANCH])
         staff = self._staff(company, plan.SMALL_PEOPLE, {"S": sergeli}, now, users={OWNER: owner})
         sergeli.manager = staff["manager"]

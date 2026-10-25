@@ -70,6 +70,10 @@ export interface TaskRow extends TaskExtras {
   project: { id: number; key: string; name: string; number: number | null } | null;
   proof: ProofKind;
   needs_confirmation: boolean;
+  /** With needs_confirmation: finished with a photo or text proof, it's accepted at once. */
+  accept_with_proof?: boolean;
+  /** Done without anyone checking it: at once, or after the company's wait (`confirmed_at`). */
+  accepted_automatically?: boolean;
   has_proof: boolean;
   /** 400 px preview (or the photo until the preview exists). */
   proof_thumb: string | null;
@@ -203,7 +207,8 @@ export interface TaskCreateInput {
   due_at?: string | null;
   priority?: TaskPriority;
   proof?: ProofKind;
-  needs_confirmation?: boolean;
+  /** null or left out: the company's rule for finished work decides. */
+  needs_confirmation?: boolean | null;
   checklist?: string[];
   reward?: Money | null;
   assignee_ids?: number[];
@@ -271,3 +276,13 @@ export interface TaskFilterParams {
 }
 
 export type TaskView = "table" | "board" | "calendar";
+
+/** "When someone finishes a task" (PLAN-OWNER §15.3). */
+export type OnFinish = "auto" | "proof" | "ask";
+
+/** The company's rules for finished work (`tasks/settings/`). */
+export interface TasksSettings {
+  on_finish: OnFinish;
+  /** Accept work nobody reviewed after this many hours (4–72); null: never. */
+  auto_accept_after_hours: number | null;
+}

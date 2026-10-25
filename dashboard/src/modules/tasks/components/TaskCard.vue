@@ -39,7 +39,7 @@ const done = computed(() => props.task.status === "done");
       <img v-if="task.proof_thumb" :src="task.proof_thumb" alt="" loading="lazy" class="size-10 shrink-0 rounded-[7px] border border-line object-cover" />
     </div>
     <div class="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted">
-      <TaskStatusPill v-if="showStatus" :status="task.status" :overdue="task.is_overdue" />
+      <TaskStatusPill v-if="showStatus" :status="task.status" :overdue="task.is_overdue" :accepted="task.accepted_automatically" />
       <DueLabel :due="task.due_at" :overdue="task.is_overdue" icon compact />
       <span v-if="task.checklist.total" :class="['inline-flex items-center gap-1 tabular-nums', task.checklist.done === task.checklist.total && 'text-success']">
         <CheckCheck :size="13" aria-hidden="true" />{{ task.checklist.done }}/{{ task.checklist.total }}

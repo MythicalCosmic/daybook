@@ -521,3 +521,21 @@ def test_owner_tg_must_be_a_user_id(debug, telegram_id):
     with pytest.raises(CommandError, match="Telegram user id"):
         seed(owner_tg=telegram_id)
     assert not Company.objects.filter(slug=PHARMACY).exists()
+
+
+def test_the_head_of_chilonzor_sees_and_runs_chilonzor_only(debug):
+    from apps.members.scope import branch_ids
+    from apps.tasks.models import OnFinish, TasksSettings
+
+    seed_core()
+
+    pharmacy = Company.objects.get(slug=PHARMACY)
+    head = pharmacy.memberships.get(user__telegram_id=seed_demo.MANAGER)
+    chilonzor = pharmacy.branches.get(code="CHL")
+    assert branch_ids(head) == [chilonzor.pk]  # audit X-12: no longer every branch
+    assert head.role.name in ("Filial rahbari", "Branch manager") and not head.role.is_owner
+    assert head.has_perm("tasks.templates") and head.has_perm("tasks.confirm")
+    assert chilonzor.manager == head
+    # Both demo companies accept finished work automatically, like every new company.
+    rules = TasksSettings.objects.filter(company__slug__in=(PHARMACY, DISTRIBUTOR))
+    assert sorted(rules.values_list("on_finish", flat=True)) == [OnFinish.AUTO] * 2

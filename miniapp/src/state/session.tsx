@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
+import { api } from "../api/client";
 import { isSuspended } from "../api/membership";
 import type { Me, Membership } from "../api/types";
 import { cloudStorage } from "../telegram";
@@ -86,6 +87,7 @@ export function SessionProvider({ me, children }: { me: Me; children: ReactNode 
       membership: pickMembership(me, preferred),
       companies: me.memberships.filter((m) => m.status === "approved" && m.is_onboarded),
       switchCompany: (companyId) => {
+        const moved = companyId !== pickMembership(me, preferred)?.company.id;
         setPreferred(companyId);
         try {
           localStorage.setItem(STORAGE_KEY, String(companyId));
@@ -93,8 +95,10 @@ export function SessionProvider({ me, children }: { me: Me; children: ReactNode 
           // Not remembered across launches, which is fine.
         }
         void cloudStorage.set(CLOUD_KEY, String(companyId));
-        // The bot keeps its own pick (/company): its menu names the company, and moving it from
-        // here would leave that menu out of date until /start.
+        // One company everywhere: the bot works in the company picked here from now on and says so
+        // in its chat, with that company's menu. Only a pick here moves it, never a link opened
+        // to another company's task. Best effort: the app works in the picked company either way.
+        if (moved) void api<Me>("/me/", { method: "PATCH", json: { bot_company: companyId } }).catch(() => undefined);
       },
     }),
     [me, preferred],

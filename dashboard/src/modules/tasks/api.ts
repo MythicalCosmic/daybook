@@ -27,6 +27,7 @@ import type {
   TaskFilterParams,
   TaskOptions,
   TaskRow,
+  TasksSettings,
   TaskSummary,
   TaskTimelineEntry,
   TaskUpdateInput,
@@ -68,6 +69,9 @@ export const tasksApi = {
     http.post<TaskDetail>(ownerPath(cid, `tasks/${id}/blocker/resolve/`), input),
   /** Need more time (contract 8): the giver's answer. */
   decideExtension: (cid: number, id: number, approve: boolean) => http.post<TaskDetail>(ownerPath(cid, `tasks/${id}/extension/decide/`), { approve }),
+  /** The company's rules for finished work: anyone reads them, company.settings changes them. */
+  settings: (cid: number, signal?: AbortSignal) => http.get<TasksSettings>(ownerPath(cid, "tasks/settings/"), undefined, { signal }),
+  saveSettings: (cid: number, input: Partial<TasksSettings>) => http.patch<TasksSettings>(ownerPath(cid, "tasks/settings/"), input),
 };
 
 /** Filter values (URL shape) as API params: empty values dropped. */
@@ -94,6 +98,7 @@ export const taskKeys = {
   detail: (cid: number, id: number) => qk(cid, MODULE, "detail", { id }),
   timeline: (cid: number, id: number) => qk(cid, MODULE, "timeline", { id }),
   proofs: (cid: number, params: Params) => qk(cid, MODULE, "proofs", params),
+  settings: (cid: number) => qk(cid, MODULE, "settings"),
 };
 
 export function useCompanyId() {
@@ -102,6 +107,17 @@ export function useCompanyId() {
 }
 
 // ─── Queries ────────────────────────────────────────────────────────────────
+
+/** The company's rules for finished work (the create dialog starts from them). */
+export function useTasksSettings() {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => taskKeys.settings(cid.value)),
+    queryFn: ({ signal }) => tasksApi.settings(cid.value, signal),
+    enabled: computed(() => cid.value > 0),
+    staleTime: 60_000,
+  });
+}
 
 export function useTaskList(params: MaybeRefOrGetter<Params>) {
   const cid = useCompanyId();
