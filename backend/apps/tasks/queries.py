@@ -147,12 +147,15 @@ def awaiting_review_by(member: Membership) -> QuerySet[Task]:
 
 
 def reviewers(task: Task) -> list[Membership]:
-    """Who gets asked to confirm finished work: whoever gave it, else the closest checkers."""
+    """Who gets asked to confirm finished work: whoever gave it, else the closest checkers.
+    Nobody checks their own work (`rules.can_review`): work someone gave themselves that still
+    waits for a check (a board card, a task they took over) goes to the closest checkers."""
     creator = task.created_by
     if (
         task.kind == Task.Kind.ASSIGNED
         and creator is not None
         and creator.status == Membership.Status.APPROVED
+        and creator.pk != task.assignee_id
     ):
         return [creator]
     return closest_confirmers(task)
