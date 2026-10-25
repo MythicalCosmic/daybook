@@ -10,6 +10,7 @@ import { mountWithProviders, testApp } from "@/test/plugins";
 
 import { reminderKeys, remindersApi } from "../api";
 import PolicyList from "../components/PolicyList.vue";
+import TelegramBubble from "../components/TelegramBubble.vue";
 import en from "../i18n/en.json";
 import { emptyDraft, summary, toDraft, toInput } from "../draft";
 import module from "../index";
@@ -243,5 +244,22 @@ describe("PolicyList", () => {
     expect(app.router.currentRoute.value.query.new).toBeUndefined();
     wrapper.unmount();
     document.body.innerHTML = "";
+  });
+});
+
+describe("TelegramBubble", () => {
+  it("shows the bot's buttons as the plain bot sends them: words only, two a row", async () => {
+    mergeModuleMessages("reminders", { en, ru: en, uz: en });
+    const app = await testApp("/c/1/reminders");
+    const labels = (snooze: number) => {
+      const { wrapper } = mountWithProviders(TelegramBubble, { plugins: app.plugins, props: { text: "{name}, {task}: due {due}.", snooze } });
+      const found = wrapper.findAll("[data-testid=bubble-buttons] span").map((button) => button.text());
+      expect(wrapper.text()).not.toMatch(/\p{Extended_Pictographic}/u);
+      wrapper.unmount();
+      return found;
+    };
+    expect(labels(30)).toEqual(["Done", "Snooze", "Open", "Open in app"]);
+    // No snoozes allowed: no Snooze button.
+    expect(labels(0)).toEqual(["Done", "Open", "Open in app"]);
   });
 });

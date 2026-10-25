@@ -63,6 +63,11 @@ const ruleNote = computed(() => {
   const rule = finishRule.data.value?.on_finish;
   return rule ? t(`tasks.reviews.rule.${rule}`) : "";
 });
+/** The company's wait: what nobody checks in time is accepted on its own. */
+const waitNote = computed(() => {
+  const hours = finishRule.data.value?.auto_accept_after_hours;
+  return hours ? t("tasks.reviews.ruleWait", { n: hours }) : "";
+});
 const routineChecks = usePulseCount("tasks.routine_review");
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const hidden = ref<Set<number>>(new Set());
@@ -252,6 +257,12 @@ const missing = (task: TaskReview) => (task.proof === "none" ? { text: t("tasks.
     <p v-if="routineChecks > 0" class="-mt-2 flex flex-wrap items-center gap-1.5 text-sm text-muted" data-testid="routine-checks">
       <Repeat :size="15" class="text-subtle" aria-hidden="true" />{{ t("tasks.reviews.routines", { n: routineChecks }, routineChecks) }}
       <RouterLink :to="`/c/${company.currentId}/routines/confirm`" class="inline-flex items-center font-medium text-accent-fg hover:underline">{{ t("tasks.reviews.toRoutines") }}<ChevronRight :size="14" /></RouterLink>
+    </p>
+
+    <!-- The company's rule above the work too, not only on the empty page: why these and not all. -->
+    <p v-if="ruleNote && query.data.value && total" class="-mt-2 max-w-[860px] text-sm text-muted" data-testid="reviews-rule-top">
+      {{ ruleNote }}<template v-if="waitNote"> {{ waitNote }}</template>
+      <RouterLink v-if="company.can('company.settings')" :to="`/c/${company.currentId}/settings/tasks`" class="ml-1 font-medium text-primary hover:underline">{{ t("tasks.reviews.ruleLink") }}</RouterLink>
     </p>
 
     <!-- Waiting for your answer: more time asked, "can't do it". -->

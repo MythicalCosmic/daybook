@@ -376,5 +376,6 @@
   "tasks.reviews.rule.auto": "Kompaniya qoidasi: bajarilgan ish avtomatik qabul qilinadi, bu yerga faqat tekshiruv so‘ralgan vazifalar keladi.",
   "tasks.reviews.rule.proof": "Kompaniya qoidasi: rasm yoki hisobot bilan bajarilgan ish avtomatik qabul qilinadi, qolgani shu yerga keladi.",
   "tasks.reviews.rule.ask": "Kompaniya qoidasi: har bir bajarilgan vazifa shu yerda tekshiruvni kutadi.",
+  "tasks.reviews.ruleWait": "{n} soat ichida hech kim tekshirmasa, ish avtomatik qabul qilinadi.",
   "tasks.reviews.ruleLink": "O‘zgartirish"
 }

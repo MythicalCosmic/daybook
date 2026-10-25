@@ -215,4 +215,55 @@ describe("the empty reviews page says the company's rule", () => {
     expect(note?.querySelector("a")?.getAttribute("href")).toContain("/settings/tasks");
     wrapper.unmount();
   });
+
+  it("says the rule and the wait above the work waiting for a check too", async () => {
+    const empty = { count: 0, next: null, previous: null, results: [] };
+    const person = (id: number, name: string) => ({ id, name, photo_url: null, position: "Farmatsevt" });
+    const waiting = {
+      id: 7,
+      kind: "assigned",
+      title: "Count the stockroom",
+      status: "review",
+      priority: "normal",
+      due_at: null,
+      for_date: null,
+      is_overdue: false,
+      assignee: person(12, "Alisher Valiyev"),
+      created_by: person(11, "Bekzod Mirzayev"),
+      branch: { id: 1, name: "Chilonzor", code: "CHL" },
+      routine: null,
+      project: null,
+      proof: "none",
+      needs_confirmation: true,
+      has_proof: false,
+      proof_thumb: null,
+      proof_photo: null,
+      checklist: { done: 0, total: 0 },
+      reward: null,
+      started_at: null,
+      completed_at: "2026-10-25T21:22:00Z",
+      confirmed_at: null,
+      created_at: "2026-10-25T20:00:00Z",
+      moves: [],
+      seen_at: null,
+      blocker: null,
+      extension: null,
+    };
+    stub({
+      "GET tasks/reviews/": () => json({ count: 1, next: null, previous: null, results: [waiting] }),
+      "GET tasks/": () => json(empty),
+      "GET tasks/settings/": () => json({ on_finish: "auto", auto_accept_after_hours: 8 }),
+    });
+    const app = await testApp("/c/1/tasks/reviews");
+    const { default: ReviewsPage } = await import("../pages/ReviewsPage.vue");
+    const { wrapper } = mountWithProviders(ReviewsPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(text()).toContain("Count the stockroom");
+    const note = document.body.querySelector("[data-testid=reviews-rule-top]");
+    expect(note?.textContent).toContain("Company rule: finished work is accepted automatically; only tasks that ask for a check come here.");
+    expect(note?.textContent).toContain("If nobody checks it within 8 h, it is accepted automatically.");
+    expect(document.body.querySelector("[data-testid=reviews-rule]")).toBeNull();
+    wrapper.unmount();
+  });
 });

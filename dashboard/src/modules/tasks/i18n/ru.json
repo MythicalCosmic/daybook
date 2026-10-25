@@ -23,7 +23,7 @@
   "tasks.status.done": "Выполнена",
   "tasks.status.cancelled": "Отменена",
   "tasks.status.late": "Просрочена",
-  "tasks.priority.urgent": "Срочно",
+  "tasks.priority.urgent": "Срочный",
   "tasks.priority.high": "Высокий",
   "tasks.priority.normal": "Обычный",
   "tasks.priority.low": "Низкий",
@@ -376,5 +376,6 @@
   "tasks.reviews.rule.auto": "Правило компании: выполненная работа принимается автоматически, сюда попадают только задачи с проверкой.",
   "tasks.reviews.rule.proof": "Правило компании: работа с фото или отчётом принимается автоматически, остальная попадает сюда.",
   "tasks.reviews.rule.ask": "Правило компании: каждая выполненная задача ждёт здесь проверки.",
+  "tasks.reviews.ruleWait": "Если никто не проверит за {n} ч, работа будет принята автоматически.",
   "tasks.reviews.ruleLink": "Изменить"
 }

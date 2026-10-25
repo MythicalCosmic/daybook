@@ -45,6 +45,9 @@ describe("one company everywhere", () => {
     await flushPromises();
     expect(app.router.currentRoute.value.path.startsWith("/c/2")).toBe(true);
     expect(calls.filter((call) => call.method === "PATCH")).toEqual([{ method: "PATCH", url: "/api/v1/owner/me/", body: { bot_company: 2 } }]);
+    // "/" in this tab opens the company just picked, not the one picked before the page loaded.
+    expect(useSessionStore().me?.bot_company).toBe(2);
+    expect(useCompanyStore().defaultCompanyId()).toBe(2);
 
     // The company already open (the app's router guard sets it from the URL): nothing to move.
     useCompanyStore().setCurrent(2);
