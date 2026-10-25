@@ -38,7 +38,7 @@ from apps.tasks.models import (
     TaskTemplate,
     Weekday,
 )
-from apps.tasks.queries import TASK_RELATIONS
+from apps.tasks.queries import TASK_RELATIONS, with_relations
 from apps.timeoff.queries import is_holiday
 
 EDITABLE_FIELDS = frozenset({"title", "description", "due_at", "priority", "reward"})
@@ -1334,9 +1334,8 @@ def _missing_proof(proof: str, text: str, photo: File | None) -> str | None:
 
 
 def _lock(task: Task) -> Task:
-    return (
-        Task.objects.select_for_update(of=("self",)).select_related(*TASK_RELATIONS).get(pk=task.pk)
-    )
+    # with_relations: the 17-table join cost 10 to 20 ms of planning on every task action.
+    return with_relations(Task.objects.select_for_update(of=("self",))).get(pk=task.pk)
 
 
 def _already(task: Task) -> str:

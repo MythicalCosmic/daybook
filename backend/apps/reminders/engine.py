@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from aiogram.exceptions import TelegramAPIError, TelegramForbiddenError
+from aiogram.exceptions import TelegramAPIError, TelegramForbiddenError, TelegramRetryAfter
 from django.db import transaction
 from django.utils import timezone, translation
 
@@ -18,7 +18,7 @@ from apps.reminders.models import ReminderLog, ReminderPolicy
 from apps.reminders.policies import escalation_recipients, policy_for
 from apps.reminders.schedule import quiet_for_task
 from apps.tasks.models import Task, TaskMessage
-from apps.tasks.queries import TASK_RELATIONS
+from apps.tasks.queries import with_relations
 from apps.timeoff.queries import days_off
 
 logger = logging.getLogger(__name__)
@@ -64,11 +64,9 @@ def _claim(task_id: int, now: datetime) -> Claim | None:
 
     Another run holding the row simply skips it, so a reminder never goes out twice.
     """
+    # with_relations also brings the escalation contact, the policies and the company.
     task = (
-        Task.objects.select_for_update(skip_locked=True, of=("self",))
-        .select_related(
-            *TASK_RELATIONS, "escalate_to__user", "reminder_policy", "template__reminder_policy"
-        )
+        with_relations(Task.objects.select_for_update(skip_locked=True, of=("self",)))
         .filter(pk=task_id, status__in=Task.OPEN_STATUSES, next_reminder_at__lte=now)
         .first()
     )
@@ -139,6 +137,14 @@ def _deliver(claim: Claim, now: datetime) -> None:
         )
     except TelegramForbiddenError:
         _blocked(task, member, now)
+        return
+    except TelegramRetryAfter as exc:
+        if not claim.escalate:
+            _retry_later(claim, now + timedelta(seconds=exc.retry_after + 1))
+            return
+        # An escalation isn't sent again: the team group already heard; the next reminder follows.
+        logger.warning("Reminder for task %s not delivered: %s", task.pk, exc)
+        _log(task, claim.kind, claim.step, member, error=str(exc))
         return
     except TelegramAPIError as exc:
         logger.warning("Reminder for task %s not delivered: %s", task.pk, exc)
@@ -231,6 +237,15 @@ def _tell(recipients, kind: str, task: Task, step: int, build) -> None:
                         "kind": TaskMessage.Kind.ESCALATION,
                     },
                 )
+
+
+def _retry_later(claim: Claim, at: datetime) -> None:
+    """Telegram asked to slow down: the same reminder goes again once it allows, instead of being
+    lost until the next one (the claim had already moved the step and the next time on)."""
+    fields = {"next_reminder_at": at}
+    if claim.kind == ReminderLog.Kind.REMINDER:
+        fields["reminders_sent"] = claim.step - 1
+    _save(claim.task, **fields)
 
 
 def _save(task: Task, **fields) -> None:

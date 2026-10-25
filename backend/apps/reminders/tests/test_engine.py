@@ -2,7 +2,7 @@ from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
-from aiogram.exceptions import TelegramForbiddenError
+from aiogram.exceptions import TelegramForbiddenError, TelegramRetryAfter
 from aiogram.methods import SendMessage
 from django.utils import timezone
 
@@ -281,6 +281,37 @@ def test_someone_who_blocked_the_bot_is_reported_once(
     assert worker.user.employee_bot_blocked_at == noon
     first.refresh_from_db()
     assert first.next_reminder_at == noon + timedelta(hours=1)
+
+
+def test_a_reminder_telegram_holds_back_goes_again_when_allowed(
+    worker, manager, noon, sent_messages, monkeypatch
+):
+    record = telegram.send_message
+    calls = []
+
+    def slow_down_once(bot, chat_id, text, reply_markup=None, photo=None):
+        calls.append(chat_id)
+        if len(calls) == 1:
+            raise TelegramRetryAfter(
+                SendMessage(chat_id=chat_id, text=text), "Too Many Requests", 30
+            )
+        return record(bot, chat_id, text, reply_markup, photo)
+
+    monkeypatch.setattr(telegram, "send_message", slow_down_once)
+    task = late_task(worker, noon, created_by=manager, title="Shelves")
+
+    send_due_reminders(noon)
+
+    task.refresh_from_db()
+    assert task.reminders_sent == 0
+    assert task.next_reminder_at == noon + timedelta(seconds=31)
+    assert not ReminderLog.objects.filter(task=task).exists()
+
+    send_due_reminders(noon + timedelta(seconds=31))
+
+    task.refresh_from_db()
+    assert task.reminders_sent == 1
+    assert len(to(sent_messages, worker)) == 1
 
 
 def test_owner_written_text_takes_over_from_its_step(company, worker, manager, noon, sent_messages):
