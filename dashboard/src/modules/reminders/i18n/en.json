@@ -46,7 +46,7 @@
   "reminders.form.escalateHint": "Tell the manager with this reminder; 0 never",
   "reminders.form.quietHint": "No reminders at night; they go out when it ends",
   "reminders.form.quietDaysHint": "Days with no reminders at all",
-  "reminders.form.snoozeHint": "When they tap “Later” in Telegram",
+  "reminders.form.snoozeHint": "When they tap “Snooze” in Telegram",
   "reminders.form.replaceHint": "Delete the last reminder when sending the next, so the chat stays tidy",
   "reminders.form.textsTitle": "Your own words",
   "reminders.form.textsHint": "Replace the bot's wording from a given reminder on. Without them the bot uses its own, firmer each time.",

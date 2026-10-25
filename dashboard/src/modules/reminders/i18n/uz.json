@@ -46,7 +46,7 @@
   "reminders.form.escalateHint": "Shu eslatmada rahbarga xabar beriladi; 0 – hech qachon",
   "reminders.form.quietHint": "Kechasi eslatma yuborilmaydi, sokin vaqt tugagach yuboriladi",
   "reminders.form.quietDaysHint": "Umuman eslatma bo‘lmaydigan kunlar",
-  "reminders.form.snoozeHint": "Telegramda «Keyinroq» bosilganda",
+  "reminders.form.snoozeHint": "Telegramda «Keyinga surish» bosilganda",
   "reminders.form.replaceHint": "Yangisini yuborganda oldingi eslatma o‘chiriladi, chat toza qoladi",
   "reminders.form.textsTitle": "O‘z matnlaringiz",
   "reminders.form.textsHint": "Ma’lum eslatmadan boshlab bot matnini almashtiring. Bo‘lmasa, bot o‘z matnini ishlatadi, har safar qat’iyroq.",

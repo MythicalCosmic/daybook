@@ -40,7 +40,7 @@
 
   "comms.compose.title": "Новое объявление",
   "comms.compose.editTitle": "Изменить запланированное объявление",
-  "comms.compose.description": "Бот отправит его в Telegram с кнопкой «Прочитал(а)».",
+  "comms.compose.description": "Бот отправит его в Telegram с кнопкой «Прочитано».",
   "comms.compose.message": "Сообщение",
   "comms.compose.placeholder": "Напишите команде…",
   "comms.compose.writeSomething": "Напишите, что отправить.",
@@ -95,7 +95,7 @@
   "comms.bubble.reminder": "Напоминание: прочитайте, пожалуйста, объявление от {name}",
   "comms.bubble.manager": "Руководитель",
   "comms.bubble.empty": "Здесь появится ваше сообщение",
-  "comms.bubble.read": "Прочитал(а)",
+  "comms.bubble.read": "Прочитано",
 
   "comms.detail.title": "Объявление",
   "comms.detail.sentBy": "Отправил(а) {name} · {when}",
@@ -115,7 +115,7 @@
   "comms.detail.allReadTitle": "Все прочитали",
   "comms.detail.allReadBody": "Напоминать больше некому.",
   "comms.detail.noneReadTitle": "Пока никто",
-  "comms.detail.noneReadBody": "Люди появятся здесь, когда нажмут «Прочитал(а)».",
+  "comms.detail.noneReadBody": "Люди появятся здесь, когда нажмут «Прочитано».",
   "comms.detail.remind": "Напомнить",
   "comms.detail.remindN": "Напомнить {n} не прочитавшему | Напомнить {n} не прочитавшим | Напомнить {n} не прочитавшим",
   "comms.detail.remindTitle": "Напомнить {n} человеку? | Напомнить {n} людям? | Напомнить {n} людям?",
