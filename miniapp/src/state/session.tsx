@@ -23,10 +23,9 @@ type Session = {
 const SessionContext = createContext<Session | null>(null);
 
 /**
- * Which membership the app shows: the company chosen on a phone if still approved, else the one
- * the server says the person works in (`bot_company`, the bot's company: the one picked last, else
- * a company they own with the most branches, which a first visit to the dashboard opens too),
- * else the first.
+ * Which membership the app shows: the preferred company (at launch `launchCompany`, later the one
+ * picked or opened from a link here) if still approved, else the one the server says the person
+ * works in (`bot_company`), else the first.
  */
 function pickMembership(me: Me, preferred: number | null): Membership | null {
   const memberships = me.memberships;
@@ -58,8 +57,19 @@ function savedCompany(): number | null {
 /** How long the first screen waits for the company remembered on another phone. */
 const CLOUD_WAIT_MS = 400;
 
+/**
+ * At launch, the company the person works in everywhere: `bot_company`, which a pick in the bot, the
+ * dashboard or this app moves (else a company they own with the most branches), so all three open
+ * the same one. Without it, the company chosen on this phone, else the one used last on another
+ * phone (Telegram's cloud).
+ */
+function launchCompany(me: Me): number | null {
+  const working = me.memberships.some((m) => m.company.id === me.bot_company && m.status === "approved");
+  return working ? (me.bot_company ?? null) : savedCompany();
+}
+
 export function SessionProvider({ me, children }: { me: Me; children: ReactNode }) {
-  const [preferred, setPreferred] = useState<number | null>(savedCompany);
+  const [preferred, setPreferred] = useState<number | null>(() => launchCompany(me));
   // Nothing remembered on this phone and more than one company: ask Telegram's cloud for the one
   // used last on another phone before the first screen, so the company never changes under a
   // screen already open (or a draft already started).

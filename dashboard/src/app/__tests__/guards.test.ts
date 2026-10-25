@@ -98,4 +98,14 @@ describe("the first company", () => {
     store.setCurrent(41);
     expect(store.defaultCompanyId()).toBe(41);
   });
+
+  it("follows the company picked last in the bot or the mini app", () => {
+    setActivePinia(createPinia());
+    const distributor = manager([], { id: 41, name: "Demo Distribyutor", is_owner: true });
+    const pharmacy = company({ id: 40, name: "Demo Dorixona" });
+    useSessionStore().me = { ...me([distributor, pharmacy]), bot_company: 41 };
+    const store = useCompanyStore();
+    store.setCurrent(40);
+    expect(store.defaultCompanyId()).toBe(41);
+  });
 });

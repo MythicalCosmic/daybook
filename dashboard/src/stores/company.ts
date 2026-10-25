@@ -33,12 +33,16 @@ export const useCompanyStore = defineStore("company", () => {
   }
 
   /**
-   * Where "/" goes: the last company used in this browser when still allowed. A first visit opens
+   * Where "/" goes: the company the person works in everywhere (`bot_company`, moved by a pick in the
+   * bot, the mini app or here), else the last one used in this browser when still allowed. A first visit opens
    * the main business, not the alphabetically first: one the person owns, that is set up, with the
    * most branches (a pharmacy chain before its small distributor); the list's order breaks ties.
    */
   function defaultCompanyId(): number | null {
     const list = companies.value;
+    // One company everywhere: the one picked last in the bot, the mini app or here.
+    const working = session.me?.bot_company ?? null;
+    if (list.some((c) => c.id === working)) return working;
     if (list.some((c) => c.id === lastId.value)) return lastId.value;
     const main = [...list].sort(
       (a, b) => Number(b.is_owner) - Number(a.is_owner) || Number(b.setup_completed) - Number(a.setup_completed) || b.branches.length - a.branches.length,
