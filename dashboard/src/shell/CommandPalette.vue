@@ -289,7 +289,11 @@ const companyItems = computed<Item[]>(() =>
       logo: { name: c.name, src: c.logo },
       icon: Building2,
       keywords: [c.name],
-      run: () => void router.push(pathInCompany(router, route, c.id)),
+      run: () => {
+        void router.push(pathInCompany(router, route, c.id));
+        // A pick, like the switcher's: the bot works in that company too (one company everywhere).
+        void shellApi.setBotCompany(c.id).catch(() => undefined);
+      },
     })),
 );
 
