@@ -372,5 +372,9 @@
   "tasks.settings.afterHours": "Принять автоматически через {n} ч",
   "tasks.settings.saved": "Сохранено",
   "tasks.field.waited": "Ожидание проверки",
-  "tasks.accepted.hours": "{n} ч"
+  "tasks.accepted.hours": "{n} ч",
+  "tasks.reviews.rule.auto": "Правило компании: выполненная работа принимается автоматически, сюда попадают только задачи с проверкой.",
+  "tasks.reviews.rule.proof": "Правило компании: работа с фото или отчётом принимается автоматически, остальная попадает сюда.",
+  "tasks.reviews.rule.ask": "Правило компании: каждая выполненная задача ждёт здесь проверки.",
+  "tasks.reviews.ruleLink": "Изменить"
 }

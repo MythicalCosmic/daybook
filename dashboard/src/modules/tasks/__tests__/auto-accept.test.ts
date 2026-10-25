@@ -196,3 +196,23 @@ describe("Accepted, wherever the status shows", () => {
     wrapper.unmount();
   });
 });
+
+describe("the empty reviews page says the company's rule", () => {
+  it("explains why little comes here, with a way to change it for owners", async () => {
+    const empty = { count: 0, next: null, previous: null, results: [] };
+    stub({
+      "GET tasks/reviews/": () => json(empty),
+      "GET tasks/": () => json(empty),
+      "GET tasks/settings/": () => json({ on_finish: "auto", auto_accept_after_hours: null }),
+    });
+    const app = await testApp("/c/1/tasks/reviews");
+    const { default: ReviewsPage } = await import("../pages/ReviewsPage.vue");
+    const { wrapper } = mountWithProviders(ReviewsPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    const note = document.body.querySelector("[data-testid=reviews-rule]");
+    expect(note?.textContent).toContain("Company rule: finished work is accepted automatically; only tasks that ask for a check come here.");
+    expect(note?.querySelector("a")?.getAttribute("href")).toContain("/settings/tasks");
+    wrapper.unmount();
+  });
+});
