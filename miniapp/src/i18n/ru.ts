@@ -480,6 +480,7 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
   "profile.streakStart": "Выполните сегодняшние задачи, чтобы начать серию.",
   "profile.onTime": "вовремя в этом месяце",
   "profile.doneMonth": "задач выполнено за месяц",
+  "profile.reportsTo": "Ваш руководитель: {name}",
   "profile.settings": "Настройки",
   "profile.language": "Язык",
   "profile.theme": "Тема",

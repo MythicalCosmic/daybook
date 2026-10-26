@@ -2,6 +2,7 @@ import { CheckCheck, ChevronDown, ClipboardList, ListPlus, Plus, Send } from "lu
 import { useEffect, useState } from "react";
 
 import { useBoard, useFinishRule, useGivenByMe, useReviewQueue } from "../api/hooks";
+import { checksWork, givesWork } from "../api/permissions";
 import type { Task } from "../api/types";
 import { ReviewQueue, RoutinesTab } from "../components/Routines";
 import { RowSkeleton, TaskRow } from "../components/TaskRow";
@@ -50,8 +51,8 @@ export function Tasks() {
   const strip = useScrollEdges<HTMLDivElement>();
   const navigation = useNavigation();
   const complete = useCompleteTask();
-  const canReview = member.permissions.includes("tasks.confirm");
-  const canAssign = member.permissions.includes("tasks.assign");
+  const canReview = checksWork(member);
+  const canAssign = givesWork(member);
   const board = useBoard(member.companyId);
   const reviews = useReviewQueue(member.companyId, canReview);
   const finishRule = useFinishRule(member.companyId, canReview);

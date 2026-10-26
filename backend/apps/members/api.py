@@ -1,4 +1,5 @@
-from drf_spectacular.utils import extend_schema, extend_schema_field
+from django.db.models import Q
+from drf_spectacular.utils import extend_schema, extend_schema_field, inline_serializer
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.generics import ListAPIView
@@ -7,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.companies.models import Branch, Company, Feature
-from apps.members import bot_messages, scope, services
+from apps.members import bot_messages, departments, scope, services
 from apps.members.models import Membership, Position
 from apps.members.permissions import Perm
 
@@ -62,6 +63,9 @@ class MembershipSerializer(serializers.ModelSerializer):
     joined_by_link = serializers.BooleanField(
         help_text="A team link let them in, without anyone's check (the app welcomes them)."
     )
+    department = serializers.SerializerMethodField()
+    manager = serializers.SerializerMethodField()
+    team_size = serializers.SerializerMethodField()
 
     class Meta:
         model = Membership
@@ -82,12 +86,42 @@ class MembershipSerializer(serializers.ModelSerializer):
             "branch_ids",
             "suspended_until",
             "joined_by_link",
+            "department",
+            "manager",
+            "team_size",
         )
         read_only_fields = fields
 
     @extend_schema_field(serializers.ListField(child=serializers.ChoiceField(Perm.choices)))
     def get_permissions(self, membership: Membership) -> list[str]:
         return [perm.value for perm in Perm if membership.has_perm(perm)]
+
+    @extend_schema_field(
+        inline_serializer(
+            "MembersDepartmentRef",
+            {"id": serializers.IntegerField(), "name": serializers.CharField()},
+            allow_null=True,
+        )
+    )
+    def get_department(self, membership: Membership) -> dict | None:
+        department = membership.department
+        return {"id": department.pk, "name": department.name} if department else None
+
+    @extend_schema_field(
+        inline_serializer(
+            "MembersManager",
+            {"id": serializers.IntegerField(), "name": serializers.CharField()},
+            allow_null=True,
+        )
+    )
+    def get_manager(self, membership: Membership) -> dict | None:
+        """Their own head (the nearest head above them in the departments)."""
+        head = departments.manager_of(membership)
+        return {"id": head.pk, "name": str(head)} if head else None
+
+    def get_team_size(self, membership: Membership) -> int:
+        """People they manage through departments: a head may give them work."""
+        return len(departments.team_ids(membership))
 
     @extend_schema_field(serializers.ListField(child=serializers.IntegerField()))
     def get_branch_ids(self, membership: Membership) -> list[int]:
@@ -183,23 +217,35 @@ class MemberBriefSerializer(serializers.ModelSerializer):
 class CanSeeMembers(BasePermission):
     def has_permission(self, request, view):
         member = view.membership
-        return member.has_perm(Perm.MEMBERS_VIEW) or member.has_perm(Perm.TASKS_ASSIGN)
+        return (
+            member.has_perm(Perm.MEMBERS_VIEW)
+            or member.has_perm(Perm.TASKS_ASSIGN)
+            or departments.leads(member)
+        )
 
 
 class MemberListView(ListAPIView):
-    """Registered members of the company, e.g. to pick who a task is for: everyone with
-    branches.all, otherwise the people sharing one of the caller's branches (§2.6)."""
+    """Registered members of the company, e.g. to pick who a task is for: with members.view or
+    tasks.assign everyone with branches.all, otherwise the people sharing one of the caller's
+    branches (§2.6); and for a head the people they manage (apps.members.departments)."""
 
     permission_classes = (IsAuthenticated, IsCompanyMember, CanSeeMembers)
     serializer_class = MemberBriefSerializer
     pagination_class = None
 
     def get_queryset(self):
-        people = Membership.objects.for_company(self.membership.company).filter(
+        member = self.membership
+        people = Membership.objects.for_company(member.company).filter(
             status=Membership.Status.APPROVED, onboarded_at__isnull=False
         )
-        people = scope.restrict(people, scope.branch_ids(self.membership), field="branches")
-        return people.select_related("user", "position").order_by("first_name", "last_name")
+        team = departments.team_ids(member)
+        if member.has_perm(Perm.MEMBERS_VIEW) or member.has_perm(Perm.TASKS_ASSIGN):
+            visible = scope.restrict(people, scope.branch_ids(member), field="branches")
+            if team:
+                visible = people.filter(Q(pk__in=visible.values("pk")) | Q(pk__in=team))
+        else:
+            visible = people.filter(Q(pk__in=team) | Q(pk=member.pk))
+        return visible.select_related("user", "position").order_by("first_name", "last_name")
 
 
 class PositionListView(ListAPIView):

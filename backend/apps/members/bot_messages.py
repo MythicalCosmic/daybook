@@ -65,11 +65,16 @@ def main_menu(membership: Membership | None = None) -> ReplyKeyboardMarkup:
 
 
 def checks_work(membership: Membership) -> bool:
-    """Whoever accepts or sends back finished work: tasks.confirm holders and those who give
-    work (they check what they gave)."""
+    """Whoever accepts or sends back finished work: tasks.confirm holders, those who give work
+    (they check what they gave) and heads (they check their people's)."""
+    from apps.members.departments import leads
     from apps.members.permissions import Perm
 
-    return membership.has_perm(Perm.TASKS_CONFIRM) or membership.has_perm(Perm.TASKS_ASSIGN)
+    return (
+        membership.has_perm(Perm.TASKS_CONFIRM)
+        or membership.has_perm(Perm.TASKS_ASSIGN)
+        or leads(membership)
+    )
 
 
 def several_companies(membership: Membership) -> bool:

@@ -2,6 +2,7 @@ import { CalendarClock, Camera, ChevronDown, Eye, Flag, Plus, Repeat as RepeatIc
 import { useId, useMemo, useState } from "react";
 
 import { type NewTask, useCreateTask, useFinishRule, useMembers } from "../api/hooks";
+import { givesWork } from "../api/permissions";
 import type { QuickAdd, Repeat } from "../api/types";
 import { FeatureSlot } from "../features/FeatureSlot";
 import { useI18n } from "../i18n";
@@ -33,7 +34,7 @@ export function AddSheet() {
   const create = useCreateTask(member.companyId);
   const toast = useToast();
   const ids = useId();
-  const canAssign = member.permissions.includes("tasks.assign");
+  const canAssign = givesWork(member);
   const members = useMembers(member.companyId, canAssign);
   const finishRule = useFinishRule(member.companyId, canAssign).data?.on_finish ?? "auto";
 

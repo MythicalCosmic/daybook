@@ -21,6 +21,7 @@ from django.utils import timezone, translation
 from django.utils.translation import gettext as _
 
 from apps.core.exceptions import DomainError
+from apps.members import departments
 from apps.members.bot_messages import MENU_NEW_TASK, BotMessage
 from apps.members.models import Membership
 from apps.members.permissions import Perm
@@ -96,7 +97,9 @@ async def got_title(message: Message, membership: Membership, state: FSMContext)
     if len(title) > TITLE_MAX:
         update["note"] = _("The title was cut to 200 characters.")
     await state.update_data(**update)
-    if membership.has_perm(Perm.TASKS_ASSIGN):
+    if membership.has_perm(Perm.TASKS_ASSIGN) or await sync_to_async(departments.leads)(
+        membership
+    ):  # a head gives work to their people
         await _ask_assignee(message, membership, state)
         return
     await _next(message, membership, state, edit=False)

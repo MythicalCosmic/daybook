@@ -126,6 +126,14 @@ class Membership(TenantModel):
     joined_by_link = models.BooleanField(
         default=False, help_text=_("A team link let them in, without anyone's check.")
     )
+    department = models.ForeignKey(
+        "Department",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="members",
+        help_text=_("The department they work in. Its head, and the heads above, manage them."),
+    )
 
     class Meta:
         constraints = [
@@ -154,7 +162,7 @@ class Membership(TenantModel):
 
     def clean(self):
         # Tenant guard: a role, position or branch from another company must never be attached.
-        for field in ("role", "position", "home_branch", "join_link"):
+        for field in ("role", "position", "home_branch", "join_link", "department"):
             related = getattr(self, field)
             if related is not None and related.company_id != self.company_id:
                 raise ValidationError({field: _("Must belong to the same company.")})
@@ -173,6 +181,39 @@ class Membership(TenantModel):
         return (
             self.status == self.Status.APPROVED and self.role is not None and self.role.grants(perm)
         )
+
+
+class Department(TenantModel):
+    """A part of the company's structure. Departments form a tree; a head manages everyone in
+    their department and in every department below it (apps.members.departments)."""
+
+    name = models.CharField(max_length=100)
+    # RESTRICT, not PROTECT: a department with sub-departments can't go alone, but a whole tree
+    # can be deleted together (a company's demo, for one).
+    parent = models.ForeignKey(
+        "self", on_delete=models.RESTRICT, null=True, blank=True, related_name="children"
+    )
+    head = models.ForeignKey(
+        Membership,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="headed_departments",
+        help_text=_("Gives and checks the work of everyone in this department and below it."),
+    )
+
+    class Meta:
+        ordering = ["name", "pk"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["company", "parent", "name"],
+                nulls_distinct=False,
+                name="unique_department_name_per_parent",
+            ),
+        ]
+
+    def __str__(self):
+        return self.name
 
 
 def generate_link_code() -> str:

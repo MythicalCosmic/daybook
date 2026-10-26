@@ -464,6 +464,7 @@ const uz: Partial<Record<Key, string>> = {
   "profile.streakStart": "Seriyani boshlash uchun bugungi vazifalarni bajaring.",
   "profile.onTime": "bu oy o‘z vaqtida",
   "profile.doneMonth": "bu oy bajarilgan vazifalar",
+  "profile.reportsTo": "Rahbaringiz: {name}",
   "profile.settings": "Sozlamalar",
   "profile.language": "Til",
   "profile.theme": "Mavzu",

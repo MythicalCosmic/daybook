@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 11:04+0500\n"
+"POT-Creation-Date: 2026-10-26 15:28+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -711,8 +711,9 @@ msgstr "Срок действия должен заканчиваться пос
 #: backend/apps/announcements/services.py backend/apps/attendance/api.py
 #: backend/apps/attendance/services.py backend/apps/console/base.py
 #: backend/apps/inbox/services.py backend/apps/knowledge/owner_api.py
-#: backend/apps/members/join_links.py backend/apps/members/services.py
-#: backend/apps/sales/handlers.py backend/apps/timeoff/services.py
+#: backend/apps/members/departments.py backend/apps/members/join_links.py
+#: backend/apps/members/services.py backend/apps/sales/handlers.py
+#: backend/apps/timeoff/services.py
 #: employee_bot/bot/handlers/admin/approvals.py
 msgid "You don't have permission to do this."
 msgstr "У вас нет прав на это действие."
@@ -5144,6 +5145,18 @@ msgstr "Снова включил ссылку для команды"
 msgid "Deleted a team link"
 msgstr "Удалил ссылку для команды"
 
+#: backend/apps/members/audit_actions.py
+msgid "Added a department"
+msgstr "Добавил отдел"
+
+#: backend/apps/members/audit_actions.py
+msgid "Changed a department"
+msgstr "Изменил отдел"
+
+#: backend/apps/members/audit_actions.py
+msgid "Deleted a department"
+msgstr "Удалил отдел"
+
 #: backend/apps/members/bot_messages.py
 msgid "Open app"
 msgstr "Открыть приложение"
@@ -5412,6 +5425,53 @@ msgstr "по умолчанию"
 msgid "Now working in <b>%(company)s</b>."
 msgstr "Теперь вы работаете в компании «<b>%(company)s</b>»."
 
+#: backend/apps/members/department_api.py
+msgid "Pick people of this company."
+msgstr "Выберите людей этой компании."
+
+#: backend/apps/members/departments.py
+#, python-format
+msgid "«%(name)s» already exists there. Rename one of them first."
+msgstr "Там уже есть «%(name)s». Сначала переименуйте один из них."
+
+#: backend/apps/members/departments.py
+msgid "Only current members of your company can be placed."
+msgstr "Распределять можно только текущих сотрудников компании."
+
+#: backend/apps/members/departments.py backend/apps/tasks/services.py
+#, python-format
+msgid "%(name)s works in a branch you don't manage."
+msgstr "%(name)s работает в филиале, которым вы не управляете."
+
+#: backend/apps/members/departments.py
+msgid "Give the department a name."
+msgstr "Дайте отделу название."
+
+#: backend/apps/members/departments.py
+msgid "A department's name can be at most 100 characters."
+msgstr "Название отдела может быть не длиннее 100 символов."
+
+#: backend/apps/members/departments.py backend/apps/members/services.py
+msgid "Pick a department of this company."
+msgstr "Выберите отдел этой компании."
+
+#: backend/apps/members/departments.py
+msgid "A department can't go under itself or its own part."
+msgstr "Отдел нельзя поместить внутрь самого себя или своей части."
+
+#: backend/apps/members/departments.py
+msgid "The head must be a current member of the company."
+msgstr "Руководителем может быть только текущий сотрудник компании."
+
+#: backend/apps/members/departments.py
+#, python-format
+msgid "There's already a department named «%(name)s» there."
+msgstr "Там уже есть отдел «%(name)s»."
+
+#: backend/apps/members/departments.py
+msgid "Only owners and people who manage every branch can do this."
+msgstr "Это могут только владельцы и те, кто управляет всеми филиалами."
+
 #: backend/apps/members/hooks.py
 msgid "Join request"
 msgstr "Заявка на вступление"
@@ -5580,8 +5640,19 @@ msgid "A team link let them in, without anyone's check."
 msgstr "Присоединился по ссылке для команды, без проверки."
 
 #: backend/apps/members/models.py
+msgid ""
+"The department they work in. Its head, and the heads above, manage them."
+msgstr ""
+"Отдел, в котором работает человек. Им руководят глава отдела и руководители "
+"выше."
+
+#: backend/apps/members/models.py
 msgid "Must be one of the branches they work in."
 msgstr "Должен быть одним из филиалов, где работает сотрудник."
+
+#: backend/apps/members/models.py
+msgid "Gives and checks the work of everyone in this department and below it."
+msgstr "Даёт задания и проверяет работу всех в этом отделе и ниже."
 
 #: backend/apps/members/models.py backend/apps/projects/models.py
 msgid "Active"
@@ -9995,11 +10066,6 @@ msgstr "Вы не можете принять эту задачу."
 #: backend/apps/tasks/services.py
 msgid "This task isn't waiting for a check."
 msgstr "Эта задача не ждёт проверки."
-
-#: backend/apps/tasks/services.py
-#, python-format
-msgid "%(name)s works in a branch you don't manage."
-msgstr "%(name)s работает в филиале, которым вы не управляете."
 
 #: backend/apps/tasks/services.py
 msgid "You can't assign tasks to others."

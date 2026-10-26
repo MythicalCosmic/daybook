@@ -20,6 +20,7 @@ audit_registry.register_target(
     "position", Perm.POSITIONS_MANAGE, check=providers.position_history_check
 )
 audit_registry.register_target("joinlink", Perm.MEMBERS_APPROVE)
+audit_registry.register_target("department", Perm.MEMBERS_VIEW)
 
 # Suspended people get no routine tasks while the suspension lasts.
 offdays.register(suspended_ids)
@@ -53,6 +54,7 @@ register_kind(
 
 registry.register_pulse("members.pending", perm=Perm.MEMBERS_APPROVE, count=providers.queue_count)
 registry.register_pulse("members.links", perm=Perm.MEMBERS_APPROVE, count=None)
+registry.register_pulse("members.departments", perm=Perm.MEMBERS_VIEW, count=None)
 registry.register_pulse("members.people", perm=Perm.MEMBERS_VIEW, count=None)
 registry.register_pulse(
     "members.roles", perm=AnyOf(Perm.ROLES_MANAGE, Perm.MEMBERS_VIEW), count=None

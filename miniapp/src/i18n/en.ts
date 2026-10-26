@@ -463,6 +463,7 @@ const en = {
   "profile.streakStart": "Finish today's tasks to start a streak.",
   "profile.onTime": "on time this month",
   "profile.doneMonth": "tasks done this month",
+  "profile.reportsTo": "Your head: {name}",
   "profile.settings": "Settings",
   "profile.language": "Language",
   "profile.theme": "Theme",
