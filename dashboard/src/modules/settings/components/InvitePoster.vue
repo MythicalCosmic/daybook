@@ -1,30 +1,36 @@
 <script setup lang="ts">
 /**
- * The A4 poster for the wall at work: the company, a big QR code of the invite link and three steps,
- * in the company's language plus Russian (or Uzbek). Printed alone: everything else on the page is
- * hidden while it prints.
+ * The A4 poster for the wall at work: the company, a big QR code of a link and three steps, in the
+ * company's language plus Russian (or Uzbek). The main invite link's poster says the manager
+ * approves; a team link that adds people straight away says they are on the team at once, and
+ * names its branch. Printed alone: everything else on the page is hidden while it prints.
  */
+import { MapPin } from "@lucide/vue";
 import { computed, defineAsyncComponent } from "vue";
 import { useI18n } from "vue-i18n";
 
 import CompanyLogo from "@/components/CompanyLogo.vue";
 import type { Language } from "@/api/types";
 
-import type { Invite } from "../types";
+import type { PosterTarget } from "../types";
 
 const QrCode = defineAsyncComponent(() => import("@/components/QrCode.vue"));
 
-const props = defineProps<{ invite: Invite; language: Language; preview?: boolean }>();
+const props = defineProps<{ target: PosterTarget; language: Language; preview?: boolean }>();
 
 const { t } = useI18n();
 const languages = computed<Language[]>(() => [props.language, props.language === "ru" ? "uz" : "ru"]);
 const say = (key: string, locale: Language) => t(key, {}, { locale });
+const stepKey = (step: number) => (step === 3 && props.target.autoApprove ? "settings.invite.poster.step3Auto" : `settings.invite.poster.step${step}`);
 </script>
 
 <template>
   <div data-theme="light" :class="['invite-poster mx-auto flex aspect-[210/297] w-full flex-col items-center bg-surface text-center text-fg', preview ? 'max-w-[420px] rounded-[10px] p-[6%] shadow-drawer' : 'p-[8%]']">
-    <CompanyLogo :name="invite.company.name" :src="invite.company.logo" :size="preview ? 52 : 96" />
-    <p :class="['mt-[3%] font-semibold leading-tight', preview ? 'text-[20px]' : 'text-[40px]']">{{ invite.company.name }}</p>
+    <CompanyLogo :name="target.company.name" :src="target.company.logo" :size="preview ? 52 : 96" />
+    <p :class="['mt-[3%] font-semibold leading-tight', preview ? 'text-[20px]' : 'text-[40px]']">{{ target.company.name }}</p>
+    <p v-if="target.branch" :class="['mt-[1%] inline-flex items-center gap-[0.3em] font-medium opacity-70', preview ? 'text-[12px]' : 'text-[24px]']">
+      <MapPin :size="preview ? 12 : 24" aria-hidden="true" />{{ target.branch }}
+    </p>
     <div class="mt-[4%] flex flex-col gap-[1%]">
       <p
         v-for="(lang, index) in languages"
@@ -39,19 +45,19 @@ const say = (key: string, locale: Language) => t(key, {}, { locale });
         {{ say("settings.invite.poster.title", lang) }}
       </p>
     </div>
-    <div class="mt-[5%]">
-      <QrCode :value="invite.link" :size="preview ? 150 : 360" level="Q" />
+    <div :class="target.branch ? 'mt-[4%]' : 'mt-[5%]'">
+      <QrCode :value="target.link" :size="preview ? 150 : 360" level="Q" />
     </div>
     <ol :class="['mt-[5%] grid w-full gap-[3%] text-left', preview ? 'text-[10px]' : 'text-[20px]']">
       <li v-for="step in [1, 2, 3]" :key="step" class="flex gap-[3%]">
         <span :class="['grid shrink-0 place-items-center rounded-full bg-primary font-bold text-on-primary', preview ? 'size-5 text-[10px]' : 'size-11 text-[22px]']">{{ step }}</span>
         <span class="min-w-0">
-          <span class="block font-semibold">{{ say(`settings.invite.poster.step${step}`, languages[0]!) }}</span>
-          <span class="block opacity-65">{{ say(`settings.invite.poster.step${step}`, languages[1]!) }}</span>
+          <span class="block font-semibold">{{ say(stepKey(step), languages[0]!) }}</span>
+          <span class="block opacity-65">{{ say(stepKey(step), languages[1]!) }}</span>
         </span>
       </li>
     </ol>
-    <p v-if="invite.bot_username" :class="['mt-auto pt-[3%] font-mono opacity-60', preview ? 'text-[9px]' : 'text-[18px]']">t.me/{{ invite.bot_username }}</p>
+    <p v-if="target.bot" :class="['mt-auto pt-[3%] font-mono opacity-60', preview ? 'text-[9px]' : 'text-[18px]']">t.me/{{ target.bot }}</p>
   </div>
 </template>
 

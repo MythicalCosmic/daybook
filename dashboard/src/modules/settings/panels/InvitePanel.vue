@@ -1,11 +1,17 @@
 <script setup lang="ts">
 /**
- * Settings › Invite staff (plan §1.4, §4.4): the employee bot's invite link as a big QR code,
- * copy and share, a printable poster for the wall at work, and "Make a new link" (the old link and
- * printed posters stop working). People who use it appear in join requests.
+ * Settings › Invite staff (plan §1.4, §4.4). Two ways in:
+ *
+ * - the **main invite link**: the employee bot's link as a big QR code, copy and share, a printable
+ *   poster for the wall at work, and "Make a new link" (the old link and printed posters stop
+ *   working). Everyone who uses it waits in Join requests: it always asks for approval;
+ * - **team links** (TeamLinksSection): one QR code or link that adds many people at once with the
+ *   branch and role chosen for it, shown live to a room.
+ *
+ * Both print through the same poster dialog.
  */
-import { Check, Copy, Link2, Printer, RefreshCw, Send, ShieldAlert, UserCheck, UserPlus, Users } from "@lucide/vue";
-import { computed, defineAsyncComponent, nextTick, ref } from "vue";
+import { Check, Copy, Link2, Printer, RefreshCw, Send, ShieldAlert, ShieldCheck, UserCheck, UserPlus, Users } from "@lucide/vue";
+import { computed, defineAsyncComponent, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
@@ -23,6 +29,9 @@ import { useCompanyStore } from "@/stores/company";
 import { useInvite, useRegenerateInvite, useSettings } from "../api";
 import InvitePoster from "../components/InvitePoster.vue";
 import PanelHeader from "../components/PanelHeader.vue";
+import TeamLinksSection from "../components/TeamLinksSection.vue";
+import { telegramShare } from "../teamLinks";
+import type { PosterTarget } from "../types";
 
 const QrCode = defineAsyncComponent(() => import("@/components/QrCode.vue"));
 
@@ -36,20 +45,34 @@ const confirm = useConfirm();
 const showSkeleton = useDelayedPending(() => invite.isPending.value);
 
 const copied = ref(false);
-const posterOpen = ref(false);
 const printing = ref(false);
 
 const language = computed(() => settings.data.value?.default_language ?? "uz");
 const shareUrl = computed(() => {
   const data = invite.data.value;
-  if (!data?.link) return "";
-  const text = t("settings.invite.shareText", { company: data.company.name });
-  return `https://t.me/share/url?url=${encodeURIComponent(data.link)}&text=${encodeURIComponent(text)}`;
+  return data?.link ? telegramShare(data.link, t("settings.invite.shareText", { company: data.company.name })) : "";
 });
 const requestsPath = computed(() => {
   const path = `/c/${company.currentId}/people/requests`;
   return router.resolve(path).name !== "company-not-found" ? path : null;
 });
+
+/** The poster in the dialog (and on paper): the main link's, or a team link's. */
+const mainPoster = computed<PosterTarget | null>(() => {
+  const data = invite.data.value;
+  return data?.link ? { link: data.link, company: data.company, bot: data.bot_username } : null;
+});
+const poster = ref<PosterTarget | null>(null);
+const posterOpen = computed({
+  get: () => poster.value !== null,
+  set: (value: boolean) => {
+    if (!value) poster.value = null;
+  },
+});
+/** The last poster shown stays in the dialog while it closes. */
+const shownPoster = ref<PosterTarget | null>(null);
+watch(poster, (target) => target && (shownPoster.value = target));
+const printed = computed(() => poster.value ?? mainPoster.value);
 
 async function copy(): Promise<void> {
   const link = invite.data.value?.link;
@@ -103,55 +126,65 @@ async function print(): Promise<void> {
 
     <EmptyState v-else-if="!invite.data.value.link" :title="t('settings.invite.noBotTitle')" :description="t('settings.invite.noBotBody')" :icon="Link2" tone="neutral" />
 
-    <div v-else class="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
-      <!-- The link -->
-      <section class="ui-card flex flex-col items-center p-6 text-center md:p-8">
-        <QrCode :value="invite.data.value.link" :size="208" level="Q" downloadable :filename="`invite-${invite.data.value.company.name}`" />
-        <p class="mt-5 text-md font-semibold text-fg">{{ t("settings.invite.scanTitle") }}</p>
-        <p class="mt-1 max-w-[380px] text-sm text-muted">{{ t("settings.invite.scanBody") }}</p>
+    <div v-else class="flex flex-col gap-9">
+      <section data-main-invite>
+        <header class="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <h3 class="text-md font-semibold text-fg">{{ t("settings.invite.mainTitle") }}</h3>
+          <span class="inline-flex items-center gap-1 text-sm text-muted"><ShieldCheck :size="14" class="text-success" aria-hidden="true" />{{ t("settings.invite.mainRule") }}</span>
+        </header>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <!-- The link -->
+          <div class="ui-card flex flex-col items-center p-6 text-center md:p-8">
+            <QrCode :value="invite.data.value.link" :size="208" level="Q" downloadable :filename="`invite-${invite.data.value.company.name}`" />
+            <p class="mt-5 text-md font-semibold text-fg">{{ t("settings.invite.scanTitle") }}</p>
+            <p class="mt-1 max-w-[380px] text-sm text-muted">{{ t("settings.invite.scanBody") }}</p>
 
-        <div class="mt-5 flex w-full max-w-[520px] items-center gap-2 rounded-[10px] border border-line bg-surface-2 p-1.5 pl-3">
-          <Link2 :size="15" class="shrink-0 text-subtle" />
-          <span class="min-w-0 flex-1 truncate text-left font-mono text-sm text-fg" :title="invite.data.value.link">{{ invite.data.value.link }}</span>
-          <UiButton size="sm" :variant="copied ? 'soft' : 'secondary'" :icon="copied ? Check : Copy" @click="copy">{{ copied ? t("common.copied") : t("common.copy") }}</UiButton>
-        </div>
+            <div class="mt-5 flex w-full max-w-[520px] items-center gap-2 rounded-[10px] border border-line bg-surface-2 p-1.5 pl-3">
+              <Link2 :size="15" class="shrink-0 text-subtle" />
+              <span class="min-w-0 flex-1 truncate text-left font-mono text-sm text-fg" :title="invite.data.value.link">{{ invite.data.value.link }}</span>
+              <UiButton size="sm" :variant="copied ? 'soft' : 'secondary'" :icon="copied ? Check : Copy" @click="copy">{{ copied ? t("common.copied") : t("common.copy") }}</UiButton>
+            </div>
 
-        <div class="mt-4 flex flex-wrap justify-center gap-2">
-          <UiButton variant="primary" :icon="Send" :href="shareUrl" target="_blank">{{ t("settings.invite.share") }}</UiButton>
-          <UiButton :icon="Printer" @click="posterOpen = true">{{ t("settings.invite.poster.open") }}</UiButton>
-          <UiButton variant="ghost" :icon="RefreshCw" :loading="regenerate.isPending.value" @click="renew">{{ t("settings.invite.renew") }}</UiButton>
+            <div class="mt-4 flex flex-wrap justify-center gap-2">
+              <UiButton variant="primary" :icon="Send" :href="shareUrl" target="_blank">{{ t("settings.invite.share") }}</UiButton>
+              <UiButton :icon="Printer" @click="poster = mainPoster">{{ t("settings.invite.poster.open") }}</UiButton>
+              <UiButton variant="ghost" :icon="RefreshCw" :loading="regenerate.isPending.value" @click="renew">{{ t("settings.invite.renew") }}</UiButton>
+            </div>
+          </div>
+
+          <!-- How it works and who joined -->
+          <aside class="flex flex-col gap-4">
+            <div class="ui-card p-5">
+              <p class="text-base font-semibold text-fg">{{ t("settings.invite.howTitle") }}</p>
+              <ol class="mt-3 flex flex-col gap-3">
+                <li v-for="step in [1, 2, 3]" :key="step" class="flex gap-3 text-sm text-muted">
+                  <span class="grid size-6 shrink-0 place-items-center rounded-full bg-accent-soft text-xs font-semibold text-accent-fg">{{ step }}</span>
+                  <span class="pt-0.5">{{ t(`settings.invite.how${step}`) }}</span>
+                </li>
+              </ol>
+            </div>
+            <div class="ui-card grid grid-cols-2 divide-x divide-line">
+              <div class="flex flex-col gap-1 p-4">
+                <span class="inline-flex items-center gap-1.5 text-xs font-medium text-muted"><Users :size="13" />{{ t("settings.invite.team") }}</span>
+                <span class="text-xl font-semibold tabular-nums text-fg">{{ invite.data.value.members.approved }}</span>
+              </div>
+              <div class="flex flex-col gap-1 p-4">
+                <span class="inline-flex items-center gap-1.5 text-xs font-medium text-muted"><UserPlus :size="13" />{{ t("settings.invite.waiting") }}</span>
+                <span :class="['text-xl font-semibold tabular-nums', invite.data.value.members.pending ? 'text-primary' : 'text-fg']">{{ invite.data.value.members.pending }}</span>
+              </div>
+            </div>
+            <UiButton v-if="requestsPath && invite.data.value.members.pending" :to="requestsPath" variant="soft" block :icon="UserCheck">{{ t("settings.invite.review") }}</UiButton>
+            <InlineAlert tone="neutral" size="sm" :description="t('settings.invite.safety')" />
+          </aside>
         </div>
       </section>
 
-      <!-- How it works and who joined -->
-      <aside class="flex flex-col gap-4">
-        <div class="ui-card p-5">
-          <p class="text-base font-semibold text-fg">{{ t("settings.invite.howTitle") }}</p>
-          <ol class="mt-3 flex flex-col gap-3">
-            <li v-for="step in [1, 2, 3]" :key="step" class="flex gap-3 text-sm text-muted">
-              <span class="grid size-6 shrink-0 place-items-center rounded-full bg-accent-soft text-xs font-semibold text-accent-fg">{{ step }}</span>
-              <span class="pt-0.5">{{ t(`settings.invite.how${step}`) }}</span>
-            </li>
-          </ol>
-        </div>
-        <div class="ui-card grid grid-cols-2 divide-x divide-line">
-          <div class="flex flex-col gap-1 p-4">
-            <span class="inline-flex items-center gap-1.5 text-xs font-medium text-muted"><Users :size="13" />{{ t("settings.invite.team") }}</span>
-            <span class="text-xl font-semibold tabular-nums text-fg">{{ invite.data.value.members.approved }}</span>
-          </div>
-          <div class="flex flex-col gap-1 p-4">
-            <span class="inline-flex items-center gap-1.5 text-xs font-medium text-muted"><UserPlus :size="13" />{{ t("settings.invite.waiting") }}</span>
-            <span :class="['text-xl font-semibold tabular-nums', invite.data.value.members.pending ? 'text-primary' : 'text-fg']">{{ invite.data.value.members.pending }}</span>
-          </div>
-        </div>
-        <UiButton v-if="requestsPath && invite.data.value.members.pending" :to="requestsPath" variant="soft" block :icon="UserCheck">{{ t("settings.invite.review") }}</UiButton>
-        <InlineAlert tone="neutral" size="sm" :description="t('settings.invite.safety')" />
-      </aside>
+      <TeamLinksSection @poster="(target) => (poster = target)" />
     </div>
 
     <UiDialog v-model:open="posterOpen" :title="t('settings.invite.poster.dialogTitle')" :description="t('settings.invite.poster.hint')" size="lg">
-      <div v-if="invite.data.value" class="flex flex-col items-center gap-4">
-        <InvitePoster :invite="invite.data.value" :language="language" preview />
+      <div v-if="shownPoster" class="flex flex-col items-center gap-4">
+        <InvitePoster :target="shownPoster" :language="language" preview />
         <div class="flex w-full justify-end gap-2">
           <UiButton variant="ghost" @click="posterOpen = false">{{ t("common.close") }}</UiButton>
           <UiButton variant="primary" :icon="Printer" :loading="printing" @click="print">{{ t("settings.invite.poster.print") }}</UiButton>
@@ -161,8 +194,8 @@ async function print(): Promise<void> {
 
     <!-- What actually prints: the full-size poster, off screen until then. -->
     <Teleport to="body">
-      <div v-if="invite.data.value?.link" class="invite-poster-print hidden" aria-hidden="true">
-        <InvitePoster :invite="invite.data.value" :language="language" />
+      <div v-if="printed" class="invite-poster-print hidden" aria-hidden="true">
+        <InvitePoster :target="printed" :language="language" />
       </div>
     </Teleport>
   </div>

@@ -2,9 +2,10 @@
 /**
  * Approve a join request with a role, a position, the branches they will work in and their home
  * branch (plan §4.6). The role list holds the default role and the roles the approver may give
- * (rule 3); with one branch there is nothing to choose.
+ * (rule 3); with one branch there is nothing to choose. Someone who came through a team link starts
+ * with that link's role and branch (when the approver may give them).
  */
-import { Check } from "@lucide/vue";
+import { Check, Link2 } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -36,6 +37,8 @@ const positionId = ref<number | null>(props.request.position?.id ?? null);
 const branchIds = ref<number[]>([]);
 const homeId = ref<number | null>(null);
 
+const link = computed(() => props.request.join_link ?? null);
+
 const roleOptions = computed(() =>
   (roles.data.value ?? [])
     .filter((role) => role.is_default || role.can_assign)
@@ -45,7 +48,10 @@ const roleOptions = computed(() =>
 watch(
   () => roles.data.value,
   (list) => {
-    if (roleId.value === null && list) roleId.value = list.find((role) => role.is_default)?.id ?? null;
+    if (roleId.value !== null || !list) return;
+    // Their team link's role when the approver may give it, else the default role.
+    const fromLink = link.value?.role ? list.find((role) => role.id === link.value!.role!.id && (role.is_default || role.can_assign)) : undefined;
+    roleId.value = fromLink?.id ?? list.find((role) => role.is_default)?.id ?? null;
   },
   { immediate: true },
 );
@@ -53,17 +59,19 @@ const positionOptions = computed(() => (positions.data.value ?? []).filter((p) =
 const severalBranches = computed(() => branches.value.length > 1);
 const homeOptions = computed(() => branches.value.filter((b) => branchIds.value.includes(b.id)).map((b) => ({ value: b.id, label: b.name })));
 
-// Start from the approver's own branch (where most approvals go).
+// Start from their team link's branch, else the approver's own (where most approvals go).
 watch(
   branches,
   (list) => {
     if (branchIds.value.length || !list.length) return;
-    const mine = company.current?.home_branch?.id;
-    const first = list.find((b) => b.id === mine) ?? list[0]!;
+    const wanted = [link.value?.branch?.id, company.current?.home_branch?.id];
+    const first = wanted.map((id) => list.find((b) => b.id === id)).find(Boolean) ?? list[0]!;
     branchIds.value = [first.id];
   },
   { immediate: true },
 );
+/** Whether the link's choices are what the form starts with (said under the form). */
+const fromLink = computed(() => !!link.value && (!!link.value.role || !!link.value.branch));
 watch(
   branchIds,
   (ids) => {
@@ -117,6 +125,7 @@ function submit(): void {
         </FormField>
       </div>
       <p class="text-sm text-muted">{{ summary }}</p>
+      <p v-if="fromLink" class="-mt-2 inline-flex items-center gap-1.5 text-xs text-subtle" data-from-link><Link2 :size="12" aria-hidden="true" />{{ t("people.approve.fromLink", { name: link!.name }) }}</p>
     </div>
     <template #footer>
       <UiButton variant="ghost" @click="open = false">{{ t("common.cancel") }}</UiButton>

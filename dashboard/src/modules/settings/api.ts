@@ -1,8 +1,9 @@
 /**
  * Company setup endpoints (plan §4.3–§4.4) as typed functions and vue-query helpers, keyed under
- * `[companyId, "settings"]`: the module's `invalidates` ("companies", "groups") refreshes them when
- * another dashboard changes something. A change that `me` shows (name, logo, modules, currency,
- * timezone) also reloads `me`, so the switcher and the sidebar follow at once.
+ * `[companyId, "settings"]`: the module's `invalidates` ("companies", "members.links") refreshes
+ * them when another dashboard changes something or someone joins through a team link. A change
+ * that `me` shows (name, logo, modules, currency, timezone) also reloads `me`, so the switcher and
+ * the sidebar follow at once.
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import { computed } from "vue";
@@ -13,6 +14,7 @@ import type { CompanyFeature } from "@/core/features";
 import { useCompanyStore } from "@/stores/company";
 import { useSessionStore } from "@/stores/session";
 
+import { statusNow } from "./teamLinks";
 import type {
   Branch,
   BranchInput,
@@ -20,9 +22,15 @@ import type {
   DeviceSession,
   Features,
   Invite,
+  JoinLink,
+  JoinLinkDetail,
+  JoinLinkInput,
+  JoinLinkPatch,
   ManagerOption,
   NotificationPreference,
+  PositionOption,
   Revoked,
+  RoleOption,
   SettingsPatch,
 } from "./types";
 
@@ -54,6 +62,17 @@ export const listManagers = (cid: number, signal?: AbortSignal) => http.get<Mana
 export const getInvite = (cid: number, signal?: AbortSignal) => http.get<Invite>(ownerPath(cid, "invite/"), undefined, { signal });
 export const regenerateInvite = (cid: number) => http.post<Invite>(ownerPath(cid, "invite/regenerate/"));
 
+// Team links: one QR code or link that adds many people at once.
+export const listJoinLinks = (cid: number, signal?: AbortSignal) => http.get<JoinLink[]>(ownerPath(cid, "join-links/"), undefined, { signal });
+export const getJoinLink = (cid: number, id: number, signal?: AbortSignal) => http.get<JoinLinkDetail>(ownerPath(cid, `join-links/${id}/`), undefined, { signal });
+export const createJoinLink = (cid: number, input: JoinLinkInput) => http.post<JoinLink>(ownerPath(cid, "join-links/"), input);
+export const updateJoinLink = (cid: number, id: number, patch: JoinLinkPatch) => http.patch<JoinLink>(ownerPath(cid, `join-links/${id}/`), patch);
+export const deleteJoinLink = (cid: number, id: number) => http.delete<void>(ownerPath(cid, `join-links/${id}/`));
+/** The roles a team link may give (the form keeps the default role and those with `can_assign`). */
+export const listRoles = (cid: number, signal?: AbortSignal) => http.get<RoleOption[]>(ownerPath(cid, "roles/"), undefined, { signal });
+export const listActivePositions = (cid: number, signal?: AbortSignal) =>
+  http.get<PositionOption[]>(ownerPath(cid, "positions/"), { active: true }, { signal });
+
 export const getPreferences = (cid: number, signal?: AbortSignal) =>
   http.get<NotificationPreference[]>(ownerPath(cid, "notification-preferences/"), undefined, { signal });
 export const putPreferences = (cid: number, rows: Array<Pick<NotificationPreference, "kind" | "in_app" | "telegram">>) =>
@@ -73,6 +92,10 @@ export const settingsKeys = {
   branches: (cid: number) => qk(cid, MODULE, "branches"),
   managers: (cid: number) => qk(cid, MODULE, "managers"),
   invite: (cid: number) => qk(cid, MODULE, "invite"),
+  joinLinks: (cid: number) => qk(cid, MODULE, "join-links"),
+  joinLink: (cid: number, id: number) => qk(cid, MODULE, "join-link", { id }),
+  roles: (cid: number) => qk(cid, MODULE, "roles"),
+  positions: (cid: number) => qk(cid, MODULE, "positions"),
   preferences: (cid: number) => qk(cid, MODULE, "preferences"),
   sessions: (cid: number) => qk(cid, MODULE, "sessions"),
 };
@@ -97,6 +120,33 @@ export const useFeatures = () => useCompanyQuery(settingsKeys.features, getFeatu
 export const useBranches = () => useCompanyQuery(settingsKeys.branches, listBranches);
 export const useManagers = (enabled = computed(() => true)) => useCompanyQuery(settingsKeys.managers, listManagers, enabled);
 export const useInvite = () => useCompanyQuery(settingsKeys.invite, getInvite);
+export const useJoinLinks = () => useCompanyQuery(settingsKeys.joinLinks, listJoinLinks);
+export const useLinkRoles = () => useCompanyQuery(settingsKeys.roles, listRoles);
+export const useActivePositions = () => useCompanyQuery(settingsKeys.positions, listActivePositions);
+
+/** How often the live screen asks who joined (ms). */
+export const LIVE_POLL_MS = 3_000;
+
+/**
+ * One team link with its people, for the live screen: asked again every 3 s while the screen is
+ * open and the tab is visible (vue-query skips the interval in a hidden tab and catches up when it
+ * shows again); closing the screen unmounts the query and stops it. `seed` shows the link at once.
+ */
+export function useLiveJoinLink(id: () => number, seed?: () => JoinLink | null) {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => settingsKeys.joinLink(cid.value, id())),
+    queryFn: ({ signal }) => getJoinLink(cid.value, id(), signal),
+    enabled: computed(() => cid.value > 0 && id() > 0),
+    placeholderData: () => {
+      const row = seed?.();
+      return row ? { ...row, people: [] } : undefined;
+    },
+    refetchInterval: LIVE_POLL_MS,
+    refetchIntervalInBackground: false,
+    staleTime: 0,
+  });
+}
 export const usePreferences = () => useCompanyQuery(settingsKeys.preferences, getPreferences);
 export const useSessions = () => useCompanyQuery(settingsKeys.sessions, (_cid, signal) => listSessions(signal));
 
@@ -203,6 +253,58 @@ export function useRegenerateInvite() {
     mutationFn: () => regenerateInvite(cid.value),
     onSuccess: (data) => client.setQueryData(settingsKeys.invite(cid.value), data),
   });
+}
+
+/**
+ * Team link changes. A new or saved link is written into the list at once (and into the live
+ * screen's cache, so it opens without waiting); stop and resume flip at once and flip back on an
+ * error; a deleted link leaves at once. Everything settles with a refetch of the list.
+ */
+export function useJoinLinkMutations() {
+  const client = useQueryClient();
+  const cid = useCompanyId();
+  const listKey = () => settingsKeys.joinLinks(cid.value);
+  const settle = () => void client.invalidateQueries({ queryKey: listKey() });
+  const put = (link: JoinLink) => {
+    const list = client.getQueryData<JoinLink[]>(listKey());
+    if (list) client.setQueryData<JoinLink[]>(listKey(), list.some((row) => row.id === link.id) ? list.map((row) => (row.id === link.id ? link : row)) : [link, ...list]);
+    const detail = client.getQueryData<JoinLinkDetail>(settingsKeys.joinLink(cid.value, link.id));
+    client.setQueryData<JoinLinkDetail>(settingsKeys.joinLink(cid.value, link.id), { ...link, people: detail?.people ?? [] });
+  };
+  return {
+    create: useMutation({ mutationFn: (input: JoinLinkInput) => createJoinLink(cid.value, input), onSuccess: put, onSettled: settle }),
+    update: useMutation({
+      mutationFn: ({ id, patch }: { id: number; patch: JoinLinkPatch }) => updateJoinLink(cid.value, id, patch),
+      onMutate: async ({ id, patch }) => {
+        // Only stop and resume are shown before the answer: the server works out the status.
+        if (patch.is_active === undefined || Object.keys(patch).length !== 1) return { before: undefined };
+        await client.cancelQueries({ queryKey: listKey() });
+        const before = client.getQueryData<JoinLink[]>(listKey());
+        if (before) {
+          const flip = (row: JoinLink): JoinLink => {
+            const next = { ...row, is_active: patch.is_active! };
+            return { ...next, status: statusNow(next) };
+          };
+          client.setQueryData<JoinLink[]>(listKey(), before.map((row) => (row.id === id ? flip(row) : row)));
+        }
+        return { before };
+      },
+      onError: (_error, _input, context) => context?.before && client.setQueryData(listKey(), context.before),
+      onSuccess: put,
+      onSettled: settle,
+    }),
+    remove: useMutation({
+      mutationFn: (id: number) => deleteJoinLink(cid.value, id),
+      onMutate: async (id) => {
+        await client.cancelQueries({ queryKey: listKey() });
+        const before = client.getQueryData<JoinLink[]>(listKey());
+        if (before) client.setQueryData<JoinLink[]>(listKey(), before.filter((row) => row.id !== id));
+        return { before };
+      },
+      onError: (_error, _id, context) => context?.before && client.setQueryData(listKey(), context.before),
+      onSettled: settle,
+    }),
+  };
 }
 
 /** Saves one notification kind; the switch moves at once and moves back on an error. */

@@ -187,6 +187,15 @@ export interface OffboardInput {
   override_blockers: boolean;
 }
 
+/** The team link someone came through: its branch and role are preselected when approving them. */
+export interface JoinRequestLink {
+  id: number;
+  name: string;
+  auto_approve: boolean;
+  branch: Named | null;
+  role: Named | null;
+}
+
 /** One row of `GET join-requests/`. */
 export interface JoinRequest {
   id: number;
@@ -200,6 +209,8 @@ export interface JoinRequest {
   onboarded: boolean;
   requested_at: string;
   former: { left_on: string; how: "left" | "blocked" } | null;
+  /** Null for the main invite link (and on servers without team links). */
+  join_link?: JoinRequestLink | null;
   fields: Record<string, unknown>;
 }
 
@@ -208,6 +219,28 @@ export interface ApproveInput {
   position_id?: number | null;
   branch_ids?: number[];
   home_branch_id?: number | null;
+}
+
+/** `POST join-requests/bulk/`: approve or reject up to 200 requests at once. */
+export interface BulkDecisionInput {
+  ids: number[];
+  action: "approve" | "reject";
+  /** Approve: one role for all; null or left out: each person's link role, else the default role. */
+  role_id?: number | null;
+  /** Approve: replaces the position they picked; left out: they keep theirs. */
+  position_id?: number | null;
+  /** Approve: left out or empty: each person's link branch, else the company's only branch. */
+  branch_ids?: number[];
+  home_branch_id?: number | null;
+  /** Reject: optional, at most 300 characters, only approvers see it. */
+  reason?: string;
+}
+
+export interface BulkDecisionResult {
+  /** One per id, in the order sent; `detail` says why not. */
+  results: Array<{ id: number; ok: boolean; detail: string }>;
+  done: number;
+  failed: number;
 }
 
 /** One row of `GET roles/`. */

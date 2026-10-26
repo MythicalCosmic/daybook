@@ -21,8 +21,9 @@ export default defineModule({
   hotkey: ",",
   routes,
   nav: [{ key: "panels", title: "settings.title", to: "settings" }],
-  // apps.companies' "companies.settings" / "companies.branches" / "companies.setup" keys.
-  invalidates: ["companies"],
+  // apps.companies' "companies.settings" / "companies.branches" / "companies.setup" keys, and
+  // "members.links" (a team link changed, or someone joined through one).
+  invalidates: ["companies", "members.links"],
   settings: [
     { id: "company", title: "settings.panel.company", order: 10, component: defineAsyncComponent(() => import("./panels/CompanyPanel.vue")) },
     { id: "features", title: "settings.panel.features", order: 20, perm: "company.settings", component: defineAsyncComponent(() => import("./panels/FeaturesPanel.vue")) },
