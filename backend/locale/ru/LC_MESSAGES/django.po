@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 10:24+0500\n"
+"POT-Creation-Date: 2026-10-26 10:43+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -5199,6 +5199,11 @@ msgstr "Имя пользователя: @%(username)s"
 #, python-format
 msgid "Telegram ID: <code>%(id)s</code>"
 msgstr "Telegram ID: <code>%(id)s</code>"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "Team link: %(link)s"
+msgstr "Ссылка для команды: %(link)s"
 
 #: backend/apps/members/bot_messages.py
 msgid "Hi! To join your company, open the invite link your manager sent you."

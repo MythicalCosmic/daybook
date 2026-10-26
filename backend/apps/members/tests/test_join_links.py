@@ -97,7 +97,8 @@ def test_a_link_that_asks_first_leaves_a_request_with_its_choices(
         request = finish(opened(link))
 
     assert request.status == Membership.Status.PENDING
-    assert Notification.objects.filter(recipient=manager, kind="members.join").exists()
+    note = Notification.objects.get(recipient=manager, kind="members.join")
+    assert "Team link: Staff meeting" in note.body
     link.refresh_from_db()
     assert link.uses == 1  # a place is used by finishing, whatever the link decides
 
