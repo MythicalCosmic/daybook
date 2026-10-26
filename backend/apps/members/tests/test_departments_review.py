@@ -102,6 +102,23 @@ def test_only_an_owner_puts_an_owner_into_a_department_through_the_api(
     assert owner.department_id is None
 
 
+def test_only_an_owner_puts_a_head_over_an_owner(company, member, owner):
+    """The owner works in Rahbariyat. A non-owner who may edit the structure (members.manage,
+    every branch, no task permission at all) makes themselves its head and from then on
+    manages the owner and everyone below: sees their tasks, gives them work, accepts it. The
+    indirect form of what "Only owners can change an owner" and the role rules (nobody grants
+    rights they don't hold, `may_assign_role`) refuse elsewhere."""
+    role = AccessRoleFactory(company=company, permissions=[Perm.MEMBERS_MANAGE, Perm.BRANCHES_ALL])
+    hr = member.registered(company, role.name)
+    top = departments.create_department(company, by=owner, name="Rahbariyat")
+    departments.place(top, by=owner, people=[owner])
+
+    with contextlib.suppress(PermissionDenied, DomainError):
+        departments.update_department(top, by=fresh(hr), head=fresh(hr))
+
+    assert not departments.manages(fresh(hr), owner)
+
+
 # A head sitting in a department below one they head ---------------------------------------------
 
 
