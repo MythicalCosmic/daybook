@@ -138,6 +138,25 @@ def test_a_head_sitting_below_their_own_department_isnt_managed_from_below(compa
     assert departments.manager_of(fresh(owner)) is None
 
 
+def test_a_head_who_also_heads_a_part_further_down_isnt_managed_from_between(
+    company, member, owner
+):
+    """The same loop without placing anyone: the owner heads Rahbariyat and also Kechki smena,
+    below Savdo (Bekzod's). `team_ids` adds the heads of every department below, so Bekzod
+    manages the owner. A fix that only checks where people are placed misses this one (and
+    moving a department the owner heads under Savdo makes it too)."""
+    bekzod = member.registered(company, first_name="Bekzod")
+    top = departments.create_department(company, by=owner, name="Rahbariyat", head=owner)
+    sales = departments.create_department(company, by=owner, name="Savdo", parent=top, head=bekzod)
+    departments.create_department(company, by=owner, name="Kechki smena", parent=sales, head=owner)
+    departments.place(top, by=owner, people=[owner])
+    departments.place(sales, by=owner, people=[bekzod])
+
+    assert departments.manages(fresh(owner), bekzod)  # passes
+    assert departments.manager_of(fresh(owner)) is None  # passes
+    assert not departments.manages(fresh(bekzod), owner)
+
+
 # Someone who leaves and comes back ---------------------------------------------------------------
 
 
