@@ -4,7 +4,7 @@
  * role, branch, how their work goes and, with the permission, their salary. Saved views as tabs,
  * filters in the URL, a card list on phones; a row opens Person 360.
  */
-import { BriefcaseBusiness, Building2, CircleDot, ShieldCheck, Smartphone, UserPlus, UserRoundX, Users } from "@lucide/vue";
+import { BriefcaseBusiness, Building2, CircleDot, ShieldCheck, Smartphone, UserCheck, UserPlus, UserRoundX, Users } from "@lucide/vue";
 import { useQuery } from "@tanstack/vue-query";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -120,6 +120,12 @@ const kpis = computed(() => {
   ];
 });
 const pending = computed(() => counter("members.pending")(pulse.value) || stats.data.value?.pending_requests || 0);
+/** Settings › Invite staff at its team links, for approvers (once the settings page exists). */
+const addPeople = computed(() => {
+  if (!can("members.approve")) return null;
+  const path = `/c/${company.currentId}/settings/invite`;
+  return router.resolve(path).name !== "company-not-found" ? `${path}#team-links` : null;
+});
 
 // Saved views: built-in statuses first, then the person's own and shared ones.
 const views = useSavedViews("people");
@@ -193,7 +199,8 @@ function clearAll(): void {
   <div class="flex flex-col gap-5">
     <PageHeader class="!mb-0" :title="t('people.team.title')" :description="t('people.team.description')">
       <template #actions>
-        <UiButton v-if="can('members.approve')" :to="`/c/${company.currentId}/people/requests`" :icon="UserPlus" :variant="pending ? 'primary' : 'secondary'">
+        <UiButton v-if="addPeople" :to="addPeople" :icon="UserPlus" data-add-people>{{ t("people.team.addPeople") }}</UiButton>
+        <UiButton v-if="can('members.approve')" :to="`/c/${company.currentId}/people/requests`" :icon="UserCheck" :variant="pending ? 'primary' : 'secondary'">
           {{ t("people.team.requests") }}
           <UiBadge v-if="pending" :count="pending" tone="neutral" variant="solid" />
         </UiButton>

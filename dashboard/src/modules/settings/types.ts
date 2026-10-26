@@ -117,6 +117,113 @@ export interface Invite {
   members: { approved: number; pending: number };
 }
 
+/** An id and a name, as the team link endpoints name branches, roles, positions and people. */
+export interface Ref {
+  id: number;
+  name: string;
+}
+
+/** stopped > expired > full > active: the strongest reason wins. */
+export type JoinLinkStatus = "active" | "full" | "expired" | "stopped";
+
+/** One row of `GET O join-links/`: a team link that adds many people at once. */
+export interface JoinLink {
+  id: number;
+  name: string;
+  /** "https://t.me/<employee bot>?start=j_<code>"; empty while the bot has no username. */
+  link: string;
+  start_param: string;
+  /** True: people are on the team at once. False: they become join requests. */
+  auto_approve: boolean;
+  branch: Ref | null;
+  /** null: the company's default role at the moment someone joins (see `default_role`). */
+  role: Ref | null;
+  default_role: Ref | null;
+  /** null: they pick their position; set: preselected in the app (they can change it). */
+  position: Ref | null;
+  /** null: no limit. */
+  max_uses: number | null;
+  /** Accounts finished through the link. */
+  uses: number;
+  /** ISO instant; null: no end date. */
+  expires_at: string | null;
+  /** False: stopped by hand. */
+  is_active: boolean;
+  status: JoinLinkStatus;
+  /** A membership (person). */
+  created_by: Ref | null;
+  created_at: string;
+  /** False when the viewer may not give its branch or role: read-only. */
+  can_edit: boolean;
+}
+
+/** Someone who opened a team link. */
+export interface JoinLinkPerson {
+  /** Membership id (People › person page). */
+  id: number;
+  name: string;
+  photo_url: string | null;
+  position: Ref | null;
+  status: "pending" | "approved" | "rejected" | "blocked" | "left" | "suspended";
+  /** Finished creating the account. */
+  onboarded: boolean;
+  /** When they finished (or opened the link, while not onboarded). */
+  joined_at: string;
+}
+
+/** `GET O join-links/{id}/`: the link and its people, newest first (at most 100). */
+export interface JoinLinkDetail extends JoinLink {
+  people: JoinLinkPerson[];
+}
+
+/** `POST O join-links/` */
+export interface JoinLinkInput {
+  /** 1–100 characters. */
+  name: string;
+  auto_approve?: boolean;
+  branch_id?: number | null;
+  /** A role with `can_assign` in `GET roles/`; null: the default role. */
+  role_id?: number | null;
+  /** An active position; null: they choose. */
+  position_id?: number | null;
+  /** 1–500; null: no limit. */
+  max_uses?: number | null;
+  /** In the future, at most 365 days ahead; null: no end date. */
+  expires_at?: string | null;
+}
+
+/** `PATCH O join-links/{id}/`: `is_active: false` stops a link, `true` resumes it. */
+export type JoinLinkPatch = Partial<JoinLinkInput> & { is_active?: boolean };
+
+/** What a poster prints: the main invite link, or a team link with its branch and rule. */
+export interface PosterTarget {
+  link: string;
+  company: { name: string; logo: string | null };
+  /** The bot's username, printed under the code for people without a camera app. */
+  bot: string;
+  /** A team link's branch. */
+  branch?: string | null;
+  /** A team link that adds people without approval. */
+  autoApprove?: boolean;
+}
+
+/** What the team link form needs from `GET O roles/`. */
+export interface RoleOption {
+  id: number;
+  name: string;
+  is_owner: boolean;
+  is_default: boolean;
+  /** The viewer may give it (anti-escalation). */
+  can_assign: boolean;
+}
+
+/** What the team link form needs from `GET O positions/?active=true`. */
+export interface PositionOption {
+  id: number;
+  name: string;
+  is_active: boolean;
+}
+
 /** One row of `GET/PUT O notification-preferences/` */
 export interface NotificationPreference {
   kind: string;

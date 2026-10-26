@@ -13,6 +13,8 @@ import { useCompanyStore } from "@/stores/company";
 
 import type {
   ApproveInput,
+  BulkDecisionInput,
+  BulkDecisionResult,
   HistoryRecord,
   JoinRequest,
   OffboardInput,
@@ -55,6 +57,9 @@ export const listJoinRequests = (cid: number, signal?: AbortSignal) => http.get<
 export const approveRequest = (cid: number, id: number, body: ApproveInput) => http.post<PersonDetail>(ownerPath(cid, `join-requests/${id}/approve/`), body);
 
 export const rejectRequest = (cid: number, id: number, reason: string) => http.post<void>(ownerPath(cid, `join-requests/${id}/reject/`), { reason });
+
+/** Approve or reject many requests at once; every id gets its own answer (one may fail, the rest go through). */
+export const decideRequests = (cid: number, body: BulkDecisionInput) => http.post<BulkDecisionResult>(ownerPath(cid, "join-requests/bulk/"), body);
 
 export const listRoles = (cid: number, signal?: AbortSignal) => http.get<Role[]>(ownerPath(cid, "roles/"), undefined, { signal });
 
@@ -196,6 +201,26 @@ export function useDecideRequest() {
     },
     onError: (_error, _input, context) => {
       if (context?.previous) client.setQueryData(peopleKeys.requests(cid.value), context.previous);
+    },
+    onSettled: refresh,
+  });
+}
+
+/**
+ * Approve or reject several requests at once. The ones that went through leave the list as soon as
+ * the answer comes; the ones that didn't stay (the page keeps them selected and says why).
+ */
+export function useBulkDecide() {
+  const client = useQueryClient();
+  const cid = useCompanyId();
+  const refresh = useRefreshPeople();
+  return useMutation({
+    mutationFn: (body: BulkDecisionInput) => decideRequests(cid.value, body),
+    onSuccess: (result) => {
+      const done = new Set(result.results.filter((row) => row.ok).map((row) => row.id));
+      const key = peopleKeys.requests(cid.value);
+      const list = client.getQueryData<JoinRequest[]>(key);
+      if (list && done.size) client.setQueryData(key, list.filter((row) => !done.has(row.id)));
     },
     onSettled: refresh,
   });
