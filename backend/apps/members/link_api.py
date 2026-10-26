@@ -8,9 +8,12 @@ at `/api/v1/owner/companies/<int:company_id>/` (members.approve):
     DELETE join-links/{id}/     delete it (people who joined stay)
 """
 
+from datetime import timedelta
+
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from drf_spectacular.utils import extend_schema, extend_schema_field
 from rest_framework import mixins, serializers, status
 from rest_framework.response import Response
@@ -157,6 +160,14 @@ class JoinLinkInputSerializer(serializers.Serializer):
         required=False, allow_null=True, min_value=1, max_value=join_links.MAX_PLACES
     )
     expires_at = serializers.DateTimeField(required=False, allow_null=True)
+
+    def validate_expires_at(self, value):
+        now = timezone.now()
+        if value is not None and value <= now:
+            raise serializers.ValidationError(_("The end must be in the future."))
+        if value is not None and value > now + timedelta(days=join_links.MAX_DAYS):
+            raise serializers.ValidationError(_("A link can work for at most a year."))
+        return value
 
 
 class JoinLinkPatchSerializer(JoinLinkInputSerializer):

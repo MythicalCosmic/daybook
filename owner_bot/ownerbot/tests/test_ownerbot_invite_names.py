@@ -1,4 +1,4 @@
-"""Review of `/invite` (bulk/review): each test here failed on bulk/core (45cd120)."""
+"""`/invite`: names of the team links the bot makes."""
 
 import pytest
 

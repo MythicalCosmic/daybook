@@ -306,12 +306,9 @@ def joined(membership: Membership) -> BotMessage:
 
 def _link_adds_straight_away(membership: Membership) -> bool:
     """Whether the person's team link lets them in once their account is made."""
-    link = membership.join_link if membership.join_link_id else None
-    return (
-        link is not None
-        and link.auto_approve
-        and link.status_at(timezone.now()) == link.Status.ACTIVE
-    )
+    from apps.members.services import link_lets_in  # the services import our notifications
+
+    return link_lets_in(membership, membership.join_link if membership.join_link_id else None)
 
 
 def onboarding_complete(membership: Membership) -> BotMessage:

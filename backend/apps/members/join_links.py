@@ -38,6 +38,8 @@ REPORT_KIND = "members.link_joined"
 # How many names one note or group post lists before "and N more".
 LISTED = 15
 EDITABLE = ("name", "auto_approve", "branch", "role", "position", "max_uses", "expires_at")
+# Changing these makes the editor the one whose approval the link stands for.
+AUTHORITY = {"auto_approve", "branch", "role"}
 
 
 # Reading ----------------------------------------------------------------------------------
@@ -46,8 +48,10 @@ EDITABLE = ("name", "auto_approve", "branch", "role", "position", "max_uses", "e
 def visible_links(member: Membership) -> QuerySet[JoinLink]:
     """The links `member` sees: all of them with every branch, else those of their branches and
     the ones they made."""
-    links = JoinLink.objects.for_company(member.company).select_related(
-        "branch", "role", "position", "created_by__user"
+    links = (
+        JoinLink.objects.for_company(member.company)
+        .filter(deleted_at__isnull=True)
+        .select_related("branch", "role", "position", "created_by__user")
     )
     allowed = scope.branch_ids(member)
     if allowed is not None:
@@ -133,6 +137,10 @@ def update_link(link: JoinLink, *, by: Membership, **fields) -> JoinLink:
         action = MemberAction.LINK_RESUMED if link.is_active else MemberAction.LINK_STOPPED
     if not changed and action is None:
         return link
+    if changed & AUTHORITY or action == MemberAction.LINK_RESUMED:
+        # Whoever sets the rules (or turns the link back on) is whose approval it stands for
+        # from now on: joins are checked against their rights, which these rules passed.
+        link.created_by = by
     link.save()
     if changed:
         audit.record(
@@ -150,15 +158,18 @@ def update_link(link: JoinLink, *, by: Membership, **fields) -> JoinLink:
 
 @transaction.atomic
 def delete_link(link: JoinLink, *, by: Membership) -> None:
-    """The link stops working at once; people who joined through it stay."""
+    """The link stops working at once and leaves every list. People who joined through it
+    stay, and so does its row: their history, and the note about a burst of joins still due,
+    need it (nothing else is touched, so no lock waits on a join in progress)."""
     link = _lock(link)
     _ensure_approver(link.company, by)
     if not may_edit(by, link):
         raise PermissionDenied(_("You can't change this link."))
+    link.is_active = False
+    link.deleted_at = timezone.now()
+    link.save(update_fields=["is_active", "deleted_at", "updated_at"])
     audit.record(MemberAction.LINK_DELETED, company_id=link.company_id, actor=by.user, target=link)
-    company_id = link.company_id
-    link.delete()
-    services.bump_on_commit(company_id, "members.links", "members.people")
+    services.bump_on_commit(link.company_id, "members.links")
 
 
 def _apply(link: JoinLink, by: Membership, fields: dict) -> set[str]:
@@ -181,9 +192,12 @@ def _apply(link: JoinLink, by: Membership, fields: dict) -> set[str]:
             if value.company_id != company.pk or not value.is_active:
                 raise DomainError(_("Pick a branch of this company."))
             if not scope.allows(scope.branch_ids(by), value.pk):
-                raise PermissionDenied(_("You can only give the branches you manage."))
-        elif name == "role" and value is not None and value.company_id != company.pk:
-            raise DomainError(_("Pick a role of this company."))
+                raise DomainError(_("You can only give the branches you manage."))
+        elif name == "role" and value is not None:
+            if value.company_id != company.pk:
+                raise DomainError(_("Pick a role of this company."))
+            if value.is_owner:  # a leaked QR code must never make strangers owners
+                raise DomainError(_("A team link can't make people owners."))
         elif name == "position" and value is not None:
             if value.company_id != company.pk or not value.is_active:
                 raise DomainError(_("Pick a position of this company."))
@@ -206,8 +220,8 @@ def _apply(link: JoinLink, by: Membership, fields: dict) -> set[str]:
 
     # The link stands for its maker's approval: the role is one they may give.
     role = link.role or default_role(company)
-    if role is not None:
-        services.ensure_may_assign_role(by, role)
+    if role is not None and not services.may_assign_role(by, role):
+        raise DomainError(_("You can only give a role whose permissions you have yourself."))
     allowed = scope.branch_ids(by)
     if link.branch_id is None and allowed is not None:
         raise DomainError(_("Choose one of your branches."))
@@ -243,7 +257,7 @@ def find(start_param: str) -> JoinLink:
     if code != start_param:
         link = (
             JoinLink.objects.select_related("company", "position")
-            .filter(code=code, company__is_active=True)
+            .filter(code=code, company__is_active=True, deleted_at__isnull=True)
             .first()
         )
     if link is None:
@@ -261,11 +275,12 @@ def open_link(user: User, start_param: str) -> tuple[Membership, bool]:
     Someone already on the team just hears where they stand; someone whose request waits
     switches to this link and, when it adds people straight away, is let in."""
     link = find(start_param)
-    current = Membership.objects.filter(
-        company=link.company, user=user, status__in=services.CURRENT
-    ).first()
-    if current is not None:
-        return current, False
+    mine = Membership.objects.filter(company=link.company, user=user).first()
+    if mine is not None and (
+        mine.status in services.CURRENT
+        or (mine.status == Membership.Status.PENDING and mine.join_link_id == link.pk)
+    ):
+        return mine, False  # on the team, or already waiting through this link
     status = link.status_at(timezone.now())
     if status == JoinLink.Status.STOPPED:
         raise DomainError(_("This team link was switched off. Ask your manager for a new one."))
@@ -284,7 +299,8 @@ def open_link(user: User, start_param: str) -> tuple[Membership, bool]:
         fields.append("position")
     membership.save(update_fields=fields)
     if membership.is_onboarded:  # their details are on file: the link decides now
-        admitted = services.admit(membership, welcome=False)
+        # A place is used only if it lets them in: switching between links takes none.
+        admitted = services.admit(membership, welcome=False, count_refusal=False)
         if admitted is not None:
             return admitted, True
     return membership, False

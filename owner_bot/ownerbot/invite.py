@@ -94,7 +94,7 @@ def overview(member: Membership) -> BotMessage:
     ]
     if working:
         lines += ["", _("<b>Working team links</b>")]
-        lines += [f"{html.quote(link.name)} · {places(link)}" for link in working]
+        lines += [f"{html.quote(link.name)} · {places(link)}" for link in working[:SHOWN]]
     rows = [[_act(_("Main link QR code"), "main", company.pk)]]
     rows += [
         [_act(f"{link.name[:40]} · {short_places(link)}", "show", company.pk, link.pk)]
@@ -210,7 +210,7 @@ def new_link(member: Membership, step: InviteNew) -> BotMessage | JoinLink:
     zone = ZoneInfo(company.timezone)
     today = timezone.localtime(timezone.now(), zone).date()
     name = (
-        f"{branch.name} · {today:%d.%m}"
+        f"{branch.name[:90]} · {today:%d.%m}"
         if branch is not None
         else _("Team link %(date)s") % {"date": f"{today:%d.%m}"}
     )

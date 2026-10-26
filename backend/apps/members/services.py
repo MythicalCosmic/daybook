@@ -149,10 +149,13 @@ def request_access(user: User, company: Company) -> tuple[Membership, bool]:
         return membership, False
 
     membership.status = Membership.Status.PENDING
-    # Someone coming back starts over: they get the default role again on approval.
+    # Someone coming back starts over: they get the default role again on approval, and the
+    # team link they once came through no longer speaks for them.
     membership.role = None
     membership.decided_by = None
     membership.decided_at = None
+    membership.join_link = None
+    membership.joined_by_link = False
     membership.save()
     if membership.is_onboarded:
         # Their details are on file, so the request goes straight back to the approvers.
@@ -260,14 +263,17 @@ def approve(
     return membership
 
 
-def admit(membership: Membership, *, welcome: bool = True) -> Membership | None:
+def admit(
+    membership: Membership, *, welcome: bool = True, count_refusal: bool = True
+) -> Membership | None:
     """Someone created their account through a team link, or opened one while their request
-    waits: count them against the link and, when it adds people straight away, let them in.
+    waits: count them against the link and, when it lets them in (`link_lets_in`), approve them
+    on its maker's authority.
 
-    Returns the approved membership, or None when they stay a join request: the link is stopped,
-    expired or full, it asks for approval, they worked here before (they come back through an
-    approver), or its maker may no longer approve them with its role and branch. Runs inside the
-    caller's transaction; the link's row lock makes the last place go to one person only."""
+    Returns the approved membership, or None when they stay a join request. A place is used by
+    finishing an account through the link; `count_refusal=False` (opening a link while already
+    waiting) uses one only if the link lets them in, so switching between links takes none.
+    Runs inside the caller's transaction; the link's row lock gives the last place to one."""
     if membership.status != Membership.Status.PENDING or not membership.is_onboarded:
         return None
     link = (
@@ -278,19 +284,63 @@ def admit(membership: Membership, *, welcome: bool = True) -> Membership | None:
     )
     if link is None or link.status_at(timezone.now()) != JoinLink.Status.ACTIVE:
         return None
-    link.uses += 1
-    link.save(update_fields=["uses", "updated_at"])
-    transaction.on_commit(partial(_bump, link.company_id, "members.links"))
+    admitted = None
+    if link_lets_in(membership, link):
+        role = link.role or _default_role(link.company)
+        try:
+            with transaction.atomic():  # a refusal leaves the request as it was
+                admitted = approve(
+                    membership, by=link.created_by.user, role=role, via=link, welcome=welcome
+                )
+        except DomainError, PermissionDenied:
+            admitted = None
+    if admitted is not None or count_refusal:
+        link.uses += 1
+        link.save(update_fields=["uses", "updated_at"])
+        transaction.on_commit(partial(_bump, link.company_id, "members.links"))
+    return admitted
+
+
+def link_lets_in(membership: Membership, link: JoinLink | None) -> bool:
+    """Whether `link` lets `membership` in by itself once their account is made: it works and
+    adds people straight away; its maker may still approve, and give its role (the default one
+    when it names none) and its branch (a link without one only while the company has a single
+    branch); and the person never left, was blocked or was turned down here: they come back
+    through an approver. The bot promises "no waiting" only when this holds."""
+    if link is None or not link.auto_approve:
+        return False
+    if link.status_at(timezone.now()) != JoinLink.Status.ACTIVE:
+        return False
     maker = link.created_by
-    if not link.auto_approve or maker is None or not maker.has_perm(Perm.MEMBERS_APPROVE):
-        return None
-    if queries.former_member(membership) is not None:
-        return None
-    try:
-        with transaction.atomic():  # a refusal leaves the request as it was
-            return approve(membership, by=maker.user, role=link.role, via=link, welcome=welcome)
-    except DomainError, PermissionDenied:
-        return None
+    if maker is None or not maker.has_perm(Perm.MEMBERS_APPROVE):
+        return False
+    role = link.role or _default_role(link.company)
+    if role is None or role.is_owner or not may_assign_role(maker, role):
+        return False
+    if link.branch_id is None:
+        if Branch.objects.filter(company_id=link.company_id, is_active=True).count() > 1:
+            return False
+    elif not link.branch.is_active or not scope.allows(scope.branch_ids(maker), link.branch_id):
+        return False
+    return not _turned_away(membership)
+
+
+def _turned_away(membership: Membership) -> bool:
+    """Whether the person left, was blocked or was turned down in this company before."""
+    return AuditLog.objects.filter(
+        company_id=membership.company_id,
+        target_type="membership",
+        target_id=membership.pk,
+        action__in=(
+            AuditLog.Action.MEMBER_LEFT,
+            AuditLog.Action.MEMBER_BLOCKED,
+            AuditLog.Action.MEMBER_REJECTED,
+        ),
+    ).exists()
+
+
+def _default_role(company: Company) -> AccessRole | None:
+    return AccessRole.objects.for_company(company).filter(is_default=True).first()
 
 
 def decide_many(
@@ -309,34 +359,41 @@ def decide_many(
     the rest: `{"id", "ok", "detail"}` per id, in the order given. Approving names one role and
     branch for all, or none, and then each person gets their team link's (else the defaults)."""
     found = {row.pk: row for row in queries.join_requests(company).filter(pk__in=ids)}
+    decided: dict[int, dict] = {}
     results = []
-    for pk in dict.fromkeys(ids):
-        membership = found.get(pk)
-        if membership is None:
-            results.append({"id": pk, "ok": False, "detail": _("This request no longer exists.")})
-            continue
-        if approve_them and not membership.is_onboarded:
-            results.append(
-                {"id": pk, "ok": False, "detail": _("They haven't filled in their details yet.")}
+    for pk in ids:
+        if pk not in decided:  # an id sent twice gets the first answer again
+            decided[pk] = _decide_one(
+                found.get(pk),
+                pk,
+                by=by,
+                approve_them=approve_them,
+                role=role,
+                position=position,
+                branches=branches,
+                home_branch=home_branch,
+                reason=reason,
             )
-            continue
-        try:
-            if approve_them:
-                approve_request(
-                    membership,
-                    by=by,
-                    role=role,
-                    position=position,
-                    branches=branches,
-                    home_branch=home_branch,
-                )
-            else:
-                reject_request(membership, by=by, reason=reason)
-        except (DomainError, PermissionDenied) as exc:
-            results.append({"id": pk, "ok": False, "detail": str(exc)})
-            continue
-        results.append({"id": pk, "ok": True, "detail": ""})
+        results.append(dict(decided[pk]))
     return results
+
+
+def _decide_one(
+    membership: Membership | None, pk: int, *, by: Membership, approve_them: bool, **choices
+) -> dict:
+    if membership is None:
+        return {"id": pk, "ok": False, "detail": _("This request no longer exists.")}
+    if approve_them and not membership.is_onboarded:
+        return {"id": pk, "ok": False, "detail": _("They haven't filled in their details yet.")}
+    reason = choices.pop("reason")
+    try:
+        if approve_them:
+            approve_request(membership, by=by, **choices)
+        else:
+            reject_request(membership, by=by, reason=reason)
+    except (DomainError, PermissionDenied) as exc:
+        return {"id": pk, "ok": False, "detail": str(exc)}
+    return {"id": pk, "ok": True, "detail": ""}
 
 
 @transaction.atomic

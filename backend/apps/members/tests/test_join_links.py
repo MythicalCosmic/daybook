@@ -235,6 +235,34 @@ def test_people_who_left_come_back_through_an_approver(company, member):
     assert membership.status == Membership.Status.PENDING
 
 
+def test_people_turned_down_before_come_back_through_an_approver(company, member):
+    owner = member.registered(company, "Owner")
+    link = make_link(company, owner)
+    turned_down = MembershipFactory(company=company, onboarded_at=timezone.now())
+    services.reject(turned_down, by=owner.user)
+    Membership.objects.filter(pk=turned_down.pk).update(
+        decided_at=timezone.now() - timedelta(days=3)  # past the cooldown
+    )
+
+    membership, admitted = join_links.open_link(turned_down.user, link.start_param)
+
+    assert admitted is False
+    assert membership.status == Membership.Status.PENDING
+
+
+def test_someone_coming_back_starts_without_their_old_link(company, member):
+    owner = member.registered(company, "Owner")
+    link = make_link(company, owner)
+    joined = finish(opened(link))
+    Membership.objects.filter(pk=joined.pk).update(status=Membership.Status.LEFT)  # offboarded
+
+    again, _created = services.request_access(joined.user, company)  # the main invite link
+
+    assert again.status == Membership.Status.PENDING
+    assert again.join_link is None
+    assert again.joined_by_link is False
+
+
 def test_a_maker_who_lost_the_right_to_approve_lets_nobody_in(company, member):
     manager = member.registered(company, "Manager")
     link = make_link(company, manager)
@@ -291,8 +319,15 @@ def test_a_link_can_only_give_a_role_its_maker_may_give(company, member):
     approver = member.registered(company, head.name)
     manager_role = AccessRole.objects.get(company=company, name="Manager")
 
-    with pytest.raises(PermissionDenied):
+    with pytest.raises(DomainError, match="permissions you have yourself"):
         make_link(company, approver, role=manager_role)
+
+
+def test_a_link_never_makes_people_owners(company, member):
+    owner = member.registered(company, "Owner")
+
+    with pytest.raises(DomainError, match="owners"):
+        make_link(company, owner, role=AccessRole.objects.get(company=company, is_owner=True))
 
 
 def test_a_branch_manager_makes_links_for_their_branches_only(company, member):
@@ -306,7 +341,7 @@ def test_a_branch_manager_makes_links_for_their_branches_only(company, member):
     head = member.registered(company, role.name, home_branch=mine)
     head.branches.add(mine)
 
-    with pytest.raises(PermissionDenied, match="branches you manage"):
+    with pytest.raises(DomainError, match="branches you manage"):
         make_link(company, head, branch=other)
     with pytest.raises(DomainError, match="your branches"):
         make_link(company, head, auto_approve=False)
@@ -368,7 +403,10 @@ def test_changing_stopping_and_deleting_a_link(company, member):
     join_links.delete_link(link, by=owner)
     joined.refresh_from_db()
     assert joined.status == Membership.Status.APPROVED  # people who joined stay
-    assert joined.join_link is None
+    assert joined.join_link == link  # and so does the row, out of every list
+    assert not join_links.visible_links(owner).filter(pk=link.pk).exists()
+    with pytest.raises(DomainError, match="invalid"):
+        join_links.find(link.start_param)
 
 
 # The note to approvers -------------------------------------------------------------------

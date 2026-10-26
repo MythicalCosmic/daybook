@@ -109,7 +109,9 @@ def test_changing_stopping_and_deleting(owner_api, company, member):
     assert response.data["status"] == "stopped"
 
     assert api.delete(url(company, f"{link.pk}/")).status_code == 204
-    assert not JoinLink.objects.filter(pk=link.pk).exists()
+    assert JoinLink.objects.get(pk=link.pk).deleted_at is not None
+    assert api.get(url(company)).data == []
+    assert api.get(url(company, f"{link.pk}/")).status_code == 404
 
 
 def test_rules_come_back_as_messages(owner_api, company, member):

@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 10:43+0500\n"
+"POT-Creation-Date: 2026-10-26 11:04+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -5541,6 +5541,10 @@ msgstr "Faqat o‘zingiz boshqaradigan filiallarni biriktira olasiz."
 msgid "Pick a role of this company."
 msgstr "Shu kompaniyadagi rolni tanlang."
 
+#: backend/apps/members/join_links.py
+msgid "A team link can't make people owners."
+msgstr "Jamoa havolasi orqali hech kim kompaniya egasi bo‘la olmaydi."
+
 #: backend/apps/members/join_links.py backend/apps/members/owner_api.py
 #: backend/apps/members/services.py
 msgid "Pick a position of this company."
@@ -5551,13 +5555,17 @@ msgstr "Shu kompaniyadagi lavozimni tanlang."
 msgid "A link can take from 1 to %(count)d people."
 msgstr "Joylar soni 1 va %(count)d orasida bo‘lishi kerak."
 
-#: backend/apps/members/join_links.py
+#: backend/apps/members/join_links.py backend/apps/members/link_api.py
 msgid "The end must be in the future."
 msgstr "Tugash vaqti kelajakda bo‘lishi kerak."
 
-#: backend/apps/members/join_links.py
+#: backend/apps/members/join_links.py backend/apps/members/link_api.py
 msgid "A link can work for at most a year."
 msgstr "Havola ko‘pi bilan bir yil ishlay oladi."
+
+#: backend/apps/members/join_links.py backend/apps/members/services.py
+msgid "You can only give a role whose permissions you have yourself."
+msgstr "Faqat barcha ruxsatlari o‘zingizda ham bor bo‘lgan rolni bera olasiz."
 
 #: backend/apps/members/join_links.py
 msgid "Choose one of your branches."
@@ -5695,6 +5703,12 @@ msgstr "Havola orqali hisob yaratganlar soni."
 #: backend/apps/members/models.py
 msgid "Off: stopped by hand."
 msgstr "O‘chiq bo‘lsa: qo‘lda to‘xtatilgan."
+
+#: backend/apps/members/models.py
+msgid "Deleted: kept for the people who joined through it, shown nowhere."
+msgstr ""
+"O‘chirilgan: u orqali qo‘shilganlar uchun saqlanadi, hech qayerda "
+"ko‘rinmaydi."
 
 #: backend/apps/members/models.py
 msgid "Approvers have heard about everyone who joined through it until then."
@@ -6051,10 +6065,6 @@ msgstr "Qo‘shilgan"
 #: backend/apps/members/providers.py
 msgid "On time, 30 days (%)"
 msgstr "O‘z vaqtida, 30 kun (%)"
-
-#: backend/apps/members/services.py
-msgid "You can only give a role whose permissions you have yourself."
-msgstr "Faqat barcha ruxsatlari o‘zingizda ham bor bo‘lgan rolni bera olasiz."
 
 #: backend/apps/members/services.py
 msgid "They haven't filled in their details yet."

@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 10:43+0500\n"
+"POT-Creation-Date: 2026-10-26 11:04+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -5464,6 +5464,10 @@ msgstr "Можно назначать только те филиалы, кото
 msgid "Pick a role of this company."
 msgstr "Выберите роль этой компании."
 
+#: backend/apps/members/join_links.py
+msgid "A team link can't make people owners."
+msgstr "Ссылка для команды не может делать людей владельцами."
+
 #: backend/apps/members/join_links.py backend/apps/members/owner_api.py
 #: backend/apps/members/services.py
 msgid "Pick a position of this company."
@@ -5474,13 +5478,17 @@ msgstr "Выберите должность этой компании."
 msgid "A link can take from 1 to %(count)d people."
 msgstr "Через ссылку могут присоединиться от 1 до %(count)d человек."
 
-#: backend/apps/members/join_links.py
+#: backend/apps/members/join_links.py backend/apps/members/link_api.py
 msgid "The end must be in the future."
 msgstr "Окончание должно быть в будущем."
 
-#: backend/apps/members/join_links.py
+#: backend/apps/members/join_links.py backend/apps/members/link_api.py
 msgid "A link can work for at most a year."
 msgstr "Ссылка может работать не больше года."
+
+#: backend/apps/members/join_links.py backend/apps/members/services.py
+msgid "You can only give a role whose permissions you have yourself."
+msgstr "Можно выдать только ту роль, все права которой есть и у вас."
 
 #: backend/apps/members/join_links.py
 msgid "Choose one of your branches."
@@ -5617,6 +5625,11 @@ msgstr "Сколько человек создали аккаунт по это�
 #: backend/apps/members/models.py
 msgid "Off: stopped by hand."
 msgstr "Выключено: остановлена вручную."
+
+#: backend/apps/members/models.py
+msgid "Deleted: kept for the people who joined through it, shown nowhere."
+msgstr ""
+"Удалена: хранится ради тех, кто по ней присоединился, нигде не показывается."
 
 #: backend/apps/members/models.py
 msgid "Approvers have heard about everyone who joined through it until then."
@@ -5980,10 +5993,6 @@ msgstr "В команде с"
 #: backend/apps/members/providers.py
 msgid "On time, 30 days (%)"
 msgstr "Вовремя за 30 дней (%)"
-
-#: backend/apps/members/services.py
-msgid "You can only give a role whose permissions you have yourself."
-msgstr "Можно выдать только ту роль, все права которой есть и у вас."
 
 #: backend/apps/members/services.py
 msgid "They haven't filled in their details yet."

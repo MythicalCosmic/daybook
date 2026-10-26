@@ -1,5 +1,5 @@
-"""Review of team links (bulk/review): each test here failed on bulk/core (45cd120) and pins
-down one defect. See the review report for the details and suggested fixes."""
+"""Team links: the rules a review pinned down (places per person, deleting a link mid-burst,
+branches and roles checked at every join, the owner API's error shapes)."""
 
 from datetime import timedelta
 
@@ -112,9 +112,9 @@ def test_deleting_the_link_right_after_the_meeting_still_tells_approvers_and_gro
         for link_id in dict.fromkeys(queued):
             tasks.report_link_joins(link_id)  # 90 s later
 
-    assert Notification.objects.filter(
-        kind=join_links.REPORT_KIND, recipient=manager
-    ).exists(), "the manager never hears that two people joined"
+    assert Notification.objects.filter(kind=join_links.REPORT_KIND, recipient=manager).exists(), (
+        "the manager never hears that two people joined"
+    )
     assert posts, "the team's group never hears about the new people"
 
 
@@ -281,7 +281,8 @@ def test_join_requests_with_links_cost_the_same_for_two_or_twelve(owner_api, com
 
     def count():
         with CaptureQueriesContext(connection) as queries:
-            assert api.get(f"/api/v1/owner/companies/{company.pk}/join-requests/").status_code == 200
+            response = api.get(f"/api/v1/owner/companies/{company.pk}/join-requests/")
+            assert response.status_code == 200
         return len(queries)
 
     for _ in range(2):

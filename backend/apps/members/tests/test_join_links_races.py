@@ -1,4 +1,4 @@
-"""Races around team links, with real transactions in two threads (bulk/review)."""
+"""Races around team links, with real transactions in two threads."""
 
 import threading
 import time
@@ -23,7 +23,7 @@ def run(target, errors):
     def body():
         try:
             target()
-        except Exception as exc:  # noqa: BLE001 - collected for the assertion
+        except Exception as exc:  # collected for the assertion
             errors.append(exc)
         finally:
             connection.close()

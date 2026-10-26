@@ -232,6 +232,11 @@ class JoinLink(TenantModel):
     )
     expires_at = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True, help_text=_("Off: stopped by hand."))
+    deleted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("Deleted: kept for the people who joined through it, shown nowhere."),
+    )
     reported_at = models.DateTimeField(
         null=True,
         blank=True,
