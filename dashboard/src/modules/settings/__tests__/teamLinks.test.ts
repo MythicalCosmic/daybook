@@ -251,7 +251,8 @@ describe("TeamLinkDialog", () => {
     await flushPromises();
 
     expect(document.querySelector<HTMLInputElement>('#team-link-form input[maxlength="100"]')!.value).toBe("Chilonzor, 26 Oct");
-    // One branch: nothing to choose.
+    // One branch: nothing to choose, but the dialog says which.
+    expect(document.querySelector("[data-only-branch]")!.textContent).toContain("Branch:Chilonzor");
     expect(document.body.textContent).not.toContain("Pick the branch");
     chip("20").click();
     await flushPromises();

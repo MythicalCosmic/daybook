@@ -249,6 +249,8 @@ async function rejectChosen(): Promise<void> {
       </section>
     </template>
 
+    <!-- Room under the last card while the bar floats over the bottom of the page. -->
+    <div v-if="selection.selected.value.length" class="h-14" aria-hidden="true" />
     <BulkActionBar :count="selection.selected.value.length" @clear="selection.clear()">
       <UiButton size="sm" variant="ghost" :icon="Check" :loading="running === 'approve'" :disabled="running === 'reject'" data-bulk-approve @click="bulkOpen = true">{{ t("common.approve") }}</UiButton>
       <UiButton size="sm" variant="ghost" :icon="X" :loading="running === 'reject'" :disabled="running === 'approve'" data-bulk-reject @click="rejectChosen">{{ t("common.reject") }}</UiButton>

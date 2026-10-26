@@ -6,7 +6,7 @@
  * typed over. Saving a new link hands it to the panel, which opens its live screen: the owner's
  * next step is to show it. An edit sends only what changed.
  */
-import { Check, QrCode, ShieldAlert } from "@lucide/vue";
+import { Check, MapPin, QrCode, ShieldAlert } from "@lucide/vue";
 import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -197,6 +197,12 @@ async function submit(): Promise<void> {
       <FormField v-if="!onlyBranch" :label="t('settings.teamLinks.field.branch')" :error="errors.branch_id" :required="branchRequired" :optional="!branchRequired">
         <BranchPicker v-model="form.branchId" :clearable="!branchRequired" :placeholder="branchRequired ? undefined : t('settings.teamLinks.field.branchLater')" />
       </FormField>
+      <!-- One branch to give: nothing to choose, but it is said. -->
+      <div v-else class="-mt-1 flex items-center gap-2 text-sm text-muted" data-only-branch>
+        <MapPin :size="14" class="shrink-0 text-subtle" aria-hidden="true" />
+        <span>{{ t("settings.teamLinks.field.branch") }}:</span>
+        <span class="font-medium text-fg">{{ onlyBranch.name }}</span>
+      </div>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField :label="t('settings.teamLinks.field.role')" :hint="t('settings.teamLinks.field.roleHint')" :error="errors.role_id">
           <SelectBox v-model="form.role" :options="roleOptions" />
