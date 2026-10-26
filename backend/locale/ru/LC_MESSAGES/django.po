@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 10:15+0500\n"
+"POT-Creation-Date: 2026-10-26 10:24+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -4349,7 +4349,7 @@ msgid "Turned on: nothing yet"
 msgstr "Включено: пока ничего"
 
 #: backend/apps/groups/bot_messages.py backend/apps/members/bot_messages.py
-#: backend/apps/tasks/bot_messages.py
+#: backend/apps/tasks/bot_messages.py owner_bot/ownerbot/invite.py
 msgid "Back"
 msgstr "Назад"
 
@@ -5381,7 +5381,7 @@ msgstr ""
 msgid "Chosen: %(names)s"
 msgstr "Выбрано: %(names)s"
 
-#: backend/apps/members/bot_messages.py
+#: backend/apps/members/bot_messages.py owner_bot/ownerbot/invite.py
 #, python-format
 msgid "Role: %(role)s"
 msgstr "Роль: %(role)s"
@@ -5439,7 +5439,7 @@ msgstr "Роли"
 msgid "Team"
 msgstr "Команда"
 
-#: backend/apps/members/join_links.py
+#: backend/apps/members/join_links.py owner_bot/ownerbot/invite.py
 msgid "You can't change this link."
 msgstr "Вы не можете изменить эту ссылку."
 
@@ -5508,7 +5508,7 @@ msgstr[1] "По ссылке «%(link)s» присоединились %(count)d
 msgstr[2] "По ссылке «%(link)s» присоединились %(count)d человек"
 msgstr[3] "По ссылке «%(link)s» присоединились %(count)d человек"
 
-#: backend/apps/members/join_links.py
+#: backend/apps/members/join_links.py owner_bot/ownerbot/invite.py
 #, python-format
 msgid "Joined: %(uses)d of %(places)d"
 msgstr "Присоединились: %(uses)d из %(places)d"
@@ -10630,6 +10630,10 @@ msgid "/today: today's numbers and what waits for you"
 msgstr "/today: показатели за сегодня и дела, которые ждут вас"
 
 #: owner_bot/ownerbot/bot_messages.py
+msgid "/invite: a QR code that adds your staff"
+msgstr "/invite: QR-код, чтобы добавить сотрудников"
+
+#: owner_bot/ownerbot/bot_messages.py
 msgid "/dashboard: open the dashboard"
 msgstr "/dashboard: открыть панель управления"
 
@@ -10929,9 +10933,175 @@ msgid "Today at a glance"
 msgstr "Сводка за сегодня"
 
 #: owner_bot/ownerbot/commands.py
+msgid "Invite staff"
+msgstr "Пригласить сотрудников"
+
+#: owner_bot/ownerbot/commands.py
 msgid "Open the dashboard"
 msgstr "Открыть панель управления"
 
 #: owner_bot/ownerbot/commands.py
 msgid "Create a company"
 msgstr "Создать компанию"
+
+#: owner_bot/ownerbot/invite.py
+msgid "You can't invite people to this company."
+msgstr "Вы не можете приглашать людей в эту компанию."
+
+#: owner_bot/ownerbot/invite.py
+msgid "You can't invite people to any company yet."
+msgstr "Пока вы не можете приглашать людей ни в одну компанию."
+
+#: owner_bot/ownerbot/invite.py
+msgid "Which company are you inviting people to?"
+msgstr "В какую компанию приглашаете?"
+
+#: owner_bot/ownerbot/invite.py
+#, python-format
+msgid "<b>Invite staff</b> · %(company)s"
+msgstr "<b>Пригласить сотрудников</b> · %(company)s"
+
+#: owner_bot/ownerbot/invite.py
+msgid "Main link: people ask to join, and you approve each one."
+msgstr "Основная ссылка: люди подают заявку, вы одобряете каждого."
+
+#: owner_bot/ownerbot/invite.py
+msgid ""
+"A team link adds many people at once, with the branch and role you choose: "
+"show its QR code at a meeting or send it to a chat."
+msgstr ""
+"Ссылка для команды добавляет сразу многих, с выбранными филиалом и ролью: "
+"покажите её QR-код на собрании или отправьте в чат."
+
+#: owner_bot/ownerbot/invite.py
+msgid "<b>Working team links</b>"
+msgstr "<b>Действующие ссылки для команды</b>"
+
+#: owner_bot/ownerbot/invite.py
+msgid "Main link QR code"
+msgstr "QR-код основной ссылки"
+
+#: owner_bot/ownerbot/invite.py
+msgid "New team link"
+msgstr "Новая ссылка для команды"
+
+#: owner_bot/ownerbot/invite.py
+msgid "All links in the dashboard"
+msgstr "Все ссылки в панели управления"
+
+#: owner_bot/ownerbot/invite.py
+msgid ""
+"The employee bot isn't connected on this server yet, so there's no link."
+msgstr ""
+"Бот для сотрудников на этом сервере ещё не подключён, поэтому ссылки нет."
+
+#: owner_bot/ownerbot/invite.py
+#, python-format
+msgid "<b>%(company)s</b>: the main invite link"
+msgstr "<b>%(company)s</b>: основная ссылка-приглашение"
+
+#: owner_bot/ownerbot/invite.py
+msgid "People who open it ask to join, and you approve each one."
+msgstr "Открывшие её подают заявку, вы одобряете каждого."
+
+#: owner_bot/ownerbot/invite.py
+msgid "This link is gone."
+msgstr "Этой ссылки больше нет."
+
+#: owner_bot/ownerbot/invite.py
+#, python-format
+msgid "<b>%(link)s</b> · %(company)s"
+msgstr "<b>%(link)s</b> · %(company)s"
+
+#: owner_bot/ownerbot/invite.py
+msgid "People who open it join straight away."
+msgstr "Открывшие её сразу попадают в команду."
+
+#: owner_bot/ownerbot/invite.py
+msgid "People who open it ask to join, and you approve them."
+msgstr "Открывшие её подают заявку, а вы их одобряете."
+
+#: owner_bot/ownerbot/invite.py
+#, python-format
+msgid "Branch: %(branch)s"
+msgstr "Филиал: %(branch)s"
+
+#: owner_bot/ownerbot/invite.py
+#, python-format
+msgid "Until: %(time)s"
+msgstr "Действует до: %(time)s"
+
+#: owner_bot/ownerbot/invite.py
+#, python-format
+msgid "Joined: %(uses)d"
+msgstr "Присоединились: %(uses)d"
+
+#: owner_bot/ownerbot/invite.py
+msgid "The link is stopped. Nobody new can join through it."
+msgstr "Ссылка остановлена. Новые люди по ней больше не присоединятся."
+
+#: owner_bot/ownerbot/invite.py
+#, python-format
+msgid "Team link %(date)s"
+msgstr "Ссылка для команды %(date)s"
+
+#: owner_bot/ownerbot/invite.py
+msgid "<b>New team link</b>"
+msgstr "<b>Новая ссылка для команды</b>"
+
+#: owner_bot/ownerbot/invite.py
+msgid "Which branch will these people work in?"
+msgstr "В каком филиале будут работать эти люди?"
+
+#: owner_bot/ownerbot/invite.py
+msgid "No limit"
+msgstr "Без ограничений"
+
+#: owner_bot/ownerbot/invite.py
+msgid "How many people will join through it?"
+msgstr "Сколько человек присоединится по ней?"
+
+#: owner_bot/ownerbot/invite.py
+msgid "Until tonight"
+msgstr "До полуночи"
+
+#: owner_bot/ownerbot/invite.py
+msgid "3 days"
+msgstr "3 дня"
+
+#: owner_bot/ownerbot/invite.py
+msgid "7 days"
+msgstr "7 дней"
+
+#: owner_bot/ownerbot/invite.py
+msgid "30 days"
+msgstr "30 дней"
+
+#: owner_bot/ownerbot/invite.py
+msgid "How long should it work?"
+msgstr "Сколько должна работать ссылка?"
+
+#: owner_bot/ownerbot/invite.py
+msgid "Stop the link"
+msgstr "Остановить ссылку"
+
+#: owner_bot/ownerbot/invite.py
+msgid "The link is stopped."
+msgstr "Ссылка остановлена."
+
+#: owner_bot/ownerbot/invite.py
+msgid "The link has ended."
+msgstr "Срок ссылки истёк."
+
+#: owner_bot/ownerbot/invite.py
+msgid "The link is full."
+msgstr "В ссылке не осталось мест."
+
+#: owner_bot/ownerbot/invite.py
+#, python-format
+msgid "Join %(company)s in Telegram"
+msgstr "Присоединяйтесь к команде %(company)s в Telegram"
+
+#: owner_bot/ownerbot/invite.py
+msgid "Share"
+msgstr "Поделиться"

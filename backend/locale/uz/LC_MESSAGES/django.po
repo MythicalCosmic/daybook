@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 10:15+0500\n"
+"POT-Creation-Date: 2026-10-26 10:24+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -4416,7 +4416,7 @@ msgid "Turned on: nothing yet"
 msgstr "Yoqilgan: hali hech narsa"
 
 #: backend/apps/groups/bot_messages.py backend/apps/members/bot_messages.py
-#: backend/apps/tasks/bot_messages.py
+#: backend/apps/tasks/bot_messages.py owner_bot/ownerbot/invite.py
 msgid "Back"
 msgstr "Orqaga"
 
@@ -5456,7 +5456,7 @@ msgstr ""
 msgid "Chosen: %(names)s"
 msgstr "Tanlangan: %(names)s"
 
-#: backend/apps/members/bot_messages.py
+#: backend/apps/members/bot_messages.py owner_bot/ownerbot/invite.py
 #, python-format
 msgid "Role: %(role)s"
 msgstr "Rol: %(role)s"
@@ -5516,7 +5516,7 @@ msgstr "Rollar"
 msgid "Team"
 msgstr "Jamoa"
 
-#: backend/apps/members/join_links.py
+#: backend/apps/members/join_links.py owner_bot/ownerbot/invite.py
 msgid "You can't change this link."
 msgstr "Bu havolani o‘zgartira olmaysiz."
 
@@ -5583,7 +5583,7 @@ msgid "%(count)d person joined through «%(link)s»"
 msgid_plural "%(count)d people joined through «%(link)s»"
 msgstr[0] "«%(link)s» havolasi orqali %(count)d kishi qo‘shildi"
 
-#: backend/apps/members/join_links.py
+#: backend/apps/members/join_links.py owner_bot/ownerbot/invite.py
 #, python-format
 msgid "Joined: %(uses)d of %(places)d"
 msgstr "Qo‘shilganlar: %(uses)d / %(places)d"
@@ -10743,6 +10743,10 @@ msgid "/today: today's numbers and what waits for you"
 msgstr "/today: bugungi ko‘rsatkichlar va sizni kutayotgan ishlar"
 
 #: owner_bot/ownerbot/bot_messages.py
+msgid "/invite: a QR code that adds your staff"
+msgstr "/invite: xodimlaringizni qo‘shadigan QR kod"
+
+#: owner_bot/ownerbot/bot_messages.py
 msgid "/dashboard: open the dashboard"
 msgstr "/dashboard: boshqaruv panelini ochish"
 
@@ -11043,9 +11047,175 @@ msgid "Today at a glance"
 msgstr "Bugungi holat qisqacha"
 
 #: owner_bot/ownerbot/commands.py
+msgid "Invite staff"
+msgstr "Xodimlarni taklif qilish"
+
+#: owner_bot/ownerbot/commands.py
 msgid "Open the dashboard"
 msgstr "Boshqaruv panelini ochish"
 
 #: owner_bot/ownerbot/commands.py
 msgid "Create a company"
 msgstr "Kompaniya yaratish"
+
+#: owner_bot/ownerbot/invite.py
+msgid "You can't invite people to this company."
+msgstr "Bu kompaniyaga odam taklif qila olmaysiz."
+
+#: owner_bot/ownerbot/invite.py
+msgid "You can't invite people to any company yet."
+msgstr "Hozircha hech bir kompaniyaga odam taklif qila olmaysiz."
+
+#: owner_bot/ownerbot/invite.py
+msgid "Which company are you inviting people to?"
+msgstr "Qaysi kompaniyaga taklif qilyapsiz?"
+
+#: owner_bot/ownerbot/invite.py
+#, python-format
+msgid "<b>Invite staff</b> · %(company)s"
+msgstr "<b>Xodimlarni taklif qilish</b> · %(company)s"
+
+#: owner_bot/ownerbot/invite.py
+msgid "Main link: people ask to join, and you approve each one."
+msgstr ""
+"Asosiy havola: odamlar qo‘shilishni so‘raydi, siz har birini tasdiqlaysiz."
+
+#: owner_bot/ownerbot/invite.py
+msgid ""
+"A team link adds many people at once, with the branch and role you choose: "
+"show its QR code at a meeting or send it to a chat."
+msgstr ""
+"Jamoa havolasi bir vaqtda ko‘p odamni siz tanlagan filial va rol bilan "
+"qo‘shadi: QR kodini yig‘ilishda ko‘rsating yoki chatga yuboring."
+
+#: owner_bot/ownerbot/invite.py
+msgid "<b>Working team links</b>"
+msgstr "<b>Ishlayotgan jamoa havolalari</b>"
+
+#: owner_bot/ownerbot/invite.py
+msgid "Main link QR code"
+msgstr "Asosiy havola QR kodi"
+
+#: owner_bot/ownerbot/invite.py
+msgid "New team link"
+msgstr "Yangi jamoa havolasi"
+
+#: owner_bot/ownerbot/invite.py
+msgid "All links in the dashboard"
+msgstr "Barcha havolalar boshqaruv panelida"
+
+#: owner_bot/ownerbot/invite.py
+msgid ""
+"The employee bot isn't connected on this server yet, so there's no link."
+msgstr "Bu serverda xodimlar boti hali ulanmagan, shuning uchun havola yo‘q."
+
+#: owner_bot/ownerbot/invite.py
+#, python-format
+msgid "<b>%(company)s</b>: the main invite link"
+msgstr "<b>%(company)s</b>: asosiy taklif havolasi"
+
+#: owner_bot/ownerbot/invite.py
+msgid "People who open it ask to join, and you approve each one."
+msgstr "Uni ochganlar qo‘shilishni so‘raydi, siz har birini tasdiqlaysiz."
+
+#: owner_bot/ownerbot/invite.py
+msgid "This link is gone."
+msgstr "Bu havola endi yo‘q."
+
+#: owner_bot/ownerbot/invite.py
+#, python-format
+msgid "<b>%(link)s</b> · %(company)s"
+msgstr "<b>%(link)s</b> · %(company)s"
+
+#: owner_bot/ownerbot/invite.py
+msgid "People who open it join straight away."
+msgstr "Uni ochganlar darhol qo‘shiladi."
+
+#: owner_bot/ownerbot/invite.py
+msgid "People who open it ask to join, and you approve them."
+msgstr "Uni ochganlar qo‘shilishni so‘raydi, siz ularni tasdiqlaysiz."
+
+#: owner_bot/ownerbot/invite.py
+#, python-format
+msgid "Branch: %(branch)s"
+msgstr "Filial: %(branch)s"
+
+#: owner_bot/ownerbot/invite.py
+#, python-format
+msgid "Until: %(time)s"
+msgstr "Tugaydi: %(time)s"
+
+#: owner_bot/ownerbot/invite.py
+#, python-format
+msgid "Joined: %(uses)d"
+msgstr "Qo‘shilganlar: %(uses)d"
+
+#: owner_bot/ownerbot/invite.py
+msgid "The link is stopped. Nobody new can join through it."
+msgstr "Havola to‘xtatildi. Endi u orqali hech kim qo‘shila olmaydi."
+
+#: owner_bot/ownerbot/invite.py
+#, python-format
+msgid "Team link %(date)s"
+msgstr "Jamoa havolasi %(date)s"
+
+#: owner_bot/ownerbot/invite.py
+msgid "<b>New team link</b>"
+msgstr "<b>Yangi jamoa havolasi</b>"
+
+#: owner_bot/ownerbot/invite.py
+msgid "Which branch will these people work in?"
+msgstr "Bu odamlar qaysi filialda ishlaydi?"
+
+#: owner_bot/ownerbot/invite.py
+msgid "No limit"
+msgstr "Cheklovsiz"
+
+#: owner_bot/ownerbot/invite.py
+msgid "How many people will join through it?"
+msgstr "U orqali nechta odam qo‘shiladi?"
+
+#: owner_bot/ownerbot/invite.py
+msgid "Until tonight"
+msgstr "Bugun yarim tungacha"
+
+#: owner_bot/ownerbot/invite.py
+msgid "3 days"
+msgstr "3 kun"
+
+#: owner_bot/ownerbot/invite.py
+msgid "7 days"
+msgstr "7 kun"
+
+#: owner_bot/ownerbot/invite.py
+msgid "30 days"
+msgstr "30 kun"
+
+#: owner_bot/ownerbot/invite.py
+msgid "How long should it work?"
+msgstr "Havola qancha muddat ishlasin?"
+
+#: owner_bot/ownerbot/invite.py
+msgid "Stop the link"
+msgstr "Havolani to‘xtatish"
+
+#: owner_bot/ownerbot/invite.py
+msgid "The link is stopped."
+msgstr "Havola to‘xtatilgan."
+
+#: owner_bot/ownerbot/invite.py
+msgid "The link has ended."
+msgstr "Havola muddati tugagan."
+
+#: owner_bot/ownerbot/invite.py
+msgid "The link is full."
+msgstr "Havolada bo‘sh joy qolmagan."
+
+#: owner_bot/ownerbot/invite.py
+#, python-format
+msgid "Join %(company)s in Telegram"
+msgstr "Telegramda %(company)s jamoasiga qo‘shiling"
+
+#: owner_bot/ownerbot/invite.py
+msgid "Share"
+msgstr "Ulashish"

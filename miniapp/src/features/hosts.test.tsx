@@ -97,6 +97,7 @@ function membership(permissions: string[]): Membership {
     home_branch: null,
     branch_ids: [],
     suspended_until: null,
+    joined_by_link: false,
   };
 }
 

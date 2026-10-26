@@ -69,6 +69,8 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
     "Запрос у руководителя. Бот напишет вам в этот чат, как только доступ подтвердят, — приложение пока можно закрыть.",
   "waiting.approvedTitle": "Добро пожаловать, {name}!",
   "waiting.approvedBody": "Ваш запрос одобрен. Задачи уже ждут.",
+  "waiting.linkTitle": "Добро пожаловать в команду, {name}!",
+  "waiting.linkBody": "Теперь вы в компании {company}. Задачи появятся здесь.",
   "waiting.request": "Ваш запрос",
   "waiting.name": "Имя",
   "waiting.phone": "Телефон",
