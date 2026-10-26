@@ -75,7 +75,7 @@
   "people.noPosition": "Без должности",
   "people.noBranch": "Без филиала",
   "people.noDepartment": "Без отдела",
-  "people.reportsTo": "Руководитель",
+  "people.reportsTo": "Подчиняется",
   "people.headsOf": "Руководит",
   "people.noWork": "Задач пока нет",
   "people.botBlocked": "Заблокировал бота: напоминания не доходят",

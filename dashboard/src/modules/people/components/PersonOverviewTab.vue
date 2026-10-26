@@ -137,13 +137,16 @@ function span(first: string, last: string): string {
         <h2 class="mb-1 text-md font-semibold text-fg">{{ t("people.overview.details") }}</h2>
         <DescriptionList :items="details" layout="rows">
           <template v-if="person.department" #value-department>
-            <RouterLink
-              :to="`/c/${company.currentId}/people/departments?department=${person.department.id}`"
-              class="min-w-0 truncate text-fg hover:text-primary hover:underline"
-              data-detail-department
-              >{{ person.department.name }}</RouterLink
-            >
-            <UiBadge v-if="headsOwn" tone="primary" class="shrink-0">{{ t("people.dept.head") }}</UiBadge>
+            <!-- The badge moves under the name rather than cutting it short (Russian "Руководитель" is long). -->
+            <span class="flex min-w-0 flex-wrap items-center justify-end gap-x-1.5 gap-y-1">
+              <RouterLink
+                :to="`/c/${company.currentId}/people/departments?department=${person.department.id}`"
+                class="min-w-0 max-w-full truncate text-fg hover:text-primary hover:underline"
+                data-detail-department
+                >{{ person.department.name }}</RouterLink
+              >
+              <UiBadge v-if="headsOwn" tone="primary" class="shrink-0">{{ t("people.dept.head") }}</UiBadge>
+            </span>
           </template>
           <template v-if="person.manager" #value-manager>
             <PersonCell :person="person.manager" size="sm" link data-detail-manager />

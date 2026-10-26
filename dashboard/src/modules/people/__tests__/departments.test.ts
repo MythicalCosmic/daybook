@@ -292,15 +292,18 @@ describe("DepartmentsPage", () => {
   });
 
   it("opens a new department's panel at once, before the list is fetched again", async () => {
+    // The dialog is its own chunk: loaded first, so a busy test run doesn't wait on it.
+    await import("../components/DepartmentDialog.vue");
     const { wrapper, app, calls } = await mountPage(DEPARTMENTS);
     await wrapper.find("[data-new-department]").trigger("click");
-    // The dialog is its own chunk.
-    const name = await vi.waitFor(() => document.body.querySelector<HTMLInputElement>("[data-department-form] input") ?? Promise.reject(new Error("no dialog yet")));
+    const name = await vi.waitFor(() => document.body.querySelector<HTMLInputElement>("[data-department-form] input") ?? Promise.reject(new Error("no dialog yet")), {
+      timeout: 10_000,
+    });
     name.value = "Sifat nazorati";
     name.dispatchEvent(new Event("input"));
     await flushPromises();
     document.body.querySelector<HTMLFormElement>("[data-department-form]")!.requestSubmit();
-    await vi.waitFor(() => expect(app.router.currentRoute.value.query.department).toBe("90"));
+    await vi.waitFor(() => expect(app.router.currentRoute.value.query.department).toBe("90"), { timeout: 10_000 });
     expect(calls.find((c) => c.method === "POST")!.body).toEqual({ name: "Sifat nazorati", parent_id: null });
     await flushPromises();
     expect(wrapper.find('[data-department="90"]').exists()).toBe(true);

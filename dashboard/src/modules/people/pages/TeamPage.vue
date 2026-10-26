@@ -355,12 +355,13 @@ function clearAll(): void {
             <template v-if="row.department"><Network :size="12" class="shrink-0 text-subtle" aria-hidden="true" /><span class="truncate">{{ row.department.name }}</span></template>
             <UiBadge v-if="headOf.has(row.id)" tone="primary" class="shrink-0">{{ t("people.dept.head") }}</UiBadge>
           </p>
-          <div :class="['flex items-center gap-3 pl-[46px] text-xs text-muted', row.department || headOf.has(row.id) ? 'mt-1.5' : 'mt-2.5']">
-            <span v-if="row.work.on_time_30d !== null" class="inline-flex items-center gap-1.5">
+          <!-- Wraps between the facts, never inside one ("89,2% o‘z vaqtida" stays on one line). -->
+          <div :class="['flex flex-wrap items-center gap-x-3 gap-y-1 pl-[46px] text-xs text-muted', row.department || headOf.has(row.id) ? 'mt-1.5' : 'mt-2.5']">
+            <span v-if="row.work.on_time_30d !== null" class="inline-flex items-center gap-1.5 whitespace-nowrap">
               <CircleDot :size="12" :class="RATE_TEXT[rateTone(row.work.on_time_30d)]" />{{ t("people.onTimeShort", { n: fmt.number(row.work.on_time_30d, 1) }) }}
             </span>
-            <span v-if="row.work.late_now" class="font-semibold text-danger">{{ t("people.lateNow", { n: row.work.late_now }) }}</span>
-            <span v-if="row.role" class="truncate">{{ row.role.name }}</span>
+            <span v-if="row.work.late_now" class="whitespace-nowrap font-semibold text-danger">{{ t("people.lateNow", { n: row.work.late_now }) }}</span>
+            <span v-if="row.role" class="min-w-0 max-w-full truncate">{{ row.role.name }}</span>
           </div>
         </template>
       </DataTable>
