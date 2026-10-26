@@ -91,6 +91,13 @@ const roleOptions = computed(() => {
   return options;
 });
 const positionOptions = computed(() => (positions.data.value ?? []).filter((p) => p.is_active).map((p) => ({ value: p.id, label: p.name })));
+/** The number field holds a number of one's own; a chip's number stays on its chip. */
+const customPlaces = computed({
+  get: () => (form.maxUses !== null && !(PLACE_CHIPS as readonly number[]).includes(form.maxUses) ? form.maxUses : null),
+  set: (value: number | null) => {
+    if (value !== null || customPlaces.value !== null) form.maxUses = value;
+  },
+});
 
 const validForOptions = computed(() => VALID_FOR.map((value) => ({ value, label: t(`settings.teamLinks.validFor.${value}`) })));
 /**
@@ -187,10 +194,10 @@ async function submit(): Promise<void> {
         />
       </div>
 
+      <FormField v-if="!onlyBranch" :label="t('settings.teamLinks.field.branch')" :error="errors.branch_id" :required="branchRequired" :optional="!branchRequired">
+        <BranchPicker v-model="form.branchId" :clearable="!branchRequired" :placeholder="branchRequired ? undefined : t('settings.teamLinks.field.branchLater')" />
+      </FormField>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <FormField v-if="!onlyBranch" :label="t('settings.teamLinks.field.branch')" :error="errors.branch_id" :required="branchRequired" :optional="!branchRequired">
-          <BranchPicker v-model="form.branchId" :clearable="!branchRequired" :placeholder="branchRequired ? undefined : t('settings.teamLinks.field.branchLater')" />
-        </FormField>
         <FormField :label="t('settings.teamLinks.field.role')" :hint="t('settings.teamLinks.field.roleHint')" :error="errors.role_id">
           <SelectBox v-model="form.role" :options="roleOptions" />
         </FormField>
@@ -207,7 +214,7 @@ async function submit(): Promise<void> {
           <button v-for="n in PLACE_CHIPS" :key="n" type="button" :class="['team-chip pressable tabular-nums', form.maxUses === n && 'is-on']" :aria-pressed="form.maxUses === n" @click="form.maxUses = n">
             {{ n }}
           </button>
-          <NumberInput v-model="form.maxUses" class="!w-[132px]" :min="1" :max="500" :placeholder="t('settings.teamLinks.field.placesOther')" :suffix="t('settings.teamLinks.field.placesUnit')" size="sm" />
+          <NumberInput v-model="customPlaces" class="!w-[136px]" :min="1" :max="500" :steppers="false" :placeholder="t('settings.teamLinks.field.placesOther')" size="sm" data-places-other />
         </div>
       </FormField>
 

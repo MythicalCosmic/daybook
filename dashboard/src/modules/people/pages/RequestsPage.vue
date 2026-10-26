@@ -198,7 +198,7 @@ async function rejectChosen(): Promise<void> {
         <article
           v-for="row in ready"
           :key="row.id"
-          :class="['ui-card flex flex-col gap-3 p-4 transition-shadow', selection.has(row.id) && 'shadow-[0_0_0_2px_var(--c-primary)]']"
+          :class="['ui-card flex flex-col gap-3 p-4 transition-shadow', selection.has(row.id) && 'shadow-[0_0_0_1.5px_var(--c-primary)]']"
           :data-request="row.id"
         >
           <div class="flex items-start gap-3">

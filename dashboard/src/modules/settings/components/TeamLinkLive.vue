@@ -13,7 +13,6 @@ import { DialogContent, DialogDescription, DialogPortal, DialogRoot, DialogTitle
 import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
-import type { Language } from "@/api/types";
 import CompanyLogo from "@/components/CompanyLogo.vue";
 import IconButton from "@/components/IconButton.vue";
 import ProgressBar from "@/components/ProgressBar.vue";
@@ -25,7 +24,8 @@ import { useTween } from "@/lib/useTween";
 import { useCompanyStore } from "@/stores/company";
 
 import { useLiveJoinLink, useSettings } from "../api";
-import { STATUS_TONE, livePeople, placesLeft, whenText } from "../teamLinks";
+import { useRoomLanguages } from "../roomLanguages";
+import { STATUS_TONE, endText, livePeople, placesLeft } from "../teamLinks";
 import type { JoinLink, JoinLinkPerson } from "../types";
 
 const QrCode = defineAsyncComponent(() => import("@/components/QrCode.vue"));
@@ -59,18 +59,11 @@ const count = useTween(() => data.value.uses);
 const shownCount = computed(() => fmt.number(Math.round(count.value.value ?? data.value.uses)));
 const people = computed(() => livePeople(data.value.people, phone.value ? 3 : 6));
 
-const room = computed<Language[]>(() => {
-  const language = settings.data.value?.default_language ?? "uz";
-  return [language, language === "ru" ? "uz" : "ru"];
-});
-const say = (key: string, locale: Language) => t(key, {}, { locale });
+const { languages: room, say } = useRoomLanguages(() => settings.data.value?.default_language ?? "uz");
 
-const placesLine = computed(() => (left.value === null ? null : t("settings.teamLinks.live.left", { n: left.value }, left.value)));
-const endLine = computed(() => {
-  const end = data.value.expires_at;
-  if (!end) return t("settings.teamLinks.live.noEnd");
-  return t("settings.teamLinks.live.until", { when: whenText(end, company.timezone, fmt.lang.value) });
-});
+/** Places left only while people can still come in; a closed link says why over its code instead. */
+const placesLine = computed(() => (!open.value || left.value === null ? null : t("settings.teamLinks.live.left", { n: left.value }, left.value)));
+const endLine = computed(() => endText(data.value, t, company.timezone, fmt.lang.value));
 /** Why nobody new gets in, when the link can't take anyone. */
 const closedTitle = computed(() => (open.value ? null : t(`settings.teamLinks.live.closed.${status.value}`)));
 const closedHint = computed(() => (open.value ? null : t(`settings.teamLinks.live.closedHint.${status.value}`)));
@@ -183,7 +176,7 @@ function focusSelf(event: Event): void {
                 </div>
               </div>
             </div>
-            <DialogDescription as="div" :class="['flex flex-col', phone ? 'mt-4 gap-0.5' : 'mt-7 gap-1']">
+            <DialogDescription as="div" :class="['flex flex-col transition-opacity duration-300', phone ? 'mt-4 gap-0.5' : 'mt-7 gap-1', !open && 'opacity-35']">
               <p v-for="(lang, index) in room" :key="lang" :lang="lang" :class="index === 0 ? (phone ? 'font-display text-[22px] leading-tight' : 'font-display text-[34px] leading-tight') : phone ? 'text-sm text-muted' : 'text-lg text-muted'">
                 {{ say("settings.teamLinks.live.scan", lang) }}
               </p>
@@ -198,7 +191,7 @@ function focusSelf(event: Event): void {
                 <p :class="['font-display leading-none tabular-nums text-fg', phone ? 'mt-1 text-[56px]' : 'mt-2 text-[112px]']">{{ shownCount }}</p>
               </div>
               <div :class="['flex min-w-0 flex-col', phone ? 'items-end gap-1 pb-1 text-right' : 'mt-5 gap-2.5']">
-                <ProgressBar v-if="data.max_uses !== null && !phone" :value="data.uses" :max="data.max_uses" size="md" :tone="status === 'full' ? 'warning' : 'success'" class="max-w-[420px]" />
+                <ProgressBar v-if="data.max_uses !== null && !phone && (open || status === 'full')" :value="data.uses" :max="data.max_uses" size="md" :tone="status === 'full' ? 'warning' : 'success'" class="max-w-[420px]" />
                 <p :class="['font-medium text-fg', phone ? 'text-sm' : 'text-lg']">
                   <span v-if="placesLine">{{ placesLine }}</span>
                   <span v-if="placesLine && !phone" class="px-2 text-subtle" aria-hidden="true">·</span>

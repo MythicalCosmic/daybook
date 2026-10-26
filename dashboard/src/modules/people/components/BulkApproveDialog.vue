@@ -76,8 +76,11 @@ const homeOptions = computed(() => branches.value.filter((b) => branchIds.value.
 const names = computed(() => namesLine(props.requests.map((row) => row.name), t));
 const people = computed(() => props.requests.map((row) => ({ id: row.id, name: row.name, photo_url: row.photo_url })));
 const branchMissing = computed(() => severalBranches.value && start.value.branchRequired && !branchIds.value.length);
+/** The missing branch reads as a hint until someone tries to approve without it. */
+const tried = ref(false);
 
 function submit(): void {
+  tried.value = true;
   if (branchMissing.value) return;
   emit(
     "approve",
@@ -106,7 +109,12 @@ function submit(): void {
         </FormField>
       </div>
       <div v-if="severalBranches" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <FormField :label="t('people.field.branches')" :error="branchMissing ? t('people.bulk.branchRequired') : undefined" :required="start.branchRequired">
+        <FormField
+          :label="t('people.field.branches')"
+          :hint="branchMissing && !tried ? t('people.bulk.branchRequired') : undefined"
+          :error="branchMissing && tried ? t('people.bulk.branchRequired') : undefined"
+          :required="start.branchRequired"
+        >
           <BranchPicker v-model="branchIds" multiple :placeholder="start.everyoneHasBranch ? t('people.bulk.asLink') : undefined" />
         </FormField>
         <FormField :label="t('people.field.homeBranch')" :hint="t('people.edit.homeHint')">
@@ -116,7 +124,7 @@ function submit(): void {
     </div>
     <template #footer>
       <UiButton variant="ghost" @click="open = false">{{ t("common.cancel") }}</UiButton>
-      <UiButton variant="primary" :icon="Check" :loading="busy" :disabled="branchMissing" data-bulk-confirm @click="submit">{{ t("people.bulk.confirm", { n: requests.length }) }}</UiButton>
+      <UiButton variant="primary" :icon="Check" :loading="busy" data-bulk-confirm @click="submit">{{ t("people.bulk.confirm", { n: requests.length }) }}</UiButton>
     </template>
   </UiDialog>
 </template>

@@ -6,21 +6,19 @@
  * names its branch. Printed alone: everything else on the page is hidden while it prints.
  */
 import { MapPin } from "@lucide/vue";
-import { computed, defineAsyncComponent } from "vue";
-import { useI18n } from "vue-i18n";
+import { defineAsyncComponent } from "vue";
 
 import CompanyLogo from "@/components/CompanyLogo.vue";
 import type { Language } from "@/api/types";
 
+import { useRoomLanguages } from "../roomLanguages";
 import type { PosterTarget } from "../types";
 
 const QrCode = defineAsyncComponent(() => import("@/components/QrCode.vue"));
 
 const props = defineProps<{ target: PosterTarget; language: Language; preview?: boolean }>();
 
-const { t } = useI18n();
-const languages = computed<Language[]>(() => [props.language, props.language === "ru" ? "uz" : "ru"]);
-const say = (key: string, locale: Language) => t(key, {}, { locale });
+const { languages, say } = useRoomLanguages(() => props.language);
 const stepKey = (step: number) => (step === 3 && props.target.autoApprove ? "settings.invite.poster.step3Auto" : `settings.invite.poster.step${step}`);
 </script>
 
