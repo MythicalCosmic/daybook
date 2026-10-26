@@ -16,6 +16,7 @@ import LineChart from "@/components/LineChart.vue";
 import PersonCell from "@/components/PersonCell.vue";
 import ProgressBar from "@/components/ProgressBar.vue";
 import StatusPill from "@/components/StatusPill.vue";
+import UiBadge from "@/components/UiBadge.vue";
 import { formatPhone } from "@/lib/format";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
@@ -64,6 +65,8 @@ const split = computed(() => [
 
 const LANGUAGES: Record<string, string> = { uz: "O‘zbekcha", ru: "Русский", en: "English" };
 // Department rows only for someone the structure touches: a company without departments sees no change.
+// Heading their own department is a badge on it; the other departments they head get a row.
+const headsOwn = computed(() => !!props.person.department && !!props.person.heads?.some((d) => d.id === props.person.department!.id));
 const org = computed<DescriptionItem[]>(() => {
   const p = props.person;
   if (!p.department && !p.manager && !p.heads?.length) return [];
@@ -71,7 +74,8 @@ const org = computed<DescriptionItem[]>(() => {
     { key: "department", label: t("people.col.department"), value: p.department?.name ?? t("people.noDepartment") },
     { key: "manager", label: t("people.reportsTo"), value: p.manager?.name ?? null },
   ];
-  if (p.heads?.length) rows.push({ key: "heads", label: t("people.headsOf"), value: p.heads.map((d) => d.name).join(", ") });
+  const others = (p.heads ?? []).filter((d) => d.id !== p.department?.id);
+  if (others.length) rows.push({ key: "heads", label: t("people.headsOf"), value: others.map((d) => d.name).join(", ") });
   return rows;
 });
 const details = computed<DescriptionItem[]>(() => [
@@ -139,6 +143,7 @@ function span(first: string, last: string): string {
               data-detail-department
               >{{ person.department.name }}</RouterLink
             >
+            <UiBadge v-if="headsOwn" tone="primary" class="shrink-0">{{ t("people.dept.head") }}</UiBadge>
           </template>
           <template v-if="person.manager" #value-manager>
             <PersonCell :person="person.manager" size="sm" link data-detail-manager />

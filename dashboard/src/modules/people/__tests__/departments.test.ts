@@ -20,6 +20,7 @@ import {
   allowedParents,
   buildDepartmentTree,
   columnsFor,
+  deleteOutcome,
   departmentCounts,
   departmentOptions,
   descendantIds,
@@ -41,7 +42,7 @@ interface Call {
   body: unknown;
 }
 
-type Responder = (call: Call) => Response | undefined;
+type Responder = (call: Call) => Response | Promise<Response> | undefined;
 
 function stub(respond: Responder = () => undefined): Call[] {
   const calls: Call[] = [];
@@ -51,11 +52,14 @@ function stub(respond: Responder = () => undefined): Call[] {
       const call = { method: init?.method ?? "GET", url: input, body: init?.body ? JSON.parse(String(init.body)) : undefined };
       calls.push(call);
       // Unhandled: an empty page for people lists, an empty list for the rest (positions, roles…).
-      return respond(call) ?? json(/\/people\/(\?|$)/.test(call.url) ? { count: 0, next: null, previous: null, results: [] } : []);
+      return (await respond(call)) ?? json(/\/people\/(\?|$)/.test(call.url) ? { count: 0, next: null, previous: null, results: [] } : []);
     }),
   );
   return calls;
 }
+
+/** An answer that takes a while, as over a real network. */
+const later = (response: () => Response, ms = 60) => new Promise<Response>((resolve) => setTimeout(() => resolve(response()), ms));
 
 const path = (call: Call) => call.url.replace("/api/v1/owner/companies/1/", "");
 
@@ -172,6 +176,23 @@ describe("the tree", () => {
     expect(placedCount(DEPARTMENTS)).toBe(14);
   });
 
+  it("says what deleting does, naming only what the department has", () => {
+    const say = (id: number, list = DEPARTMENTS) => deleteOutcome(list, list.find((d) => d.id === id)!);
+    expect(say(2)).toEqual({ key: "people.dept.deleteBodyParent", parent: "Rahbariyat" });
+    expect(say(3)).toEqual({ key: "people.dept.deletePeopleParent", parent: "Rahbariyat" });
+    expect(say(7)).toEqual({ key: "people.dept.deleteBodyEmpty", parent: null });
+    expect(say(1)).toEqual({ key: "people.dept.deleteBodyTop", parent: null });
+    const emptyTop = DEPARTMENTS.map((d) => (d.id === 1 ? { ...d, member_count: 0 } : d));
+    expect(say(1, emptyTop)).toEqual({ key: "people.dept.deleteSubsTop", parent: null });
+    const emptyMiddle = DEPARTMENTS.map((d) => (d.id === 2 ? { ...d, member_count: 0 } : d));
+    expect(say(2, emptyMiddle)).toEqual({ key: "people.dept.deleteSubsParent", parent: "Rahbariyat" });
+    expect(say(7, DEPARTMENTS.map((d) => (d.id === 7 ? { ...d, member_count: 2 } : d)))).toEqual({ key: "people.dept.deletePeopleTop", parent: null });
+    // Every outcome has its words in all three languages.
+    for (const key of ["Body", "People", "Subs"].flatMap((what) => [`people.dept.delete${what}Parent`, `people.dept.delete${what}Top`])) {
+      for (const dictionary of [en, uz, ru] as Array<Record<string, string>>) expect(dictionary[key], key).toBeTruthy();
+    }
+  });
+
   it("finds the head a head reports to, skipping their own other departments", () => {
     expect(headAbove(DEPARTMENTS, 4)).toMatchObject({ head: { id: 22 }, department: { name: "Dorixonalar" } });
     expect(headAbove(DEPARTMENTS, 2)).toMatchObject({ head: { id: 21 }, department: { name: "Rahbariyat" } });
@@ -223,16 +244,25 @@ describe("api", () => {
 
 describe("DepartmentsPage", () => {
   async function mountPage(start: Department[], path = "/c/1/people/departments") {
-    // The server's list: a delete takes the department out and moves its sub-departments up.
+    // The server's list: a delete takes the department out and moves its sub-departments up; after
+    // a create the list comes back slowly (the new department's panel mustn't wait for it).
     let list = start;
+    let created = false;
     const calls = stub((call) => {
-      if (call.method === "GET" && call.url.includes("/departments/")) return json(list);
+      if (call.method === "GET" && call.url.includes("/departments/")) return created ? later(() => json(list)) : json(list);
       if (call.url.includes("/people/stats/")) return json({ current: 20, active: 19, suspended: 1, on_leave_today: 0, joined_30d: 0, left_30d: 0, pending_requests: 0, bot_blocked: 0 });
       if (call.method === "DELETE") {
         const id = Number(/departments\/(\d+)\//.exec(call.url)![1]);
         const gone = list.find((d) => d.id === id)!;
         list = list.filter((d) => d.id !== id).map((d) => (d.parent_id === id ? { ...d, parent_id: gone.parent_id } : d));
         return json(null, 204);
+      }
+      if (call.method === "POST" && call.url.endsWith("/departments/")) {
+        const body = call.body as { name: string; parent_id: number | null };
+        const made = dept(90, body.name, body.parent_id, []);
+        list = [...list, made];
+        created = true;
+        return json(made, 201);
       }
       return undefined;
     });
@@ -259,6 +289,22 @@ describe("DepartmentsPage", () => {
     expect(wrapper.find('[data-branch="2"] [data-branch="4"]').exists()).toBe(true);
     expect(wrapper.find("[data-departments-summary]").text()).toBe("7 departments·14 people in departments·6 without a department");
     expect(wrapper.find("[data-new-department]").exists()).toBe(true);
+  });
+
+  it("opens a new department's panel at once, before the list is fetched again", async () => {
+    const { wrapper, app, calls } = await mountPage(DEPARTMENTS);
+    await wrapper.find("[data-new-department]").trigger("click");
+    // The dialog is its own chunk.
+    const name = await vi.waitFor(() => document.body.querySelector<HTMLInputElement>("[data-department-form] input") ?? Promise.reject(new Error("no dialog yet")));
+    name.value = "Sifat nazorati";
+    name.dispatchEvent(new Event("input"));
+    await flushPromises();
+    document.body.querySelector<HTMLFormElement>("[data-department-form]")!.requestSubmit();
+    await vi.waitFor(() => expect(app.router.currentRoute.value.query.department).toBe("90"));
+    expect(calls.find((c) => c.method === "POST")!.body).toEqual({ name: "Sifat nazorati", parent_id: null });
+    await flushPromises();
+    expect(wrapper.find('[data-department="90"]').exists()).toBe(true);
+    wrapper.unmount();
   });
 
   it("explains departments when there are none, with the button only for those who may edit", async () => {
@@ -372,13 +418,21 @@ describe("DepartmentPanel", () => {
     expect(wrapper.find("[data-team-link]").attributes("href")).toBe("/c/1/people?department=2");
   });
 
-  it("takes someone out at once with PATCH department_id null", async () => {
+  it("takes someone out at once with PATCH department_id null, and Undo puts them back", async () => {
     const { wrapper, calls } = await mountPanel();
     await wrapper.find('[data-person="31"] [data-take-out]').trigger("click");
     await flushPromises();
     const patch = calls.find((c) => c.method === "PATCH")!;
     expect(path(patch)).toBe("people/31/");
     expect(patch.body).toEqual({ department_id: null });
+    // Said in the panel (a toast would sit under the drawer), with Undo.
+    expect(wrapper.find("[data-panel-notice]").text()).toContain("Madina Saidova is no longer in «Dorixonalar»");
+    await wrapper.find("[data-panel-undo]").trigger("click");
+    await flushPromises();
+    const back = calls.find((c) => c.method === "POST")!;
+    expect(path(back)).toBe("departments/2/members/");
+    expect(back.body).toEqual({ member_ids: [31] });
+    expect(wrapper.find("[data-panel-notice]").exists()).toBe(false);
   });
 
   it("adds people from other departments or none, and leaves out those already in it", async () => {
@@ -388,7 +442,8 @@ describe("DepartmentPanel", () => {
     await flushPromises();
     const picker = wrapper.findComponent(MultiSelect);
     const options = optionsOf(picker) as Array<{ value: number; description?: string }>;
-    expect(options.map((o) => o.value)).toEqual([33, 40, 41]);
+    // Those in no department first, then by name; those already in it are left out.
+    expect(options.map((o) => o.value)).toEqual([41, 33, 40]);
     expect(options.find((o) => o.value === 40)!.description).toBe("Farmatsevt · Now in: Ombor");
     picker.vm.$emit("update:modelValue", [40, 41]);
     await flushPromises();
@@ -461,7 +516,7 @@ describe("PersonEditDialog", () => {
 describe("PersonPage", () => {
   it("shows the department, whom they report to and the departments they head", async () => {
     const detail = {
-      ...person(22, "Dilshod Rahimov", { id: 2, name: "Dorixonalar" }, { manager: aziz, heads: [{ id: 2, name: "Dorixonalar" }] }),
+      ...person(22, "Dilshod Rahimov", { id: 2, name: "Dorixonalar" }, { manager: aziz, heads: [{ id: 2, name: "Dorixonalar" }, { id: 6, name: "Moliya" }] }),
       language: "uz",
       overview: { trend: [], on_time: 0, late: 0, missed: 0, total: 0, on_time_percent: null, streak: 0, joined_on: "2025-10-06", left_on: null, tenure_days: 10, days_off_this_year: 0, range: { from: "2026-09-27", to: "2026-10-26" }, upcoming_time_off: [], open_now: 0, late_now: 0, done: 0 },
       can: {},
@@ -485,8 +540,10 @@ describe("PersonPage", () => {
     expect(manager.find("span").text()).toBe("Reports to:");
     expect(manager.find("a").text()).toContain("Aziz Karimov");
     expect(manager.find("a").attributes("href")).toBe("/c/1/people/21");
-    expect(wrapper.find("[data-person-heads]").text()).toBe("Heads:Dorixonalar");
-    expect(wrapper.find("[data-person-heads] a").attributes("href")).toBe("/c/1/people/departments?department=2");
+    // Heading their own department is a badge on it; the others they head are listed.
+    expect(wrapper.find("[data-person-heads-own]").text()).toBe("Head");
+    expect(wrapper.find("[data-person-heads]").text()).toBe("Heads:Moliya");
+    expect(wrapper.find("[data-person-heads] a").attributes("href")).toBe("/c/1/people/departments?department=6");
     expect(wrapper.find("[data-detail-department]").text()).toBe("Dorixonalar");
   });
 

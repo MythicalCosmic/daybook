@@ -351,11 +351,11 @@ function clearAll(): void {
               :label="chipLabel(row)"
             />
           </div>
-          <div class="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 pl-[46px] text-xs text-muted">
-            <span v-if="row.department" class="inline-flex min-w-0 items-center gap-1.5" data-card-department>
-              <Network :size="12" class="shrink-0 text-subtle" aria-hidden="true" /><span class="truncate">{{ row.department.name }}</span>
-              <span v-if="headOf.has(row.id)" class="font-semibold text-accent-fg">· {{ t("people.dept.head") }}</span>
-            </span>
+          <p v-if="row.department || headOf.has(row.id)" class="mt-2 flex min-w-0 items-center gap-1.5 pl-[46px] text-xs text-muted" data-card-department>
+            <template v-if="row.department"><Network :size="12" class="shrink-0 text-subtle" aria-hidden="true" /><span class="truncate">{{ row.department.name }}</span></template>
+            <UiBadge v-if="headOf.has(row.id)" tone="primary" class="shrink-0">{{ t("people.dept.head") }}</UiBadge>
+          </p>
+          <div :class="['flex items-center gap-3 pl-[46px] text-xs text-muted', row.department || headOf.has(row.id) ? 'mt-1.5' : 'mt-2.5']">
             <span v-if="row.work.on_time_30d !== null" class="inline-flex items-center gap-1.5">
               <CircleDot :size="12" :class="RATE_TEXT[rateTone(row.work.on_time_30d)]" />{{ t("people.onTimeShort", { n: fmt.number(row.work.on_time_30d, 1) }) }}
             </span>

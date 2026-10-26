@@ -4,8 +4,8 @@
  * way to take someone out, "Add people" (current members; whoever is in another department moves
  * here), its sub-departments, and everyone in it and below on the Team list.
  */
-import { ArrowRight, ChevronRight, Network, UserPlus, UserRound, X } from "@lucide/vue";
-import { computed, ref, watch } from "vue";
+import { ArrowRight, CircleCheck, ChevronRight, Network, UserPlus, UserRound, X } from "@lucide/vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
 
@@ -16,7 +16,6 @@ import PersonCell from "@/components/PersonCell.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UiBadge from "@/components/UiBadge.vue";
 import UiButton from "@/components/UiButton.vue";
-import { toast } from "@/components/useToast";
 import { useCompanyStore } from "@/stores/company";
 
 import { useDepartmentMutations, useDepartmentPeople, usePeople } from "../api";
@@ -45,9 +44,11 @@ const children = computed(() => flattenDepartments(props.departments).find((node
 const adding = ref(false);
 const chosen = ref<number[]>([]);
 const everyone = usePeople({ status: "current", ordering: "name", page_size: 500 }, adding);
+/** Everyone not directly in it: those in no department first (the likeliest to add), then by name. */
 const options = computed<SelectOption<number>[]>(() =>
   (everyone.data.value?.results ?? [])
     .filter((row) => row.department?.id !== id.value)
+    .sort((a, b) => Number(!!a.department) - Number(!!b.department))
     .map((row: Person) => ({
       value: row.id,
       label: row.name,
@@ -60,11 +61,27 @@ watch(id, () => {
   chosen.value = [];
 });
 
+// ─── What just happened ──────────────────────────────────────────────────────
+// Said here, next to the list, not in a toast: the panel is a drawer, and the people it changed
+// are right below. Taking someone out offers Undo for a few seconds.
+const notice = ref<{ text: string; undo?: () => void } | null>(null);
+let noticeTimer: ReturnType<typeof setTimeout> | undefined;
+function say(text: string, undo?: () => void): void {
+  clearTimeout(noticeTimer);
+  notice.value = { text, undo };
+  noticeTimer = setTimeout(() => (notice.value = null), undo ? 8000 : 5000);
+}
+onBeforeUnmount(() => clearTimeout(noticeTimer));
+watch(id, () => {
+  clearTimeout(noticeTimer);
+  notice.value = null;
+});
+
 async function add(): Promise<void> {
   if (!chosen.value.length) return;
   try {
     await addMembers.mutateAsync({ id: id.value, memberIds: chosen.value });
-    toast.success(t("people.dept.added", { name: props.department.name, n: chosen.value.length }));
+    say(t("people.dept.added", { name: props.department.name, n: chosen.value.length }));
     chosen.value = [];
     adding.value = false;
   } catch {
@@ -77,8 +94,9 @@ async function takeOut(person: Person): Promise<void> {
   const name = props.department.name;
   try {
     await removeMember.mutateAsync({ departmentId, memberId: person.id });
-    toast.success(t("people.dept.removed", { person: person.name, name }), {
-      action: { label: t("common.undo"), onClick: () => addMembers.mutate({ id: departmentId, memberIds: [person.id] }) },
+    say(t("people.dept.removed", { person: person.name, name }), () => {
+      notice.value = null;
+      addMembers.mutate({ id: departmentId, memberIds: [person.id] });
     });
   } catch {
     // Back in the list; the HTTP layer showed why.
@@ -95,7 +113,7 @@ const teamLink = computed(() => `/c/${company.currentId}/people?department=${id.
       <h3 class="text-xs font-semibold uppercase tracking-[0.06em] text-subtle">{{ t("people.dept.head") }}</h3>
       <div v-if="department.head" class="flex items-center justify-between gap-3">
         <PersonCell :person="department.head" link size="lg" />
-        <UiButton v-if="canEdit" size="sm" variant="ghost" @click="emit('action', 'head', department)">{{ t("people.dept.changeHead") }}</UiButton>
+        <UiButton v-if="canEdit" size="sm" variant="secondary" data-panel-change-head @click="emit('action', 'head', department)">{{ t("people.dept.changeHead") }}</UiButton>
       </div>
       <div v-else class="flex items-center justify-between gap-3">
         <span class="flex min-w-0 items-center gap-2.5">
@@ -137,6 +155,14 @@ const teamLink = computed(() => `/c/${company.currentId}/people?department=${id.
           </UiButton>
         </div>
       </div>
+
+      <p v-if="notice" role="status" class="flex items-center gap-2 rounded-[10px] bg-success-soft px-3 py-2 text-sm text-fg" data-panel-notice>
+        <CircleCheck :size="15" class="shrink-0 text-success" aria-hidden="true" />
+        <span class="min-w-0 flex-1">{{ notice.text }}</span>
+        <button v-if="notice.undo" type="button" class="-my-1 shrink-0 rounded-[7px] px-2 py-1 font-semibold text-primary hover:bg-accent-soft" data-panel-undo @click="notice.undo()">
+          {{ t("common.undo") }}
+        </button>
+      </p>
 
       <div v-if="people.isPending.value" class="flex flex-col gap-3">
         <div v-for="n in 3" :key="n" class="flex items-center gap-3"><SkeletonBlock circle height="28px" /><SkeletonBlock width="60%" /></div>

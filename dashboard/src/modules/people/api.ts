@@ -301,7 +301,15 @@ export function useDepartmentMutations() {
   const cid = useCompanyId();
   const refresh = useRefreshPeople();
   const key = () => peopleKeys.departments(cid.value);
-  const create = useMutation({ mutationFn: (body: DepartmentInput) => createDepartment(cid.value, body), onSettled: refresh });
+  const create = useMutation({
+    mutationFn: (body: DepartmentInput) => createDepartment(cid.value, body),
+    // In the chart at once (its panel can open before the refetch brings the list).
+    onSuccess: (department) => {
+      const list = client.getQueryData<Department[]>(key());
+      if (list && !list.some((row) => row.id === department.id)) client.setQueryData(key(), [...list, department]);
+    },
+    onSettled: refresh,
+  });
   const update = useMutation({
     mutationFn: ({ id, body }: { id: number; body: Partial<DepartmentInput> }) => updateDepartment(cid.value, id, body),
     // The changed card at once; the paths below it and the counts above it come with the refetch.

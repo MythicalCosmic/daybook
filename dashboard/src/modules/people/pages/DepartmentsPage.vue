@@ -29,7 +29,7 @@ import DepartmentBranch from "../components/DepartmentBranch.vue";
 import type { DepartmentDialogMode } from "../components/DepartmentDialog.vue";
 import { departmentMenu, type DepartmentAction } from "../components/departmentMenu";
 import DepartmentPanel from "../components/DepartmentPanel.vue";
-import { buildDepartmentTree, parentPath, placedCount } from "../departments";
+import { buildDepartmentTree, deleteOutcome, parentPath, placedCount } from "../departments";
 import type { Department } from "../types";
 
 const DepartmentDialog = defineAsyncComponent(() => import("../components/DepartmentDialog.vue"));
@@ -109,17 +109,10 @@ async function clearHead(department: Department): Promise<void> {
 }
 
 async function deleteDepartment(department: Department): Promise<void> {
-  const parent = list.value.find((d) => d.id === department.parent_id) ?? null;
-  const hasChildren = list.value.some((d) => d.parent_id === department.id);
-  const message =
-    !department.member_count && !hasChildren
-      ? t("people.dept.deleteBodyEmpty")
-      : parent
-        ? t("people.dept.deleteBodyParent", { parent: parent.name })
-        : t("people.dept.deleteBodyTop");
+  const outcome = deleteOutcome(list.value, department);
   const answer = await confirm({
     title: t("people.dept.deleteTitle", { name: department.name }),
-    message,
+    message: t(outcome.key, { parent: outcome.parent ?? "" }),
     tone: "danger",
     icon: Trash2,
     confirmLabel: t("common.delete"),

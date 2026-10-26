@@ -45,6 +45,7 @@ function place(index: number): Record<string, boolean> {
 
 <template>
   <li class="dept-branch min-w-0" :data-branch="node.department.id">
+    <span class="dept-drop" aria-hidden="true" />
     <DepartmentCard
       :department="node.department"
       :has-children="children.length > 0"
@@ -135,7 +136,8 @@ function place(index: number): Record<string, boolean> {
 }
 
 /* Columns: each card draws its piece of the row's line (from its gap, or from the trunk for the
-   first) and its drop at the card's middle; the first of a row carries the trunk on to the next. */
+   first, up to the middle of the last card) and its drop into the card's middle (the card is at
+   most 21rem wide, left-aligned in its column); the first of a row carries the trunk on. */
 .is-rows {
   display: grid;
   column-gap: 16px;
@@ -154,14 +156,23 @@ function place(index: number): Record<string, boolean> {
   top: calc(-1 * var(--s));
   left: calc(var(--t) - var(--indent));
   right: 0;
-  height: var(--s);
-  border-top: var(--w) solid var(--line);
-  background: linear-gradient(var(--line), var(--line)) no-repeat;
-  background-size: var(--w) 100%;
-  background-position: calc(var(--mid) + var(--indent) - var(--t) - var(--w) / 2) 0;
+  height: var(--w);
+  background: var(--line);
 }
 .is-rows > li.row-end::before {
   right: calc(100% - var(--mid) - var(--w) / 2);
+}
+.dept-drop {
+  display: none;
+}
+.is-rows > li > .dept-drop {
+  display: block;
+  position: absolute;
+  top: calc(-1 * var(--s));
+  left: calc(var(--mid) - var(--w) / 2);
+  width: var(--w);
+  height: var(--s);
+  background: var(--line);
 }
 .is-rows > li.row-first:not(.last-row)::after {
   content: "";

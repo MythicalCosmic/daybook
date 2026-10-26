@@ -126,6 +126,19 @@ export function departmentCounts(department: Department, hasChildren: boolean): 
   return { direct: department.member_count, total: showTotal ? department.total_count : null };
 }
 
+/**
+ * What deleting a department does, for its confirmation: its people and its sub-departments move
+ * up to its parent, or to no department and the top level without one. Says only what it has.
+ */
+export function deleteOutcome(list: readonly Department[], department: Department): { key: string; parent: string | null } {
+  const parent = list.find((d) => d.id === department.parent_id)?.name ?? null;
+  const people = department.member_count > 0;
+  const subs = list.some((d) => d.parent_id === department.id);
+  if (!people && !subs) return { key: "people.dept.deleteBodyEmpty", parent };
+  const what = people && subs ? "Body" : people ? "People" : "Subs";
+  return { key: `people.dept.delete${what}${parent === null ? "Top" : "Parent"}`, parent };
+}
+
 /** People placed in some department (each person is in at most one). */
 export function placedCount(list: readonly Department[]): number {
   return list.reduce((sum, d) => sum + d.member_count, 0);

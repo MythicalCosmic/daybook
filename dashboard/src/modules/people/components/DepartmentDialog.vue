@@ -2,7 +2,7 @@
 /**
  * One dialog for the structure's small edits, each showing only what it changes: a new department
  * (name, where it goes, its head), a new name, a new place (never under itself or one of its own
- * sub-departments), or its head (a current member, or none). Sends only what changed.
+ * sub-departments), or its head (an active member, or none). Sends only what changed.
  */
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
@@ -116,7 +116,8 @@ const form = useForm(schema, initial, {
         <SelectBox v-model="form.values.parent_id" :options="parentOptions" data-parent-picker />
       </FormField>
       <FormField v-if="shows.head" :label="t('people.dept.head')" :hint="t('people.dept.headHint')" :error="form.errors.head_id">
-        <PersonPicker v-model="form.values.head_id" :filters="{ status: 'current' }" :placeholder="t('people.dept.headPlaceholder')" />
+        <!-- Active members only: the server refuses a suspended head. -->
+        <PersonPicker v-model="form.values.head_id" :filters="{ status: 'active' }" :placeholder="t('people.dept.headPlaceholder')" data-head-picker />
       </FormField>
     </form>
     <template #footer>
