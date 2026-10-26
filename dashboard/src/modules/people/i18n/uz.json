@@ -416,6 +416,7 @@
   "people.dept.emptyNoEdit": "Bo‘limlarni kompaniya egasi yoki barcha filiallarni ko‘radigan rahbar sozlaydi.",
   "people.dept.panelPeople": "Xodimlar",
   "people.dept.noPeople": "Bu bo‘limda hali hech kim yo‘q.",
+  "people.dept.onlyYourBranches": "Faqat o‘z filiallaringizdagi xodimlar ko‘rsatilgan; bo‘limda jami {n} kishi.",
   "people.dept.addPeople": "Xodim qo‘shish",
   "people.dept.addHint": "Boshqa bo‘limdagi xodim shu bo‘limga o‘tadi.",
   "people.dept.addCount": "Qo‘shish ({n})",
@@ -425,6 +426,7 @@
   "people.dept.removed": "{person} endi «{name}» bo‘limida emas",
   "people.dept.subs": "Ichki bo‘limlar",
   "people.dept.everyone": "Jamoa ro‘yxatida hammasini ko‘rish ({n})",
+  "people.dept.everyoneShort": "Jamoa ro‘yxatida ko‘rish",
   "people.dept.withBelow": "ichidagilari bilan",
   "people.dept.nobodyToAdd": "Hamma allaqachon shu bo‘limda."
 }

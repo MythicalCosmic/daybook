@@ -37,6 +37,12 @@ const id = computed(() => props.department.id);
 const people = useDepartmentPeople(id);
 /** Directly in it: the list also holds the departments below. */
 const direct = computed(() => (people.data.value?.results ?? []).filter((row) => row.department?.id === id.value));
+/**
+ * The card counts everyone; for someone limited to some branches the list holds only those: say so
+ * when that leaves people out. (Everyone else sees the whole list.)
+ */
+const branchLimited = computed(() => !!company.current && !company.current.is_owner && company.current.branch_scope !== null);
+const partial = computed(() => branchLimited.value && !!people.data.value && direct.value.length < props.department.member_count);
 const above = computed(() => headAbove(props.departments, id.value));
 const children = computed(() => flattenDepartments(props.departments).find((node) => node.department.id === id.value)?.children ?? []);
 
@@ -183,7 +189,8 @@ const teamLink = computed(() => `/c/${company.currentId}/people?department=${id.
           />
         </li>
       </ul>
-      <p v-else class="text-sm text-muted" data-no-people>{{ t("people.dept.noPeople") }}</p>
+      <p v-else-if="!partial" class="text-sm text-muted" data-no-people>{{ t("people.dept.noPeople") }}</p>
+      <p v-if="partial" class="text-xs text-muted" data-panel-partial>{{ t("people.dept.onlyYourBranches", { n: department.member_count }) }}</p>
     </section>
 
     <!-- Sub-departments -->
@@ -215,7 +222,8 @@ const teamLink = computed(() => `/c/${company.currentId}/people?department=${id.
       class="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-primary hover:underline"
       data-team-link
     >
-      {{ t("people.dept.everyone", { n: department.total_count }) }}<ArrowRight :size="14" aria-hidden="true" />
+      <!-- The count is company-wide; someone limited to some branches will see only theirs there. -->
+      {{ branchLimited ? t("people.dept.everyoneShort") : t("people.dept.everyone", { n: department.total_count }) }}<ArrowRight :size="14" aria-hidden="true" />
     </RouterLink>
   </div>
 </template>

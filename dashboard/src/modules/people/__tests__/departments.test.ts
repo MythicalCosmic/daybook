@@ -6,12 +6,15 @@ import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 
+import type { Company } from "@/api/types";
 import MultiSelect from "@/components/MultiSelect.vue";
 import SelectBox from "@/components/SelectBox.vue";
 import { confirmQueue, settleConfirm } from "@/components/useConfirm";
 import { modulesToRefresh } from "@/core/pulse";
 import { i18n, mergeModuleMessages, setLanguage } from "@/i18n";
-import { json } from "@/test/fixtures";
+import { useCompanyStore } from "@/stores/company";
+import { useSessionStore } from "@/stores/session";
+import { json, manager, me } from "@/test/fixtures";
 import { mountWithProviders, testApp } from "@/test/plugins";
 
 import { addDepartmentMembers, createDepartment, deleteDepartment, listDepartments, listPeople, updateDepartment, updatePerson } from "../api";
@@ -62,6 +65,14 @@ function stub(respond: Responder = () => undefined): Call[] {
 const later = (response: () => Response, ms = 60) => new Promise<Response>((resolve) => setTimeout(() => resolve(response()), ms));
 
 const path = (call: Call) => call.url.replace("/api/v1/owner/companies/1/", "");
+
+/** A manager in Demo Dorixona limited to Chilonzor, who may see people but not manage them. */
+const branchManager = manager(["members.view"], { id: 1, name: "Demo Dorixona", branch_scope: [1] });
+
+function signInAs(company: Company): void {
+  useSessionStore().me = me([company]);
+  useCompanyStore().setCurrent(company.id);
+}
 
 /** The options a (generic) picker was given. */
 const optionsOf = (picker: { props: () => unknown }) => (picker.props() as { options: unknown }).options;
@@ -243,7 +254,7 @@ describe("api", () => {
 });
 
 describe("DepartmentsPage", () => {
-  async function mountPage(start: Department[], path = "/c/1/people/departments") {
+  async function mountPage(start: Department[], path = "/c/1/people/departments", viewer?: Company) {
     // The server's list: a delete takes the department out and moves its sub-departments up; after
     // a create the list comes back slowly (the new department's panel mustn't wait for it).
     let list = start;
@@ -268,6 +279,7 @@ describe("DepartmentsPage", () => {
     });
     const DepartmentsPage = (await import("../pages/DepartmentsPage.vue")).default;
     const app = await testApp(path);
+    if (viewer) signInAs(viewer);
     const mounted = mountWithProviders(DepartmentsPage, { plugins: app.plugins });
     await flushPromises();
     await flushPromises();
@@ -315,6 +327,15 @@ describe("DepartmentsPage", () => {
     const empty = wrapper.find("[data-departments-empty]");
     expect(empty.text()).toContain("No departments yet");
     expect(empty.find("[data-new-department]").exists()).toBe(true);
+  });
+
+  it("doesn't compare company-wide counts with the headcount of someone limited to some branches", async () => {
+    const { wrapper } = await mountPage(
+      DEPARTMENTS.map((d) => ({ ...d, can_edit: false })),
+      "/c/1/people/departments",
+      branchManager,
+    );
+    expect(wrapper.find("[data-departments-summary]").text()).toBe("7 departments·14 people in departments");
   });
 
   it("hides editing from someone the server says may not change the structure", async () => {
@@ -436,6 +457,28 @@ describe("DepartmentPanel", () => {
     expect(path(back)).toBe("departments/2/members/");
     expect(back.body).toEqual({ member_ids: [31] });
     expect(wrapper.find("[data-panel-notice]").exists()).toBe(false);
+  });
+
+  it("tells someone limited to some branches that the list leaves people out", async () => {
+    stub((call) => (call.method === "GET" && call.url.includes("department=2") ? json(page([people[1]])) : undefined));
+    const DepartmentPanel = (await import("../components/DepartmentPanel.vue")).default;
+    const app = await testApp("/c/1/people/departments?department=2");
+    signInAs(branchManager);
+    // Three people are directly in Dorixonalar; this viewer's list holds one of them.
+    const department = { ...DEPARTMENTS[2]!, member_count: 3 };
+    const { wrapper } = mountWithProviders(DepartmentPanel, { plugins: app.plugins, props: { department, departments: DEPARTMENTS } });
+    await flushPromises();
+    await flushPromises();
+    expect(wrapper.findAll("[data-person]")).toHaveLength(1);
+    expect(wrapper.find("[data-panel-partial]").text()).toBe("Only the people in your branches are shown; the department has 3 in all.");
+    expect(wrapper.find("[data-add-people]").exists()).toBe(false);
+    expect(wrapper.find("[data-take-out]").exists()).toBe(false);
+    // The owner sees everyone: no such note even when the counts disagree for a moment.
+    const owner = await testApp("/c/1/people/departments?department=2");
+    const again = mountWithProviders(DepartmentPanel, { plugins: owner.plugins, props: { department, departments: DEPARTMENTS, canPlace: true } });
+    await flushPromises();
+    await flushPromises();
+    expect(again.wrapper.find("[data-panel-partial]").exists()).toBe(false);
   });
 
   it("adds people from other departments or none, and leaves out those already in it", async () => {

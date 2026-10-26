@@ -57,12 +57,14 @@ const canEdit = computed(() =>
 /** Who puts people in and takes them out (the server checks each person's branches). */
 const canPlace = computed(() => can("members.manage"));
 
+/** Department counts are company-wide; the headcount is the viewer's branches: compare them only for someone who sees every branch. */
+const seesEveryBranch = computed(() => !!company.current && (company.current.is_owner || company.current.branch_scope === null));
 const summary = computed(() => {
   if (!list.value.length) return [];
   const placed = placedCount(list.value);
   const parts = [t("people.dept.count", { n: list.value.length }, list.value.length), t("people.dept.placed", { n: placed }, placed)];
   const current = stats.data.value?.current;
-  if (current !== undefined && current > placed) parts.push(t("people.dept.unplaced", { n: current - placed }, current - placed));
+  if (seesEveryBranch.value && current !== undefined && current > placed) parts.push(t("people.dept.unplaced", { n: current - placed }, current - placed));
   return parts;
 });
 

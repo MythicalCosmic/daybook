@@ -416,6 +416,7 @@
   "people.dept.emptyNoEdit": "Departments are set up by the owner or by a manager who sees every branch.",
   "people.dept.panelPeople": "People",
   "people.dept.noPeople": "No one is in this department yet.",
+  "people.dept.onlyYourBranches": "Only the people in your branches are shown; the department has {n} in all.",
   "people.dept.addPeople": "Add people",
   "people.dept.addHint": "Someone from another department moves here.",
   "people.dept.addCount": "Add ({n})",
@@ -425,6 +426,7 @@
   "people.dept.removed": "{person} is no longer in «{name}»",
   "people.dept.subs": "Sub-departments",
   "people.dept.everyone": "See all on the Team list ({n})",
+  "people.dept.everyoneShort": "See them on the Team list",
   "people.dept.withBelow": "with the ones below",
   "people.dept.nobodyToAdd": "Everyone is already in this department."
 }

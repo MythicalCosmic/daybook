@@ -416,6 +416,7 @@
   "people.dept.emptyNoEdit": "Отделы настраивает владелец или руководитель, который видит все филиалы.",
   "people.dept.panelPeople": "Сотрудники",
   "people.dept.noPeople": "В этом отделе пока никого нет.",
+  "people.dept.onlyYourBranches": "Показаны только сотрудники ваших филиалов; всего в отделе: {n}.",
   "people.dept.addPeople": "Добавить сотрудников",
   "people.dept.addHint": "Сотрудник из другого отдела перейдёт сюда.",
   "people.dept.addCount": "Добавить ({n})",
@@ -425,6 +426,7 @@
   "people.dept.removed": "{person} — больше не в отделе «{name}»",
   "people.dept.subs": "Подотделы",
   "people.dept.everyone": "Все в списке команды ({n})",
+  "people.dept.everyoneShort": "Показать в списке команды",
   "people.dept.withBelow": "с вложенными",
   "people.dept.nobodyToAdd": "Все уже в этом отделе."
 }
