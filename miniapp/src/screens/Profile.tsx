@@ -63,6 +63,12 @@ export function Profile() {
           <div className="muted" style={{ fontSize: 14, marginTop: 4 }}>
             {[member.position?.name, member.company.name].filter(Boolean).join(" · ")}
           </div>
+          {/* Where they sit in the company's departments, and whom they report to. */}
+          {(member.department || member.manager) && (
+            <div className="muted" style={{ fontSize: 14, marginTop: 2 }}>
+              {[member.department?.name, member.manager && t("profile.reportsTo", { name: member.manager.name })].filter(Boolean).join(" · ")}
+            </div>
+          )}
         </div>
       </div>
 

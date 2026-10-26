@@ -2742,6 +2742,165 @@ paths:
                 items:
                   $ref: '#/components/schemas/AgendaSource'
           description: ''
+  /api/v1/owner/companies/{company_id}/departments/:
+    get:
+      operationId: companies_departments_list
+      description: The company's departments; a head manages everyone in theirs and
+        below.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Department'
+          description: ''
+    post:
+      operationId: companies_departments_create
+      description: The company's departments; a head manages everyone in theirs and
+        below.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepartmentInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DepartmentInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DepartmentInputRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+          description: ''
+  /api/v1/owner/companies/{company_id}/departments/{id}/:
+    patch:
+      operationId: companies_departments_partial_update
+      description: The company's departments; a head manages everyone in theirs and
+        below.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDepartmentPatchRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDepartmentPatchRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDepartmentPatchRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+          description: ''
+    delete:
+      operationId: companies_departments_destroy
+      description: The company's departments; a head manages everyone in theirs and
+        below.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/departments/{id}/members/:
+    post:
+      operationId: companies_departments_members_create
+      description: The company's departments; a head manages everyone in theirs and
+        below.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepartmentMembersRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DepartmentMembersRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DepartmentMembersRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Department'
+          description: ''
   /api/v1/owner/companies/{company_id}/exports/:
     get:
       operationId: companies_exports_list
@@ -16089,6 +16248,76 @@ components:
       - uz
       - ru
       - en
+    Department:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        parent_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        head:
+          allOf:
+          - $ref: '#/components/schemas/MembersPersonRef'
+          nullable: true
+          readOnly: true
+        member_count:
+          type: integer
+          readOnly: true
+          description: Current people directly in it.
+        total_count:
+          type: integer
+          readOnly: true
+          description: With every department below.
+        path:
+          type: array
+          items:
+            type: string
+          readOnly: true
+          description: Names from the top down to it.
+        can_edit:
+          type: boolean
+          readOnly: true
+      required:
+      - can_edit
+      - head
+      - id
+      - member_count
+      - name
+      - parent_id
+      - path
+      - total_count
+    DepartmentInputRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        parent_id:
+          type: integer
+          nullable: true
+        head_id:
+          type: integer
+          nullable: true
+      required:
+      - name
+    DepartmentMembersRequest:
+      type: object
+      properties:
+        member_ids:
+          type: array
+          items:
+            type: integer
+          maxItems: 200
+          minItems: 1
+      required:
+      - member_ids
     DevLoginRequest:
       type: object
       properties:
@@ -18726,6 +18955,17 @@ components:
           allOf:
           - $ref: '#/components/schemas/MembersWork'
           readOnly: true
+        department:
+          allOf:
+          - $ref: '#/components/schemas/MembersNamed'
+          nullable: true
+          readOnly: true
+        manager:
+          allOf:
+          - $ref: '#/components/schemas/MembersPersonRef'
+          nullable: true
+          readOnly: true
+          description: 'Their head: whom they report to.'
         fields:
           type: object
           additionalProperties: {}
@@ -18735,6 +18975,7 @@ components:
       required:
       - bot_blocked
       - branches
+      - department
       - fields
       - first_name
       - full_name
@@ -18743,6 +18984,7 @@ components:
       - joined_on
       - last_name
       - left_on
+      - manager
       - name
       - onboarded
       - phone
@@ -18753,6 +18995,20 @@ components:
       - suspended_until
       - username
       - work
+    MembersPersonRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        photo_url:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+      - photo_url
     MembersPositionsOrderRequest:
       type: object
       properties:
@@ -20651,6 +20907,19 @@ components:
         branch:
           type: integer
           nullable: true
+    PatchedDepartmentPatchRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        parent_id:
+          type: integer
+          nullable: true
+        head_id:
+          type: integer
+          nullable: true
     PatchedFeaturesRequest:
       type: object
       properties:
@@ -20822,6 +21091,9 @@ components:
           nullable: true
         role_id:
           type: integer
+        department_id:
+          type: integer
+          nullable: true
     PatchedPolicyWriteRequest:
       type: object
       properties:
@@ -21795,6 +22067,17 @@ components:
           allOf:
           - $ref: '#/components/schemas/MembersWork'
           readOnly: true
+        department:
+          allOf:
+          - $ref: '#/components/schemas/MembersNamed'
+          nullable: true
+          readOnly: true
+        manager:
+          allOf:
+          - $ref: '#/components/schemas/MembersPersonRef'
+          nullable: true
+          readOnly: true
+          description: 'Their head: whom they report to.'
         fields:
           type: object
           additionalProperties: {}
@@ -21804,6 +22087,12 @@ components:
         language:
           type: string
           readOnly: true
+        heads:
+          type: array
+          items:
+            $ref: '#/components/schemas/MembersNamed'
+          readOnly: true
+          description: The departments they head.
         overview:
           type: object
           additionalProperties: {}
@@ -21817,15 +22106,18 @@ components:
       - bot_blocked
       - branches
       - can
+      - department
       - fields
       - first_name
       - full_name
+      - heads
       - home_branch
       - id
       - joined_on
       - language
       - last_name
       - left_on
+      - manager
       - name
       - onboarded
       - overview

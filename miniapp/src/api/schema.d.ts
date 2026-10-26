@@ -534,8 +534,9 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description Registered members of the company, e.g. to pick who a task is for: everyone with
-         *     branches.all, otherwise the people sharing one of the caller's branches (§2.6).
+         * @description Registered members of the company, e.g. to pick who a task is for: with members.view or
+         *     tasks.assign everyone with branches.all, otherwise the people sharing one of the caller's
+         *     branches (§2.6); and for a head the people they manage (apps.members.departments).
          */
         get: operations["v1_companies_members_list"];
         put?: never;
@@ -2245,6 +2246,14 @@ export interface components {
             name: string;
             position: string | null;
         };
+        MembersDepartmentRef: {
+            id: number;
+            name: string;
+        };
+        MembersManager: {
+            id: number;
+            name: string;
+        };
         Membership: {
             readonly id: number;
             company: components["schemas"]["Company"];
@@ -2274,6 +2283,10 @@ export interface components {
             suspended_until: string | null;
             /** @description A team link let them in, without anyone's check (the app welcomes them). */
             joined_by_link: boolean;
+            readonly department: components["schemas"]["MembersDepartmentRef"] | null;
+            readonly manager: components["schemas"]["MembersManager"] | null;
+            /** @description People they manage through departments: a head may give them work. */
+            readonly team_size: number;
         };
         /**
          * @description * `pending` - Pending

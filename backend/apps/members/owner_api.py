@@ -36,10 +36,10 @@ from apps.companies.models import Branch
 from apps.console import registry
 from apps.console.base import AnyOf, OwnerViewSet
 from apps.core.api import Pagination
-from apps.members import queries, scope, services
-from apps.members.models import AccessRole, Membership, Position
+from apps.members import departments, queries, scope, services
+from apps.members.models import AccessRole, Department, Membership, Position
 from apps.members.permissions import Perm
-from apps.members.queries import branch_ref, photo_url
+from apps.members.queries import branch_ref, person_ref, photo_url
 
 PEOPLE = "members.people"
 # Join requests decided in one go at most.
@@ -71,6 +71,15 @@ class BranchRefSerializer(serializers.Serializer):
         ref_name = "MembersBranchRef"
 
 
+class PersonRefSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    photo_url = serializers.CharField(allow_null=True)
+
+    class Meta:
+        ref_name = "MembersPersonRef"
+
+
 class RoleRefSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
@@ -94,6 +103,8 @@ class PersonSerializer(serializers.ModelSerializer):
     onboarded = serializers.SerializerMethodField()
     bot_blocked = serializers.SerializerMethodField()
     work = serializers.SerializerMethodField()
+    department = serializers.SerializerMethodField()
+    manager = serializers.SerializerMethodField(help_text="Their head: whom they report to.")
     fields = serializers.SerializerMethodField(
         method_name="get_extra",
         help_text="Fields other modules add (attendance_today, attendance_30d, salary with "
@@ -123,6 +134,8 @@ class PersonSerializer(serializers.ModelSerializer):
             "onboarded",
             "bot_blocked",
             "work",
+            "department",
+            "manager",
             "fields",
         )
         read_only_fields = fields
@@ -195,13 +208,30 @@ class PersonSerializer(serializers.ModelSerializer):
             person.pk, {"on_time_30d": None, "done_30d": 0, "late_now": 0, "open_now": 0}
         )
 
+    @extend_schema_field(NamedSerializer(allow_null=True))
+    def get_department(self, person: Membership) -> dict | None:
+        department = self._org().departments.get(person.department_id)
+        return {"id": department.pk, "name": department.name} if department else None
+
+    @extend_schema_field(PersonRefSerializer(allow_null=True))
+    def get_manager(self, person: Membership) -> dict | None:
+        return person_ref(self._org().head_above(person))
+
     @extend_schema_field(serializers.DictField())
     def get_extra(self, person: Membership) -> dict:
         return self.context.get("fields", {}).get(person.pk, {})
 
+    def _org(self) -> departments.Org:
+        """The company's departments, loaded once per response."""
+        org = self.context.get("org")
+        if org is None:
+            org = self.context["org"] = departments.Org(self.context["company"].pk)
+        return org
+
 
 class PersonDetailSerializer(PersonSerializer):
     language = serializers.SerializerMethodField()
+    heads = serializers.SerializerMethodField(help_text="The departments they head.")
     overview = serializers.SerializerMethodField()
     can = serializers.SerializerMethodField()
 
@@ -210,6 +240,7 @@ class PersonDetailSerializer(PersonSerializer):
         fields = (
             *PersonSerializer.Meta.fields,
             "language",
+            "heads",
             "overview",
             "can",
         )
@@ -217,6 +248,11 @@ class PersonDetailSerializer(PersonSerializer):
 
     def get_language(self, person: Membership) -> str:
         return person.user.language
+
+    @extend_schema_field(NamedSerializer(many=True))
+    def get_heads(self, person: Membership) -> list[dict]:
+        org = self._org()
+        return [{"id": pk, "name": org.departments[pk].name} for pk in org.headed_by(person.pk)]
 
     @extend_schema_field(serializers.DictField())
     def get_overview(self, person: Membership) -> dict:
@@ -262,6 +298,7 @@ class PersonUpdateSerializer(serializers.Serializer):
     branch_ids = serializers.ListField(child=serializers.IntegerField(), required=False)
     home_branch_id = serializers.IntegerField(required=False, allow_null=True)
     role_id = serializers.IntegerField(required=False)
+    department_id = serializers.IntegerField(required=False, allow_null=True)
 
 
 class SuspendSerializer(serializers.Serializer):
@@ -387,6 +424,10 @@ class PeopleViewSet(
             branch=branches or None,
             include=self.membership,
         )
+        wanted = _ints(params.getlist("department"))
+        if wanted:  # a department and every department below it
+            below = departments.Org(self.company.pk).below(wanted)
+            people = people.filter(department_id__in=below or [-1])
         if params.get("bot_blocked") in ("1", "true"):
             people = people.filter(user__employee_bot_blocked_at__isnull=False)
         ordering = {
@@ -469,6 +510,14 @@ class PeopleViewSet(
             changes["home_branch"] = (
                 _branch(self.company, data["home_branch_id"])
                 if data["home_branch_id"] is not None
+                else None
+            )
+        if "department_id" in data:
+            changes["department"] = (
+                get_object_or_404(
+                    Department.objects.for_company(self.company), pk=data["department_id"]
+                )
+                if data["department_id"] is not None
                 else None
             )
         if changes:

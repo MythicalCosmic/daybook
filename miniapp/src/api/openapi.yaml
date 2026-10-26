@@ -957,8 +957,9 @@ paths:
     get:
       operationId: v1_companies_members_list
       description: |-
-        Registered members of the company, e.g. to pick who a task is for: everyone with
-        branches.all, otherwise the people sharing one of the caller's branches (§2.6).
+        Registered members of the company, e.g. to pick who a task is for: with members.view or
+        tasks.assign everyone with branches.all, otherwise the people sharing one of the caller's
+        branches (§2.6); and for a head the people they manage (apps.members.departments).
       parameters:
       - in: path
         name: company_id
@@ -5127,6 +5128,26 @@ components:
       required:
       - name
       - position
+    MembersDepartmentRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    MembersManager:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
     Membership:
       type: object
       properties:
@@ -5193,16 +5214,33 @@ components:
           type: boolean
           description: A team link let them in, without anyone's check (the app welcomes
             them).
+        department:
+          allOf:
+          - $ref: '#/components/schemas/MembersDepartmentRef'
+          nullable: true
+          readOnly: true
+        manager:
+          allOf:
+          - $ref: '#/components/schemas/MembersManager'
+          nullable: true
+          readOnly: true
+        team_size:
+          type: integer
+          description: 'People they manage through departments: a head may give them
+            work.'
+          readOnly: true
       required:
       - branch_ids
       - company
       - decided_at
+      - department
       - first_name
       - home_branch
       - id
       - is_onboarded
       - joined_by_link
       - last_name
+      - manager
       - onboarded_at
       - permissions
       - position
@@ -5210,6 +5248,7 @@ components:
       - role
       - status
       - suspended_until
+      - team_size
     MembershipStatusEnum:
       enum:
       - pending

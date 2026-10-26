@@ -21,7 +21,7 @@ from apps.inbox import services as inbox
 from apps.members import queries, scope, signals, tasks
 from apps.members.audit_actions import MemberAction
 from apps.members.callbacks import JoinAction
-from apps.members.models import AccessRole, JoinLink, Membership, Position
+from apps.members.models import AccessRole, Department, JoinLink, Membership, Position
 from apps.members.permissions import DEFAULT_ROLES, Perm
 from apps.tasks import services as task_services
 from apps.timeoff.models import TimeOff
@@ -721,9 +721,11 @@ def update_member(
     position: Position | object | None = UNSET,
     branches: list[Branch] | None = None,
     home_branch: Branch | object | None = UNSET,
+    department: Department | object | None = UNSET,
 ) -> Membership:
-    """Change someone's name, position, branches or home branch (members.manage). Someone who
-    sees only some branches can hand out only those, and keeps the others as they were."""
+    """Change someone's name, position, branches, home branch or department (members.manage).
+    Someone who sees only some branches can hand out only those, and keeps the others as they
+    were."""
     _ensure_same_company(membership, by)
     membership = _lock(membership)
     if not by.has_perm(Perm.MEMBERS_MANAGE):
@@ -754,6 +756,16 @@ def update_member(
                 position.name if position else None,
             ]
             membership.position = position
+
+    if department is not UNSET:
+        if department is not None and department.company_id != company.pk:
+            raise DomainError(_("Pick a department of this company."))
+        if (department.pk if department else None) != membership.department_id:
+            changes["department"] = [
+                membership.department.name if membership.department_id else None,
+                department.name if department else None,
+            ]
+            membership.department = department
 
     new_branches = None
     if branches is not None:
@@ -1234,9 +1246,11 @@ def bump_on_commit(company_id: int, *keys: str) -> None:
 
 
 def _wind_down(membership: Membership, *, by: Membership | None) -> None:
-    """Hand their work back and drop time off they won't be taking, one row at a time so
-    `time_off_cancelled` reaches the apps that keep balances."""
+    """Hand their work back, leave the departments they headed without a head, and drop time
+    off they won't be taking, one row at a time so `time_off_cancelled` reaches the apps that
+    keep balances."""
     task_services.hand_back_work(membership)
+    Department.objects.filter(head=membership).update(head=None)
     cancelled = (
         TimeOff.objects.select_for_update()
         .filter(

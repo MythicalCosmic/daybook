@@ -1,8 +1,10 @@
-"""Who may do what with a task. Pure checks: no queries beyond already-loaded relations."""
+"""Who may do what with a task. Pure checks: no queries beyond already-loaded relations and the
+member's team, loaded once and kept on the member (apps.members.departments.team_ids)."""
 
 from datetime import datetime, timedelta
 from enum import StrEnum
 
+from apps.members.departments import manages
 from apps.members.models import Membership
 from apps.members.permissions import Perm
 from apps.tasks.models import Proof, Task
@@ -51,10 +53,13 @@ def accepted_automatically(task: Task) -> bool:
 
 
 def can_review(task: Task, member: Membership) -> bool:
-    """Confirm or return finished work: whoever assigned it, or anyone allowed to confirm."""
+    """Confirm or return finished work: whoever assigned it, the assignee's heads, or anyone
+    allowed to confirm."""
     if task.company_id != member.company_id or is_assignee(task, member):
         return False
     if task.kind == Task.Kind.ASSIGNED and task.created_by_id == member.pk:
+        return True
+    if task.kind != Task.Kind.PERSONAL and manages(member, task.assignee):
         return True
     return member.has_perm(Perm.TASKS_CONFIRM)
 
@@ -102,13 +107,13 @@ def can_reassign(task: Task, member: Membership) -> bool:
 
 
 def can_nudge(task: Task, member: Membership) -> bool:
-    """Send the assignee a reminder now: shared, open work of someone else, by whoever gave it
-    or anyone who hands out, checks or plans work."""
+    """Send the assignee a reminder now: shared, open work of someone else, by whoever gave it,
+    the assignee's heads, or anyone who hands out, checks or plans work."""
     if task.company_id != member.company_id or is_assignee(task, member):
         return False
     if task.kind == Task.Kind.PERSONAL or not task.is_open:
         return False
-    if task.created_by_id == member.pk:
+    if task.created_by_id == member.pk or manages(member, task.assignee):
         return True
     return any(
         member.has_perm(perm)

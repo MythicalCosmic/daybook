@@ -147,6 +147,9 @@ function membership(permissions: string[]): Membership {
     branch_ids: [],
     suspended_until: null,
     joined_by_link: false,
+    department: null,
+    manager: null,
+    team_size: 0,
   };
 }
 

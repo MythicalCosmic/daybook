@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 from django.db.models import Prefetch, Q, QuerySet
 from django.utils import timezone
 
+from apps.members.departments import manager_of, team_ids
 from apps.members.models import Membership
 from apps.members.permissions import Perm
 from apps.members.queries import members_with_perm
@@ -77,7 +78,8 @@ def visible_tasks(member: Membership) -> QuerySet[Task]:
 
     - Someone else's personal tasks only for an owner, and only while the company's
       `owner_sees_personal_tasks` is on. This comes before every other rule.
-    - Their own tasks and the ones they handed out, always.
+    - Their own tasks and the ones they handed out, always; for a head, also their people's
+      (apps.members.departments).
     - With tasks.view_all: everything in their branch scope (tasks of other branches, and
       tasks without a branch, only with every branch).
     - With tasks.confirm: also work waiting for a check, in their branch scope.
@@ -89,6 +91,9 @@ def visible_tasks(member: Membership) -> QuerySet[Task]:
     if not (role is not None and role.is_owner and member.company.owner_sees_personal_tasks):
         tasks = tasks.exclude(others_personal)
     own = Q(assignee=member) | Q(created_by=member)
+    team = team_ids(member)
+    if team:
+        own |= Q(assignee_id__in=team)
     scope = branch_ids(member)  # None = every branch
     if member.has_perm(Perm.TASKS_VIEW_ALL):
         if scope is not None:
@@ -143,13 +148,18 @@ def awaiting_review_by(member: Membership) -> QuerySet[Task]:
     tasks = visible_tasks(member).filter(status=Task.Status.REVIEW).exclude(assignee=member)
     if member.has_perm(Perm.TASKS_CONFIRM):
         return tasks
-    return tasks.filter(kind=Task.Kind.ASSIGNED, created_by=member)
+    theirs = Q(kind=Task.Kind.ASSIGNED, created_by=member)
+    team = team_ids(member)
+    if team:  # a head checks their people's work
+        theirs |= Q(assignee_id__in=team) & ~Q(kind=Task.Kind.PERSONAL)
+    return tasks.filter(theirs)
 
 
 def reviewers(task: Task) -> list[Membership]:
-    """Who gets asked to confirm finished work: whoever gave it, else the closest checkers.
-    Nobody checks their own work (`rules.can_review`): work someone gave themselves that still
-    waits for a check (a board card, a task they took over) goes to the closest checkers."""
+    """Who gets asked to confirm finished work: whoever gave it, else the assignee's own head
+    (apps.members.departments), else the closest checkers. Nobody checks their own work
+    (`rules.can_review`): work someone gave themselves that still waits for a check (a board
+    card, a task they took over) goes to their head or the closest checkers."""
     creator = task.created_by
     if (
         task.kind == Task.Kind.ASSIGNED
@@ -158,6 +168,9 @@ def reviewers(task: Task) -> list[Membership]:
         and creator.pk != task.assignee_id
     ):
         return [creator]
+    head = manager_of(task.assignee)
+    if head is not None:
+        return [head]
     return closest_confirmers(task)
 
 

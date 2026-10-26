@@ -75,3 +75,20 @@ export function canAny(member: HasPermissions, perms: readonly Perm[]): boolean 
 export function canAll(member: HasPermissions, perms: readonly Perm[]): boolean {
   return perms.every((perm) => can(member, perm));
 }
+
+type Member = HasPermissions & { team_size?: number };
+
+/** Whether they head a department: they give and check their people's work (whatever their role). */
+export function leadsTeam(member: Member): boolean {
+  return (member.team_size ?? 0) > 0;
+}
+
+/** Gives work to others: "Assign tasks", or heading a department (to their people). */
+export function givesWork(member: Member): boolean {
+  return can(member, "tasks.assign") || leadsTeam(member);
+}
+
+/** Checks others' finished work: "Confirm tasks", or heading a department (their people's). */
+export function checksWork(member: Member): boolean {
+  return can(member, "tasks.confirm") || leadsTeam(member);
+}

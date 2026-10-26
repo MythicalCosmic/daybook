@@ -14,9 +14,11 @@ import { Tasks } from "./Tasks";
 const api = vi.hoisted(() => vi.fn((_path: string): Promise<unknown> => Promise.reject(new Error("no network in tests"))));
 vi.mock("../api/client", async (importOriginal) => ({ ...(await importOriginal<typeof import("../api/client")>()), api }));
 
-function show(options: { board?: Task[]; given?: Task[]; permissions?: Membership["permissions"]; tab?: "daily" | "assigned" | "personal" | "given" } = {}) {
+function show(
+  options: { board?: Task[]; given?: Task[]; permissions?: Membership["permissions"]; teamSize?: number; tab?: "daily" | "assigned" | "personal" | "given" } = {},
+) {
   return renderApp(<Tasks />, {
-    me: person([membership({ id: 3, permissions: options.permissions ?? [] })]),
+    me: person([membership({ id: 3, permissions: options.permissions ?? [], team_size: options.teamSize ?? 0 })]),
     init: { tab: "tasks", tasksTab: options.tab ?? "assigned" },
     seed: (client) => {
       client.setQueryData(keys.board(1), options.board ?? []);
@@ -145,6 +147,12 @@ describe("Given by me", () => {
     cleanup();
     show({ permissions: ["tasks.assign"] });
     expect(screen.getByRole("tab", { name: /Given by me/ })).toBeTruthy();
+  });
+
+  it("is there for a department head too, with their people's work to check", () => {
+    show({ teamSize: 4 });
+    expect(screen.getByRole("tab", { name: /Given by me/ })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: /To check/ })).toBeTruthy();
   });
 
   it("puts what needs me first, then work to check, then the rest, each with who has it", () => {

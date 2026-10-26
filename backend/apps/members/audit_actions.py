@@ -25,3 +25,7 @@ class MemberAction(models.TextChoices):
     LINK_STOPPED = "members.link_stopped", _("Stopped a team link")
     LINK_RESUMED = "members.link_resumed", _("Turned a team link back on")
     LINK_DELETED = "members.link_deleted", _("Deleted a team link")
+    # Departments.
+    DEPARTMENT_CREATED = "members.department_created", _("Added a department")
+    DEPARTMENT_CHANGED = "members.department_changed", _("Changed a department")
+    DEPARTMENT_DELETED = "members.department_deleted", _("Deleted a department")

@@ -17,6 +17,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { api, ApiError } from "../api/client";
+import { givesWork } from "../api/permissions";
 import {
   keys,
   useActivity,
@@ -583,7 +584,7 @@ function Comments({ task, comments, people, ctx, seed }: {
   const add = useAddComment(member.companyId, task.id);
   const toast = useToast();
   // Managers can mention anyone on their team; everyone else, the people on the task.
-  const canSeeTeam = member.permissions.includes("tasks.assign") || member.permissions.includes("members.view");
+  const canSeeTeam = givesWork(member) || member.permissions.includes("members.view");
   const team = useMembers(member.companyId, canSeeTeam);
   const draftKey = `daybook.comment.${member.companyId}.${task.id}`;
   const [draft, setDraft] = useState(() => readDraft(draftKey));

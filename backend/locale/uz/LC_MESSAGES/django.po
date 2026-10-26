@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 11:04+0500\n"
+"POT-Creation-Date: 2026-10-26 15:28+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -710,8 +710,9 @@ msgstr "E’lonning amal qilish muddati u yuborilgandan keyin tugashi kerak."
 #: backend/apps/announcements/services.py backend/apps/attendance/api.py
 #: backend/apps/attendance/services.py backend/apps/console/base.py
 #: backend/apps/inbox/services.py backend/apps/knowledge/owner_api.py
-#: backend/apps/members/join_links.py backend/apps/members/services.py
-#: backend/apps/sales/handlers.py backend/apps/timeoff/services.py
+#: backend/apps/members/departments.py backend/apps/members/join_links.py
+#: backend/apps/members/services.py backend/apps/sales/handlers.py
+#: backend/apps/timeoff/services.py
 #: employee_bot/bot/handlers/admin/approvals.py
 msgid "You don't have permission to do this."
 msgstr "Bunga ruxsatingiz yo‘q."
@@ -5211,6 +5212,18 @@ msgstr "Jamoa havolasini qayta yoqdi"
 msgid "Deleted a team link"
 msgstr "Jamoa havolasini o‘chirdi"
 
+#: backend/apps/members/audit_actions.py
+msgid "Added a department"
+msgstr "Bo‘lim qo‘shdi"
+
+#: backend/apps/members/audit_actions.py
+msgid "Changed a department"
+msgstr "Bo‘limni o‘zgartirdi"
+
+#: backend/apps/members/audit_actions.py
+msgid "Deleted a department"
+msgstr "Bo‘limni o‘chirdi"
+
 #: backend/apps/members/bot_messages.py
 msgid "Open app"
 msgstr "Ilovani ochish"
@@ -5488,6 +5501,55 @@ msgstr "standart"
 msgid "Now working in <b>%(company)s</b>."
 msgstr "Endi <b>%(company)s</b> kompaniyasida ishlayapsiz."
 
+#: backend/apps/members/department_api.py
+msgid "Pick people of this company."
+msgstr "Shu kompaniyadagi xodimlarni tanlang."
+
+#: backend/apps/members/departments.py
+#, python-format
+msgid "«%(name)s» already exists there. Rename one of them first."
+msgstr ""
+"U yerda «%(name)s» allaqachon bor. Avval ulardan birining nomini "
+"o‘zgartiring."
+
+#: backend/apps/members/departments.py
+msgid "Only current members of your company can be placed."
+msgstr "Faqat kompaniyaning hozirgi xodimlarini joylash mumkin."
+
+#: backend/apps/members/departments.py backend/apps/tasks/services.py
+#, python-format
+msgid "%(name)s works in a branch you don't manage."
+msgstr "%(name)s siz boshqarmaydigan filialda ishlaydi."
+
+#: backend/apps/members/departments.py
+msgid "Give the department a name."
+msgstr "Bo‘limga nom bering."
+
+#: backend/apps/members/departments.py
+msgid "A department's name can be at most 100 characters."
+msgstr "Bo‘lim nomi ko‘pi bilan 100 ta belgi bo‘lishi mumkin."
+
+#: backend/apps/members/departments.py backend/apps/members/services.py
+msgid "Pick a department of this company."
+msgstr "Shu kompaniyadagi bo‘limni tanlang."
+
+#: backend/apps/members/departments.py
+msgid "A department can't go under itself or its own part."
+msgstr "Bo‘lim o‘zining ichiga yoki o‘z qismining ichiga o‘tkazilmaydi."
+
+#: backend/apps/members/departments.py
+msgid "The head must be a current member of the company."
+msgstr "Rahbar kompaniyaning hozirgi xodimi bo‘lishi kerak."
+
+#: backend/apps/members/departments.py
+#, python-format
+msgid "There's already a department named «%(name)s» there."
+msgstr "U yerda «%(name)s» nomli bo‘lim allaqachon bor."
+
+#: backend/apps/members/departments.py
+msgid "Only owners and people who manage every branch can do this."
+msgstr "Buni faqat egalar va barcha filiallarni boshqaradiganlar qila oladi."
+
 #: backend/apps/members/hooks.py
 msgid "Join request"
 msgstr "Qo‘shilish so‘rovi"
@@ -5657,8 +5719,21 @@ msgid "A team link let them in, without anyone's check."
 msgstr "Jamoa havolasi orqali hech kim tekshirmasdan qo‘shilgan."
 
 #: backend/apps/members/models.py
+msgid ""
+"The department they work in. Its head, and the heads above, manage them."
+msgstr ""
+"Xodim ishlaydigan bo‘lim. Uning rahbari va undan yuqoridagi rahbarlar uni "
+"boshqaradi."
+
+#: backend/apps/members/models.py
 msgid "Must be one of the branches they work in."
 msgstr "Xodim ishlaydigan filiallardan biri bo‘lishi kerak."
+
+#: backend/apps/members/models.py
+msgid "Gives and checks the work of everyone in this department and below it."
+msgstr ""
+"Shu bo‘lim va undan quyidagi bo‘limlardagi barchaga vazifa beradi va ishini "
+"tekshiradi."
 
 #: backend/apps/members/models.py backend/apps/projects/models.py
 msgid "Active"
@@ -10107,11 +10182,6 @@ msgstr "Bu vazifani qabul qila olmaysiz."
 #: backend/apps/tasks/services.py
 msgid "This task isn't waiting for a check."
 msgstr "Bu vazifa tekshiruvni kutmayapti."
-
-#: backend/apps/tasks/services.py
-#, python-format
-msgid "%(name)s works in a branch you don't manage."
-msgstr "%(name)s siz boshqarmaydigan filialda ishlaydi."
 
 #: backend/apps/tasks/services.py
 msgid "You can't assign tasks to others."

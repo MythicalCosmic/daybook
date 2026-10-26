@@ -5,7 +5,8 @@ courier) was blocked, two people ask to join and a former storekeeper asks to co
 approvals, a promotion and a move between the pharmacies give Person 360 a history. Team links:
 one from this morning's staff meeting that three new pharmacists joined through (a fourth is
 still making an account), one for Yunusobod that asks first (two requests wait), and one that
-ended.
+ended. Departments: the management on top, a department per pharmacy (Yunusobod's night shift
+under it), stock and delivery, and accounting, each with its head.
 """
 
 from datetime import time, timedelta
@@ -15,7 +16,7 @@ from apps.audit import services as audit
 from apps.audit.models import AuditLog
 from apps.core import demo_plan as story_plan
 from apps.members.audit_actions import MemberAction
-from apps.members.models import AccessRole, JoinLink, Membership, Position
+from apps.members.models import AccessRole, Department, JoinLink, Membership, Position
 
 # People who came through the demo's team links: key, telegram id, first, last, minutes ago
 # (None: still making their account).
@@ -148,6 +149,7 @@ def seed(company, people, now) -> None:
     jahongir.branches.clear()
 
     _team_links(company, story, owner, positions, roles, now)
+    _departments(company, story)
 
     # A little history on Person 360: a promotion and a move between the pharmacies.
     sardor, dilshod = story.member("sardor"), story.member("dilshod")
@@ -172,6 +174,40 @@ def seed(company, people, now) -> None:
                 "home_branch": ["Chilonzor", "Yunusobod"],
             },
         )
+
+
+# Departments: (key, name, parent key, head, people). People are story keys; whoever isn't in
+# the company (a module's own tests seed six people) is skipped.
+DEPARTMENTS = [
+    ("top", "Rahbariyat", None, "owner", ["owner"]),
+    (
+        "chilonzor",
+        "Chilonzor dorixonasi",
+        "top",
+        "manager",
+        ["manager", "worker", "madina", "gulnora", "sardor", "bobur"],
+    ),
+    (
+        "yunusobod",
+        "Yunusobod dorixonasi",
+        "top",
+        "farrux",
+        ["farrux", "malika", "shahzoda", "kamola"],
+    ),
+    ("night", "Tungi smena", "yunusobod", "nigora", ["nigora", "dilshod"]),
+    ("stock", "Ombor va yetkazib berish", "top", "otabek", ["otabek", "jasur"]),
+    ("office", "Buxgalteriya", "top", "aziza", ["aziza"]),
+]
+
+
+def _departments(company, story) -> None:
+    made = {}
+    for key, name, parent, head, people in DEPARTMENTS:
+        made[key] = Department.objects.create(
+            company=company, name=name, parent=made.get(parent), head=story.member(head)
+        )
+        ids = [member.pk for member in map(story.member, people) if member is not None]
+        Membership.objects.filter(pk__in=ids).update(department=made[key])
 
 
 def _team_links(company, story, owner, positions, roles, now) -> None:

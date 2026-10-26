@@ -1,6 +1,7 @@
 import { AlarmClock, Eye, Flame, MessageCircleQuestion, Sun, TreePalm } from "lucide-react";
 
 import { useActivity, useBoard, useGivenByMe, useSummary } from "../api/hooks";
+import { givesWork } from "../api/permissions";
 import { ActivityRow } from "../components/ActivityRow";
 import { FeatureSlot } from "../features/FeatureSlot";
 import { Ring } from "../components/Ring";
@@ -33,7 +34,7 @@ export function Home() {
   const summary = useSummary(member.companyId);
   const board = useBoard(member.companyId);
   const activity = useActivity(member.companyId);
-  const given = useGivenByMe(member.companyId, member.permissions.includes("tasks.assign"));
+  const given = useGivenByMe(member.companyId, givesWork(member));
   const requests = (given.data ?? []).filter((task) => task.blocker || task.extension);
 
   const tasks = board.data ?? [];

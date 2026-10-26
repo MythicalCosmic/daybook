@@ -98,6 +98,9 @@ function membership(permissions: string[]): Membership {
     branch_ids: [],
     suspended_until: null,
     joined_by_link: false,
+    department: null,
+    manager: null,
+    team_size: 0,
   };
 }
 
@@ -131,6 +134,7 @@ function renderWith(
     numbers = summary as Summary | null,
     board = [] as Task[] | null,
     activity = [] as unknown[] | null,
+    member = {} as Partial<Membership>,
   } = {},
 ) {
   const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } });
@@ -143,7 +147,7 @@ function renderWith(
   if (activity) client.setQueryData(keys.activity(1), activity);
   client.setQueryData(keys.timeOff(1), []);
   client.setQueryData(keys.holidays(1), []);
-  const me = { id: 1, telegram_id: 4242, telegram_username: "", first_name: "Alisher", last_name: "Valiyev", phone: "", memberships: [membership(permissions)] } as Me;
+  const me = { id: 1, telegram_id: 4242, telegram_username: "", first_name: "Alisher", last_name: "Valiyev", phone: "", memberships: [{ ...membership(permissions), ...member }] } as Me;
   return render(
     <QueryClientProvider client={client}>
       <I18nProvider lang="en">
@@ -280,6 +284,11 @@ describe("feature hosts in the real screens", () => {
     const settings = [...container.querySelectorAll(".card.list-card")].at(-1)!;
     expect(settings.textContent).toContain("Quiet hours");
     expect(settings.textContent).toContain("22:00–08:00");
+  });
+
+  it("say on Me which department someone is in and whom they report to", () => {
+    renderWith(<Profile />, { member: { department: { id: 4, name: "Savdo" }, manager: { id: 9, name: "Bekzod Mirzayev" } } });
+    expect(screen.getByText("Savdo · Your head: Bekzod Mirzayev")).toBeTruthy();
   });
 
   it("group feature rows on Me and let features take over time off and team results", () => {

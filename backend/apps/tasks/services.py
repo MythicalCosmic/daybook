@@ -17,6 +17,7 @@ from apps.core import uploads
 from apps.core.exceptions import DomainError
 from apps.groups import tasks as group_jobs
 from apps.inbox import services as inbox
+from apps.members import departments
 from apps.members.models import Membership, Position
 from apps.members.permissions import Perm
 from apps.members.scope import allows, branch_ids
@@ -773,12 +774,15 @@ def decide_extension(task: Task, *, by: Membership, approve: bool) -> Task:
 
 def can_decide(task: Task, member: Membership) -> bool:
     """Who answers a "can't do it" or a "need more time": whoever gave the task, its escalation
-    contact, or someone holding tasks.assign or tasks.confirm whose branch scope covers it."""
+    contact, the assignee's heads, or someone holding tasks.assign or tasks.confirm whose
+    branch scope covers it."""
     if task.company_id != member.company_id or rules.is_assignee(task, member):
         return False
     if member.status != Membership.Status.APPROVED:
         return False
     if task.created_by_id == member.pk or task.escalate_to_id == member.pk:
+        return True
+    if departments.manages(member, task.assignee):
         return True
     holds = member.has_perm(Perm.TASKS_ASSIGN) or member.has_perm(Perm.TASKS_CONFIRM)
     return holds and allows(branch_ids(member), task.branch_id)
@@ -1388,16 +1392,18 @@ def _ensure_may_assign(by: Membership, assignee: Membership, project=None) -> No
 
     - with tasks.assign, anyone registered in their branch scope, and on a project also anyone
       already on it, wherever they work (the project brought them together);
-    - without it, a project's lead, to the people on their own project only (a lead runs their
-      project without projects.manage).
+    - a head, the people they manage through departments, whatever their role and branches;
+    - without either, a project's lead, to the people on their own project only (a lead runs
+      their project without projects.manage).
     """
     on_project = project is not None and _project_role(project, assignee) is not None
     leads_it = on_project and _project_role(project, by) == "lead"
-    if not (by.has_perm(Perm.TASKS_ASSIGN) or leads_it):
+    heads_them = departments.manages(by, assignee)
+    if not (by.has_perm(Perm.TASKS_ASSIGN) or leads_it or heads_them):
         raise PermissionDenied(_("You can't assign tasks to others."))
     if assignee.company_id != by.company_id or not _is_registered(assignee):
         raise DomainError(_("Tasks can only go to registered members of your company."))
-    if not on_project:
+    if not (on_project or heads_them):
         _ensure_in_scope(by, assignee)
 
 
