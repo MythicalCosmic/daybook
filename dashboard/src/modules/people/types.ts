@@ -57,6 +57,10 @@ export interface Person {
   bot_blocked: boolean;
   work: WorkNumbers;
   fields: PersonFields;
+  /** The department they are in (at most one). */
+  department?: Named | null;
+  /** Their head ("reports to"): the nearest department head above them, never themselves. */
+  manager?: PersonRef | null;
 }
 
 export interface TrendPoint {
@@ -109,6 +113,8 @@ export interface PersonDetail extends Person {
   language: "uz" | "ru" | "en";
   overview: PersonOverview;
   can: PersonActions;
+  /** The departments they head. */
+  heads?: Named[];
 }
 
 export interface PeopleParams {
@@ -117,6 +123,8 @@ export interface PeopleParams {
   position?: string[];
   role?: string[];
   branch?: string[];
+  /** Department ids: each one with every department below it. */
+  department?: string[];
   bot_blocked?: string;
   ordering?: string;
   page?: number;
@@ -130,6 +138,36 @@ export interface PersonUpdate {
   branch_ids?: number[];
   home_branch_id?: number | null;
   role_id?: number;
+  /** null takes them out of their department. */
+  department_id?: number | null;
+}
+
+/**
+ * One row of `GET departments/` (in tree order: parents before children, siblings by name). A head
+ * manages everyone in the department and in every department below it, themselves left out.
+ */
+export interface Department {
+  id: number;
+  /** 1–100 characters, unique among its siblings. */
+  name: string;
+  /** null: a top-level department. */
+  parent_id: number | null;
+  head: PersonRef | null;
+  /** Current people directly in it (approved or suspended). */
+  member_count: number;
+  /** The same with every department below it. */
+  total_count: number;
+  /** Names from the top down to it, e.g. ["Rahbariyat", "Savdo"]. */
+  path: string[];
+  /** The viewer may change the structure (owners, or members.manage seeing every branch). */
+  can_edit: boolean;
+}
+
+export interface DepartmentInput {
+  name: string;
+  parent_id?: number | null;
+  /** A current member of the company; null clears the head. */
+  head_id?: number | null;
 }
 
 /** One row of `GET people/{id}/history/` (the AuditTrail row shape). */

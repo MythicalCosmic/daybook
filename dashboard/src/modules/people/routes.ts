@@ -9,6 +9,12 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: "people.team.title" },
   },
   {
+    path: "people/departments",
+    name: "people.departments",
+    component: () => import("./pages/DepartmentsPage.vue"),
+    meta: { title: "people.nav.departments" },
+  },
+  {
     path: "people/requests",
     name: "people.requests",
     component: () => import("./pages/RequestsPage.vue"),
