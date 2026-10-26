@@ -157,6 +157,8 @@ def join_request(membership: Membership) -> BotMessage:
             _("Username: @%(username)s") % {"username": html.quote(user.telegram_username)}
         )
     lines.append(_("Telegram ID: <code>%(id)s</code>") % {"id": user.telegram_id})
+    if membership.join_link_id and membership.join_link:
+        lines.append(_("Team link: %(link)s") % {"link": html.quote(membership.join_link.name)})
 
     if membership.status != Membership.Status.PENDING:
         lines += ["", _outcome(membership)]
@@ -395,6 +397,8 @@ def join_request_body(membership: Membership) -> str:
         lines.append(_("Phone: %(phone)s") % {"phone": user.phone})
     if user.telegram_username:
         lines.append(_("Username: @%(username)s") % {"username": user.telegram_username})
+    if membership.join_link_id and membership.join_link:
+        lines.append(_("Team link: %(link)s") % {"link": membership.join_link.name})
     return "\n".join(lines)
 
 

@@ -70,6 +70,8 @@ const en = {
     "Your request is with your manager. The bot will message you in this chat as soon as you're approved, so you can close the app for now.",
   "waiting.approvedTitle": "You're in, {name}!",
   "waiting.approvedBody": "Your request was approved. Your tasks are ready.",
+  "waiting.linkTitle": "Welcome to the team, {name}!",
+  "waiting.linkBody": "You've joined {company}. Your tasks will show up here.",
   "waiting.request": "Your request",
   "waiting.name": "Name",
   "waiting.phone": "Phone",

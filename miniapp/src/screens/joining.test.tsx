@@ -191,6 +191,17 @@ describe("the waiting room", () => {
     fireEvent.click(bar());
     expect(onOpen).toHaveBeenCalled();
   });
+
+  it("welcomes someone a team link let in, without the steps of an approval nobody made", () => {
+    const joined = membership({ status: "approved", is_onboarded: true, onboarded_at: "2026-10-26T08:00:00Z", joined_by_link: true } as never);
+    const onOpen = vi.fn();
+    renderWith(<Waiting membership={joined} onOpen={onOpen} />, person("+998935550202", joined));
+    expect(screen.getByText("Welcome to the team, Javohir!")).toBeTruthy();
+    expect(screen.getByText("You've joined Demo Dorixona. Your tasks will show up here.")).toBeTruthy();
+    expect(screen.queryByText("Your manager checks it")).toBeNull();
+    fireEvent.click(bar());
+    expect(onOpen).toHaveBeenCalled();
+  });
 });
 
 describe("the gate screens", () => {

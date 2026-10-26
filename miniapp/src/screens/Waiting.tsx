@@ -12,12 +12,14 @@ type Step = { title: string; sub: string; state: "done" | "current" | "future" }
 
 /**
  * The waiting room after the request is sent, and the welcome once it's approved (the approval
- * lands while the app is open). The request card is only there while it's being checked.
+ * lands while the app is open). The request card is only there while it's being checked. Someone
+ * a team link let in straight away gets the welcome alone: nobody had anything to check.
  */
 export function Waiting({ membership, onOpen }: { membership: Membership; onOpen: () => void }) {
   const { t, locale } = useI18n();
   const { me } = useSession();
   const approved = membership.status === "approved";
+  const byLink = approved && membership.joined_by_link === true;
   const zone = membership.company.timezone;
   const sentAt = membership.onboarded_at;
   const sentLabel = sentAt
@@ -58,8 +60,10 @@ export function Waiting({ membership, onOpen }: { membership: Membership; onOpen
               </span>
             </span>
           )}
-          <h1 className="heading title-xl">{approved ? t("waiting.approvedTitle", { name: membership.first_name }) : t("waiting.title")}</h1>
-          <p className="lede">{approved ? t("waiting.approvedBody") : t("waiting.body")}</p>
+          <h1 className="heading title-xl">
+            {byLink ? t("waiting.linkTitle", { name: membership.first_name }) : approved ? t("waiting.approvedTitle", { name: membership.first_name }) : t("waiting.title")}
+          </h1>
+          <p className="lede">{byLink ? t("waiting.linkBody", { company: membership.company.name }) : approved ? t("waiting.approvedBody") : t("waiting.body")}</p>
         </div>
 
         {!approved && (
@@ -78,6 +82,7 @@ export function Waiting({ membership, onOpen }: { membership: Membership; onOpen
           </div>
         )}
 
+        {!byLink && (
         <ol className="waiting-steps">
           {steps.map((step, index) => (
             <li key={step.title} className="waiting-step">
@@ -92,6 +97,7 @@ export function Waiting({ membership, onOpen }: { membership: Membership; onOpen
             </li>
           ))}
         </ol>
+        )}
 
         {!approved && (
           <div className="banner waiting-locked">

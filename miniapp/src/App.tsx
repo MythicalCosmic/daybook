@@ -128,13 +128,18 @@ function Gatekeeper() {
   const { membership } = useSession();
   const status = membership?.status;
   const waiting = status === "pending" && membership?.is_onboarded === true;
+  const creating = membership != null && !membership.is_onboarded;
+  const byLink = membership?.joined_by_link === true;
   useMe({ poll: waiting }); // the approval lands without a reload
   const [celebrating, setCelebrating] = useState(false);
   const wasWaiting = useRef(waiting);
+  const wasCreating = useRef(creating);
   useEffect(() => {
-    if (wasWaiting.current && status === "approved") setCelebrating(true);
+    // Approved while waiting, or let in by a team link the moment the account was made.
+    if (status === "approved" && (wasWaiting.current || (wasCreating.current && byLink))) setCelebrating(true);
     wasWaiting.current = waiting;
-  }, [status, waiting]);
+    wasCreating.current = creating;
+  }, [status, waiting, creating, byLink]);
 
   if (!membership) return <NoAccess />;
   if (status === "left") return <Left membership={membership} />;

@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 def private_commands() -> list[BotCommand]:
     return [
         BotCommand(command="today", description=_("Today at a glance")),
+        BotCommand(command="invite", description=_("Invite staff")),
         BotCommand(command="dashboard", description=_("Open the dashboard")),
         BotCommand(command="new", description=_("Create a company")),
         BotCommand(command="language", description=_("Change language")),

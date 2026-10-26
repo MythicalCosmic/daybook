@@ -31,7 +31,7 @@ def dashboard_url(path: str = "") -> str:
     return base.rstrip("/") + "/" + path.lstrip("/") if path else base
 
 
-def _web_app_button(text: str, path: str = "") -> InlineKeyboardButton | None:
+def web_app_button(text: str, path: str = "") -> InlineKeyboardButton | None:
     """A Mini App button (Telegram only accepts https links), else None."""
     url = dashboard_url(path)
     if not url.startswith("https://"):
@@ -41,7 +41,7 @@ def _web_app_button(text: str, path: str = "") -> InlineKeyboardButton | None:
 
 def dashboard_keyboard(path: str = "") -> InlineKeyboardMarkup | None:
     """The "Open dashboard" button."""
-    button = _web_app_button(_("Open dashboard"), path)
+    button = web_app_button(_("Open dashboard"), path)
     return InlineKeyboardMarkup(inline_keyboard=[[button]]) if button else None
 
 
@@ -64,6 +64,7 @@ def welcome(user: User, companies: list[dict] | None = None) -> BotMessage:
         lines += [
             "",
             _("/today: today's numbers and what waits for you"),
+            _("/invite: a QR code that adds your staff"),
             _("/dashboard: open the dashboard"),
             _("/new: create another company"),
         ]
@@ -214,7 +215,7 @@ def created(company_id: int, name: str) -> BotMessage:
             html.quote(_("You are its owner. Next: add your branches and invite your staff.")),
         )
     )
-    button = _web_app_button(_("Open Get started"), f"c/{company_id}/get-started")
+    button = web_app_button(_("Open Get started"), f"c/{company_id}/get-started")
     if button is None:
         url = dashboard_url(f"c/{company_id}/get-started")
         if url:
@@ -245,12 +246,12 @@ def pick_company(companies: list[tuple[int, str]]) -> BotMessage:
 def today_keyboard(company_id: int, waiting: int) -> InlineKeyboardMarkup | None:
     rows = []
     if waiting:
-        approvals = _web_app_button(
+        approvals = web_app_button(
             _("Approvals (%(count)d)") % {"count": waiting}, f"c/{company_id}?inbox=needs"
         )
         if approvals:
             rows.append([approvals])
-    opened = _web_app_button(_("Open dashboard"), f"c/{company_id}")
+    opened = web_app_button(_("Open dashboard"), f"c/{company_id}")
     if opened:
         rows.append([opened])
     return InlineKeyboardMarkup(inline_keyboard=rows) if rows else None

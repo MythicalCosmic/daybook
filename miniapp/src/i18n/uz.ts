@@ -71,6 +71,8 @@ const uz: Partial<Record<Key, string>> = {
     "So‘rovingiz rahbarda. Tasdiqlanishi bilan bot shu chatga yozadi, hozircha ilovani yopsangiz bo‘ladi.",
   "waiting.approvedTitle": "Xush kelibsiz, {name}!",
   "waiting.approvedBody": "So‘rovingiz tasdiqlandi. Vazifalaringiz tayyor.",
+  "waiting.linkTitle": "Jamoaga xush kelibsiz, {name}!",
+  "waiting.linkBody": "Siz {company} jamoasiga qo‘shildingiz. Vazifalaringiz shu yerda chiqadi.",
   "waiting.request": "Sizning so‘rovingiz",
   "waiting.name": "Ism",
   "waiting.phone": "Telefon",

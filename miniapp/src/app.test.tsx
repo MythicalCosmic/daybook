@@ -45,11 +45,19 @@ function renderApp(person: Me) {
   client.setQueryData(keys.activity(1), []);
   client.setQueryData(keys.timeOff(1), []);
   client.setQueryData(keys.holidays(1), []);
-  return render(
+  client.setQueryData(keys.positions(1), []);
+  const view = render(
     <QueryClientProvider client={client}>
       <App />
     </QueryClientProvider>,
   );
+  return Object.assign(view, { client });
+}
+
+/** `person` before they've made their account (their only membership not onboarded yet). */
+function creatingAccount(person: Me): Me {
+  const [membership] = person.memberships;
+  return { ...person, memberships: [{ ...membership, is_onboarded: false } as Membership] };
 }
 
 beforeEach(() => {
@@ -179,6 +187,30 @@ describe("app", () => {
     expect(back.offClick).toHaveBeenCalled();
     // A fresh module graph (to load telegram.ts with the stub) is slow when every file runs at once.
   }, 20_000);
+
+  it("welcomes someone a team link let in the moment their account is made", async () => {
+    const person = creatingAccount(me("pending"));
+    const { client } = renderApp(person);
+    expect(await screen.findByText("Step 1 of 3", {}, { timeout: 3000 })).toBeTruthy();
+
+    const [membership] = person.memberships;
+    const joined = { ...membership, status: "approved", is_onboarded: true, joined_by_link: true } as Membership;
+    act(() => client.setQueryData(keys.me, { ...person, memberships: [joined] }));
+
+    expect(await screen.findByText("Welcome to the team, Alisher!")).toBeTruthy();
+    expect(document.querySelector(".tabbar")).toBeNull();
+  });
+
+  it("opens the app straight away for someone approved before they made their account", async () => {
+    const person = creatingAccount(me("approved"));
+    const { client } = renderApp(person);
+    expect(await screen.findByText("Step 1 of 3", {}, { timeout: 3000 })).toBeTruthy();
+
+    act(() => client.setQueryData(keys.me, me("approved")));
+
+    expect(await screen.findByText("Home", {}, { timeout: 3000 })).toBeTruthy();
+    expect(screen.queryByText(/Welcome to the team/)).toBeNull();
+  });
 
   it("shows a calm paused screen to a suspended person", async () => {
     renderApp(me("suspended"));

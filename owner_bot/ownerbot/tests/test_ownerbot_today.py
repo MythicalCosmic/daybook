@@ -112,6 +112,7 @@ async def test_commands_and_the_menu_button(bot, settings):
     menus = [r for r in bot.requests if isinstance(r, SetMyCommands)]
     assert [c.command for c in menus[0].commands] == [
         "today",
+        "invite",
         "dashboard",
         "new",
         "language",
