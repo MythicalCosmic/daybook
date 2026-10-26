@@ -5391,6 +5391,152 @@ paths:
               schema:
                 $ref: '#/components/schemas/Invite'
           description: ''
+  /api/v1/owner/companies/{company_id}/join-links/:
+    get:
+      operationId: companies_join_links_list
+      description: 'Team links: everyone who opens one joins with its branch, role
+        and position.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JoinLink'
+          description: ''
+    post:
+      operationId: companies_join_links_create
+      description: 'Team links: everyone who opens one joins with its branch, role
+        and position.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JoinLinkInputRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/JoinLinkInputRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/JoinLinkInputRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JoinLink'
+          description: ''
+  /api/v1/owner/companies/{company_id}/join-links/{id}/:
+    get:
+      operationId: companies_join_links_retrieve
+      description: 'Team links: everyone who opens one joins with its branch, role
+        and position.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JoinLinkDetail'
+          description: ''
+    patch:
+      operationId: companies_join_links_partial_update
+      description: 'Team links: everyone who opens one joins with its branch, role
+        and position.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedJoinLinkPatchRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedJoinLinkPatchRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedJoinLinkPatchRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JoinLink'
+          description: ''
+    delete:
+      operationId: companies_join_links_destroy
+      description: 'Team links: everyone who opens one joins with its branch, role
+        and position.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/owner/companies/{company_id}/join-requests/:
     get:
       operationId: companies_join_requests_list
@@ -5489,6 +5635,40 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/owner/companies/{company_id}/join-requests/bulk/:
+    post:
+      operationId: companies_join_requests_bulk_create
+      description: Approve or reject many requests at once; each succeeds or fails
+        on its own.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkDecisionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BulkDecisionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BulkDecisionRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembersBulkDecisionResult'
+          description: ''
   /api/v1/owner/companies/{company_id}/knowledge/images/:
     post:
       operationId: companies_knowledge_images_create
@@ -14832,6 +15012,40 @@ components:
       - name
       - opens_at
       - status
+    BulkDecisionRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+          maxItems: 200
+          minItems: 1
+        action:
+          $ref: '#/components/schemas/MembersBulkDecisionEnum'
+        role_id:
+          type: integer
+          nullable: true
+          description: 'Empty: each person''s link role, else default.'
+        position_id:
+          type: integer
+          nullable: true
+          description: 'Empty: the positions they picked.'
+        branch_ids:
+          type: array
+          items:
+            type: integer
+          description: 'Empty: each person''s link branch, else the company''s only
+            branch.'
+        home_branch_id:
+          type: integer
+          nullable: true
+        reason:
+          type: string
+          maxLength: 300
+      required:
+      - action
+      - ids
     BulkPayloadRequest:
       type: object
       properties:
@@ -17156,6 +17370,267 @@ components:
       - link
       - members
       - start_param
+    JoinLink:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        link:
+          type: string
+          readOnly: true
+          description: '"" until the bot username is set.'
+        start_param:
+          type: string
+          readOnly: true
+        auto_approve:
+          type: boolean
+          readOnly: true
+          description: 'People join straight away. Off: they wait for approval.'
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/MembersNamed'
+          nullable: true
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/MembersNamed'
+          nullable: true
+          readOnly: true
+          description: 'Empty: the default role.'
+        default_role:
+          allOf:
+          - $ref: '#/components/schemas/MembersNamed'
+          nullable: true
+          readOnly: true
+        position:
+          allOf:
+          - $ref: '#/components/schemas/MembersNamed'
+          nullable: true
+          readOnly: true
+        max_uses:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: 'How many people can join through it. Empty: no limit.'
+        uses:
+          type: integer
+          readOnly: true
+          description: People who created their account through it.
+        expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        is_active:
+          type: boolean
+          readOnly: true
+          description: 'Off: stopped by hand.'
+        status:
+          allOf:
+          - $ref: '#/components/schemas/MembersJoinLinkStatusEnum'
+          readOnly: true
+        created_by:
+          allOf:
+          - $ref: '#/components/schemas/MembersNamed'
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        can_edit:
+          type: boolean
+          readOnly: true
+      required:
+      - auto_approve
+      - branch
+      - can_edit
+      - created_at
+      - created_by
+      - default_role
+      - expires_at
+      - id
+      - is_active
+      - link
+      - max_uses
+      - name
+      - position
+      - role
+      - start_param
+      - status
+      - uses
+    JoinLinkDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        link:
+          type: string
+          readOnly: true
+          description: '"" until the bot username is set.'
+        start_param:
+          type: string
+          readOnly: true
+        auto_approve:
+          type: boolean
+          readOnly: true
+          description: 'People join straight away. Off: they wait for approval.'
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/MembersNamed'
+          nullable: true
+          readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/MembersNamed'
+          nullable: true
+          readOnly: true
+          description: 'Empty: the default role.'
+        default_role:
+          allOf:
+          - $ref: '#/components/schemas/MembersNamed'
+          nullable: true
+          readOnly: true
+        position:
+          allOf:
+          - $ref: '#/components/schemas/MembersNamed'
+          nullable: true
+          readOnly: true
+        max_uses:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: 'How many people can join through it. Empty: no limit.'
+        uses:
+          type: integer
+          readOnly: true
+          description: People who created their account through it.
+        expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        is_active:
+          type: boolean
+          readOnly: true
+          description: 'Off: stopped by hand.'
+        status:
+          allOf:
+          - $ref: '#/components/schemas/MembersJoinLinkStatusEnum'
+          readOnly: true
+        created_by:
+          allOf:
+          - $ref: '#/components/schemas/MembersNamed'
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        can_edit:
+          type: boolean
+          readOnly: true
+        people:
+          type: array
+          items:
+            $ref: '#/components/schemas/JoinLinkPerson'
+          readOnly: true
+          description: Newest first, at most 100.
+      required:
+      - auto_approve
+      - branch
+      - can_edit
+      - created_at
+      - created_by
+      - default_role
+      - expires_at
+      - id
+      - is_active
+      - link
+      - max_uses
+      - name
+      - people
+      - position
+      - role
+      - start_param
+      - status
+      - uses
+    JoinLinkInputRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        auto_approve:
+          type: boolean
+          default: true
+        branch_id:
+          type: integer
+          nullable: true
+        role_id:
+          type: integer
+          nullable: true
+          description: 'Empty: the default role.'
+        position_id:
+          type: integer
+          nullable: true
+        max_uses:
+          type: integer
+          maximum: 500
+          minimum: 1
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - name
+    JoinLinkPerson:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        photo_url:
+          type: string
+          nullable: true
+          readOnly: true
+        position:
+          allOf:
+          - $ref: '#/components/schemas/MembersNamed'
+          nullable: true
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/MembershipStatusEnum'
+          readOnly: true
+        onboarded:
+          type: boolean
+          readOnly: true
+        joined_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - joined_at
+      - name
+      - onboarded
+      - photo_url
+      - position
+      - status
     JoinRequest:
       type: object
       properties:
@@ -17198,6 +17673,13 @@ components:
           - $ref: '#/components/schemas/MembersFormer'
           nullable: true
           readOnly: true
+        join_link:
+          allOf:
+          - $ref: '#/components/schemas/MembersRequestLink'
+          nullable: true
+          readOnly: true
+          description: The team link they came through; approving without choices
+            uses its own.
         fields:
           type: object
           additionalProperties: {}
@@ -17207,6 +17689,7 @@ components:
       - first_name
       - former
       - id
+      - join_link
       - last_name
       - name
       - onboarded
@@ -18068,6 +18551,42 @@ components:
       - code
       - id
       - name
+    MembersBulkDecisionEnum:
+      enum:
+      - approve
+      - reject
+      type: string
+      description: |-
+        * `approve` - approve
+        * `reject` - reject
+    MembersBulkDecisionResult:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MembersBulkDecisionRow'
+        done:
+          type: integer
+        failed:
+          type: integer
+      required:
+      - done
+      - failed
+      - results
+    MembersBulkDecisionRow:
+      type: object
+      properties:
+        id:
+          type: integer
+        ok:
+          type: boolean
+        detail:
+          type: string
+      required:
+      - detail
+      - id
+      - ok
     MembersFormer:
       type: object
       properties:
@@ -18079,6 +18598,18 @@ components:
       required:
       - how
       - left_on
+    MembersJoinLinkStatusEnum:
+      enum:
+      - active
+      - full
+      - expired
+      - stopped
+      type: string
+      description: |-
+        * `active` - Active
+        * `full` - Full
+        * `expired` - Expired
+        * `stopped` - Stopped
     MembersNamed:
       type: object
       properties:
@@ -18231,6 +18762,29 @@ components:
             type: integer
       required:
       - ids
+    MembersRequestLink:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        auto_approve:
+          type: boolean
+        branch:
+          allOf:
+          - $ref: '#/components/schemas/MembersNamed'
+          nullable: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/MembersNamed'
+          nullable: true
+      required:
+      - auto_approve
+      - branch
+      - id
+      - name
+      - role
     MembersStats:
       type: object
       properties:
@@ -20129,6 +20683,37 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+    PatchedJoinLinkPatchRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        auto_approve:
+          type: boolean
+        branch_id:
+          type: integer
+          nullable: true
+        role_id:
+          type: integer
+          nullable: true
+          description: 'Empty: the default role.'
+        position_id:
+          type: integer
+          nullable: true
+        max_uses:
+          type: integer
+          maximum: 500
+          minimum: 1
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        is_active:
+          type: boolean
+          description: False stops the link.
     PatchedKnowledgePageSaveRequest:
       type: object
       properties:

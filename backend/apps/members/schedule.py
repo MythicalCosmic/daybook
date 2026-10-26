@@ -10,3 +10,10 @@ def reinstate_finished_suspensions() -> int:
     from apps.members import services  # services import apps.members.tasks, which imports us
 
     return services.reinstate_finished_suspensions()
+
+
+def report_link_joins(link_id: int) -> int:
+    """The note to approvers about a burst of people joining through a team link."""
+    from apps.members import join_links  # it imports the services, which import us
+
+    return join_links.report_joins(link_id)

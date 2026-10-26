@@ -1,3 +1,4 @@
+import secrets
 from datetime import datetime, timedelta
 
 from django.conf import settings
@@ -114,6 +115,17 @@ class Membership(TenantModel):
         blank=True,
         help_text=_("While suspended: the last day of the suspension. Empty: until reinstated."),
     )
+    join_link = models.ForeignKey(
+        "JoinLink",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="memberships",
+        help_text=_("The team link they joined through."),
+    )
+    joined_by_link = models.BooleanField(
+        default=False, help_text=_("A team link let them in, without anyone's check.")
+    )
 
     class Meta:
         constraints = [
@@ -142,7 +154,7 @@ class Membership(TenantModel):
 
     def clean(self):
         # Tenant guard: a role, position or branch from another company must never be attached.
-        for field in ("role", "position", "home_branch"):
+        for field in ("role", "position", "home_branch", "join_link"):
             related = getattr(self, field)
             if related is not None and related.company_id != self.company_id:
                 raise ValidationError({field: _("Must belong to the same company.")})
@@ -161,3 +173,93 @@ class Membership(TenantModel):
         return (
             self.status == self.Status.APPROVED and self.role is not None and self.role.grants(perm)
         )
+
+
+def generate_link_code() -> str:
+    return secrets.token_urlsafe(9)
+
+
+class JoinLink(TenantModel):
+    """A team link: everyone who opens it and creates their account joins with the branch, role
+    and position it sets, straight away (`auto_approve`) or as a join request with those choices
+    already made. The company's own invite link (Company.invite_code) always asks for approval."""
+
+    PREFIX = "j_"
+
+    class Status(models.TextChoices):
+        ACTIVE = "active", _("Active")
+        FULL = "full", _("Full")
+        EXPIRED = "expired", _("Expired")
+        STOPPED = "stopped", _("Stopped")
+
+    name = models.CharField(max_length=100)
+    code = models.CharField(max_length=32, unique=True, default=generate_link_code, editable=False)
+    created_by = models.ForeignKey(
+        Membership,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        help_text=_("Whose approval it stands for: their permissions are checked at every join."),
+    )
+    auto_approve = models.BooleanField(
+        default=True, help_text=_("People join straight away. Off: they wait for approval.")
+    )
+    branch = models.ForeignKey(
+        Branch, on_delete=models.SET_NULL, null=True, blank=True, related_name="join_links"
+    )
+    role = models.ForeignKey(
+        AccessRole,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="join_links",
+        help_text=_("Empty: the default role."),
+    )
+    position = models.ForeignKey(
+        Position,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="join_links",
+        help_text=_("Chosen for them when they create their account (they can change it)."),
+    )
+    max_uses = models.PositiveIntegerField(
+        null=True, blank=True, help_text=_("How many people can join through it. Empty: no limit.")
+    )
+    uses = models.PositiveIntegerField(
+        default=0, help_text=_("People who created their account through it.")
+    )
+    expires_at = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True, help_text=_("Off: stopped by hand."))
+    reported_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_("Approvers have heard about everyone who joined through it until then."),
+    )
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def start_param(self) -> str:
+        return f"{self.PREFIX}{self.code}"
+
+    @property
+    def link(self) -> str:
+        if not settings.EMPLOYEE_BOT_USERNAME:
+            return ""
+        return f"https://t.me/{settings.EMPLOYEE_BOT_USERNAME}?start={self.start_param}"
+
+    def status_at(self, now: datetime) -> str:
+        """Stopped, expired, full or active, in that order."""
+        if not self.is_active:
+            return self.Status.STOPPED
+        if self.expires_at is not None and self.expires_at <= now:
+            return self.Status.EXPIRED
+        if self.max_uses is not None and self.uses >= self.max_uses:
+            return self.Status.FULL
+        return self.Status.ACTIVE

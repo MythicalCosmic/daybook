@@ -59,6 +59,9 @@ class MembershipSerializer(serializers.ModelSerializer):
     suspended_until = serializers.DateField(
         allow_null=True, help_text="While suspended: the last day of it; null: until reinstated."
     )
+    joined_by_link = serializers.BooleanField(
+        help_text="A team link let them in, without anyone's check (the app welcomes them)."
+    )
 
     class Meta:
         model = Membership
@@ -78,6 +81,7 @@ class MembershipSerializer(serializers.ModelSerializer):
             "home_branch",
             "branch_ids",
             "suspended_until",
+            "joined_by_link",
         )
         read_only_fields = fields
 

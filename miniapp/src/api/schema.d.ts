@@ -2272,6 +2272,8 @@ export interface components {
              * @description While suspended: the last day of it; null: until reinstated.
              */
             suspended_until: string | null;
+            /** @description A team link let them in, without anyone's check (the app welcomes them). */
+            joined_by_link: boolean;
         };
         /**
          * @description * `pending` - Pending

@@ -5189,6 +5189,10 @@ components:
           format: date
           nullable: true
           description: 'While suspended: the last day of it; null: until reinstated.'
+        joined_by_link:
+          type: boolean
+          description: A team link let them in, without anyone's check (the app welcomes
+            them).
       required:
       - branch_ids
       - company
@@ -5197,6 +5201,7 @@ components:
       - home_branch
       - id
       - is_onboarded
+      - joined_by_link
       - last_name
       - onboarded_at
       - permissions

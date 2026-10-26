@@ -187,6 +187,8 @@ def status(membership: Membership | None) -> BotMessage | None:
         company = {"company": html.quote(membership.company.name)}
         if not membership.is_onboarded:
             header = _("Welcome! You're joining <b>%(company)s</b>.") % company
+            if _link_adds_straight_away(membership):
+                header += " " + _("Once your account is made, you're on the team: no waiting.")
             return _compose(header, _create_account_prompt())
         text = (
             _(
@@ -289,6 +291,25 @@ def phone_saved(membership: Membership) -> BotMessage:
 
 def foreign_contact() -> BotMessage:
     return _("Please share your own phone number with the button below."), _share_phone_keyboard()
+
+
+def joined(membership: Membership) -> BotMessage:
+    """Someone a team link let in, straight after making their account."""
+    header = _("Welcome to the team, %(name)s! You've joined <b>%(company)s</b>.") % {
+        "name": html.quote(membership.first_name or _requester_name(membership)),
+        "company": html.quote(membership.company.name),
+    }
+    return _compose(header, _menu_prompt(membership))
+
+
+def _link_adds_straight_away(membership: Membership) -> bool:
+    """Whether the person's team link lets them in once their account is made."""
+    link = membership.join_link if membership.join_link_id else None
+    return (
+        link is not None
+        and link.auto_approve
+        and link.status_at(timezone.now()) == link.Status.ACTIVE
+    )
 
 
 def onboarding_complete(membership: Membership) -> BotMessage:

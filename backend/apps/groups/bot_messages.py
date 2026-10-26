@@ -8,7 +8,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext as _
-from django.utils.translation import pgettext
+from django.utils.translation import ngettext, pgettext
 
 from apps.companies.models import Company
 from apps.groups.callbacks import GroupAction, GroupCallback
@@ -20,6 +20,8 @@ from apps.tasks.bot_messages import display_title, format_duration
 from apps.tasks.models import Activity, Task
 
 NOT_DONE_LIMIT = 15
+# A post about several new people names this many.
+MEMBERS_LISTED = 30
 # Longer lists of positions are cut short on the settings button.
 WHO_LIMIT = 40
 
@@ -69,6 +71,24 @@ def member_joined(member: Membership) -> BotMessage:
     else:
         text = _("<b>%(name)s</b> joined the team.") % values
     return text, None
+
+
+def members_joined(members: list[Membership]) -> BotMessage:
+    """Several people at once (a team link): the count, then a line each."""
+    lines = [
+        ngettext(
+            "<b>%(count)d new person joined the team</b>",
+            "<b>%(count)d new people joined the team</b>",
+            len(members),
+        )
+        % {"count": len(members)}
+    ]
+    for member in members[:MEMBERS_LISTED]:
+        name = html.quote(str(member))
+        lines.append(f"{name} · {html.quote(member.position.name)}" if member.position else name)
+    if len(members) > MEMBERS_LISTED:
+        lines.append(_("and %(count)d more") % {"count": len(members) - MEMBERS_LISTED})
+    return "\n".join(lines), None
 
 
 def morning(company: Company, day: date, rows: list[PlanRow]) -> BotMessage:

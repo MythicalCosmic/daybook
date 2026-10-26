@@ -63,8 +63,10 @@ def test_demo_adds_people_who_left_requests_and_history(company, demo_people, se
     statuses = set(Membership.objects.filter(company=company).values_list("status", flat=True))
     assert {"approved", "suspended", "left", "blocked", "pending"} <= statuses
     assert Position.objects.filter(company=company).count() >= 6
-    # The core demo makes the working staff; this demo adds only people with a status.
-    assert Membership.objects.filter(company=company, status="approved").count() == 6
+    # The core demo makes the working staff; this demo adds people with a status, and the three
+    # who joined through this morning's team link.
+    assert Membership.objects.filter(company=company, status="approved").count() == 6 + 3
+    assert Membership.objects.filter(company=company, joined_by_link=True).count() == 3
     result = call_tool("members_list_people", people["owner"])
     assert len(result["rows"]) >= 6
 

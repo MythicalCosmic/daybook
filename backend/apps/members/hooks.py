@@ -19,6 +19,7 @@ audit_registry.register_target("accessrole", Perm.ROLES_MANAGE, check=providers.
 audit_registry.register_target(
     "position", Perm.POSITIONS_MANAGE, check=providers.position_history_check
 )
+audit_registry.register_target("joinlink", Perm.MEMBERS_APPROVE)
 
 # Suspended people get no routine tasks while the suspension lasts.
 offdays.register(suspended_ids)
@@ -42,7 +43,16 @@ registry.register_queue(
     items=providers.queue_items,
 )
 
+# People who joined through a team link: one note per burst, through the owner bot.
+register_kind(
+    "members.link_joined",
+    label=_("People joined through a team link"),
+    audience="owner",
+    default_telegram=True,
+)
+
 registry.register_pulse("members.pending", perm=Perm.MEMBERS_APPROVE, count=providers.queue_count)
+registry.register_pulse("members.links", perm=Perm.MEMBERS_APPROVE, count=None)
 registry.register_pulse("members.people", perm=Perm.MEMBERS_VIEW, count=None)
 registry.register_pulse(
     "members.roles", perm=AnyOf(Perm.ROLES_MANAGE, Perm.MEMBERS_VIEW), count=None

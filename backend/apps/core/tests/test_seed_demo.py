@@ -112,9 +112,12 @@ def test_the_whole_demo_tells_one_story(debug):
     assert yunusobod.opens_at is None  # open around the clock
     assert [b.code for b in distributor.branches.all()] == ["SRG"]
 
-    # The people: Demo Dorixona's fifteen (and the real owner), the distributor's five.
+    # The people: Demo Dorixona's fifteen (and the real owner), the three pharmacists who joined
+    # through this morning's team link, the distributor's five.
     approved = pharmacy.memberships.filter(status=Membership.Status.APPROVED)
-    assert approved.exclude(user__telegram_id=REAL_OWNER).count() == len(demo_plan.PEOPLE)
+    by_link = approved.filter(joined_by_link=True)
+    assert by_link.count() == 3
+    assert approved.exclude(user__telegram_id=REAL_OWNER).count() == len(demo_plan.PEOPLE) + 3
     assert distributor.memberships.filter(status=Membership.Status.APPROVED).exclude(
         user__telegram_id=REAL_OWNER
     ).count() == len(demo_plan.SMALL_PEOPLE)

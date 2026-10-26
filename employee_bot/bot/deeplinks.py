@@ -12,7 +12,8 @@ feature router when it is built)::
     register_start_param("job_", open_vacancy)
 
 The start router calls `dispatch()` first; a parameter no prefix claims is a company invite
-(`c_…`), as before. Handlers run before the member gate, so they must check access themselves.
+(`c_…`) or a team link (`j_…`). Handlers run before the member gate, so they must check access
+themselves.
 """
 
 import re
@@ -24,6 +25,7 @@ from aiogram.types import Message
 
 from apps.accounts.models import User
 from apps.companies.models import Company
+from apps.members.models import JoinLink
 
 
 class StartHandler(Protocol):
@@ -37,8 +39,8 @@ class StartHandler(Protocol):
 PREFIX = re.compile(r"[a-z][a-z0-9]{0,15}_")
 # Telegram allows A-Z, a-z, 0-9, _ and - in a start parameter, 64 characters at most.
 PARAMETER = re.compile(r"[A-Za-z0-9_-]{1,64}")
-# Prefixes the start router handles itself.
-RESERVED = frozenset({Company.INVITE_PREFIX})
+# Prefixes the start router handles itself: company invites and team links.
+RESERVED = frozenset({Company.INVITE_PREFIX, JoinLink.PREFIX})
 
 _handlers: dict[str, StartHandler] = {}
 

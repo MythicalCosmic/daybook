@@ -18,10 +18,10 @@ from apps.core.exceptions import DomainError
 from apps.core.signals import send_on_commit
 from apps.groups import tasks as group_jobs
 from apps.inbox import services as inbox
-from apps.members import scope, signals, tasks
+from apps.members import queries, scope, signals, tasks
 from apps.members.audit_actions import MemberAction
 from apps.members.callbacks import JoinAction
-from apps.members.models import AccessRole, Membership, Position
+from apps.members.models import AccessRole, JoinLink, Membership, Position
 from apps.members.permissions import DEFAULT_ROLES, Perm
 from apps.tasks import services as task_services
 from apps.timeoff.models import TimeOff
@@ -178,10 +178,19 @@ def approve(
     position: Position | None = None,
     branches: list[Branch] | None = None,
     home_branch: Branch | None = None,
+    via: JoinLink | None = None,
+    welcome: bool = True,
 ) -> Membership:
     """Let a person in: `role` if the approver may give it (rule 3), else the role set on the
     request, else the default one; `position` replaces the one they picked; `branches` and
-    `home_branch` say where they work (the company's branch when it has exactly one).
+    `home_branch` say where they work (the company's branch when it has exactly one). A request
+    that came through a team link takes the link's role and branch when the approver names
+    none and may give them.
+
+    `via` is a team link letting the person in by itself (`admit`): `by` is the link's maker,
+    whose right to give its role and branch is checked as for any approval; the person hears a
+    welcome instead of a decision (unless `welcome` is False: the caller answers them itself),
+    and approvers and groups hear about a burst of joins at once.
 
     Every approver's copy of the request, in the bot and in Needs you, shows the outcome."""
     membership = _lock(membership)
@@ -189,7 +198,17 @@ def approve(
     _ensure_status(membership, Membership.Status.PENDING)
     actor = _actor(by, membership.company)
     company = membership.company
+    link = via or (membership.join_link if membership.join_link_id else None)
 
+    chosen_role = role
+    if (
+        role is None
+        and membership.role_id is None
+        and link is not None
+        and link.role_id
+        and (via is not None or by.is_platform_admin or may_assign_role(actor, link.role))
+    ):
+        role = link.role
     if role is not None:
         if role.company_id != company.pk:
             raise DomainError(_("Pick a role of this company."))
@@ -203,29 +222,121 @@ def approve(
             raise DomainError(_("Pick a position of this company."))
         membership.position = position
     chosen = _valid_branches(company, branches, home_branch, actor=actor)
+    if chosen is None and link is not None:
+        chosen = _link_branches(company, link, actor=actor, strict=via is not None)
     if chosen is None:
         only_branch = _only_active_branch(company)
         chosen = ([only_branch], only_branch) if only_branch is not None else None
     if chosen is not None:
         membership.home_branch = chosen[1]
     membership.status = Membership.Status.APPROVED
+    membership.joined_by_link = via is not None
     _record_decision(membership, by)
     membership.save()
     if chosen is not None:
         membership.branches.set(chosen[0])
     # What the approver chose is recorded; defaults (the request's role, the only branch) aren't.
     chose = {}
-    if role is not None:
+    if chosen_role is not None:
         chose["role"] = membership.role.name
     if branches is not None and chosen is not None:
         chose["branches"] = [branch.name for branch in chosen[0]]
+    if via is not None:
+        chose["link"] = via.name
     _audit(AuditLog.Action.MEMBER_APPROVED, membership, by, **chose)
     inbox.settle(membership, outcome=APPROVED, by=actor, kind=JOIN_KIND)
-    transaction.on_commit(partial(tasks.notify_join_decision.delay, membership.pk))
-    transaction.on_commit(partial(group_jobs.announce_member.delay, membership.pk))
-    transaction.on_commit(partial(_bump, company.pk, "members.pending", "members.people"))
+    if via is None:
+        transaction.on_commit(partial(tasks.notify_join_decision.delay, membership.pk))
+        transaction.on_commit(partial(group_jobs.announce_member.delay, membership.pk))
+    else:
+        if welcome:
+            transaction.on_commit(partial(tasks.notify_joined.delay, membership.pk))
+        transaction.on_commit(partial(tasks.queue_link_report, via.pk))
+    pulses = ["members.pending", "members.people"]
+    if membership.join_link_id is not None:
+        pulses.append("members.links")
+    transaction.on_commit(partial(_bump, company.pk, *pulses))
     send_on_commit(signals.member_approved, sender=Membership, membership=membership, by=actor)
     return membership
+
+
+def admit(membership: Membership, *, welcome: bool = True) -> Membership | None:
+    """Someone created their account through a team link, or opened one while their request
+    waits: count them against the link and, when it adds people straight away, let them in.
+
+    Returns the approved membership, or None when they stay a join request: the link is stopped,
+    expired or full, it asks for approval, they worked here before (they come back through an
+    approver), or its maker may no longer approve them with its role and branch. Runs inside the
+    caller's transaction; the link's row lock makes the last place go to one person only."""
+    if membership.status != Membership.Status.PENDING or not membership.is_onboarded:
+        return None
+    link = (
+        JoinLink.objects.select_for_update(of=("self",))
+        .select_related("company", "branch", "role", "created_by__role", "created_by__user")
+        .filter(pk=membership.join_link_id)
+        .first()
+    )
+    if link is None or link.status_at(timezone.now()) != JoinLink.Status.ACTIVE:
+        return None
+    link.uses += 1
+    link.save(update_fields=["uses", "updated_at"])
+    transaction.on_commit(partial(_bump, link.company_id, "members.links"))
+    maker = link.created_by
+    if not link.auto_approve or maker is None or not maker.has_perm(Perm.MEMBERS_APPROVE):
+        return None
+    if queries.former_member(membership) is not None:
+        return None
+    try:
+        with transaction.atomic():  # a refusal leaves the request as it was
+            return approve(membership, by=maker.user, role=link.role, via=link, welcome=welcome)
+    except DomainError, PermissionDenied:
+        return None
+
+
+def decide_many(
+    company: Company,
+    *,
+    by: Membership,
+    ids: list[int],
+    approve_them: bool,
+    role: AccessRole | None = None,
+    position: Position | None = None,
+    branches: list[Branch] | None = None,
+    home_branch: Branch | None = None,
+    reason: str = "",
+) -> list[dict]:
+    """Approve or reject several join requests, each on its own, so one refusal doesn't stop
+    the rest: `{"id", "ok", "detail"}` per id, in the order given. Approving names one role and
+    branch for all, or none, and then each person gets their team link's (else the defaults)."""
+    found = {row.pk: row for row in queries.join_requests(company).filter(pk__in=ids)}
+    results = []
+    for pk in dict.fromkeys(ids):
+        membership = found.get(pk)
+        if membership is None:
+            results.append({"id": pk, "ok": False, "detail": _("This request no longer exists.")})
+            continue
+        if approve_them and not membership.is_onboarded:
+            results.append(
+                {"id": pk, "ok": False, "detail": _("They haven't filled in their details yet.")}
+            )
+            continue
+        try:
+            if approve_them:
+                approve_request(
+                    membership,
+                    by=by,
+                    role=role,
+                    position=position,
+                    branches=branches,
+                    home_branch=home_branch,
+                )
+            else:
+                reject_request(membership, by=by, reason=reason)
+        except (DomainError, PermissionDenied) as exc:
+            results.append({"id": pk, "ok": False, "detail": str(exc)})
+            continue
+        results.append({"id": pk, "ok": True, "detail": ""})
+    return results
 
 
 @transaction.atomic
@@ -303,6 +414,10 @@ def complete_onboarding(
     membership.position = position
     membership.onboarded_at = timezone.now()
     membership.save()
+    if membership.join_link_id is not None:
+        admitted = admit(membership)
+        if admitted is not None:
+            return admitted
     if membership.status == Membership.Status.PENDING:
         notify = tasks.notify_join_request  # now approvers have something to decide on
     else:
@@ -1017,6 +1132,22 @@ def _valid_branches(
     return branches, home_branch
 
 
+def _link_branches(
+    company: Company, link: JoinLink, *, actor: Membership | None, strict: bool
+) -> tuple[list[Branch], Branch] | None:
+    """A team link's branch for an approval that names none. For the link letting someone in
+    (`strict`), a closed branch or one its maker no longer manages stops the approval; an
+    approver gets the usual default instead."""
+    if link.branch_id is None:
+        return None
+    try:
+        return _valid_branches(company, [link.branch], link.branch, actor=actor)
+    except DomainError, PermissionDenied:
+        if strict:
+            raise
+        return None
+
+
 def _dedupe(branches: list[Branch]) -> list[Branch]:
     seen: dict[int, Branch] = {}
     for branch in branches:
@@ -1038,6 +1169,11 @@ def _bump(company_id: int, *keys: str) -> None:
     from apps.console import pulse
 
     pulse.bump(company_id, *keys)
+
+
+def bump_on_commit(company_id: int, *keys: str) -> None:
+    """Move pulse keys on once the current transaction commits (open dashboards refetch)."""
+    transaction.on_commit(partial(_bump, company_id, *keys))
 
 
 def _wind_down(membership: Membership, *, by: Membership | None) -> None:

@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 01:45+0500\n"
+"POT-Creation-Date: 2026-10-26 10:15+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -407,8 +407,8 @@ msgstr "Takrorlanish tadbir boshlanishidan oldin tugay olmaydi."
 msgid "A reminder can come at most a week before."
 msgstr "Eslatma ko‘pi bilan bir hafta oldin yuborilishi mumkin."
 
-#: backend/apps/agenda/services.py backend/apps/members/owner_api.py
-#: backend/apps/members/services.py
+#: backend/apps/agenda/services.py backend/apps/members/join_links.py
+#: backend/apps/members/owner_api.py backend/apps/members/services.py
 msgid "Pick a branch of this company."
 msgstr "Shu kompaniyaning filialini tanlang."
 
@@ -710,8 +710,8 @@ msgstr "E’lonning amal qilish muddati u yuborilgandan keyin tugashi kerak."
 #: backend/apps/announcements/services.py backend/apps/attendance/api.py
 #: backend/apps/attendance/services.py backend/apps/console/base.py
 #: backend/apps/inbox/services.py backend/apps/knowledge/owner_api.py
-#: backend/apps/members/services.py backend/apps/sales/handlers.py
-#: backend/apps/timeoff/services.py
+#: backend/apps/members/join_links.py backend/apps/members/services.py
+#: backend/apps/sales/handlers.py backend/apps/timeoff/services.py
 #: employee_bot/bot/handlers/admin/approvals.py
 msgid "You don't have permission to do this."
 msgstr "Bunga ruxsatingiz yo‘q."
@@ -1388,7 +1388,7 @@ msgid "Rejected"
 msgstr "Rad etilgan"
 
 #: backend/apps/attendance/models.py backend/apps/attendance/services.py
-#: backend/apps/signin/models.py
+#: backend/apps/members/models.py backend/apps/signin/models.py
 msgid "Expired"
 msgstr "Muddati o‘tgan"
 
@@ -2473,7 +2473,7 @@ msgstr "Taklif qilingan tillardan birini tanlang."
 msgid "Pick one of the currencies offered."
 msgstr "Taklif qilingan valyutalardan birini tanlang."
 
-#: backend/apps/companies/services.py
+#: backend/apps/companies/services.py backend/apps/members/join_links.py
 msgid ""
 "This invite link is invalid or has expired. Ask your manager for a new one."
 msgstr ""
@@ -4346,6 +4346,18 @@ msgstr "<b>%(name)s</b> jamoaga qo‘shildi."
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
+msgid "<b>%(count)d new person joined the team</b>"
+msgid_plural "<b>%(count)d new people joined the team</b>"
+msgstr[0] "<b>Jamoaga %(count)d ta yangi xodim qo‘shildi</b>"
+
+#: backend/apps/groups/bot_messages.py backend/apps/members/join_links.py
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "and %(count)d more"
+msgstr "va yana %(count)d kishi"
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
 msgid "<b>Today's plan</b> · %(date)s"
 msgstr "<b>Bugungi reja</b> · %(date)s"
 
@@ -5179,6 +5191,26 @@ msgstr "Lavozimni o‘chirdi"
 msgid "Reordered positions"
 msgstr "Lavozimlar tartibini o‘zgartirdi"
 
+#: backend/apps/members/audit_actions.py
+msgid "Made a team link"
+msgstr "Jamoa havolasini yaratdi"
+
+#: backend/apps/members/audit_actions.py
+msgid "Changed a team link"
+msgstr "Jamoa havolasini o‘zgartirdi"
+
+#: backend/apps/members/audit_actions.py
+msgid "Stopped a team link"
+msgstr "Jamoa havolasini to‘xtatdi"
+
+#: backend/apps/members/audit_actions.py
+msgid "Turned a team link back on"
+msgstr "Jamoa havolasini qayta yoqdi"
+
+#: backend/apps/members/audit_actions.py
+msgid "Deleted a team link"
+msgstr "Jamoa havolasini o‘chirdi"
+
 #: backend/apps/members/bot_messages.py
 msgid "Open app"
 msgstr "Ilovani ochish"
@@ -5245,6 +5277,10 @@ msgstr ""
 #, python-format
 msgid "Welcome! You're joining <b>%(company)s</b>."
 msgstr "Xush kelibsiz! Siz <b>%(company)s</b> kompaniyasiga qo‘shilyapsiz."
+
+#: backend/apps/members/bot_messages.py
+msgid "Once your account is made, you're on the team: no waiting."
+msgstr "Hisobingiz yaratilishi bilan jamoaga qo‘shilasiz, kutish shart emas."
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -5323,6 +5359,13 @@ msgstr "Rahmat, telefon raqamingiz saqlandi."
 #: backend/apps/members/bot_messages.py
 msgid "Please share your own phone number with the button below."
 msgstr "Iltimos, quyidagi tugma orqali o‘z raqamingizni ulashing."
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "Welcome to the team, %(name)s! You've joined <b>%(company)s</b>."
+msgstr ""
+"Jamoaga xush kelibsiz, %(name)s! Siz <b>%(company)s</b> kompaniyasiga "
+"qo‘shildingiz."
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -5449,6 +5492,10 @@ msgid "Join requests"
 msgstr "Qo‘shilish so‘rovlari"
 
 #: backend/apps/members/hooks.py
+msgid "People joined through a team link"
+msgstr "Jamoa havolasi orqali qo‘shilganlar"
+
+#: backend/apps/members/hooks.py
 msgid "Access and work"
 msgstr "Kirish huquqi va vazifalar"
 
@@ -5468,6 +5515,83 @@ msgstr "Rollar"
 #: backend/apps/members/hooks.py
 msgid "Team"
 msgstr "Jamoa"
+
+#: backend/apps/members/join_links.py
+msgid "You can't change this link."
+msgstr "Bu havolani o‘zgartira olmaysiz."
+
+#: backend/apps/members/join_links.py
+msgid "Give the link a name."
+msgstr "Havolaga nom bering."
+
+#: backend/apps/members/join_links.py
+msgid "A link's name can be at most 100 characters."
+msgstr "Havola nomi ko‘pi bilan 100 ta belgi bo‘lishi mumkin."
+
+#: backend/apps/members/join_links.py backend/apps/members/services.py
+msgid "You can only give the branches you manage."
+msgstr "Faqat o‘zingiz boshqaradigan filiallarni biriktira olasiz."
+
+#: backend/apps/members/join_links.py backend/apps/members/services.py
+msgid "Pick a role of this company."
+msgstr "Shu kompaniyadagi rolni tanlang."
+
+#: backend/apps/members/join_links.py backend/apps/members/owner_api.py
+#: backend/apps/members/services.py
+msgid "Pick a position of this company."
+msgstr "Shu kompaniyadagi lavozimni tanlang."
+
+#: backend/apps/members/join_links.py
+#, python-format
+msgid "A link can take from 1 to %(count)d people."
+msgstr "Joylar soni 1 va %(count)d orasida bo‘lishi kerak."
+
+#: backend/apps/members/join_links.py
+msgid "The end must be in the future."
+msgstr "Tugash vaqti kelajakda bo‘lishi kerak."
+
+#: backend/apps/members/join_links.py
+msgid "A link can work for at most a year."
+msgstr "Havola ko‘pi bilan bir yil ishlay oladi."
+
+#: backend/apps/members/join_links.py
+msgid "Choose one of your branches."
+msgstr "O‘z filiallaringizdan birini tanlang."
+
+#: backend/apps/members/join_links.py
+msgid "Choose the branch these people will work in."
+msgstr "Bu xodimlar ishlaydigan filialni tanlang."
+
+#: backend/apps/members/join_links.py
+msgid "This team link was switched off. Ask your manager for a new one."
+msgstr ""
+"Bu jamoa havolasi o‘chirib qo‘yilgan. Rahbaringizdan yangisini so‘rang."
+
+#: backend/apps/members/join_links.py
+msgid "This team link has expired. Ask your manager for a new one."
+msgstr ""
+"Bu jamoa havolasining muddati tugagan. Rahbaringizdan yangisini so‘rang."
+
+#: backend/apps/members/join_links.py
+msgid "This team link has no places left. Ask your manager for a new one."
+msgstr ""
+"Bu jamoa havolasida bo‘sh joy qolmadi. Rahbaringizdan yangisini so‘rang."
+
+#: backend/apps/members/join_links.py
+#, python-format
+msgid "%(count)d person joined through «%(link)s»"
+msgid_plural "%(count)d people joined through «%(link)s»"
+msgstr[0] "«%(link)s» havolasi orqali %(count)d kishi qo‘shildi"
+
+#: backend/apps/members/join_links.py
+#, python-format
+msgid "Joined: %(uses)d of %(places)d"
+msgstr "Qo‘shilganlar: %(uses)d / %(places)d"
+
+#: backend/apps/members/join_links.py
+#, python-format
+msgid "Joined in total: %(uses)d"
+msgstr "Jami qo‘shilganlar: %(uses)d"
 
 #: backend/apps/members/models.py
 msgid "Owners have every permission."
@@ -5512,8 +5636,66 @@ msgstr ""
 "qaytarilguncha."
 
 #: backend/apps/members/models.py
+msgid "The team link they joined through."
+msgstr "Xodim qo‘shilgan jamoa havolasi."
+
+#: backend/apps/members/models.py
+msgid "A team link let them in, without anyone's check."
+msgstr "Jamoa havolasi orqali hech kim tekshirmasdan qo‘shilgan."
+
+#: backend/apps/members/models.py
 msgid "Must be one of the branches they work in."
 msgstr "Xodim ishlaydigan filiallardan biri bo‘lishi kerak."
+
+#: backend/apps/members/models.py backend/apps/projects/models.py
+msgid "Active"
+msgstr "Faol"
+
+#: backend/apps/members/models.py
+msgid "Full"
+msgstr "To‘lgan"
+
+#: backend/apps/members/models.py
+msgid "Stopped"
+msgstr "To‘xtatilgan"
+
+#: backend/apps/members/models.py
+msgid ""
+"Whose approval it stands for: their permissions are checked at every join."
+msgstr ""
+"Kimning tasdig‘i o‘rnida ishlaydi: har bir qo‘shilishda uning huquqlari "
+"tekshiriladi."
+
+#: backend/apps/members/models.py
+msgid "People join straight away. Off: they wait for approval."
+msgstr "Odamlar darhol qo‘shiladi. O‘chiq bo‘lsa, tasdiqlashni kutishadi."
+
+#: backend/apps/members/models.py
+msgid "Empty: the default role."
+msgstr "Bo‘sh bo‘lsa: standart rol."
+
+#: backend/apps/members/models.py
+msgid "Chosen for them when they create their account (they can change it)."
+msgstr ""
+"Hisob yaratishda ular uchun tanlab qo‘yiladi (o‘zgartirishlari mumkin)."
+
+#: backend/apps/members/models.py
+msgid "How many people can join through it. Empty: no limit."
+msgstr "Havola orqali nechta odam qo‘shila oladi. Bo‘sh bo‘lsa, cheklov yo‘q."
+
+#: backend/apps/members/models.py
+msgid "People who created their account through it."
+msgstr "Havola orqali hisob yaratganlar soni."
+
+#: backend/apps/members/models.py
+msgid "Off: stopped by hand."
+msgstr "O‘chiq bo‘lsa: qo‘lda to‘xtatilgan."
+
+#: backend/apps/members/models.py
+msgid "Approvers have heard about everyone who joined through it until then."
+msgstr ""
+"Shu vaqtgacha qo‘shilganlarning barchasi haqida tasdiqlovchilarga xabar "
+"berilgan."
 
 #: backend/apps/members/owner_api.py
 msgid "Changing a role needs roles.manage."
@@ -5526,10 +5708,6 @@ msgstr "Faqat hozirgi xodimlarni ishdan bo‘shatish mumkin."
 #: backend/apps/members/owner_api.py
 msgid "Send the position ids in their new order."
 msgstr "Lavozim ID’larini yangi tartibda yuboring."
-
-#: backend/apps/members/owner_api.py backend/apps/members/services.py
-msgid "Pick a position of this company."
-msgstr "Shu kompaniyadagi lavozimni tanlang."
 
 #: backend/apps/members/permissions.py
 msgid "View members"
@@ -5874,8 +6052,8 @@ msgid "You can only give a role whose permissions you have yourself."
 msgstr "Faqat barcha ruxsatlari o‘zingizda ham bor bo‘lgan rolni bera olasiz."
 
 #: backend/apps/members/services.py
-msgid "Pick a role of this company."
-msgstr "Shu kompaniyadagi rolni tanlang."
+msgid "They haven't filled in their details yet."
+msgstr "U hali ma’lumotlarini to‘ldirmagan."
 
 #: backend/apps/members/services.py
 msgid "You've already completed registration."
@@ -5948,10 +6126,6 @@ msgstr "Egani faqat egalar o‘zgartira oladi."
 #: backend/apps/members/services.py
 msgid "A first name is required."
 msgstr "Ism kiritilishi shart."
-
-#: backend/apps/members/services.py
-msgid "You can only give the branches you manage."
-msgstr "Faqat o‘zingiz boshqaradigan filiallarni biriktira olasiz."
 
 #: backend/apps/members/services.py
 msgid "The home branch must be one of their branches."
@@ -6383,10 +6557,6 @@ msgstr "Palitradagi chart-1 … chart-8 ranglaridan biri."
 #: backend/apps/projects/models.py
 msgid "Planning"
 msgstr "Rejalashtirilmoqda"
-
-#: backend/apps/projects/models.py
-msgid "Active"
-msgstr "Faol"
 
 #: backend/apps/projects/models.py
 msgid "On hold"
@@ -10769,11 +10939,6 @@ msgstr "Ishda: %(present)d/%(rostered)d"
 #, python-format
 msgid "Tasks: %(done)d/%(total)d"
 msgstr "Vazifalar: %(done)d/%(total)d"
-
-#: owner_bot/ownerbot/brief.py
-#, python-format
-msgid "and %(count)d more"
-msgstr "va yana %(count)d kishi"
 
 #: owner_bot/ownerbot/brief.py
 #, python-format

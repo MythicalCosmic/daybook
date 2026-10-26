@@ -2,7 +2,10 @@
 people; this adds what HR sees around them. Bobur, a pharmacist, is suspended while a shortage
 of prescription medicines is looked into, Nodira (a Yunusobod pharmacist) left, Rustam (a
 courier) was blocked, two people ask to join and a former storekeeper asks to come back;
-approvals, a promotion and a move between the pharmacies give Person 360 a history.
+approvals, a promotion and a move between the pharmacies give Person 360 a history. Team links:
+one from this morning's staff meeting that three new pharmacists joined through (a fourth is
+still making an account), one for Yunusobod that asks first (two requests wait), and one that
+ended.
 """
 
 from datetime import time, timedelta
@@ -12,7 +15,20 @@ from apps.audit import services as audit
 from apps.audit.models import AuditLog
 from apps.core import demo_plan as story_plan
 from apps.members.audit_actions import MemberAction
-from apps.members.models import AccessRole, Membership, Position
+from apps.members.models import AccessRole, JoinLink, Membership, Position
+
+# People who came through the demo's team links: key, telegram id, first, last, minutes ago
+# (None: still making their account).
+MEETING_JOINERS = [
+    ("sevara", 3101, "Sevara", "Qodirova", 52),
+    ("javohir", 3102, "Javohir", "Usmonov", 47),
+    ("dilfuza", 3103, "Dilfuza", "Rahmonova", 31),
+    ("bahodir", 3104, "Bahodir", "Ergashev", None),
+]
+YUNUSOBOD_REQUESTS = [
+    ("zarina", 3105, "Zarina", "Abdullayeva", 180),
+    ("ulugbek", 3106, "Ulug‘bek", "Sobirov", 95),
+]
 
 
 def seed(company, people, now) -> None:
@@ -131,6 +147,8 @@ def seed(company, people, now) -> None:
     )
     jahongir.branches.clear()
 
+    _team_links(company, story, owner, positions, roles, now)
+
     # A little history on Person 360: a promotion and a move between the pharmacies.
     sardor, dilshod = story.member("sardor"), story.member("dilshod")
     if sardor is not None:
@@ -154,6 +172,99 @@ def seed(company, people, now) -> None:
                 "home_branch": ["Chilonzor", "Yunusobod"],
             },
         )
+
+
+def _team_links(company, story, owner, positions, roles, now) -> None:
+    chilonzor, yunusobod = story.branches["C"], story.branches["Y"]
+    pharmacist = positions[story_plan.PHARMACIST]
+
+    def link(name, made_minutes_ago, **fields):
+        created = JoinLink.objects.create(company=company, created_by=owner, name=name, **fields)
+        made = now - timedelta(minutes=made_minutes_ago)
+        JoinLink.objects.filter(pk=created.pk).update(created_at=made)
+        _audit_at(MemberAction.LINK_CREATED, company, owner.user, created, made)
+        return created
+
+    def joiner(key, tg, first_name, last_name, through, minutes_ago, *, branch, status):
+        person = story_plan.Person(key, tg, first_name, last_name, None, "Employee", "C", 0, None)
+        finished = now - timedelta(minutes=minutes_ago) if minutes_ago is not None else None
+        membership = Membership.objects.create(
+            company=company,
+            user=_user(person),
+            first_name=first_name if finished else "",
+            last_name=last_name if finished else "",
+            position=pharmacist if finished or through.position_id else None,
+            status=status,
+            join_link=through,
+            onboarded_at=finished,
+        )
+        opened = (finished or now) - timedelta(minutes=4)
+        Membership.objects.filter(pk=membership.pk).update(created_at=opened)
+        if status == Membership.Status.APPROVED:
+            Membership.objects.filter(pk=membership.pk).update(
+                role=through.role,
+                joined_by_link=True,
+                decided_by=owner.user,
+                decided_at=finished,
+                home_branch=branch,
+            )
+            membership.branches.set([branch])
+            _audit_at(
+                AuditLog.Action.MEMBER_APPROVED,
+                company,
+                owner.user,
+                membership,
+                finished,
+                link=through.name,
+            )
+        return membership
+
+    meeting = link(
+        "Xodimlar yig‘ilishi",
+        70,
+        branch=chilonzor,
+        role=roles.get(story_plan.TILL),
+        position=pharmacist,
+        max_uses=10,
+        expires_at=now + timedelta(days=2),
+    )
+    for key, tg, first_name, last_name, minutes_ago in MEETING_JOINERS:
+        done = minutes_ago is not None
+        status = Membership.Status.APPROVED if done else Membership.Status.PENDING
+        joiner(
+            key, tg, first_name, last_name, meeting, minutes_ago, branch=chilonzor, status=status
+        )
+    JoinLink.objects.filter(pk=meeting.pk).update(uses=3, reported_at=now - timedelta(minutes=30))
+
+    asking = link(
+        "Yunusobod: yangi xodimlar",
+        60 * 26,
+        auto_approve=False,
+        branch=yunusobod,
+        expires_at=now + timedelta(days=29),
+    )
+    for key, tg, first_name, last_name, minutes_ago in YUNUSOBOD_REQUESTS:
+        joiner(
+            key,
+            tg,
+            first_name,
+            last_name,
+            asking,
+            minutes_ago,
+            branch=yunusobod,
+            status=Membership.Status.PENDING,
+        )
+    JoinLink.objects.filter(pk=asking.pk).update(uses=len(YUNUSOBOD_REQUESTS))
+
+    ended = link(
+        "Ochilish kuni",
+        60 * 24 * 40,
+        branch=yunusobod,
+        role=roles.get(story_plan.TILL),
+        max_uses=6,
+        expires_at=now - timedelta(days=38),
+    )
+    assert ended.pk
 
 
 def _user(person) -> User:

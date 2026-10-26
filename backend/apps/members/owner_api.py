@@ -7,7 +7,7 @@
     POST   people/{id}/block/ · unblock/ · suspend/ · reinstate/
     GET    people/{id}/offboard-preview/  ·  POST people/{id}/offboard/
     GET    people/{id}/history/       audit rows about them and their time off
-    GET    join-requests/  ·  POST join-requests/{id}/approve/ · reject/
+    GET    join-requests/  ·  POST join-requests/{id}/approve/ · reject/ · join-requests/bulk/
     CRUD   roles/  ·  CRUD positions/  ·  POST positions/reorder/
 """
 
@@ -42,6 +42,8 @@ from apps.members.permissions import Perm
 from apps.members.queries import branch_ref, photo_url
 
 PEOPLE = "members.people"
+# Join requests decided in one go at most.
+BULK_LIMIT = 200
 
 
 class PeoplePagination(Pagination):
@@ -601,6 +603,9 @@ class JoinRequestSerializer(serializers.ModelSerializer):
     onboarded = serializers.SerializerMethodField()
     requested_at = serializers.SerializerMethodField()
     former = serializers.SerializerMethodField()
+    join_link = serializers.SerializerMethodField(
+        help_text="The team link they came through; approving without choices uses its own."
+    )
     fields = serializers.SerializerMethodField(method_name="get_extra")
 
     class Meta:
@@ -617,6 +622,7 @@ class JoinRequestSerializer(serializers.ModelSerializer):
             "onboarded",
             "requested_at",
             "former",
+            "join_link",
             "fields",
         )
         read_only_fields = fields
@@ -655,6 +661,31 @@ class JoinRequestSerializer(serializers.ModelSerializer):
         former = self.context.get("former")
         return former.get(row.pk) if former is not None else queries.former_member(row)
 
+    @extend_schema_field(
+        inline_serializer(
+            "MembersRequestLink",
+            {
+                "id": serializers.IntegerField(),
+                "name": serializers.CharField(),
+                "auto_approve": serializers.BooleanField(),
+                "branch": NamedSerializer(allow_null=True),
+                "role": NamedSerializer(allow_null=True),
+            },
+            allow_null=True,
+        )
+    )
+    def get_join_link(self, row: Membership) -> dict | None:
+        link = row.join_link
+        if link is None:
+            return None
+        return {
+            "id": link.pk,
+            "name": link.name,
+            "auto_approve": link.auto_approve,
+            "branch": {"id": link.branch.pk, "name": link.branch.name} if link.branch else None,
+            "role": {"id": link.role.pk, "name": link.role.name} if link.role else None,
+        }
+
     @extend_schema_field(serializers.DictField())
     def get_extra(self, row: Membership) -> dict:
         return self.context.get("fields", {}).get(row.pk, {})
@@ -671,6 +702,43 @@ class RejectSerializer(serializers.Serializer):
     reason = serializers.CharField(required=False, allow_blank=True, max_length=300)
 
 
+class BulkDecisionSerializer(serializers.Serializer):
+    ids = serializers.ListField(
+        child=serializers.IntegerField(), min_length=1, max_length=BULK_LIMIT
+    )
+    action = serializers.ChoiceField(choices=["approve", "reject"])
+    role_id = serializers.IntegerField(
+        required=False, allow_null=True, help_text="Empty: each person's link role, else default."
+    )
+    position_id = serializers.IntegerField(
+        required=False, allow_null=True, help_text="Empty: the positions they picked."
+    )
+    branch_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        help_text="Empty: each person's link branch, else the company's only branch.",
+    )
+    home_branch_id = serializers.IntegerField(required=False, allow_null=True)
+    reason = serializers.CharField(required=False, allow_blank=True, max_length=300)
+
+
+class BulkDecisionResultSerializer(serializers.Serializer):
+    results = inline_serializer(
+        "MembersBulkDecisionRow",
+        {
+            "id": serializers.IntegerField(),
+            "ok": serializers.BooleanField(),
+            "detail": serializers.CharField(),
+        },
+        many=True,
+    )
+    done = serializers.IntegerField()
+    failed = serializers.IntegerField()
+
+    class Meta:
+        ref_name = "MembersBulkDecisionResult"
+
+
 class JoinRequestViewSet(mixins.ListModelMixin, OwnerViewSet):
     """People asking to join, with approve (role, position, branches) and reject."""
 
@@ -682,7 +750,9 @@ class JoinRequestViewSet(mixins.ListModelMixin, OwnerViewSet):
     def get_queryset(self):
         if getattr(self, "swagger_fake_view", False):
             return Membership.objects.none()
-        return queries.join_requests(self.company)
+        return queries.join_requests(self.company).select_related(
+            "join_link__branch", "join_link__role"
+        )
 
     def list(self, request, *args, **kwargs):
         rows = list(self.get_queryset())
@@ -729,6 +799,42 @@ class JoinRequestViewSet(mixins.ListModelMixin, OwnerViewSet):
             .get(pk=person.pk)
         )
         return Response(person_detail(self.membership, fresh))
+
+    @extend_schema(request=BulkDecisionSerializer, responses=BulkDecisionResultSerializer)
+    @action(detail=False, methods=["post"])
+    def bulk(self, request, company_id):
+        """Approve or reject many requests at once; each succeeds or fails on its own."""
+        serializer = BulkDecisionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        approving = data["action"] == "approve"
+        role = position = home = None
+        branches = []
+        if approving:
+            if data.get("role_id"):
+                role = get_object_or_404(
+                    AccessRole.objects.for_company(self.company), pk=data["role_id"]
+                )
+            if data.get("position_id"):
+                position = _position(self.company, data["position_id"])
+            branches = _branches(self.company, data.get("branch_ids") or [])
+            if data.get("home_branch_id"):
+                home = _branch(self.company, data["home_branch_id"])
+        results = services.decide_many(
+            self.company,
+            by=self.membership,
+            ids=data["ids"],
+            approve_them=approving,
+            role=role,
+            position=position,
+            branches=branches or None,
+            home_branch=home,
+            reason=data.get("reason", ""),
+        )
+        done = sum(1 for row in results if row["ok"])
+        if done:
+            self.bump("members.pending", PEOPLE, "members.links")
+        return Response({"results": results, "done": done, "failed": len(results) - done})
 
     @extend_schema(request=RejectSerializer, responses={204: None})
     @action(detail=True, methods=["post"])

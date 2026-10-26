@@ -16,8 +16,8 @@ from apps.accounts.services import bot_membership, set_language
 from apps.accounts.telegram_chat import LANGUAGE_NAMES, LANGUAGES, language_of, relabel
 from apps.companies.services import find_by_invite
 from apps.core.exceptions import DomainError
-from apps.members import bot_messages, services
-from apps.members.models import Membership
+from apps.members import bot_messages, join_links, services
+from apps.members.models import JoinLink, Membership
 from bot import deeplinks
 from bot.callbacks import LangCallback
 from bot.commands import menu_button
@@ -152,6 +152,11 @@ def _handle_start(user: User, start_param: str | None) -> bot_messages.BotMessag
     if not start_param:
         return bot_messages.status(bot_membership(user))
     try:
+        if start_param.startswith(JoinLink.PREFIX):  # a team link
+            membership, admitted = join_links.open_link(user, start_param)
+            if admitted:
+                return bot_messages.joined(membership)
+            return bot_messages.status(membership)
         company = find_by_invite(start_param)
     except DomainError as exc:
         return str(exc), None

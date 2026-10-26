@@ -15,7 +15,7 @@ from django.db import transaction
 from django.db.models import Prefetch, Q
 from django.utils import timezone, translation
 
-from apps.companies.models import Company
+from apps.companies.models import Branch, Company
 from apps.groups import bot_messages, reports
 from apps.groups.models import GroupEvent, GroupReport, TelegramGroup
 from apps.members.bot_messages import BotMessage
@@ -166,6 +166,43 @@ def announce_member(membership_id: int) -> None:
         lambda: bot_messages.member_joined(member),
         branch_id=member.home_branch_id,
     )
+
+
+@shared_task
+def announce_members(membership_ids: list[int]) -> None:
+    """Several people who joined at once (through a team link): one post per group naming the
+    ones it covers, instead of a post each. A group covers people as `_post` decides."""
+    members = list(
+        Membership.objects.select_related("company", "user", "position")
+        .filter(pk__in=membership_ids, status=Membership.Status.APPROVED)
+        .order_by("decided_at", "pk")
+    )
+    if not members:
+        return
+    company = members[0].company
+    groups = TelegramGroup.objects.filter(
+        company=company, is_active=True, events__contains=[GroupEvent.MEMBERS]
+    ).prefetch_related(
+        Prefetch("positions", queryset=Position.objects.only("pk")),
+        Prefetch("branches", queryset=Branch.objects.only("pk")),
+    )
+    for group in groups:
+        positions = {position.pk for position in group.positions.all()}
+        branches = {branch.pk for branch in group.branches.all()}
+        covered = [
+            member
+            for member in members
+            if (not positions or member.position_id in positions)
+            and (not branches or member.home_branch_id in branches)
+        ]
+        if not covered:
+            continue
+        with translation.override(company.default_language):
+            if len(covered) == 1:
+                message = bot_messages.member_joined(covered[0])
+            else:
+                message = bot_messages.members_joined(covered)
+        queue_post(group.pk, message)
 
 
 @shared_task

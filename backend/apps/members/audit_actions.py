@@ -19,3 +19,9 @@ class MemberAction(models.TextChoices):
     POSITION_SAVED = "members.position_saved", _("Changed a position")
     POSITION_DELETED = "members.position_deleted", _("Deleted a position")
     POSITIONS_REORDERED = "members.positions_reordered", _("Reordered positions")
+    # Team links (bulk joining).
+    LINK_CREATED = "members.link_created", _("Made a team link")
+    LINK_CHANGED = "members.link_changed", _("Changed a team link")
+    LINK_STOPPED = "members.link_stopped", _("Stopped a team link")
+    LINK_RESUMED = "members.link_resumed", _("Turned a team link back on")
+    LINK_DELETED = "members.link_deleted", _("Deleted a team link")

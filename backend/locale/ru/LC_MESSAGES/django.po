@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 01:45+0500\n"
+"POT-Creation-Date: 2026-10-26 10:15+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -406,8 +406,8 @@ msgstr "Повторы не могут закончиться раньше на�
 msgid "A reminder can come at most a week before."
 msgstr "Напоминание можно поставить не раньше чем за неделю."
 
-#: backend/apps/agenda/services.py backend/apps/members/owner_api.py
-#: backend/apps/members/services.py
+#: backend/apps/agenda/services.py backend/apps/members/join_links.py
+#: backend/apps/members/owner_api.py backend/apps/members/services.py
 msgid "Pick a branch of this company."
 msgstr "Выберите филиал этой компании."
 
@@ -711,8 +711,8 @@ msgstr "Срок действия должен заканчиваться пос
 #: backend/apps/announcements/services.py backend/apps/attendance/api.py
 #: backend/apps/attendance/services.py backend/apps/console/base.py
 #: backend/apps/inbox/services.py backend/apps/knowledge/owner_api.py
-#: backend/apps/members/services.py backend/apps/sales/handlers.py
-#: backend/apps/timeoff/services.py
+#: backend/apps/members/join_links.py backend/apps/members/services.py
+#: backend/apps/sales/handlers.py backend/apps/timeoff/services.py
 #: employee_bot/bot/handlers/admin/approvals.py
 msgid "You don't have permission to do this."
 msgstr "У вас нет прав на это действие."
@@ -1377,7 +1377,7 @@ msgid "Rejected"
 msgstr "Отклонено"
 
 #: backend/apps/attendance/models.py backend/apps/attendance/services.py
-#: backend/apps/signin/models.py
+#: backend/apps/members/models.py backend/apps/signin/models.py
 msgid "Expired"
 msgstr "Срок истёк"
 
@@ -2441,7 +2441,7 @@ msgstr "Выберите один из предложенных языков."
 msgid "Pick one of the currencies offered."
 msgstr "Выберите одну из предложенных валют."
 
-#: backend/apps/companies/services.py
+#: backend/apps/companies/services.py backend/apps/members/join_links.py
 msgid ""
 "This invite link is invalid or has expired. Ask your manager for a new one."
 msgstr ""
@@ -4276,6 +4276,21 @@ msgstr "В команде новый сотрудник: <b>%(name)s</b>."
 
 #: backend/apps/groups/bot_messages.py
 #, python-format
+msgid "<b>%(count)d new person joined the team</b>"
+msgid_plural "<b>%(count)d new people joined the team</b>"
+msgstr[0] "<b>В команде %(count)d новый сотрудник</b>"
+msgstr[1] "<b>В команде %(count)d новых сотрудника</b>"
+msgstr[2] "<b>В команде %(count)d новых сотрудников</b>"
+msgstr[3] "<b>В команде %(count)d новых сотрудников</b>"
+
+#: backend/apps/groups/bot_messages.py backend/apps/members/join_links.py
+#: owner_bot/ownerbot/brief.py
+#, python-format
+msgid "and %(count)d more"
+msgstr "и ещё %(count)d"
+
+#: backend/apps/groups/bot_messages.py
+#, python-format
 msgid "<b>Today's plan</b> · %(date)s"
 msgstr "<b>План на сегодня</b> · %(date)s"
 
@@ -5109,6 +5124,26 @@ msgstr "Удалена должность"
 msgid "Reordered positions"
 msgstr "Изменён порядок должностей"
 
+#: backend/apps/members/audit_actions.py
+msgid "Made a team link"
+msgstr "Создал ссылку для команды"
+
+#: backend/apps/members/audit_actions.py
+msgid "Changed a team link"
+msgstr "Изменил ссылку для команды"
+
+#: backend/apps/members/audit_actions.py
+msgid "Stopped a team link"
+msgstr "Остановил ссылку для команды"
+
+#: backend/apps/members/audit_actions.py
+msgid "Turned a team link back on"
+msgstr "Снова включил ссылку для команды"
+
+#: backend/apps/members/audit_actions.py
+msgid "Deleted a team link"
+msgstr "Удалил ссылку для команды"
+
 #: backend/apps/members/bot_messages.py
 msgid "Open app"
 msgstr "Открыть приложение"
@@ -5175,6 +5210,10 @@ msgstr ""
 #, python-format
 msgid "Welcome! You're joining <b>%(company)s</b>."
 msgstr "Добро пожаловать! Вы присоединяетесь к компании <b>%(company)s</b>."
+
+#: backend/apps/members/bot_messages.py
+msgid "Once your account is made, you're on the team: no waiting."
+msgstr "Как только создадите аккаунт, сразу попадёте в команду, без ожидания."
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -5250,6 +5289,13 @@ msgstr "Спасибо, номер телефона сохранён."
 #: backend/apps/members/bot_messages.py
 msgid "Please share your own phone number with the button below."
 msgstr "Пожалуйста, поделитесь своим номером кнопкой ниже."
+
+#: backend/apps/members/bot_messages.py
+#, python-format
+msgid "Welcome to the team, %(name)s! You've joined <b>%(company)s</b>."
+msgstr ""
+"Добро пожаловать в команду, %(name)s! Теперь вы в компании <b>%(company)s</"
+"b>."
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -5370,6 +5416,10 @@ msgid "Join requests"
 msgstr "Заявки на вступление"
 
 #: backend/apps/members/hooks.py
+msgid "People joined through a team link"
+msgstr "Новые сотрудники по ссылке для команды"
+
+#: backend/apps/members/hooks.py
 msgid "Access and work"
 msgstr "Доступ и задачи"
 
@@ -5388,6 +5438,85 @@ msgstr "Роли"
 #: backend/apps/members/hooks.py
 msgid "Team"
 msgstr "Команда"
+
+#: backend/apps/members/join_links.py
+msgid "You can't change this link."
+msgstr "Вы не можете изменить эту ссылку."
+
+#: backend/apps/members/join_links.py
+msgid "Give the link a name."
+msgstr "Дайте ссылке название."
+
+#: backend/apps/members/join_links.py
+msgid "A link's name can be at most 100 characters."
+msgstr "Название ссылки может быть не длиннее 100 символов."
+
+#: backend/apps/members/join_links.py backend/apps/members/services.py
+msgid "You can only give the branches you manage."
+msgstr "Можно назначать только те филиалы, которыми вы управляете."
+
+#: backend/apps/members/join_links.py backend/apps/members/services.py
+msgid "Pick a role of this company."
+msgstr "Выберите роль этой компании."
+
+#: backend/apps/members/join_links.py backend/apps/members/owner_api.py
+#: backend/apps/members/services.py
+msgid "Pick a position of this company."
+msgstr "Выберите должность этой компании."
+
+#: backend/apps/members/join_links.py
+#, python-format
+msgid "A link can take from 1 to %(count)d people."
+msgstr "Через ссылку могут присоединиться от 1 до %(count)d человек."
+
+#: backend/apps/members/join_links.py
+msgid "The end must be in the future."
+msgstr "Окончание должно быть в будущем."
+
+#: backend/apps/members/join_links.py
+msgid "A link can work for at most a year."
+msgstr "Ссылка может работать не больше года."
+
+#: backend/apps/members/join_links.py
+msgid "Choose one of your branches."
+msgstr "Выберите один из своих филиалов."
+
+#: backend/apps/members/join_links.py
+msgid "Choose the branch these people will work in."
+msgstr "Выберите филиал, в котором будут работать эти люди."
+
+#: backend/apps/members/join_links.py
+msgid "This team link was switched off. Ask your manager for a new one."
+msgstr "Эта ссылка для команды отключена. Попросите у руководителя новую."
+
+#: backend/apps/members/join_links.py
+msgid "This team link has expired. Ask your manager for a new one."
+msgstr ""
+"Срок действия этой ссылки для команды истёк. Попросите у руководителя новую."
+
+#: backend/apps/members/join_links.py
+msgid "This team link has no places left. Ask your manager for a new one."
+msgstr ""
+"В этой ссылке для команды не осталось мест. Попросите у руководителя новую."
+
+#: backend/apps/members/join_links.py
+#, python-format
+msgid "%(count)d person joined through «%(link)s»"
+msgid_plural "%(count)d people joined through «%(link)s»"
+msgstr[0] "По ссылке «%(link)s» присоединился %(count)d человек"
+msgstr[1] "По ссылке «%(link)s» присоединились %(count)d человека"
+msgstr[2] "По ссылке «%(link)s» присоединились %(count)d человек"
+msgstr[3] "По ссылке «%(link)s» присоединились %(count)d человек"
+
+#: backend/apps/members/join_links.py
+#, python-format
+msgid "Joined: %(uses)d of %(places)d"
+msgstr "Присоединились: %(uses)d из %(places)d"
+
+#: backend/apps/members/join_links.py
+#, python-format
+msgid "Joined in total: %(uses)d"
+msgstr "Всего присоединились: %(uses)d"
 
 #: backend/apps/members/models.py
 msgid "Owners have every permission."
@@ -5430,8 +5559,63 @@ msgid ""
 msgstr "При отстранении: последний день отстранения. Пусто: до восстановления."
 
 #: backend/apps/members/models.py
+msgid "The team link they joined through."
+msgstr "Ссылка для команды, по которой человек присоединился."
+
+#: backend/apps/members/models.py
+msgid "A team link let them in, without anyone's check."
+msgstr "Присоединился по ссылке для команды, без проверки."
+
+#: backend/apps/members/models.py
 msgid "Must be one of the branches they work in."
 msgstr "Должен быть одним из филиалов, где работает сотрудник."
+
+#: backend/apps/members/models.py backend/apps/projects/models.py
+msgid "Active"
+msgstr "Активен"
+
+#: backend/apps/members/models.py
+msgid "Full"
+msgstr "Мест нет"
+
+#: backend/apps/members/models.py
+msgid "Stopped"
+msgstr "Остановлена"
+
+#: backend/apps/members/models.py
+msgid ""
+"Whose approval it stands for: their permissions are checked at every join."
+msgstr ""
+"Чьё одобрение она заменяет: его права проверяются при каждом вступлении."
+
+#: backend/apps/members/models.py
+msgid "People join straight away. Off: they wait for approval."
+msgstr "Люди присоединяются сразу. Если выключено, ждут одобрения."
+
+#: backend/apps/members/models.py
+msgid "Empty: the default role."
+msgstr "Пусто: роль по умолчанию."
+
+#: backend/apps/members/models.py
+msgid "Chosen for them when they create their account (they can change it)."
+msgstr "Выбирается за человека при создании аккаунта (можно изменить)."
+
+#: backend/apps/members/models.py
+msgid "How many people can join through it. Empty: no limit."
+msgstr ""
+"Сколько человек может присоединиться по ссылке. Пусто: без ограничений."
+
+#: backend/apps/members/models.py
+msgid "People who created their account through it."
+msgstr "Сколько человек создали аккаунт по этой ссылке."
+
+#: backend/apps/members/models.py
+msgid "Off: stopped by hand."
+msgstr "Выключено: остановлена вручную."
+
+#: backend/apps/members/models.py
+msgid "Approvers have heard about everyone who joined through it until then."
+msgstr "До этого момента одобряющим сообщили обо всех, кто присоединился."
 
 #: backend/apps/members/owner_api.py
 msgid "Changing a role needs roles.manage."
@@ -5444,10 +5628,6 @@ msgstr "Уволить можно только действующего сотр
 #: backend/apps/members/owner_api.py
 msgid "Send the position ids in their new order."
 msgstr "Передайте ID должностей в новом порядке."
-
-#: backend/apps/members/owner_api.py backend/apps/members/services.py
-msgid "Pick a position of this company."
-msgstr "Выберите должность этой компании."
 
 #: backend/apps/members/permissions.py
 msgid "View members"
@@ -5801,8 +5981,8 @@ msgid "You can only give a role whose permissions you have yourself."
 msgstr "Можно выдать только ту роль, все права которой есть и у вас."
 
 #: backend/apps/members/services.py
-msgid "Pick a role of this company."
-msgstr "Выберите роль этой компании."
+msgid "They haven't filled in their details yet."
+msgstr "Человек ещё не заполнил свои данные."
 
 #: backend/apps/members/services.py
 msgid "You've already completed registration."
@@ -5875,10 +6055,6 @@ msgstr "Изменить владельца может только владел
 #: backend/apps/members/services.py
 msgid "A first name is required."
 msgstr "Нужно указать имя."
-
-#: backend/apps/members/services.py
-msgid "You can only give the branches you manage."
-msgstr "Можно назначать только те филиалы, которыми вы управляете."
 
 #: backend/apps/members/services.py
 msgid "The home branch must be one of their branches."
@@ -6306,10 +6482,6 @@ msgstr "Один из цветов палитры: chart-1 … chart-8."
 #: backend/apps/projects/models.py
 msgid "Planning"
 msgstr "Планирование"
-
-#: backend/apps/projects/models.py
-msgid "Active"
-msgstr "Активен"
 
 #: backend/apps/projects/models.py
 msgid "On hold"
@@ -10650,11 +10822,6 @@ msgstr "На работе: %(present)d/%(rostered)d"
 #, python-format
 msgid "Tasks: %(done)d/%(total)d"
 msgstr "Задачи: %(done)d/%(total)d"
-
-#: owner_bot/ownerbot/brief.py
-#, python-format
-msgid "and %(count)d more"
-msgstr "и ещё %(count)d"
 
 #: owner_bot/ownerbot/brief.py
 #, python-format

@@ -80,6 +80,14 @@ def send_join_decision(membership_id: int) -> None:
         )
 
 
+def send_joined(membership_id: int) -> None:
+    """The welcome for someone a team link let in, with the main menu."""
+    membership = _load(membership_id)
+    if membership is None or membership.status != Membership.Status.APPROVED:
+        return
+    _send_to_member(membership, bot_messages.joined)
+
+
 def send_onboarding_complete(membership_id: int) -> None:
     membership = _load(membership_id)
     if membership is None or membership.user.telegram_id is None:
