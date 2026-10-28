@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 15:28+0500\n"
+"POT-Creation-Date: 2026-10-26 16:37+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -5443,6 +5443,10 @@ msgstr "Распределять можно только текущих сотр
 msgid "%(name)s works in a branch you don't manage."
 msgstr "%(name)s работает в филиале, которым вы не управляете."
 
+#: backend/apps/members/departments.py backend/apps/members/services.py
+msgid "Only owners can change an owner."
+msgstr "Изменить владельца может только владелец."
+
 #: backend/apps/members/departments.py
 msgid "Give the department a name."
 msgstr "Дайте отделу название."
@@ -5462,6 +5466,13 @@ msgstr "Отдел нельзя поместить внутрь самого с�
 #: backend/apps/members/departments.py
 msgid "The head must be a current member of the company."
 msgstr "Руководителем может быть только текущий сотрудник компании."
+
+#: backend/apps/members/departments.py
+msgid ""
+"Only owners, and people who give and check tasks themselves, choose heads."
+msgstr ""
+"Руководителей назначают только владельцы и те, кто сам даёт и проверяет "
+"задачи."
 
 #: backend/apps/members/departments.py
 #, python-format
@@ -6132,10 +6143,6 @@ msgstr "Этот человек не заблокирован."
 #: backend/apps/members/services.py
 msgid "Only current members can be changed."
 msgstr "Изменять можно только действующих сотрудников."
-
-#: backend/apps/members/services.py
-msgid "Only owners can change an owner."
-msgstr "Изменить владельца может только владелец."
 
 #: backend/apps/members/services.py
 msgid "A first name is required."
@@ -9645,6 +9652,14 @@ msgstr "Если никто не проверит за столько часов
 msgid "Use without or only."
 msgstr "Используйте «without» или «only»."
 
+#: backend/apps/tasks/owner_api.py backend/apps/tasks/services.py
+msgid "You can't assign tasks to others."
+msgstr "Вы не можете назначать задачи другим."
+
+#: backend/apps/tasks/owner_api.py
+msgid "Rewards need the right to assign tasks."
+msgstr "Чтобы назначить награду, нужно право давать задачи."
+
 #: backend/apps/tasks/owner_api.py
 msgid "Some of the people picked don't work here."
 msgstr "Некоторые из выбранных людей здесь не работают."
@@ -9894,6 +9909,10 @@ msgstr "Решает тот, кто поручил задачу, или руко
 msgid "Pick who gets it."
 msgstr "Выберите, кому передать."
 
+#: backend/apps/tasks/services.py
+msgid "You can only give it to your own people."
+msgstr "Её можно передать только своим сотрудникам."
+
 #: backend/apps/tasks/services.py backend/apps/timeoff/bot_messages.py
 #, python-format
 msgid "Reason: %(reason)s"
@@ -10066,10 +10085,6 @@ msgstr "Вы не можете принять эту задачу."
 #: backend/apps/tasks/services.py
 msgid "This task isn't waiting for a check."
 msgstr "Эта задача не ждёт проверки."
-
-#: backend/apps/tasks/services.py
-msgid "You can't assign tasks to others."
-msgstr "Вы не можете назначать задачи другим."
 
 #: backend/apps/tasks/services.py
 msgid "That list or milestone is on another board."

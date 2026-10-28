@@ -287,7 +287,7 @@ describe("feature hosts in the real screens", () => {
   });
 
   it("say on Me which department someone is in and whom they report to", () => {
-    renderWith(<Profile />, { member: { department: { id: 4, name: "Savdo" }, manager: { id: 9, name: "Bekzod Mirzayev" } } });
+    renderWith(<Profile />, { member: { department: { id: 4, name: "Savdo" }, manager: { id: 9, name: "Bekzod Mirzayev", photo_url: null } } });
     expect(screen.getByText("Savdo · Your head: Bekzod Mirzayev")).toBeTruthy();
   });
 

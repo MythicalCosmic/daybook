@@ -11,6 +11,7 @@ from apps.companies.models import Branch, Company, Feature
 from apps.members import bot_messages, departments, scope, services
 from apps.members.models import Membership, Position
 from apps.members.permissions import Perm
+from apps.members.queries import person_ref
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -110,18 +111,28 @@ class MembershipSerializer(serializers.ModelSerializer):
     @extend_schema_field(
         inline_serializer(
             "MembersManager",
-            {"id": serializers.IntegerField(), "name": serializers.CharField()},
+            {
+                "id": serializers.IntegerField(),
+                "name": serializers.CharField(),
+                "photo_url": serializers.CharField(allow_null=True),
+            },
             allow_null=True,
         )
     )
     def get_manager(self, membership: Membership) -> dict | None:
         """Their own head (the nearest head above them in the departments)."""
-        head = departments.manager_of(membership)
-        return {"id": head.pk, "name": str(head)} if head else None
+        return person_ref(departments.manager_of(membership, org=self._org(membership)))
 
     def get_team_size(self, membership: Membership) -> int:
         """People they manage through departments: a head may give them work."""
-        return len(departments.team_ids(membership))
+        return len(departments.team_ids(membership, org=self._org(membership)))
+
+    def _org(self, membership: Membership) -> departments.Org:
+        """The company's departments, loaded once per response."""
+        orgs = self.context.setdefault("orgs", {})
+        if membership.company_id not in orgs:
+            orgs[membership.company_id] = departments.Org(membership.company_id)
+        return orgs[membership.company_id]
 
     @extend_schema_field(serializers.ListField(child=serializers.IntegerField()))
     def get_branch_ids(self, membership: Membership) -> list[int]:

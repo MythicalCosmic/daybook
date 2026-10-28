@@ -456,6 +456,9 @@ class PeopleViewSet(
             OpenApiParameter("position", int, many=True),
             OpenApiParameter("role", int, many=True),
             OpenApiParameter("branch", int, many=True),
+            OpenApiParameter(
+                "department", int, many=True, description="With every department below it."
+            ),
             OpenApiParameter("bot_blocked", bool),
             OpenApiParameter("ordering", str, description="name, position, branch, joined"),
         ]

@@ -17,6 +17,7 @@ from aiogram.utils.chat_action import ChatActionSender
 from asgiref.sync import sync_to_async
 from django.core.exceptions import PermissionDenied
 from django.core.files.base import ContentFile
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
@@ -24,6 +25,7 @@ from apps.core.exceptions import DomainError
 from apps.members import departments
 from apps.members.bot_messages import MENU_MY_TASKS, MENU_TO_CHECK, BotMessage
 from apps.members.models import Membership
+from apps.members.scope import branch_ids, restrict
 from apps.tasks import bot_messages as task_messages
 from apps.tasks import dates, queries, services
 from apps.tasks.callbacks import (
@@ -884,8 +886,26 @@ def _cancel(member: Membership, task_id: int) -> Outcome:
 
 @sync_to_async
 def _colleagues(member: Membership, *, exclude: int | None = None) -> list[Membership]:
-    """Registered people the member may give work to (their branch scope with tasks.assign, the
-    people they head), by name."""
-    people = departments.assignable(member).select_related("user", "position")
-    found = [person for person in people if person.pk != exclude]
+    """Registered people a card's "Someone else" offers, by name: the member's branch scope
+    and the people they head. The server decides per task who may really get it (a project's
+    lead hands a card to its people, a head only to theirs)."""
+    registered = Membership.objects.for_company(member.company_id).filter(
+        status=Membership.Status.APPROVED, onboarded_at__isnull=False
+    )
+    people = restrict(registered, branch_ids(member), field="branches")
+    team = departments.team_ids(member)
+    if team:
+        people = registered.filter(Q(pk__in=people.values("pk")) | Q(pk__in=team))
+    found = [
+        person
+        for person in people.select_related("user", "position")
+        if person.pk not in (member.pk, exclude)
+    ]
     return sorted(found, key=lambda person: str(person).lower())
+
+
+@sync_to_async
+def _assignable(member: Membership) -> list[Membership]:
+    """Registered people "New task" offers: whom the member may give work to, by name."""
+    people = departments.assignable(member).select_related("user", "position")
+    return sorted(people, key=lambda person: str(person).lower())

@@ -150,12 +150,13 @@ def request_access(user: User, company: Company) -> tuple[Membership, bool]:
 
     membership.status = Membership.Status.PENDING
     # Someone coming back starts over: they get the default role again on approval, and the
-    # team link they once came through no longer speaks for them.
+    # team link they once came through and the department they were in no longer apply.
     membership.role = None
     membership.decided_by = None
     membership.decided_at = None
     membership.join_link = None
     membership.joined_by_link = False
+    membership.department = None
     membership.save()
     if membership.is_onboarded:
         # Their details are on file, so the request goes straight back to the approvers.
@@ -766,6 +767,7 @@ def update_member(
                 department.name if department else None,
             ]
             membership.department = department
+            bump_on_commit(company.pk, "members.departments")  # the org chart's counts
 
     new_branches = None
     if branches is not None:
@@ -1250,7 +1252,8 @@ def _wind_down(membership: Membership, *, by: Membership | None) -> None:
     off they won't be taking, one row at a time so `time_off_cancelled` reaches the apps that
     keep balances."""
     task_services.hand_back_work(membership)
-    Department.objects.filter(head=membership).update(head=None)
+    if Department.objects.filter(head=membership).update(head=None):
+        bump_on_commit(membership.company_id, "members.departments")
     cancelled = (
         TimeOff.objects.select_for_update()
         .filter(

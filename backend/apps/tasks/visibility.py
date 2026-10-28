@@ -45,3 +45,15 @@ def apply_filters(tasks: QuerySet, member) -> QuerySet:
 
 def registered_keys() -> list[str]:
     return sorted(_filters)
+
+
+def head_sees(task, member) -> bool:
+    """Whether `member` heads the task's assignee (apps.members.departments) and the registered
+    filters let them see it (a card of a members-only project stays hidden from a head who
+    isn't on it). Someone's personal tasks are never their head's."""
+    from apps.members.departments import manages
+    from apps.tasks.models import Task
+
+    if task.kind == Task.Kind.PERSONAL or not manages(member, task.assignee):
+        return False
+    return apply_filters(Task.objects.filter(pk=task.pk), member).exists()

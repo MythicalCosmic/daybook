@@ -1,6 +1,5 @@
-"""Review of departments (dept/review): failing tests that pin down each finding on dept/core.
-
-Each test failed on dept/core (304273b)."""
+"""Departments: the rules a review pinned down (owners stay above non-owners, the chain of
+command never loops, returning people start outside it, the org chart refreshes, deep trees)."""
 
 import contextlib
 

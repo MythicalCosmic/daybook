@@ -1,7 +1,5 @@
-"""Review of departments in the employee bot (dept/review): failing tests that pin down each
-finding on dept/core.
-
-Each test failed on dept/core (304273b)."""
+"""The employee bot's people pickers with departments: a card's "Someone else" still offers the
+member's branch (the server decides per task)."""
 
 import pytest
 from asgiref.sync import sync_to_async

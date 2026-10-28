@@ -1,13 +1,13 @@
-"""Who may do what with a task. Pure checks: no queries beyond already-loaded relations and the
-member's team, loaded once and kept on the member (apps.members.departments.team_ids)."""
+"""Who may do what with a task. Pure checks: no queries beyond already-loaded relations, except
+for a department head (their team, kept on the member, and whether they may see the task)."""
 
 from datetime import datetime, timedelta
 from enum import StrEnum
 
-from apps.members.departments import manages
 from apps.members.models import Membership
 from apps.members.permissions import Perm
 from apps.tasks.models import Proof, Task
+from apps.tasks.visibility import head_sees
 
 
 class Action(StrEnum):
@@ -59,9 +59,9 @@ def can_review(task: Task, member: Membership) -> bool:
         return False
     if task.kind == Task.Kind.ASSIGNED and task.created_by_id == member.pk:
         return True
-    if task.kind != Task.Kind.PERSONAL and manages(member, task.assignee):
+    if member.has_perm(Perm.TASKS_CONFIRM):
         return True
-    return member.has_perm(Perm.TASKS_CONFIRM)
+    return head_sees(task, member)
 
 
 def can_manage(task: Task, member: Membership) -> bool:
@@ -113,12 +113,14 @@ def can_nudge(task: Task, member: Membership) -> bool:
         return False
     if task.kind == Task.Kind.PERSONAL or not task.is_open:
         return False
-    if task.created_by_id == member.pk or manages(member, task.assignee):
+    if task.created_by_id == member.pk:
         return True
-    return any(
+    if any(
         member.has_perm(perm)
         for perm in (Perm.TASKS_ASSIGN, Perm.TASKS_CONFIRM, Perm.TASKS_TEMPLATES)
-    )
+    ):
+        return True
+    return head_sees(task, member)
 
 
 def owner_actions(task: Task, member: Membership) -> list[str]:

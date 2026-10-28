@@ -36,6 +36,8 @@ CURRENT = (Membership.Status.APPROVED, Membership.Status.SUSPENDED)
 UNSET = object()
 # People placed into a department in one go at most.
 PLACE_LIMIT = 200
+# What heading a department amounts to, for the people below: who may choose heads holds it.
+HEAD_RIGHTS = (Perm.TASKS_ASSIGN, Perm.TASKS_CONFIRM, Perm.TASKS_VIEW_ALL)
 
 
 class Org:
@@ -45,12 +47,30 @@ class Org:
         self.departments: dict[int, Department] = {
             department.pk: department
             for department in Department.objects.filter(company_id=company_id).select_related(
-                "head__user"
+                "head__user", "head__role"
             )
         }
         self.children: dict[int | None, list[int]] = defaultdict(list)
         for department in sorted(self.departments.values(), key=lambda d: (d.name.lower(), d.pk)):
-            self.children[department.parent_id].append(department.pk)
+            parent = department.parent_id if department.parent_id in self.departments else None
+            self.children[parent].append(department.pk)
+        # Parents before children, siblings by name; depth 1 at the top. Walked without
+        # recursion, so a deep tree can't overflow the stack.
+        self.order: list[int] = []
+        self.depths: dict[int, int] = {}
+        stack = [(pk, 1) for pk in reversed(self.children.get(None, ()))]
+        while stack:
+            pk, depth = stack.pop()
+            if pk in self.depths:
+                continue
+            self.depths[pk] = depth
+            self.order.append(pk)
+            stack.extend((child, depth + 1) for child in reversed(self.children.get(pk, ())))
+        # Member -> the departments they head, in tree order.
+        self.heads: dict[int, list[int]] = defaultdict(list)
+        for pk in self.order:
+            if (head_id := self.departments[pk].head_id) is not None:
+                self.heads[head_id].append(pk)
 
     def __bool__(self) -> bool:
         return bool(self.departments)
@@ -67,37 +87,42 @@ class Org:
         return found
 
     def headed_by(self, member_id: int) -> list[int]:
-        return [pk for pk in self.in_tree_order() if self.departments[pk].head_id == member_id]
+        return list(self.heads.get(member_id, ()))
 
     def managed(self, member_id: int) -> set[int]:
         """The departments a member manages: the ones they head and everything below."""
         return self.below(self.headed_by(member_id))
 
+    def anchor(self, member_id: int, department_id: int | None) -> int | None:
+        """Where someone sits in the tree: the highest of the departments they head and the one
+        they're in (one they head wins a tie). Heads and teams are reckoned from it, so the
+        chain of command can't loop: whoever sits higher is never managed from below."""
+        options = [(self.depths[pk], 0, pk) for pk in self.heads.get(member_id, ())]
+        if department_id in self.depths:
+            options.append((self.depths[department_id], 1, department_id))
+        return min(options)[2] if options else None
+
     def head_above(self, person: Membership) -> Membership | None:
-        """The person's own head: going up from their department (or, when they're in none, the
-        highest one they head), the first approved head who isn't them."""
-        start = person.department_id if person.department_id in self.departments else None
-        if start is None:
-            headed = self.headed_by(person.pk)
-            start = min(headed, key=self.depth) if headed else None
-        pk, seen = start, set()
+        """The person's own head: going up from where they sit (`anchor`), the first approved
+        head who isn't them. An owner's head can only be another owner."""
+        owner = is_owner(person)
+        pk, seen = self.anchor(person.pk, person.department_id), set()
         while pk is not None and pk not in seen:
             seen.add(pk)
             department = self.departments[pk]
             head = department.head
-            approved = head is not None and head.status == Membership.Status.APPROVED
-            if approved and head.pk != person.pk:
+            if (
+                head is not None
+                and head.pk != person.pk
+                and head.status == Membership.Status.APPROVED
+                and (is_owner(head) or not owner)
+            ):
                 return head
             pk = department.parent_id
         return None
 
     def depth(self, pk: int) -> int:
-        depth, seen = 0, set()
-        while pk is not None and pk not in seen:
-            seen.add(pk)
-            pk = self.departments[pk].parent_id
-            depth += 1
-        return depth
+        return self.depths.get(pk, 0)
 
     def path(self, pk: int) -> list[str]:
         """Names from the top down to the department."""
@@ -110,49 +135,53 @@ class Org:
 
     def in_tree_order(self) -> list[int]:
         """Parents before their children, siblings by name."""
-        ordered: list[int] = []
+        return list(self.order)
 
-        def walk(parent):
-            for pk in self.children.get(parent, ()):
-                ordered.append(pk)
-                walk(pk)
 
-        walk(None)
-        return ordered
+def is_owner(member: Membership) -> bool:
+    return member.role_id is not None and member.role.is_owner
 
 
 # Whom a member manages --------------------------------------------------------------------------
 
 
-def team_ids(member: Membership) -> frozenset[int]:
-    """The memberships `member` manages: current people of the departments they head and of
-    every department below, with those departments' heads; never themselves. Cached on the
-    member object (one query for someone who heads nothing)."""
+def team_ids(member: Membership, org: Org | None = None) -> frozenset[int]:
+    """The memberships `member` manages: the current people who sit (`Org.anchor`) in a
+    department they head or below it; never themselves, and an owner only when they're an
+    owner too. Cached on the member object; `org` saves loading the tree again (without it,
+    someone who heads nothing costs one query)."""
     cached = getattr(member, "_team_ids", None)
     if cached is not None:
         return cached
     team: frozenset[int] = frozenset()
     if member.pk and member.status == Membership.Status.APPROVED:
-        heads_something = Department.objects.filter(
-            company_id=member.company_id, head_id=member.pk
-        ).exists()
-        if heads_something:
+        if (
+            org is None
+            and Department.objects.filter(company_id=member.company_id, head_id=member.pk).exists()
+        ):
             org = Org(member.company_id)
-            managed = org.managed(member.pk)
-            people = set(
-                Membership.objects.filter(
-                    company_id=member.company_id, department_id__in=managed, status__in=CURRENT
-                ).values_list("pk", flat=True)
-            )
-            heads = {
-                org.departments[pk].head_id
-                for pk in managed
-                if org.departments[pk].head is not None
-                and org.departments[pk].head.status in CURRENT
-            }
-            team = frozenset((people | heads) - {member.pk})
+        if org is not None and org.heads.get(member.pk):
+            team = _team(org, member)
     member._team_ids = team
     return team
+
+
+def _team(org: Org, member: Membership) -> frozenset[int]:
+    managed = org.managed(member.pk)
+    heads = {org.departments[pk].head_id for pk in managed} - {None}
+    sees_owners = is_owner(member)
+    candidates = (
+        Membership.objects.filter(company_id=member.company_id, status__in=CURRENT)
+        .filter(Q(department_id__in=managed) | Q(pk__in=heads))
+        .values_list("pk", "department_id", "role__is_owner")
+    )
+    return frozenset(
+        pk
+        for pk, department_id, owner in candidates
+        if pk != member.pk
+        and org.anchor(pk, department_id) in managed
+        and (sees_owners or not owner)
+    )
 
 
 def manages(member: Membership, person: Membership) -> bool:
@@ -164,9 +193,9 @@ def leads(member: Membership) -> bool:
     return bool(team_ids(member))
 
 
-def manager_of(person: Membership) -> Membership | None:
+def manager_of(person: Membership, org: Org | None = None) -> Membership | None:
     """The person's own head, or None."""
-    org = Org(person.company_id)
+    org = org if org is not None else Org(person.company_id)
     return org.head_above(person) if org else None
 
 
@@ -219,7 +248,7 @@ def create_department(
     _ensure_editor(company, by)
     _lock(company)
     department = Department(company=company)
-    _apply(department, {"name": name, "parent": parent, "head": head})
+    _apply(department, {"name": name, "parent": parent, "head": head}, by=by)
     department.save()
     audit.record(
         MemberAction.DEPARTMENT_CREATED, company_id=company.pk, actor=by.user, target=department
@@ -237,7 +266,7 @@ def update_department(department: Department, *, by: Membership, **fields) -> De
     _ensure_editor(department.company, by)
     _lock(department.company)
     department = Department.objects.select_related("company", "head").get(pk=department.pk)
-    changes = _apply(department, fields)
+    changes = _apply(department, fields, by=by)
     if not changes:
         return department
     department.save()
@@ -271,6 +300,8 @@ def delete_department(department: Department, *, by: Membership) -> None:
                 _("«%(name)s» already exists there. Rename one of them first.")
                 % {"name": child.name}
             )
+    # Free its name first: a part named like it ("Savdo" in "Savdo") moves up into its place.
+    Department.objects.filter(pk=department.pk).update(name=f"~{department.pk}")
     Department.objects.filter(parent=department).update(parent=department.parent)
     Membership.objects.filter(department=department).update(department=department.parent)
     audit.record(
@@ -300,6 +331,8 @@ def place(department: Department, *, by: Membership, people: list[Membership]) -
             raise PermissionDenied(
                 _("%(name)s works in a branch you don't manage.") % {"name": person}
             )
+        if is_owner(person) and not is_owner(by) and person.pk != by.pk:
+            raise PermissionDenied(_("Only owners can change an owner."))
         if person.department_id == department.pk:
             continue
         old = person.department.name if person.department_id else None
@@ -317,7 +350,7 @@ def place(department: Department, *, by: Membership, people: list[Membership]) -
     return moved
 
 
-def _apply(department: Department, fields: dict) -> dict:
+def _apply(department: Department, fields: dict, *, by: Membership) -> dict:
     """Check `fields` and set them on `department`; returns {field: [before, after]}."""
     company_id = department.company_id
     org = Org(company_id)
@@ -348,6 +381,10 @@ def _apply(department: Department, fields: dict) -> dict:
             head.company_id != company_id or head.status != Membership.Status.APPROVED
         ):
             raise DomainError(_("The head must be a current member of the company."))
+        if head is not None and head.pk != department.head_id and not _may_appoint(by):
+            raise PermissionDenied(
+                _("Only owners, and people who give and check tasks themselves, choose heads.")
+            )
         if (head.pk if head else None) != department.head_id:
             changes["head"] = [
                 str(department.head) if department.head_id else None,
@@ -362,6 +399,14 @@ def _apply(department: Department, fields: dict) -> dict:
             _("There's already a department named «%(name)s» there.") % {"name": department.name}
         )
     return changes
+
+
+def _may_appoint(by: Membership) -> bool:
+    """A head gives, sees and checks their people's work: only someone holding those rights
+    themselves (an owner holds every right) hands them out (the role rules' rule 2)."""
+    from apps.members.services import may_grant
+
+    return may_grant(by, HEAD_RIGHTS)
 
 
 def _ensure_editor(company: Company, by: Membership) -> None:

@@ -1,7 +1,6 @@
-"""Review of department heads and tasks (dept/review): failing tests that pin down each finding
-on dept/core.
-
-Each test failed on dept/core (304273b)."""
+"""Department heads and tasks: the rules a review pinned down (a head hands blocked work only to
+their own people, never checks their own head's work, gives work from the dashboard, stays out of
+members-only projects; late routine work reaches the branch's checkers as well)."""
 
 from datetime import timedelta
 
