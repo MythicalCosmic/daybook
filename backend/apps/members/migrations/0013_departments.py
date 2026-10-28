@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('companies', '0007_alter_company_default_language'),
-        ('members', '0011_join_link_deleted'),
+        ('members', '0012_default_positions'),
     ]
 
     operations = [
