@@ -9,7 +9,7 @@ from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from django.db import transaction
-from django.db.models import Case, F, IntegerField, Value, When
+from django.db.models import Case, F, IntegerField, Q, Value, When
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
@@ -20,6 +20,7 @@ from rest_framework.response import Response
 from apps.companies.models import Branch
 from apps.console.base import AnyOf, OwnerAPIView, OwnerViewSet
 from apps.core.exceptions import DomainError
+from apps.members import departments
 from apps.members.models import Membership, Position
 from apps.members.permissions import Perm
 from apps.members.scope import restrict
@@ -202,16 +203,14 @@ class TaskOwnerViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerVi
         "board": Perm.TASKS_VIEW_ALL,
         "calendar": Perm.TASKS_VIEW_ALL,
         "summary": Perm.TASKS_VIEW_ALL,
-        "create": Perm.TASKS_ASSIGN,
+        "create": None,  # tasks.assign, or a head giving their own people work (checked below)
         "partial_update": AnyOf(Perm.TASKS_ASSIGN, Perm.TASKS_TEMPLATES),
         "bulk": AnyOf(Perm.TASKS_ASSIGN, Perm.TASKS_CONFIRM),
         "reassign": AnyOf(Perm.TASKS_ASSIGN, Perm.TASKS_TEMPLATES),
         "cancel": AnyOf(Perm.TASKS_ASSIGN, Perm.TASKS_TEMPLATES),
         # The pickers list people, positions and policies: for whoever works with tasks, not
         # for every dashboard user (an accountant has no business with the staff list here).
-        "options": AnyOf(
-            Perm.TASKS_VIEW_ALL, Perm.TASKS_ASSIGN, Perm.TASKS_TEMPLATES, Perm.TASKS_CONFIRM
-        ),
+        "options": None,  # whoever works with tasks, or heads a department (checked below)
         "parse": AnyOf(
             Perm.TASKS_VIEW_ALL, Perm.TASKS_ASSIGN, Perm.TASKS_TEMPLATES, Perm.TASKS_CONFIRM
         ),
@@ -269,13 +268,18 @@ class TaskOwnerViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerVi
     def create(self, request, company_id):
         """One task per person: the people chosen, plus everyone holding the positions or working
         in the branches chosen (the creator is left out of groups)."""
+        member = self.membership
+        if not (member.has_perm(Perm.TASKS_ASSIGN) or departments.leads(member)):
+            self.permission_denied(request, message=_("You can't assign tasks to others."))
         data = TaskCreateSerializer(data=request.data)
         data.is_valid(raise_exception=True)
         fields = dict(data.validated_data)
+        if fields.get("reward") is not None and not member.has_perm(Perm.TASKS_ASSIGN):
+            self.permission_denied(request, message=_("Rewards need the right to assign tasks."))
         people = self._people(
             fields.pop("assignee_ids"), fields.pop("position_ids"), fields.pop("branch_ids")
         )
-        tasks = services.create_for_many(by=self.membership, people=people, **fields)
+        tasks = services.create_for_many(by=member, people=people, **fields)
         return Response(
             {"created": len(tasks), "ids": [task.pk for task in tasks]},
             status=status.HTTP_201_CREATED,
@@ -612,16 +616,31 @@ class TaskOwnerViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, OwnerVi
     )
     @action(detail=False, methods=["get"])
     def options(self, request, company_id):
-        """What the pickers offer: people the caller may give work to (their branch scope),
-        positions, routines and reminder policies."""
+        """What the pickers offer: people the caller may give work to (their branch scope, and
+        the people they head), positions, routines and reminder policies."""
         company = self.company
-        people = restrict(
-            Membership.objects.for_company(company).filter(
-                status=Membership.Status.APPROVED, onboarded_at__isnull=False
-            ),
-            self.branch_scope,
-            field="branches",
-        ).select_related("user", "position", "home_branch")
+        member = self.membership
+        works_with_tasks = any(
+            member.has_perm(perm)
+            for perm in (
+                Perm.TASKS_VIEW_ALL,
+                Perm.TASKS_ASSIGN,
+                Perm.TASKS_TEMPLATES,
+                Perm.TASKS_CONFIRM,
+            )
+        )
+        team = departments.team_ids(member)
+        if not (works_with_tasks or team):
+            self.permission_denied(request)
+        registered = Membership.objects.for_company(company).filter(
+            status=Membership.Status.APPROVED, onboarded_at__isnull=False
+        )
+        people = restrict(registered, self.branch_scope, field="branches")
+        if not works_with_tasks:
+            people = registered.filter(pk__in=team)
+        elif team:
+            people = registered.filter(Q(pk__in=people.values("pk")) | Q(pk__in=team))
+        people = people.select_related("user", "position", "home_branch")
         return Response(
             {
                 "people": [

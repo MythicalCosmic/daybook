@@ -5145,9 +5145,13 @@ components:
           type: integer
         name:
           type: string
+        photo_url:
+          type: string
+          nullable: true
       required:
       - id
       - name
+      - photo_url
     Membership:
       type: object
       properties:

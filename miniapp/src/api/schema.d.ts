@@ -2253,6 +2253,7 @@ export interface components {
         MembersManager: {
             id: number;
             name: string;
+            photo_url: string | null;
         };
         Membership: {
             readonly id: number;

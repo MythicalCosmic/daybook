@@ -97,9 +97,7 @@ async def test_someone_waiting_who_scans_the_link_is_let_in_at_once(dp, bot, com
         user__language="en",
     )
 
-    await dp.feed_update(
-        bot, updates.message(updates.tg_user(605), f"/start {link.start_param}")
-    )
+    await dp.feed_update(bot, updates.message(updates.tg_user(605), f"/start {link.start_param}"))
 
     await waiting.arefresh_from_db()
     assert waiting.status == Membership.Status.APPROVED

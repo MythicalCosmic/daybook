@@ -7025,6 +7025,13 @@ paths:
           type: integer
         required: true
       - in: query
+        name: department
+        schema:
+          type: array
+          items:
+            type: integer
+        description: With every department below it.
+      - in: query
         name: ordering
         schema:
           type: string
@@ -13260,8 +13267,8 @@ paths:
     get:
       operationId: companies_tasks_options_retrieve
       description: |-
-        What the pickers offer: people the caller may give work to (their branch scope),
-        positions, routines and reminder policies.
+        What the pickers offer: people the caller may give work to (their branch scope, and
+        the people they head), positions, routines and reminder policies.
       parameters:
       - in: path
         name: company_id

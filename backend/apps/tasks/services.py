@@ -24,7 +24,7 @@ from apps.members.scope import allows, branch_ids
 from apps.reminders.models import ReminderPolicy
 from apps.reminders.policies import escalation_recipients, policy_for
 from apps.reminders.schedule import first_reminder_at
-from apps.tasks import conf, dates, generation, queries, rules
+from apps.tasks import conf, dates, generation, queries, rules, visibility
 from apps.tasks import tasks as jobs
 from apps.tasks.audit_actions import TasksAction
 from apps.tasks.models import (
@@ -782,7 +782,7 @@ def can_decide(task: Task, member: Membership) -> bool:
         return False
     if task.created_by_id == member.pk or task.escalate_to_id == member.pk:
         return True
-    if departments.manages(member, task.assignee):
+    if visibility.head_sees(task, member):
         return True
     holds = member.has_perm(Perm.TASKS_ASSIGN) or member.has_perm(Perm.TASKS_CONFIRM)
     return holds and allows(branch_ids(member), task.branch_id)
@@ -794,8 +794,9 @@ def _ensure_may_decide(task: Task, by: Membership) -> None:
 
 
 def _colleague(task: Task, by: Membership, member_id: int | None) -> Membership:
-    """The person a blocked task goes to: registered in the task's company, inside the deciding
-    person's scope, not the one who couldn't do it."""
+    """The person a blocked task goes to: registered in the task's company, not the one who
+    couldn't do it, and one of the deciding person's own people when they decide as the
+    assignee's head only; otherwise inside the deciding person's branch scope."""
     if member_id is None:
         raise DomainError(_("Pick who gets it."))
     person = (
@@ -808,8 +809,23 @@ def _colleague(task: Task, by: Membership, member_id: int | None) -> Membership:
         raise DomainError(_("Tasks can only go to registered members of your company."))
     if person.pk == task.assignee_id:
         raise DomainError(_("%(name)s already has this task.") % {"name": person})
+    if departments.manages(by, person):
+        return person  # their own person, wherever they work
+    if _decides_as_head_only(task, by):
+        raise PermissionDenied(_("You can only give it to your own people."))
     _ensure_in_scope(by, person)
     return person
+
+
+def _decides_as_head_only(task: Task, by: Membership) -> bool:
+    """Whether `by` answers a "can't do it" only because they head the assignee: not its giver
+    or escalation contact, holding neither tasks.assign nor tasks.confirm."""
+    return not (
+        task.created_by_id == by.pk
+        or task.escalate_to_id == by.pk
+        or by.has_perm(Perm.TASKS_ASSIGN)
+        or by.has_perm(Perm.TASKS_CONFIRM)
+    )
 
 
 def _clear_blocker(task: Task, by: Membership | None, *, outcome) -> None:

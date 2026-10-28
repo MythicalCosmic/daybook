@@ -39,7 +39,7 @@ from apps.tasks.models import Repeat, Task
 from bot.filters.membership import IsRegistered
 from bot.filters.menu import MenuButton
 from bot.handlers.member import cards
-from bot.handlers.member.tasks import CANCEL_WORDS, _colleagues
+from bot.handlers.member.tasks import CANCEL_WORDS, _assignable
 from bot.states.tasks import NewTask
 
 router = Router(name="member_new_task")
@@ -113,7 +113,7 @@ async def title_expected(message: Message) -> None:
 
 async def _ask_assignee(message: Message, membership: Membership, state: FSMContext) -> None:
     await state.set_state(NewTask.assignee)
-    people = await _colleagues(membership)
+    people = await _assignable(membership)
     markup = task_messages.person_picker(people, me=True)
     await message.answer(task_messages.ask_assignee(), reply_markup=markup)
 
@@ -123,7 +123,7 @@ async def got_assignee(
     callback: CallbackQuery, callback_data: PickCallback, membership: Membership, state: FSMContext
 ) -> None:
     if callback_data.member_id < 0:  # turning the list's pages
-        people = await _colleagues(membership)
+        people = await _assignable(membership)
         markup = task_messages.person_picker(people, me=True, page=callback_data.page)
         await cards.edit_keyboard(callback, markup)
         await callback.answer()

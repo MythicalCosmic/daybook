@@ -163,7 +163,7 @@ def test_the_app_knows_my_department_head_and_team(api_as, company, member, owne
     head = api_as(bekzod).get("/api/v1/me/").data["memberships"][0]
 
     assert mine["department"] == {"id": sales.pk, "name": "Savdo"}
-    assert mine["manager"] == {"id": bekzod.pk, "name": str(bekzod)}
+    assert mine["manager"] == {"id": bekzod.pk, "name": str(bekzod), "photo_url": None}
     assert mine["team_size"] == 0
     assert head["team_size"] == 1
     assert head["manager"]["id"] == owner.pk

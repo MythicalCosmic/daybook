@@ -169,7 +169,7 @@ def reviewers(task: Task) -> list[Membership]:
     ):
         return [creator]
     head = manager_of(task.assignee)
-    if head is not None:
+    if head is not None and visibility.head_sees(task, head):
         return [head]
     return closest_confirmers(task)
 

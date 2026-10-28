@@ -84,7 +84,7 @@ class MeSerializer(serializers.ModelSerializer):
     def get_memberships(self, user: User) -> list[dict]:
         memberships = (
             Membership.objects.filter(user=user, company__is_active=True)
-            .select_related("company", "role", "position", "home_branch")
+            .select_related("company", "role", "position", "home_branch", "department")
             .prefetch_related("branches")
         )
         return MembershipSerializer(memberships, many=True).data

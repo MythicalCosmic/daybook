@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 15:28+0500\n"
+"POT-Creation-Date: 2026-10-26 16:37+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -5521,6 +5521,10 @@ msgstr "Faqat kompaniyaning hozirgi xodimlarini joylash mumkin."
 msgid "%(name)s works in a branch you don't manage."
 msgstr "%(name)s siz boshqarmaydigan filialda ishlaydi."
 
+#: backend/apps/members/departments.py backend/apps/members/services.py
+msgid "Only owners can change an owner."
+msgstr "Egani faqat egalar o‘zgartira oladi."
+
 #: backend/apps/members/departments.py
 msgid "Give the department a name."
 msgstr "Bo‘limga nom bering."
@@ -5540,6 +5544,12 @@ msgstr "Bo‘lim o‘zining ichiga yoki o‘z qismining ichiga o‘tkazilmaydi."
 #: backend/apps/members/departments.py
 msgid "The head must be a current member of the company."
 msgstr "Rahbar kompaniyaning hozirgi xodimi bo‘lishi kerak."
+
+#: backend/apps/members/departments.py
+msgid ""
+"Only owners, and people who give and check tasks themselves, choose heads."
+msgstr ""
+"Rahbarlarni faqat egalar va o‘zi vazifa berib, tekshiradiganlar tayinlaydi."
 
 #: backend/apps/members/departments.py
 #, python-format
@@ -6208,10 +6218,6 @@ msgstr "Bu odam bloklanmagan."
 #: backend/apps/members/services.py
 msgid "Only current members can be changed."
 msgstr "Faqat hozirgi xodimlarni o‘zgartirish mumkin."
-
-#: backend/apps/members/services.py
-msgid "Only owners can change an owner."
-msgstr "Egani faqat egalar o‘zgartira oladi."
 
 #: backend/apps/members/services.py
 msgid "A first name is required."
@@ -9759,6 +9765,14 @@ msgstr "Shuncha soat ichida hech kim tekshirmasa, avtomatik qabul qilish."
 msgid "Use without or only."
 msgstr "«without» yoki «only» qiymatini kiriting."
 
+#: backend/apps/tasks/owner_api.py backend/apps/tasks/services.py
+msgid "You can't assign tasks to others."
+msgstr "Siz boshqalarga vazifa bera olmaysiz."
+
+#: backend/apps/tasks/owner_api.py
+msgid "Rewards need the right to assign tasks."
+msgstr "Mukofot belgilash uchun vazifa berish huquqi kerak."
+
 #: backend/apps/tasks/owner_api.py
 msgid "Some of the people picked don't work here."
 msgstr "Tanlangan odamlarning ba’zilari bu yerda ishlamaydi."
@@ -10010,6 +10024,10 @@ msgstr "Faqat vazifani bergan xodim yoki rahbar qaror qiladi."
 msgid "Pick who gets it."
 msgstr "Kimga berishni tanlang."
 
+#: backend/apps/tasks/services.py
+msgid "You can only give it to your own people."
+msgstr "Uni faqat o‘z xodimlaringizga bera olasiz."
+
 #: backend/apps/tasks/services.py backend/apps/timeoff/bot_messages.py
 #, python-format
 msgid "Reason: %(reason)s"
@@ -10182,10 +10200,6 @@ msgstr "Bu vazifani qabul qila olmaysiz."
 #: backend/apps/tasks/services.py
 msgid "This task isn't waiting for a check."
 msgstr "Bu vazifa tekshiruvni kutmayapti."
-
-#: backend/apps/tasks/services.py
-msgid "You can't assign tasks to others."
-msgstr "Siz boshqalarga vazifa bera olmaysiz."
 
 #: backend/apps/tasks/services.py
 msgid "That list or milestone is on another board."

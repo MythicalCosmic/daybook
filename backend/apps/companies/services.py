@@ -40,6 +40,7 @@ from apps.core.models import Language
 from apps.core.money import Currency
 from apps.core.signals import send_on_commit
 from apps.members.models import AccessRole, Membership
+from apps.members.positions import create_default_positions
 from apps.members.services import create_default_roles
 from apps.reminders.policies import default_policy
 
@@ -224,6 +225,8 @@ def create_company_for(
                 source=copy_from.name,
                 parts=copied,
             )
+        # A pharmacy's usual job titles, unless positions were copied from another company.
+        create_default_positions(company)
     return company, copied
 
 
