@@ -27,7 +27,7 @@ import { useCompanyStore } from "@/stores/company";
 import { useDepartmentMutations, useDepartments, usePeopleStats } from "../api";
 import DepartmentBranch from "../components/DepartmentBranch.vue";
 import type { DepartmentDialogMode } from "../components/DepartmentDialog.vue";
-import { departmentMenu, type DepartmentAction } from "../components/departmentMenu";
+import { departmentMenu, HEAD_PERMS, type DepartmentAction } from "../components/departmentMenu";
 import DepartmentPanel from "../components/DepartmentPanel.vue";
 import { buildDepartmentTree, deleteOutcome, parentPath, placedCount } from "../departments";
 import type { Department } from "../types";
@@ -37,7 +37,7 @@ const DepartmentDialog = defineAsyncComponent(() => import("../components/Depart
 const { t } = useI18n();
 const company = useCompanyStore();
 const confirm = useConfirm();
-const { can } = usePermission();
+const { can, canAll } = usePermission();
 
 const departments = useDepartments();
 const list = computed(() => departments.data.value ?? []);
@@ -56,6 +56,8 @@ const canEdit = computed(() =>
 );
 /** Who puts people in and takes them out (the server checks each person's branches). */
 const canPlace = computed(() => can("members.manage"));
+/** Who chooses heads: owners, or someone who may assign, check and see all work (403 otherwise). */
+const canHead = computed(() => !!company.current?.is_owner || canAll([...HEAD_PERMS]));
 
 /** Department counts are company-wide; the headcount is the viewer's branches: compare them only for someone who sees every branch. */
 const seesEveryBranch = computed(() => !!company.current && (company.current.is_owner || company.current.branch_scope === null));
@@ -79,7 +81,7 @@ watch([selectedId, () => departments.data.value], ([id, data]) => {
 function openPanel(department: Department): void {
   selectedId.value = department.id;
 }
-const panelMenu = computed(() => (selected.value ? departmentMenu(selected.value, t, (action) => onAction(action, selected.value!)) : []));
+const panelMenu = computed(() => (selected.value ? departmentMenu(selected.value, t, (action) => onAction(action, selected.value!), canHead.value) : []));
 
 // ─── Edits ───────────────────────────────────────────────────────────────────
 const dialog = ref<{ mode: DepartmentDialogMode; department: Department | null; parentId: number | null; key: number } | null>(null);
@@ -183,6 +185,7 @@ function onSaved(department: Department): void {
           :node="root"
           :selected-id="selectedId"
           :can-edit="canEdit"
+          :can-head="canHead"
           top
           @open="openPanel"
           @action="onAction"
@@ -202,6 +205,7 @@ function onSaved(department: Department): void {
         :department="selected"
         :departments="list"
         :can-edit="canEdit"
+        :can-head="canHead"
         :can-place="canPlace"
         @open="openPanel"
         @action="onAction"
@@ -216,6 +220,7 @@ function onSaved(department: Department): void {
       :department="dialog.department"
       :parent-id="dialog.parentId"
       :departments="list"
+      :can-head="canHead"
       @saved="onSaved"
     />
   </div>

@@ -33,8 +33,10 @@ const props = withDefaults(
     /** A new department's place: under this one (a sub-department), or at the top level. */
     parentId?: number | null;
     departments: Department[];
+    /** The viewer may choose heads (else a new department starts without one). */
+    canHead?: boolean;
   }>(),
-  { department: null, parentId: null },
+  { department: null, parentId: null, canHead: true },
 );
 const emit = defineEmits<{ saved: [department: Department] }>();
 
@@ -56,7 +58,7 @@ const initial = {
 const shows = computed(() => ({
   name: props.mode === "create" || props.mode === "rename",
   parent: props.mode === "create" || props.mode === "move",
-  head: props.mode === "create" || props.mode === "head",
+  head: (props.mode === "create" && props.canHead) || props.mode === "head",
 }));
 
 const title = computed(() => {

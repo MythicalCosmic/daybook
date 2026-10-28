@@ -23,8 +23,9 @@ import { flattenDepartments, headAbove } from "../departments";
 import type { Department, Person } from "../types";
 import type { DepartmentAction } from "./departmentMenu";
 
-const props = withDefaults(defineProps<{ department: Department; departments: Department[]; canEdit?: boolean; canPlace?: boolean }>(), {
+const props = withDefaults(defineProps<{ department: Department; departments: Department[]; canEdit?: boolean; canHead?: boolean; canPlace?: boolean }>(), {
   canEdit: false,
+  canHead: false,
   canPlace: false,
 });
 const emit = defineEmits<{ open: [department: Department]; action: [action: DepartmentAction, department: Department] }>();
@@ -51,9 +52,11 @@ const adding = ref(false);
 const chosen = ref<number[]>([]);
 const everyone = usePeople({ status: "current", ordering: "name", page_size: 500 }, adding);
 /** Everyone not directly in it: those in no department first (the likeliest to add), then by name. */
+/** Only owners place (or take out) an owner: the server refuses anyone else. */
+const viewerIsOwner = computed(() => !!company.current?.is_owner);
 const options = computed<SelectOption<number>[]>(() =>
   (everyone.data.value?.results ?? [])
-    .filter((row) => row.department?.id !== id.value)
+    .filter((row) => row.department?.id !== id.value && (viewerIsOwner.value || !row.role?.is_owner))
     .sort((a, b) => Number(!!a.department) - Number(!!b.department))
     .map((row: Person) => ({
       value: row.id,
@@ -119,14 +122,14 @@ const teamLink = computed(() => `/c/${company.currentId}/people?department=${id.
       <h3 class="text-xs font-semibold uppercase tracking-[0.06em] text-subtle">{{ t("people.dept.head") }}</h3>
       <div v-if="department.head" class="flex items-center justify-between gap-3">
         <PersonCell :person="department.head" link size="lg" />
-        <UiButton v-if="canEdit" size="sm" variant="secondary" data-panel-change-head @click="emit('action', 'head', department)">{{ t("people.dept.changeHead") }}</UiButton>
+        <UiButton v-if="canEdit && canHead" size="sm" variant="secondary" data-panel-change-head @click="emit('action', 'head', department)">{{ t("people.dept.changeHead") }}</UiButton>
       </div>
       <div v-else class="flex items-center justify-between gap-3">
         <span class="flex min-w-0 items-center gap-2.5">
           <span class="grid size-9 shrink-0 place-items-center rounded-full border border-dashed border-line-strong text-subtle"><UserRound :size="16" aria-hidden="true" /></span>
           <span class="truncate text-base text-muted">{{ t("people.dept.noHead") }}</span>
         </span>
-        <UiButton v-if="canEdit" size="sm" variant="secondary" data-panel-set-head @click="emit('action', 'head', department)">{{ t("people.dept.setHead") }}</UiButton>
+        <UiButton v-if="canEdit && canHead" size="sm" variant="secondary" data-panel-set-head @click="emit('action', 'head', department)">{{ t("people.dept.setHead") }}</UiButton>
       </div>
       <p class="text-sm text-muted">{{ t("people.dept.headHint") }}</p>
       <p v-if="department.head && above" class="flex min-w-0 flex-wrap items-center gap-x-1.5 text-sm text-muted" data-head-above>
@@ -178,7 +181,7 @@ const teamLink = computed(() => `/c/${company.currentId}/people?department=${id.
           <PersonCell class="min-w-0 flex-1" :person="person" :subtitle="person.position?.name ?? t('people.noPosition')" link />
           <UiBadge v-if="department.head?.id === person.id" tone="primary" size="sm">{{ t("people.dept.head") }}</UiBadge>
           <IconButton
-            v-if="canPlace"
+            v-if="canPlace && (viewerIsOwner || !person.role?.is_owner)"
             :icon="X"
             size="sm"
             :label="t('people.dept.remove')"

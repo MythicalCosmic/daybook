@@ -14,9 +14,10 @@ import type { Department } from "../types";
 import DepartmentCard from "./DepartmentCard.vue";
 import type { DepartmentAction } from "./departmentMenu";
 
-const props = withDefaults(defineProps<{ node: DepartmentNode; selectedId?: number | null; canEdit?: boolean; top?: boolean }>(), {
+const props = withDefaults(defineProps<{ node: DepartmentNode; selectedId?: number | null; canEdit?: boolean; canHead?: boolean; top?: boolean }>(), {
   selectedId: null,
   canEdit: false,
+  canHead: false,
   top: false,
 });
 const emit = defineEmits<{ open: [department: Department]; action: [action: DepartmentAction, department: Department] }>();
@@ -51,6 +52,7 @@ function place(index: number): Record<string, boolean> {
       :has-children="children.length > 0"
       :selected="selectedId === node.department.id"
       :can-edit="canEdit"
+      :can-head="canHead"
       :top="top"
       @open="emit('open', node.department)"
       @action="(action) => emit('action', action, node.department)"
@@ -69,6 +71,7 @@ function place(index: number): Record<string, boolean> {
         :class="place(index)"
         :selected-id="selectedId"
         :can-edit="canEdit"
+        :can-head="canHead"
         @open="(department) => emit('open', department)"
         @action="(action, department) => emit('action', action, department)"
       />

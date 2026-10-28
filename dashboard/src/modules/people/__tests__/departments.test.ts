@@ -19,6 +19,7 @@ import { mountWithProviders, testApp } from "@/test/plugins";
 
 import { addDepartmentMembers, createDepartment, deleteDepartment, listDepartments, listPeople, updateDepartment, updatePerson } from "../api";
 import DepartmentCard from "../components/DepartmentCard.vue";
+import { departmentMenu } from "../components/departmentMenu";
 import {
   allowedParents,
   buildDepartmentTree,
@@ -338,6 +339,21 @@ describe("DepartmentsPage", () => {
     expect(wrapper.find("[data-departments-summary]").text()).toBe("7 departments·14 people in departments");
   });
 
+  it("offers heads only to someone who may choose them (owner, or assign + confirm + see all work)", async () => {
+    const editor = manager(["members.manage", "members.view"], { id: 1, name: "Demo Dorixona", branch_scope: null });
+    const { wrapper } = await mountPage(DEPARTMENTS, "/c/1/people/departments", editor);
+    const card = wrapper.findAllComponents(DepartmentCard).find((c) => c.props("department").id === 5)!;
+    expect(card.props("canHead")).toBe(false);
+    expect(card.find("[data-set-head]").exists()).toBe(false);
+    const labels = departmentMenu(DEPARTMENTS[1]!, (key) => key, () => undefined, false).map((entry) => ("label" in entry ? entry.label : entry.type));
+    expect(labels).not.toContain("people.dept.changeHead");
+    expect(labels).not.toContain("people.dept.clearHead");
+    expect(labels).toContain("people.dept.rename");
+    wrapper.unmount();
+    const owner = await mountPage(DEPARTMENTS);
+    expect(owner.wrapper.find('[data-department="5"] [data-set-head]').exists()).toBe(true);
+  });
+
   it("hides editing from someone the server says may not change the structure", async () => {
     const { wrapper } = await mountPage(DEPARTMENTS.map((d) => ({ ...d, can_edit: false })));
     expect(wrapper.find("[data-new-department]").exists()).toBe(false);
@@ -479,6 +495,28 @@ describe("DepartmentPanel", () => {
     await flushPromises();
     await flushPromises();
     expect(again.wrapper.find("[data-panel-partial]").exists()).toBe(false);
+  });
+
+  it("never offers or takes out an owner for someone who isn't one", async () => {
+    const ownerRole = { id: 1, name: "Egasi", is_owner: true };
+    const team = [person(31, "Madina Saidova", { id: 2, name: "Dorixonalar" }), person(21, "Aziz Karimov", { id: 2, name: "Dorixonalar" }, { role: ownerRole })];
+    stub((call) => {
+      if (call.method === "GET" && call.url.includes("department=2")) return json(page(team));
+      if (call.method === "GET" && call.url.includes("/people/")) return json(page([...team, person(50, "Dilnoza Karimova", null, { role: ownerRole }), person(41, "Kamola Ergasheva", null)]));
+      return undefined;
+    });
+    const DepartmentPanel = (await import("../components/DepartmentPanel.vue")).default;
+    const app = await testApp("/c/1/people/departments?department=2");
+    signInAs(manager(["members.manage", "members.view"], { id: 1, name: "Demo Dorixona", branch_scope: null }));
+    const { wrapper } = mountWithProviders(DepartmentPanel, { plugins: app.plugins, props: { department: { ...DEPARTMENTS[2]!, member_count: 2 }, departments: DEPARTMENTS, canPlace: true } });
+    await flushPromises();
+    await flushPromises();
+    expect(wrapper.find('[data-person="31"] [data-take-out]').exists()).toBe(true);
+    expect(wrapper.find('[data-person="21"] [data-take-out]').exists()).toBe(false);
+    await wrapper.find("[data-add-people]").trigger("click");
+    await flushPromises();
+    await flushPromises();
+    expect((optionsOf(wrapper.findComponent(MultiSelect)) as Array<{ value: number }>).map((o) => o.value)).toEqual([41]);
   });
 
   it("adds people from other departments or none, and leaves out those already in it", async () => {

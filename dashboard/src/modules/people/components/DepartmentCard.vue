@@ -2,7 +2,8 @@
 /**
  * A department in the org chart: its name, its head (or that it has none yet), how many people
  * are directly in it and, when sub-departments add people, how many in all. The whole card opens
- * its panel; the head's name opens their page; with `canEdit` a menu changes the structure.
+ * its panel; the head's name opens their page; with `canEdit` a menu changes the structure, and
+ * with `canHead` as well it sets and clears heads.
  */
 import { Ellipsis, UserRound, Users } from "@lucide/vue";
 import { computed } from "vue";
@@ -17,13 +18,13 @@ import { departmentCounts } from "../departments";
 import type { Department } from "../types";
 import { departmentMenu, type DepartmentAction } from "./departmentMenu";
 
-const props = defineProps<{ department: Department; hasChildren: boolean; selected?: boolean; canEdit?: boolean; top?: boolean }>();
+const props = defineProps<{ department: Department; hasChildren: boolean; selected?: boolean; canEdit?: boolean; canHead?: boolean; top?: boolean }>();
 const emit = defineEmits<{ open: []; action: [action: DepartmentAction] }>();
 
 const { t } = useI18n();
 const counts = computed(() => departmentCounts(props.department, props.hasChildren));
 
-const menu = computed(() => departmentMenu(props.department, t, (action) => emit("action", action)));
+const menu = computed(() => departmentMenu(props.department, t, (action) => emit("action", action), props.canHead));
 </script>
 
 <template>
@@ -70,7 +71,7 @@ const menu = computed(() => departmentMenu(props.department, t, (action) => emit
         <span class="min-w-0 leading-tight">
           <span class="block truncate text-sm text-subtle">{{ t("people.dept.noHead") }}</span>
           <button
-            v-if="canEdit"
+            v-if="canEdit && canHead"
             type="button"
             class="pointer-events-auto mt-0.5 block text-xs font-semibold text-primary hover:underline"
             data-set-head
