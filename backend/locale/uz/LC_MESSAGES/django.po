@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-29 13:31+0500\n"
+"POT-Creation-Date: 2026-10-29 14:35+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -2699,7 +2699,7 @@ msgstr "Bu faylni rasm sifatida o‘qib bo‘lmadi. Rasm yuboring."
 msgid "The file is too large (%(megabytes)d MB at most)."
 msgstr "Fayl juda katta (ko‘pi bilan %(megabytes)d MB)."
 
-#: backend/apps/core/uploads.py
+#: backend/apps/core/uploads.py backend/apps/tasks/bot_messages.py
 msgid "photo"
 msgstr "rasm"
 
@@ -8999,6 +8999,10 @@ msgstr "Qaytarish"
 msgid "New time"
 msgstr "Yangi muddat"
 
+#: backend/apps/tasks/bot_messages.py backend/apps/tasks/models.py
+msgid "Photo"
+msgstr "Rasm"
+
 #: backend/apps/tasks/bot_messages.py
 msgid "15 min"
 msgstr "15 daqiqa"
@@ -9459,6 +9463,35 @@ msgstr "Eslatish"
 msgid "To check: %(count)d"
 msgstr "Tekshirish kutilmoqda: %(count)d"
 
+#: backend/apps/tasks/bot_messages.py
+msgid "<b>Open</b>"
+msgstr "<b>Ochiq</b>"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "Nothing open."
+msgstr "Ochiq vazifa yo‘q."
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "late since %(time)s"
+msgstr "kechikmoqda, muddati: %(time)s"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "<b>Done in the last 7 days</b>"
+msgstr "<b>Oxirgi 7 kunda bajarilgan</b>"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "Nothing done in the last 7 days."
+msgstr "Oxirgi 7 kunda bajarilgan vazifa yo‘q."
+
+#: backend/apps/tasks/bot_messages.py
+msgid "report"
+msgstr "hisobot"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "waiting for check"
+msgstr "tekshiruv kutilmoqda"
+
 #: backend/apps/tasks/feeds.py
 #, python-format
 msgid "Finished “%(title)s”"
@@ -9577,10 +9610,6 @@ msgstr "Yakshanba"
 #: backend/apps/tasks/models.py
 msgid "Not needed"
 msgstr "Kerak emas"
-
-#: backend/apps/tasks/models.py
-msgid "Photo"
-msgstr "Rasm"
 
 #: backend/apps/tasks/models.py
 msgid "Text report"
@@ -10829,8 +10858,16 @@ msgid "Task cancelled."
 msgstr "Vazifa bekor qilindi."
 
 #: employee_bot/bot/handlers/member/team.py
+msgid "There's no photo to show."
+msgstr "Ko‘rsatadigan rasm yo‘q."
+
+#: employee_bot/bot/handlers/member/team.py
 msgid "You don't head a department."
 msgstr "Siz hech qaysi bo‘limga rahbarlik qilmaysiz."
+
+#: employee_bot/bot/handlers/member/team.py
+msgid "This person isn't in your departments."
+msgstr "Bu xodim sizning bo‘limlaringizda emas."
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Tashkent"

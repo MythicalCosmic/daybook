@@ -34,6 +34,7 @@ class TaskAction(StrEnum):
     NEW_DUE = "newdue"  # a manager sets a new deadline
     CANCEL = "cancel"  # a manager cancels it (asks first)
     CANCEL_YES = "cancelyes"
+    PHOTO = "photo"  # send the proof photo
 
 
 class TaskCallback(CallbackData, prefix="task"):
@@ -110,3 +111,9 @@ class QuickAddCallback(CallbackData, prefix="tqa"):
     """The quick-add preview's buttons: save, change the time, keep the words in the title."""
 
     action: str
+
+
+class TeamCallback(CallbackData, prefix="team"):
+    """A head's "My team": `member_id` 0 for the whole team, else one person's work."""
+
+    member_id: int = 0

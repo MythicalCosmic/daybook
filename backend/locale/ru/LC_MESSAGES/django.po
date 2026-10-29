@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-29 13:31+0500\n"
+"POT-Creation-Date: 2026-10-29 14:35+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -2663,7 +2663,7 @@ msgstr "Не удалось открыть этот файл как изобра
 msgid "The file is too large (%(megabytes)d MB at most)."
 msgstr "Файл слишком большой (не больше %(megabytes)d МБ)."
 
-#: backend/apps/core/uploads.py
+#: backend/apps/core/uploads.py backend/apps/tasks/bot_messages.py
 msgid "photo"
 msgstr "фото"
 
@@ -8890,6 +8890,10 @@ msgstr "Вернуть"
 msgid "New time"
 msgstr "Новый срок"
 
+#: backend/apps/tasks/bot_messages.py backend/apps/tasks/models.py
+msgid "Photo"
+msgstr "Фото"
+
 #: backend/apps/tasks/bot_messages.py
 msgid "15 min"
 msgstr "15 мин"
@@ -9348,6 +9352,35 @@ msgstr "Напомнить"
 msgid "To check: %(count)d"
 msgstr "Ждут проверки: %(count)d"
 
+#: backend/apps/tasks/bot_messages.py
+msgid "<b>Open</b>"
+msgstr "<b>Открытые</b>"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "Nothing open."
+msgstr "Открытых задач нет."
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "late since %(time)s"
+msgstr "просрочено с %(time)s"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "<b>Done in the last 7 days</b>"
+msgstr "<b>Сделано за последние 7 дней</b>"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "Nothing done in the last 7 days."
+msgstr "За последние 7 дней ничего не сделано."
+
+#: backend/apps/tasks/bot_messages.py
+msgid "report"
+msgstr "отчёт"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "waiting for check"
+msgstr "ждёт проверки"
+
 #: backend/apps/tasks/feeds.py
 #, python-format
 msgid "Finished “%(title)s”"
@@ -9469,10 +9502,6 @@ msgstr "Воскресенье"
 #: backend/apps/tasks/models.py
 msgid "Not needed"
 msgstr "Не нужно"
-
-#: backend/apps/tasks/models.py
-msgid "Photo"
-msgstr "Фото"
 
 #: backend/apps/tasks/models.py
 msgid "Text report"
@@ -10709,8 +10738,16 @@ msgid "Task cancelled."
 msgstr "Задача отменена."
 
 #: employee_bot/bot/handlers/member/team.py
+msgid "There's no photo to show."
+msgstr "Фото нет."
+
+#: employee_bot/bot/handlers/member/team.py
 msgid "You don't head a department."
 msgstr "Вы не руководите отделом."
+
+#: employee_bot/bot/handlers/member/team.py
+msgid "This person isn't in your departments."
+msgstr "Этот человек не в ваших отделах."
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Tashkent"

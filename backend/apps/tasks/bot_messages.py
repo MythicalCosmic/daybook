@@ -34,6 +34,7 @@ from apps.tasks.callbacks import (
     StepCallback,
     TaskAction,
     TaskCallback,
+    TeamCallback,
     WhenCallback,
 )
 from apps.tasks.dates import EVENING
@@ -133,8 +134,12 @@ def display_title(task: Task) -> str:
 # The card ----------------------------------------------------------------------------------
 
 
-def task_card(task: Task, member: Membership, now: datetime, header: str = "") -> BotMessage:
-    return card_text(task, member, now, header), card_keyboard(task, member, now)
+def task_card(
+    task: Task, member: Membership, now: datetime, header: str = "", *, photo_button: bool = True
+) -> BotMessage:
+    return card_text(task, member, now, header), card_keyboard(
+        task, member, now, photo_button=photo_button
+    )
 
 
 def card_text(task: Task, member: Membership, now: datetime, header: str = "") -> str:
@@ -180,8 +185,11 @@ def card_text(task: Task, member: Membership, now: datetime, header: str = "") -
     return "\n".join(lines)
 
 
-def card_keyboard(task: Task, member: Membership, now: datetime) -> InlineKeyboardMarkup | None:
-    """What this person can do from the card, two buttons a row at most (research R1 C2)."""
+def card_keyboard(
+    task: Task, member: Membership, now: datetime, *, photo_button: bool = True
+) -> InlineKeyboardMarkup | None:
+    """What this person can do from the card, two buttons a row at most (research R1 C2).
+    `photo_button` False for a card sent with its proof photo already."""
     actions = rules.allowed_actions(task, member)
     mine = rules.is_assignee(task, member)
     rows: list[list[InlineKeyboardButton]] = []
@@ -228,6 +236,8 @@ def card_keyboard(task: Task, member: Membership, now: datetime) -> InlineKeyboa
             more.append(_button(_("Comment"), TaskAction.COMMENT, task.pk))
         rows.append(more)
     last = []
+    if task.proof_photo and photo_button:
+        last.append(_button(_("Photo"), TaskAction.PHOTO, task.pk))
     if app := app_button(task):
         last.append(app)
     if mine:
@@ -525,7 +535,8 @@ def review_request(task: Task, reviewer: Membership, now: datetime) -> BotMessag
     header = _("%(name)s finished a task. Please check it.") % {
         "name": html.quote(str(task.assignee))
     }
-    return task_card(task, reviewer, now, f"<b>{header}</b>")
+    # Sent with the proof photo itself: no "Photo" button.
+    return task_card(task, reviewer, now, f"<b>{header}</b>", photo_button=False)
 
 
 def task_completed(task: Task, creator: Membership, now: datetime) -> BotMessage:
@@ -1140,6 +1151,13 @@ def team_summary(head: Membership) -> BotMessage:
                     ),
                 ]
             )
+    people_buttons = [
+        InlineKeyboardButton(
+            text=str(person)[:30], callback_data=TeamCallback(member_id=person.pk).pack()
+        )
+        for person in people
+    ]
+    rows = [people_buttons[i : i + 2] for i in range(0, len(people_buttons), 2)] + rows
     waiting = queries.awaiting_review_by(head).count()
     if waiting:
         lines += ["", _("To check: %(count)d") % {"count": waiting}]
@@ -1152,3 +1170,53 @@ def team_summary(head: Membership) -> BotMessage:
             ]
         )
     return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=rows) if rows else None
+
+
+PERSON_DONE_DAYS = 7
+PERSON_SHOWN = 10
+
+
+def team_person(head: Membership, person: Membership) -> BotMessage:
+    """One of a head's people: their open work and what they finished in the last week, with
+    how each was proven; every task opens as its card (the photo with it)."""
+    now = timezone.now()
+    zone = ZoneInfo(person.company.timezone)
+    work = Task.objects.filter(assignee=person).exclude(kind=Task.Kind.PERSONAL)
+    open_tasks = list(work.filter(status__in=Task.OPEN_STATUSES).order_by("due_at")[:PERSON_SHOWN])
+    finished = list(
+        work.filter(
+            status__in=(Task.Status.DONE, Task.Status.REVIEW),
+            completed_at__gte=now - timedelta(days=PERSON_DONE_DAYS),
+        ).order_by("-completed_at")[:PERSON_SHOWN]
+    )
+    title = html.quote(str(person))
+    if person.position_id:
+        title += " · " + html.quote(person.position.name)
+    lines = [f"<b>{title}</b>", ""]
+    rows = []
+    lines.append(_("<b>Open</b>") if open_tasks else _("Nothing open."))
+    for task in open_tasks:
+        line = html.quote(display_title(task))
+        if task.due_at is not None:
+            when = timezone.localtime(task.due_at, zone).strftime("%d.%m %H:%M")
+            line += " — " + (
+                _("late since %(time)s") % {"time": when} if task.due_at < now else when
+            )
+        lines.append(line)
+        rows.append([_button(display_title(task)[:40], TaskAction.OPEN, task.pk)])
+    done_header = _("<b>Done in the last 7 days</b>")
+    lines += ["", done_header if finished else _("Nothing done in the last 7 days.")]
+    for task in finished:
+        when = timezone.localtime(task.completed_at, zone).strftime("%d.%m %H:%M")
+        proof = ""
+        if task.proof_photo:
+            proof = " · " + _("photo")
+        elif task.proof_text:
+            proof = " · " + _("report")
+        waiting = " · " + _("waiting for check") if task.status == Task.Status.REVIEW else ""
+        lines.append(f"{html.quote(display_title(task))} — {when}{proof}{waiting}")
+        rows.append([_button(display_title(task)[:40], TaskAction.OPEN, task.pk)])
+    rows.append(
+        [InlineKeyboardButton(text=_("Back"), callback_data=TeamCallback(member_id=0).pack())]
+    )
+    return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=rows)

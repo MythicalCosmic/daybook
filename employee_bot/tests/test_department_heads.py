@@ -74,3 +74,53 @@ async def test_heads_get_my_team_on_their_menu_and_it_answers(dp, bot, sales):
 
     assert "My team" in sent(bot)[-1].text
     assert "Alisher" in sent(bot)[-1].text
+
+
+async def test_a_head_sees_a_persons_history_and_their_proof_photo(dp, bot, sales, company):
+    from aiogram.methods import SendPhoto
+    from django.core.files.base import ContentFile
+    from django.utils import timezone
+
+    from apps.tasks.callbacks import TaskAction, TaskCallback, TeamCallback
+    from apps.tasks.models import Proof, Task
+    from apps.tasks.tests.factories import jpeg_bytes
+
+    def setup():
+        task = Task.objects.create(
+            company=company,
+            kind=Task.Kind.ASSIGNED,
+            title="Muzlatgich harorati",
+            assignee=sales["alisher"],
+            created_by=sales["bekzod"],
+            status=Task.Status.DONE,
+            proof=Proof.PHOTO,
+            completed_at=timezone.now(),
+        )
+        task.proof_photo.save("proof.jpg", ContentFile(jpeg_bytes()))
+        return task
+
+    task = await sync_to_async(setup)()
+    head = updates.tg_user(sales["bekzod"].user.telegram_id)
+
+    await dp.feed_update(
+        bot, updates.callback(head, TeamCallback(member_id=sales["alisher"].pk).pack())
+    )
+    history = sent(bot)[-1].text
+    assert "Done in the last 7 days" in history
+    assert "Muzlatgich harorati" in history and "photo" in history
+
+    await dp.feed_update(
+        bot, updates.callback(head, TaskCallback(action=TaskAction.PHOTO, task_id=task.pk).pack())
+    )
+    assert any(isinstance(r, SendPhoto) for r in bot.requests)
+
+
+async def test_a_head_cant_open_someone_elses_history(dp, bot, sales):
+    from apps.tasks.callbacks import TeamCallback
+
+    head = updates.tg_user(sales["bekzod"].user.telegram_id)
+    await dp.feed_update(
+        bot, updates.callback(head, TeamCallback(member_id=sales["otabek"].pk).pack())
+    )
+
+    assert "isn't in your departments" in sent(bot)[-1].text
