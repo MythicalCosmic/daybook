@@ -906,6 +906,8 @@ def _colleagues(member: Membership, *, exclude: int | None = None) -> list[Membe
 
 @sync_to_async
 def _assignable(member: Membership) -> list[Membership]:
-    """Registered people "New task" offers: whom the member may give work to, by name."""
+    """Registered people "New task" offers: whom the member may give work to, their own
+    people (a head's team) first, then by name."""
+    team = departments.team_ids(member)
     people = departments.assignable(member).select_related("user", "position")
-    return sorted(people, key=lambda person: str(person).lower())
+    return sorted(people, key=lambda person: (person.pk not in team, str(person).lower()))

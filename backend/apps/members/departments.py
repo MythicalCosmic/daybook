@@ -265,6 +265,7 @@ def create_department(
     department = Department(company=company)
     _apply(department, {"name": name, "parent": parent, "head": head}, by=by)
     department.save()
+    _seat_head(department, by)
     audit.record(
         MemberAction.DEPARTMENT_CREATED, company_id=company.pk, actor=by.user, target=department
     )
@@ -285,6 +286,8 @@ def update_department(department: Department, *, by: Membership, **fields) -> De
     if not changes:
         return department
     department.save()
+    if "head" in changes:
+        _seat_head(department, by)
     audit.record(
         MemberAction.DEPARTMENT_CHANGED,
         company_id=department.company_id,
@@ -414,6 +417,32 @@ def _apply(department: Department, fields: dict, *, by: Membership) -> dict:
             _("There's already a department named «%(name)s» there.") % {"name": department.name}
         )
     return changes
+
+
+def _seat_head(department: Department, by: Membership) -> None:
+    """A new head who works in no department yet works in the one they now head (the owner,
+    29.10.2026: making someone head, then placing them by hand, was confusing)."""
+    head = department.head
+    if head is None:
+        return
+    if not Membership.objects.filter(pk=head.pk, department__isnull=True).update(
+        department=department
+    ):
+        return  # already works in a department
+    head.department = department
+    audit.record(
+        MemberAction.CHANGED,
+        company_id=department.company_id,
+        actor=by.user,
+        target=head,
+        changes={"department": [None, department.name]},
+    )
+    _bump(department.company_id, people=True)
+
+
+def heads_any(member: Membership) -> bool:
+    """Whether the member heads a department (with people in it or not yet)."""
+    return Department.objects.filter(company_id=member.company_id, head_id=member.pk).exists()
 
 
 def _may_appoint(by: Membership) -> bool:

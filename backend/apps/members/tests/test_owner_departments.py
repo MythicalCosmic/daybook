@@ -47,7 +47,8 @@ def test_making_and_reading_the_tree(owner_api, company, member, owner):
     assert rows[1]["parent_id"] == rows[0]["id"]
     assert rows[1]["head"]["id"] == bekzod.pk
     assert rows[1]["path"] == ["Rahbariyat", "Savdo"]
-    assert (rows[0]["member_count"], rows[0]["total_count"]) == (0, 1)
+    # The owner heads Rahbariyat, so works in it too.
+    assert (rows[0]["member_count"], rows[0]["total_count"]) == (1, 2)
     assert (rows[1]["member_count"], rows[1]["total_count"]) == (1, 1)
     assert rows[0]["can_edit"] is True
 
@@ -114,7 +115,7 @@ def test_people_rows_name_their_department_and_head(owner_api, company, member, 
     assert rows[alisher.pk]["department"] == {"id": sales.pk, "name": "Savdo"}
     assert rows[alisher.pk]["manager"]["id"] == bekzod.pk
     assert rows[bekzod.pk]["manager"]["id"] == owner.pk
-    assert rows[owner.pk]["department"] is None
+    assert rows[owner.pk]["department"] == {"id": top.pk, "name": "Rahbariyat"}  # its head
     detail = owner_api(owner).get(people_url(company, f"{bekzod.pk}/")).data
     assert detail["heads"] == [{"id": sales.pk, "name": "Savdo"}]
 

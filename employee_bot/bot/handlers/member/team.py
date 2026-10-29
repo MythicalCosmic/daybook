@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from apps.members.bot_messages import MENU_MY_TEAM
-from apps.members.departments import leads, manages
+from apps.members.departments import heads_any, manages
 from apps.members.models import Membership
 from apps.tasks import bot_messages as task_messages
 from apps.tasks.callbacks import TaskAction, TaskCallback, TeamCallback
@@ -48,7 +48,7 @@ async def show_photo(callback: CallbackQuery, callback_data: TaskCallback, membe
 
 @sync_to_async
 def _team(membership: Membership, member_id: int):
-    if not leads(membership):
+    if not heads_any(membership):
         return _("You don't head a department."), None
     if not member_id:
         return task_messages.team_summary(membership)

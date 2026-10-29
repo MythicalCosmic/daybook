@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-29 14:35+0500\n"
+"POT-Creation-Date: 2026-10-29 15:23+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -9442,8 +9442,12 @@ msgid "<b>My team</b>"
 msgstr "<b>Jamoam</b>"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "Nobody is in your departments yet."
-msgstr "Bo‘limlaringizda hali hech kim yo‘q."
+msgid ""
+"Nobody is in your departments yet. Add people in the dashboard: People, "
+"Departments, then your department."
+msgstr ""
+"Bo‘limlaringizda hali hech kim yo‘q. Xodimlarni boshqaruv panelida qo‘shing: "
+"Xodimlar, Bo‘limlar, keyin bo‘limingiz."
 
 #: backend/apps/tasks/bot_messages.py
 msgid "<b>Late now</b>"

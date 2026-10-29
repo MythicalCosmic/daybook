@@ -124,3 +124,14 @@ async def test_a_head_cant_open_someone_elses_history(dp, bot, sales):
     )
 
     assert "isn't in your departments" in sent(bot)[-1].text
+
+
+async def test_a_head_with_nobody_yet_still_gets_my_team(company, member):
+    def setup():
+        owner = member.registered(company, "Owner")
+        head = member.registered(company, first_name="Lola")
+        departments.create_department(company, by=owner, name="HR", head=head)
+        fresh = Membership.objects.select_related("company", "role", "user").get(pk=head.pk)
+        return [button.text for row in main_menu(fresh).keyboard for button in row]
+
+    assert "My team" in await sync_to_async(setup)()

@@ -1105,7 +1105,12 @@ def team_summary(head: Membership) -> BotMessage:
     )
     lines = [_("<b>My team</b>")]
     if not people:
-        lines.append(_("Nobody is in your departments yet."))
+        lines.append(
+            _(
+                "Nobody is in your departments yet. Add people in the dashboard: People, "
+                "Departments, then your department."
+            )
+        )
         return "\n".join(lines), None
     open_work = Task.objects.filter(assignee__in=people, status__in=Task.OPEN_STATUSES).exclude(
         kind=Task.Kind.PERSONAL

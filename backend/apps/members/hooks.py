@@ -25,7 +25,7 @@ audit_registry.register_target("department", Perm.MEMBERS_VIEW)
 
 # Heads see their people's work from the employee bot's menu.
 bot_menu.register_menu_button(
-    MENU_MY_TEAM, order=5, visible=lambda member: departments.leads(member)
+    MENU_MY_TEAM, order=5, visible=lambda member: departments.heads_any(member)
 )
 
 # Suspended people get no routine tasks while the suspension lasts.

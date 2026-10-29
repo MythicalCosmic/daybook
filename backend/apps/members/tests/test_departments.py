@@ -263,3 +263,41 @@ def test_a_head_who_leaves_leaves_their_department_without_a_head(owner, tree):
 
     tree["sales"].refresh_from_db()
     assert tree["sales"].head is None
+
+
+def test_a_new_head_works_in_their_department_when_in_none(company, member, owner):
+    lola = member.registered(company, first_name="Lola")
+    busy = member.registered(company, first_name="Bobur")
+    other = departments.create_department(company, by=owner, name="Ombor")
+    departments.place(other, by=owner, people=[busy])
+
+    sales = departments.create_department(company, by=owner, name="Savdo", head=lola)
+    hr = departments.create_department(company, by=owner, name="HR")
+    departments.update_department(hr, by=owner, head=busy)
+
+    lola.refresh_from_db()
+    busy.refresh_from_db()
+    assert lola.department == sales
+    assert busy.department == other  # already somewhere: stays there
+
+
+def test_heads_made_before_are_placed_in_the_highest_department_they_head(company, member, owner):
+    import importlib
+
+    from django.apps import apps
+
+    lola = member.registered(company, first_name="Lola")
+    busy = member.registered(company, first_name="Bobur")
+    top = Department.objects.create(company=company, name="Rahbariyat", head=lola)
+    Department.objects.create(company=company, name="Savdo", parent=top, head=lola)
+    elsewhere = Department.objects.create(company=company, name="Ombor")
+    Department.objects.create(company=company, name="HR", head=busy)
+    Membership.objects.filter(pk=busy.pk).update(department=elsewhere)
+    migration = importlib.import_module("apps.members.migrations.0014_seat_heads")
+
+    migration.seat_heads(apps, None)
+
+    lola.refresh_from_db()
+    busy.refresh_from_db()
+    assert lola.department == top
+    assert busy.department == elsewhere
