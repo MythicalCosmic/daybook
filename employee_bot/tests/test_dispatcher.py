@@ -65,6 +65,7 @@ def test_feature_routers_sit_between_the_state_bound_routers_and_home(dp):
         "member-app",  # the menu's app buttons answer before a module handles its button's text
         "member_tasks",
         "member_new_task",
+        "member_team",  # a head's "My team"
         "member_announcements",
         *(f"feature_{area}" for area in AREAS),
         "member_home",

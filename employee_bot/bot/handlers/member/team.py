@@ -12,7 +12,7 @@ from apps.members.models import Membership
 from apps.tasks import bot_messages as task_messages
 from bot.filters.menu import MenuButton
 
-router = Router(name="team")
+router = Router(name="member_team")
 
 
 @router.message(MenuButton(MENU_MY_TEAM))
