@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
- * Edit someone: name, position, the branches they work in and their home branch, and (with
- * roles.manage) their role. Only roles the viewer may give are offered; the server checks the
- * anti-escalation rules again. Sends only what changed.
+ * Edit someone: name, position, their department (once the company has departments), the branches
+ * they work in and their home branch, and (with roles.manage) their role. Only roles the viewer may
+ * give are offered; the server checks the anti-escalation rules again. Sends only what changed.
  */
 import { computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -19,7 +19,8 @@ import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
 import { useForm } from "@/lib/useForm";
 
-import { updatePerson, usePersonMutation, usePositions, useRoles } from "../api";
+import { updatePerson, useDepartments, usePersonMutation, usePositions, useRoles } from "../api";
+import { departmentOptions, flattenDepartments } from "../departments";
 import type { PersonDetail, PersonUpdate } from "../types";
 
 const open = defineModel<boolean>("open", { default: false });
@@ -29,11 +30,13 @@ const { t } = useI18n();
 const positions = usePositions();
 const roles = useRoles(computed(() => props.person.can.change_role));
 const scoped = useScopedBranches();
+const departments = useDepartments();
 
 const schema = z.object({
   first_name: z.string().trim().min(1, "common.form.required").max(100, "common.form.tooLong"),
   last_name: z.string().trim().max(100, "common.form.tooLong"),
   position_id: z.number().nullable(),
+  department_id: z.number().nullable(),
   branch_ids: z.array(z.number()),
   home_branch_id: z.number().nullable(),
   role_id: z.number().nullable(),
@@ -43,6 +46,7 @@ const initial = {
   first_name: props.person.first_name,
   last_name: props.person.last_name,
   position_id: props.person.position?.id ?? null,
+  department_id: props.person.department?.id ?? null,
   branch_ids: props.person.branches.map((b) => b.id),
   home_branch_id: props.person.home_branch?.id ?? null,
   role_id: props.person.role?.id ?? null,
@@ -55,6 +59,7 @@ const form = useForm(schema, initial, {
     if (values.first_name !== initial.first_name) body.first_name = values.first_name;
     if (values.last_name !== initial.last_name) body.last_name = values.last_name;
     if (values.position_id !== initial.position_id) body.position_id = values.position_id;
+    if (values.department_id !== initial.department_id) body.department_id = values.department_id;
     if (JSON.stringify([...values.branch_ids].sort()) !== JSON.stringify([...initial.branch_ids].sort())) body.branch_ids = values.branch_ids;
     if (values.home_branch_id !== initial.home_branch_id) body.home_branch_id = values.home_branch_id;
     if (values.role_id !== null && values.role_id !== initial.role_id) body.role_id = values.role_id;
@@ -69,6 +74,9 @@ const form = useForm(schema, initial, {
 const positionOptions = computed(() =>
   (positions.data.value ?? []).filter((p) => p.is_active || p.id === initial.position_id).map((p) => ({ value: p.id, label: p.name })),
 );
+/** Departments in tree order, the ones above on the second line; the field shows once there are any. */
+const departmentChoices = computed(() => departmentOptions(flattenDepartments(departments.data.value ?? []), (d) => d.id));
+const showDepartment = computed(() => departmentChoices.value.length > 0 || initial.department_id !== null);
 // Branches the person works in that the viewer can't see stay as they are (the server keeps them).
 const hiddenBranches = computed(() => props.person.branches.filter((b) => !scoped.value.some((s) => s.id === b.id)));
 const homeOptions = computed(() =>
@@ -104,6 +112,9 @@ watch(
       </div>
       <FormField :label="t('people.col.position')" :error="form.errors.position_id">
         <SelectBox v-model="form.values.position_id" :options="positionOptions" :placeholder="t('people.noPosition')" clearable />
+      </FormField>
+      <FormField v-if="showDepartment" :label="t('people.col.department')" :hint="t('people.edit.departmentHint')" :error="form.errors.department_id">
+        <SelectBox v-model="form.values.department_id" :options="departmentChoices" :placeholder="t('people.noDepartment')" clearable data-department-select />
       </FormField>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField :label="t('people.field.branches')" :hint="t('people.edit.branchesHint')" :error="form.errors.branch_ids">

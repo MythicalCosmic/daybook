@@ -100,7 +100,7 @@ describe("api", () => {
   it("registers behind members.view with the members pulse keys", () => {
     expect(module).toMatchObject({ id: "people", group: "people", perm: "members.view", hotkey: "p" });
     expect(module.invalidates).toEqual(expect.arrayContaining(["members", "timeoff.time_off"]));
-    expect(module.nav?.map((item) => item.to)).toEqual(["people", "people/requests", "people/roles", "people/positions"]);
+    expect(module.nav?.map((item) => item.to)).toEqual(["people", "people/departments", "people/requests", "people/roles", "people/positions"]);
     expect(peopleKeys.list(1, { page: 1 })).toEqual([1, "people", "list", { page: 1 }]);
   });
 });

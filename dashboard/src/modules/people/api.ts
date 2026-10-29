@@ -15,6 +15,8 @@ import type {
   ApproveInput,
   BulkDecisionInput,
   BulkDecisionResult,
+  Department,
+  DepartmentInput,
   HistoryRecord,
   JoinRequest,
   OffboardInput,
@@ -83,6 +85,20 @@ export const reorderPositions = (cid: number, ids: number[]) => http.post<Positi
 /** The permission registry for the roles matrix (outside the company prefix). */
 export const listPermissions = (signal?: AbortSignal) => http.get<PermissionInfo[]>("/owner/permissions/", undefined, { signal });
 
+/** The company's departments in tree order (parents before children, siblings by name). */
+export const listDepartments = (cid: number, signal?: AbortSignal) => http.get<Department[]>(ownerPath(cid, "departments/"), undefined, { signal });
+
+export const createDepartment = (cid: number, body: DepartmentInput) => http.post<Department>(ownerPath(cid, "departments/"), body);
+
+export const updateDepartment = (cid: number, id: number, body: Partial<DepartmentInput>) => http.patch<Department>(ownerPath(cid, `departments/${id}/`), body);
+
+/** Its people and sub-departments move up to its parent (to no department / the top level without one). */
+export const deleteDepartment = (cid: number, id: number) => http.delete<void>(ownerPath(cid, `departments/${id}/`));
+
+/** Puts people into a department (1–200 at once); they leave the one they were in. */
+export const addDepartmentMembers = (cid: number, id: number, memberIds: number[]) =>
+  http.post<Department>(ownerPath(cid, `departments/${id}/members/`), { member_ids: memberIds });
+
 // ─── Keys and queries ──────────────────────────────────────────────────────
 
 export const peopleKeys = {
@@ -94,19 +110,24 @@ export const peopleKeys = {
   requests: (cid: number) => qk(cid, MODULE, "requests"),
   roles: (cid: number) => qk(cid, MODULE, "roles"),
   positions: (cid: number) => qk(cid, MODULE, "positions"),
+  departments: (cid: number) => qk(cid, MODULE, "departments"),
+  departmentPeople: (cid: number, id: number) => qk(cid, MODULE, "department-people", { id }),
 };
+
+/** Current people of a department and of every one below it (the panel keeps those directly in it). */
+export const departmentPeopleParams = (id: number): PeopleParams => ({ department: [String(id)], status: "current", ordering: "name", page_size: 500 });
 
 export function useCompanyId() {
   const company = useCompanyStore();
   return computed(() => company.currentId ?? 0);
 }
 
-export function usePeople(params: MaybeRefOrGetter<PeopleParams>) {
+export function usePeople(params: MaybeRefOrGetter<PeopleParams>, enabled: MaybeRefOrGetter<boolean> = true) {
   const cid = useCompanyId();
   return useQuery({
     queryKey: computed(() => peopleKeys.list(cid.value, toValue(params))),
     queryFn: ({ signal }) => listPeople(cid.value, toValue(params), signal),
-    enabled: computed(() => cid.value > 0),
+    enabled: computed(() => cid.value > 0 && toValue(enabled)),
     placeholderData: keepPreviousData,
     staleTime: 15_000,
   });
@@ -154,6 +175,50 @@ export function usePositions() {
 
 export function usePermissionRegistry() {
   return useQuery({ queryKey: ["permissions"], queryFn: ({ signal }) => listPermissions(signal), staleTime: Infinity });
+}
+
+/** The departments (tens at most): the org chart, the Team filter, Person 360 and the pickers share one copy. */
+export function useDepartments(enabled: MaybeRefOrGetter<boolean> = true) {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => peopleKeys.departments(cid.value)),
+    queryFn: ({ signal }) => listDepartments(cid.value, signal),
+    enabled: computed(() => cid.value > 0 && toValue(enabled)),
+    staleTime: 60_000,
+  });
+}
+
+export interface PeopleStats {
+  current: number;
+  active: number;
+  suspended: number;
+  on_leave_today: number;
+  joined_30d: number;
+  left_30d: number;
+  pending_requests: number;
+  bot_blocked: number;
+}
+
+/** The headcounts above the Team list (the same cached answer the Team page reads). */
+export function usePeopleStats() {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => qk(cid.value, MODULE, "stats")),
+    queryFn: ({ signal }) => http.get<PeopleStats>(ownerPath(cid.value, "people/stats/"), undefined, { signal }),
+    enabled: computed(() => cid.value > 0),
+    staleTime: 15_000,
+  });
+}
+
+/** Everyone in a department and below it, for its panel (no placeholder: another department's people never flash in). */
+export function useDepartmentPeople(id: MaybeRefOrGetter<number>) {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => peopleKeys.departmentPeople(cid.value, toValue(id))),
+    queryFn: ({ signal }) => listPeople(cid.value, departmentPeopleParams(toValue(id)), signal),
+    enabled: computed(() => cid.value > 0 && toValue(id) > 0),
+    staleTime: 15_000,
+  });
 }
 
 // ─── Mutations ─────────────────────────────────────────────────────────────
@@ -224,6 +289,72 @@ export function useBulkDecide() {
     },
     onSettled: refresh,
   });
+}
+
+/**
+ * Changes to the structure and to who is in it. Every answer refetches everything under
+ * `[cid, "people"]`: a move or a delete changes other departments' paths and counts, and the
+ * people's heads ("reports to") on the Team list and Person 360.
+ */
+export function useDepartmentMutations() {
+  const client = useQueryClient();
+  const cid = useCompanyId();
+  const refresh = useRefreshPeople();
+  const key = () => peopleKeys.departments(cid.value);
+  const create = useMutation({
+    mutationFn: (body: DepartmentInput) => createDepartment(cid.value, body),
+    // In the chart at once (its panel can open before the refetch brings the list).
+    onSuccess: (department) => {
+      const list = client.getQueryData<Department[]>(key());
+      if (list && !list.some((row) => row.id === department.id)) client.setQueryData(key(), [...list, department]);
+    },
+    onSettled: refresh,
+  });
+  const update = useMutation({
+    mutationFn: ({ id, body }: { id: number; body: Partial<DepartmentInput> }) => updateDepartment(cid.value, id, body),
+    // The changed card at once; the paths below it and the counts above it come with the refetch.
+    onSuccess: (department) => {
+      const list = client.getQueryData<Department[]>(key());
+      if (list) client.setQueryData(key(), list.map((row) => (row.id === department.id ? department : row)));
+    },
+    onSettled: refresh,
+  });
+  const remove = useMutation({
+    mutationFn: (id: number) => deleteDepartment(cid.value, id),
+    // Gone at once, its sub-departments under its parent (as the server does); back on an error.
+    onMutate: async (id) => {
+      await client.cancelQueries({ queryKey: key() });
+      const previous = client.getQueryData<Department[]>(key());
+      const gone = previous?.find((row) => row.id === id);
+      if (previous && gone) {
+        client.setQueryData(
+          key(),
+          previous.filter((row) => row.id !== id).map((row) => (row.parent_id === id ? { ...row, parent_id: gone.parent_id } : row)),
+        );
+      }
+      return { previous };
+    },
+    onError: (_e, _id, context) => context?.previous && client.setQueryData(key(), context.previous),
+    onSettled: refresh,
+  });
+  const addMembers = useMutation({
+    mutationFn: ({ id, memberIds }: { id: number; memberIds: number[] }) => addDepartmentMembers(cid.value, id, memberIds),
+    onSettled: refresh,
+  });
+  /** Takes someone out of a department (to no department): they leave its panel at once, back on an error. */
+  const removeMember = useMutation({
+    mutationFn: ({ memberId }: { departmentId: number; memberId: number }) => updatePerson(cid.value, memberId, { department_id: null }),
+    onMutate: async ({ departmentId, memberId }) => {
+      const peopleKey = peopleKeys.departmentPeople(cid.value, departmentId);
+      await client.cancelQueries({ queryKey: peopleKey });
+      const previous = client.getQueryData<Page<Person>>(peopleKey);
+      if (previous) client.setQueryData(peopleKey, { ...previous, count: previous.count - 1, results: previous.results.filter((row) => row.id !== memberId) });
+      return { previous, peopleKey };
+    },
+    onError: (_e, _v, context) => context?.previous && client.setQueryData(context.peopleKey, context.previous),
+    onSettled: refresh,
+  });
+  return { create, update, remove, addMembers, removeMember };
 }
 
 export function useSaveRole() {

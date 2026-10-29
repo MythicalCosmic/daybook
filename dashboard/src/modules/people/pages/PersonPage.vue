@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * Person 360 (plan §6.2): everything about one person. A header with their photo, position,
- * branches, role, status, contacts and tenure, the actions the viewer may take (and the
+ * department, whom they report to and the departments they head, branches, role, status, contacts
+ * and tenure, the actions the viewer may take (and the
  * `people.profile.actions` slot other modules fill: warn, suspend, terminate…), their key numbers,
  * then tabs: Overview, the tabs other modules register (`personTabs`), History. The tab is in the
  * path (`people/12/history`).
@@ -15,6 +16,7 @@ import {
   Ellipsis,
   LogOut,
   MapPin,
+  Network,
   Pause,
   Pencil,
   Phone,
@@ -22,6 +24,7 @@ import {
   ShieldCheck,
   Undo2,
   UserRoundX,
+  UsersRound,
 } from "@lucide/vue";
 import { computed, defineAsyncComponent, ref } from "vue";
 import { useI18n } from "vue-i18n";
@@ -193,6 +196,11 @@ const menu = computed<MenuEntry[]>(() => {
 });
 
 const slotContext = computed(() => ({ companyId: company.currentId, memberId: memberId.value, person: person.value }));
+/** A department's panel on the org chart. */
+const departmentLink = (id: number) => `/c/${company.currentId}/people/departments?department=${id}`;
+/** Heading their own department is a badge on it; other departments they head are listed. */
+const headsOwn = computed(() => !!person.value?.department && !!person.value.heads?.some((d) => d.id === person.value!.department!.id));
+const otherHeads = computed(() => (person.value?.heads ?? []).filter((d) => d.id !== person.value?.department?.id));
 const hasProfileActions = computed(() => hasExtension("people.profile.actions", company.current));
 </script>
 
@@ -231,6 +239,27 @@ const hasProfileActions = computed(() => hasExtension("people.profile.actions", 
               {{ person.position?.name ?? t("people.noPosition") }}
               <template v-if="person.role && !person.role.is_owner && person.role.name !== person.position?.name"> · {{ person.role.name }}</template>
             </p>
+            <div v-if="person.department || person.manager || person.heads?.length" class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted" data-person-org>
+              <span v-if="person.department" class="inline-flex min-w-0 items-center gap-1.5">
+                <RouterLink :to="departmentLink(person.department.id)" class="inline-flex min-w-0 items-center gap-1.5 hover:text-fg" data-person-department>
+                  <Network :size="14" class="shrink-0" aria-hidden="true" /><span class="truncate">{{ person.department.name }}</span>
+                </RouterLink>
+                <UiBadge v-if="headsOwn" tone="primary" data-person-heads-own>{{ t("people.dept.head") }}</UiBadge>
+              </span>
+              <span v-if="person.manager" class="inline-flex min-w-0 items-center gap-1.5" data-person-manager>
+                <span class="shrink-0">{{ t("people.reportsTo") }}:</span>
+                <RouterLink :to="`/c/${company.currentId}/people/${person.manager.id}`" class="inline-flex min-w-0 items-center gap-1.5 font-medium text-fg hover:text-primary hover:underline">
+                  <UserAvatar :name="person.manager.name" :src="person.manager.photo_url" :size="18" class="shrink-0" /><span class="truncate">{{ person.manager.name }}</span>
+                </RouterLink>
+              </span>
+              <span v-if="otherHeads.length" class="inline-flex min-w-0 flex-wrap items-center gap-x-1.5" data-person-heads>
+                <UsersRound :size="14" class="shrink-0 text-primary" aria-hidden="true" /><span>{{ t("people.headsOf") }}:</span>
+                <template v-for="(department, index) in otherHeads" :key="department.id"
+                  ><span v-if="index" class="-ml-1.5">,</span
+                  ><RouterLink :to="departmentLink(department.id)" class="font-medium text-fg hover:text-primary hover:underline">{{ department.name }}</RouterLink></template
+                >
+              </span>
+            </div>
             <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted">
               <span v-if="person.home_branch" class="inline-flex items-center gap-1.5">
                 <MapPin :size="14" aria-hidden="true" />{{ person.home_branch.name }}

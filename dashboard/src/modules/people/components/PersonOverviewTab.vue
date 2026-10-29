@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * Person 360 › Overview: how their work went week by week, the last 30 days split into on time,
- * late and missed, their details, and the time off coming up.
+ * late and missed, their details (their department and whom they report to among them, for someone
+ * the company's departments touch), and the time off coming up.
  */
 import { ArrowRight, CalendarDays, Flame } from "@lucide/vue";
 import { computed } from "vue";
@@ -12,10 +13,13 @@ import ChartCard from "@/components/ChartCard.vue";
 import DescriptionList, { type DescriptionItem } from "@/components/DescriptionList.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import LineChart from "@/components/LineChart.vue";
+import PersonCell from "@/components/PersonCell.vue";
 import ProgressBar from "@/components/ProgressBar.vue";
 import StatusPill from "@/components/StatusPill.vue";
+import UiBadge from "@/components/UiBadge.vue";
 import { formatPhone } from "@/lib/format";
 import { useFormat } from "@/lib/useFormat";
+import { useCompanyStore } from "@/stores/company";
 
 import type { PersonDetail } from "../types";
 
@@ -28,6 +32,7 @@ const props = defineProps<{
 
 const { t } = useI18n();
 const fmt = useFormat();
+const company = useCompanyStore();
 
 // Weeks before their first task (new people) would only draw a flat zero, so the chart starts there.
 const trend = computed(() => {
@@ -59,8 +64,23 @@ const split = computed(() => [
 ]);
 
 const LANGUAGES: Record<string, string> = { uz: "O‘zbekcha", ru: "Русский", en: "English" };
+// Department rows only for someone the structure touches: a company without departments sees no change.
+// Heading their own department is a badge on it; the other departments they head get a row.
+const headsOwn = computed(() => !!props.person.department && !!props.person.heads?.some((d) => d.id === props.person.department!.id));
+const org = computed<DescriptionItem[]>(() => {
+  const p = props.person;
+  if (!p.department && !p.manager && !p.heads?.length) return [];
+  const rows: DescriptionItem[] = [
+    { key: "department", label: t("people.col.department"), value: p.department?.name ?? t("people.noDepartment") },
+    { key: "manager", label: t("people.reportsTo"), value: p.manager?.name ?? null },
+  ];
+  const others = (p.heads ?? []).filter((d) => d.id !== p.department?.id);
+  if (others.length) rows.push({ key: "heads", label: t("people.headsOf"), value: others.map((d) => d.name).join(", ") });
+  return rows;
+});
 const details = computed<DescriptionItem[]>(() => [
   { key: "position", label: t("people.col.position"), value: props.person.position?.name ?? null },
+  ...org.value,
   { key: "role", label: t("people.col.role"), value: props.person.role?.name ?? null },
   { key: "home", label: t("people.field.homeBranch"), value: props.person.home_branch?.name ?? null },
   { key: "branches", label: t("people.field.branches"), value: props.person.branches.map((b) => b.name).join(", ") || null },
@@ -115,7 +135,23 @@ function span(first: string, last: string): string {
     <div class="flex min-w-0 flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start xl:flex xl:items-stretch">
       <section class="ui-card p-5">
         <h2 class="mb-1 text-md font-semibold text-fg">{{ t("people.overview.details") }}</h2>
-        <DescriptionList :items="details" layout="rows" />
+        <DescriptionList :items="details" layout="rows">
+          <template v-if="person.department" #value-department>
+            <!-- The badge moves under the name rather than cutting it short (Russian "Руководитель" is long). -->
+            <span class="flex min-w-0 flex-wrap items-center justify-end gap-x-1.5 gap-y-1">
+              <RouterLink
+                :to="`/c/${company.currentId}/people/departments?department=${person.department.id}`"
+                class="min-w-0 max-w-full truncate text-fg hover:text-primary hover:underline"
+                data-detail-department
+                >{{ person.department.name }}</RouterLink
+              >
+              <UiBadge v-if="headsOwn" tone="primary" class="shrink-0">{{ t("people.dept.head") }}</UiBadge>
+            </span>
+          </template>
+          <template v-if="person.manager" #value-manager>
+            <PersonCell :person="person.manager" size="sm" link data-detail-manager />
+          </template>
+        </DescriptionList>
       </section>
 
       <section class="ui-card p-5">

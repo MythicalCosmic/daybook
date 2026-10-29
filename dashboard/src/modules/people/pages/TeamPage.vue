@@ -1,14 +1,16 @@
 <script setup lang="ts">
 /**
  * The team directory (plan §6.2 "Team"): everyone who works here with today's status, position,
- * role, branch, how their work goes and, with the permission, their salary. Saved views as tabs,
- * filters in the URL, a card list on phones; a row opens Person 360.
+ * role, department, branch, how their work goes and, with the permission, their salary. Saved
+ * views as tabs, filters in the URL, a card list on phones; a row opens Person 360. The department
+ * column and filter appear once the company has departments; a department filter includes the
+ * departments below it.
  */
-import { BriefcaseBusiness, Building2, CircleDot, ShieldCheck, Smartphone, UserCheck, UserPlus, UserRoundX, Users } from "@lucide/vue";
+import { BriefcaseBusiness, Building2, CircleDot, Network, ShieldCheck, Smartphone, UserCheck, UserPlus, UserRoundX, Users } from "@lucide/vue";
 import { useQuery } from "@tanstack/vue-query";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 import { http, ownerPath } from "@/api/http";
 import { qk } from "@/api/keys";
@@ -24,6 +26,7 @@ import ProgressBar from "@/components/ProgressBar.vue";
 import SavedViewsTabs, { type ViewTab } from "@/components/SavedViewsTabs.vue";
 import StatusPill from "@/components/StatusPill.vue";
 import type { TableColumn } from "@/components/table";
+import { vTruncateTitle } from "@/components/truncateTitle";
 import UiBadge from "@/components/UiBadge.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiTooltip from "@/components/UiTooltip.vue";
@@ -37,13 +40,15 @@ import { rs, useRouteState } from "@/lib/useRouteState";
 import { paramsDiffer, useSavedViews } from "@/lib/useSavedViews";
 import { useCompanyStore } from "@/stores/company";
 
-import { usePeople, usePositions, useRoles } from "../api";
+import { useDepartments, usePeople, usePositions, useRoles } from "../api";
+import { departmentOptions, flattenDepartments } from "../departments";
 import { rateTone, statusChip } from "../status";
 import type { DirectoryStatus, Person } from "../types";
 
 const { t } = useI18n();
 const fmt = useFormat();
 const router = useRouter();
+const route = useRoute();
 const company = useCompanyStore();
 const { can } = usePermission();
 
@@ -54,6 +59,24 @@ const search = useRouteState("q", rs.string(""));
 const positions = usePositions();
 const roles = useRoles(computed(() => can(["roles.manage", "members.approve", "members.view"])));
 const branches = useScopedBranches();
+const departments = useDepartments();
+const departmentNodes = computed(() => flattenDepartments(departments.data.value ?? []));
+const hasDepartments = computed(() => departmentNodes.value.length > 0);
+/** Choosing a department shows its people and those of every department below it: said on the option. */
+const departmentChoices = computed(() =>
+  departmentOptions(departmentNodes.value, (d) => String(d.id)).map((option, index) => ({
+    ...option,
+    description: [option.description, departmentNodes.value[index]!.children.length ? t("people.dept.withBelow") : null].filter(Boolean).join(" · ") || undefined,
+  })),
+);
+/** Who heads which departments, for the "Head" tag on their row. */
+const headOf = computed(() => {
+  const map = new Map<number, string[]>();
+  for (const { department } of departmentNodes.value) {
+    if (department.head) map.set(department.head.id, [...(map.get(department.head.id) ?? []), department.name]);
+  }
+  return map;
+});
 
 const defs = computed<FilterDef[]>(() => [
   {
@@ -77,6 +100,11 @@ const defs = computed<FilterDef[]>(() => [
     icon: ShieldCheck,
     options: (roles.data.value ?? []).map((r) => ({ value: String(r.id), label: r.name })),
   },
+  // Also while the departments load, when the address already filters by one (a link from a
+  // department's panel): the first request then asks for that department, not for everyone.
+  ...(hasDepartments.value || route.query.department !== undefined
+    ? [{ key: "department", label: t("people.col.department"), type: "multi" as const, icon: Network, options: departmentChoices.value }]
+    : []),
   { key: "bot_blocked", label: t("people.filter.botBlocked"), type: "boolean", icon: Smartphone, trueLabel: t("people.filter.botBlockedYes") },
 ]);
 const filters = useUrlFilters(defs);
@@ -171,6 +199,7 @@ const columns = computed<TableColumn<Person>[]>(() => {
     { id: "person", header: t("people.col.person"), minWidth: 240, sticky: true, hideable: false, sortable: "name", value: (row) => row.name },
     { id: "status", header: t("people.col.status"), width: 190, value: (row) => chipLabel(row) },
     { id: "role", header: t("people.col.role"), width: 140, value: (row) => row.role?.name ?? "" },
+    ...(hasDepartments.value ? [{ id: "department", header: t("people.col.department"), width: 170, value: (row: Person) => row.department?.name ?? "" }] : []),
     { id: "branch", header: t("people.col.branch"), width: 150, sortable: "branch", value: (row) => row.home_branch?.name ?? "" },
     { id: "on_time", header: t("people.col.onTime"), width: 150, hint: t("people.col.onTimeHint"), value: (row) => row.work.on_time_30d ?? "" },
     { id: "late_now", header: t("people.col.lateNow"), width: 112, numeric: true, value: (row) => row.work.late_now },
@@ -267,6 +296,15 @@ function clearAll(): void {
           </span>
           <span v-else class="text-subtle">—</span>
         </template>
+        <template #cell-department="{ row }">
+          <span v-if="row.department || headOf.has(row.id)" class="flex min-w-0 items-center gap-1.5">
+            <span v-if="row.department" v-truncate-title class="min-w-0 truncate text-sm text-fg">{{ row.department.name }}</span>
+            <UiTooltip v-if="headOf.has(row.id)" :content="`${t('people.headsOf')}: ${headOf.get(row.id)!.join(', ')}`">
+              <UiBadge tone="primary" class="shrink-0" data-head-tag>{{ t("people.dept.head") }}</UiBadge>
+            </UiTooltip>
+          </span>
+          <span v-else class="text-subtle">—</span>
+        </template>
         <template #cell-branch="{ row }">
           <span v-if="row.home_branch" class="text-sm text-fg">
             {{ row.home_branch.name }}
@@ -313,12 +351,17 @@ function clearAll(): void {
               :label="chipLabel(row)"
             />
           </div>
-          <div class="mt-2.5 flex items-center gap-3 pl-[46px] text-xs text-muted">
-            <span v-if="row.work.on_time_30d !== null" class="inline-flex items-center gap-1.5">
+          <p v-if="row.department || headOf.has(row.id)" class="mt-2 flex min-w-0 items-center gap-1.5 pl-[46px] text-xs text-muted" data-card-department>
+            <template v-if="row.department"><Network :size="12" class="shrink-0 text-subtle" aria-hidden="true" /><span class="truncate">{{ row.department.name }}</span></template>
+            <UiBadge v-if="headOf.has(row.id)" tone="primary" class="shrink-0">{{ t("people.dept.head") }}</UiBadge>
+          </p>
+          <!-- Wraps between the facts, never inside one ("89,2% o‘z vaqtida" stays on one line). -->
+          <div :class="['flex flex-wrap items-center gap-x-3 gap-y-1 pl-[46px] text-xs text-muted', row.department || headOf.has(row.id) ? 'mt-1.5' : 'mt-2.5']">
+            <span v-if="row.work.on_time_30d !== null" class="inline-flex items-center gap-1.5 whitespace-nowrap">
               <CircleDot :size="12" :class="RATE_TEXT[rateTone(row.work.on_time_30d)]" />{{ t("people.onTimeShort", { n: fmt.number(row.work.on_time_30d, 1) }) }}
             </span>
-            <span v-if="row.work.late_now" class="font-semibold text-danger">{{ t("people.lateNow", { n: row.work.late_now }) }}</span>
-            <span v-if="row.role" class="truncate">{{ row.role.name }}</span>
+            <span v-if="row.work.late_now" class="whitespace-nowrap font-semibold text-danger">{{ t("people.lateNow", { n: row.work.late_now }) }}</span>
+            <span v-if="row.role" class="min-w-0 max-w-full truncate">{{ row.role.name }}</span>
           </div>
         </template>
       </DataTable>
