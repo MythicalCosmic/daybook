@@ -30,6 +30,8 @@ MENU_MY_TASKS = gettext_noop("My tasks")
 MENU_NEW_TASK = gettext_noop("New task")
 MENU_APP = gettext_noop("Open app")
 MENU_TO_CHECK = gettext_noop("To check")
+# A head's people and their work (apps.members.departments).
+MENU_MY_TEAM = gettext_noop("My team")
 # The company switch of someone in several companies (audit X-1): "Kompaniya: Demo Dorixona".
 # Keyboards from before 25.10.2026 send "🏢 Demo Dorixona ▸".
 COMPANY_BUTTON = gettext_noop("Company: %(name)s")

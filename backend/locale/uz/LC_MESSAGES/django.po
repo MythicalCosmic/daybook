@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 16:37+0500\n"
+"POT-Creation-Date: 2026-10-29 13:31+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -5228,9 +5228,13 @@ msgstr "Bo‘limni o‘chirdi"
 msgid "Open app"
 msgstr "Ilovani ochish"
 
-#: backend/apps/members/bot_messages.py
+#: backend/apps/members/bot_messages.py backend/apps/tasks/bot_messages.py
 msgid "To check"
 msgstr "Tekshirish"
+
+#: backend/apps/members/bot_messages.py
+msgid "My team"
+msgstr "Jamoam"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -5347,7 +5351,7 @@ msgstr "<b>%(company)s</b> jamoasiga xush kelibsiz!"
 msgid "Language: /language · Help: /help"
 msgstr "Til: /language · Yordam: /help"
 
-#: backend/apps/members/bot_messages.py
+#: backend/apps/members/bot_messages.py backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "Open: %(count)d"
 msgstr "Ochiq: %(count)d"
@@ -9429,6 +9433,32 @@ msgstr "Qabul qilindi"
 msgid "<b>Accepted automatically</b> · nobody checked it in time"
 msgstr "<b>Avtomatik qabul qilindi</b> · hech kim o‘z vaqtida tekshirmadi"
 
+#: backend/apps/tasks/bot_messages.py
+msgid "<b>My team</b>"
+msgstr "<b>Jamoam</b>"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "Nobody is in your departments yet."
+msgstr "Bo‘limlaringizda hali hech kim yo‘q."
+
+#: backend/apps/tasks/bot_messages.py
+msgid "<b>Late now</b>"
+msgstr "<b>Hozir kechikayotganlar</b>"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "%(task)s — %(name)s, %(late)s late"
+msgstr "%(task)s — %(name)s, kechikish: %(late)s"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "Remind"
+msgstr "Eslatish"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "To check: %(count)d"
+msgstr "Tekshirish kutilmoqda: %(count)d"
+
 #: backend/apps/tasks/feeds.py
 #, python-format
 msgid "Finished “%(title)s”"
@@ -10798,6 +10828,10 @@ msgstr "Boshqa xodimga berildi."
 msgid "Task cancelled."
 msgstr "Vazifa bekor qilindi."
 
+#: employee_bot/bot/handlers/member/team.py
+msgid "You don't head a department."
+msgstr "Siz hech qaysi bo‘limga rahbarlik qilmaysiz."
+
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Tashkent"
 msgstr "Toshkent"
@@ -10985,6 +11019,19 @@ msgstr "Ishni boshlash: %(url)s"
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Cancelled. Nothing was created."
 msgstr "Bekor qilindi. Hech narsa yaratilmadi."
+
+#: owner_bot/ownerbot/bot_messages.py
+msgid "This bot is for owners and top managers."
+msgstr "Bu bot egalar va bosh menejerlar uchun."
+
+#: owner_bot/ownerbot/bot_messages.py
+#, python-format
+msgid "Your work and your team are in @%(bot)s."
+msgstr "Ishingiz va jamoangiz @%(bot)s botida."
+
+#: owner_bot/ownerbot/bot_messages.py
+msgid "Your work and your team are in the staff bot."
+msgstr "Ishingiz va jamoangiz xodimlar botida."
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid ""

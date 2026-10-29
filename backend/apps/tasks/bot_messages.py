@@ -1073,3 +1073,82 @@ def accepted_header(task: Task) -> str:
     if rules.accepted_automatically(task) and task.confirmed_at is not None:
         return _("<b>Accepted automatically</b> · nobody checked it in time")
     return ""
+
+
+# A head's team (apps.members.departments) ---------------------------------------------------
+
+TEAM_LATE_SHOWN = 8
+
+
+def team_summary(head: Membership) -> BotMessage:
+    """ "My team": each of the head's people with their open and late work, then the late tasks
+    to open or remind about, and what waits for the head's check."""
+    from apps.members.departments import team_ids
+    from apps.tasks import queries
+
+    now = timezone.now()
+    people = list(
+        Membership.objects.filter(pk__in=team_ids(head), status=Membership.Status.APPROVED)
+        .select_related("user", "position")
+        .order_by("first_name", "last_name")
+    )
+    lines = [_("<b>My team</b>")]
+    if not people:
+        lines.append(_("Nobody is in your departments yet."))
+        return "\n".join(lines), None
+    open_work = Task.objects.filter(assignee__in=people, status__in=Task.OPEN_STATUSES).exclude(
+        kind=Task.Kind.PERSONAL
+    )
+    counts: dict[int, list[int]] = {person.pk: [0, 0] for person in people}
+    for assignee_id, due_at in open_work.values_list("assignee_id", "due_at"):
+        counts[assignee_id][0] += 1
+        if due_at is not None and due_at < now:
+            counts[assignee_id][1] += 1
+    lines.append("")
+    for person in people:
+        total, late = counts[person.pk]
+        facts = _("Open: %(count)d") % {"count": total}
+        if late:
+            facts += " · " + _("late: %(count)d") % {"count": late}
+        lines.append(f"{html.quote(str(person))} — {facts}")
+    late_tasks = list(
+        open_work.filter(due_at__lt=now)
+        .select_related("assignee__user")
+        .order_by("due_at")[:TEAM_LATE_SHOWN]
+    )
+    rows = []
+    if late_tasks:
+        lines += ["", _("<b>Late now</b>")]
+        for task in late_tasks:
+            lines.append(
+                _("%(task)s — %(name)s, %(late)s late")
+                % {
+                    "task": html.quote(display_title(task)),
+                    "name": html.quote(str(task.assignee)),
+                    "late": format_duration(now - task.due_at),
+                }
+            )
+            rows.append(
+                [
+                    InlineKeyboardButton(
+                        text=display_title(task)[:32],
+                        callback_data=TaskCallback(action=TaskAction.OPEN, task_id=task.pk).pack(),
+                    ),
+                    InlineKeyboardButton(
+                        text=_("Remind"),
+                        callback_data=TaskCallback(action=TaskAction.NUDGE, task_id=task.pk).pack(),
+                    ),
+                ]
+            )
+    waiting = queries.awaiting_review_by(head).count()
+    if waiting:
+        lines += ["", _("To check: %(count)d") % {"count": waiting}]
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text=_("To check"),
+                    callback_data=TaskCallback(action=TaskAction.REVIEWS).pack(),
+                )
+            ]
+        )
+    return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=rows) if rows else None

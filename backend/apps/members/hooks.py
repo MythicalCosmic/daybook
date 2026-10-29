@@ -7,8 +7,9 @@ from apps.console import registry
 from apps.console.perms import AnyOf
 from apps.exports.registry import register_exporter
 from apps.inbox.registry import register_action, register_kind
-from apps.members import providers
+from apps.members import bot_menu, departments, providers
 from apps.members.audit_actions import MemberAction
+from apps.members.bot_messages import MENU_MY_TEAM
 from apps.members.permissions import Perm
 from apps.members.queries import suspended_ids
 from apps.tasks import offdays
@@ -21,6 +22,11 @@ audit_registry.register_target(
 )
 audit_registry.register_target("joinlink", Perm.MEMBERS_APPROVE)
 audit_registry.register_target("department", Perm.MEMBERS_VIEW)
+
+# Heads see their people's work from the employee bot's menu.
+bot_menu.register_menu_button(
+    MENU_MY_TEAM, order=5, visible=lambda member: departments.leads(member)
+)
 
 # Suspended people get no routine tasks while the suspension lasts.
 offdays.register(suspended_ids)

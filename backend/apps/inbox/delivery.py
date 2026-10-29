@@ -30,13 +30,17 @@ BLOCKED_FIELD = {
 }
 
 
-def bots_for(user: User, audience: str) -> list[BotName]:
-    """The bots to try, in order."""
+def bots_for(user: User, audience: str, member: Membership | None = None) -> list[BotName]:
+    """The bots to try, in order. The owner bot only for owners and top managers (`member`,
+    when known): everyone else hears through the employee bot."""
+    from apps.members.departments import is_top_manager
+
     owner_bot_ready = (
         audience == "owner"
         and bool(settings.OWNER_BOT_TOKEN)
         and user.owner_bot_started_at is not None
         and user.owner_bot_blocked_at is None
+        and (member is None or is_top_manager(member))
     )
     return [BotName.OWNER, BotName.EMPLOYEE] if owner_bot_ready else [BotName.EMPLOYEE]
 
@@ -49,7 +53,7 @@ def deliver(notification_id: int, *, photo: str | None = None, photo_storage: st
     """Send the Telegram copy of one notification (once). Telegram network errors propagate,
     so the Celery task retries; a blocked bot is recorded on the user."""
     item = (
-        Notification.objects.select_related("recipient__user", "company")
+        Notification.objects.select_related("recipient__user", "recipient__role", "company")
         .filter(pk=notification_id)
         .first()
     )
@@ -65,7 +69,7 @@ def deliver(notification_id: int, *, photo: str | None = None, photo_storage: st
     audience = kind.audience if kind else "employee"
     with translation.override(user.language):
         text, markup = bot_messages.notification(item, audience=audience)
-    for bot in bots_for(user, audience):
+    for bot in bots_for(user, audience, item.recipient):
         try:
             message_id = telegram.send_message(
                 bot, user.telegram_id, text, serialize_markup(markup), photo, photo_storage

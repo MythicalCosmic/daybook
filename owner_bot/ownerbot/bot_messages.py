@@ -231,6 +231,15 @@ def cancelled() -> str:
 # /today -----------------------------------------------------------------------------------
 
 
+def not_for_you() -> str:
+    """/start from someone in a company who isn't one of its owners or top managers."""
+    bot = settings.EMPLOYEE_BOT_USERNAME
+    text = _("This bot is for owners and top managers.")
+    if bot:
+        return text + " " + _("Your work and your team are in @%(bot)s.") % {"bot": bot}
+    return text + " " + _("Your work and your team are in the staff bot.")
+
+
 def no_companies() -> str:
     return _("You don't have a company with dashboard access yet. Create one with /new.")
 

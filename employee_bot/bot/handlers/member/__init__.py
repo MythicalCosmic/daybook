@@ -18,6 +18,7 @@ from bot.handlers.member.app import router as app_router
 from bot.handlers.member.home import router as home_router
 from bot.handlers.member.new_task import router as new_task_router
 from bot.handlers.member.tasks import router as tasks_router
+from bot.handlers.member.team import router as team_router
 from bot.middlewares.access import MemberAccessMiddleware
 
 # Module areas, after the state-bound routers and before home (docs/PLAN-OWNER.md §10.2).
@@ -50,6 +51,7 @@ router.include_routers(
     app_router,
     tasks_router,
     new_task_router,
+    team_router,
     announcements_router,
     *FEATURE_ROUTERS,
     home_router,

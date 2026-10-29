@@ -142,6 +142,21 @@ def is_owner(member: Membership) -> bool:
     return member.role_id is not None and member.role.is_owner
 
 
+def is_top_manager(member: Membership) -> bool:
+    """Who uses the owner bot (the owner, 29.10.2026: "only top and owner managers can use the
+    owner bot"): owners, people whose role runs every branch and gives work (a Manager), and
+    the heads of top-level departments. Other heads work from the employee bot."""
+    if member.status != Membership.Status.APPROVED:
+        return False
+    if is_owner(member):
+        return True
+    if member.has_perm(Perm.BRANCHES_ALL) and member.has_perm(Perm.TASKS_ASSIGN):
+        return True
+    return Department.objects.filter(
+        company_id=member.company_id, head_id=member.pk, parent__isnull=True
+    ).exists()
+
+
 # Whom a member manages --------------------------------------------------------------------------
 
 

@@ -39,6 +39,14 @@ BRANCH_STATUSES = (
 )
 
 
+def top_memberships(user: User) -> list[Membership]:
+    """The memberships through which `user` uses the owner bot: dashboard access, as an owner or
+    a top manager (apps.members.departments.is_top_manager)."""
+    from apps.members.departments import is_top_manager
+
+    return [member for member in owner_memberships(user) if is_top_manager(member)]
+
+
 def owner_memberships(user: User) -> list[Membership]:
     """Every membership through which `user` may open the dashboard, by company name."""
     memberships = (

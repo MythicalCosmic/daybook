@@ -39,7 +39,10 @@ async def cmd_start(
         return
     await state.clear()
     companies = await sync_to_async(brief.companies_summary)(user)
-    text, markup = bot_messages.welcome(user, companies)
+    if not companies and await sync_to_async(brief.works_elsewhere)(user):
+        text, markup = bot_messages.not_for_you(), None  # a manager, not an owner or top manager
+    else:
+        text, markup = bot_messages.welcome(user, companies)
     # Everyone starts in Uzbek; this one small button offers the other languages.
     await message.answer(text, reply_markup=language.with_language_button(markup))
 

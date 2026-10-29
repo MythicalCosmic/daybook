@@ -59,3 +59,18 @@ async def test_heads_get_to_check_on_their_menu(sales):
 
     assert "To check" in await sync_to_async(labels)(sales["bekzod"])
     assert "To check" not in await sync_to_async(labels)(sales["alisher"])
+
+
+async def test_heads_get_my_team_on_their_menu_and_it_answers(dp, bot, sales):
+    def labels(person: Membership) -> list[str]:
+        fresh = Membership.objects.select_related("company", "role", "user").get(pk=person.pk)
+        return [button.text for row in main_menu(fresh).keyboard for button in row]
+
+    assert "My team" in await sync_to_async(labels)(sales["bekzod"])
+    assert "My team" not in await sync_to_async(labels)(sales["alisher"])
+
+    head = updates.tg_user(sales["bekzod"].user.telegram_id)
+    await dp.feed_update(bot, updates.message(head, "My team"))
+
+    assert "My team" in sent(bot)[-1].text
+    assert "Alisher" in sent(bot)[-1].text

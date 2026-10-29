@@ -33,8 +33,16 @@ from ownerbot import bot_messages
 
 
 def memberships(user: User) -> list[Membership]:
-    """Every company where `user` may open the dashboard, by name."""
-    return console.owner_memberships(user)
+    """Every company where `user` runs things from the owner bot (an owner or a top manager
+    with dashboard access), by name. Other managers, heads included, work in the employee bot."""
+    return console.top_memberships(user)
+
+
+def works_elsewhere(user: User) -> bool:
+    """Someone in a company who isn't one of its owners or top managers."""
+    return Membership.objects.filter(
+        user=user, status=Membership.Status.APPROVED, company__is_active=True
+    ).exists()
 
 
 def companies_summary(user: User) -> list[dict]:

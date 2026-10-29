@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-26 16:37+0500\n"
+"POT-Creation-Date: 2026-10-29 13:31+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -5161,9 +5161,13 @@ msgstr "Удалил отдел"
 msgid "Open app"
 msgstr "Открыть приложение"
 
-#: backend/apps/members/bot_messages.py
+#: backend/apps/members/bot_messages.py backend/apps/tasks/bot_messages.py
 msgid "To check"
 msgstr "Проверка"
+
+#: backend/apps/members/bot_messages.py
+msgid "My team"
+msgstr "Моя команда"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
@@ -5278,7 +5282,7 @@ msgstr "Добро пожаловать в команду <b>%(company)s</b>!"
 msgid "Language: /language · Help: /help"
 msgstr "Язык: /language · Помощь: /help"
 
-#: backend/apps/members/bot_messages.py
+#: backend/apps/members/bot_messages.py backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "Open: %(count)d"
 msgstr "Открытых: %(count)d"
@@ -9318,6 +9322,32 @@ msgstr "Принято"
 msgid "<b>Accepted automatically</b> · nobody checked it in time"
 msgstr "<b>Принято автоматически</b> · никто не проверил вовремя"
 
+#: backend/apps/tasks/bot_messages.py
+msgid "<b>My team</b>"
+msgstr "<b>Моя команда</b>"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "Nobody is in your departments yet."
+msgstr "В ваших отделах пока никого нет."
+
+#: backend/apps/tasks/bot_messages.py
+msgid "<b>Late now</b>"
+msgstr "<b>Сейчас просрочено</b>"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "%(task)s — %(name)s, %(late)s late"
+msgstr "%(task)s — %(name)s, опоздание: %(late)s"
+
+#: backend/apps/tasks/bot_messages.py
+msgid "Remind"
+msgstr "Напомнить"
+
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "To check: %(count)d"
+msgstr "Ждут проверки: %(count)d"
+
 #: backend/apps/tasks/feeds.py
 #, python-format
 msgid "Finished “%(title)s”"
@@ -10678,6 +10708,10 @@ msgstr "Передана другому."
 msgid "Task cancelled."
 msgstr "Задача отменена."
 
+#: employee_bot/bot/handlers/member/team.py
+msgid "You don't head a department."
+msgstr "Вы не руководите отделом."
+
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Tashkent"
 msgstr "Ташкент"
@@ -10864,6 +10898,19 @@ msgstr "Начало работы: %(url)s"
 #: owner_bot/ownerbot/bot_messages.py
 msgid "Cancelled. Nothing was created."
 msgstr "Отменено. Ничего не создано."
+
+#: owner_bot/ownerbot/bot_messages.py
+msgid "This bot is for owners and top managers."
+msgstr "Этот бот для владельцев и топ-менеджеров."
+
+#: owner_bot/ownerbot/bot_messages.py
+#, python-format
+msgid "Your work and your team are in @%(bot)s."
+msgstr "Ваша работа и команда — в @%(bot)s."
+
+#: owner_bot/ownerbot/bot_messages.py
+msgid "Your work and your team are in the staff bot."
+msgstr "Ваша работа и команда — в боте для сотрудников."
 
 #: owner_bot/ownerbot/bot_messages.py
 msgid ""
