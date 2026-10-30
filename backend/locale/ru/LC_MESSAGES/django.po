@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-29 15:23+0500\n"
+"POT-Creation-Date: 2026-10-30 16:10+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -5204,6 +5204,11 @@ msgstr "Должность: %(position)s"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
+msgid "Access: %(role)s"
+msgstr "Доступ: %(role)s"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
 msgid "Phone: %(phone)s"
 msgstr "Телефон: %(phone)s"
 
@@ -5419,6 +5424,14 @@ msgid "<b>Which role?</b> It decides what they may do."
 msgstr "<b>Какая роль?</b> От неё зависит, что сотрудник сможет делать."
 
 #: backend/apps/members/bot_messages.py
+msgid "team link"
+msgstr "ссылка для команды"
+
+#: backend/apps/members/bot_messages.py
+msgid "job title"
+msgstr "должность"
+
+#: backend/apps/members/bot_messages.py
 msgid "default"
 msgstr "по умолчанию"
 
@@ -5535,7 +5548,8 @@ msgstr "Название ссылки может быть не длиннее 10
 msgid "You can only give the branches you manage."
 msgstr "Можно назначать только те филиалы, которыми вы управляете."
 
-#: backend/apps/members/join_links.py backend/apps/members/services.py
+#: backend/apps/members/join_links.py backend/apps/members/owner_api.py
+#: backend/apps/members/services.py
 msgid "Pick a role of this company."
 msgstr "Выберите роль этой компании."
 
@@ -5613,6 +5627,12 @@ msgstr "У владельцев есть все права."
 #: backend/apps/members/models.py
 msgid "Given to new members when they are approved."
 msgstr "Выдаётся новым сотрудникам после одобрения."
+
+#: backend/apps/members/models.py
+msgid "The access people with this job title get. Empty: the default role."
+msgstr ""
+"Доступ, который получают сотрудники с этой должностью. Пусто: роль по "
+"умолчанию."
 
 #: backend/apps/members/models.py
 msgid "Pending"
@@ -6203,12 +6223,31 @@ msgid "Give the people in this role another role first."
 msgstr "Сначала назначьте людям с этой ролью другую роль."
 
 #: backend/apps/members/services.py
+msgid "Job titles give this role: give them another one first."
+msgstr "Эту роль дают должности: сначала назначьте им другую."
+
+#: backend/apps/members/services.py
 msgid "Name the position."
 msgstr "Укажите название должности."
 
 #: backend/apps/members/services.py
 msgid "There is already a position with that name."
 msgstr "Должность с таким названием уже есть."
+
+#: backend/apps/members/services.py
+msgid "Changing the access a job title gives needs roles.manage."
+msgstr ""
+"Чтобы изменить доступ, который даёт должность, нужно право roles.manage."
+
+#: backend/apps/members/services.py
+msgid "A job title can't give the Owner role."
+msgstr "Должность не может давать роль «Владелец»."
+
+#: backend/apps/members/services.py
+msgid ""
+"You can only change the access of a job title whose role you could give."
+msgstr ""
+"Изменить доступ можно только у должности, чью роль вы могли бы выдать сами."
 
 #: backend/apps/members/services.py
 msgid "People hold this position: hide it instead of deleting it."

@@ -25,6 +25,7 @@ import type {
   Person,
   PersonDetail,
   PersonUpdate,
+  PositionInput,
   PositionRow,
   Role,
   RoleInput,
@@ -73,10 +74,9 @@ export const deleteRole = (cid: number, id: number) => http.delete<void>(ownerPa
 
 export const listPositions = (cid: number, signal?: AbortSignal) => http.get<PositionRow[]>(ownerPath(cid, "positions/"), undefined, { signal });
 
-export const createPosition = (cid: number, name: string) => http.post<PositionRow>(ownerPath(cid, "positions/"), { name });
+export const createPosition = (cid: number, body: PositionInput) => http.post<PositionRow>(ownerPath(cid, "positions/"), body);
 
-export const updatePosition = (cid: number, id: number, body: { name?: string; is_active?: boolean }) =>
-  http.patch<PositionRow>(ownerPath(cid, `positions/${id}/`), body);
+export const updatePosition = (cid: number, id: number, body: PositionInput) => http.patch<PositionRow>(ownerPath(cid, `positions/${id}/`), body);
 
 export const deletePosition = (cid: number, id: number) => http.delete<void>(ownerPath(cid, `positions/${id}/`));
 
@@ -377,13 +377,15 @@ export function usePositionMutations() {
   const cid = useCompanyId();
   const refresh = useRefreshPeople();
   const key = () => peopleKeys.positions(cid.value);
-  const create = useMutation({ mutationFn: (name: string) => createPosition(cid.value, name), onSettled: refresh });
+  const create = useMutation({ mutationFn: (body: PositionInput) => createPosition(cid.value, body), onSettled: refresh });
   const update = useMutation({
-    mutationFn: ({ id, body }: { id: number; body: { name?: string; is_active?: boolean } }) => updatePosition(cid.value, id, body),
+    mutationFn: ({ id, body }: { id: number; body: PositionInput }) => updatePosition(cid.value, id, body),
     onMutate: async ({ id, body }) => {
       await client.cancelQueries({ queryKey: key() });
       const previous = client.getQueryData<PositionRow[]>(key());
-      if (previous) client.setQueryData(key(), previous.map((row) => (row.id === id ? { ...row, ...body } : row)));
+      // Name and visibility show at once; a new access waits for the server (it names the role).
+      const shown = { ...(body.name !== undefined && { name: body.name }), ...(body.is_active !== undefined && { is_active: body.is_active }) };
+      if (previous) client.setQueryData(key(), previous.map((row) => (row.id === id ? { ...row, ...shown } : row)));
       return { previous };
     },
     onError: (_e, _v, context) => context?.previous && client.setQueryData(key(), context.previous),

@@ -124,7 +124,7 @@ def _start(user: User, *, membership_id: int | None = None, notification_id: int
             membership,
             branches=branches,
             chosen=chosen,
-            role=_role(membership, 0),
+            role=_role(membership, 0, user),
             nid=notification_id,
         )
     )
@@ -167,6 +167,7 @@ def _step(user: User, data: JoinSetup) -> Answer:
             message=bot_messages.join_roles(
                 membership,
                 roles=roles,
+                suggested=services.proposed_role(membership, by=user),
                 current_id=role_id,
                 branches=branches,
                 chosen=chosen,
@@ -206,8 +207,9 @@ def _step(user: User, data: JoinSetup) -> Answer:
             membership,
             branches=branches,
             chosen=chosen,
-            role=_role(membership, role_id),
+            role=_role(membership, role_id, user),
             nid=data.nid,
+            role_id=role_id,
         )
     )
 
@@ -233,7 +235,7 @@ def _approve(
     home: int | None = None,
     role_id: int = 0,
 ) -> Answer:
-    role = _role(membership, role_id) if role_id else None
+    role = _role(membership, role_id, user) if role_id else None
     home_branch = next((b for b in branches or [] if b.pk == home), None)
     try:
         membership = services.approve(
@@ -293,10 +295,11 @@ def _approver(user: User, membership: Membership) -> Membership | None:
     return approver
 
 
-def _role(membership: Membership, role_id: int) -> AccessRole | None:
-    roles = AccessRole.objects.for_company(membership.company)
+def _role(membership: Membership, role_id: int, user: User) -> AccessRole | None:
+    """The role `role_id` names, or for 0 the one approving gives by itself (their team link's,
+    else their job title's, when `user` may give it; else the default one)."""
     if role_id:
-        found = roles.filter(pk=role_id).first()
+        found = AccessRole.objects.for_company(membership.company).filter(pk=role_id).first()
         if found is not None:
             return found
-    return roles.filter(is_default=True).first()
+    return services.proposed_role(membership, by=user)

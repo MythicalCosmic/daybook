@@ -7,7 +7,7 @@ import { computed, ref, watch } from "vue";
 
 import type { BranchRef } from "@/api/types";
 
-import type { BulkDecisionInput, BulkDecisionResult, JoinRequest, Role } from "./types";
+import type { BulkDecisionInput, BulkDecisionResult, JoinRequest, PositionRow, Role } from "./types";
 
 type T = (key: string, params?: Record<string, unknown>, plural?: number) => string;
 
@@ -44,9 +44,11 @@ export function useSelection(ids: () => readonly number[]) {
 }
 
 export interface BulkStart {
-  /** The role chosen first: "as their link says" when every link names a role, else the default role. */
+  /** The role chosen first: "each their own" (their team link's, else their job title's) when anyone
+   * has one of their own, else the default role. */
   role: number | null;
-  /** How many of the people came through a link that names a role. */
+  /** How many of the people have a role of their own: through a team link that names one, or a job
+   * title that gives one. */
   linkRoles: "all" | "some" | "none";
   /** Their shared link branch, when they all came with the same one (and the approver may give it). */
   branchIds: number[];
@@ -57,16 +59,23 @@ export interface BulkStart {
   branchRequired: boolean;
 }
 
-/** What the bulk approve dialog starts with, from the people chosen and the approver's roles and branches. */
-export function bulkStart(rows: readonly JoinRequest[], roles: readonly Role[], branches: readonly BranchRef[]): BulkStart {
-  const withRole = rows.filter((row) => row.join_link?.role).length;
+/** What the bulk approve dialog starts with, from the people chosen, the approver's roles and branches
+ * and the job titles (with the access each gives). */
+export function bulkStart(
+  rows: readonly JoinRequest[],
+  roles: readonly Role[],
+  branches: readonly BranchRef[],
+  positions: readonly PositionRow[] = [],
+): BulkStart {
+  const titlesWithRole = new Set(positions.filter((p) => p.role && !p.role.is_owner).map((p) => p.id));
+  const withRole = rows.filter((row) => row.join_link?.role || (row.position && titlesWithRole.has(row.position.id))).length;
   const linkRoles = rows.length > 0 && withRole === rows.length ? "all" : withRole > 0 ? "some" : "none";
   const linkBranches = rows.map((row) => row.join_link?.branch?.id ?? null);
   const everyoneHasBranch = rows.length > 0 && linkBranches.every((id) => id !== null);
   const shared = everyoneHasBranch && new Set(linkBranches).size === 1 ? linkBranches[0]! : null;
   const prefill = shared !== null && branches.some((branch) => branch.id === shared) ? shared : null;
   return {
-    role: linkRoles === "all" ? AS_LINK : (roles.find((role) => role.is_default)?.id ?? null),
+    role: linkRoles !== "none" ? AS_LINK : (roles.find((role) => role.is_default)?.id ?? null),
     linkRoles,
     branchIds: prefill === null ? [] : [prefill],
     homeId: prefill,

@@ -157,6 +157,9 @@ def join_request(membership: Membership) -> BotMessage:
         lines.append(
             _("Position: %(position)s") % {"position": html.quote(membership.position.name)}
         )
+    access = _access(membership)
+    if access is not None:
+        lines.append(_("Access: %(role)s") % {"role": html.quote(access.name)})
     if user.phone:
         lines.append(_("Phone: %(phone)s") % {"phone": html.quote(user.phone)})
     if user.telegram_username:
@@ -397,6 +400,9 @@ def join_request_body(membership: Membership) -> str:
     lines = [_("Company: %(company)s") % {"company": membership.company.name}]
     if membership.position:
         lines.append(_("Position: %(position)s") % {"position": membership.position.name})
+    access = _access(membership)
+    if access is not None:
+        lines.append(_("Access: %(role)s") % {"role": access.name})
     if user.phone:
         lines.append(_("Phone: %(phone)s") % {"phone": user.phone})
     if user.telegram_username:
@@ -413,9 +419,11 @@ def join_setup(
     chosen: list[int],
     role,
     nid: int,
+    role_id: int = 0,
 ) -> BotMessage:
     """Step 1 of approving in a company with several branches: pick the branches (and the role,
-    optionally), then Approve."""
+    optionally), then Approve. `role` is the one they will get: `role_id` 0 is the suggested one
+    (their team link's, else their job title's, else the default one)."""
     name = html.quote(membership.first_name or _requester_name(membership))
     lines = [
         _join_header(membership),
@@ -427,7 +435,6 @@ def join_setup(
     if names:
         lines.append(_("Chosen: %(names)s") % {"names": ", ".join(names)})
     packed = _pack(chosen, branches)
-    role_id = role.pk if role is not None and not role.is_default else 0
     rows = []
     row: list[InlineKeyboardButton] = []
     for branch in branches:
@@ -523,19 +530,23 @@ def join_roles(
     membership: Membership,
     *,
     roles: list,
+    suggested,
     current_id: int,
     branches: list,
     chosen: list[int],
     nid: int,
 ) -> BotMessage:
-    """The roles the approver may give; the default one first."""
+    """The roles the approver may give, the suggested one first (`suggested`: their team
+    link's, else their job title's, else the default one), said why."""
     lines = [_join_header(membership), "", _("<b>Which role?</b> It decides what they may do.")]
     packed = _pack(chosen, branches)
     rows = []
-    for role in roles:
-        value = 0 if role.is_default else role.pk
+    first = [role for role in roles if suggested is not None and role.pk == suggested.pk]
+    for role in first + [role for role in roles if role not in first]:
+        value = 0 if role in first else role.pk
         selected = value == current_id
-        label = role.name + (" · " + _("default") if role.is_default else "")
+        note = _suggestion(membership, role) if role in first else ""
+        label = role.name + (" · " + note if note else "")
         if selected:  # in words; its button is coloured too
             lines.append(_("Chosen: %(names)s") % {"names": html.quote(label)})
         rows.append(
@@ -553,6 +564,28 @@ def join_roles(
             ]
         )
     return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def _access(membership: Membership):
+    """The role approving brings beyond the default one: their team link's, else their job
+    title's (approvers who may not give it give the default one); None for the default."""
+    link = membership.join_link if membership.join_link_id else None
+    if link is not None and link.role_id is not None:
+        return link.role
+    position = membership.position
+    if position is not None and position.role_id is not None and not position.role.is_owner:
+        return position.role
+    return None
+
+
+def _suggestion(membership: Membership, role) -> str:
+    """Why a role is the suggested one."""
+    link = membership.join_link if membership.join_link_id else None
+    if link is not None and link.role_id == role.pk:
+        return _("team link")
+    if membership.position is not None and membership.position.role_id == role.pk:
+        return _("job title")
+    return _("default")
 
 
 def unpack_branches(text: str, branches: list) -> list[int]:

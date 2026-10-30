@@ -45,11 +45,22 @@ class AccessRole(TenantModel):
 
 
 class Position(TenantModel):
-    """A job title (Pharmacist, Cashier…) the employee picks during onboarding. Grants nothing."""
+    """A job title (Pharmacist, Cashier…) the employee picks during onboarding. Its `role` is the
+    access that comes with it: approving someone or changing their job title gives it (when the
+    person doing it may give that role); empty means the company's default role."""
 
     name = models.CharField(max_length=100)
     order = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
+    # RESTRICT, not PROTECT: a company deleted as a whole (the demo reset) takes both with it.
+    role = models.ForeignKey(
+        AccessRole,
+        on_delete=models.RESTRICT,
+        null=True,
+        blank=True,
+        related_name="positions",
+        help_text=_("The access people with this job title get. Empty: the default role."),
+    )
 
     class Meta:
         ordering = ["order", "name"]

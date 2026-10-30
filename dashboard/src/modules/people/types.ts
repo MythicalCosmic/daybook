@@ -115,6 +115,8 @@ export interface PersonDetail extends Person {
   can: PersonActions;
   /** The departments they head. */
   heads?: Named[];
+  /** Their role is the one their job title gives, so a new job title brings its own. */
+  role_follows_title?: boolean;
 }
 
 export interface PeopleParams {
@@ -308,6 +310,19 @@ export interface PositionRow {
   order: number;
   is_active: boolean;
   members_count: number;
+  /** The access it gives: approving someone or changing their job title gives it; null for the default role. */
+  role: RoleBrief | null;
+  /** After a save: how many people got its new access. */
+  applied?: number | null;
+}
+
+export interface PositionInput {
+  name?: string;
+  is_active?: boolean;
+  /** null: the company's default role (needs roles.manage). */
+  role_id?: number | null;
+  /** Also give a new access to the people with this job title whose access followed it. */
+  apply_to_holders?: boolean;
 }
 
 export type { BranchRef, PersonRef };

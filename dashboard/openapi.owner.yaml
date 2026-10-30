@@ -21161,6 +21161,16 @@ components:
           maxLength: 100
         is_active:
           type: boolean
+        role_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+        apply_to_holders:
+          type: boolean
+          writeOnly: true
+          default: false
+          description: Also give a new access to the people with this job title whose
+            access followed it.
     PatchedProjectWriteRequest:
       type: object
       properties:
@@ -22100,6 +22110,11 @@ components:
             $ref: '#/components/schemas/MembersNamed'
           readOnly: true
           description: The departments they head.
+        role_follows_title:
+          type: boolean
+          readOnly: true
+          description: Their role is the one their job title gives, so a new job title
+            brings its own.
         overview:
           type: object
           additionalProperties: {}
@@ -22132,6 +22147,7 @@ components:
       - photo_url
       - position
       - role
+      - role_follows_title
       - status
       - suspended_until
       - username
@@ -22303,11 +22319,24 @@ components:
         members_count:
           type: integer
           readOnly: true
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleRef'
+          readOnly: true
+          nullable: true
+          description: 'The access it gives; null: the default role.'
+        applied:
+          type: integer
+          nullable: true
+          readOnly: true
+          description: 'After a save: how many people got the new access.'
       required:
+      - applied
       - id
       - members_count
       - name
       - order
+      - role
     PositionRequest:
       type: object
       properties:
@@ -22317,6 +22346,16 @@ components:
           maxLength: 100
         is_active:
           type: boolean
+        role_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+        apply_to_holders:
+          type: boolean
+          writeOnly: true
+          default: false
+          description: Also give a new access to the people with this job title whose
+            access followed it.
       required:
       - name
     Preference:
@@ -24929,6 +24968,20 @@ components:
           type: integer
         name:
           type: string
+        is_owner:
+          type: boolean
+      required:
+      - id
+      - is_owner
+      - name
+    RoleRefRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          minLength: 1
         is_owner:
           type: boolean
       required:

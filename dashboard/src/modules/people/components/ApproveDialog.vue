@@ -2,8 +2,10 @@
 /**
  * Approve a join request with a role, a position, the branches they will work in and their home
  * branch (plan §4.6). The role list holds the default role and the roles the approver may give
- * (rule 3); with one branch there is nothing to choose. Someone who came through a team link starts
- * with that link's role and branch (when the approver may give them).
+ * (rule 3); with one branch there is nothing to choose. The role starts as the server would pick
+ * it: their team link's, else the one their job title gives (following the position chosen here
+ * until the approver picks a role), when the approver may give it; else the default one. Someone
+ * who came through a team link starts with that link's branch too.
  */
 import { Check, Link2 } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
@@ -20,7 +22,7 @@ import { formatPhone } from "@/lib/format";
 import { useCompanyStore } from "@/stores/company";
 
 import { usePositions, useRoles } from "../api";
-import type { ApproveInput, JoinRequest } from "../types";
+import type { ApproveInput, JoinRequest, Role } from "../types";
 
 const open = defineModel<boolean>("open", { default: false });
 const props = defineProps<{ request: JoinRequest; busy?: boolean }>();
@@ -39,19 +41,31 @@ const homeId = ref<number | null>(null);
 
 const link = computed(() => props.request.join_link ?? null);
 
+/** The role the chosen job title gives, when it gives one of its own. */
+const titleRoleId = computed(() => (positions.data.value ?? []).find((p) => p.id === positionId.value)?.role?.id ?? null);
 const roleOptions = computed(() =>
   (roles.data.value ?? [])
     .filter((role) => role.is_default || role.can_assign)
     .sort((a, b) => Number(b.is_default) - Number(a.is_default))
-    .map((role) => ({ value: role.id, label: role.is_default ? t("people.approve.defaultRole", { name: role.name }) : role.name })),
+    .map((role) => ({
+      value: role.id,
+      label: role.is_default
+        ? t("people.approve.defaultRole", { name: role.name })
+        : role.id === titleRoleId.value
+          ? t("people.approve.fromTitle", { name: role.name })
+          : role.name,
+    })),
 );
+/** The approver picked a role: a new position no longer changes it. */
+const roleTouched = ref(false);
+function suggested(list: Role[]): number | null {
+  const mayGive = (id: number | null | undefined) => list.find((role) => role.id === id && !role.is_owner && (role.is_default || role.can_assign));
+  return (mayGive(link.value?.role?.id) ?? mayGive(titleRoleId.value) ?? list.find((role) => role.is_default))?.id ?? null;
+}
 watch(
-  () => roles.data.value,
-  (list) => {
-    if (roleId.value !== null || !list) return;
-    // Their team link's role when the approver may give it, else the default role.
-    const fromLink = link.value?.role ? list.find((role) => role.id === link.value!.role!.id && (role.is_default || role.can_assign)) : undefined;
-    roleId.value = fromLink?.id ?? list.find((role) => role.is_default)?.id ?? null;
+  [() => roles.data.value, titleRoleId],
+  ([list]) => {
+    if (!roleTouched.value && list) roleId.value = suggested(list);
   },
   { immediate: true },
 );
@@ -110,7 +124,7 @@ function submit(): void {
       </div>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField :label="t('people.col.role')" :hint="t('people.approve.roleHint')">
-          <SelectBox v-model="roleId" :options="roleOptions" />
+          <SelectBox v-model="roleId" :options="roleOptions" @update:model-value="roleTouched = true" />
         </FormField>
         <FormField :label="t('people.col.position')">
           <SelectBox v-model="positionId" :options="positionOptions" :placeholder="t('people.noPosition')" clearable />

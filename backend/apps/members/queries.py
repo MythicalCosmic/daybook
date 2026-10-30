@@ -439,8 +439,10 @@ def roles(company: Company) -> QuerySet[AccessRole]:
 
 
 def positions(company: Company, *, active: bool | None = None) -> QuerySet[Position]:
-    rows = Position.objects.for_company(company).annotate(
-        members_count=Count("members", filter=Q(members__status__in=CURRENT))
+    rows = (
+        Position.objects.for_company(company)
+        .select_related("role")
+        .annotate(members_count=Count("members", filter=Q(members__status__in=CURRENT)))
     )
     if active is not None:
         rows = rows.filter(is_active=active)

@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import ProtectedError
+from django.db.models import ProtectedError, Q
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
@@ -186,10 +186,11 @@ def approve(
     welcome: bool = True,
 ) -> Membership:
     """Let a person in: `role` if the approver may give it (rule 3), else the role set on the
-    request, else the default one; `position` replaces the one they picked; `branches` and
+    request, else `proposed_role` (their team link's, else their job title's, when the approver
+    may give it; else the default one); `position` replaces the one they picked; `branches` and
     `home_branch` say where they work (the company's branch when it has exactly one). A request
-    that came through a team link takes the link's role and branch when the approver names
-    none and may give them.
+    that came through a team link takes the link's branch when the approver names none and may
+    give it.
 
     `via` is a team link letting the person in by itself (`admit`): `by` is the link's maker,
     whose right to give its role and branch is checked as for any approval; the person hears a
@@ -203,27 +204,26 @@ def approve(
     actor = _actor(by, membership.company)
     company = membership.company
     link = via or (membership.join_link if membership.join_link_id else None)
+    if position is not None and (position.company_id != company.pk or not position.is_active):
+        raise DomainError(_("Pick a position of this company."))
 
     chosen_role = role
-    if (
-        role is None
-        and membership.role_id is None
-        and link is not None
-        and link.role_id
-        and (via is not None or by.is_platform_admin or may_assign_role(actor, link.role))
-    ):
-        role = link.role
+    if role is None and membership.role_id is None:
+        if via is not None:
+            role = _link_role(via)
+        else:
+            # The default role needs no right to give it (it's what everyone starts with).
+            suggested = proposed_role(membership, by=by, position=position)
+            role = suggested if suggested is not None and not suggested.is_default else None
     if role is not None:
         if role.company_id != company.pk:
             raise DomainError(_("Pick a role of this company."))
         membership.role = role
     if membership.role_id is None:
-        membership.role = AccessRole.objects.for_company(company).filter(is_default=True).first()
+        membership.role = _default_role(company)
     elif not by.is_platform_admin:
         ensure_may_assign_role(actor, membership.role)
     if position is not None:
-        if position.company_id != company.pk or not position.is_active:
-            raise DomainError(_("Pick a position of this company."))
         membership.position = position
     chosen = _valid_branches(company, branches, home_branch, actor=actor)
     if chosen is None and link is not None:
@@ -279,7 +279,9 @@ def admit(
         return None
     link = (
         JoinLink.objects.select_for_update(of=("self",))
-        .select_related("company", "branch", "role", "created_by__role", "created_by__user")
+        .select_related(
+            "company", "branch", "role", "position__role", "created_by__role", "created_by__user"
+        )
         .filter(pk=membership.join_link_id)
         .first()
     )
@@ -287,7 +289,7 @@ def admit(
         return None
     admitted = None
     if link_lets_in(membership, link):
-        role = link.role or _default_role(link.company)
+        role = _link_role(link)
         try:
             with transaction.atomic():  # a refusal leaves the request as it was
                 admitted = approve(
@@ -304,10 +306,11 @@ def admit(
 
 def link_lets_in(membership: Membership, link: JoinLink | None) -> bool:
     """Whether `link` lets `membership` in by itself once their account is made: it works and
-    adds people straight away; its maker may still approve, and give its role (the default one
-    when it names none) and its branch (a link without one only while the company has a single
-    branch); and the person never left, was blocked or was turned down here: they come back
-    through an approver. The bot promises "no waiting" only when this holds."""
+    adds people straight away; its maker may still approve, and give its role (`_link_role`) and
+    its branch (a link without one only while the company has a single branch); and the person
+    never left, was blocked or was turned down here: they come back through an approver. The bot
+    promises "no waiting" only when this holds. A job title the person picked themselves never
+    decides their access here: nobody looked at it."""
     if link is None or not link.auto_approve:
         return False
     if link.status_at(timezone.now()) != JoinLink.Status.ACTIVE:
@@ -315,7 +318,7 @@ def link_lets_in(membership: Membership, link: JoinLink | None) -> bool:
     maker = link.created_by
     if maker is None or not maker.has_perm(Perm.MEMBERS_APPROVE):
         return False
-    role = link.role or _default_role(link.company)
+    role = _link_role(link)
     if role is None or role.is_owner or not may_assign_role(maker, role):
         return False
     if link.branch_id is None:
@@ -342,6 +345,49 @@ def _turned_away(membership: Membership) -> bool:
 
 def _default_role(company: Company) -> AccessRole | None:
     return AccessRole.objects.for_company(company).filter(is_default=True).first()
+
+
+def title_role(position: Position | None, company: Company) -> AccessRole | None:
+    """The access a job title gives: its own role, else the company's default one (never the
+    Owner role)."""
+    if position is not None and position.role_id is not None and not position.role.is_owner:
+        return position.role
+    return _default_role(company)
+
+
+def proposed_role(
+    membership: Membership, *, by: User, position: Position | None = None
+) -> AccessRole | None:
+    """The role approving `membership` gives when the approver names none: their team link's,
+    else their job title's (`position` when the approver changes it), each only when `by` may
+    give it; else the company's default role."""
+    company = membership.company
+    actor = _actor(by, company)
+
+    def allowed(role: AccessRole | None) -> bool:
+        return (
+            role is not None
+            and not role.is_owner
+            and (by.is_platform_admin or may_assign_role(actor, role))
+        )
+
+    link = membership.join_link if membership.join_link_id else None
+    if link is not None and allowed(link.role):
+        return link.role
+    title = position if position is not None else membership.position
+    if title is not None and allowed(title.role):
+        return title.role
+    return _default_role(company)
+
+
+def _link_role(link: JoinLink) -> AccessRole | None:
+    """The role a team link gives: its own, else that of the job title it sets (its maker chose
+    both), else the company's default one."""
+    if link.role_id is not None:
+        return link.role
+    if link.position_id is not None:
+        return title_role(link.position, link.company)
+    return _default_role(link.company)
 
 
 def decide_many(
@@ -726,7 +772,7 @@ def update_member(
 ) -> Membership:
     """Change someone's name, position, branches, home branch or department (members.manage).
     Someone who sees only some branches can hand out only those, and keeps the others as they
-    were."""
+    were. A new job title brings its access along (`_follows_title`)."""
     _ensure_same_company(membership, by)
     membership = _lock(membership)
     if not by.has_perm(Perm.MEMBERS_MANAGE):
@@ -756,6 +802,10 @@ def update_member(
                 membership.position.name if membership.position else None,
                 position.name if position else None,
             ]
+            role = _follows_title(membership, membership.position, position, by=by)
+            if role is not None:
+                changes["role"] = [membership.role.name if membership.role else None, role.name]
+                membership.role = role
             membership.position = position
 
     if department is not UNSET:
@@ -825,6 +875,29 @@ def update_member(
     )
     transaction.on_commit(partial(_bump, membership.company_id, "members.people"))
     return membership
+
+
+def _follows_title(
+    membership: Membership, before: Position | None, after: Position | None, *, by: Membership
+) -> AccessRole | None:
+    """The role that comes with the job title `after`, when the person's access follows their
+    job title (they hold what `before` gave, or no role) and `by` may change roles, give that
+    role and take theirs away (§5); None leaves the role as it is: an owner stays an owner, and
+    a role set by hand stays too."""
+    if _holds_owner_role(membership) or not by.has_perm(Perm.ROLES_MANAGE):
+        return None
+    company = membership.company
+    was = title_role(before, company)
+    if membership.role_id is not None and (was is None or membership.role_id != was.pk):
+        return None
+    role = title_role(after, company)
+    if role is None or role.pk == membership.role_id:
+        return None
+    if not may_assign_role(by, role, target=membership):
+        return None
+    if membership.role is not None and not may_assign_role(by, membership.role, target=membership):
+        return None
+    return role
 
 
 @transaction.atomic
@@ -951,6 +1024,8 @@ def delete_role(role: AccessRole, *, by: Membership) -> None:
         raise DomainError(_("Make another role the default one first."))
     if Membership.objects.filter(role=role).exists():
         raise DomainError(_("Give the people in this role another role first."))
+    if Position.objects.filter(role=role).exists():
+        raise DomainError(_("Job titles give this role: give them another one first."))
     audit.record(
         MemberAction.ROLE_DELETED,
         company_id=role.company_id,
@@ -970,8 +1045,14 @@ def save_position(
     position: Position | None = None,
     name: str | None = None,
     is_active: bool | None = None,
+    role: AccessRole | object | None = UNSET,
+    apply_to_holders: bool = False,
 ) -> Position:
-    """Create a position or rename, hide or bring back one (positions.manage)."""
+    """Create a position or rename, hide or bring back one (positions.manage), or change the
+    access it gives (`role`, None for the default one): that takes roles.manage too, and only a
+    role `by` may give, never the Owner role (§5). `apply_to_holders` gives the new access to
+    the people with this job title whose access followed it; `position.applied` says to how
+    many."""
     if by.company_id != company.pk or not by.has_perm(Perm.POSITIONS_MANAGE):
         raise PermissionDenied(_("You don't have permission to do this."))
     created = position is None
@@ -995,6 +1076,27 @@ def save_position(
     if is_active is not None and is_active != position.is_active:
         changes["is_active"] = [position.is_active, is_active]
         position.is_active = is_active
+    was = None
+    if role is not UNSET and (role.pk if role else None) != position.role_id:
+        if not by.has_perm(Perm.ROLES_MANAGE):
+            raise PermissionDenied(_("Changing the access a job title gives needs roles.manage."))
+        if role is not None:
+            if role.company_id != company.pk:
+                raise DomainError(_("Pick a role of this company."))
+            if role.is_owner:
+                raise DomainError(_("A job title can't give the Owner role."))
+            ensure_may_assign_role(by, role)
+        if position.role_id is not None and not may_assign_role(by, position.role):
+            raise PermissionDenied(
+                _("You can only change the access of a job title whose role you could give.")
+            )
+        was = title_role(position, company)
+        changes["role"] = [
+            position.role.name if position.role_id else None,
+            role.name if role else None,
+        ]
+        position.role = role
+    position.applied = 0
     if not changes and not created:
         return position
     position.save()
@@ -1005,8 +1107,48 @@ def save_position(
         target=position,
         changes=changes,
     )
-    transaction.on_commit(partial(_bump, company.pk, "members.positions"))
+    pulses = ["members.positions"]
+    if apply_to_holders and was is not None and not created:
+        position.applied = _give_title_role(position, was, by=by)
+        if position.applied:
+            pulses.append("members.people")
+    transaction.on_commit(partial(_bump, company.pk, *pulses))
     return position
+
+
+def _give_title_role(position: Position, was: AccessRole, *, by: Membership) -> int:
+    """Give the access `position` gives now to its current holders whose access followed it
+    (they hold `was`, what it gave before, or no role), as far as `by` may (§5): owners and
+    roles set by hand stay. Returns how many changed."""
+    role = title_role(position, position.company)
+    if role is None or role.pk == was.pk:
+        return 0
+    holders = (
+        Membership.objects.select_for_update(of=("self",))
+        .select_related("role")
+        .filter(position=position, status__in=CURRENT)
+        .filter(Q(role=was) | Q(role__isnull=True))
+        .order_by("pk")
+    )
+    given = 0
+    for person in holders:
+        if _holds_owner_role(person) or not may_assign_role(by, role, target=person):
+            continue
+        if person.role is not None and not may_assign_role(by, person.role, target=person):
+            continue
+        before = person.role.name if person.role else None
+        person.role = role
+        person.save(update_fields=["role", "updated_at"])
+        audit.record(
+            MemberAction.ROLE_CHANGED,
+            company_id=person.company_id,
+            actor=by.user,
+            target=person,
+            changes={"role": [before, role.name]},
+            position=position.name,
+        )
+        given += 1
+    return given
 
 
 @transaction.atomic

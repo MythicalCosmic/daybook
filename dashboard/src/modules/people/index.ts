@@ -25,8 +25,9 @@ export default defineModule({
     { key: "team", title: "people.nav.team", to: "people", exact: true },
     { key: "departments", title: "people.nav.departments", to: "people/departments" },
     { key: "requests", title: "people.nav.requests", to: "people/requests", perm: "members.approve", badge: counter("members.pending") },
-    { key: "roles", title: "people.nav.roles", to: "people/roles", perm: "roles.manage" },
+    // A job title gives its access; roles (the permission bundles behind it) are the advanced part.
     { key: "positions", title: "people.nav.positions", to: "people/positions", perm: "positions.manage" },
+    { key: "roles", title: "people.nav.roles", to: "people/roles", perm: "roles.manage" },
   ],
   // Every members.* key (people, pending, roles, positions, departments) and time off shown on Person 360.
   invalidates: ["members", "timeoff.time_off"],

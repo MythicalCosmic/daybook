@@ -1,10 +1,12 @@
 <script setup lang="ts">
 /**
  * Edit someone: name, position, their department (once the company has departments), the branches
- * they work in and their home branch, and (with roles.manage) their role. Only roles the viewer may
- * give are offered; the server checks the anti-escalation rules again. Sends only what changed.
+ * they work in and their home branch. Their access comes with the job title (said under it); with
+ * roles.manage it can be set by hand instead, under "Change access by hand". Only roles the viewer
+ * may give are offered; the server checks the anti-escalation rules again. Sends only what changed.
  */
-import { computed, watch } from "vue";
+import { ChevronDown } from "@lucide/vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { z } from "zod";
 
@@ -28,7 +30,7 @@ const props = defineProps<{ person: PersonDetail }>();
 
 const { t } = useI18n();
 const positions = usePositions();
-const roles = useRoles(computed(() => props.person.can.change_role));
+const roles = useRoles();
 const scoped = useScopedBranches();
 const departments = useDepartments();
 
@@ -88,6 +90,20 @@ const roleOptions = computed(() =>
     .map((role) => ({ value: role.id, label: role.name, description: role.is_owner ? t("people.edit.ownerRole") : t("people.roles.permissionsCount", { n: role.permissions.length }, role.permissions.length), disabled: !role.can_assign })),
 );
 
+/** Where their access comes from, for the job title chosen in the form: the title (when it followed
+ * the old one), by hand, or the Owner role, which never moves with a title. */
+const showRole = ref(false);
+const roleByHand = computed(() => form.values.role_id !== initial.role_id);
+const accessNote = computed(() => {
+  const list = roles.data.value ?? [];
+  const current = list.find((role) => role.id === form.values.role_id)?.name ?? props.person.role?.name;
+  if (props.person.role?.is_owner && !roleByHand.value) return t("people.edit.accessOwner");
+  if (roleByHand.value || !props.person.role_follows_title) return current ? t("people.edit.accessByHand", { name: current }) : "";
+  const title = (positions.data.value ?? []).find((p) => p.id === form.values.position_id);
+  const name = title?.role?.name ?? list.find((role) => role.is_default)?.name;
+  return name ? t("people.edit.accessFollows", { name }) : "";
+});
+
 // A home branch must be one of the branches: keep it valid while branches change.
 watch(
   () => [...form.values.branch_ids],
@@ -112,6 +128,7 @@ watch(
       </div>
       <FormField :label="t('people.col.position')" :error="form.errors.position_id">
         <SelectBox v-model="form.values.position_id" :options="positionOptions" :placeholder="t('people.noPosition')" clearable />
+        <p v-if="accessNote" class="mt-1.5 text-xs text-muted" data-access-note>{{ accessNote }}</p>
       </FormField>
       <FormField v-if="showDepartment" :label="t('people.col.department')" :hint="t('people.edit.departmentHint')" :error="form.errors.department_id">
         <SelectBox v-model="form.values.department_id" :options="departmentChoices" :placeholder="t('people.noDepartment')" clearable data-department-select />
@@ -124,9 +141,21 @@ watch(
           <SelectBox v-model="form.values.home_branch_id" :options="homeOptions" :disabled="!homeOptions.length" :placeholder="t('people.noBranch')" />
         </FormField>
       </div>
-      <FormField v-if="person.can.change_role" :label="t('people.col.role')" :hint="t('people.edit.roleHint')" :error="form.errors.role_id">
-        <SelectBox v-model="form.values.role_id" :options="roleOptions" />
-      </FormField>
+      <template v-if="person.can.change_role">
+        <button
+          type="button"
+          class="-mt-1 inline-flex w-fit items-center gap-1 text-sm font-medium text-muted hover:text-fg"
+          :aria-expanded="showRole || !!form.errors.role_id"
+          data-access-advanced
+          @click="showRole = !showRole"
+        >
+          <ChevronDown :size="15" aria-hidden="true" :class="showRole || form.errors.role_id ? 'rotate-180' : ''" />
+          {{ t("people.edit.accessAdvanced") }}
+        </button>
+        <FormField v-if="showRole || form.errors.role_id" :label="t('people.col.role')" :hint="t('people.edit.roleHint')" :error="form.errors.role_id">
+          <SelectBox v-model="form.values.role_id" :options="roleOptions" />
+        </FormField>
+      </template>
     </form>
     <template #footer>
       <UiButton variant="ghost" @click="open = false">{{ t("common.cancel") }}</UiButton>

@@ -117,9 +117,9 @@ describe("bulkStart", () => {
     });
   });
 
-  it("starts from the default role when someone's link names none, and asks for branches when someone came without one", () => {
+  it("starts from each one's own role when only some links name one, and asks for branches when someone came without one", () => {
     const rows = [request(1, { join_link: MEETING }), request(2)];
-    expect(bulkStart(rows, ROLES, [CHILONZOR, YUNUSOBOD])).toMatchObject({ role: 3, linkRoles: "some", branchIds: [], homeId: null, everyoneHasBranch: false, branchRequired: true });
+    expect(bulkStart(rows, ROLES, [CHILONZOR, YUNUSOBOD])).toMatchObject({ role: AS_LINK, linkRoles: "some", branchIds: [], homeId: null, everyoneHasBranch: false, branchRequired: true });
     expect(bulkStart([request(3)], ROLES, [CHILONZOR, YUNUSOBOD])).toMatchObject({ role: 3, linkRoles: "none", branchRequired: true });
     // One branch: nothing to choose.
     expect(bulkStart(rows, ROLES, [CHILONZOR]).branchRequired).toBe(false);
@@ -213,12 +213,12 @@ describe("RequestsPage", () => {
     await vi.waitFor(() => expect(document.querySelector("[data-bulk-confirm]")).not.toBeNull());
     await flushPromises();
     expect(document.querySelector("[data-bulk-who]")!.textContent).toContain("Aziza Karimova, Zarina Abdullayeva, Laylo Hamidova");
-    // Not everyone's link names a role: the default role for all, unless changed.
+    // Some links name a role: each their own (the link's, else the job title's, else the default one).
     document.querySelector<HTMLButtonElement>("[data-bulk-confirm]")!.click();
     await flushPromises();
     await flushPromises();
 
-    expect(calls.find((c) => c.method === "POST")?.body).toEqual({ ids: [1, 2, 3], action: "approve", role_id: 3 });
+    expect(calls.find((c) => c.method === "POST")?.body).toEqual({ ids: [1, 2, 3], action: "approve" });
     expect(toasts.map((toast) => toast.title)).toContain("2 people are on the team");
     const failures = wrapper.find("[data-bulk-failures]");
     expect(failures.text()).toContain("1 person couldn’t be approved");

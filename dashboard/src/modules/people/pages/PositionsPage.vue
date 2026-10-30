@@ -1,10 +1,12 @@
 <script setup lang="ts">
 /**
  * Positions (plan §6.2 "Positions: drag to sort"): the jobs people pick when they join, in the
- * order they see them. Drag a row (or Alt + ↑/↓) to reorder, click one to rename, hide or delete
- * it. A position people hold can only be hidden, never deleted.
+ * order they see them, each with the access it gives (approving someone or changing their job
+ * title gives it). Drag a row (or Alt + ↑/↓) to reorder, click one to rename, hide or delete it,
+ * or (with roles.manage) change its access, for the people who hold it now too. A position people
+ * hold can only be hidden, never deleted.
  */
-import { BriefcaseBusiness, Eye, EyeOff, Megaphone, Plus, Repeat, Trash2, UserPlus } from "@lucide/vue";
+import { BriefcaseBusiness, Eye, EyeOff, Megaphone, Plus, Repeat, ShieldCheck, Trash2, UserPlus } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -13,6 +15,7 @@ import ErrorState from "@/components/ErrorState.vue";
 import FormField from "@/components/FormField.vue";
 import IconButton from "@/components/IconButton.vue";
 import PageHeader from "@/components/PageHeader.vue";
+import SelectBox from "@/components/SelectBox.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import TextInput from "@/components/TextInput.vue";
 import ToggleSwitch from "@/components/ToggleSwitch.vue";
@@ -23,10 +26,11 @@ import UiDialog from "@/components/UiDialog.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { useDelayedPending } from "@/lib/useDelayedPending";
+import { useCan } from "@/lib/usePermission";
 import { useCompanyStore } from "@/stores/company";
 
-import { usePositionMutations, usePositions } from "../api";
-import type { PositionRow } from "../types";
+import { usePositionMutations, usePositions, useRoles } from "../api";
+import type { PositionInput, PositionRow } from "../types";
 
 const { t } = useI18n();
 const company = useCompanyStore();
@@ -34,11 +38,27 @@ const confirm = useConfirm();
 const positions = usePositions();
 const skeleton = useDelayedPending(computed(() => positions.isPending.value));
 const { create, update, remove, reorder } = usePositionMutations();
+// Changing the access a job title gives takes roles.manage; the list shows it to everyone here.
+const canSetAccess = useCan("roles.manage");
+const roles = useRoles();
+const defaultRole = computed(() => roles.data.value?.find((role) => role.is_default) ?? null);
+
+/** "Access: Cashier", or the company's default role for a title without its own. */
+function accessLine(row: PositionRow): string {
+  const name = row.role?.name ?? defaultRole.value?.name;
+  return name ? t("people.positions.accessLine", { name }) : t("people.positions.accessDefaultPlain");
+}
 
 const active = computed(() => (positions.data.value ?? []).filter((p) => p.is_active).sort((a, b) => a.order - b.order));
 const hidden = computed(() => (positions.data.value ?? []).filter((p) => !p.is_active));
 const nodes = computed<TreeNode[]>(() =>
-  active.value.map((p) => ({ id: p.id, label: p.name, icon: BriefcaseBusiness, badge: t("people.positions.people", { n: p.members_count }, p.members_count) })),
+  active.value.map((p) => ({
+    id: p.id,
+    label: p.name,
+    icon: BriefcaseBusiness,
+    meta: accessLine(p),
+    badge: t("people.positions.people", { n: p.members_count }, p.members_count),
+  })),
 );
 
 function onMove(move: TreeMove): void {
@@ -54,10 +74,13 @@ const editing = ref<PositionRow | null>(null);
 const adding = ref(false);
 const name = ref("");
 const isActive = ref(true);
+const roleId = ref<number | null>(null);
+const applyToHolders = ref(true);
 function openAdd(): void {
   adding.value = true;
   editing.value = null;
   name.value = "";
+  roleId.value = null;
 }
 function openEdit(id: number | string): void {
   const row = (positions.data.value ?? []).find((p) => p.id === Number(id));
@@ -66,7 +89,21 @@ function openEdit(id: number | string): void {
   adding.value = false;
   name.value = row.name;
   isActive.value = row.is_active;
+  roleId.value = row.role?.id ?? null;
+  applyToHolders.value = true;
 }
+
+/** Roles a job title may give: never the Owner role, and only roles the viewer may give (the
+ * one it gives now stays listed so the box can show it). */
+const accessOptions = computed(() =>
+  (roles.data.value ?? [])
+    .filter((role) => !role.is_owner && (!role.is_default || role.id === editing.value?.role?.id) && (role.can_assign || role.id === editing.value?.role?.id))
+    .map((role) => ({ value: role.id, label: role.name, disabled: !role.can_assign })),
+);
+const accessPlaceholder = computed(() =>
+  defaultRole.value ? t("people.positions.accessDefault", { name: defaultRole.value.name }) : t("people.positions.accessDefaultPlain"),
+);
+const accessChanged = computed(() => !!editing.value && roleId.value !== (editing.value.role?.id ?? null));
 const dialogOpen = computed({
   get: () => adding.value || editing.value !== null,
   set: (value: boolean) => {
@@ -82,15 +119,23 @@ async function submit(): Promise<void> {
   if (!clean) return;
   try {
     if (adding.value) {
-      await create.mutateAsync(clean);
+      const body: PositionInput = { name: clean };
+      if (canSetAccess.value && roleId.value !== null) body.role_id = roleId.value;
+      await create.mutateAsync(body);
       toast.success(t("people.positions.added", { name: clean }));
     } else if (editing.value) {
-      await update.mutateAsync({ id: editing.value.id, body: { name: clean, is_active: isActive.value } });
-      toast.success(t("people.positions.saved", { name: clean }));
+      const body: PositionInput = { name: clean, is_active: isActive.value };
+      if (accessChanged.value) {
+        body.role_id = roleId.value;
+        body.apply_to_holders = editing.value.members_count > 0 && applyToHolders.value;
+      }
+      const saved = await update.mutateAsync({ id: editing.value.id, body });
+      const applied = saved.applied ?? 0;
+      toast.success(applied > 0 ? t("people.positions.savedApplied", { name: clean, n: applied }, applied) : t("people.positions.saved", { name: clean }));
     }
     dialogOpen.value = false;
   } catch {
-    // Shown (a name already taken).
+    // Shown (a name already taken, an access they may not give).
   }
 }
 
@@ -156,6 +201,7 @@ async function deletePosition(row: PositionRow): Promise<void> {
         <h2 class="text-md font-semibold text-fg">{{ t("people.positions.whyTitle") }}</h2>
         <ul class="mt-3 flex flex-col gap-3 text-sm text-muted">
           <li class="flex gap-2.5"><UserPlus :size="16" class="mt-0.5 shrink-0 text-primary" aria-hidden="true" />{{ t("people.positions.whyJoin") }}</li>
+          <li class="flex gap-2.5"><ShieldCheck :size="16" class="mt-0.5 shrink-0 text-primary" aria-hidden="true" />{{ t("people.positions.whyAccess") }}</li>
           <li class="flex gap-2.5"><Repeat :size="16" class="mt-0.5 shrink-0 text-primary" aria-hidden="true" />{{ t("people.positions.whyRoutines") }}</li>
           <li class="flex gap-2.5"><Megaphone :size="16" class="mt-0.5 shrink-0 text-primary" aria-hidden="true" />{{ t("people.positions.whyAnnounce") }}</li>
         </ul>
@@ -168,6 +214,18 @@ async function deletePosition(row: PositionRow): Promise<void> {
         <FormField :label="t('people.positions.name')" required>
           <TextInput v-model="name" autofocus :maxlength="100" :placeholder="t('people.positions.namePlaceholder')" />
         </FormField>
+        <FormField v-if="canSetAccess" :label="t('people.positions.access')" :hint="t('people.positions.accessHint')">
+          <SelectBox v-model="roleId" :options="accessOptions" :placeholder="accessPlaceholder" clearable data-access-select />
+        </FormField>
+        <p v-else-if="editing" class="text-sm text-muted">{{ accessLine(editing) }}</p>
+        <ToggleSwitch
+          v-if="accessChanged && editing && editing.members_count > 0"
+          v-model="applyToHolders"
+          layout="row"
+          :label="t('people.positions.applyHolders', { n: editing.members_count })"
+          :description="t('people.positions.applyHoldersHint')"
+          data-apply-holders
+        />
         <ToggleSwitch v-if="editing" v-model="isActive" layout="row" :label="t('people.positions.visible')" :description="t('people.positions.visibleHint')" />
         <p v-if="editing" class="text-sm text-muted">{{ t("people.positions.heldBy", { n: editing.members_count }, editing.members_count) }}</p>
       </form>

@@ -232,6 +232,9 @@ class PersonSerializer(serializers.ModelSerializer):
 class PersonDetailSerializer(PersonSerializer):
     language = serializers.SerializerMethodField()
     heads = serializers.SerializerMethodField(help_text="The departments they head.")
+    role_follows_title = serializers.SerializerMethodField(
+        help_text="Their role is the one their job title gives, so a new job title brings its own."
+    )
     overview = serializers.SerializerMethodField()
     can = serializers.SerializerMethodField()
 
@@ -241,6 +244,7 @@ class PersonDetailSerializer(PersonSerializer):
             *PersonSerializer.Meta.fields,
             "language",
             "heads",
+            "role_follows_title",
             "overview",
             "can",
         )
@@ -253,6 +257,14 @@ class PersonDetailSerializer(PersonSerializer):
     def get_heads(self, person: Membership) -> list[dict]:
         org = self._org()
         return [{"id": pk, "name": org.departments[pk].name} for pk in org.headed_by(person.pk)]
+
+    def get_role_follows_title(self, person: Membership) -> bool:
+        if person.role_id is None:
+            return True
+        if person.role.is_owner:
+            return False
+        role = services.title_role(person.position, person.company)
+        return role is not None and role.pk == person.role_id
 
     @extend_schema_field(serializers.DictField())
     def get_overview(self, person: Membership) -> dict:
@@ -488,6 +500,7 @@ class PeopleViewSet(
         return Response(self._detail(self.get_queryset().get(pk=person.pk)))
 
     def _update(self, person: Membership, data: dict) -> None:
+        role = None
         if "role_id" in data:
             if not self.membership.has_perm(Perm.ROLES_MANAGE):
                 self.permission_denied(
@@ -496,7 +509,12 @@ class PeopleViewSet(
             role = get_object_or_404(
                 AccessRole.objects.for_company(self.company), pk=data["role_id"]
             )
+        self._update_details(person, data)
+        # After the job title: a role chosen by hand wins over the one a new title brings.
+        if role is not None:
             services.change_role(person, by=self.membership, role=role)
+
+    def _update_details(self, person: Membership, data: dict) -> None:
         changes = {}
         for field in ("first_name", "last_name"):
             if field in data:
@@ -990,11 +1008,38 @@ class RoleViewSet(
 
 class PositionSerializer(serializers.ModelSerializer):
     members_count = serializers.IntegerField(read_only=True)
+    role = RoleRefSerializer(
+        read_only=True, allow_null=True, help_text="The access it gives; null: the default role."
+    )
+    role_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+    apply_to_holders = serializers.BooleanField(
+        write_only=True,
+        required=False,
+        default=False,
+        help_text="Also give a new access to the people with this job title whose access "
+        "followed it.",
+    )
+    applied = serializers.SerializerMethodField(
+        help_text="After a save: how many people got the new access."
+    )
 
     class Meta:
         model = Position
-        fields = ("id", "name", "order", "is_active", "members_count")
+        fields = (
+            "id",
+            "name",
+            "order",
+            "is_active",
+            "members_count",
+            "role",
+            "role_id",
+            "apply_to_holders",
+            "applied",
+        )
         read_only_fields = ("id", "order", "members_count")
+
+    def get_applied(self, position: Position) -> int | None:
+        return getattr(position, "applied", None)
 
 
 class PositionViewSet(
@@ -1030,20 +1075,35 @@ class PositionViewSet(
             by=self.membership,
             name=serializer.validated_data["name"],
             is_active=serializer.validated_data.get("is_active"),
+            role=self._role(serializer.validated_data),
         )
         serializer.instance = queries.positions(self.company).get(pk=position.pk)
         self.bump("members.positions")
 
     def perform_update(self, serializer):
+        data = serializer.validated_data
         position = services.save_position(
             self.company,
             by=self.membership,
             position=serializer.instance,
-            name=serializer.validated_data.get("name"),
-            is_active=serializer.validated_data.get("is_active"),
+            name=data.get("name"),
+            is_active=data.get("is_active"),
+            role=self._role(data),
+            apply_to_holders=data.get("apply_to_holders", False),
         )
         serializer.instance = queries.positions(self.company).get(pk=position.pk)
+        serializer.instance.applied = position.applied
         self.bump("members.positions", PEOPLE)
+
+    def _role(self, data: dict):
+        if "role_id" not in data:
+            return services.UNSET
+        if data["role_id"] is None:
+            return None
+        role = AccessRole.objects.for_company(self.company).filter(pk=data["role_id"]).first()
+        if role is None:
+            raise ValidationError({"role_id": [_("Pick a role of this company.")]})
+        return role
 
     def perform_destroy(self, instance):
         services.delete_position(instance, by=self.membership)

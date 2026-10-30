@@ -330,6 +330,8 @@ def positions_done(company: Company) -> bool:
 
 
 def copy_positions(source: Company, target: Company, by: Membership) -> int:
+    """Active job titles by name, each with the access it gives when the new company has a role
+    of that name (`_match_title_roles`, whichever part is copied first)."""
     taken = {
         name.lower() for name in Position.objects.for_company(target).values_list("name", flat=True)
     }
@@ -340,6 +342,7 @@ def copy_positions(source: Company, target: Company, by: Membership) -> int:
             continue
         Position.objects.create(company=target, name=position.name, order=order + created)
         created += 1
+    _match_title_roles(source, target)
     return created
 
 
@@ -356,7 +359,32 @@ def copy_roles(source: Company, target: Company, by: Membership) -> int:
         permissions = [code for code in role.permissions if services.may_grant(by, [code])]
         AccessRole.objects.create(company=target, name=role.name, permissions=permissions)
         created += 1
+    _match_title_roles(source, target)
     return created
+
+
+def _match_title_roles(source: Company, target: Company) -> None:
+    """Job titles of `target` without access of their own give the role their namesake in
+    `source` gives, when `target` has a role of that name (never the Owner role)."""
+    wanted = {
+        position.name.lower(): position.role.name
+        for position in Position.objects.for_company(source)
+        .filter(role__isnull=False, role__is_owner=False)
+        .select_related("role")
+    }
+    if not wanted:
+        return
+    roles = {
+        role.name: role
+        for role in AccessRole.objects.for_company(target).filter(
+            is_owner=False, name__in=set(wanted.values())
+        )
+    }
+    for position in Position.objects.for_company(target).filter(role__isnull=True):
+        role = roles.get(wanted.get(position.name.lower(), ""))
+        if role is not None:
+            position.role = role
+            position.save(update_fields=["role", "updated_at"])
 
 
 # Audit history -----------------------------------------------------------------------

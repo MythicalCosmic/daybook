@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-29 15:23+0500\n"
+"POT-Creation-Date: 2026-10-30 16:10+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -5271,6 +5271,11 @@ msgstr "Lavozim: %(position)s"
 
 #: backend/apps/members/bot_messages.py
 #, python-format
+msgid "Access: %(role)s"
+msgstr "Ruxsat: %(role)s"
+
+#: backend/apps/members/bot_messages.py
+#, python-format
 msgid "Phone: %(phone)s"
 msgstr "Telefon: %(phone)s"
 
@@ -5495,6 +5500,14 @@ msgid "<b>Which role?</b> It decides what they may do."
 msgstr "<b>Qaysi rol?</b> Xodim nimalar qila olishi shunga bog‘liq."
 
 #: backend/apps/members/bot_messages.py
+msgid "team link"
+msgstr "jamoa havolasi"
+
+#: backend/apps/members/bot_messages.py
+msgid "job title"
+msgstr "lavozim"
+
+#: backend/apps/members/bot_messages.py
 msgid "default"
 msgstr "standart"
 
@@ -5613,7 +5626,8 @@ msgstr "Havola nomi ko‘pi bilan 100 ta belgi bo‘lishi mumkin."
 msgid "You can only give the branches you manage."
 msgstr "Faqat o‘zingiz boshqaradigan filiallarni biriktira olasiz."
 
-#: backend/apps/members/join_links.py backend/apps/members/services.py
+#: backend/apps/members/join_links.py backend/apps/members/owner_api.py
+#: backend/apps/members/services.py
 msgid "Pick a role of this company."
 msgstr "Shu kompaniyadagi rolni tanlang."
 
@@ -5689,6 +5703,10 @@ msgstr "Egalarda barcha ruxsatlar bor."
 #: backend/apps/members/models.py
 msgid "Given to new members when they are approved."
 msgstr "Yangi xodimlarga tasdiqlanganda beriladi."
+
+#: backend/apps/members/models.py
+msgid "The access people with this job title get. Empty: the default role."
+msgstr "Shu lavozimdagi xodimlar oladigan ruxsat. Bo‘sh bo‘lsa: standart rol."
 
 #: backend/apps/members/models.py
 msgid "Pending"
@@ -6279,12 +6297,32 @@ msgid "Give the people in this role another role first."
 msgstr "Avval bu roldagi odamlarga boshqa rol bering."
 
 #: backend/apps/members/services.py
+msgid "Job titles give this role: give them another one first."
+msgstr "Bu rolni lavozimlar beradi: avval ularga boshqa rol bering."
+
+#: backend/apps/members/services.py
 msgid "Name the position."
 msgstr "Lavozimga nom bering."
 
 #: backend/apps/members/services.py
 msgid "There is already a position with that name."
 msgstr "Bunday nomli lavozim allaqachon bor."
+
+#: backend/apps/members/services.py
+msgid "Changing the access a job title gives needs roles.manage."
+msgstr ""
+"Lavozim beradigan ruxsatni o‘zgartirish uchun roles.manage ruxsati kerak."
+
+#: backend/apps/members/services.py
+msgid "A job title can't give the Owner role."
+msgstr "Lavozim Ega rolini bera olmaydi."
+
+#: backend/apps/members/services.py
+msgid ""
+"You can only change the access of a job title whose role you could give."
+msgstr ""
+"Faqat o‘zingiz bera oladigan rolni beradigan lavozimning ruxsatini "
+"o‘zgartira olasiz."
 
 #: backend/apps/members/services.py
 msgid "People hold this position: hide it instead of deleting it."

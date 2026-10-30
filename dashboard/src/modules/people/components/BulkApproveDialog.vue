@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
  * Approve several join requests at once (People › Join requests): who (compact), one role for all
- * or "as their link says" (the start when every selected person came through a team link with a
- * role), the branches and home branch (their shared link branch to start with; required when some
- * came without one and there are branches to choose from), and the position: theirs, or one for
- * all. The page sends it and handles the answer.
+ * or "each their own" (their team link's, else their job title's; the start when anyone has one),
+ * the branches and home branch (their shared link branch to start with; required when some came
+ * without one and there are branches to choose from), and the position: theirs, or one for all.
+ * The page sends it and handles the answer.
  */
 import { Check } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
@@ -32,7 +32,7 @@ const positions = usePositions();
 const branches = useScopedBranches();
 
 const severalBranches = computed(() => branches.value.length > 1);
-const start = computed(() => bulkStart(props.requests, roles.data.value ?? [], branches.value));
+const start = computed(() => bulkStart(props.requests, roles.data.value ?? [], branches.value, positions.data.value ?? []));
 const defaultRole = computed(() => roles.data.value?.find((role) => role.is_default) ?? null);
 
 const roleId = ref<number | null>(null);
@@ -40,11 +40,11 @@ const positionId = ref<number | null>(null);
 const branchIds = ref<number[]>([...start.value.branchIds]);
 const homeId = ref<number | null>(start.value.homeId);
 
-// The role starts once the roles are here (the default role's id comes with them).
+// The role starts once the roles and job titles are here (the default role's id comes with them).
 watch(
-  () => roles.data.value,
-  (list) => {
-    if (list && roleId.value === null) roleId.value = start.value.role;
+  [() => roles.data.value, () => positions.data.value],
+  ([list, titles]) => {
+    if (list && titles && roleId.value === null) roleId.value = start.value.role;
   },
   { immediate: true },
 );
