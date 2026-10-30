@@ -9,6 +9,7 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
   "tab.profile": "Профиль",
 
   "common.continue": "Продолжить",
+  "common.close": "Закрыть",
   "common.retry": "Повторить",
   "error.generic": "Что-то пошло не так. Попробуйте ещё раз.",
   "error.network": "Нет соединения. Проверьте интернет и попробуйте снова.",
@@ -483,6 +484,7 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
   "profile.reportsTo": "Ваш руководитель: {name}",
   "myTeam.title": "Моя команда",
   "myTeam.empty": "В вашем отделе пока никого нет. Добавьте людей в панели управления: Сотрудники, Отделы.",
+  "myTeam.people": "Сотрудников: {count}",
   "myTeam.open": "Открыто: {count}",
   "myTeam.late": "Просрочено: {count}",
   "myTeam.done": "Сделано за неделю: {count}",

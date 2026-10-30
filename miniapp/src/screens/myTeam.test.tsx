@@ -4,8 +4,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { keys } from "../api/hooks";
 import { makeTask, membership, person, renderApp } from "../test/harness";
+import { Home } from "./Home";
 import { MyTeam } from "./MyTeam";
 import { Profile } from "./Profile";
+import { Tasks } from "./Tasks";
 import { TeamPerson } from "./TeamPerson";
 
 const api = vi.hoisted(() => vi.fn((_path: string): Promise<unknown> => Promise.reject(new Error("no network in tests"))));
@@ -45,6 +47,24 @@ describe("My team", () => {
     expect(screen.getByText("Kassani sanash")).toBeTruthy();
     expect(screen.getByText("Muzlatgich harorati")).toBeTruthy();
     expect(screen.getByAltText("Proof photo")).toBeTruthy();
+  });
+
+  it("waits at the top of Home and Tasks for a head, with how many of their tasks are late", () => {
+    for (const page of [<Home key="home" />, <Tasks key="tasks" />]) {
+      renderApp(page, {
+        me: head(),
+        seed: (client) =>
+          client.setQueryData(keys.myTeam(1), {
+            departments: ["Moliya Bolimi"],
+            people: [{ id: 9, name: "Alisher Valiyev", position: "Kassir", department: "Moliya Bolimi", open: 3, late: 2, done_week: 5 }],
+          }),
+      });
+      expect(screen.getByRole("button", { name: /My team/ })).toBeTruthy();
+      expect(screen.getByText("Moliya Bolimi · People: 1 · 2 late")).toBeTruthy();
+      cleanup();
+    }
+    renderApp(<Home />, { me: person([membership()]) });
+    expect(screen.queryByRole("button", { name: /My team/ })).toBeNull();
   });
 
   it("is on Me only for someone who heads a department", () => {

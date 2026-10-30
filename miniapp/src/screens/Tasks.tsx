@@ -6,6 +6,7 @@ import { checksWork, givesWork } from "../api/permissions";
 import type { Task } from "../api/types";
 import { ReviewQueue, RoutinesTab } from "../components/Routines";
 import { RowSkeleton, TaskRow } from "../components/TaskRow";
+import { TeamCard } from "../components/TeamCard";
 import { useCompleteTask } from "../lib/actions";
 import { quickAddAvailable } from "../lib/quickAdd";
 import {
@@ -91,6 +92,8 @@ export function Tasks() {
         {/* Counted once the list is here: "0 tasks left" while it loads would be a guess. */}
         <div className="subline">{board.data ? t("tasks.left", { count: leftToday }) : " "}</div>
       </div>
+
+      <TeamCard />
 
       {/* Four or five tabs with counts don't fit a phone in every language: the strip scrolls
           sideways then, keeping the chosen tab in view. */}

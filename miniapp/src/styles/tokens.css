@@ -62,8 +62,10 @@
   --hairline: color-mix(in srgb, var(--color-text) 8%, transparent);
 }
 
-/* Dark: the design flips every tonal ramp end for end and darkens the ground. */
+/* Dark: the design flips every tonal ramp end for end and darkens the ground. The browser's own
+   parts follow (the calendar and clock in date and time boxes were black on the dark ground). */
 :root[data-theme="dark"] {
+  color-scheme: dark;
   --color-bg: color-mix(in srgb, #2e2b25 78%, black);
   --color-surface: #2e2b25;
   --color-text: #f5ead8;

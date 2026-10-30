@@ -11,6 +11,7 @@ const en = {
   "tab.profile": "Profile",
 
   "common.continue": "Continue",
+  "common.close": "Close",
   "common.retry": "Try again",
   "error.generic": "Something went wrong. Try again.",
   "error.network": "No connection. Check your internet and try again.",
@@ -466,6 +467,7 @@ const en = {
   "profile.reportsTo": "Your head: {name}",
   "myTeam.title": "My team",
   "myTeam.empty": "Nobody is in your department yet. Add people in the dashboard: People, Departments.",
+  "myTeam.people": "People: {count}",
   "myTeam.open": "{count} open",
   "myTeam.late": "{count} late",
   "myTeam.done": "{count} done this week",

@@ -14,7 +14,7 @@ import { useNavigation } from "../state/navigation";
 import { useMember } from "../state/session";
 import { useToast } from "../state/toast";
 import { haptic } from "../telegram";
-import { BottomBar } from "../ui";
+import { BottomBar, Select } from "../ui";
 
 const REPEATS: Repeat[] = ["none", "daily", "weekdays", "weekly"];
 type When = "today" | "tomorrow" | "date" | "none";
@@ -137,9 +137,9 @@ export function AddSheet() {
       {canAssign && (
         <div className="field">
           <label htmlFor={`${ids}-for`}>{t("add.for")}</label>
-          <select
+          {/* The shared picker: with its chevron, "Me" reads as a choice, not as plain text. */}
+          <Select
             id={`${ids}-for`}
-            className="input"
             value={assignee ?? ""}
             onChange={(event) => {
               haptic.select();
@@ -152,22 +152,33 @@ export function AddSheet() {
                 {person.position ? `${person.name} · ${person.position}` : person.name}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
       )}
 
       <div className="field">
         <label htmlFor={`${ids}-title`}>{t("add.what")}</label>
-        <input
+        {/* A box that grows with the words: a long title is easy to read back and fix. A title
+            is one line, so Enter adds the task (as it always did) instead of a line. */}
+        <textarea
           id={`${ids}-title`}
-          className="input"
+          className="input plus-grow plus-title"
+          rows={3}
           placeholder={t(quickAddAvailable() ? "add.placeholderQuick" : "add.placeholder")}
           value={title}
           maxLength={TITLE_MAX}
           enterKeyHint="done"
           autoComplete="off"
-          onChange={(event) => setTitle(event.target.value)}
-          onKeyDown={(event) => event.key === "Enter" && void submit()}
+          onChange={(event) => {
+            setTitle(event.target.value.replace(/\s*\n\s*/g, " "));
+            grow(event.target);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              void submit();
+            }
+          }}
         />
         {title.length > TITLE_MAX - 40 && <span className="field-count num">{`${title.length}/${TITLE_MAX}`}</span>}
       </div>
@@ -212,7 +223,7 @@ export function AddSheet() {
               </button>
             </div>
           )}
-          <div className="ui-chips" role="group" aria-labelledby={`${ids}-when`}>
+          <div className="ui-chips plus-days" role="group" aria-labelledby={`${ids}-when`}>
             {(["today", "tomorrow", "date", "none"] as const).map((option) => (
               <button
                 key={option}
@@ -271,11 +282,11 @@ export function AddSheet() {
       {assignee === null && due && !read?.repeat && (
         <div className="field">
           <label htmlFor={`${ids}-repeat`}>{t("add.repeat")}</label>
-          <select id={`${ids}-repeat`} className="input" value={repeat} onChange={(event) => setRepeat(event.target.value as Repeat)}>
+          <Select id={`${ids}-repeat`} value={repeat} onChange={(event) => setRepeat(event.target.value as Repeat)}>
             {REPEATS.map((option) => (
               <option key={option} value={option}>{t(`add.repeat.${option}`)}</option>
             ))}
-          </select>
+          </Select>
         </div>
       )}
 
@@ -285,12 +296,15 @@ export function AddSheet() {
             <label htmlFor={`${ids}-description`}>{t("add.description")}</label>
             <textarea
               id={`${ids}-description`}
-              className="input"
+              className="input plus-grow"
               rows={3}
               maxLength={2000}
               placeholder={t("add.descriptionPlaceholder")}
               value={description}
-              onChange={(event) => setDescription(event.target.value)}
+              onChange={(event) => {
+                setDescription(event.target.value);
+                grow(event.target);
+              }}
             />
           </div>
           <StepsEditor steps={steps} onChange={setSteps} />
@@ -321,6 +335,12 @@ export function AddSheet() {
       />
     </>
   );
+}
+
+/** Let a text box grow with what's typed (up to about eight lines). */
+function grow(box: HTMLTextAreaElement): void {
+  box.style.height = "auto";
+  box.style.height = `${Math.min(box.scrollHeight, 240)}px`;
 }
 
 const WHEN_LABEL = { today: "day.today", tomorrow: "day.tomorrow", date: "add.otherDay", none: "add.noDeadline" } as const;

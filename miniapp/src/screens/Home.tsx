@@ -6,6 +6,7 @@ import { ActivityRow } from "../components/ActivityRow";
 import { FeatureSlot } from "../features/FeatureSlot";
 import { Ring } from "../components/Ring";
 import { RowSkeleton, TaskRow } from "../components/TaskRow";
+import { TeamCard } from "../components/TeamCard";
 import { useCompleteTask } from "../lib/actions";
 import { isFinished, isRoutine, routineProgress } from "../lib/routines";
 import { byFocus, isDueToday, isLate, isOpen } from "../lib/taskView";
@@ -16,8 +17,8 @@ import { useMember } from "../state/session";
 import { Banner, LoadError } from "../ui";
 
 /**
- * Home, most urgent first: what to do right now (the hero: check in or out, the till), the shape
- * of the day (off today, today's progress), what waits for me (late work, work to check, then
+ * Home, most urgent first: what to do right now (the hero: check in or out, the till), a head's
+ * team, the shape of the day (off today, today's progress), what waits for me (late work, work to check, then
  * the feature cards: cash to confirm, the running timer, swaps, the next event, pages to read),
  * the next tasks and news, and overviews such as my projects at the end.
  *
@@ -70,6 +71,8 @@ export function Home() {
       </div>
 
       <FeatureSlot name="home.hero" />
+
+      <TeamCard />
 
       {numbers?.off_today && (
         <Banner

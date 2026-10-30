@@ -10,6 +10,7 @@ const uz: Partial<Record<Key, string>> = {
   "tab.profile": "Profil",
 
   "common.continue": "Davom etish",
+  "common.close": "Yopish",
   "common.retry": "Qayta urinish",
   "error.generic": "Nimadir xato ketdi. Qayta urinib ko‘ring.",
   "error.network": "Internet yo‘q. Ulanishni tekshirib, qayta urinib ko‘ring.",
@@ -467,6 +468,7 @@ const uz: Partial<Record<Key, string>> = {
   "profile.reportsTo": "Rahbaringiz: {name}",
   "myTeam.title": "Jamoam",
   "myTeam.empty": "Bo‘limingizda hali hech kim yo‘q. Xodimlarni boshqaruv panelida qo‘shing: Xodimlar, Bo‘limlar.",
+  "myTeam.people": "Xodimlar: {count}",
   "myTeam.open": "Ochiq: {count}",
   "myTeam.late": "Kechikkan: {count}",
   "myTeam.done": "Shu hafta bajarildi: {count}",

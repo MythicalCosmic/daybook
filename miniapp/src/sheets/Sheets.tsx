@@ -20,10 +20,11 @@ import { BlockerSheet, DueSheet, EditSheet, ExtensionSheet, ReassignSheet, Snooz
 
 export function Sheets() {
   const navigation = useNavigation();
+  const { t } = useI18n();
   const sheet = navigation.sheet;
   if (!sheet) return null;
   return (
-    <Sheet onClose={navigation.closeSheet}>
+    <Sheet onClose={navigation.closeSheet} full={sheet.kind === "add"} closeLabel={t("common.close")}>
       {sheet.kind === "complete" && <CompleteSheet taskId={sheet.taskId} />}
       {sheet.kind === "return" && <ReturnSheet taskId={sheet.taskId} />}
       {sheet.kind === "snooze" && <SnoozeSheet taskId={sheet.taskId} />}

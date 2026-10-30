@@ -149,11 +149,12 @@ export function useTeamStats(company: number, period: Period) {
 }
 
 /** A department head's people and how their work stands. */
-export function useMyTeam(company: number) {
+export function useMyTeam(company: number, enabled = true) {
   return useQuery({
     queryKey: keys.myTeam(company),
     queryFn: () => api<MyTeam>(`/companies/${company}/my-team/`),
     staleTime: 30_000,
+    enabled,
   });
 }
 

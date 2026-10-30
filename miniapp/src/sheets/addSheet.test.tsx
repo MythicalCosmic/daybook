@@ -45,7 +45,7 @@ function openSheet(permissions: Membership["permissions"] = []) {
   });
 }
 
-const title = () => screen.getByLabelText("What needs doing?") as HTMLInputElement;
+const title = () => screen.getByLabelText("What needs doing?") as HTMLTextAreaElement;
 const type = (text: string) => fireEvent.change(title(), { target: { value: text } });
 const add = () => fireEvent.click(screen.getByRole("button", { name: /Add task|Give task/ }));
 
@@ -58,6 +58,23 @@ afterEach(() => {
   cleanup();
   api.mockReset();
   vi.useRealTimers();
+});
+
+describe("the (+) sheet", () => {
+  it("takes the whole screen, with its own close button where Telegram's back button isn't", () => {
+    answer();
+    openSheet();
+    expect(document.querySelector(".sheet--full")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(document.querySelector(".sheet")).toBeNull();
+  });
+
+  it("keeps a pasted title on one line", () => {
+    answer({ title: "Kassani sanash ertaga", due_at: null, due_label: null, priority: null, repeat: null });
+    openSheet();
+    type("Kassani sanash\n  ertaga");
+    expect(title().value).toBe("Kassani sanash ertaga");
+  });
 });
 
 describe("quick add in the (+) sheet", () => {

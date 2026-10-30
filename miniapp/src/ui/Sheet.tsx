@@ -1,6 +1,7 @@
+import { X } from "lucide-react";
 import { useEffect, useId, useLayoutEffect, useRef, type ReactNode } from "react";
 
-import { disableVerticalSwipes } from "../telegram";
+import { disableVerticalSwipes, hasNativeBackButton } from "../telegram";
 import { useHideNativeButtons } from "./BottomBar";
 
 /**
@@ -16,6 +17,8 @@ export function Sheet({
   children,
   title,
   label,
+  full = false,
+  closeLabel = "Close",
 }: {
   onClose: () => void;
   children: ReactNode;
@@ -23,6 +26,11 @@ export function Sheet({
   title?: ReactNode;
   /** Name for screen readers when there is no visible title. */
   label?: string;
+  /** The whole screen, for long forms (a new task): no handle, and a close button where Telegram's
+   * back button isn't there to close it. */
+  full?: boolean;
+  /** The close button's name for screen readers (full sheets outside Telegram). */
+  closeLabel?: string;
 }) {
   const dialog = useRef<HTMLDivElement>(null);
   const titleId = useId();
@@ -95,14 +103,24 @@ export function Sheet({
       <div className="sheet-backdrop" onClick={onClose} />
       <div
         ref={dialog}
-        className="sheet"
+        className={full ? "sheet sheet--full" : "sheet"}
         role="dialog"
         aria-modal="true"
         aria-label={label}
         aria-labelledby={title !== undefined && !label ? titleId : undefined}
         tabIndex={-1}
       >
-        <div className="sheet-handle" />
+        {/* In Telegram its back button (top left) closes a full sheet: a second round button under
+            Telegram's own menu button would only crowd the corner. */}
+        {!full ? (
+          <div className="sheet-handle" />
+        ) : (
+          !hasNativeBackButton() && (
+            <button type="button" className="sheet-close" aria-label={closeLabel} onClick={onClose}>
+              <X size={22} strokeWidth={2.5} aria-hidden />
+            </button>
+          )
+        )}
         {title !== undefined && (
           <div className="heading title-sm" id={titleId}>
             {title}
