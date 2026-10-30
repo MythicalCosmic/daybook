@@ -3,7 +3,7 @@ import { useCallback } from "react";
 
 import { isPending, usePendingVersion } from "../lib/delayedSend";
 import { api, ApiError } from "./client";
-import type { Activity, BlockerReason, BlockerResolution, Comment, FinishRule, Holiday, Language, Me, MemberBrief, Membership, Page, Period, Position, Priority, Proof, Repeat, SnoozePreset, Summary, Task, TeamStats, TimeOff } from "./types";
+import type { Activity, BlockerReason, BlockerResolution, Comment, FinishRule, Holiday, Language, Me, MemberBrief, Membership, MyTeam, Page, Period, Position, Priority, Proof, Repeat, SnoozePreset, Summary, Task, TeamPerson, TeamStats, TimeOff } from "./types";
 
 export const keys = {
   me: ["me"] as const,
@@ -18,6 +18,8 @@ export const keys = {
   positions: (company: number) => ["positions", company] as const,
   members: (company: number) => ["members", company] as const,
   team: (company: number, period: Period) => ["team", company, period] as const,
+  myTeam: (company: number) => ["myTeam", company] as const,
+  teamPerson: (company: number, member: number) => ["myTeam", company, member] as const,
   timeOff: (company: number) => ["timeOff", company] as const,
   holidays: (company: number) => ["holidays", company] as const,
 };
@@ -143,6 +145,24 @@ export function useTeamStats(company: number, period: Period) {
     queryKey: keys.team(company, period),
     queryFn: () => api<TeamStats>(`/companies/${company}/team-stats/?period=${period}`),
     staleTime: 60_000,
+  });
+}
+
+/** A department head's people and how their work stands. */
+export function useMyTeam(company: number) {
+  return useQuery({
+    queryKey: keys.myTeam(company),
+    queryFn: () => api<MyTeam>(`/companies/${company}/my-team/`),
+    staleTime: 30_000,
+  });
+}
+
+/** One of a head's people: their open work and what they finished this week. */
+export function useTeamPerson(company: number, member: number) {
+  return useQuery({
+    queryKey: keys.teamPerson(company, member),
+    queryFn: () => api<TeamPerson>(`/companies/${company}/my-team/${member}/`),
+    staleTime: 30_000,
   });
 }
 

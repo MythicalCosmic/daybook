@@ -980,6 +980,58 @@ paths:
                 items:
                   $ref: '#/components/schemas/MemberBrief'
           description: ''
+  /api/v1/companies/{company_id}/my-team/:
+    get:
+      operationId: v1_companies_my_team
+      description: 'A head''s people and how their work stands: open, late and done
+        this week.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyTeam'
+          description: ''
+  /api/v1/companies/{company_id}/my-team/{member_id}/:
+    get:
+      operationId: v1_companies_my_team_person
+      description: |-
+        One of a head's people: their open shared work and what they finished this week, each
+        task as the app shows tasks (proof photo and report included).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: member_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamPerson'
+          description: ''
   /api/v1/companies/{company_id}/onboarding/:
     post:
       operationId: v1_companies_onboarding_create
@@ -5233,12 +5285,19 @@ components:
           description: 'People they manage through departments: a head may give them
             work.'
           readOnly: true
+        heads:
+          type: array
+          items:
+            type: string
+          readOnly: true
+          description: Departments they head (My team).
       required:
       - branch_ids
       - company
       - decided_at
       - department
       - first_name
+      - heads
       - home_branch
       - id
       - is_onboarded
@@ -5487,6 +5546,20 @@ components:
       required:
       - mine
       - requests
+    MyTeam:
+      type: object
+      properties:
+        departments:
+          type: array
+          items:
+            type: string
+        people:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamMember'
+      required:
+      - departments
+      - people
     Notification:
       type: object
       properties:
@@ -8032,6 +8105,54 @@ components:
       required:
       - due_time
       - title
+    TeamMember:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        position:
+          type: string
+          nullable: true
+        department:
+          type: string
+          nullable: true
+        open:
+          type: integer
+          description: Shared work still to do.
+        late:
+          type: integer
+          description: Of it, past its deadline.
+        done_week:
+          type: integer
+          description: Finished in the last 7 days.
+      required:
+      - department
+      - done_week
+      - id
+      - late
+      - name
+      - open
+      - position
+    TeamPerson:
+      type: object
+      properties:
+        person:
+          $ref: '#/components/schemas/TeamMember'
+        open:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+        done:
+          type: array
+          items:
+            $ref: '#/components/schemas/Task'
+          description: Finished in the last 7 days, newest first.
+      required:
+      - done
+      - open
+      - person
     TeamRow:
       type: object
       properties:

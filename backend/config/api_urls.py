@@ -7,7 +7,14 @@ from apps.accounts.api import MeView, TelegramAuthView
 from apps.members.api import MemberListView, OnboardingView, PositionListView
 from apps.reminders.api import ReminderPolicyViewSet
 from apps.reports.api import TeamStatsView
-from apps.tasks.api import ActivityViewSet, SummaryView, TaskTemplateViewSet, TaskViewSet
+from apps.tasks.api import (
+    ActivityViewSet,
+    MyTeamView,
+    SummaryView,
+    TaskTemplateViewSet,
+    TaskViewSet,
+    TeamPersonView,
+)
 from apps.timeoff.api import HolidayListView, TimeOffViewSet
 
 COMPANY = "companies/<int:company_id>"
@@ -101,6 +108,8 @@ urlpatterns = [
     path(f"{COMPANY}/onboarding/", OnboardingView.as_view(), name="onboarding"),
     path(f"{COMPANY}/summary/", SummaryView.as_view(), name="summary"),
     path(f"{COMPANY}/team-stats/", TeamStatsView.as_view(), name="team-stats"),
+    path(f"{COMPANY}/my-team/", MyTeamView.as_view(), name="my-team"),
+    path(f"{COMPANY}/my-team/<int:member_id>/", TeamPersonView.as_view(), name="my-team-person"),
     path(f"{COMPANY}/holidays/", HolidayListView.as_view(), name="holidays"),
     *router.urls,
     *(path(f"{COMPANY}/", include(f"apps.{app}.urls")) for app in EMPLOYEE_APPS),

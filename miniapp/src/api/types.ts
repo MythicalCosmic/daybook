@@ -5,6 +5,9 @@ type Schemas = components["schemas"];
 export type Me = Schemas["Me"];
 export type Membership = Schemas["Membership"];
 export type Position = Schemas["Position"];
+export type TeamMember = Schemas["TeamMember"];
+export type MyTeam = Schemas["MyTeam"];
+export type TeamPerson = Omit<Schemas["TeamPerson"], "open" | "done"> & { open: Task[]; done: Task[] };
 export type TaskStatus = Schemas["TaskStatusEnum"];
 export type Priority = Schemas["PriorityEnum"];
 

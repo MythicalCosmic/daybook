@@ -19,6 +19,8 @@ import { Splash } from "./screens/Splash";
 import { TaskDetail } from "./screens/TaskDetail";
 import { Tasks } from "./screens/Tasks";
 import { Team } from "./screens/Team";
+import { MyTeam } from "./screens/MyTeam";
+import { TeamPerson } from "./screens/TeamPerson";
 import { Waiting } from "./screens/Waiting";
 import { Sheets } from "./sheets/Sheets";
 import { readScreenLink, resolveScreen, type ScreenLink } from "./state/deeplink";
@@ -243,6 +245,9 @@ function StackPage({ page }: { page: PageRef }) {
     if (page.page === "task") return <TaskDetail taskId={Number(page.params?.id)} />;
     // Me shows team results only with reports.view; a deep link must not get around that.
     if (page.page === "team" && membership?.permissions.includes("reports.view")) return <Team />;
+    // A head's My team; the server checks headship again on every request.
+    if (page.page === "myTeam" && (membership?.heads?.length ?? 0) > 0) return <MyTeam />;
+    if (page.page === "teamPerson" && (membership?.heads?.length ?? 0) > 0) return <TeamPerson memberId={Number(page.params?.id)} />;
     return <FeaturePage feature={page.feature} page={page.page} params={page.params ?? {}} />;
   }
   return <FeaturePage feature={page.feature} page={page.page} params={page.params ?? {}} />;

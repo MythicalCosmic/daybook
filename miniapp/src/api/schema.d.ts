@@ -547,6 +547,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/my-team/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A head's people and how their work stands: open, late and done this week. */
+        get: operations["v1_companies_my_team"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/my-team/{member_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description One of a head's people: their open shared work and what they finished this week, each
+         *     task as the app shows tasks (proof photo and report included).
+         */
+        get: operations["v1_companies_my_team_person"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/onboarding/": {
         parameters: {
             query?: never;
@@ -2288,6 +2325,8 @@ export interface components {
             readonly manager: components["schemas"]["MembersManager"] | null;
             /** @description People they manage through departments: a head may give them work. */
             readonly team_size: number;
+            /** @description Departments they head (My team). */
+            readonly heads: string[];
         };
         /**
          * @description * `pending` - Pending
@@ -2372,6 +2411,10 @@ export interface components {
         MySwaps: {
             mine: components["schemas"]["SwapOut"][];
             requests: components["schemas"]["SwapOut"][];
+        };
+        MyTeam: {
+            departments: string[];
+            people: components["schemas"]["TeamMember"][];
         };
         Notification: {
             readonly id: number;
@@ -3460,6 +3503,24 @@ export interface components {
             needs_confirmation?: boolean | null;
             is_active?: boolean;
         };
+        TeamMember: {
+            id: number;
+            name: string;
+            position: string | null;
+            department: string | null;
+            /** @description Shared work still to do. */
+            open: number;
+            /** @description Of it, past its deadline. */
+            late: number;
+            /** @description Finished in the last 7 days. */
+            done_week: number;
+        };
+        TeamPerson: {
+            person: components["schemas"]["TeamMember"];
+            open: components["schemas"]["Task"][];
+            /** @description Finished in the last 7 days, newest first. */
+            done: components["schemas"]["Task"][];
+        };
         TeamRow: {
             /** @description Shared tasks whose deadline passed in the period. */
             total: number;
@@ -4324,6 +4385,49 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MemberBrief"][];
+                };
+            };
+        };
+    };
+    v1_companies_my_team: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyTeam"];
+                };
+            };
+        };
+    };
+    v1_companies_my_team_person: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                member_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamPerson"];
                 };
             };
         };

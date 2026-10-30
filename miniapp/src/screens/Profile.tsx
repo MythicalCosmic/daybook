@@ -1,4 +1,4 @@
-import { BarChart3, Check, ChevronRight, Flame, PartyPopper, TreePalm } from "lucide-react";
+import { BarChart3, Check, ChevronRight, Flame, PartyPopper, TreePalm, Users } from "lucide-react";
 import { useState } from "react";
 
 import { useCancelTimeOff, useHolidays, useSummary, useTimeOff } from "../api/hooks";
@@ -10,7 +10,7 @@ import { errorText } from "../lib/actions";
 import { cancellable, current, STATUS_TAG } from "../lib/timeOff";
 import { dayKey, dayMonth, weekdayShort } from "../lib/time";
 import { useToast } from "../state/toast";
-import { useNavigation } from "../state/navigation";
+import { CORE, useNavigation } from "../state/navigation";
 import { initials, useMember, useSession } from "../state/session";
 import { close, haptic } from "../telegram";
 import { applyTheme, saveThemeMode, savedThemeMode, type ThemeMode } from "../theme";
@@ -163,6 +163,22 @@ export function Profile() {
             </button>
           </div>
         </>
+      )}
+
+      {/* A department head's people and their work. */}
+      {(member.heads?.length ?? 0) > 0 && (
+        <div className="card list-card">
+          <button className="list-item" onClick={() => navigation.push({ feature: CORE, page: "myTeam" })}>
+            <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <Users size={20} strokeWidth={2.4} />
+              {t("myTeam.title")}
+            </span>
+            <span className="list-item-value">
+              {member.heads?.join(", ")}
+              <ChevronRight size={18} strokeWidth={2.5} />
+            </span>
+          </button>
+        </div>
       )}
 
       {/* Feature rows on Me, grouped; the built-in Team results row leads the team group. */}

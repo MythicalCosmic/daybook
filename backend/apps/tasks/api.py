@@ -1,15 +1,16 @@
-from datetime import date
+from datetime import date, timedelta
 from zoneinfo import ZoneInfo
 
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import F, Q
 from django.utils import timezone, translation
 from django.utils.translation import gettext as _
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_field
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
@@ -19,6 +20,7 @@ from apps.audit.models import AuditLog
 from apps.core import uploads
 from apps.core.exceptions import DomainError
 from apps.core.money import MoneySerializerField
+from apps.members import departments
 from apps.members.api import IsCompanyMember, MemberBriefSerializer, requires
 from apps.members.models import Membership, Position
 from apps.members.permissions import Perm
@@ -996,3 +998,124 @@ class ActivityViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     def read(self, request, company_id):
         """Mark the whole feed as read."""
         return Response({"marked": services.mark_feed_read(self.membership)})
+
+
+# A department head's team (apps.members.departments) --------------------------------------
+
+TEAM_DONE_DAYS = 7
+TEAM_TASKS_SHOWN = 50
+
+
+class TeamMemberSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    position = serializers.CharField(allow_null=True)
+    department = serializers.CharField(allow_null=True)
+    open = serializers.IntegerField(help_text="Shared work still to do.")
+    late = serializers.IntegerField(help_text="Of it, past its deadline.")
+    done_week = serializers.IntegerField(help_text="Finished in the last 7 days.")
+
+
+class MyTeamSerializer(serializers.Serializer):
+    departments = serializers.ListField(child=serializers.CharField())
+    people = TeamMemberSerializer(many=True)
+
+
+class TeamPersonSerializer(serializers.Serializer):
+    person = TeamMemberSerializer()
+    open = TaskSerializer(many=True)
+    done = TaskSerializer(many=True, help_text="Finished in the last 7 days, newest first.")
+
+
+class HeadsADepartment(BasePermission):
+    def has_permission(self, request, view):
+        return departments.heads_any(view.membership)
+
+
+def _team_rows(people: list[Membership], now) -> list[dict]:
+    counts = {person.pk: {"open": 0, "late": 0, "done_week": 0} for person in people}
+    shared = Task.objects.filter(assignee__in=people).exclude(kind=Task.Kind.PERSONAL)
+    for assignee_id, due_at in shared.filter(status__in=Task.OPEN_STATUSES).values_list(
+        "assignee_id", "due_at"
+    ):
+        counts[assignee_id]["open"] += 1
+        if due_at is not None and due_at < now:
+            counts[assignee_id]["late"] += 1
+    for assignee_id in shared.filter(
+        status__in=(Task.Status.DONE, Task.Status.REVIEW),
+        completed_at__gte=now - timedelta(days=TEAM_DONE_DAYS),
+    ).values_list("assignee_id", flat=True):
+        counts[assignee_id]["done_week"] += 1
+    return [
+        {
+            "id": person.pk,
+            "name": str(person),
+            "position": person.position.name if person.position_id else None,
+            "department": person.department.name if person.department_id else None,
+            **counts[person.pk],
+        }
+        for person in people
+    ]
+
+
+class MyTeamView(APIView):
+    """A head's people and how their work stands: open, late and done this week."""
+
+    permission_classes = (IsAuthenticated, IsCompanyMember, HeadsADepartment)
+
+    @extend_schema(responses=MyTeamSerializer, operation_id="v1_companies_my_team")
+    def get(self, request, company_id):
+        head = self.membership
+        org = departments.Org(head.company_id)
+        people = list(
+            Membership.objects.filter(
+                pk__in=departments.team_ids(head, org=org), status=Membership.Status.APPROVED
+            )
+            .select_related("position", "department")
+            .order_by("first_name", "last_name")
+        )
+        return Response(
+            {
+                "departments": [org.departments[pk].name for pk in org.headed_by(head.pk)],
+                "people": _team_rows(people, timezone.now()),
+            }
+        )
+
+
+class TeamPersonView(APIView):
+    """One of a head's people: their open shared work and what they finished this week, each
+    task as the app shows tasks (proof photo and report included)."""
+
+    permission_classes = (IsAuthenticated, IsCompanyMember, HeadsADepartment)
+
+    @extend_schema(responses=TeamPersonSerializer, operation_id="v1_companies_my_team_person")
+    def get(self, request, company_id, member_id):
+        head = self.membership
+        person = (
+            Membership.objects.select_related("position", "department", "user")
+            .filter(pk=member_id, company_id=head.company_id)
+            .first()
+        )
+        if person is None or not departments.manages(head, person):
+            raise NotFound
+        now = timezone.now()
+        work = queries.visible_tasks(head).filter(assignee=person).exclude(kind=Task.Kind.PERSONAL)
+        open_tasks = work.filter(status__in=Task.OPEN_STATUSES).order_by(
+            F("due_at").asc(nulls_last=True)
+        )[:TEAM_TASKS_SHOWN]
+        done = work.filter(
+            status__in=(Task.Status.DONE, Task.Status.REVIEW),
+            completed_at__gte=now - timedelta(days=TEAM_DONE_DAYS),
+        ).order_by("-completed_at")[:TEAM_TASKS_SHOWN]
+        context = {"request": request, "membership": head, "detail": False}
+        return Response(
+            {
+                "person": _team_rows([person], now)[0],
+                "open": TaskSerializer(
+                    open_tasks.prefetch_related("checklist"), many=True, context=context
+                ).data,
+                "done": TaskSerializer(
+                    done.prefetch_related("checklist"), many=True, context=context
+                ).data,
+            }
+        )

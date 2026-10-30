@@ -67,6 +67,7 @@ class MembershipSerializer(serializers.ModelSerializer):
     department = serializers.SerializerMethodField()
     manager = serializers.SerializerMethodField()
     team_size = serializers.SerializerMethodField()
+    heads = serializers.SerializerMethodField(help_text="Departments they head (My team).")
 
     class Meta:
         model = Membership
@@ -90,6 +91,7 @@ class MembershipSerializer(serializers.ModelSerializer):
             "department",
             "manager",
             "team_size",
+            "heads",
         )
         read_only_fields = fields
 
@@ -126,6 +128,11 @@ class MembershipSerializer(serializers.ModelSerializer):
     def get_team_size(self, membership: Membership) -> int:
         """People they manage through departments: a head may give them work."""
         return len(departments.team_ids(membership, org=self._org(membership)))
+
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
+    def get_heads(self, membership: Membership) -> list[str]:
+        org = self._org(membership)
+        return [org.departments[pk].name for pk in org.headed_by(membership.pk)]
 
     def _org(self, membership: Membership) -> departments.Org:
         """The company's departments, loaded once per response."""

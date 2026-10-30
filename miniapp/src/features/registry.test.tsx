@@ -150,6 +150,7 @@ function membership(permissions: string[]): Membership {
     department: null,
     manager: null,
     team_size: 0,
+    heads: [],
   };
 }
 
