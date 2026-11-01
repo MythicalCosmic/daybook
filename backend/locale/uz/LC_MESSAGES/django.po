@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-02 02:33+0500\n"
+"POT-Creation-Date: 2026-11-02 02:57+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -466,6 +466,147 @@ msgstr "Narxi (USD)"
 msgid "AI usage: %(usd)s USD"
 msgstr "AI sarfi: %(usd)s USD"
 
+#: backend/apps/ai/agents/deadline_watcher.py
+#, python-format
+msgid "Every 30 minutes, %(start)s–%(end)s"
+msgstr "Har 30 daqiqada, %(start)s–%(end)s"
+
+#: backend/apps/ai/agents/deadline_watcher.py
+msgid "Deadline watcher"
+msgstr "Muddat nazoratchisi"
+
+#: backend/apps/ai/agents/deadline_watcher.py
+msgid ""
+"Tells whoever gave a task when it is late, once, with a button to open it or "
+"give an hour more. Never repeats what the reminders already said."
+msgstr ""
+"Vazifa kechiksa, uni bergan odamga bir marta xabar beradi: ochish yoki yana "
+"bir soat berish tugmasi bilan. Eslatmalar aytganini takrorlamaydi."
+
+#: backend/apps/ai/agents/deadline_watcher.py
+msgid "Late by"
+msgstr "Kechikish"
+
+#: backend/apps/ai/agents/deadline_watcher.py
+msgid "How late a task is before its giver hears."
+msgstr "Vazifa qancha kechiksa, bergan odamga xabar boradi."
+
+#: backend/apps/ai/agents/deadline_watcher.py
+msgid "hours"
+msgstr "soat"
+
+#: backend/apps/ai/agents/deadline_watcher.py
+msgid "Quiet from"
+msgstr "Sokin vaqt boshlanishi"
+
+#: backend/apps/ai/agents/deadline_watcher.py
+msgid "Quiet until"
+msgstr "Sokin vaqt tugashi"
+
+#: backend/apps/ai/agents/deadline_watcher.py
+#, python-format
+msgid "Told %(to)s that «%(task)s» is late (%(assignee)s)"
+msgstr "%(to)s xabardor qilindi: «%(task)s» kechikmoqda (%(assignee)s)"
+
+#: backend/apps/ai/agents/morning_plan.py
+#, python-format
+msgid "Workdays at %(time)s"
+msgstr "Ish kunlari, soat %(time)s"
+
+#: backend/apps/ai/agents/morning_plan.py backend/apps/groups/models.py
+msgid "Morning plan"
+msgstr "Ertalabki reja"
+
+#: backend/apps/ai/agents/morning_plan.py
+msgid ""
+"Each workday morning, every head and manager gets their team's day: what is "
+"due, what is late, what waits for their check and who is off."
+msgstr ""
+"Har ish kuni ertalab har bir rahbar va menejer jamoasining kunini oladi: "
+"nima muddatli, nima kechikkan, nima tekshiruvini kutmoqda va kim dam olishda."
+
+#: backend/apps/ai/agents/morning_plan.py
+msgid "Send at"
+msgstr "Yuborish vaqti"
+
+#: backend/apps/ai/agents/morning_plan.py
+msgid "Who gets it"
+msgstr "Kim oladi"
+
+#: backend/apps/ai/agents/morning_plan.py
+msgid "Department heads"
+msgstr "Bo‘lim rahbarlari"
+
+#: backend/apps/ai/agents/morning_plan.py
+msgid "Managers"
+msgstr "Menejerlar"
+
+#: backend/apps/ai/agents/morning_plan.py
+msgid "Heads and managers"
+msgstr "Rahbarlar va menejerlar"
+
+#: backend/apps/ai/agents/morning_plan.py
+#, python-format
+msgid ""
+"Morning plan for %(to)s: %(due_today)s due today, %(late)s late, "
+"%(to_check)s to check"
+msgstr ""
+"Ertalabki reja (%(to)s): bugun muddati — %(due_today)s, kechikkan — "
+"%(late)s, tekshirish — %(to_check)s"
+
+#: backend/apps/ai/agents/photo_checker.py
+msgid "When a routine is finished with a photo"
+msgstr "Muntazam vazifa rasm bilan bajarilganda"
+
+#: backend/apps/ai/agents/photo_checker.py
+msgid "When a task is finished with a photo"
+msgstr "Vazifa rasm bilan bajarilganda"
+
+#: backend/apps/ai/agents/photo_checker.py
+msgid "The fridge shows 5 °C, inside 2-8 °C."
+msgstr "Muzlatgich 5 °C ko‘rsatmoqda, 2-8 °C oralig‘ida."
+
+#: backend/apps/ai/agents/photo_checker.py
+msgid "The photo is a little dark: take a quick look."
+msgstr "Rasm biroz qorong‘i: bir ko‘z yugurtirib chiqing."
+
+#: backend/apps/ai/agents/photo_checker.py
+msgid "Photo checker"
+msgstr "Rasm tekshiruvchi"
+
+#: backend/apps/ai/agents/photo_checker.py
+msgid ""
+"Reads the proof photo when a task is finished (a fridge thermometer, expiry "
+"dates) and leaves a note for whoever checks the work. Sends task photos to "
+"Claude."
+msgstr ""
+"Vazifa bajarilganda tasdiq rasmini o‘qiydi (muzlatgich termometri, "
+"yaroqlilik muddatlari) va ishni tekshiradigan odamga izoh qoldiradi. Vazifa "
+"rasmlari Claude xizmatiga yuboriladi."
+
+#: backend/apps/ai/agents/photo_checker.py
+msgid "Only routines"
+msgstr "Faqat muntazam vazifalar"
+
+#: backend/apps/ai/agents/photo_checker.py
+msgid "Check only the photos of daily routines."
+msgstr "Faqat kundalik muntazam vazifalar rasmlarini tekshirish."
+
+#: backend/apps/ai/agents/photo_checker.py
+#, python-format
+msgid "Photo of «%(task)s» looks right: %(note)s"
+msgstr "«%(task)s» rasmi joyida: %(note)s"
+
+#: backend/apps/ai/agents/photo_checker.py
+#, python-format
+msgid "Photo of «%(task)s» needs a look: %(note)s"
+msgstr "«%(task)s» rasmini ko‘rib chiqing: %(note)s"
+
+#: backend/apps/ai/agents/photo_checker.py
+#, python-format
+msgid "Photo of «%(task)s» doesn't show enough: %(note)s"
+msgstr "«%(task)s» rasmida yetarli narsa ko‘rinmaydi: %(note)s"
+
 #: backend/apps/ai/agents/registry.py
 msgid "Choose on or off."
 msgstr "Yoqing yoki o‘chiring."
@@ -733,6 +874,64 @@ msgstr "Ochish: %(title)s"
 msgid "Edit in the app"
 msgstr "Ilovada tahrirlash"
 
+#: backend/apps/ai/bot_messages.py
+msgid "Late task"
+msgstr "Kechikkan vazifa"
+
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#: backend/apps/ai/bot_messages.py backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "For: %(name)s"
+msgstr "Ijrochi: %(name)s"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Deadline: %(when)s"
+msgstr "Muddat: %(when)s"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Late by: %(late)s"
+msgstr "Kechikish: %(late)s"
+
+#: backend/apps/ai/bot_messages.py backend/apps/tasks/bot_messages.py
+msgid "+1 hour"
+msgstr "+1 soat"
+
+#: backend/apps/ai/bot_messages.py
+msgid "Your team today"
+msgstr "Bugun jamoangiz"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Due today: %(count)s"
+msgstr "Bugun muddati: %(count)s"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Late: %(count)s"
+msgstr "Kechikkan: %(count)s"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Waiting for your check: %(count)s"
+msgstr "Tekshiruvingizni kutmoqda: %(count)s"
+
+#: backend/apps/ai/bot_messages.py owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Off today: %(names)s"
+msgstr "Bugun dam olishda: %(names)s"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "To check (%(count)s)"
+msgstr "Tekshirish (%(count)s)"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "New deadline for «%(title)s»: %(when)s"
+msgstr "«%(title)s» uchun yangi muddat: %(when)s"
+
 #: backend/apps/ai/drafts.py
 msgid "There is nothing to create."
 msgstr "Yaratadigan narsa yo‘q."
@@ -877,6 +1076,11 @@ msgstr "Xodim"
 msgid "Voice note"
 msgstr "Ovozli xabar"
 
+#: backend/apps/ai/queries.py
+#, python-format
+msgid "Voice note · %(name)s"
+msgstr "Ovozli xabar · %(name)s"
+
 #: backend/apps/ai/services.py
 msgid "Voice tasks are switched off in this company."
 msgstr "Bu kompaniyada ovozli vazifalar o‘chirilgan."
@@ -903,6 +1107,26 @@ msgstr "AI sozlamalarini o‘zgartira olmaysiz."
 #: backend/apps/ai/services.py
 msgid "AI is switched off for this company by the platform."
 msgstr "Platforma bu kompaniya uchun AI funksiyalarini o‘chirib qo‘ygan."
+
+#: backend/apps/ai/services.py
+msgid "There is no such agent."
+msgstr "Bunday agent yo‘q."
+
+#: backend/apps/ai/services.py
+msgid "This agent needs Claude: add ANTHROPIC_API_KEY on the server."
+msgstr "Bu agentga Claude kerak: serverga ANTHROPIC_API_KEY qo‘shing."
+
+#: backend/apps/ai/services.py
+msgid "This task is no longer here."
+msgstr "Bu vazifa endi yo‘q."
+
+#: backend/apps/ai/services.py
+msgid "This agent works by itself when something happens."
+msgstr "Bu agent biror narsa sodir bo‘lganda o‘zi ishlaydi."
+
+#: backend/apps/ai/services.py
+msgid "Turn AI on first."
+msgstr "Avval AI funksiyalarini yoqing."
 
 #: backend/apps/announcements/admin.py backend/apps/finance/models.py
 msgid "Read"
@@ -4945,10 +5169,6 @@ msgstr "Kechikkan vazifalar"
 #: backend/apps/groups/models.py
 msgid "New people"
 msgstr "Yangi xodimlar"
-
-#: backend/apps/groups/models.py
-msgid "Morning plan"
-msgstr "Ertalabki reja"
 
 #: backend/apps/groups/models.py
 msgid "End-of-day summary"
@@ -9380,12 +9600,6 @@ msgstr "Mukofot: +%(amount)s"
 msgid "From: %(name)s"
 msgstr "Kimdan: %(name)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
-#: backend/apps/tasks/bot_messages.py
-#, python-format
-msgid "For: %(name)s"
-msgstr "Ijrochi: %(name)s"
-
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "Checklist: %(done)d of %(total)d"
@@ -9542,10 +9756,6 @@ msgstr "Nimani tuzatish kerak? Sababni tanlang yoki o‘zingiz yozing."
 #: backend/apps/tasks/bot_messages.py
 msgid "+30 min"
 msgstr "+30 daqiqa"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "+1 hour"
-msgstr "+1 soat"
 
 #: backend/apps/tasks/bot_messages.py
 msgid "In 1 hour"
@@ -11631,11 +11841,6 @@ msgstr "Qo‘shilish so‘rovlari: %(count)d"
 #, python-format
 msgid "New this week: %(names)s"
 msgstr "Shu hafta qo‘shilganlar: %(names)s"
-
-#: owner_bot/ownerbot/brief.py
-#, python-format
-msgid "Off today: %(names)s"
-msgstr "Bugun dam olishda: %(names)s"
 
 #: owner_bot/ownerbot/brief.py
 #, python-format

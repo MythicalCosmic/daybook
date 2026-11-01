@@ -1,10 +1,16 @@
-"""The AI agents (v0.2 AI contract §3): one module per agent, each registering itself.
+"""The AI agents (v0.2 AI contract §3): one module per agent, each registering itself, in the
+order the dashboard shows them.
 
-from apps.ai import agents
-agents.get("voice_tasks")
+    from apps.ai import agents
+    agents.get("voice_tasks")
 """
 
-from apps.ai.agents import voice_tasks  # noqa: F401  (registers itself)
+from apps.ai.agents import (  # noqa: F401  (each registers itself)
+    deadline_watcher,
+    morning_plan,
+    photo_checker,
+    voice_tasks,
+)
 from apps.ai.agents.registry import (
     Agent,
     EventTemplate,

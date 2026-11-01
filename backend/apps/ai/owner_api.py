@@ -16,10 +16,11 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import QuerySet
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
-from apps.ai import availability, conf, services, speech
+from apps.ai import agents, availability, conf, queries, services, speech
+from apps.ai.agents import photo_checker
 from apps.ai.api import CREATE_ERRORS, DRAFT_RELATIONS, DraftEndpoints
 from apps.ai.models import AIDraft, AISettings
 from apps.ai.serializers import (
@@ -113,7 +114,9 @@ def owner_status(membership) -> dict:
             "voice": voice.voice,
             "smart_text": voice.smart_text,
             "chat": False,  # Ask AI arrives with the chat backend
-            "photo_checker": False,
+            "photo_checker": conf.ai_on(company)
+            and agents.state_of(company, photo_checker.KEY).enabled
+            and (availability.fake() or availability.status(company).available),
         },
         "budget": budget,
     }
@@ -247,3 +250,149 @@ class TaskDraftDiscardView(OwnerDraftEndpoints, OwnerAPIView):
     @extend_schema(request=None, responses={204: None})
     def post(self, request, company_id, draft_id):
         return self.discard(request, draft_id)
+
+
+# Agents and their activity ----------------------------------------------------------------------
+
+
+class AIAgentOptionSerializer(serializers.Serializer):
+    value = serializers.CharField()
+    label = serializers.CharField()
+
+
+class AIAgentFieldSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    type = serializers.ChoiceField(["bool", "int", "time", "choice"])
+    label = serializers.CharField()
+    help = serializers.CharField(allow_blank=True)
+    min = serializers.IntegerField(required=False)
+    max = serializers.IntegerField(required=False)
+    unit = serializers.CharField(required=False)
+    options = AIAgentOptionSerializer(many=True, required=False)
+
+
+class AIAgentStatsSerializer(serializers.Serializer):
+    today = serializers.IntegerField()
+    week = serializers.IntegerField()
+
+
+class AIAgentSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    name = serializers.CharField()
+    description = serializers.CharField()
+    icon = serializers.CharField(help_text="A lucide icon name.")
+    enabled = serializers.BooleanField()
+    needs_claude = serializers.BooleanField()
+    available = serializers.BooleanField()
+    unavailable_reason = serializers.ChoiceField(["", "needs_claude", "needs_speech", "ai_off"])
+    schedule = serializers.CharField()
+    running = serializers.BooleanField()
+    last_run_at = serializers.DateTimeField(allow_null=True)
+    next_run_at = serializers.DateTimeField(allow_null=True)
+    stats = AIAgentStatsSerializer()
+    config = serializers.DictField()
+    fields = AIAgentFieldSerializer(many=True)
+
+
+class AIAgentUpdateSerializer(serializers.Serializer):
+    enabled = serializers.BooleanField(required=False)
+    config = serializers.DictField(required=False)
+
+
+class AIQueuedSerializer(serializers.Serializer):
+    queued = serializers.BooleanField()
+
+
+class AIActivityActorSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    photo = serializers.CharField(allow_null=True)
+
+
+class AIActivitySubjectSerializer(serializers.Serializer):
+    type = serializers.ChoiceField(["task", "member", "draft"])
+    id = serializers.IntegerField()
+    label = serializers.CharField(allow_blank=True)
+
+
+class AIActivityItemSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    agent = serializers.CharField()
+    agent_name = serializers.CharField()
+    icon = serializers.CharField()
+    kind = serializers.CharField()
+    level = serializers.ChoiceField(["info", "success", "warning"])
+    text = serializers.CharField()
+    created_at = serializers.DateTimeField()
+    actor = AIActivityActorSerializer(allow_null=True)
+    subject = AIActivitySubjectSerializer(allow_null=True)
+
+
+class AIActivityPageSerializer(serializers.Serializer):
+    results = AIActivityItemSerializer(many=True)
+    next_before = serializers.IntegerField(allow_null=True)
+
+
+def _agent_row(company, key: str) -> dict:
+    return next(row for row in queries.agent_rows(company) if row["key"] == key)
+
+
+class AgentListView(OwnerAPIView):
+    perm = None
+
+    @extend_schema(responses=AIAgentSerializer(many=True))
+    def get(self, request, company_id):
+        return Response(AIAgentSerializer(queries.agent_rows(self.company), many=True).data)
+
+
+class AgentView(OwnerAPIView):
+    perm = CONFIGURE
+
+    @extend_schema(request=AIAgentUpdateSerializer, responses=AIAgentSerializer)
+    def patch(self, request, company_id, key):
+        if agents.get(key) is None:
+            raise NotFound
+        form = AIAgentUpdateSerializer(data=request.data)
+        form.is_valid(raise_exception=True)
+        try:
+            services.update_agent(self.company, key, by=self.membership, **form.validated_data)
+        except DjangoValidationError as exc:
+            raise ValidationError({"config": exc.message_dict}) from exc
+        self.bump(PULSE_SETTINGS)
+        return Response(AIAgentSerializer(_agent_row(self.company, key)).data)
+
+
+class AgentRunView(OwnerAPIView):
+    perm = CONFIGURE
+
+    @extend_schema(request=None, responses={202: AIQueuedSerializer})
+    def post(self, request, company_id, key):
+        if agents.get(key) is None:
+            raise NotFound
+        services.run_agent_now(self.company, key, by=self.membership)
+        return Response({"queued": True}, status=202)
+
+
+class ActivityView(OwnerAPIView):
+    perm = None
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("agent", str, description="One agent's key."),
+            OpenApiParameter("limit", int, description="How many (30; at most 100)."),
+            OpenApiParameter("before", int, description="The page after: next_before."),
+        ],
+        responses=AIActivityPageSerializer,
+    )
+    def get(self, request, company_id):
+        params = request.query_params
+        limit = int(params["limit"]) if params.get("limit", "").isdigit() else 30
+        before = int(params["before"]) if params.get("before", "").isdigit() else None
+        page = queries.activity(
+            self.company,
+            branch_ids=self.branch_scope,
+            agent=params.get("agent") or None,
+            limit=limit,
+            before=before,
+        )
+        return Response(AIActivityPageSerializer(page).data)

@@ -279,3 +279,66 @@ def _zone(company):
     from zoneinfo import ZoneInfo
 
     return ZoneInfo(company.timezone)
+
+
+# The agents' messages ---------------------------------------------------------------------------
+
+
+def late_task(task: Task, recipient: Membership, now) -> BotMessage:
+    """The deadline watcher's note to whoever gave the task: Open and "+1 hour"."""
+    from apps.ai.callbacks import AILateCallback, LateAction
+
+    local_now = timezone.localtime(now, _zone(task.company))
+    due = timezone.localtime(task.due_at, local_now.tzinfo)
+    lines = [
+        "<b>" + _("Late task") + "</b>",
+        "",
+        html.bold(html.quote(task.title)),
+        _("For: %(name)s") % {"name": html.quote(str(task.assignee))},
+        _("Deadline: %(when)s") % {"when": dates.due_label(due, local_now, dates.language(None))},
+        _("Late by: %(late)s") % {"late": task_messages.format_duration(now - task.due_at)},
+    ]
+    later = InlineKeyboardButton(
+        text=_("+1 hour"),
+        callback_data=AILateCallback(action=LateAction.HOUR_MORE, task_id=task.pk).pack(),
+    )
+    rows = [[task_messages.open_button(task), later]]
+    return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def morning_plan(member: Membership, day: dict, now, *, summary: str = "") -> BotMessage:
+    """A head's or manager's team today, in a few lines."""
+    from apps.tasks.callbacks import ListCallback
+
+    local_now = timezone.localtime(now, _zone(member.company))
+    lang = dates.language(None)
+    lines = ["<b>" + _("Your team today") + "</b>"]
+    if summary:
+        lines += ["", html.quote(summary)]
+    lines += ["", _("Due today: %(count)s") % {"count": day["due_today"]}]
+    late = day["late"]
+    lines.append(_("Late: %(count)s") % {"count": len(late)})
+    for task in late[:3]:
+        when = dates.short_due(timezone.localtime(task.due_at, local_now.tzinfo), local_now, lang)
+        lines.append(f"    · {html.quote(task.title)} — {html.quote(str(task.assignee))} ({when})")
+    if day["to_check"]:
+        lines.append(_("Waiting for your check: %(count)s") % {"count": day["to_check"]})
+    if day["off"]:
+        names = ", ".join(html.quote(str(person)) for person in day["off"][:6])
+        lines.append(_("Off today: %(names)s") % {"names": names})
+    rows = []
+    if day["to_check"]:
+        label = _("To check (%(count)s)") % {"count": day["to_check"]}
+        rows.append(
+            [InlineKeyboardButton(text=label, callback_data=ListCallback(view="check").pack())]
+        )
+    return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=rows) if rows else None
+
+
+def hour_more_done(task: Task, now) -> str:
+    local_now = timezone.localtime(now, _zone(task.company))
+    due = timezone.localtime(task.due_at, local_now.tzinfo)
+    return _("New deadline for «%(title)s»: %(when)s") % {
+        "title": html.quote(task.title),
+        "when": dates.due_label(due, local_now, dates.language(None)),
+    }

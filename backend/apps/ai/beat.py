@@ -7,6 +7,11 @@ Read by file path when the settings load: import only the standard library and
 from celery.schedules import crontab
 
 SCHEDULE = {
+    # The agents (apps.ai.agents): each runs when its own next time has come.
+    "ai-agents-tick": {
+        "task": "apps.ai.tasks.run_agents",
+        "schedule": crontab(minute="*/5"),
+    },
     # Ready drafts nobody used for a day expire; drafts whose job died fail.
     "ai-expire-drafts": {
         "task": "apps.ai.tasks.expire_drafts",

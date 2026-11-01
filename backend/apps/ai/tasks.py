@@ -33,3 +33,26 @@ def expire_drafts() -> int:
 @shared_task
 def purge_voice_notes() -> int:
     return drafts.purge_audio()
+
+
+@shared_task
+def run_agents() -> int:
+    """The beat tick: every scheduled agent whose time has come."""
+    from apps.ai.agents import runner
+
+    return runner.tick()
+
+
+@shared_task
+def run_agent(state_id: int) -> int:
+    """ "Run now" from the dashboard."""
+    from apps.ai.agents import runner
+
+    return runner.run_state(state_id, forced=True)
+
+
+@shared_task
+def check_proof_photo(task_id: int, completed_at: str) -> str | None:
+    from apps.ai.agents import photo_checker
+
+    return photo_checker.check(task_id, completed_at)

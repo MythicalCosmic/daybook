@@ -9,7 +9,7 @@ Each service takes `by: Membership` (`None` means the system), audits its change
 """
 
 from dataclasses import dataclass
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from functools import partial
 from zoneinfo import ZoneInfo
 
@@ -20,10 +20,10 @@ from django.utils.translation import gettext as _
 
 from apps.ai import agents, availability, conf, speech
 from apps.ai import tasks as jobs
-from apps.ai.agents import voice_tasks
+from apps.ai.agents import runner, voice_tasks
 from apps.ai.audit_actions import AIAction
 from apps.ai.drafts import apply_draft, discard_draft, undo_draft
-from apps.ai.models import AIDraft, AISettings
+from apps.ai.models import AgentState, AIDraft, AISettings
 from apps.audit import services as audit
 from apps.companies.models import Feature
 from apps.core.exceptions import DomainError
@@ -34,12 +34,15 @@ from apps.tasks import dates
 
 __all__ = [
     "DraftRefused",
+    "agent_unavailable",
     "apply_draft",
     "disable_ai",
     "discard_draft",
     "enable_ai",
+    "run_agent_now",
     "start_draft",
     "undo_draft",
+    "update_agent",
     "update_settings",
     "voice_status",
 ]
@@ -206,7 +209,8 @@ def enable_ai(company, *, by: Membership) -> AISettings:
             state = agents.state_of(company, agent.key)
             if not state.enabled:
                 state.enabled = True
-                state.save(update_fields=["enabled", "updated_at"])
+                runner.schedule_first_run(state)
+                state.save(update_fields=["enabled", "next_run_at", "updated_at"])
     return row
 
 
@@ -219,6 +223,79 @@ def disable_ai(company, *, by: Membership) -> AISettings:
         row.save()
         audit.record(AIAction.DISABLED, company_id=company.pk, actor=by.user, target=row)
     return row
+
+
+def agent_unavailable(company, agent) -> str:
+    """Why an agent can't work here now: "", "ai_off", "needs_claude" or "needs_speech"."""
+    if not conf.ai_on(company):
+        return "ai_off"
+    if agent.needs_claude and not (availability.fake() or availability.status(company).available):
+        return "needs_claude"
+    if agent.needs_speech and speech.status() == "not_configured":
+        return "needs_speech"
+    return ""
+
+
+@transaction.atomic
+def update_agent(
+    company, key: str, *, by: Membership, enabled: bool | None = None, config: dict | None = None
+):
+    """Switch an agent on or off and change its settings (checked against its fields)."""
+    _ensure_may_configure(by)
+    agent = agents.get(key)
+    if agent is None:
+        raise DomainError(_("There is no such agent."))
+    state = AgentState.objects.select_for_update().get(pk=agents.state_of(company, key).pk)
+    before = {"enabled": state.enabled, "config": dict(state.config or {})}
+    if config is not None:
+        state.config = agents.clean_config(agent, config, agents.config_of(agent, state))
+    if enabled is not None and enabled != state.enabled:
+        if enabled and agent.needs_claude and not availability.configured():
+            raise DomainError(_("This agent needs Claude: add ANTHROPIC_API_KEY on the server."))
+        state.enabled = enabled
+    if state.enabled and agent.scheduled and (config is not None or not before["enabled"]):
+        runner.schedule_first_run(state)
+    state.save()
+    after = {"enabled": state.enabled, "config": dict(state.config or {})}
+    if changed := audit.diff(before, after):
+        audit.record(
+            AIAction.AGENT_CHANGED,
+            company_id=company.pk,
+            actor=by.user,
+            target=state,
+            agent=key,
+            changes=changed,
+        )
+    return state
+
+
+def give_an_hour(task_id: int, *, by: Membership):
+    """The deadline watcher's "+1 hour": the late task's new deadline is an hour from now (on
+    the next five minutes), through `tasks.services.update_task` (its rights, reminders and
+    notice to the assignee)."""
+    from apps.tasks import services as task_services
+    from apps.tasks.models import Task
+
+    task = Task.objects.for_company(by.company).filter(pk=task_id).first()
+    if task is None:
+        raise DomainError(_("This task is no longer here."))
+    later = timezone.now() + timedelta(hours=1)
+    later = later.replace(second=0, microsecond=0) + timedelta(minutes=-later.minute % 5)
+    return task_services.update_task(task, by=by, due_at=later)
+
+
+def run_agent_now(company, key: str, *, by: Membership) -> AgentState:
+    """ "Run now": the scheduled agent runs at once on the ai queue."""
+    _ensure_may_configure(by)
+    agent = agents.get(key)
+    if agent is None or not agent.scheduled:
+        raise DomainError(_("This agent works by itself when something happens."))
+    if not conf.ai_on(company):
+        raise DomainError(_("Turn AI on first."))
+    state = agents.state_of(company, key)
+    AgentState.objects.filter(pk=state.pk).update(running_since=timezone.now())
+    transaction.on_commit(partial(jobs.run_agent.delay, state.pk))
+    return state
 
 
 @transaction.atomic

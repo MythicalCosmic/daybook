@@ -14,3 +14,12 @@ class DraftAction(StrEnum):
 class AIDraftCallback(CallbackData, prefix="aid"):
     action: DraftAction
     id: int
+
+
+class LateAction(StrEnum):
+    HOUR_MORE = "hour"  # the deadline watcher's "+1 hour"
+
+
+class AILateCallback(CallbackData, prefix="ail"):
+    action: LateAction
+    task_id: int
