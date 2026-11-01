@@ -393,6 +393,111 @@ paths:
               schema:
                 $ref: '#/components/schemas/AIQueued'
           description: ''
+  /api/v1/owner/companies/{company_id}/ai/conversations/:
+    get:
+      operationId: companies_ai_conversations_list
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AIConversation'
+          description: ''
+    post:
+      operationId: companies_ai_conversations_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIConversation'
+          description: ''
+  /api/v1/owner/companies/{company_id}/ai/conversations/{conversation_id}/messages/:
+    get:
+      operationId: companies_ai_conversations_messages_list
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: conversation_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AIChatMessage'
+          description: ''
+  /api/v1/owner/companies/{company_id}/ai/conversations/{conversation_id}/turns/:
+    post:
+      operationId: companies_ai_conversations_turns_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: conversation_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AITurnCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AITurnCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AITurnCreateRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AITurnStarted'
+          description: ''
   /api/v1/owner/companies/{company_id}/ai/settings/:
     get:
       operationId: companies_ai_settings_retrieve
@@ -710,6 +815,56 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/owner/companies/{company_id}/ai/turns/{turn_id}/:
+    get:
+      operationId: companies_ai_turns_retrieve
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: turn_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AITurn'
+          description: ''
+  /api/v1/owner/companies/{company_id}/ai/turns/{turn_id}/cancel/:
+    post:
+      operationId: companies_ai_turns_cancel_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: turn_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AITurn'
+          description: ''
   /api/v1/owner/companies/{company_id}/announcements/:
     get:
       operationId: companies_announcements_list
@@ -14541,6 +14696,54 @@ components:
       - monthly_usd
       - resets_on
       - spent_usd
+    AIChatMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+        role:
+          $ref: '#/components/schemas/AIChatMessageRoleEnum'
+        text:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIStep'
+      required:
+      - created_at
+      - id
+      - role
+      - steps
+      - text
+    AIChatMessageRoleEnum:
+      enum:
+      - user
+      - assistant
+      type: string
+      description: |-
+        * `user` - user
+        * `assistant` - assistant
+    AIConversation:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        last_activity_at:
+          type: string
+          format: date-time
+      required:
+      - created_at
+      - id
+      - last_activity_at
+      - title
     AICreatedTask:
       type: object
       properties:
@@ -14839,6 +15042,87 @@ components:
       - enabled_at
       - enabled_by_name
       - platform_blocked
+    AIStep:
+      type: object
+      properties:
+        label:
+          type: string
+        status:
+          $ref: '#/components/schemas/AIStepStatusEnum'
+        ms:
+          type: integer
+      required:
+      - label
+      - ms
+      - status
+    AIStepStatusEnum:
+      enum:
+      - done
+      - error
+      type: string
+      description: |-
+        * `done` - done
+        * `error` - error
+    AITurn:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          $ref: '#/components/schemas/AITurnStatusEnum'
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIStep'
+        text:
+          type: string
+          description: 'Markdown: final once done.'
+        error_code:
+          type: string
+        message_id:
+          type: integer
+          nullable: true
+      required:
+      - error_code
+      - id
+      - message_id
+      - status
+      - steps
+      - text
+    AITurnCreateRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        page:
+          type: string
+          default: ''
+          maxLength: 200
+      required:
+      - text
+    AITurnStarted:
+      type: object
+      properties:
+        turn_id:
+          type: integer
+      required:
+      - turn_id
+    AITurnStatusEnum:
+      enum:
+      - queued
+      - running
+      - done
+      - failed
+      - cancelled
+      type: string
+      description: |-
+        * `queued` - queued
+        * `running` - running
+        * `done` - done
+        * `failed` - failed
+        * `cancelled` - cancelled
     Access:
       type: object
       properties:

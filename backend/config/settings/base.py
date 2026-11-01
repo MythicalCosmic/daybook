@@ -233,6 +233,8 @@ REST_FRAMEWORK = {
         "export_create": "10/min",
         # Voice notes and typed instructions turned into task drafts (apps.ai).
         "ai_draft": "20/min",
+        # Ask AI questions (each one a Claude tool loop).
+        "ai_turn": "20/min",
     }
     | rate_overrides(env("THROTTLE_RATES", default="")),
     # Caddy sits in front: throttles and stored IPs use the client's address, not Caddy's.

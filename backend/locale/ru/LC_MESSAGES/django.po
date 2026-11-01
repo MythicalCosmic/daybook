@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-02 02:57+0500\n"
+"POT-Creation-Date: 2026-11-02 03:16+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -945,6 +945,55 @@ msgstr "Проверить (%(count)s)"
 msgid "New deadline for «%(title)s»: %(when)s"
 msgstr "Новый срок для «%(title)s»: %(when)s"
 
+#: backend/apps/ai/chat.py
+msgid "Ask AI isn't available here."
+msgstr "Здесь «Спросить AI» недоступно."
+
+#: backend/apps/ai/chat.py
+msgid "This conversation isn't yours."
+msgstr "Это не ваш разговор."
+
+#: backend/apps/ai/chat.py
+#, python-format
+msgid "Ask in 1 to %(max)s characters."
+msgstr "Спросите в пределах от 1 до %(max)s символов."
+
+#: backend/apps/ai/chat.py
+msgid "This conversation is full: start a new one."
+msgstr "Этот разговор заполнен: начните новый."
+
+#: backend/apps/ai/chat.py
+msgid "Wait for the answer to the last question."
+msgstr "Дождитесь ответа на последний вопрос."
+
+#: backend/apps/ai/chat.py
+msgid "This question isn't yours."
+msgstr "Это не ваш вопрос."
+
+#: backend/apps/ai/chat.py
+msgid ""
+"I can only see what your access allows; ask about your own work in the app."
+msgstr ""
+"Я вижу только то, что позволяет ваш доступ; спросите о своей работе в "
+"приложении."
+
+#: backend/apps/ai/chat.py
+msgid ""
+"**No task is late right now.** Everything due so far is done or still has "
+"time."
+msgstr ""
+"**Сейчас ни одна задача не опаздывает.** Всё, что к сроку, сделано или ещё "
+"есть время."
+
+#: backend/apps/ai/chat.py
+#, python-format
+msgid "**%(count)s task is late right now:**"
+msgid_plural "**%(count)s tasks are late right now.** The oldest first:"
+msgstr[0] "**Сейчас опаздывает %(count)s задача:**"
+msgstr[1] "**Сейчас опаздывают %(count)s задачи.** Сначала самые давние:"
+msgstr[2] "**Сейчас опаздывают %(count)s задач.** Сначала самые давние:"
+msgstr[3] "**Сейчас опаздывают %(count)s задачи.** Сначала самые давние:"
+
 #: backend/apps/ai/drafts.py
 msgid "There is nothing to create."
 msgstr "Создавать нечего."
@@ -1063,6 +1112,29 @@ msgstr "Демо"
 msgid "The model that answered."
 msgstr "Модель, которая ответила."
 
+#: backend/apps/ai/models.py
+msgid "Running"
+msgstr "Выполняется"
+
+#: backend/apps/ai/models.py backend/apps/projects/conf.py
+#: backend/apps/projects/models.py backend/apps/reminders/bot_messages.py
+#: backend/apps/tasks/bot_messages.py backend/apps/tasks/services.py
+msgid "Done"
+msgstr "Готово"
+
+#: backend/apps/ai/models.py backend/apps/announcements/models.py
+#: backend/apps/attendance/models.py backend/apps/attendance/services.py
+#: backend/apps/finance/models.py backend/apps/projects/models.py
+#: backend/apps/sales/services.py backend/apps/tasks/models.py
+#: backend/apps/timeoff/models.py backend/apps/timeoff/services.py
+msgid "Cancelled"
+msgstr "Отменена"
+
+#: backend/apps/ai/models.py backend/apps/finance/exporters.py
+#: backend/apps/projects/hooks.py backend/apps/timeoff/providers.py
+msgid "Person"
+msgstr "Сотрудник"
+
 #: backend/apps/ai/models.py backend/apps/inbox/models.py
 msgid "Info"
 msgstr "Информация"
@@ -1079,11 +1151,6 @@ msgstr "Предупреждение"
 #: backend/apps/projects/hooks.py backend/apps/tasks/hooks.py
 msgid "Task"
 msgstr "Задача"
-
-#: backend/apps/ai/models.py backend/apps/finance/exporters.py
-#: backend/apps/projects/hooks.py backend/apps/timeoff/providers.py
-msgid "Person"
-msgstr "Сотрудник"
 
 #: backend/apps/ai/models.py
 msgid "Voice note"
@@ -1277,14 +1344,6 @@ msgstr "Запланировано"
 #: backend/apps/announcements/models.py
 msgid "Sent"
 msgstr "Отправлено"
-
-#: backend/apps/announcements/models.py backend/apps/attendance/models.py
-#: backend/apps/attendance/services.py backend/apps/finance/models.py
-#: backend/apps/projects/models.py backend/apps/sales/services.py
-#: backend/apps/tasks/models.py backend/apps/timeoff/models.py
-#: backend/apps/timeoff/services.py
-msgid "Cancelled"
-msgstr "Отменена"
 
 #: backend/apps/announcements/models.py
 msgid "As the author wrote it, formatting included."
@@ -7142,12 +7201,6 @@ msgstr "В работе"
 #: backend/apps/projects/conf.py
 msgid "Review"
 msgstr "Проверка"
-
-#: backend/apps/projects/conf.py backend/apps/projects/models.py
-#: backend/apps/reminders/bot_messages.py backend/apps/tasks/bot_messages.py
-#: backend/apps/tasks/services.py
-msgid "Done"
-msgstr "Готово"
 
 #: backend/apps/projects/hooks.py
 msgid "Project milestones"

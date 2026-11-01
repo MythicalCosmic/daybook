@@ -128,6 +128,42 @@ def structured[M: BaseModel](
         raise InvalidOutput(str(exc)[:200]) from exc
 
 
+def converse(
+    feature: str,
+    *,
+    company,
+    membership=None,
+    model: str,
+    system: list[dict] | str,
+    messages: list[dict],
+    tools: list[dict],
+    tool_choice: dict | None = None,
+    effort: str = "medium",
+    max_tokens: int = MAX_STRUCTURED_TOKENS,
+):
+    """One round of a tool loop (Ask AI): the response, priced and checked (refusal and
+    max_tokens raise). `tool_choice` is only ever "auto" (left out) or {"type": "none"}: forced
+    tool use is refused by Opus 5.5 and Sonnet 5.5."""
+    if effort not in EFFORTS:
+        raise ValueError(f"Unknown effort {effort!r}.")
+    if tool_choice is not None and tool_choice.get("type") not in ("auto", "none"):
+        raise ValueError("Forced tool use is not accepted by the current models.")
+    request = {
+        "model": model,
+        "max_tokens": min(max_tokens, MAX_STRUCTURED_TOKENS),
+        "system": system,
+        "messages": messages,
+        "tools": tools,
+        "output_config": {"effort": effort},
+    }
+    if tool_choice is not None:
+        request["tool_choice"] = tool_choice
+    if uses_fallbacks(model):
+        request |= {"betas": [FALLBACK_BETA], "fallbacks": "default"}
+    response, _call = _send(feature, company, membership, request)
+    return response
+
+
 def _send(feature: str, company, membership, request: dict):
     started = time.monotonic()
     try:

@@ -19,7 +19,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 
-from apps.ai import agents, availability, conf, queries, services, speech
+from apps.ai import agents, availability, chat, conf, queries, services, speech
 from apps.ai.agents import photo_checker
 from apps.ai.api import CREATE_ERRORS, DRAFT_RELATIONS, DraftEndpoints
 from apps.ai.models import AIDraft, AISettings
@@ -31,6 +31,7 @@ from apps.ai.serializers import (
 )
 from apps.console.base import OwnerAPIView, OwnerGenericAPIView
 from apps.core.api import Pagination
+from apps.core.throttles import throttle_person
 from apps.members import scope
 from apps.members.permissions import Perm
 
@@ -113,7 +114,7 @@ def owner_status(membership) -> dict:
         "features": {
             "voice": voice.voice,
             "smart_text": voice.smart_text,
-            "chat": False,  # Ask AI arrives with the chat backend
+            "chat": chat.available(membership),
             "photo_checker": conf.ai_on(company)
             and agents.state_of(company, photo_checker.KEY).enabled
             and (availability.fake() or availability.status(company).available),
@@ -396,3 +397,165 @@ class ActivityView(OwnerAPIView):
             before=before,
         )
         return Response(AIActivityPageSerializer(page).data)
+
+
+# Ask AI -----------------------------------------------------------------------------------------
+
+
+class AIConversationSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    title = serializers.CharField(allow_blank=True)
+    created_at = serializers.DateTimeField()
+    last_activity_at = serializers.DateTimeField()
+
+
+class AIStepSerializer(serializers.Serializer):
+    label = serializers.CharField()
+    status = serializers.ChoiceField(["done", "error"])
+    ms = serializers.IntegerField()
+
+
+class AIChatMessageSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    role = serializers.ChoiceField(["user", "assistant"])
+    text = serializers.CharField(allow_blank=True)
+    created_at = serializers.DateTimeField()
+    steps = AIStepSerializer(many=True)
+
+
+class AITurnCreateSerializer(serializers.Serializer):
+    text = serializers.CharField(max_length=chat.TEXT_MAX)
+    page = serializers.CharField(required=False, allow_blank=True, max_length=200, default="")
+
+
+class AITurnStartedSerializer(serializers.Serializer):
+    turn_id = serializers.IntegerField()
+
+
+class AITurnSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    status = serializers.ChoiceField(["queued", "running", "done", "failed", "cancelled"])
+    steps = AIStepSerializer(many=True)
+    text = serializers.CharField(allow_blank=True, help_text="Markdown: final once done.")
+    error_code = serializers.CharField(allow_blank=True)
+    message_id = serializers.IntegerField(allow_null=True)
+
+
+def _conversation_row(conversation) -> dict:
+    return {
+        "id": conversation.pk,
+        "title": conversation.title,
+        "created_at": conversation.created_at,
+        "last_activity_at": conversation.last_activity_at,
+    }
+
+
+def _turn_row(turn) -> dict:
+    return {
+        "id": turn.pk,
+        "status": turn.status,
+        "steps": turn.steps or [],
+        "text": turn.text,
+        "error_code": turn.error_code,
+        "message_id": turn.message_id,
+    }
+
+
+def _refused(exc: chat.TurnRefused) -> Response:
+    return Response({"code": exc.code, "detail": str(exc)}, status=exc.status)
+
+
+class ChatAccess(OwnerAPIView):
+    perm = Perm.AI_USE
+
+    def conversation(self, conversation_id: int):
+        from apps.ai.models import AIConversation
+
+        found = AIConversation.objects.filter(
+            pk=conversation_id, company_id=self.company.pk, membership=self.membership
+        ).first()
+        if found is None:
+            raise NotFound
+        return found
+
+    def turn(self, turn_id: int):
+        from apps.ai.models import AITurn
+
+        found = AITurn.objects.filter(
+            pk=turn_id, company_id=self.company.pk, membership=self.membership
+        ).first()
+        if found is None:
+            raise NotFound
+        return found
+
+
+class ConversationListView(ChatAccess):
+    @extend_schema(responses=AIConversationSerializer(many=True))
+    def get(self, request, company_id):
+        from apps.ai.models import AIConversation
+
+        rows = AIConversation.objects.filter(
+            company_id=self.company.pk, membership=self.membership
+        ).order_by("-last_activity_at")[:100]
+        return Response(
+            AIConversationSerializer([_conversation_row(c) for c in rows], many=True).data
+        )
+
+    @extend_schema(request=None, responses={201: AIConversationSerializer})
+    def post(self, request, company_id):
+        try:
+            conversation = chat.start_conversation(self.membership)
+        except chat.TurnRefused as exc:
+            return _refused(exc)
+        return Response(AIConversationSerializer(_conversation_row(conversation)).data, status=201)
+
+
+class ConversationMessagesView(ChatAccess):
+    @extend_schema(responses=AIChatMessageSerializer(many=True))
+    def get(self, request, company_id, conversation_id):
+        from apps.ai.models import AIMessage
+
+        conversation = self.conversation(conversation_id)
+        messages = AIMessage.objects.filter(conversation=conversation).select_related("turn")
+        rows = [
+            {
+                "id": message.pk,
+                "role": message.role,
+                "text": message.display_text,
+                "created_at": message.created_at,
+                "steps": (message.turn.steps or [])
+                if message.turn and message.role == "assistant"
+                else [],
+            }
+            for message in messages
+            if message.display_text
+        ]
+        return Response(AIChatMessageSerializer(rows, many=True).data)
+
+
+class TurnCreateView(ChatAccess):
+    @extend_schema(request=AITurnCreateSerializer, responses={202: AITurnStartedSerializer})
+    def post(self, request, company_id, conversation_id):
+        throttle_person(self, request, "ai_turn", self.membership.pk)
+        form = AITurnCreateSerializer(data=request.data)
+        form.is_valid(raise_exception=True)
+        try:
+            turn = chat.start_turn(
+                self.conversation(conversation_id), by=self.membership, **form.validated_data
+            )
+        except chat.TurnRefused as exc:
+            return _refused(exc)
+        return Response({"turn_id": turn.pk}, status=202)
+
+
+class TurnView(ChatAccess):
+    @extend_schema(responses=AITurnSerializer)
+    def get(self, request, company_id, turn_id):
+        return Response(AITurnSerializer(_turn_row(self.turn(turn_id))).data)
+
+
+class TurnCancelView(ChatAccess):
+    @extend_schema(request=None, responses=AITurnSerializer)
+    def post(self, request, company_id, turn_id):
+        turn = chat.cancel_turn(self.turn(turn_id), by=self.membership)
+        return Response(AITurnSerializer(_turn_row(turn)).data)

@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-02 02:57+0500\n"
+"POT-Creation-Date: 2026-11-02 03:16+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -932,6 +932,52 @@ msgstr "Tekshirish (%(count)s)"
 msgid "New deadline for «%(title)s»: %(when)s"
 msgstr "«%(title)s» uchun yangi muddat: %(when)s"
 
+#: backend/apps/ai/chat.py
+msgid "Ask AI isn't available here."
+msgstr "Bu yerda AI yordamchisi ishlamaydi."
+
+#: backend/apps/ai/chat.py
+msgid "This conversation isn't yours."
+msgstr "Bu suhbat sizniki emas."
+
+#: backend/apps/ai/chat.py
+#, python-format
+msgid "Ask in 1 to %(max)s characters."
+msgstr "Savol bo‘sh bo‘lmasin va %(max)s belgidan oshmasin."
+
+#: backend/apps/ai/chat.py
+msgid "This conversation is full: start a new one."
+msgstr "Bu suhbat to‘ldi: yangisini boshlang."
+
+#: backend/apps/ai/chat.py
+msgid "Wait for the answer to the last question."
+msgstr "Oxirgi savolga javobni kuting."
+
+#: backend/apps/ai/chat.py
+msgid "This question isn't yours."
+msgstr "Bu savol sizniki emas."
+
+#: backend/apps/ai/chat.py
+msgid ""
+"I can only see what your access allows; ask about your own work in the app."
+msgstr ""
+"Men faqat sizning huquqingiz yetadigan narsani ko‘raman; o‘z ishingiz haqida "
+"ilovada so‘rang."
+
+#: backend/apps/ai/chat.py
+msgid ""
+"**No task is late right now.** Everything due so far is done or still has "
+"time."
+msgstr ""
+"**Hozir kechikkan vazifa yo‘q.** Muddati kelganlarning hammasi bajarilgan "
+"yoki hali vaqti bor."
+
+#: backend/apps/ai/chat.py
+#, python-format
+msgid "**%(count)s task is late right now:**"
+msgid_plural "**%(count)s tasks are late right now.** The oldest first:"
+msgstr[0] "**Hozir %(count)s ta vazifa kechikmoqda.** Eng eskisi birinchi:"
+
 #: backend/apps/ai/drafts.py
 msgid "There is nothing to create."
 msgstr "Yaratadigan narsa yo‘q."
@@ -1050,6 +1096,29 @@ msgstr "Demo"
 msgid "The model that answered."
 msgstr "Javob bergan model."
 
+#: backend/apps/ai/models.py
+msgid "Running"
+msgstr "Ishlamoqda"
+
+#: backend/apps/ai/models.py backend/apps/projects/conf.py
+#: backend/apps/projects/models.py backend/apps/reminders/bot_messages.py
+#: backend/apps/tasks/bot_messages.py backend/apps/tasks/services.py
+msgid "Done"
+msgstr "Bajarildi"
+
+#: backend/apps/ai/models.py backend/apps/announcements/models.py
+#: backend/apps/attendance/models.py backend/apps/attendance/services.py
+#: backend/apps/finance/models.py backend/apps/projects/models.py
+#: backend/apps/sales/services.py backend/apps/tasks/models.py
+#: backend/apps/timeoff/models.py backend/apps/timeoff/services.py
+msgid "Cancelled"
+msgstr "Bekor qilindi"
+
+#: backend/apps/ai/models.py backend/apps/finance/exporters.py
+#: backend/apps/projects/hooks.py backend/apps/timeoff/providers.py
+msgid "Person"
+msgstr "Xodim"
+
 #: backend/apps/ai/models.py backend/apps/inbox/models.py
 msgid "Info"
 msgstr "Ma’lumot"
@@ -1066,11 +1135,6 @@ msgstr "Ogohlantirish"
 #: backend/apps/projects/hooks.py backend/apps/tasks/hooks.py
 msgid "Task"
 msgstr "Vazifa"
-
-#: backend/apps/ai/models.py backend/apps/finance/exporters.py
-#: backend/apps/projects/hooks.py backend/apps/timeoff/providers.py
-msgid "Person"
-msgstr "Xodim"
 
 #: backend/apps/ai/models.py
 msgid "Voice note"
@@ -1263,14 +1327,6 @@ msgstr "Rejalashtirilgan"
 #: backend/apps/announcements/models.py
 msgid "Sent"
 msgstr "Yuborilgan"
-
-#: backend/apps/announcements/models.py backend/apps/attendance/models.py
-#: backend/apps/attendance/services.py backend/apps/finance/models.py
-#: backend/apps/projects/models.py backend/apps/sales/services.py
-#: backend/apps/tasks/models.py backend/apps/timeoff/models.py
-#: backend/apps/timeoff/services.py
-msgid "Cancelled"
-msgstr "Bekor qilindi"
 
 #: backend/apps/announcements/models.py
 msgid "As the author wrote it, formatting included."
@@ -7206,12 +7262,6 @@ msgstr "Jarayonda"
 #: backend/apps/projects/conf.py
 msgid "Review"
 msgstr "Tekshiruv"
-
-#: backend/apps/projects/conf.py backend/apps/projects/models.py
-#: backend/apps/reminders/bot_messages.py backend/apps/tasks/bot_messages.py
-#: backend/apps/tasks/services.py
-msgid "Done"
-msgstr "Bajarildi"
 
 #: backend/apps/projects/hooks.py
 msgid "Project milestones"

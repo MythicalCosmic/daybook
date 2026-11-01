@@ -198,6 +198,83 @@ class AgentState(TenantModel):
         return f"{self.key} of {self.company}"
 
 
+class AIConversation(TenantModel):
+    """An "Ask AI" conversation, private to its author."""
+
+    membership = models.ForeignKey(
+        "members.Membership", on_delete=models.CASCADE, related_name="ai_conversations"
+    )
+    title = models.CharField(max_length=120, blank=True)
+    last_activity_at = models.DateTimeField(db_index=True)
+    turn_count = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return self.title or f"Conversation #{self.pk}"
+
+
+class AITurn(TenantModel):
+    """One question and the work to answer it (tool calls, then the answer)."""
+
+    class Status(models.TextChoices):
+        QUEUED = "queued", _("Queued")
+        RUNNING = "running", _("Running")
+        DONE = "done", _("Done")
+        FAILED = "failed", _("Failed")
+        CANCELLED = "cancelled", _("Cancelled")
+
+    conversation = models.ForeignKey(AIConversation, on_delete=models.CASCADE, related_name="turns")
+    membership = models.ForeignKey(
+        "members.Membership", on_delete=models.SET_NULL, null=True, related_name="+"
+    )
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.QUEUED)
+    page = models.CharField(max_length=200, blank=True)
+    # [{"label": str, "status": "done"|"error", "ms": int}]
+    steps = models.JSONField(default=list, blank=True)
+    text = models.TextField(blank=True)
+    error_code = models.CharField(max_length=32, blank=True)
+    message = models.ForeignKey(
+        "AIMessage", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    model = models.CharField(max_length=64, blank=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Turn #{self.pk}"
+
+
+class AIMessage(models.Model):
+    """One message of a conversation, its API content blocks exactly as sent or returned
+    (thinking blocks included): history is replayed as stored, never edited."""
+
+    class Role(models.TextChoices):
+        USER = "user", _("Person")
+        ASSISTANT = "assistant", "AI"
+
+    conversation = models.ForeignKey(
+        AIConversation, on_delete=models.CASCADE, related_name="messages"
+    )
+    turn = models.ForeignKey(
+        AITurn, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    seq = models.PositiveIntegerField()
+    role = models.CharField(max_length=16, choices=Role.choices)
+    content = models.JSONField(default=list)
+    # What the conversation shows ("" for the tool rounds in between).
+    display_text = models.TextField(blank=True)
+    in_context = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["conversation", "seq"], name="ai_message_seq_unique")
+        ]
+        ordering = ["seq"]
+
+    def __str__(self):
+        return f"{self.role} #{self.seq}"
+
+
 class AgentEvent(TenantModel):
     """Something an agent did. The text is rendered when it is read, in the reader's language,
     from `kind` and `params` (apps.ai.events)."""

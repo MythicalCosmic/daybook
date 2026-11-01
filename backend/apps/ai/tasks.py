@@ -56,3 +56,11 @@ def check_proof_photo(task_id: int, completed_at: str) -> str | None:
     from apps.ai.agents import photo_checker
 
     return photo_checker.check(task_id, completed_at)
+
+
+@shared_task
+def run_turn(turn_id: int) -> None:
+    """One Ask AI question: the tool loop and the answer."""
+    from apps.ai import chat
+
+    chat.run_turn(turn_id)
