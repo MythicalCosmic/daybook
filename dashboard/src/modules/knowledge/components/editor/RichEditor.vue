@@ -66,10 +66,15 @@ const tool = computed(() => (isPhone.value ? "lg" : "sm"));
 // Bumped on every transaction, so the toolbar's active states follow the cursor.
 const tick = shallowRef(0);
 
+// Touch screens open the page without the cursor in it: focusing would pop the keyboard over half
+// the page, and Tiptap's focus on iOS and Android dispatches a stale transaction ("Applying a
+// mismatched transaction") that also swallowed the editor's "created", so `ready` never came.
+const touch = typeof window !== "undefined" && !!window.matchMedia?.("(pointer: coarse)")?.matches;
+
 const editor = useEditor({
   content: model.value,
   extensions: buildExtensions(props.placeholder ?? t("knowledge.editor.placeholder")),
-  autofocus: props.autofocus ? "end" : false,
+  autofocus: props.autofocus && !touch ? "end" : false,
   editorProps: {
     attributes: { class: "kb-prose", "aria-label": t("knowledge.editor.body"), role: "textbox", "aria-multiline": "true" },
     handlePaste: (_view, event) => takeImages(event.clipboardData?.files),

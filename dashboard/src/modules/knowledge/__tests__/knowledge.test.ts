@@ -208,6 +208,31 @@ describe("editor", () => {
     wrapper.unmount();
   });
 
+  it("opens on a phone without focusing: no keyboard over the page, and the editor still says ready", async () => {
+    // An iPhone inside Telegram: Tiptap's focus there dispatched a stale transaction ("Applying a
+    // mismatched transaction"), which also swallowed "created", so `ready` never came.
+    vi.spyOn(navigator, "platform", "get").mockReturnValue("iPhone");
+    vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("coarse"), media: query, addEventListener: () => undefined, removeEventListener: () => undefined }));
+    const errors: unknown[] = [];
+    const onError = (event: ErrorEvent) => {
+      errors.push(event.error);
+      event.preventDefault();
+    };
+    window.addEventListener("error", onError);
+    const app = await testApp("/c/1/knowledge/p/5/edit");
+    const { wrapper, inner } = mountWithProviders(RichEditor, {
+      props: { modelValue: "<p>Muzlatgich</p>", upload: vi.fn(), autofocus: true },
+      plugins: app.plugins,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    await flushPromises();
+    window.removeEventListener("error", onError);
+    expect(errors).toEqual([]);
+    expect(inner.emitted("ready")).toHaveLength(1);
+    expect(document.activeElement?.closest(".ProseMirror")).toBeNull();
+    wrapper.unmount();
+  });
+
   it("ignores the editor's empty last paragraph when comparing bodies", () => {
     expect(normalizeBody("<p>A</p><p></p>")).toBe("<p>A</p>");
     expect(normalizeBody("<p>A</p><p><br></p> <p></p>")).toBe("<p>A</p>");
