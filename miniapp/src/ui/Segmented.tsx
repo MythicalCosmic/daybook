@@ -1,4 +1,4 @@
-import { useRef, type KeyboardEvent, type ReactNode } from "react";
+import { useRef, type KeyboardEvent, type ReactNode, type Ref } from "react";
 
 import { haptic } from "../telegram";
 import { cx } from "./cx";
@@ -29,6 +29,7 @@ export function Segmented<T extends string>({
   role = "radiogroup",
   label,
   className,
+  ref,
 }: {
   options: readonly SegmentOption<T>[];
   value: T;
@@ -40,6 +41,8 @@ export function Segmented<T extends string>({
   role?: "radiogroup" | "tablist";
   label?: string;
   className?: string;
+  /** The strip itself (a strip that scrolls sideways measures its edges, `useScrollEdges`). */
+  ref?: Ref<HTMLDivElement>;
 }) {
   const tabs = role === "tablist";
   const buttons = useRef(new Map<T, HTMLButtonElement>());
@@ -70,6 +73,7 @@ export function Segmented<T extends string>({
 
   return (
     <div
+      ref={ref}
       className={cx("seg", size === "small" && "seg--small", fit && "seg--fit", className)}
       role={role}
       aria-label={label}

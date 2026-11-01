@@ -24,10 +24,23 @@ const EN_WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const isUzbek = (locale: string) => locale.startsWith("uz");
 
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * The instant to format and the zone to read it in. A calendar date without a time ("2026-11-02",
+ * a holiday, a shift's day, a report's range) is that day everywhere: it's read at noon UTC, in
+ * UTC, so no zone moves it to the day before or after (a bare "2026-11-02" parses as UTC
+ * midnight, the evening before west of Greenwich).
+ */
+function at(moment: string | Date, timeZone: string): [Date, string] {
+  if (typeof moment === "string" && DATE_ONLY.test(moment)) return [new Date(`${moment}T12:00:00Z`), "UTC"];
+  return [new Date(moment), timeZone];
+}
+
 /** Day, month (0–11) and weekday (0 = Sunday) of a moment in `timeZone`. */
 function calendar(moment: string | Date, timeZone: string) {
-  const parts = formatter("en-US", { timeZone, day: "numeric", month: "numeric", weekday: "short" })
-    .formatToParts(new Date(moment));
+  const [instant, zone] = at(moment, timeZone);
+  const parts = formatter("en-US", { timeZone: zone, day: "numeric", month: "numeric", weekday: "short" }).formatToParts(instant);
   const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
   return {
     day: Number(part("day")),
@@ -37,9 +50,8 @@ function calendar(moment: string | Date, timeZone: string) {
 }
 
 export function dayKey(moment: Date | string, timeZone: string): DayKey {
-  return formatter("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(
-    new Date(moment),
-  );
+  const [instant, zone] = at(moment, timeZone);
+  return formatter("en-CA", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit" }).format(instant);
 }
 
 export function addDays(key: DayKey, days: number): DayKey {
@@ -64,14 +76,22 @@ export function hourIn(now: Date, timeZone: string): number {
   return Number(formatter("en-GB", { timeZone, hour: "2-digit", hourCycle: "h23" }).format(now));
 }
 
+/** `moment` in `timeZone` (a calendar date: as that very day) with these fields, in `locale`. */
+function format(moment: string | Date, timeZone: string, locale: string, options: Intl.DateTimeFormatOptions): string {
+  const [instant, zone] = at(moment, timeZone);
+  return formatter(locale, { timeZone: zone, ...options }).format(instant);
+}
+
+/** The functions below take a moment (ISO string or Date, read in `timeZone`) or a calendar date
+ * ("2026-11-02", the same day in every zone). */
 export function weekdayShort(moment: string | Date, timeZone: string, locale: string): string {
   if (isUzbek(locale)) return UZ_WEEKDAYS_SHORT[calendar(moment, timeZone).weekday];
-  return formatter(locale, { timeZone, weekday: "short" }).format(new Date(moment));
+  return format(moment, timeZone, locale, { weekday: "short" });
 }
 
 export function weekdayLong(moment: string | Date, timeZone: string, locale: string): string {
   if (isUzbek(locale)) return UZ_WEEKDAYS[calendar(moment, timeZone).weekday];
-  return formatter(locale, { timeZone, weekday: "long" }).format(new Date(moment));
+  return format(moment, timeZone, locale, { weekday: "long" });
 }
 
 export function dayMonth(moment: string | Date, timeZone: string, locale: string): string {
@@ -79,7 +99,7 @@ export function dayMonth(moment: string | Date, timeZone: string, locale: string
     const { day, month } = calendar(moment, timeZone);
     return `${day}-${UZ_MONTHS_SHORT[month]}`;
   }
-  return formatter(locale, { timeZone, day: "numeric", month: "short" }).format(new Date(moment));
+  return format(moment, timeZone, locale, { day: "numeric", month: "short" });
 }
 
 /** "26 October", "26 октября", "26-oktabr": a date inside a sentence, where a shortened month's dot
@@ -89,7 +109,7 @@ export function dayMonthLong(moment: string | Date, timeZone: string, locale: st
     const { day, month } = calendar(moment, timeZone);
     return `${day}-${UZ_MONTHS[month]}`;
   }
-  return formatter(locale, { timeZone, day: "numeric", month: "long" }).format(new Date(moment));
+  return format(moment, timeZone, locale, { day: "numeric", month: "long" });
 }
 
 /** "Yakshanba, 25-oktabr", "Воскресенье, 25 октября": a date that starts a line, so capitalised

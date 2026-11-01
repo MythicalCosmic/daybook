@@ -89,6 +89,21 @@ describe("time", () => {
     expect(daysFromToday("2026-10-18T19:30:00Z", NOW, TASHKENT)).toBe(0); // 00:30 local
     expect(addDays("2026-12-31", 1)).toBe("2027-01-01");
   });
+
+  it("shows a calendar date (a holiday, a shift's day, a report's range) as that very day in every zone", () => {
+    // A bare "2026-11-02" parses as UTC midnight: the evening before west of Greenwich, and noon
+    // UTC is already the next day in Kiribati (+14).
+    for (const zone of ["America/New_York", TASHKENT, "Pacific/Kiritimati", "UTC"]) {
+      expect(dayKey("2026-11-02", zone)).toBe("2026-11-02");
+      expect(dayMonth("2026-11-02", zone, "en-GB")).toBe("2 Nov");
+      expect(dayMonth("2026-11-02", zone, "uz-Latn-UZ")).toBe("2-noy");
+      expect(weekdayShort("2026-11-02", zone, "en-GB")).toBe("Mon");
+      expect(weekdayShort("2026-11-02", zone, "uz-Latn-UZ")).toBe("Dush");
+    }
+    // A moment still reads in the zone given.
+    expect(dayMonth("2026-11-01T22:00:00Z", TASHKENT, "en-GB")).toBe("2 Nov");
+    expect(dayMonth("2026-11-01T22:00:00Z", "America/New_York", "en-GB")).toBe("1 Nov");
+  });
 });
 
 describe("task view", () => {

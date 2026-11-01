@@ -209,6 +209,8 @@ button {
   border: 1px solid transparent;
   border-radius: 999px;
   padding: var(--space-2) 16px;
+  /* A finger's width at least: one line of text and the padding came to 36 px. */
+  min-height: 40px;
   text-decoration: none;
   transition: background 0.15s ease, transform 0.1s ease;
 }
@@ -227,16 +229,20 @@ button {
   color: var(--color-bg);
 }
 
-.btn-primary:hover:not(:disabled) {
-  background: var(--color-accent-600);
+@media (hover: hover) {
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-accent-600);
+  }
 }
 
 .btn-secondary {
   border-color: var(--color-divider);
 }
 
-.btn-secondary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-text) 7%, transparent);
+@media (hover: hover) {
+  .btn-secondary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-text) 7%, transparent);
+  }
 }
 
 .btn-ghost {
@@ -249,8 +255,10 @@ button {
   color: var(--color-accent-700);
 }
 
-.btn-ghost:hover {
-  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+@media (hover: hover) {
+  .btn-ghost:hover {
+    background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  }
 }
 
 .btn-lg {
@@ -310,8 +318,10 @@ button {
   text-align: left;
 }
 
-.input:hover {
-  border-color: color-mix(in srgb, var(--color-text) 45%, transparent);
+@media (hover: hover) {
+  .input:hover {
+    border-color: color-mix(in srgb, var(--color-text) 45%, transparent);
+  }
 }
 
 .input:focus-visible {
@@ -478,8 +488,15 @@ textarea.input {
   color: var(--color-text);
 }
 
-.row:hover {
+/* Pressed: on a phone the only feedback a row gets (hover below is for a mouse). */
+.row:not(.row--static):active {
   background: color-mix(in srgb, var(--color-surface) 92%, var(--color-text));
+}
+
+@media (hover: hover) {
+  .row:not(.row--static):hover {
+    background: color-mix(in srgb, var(--color-surface) 92%, var(--color-text));
+  }
 }
 
 .row-main {
@@ -514,9 +531,7 @@ textarea.input {
 }
 
 /* Rows that show information and aren't tapped. */
-.row--static,
-.row--static:hover {
-  background: var(--color-surface);
+.row--static {
   cursor: default;
 }
 
@@ -1171,6 +1186,78 @@ textarea.plus-title {
   color: var(--muted);
 }
 
+/* — my team: a head's people — */
+
+.team-people {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.team-person.card--row {
+  gap: 12px;
+  padding: 14px;
+}
+
+.team-person-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.team-person-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.team-person-chevron {
+  flex: none;
+}
+
+.team-person-none {
+  padding: 0 4px;
+  font-size: 15px;
+}
+
+/* — team results — */
+
+.team-totals {
+  padding: 18px;
+  gap: 14px;
+}
+
+.team-totals-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.team-totals-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.team-totals-percent {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.team-totals-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.team-totals-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 /* — task detail — */
 
 .detail-layer {
@@ -1207,8 +1294,10 @@ textarea.plus-title {
   font-size: 16px;
 }
 
-.check-item:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-text) 5%, transparent);
+@media (hover: hover) {
+  .check-item:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-text) 5%, transparent);
+  }
 }
 
 .check-item:disabled {
@@ -1247,8 +1336,10 @@ textarea.plus-title {
   font-weight: 600;
 }
 
-.photo-drop:hover {
-  border-color: var(--color-accent);
+@media (hover: hover) {
+  .photo-drop:hover {
+    border-color: var(--color-accent);
+  }
 }
 
 /* — joining: creating the account, the waiting room, and the "can't get in" screens — */
@@ -2213,8 +2304,8 @@ textarea.plus-title {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  min-height: 36px;
-  margin: 2px 0 -4px -10px;
+  min-height: 40px;
+  margin: 0 0 -6px -10px;
   padding: 0 10px;
   border: 0;
   border-radius: 999px;
@@ -2224,8 +2315,10 @@ textarea.plus-title {
   font-weight: 700;
 }
 
-.qa-read-undo:hover {
-  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+@media (hover: hover) {
+  .qa-read-undo:hover {
+    background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  }
 }
 
 /* ui.css loads after this file: the doubled class outranks its pressed chip. */
@@ -2383,9 +2476,14 @@ textarea.plus-title {
   text-align: left;
 }
 
-.mention-option[aria-selected="true"],
-.mention-option:hover {
+.mention-option[aria-selected="true"] {
   background: var(--color-surface);
+}
+
+@media (hover: hover) {
+  .mention-option:hover {
+    background: var(--color-surface);
+  }
 }
 
 .mention-option-text {
@@ -2419,14 +2517,17 @@ textarea.plus-title {
 
 /* — no connection — */
 
+/* A pill centred at the top, as wide as its words: left and right with auto margins (a box placed
+   at left: 50% may only grow to half the screen and broke the line in two). */
 .offline-banner {
   position: absolute;
-  top: calc(var(--top-inset) + 8px);
-  left: 50%;
+  top: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px) + 8px);
+  left: 16px;
+  right: 16px;
   z-index: 25;
-  transform: translateX(-50%);
-  max-width: calc(100% - 32px);
-  display: inline-flex;
+  width: fit-content;
+  margin-inline: auto;
+  display: flex;
   align-items: center;
   gap: 8px;
   padding: 8px 14px;
@@ -2435,6 +2536,16 @@ textarea.plus-title {
   color: var(--color-bg);
   font-size: 13.5px;
   font-weight: 600;
+  line-height: 1.35;
   box-shadow: var(--shadow-md);
   animation: fade-in 220ms ease;
+}
+
+.offline-banner > svg {
+  flex: none;
+}
+
+/* While it shows, screens and pages start below it rather than under it. */
+.app:has(> .offline-banner) {
+  --top-inset: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px) + 44px);
 }

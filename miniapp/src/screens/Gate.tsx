@@ -115,8 +115,8 @@ export function Blocked() {
 export function Suspended({ membership }: { membership: Membership }) {
   const { t, locale } = useI18n();
   const until = suspendedUntil(membership);
-  // A date without a time: read it at noon UTC so no timezone moves the day.
-  const body = until ? t("gate.suspended.until", { date: whole(dayMonthLong(`${until}T12:00:00Z`, "UTC", locale)) }) : t("gate.suspended.body");
+  // A calendar date ("2026-11-12"): the same day in any zone (lib/time).
+  const body = until ? t("gate.suspended.until", { date: whole(dayMonthLong(until, "UTC", locale)) }) : t("gate.suspended.body");
   return (
     <Message icon={CirclePause} tone="sage" title={t("gate.suspended.title")} body={body}>
       <CloseButton />
