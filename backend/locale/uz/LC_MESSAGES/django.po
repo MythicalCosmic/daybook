@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-02 03:40+0500\n"
+"POT-Creation-Date: 2026-11-02 04:44+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -748,12 +748,20 @@ msgstr ""
 "Bu yerda hali ovozli xabarlarni eshita olmayman. Vazifani yozib yuboring."
 
 #: backend/apps/ai/bot_messages.py
+msgid "I can't listen to voice messages here yet."
+msgstr "Bu yerda hali ovozli xabarlarni eshita olmayman."
+
+#: backend/apps/ai/bot_messages.py
 msgid "Voice needs a speech service on the server (AI_SPEECH_URL)."
 msgstr "Ovoz uchun serverda nutqni tanish xizmati kerak (AI_SPEECH_URL)."
 
 #: backend/apps/ai/bot_messages.py
 msgid "Voice tasks aren't switched on in this company. Type the task instead."
 msgstr "Bu kompaniyada ovozli vazifalar yoqilmagan. Vazifani yozib yuboring."
+
+#: backend/apps/ai/bot_messages.py
+msgid "Voice tasks aren't switched on in this company."
+msgstr "Bu kompaniyada ovozli vazifalar yoqilmagan."
 
 #: backend/apps/ai/bot_messages.py
 msgid "You can switch them on in the dashboard: AI, then Agents."
@@ -3377,6 +3385,10 @@ msgstr "Bu ko‘rinishda ma’lumot juda ko‘p, uni saqlab bo‘lmaydi."
 #: backend/apps/console/services.py
 msgid "You already have a view with this name here."
 msgstr "Bu yerda shu nomli ko‘rinishingiz allaqachon bor."
+
+#: backend/apps/core/bot_runtime.py
+msgid "This message is too old. Open it again from the menu."
+msgstr "Bu xabar eskirgan. Uni menyudan qaytadan oching."
 
 #: backend/apps/core/bot_runtime.py
 msgid "Something went wrong. Please try again in a moment."
@@ -6050,7 +6062,7 @@ msgstr "<b>%(company)s</b> jamoasiga xush kelibsiz!"
 msgid "Language: /language · Help: /help"
 msgstr "Til: /language · Yordam: /help"
 
-#: backend/apps/members/bot_messages.py backend/apps/tasks/bot_messages.py
+#: backend/apps/members/bot_messages.py
 #, python-format
 msgid "Open: %(count)d"
 msgstr "Ochiq: %(count)d"
@@ -9803,6 +9815,10 @@ msgid "What needs to be fixed? Tap a reason or write your own."
 msgstr "Nimani tuzatish kerak? Sababni tanlang yoki o‘zingiz yozing."
 
 #: backend/apps/tasks/bot_messages.py
+msgid "Why can't it be done?"
+msgstr "Nega bajarib bo‘lmaydi?"
+
+#: backend/apps/tasks/bot_messages.py
 msgid "+30 min"
 msgstr "+30 daqiqa"
 
@@ -10144,6 +10160,12 @@ msgstr ""
 "Bo‘limlaringizda hali hech kim yo‘q. Xodimlarni boshqaruv panelida qo‘shing: "
 "Xodimlar, Bo‘limlar, keyin bo‘limingiz."
 
+#. Translators: mid-line after a person's name ("Alisher Valiyev — open: 3"), lowercase.
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "open: %(count)d"
+msgstr "ochiq: %(count)d"
+
 #: backend/apps/tasks/bot_messages.py
 msgid "<b>Late now</b>"
 msgstr "<b>Hozir kechikayotganlar</b>"
@@ -10169,11 +10191,6 @@ msgstr "<b>Ochiq</b>"
 #: backend/apps/tasks/bot_messages.py
 msgid "Nothing open."
 msgstr "Ochiq vazifa yo‘q."
-
-#: backend/apps/tasks/bot_messages.py
-#, python-format
-msgid "late since %(time)s"
-msgstr "kechikmoqda, muddati: %(time)s"
 
 #: backend/apps/tasks/bot_messages.py
 msgid "<b>Done in the last 7 days</b>"
@@ -11506,10 +11523,6 @@ msgstr "Qabul qilindi"
 #: employee_bot/bot/handlers/member/tasks.py
 msgid "Sent back with your comment."
 msgstr "Izohingiz bilan qaytarildi."
-
-#: employee_bot/bot/handlers/member/tasks.py
-msgid "Why can't it be done?"
-msgstr "Nega bajarib bo‘lmaydi?"
 
 #: employee_bot/bot/handlers/member/tasks.py
 msgid "What's in the way? Write a few words."

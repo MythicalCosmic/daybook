@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-02 03:40+0500\n"
+"POT-Creation-Date: 2026-11-02 04:44+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -755,12 +755,20 @@ msgid "I can't listen to voice messages here yet. Type the task instead."
 msgstr "Здесь я пока не слушаю голосовые. Напишите задачу текстом."
 
 #: backend/apps/ai/bot_messages.py
+msgid "I can't listen to voice messages here yet."
+msgstr "Здесь я пока не слушаю голосовые."
+
+#: backend/apps/ai/bot_messages.py
 msgid "Voice needs a speech service on the server (AI_SPEECH_URL)."
 msgstr "Для голоса на сервере нужен сервис распознавания речи (AI_SPEECH_URL)."
 
 #: backend/apps/ai/bot_messages.py
 msgid "Voice tasks aren't switched on in this company. Type the task instead."
 msgstr "В этой компании голосовые задачи не включены. Напишите задачу текстом."
+
+#: backend/apps/ai/bot_messages.py
+msgid "Voice tasks aren't switched on in this company."
+msgstr "В этой компании голосовые задачи не включены."
 
 #: backend/apps/ai/bot_messages.py
 msgid "You can switch them on in the dashboard: AI, then Agents."
@@ -889,7 +897,7 @@ msgstr "Изменить в приложении"
 
 #: backend/apps/ai/bot_messages.py
 msgid "Late task"
-msgstr "Задача опаздывает"
+msgstr "Просроченная задача"
 
 #. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
 #: backend/apps/ai/bot_messages.py backend/apps/tasks/bot_messages.py
@@ -905,7 +913,7 @@ msgstr "Срок: %(when)s"
 #: backend/apps/ai/bot_messages.py
 #, python-format
 msgid "Late by: %(late)s"
-msgstr "Опоздание: %(late)s"
+msgstr "Просрочено на %(late)s"
 
 #: backend/apps/ai/bot_messages.py backend/apps/tasks/bot_messages.py
 msgid "+1 hour"
@@ -3358,6 +3366,10 @@ msgstr "В этом виде слишком много данных, его не
 #: backend/apps/console/services.py
 msgid "You already have a view with this name here."
 msgstr "У вас здесь уже есть вид с таким названием."
+
+#: backend/apps/core/bot_runtime.py
+msgid "This message is too old. Open it again from the menu."
+msgstr "Это сообщение устарело. Откройте его заново из меню."
 
 #: backend/apps/core/bot_runtime.py
 msgid "Something went wrong. Please try again in a moment."
@@ -5998,7 +6010,7 @@ msgstr "Добро пожаловать в команду <b>%(company)s</b>!"
 msgid "Language: /language · Help: /help"
 msgstr "Язык: /language · Помощь: /help"
 
-#: backend/apps/members/bot_messages.py backend/apps/tasks/bot_messages.py
+#: backend/apps/members/bot_messages.py
 #, python-format
 msgid "Open: %(count)d"
 msgstr "Открытых: %(count)d"
@@ -9711,6 +9723,10 @@ msgid "What needs to be fixed? Tap a reason or write your own."
 msgstr "Что исправить? Выберите причину или напишите свою."
 
 #: backend/apps/tasks/bot_messages.py
+msgid "Why can't it be done?"
+msgstr "Почему не получается?"
+
+#: backend/apps/tasks/bot_messages.py
 msgid "+30 min"
 msgstr "+30 мин"
 
@@ -10051,6 +10067,12 @@ msgstr ""
 "В ваших отделах пока никого нет. Добавьте людей в панели управления: "
 "Сотрудники, Отделы, затем ваш отдел."
 
+#. Translators: mid-line after a person's name ("Alisher Valiyev — open: 3"), lowercase.
+#: backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "open: %(count)d"
+msgstr "открытых: %(count)d"
+
 #: backend/apps/tasks/bot_messages.py
 msgid "<b>Late now</b>"
 msgstr "<b>Сейчас просрочено</b>"
@@ -10058,7 +10080,7 @@ msgstr "<b>Сейчас просрочено</b>"
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "%(task)s — %(name)s, %(late)s late"
-msgstr "%(task)s — %(name)s, опоздание: %(late)s"
+msgstr "%(task)s — %(name)s, просрочено на %(late)s"
 
 #: backend/apps/tasks/bot_messages.py
 msgid "Remind"
@@ -10076,11 +10098,6 @@ msgstr "<b>Открытые</b>"
 #: backend/apps/tasks/bot_messages.py
 msgid "Nothing open."
 msgstr "Открытых задач нет."
-
-#: backend/apps/tasks/bot_messages.py
-#, python-format
-msgid "late since %(time)s"
-msgstr "просрочено с %(time)s"
 
 #: backend/apps/tasks/bot_messages.py
 msgid "<b>Done in the last 7 days</b>"
@@ -11404,10 +11421,6 @@ msgstr "Принято"
 #: employee_bot/bot/handlers/member/tasks.py
 msgid "Sent back with your comment."
 msgstr "Возвращено с вашим комментарием."
-
-#: employee_bot/bot/handlers/member/tasks.py
-msgid "Why can't it be done?"
-msgstr "Почему не получается?"
 
 #: employee_bot/bot/handlers/member/tasks.py
 msgid "What's in the way? Write a few words."
