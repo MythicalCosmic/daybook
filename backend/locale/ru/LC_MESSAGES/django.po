@@ -931,7 +931,7 @@ msgstr "Сегодня к сроку: %(count)s"
 #: backend/apps/ai/bot_messages.py
 #, python-format
 msgid "Late: %(count)s"
-msgstr "Опаздывают: %(count)s"
+msgstr "Просрочено: %(count)s"
 
 #: backend/apps/ai/bot_messages.py
 #, python-format
