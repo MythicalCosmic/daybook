@@ -197,6 +197,44 @@ def test_cancel_takes_the_turn_out_of_the_context(owner_api, owner, company, set
     assert not AIMessage.objects.filter(turn_id=turn_id, in_context=True).exists()
 
 
+def test_a_cancel_during_a_call_leaves_nothing_of_the_turn_in_the_context(
+    owner_api, owner, company, fake_claude, monkeypatch, django_capture_on_commit_callbacks
+):
+    """Cancel arrives while Claude is answering a tool round: what that round brings back
+    (a tool_use, its results) must not stay in the history, or every later question replays a
+    tool_use without its result (a 400 for the rest of the conversation)."""
+    from apps.ai import chat
+
+    fake_claude.script(
+        fake_claude.message([tool_use("tasks_search", {"overdue": True})], stop_reason="tool_use"),
+        fake_claude.text("Ikkinchi savolga javob."),
+    )
+    answer = fake_claude._answer
+    calls = []
+
+    def cancelled_while_answering(request):
+        calls.append(request)
+        if len(calls) == 1:
+            chat.cancel_turn(AITurn.objects.get(), by=owner)
+        return answer(request)
+
+    monkeypatch.setattr(fake_claude, "_answer", cancelled_while_answering)
+    client = owner_api(owner)
+    conversation, turn_id = ask(client, company, "Birinchi", django_capture_on_commit_callbacks)
+
+    assert AITurn.objects.get(pk=turn_id).status == "cancelled"
+    assert not AIMessage.objects.filter(turn_id=turn_id, in_context=True).exists()
+    with django_capture_on_commit_callbacks(execute=True):
+        client.post(
+            url(company, f"conversations/{conversation['id']}/turns/"),
+            {"text": "Ikkinchi"},
+            format="json",
+        )
+    second = fake_claude.requests[-1]
+    assert [message["role"] for message in second["messages"]] == ["user"]
+    assert second["messages"][0]["content"][-1] == {"type": "text", "text": "Ikkinchi"}
+
+
 def test_chat_needs_ai_use_and_is_private(owner_api, owner, company, member, settings):
     settings.AI_FAKE = True
     manager = member.registered(company, "Manager")

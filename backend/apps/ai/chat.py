@@ -140,21 +140,32 @@ def cancel_turn(turn: AITurn, *, by: Membership) -> AITurn:
 
 
 def _add_message(conversation, turn, role: str, content: list, display: str = "") -> AIMessage:
-    seq = (
-        AIMessage.objects.filter(conversation=conversation)
-        .order_by("-seq")
-        .values_list("seq", flat=True)
-        .first()
-        or 0
-    ) + 1
-    return AIMessage.objects.create(
-        conversation=conversation,
-        turn=turn,
-        seq=seq,
-        role=role,
-        content=content,
-        display_text=display,
-    )
+    """The next message of the conversation. One that arrives for a turn cancelled meanwhile
+    (an answer that was on its way) is stored out of the context, like the turn's others: the
+    turn's row lock, which `cancel_turn` takes too, lets none slip in between."""
+    with transaction.atomic():
+        status = (
+            AITurn.objects.select_for_update()
+            .filter(pk=turn.pk)
+            .values_list("status", flat=True)
+            .first()
+        )
+        seq = (
+            AIMessage.objects.filter(conversation=conversation)
+            .order_by("-seq")
+            .values_list("seq", flat=True)
+            .first()
+            or 0
+        ) + 1
+        return AIMessage.objects.create(
+            conversation=conversation,
+            turn=turn,
+            seq=seq,
+            role=role,
+            content=content,
+            display_text=display,
+            in_context=status != AITurn.Status.CANCELLED,
+        )
 
 
 # Running a turn --------------------------------------------------------------------------------
@@ -286,7 +297,8 @@ def _loop(turn: AITurn, ctx: ToolContext) -> str | None:
             message = _add_message(conversation, turn, "assistant", content, text)
             AITurn.objects.filter(pk=turn.pk).update(message=message, model=response.model)
             return text
-        _add_message(conversation, turn, "assistant", content)
+        if not _add_message(conversation, turn, "assistant", content).in_context:
+            return None  # cancelled while Claude was answering: its tools aren't run
         results = []
         for use in uses:
             started = time.monotonic()
