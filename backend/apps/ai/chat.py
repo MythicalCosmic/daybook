@@ -35,6 +35,7 @@ from apps.ai import availability, client, conf
 from apps.ai.models import AIConversation, AIMessage, AITurn
 from apps.ai.tools import registry
 from apps.ai.tools.registry import ToolContext
+from apps.ai.tools.scrub import scrub
 from apps.members.models import Membership
 from apps.tasks import queries as task_queries
 
@@ -119,7 +120,7 @@ def start_turn(
     )
     question = [
         {"type": "text", "text": turn_context(by, page)},
-        {"type": "text", "text": text},
+        {"type": "text", "text": scrub(text)},  # what Claude reads; the asker sees `text`
     ]
     _add_message(conversation, turn, "user", question, text)
     conversation.turn_count += 1

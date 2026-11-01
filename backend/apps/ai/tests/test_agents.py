@@ -382,6 +382,27 @@ def test_claude_sees_the_photo_and_the_task(photo_task, crew, fake_claude):
     assert TaskComment.objects.get(task=task).text == "AI: Termometr 11 °C ko‘rsatmoqda."
 
 
+def test_the_photo_checker_sends_no_phone_numbers_or_usernames(photo_task, crew, fake_claude):
+    """Task texts are written by staff: a phone number or a @username in the description or a
+    step is hidden before the task goes to Claude (apps.ai.tools.scrub), as everywhere else."""
+    from apps.tasks.models import ChecklistItem
+
+    Task.objects.filter(pk=photo_task.pk).update(
+        description="Yetkazib beruvchi: +998 90 123 45 67, @alisher_v ga yozing"
+    )
+    ChecklistItem.objects.create(task=photo_task, text="Natijani 998901234567 ga yuboring", order=0)
+    photo_task.refresh_from_db()
+    task = finish_with_photo(photo_task, crew["worker"])
+    fake_claude.script(fake_claude.json({"verdict": "looks_right", "note": "5 °C."}))
+
+    photo_checker.check(task.pk, task.completed_at.isoformat())
+
+    [request] = fake_claude.requests
+    text = request["messages"][0]["content"][1]["text"]
+    assert "123 45 67" not in text and "@alisher_v" not in text and "998901234567" not in text
+    assert "[hidden]" in text and "Yetkazib beruvchi" in text
+
+
 def test_the_photo_checker_is_opt_in(crew, fake_claude):
     task = TaskFactory(company=crew["giver"].company, assignee=crew["worker"], proof="photo")
     finished = finish_with_photo(task, crew["worker"])

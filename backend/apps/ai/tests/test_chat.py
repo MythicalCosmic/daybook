@@ -299,6 +299,24 @@ def test_a_turn_whose_job_died_does_not_hold_the_conversation_forever(
     assert AITurn.objects.get(pk=again.json()["turn_id"]).status == "done"
 
 
+def test_a_question_goes_to_claude_without_phone_numbers_or_usernames(
+    owner_api, owner, company, fake_claude, django_capture_on_commit_callbacks
+):
+    """What the asker types is scrubbed like every tool result before it reaches Claude; the
+    conversation still shows them what they typed."""
+    fake_claude.script(fake_claude.text("Bo‘ldi."))
+    said = "Alisherga +998 90 123 45 67 orqali qo‘ng‘iroq qildimi? @alisher_v ham yozdi"
+    client = owner_api(owner)
+
+    conversation, _turn = ask(client, company, said, django_capture_on_commit_callbacks)
+
+    [request] = fake_claude.requests
+    sent = json.dumps(request["messages"], ensure_ascii=False)
+    assert "123 45 67" not in sent and "@alisher_v" not in sent and "[hidden]" in sent
+    shown = client.get(url(company, f"conversations/{conversation['id']}/messages/")).json()
+    assert shown[0]["text"] == said
+
+
 def test_chat_needs_ai_use_and_is_private(owner_api, owner, company, member, settings):
     settings.AI_FAKE = True
     manager = member.registered(company, "Manager")
