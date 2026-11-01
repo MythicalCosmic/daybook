@@ -327,6 +327,24 @@ def test_finishing_with_a_photo_queues_the_check(
     assert queued == [((task.pk, task.completed_at.isoformat()), 65)]
 
 
+def test_a_failing_photo_receiver_never_fails_the_completion(
+    photo_task, crew, monkeypatch, django_capture_on_commit_callbacks
+):
+    """The completion is saved before the signal goes out: a receiver error (the photo checker
+    can't queue) is logged by send_robust instead of answering 500 to a saved Done."""
+
+    def broken(*args, **kwargs):
+        raise RuntimeError("the queue is down")
+
+    monkeypatch.setattr("apps.ai.tasks.check_proof_photo.apply_async", broken)
+
+    with django_capture_on_commit_callbacks(execute=True):
+        task = finish_with_photo(photo_task, crew["worker"])
+
+    task.refresh_from_db()
+    assert task.completed_at is not None
+
+
 # The runner ------------------------------------------------------------------------------------
 
 

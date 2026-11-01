@@ -227,7 +227,10 @@ def complete_task(
     if proof_photo is not None:
         transaction.on_commit(
             partial(
-                signals.completed_with_photo.send, sender=Task, task_id=task.pk, completed_at=stamp
+                signals.completed_with_photo.send_robust,
+                sender=Task,
+                task_id=task.pk,
+                completed_at=stamp,
             )
         )
     _refresh_copies(task)
