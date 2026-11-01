@@ -33,4 +33,25 @@ urlpatterns = [
     path("ai/agents/<str:key>/", owner_api.AgentView.as_view(), name="owner-ai-agent"),
     path("ai/agents/<str:key>/run/", owner_api.AgentRunView.as_view(), name="owner-ai-agent-run"),
     path("ai/activity/", owner_api.ActivityView.as_view(), name="owner-ai-activity"),
+    path(
+        "ai/conversations/",
+        owner_api.ConversationListView.as_view(),
+        name="owner-ai-conversations",
+    ),
+    path(
+        "ai/conversations/<int:conversation_id>/messages/",
+        owner_api.ConversationMessagesView.as_view(),
+        name="owner-ai-conversation-messages",
+    ),
+    path(
+        "ai/conversations/<int:conversation_id>/turns/",
+        owner_api.TurnCreateView.as_view(),
+        name="owner-ai-turns",
+    ),
+    path("ai/turns/<int:turn_id>/", owner_api.TurnView.as_view(), name="owner-ai-turn"),
+    path(
+        "ai/turns/<int:turn_id>/cancel/",
+        owner_api.TurnCancelView.as_view(),
+        name="owner-ai-turn-cancel",
+    ),
 ]
