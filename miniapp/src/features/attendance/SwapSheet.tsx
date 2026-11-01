@@ -8,6 +8,7 @@ import { useId, useState, type ReactNode } from "react";
 
 import { useI18n } from "../../i18n";
 import { errorText } from "../../lib/actions";
+import { useDraftGuard } from "../../lib/useDraftGuard";
 import { useMember } from "../../state/session";
 import { haptic } from "../../telegram";
 import { Avatar, Button, EmptyState, Field, LoadError, Segmented, SheetTitle, SkeletonList, Textarea, useToast } from "../../ui";
@@ -44,6 +45,7 @@ function SwapForm({ shift, close }: { shift: Shift; close: () => void }) {
   const [target, setTarget] = useState<number | null>(null);
   const [other, setOther] = useState<number | null>(null);
   const [note, setNote] = useState("");
+  useDraftGuard(Boolean(note.trim()));
 
   const people = candidates.data ?? [];
   const swappable = people.filter((person) => person.shifts.length > 0);

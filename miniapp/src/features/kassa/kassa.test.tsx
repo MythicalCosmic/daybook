@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../../api/client";
 import type { Me, Membership, Summary } from "../../api/types";
 import { I18nProvider } from "../../i18n";
+import { InSheet, sheetHasDraft } from "../../lib/useDraftGuard";
 import { NavigationProvider } from "../../state/navigation";
 import { SessionProvider, type Member } from "../../state/session";
 import { ToastProvider } from "../../state/toast";
@@ -233,6 +234,19 @@ describe("during a shift", () => {
       }),
     );
     await waitFor(() => expect(close).toHaveBeenCalled());
+  });
+
+  it("keeps a typed payout from a stray tap: closing the sheet asks first", async () => {
+    serve({ "/sales/shifts/current/": kassa({ shift: shift() }) });
+    wrap(
+      <InSheet.Provider value>
+        <PayoutSheet params={{}} close={() => undefined} />
+      </InSheet.Provider>,
+    );
+    const amount = await screen.findByLabelText("Amount");
+    expect(sheetHasDraft()).toBe(false);
+    fireEvent.change(amount, { target: { value: "120000" } });
+    expect(sheetHasDraft()).toBe(true);
   });
 
   it("sends one payout for a double tap, even while the receipt photo is made smaller", async () => {

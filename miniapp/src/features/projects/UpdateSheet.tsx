@@ -6,6 +6,7 @@ import { useToast } from "../../state/toast";
 import { haptic } from "../../telegram";
 import { Button, Field, SheetTitle, Textarea } from "../../ui";
 import { errorText } from "../../lib/actions";
+import { useDraftGuard } from "../../lib/useDraftGuard";
 import type { SheetProps } from "../registry";
 import { postUpdate, useRefresh, type Health } from "./api";
 import { messages } from "./messages";
@@ -23,6 +24,7 @@ export default function UpdateSheet({ params, close }: SheetProps) {
   const [health, setHealth] = useState<Health>("on_track");
   const [text, setText] = useState("");
   const [saving, setSaving] = useState(false);
+  useDraftGuard(Boolean(text.trim()));
 
   async function send() {
     setSaving(true);

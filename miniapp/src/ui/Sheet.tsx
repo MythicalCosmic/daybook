@@ -1,12 +1,16 @@
 import { X } from "lucide-react";
 import { useEffect, useId, useLayoutEffect, useRef, type ReactNode } from "react";
 
+import { translate, useLangOrDefault } from "../i18n";
+import { InSheet, closeUnlessDraft, sheetHasDraft } from "../lib/useDraftGuard";
 import { disableVerticalSwipes, hasNativeBackButton } from "../telegram";
 import { useHideNativeButtons } from "./BottomBar";
 
 /**
  * The bottom sheet: a dimmed backdrop (tap to close), a handle, and the content. Telegram's back
  * button closes navigation sheets through `useNavigation().closeSheet`; Escape closes it too.
+ * While the content holds a draft (`useDraftGuard`), closing asks first, and a tap beside the
+ * sheet with the keyboard up only puts the keyboard away.
  *
  * For keyboards and screen readers it is a named dialog: it takes focus when it opens (unless a
  * field inside already did, through `autoFocus`), gives it back to the button that opened it when
@@ -34,8 +38,23 @@ export function Sheet({
 }) {
   const dialog = useRef<HTMLDivElement>(null);
   const titleId = useId();
+  const lang = useLangOrDefault();
   const close = useRef(onClose);
   close.current = onClose;
+  const question = useRef("");
+  question.current = translate(lang, "sheet.discardAsk");
+  /** Closing as the person asked (a tap beside it, Escape, its close button). */
+  const dismiss = useRef(() => void closeUnlessDraft(() => close.current(), question.current)).current;
+  const onBackdrop = () => {
+    // A tap beside the sheet while typing puts the keyboard away, as a tap outside a field does
+    // elsewhere; the draft stays.
+    const active = document.activeElement;
+    if (sheetHasDraft() && isTextField(active) && dialog.current?.contains(active)) {
+      active.blur();
+      return;
+    }
+    dismiss();
+  };
   // The page's Telegram buttons step aside while the sheet is open (its own BottomBar shows).
   useHideNativeButtons(true);
   // A swipe down inside a sheet scrolls it or does nothing: it never minimises the app and loses
@@ -67,7 +86,7 @@ export function Sheet({
       if (event.defaultPrevented) return;
       if (event.key === "Escape") {
         event.preventDefault();
-        close.current();
+        dismiss();
       } else if (event.key === "Tab") {
         // Keep Tab inside the sheet: the page behind it is covered and inert to the eye.
         const stops = [...element.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
@@ -100,7 +119,7 @@ export function Sheet({
 
   return (
     <div className="sheet-layer">
-      <div className="sheet-backdrop" onClick={onClose} />
+      <div className="sheet-backdrop" onClick={onBackdrop} />
       <div
         ref={dialog}
         className={full ? "sheet sheet--full" : "sheet"}
@@ -116,7 +135,7 @@ export function Sheet({
           <div className="sheet-handle" />
         ) : (
           !hasNativeBackButton() && (
-            <button type="button" className="sheet-close" aria-label={closeLabel} onClick={onClose}>
+            <button type="button" className="sheet-close" aria-label={closeLabel} onClick={dismiss}>
               <X size={22} strokeWidth={2.5} aria-hidden />
             </button>
           )
@@ -126,7 +145,7 @@ export function Sheet({
             {title}
           </div>
         )}
-        {children}
+        <InSheet.Provider value>{children}</InSheet.Provider>
       </div>
     </div>
   );
@@ -134,6 +153,12 @@ export function Sheet({
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/** A field the phone's keyboard types into. */
+function isTextField(element: Element | null): element is HTMLInputElement | HTMLTextAreaElement {
+  if (element instanceof HTMLTextAreaElement) return true;
+  return element instanceof HTMLInputElement && !["checkbox", "radio", "button", "submit", "reset", "file", "range", "color"].includes(element.type);
+}
 
 function matchesFocusVisible(element: Element): boolean {
   try {

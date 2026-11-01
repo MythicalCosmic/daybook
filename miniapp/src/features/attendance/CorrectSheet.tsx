@@ -8,6 +8,7 @@ import { useState } from "react";
 
 import { useI18n } from "../../i18n";
 import { errorText } from "../../lib/actions";
+import { useDraftGuard } from "../../lib/useDraftGuard";
 import { addDays, dayKey, dayMonth, weekdayShort } from "../../lib/time";
 import { useMember } from "../../state/session";
 import { haptic } from "../../telegram";
@@ -49,6 +50,7 @@ function CorrectForm({ record, initialDate, close }: { record: AttendanceRecord 
   const [arrived, setArrived] = useState(record?.check_in_at ? wallClock(record.check_in_at) : "");
   const [left, setLeft] = useState(record?.check_out_at ? wallClock(record.check_out_at) : "");
   const [reason, setReason] = useState("");
+  useDraftGuard(Boolean(reason.trim()));
   const valid = Boolean(date) && date <= today && reason.trim().length > 0 && Boolean(arrived || left);
 
   const submit = () => {

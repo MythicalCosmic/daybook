@@ -9,6 +9,7 @@ import { useToast } from "../../state/toast";
 import { haptic } from "../../telegram";
 import { Button, ChipGroup, EmptyState, Field, IconButton, Input, SheetTitle } from "../../ui";
 import { errorText } from "../../lib/actions";
+import { useDraftGuard } from "../../lib/useDraftGuard";
 import type { SheetProps } from "../registry";
 import { logTime, useBoard, useMyProjects, useRefresh, useWeek } from "./api";
 import { hhmm } from "./lib";
@@ -38,6 +39,7 @@ export default function LogTimeSheet({ params, close }: SheetProps) {
   const [minutes, setMinutes] = useState(60);
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+  useDraftGuard(Boolean(note.trim()));
 
   useEffect(() => {
     if (!project && live.length) setProject(String(live[0]!.id));

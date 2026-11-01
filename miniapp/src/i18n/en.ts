@@ -535,6 +535,7 @@ const en = {
   // Shared building blocks (src/ui) and the feature hosts.
   "ui.optional": "(optional)",
   "ui.back": "Back",
+  "sheet.discardAsk": "Close it? What you entered won't be saved.",
   "ui.photo.add": "Take or choose a photo",
   "ui.photo.camera": "Take a photo",
   "ui.photo.gallery": "Choose from the gallery",

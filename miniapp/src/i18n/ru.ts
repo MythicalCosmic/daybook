@@ -558,6 +558,7 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
 
   "ui.optional": "(необязательно)",
   "ui.back": "Назад",
+  "sheet.discardAsk": "Закрыть? Введённое не сохранится.",
   "ui.photo.add": "Сфотографируйте или выберите фото",
   "ui.photo.camera": "Сделать фото",
   "ui.photo.gallery": "Выбрать из галереи",
