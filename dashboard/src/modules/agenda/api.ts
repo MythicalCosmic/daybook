@@ -9,7 +9,7 @@ import { computed, toValue, type MaybeRefOrGetter } from "vue";
 import { http, ownerPath } from "@/api/http";
 import { moduleKey, qk } from "@/api/keys";
 import type { Page } from "@/api/types";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId } from "@/stores/company";
 
 import type { AgendaEvent, AgendaSettings, Attendee, AttendeeResponse, CalendarResponse, EventInput, Invitee } from "./types";
 
@@ -40,11 +40,6 @@ export const agendaKeys = {
   people: (cid: number) => qk(cid, MODULE, "people"),
   settings: (cid: number) => qk(cid, MODULE, "settings"),
 };
-
-export function useCompanyId() {
-  const company = useCompanyStore();
-  return computed(() => company.currentId ?? 0);
-}
 
 export function useCalendar(range: MaybeRefOrGetter<{ from: string; to: string }>) {
   const cid = useCompanyId();

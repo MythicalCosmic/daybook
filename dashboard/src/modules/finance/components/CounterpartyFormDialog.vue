@@ -60,7 +60,8 @@ watch(
   ([isOpen, party]) => {
     if (!isOpen) return;
     for (const key of Object.keys(errors)) delete errors[key];
-    Object.assign(form, empty(), party ? { ...party, default_category: party.default_category?.id ?? null } : {});
+    // The tags are copied: the cached list is read-only, so a new tag pushed onto it was dropped.
+    Object.assign(form, empty(), party ? { ...party, tags: [...party.tags], default_category: party.default_category?.id ?? null } : {});
   },
   { immediate: true },
 );
@@ -130,7 +131,7 @@ async function save(): Promise<void> {
         </FormField>
       </div>
       <FormField :label="t('finance.parties.tags')" optional>
-        <MultiSelect v-model="form.tags" :options="tagOptions" creatable :placeholder="t('finance.parties.tagsPlaceholder')" @create="(tag: string) => form.tags.push(tag)" />
+        <MultiSelect v-model="form.tags" :options="tagOptions" creatable :placeholder="t('finance.parties.tagsPlaceholder')" @create="(tag: string) => (form.tags = [...form.tags, tag])" />
       </FormField>
       <FormField :label="t('finance.parties.bankDetails')" :hint="t('finance.parties.bankDetailsHint')" optional>
         <TextArea v-model="form.bank_details" :rows="2" autosize />

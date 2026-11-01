@@ -11,7 +11,7 @@ import { computed } from "vue";
 import { http, ownerPath, request } from "@/api/http";
 import { qk } from "@/api/keys";
 import type { CompanyFeature } from "@/core/features";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId } from "@/stores/company";
 import { useSessionStore } from "@/stores/session";
 
 import { statusNow } from "./teamLinks";
@@ -99,11 +99,6 @@ export const settingsKeys = {
   preferences: (cid: number) => qk(cid, MODULE, "preferences"),
   sessions: (cid: number) => qk(cid, MODULE, "sessions"),
 };
-
-export function useCompanyId() {
-  const company = useCompanyStore();
-  return computed(() => company.currentId ?? 0);
-}
 
 function useCompanyQuery<T>(key: (cid: number) => readonly unknown[], fetcher: (cid: number, signal?: AbortSignal) => Promise<T>, enabled = computed(() => true)) {
   const cid = useCompanyId();

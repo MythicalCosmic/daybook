@@ -177,17 +177,6 @@ export interface ShiftDetail extends ShiftRow {
   timeline: TimelineEntry[];
 }
 
-export interface ShiftFilters {
-  branch?: string[];
-  cashier?: string;
-  status?: string[];
-  from?: string;
-  to?: string;
-  has_difference?: string;
-  mismatch?: string;
-  q?: string;
-}
-
 export interface PaymentLineInput {
   method_id: number;
   sales: Money;
@@ -404,16 +393,3 @@ export interface SalesOptions {
   accounts: Array<{ id: number; name: string; kind: string; branch_id: number | null }>;
 }
 
-export interface DailyRow {
-  id: number;
-  day: string;
-  branch: BranchRef;
-  sales: Money;
-  refunds: Money;
-  net: Money;
-  receipts: number;
-  avg_check: Money;
-  by_method: Record<string, { name: string; kind: MethodKind; sales: Money; refunds: Money; net: Money }>;
-  shifts: number;
-  cash_difference: Money;
-}

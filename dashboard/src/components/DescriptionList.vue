@@ -54,7 +54,7 @@ const grid = { 1: "", 2: "sm:grid-cols-2", 3: "sm:grid-cols-2 lg:grid-cols-3", 4
         <button
           v-if="item.copy && item.value"
           type="button"
-          class="grid size-6 shrink-0 place-items-center rounded-[6px] text-subtle opacity-0 transition-opacity hover:bg-highlight hover:text-fg focus-visible:opacity-100 group-hover:opacity-100"
+          class="grid size-6 shrink-0 place-items-center rounded-[6px] text-subtle opacity-0 transition-opacity hover:bg-highlight hover:text-fg focus-visible:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100"
           :aria-label="copied === item.key ? t('common.copied') : t('common.copy')"
           @click="copy(item)"
         >

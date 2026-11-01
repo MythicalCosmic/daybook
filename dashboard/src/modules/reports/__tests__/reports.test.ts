@@ -118,6 +118,20 @@ describe("TeamReportPage", () => {
     wrapper.unmount();
   });
 
+  it("exports the branches the page shows (it exported the whole company)", async () => {
+    stub({ "GET reports/team/": () => json(report()) });
+    const app = await testApp("/c/1");
+    for (const name of ["reports.team", "reports.routines"]) app.router.addRoute({ name, path: `/c/:companyId/${name.replace(".", "/")}`, component: { render: () => null } });
+    await app.router.push("/c/1/reports/team?preset=last_30&branch=2");
+    const { wrapper } = mountWithProviders(TeamReportPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    const ExportButton = (await import("@/components/ExportButton.vue")).default;
+    const params = (wrapper.findAllComponents(ExportButton).map((button) => button.props() as { kind?: string; params?: Record<string, unknown> }).find((props) => props.kind === "reports.team") ?? {}).params;
+    expect(params).toMatchObject({ branch: ["2"] });
+    wrapper.unmount();
+  });
+
   it("stops the on-time line at yesterday: today's rate only counts what was due so far", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-21T10:00:00Z")); // 15:00 in Tashkent

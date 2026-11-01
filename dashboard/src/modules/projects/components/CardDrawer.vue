@@ -31,9 +31,9 @@ import UserAvatar from "@/components/UserAvatar.vue";
 import { toast } from "@/components/useToast";
 import { zonedDay } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyStore } from "@/stores/company";
 
-import { moveCard, scheduleCard, startTimer, stopTimer, updateCard, useCard, useCompanyId, useRefreshProjects, useTimers } from "../api";
+import { moveCard, scheduleCard, startTimer, stopTimer, updateCard, useCard, useRefreshProjects, useTimers } from "../api";
 import { colorVar, hhmm, TASK_TONE, tint } from "../lib";
 import type { CardDetail, ProjectDetail, TaskPriority } from "../types";
 import LogTimeDialog from "./LogTimeDialog.vue";
@@ -166,8 +166,10 @@ const tasksLink = computed(() => (card.value ? `/c/${company.currentId}/tasks?ta
 
 const timers = useTimers();
 const timerRunning = computed(() => !!card.value && (timers.data.value ?? []).some((timer) => timer.person.id === company.current?.membership_id && timer.task?.id === card.value?.id));
+const timerBusy = ref(false);
 async function toggleTimer(): Promise<void> {
-  if (!card.value) return;
+  if (!card.value || timerBusy.value) return;
+  timerBusy.value = true;
   try {
     if (timerRunning.value) {
       const entry = await stopTimer(companyId.value);
@@ -180,6 +182,8 @@ async function toggleTimer(): Promise<void> {
     void refresh();
   } catch {
     // The HTTP layer showed why.
+  } finally {
+    timerBusy.value = false;
   }
 }
 </script>
@@ -206,7 +210,7 @@ async function toggleTimer(): Promise<void> {
           <TextInput v-if="editingTitle" v-model="title" autofocus :maxlength="200" @enter="saveTitle" @blur="saveTitle" />
           <h2 v-else class="group flex items-start gap-2 text-lg font-semibold leading-snug text-fg">
             <span class="min-w-0 flex-1">{{ card.title }}</span>
-            <button v-if="canEditTask" type="button" class="mt-1 rounded-[6px] p-1 text-subtle opacity-0 transition-opacity hover:bg-highlight hover:text-fg focus:opacity-100 group-hover:opacity-100" :aria-label="t('projects.drawer.editTitle')" @click="editingTitle = true">
+            <button v-if="canEditTask" type="button" class="mt-1 rounded-[6px] p-1 text-subtle opacity-0 transition-opacity hover:bg-highlight hover:text-fg focus:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100" :aria-label="t('projects.drawer.editTitle')" @click="editingTitle = true">
               <Pencil :size="14" />
             </button>
           </h2>
@@ -295,7 +299,7 @@ async function toggleTimer(): Promise<void> {
             <div class="flex items-center gap-2">
               <h3 class="section-title flex-1"><Timer :size="14" />{{ t("projects.drawer.time", { time: hhmm(card.minutes) }) }}</h3>
               <UiButton size="sm" variant="ghost" :icon="Plus" @click="logging = true">{{ t("projects.time.log") }}</UiButton>
-              <UiButton v-if="(card.status !== 'done' && card.status !== 'cancelled' || timerRunning) && (card.assignee?.id === company.current?.membership_id || canEditBoard)" size="sm" :variant="timerRunning ? 'primary' : 'secondary'" :icon="timerRunning ? Square : Play" @click="toggleTimer">
+              <UiButton v-if="(card.status !== 'done' && card.status !== 'cancelled' || timerRunning) && (card.assignee?.id === company.current?.membership_id || canEditBoard)" size="sm" :variant="timerRunning ? 'primary' : 'secondary'" :icon="timerRunning ? Square : Play" :loading="timerBusy" @click="toggleTimer">
                 {{ timerRunning ? t("projects.time.stop") : t("projects.time.start") }}
               </UiButton>
             </div>

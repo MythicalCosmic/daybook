@@ -58,3 +58,23 @@ describe("useExport", () => {
     expect(toasts.at(-1)?.tone).toBe("error");
   });
 });
+
+describe("downloadExport inside Telegram", () => {
+  afterEach(() => {
+    delete window.Telegram;
+  });
+
+  it("hands the signed link to Telegram's download prompt (its webview ignores <a download>)", async () => {
+    const { downloadExport } = await import("@/lib/useExport");
+    const downloadFile = vi.fn();
+    window.Telegram = { WebApp: { initData: "query_id=1", isVersionAtLeast: () => true, downloadFile } as never };
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+    downloadExport({ file_url: "/api/v1/owner/companies/1/exports/7/file/?sig=abc", file_name: "Vazifalar.xlsx" });
+    expect(downloadFile).toHaveBeenCalledWith({ url: `${window.location.origin}/api/v1/owner/companies/1/exports/7/file/?sig=abc`, file_name: "Vazifalar.xlsx" });
+    expect(click).not.toHaveBeenCalled();
+    // Outside Telegram: the plain link.
+    delete window.Telegram;
+    downloadExport({ file_url: "/api/v1/owner/companies/1/exports/7/file/?sig=abc", file_name: "Vazifalar.xlsx" });
+    expect(click).toHaveBeenCalledOnce();
+  });
+});

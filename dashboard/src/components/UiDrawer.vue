@@ -69,6 +69,8 @@ const widths = { sm: "w-[400px]", md: "w-[480px]", lg: "w-[640px]", xl: "w-[820p
 
 <template>
   <BottomSheet v-if="isPhone" v-model:open="open" :title="title" :description="description" :hide-header="hideHeader" tall flush @closed="emit('closed')">
+    <template v-if="$slots.title" #title><slot name="title" /></template>
+    <template v-if="$slots['header-actions']" #header-actions><slot name="header-actions" :value="queryValue" /></template>
     <slot :value="queryValue" />
     <template v-if="$slots.footer" #footer><slot name="footer" :value="queryValue" /></template>
   </BottomSheet>

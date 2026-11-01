@@ -131,7 +131,7 @@ function open(row: Announcement): void {
       "
     >
       <template #toolbar>
-        <TextInput v-model="search" class="w-full sm:w-[300px]" type="search" :icon="Search" :placeholder="t('comms.list.search')" clearable />
+        <TextInput v-model="search" :debounce="300" class="w-full sm:w-[300px]" type="search" :icon="Search" :placeholder="t('comms.list.search')" clearable />
       </template>
       <template #cell-title="{ row }">
         <div class="flex min-w-0 items-start gap-2.5 py-0.5">

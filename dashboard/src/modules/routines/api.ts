@@ -8,7 +8,7 @@ import { computed, toValue, type MaybeRefOrGetter } from "vue";
 
 import { http, ownerPath } from "@/api/http";
 import { moduleKey, qk } from "@/api/keys";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId } from "@/stores/company";
 
 import type { BulkResult, GivenToday, PlanOptions, Routine, RoutineCompliance, RoutineDay, RoutineHistory, RoutineInput, RoutinePreview, ToConfirm } from "./types";
 
@@ -63,11 +63,6 @@ export const routineKeys = {
   history: (cid: number, params: WorkParams) => qk(cid, MODULE, "history", { ...params }),
   toConfirm: (cid: number) => qk(cid, MODULE, "to-confirm"),
 };
-
-function useCompanyId() {
-  const company = useCompanyStore();
-  return computed(() => company.currentId ?? 0);
-}
 
 /** The company's rule for finished work, cached with the tasks module's copy of it. */
 export function useFinishRule() {

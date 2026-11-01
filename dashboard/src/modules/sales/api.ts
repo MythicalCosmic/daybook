@@ -10,12 +10,11 @@ import { computed, toValue, type MaybeRefOrGetter } from "vue";
 import { http, ownerPath, type Query } from "@/api/http";
 import { moduleKey, qk } from "@/api/keys";
 import type { Page } from "@/api/types";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId } from "@/stores/company";
 
 import type {
   CashierScore,
   CashPositions,
-  DailyRow,
   Entry,
   EntryInput,
   GroupBy,
@@ -57,7 +56,6 @@ export const salesApi = {
   options: (cid: number) => http.get<SalesOptions>(path(cid, "options/")),
   today: (cid: number) => http.get<{ branches: BranchTodaySales[] }>(path(cid, "today/")),
   summary: (cid: number, params: Query) => http.get<SalesSummary>(path(cid, "summary/"), params),
-  daily: (cid: number, params: Query) => http.get<Page<DailyRow>>(path(cid, "daily/"), params),
   cashiers: (cid: number, params: Query) => http.get<{ range: { from: string; to: string }; results: CashierScore[] }>(path(cid, "cashiers/"), params),
 
   shifts: (cid: number, params: Query, signal?: AbortSignal) => http.get<Page<ShiftRow>>(path(cid, "shifts/"), params, { signal }),
@@ -93,11 +91,6 @@ export const salesKeys = {
   all: (cid: number) => moduleKey(cid, MODULE),
   resource: (cid: number, name: string, params: Record<string, unknown> = {}) => qk(cid, MODULE, name, params),
 };
-
-export function useCompanyId() {
-  const company = useCompanyStore();
-  return computed(() => company.currentId ?? 0);
-}
 
 function useResource<T>(name: string, params: MaybeRefOrGetter<Record<string, unknown>>, fetcher: (cid: number, params: Record<string, unknown>) => Promise<T>, options: { keep?: boolean; enabled?: MaybeRefOrGetter<boolean>; staleTime?: number } = {}) {
   const cid = useCompanyId();

@@ -18,6 +18,7 @@ import { useCompanyStore } from "@/stores/company";
 
 import { usePolicies, useSavePolicy } from "../api";
 import { emptyDraft, toDraft, toInput } from "../draft";
+import type { Policy } from "../types";
 import PolicyForm, { type PolicyDraft } from "./PolicyForm.vue";
 
 const { t } = useI18n();
@@ -27,14 +28,26 @@ const save = useSavePolicy();
 const policy = computed(() => query.data.value?.find((p) => p.is_default) ?? null);
 const draft = ref<PolicyDraft>(emptyDraft());
 const errors = ref<Record<string, string>>({});
-const dirty = computed(() => !!policy.value && JSON.stringify(toInput(draft.value)) !== JSON.stringify(toInput(toDraft(policy.value))));
+const differs = (value: PolicyDraft, from: Policy) => JSON.stringify(toInput(value)) !== JSON.stringify(toInput(toDraft(from)));
+const dirty = computed(() => !!policy.value && differs(draft.value, policy.value));
 
-watch(policy, (value) => value && (draft.value = toDraft(value)), { immediate: true });
+// The module refetches whenever a task changes anywhere (the policy's usage counts move), and each
+// refetch is a new object: take the server's copy only while nothing has been changed here, so
+// the owner's typing isn't wiped by a task closing in a branch.
+watch(
+  policy,
+  (value, previous) => {
+    if (value && (!previous || !differs(draft.value, previous))) draft.value = toDraft(value);
+  },
+  { immediate: true },
+);
 
 async function submit(): Promise<void> {
   if (!policy.value) return;
   try {
     await save.mutateAsync({ id: policy.value.id, input: toInput(draft.value) });
+    // The save refetched the policy: show it as the server keeps it.
+    if (policy.value) draft.value = toDraft(policy.value);
     toast.success(t("reminders.toast.saved"));
     errors.value = {};
   } catch (error) {

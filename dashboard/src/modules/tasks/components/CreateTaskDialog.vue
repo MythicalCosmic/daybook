@@ -32,9 +32,10 @@ import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
 import { addDays, todayIn, zonedNow } from "@/lib/dates";
-import { useCompanyStore } from "@/stores/company";
+import { useNow } from "@/lib/useNow";
+import { useCompanyId, useCompanyStore } from "@/stores/company";
 
-import { useCompanyId, useCreateTasks, useTaskOptions, useTasksSettings } from "../api";
+import { useCreateTasks, useTaskOptions, useTasksSettings } from "../api";
 import { zonedIso } from "../meta";
 import { resultKey, useQuickAdd } from "../quickAdd";
 import type { ProofKind, TaskPriority } from "../types";
@@ -152,7 +153,9 @@ const recipients = computed(() => {
   return all.filter((p) => p.branch_id !== null && branches.value.includes(p.branch_id) && p.id !== me.value);
 });
 
-const hourNow = computed(() => zonedNow(company.timezone).getHours());
+// Read on a ticking clock: the dialog stays mounted, and "Today 18:00" must go after 17:00.
+const now = useNow();
+const hourNow = computed(() => zonedNow(company.timezone, now.value).getHours());
 const duePresets = computed(() => {
   const presets: Array<{ value: DuePreset; label: string }> = [];
   if (understood.value?.due_at) presets.push({ value: "parsed", label: understood.value.due_label ?? understood.value.due_at });
@@ -357,7 +360,7 @@ async function submit(): Promise<void> {
     </form>
 
     <template #footer>
-      <div class="mr-auto flex min-w-0 items-center gap-2 text-sm text-muted">
+      <div class="mr-auto flex min-w-0 items-center gap-2 text-sm text-muted" data-sheet-note>
         <AvatarStack v-if="recipients.length" :people="recipients" :max="4" :size="24" />
         <span class="truncate">{{ recipients.length ? t("tasks.create.makes", { n: recipients.length }, recipients.length) : t("tasks.create.nobodyYet") }}</span>
       </div>

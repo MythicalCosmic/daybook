@@ -5,7 +5,7 @@
  * open the drawer (`?task=`).
  */
 import { BellRing, CalendarClock, Check, CheckCheck, Eye, EyeOff, Flag, FolderKanban, Gift, Inbox, Repeat, UserRoundCog, X } from "@lucide/vue";
-import { computed, ref, watch } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import DataTable from "@/components/DataTable.vue";
@@ -58,10 +58,7 @@ const emptyBody = computed(() => {
 const options = useTaskOptions();
 const people = computed(() => (options.data.value?.people ?? []).map((p) => ({ id: p.id, name: p.name, photo_url: p.photo_url, subtitle: [p.position, p.branch].filter(Boolean).join(" · ") })));
 
-watch(
-  () => JSON.stringify(props.params),
-  () => props.state.resetPage(),
-);
+props.state.resetPageOn(() => props.params);
 
 const columns = computed<TableColumn<TaskRow>[]>(() => [
   { id: "title", header: t("tasks.col.task"), sortable: true, minWidth: 260, hideable: false, sticky: true, csv: (row) => row.title },
@@ -85,6 +82,8 @@ const reassignOpen = ref(false);
 const reassignTo = ref<number | null>(null);
 
 async function runBulk(selected: string[], clear: () => void, action: BulkAction, payload?: BulkInput["payload"]): Promise<void> {
+  // One bulk action at a time: a second Nudge in the cooldown failed on every task after a success.
+  if (bulk.isPending.value) return;
   const ids = selected.map(Number);
   try {
     const result = await bulk.mutateAsync({ ids, action, payload });
@@ -229,8 +228,8 @@ async function reassignMany(selected: string[], clear: () => void): Promise<void
       <DropdownMenu :items="priorityMenu(selected, clear)">
         <template #trigger><UiButton size="sm" :icon="Flag">{{ t("tasks.col.priority") }}</UiButton></template>
       </DropdownMenu>
-      <UiButton size="sm" :icon="BellRing" @click="runBulk(selected, clear, 'nudge')">{{ t("tasks.action.nudge") }}</UiButton>
-      <UiButton v-if="can('tasks.confirm')" size="sm" :icon="CheckCheck" @click="runBulk(selected, clear, 'confirm')">{{ t("tasks.action.confirm") }}</UiButton>
+      <UiButton size="sm" :icon="BellRing" :disabled="bulk.isPending.value" @click="runBulk(selected, clear, 'nudge')">{{ t("tasks.action.nudge") }}</UiButton>
+      <UiButton v-if="can('tasks.confirm')" size="sm" :icon="CheckCheck" :disabled="bulk.isPending.value" @click="runBulk(selected, clear, 'confirm')">{{ t("tasks.action.confirm") }}</UiButton>
       <UiButton size="sm" variant="ghost" :icon="X" class="hover:!text-danger" data-testid="bulk-cancel" @click="cancelMany(selected, clear)">{{ t("tasks.bulk.cancel") }}</UiButton>
     </template>
   </DataTable>

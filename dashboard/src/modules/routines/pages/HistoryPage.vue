@@ -21,7 +21,7 @@ import { useScopedBranches } from "@/components/pickers";
 import ProgressBar from "@/components/ProgressBar.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
-import { todayIn } from "@/lib/dates";
+import { addDays, DATE_PRESETS, diffDays, todayIn } from "@/lib/dates";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { useRangeState } from "@/lib/useRangeState";
@@ -45,8 +45,14 @@ const defs = computed<FilterDef[]>(() => [
   { key: "position", label: t("routines.filter.position"), type: "multi", icon: Users, options: (options.data.value?.positions ?? []).map((p) => ({ value: String(p.id), label: p.name })) },
 ]);
 const filters = useUrlFilters(defs);
+/**
+ * routines/history/ answers at most 92 days: "This year" is not offered, and a longer custom range
+ * shows its last 92 days. A longer range replaced the page with an error that Retry couldn't fix.
+ */
+const MAX_DAYS = 92;
+const PRESETS = DATE_PRESETS.filter((preset) => preset !== "year");
 const params = computed(() => ({
-  from: period.value.range.from,
+  from: diffDays(period.value.range.from, period.value.range.to) + 1 > MAX_DAYS ? addDays(period.value.range.to, -(MAX_DAYS - 1)) : period.value.range.from,
   to: period.value.range.to,
   branch: (filters.params.value.branch as string[] | undefined) ?? undefined,
   position: (filters.params.value.position as string[] | undefined) ?? undefined,
@@ -109,7 +115,7 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
   <div class="flex min-w-0 flex-col gap-5">
     <RoutinesHeader>
       <template #actions>
-        <DateRangePicker v-model="period" align="end" />
+        <DateRangePicker v-model="period" align="end" :presets="PRESETS" :compare="false" />
       </template>
     </RoutinesHeader>
 

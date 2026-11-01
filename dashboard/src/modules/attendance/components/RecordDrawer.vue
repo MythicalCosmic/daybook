@@ -31,9 +31,9 @@ import { toast } from "@/components/useToast";
 import { useFormat } from "@/lib/useFormat";
 import { useNow } from "@/lib/useNow";
 import { rs, useRouteState } from "@/lib/useRouteState";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyStore } from "@/stores/company";
 
-import { editRecord, excuseRecord, useCompanyId, useOvertimeDecision, useRecord, useRefresh } from "../api";
+import { editRecord, excuseRecord, useOvertimeDecision, useRecord, useRefresh } from "../api";
 import { clockOf, formatDistance, localDateTime } from "../lib";
 import type { RecordDetail } from "../types";
 

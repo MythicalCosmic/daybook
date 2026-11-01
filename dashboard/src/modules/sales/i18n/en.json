@@ -512,7 +512,6 @@
   "sales.widget.soFar": "From the shifts closed so far",
   "sales.widget.yesterday": "Sales yesterday",
   "sales.widget.vsWeekday": "vs same day last week",
-  "sales.widget.error": "Couldn't load sales",
   "sales.shift.movedOut": "Cash out so far",
   "sales.shift.movedOutHint": "sales added at close",
   "sales.shift.movedOutSub": "payouts, handovers, safe",

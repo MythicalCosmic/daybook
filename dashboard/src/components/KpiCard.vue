@@ -106,7 +106,7 @@ function render(value: number | null, exact: boolean): string {
 }
 
 const text = computed(() => render(tween.running.value ? tween.value.value : numeric.value, !tween.running.value));
-const full = computed(() => (props.format === "money" && props.compact && numeric.value !== null ? fmt.money(props.value) : undefined));
+const full = computed(() => (props.format === "money" && props.compact && numeric.value !== null ? fmt.money(props.value, props.currency) : undefined));
 
 const hasSpark = computed(() => !!props.spark && props.spark.length > 1);
 /**

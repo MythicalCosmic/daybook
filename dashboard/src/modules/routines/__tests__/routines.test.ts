@@ -180,6 +180,27 @@ describe("RoutinesPage", () => {
     wrapper.unmount();
   });
 
+  it("keeps the share, the switch and the menu apart on a phone (they overlapped at 390 px)", async () => {
+    const late = routine({ id: 3, title: "Receive the delivery", stats: { made_30d: 26, done_30d: 26, on_time_30d: 16, completion_30d: 100, spark: Array(14).fill(100) } });
+    stub({ "GET routines/": () => json([late]), "GET tasks/options/": () => json(options) });
+    const app = await testApp("/c/1/routines/all");
+    for (const name of ["routines.today", "routines.history", "routines.confirm", "routines.list", "routines.onboarding", "routines.detail"]) {
+      app.router.addRoute({ path: `/named/${name}/:id?`, name, component: { render: () => null } });
+    }
+    const { default: RoutinesPage } = await import("../pages/RoutinesPage.vue");
+    const { wrapper } = mountWithProviders(RoutinesPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    // One row: the share at the start, the switch and the menu at the end; the share may wrap,
+    // and the 96 px trend line (no room beside them) waits for wider screens.
+    expect(wrapper.find("[data-testid=routine-stats]").classes()).toContain("max-md:justify-between");
+    const share = wrapper.find("[data-testid=on-time-share]").classes();
+    expect(share).not.toContain("whitespace-nowrap");
+    expect(share).toContain("md:whitespace-nowrap");
+    expect(wrapper.find(`svg[aria-label="${en["routines.sparkLabel"]}"]`).classes()).toContain("max-sm:hidden");
+    wrapper.unmount();
+  });
+
   it("leads with the on-time share, not done (late runs count as done), and says how many were late", async () => {
     // A delivery done every day but late on 10 of 26: "100% done" hid it (audit D-2).
     const late = routine({ id: 3, title: "Receive the delivery", stats: { made_30d: 26, done_30d: 26, on_time_30d: 16, completion_30d: 100, spark: Array(14).fill(100) } });
@@ -461,6 +482,18 @@ describe("routine work", () => {
     vi.setSystemTime(new Date("2026-10-21T07:30:00Z")); // Wednesday 12:30 in Tashkent
   });
   afterEach(() => vi.useRealTimers());
+
+  it("asks history for at most 92 days, the server's limit (a longer range broke the page)", async () => {
+    const calls = stub({
+      "GET routines/history/": () => json({ range: {}, days: [], routines: [], series: [], people: [], totals: {} }),
+      "GET tasks/options/": () => json(options),
+    });
+    await mountPage("/c/1/routines/history?preset=custom&from=2026-01-01&to=2026-10-21", "HistoryPage");
+    const asked = calls.filter((c) => c.url.includes("/routines/history/")).map((c) => new URL(c.url, "http://x").searchParams);
+    expect(asked.length).toBeGreaterThan(0);
+    expect(asked.at(-1)!.get("to")).toBe("2026-10-21");
+    expect(asked.at(-1)!.get("from")).toBe("2026-07-22");
+  });
 
   it("reads a day, its history and what waits for confirmation, and confirms through the tasks bulk endpoint", async () => {
     const calls = stub({

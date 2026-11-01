@@ -83,7 +83,7 @@
   "timeoff.audit.member": "Xodim",
 
   "timeoff.record.title": "Ta’til yozish",
-  "timeoff.record.description": "Kasal bo‘lgan yoki dam olishni og‘zaki kelishgan xodim uchun. O‘tgan kunlarni ham yozsa bo‘ladi; ta’til darhol tasdiqlanadi va xodimga Telegram’da xabar boradi.",
+  "timeoff.record.description": "Kasal bo‘lgan yoki dam olishni og‘zaki kelishgan xodim uchun. O‘tgan kunlarni ham yozsa bo‘ladi; ta’til darhol tasdiqlanadi va xodimga Telegramda xabar boradi.",
   "timeoff.record.person": "Kim",
   "timeoff.record.personPlaceholder": "Xodimni tanlang",
   "timeoff.record.pickPerson": "Kim ta’tilda ekanini tanlang",
@@ -97,7 +97,7 @@
   "timeoff.record.noteDrop": "Varaqaning rasmini yoki PDF faylini shu yerga tashlang",
   "timeoff.record.confirm": "Yozish",
   "timeoff.record.done": "{name} uchun ta’til yozildi",
-  "timeoff.record.doneHint": "Unga Telegram’da xabar yuborildi.",
+  "timeoff.record.doneHint": "Unga Telegramda xabar yuborildi.",
   "timeoff.reasons.sick": "Kasallik",
   "timeoff.reasons.dayOff": "Dam olish kuni",
   "timeoff.reasons.family": "Oilaviy ishlar",
@@ -112,7 +112,7 @@
   "timeoff.revoke.firstDayBack": "Ishga qaytadigan birinchi kun",
   "timeoff.revoke.firstDayBackHint": "Ta’til bir kun oldin tugaydi",
   "timeoff.revoke.outcomeAll": "Ta’til to‘liq bekor qilinadi.",
-  "timeoff.revoke.outcomeCut": "Ta’til endi {date} da tugaydi, qolgani bekor qilinadi.",
+  "timeoff.revoke.outcomeCut": "Ta’tilning yangi oxirgi kuni: {date}, qolgani bekor qilinadi.",
   "timeoff.revoke.reason": "Sabab",
   "timeoff.revoke.reasonHint": "Xodim buni botda ko‘radi",
   "timeoff.revoke.reasonPlaceholder": "Masalan: shanba kuni inventarizatsiya",
@@ -157,6 +157,6 @@
   "timeoff.widget.title": "Bugun yo‘q",
   "timeoff.widget.emptyTitle": "Hamma ishda",
   "timeoff.widget.emptyBody": "Bugun hech kim ta’tilda emas.",
-  "timeoff.widget.until": "{date} gacha",
+  "timeoff.widget.until": "Oxirgi kuni: {date}",
   "timeoff.widget.waiting": "{n} ta so‘rov kutmoqda | {n} ta so‘rov kutmoqda | {n} ta so‘rov kutmoqda"
 }

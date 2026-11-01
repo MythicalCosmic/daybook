@@ -58,6 +58,7 @@ function guard(event: Event): void {
     :dismissable="dismissable"
     @closed="emit('closed')"
   >
+    <template v-if="$slots['header-actions']" #header-actions><slot name="header-actions" /></template>
     <slot />
     <template v-if="$slots.footer" #footer><slot name="footer" /></template>
   </BottomSheet>

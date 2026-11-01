@@ -13,7 +13,6 @@ export type BoardColumnId = "todo" | "in_progress" | "review" | "returned" | "do
 export type TaskAction = "start" | "complete" | "confirm" | "return" | "edit" | "cancel" | "reassign" | "nudge" | "comment";
 
 export const STATUSES: readonly TaskStatus[] = ["todo", "in_progress", "review", "returned", "done", "cancelled"];
-export const OPEN_STATUSES: readonly TaskStatus[] = ["todo", "in_progress", "returned"];
 export const PRIORITIES: readonly TaskPriority[] = ["urgent", "high", "normal", "low"];
 export const KINDS: readonly TaskKind[] = ["daily", "assigned", "personal"];
 export const BOARD_COLUMNS: readonly BoardColumnId[] = ["todo", "in_progress", "review", "returned", "done"];
@@ -27,8 +26,6 @@ export interface TaskPerson {
 
 /** Why the assignee can't do it ("Can't do it", cross-area contract 7). */
 export type BlockerReason = "no_stock" | "no_access" | "broken" | "not_mine" | "other";
-export const BLOCKER_REASONS: readonly BlockerReason[] = ["no_stock", "no_access", "broken", "not_mine", "other"];
-
 export interface TaskBlocker {
   reason_code: BlockerReason;
   note: string;

@@ -23,7 +23,7 @@ import UserAvatar from "@/components/UserAvatar.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { useHotkey } from "@/core/hotkeys";
-import { todayIn } from "@/lib/dates";
+import { diffDays, todayIn } from "@/lib/dates";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { usePageTitle } from "@/lib/usePageTitle";
@@ -35,7 +35,7 @@ import HealthDot from "../components/HealthDot.vue";
 import ProjectBadge from "../components/ProjectBadge.vue";
 import ProjectFormDialog from "../components/ProjectFormDialog.vue";
 import UpdateDialog from "../components/UpdateDialog.vue";
-import { daysBetween, STATUS_TONE } from "../lib";
+import { STATUS_TONE } from "../lib";
 import { PROJECT_TABS, type ProjectTab } from "../types";
 
 const BoardTab = defineAsyncComponent(() => import("../components/BoardTab.vue"));
@@ -155,7 +155,7 @@ useHotkey("u", () => (posting.value = true), { description: "projects.keys.updat
 const daysLeft = computed(() => {
   const due = project.value?.due_on;
   if (!due || project.value?.status === "completed") return null;
-  return daysBetween(todayIn(company.timezone), due);
+  return diffDays(todayIn(company.timezone), due);
 });
 </script>
 

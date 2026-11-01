@@ -18,15 +18,6 @@ const DAY_MS = 86_400_000;
 
 const INTL_LOCALE: Record<Language, string> = { uz: "uz-Latn-UZ", ru: "ru-RU", en: "en-GB" };
 
-export function intlLocale(lang: Language): string {
-  return INTL_LOCALE[lang];
-}
-
-/** Intl's Uzbek output uses ʻ/ʼ; the product writes o‘ and g‘ with U+2018 and the apostrophe U+2019. */
-export function fixUzbek(text: string, lang: Language): string {
-  return lang === "uz" ? text.replace(/ʻ/g, "‘").replace(/ʼ/g, "’") : text;
-}
-
 function pad(n: number, width = 2): string {
   return String(n).padStart(width, "0");
 }
@@ -55,10 +46,6 @@ export function addMonths(day: string, amount: number): string {
   const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
   target.setUTCDate(Math.min(date.getUTCDate(), lastDay));
   return dayOf(target);
-}
-
-export function addYears(day: string, amount: number): string {
-  return addMonths(day, amount * 12);
 }
 
 /** Whole days from a to b (b − a). */

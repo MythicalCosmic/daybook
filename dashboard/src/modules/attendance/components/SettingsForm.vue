@@ -16,8 +16,9 @@ import StickyActionBar from "@/components/StickyActionBar.vue";
 import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import UiButton from "@/components/UiButton.vue";
 import { toast } from "@/components/useToast";
+import { useCompanyId } from "@/stores/company";
 
-import { saveSettings, useCompanyId, useRefresh, useSettings } from "../api";
+import { saveSettings, useRefresh, useSettings } from "../api";
 import SettingRow from "./SettingRow.vue";
 import type { AttendanceSettings } from "../types";
 

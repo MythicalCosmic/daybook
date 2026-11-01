@@ -241,6 +241,7 @@ const unreadInView = computed(() => notes.value.filter((note) => !note.read_at).
                 :variant="action.style === 'primary' ? 'primary' : 'secondary'"
                 :class="action.style === 'danger' && 'hover:!text-danger'"
                 :loading="act.isPending.value && act.variables.value?.key === action.key"
+                :disabled="act.isPending.value"
                 @click="runAction(selected, action.key)"
                 >{{ action.label }}</UiButton
               >

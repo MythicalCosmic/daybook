@@ -86,7 +86,9 @@ const positionOptions = computed<SelectOption<number>[]>(() => {
 });
 
 const length = computed(() => spanMinutes(form.value.start, form.value.end, form.value.breakMinutes ?? 0));
-const overnight = computed(() => form.value.end <= form.value.start);
+const overnight = computed(() => !!form.value.start && !!form.value.end && form.value.end <= form.value.start);
+/** Both times are needed: a cleared one would be sent as null. */
+const timesSet = computed(() => !!form.value.start && !!form.value.end);
 const busy = computed(() => create.isPending.value || update.isPending.value || remove.isPending.value);
 
 function useTemplate(template: ShiftTemplate): void {
@@ -185,7 +187,7 @@ async function destroy(): Promise<void> {
     <template #footer>
       <UiButton v-if="editing" variant="ghost" :icon="Trash2" class="mr-auto text-danger" :disabled="busy || draft?.shift?.has_record" @click="destroy">{{ t("common.delete") }}</UiButton>
       <UiButton variant="ghost" @click="open = false">{{ t("common.cancel") }}</UiButton>
-      <UiButton variant="primary" :icon="CalendarPlus" :loading="busy" @click="save">{{ editing ? t("common.save") : t("attendance.roster.add") }}</UiButton>
+      <UiButton variant="primary" :icon="CalendarPlus" :loading="busy" :disabled="!timesSet" @click="save">{{ editing ? t("common.save") : t("attendance.roster.add") }}</UiButton>
     </template>
   </UiDialog>
 </template>

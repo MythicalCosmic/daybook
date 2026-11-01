@@ -175,7 +175,7 @@ async function pickKind(next: string): Promise<void> {
                     :variant="action.style === 'primary' ? 'primary' : 'secondary'"
                     :class="action.style === 'danger' && 'hover:!text-danger'"
                     :loading="pendingKey === `${queueKey(item)}:${action.key}`"
-                    :disabled="!!pendingKey && pendingKey.startsWith(queueKey(item))"
+                    :disabled="!!pendingKey && pendingKey.startsWith(`${queueKey(item)}:`)"
                     @click="run(item, action)"
                     >{{ action.label }}</UiButton
                   >

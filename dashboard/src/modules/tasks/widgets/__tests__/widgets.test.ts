@@ -71,6 +71,15 @@ describe("tasks Overview widgets", () => {
     for (const url of asked) expect(new URL(url, "http://x").searchParams.get("routines")).toBe("without");
   });
 
+  it("opens Today with today's dates, not every task under the Today tab", async () => {
+    stubSummary(summary);
+    const wrapper = await mountWidget(DoneTodayWidget);
+    const href = new URL(wrapper.find("a").attributes("href")!, "http://x");
+    expect(href.searchParams.get("sv")).toBe("today");
+    expect(href.searchParams.get("due_from")).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(href.searchParams.get("due_to")).toBe(href.searchParams.get("due_from"));
+  });
+
   it("leave today's half day out of the KPI sparkline and mark it 'so far' on the trend", async () => {
     stubSummary(summary);
     const tile = await mountWidget(OnTimeWidget);
@@ -99,7 +108,8 @@ describe("Branches now (R2 §3.19)", () => {
         const params = new URL(String(url), "http://x").searchParams;
         const first = params.get("branch") === "1";
         if (String(url).includes("/tasks/summary/")) return json({ ...summary, late_now: first ? 3 : 0 });
-        if (params.get("blocked") === "true") return first ? page(1, [{ id: 5, blocker: { reason_code: "broken", note: "", at: "2026-10-21T08:00:00Z" } }]) : page(0);
+        // One list for the whole scope; the widget counts its rows per branch.
+        if (params.get("blocked") === "true") return page(1, [{ id: 5, branch: { id: 1, name: "Chilonzor", code: "CHL" }, blocker: { reason_code: "broken", note: "", at: "2026-10-21T08:00:00Z" } }]);
         if (params.get("extension") === "true") return page(0);
         return json({ detail: "Not found." }, 404);
       }),
@@ -121,6 +131,11 @@ describe("Branches now (R2 §3.19)", () => {
     await vi.waitFor(() => expect(chilonzor.find("[data-stat=answers]").text()).toContain("1"));
     expect(chilonzor.find("[data-stat=answers]").attributes("href")).toContain("blocked=true");
     expect(wrapper.find("[data-branch='2'] [data-stat=late]").classes()).toContain("text-subtle");
+    expect(wrapper.find("[data-branch='2'] [data-stat=answers]").text()).toContain("0");
+    // Two lists for every branch together, not two per branch (the Overview's request count).
+    const lists = urls.filter((u) => u.includes("/tasks/?"));
+    expect(lists).toHaveLength(2);
+    for (const url of lists) expect(new URL(url, "http://x").searchParams.getAll("branch")).toEqual(["1", "2"]);
     // On a phone the short words step aside visually but stay readable: a number alone ("3")
     // tells a screen reader nothing.
     const word = chilonzor.find("[data-stat=late] span");

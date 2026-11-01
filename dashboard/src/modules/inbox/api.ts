@@ -15,7 +15,7 @@ import { http, ownerPath } from "@/api/http";
 import { keys as shellKeys, moduleKey, qk } from "@/api/keys";
 import { fetchQueue, runQueueAction as runAction, withoutQueueItem } from "@/api/shell";
 import type { Page } from "@/api/types";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId } from "@/stores/company";
 
 import type { Notification, NotificationActionResult, NotificationParams, QueueAction, QueueItem, QueueView } from "./types";
 
@@ -62,11 +62,6 @@ export const inboxKeys = {
 };
 
 // ─── Queries ────────────────────────────────────────────────────────────────
-
-function useCompanyId() {
-  const company = useCompanyStore();
-  return computed(() => company.currentId ?? 0);
-}
 
 /** "Needs you", optionally one kind. */
 export function useQueue(kind: MaybeRefOrGetter<string | null> = null) {

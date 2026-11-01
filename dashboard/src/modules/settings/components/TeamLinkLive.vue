@@ -19,6 +19,7 @@ import ProgressBar from "@/components/ProgressBar.vue";
 import StatusPill from "@/components/StatusPill.vue";
 import UiButton from "@/components/UiButton.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
+import { useBackCloses } from "@/lib/backStack";
 import { useFormat } from "@/lib/useFormat";
 import { useTween } from "@/lib/useTween";
 import { useCompanyStore } from "@/stores/company";
@@ -128,6 +129,8 @@ onBeforeUnmount(() => {
 function onOpenChange(value: boolean): void {
   if (!value) emit("close");
 }
+// Telegram's Back closes the live screen, not the settings page under it.
+useBackCloses(() => true, () => emit("close"));
 
 /** Focus the screen itself, not the close button: no focus ring on a screen shown to a room. */
 function focusSelf(event: Event): void {

@@ -10,8 +10,9 @@ import TextInput from "@/components/TextInput.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
+import { useCompanyId } from "@/stores/company";
 
-import { createMilestone, updateMilestone, useCompanyId, useRefreshProjects } from "../api";
+import { createMilestone, updateMilestone, useRefreshProjects } from "../api";
 import type { Milestone } from "../types";
 
 const open = defineModel<boolean>("open", { default: false });

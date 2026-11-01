@@ -4,7 +4,7 @@
  * those entered here after the fact. Filters in the URL, void with a reason, "New receipt".
  */
 import { Ban, Building2, Plus, ReceiptText } from "@lucide/vue";
-import { computed, ref, watch } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import DataTable from "@/components/DataTable.vue";
@@ -44,7 +44,7 @@ const defs = computed<FilterDef[]>(() => [
 const filters = useUrlFilters(defs);
 const search = useRouteState<string>("q", rs.string(""));
 const table = useDataTable({ id: "sales.entries", url: true });
-watch([() => filters.params.value, search], () => table.resetPage(), { deep: true });
+table.resetPageOn(() => [filters.params.value, search.value]);
 const query = useEntries(computed(() => ({ ...filters.params.value, ...(search.value ? { q: search.value } : {}), ...table.params.value })));
 
 const columns = computed<TableColumn<Entry>[]>(() => [

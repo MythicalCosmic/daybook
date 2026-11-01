@@ -80,6 +80,3 @@ export const toast = {
   dismiss: dismissToast,
 };
 
-export function useToast() {
-  return toast;
-}

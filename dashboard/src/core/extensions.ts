@@ -12,6 +12,12 @@ export interface ExtensionEntry {
 }
 
 /** Components registered for `point` by modules visible in `company`, in sidebar order. */
+/**
+ * Points that work outside any company: "New company" is how a person without one gets their
+ * first, so its form must not depend on a company's permissions (it rendered empty on /welcome).
+ */
+const COMPANYLESS_POINTS: ReadonlySet<ExtensionPoint> = new Set<ExtensionPoint>(["shell.company.create"]);
+
 export function extensionsFor(
   point: ExtensionPoint,
   company: Company | null | undefined,
@@ -20,7 +26,7 @@ export function extensionsFor(
   const out: ExtensionEntry[] = [];
   for (const module of list) {
     const components = module.extensions?.[point];
-    if (!components?.length || !isModuleVisible(module, company)) continue;
+    if (!components?.length || (!COMPANYLESS_POINTS.has(point) && !isModuleVisible(module, company))) continue;
     components.forEach((component, index) => out.push({ key: `${module.id}:${index}`, moduleId: module.id, component }));
   }
   return out;

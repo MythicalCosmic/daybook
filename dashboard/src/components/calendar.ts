@@ -3,7 +3,7 @@
  * strings and months "YYYY-MM"; weeks start on Monday (Uzbekistan and Russia), like the backend.
  */
 import type { Range } from "@/api/types";
-import { addDays, addMonths, diffDays, startOfWeek } from "@/lib/dates";
+import { addDays, addMonths, startOfWeek } from "@/lib/dates";
 
 export type Month = string;
 
@@ -49,10 +49,6 @@ export function inRange(day: string, range: Range | null | undefined): boolean {
 /** A range from two clicks in any order. */
 export function orderedRange(a: string, b: string): Range {
   return a <= b ? { from: a, to: b } : { from: b, to: a };
-}
-
-export function rangeLength(range: Range): number {
-  return diffDays(range.from, range.to) + 1;
 }
 
 export function clampDay(day: string, min?: string | null, max?: string | null): string {

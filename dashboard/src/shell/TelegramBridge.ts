@@ -6,7 +6,9 @@
 import { watch } from "vue";
 import type { RouteLocationRaw, Router } from "vue-router";
 
+import { shellApi } from "@/api/shell";
 import type { DashboardModule } from "@/core/modules";
+import { closeTopOverlay, overlayOpen } from "@/lib/backStack";
 import { useUiStore } from "@/stores/ui";
 
 interface Insets {
@@ -38,6 +40,8 @@ export interface TelegramWebApp {
   offEvent: (event: string, handler: () => void) => void;
   BackButton: { show: () => void; hide: () => void; onClick: (cb: () => void) => void; offClick: (cb: () => void) => void };
   HapticFeedback?: { impactOccurred: (style: "light" | "medium") => void; notificationOccurred: (kind: "success" | "warning" | "error") => void };
+  /** Bot API 8.0: Telegram's own download prompt (its webviews ignore `<a download>`). */
+  downloadFile?: (params: { url: string; file_name: string }, callback?: (accepted: boolean) => void) => void;
 }
 
 declare global {
@@ -112,14 +116,8 @@ export function initDataExpired(now = Date.now()): boolean {
 export async function telegramRelogin(): Promise<string | null> {
   if (!context.initData || initDataExpired()) return null;
   try {
-    const response = await fetch("/api/v1/owner/auth/telegram/", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json", Accept: "application/json", "X-Requested-With": "dashboard" },
-      body: JSON.stringify({ init_data: context.initData }),
-    });
-    if (!response.ok) return null;
-    return ((await response.json()) as { access?: string }).access ?? null;
+    // The shell's own call: the API base and the language headers in one place.
+    return (await shellApi.telegramLogin(context.initData)).access ?? null;
   } catch {
     return null;
   }
@@ -170,14 +168,18 @@ export function bindTelegram(router: Router): void {
   webApp.onEvent("safeAreaChanged", () => applyInsets(webApp));
   webApp.onEvent("contentSafeAreaChanged", () => applyInsets(webApp));
 
-  // BackButton mirrors the browser history: shown whenever there is somewhere to go back to.
-  const back = () => router.back();
-  webApp.BackButton.onClick(back);
-  router.afterEach(() => {
-    const canGoBack = !!(window.history.state as { back?: string | null } | null)?.back;
-    if (canGoBack) webApp.BackButton.show();
-    else webApp.BackButton.hide();
+  // BackButton closes the sheet, dialog or palette on top first (lib/backStack), then mirrors the
+  // browser history: shown whenever there is an overlay to close or somewhere to go back to.
+  webApp.BackButton.onClick(() => {
+    if (!closeTopOverlay()) router.back();
   });
+  const syncBackButton = () => {
+    const canGoBack = !!(window.history.state as { back?: string | null } | null)?.back;
+    if (canGoBack || overlayOpen.value) webApp.BackButton.show();
+    else webApp.BackButton.hide();
+  };
+  router.afterEach(syncBackButton);
+  watch(overlayOpen, syncBackButton);
 }
 
 /**

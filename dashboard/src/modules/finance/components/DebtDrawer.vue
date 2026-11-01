@@ -36,7 +36,7 @@ import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
 import { financeApi, useDebt, useOptions, useRefresh } from "../api";
-import { dayStyle, DEBT_TONES, share } from "../lib";
+import { dayStyle, DEBT_TONES, debtChanges, share } from "../lib";
 import PaymentDialog from "./PaymentDialog.vue";
 
 const { t } = useI18n();
@@ -96,10 +96,11 @@ function startEdit(): void {
 const people = computed(() => (options.data.value?.members ?? []).map((m) => ({ value: m.id, label: m.name, description: m.position })));
 
 async function saveEdit(): Promise<void> {
-  if (!debt.value) return;
+  const d = debt.value;
+  if (!d) return;
   saving.value = true;
   try {
-    await financeApi.updateDebt(company.currentId ?? 0, debt.value.id, draft.value);
+    await financeApi.updateDebt(company.currentId ?? 0, d.id, debtChanges(d, draft.value));
     toast.success(t("finance.debts.saved"));
     editing.value = false;
     refresh();
@@ -256,7 +257,7 @@ const moreMenu = computed<MenuEntry[]>(() => {
                 <SelectBox v-model="draft.responsible" :options="people" clearable />
               </FormField>
               <FormField :label="t('finance.field.note')" optional>
-                <TextInput v-model="draft.description" :maxlength="300" />
+                <TextInput v-model="draft.description" :maxlength="300" :disabled="debt.masked" />
               </FormField>
               <div class="flex justify-end gap-2">
                 <UiButton variant="ghost" @click="editing = false">{{ t("common.cancel") }}</UiButton>

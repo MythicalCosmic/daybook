@@ -22,8 +22,9 @@ import UiButton from "@/components/UiButton.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { useDelayedPending } from "@/lib/useDelayedPending";
+import { useCompanyId } from "@/stores/company";
 
-import { addMember, removeMember, setMemberRole, useCompanyId, useMembers, usePeople, useRefreshProjects } from "../api";
+import { addMember, removeMember, setMemberRole, useMembers, usePeople, useRefreshProjects } from "../api";
 import { hhmm } from "../lib";
 import type { Member, ProjectDetail } from "../types";
 

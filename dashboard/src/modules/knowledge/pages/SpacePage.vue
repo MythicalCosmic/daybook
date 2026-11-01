@@ -74,6 +74,8 @@ const stats = computed(() => {
 
 async function archive(): Promise<void> {
   if (!space.value) return;
+  // Kept before leaving: Undo runs on the Knowledge home, where this page's id reads NaN.
+  const id = space.value.id;
   const answer = await confirm({
     title: t("knowledge.space.archiveTitle", { name: space.value.name }),
     message: t("knowledge.space.archiveBody"),
@@ -81,13 +83,13 @@ async function archive(): Promise<void> {
     tone: "danger",
   });
   if (!answer) return;
-  await knowledgeApi.archiveSpace(company.currentId ?? 0, space.value.id);
+  await knowledgeApi.archiveSpace(company.currentId ?? 0, id);
   await refresh();
   toast.success(t("knowledge.space.archived"), {
     action: {
       label: t("common.undo"),
       onClick: async () => {
-        await knowledgeApi.restoreSpace(company.currentId ?? 0, spaceId.value);
+        await knowledgeApi.restoreSpace(company.currentId ?? 0, id);
         await refresh();
       },
     },

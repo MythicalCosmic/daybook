@@ -15,11 +15,11 @@ import ProgressBar from "@/components/ProgressBar.vue";
 import ProgressRing from "@/components/ProgressRing.vue";
 import StatusPill from "@/components/StatusPill.vue";
 import UiTooltip from "@/components/UiTooltip.vue";
-import { todayIn } from "@/lib/dates";
+import { diffDays, todayIn } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
-import { burnTone, colorVar, daysBetween, STATUS_TONE } from "../lib";
+import { burnTone, colorVar, STATUS_TONE } from "../lib";
 import type { ProjectItem } from "../types";
 import HealthDot from "./HealthDot.vue";
 import ProjectBadge from "./ProjectBadge.vue";
@@ -33,7 +33,7 @@ const company = useCompanyStore();
 const to = computed(() => `/c/${props.companyId}/projects/${props.project.id}`);
 const done = computed(() => props.project.status === "completed");
 const ring = computed(() => (done.value ? "success" : props.project.health === "off_track" ? "danger" : props.project.health === "at_risk" ? "warning" : "primary"));
-const daysLeft = computed(() => (props.project.due_on && !done.value ? daysBetween(todayIn(company.timezone), props.project.due_on) : null));
+const daysLeft = computed(() => (props.project.due_on && !done.value ? diffDays(todayIn(company.timezone), props.project.due_on) : null));
 </script>
 
 <template>

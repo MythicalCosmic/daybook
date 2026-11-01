@@ -68,6 +68,8 @@ async function download(job: ExportJob): Promise<void> {
 }
 
 async function exportAgain(job: ExportJob): Promise<void> {
+  // One at a time: every tap on a phone card started another export.
+  if (again.isPending.value) return;
   try {
     await again.mutateAsync({ kind: job.kind, format: job.format === "csv" ? "csv" : "xlsx", params: job.params, deliverTelegram: false });
     toast.success(t("exports.started", { name: job.label }), { description: t("exports.startedHint") });
@@ -176,7 +178,7 @@ const columns = computed<TableColumn<ExportJob>[]>(() => [
             <p v-if="row.error" class="mt-1.5 text-xs text-danger">{{ row.error }}</p>
           </div>
           <UiButton v-if="row.status === 'ready' && !expired(row)" size="sm" :icon="Download" :loading="downloading === row.id" :aria-label="t('exports.download')" @click.stop="download(row)" />
-          <UiButton v-else-if="row.status === 'failed' || expired(row)" size="sm" variant="ghost" :icon="RotateCw" :aria-label="t('exports.again')" @click.stop="exportAgain(row)" />
+          <UiButton v-else-if="row.status === 'failed' || expired(row)" size="sm" variant="ghost" :icon="RotateCw" :loading="again.isPending.value && again.variables.value?.kind === row.kind" :aria-label="t('exports.again')" @click.stop="exportAgain(row)" />
         </div>
       </template>
     </DataTable>

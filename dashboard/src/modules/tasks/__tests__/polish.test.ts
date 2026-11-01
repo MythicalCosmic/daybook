@@ -247,6 +247,26 @@ describe("quick add in New task (contract 1)", () => {
   });
 });
 
+describe("New task's deadlines follow the clock", () => {
+  it("drops \"Today 18:00\" once it is past 17:00, with the dialog left mounted", async () => {
+    vi.useFakeTimers({ toFake: ["Date", "setInterval", "clearInterval"] });
+    // 16:50 in Tashkent (UTC+5).
+    vi.setSystemTime(new Date("2026-11-02T11:50:00Z"));
+    stub({ "GET tasks/options/": () => json({ people: [], positions: [], routines: [], policies: [] }) });
+    const app = await testApp("/c/1/tasks");
+    const { wrapper } = mountWithProviders(CreateTaskDialog, { plugins: app.plugins, props: { open: true } });
+    await flushPromises();
+    const today = en["tasks.create.due.today"];
+    const labels = () => buttons().map((b) => b.textContent?.trim());
+    expect(labels()).toContain(today);
+    vi.advanceTimersByTime(20 * 60_000);
+    await flushPromises();
+    expect(labels()).not.toContain(today);
+    wrapper.unmount();
+    vi.useRealTimers();
+  });
+});
+
 describe("layout", () => {
   it("brings today's week into view when the calendar opens on this month (audit D-3)", async () => {
     const scrolled: Array<{ el: Element; options: unknown }> = [];

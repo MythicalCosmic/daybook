@@ -8,7 +8,7 @@ import { computed, toValue, type MaybeRefOrGetter } from "vue";
 
 import { http, ownerPath } from "@/api/http";
 import { moduleKey, qk } from "@/api/keys";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId } from "@/stores/company";
 
 import type { BlockedPerson, LogPage, Policy, PolicyInput } from "./types";
 
@@ -32,11 +32,6 @@ export const reminderKeys = {
   log: (cid: number, params: Params) => qk(cid, MODULE, "log", params),
   blocked: (cid: number) => qk(cid, MODULE, "blocked"),
 };
-
-function useCompanyId() {
-  const company = useCompanyStore();
-  return computed(() => company.currentId ?? 0);
-}
 
 export function usePolicies() {
   const cid = useCompanyId();

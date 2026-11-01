@@ -76,3 +76,9 @@ export const useCompanyStore = defineStore("company", () => {
 
   return { currentId, current, isOwner, companies, timezone, currency, branchFilter, setCurrent, defaultCompanyId, has, can, enabled, setBranchFilter };
 });
+
+/** The current company's id as a ref; 0 before one is chosen (queries wait for an id > 0). */
+export function useCompanyId() {
+  const company = useCompanyStore();
+  return computed(() => company.currentId ?? 0);
+}

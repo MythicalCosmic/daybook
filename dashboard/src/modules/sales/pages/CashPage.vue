@@ -99,7 +99,7 @@ const defs = computed<FilterDef[]>(() => [
 ]);
 const filters = useUrlFilters(defs);
 const table = useDataTable({ id: "sales.movements", url: "m_", pageSize: 25 });
-watch(() => filters.params.value, () => table.resetPage(), { deep: true });
+table.resetPageOn(() => filters.params.value);
 const movements = useMovements(computed(() => ({ ...filters.params.value, ...table.params.value })));
 const columns = computed<TableColumn<Movement>[]>(() => [
   { id: "created_at", header: t("sales.col.when"), width: 140, format: (v) => fmt.instant(String(v), "short") },

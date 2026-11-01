@@ -4,7 +4,7 @@
  * density override. With `url` the page, page size and ordering live in the URL (plan §6.5).
  *
  *   const table = useDataTable({ id: "finance.transactions", ordering: "-date", url: true });
- *   watch(filters, table.resetPage, { deep: true });
+ *   table.resetPageOn(() => [filters.value, search.value]);
  *   const query = useQuery({
  *     queryKey: computed(() => qk(cid, "finance", "transactions", { ...filters.value, ...table.params.value })),
  *     queryFn: () => listTransactions(cid, { ...filters.value, ...table.params.value }),
@@ -12,7 +12,7 @@
  *   });
  *   <DataTable :state="table" :columns="columns" :rows="query.data.value?.results" :total="query.data.value?.count" … />
  */
-import { computed, ref, shallowRef, type ComputedRef, type Ref, type WritableComputedRef } from "vue";
+import { computed, ref, shallowRef, watch, type ComputedRef, type Ref, type WritableComputedRef } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { readStored, writeStored } from "@/lib/storage";
@@ -63,6 +63,12 @@ export interface DataTableState {
   clearSelection: () => void;
   /** Back to page 1 (call when filters change). */
   resetPage: () => void;
+  /**
+   * Back to page 1 whenever `source` changes by content. Filters read from the URL are new objects
+   * after every navigation, the list's own `?page=2` included, so a deep watcher put the list back
+   * on page 1 the moment the person turned it. Call from setup.
+   */
+  resetPageOn: (source: () => unknown) => void;
   /** Per-table density; null follows the person's setting. */
   density: Ref<Density | null>;
 }
@@ -185,6 +191,12 @@ export function useDataTable(options: DataTableOptions = {}): DataTableState {
     clearSelection: () => setSelected(new Set()),
     resetPage: () => {
       if (page.value !== 1) page.value = 1;
+    },
+    resetPageOn: (source) => {
+      watch(
+        () => JSON.stringify(source()),
+        () => state.resetPage(),
+      );
     },
     density: ref<Density | null>(null),
   };

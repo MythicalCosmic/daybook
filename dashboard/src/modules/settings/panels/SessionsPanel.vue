@@ -65,6 +65,7 @@ async function signOutOthers(): Promise<void> {
 }
 
 async function signOutEverywhere(): Promise<void> {
+  if (mutations.revokeAll.isPending.value) return;
   const answer = await confirm({
     title: t("settings.sessions.everywhereTitle"),
     message: t("settings.sessions.everywhereBody"),
@@ -84,7 +85,7 @@ async function signOutEverywhere(): Promise<void> {
     <PanelHeader :title="t('settings.panel.sessions')" :description="t('settings.sessions.description')">
       <template v-if="sessions.data.value?.length" #actions>
         <UiButton v-if="others.length && hasCurrent" :icon="LogOut" :loading="mutations.revokeAll.isPending.value" @click="signOutOthers">{{ t("settings.sessions.others") }}</UiButton>
-        <UiButton variant="danger" :icon="ShieldX" @click="signOutEverywhere">{{ t("settings.sessions.everywhere") }}</UiButton>
+        <UiButton variant="danger" :icon="ShieldX" :loading="mutations.revokeAll.isPending.value" @click="signOutEverywhere">{{ t("settings.sessions.everywhere") }}</UiButton>
       </template>
     </PanelHeader>
 

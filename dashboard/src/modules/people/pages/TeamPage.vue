@@ -118,7 +118,7 @@ const params = computed(() => ({
   status: status.value,
   ...table.params.value,
 }));
-watch([() => filters.params.value, search, status], () => table.resetPage(), { deep: true });
+table.resetPageOn(() => [filters.params.value, search.value, status.value]);
 const query = usePeople(params);
 const rows = computed(() => query.data.value?.results ?? []);
 const chips = computed(() => new Map(rows.value.map((row) => [row.id, statusChip(row, (d) => fmt.day(d, "short"))])));

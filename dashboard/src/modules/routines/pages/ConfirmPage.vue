@@ -58,7 +58,10 @@ const groups = computed(() =>
 const total = computed(() => groups.value.reduce((sum, group) => sum + group.items.length, 0));
 
 async function confirm(runs: RoutineRun[], label: string): Promise<void> {
-  const ids = runs.map((run) => run.id);
+  // Runs already on their way (a second click during the leave animation) aren't sent again: the
+  // second answer said "already checked by someone else".
+  const ids = runs.map((run) => run.id).filter((id) => !hidden.value.has(id));
+  if (!ids.length) return;
   hide(ids, true);
   try {
     const result = await confirmRuns.mutateAsync(ids);

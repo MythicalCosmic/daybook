@@ -22,13 +22,13 @@ import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { toast } from "@/components/useToast";
-import { todayIn } from "@/lib/dates";
+import { endOfMonth, todayIn } from "@/lib/dates";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyStore } from "@/stores/company";
 
-import { createRecord, useCompanyId, useRefresh, useSummary, useTimesheet } from "../api";
+import { createRecord, useRefresh, useSummary, useTimesheet } from "../api";
 import AttendanceHeader from "../components/AttendanceHeader.vue";
 import BranchSwitch from "../components/BranchSwitch.vue";
 import RecordDrawer from "../components/RecordDrawer.vue";
@@ -53,8 +53,9 @@ const recordId = useRouteState("record", rs.optionalNumber(), { push: true });
 const sheet = useTimesheet(() => ({ month: month.value, branch: branch.value }));
 const skeleton = useDelayedPending(computed(() => sheet.isPending.value));
 const data = computed(() => sheet.data.value);
-const lastDay = computed(() => data.value?.days.at(-1) ?? `${month.value}-28`);
-const summary = useSummary(() => ({ from: monthStart(month.value), to: lastDay.value, branch: branch.value ? [branch.value] : [] }));
+// The month's own last day: the previous answer's (kept while the next month loads) ran before the
+// first day, and the server refused the range.
+const summary = useSummary(() => ({ from: monthStart(month.value), to: endOfMonth(monthStart(month.value)), branch: branch.value ? [branch.value] : [] }));
 
 const kpis = computed(() => {
   const totals = summary.data.value?.totals;

@@ -5,7 +5,7 @@
  * shift drawer (`?shift=`). On phones the table becomes cards.
  */
 import { AlertTriangle, Building2, Check, CircleDot, ClipboardList, Sparkles, UserRound } from "@lucide/vue";
-import { computed, onMounted, watch } from "vue";
+import { computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
@@ -65,7 +65,7 @@ const defs = computed<FilterDef[]>(() => [
 const filters = useUrlFilters(defs);
 const search = useRouteState<string>("q", rs.string(""));
 const table = useDataTable({ id: "sales.shifts", ordering: "-opened_at", url: true, hidden: ["receipts", "verified_by", "branch"] });
-watch([() => filters.params.value, search], () => table.resetPage(), { deep: true });
+table.resetPageOn(() => [filters.params.value, search.value]);
 
 // Views: built-in ones set the filters; saved ones store them.
 type BuiltinView = ViewTab & { params: Record<string, string | string[]> };

@@ -572,6 +572,35 @@ describe("TeamPage", () => {
   });
 });
 
+describe("TeamPage paging", () => {
+  it("turns to page 2 and stays there (the filters' watcher used to snap it back to page 1)", async () => {
+    const calls = stub((call) => {
+      if (call.method === "GET" && /\/people\/\?/.test(call.url)) {
+        return json({ count: 120, next: "x", previous: null, results: [person(31, "Madina Saidova", null)] });
+      }
+      return undefined;
+    });
+    const TeamPage = (await import("../pages/TeamPage.vue")).default;
+    const app = await testApp("/c/1/people");
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: "/c/:companyId/people", component: TeamPage },
+        { path: "/:any(.*)*", component: { render: () => null } },
+      ],
+    });
+    await router.push("/c/1/people");
+    const { wrapper } = mountWithProviders(TeamPage, { plugins: [app.pinia, router, i18n, [VueQueryPlugin, { queryClient: app.client }]] });
+    await flushPromises();
+    await router.push({ query: { ...router.currentRoute.value.query, page: "2" } });
+    await flushPromises();
+    await flushPromises();
+    expect(router.currentRoute.value.query.page).toBe("2");
+    expect(calls.filter((c) => /\/people\/\?/.test(c.url)).at(-1)!.url).toContain("page=2");
+    wrapper.unmount();
+  });
+});
+
 describe("PersonEditDialog", () => {
   it("moves someone to another department with department_id", async () => {
     const calls = stub((call) => {

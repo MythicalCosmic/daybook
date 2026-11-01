@@ -149,7 +149,7 @@ defineExpose({ reload: () => load(query.value) });
       <ListboxFilter
         v-model="query"
         auto-focus
-        class="ui-input h-full text-base"
+        class="ui-input h-full text-base pointer-coarse:text-md"
         :placeholder="searchPlaceholder ?? t('common.select.search')"
       />
       <UiSpinner v-if="loading" :size="14" class="text-subtle" />

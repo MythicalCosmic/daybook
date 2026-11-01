@@ -8,7 +8,7 @@ import { computed } from "vue";
 
 import { http, ownerPath } from "@/api/http";
 import { qk } from "@/api/keys";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId } from "@/stores/company";
 import { useSessionStore } from "@/stores/session";
 
 import type { CreatedCompany, NewCompanyInfo, NewCompanyInput, Setup } from "./types";
@@ -28,8 +28,7 @@ export const setupKeys = {
 
 /** The checklist of the current company (`enabled` lets the sidebar pill wait until it's needed). */
 export function useSetup(enabled = computed(() => true)) {
-  const company = useCompanyStore();
-  const cid = computed(() => company.currentId ?? 0);
+  const cid = useCompanyId();
   return useQuery({
     queryKey: computed(() => setupKeys.steps(cid.value)),
     queryFn: ({ signal }) => getSetup(cid.value, signal),
@@ -40,9 +39,8 @@ export function useSetup(enabled = computed(() => true)) {
 
 export function useSetupVisibility() {
   const client = useQueryClient();
-  const company = useCompanyStore();
   const session = useSessionStore();
-  const cid = computed(() => company.currentId ?? 0);
+  const cid = useCompanyId();
   const settle = (data: Setup) => {
     client.setQueryData(setupKeys.steps(cid.value), data);
     void session.loadMe().catch(() => undefined);

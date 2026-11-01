@@ -1,12 +1,14 @@
 // The registry first, as in the app: it is what loads every module's index.ts (see core/modules.ts).
 import "@/core/modules";
 
+import { VueQueryPlugin } from "@tanstack/vue-query";
 import { Editor } from "@tiptap/core";
 import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createMemoryHistory, createRouter } from "vue-router";
 
 import { toasts } from "@/components/useToast";
-import { mergeModuleMessages } from "@/i18n";
+import { i18n, mergeModuleMessages } from "@/i18n";
 import { company, me } from "@/test/fixtures";
 import { json } from "@/test/fixtures";
 import { mountWithProviders, testApp } from "@/test/plugins";
@@ -20,6 +22,7 @@ import en from "../i18n/en.json";
 import module from "../index";
 import RichEditor from "../components/editor/RichEditor.vue";
 import { moveData, normalizeBody, pathTo, readTone, safeBody, toTreeNodes } from "../lib";
+import PageEditor from "../pages/PageEditor.vue";
 import PageView from "../pages/PageView.vue";
 import type { PageDetail, TreeNodeData } from "../types";
 
@@ -208,6 +211,31 @@ describe("editor", () => {
     wrapper.unmount();
   });
 
+  it("opens on a phone without focusing: no keyboard over the page, and the editor still says ready", async () => {
+    // An iPhone inside Telegram: Tiptap's focus there dispatched a stale transaction ("Applying a
+    // mismatched transaction"), which also swallowed "created", so `ready` never came.
+    vi.spyOn(navigator, "platform", "get").mockReturnValue("iPhone");
+    vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("coarse"), media: query, addEventListener: () => undefined, removeEventListener: () => undefined }));
+    const errors: unknown[] = [];
+    const onError = (event: ErrorEvent) => {
+      errors.push(event.error);
+      event.preventDefault();
+    };
+    window.addEventListener("error", onError);
+    const app = await testApp("/c/1/knowledge/p/5/edit");
+    const { wrapper, inner } = mountWithProviders(RichEditor, {
+      props: { modelValue: "<p>Muzlatgich</p>", upload: vi.fn(), autofocus: true },
+      plugins: app.plugins,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    await flushPromises();
+    window.removeEventListener("error", onError);
+    expect(errors).toEqual([]);
+    expect(inner.emitted("ready")).toHaveLength(1);
+    expect(document.activeElement?.closest(".ProseMirror")).toBeNull();
+    wrapper.unmount();
+  });
+
   it("ignores the editor's empty last paragraph when comparing bodies", () => {
     expect(normalizeBody("<p>A</p><p></p>")).toBe("<p>A</p>");
     expect(normalizeBody("<p>A</p><p><br></p> <p></p>")).toBe("<p>A</p>");
@@ -310,5 +338,113 @@ describe("archive", () => {
     await flushPromises();
     expect(calls).toHaveLength(0);
     wrapper.unmount();
+  });
+});
+
+describe("PageEditor saves", () => {
+  const detail = (version: number) => ({
+    id: 5,
+    title: "Sovuq zanjir",
+    emoji: "",
+    space: { id: 1, name: "SOP", emoji: "", color: "" },
+    parent_id: null,
+    published: true,
+    published_at: "2026-10-30T08:00:00Z",
+    require_ack: false,
+    version,
+    archived: false,
+    updated_at: "2026-10-30T08:00:00Z",
+    updated_by: null,
+    excerpt: "",
+    read: null,
+    body: "<p>Muzlatgich 2–8 °C</p>",
+    ack_version: 1,
+    breadcrumbs: [],
+    children: [],
+    links: [],
+    my_ack: null,
+    created_at: "2026-10-01T08:00:00Z",
+    created_by: null,
+    can_edit: true,
+  });
+
+  it("sends the version it started from, once, even when the page refetched a colleague's newer one", async () => {
+    let answer: (() => void) | null = null;
+    const calls = stubApi({
+      "GET knowledge/pages/5/": () => json(detail(3)),
+      "GET knowledge/spaces/": () => json([{ id: 1, name: "SOP", emoji: "", color: "", page_count: 1 }]),
+      "GET knowledge/spaces/1/tree/": () => json([]),
+      "PATCH knowledge/pages/5/": () => new Promise<Response>((resolve) => (answer = () => resolve(json(detail(4))))),
+    });
+    // A touch screen: the editor opens without autofocus (jsdom has no layout to scroll the cursor into).
+    vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("coarse"), media: query, addEventListener: () => undefined, removeEventListener: () => undefined }));
+    const app = await testApp("/c/1/knowledge/p/5/edit");
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: "/c/:companyId/knowledge/p/:pageId/edit", name: "knowledge.edit", component: PageEditor },
+        { path: "/:any(.*)*", component: { render: () => null } },
+      ],
+    });
+    await router.push("/c/1/knowledge/p/5/edit");
+    const { wrapper } = mountWithProviders(PageEditor, { plugins: [app.pinia, router, i18n, [VueQueryPlugin, { queryClient: app.client }]] });
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    await flushPromises();
+    // A refetch brings a colleague's save (version 4) while this draft started from version 3.
+    app.client.setQueryData(kbKeys.page(1, 5), detail(4));
+    const title = document.body.querySelector<HTMLTextAreaElement>("textarea")!;
+    title.value = "Sovuq zanjir: tekshiruv";
+    title.dispatchEvent(new Event("input"));
+    await flushPromises();
+    // Ctrl+S twice before the answer comes.
+    for (let i = 0; i < 2; i += 1) document.dispatchEvent(new KeyboardEvent("keydown", { key: "s", ctrlKey: true, bubbles: true }));
+    await flushPromises();
+    const saves = calls.filter((c) => c.method === "PATCH");
+    expect(saves).toHaveLength(1);
+    expect(saves[0]!.body).toMatchObject({ base_version: 3 });
+    (answer as (() => void) | null)?.();
+    await flushPromises();
+    wrapper.unmount();
+    document.body.innerHTML = "";
+  });
+});
+
+describe("SpacePage archive", () => {
+  it("Undo restores the space it archived, from the page it went to (it posted spaces/NaN/restore/)", async () => {
+    const calls = stubApi({
+      "GET knowledge/spaces/": () => json([{ id: 1, name: "SOP", emoji: "", color: "", page_count: 0, archived: false, audience_all: true, positions: [], can_manage: true }]),
+      "GET knowledge/spaces/1/tree/": () => json([]),
+      "GET knowledge/pages/": () => json({ count: 0, next: null, previous: null, results: [] }),
+      "POST knowledge/spaces/1/archive/": () => json({ id: 1 }),
+      "POST knowledge/spaces/1/restore/": () => json({ id: 1 }),
+    });
+    const app = await testApp("/c/1/knowledge/s/1");
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: "/c/:companyId/knowledge/s/:spaceId", name: "knowledge.space", component: { render: () => null } },
+        { path: "/:any(.*)*", component: { render: () => null } },
+      ],
+    });
+    await router.push("/c/1/knowledge/s/1");
+    const { default: SpacePage } = await import("../pages/SpacePage.vue");
+    const { wrapper } = mountWithProviders(SpacePage, { plugins: [app.pinia, router, i18n, [VueQueryPlugin, { queryClient: app.client }]] });
+    await flushPromises();
+    await flushPromises();
+    const DropdownMenu = (await import("@/components/DropdownMenu.vue")).default;
+    const items = wrapper.findAllComponents(DropdownMenu).flatMap((menu) => (menu.props() as { items: Array<{ label?: string; onSelect?: () => void }> }).items);
+    items.find((item) => item.label === en["knowledge.space.archive"])!.onSelect!();
+    await flushPromises();
+    const { confirmQueue, settleConfirm } = await import("@/components/useConfirm");
+    settleConfirm(confirmQueue.value.at(-1)!.id, { reason: "" });
+    await flushPromises();
+    await flushPromises();
+    // The page left the space: Undo runs from the Knowledge home.
+    expect(router.currentRoute.value.path).not.toContain("/s/1");
+    await toasts.at(-1)!.action!.onClick();
+    await flushPromises();
+    expect(calls.some((c) => c.method === "POST" && c.url.endsWith("knowledge/spaces/1/restore/"))).toBe(true);
+    wrapper.unmount();
+    document.body.innerHTML = "";
   });
 });

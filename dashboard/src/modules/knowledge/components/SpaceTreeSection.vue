@@ -87,7 +87,7 @@ async function move(change: TreeMove): Promise<void> {
         <span class="truncate">{{ space.name }}</span>
       </RouterLink>
       <span :class="['shrink-0 text-xs tabular-nums text-subtle', canManage && 'group-focus-within:hidden group-hover:hidden']">{{ space.counts.pages || "" }}</span>
-      <span v-if="canManage" class="hidden group-focus-within:block group-hover:block">
+      <span v-if="canManage" class="hidden group-focus-within:block group-hover:block pointer-coarse:block">
         <IconButton :icon="Plus" :label="t('knowledge.newPageIn', { space: space.name })" size="sm" :tooltip="false" :to="{ path: `${base}/new`, query: { space: String(space.id) } }" />
       </span>
     </div>

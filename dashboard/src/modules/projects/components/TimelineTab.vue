@@ -18,8 +18,9 @@ import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import { toast } from "@/components/useToast";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { rs, useRouteState } from "@/lib/useRouteState";
+import { useCompanyId } from "@/stores/company";
 
-import { scheduleCard, updateMilestone, useCompanyId, useRefreshProjects, useTimeline } from "../api";
+import { scheduleCard, updateMilestone, useRefreshProjects, useTimeline } from "../api";
 import { colorVar, declutterMilestones } from "../lib";
 import type { ProjectDetail } from "../types";
 

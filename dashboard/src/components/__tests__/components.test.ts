@@ -186,6 +186,19 @@ describe("ExtensionSlot", () => {
   });
 });
 
+describe("KpiCard money tooltip", () => {
+  it("shows the full amount in the tile's own currency (a dollar tile's tooltip said so‘m)", () => {
+    const card = mount(KpiCard, {
+      props: { label: "Cash in USD", value: "1700.00", format: "money", compact: true, currency: "USD" },
+      global: { plugins: plugins() },
+    });
+    const title = card.find(".kpi-value").attributes("title") ?? "";
+    expect(title).toMatch(/\$|USD/);
+    expect(title).not.toMatch(/so‘m|UZS/);
+    card.unmount();
+  });
+});
+
 describe("KpiStrip", () => {
   const items = (n: number) => Array.from({ length: n }, (_, i) => ({ label: `K${i}`, value: i, hint: "hint" }));
   const strip = (props: Record<string, unknown>) => mount(KpiStrip, { props, global: { plugins: plugins() } }).find(".kpi-strip");
@@ -240,6 +253,22 @@ describe("UiDialog", () => {
     expect(body.className).toMatch(/\bmin-h-0\b.*\boverflow-y-auto\b/);
     expect(content.querySelector("footer")!.className).toContain("shrink-0");
     wrapper.unmount();
+  });
+});
+
+describe("PersonCell links", () => {
+  it("links a name to the person only for people who may open People (others got the no-access page)", async () => {
+    const { manager } = await import("@/test/fixtures");
+    const person = { id: 31, name: "Madina Saidova", photo_url: null };
+    useSessionStore().me = me([manager(["tasks.view_all"], { id: 1 })]);
+    useCompanyStore().setCurrent(1);
+    const without = mount(PersonCell, { props: { person, link: true }, global: { plugins: plugins() } });
+    expect(without.find("a").exists()).toBe(false);
+    without.unmount();
+    useSessionStore().me = me([manager(["tasks.view_all", "members.view"], { id: 1 })]);
+    const allowed = mount(PersonCell, { props: { person, link: true }, global: { plugins: plugins() } });
+    expect(allowed.find("a").attributes("href")).toContain("/c/1/people/31");
+    allowed.unmount();
   });
 });
 
@@ -570,6 +599,38 @@ describe("names cut short", () => {
   });
 });
 
+describe("TextInput debounce", () => {
+  it("passes a search on once typing pauses, and at once on Enter (a request per key before)", async () => {
+    vi.useFakeTimers();
+    const updates: string[] = [];
+    // A v-model parent: the prop follows each update.
+    const wrapper = mount(TextInput, {
+      props: {
+        modelValue: "",
+        debounce: 300,
+        "onUpdate:modelValue": (value: string | null) => {
+          updates.push(value ?? "");
+          void wrapper.setProps({ modelValue: value });
+        },
+      },
+      global: { plugins: plugins() },
+    });
+    const input = wrapper.find("input");
+    for (const text of ["d", "do", "dor"]) await input.setValue(text);
+    expect(updates).toEqual([]);
+    vi.advanceTimersByTime(300);
+    expect(updates).toEqual(["dor"]);
+    await input.setValue("dori");
+    await input.trigger("keydown", { key: "Enter" });
+    expect(updates).toEqual(["dor", "dori"]);
+    await flushPromises();
+    // A change from outside (Back, a cleared filter) shows in the field.
+    await wrapper.setProps({ modelValue: "" });
+    expect((input.element as HTMLInputElement).value).toBe("");
+    wrapper.unmount();
+  });
+});
+
 describe("TreeList on touch", () => {
   it("shows its drag handles and keeps the finger's drag from scrolling the page", () => {
     const tree = mount(TreeList, {
@@ -579,6 +640,16 @@ describe("TreeList on touch", () => {
     const handles = tree.findAll("[data-tree-handle]");
     expect(handles).toHaveLength(2);
     for (const handle of handles) expect(handle.classes()).toEqual(expect.arrayContaining(["touch-none", "pointer-coarse:opacity-100"]));
+    tree.unmount();
+  });
+
+  it("shows each row's actions (the finance categories' menu), which only appeared on hover", () => {
+    const tree = mount(TreeList, {
+      props: { nodes: [{ id: 1, label: "Ijara" }] },
+      slots: { actions: () => h("button", { class: "row-menu" }, "…") },
+      global: { plugins: plugins() },
+    });
+    expect(tree.find(".row-menu").element.parentElement!.classList).toContain("pointer-coarse:opacity-100");
     tree.unmount();
   });
 });

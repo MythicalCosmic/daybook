@@ -5,7 +5,7 @@
  * manager's answer ("can't do it", "more time"). Each number opens that list. All work counts,
  * routines too: a manager looks at the branch, not at where the work came from.
  */
-import { useQueries } from "@tanstack/vue-query";
+import { useQueries, useQuery } from "@tanstack/vue-query";
 import { AlarmClock, CircleCheck, Hourglass, MessageCircleQuestion, Store } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
@@ -20,6 +20,8 @@ import { todayIn } from "@/lib/dates";
 import { useCompanyStore } from "@/stores/company";
 
 import { taskKeys, tasksApi } from "../api";
+import { viewLink } from "../filters";
+import type { TaskRow } from "../types";
 
 const props = defineProps<{ companyId: number; range?: Range; compare?: Range | null }>();
 const { t } = useI18n();
@@ -40,23 +42,38 @@ const summaries = useQueries({
     }),
   ),
 });
-/** "Can't do it" plus "more time" per branch (a backend without them: no number). */
-const answers = useQueries({
-  queries: computed(() =>
-    branches.value.map((branch) => ({
-      queryKey: [props.companyId, "tasks", "branch-answers", branch.id] as const,
-      queryFn: async ({ signal }: { signal: AbortSignal }) => {
-        const [blocked, extension] = await Promise.all([
-          tasksApi.list(props.companyId, { blocked: "true", branch: [String(branch.id)], page_size: 1 }, signal),
-          tasksApi.list(props.companyId, { extension: "true", branch: [String(branch.id)], page_size: 1 }, signal),
-        ]);
-        const known = (blocked.results[0]?.blocker ?? true) && (extension.results[0]?.extension ?? true);
-        return known ? { blocked: blocked.count, extension: extension.count } : null;
-      },
-      staleTime: 30_000,
-      retry: false,
-    })),
-  ),
+/**
+ * "Can't do it" plus "more time", counted per branch from two lists of the whole scope: two
+ * requests, not two per branch. No number for a branch when the backend ignores these filters (its
+ * rows aren't blocked) or when one page doesn't hold them all.
+ */
+const ANSWERS_PAGE = 200;
+const branchIds = computed(() => branches.value.map((branch) => branch.id));
+const answers = useQuery({
+  queryKey: computed(() => [props.companyId, "tasks", "branch-answers", branchIds.value] as const),
+  queryFn: async ({ signal }) => {
+    const scope = { branch: branchIds.value.map(String), page_size: ANSWERS_PAGE };
+    const [blocked, extension] = await Promise.all([
+      tasksApi.list(props.companyId, { ...scope, blocked: "true" }, signal),
+      tasksApi.list(props.companyId, { ...scope, extension: "true" }, signal),
+    ]);
+    const whole = blocked.results.length >= blocked.count && extension.results.length >= extension.count;
+    const known = blocked.results.every((row) => !!row.blocker) && extension.results.every((row) => !!row.extension);
+    if (!whole || !known) return null;
+    const perBranch = new Map(branchIds.value.map((id) => [id, { blocked: 0, extension: 0 }]));
+    const count = (rows: TaskRow[], field: "blocked" | "extension") => {
+      for (const row of rows) {
+        const entry = row.branch ? perBranch.get(row.branch.id) : undefined;
+        if (entry) entry[field] += 1;
+      }
+    };
+    count(blocked.results, "blocked");
+    count(extension.results, "extension");
+    return perBranch;
+  },
+  enabled: computed(() => branchIds.value.length > 0),
+  staleTime: 30_000,
+  retry: false,
 });
 
 const pending = computed(() => summaries.value.some((query) => query.isPending));
@@ -65,17 +82,16 @@ const failed = computed(() => summaries.value.find((query) => query.isError));
 
 const rows = computed(() => {
   const today = todayIn(company.timezone);
-  const base = `/c/${props.companyId}/tasks`;
   return branches.value.map((branch, index) => {
     const data = summaries.value[index]?.data;
-    const waiting = answers.value[index]?.data ?? null;
-    const scope = `branch=${branch.id}&routines=1`;
+    const waiting = answers.data.value?.get(branch.id) ?? null;
+    const link = (view: string) => viewLink(props.companyId, view, today, { branch: String(branch.id), routines: "1" });
     return {
       branch,
-      done: data ? { value: `${data.done_today}/${data.total_today}`, to: `${base}?sv=today&due_from=${today}&due_to=${today}&${scope}` } : null,
-      late: data ? { value: data.late_now, to: `${base}?sv=late&overdue=true&${scope}` } : null,
-      review: data ? { value: data.review, to: `${base}?sv=review&status=review&ordering=completed_at&${scope}` } : null,
-      answers: waiting ? { value: waiting.blocked + waiting.extension, to: waiting.blocked ? `${base}?sv=blocked&blocked=true&${scope}` : `${base}/reviews` } : null,
+      done: data ? { value: `${data.done_today}/${data.total_today}`, to: link("today") } : null,
+      late: data ? { value: data.late_now, to: link("late") } : null,
+      review: data ? { value: data.review, to: link("review") } : null,
+      answers: waiting ? { value: waiting.blocked + waiting.extension, to: waiting.blocked ? link("blocked") : `/c/${props.companyId}/tasks/reviews` } : null,
     };
   });
 });

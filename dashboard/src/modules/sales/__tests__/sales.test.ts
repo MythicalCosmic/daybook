@@ -422,3 +422,30 @@ describe("ShiftDrawer", () => {
     expect(post?.body).toEqual({ recount_cash: null, note: "" });
   });
 });
+
+describe("correcting a shift", () => {
+  it("keeps each method's receipt count (the server rebuilds every line it is sent)", async () => {
+    const calls = stub({
+      "GET sales/options/": () => json({ ...options(), methods: [{ id: 1, name: "Naqd", kind: "cash", is_active: true }, { id: 2, name: "Uzcard", kind: "card", is_active: true }] }),
+      "PATCH sales/shifts/42/payments/": () => json(shift()),
+    });
+    const counted = shift({ payments: shift().payments.map((p, index) => ({ ...p, receipts: index ? 37 : 52 })) });
+    const app = await testApp("/c/1/sales/shifts?shift=42");
+    const { default: CorrectDialog } = await import("../components/CorrectDialog.vue");
+    const { wrapper } = mountWithProviders(CorrectDialog, { plugins: app.plugins, props: { open: true, shift: counted } });
+    await flushPromises();
+    await flushPromises();
+    const reason = document.body.querySelector<HTMLInputElement>("[role=dialog] input[maxlength=\"300\"]")!;
+    reason.value = "Uzcard terminal hisoboti boshqacha";
+    reason.dispatchEvent(new Event("input"));
+    await flushPromises();
+    const submit = [...document.body.querySelectorAll<HTMLButtonElement>("[role=dialog] button")].at(-1)!;
+    submit.click();
+    await flushPromises();
+    await flushPromises();
+    const sent = calls.find((c) => c.method === "PATCH" && c.url.includes("/shifts/42/payments/"));
+    expect(sent?.body).toMatchObject({ payments: [{ method_id: 1, receipts: 52 }, { method_id: 2, receipts: 37 }] });
+    wrapper.unmount();
+    document.body.innerHTML = "";
+  });
+});

@@ -105,7 +105,8 @@ const columns = computed<TableColumn<TeamRow>[]>(() => [
 const tone = (value: number | null) => (value === null ? "neutral" : value >= 90 ? "success" : value >= 75 ? "warning" : "danger");
 const TONE_TEXT = { neutral: "text-muted", success: "text-success", warning: "text-warning", danger: "text-danger" } as const;
 const delta = (row: TeamRow) => (row.on_time_percent !== null && row.previous_on_time_percent !== null ? row.on_time_percent - row.previous_on_time_percent : null);
-const exportParams = computed(() => ({ ...periodParams(period.value), group_by: groupBy.value }));
+// The same branches as the numbers on the page (the exporter narrows to them; it exported the whole company).
+const exportParams = computed(() => ({ ...periodParams(period.value), group_by: groupBy.value, branch: branches.value.length ? branches.value : undefined }));
 
 const groupOptions = computed(() => [
   { value: "member" as const, label: t("reports.group.member"), icon: UserRound, iconOnly: isPhone.value },

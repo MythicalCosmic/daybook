@@ -117,12 +117,22 @@ async function saveView(input: { name: string; shared: boolean }): Promise<void>
   patchQuery(router, { sv: String(created.id) });
 }
 
-// The first visit opens "All open" with its chips showing.
-onMounted(() => {
+// The first visit opens "All open" with its chips showing. The list, board or calendar waits until
+// those chips are in the URL, so it asks the server once, not once without them and again with them.
+function hasViewInUrl(): boolean {
   const filterKeys = defs.value.flatMap((def) => (def.type === "date-range" ? (def.params ?? []) : [def.key]));
-  const hasAny = filterKeys.some((key) => route.query[key] !== undefined) || route.query.sv !== undefined || route.query.q !== undefined;
-  if (!hasAny) patchQuery(router, builtins.value[0]!.params);
+  return filterKeys.some((key) => route.query[key] !== undefined) || route.query.sv !== undefined || route.query.q !== undefined;
+}
+const landing = ref(!hasViewInUrl());
+onMounted(() => {
+  if (landing.value) patchQuery(router, builtins.value[0]!.params);
 });
+watch(
+  () => route.query,
+  () => {
+    if (landing.value && hasViewInUrl()) landing.value = false;
+  },
+);
 
 // How long the oldest one-off work has waited for a check (R2 T32): the queue is oldest first.
 const reviews = useReviews();
@@ -148,7 +158,7 @@ const kpis = computed(() => {
       hint: t(`tasks.kpi.doneTodayHint${counts}`),
     },
     // The late list counts the same work as the number: with routine work when it's in.
-    { id: "late", label: t("tasks.kpi.lateNow"), value: data?.late_now ?? null, to: `/c/${cid}/tasks?sv=late&overdue=true${withRoutines.value ? "&routines=1" : ""}`, hint: t(`tasks.kpi.lateNowHint${counts}`) },
+    { id: "late", label: t("tasks.kpi.lateNow"), value: data?.late_now ?? null, to: `/c/${cid}/tasks?sv=late&overdue=true${routinesAsked.value ? "&routines=1" : ""}`, hint: t(`tasks.kpi.lateNowHint${counts}`) },
     { id: "review", label: t("tasks.kpi.review"), value: data?.review ?? null, to: `/c/${cid}/tasks/reviews`, hint: reviewHint.value ?? t(`tasks.kpi.reviewHint${counts}`) },
     {
       id: "on_time",
@@ -269,7 +279,7 @@ const viewOptions = computed(() => [
         </template>
         <!-- Phones: search, one Filters button (the chips live in a sheet), the view switch. -->
         <template v-else>
-          <TextInput v-model="search" :icon="Search" clearable :placeholder="t('tasks.searchPlaceholder')" class="min-w-0 flex-1" />
+          <TextInput v-model="search" :icon="Search" clearable :debounce="300" :placeholder="t('tasks.searchPlaceholder')" class="min-w-0 flex-1" />
           <UiButton :icon="ListFilter" :aria-label="t('tasks.filters.title')" data-testid="phone-filters" @click="filtersOpen = true">
             <span v-if="filters.active.value + (routinesAsked ? 1 : 0)" class="tabular-nums">{{ filters.active.value + (routinesAsked ? 1 : 0) }}</span>
           </UiButton>
@@ -284,9 +294,11 @@ const viewOptions = computed(() => [
         </div>
       </BottomSheet>
 
-      <TasksTable v-if="view === 'table'" :state="table" :params="params" :filtered="filtered" :active-id="openId" @open="open" @clear-filters="filters.clear(), (search = '')" @include-routines="withRoutines = true" />
-      <TasksBoard v-else-if="view === 'board'" :params="params" @open="open" />
-      <TasksCalendar v-else :params="params" @open="open" />
+      <template v-if="!landing">
+        <TasksTable v-if="view === 'table'" :state="table" :params="params" :filtered="filtered" :active-id="openId" @open="open" @clear-filters="filters.clear(), (search = '')" @include-routines="withRoutines = true" />
+        <TasksBoard v-else-if="view === 'board'" :params="params" @open="open" />
+        <TasksCalendar v-else :params="params" @open="open" />
+      </template>
     </div>
 
     <TaskDrawer />

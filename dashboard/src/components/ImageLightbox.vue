@@ -10,6 +10,8 @@ import { DialogContent, DialogDescription, DialogOverlay, DialogPortal, DialogRo
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
+import { useBackCloses } from "@/lib/backStack";
+
 export interface LightboxImage {
   src: string;
   alt?: string;
@@ -43,6 +45,9 @@ watch([index, open], () => {
   reset();
   loaded.value = false;
 });
+
+// Telegram's Back closes the photo first, not the page under it.
+useBackCloses(open, () => (open.value = false));
 
 function go(step: number): void {
   if (!many.value) return;

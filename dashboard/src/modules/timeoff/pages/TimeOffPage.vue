@@ -6,7 +6,7 @@
  * branch and filters live in the URL.
  */
 import { CalendarDays, CalendarPlus, Check, ChevronLeft, ChevronRight, CircleDot, List, PartyPopper, Rows3, TreePalm, X } from "@lucide/vue";
-import { computed, ref, watch } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
@@ -112,7 +112,7 @@ const defs = computed<FilterDef[]>(() => [
 const filters = useUrlFilters(defs);
 const search = useRouteState("q", rs.string(""));
 const table = useDataTable({ id: "timeoff.list", url: true, pageSize: 50, ordering: "-first_day" });
-watch([() => filters.params.value, search, branchIds], () => table.resetPage(), { deep: true });
+table.resetPageOn(() => [filters.params.value, search.value, branchIds.value]);
 const listParams = computed(() => ({
   ...(filters.params.value as Record<string, unknown>),
   q: search.value || undefined,

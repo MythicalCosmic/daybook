@@ -18,9 +18,9 @@ import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
 import { todayIn } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyStore } from "@/stores/company";
 
-import { addExpense, useCompanyId, useExpenseOptions, useRefreshProjects } from "../api";
+import { addExpense, useExpenseOptions, useRefreshProjects } from "../api";
 import type { ProjectDetail } from "../types";
 
 const open = defineModel<boolean>("open", { default: false });

@@ -9,7 +9,7 @@ import { computed, toValue, type MaybeRefOrGetter } from "vue";
 
 import { http, ownerPath } from "@/api/http";
 import { keys as shellKeys, moduleKey, qk } from "@/api/keys";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId } from "@/stores/company";
 
 import type {
   AttendanceSettings,
@@ -197,11 +197,6 @@ export const attendanceKeys = {
 };
 
 // ─── Queries ────────────────────────────────────────────────────────────────
-
-export function useCompanyId() {
-  const company = useCompanyStore();
-  return computed(() => company.currentId ?? 0);
-}
 
 export function useBoard(params: MaybeRefOrGetter<{ date: string | null; branch: number[] }>) {
   const companyId = useCompanyId();

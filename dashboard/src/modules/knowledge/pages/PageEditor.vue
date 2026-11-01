@@ -25,7 +25,7 @@ import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { useHotkey } from "@/core/hotkeys";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId } from "@/stores/company";
 
 import { knowledgeApi, usePage, usePutPage, useRefresh, useSpaces, useTree } from "../api";
 import EmojiPicker from "../components/EmojiPicker.vue";
@@ -37,11 +37,10 @@ const { t } = useI18n();
 const fmt = useFormat();
 const route = useRoute();
 const router = useRouter();
-const company = useCompanyStore();
 const confirm = useConfirm();
 const refresh = useRefresh();
 const putPage = usePutPage();
-const cid = computed(() => company.currentId ?? 0);
+const cid = useCompanyId();
 const base = computed(() => `/c/${cid.value}/knowledge`);
 
 const pageId = computed(() => (route.params.pageId ? Number(route.params.pageId) : null));
@@ -52,6 +51,12 @@ const spaces = useSpaces();
 const draft = reactive({ title: "", emoji: "", body: "", requireAck: false, note: "", reread: false, notify: true, space: 0, parent: 0 });
 const baseline = ref("");
 const loaded = ref(false);
+/**
+ * The version this draft started from. The server refuses a save over a newer one (a colleague's);
+ * reading it from the live page query, which a refetch moves to the colleague's version, let the
+ * save through and silently overwrote their edit.
+ */
+let baseVersion: number | null = null;
 // Set by `load`: the editor's next "ready" is that document, normalised, and becomes the baseline.
 let awaitingEditor = false;
 const saving = ref(false);
@@ -65,6 +70,7 @@ const page = computed<PageDetail | null>(() => query.data.value ?? null);
 const published = computed(() => !!page.value?.published);
 
 function load(from: PageDetail | null): void {
+  baseVersion = from?.version ?? null;
   if (from) {
     draft.title = from.title;
     draft.emoji = from.emoji;
@@ -139,6 +145,8 @@ async function upload(file: File) {
 }
 
 async function save(options: { quiet?: boolean } = {}): Promise<PageDetail | null> {
+  // ⌘S pressed twice, or during Publish: one save at a time (a new page was created twice).
+  if (saving.value) return null;
   if (!draft.title.trim()) {
     toast.error(t("knowledge.editor.needTitle"));
     titleEl.value?.focus();
@@ -167,12 +175,13 @@ async function save(options: { quiet?: boolean } = {}): Promise<PageDetail | nul
         body: draft.body,
         require_ack: draft.requireAck,
         note: draft.note,
-        base_version: page.value?.version ?? null,
+        base_version: baseVersion,
         reread: published.value && draft.requireAck && draft.reread,
         notify: draft.notify,
       });
     }
     putPage(result);
+    baseVersion = result.version;
     draft.note = "";
     draft.reread = false;
     baseline.value = snapshot();

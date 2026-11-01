@@ -31,7 +31,7 @@ import { companyUrl as linkInCompany } from "@/lib/links";
 import { applyQueryPatch, closeQueryKey } from "@/lib/useRouteState";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyStore } from "@/stores/company";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -41,7 +41,7 @@ const company = useCompanyStore();
 const fmt = useFormat();
 const confirm = useConfirm();
 
-const companyId = computed(() => company.currentId ?? 0);
+const companyId = useCompanyId();
 const isOpen = computed(() => route.query.inbox !== undefined);
 const tab = computed<"needs" | "notifications">(() => (route.query.inbox === "notifications" ? "notifications" : "needs"));
 const notesFilter = ref<"unread" | "all">("unread");
@@ -270,7 +270,7 @@ const unreadBadge = computed(() => (notes.data.value && notesFilter.value === "u
                         :id="`reason-${itemKey(item)}`"
                         v-model="reason"
                         rows="2"
-                        class="w-full resize-none rounded-input border border-line bg-surface px-2.5 py-2 text-base outline-none transition-shadow focus:border-primary focus:shadow-[0_0_0_3px_var(--c-accent-soft)]"
+                        class="w-full resize-none rounded-input border border-line bg-surface px-2.5 py-2 text-base outline-none transition-shadow focus:border-primary focus:shadow-[0_0_0_3px_var(--c-accent-soft)] pointer-coarse:text-md"
                         :placeholder="t('common.reasonPlaceholder')"
                         autofocus
                       />

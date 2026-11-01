@@ -22,9 +22,9 @@ import UiDrawer from "@/components/UiDrawer.vue";
 import { toast } from "@/components/useToast";
 import { todayIn } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyStore } from "@/stores/company";
 
-import { createSchedule, updateSchedule, useCompanyId, useRefresh } from "../api";
+import { createSchedule, updateSchedule, useRefresh } from "../api";
 import { slotColor, spanMinutes } from "../lib";
 import type { Schedule, ScheduleInput, ScheduleKind } from "../types";
 

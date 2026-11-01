@@ -8,7 +8,7 @@ import { computed } from "vue";
 
 import { http, ownerPath } from "@/api/http";
 import { qk } from "@/api/keys";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId } from "@/stores/company";
 
 import type { GroupPatch, GroupsList, TelegramGroup } from "./types";
 
@@ -19,11 +19,6 @@ export const updateGroup = (cid: number, id: number, patch: GroupPatch) => http.
 export const disconnectGroup = (cid: number, id: number) => http.post<TelegramGroup>(ownerPath(cid, `groups/${id}/disconnect/`));
 
 export const groupKeys = { list: (cid: number) => qk(cid, MODULE, "list") };
-
-function useCompanyId() {
-  const company = useCompanyStore();
-  return computed(() => company.currentId ?? 0);
-}
 
 export function useGroups() {
   const cid = useCompanyId();

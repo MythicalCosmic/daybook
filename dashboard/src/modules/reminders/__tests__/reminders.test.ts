@@ -4,11 +4,14 @@ import "@/core/modules";
 import { flushPromises } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import StickyActionBar from "@/components/StickyActionBar.vue";
 import { mergeModuleMessages } from "@/i18n";
 import { json } from "@/test/fixtures";
 import { mountWithProviders, testApp } from "@/test/plugins";
 
 import { reminderKeys, remindersApi } from "../api";
+import DefaultsPanel from "../components/DefaultsPanel.vue";
+import PolicyForm from "../components/PolicyForm.vue";
 import PolicyList from "../components/PolicyList.vue";
 import TelegramBubble from "../components/TelegramBubble.vue";
 import en from "../i18n/en.json";
@@ -242,6 +245,46 @@ describe("PolicyList", () => {
     await flushPromises();
     expect(document.body.querySelector("[role=dialog]")?.textContent).toContain(en["reminders.editor.newTitle"]);
     expect(app.router.currentRoute.value.query.new).toBeUndefined();
+    wrapper.unmount();
+    document.body.innerHTML = "";
+  });
+});
+
+describe("DefaultsPanel", () => {
+  it("keeps the owner's unsaved changes when a task elsewhere refetches the policy", async () => {
+    mergeModuleMessages("reminders", { en, ru: en, uz: en });
+    let openTasks = 1;
+    const defaults = (): Policy => ({
+      id: 1,
+      name: "Default",
+      is_default: true,
+      heads_up_minutes: 15,
+      repeat_every_minutes: 20,
+      max_reminders: 8,
+      escalate_after: 3,
+      quiet_from: "22:00",
+      quiet_until: "08:00",
+      quiet_days: [],
+      snooze_minutes: 15,
+      max_snoozes: 2,
+      replace_previous: true,
+      texts: [],
+      usage: { routines: 13, open_tasks: openTasks },
+      updated_at: "2026-11-01T08:00:00Z",
+    });
+    stub({ "GET reminder-policies/": () => json([defaults()]) });
+    const app = await testApp("/c/1/settings/reminders.defaults");
+    const { wrapper } = mountWithProviders(DefaultsPanel, { plugins: app.plugins });
+    await flushPromises();
+    const form = () => wrapper.findComponent(PolicyForm);
+    form().vm.$emit("update:modelValue", { ...form().props("modelValue"), repeat_every_minutes: 45 });
+    await flushPromises();
+    // A task closes in a branch: the module refetches, and the policy's usage count moved.
+    openTasks = 2;
+    await app.client.invalidateQueries();
+    await flushPromises();
+    expect(form().props("modelValue").repeat_every_minutes).toBe(45);
+    expect(wrapper.findComponent(StickyActionBar).props("show")).toBe(true);
     wrapper.unmount();
     document.body.innerHTML = "";
   });

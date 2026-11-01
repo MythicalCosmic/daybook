@@ -26,9 +26,9 @@ import { toast } from "@/components/useToast";
 import WizardSteps from "@/components/WizardSteps.vue";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyStore } from "@/stores/company";
 
-import { getOffboardPreview, offboardPerson, peopleKeys, useCompanyId, usePerson, usePersonMutation } from "../api";
+import { getOffboardPreview, offboardPerson, peopleKeys, usePerson, usePersonMutation } from "../api";
 import OffboardField from "../components/OffboardField.vue";
 import type { OffboardInput, OffboardReason } from "../types";
 

@@ -22,9 +22,9 @@ import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { useNow } from "@/lib/useNow";
 import { rs, useRouteState } from "@/lib/useRouteState";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyStore } from "@/stores/company";
 
-import { deleteTime, startTimer, stopTimer, useCompanyId, useRefreshProjects, useTimeWeek } from "../api";
+import { deleteTime, startTimer, stopTimer, useRefreshProjects, useTimeWeek } from "../api";
 import { colorVar, hhmm } from "../lib";
 import type { ProjectDetail, TimeEntry } from "../types";
 import LogTimeDialog from "./LogTimeDialog.vue";
@@ -69,7 +69,10 @@ function elapsed(startedAt: string): string {
   return hhmm(Math.max(0, Math.floor((now.value - new Date(startedAt).getTime()) / 60000)));
 }
 
+const timerBusy = ref(false);
 async function toggleTimer(): Promise<void> {
+  if (timerBusy.value) return;
+  timerBusy.value = true;
   try {
     if (myTimer.value) {
       const entry = await stopTimer(companyId.value);
@@ -81,6 +84,8 @@ async function toggleTimer(): Promise<void> {
     void refresh();
   } catch {
     // The HTTP layer showed why.
+  } finally {
+    timerBusy.value = false;
   }
 }
 
@@ -110,7 +115,7 @@ const exportParams = computed(() => ({ project: props.project.id, from: weekStar
       <UiButton v-if="!isThisWeek" size="sm" variant="ghost" @click="week = null">{{ t("projects.time.thisWeek") }}</UiButton>
       <span class="flex-1" />
       <ExportButton kind="projects.time" :params="exportParams" size="sm" variant="ghost" />
-      <UiButton v-if="canTrack" size="sm" :variant="myTimer ? 'primary' : 'secondary'" :icon="myTimer ? Square : Play" @click="toggleTimer">
+      <UiButton v-if="canTrack" size="sm" :variant="myTimer ? 'primary' : 'secondary'" :icon="myTimer ? Square : Play" :loading="timerBusy" @click="toggleTimer">
         {{ myTimer ? t("projects.time.stopAt", { time: elapsed(myTimer.started_at) }) : t("projects.time.startProject") }}
       </UiButton>
       <UiButton size="sm" variant="primary" :icon="Plus" @click="logOn(null)">{{ t("projects.time.log") }}</UiButton>

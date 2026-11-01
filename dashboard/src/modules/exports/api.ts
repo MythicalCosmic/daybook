@@ -10,7 +10,7 @@ import { http, ownerPath } from "@/api/http";
 import { moduleKey, qk } from "@/api/keys";
 import type { ExportJob, Exporter, Page } from "@/api/types";
 import { exportsApi, type ExportRequest } from "@/lib/useExport";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId } from "@/stores/company";
 
 export const MODULE = "exports";
 /** How often the list refreshes while a file is still being built. */
@@ -39,11 +39,6 @@ export const exportKeys = {
 };
 
 export const isBuilding = (job: Pick<ExportJob, "status">) => job.status === "pending" || job.status === "running";
-
-function useCompanyId() {
-  const company = useCompanyStore();
-  return computed(() => company.currentId ?? 0);
-}
 
 /** The list; while any file is still being built it refreshes every two seconds. */
 export function useExports(params: MaybeRefOrGetter<{ page: number; page_size: number }>) {

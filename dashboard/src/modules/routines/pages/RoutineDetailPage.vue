@@ -136,7 +136,7 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
         <span v-if="data.checklist.length" class="inline-flex items-center gap-1"><ListChecks :size="14" />{{ t("routines.steps", { n: data.checklist.length }, data.checklist.length) }}</span>
         <span v-if="data.reminder_policy" class="inline-flex items-center gap-1"><CalendarClock :size="14" />{{ data.reminder_policy.name }}</span>
         <span class="flex-1" />
-        <DateRangePicker v-model="period" align="end" />
+        <DateRangePicker v-model="period" align="end" :compare="false" />
       </div>
 
       <InlineAlert v-if="lateToday" tone="warning" :icon="CalendarClock" :title="lateToday.title" data-testid="late-today">

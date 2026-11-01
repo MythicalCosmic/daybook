@@ -46,11 +46,6 @@ export function moveData(data: readonly TreeNodeData[], move: { id: number; pare
   return insert(without, null);
 }
 
-/** How many pages a tree holds. */
-export function countNodes(data: readonly TreeNodeData[]): number {
-  return data.reduce((sum, node) => sum + 1 + countNodes(node.children), 0);
-}
-
 /** Every page of a tree with its depth, top to bottom (for "put it under…" pickers). */
 export function flatten(data: readonly TreeNodeData[], depth = 0): Array<{ node: TreeNodeData; depth: number }> {
   return data.flatMap((node) => [{ node, depth }, ...flatten(node.children, depth + 1)]);
@@ -66,11 +61,6 @@ export function normalizeBody(html: string): string {
 
 export function displayTitle(page: Pick<PageRow, "emoji" | "title">): string {
   return `${page.emoji ? `${page.emoji} ` : ""}${page.title}`;
-}
-
-export function readRatio(read: ReadCount | null | undefined): number {
-  if (!read || !read.total) return 0;
-  return read.read / read.total;
 }
 
 /** The tone of a read progress: green when everyone read it, ochre past half, red below. */

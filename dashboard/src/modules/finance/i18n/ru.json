@@ -317,6 +317,7 @@
   "finance.overview.firstBody": "Начните с того, сколько сегодня лежит в каждой кассе, на счёте и карте. Дальше сюда попадают все продажи, расходы и долги.",
   "finance.overview.firstTitle": "Давайте наладим учёт",
   "finance.overview.included": "включено",
+  "finance.overview.notCounted": "{amounts}: не учтено, курса ещё нет",
   "finance.overview.income": "Доход за месяц",
   "finance.overview.moneyIn": "Поступления",
   "finance.overview.moneyOut": "Выплаты",

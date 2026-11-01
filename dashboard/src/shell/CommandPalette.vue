@@ -67,6 +67,7 @@ import { hasExtension } from "@/core/extensions";
 import { modules, type Command, type CommandCtx } from "@/core/modules";
 import type { NavGroup } from "@/core/nav";
 import { allLanguages, loadAllLanguages, loadModuleTitles } from "@/i18n";
+import { useBackCloses } from "@/lib/backStack";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useCompanyStore } from "@/stores/company";
 import { usePaletteStore } from "@/stores/palette";
@@ -424,6 +425,8 @@ async function select(value: unknown): Promise<void> {
 function onOpenChange(open: boolean): void {
   if (!open) palette.hide();
 }
+// Telegram's Back closes the palette first.
+useBackCloses(() => palette.open, () => palette.hide());
 </script>
 
 <template>

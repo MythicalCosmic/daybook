@@ -62,7 +62,7 @@ const defs = computed<FilterDef[]>(() => [
 ]);
 const filters = useUrlFilters(defs);
 const table = useDataTable({ id: "finance.debts", url: true });
-watch([() => filters.params.value, search, direction], () => table.resetPage(), { deep: true });
+table.resetPageOn(() => [filters.params.value, search.value, direction.value]);
 
 const params = computed(() => ({ direction: direction.value, ...filters.params.value, ...(search.value ? { q: search.value } : {}), ...table.params.value }));
 const debts = useDebts(params);
