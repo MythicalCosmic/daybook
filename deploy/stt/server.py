@@ -3,8 +3,9 @@
 The backend sends voice messages here (`AI_SPEECH_URL=http://stt:8000/v1`) the same way it would
 send them to a hosted provider, so switching to OpenAI or Groq is a matter of settings:
 
-    POST /v1/audio/transcriptions   multipart: file, [model], [language], [prompt], [response_format]
-    GET  /health                    {"status": "ok" | "loading" | "error", "models": {...}}
+    POST /v1/audio/transcriptions  multipart: file, [model], [language], [prompt],
+                                   [response_format]
+    GET  /health                   {"status": "ok" | "loading" | "error", "models": {...}}
 
 Whisper runs with CTranslate2 (faster-whisper) on the CPU. Stock Whisper is weak at Uzbek, so a
 language can have its own fine-tuned model: with STT_MODELS_BY_LANGUAGE="uz=<model>", a request
@@ -49,7 +50,7 @@ PROMPT_MAX = 600  # characters; Whisper reads ~224 tokens of prompt at most
 
 
 def _by_language(raw: str) -> dict[str, str]:
-    """"uz=org/model, ru=other/model" -> {"uz": "org/model", "ru": "other/model"}."""
+    """ "uz=org/model, ru=other/model" -> {"uz": "org/model", "ru": "other/model"}."""
     pairs = (item.split("=", 1) for item in raw.split(",") if "=" in item)
     return {lang.strip().lower(): name.strip() for lang, name in pairs if name.strip()}
 
@@ -156,7 +157,10 @@ async def transcriptions(request: Request):
                 return _error(400, "Could not read the audio.")
     log.info(
         "transcribed %.1f s of %s with %s in %.1f s",
-        result["duration"], result["language"], name, time.monotonic() - started,
+        result["duration"],
+        result["language"],
+        name,
+        time.monotonic() - started,
     )
     if response_format == "text":
         return PlainTextResponse(result["text"])
