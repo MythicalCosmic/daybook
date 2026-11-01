@@ -597,3 +597,17 @@ describe("PersonMonth", () => {
     wrapper.unmount();
   });
 });
+
+describe("wording", () => {
+  it("says in Russian that one person is late (the verb agrees)", async () => {
+    const { i18n, setLanguage } = await import("@/i18n");
+    const ru = (await import("../i18n/ru.json")).default;
+    const uz = (await import("../i18n/uz.json")).default;
+    mergeModuleMessages("attendance", { en, ru, uz });
+    setLanguage("ru");
+    expect(i18n.global.t("attendance.kpi.notYetHint", { n: 1 }, 1)).toBe("1 уже опаздывает");
+    expect(i18n.global.t("attendance.kpi.notYetHint", { n: 5 }, 5)).toBe("5 уже опаздывают");
+    setLanguage("en");
+    expect(i18n.global.t("attendance.kpi.notYetHint", { n: 1 }, 1)).toBe("1 past their start");
+  });
+});

@@ -173,7 +173,7 @@ const columns = computed<TableColumn<ExportJob>[]>(() => [
             <div class="mt-2 flex flex-wrap items-center gap-2">
               <StatusPill size="sm" :tone="TONES[row.status]" :live="isBuilding(row)" :label="t(`exports.status.${row.status}`)" />
               <RelativeTime :value="row.created_at" class="text-xs text-subtle" />
-              <span v-if="row.rows !== null" class="text-xs text-subtle">· {{ t("exports.rowsCount", { n: fmt.number(row.rows) }) }}</span>
+              <span v-if="row.rows !== null" class="text-xs text-subtle">· {{ t("exports.rowsCount", { n: fmt.number(row.rows) }, row.rows) }}</span>
             </div>
             <p v-if="row.error" class="mt-1.5 text-xs text-danger">{{ row.error }}</p>
           </div>

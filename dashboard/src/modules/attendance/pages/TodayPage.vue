@@ -101,7 +101,7 @@ const kpis = computed(() => {
       id: "missing",
       label: t("attendance.state.not_yet"),
       value: totals.not_yet,
-      hint: !totals.not_yet ? undefined : overdue.value ? t("attendance.kpi.notYetHint", { n: overdue.value }) : t("attendance.kpi.notYetSoon"),
+      hint: !totals.not_yet ? undefined : overdue.value ? t("attendance.kpi.notYetHint", { n: overdue.value }, overdue.value) : t("attendance.kpi.notYetSoon"),
     },
     { id: "absent", label: t("attendance.kpi.absent"), value: totals.absent, hint: totals.absent && isToday.value ? t("attendance.kpi.absentHint") : undefined },
     {

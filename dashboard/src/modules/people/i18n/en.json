@@ -134,6 +134,7 @@
   "people.field.branches": "Branches",
   "people.field.homeBranch": "Home branch",
   "people.field.home_branch": "Home branch",
+  "people.field.department": "Department",
   "people.field.language": "Bot language",
   "people.field.permissions": "Permissions",
   "people.field.is_active": "Visible",

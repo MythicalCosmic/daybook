@@ -119,7 +119,7 @@ async function archive(): Promise<void> {
   const id = page.value.id;
   const answer = await confirm({
     title: t("knowledge.page.archiveTitle", { title: page.value.title }),
-    message: page.value.children.length ? t("knowledge.page.archiveBodyChildren", { n: page.value.children.length }) : t("knowledge.page.archiveBody"),
+    message: page.value.children.length ? t("knowledge.page.archiveBodyChildren", { n: page.value.children.length }, page.value.children.length) : t("knowledge.page.archiveBody"),
     confirmLabel: t("knowledge.page.archive"),
     tone: "danger",
   });

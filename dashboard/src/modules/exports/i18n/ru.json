@@ -18,7 +18,7 @@
   "exports.sensitive": "Конфиденциально",
   "exports.sensitiveHint": "Содержит зарплаты, документы или суммы по сотрудникам",
   "exports.wholeList": "Весь список",
-  "exports.rowsCount": "строк: {n}",
+  "exports.rowsCount": "{n} строка | {n} строки | {n} строк",
   "exports.param.since": "С {day}",
   "exports.param.until": "По {day}",
   "exports.param.search": "Поиск «{text}»",

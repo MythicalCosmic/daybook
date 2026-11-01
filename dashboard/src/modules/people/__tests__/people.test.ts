@@ -381,3 +381,23 @@ describe("RolesPage", () => {
     expect(patches).toEqual(["roles/2/", "roles/3/", "roles/3/"]);
   });
 });
+
+describe("wording", () => {
+  it("names the department in a person's history in every language", () => {
+    for (const dictionary of [en, ru, uz] as Array<Record<string, string>>) expect(dictionary["people.field.department"]).toBeTruthy();
+  });
+});
+
+describe("download names", () => {
+  it("are written in the person's language, not hard-coded in English", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { dirname, join } = await import("node:path");
+    const { fileURLToPath } = await import("node:url");
+    const here = dirname(fileURLToPath(import.meta.url));
+    for (const file of ["pages/TeamPage.vue", "components/PersonOverviewTab.vue"]) {
+      const source = readFileSync(join(here, "..", file), "utf8");
+      expect(source, file).not.toMatch(/[^:]csv-name="/);
+      expect(source, file).not.toMatch(/filename: `[a-z-]+-/);
+    }
+  });
+});

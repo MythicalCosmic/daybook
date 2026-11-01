@@ -235,3 +235,17 @@ describe("PersonTimeOffTab", () => {
     expect(wrapper.text()).not.toContain("Record time off");
   });
 });
+
+describe("download names", () => {
+  it("are written in the person's language, not hard-coded in English", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { dirname, join } = await import("node:path");
+    const { fileURLToPath } = await import("node:url");
+    const here = dirname(fileURLToPath(import.meta.url));
+    for (const file of ["pages/TimeOffPage.vue"]) {
+      const source = readFileSync(join(here, "..", file), "utf8");
+      expect(source, file).not.toMatch(/[^:]csv-name="/);
+      expect(source, file).not.toMatch(/filename: `[a-z-]+-/);
+    }
+  });
+});

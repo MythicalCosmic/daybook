@@ -27,6 +27,8 @@
   "settings.panel.reminders.defaults": "Напоминания",
   "settings.panel.reminders.defaults.hint": "Правило напоминаний по умолчанию",
   "settings.panel.reminders.defaults.description": "Правило напоминаний по умолчанию: ему следуют все регулярные и разовые задачи без собственного правила.",
+  "settings.panel.tasks.hint": "Проверка выполненной работы, срок ожидания",
+  "settings.panel.tasks.description": "Что происходит, когда сотрудник выполняет задачу, и сколько выполненная работа ждёт проверки.",
   "settings.panel.projects.hint": "Колонки, еженедельный отчёт, риск",
   "settings.panel.projects.description": "С чего начинается каждая новая доска, напоминание о еженедельном отчёте и когда проект считается под угрозой.",
   "settings.panel.sales": "Правила продаж",

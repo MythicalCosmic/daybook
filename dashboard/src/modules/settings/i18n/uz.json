@@ -27,6 +27,8 @@
   "settings.panel.reminders.defaults": "Eslatmalar",
   "settings.panel.reminders.defaults.hint": "Asosiy eslatma qoidasi",
   "settings.panel.reminders.defaults.description": "Asosiy eslatma qoidasi: o‘z qoidasi bo‘lmagan har bir muntazam vazifa va vazifa unga amal qiladi.",
+  "settings.panel.tasks.hint": "Bajarilgan ishni tekshirish, qancha kutishi",
+  "settings.panel.tasks.description": "Kimdir vazifani bajarganda nima bo‘lishi va bajarilgan ish tekshiruvni qancha kutishi.",
   "settings.panel.projects.hint": "Boshlang‘ich ro‘yxatlar, haftalik hisobot, xavf",
   "settings.panel.projects.description": "Har bir yangi doska nima bilan boshlanishi, haftalik hisobot eslatmasi va loyiha qachon xavf ostida hisoblanishi.",
   "settings.panel.sales": "Savdo qoidalari",

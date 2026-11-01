@@ -487,3 +487,15 @@ describe("SpacePage archive", () => {
     document.body.innerHTML = "";
   });
 });
+
+describe("wording", () => {
+  it("says one page inside, not one pages", async () => {
+    const { i18n, setLanguage } = await import("@/i18n");
+    const ru = (await import("../i18n/ru.json")).default;
+    const uz = (await import("../i18n/uz.json")).default;
+    mergeModuleMessages("knowledge", { en, ru, uz });
+    setLanguage("en");
+    expect(i18n.global.t("knowledge.page.archiveBodyChildren", { n: 1 }, 1)).toContain("the page inside it");
+    expect(i18n.global.t("knowledge.page.archiveBodyChildren", { n: 4 }, 4)).toContain("the 4 pages inside it");
+  });
+});

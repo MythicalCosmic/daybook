@@ -219,7 +219,7 @@ async function savePin(): Promise<void> {
               :retry="() => receipts.refetch()"
               :empty-title="state === 'unread' ? t('comms.detail.allReadTitle') : t('comms.detail.noneReadTitle')"
               :empty-description="state === 'unread' ? t('comms.detail.allReadBody') : t('comms.detail.noneReadBody')"
-              csv-name="Receipts"
+              :csv-name="t('comms.detail.receiptsFile')"
             >
               <template #toolbar>
                 <SegmentedControl

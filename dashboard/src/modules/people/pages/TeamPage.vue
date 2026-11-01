@@ -263,7 +263,7 @@ function clearAll(): void {
         :filtered="filtered"
         :export-kind="can('members.manage') ? 'members.people' : undefined"
         :export-params="{ status, q: search || undefined }"
-        csv-name="Team"
+        :csv-name="t('people.team.title')"
         :empty-title="t('people.team.emptyTitle')"
         :empty-description="t('people.team.emptyBody')"
         :empty-icon="Users"

@@ -280,3 +280,12 @@ describe("FeaturesPanel", () => {
     expect(wrapper.findAll('[role="switch"]')[1]!.attributes("data-state")).toBe("checked");
   });
 });
+
+describe("wording", () => {
+  it("describes the Tasks panel in the settings list in every language", () => {
+    for (const dictionary of [en, ru, uz] as Array<Record<string, string>>) {
+      expect(dictionary["settings.panel.tasks.hint"]).toBeTruthy();
+      expect(dictionary["settings.panel.tasks.description"]).toBeTruthy();
+    }
+  });
+});

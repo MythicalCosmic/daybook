@@ -116,6 +116,7 @@
   "comms.detail.allReadBody": "Напоминать больше некому.",
   "comms.detail.noneReadTitle": "Пока никто",
   "comms.detail.noneReadBody": "Люди появятся здесь, когда нажмут «Прочитано».",
+  "comms.detail.receiptsFile": "Кто прочитал",
   "comms.detail.remind": "Напомнить",
   "comms.detail.remindN": "Напомнить {n} не прочитавшему | Напомнить {n} не прочитавшим | Напомнить {n} не прочитавшим",
   "comms.detail.remindTitle": "Напомнить {n} человеку? | Напомнить {n} людям? | Напомнить {n} людям?",

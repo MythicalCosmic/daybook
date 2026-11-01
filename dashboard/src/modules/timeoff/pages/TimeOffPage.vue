@@ -276,7 +276,7 @@ const nextHoliday = computed(() => stats.data.value?.next_holiday ?? null);
       :filtered="filters.active.value > 0 || !!search"
       export-kind="timeoff.time_off"
       :export-params="filters.params.value"
-      csv-name="Time off"
+      :csv-name="t('timeoff.title')"
       :empty-title="t('timeoff.list.emptyTitle')"
       :empty-description="t('timeoff.list.emptyBody')"
       :empty-icon="TreePalm"
