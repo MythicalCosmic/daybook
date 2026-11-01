@@ -8,7 +8,7 @@ twice.
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.db import transaction
 from django.db.models import Q
@@ -19,6 +19,9 @@ from apps.ai.agents import registry
 from apps.ai.models import AgentState
 
 logger = logging.getLogger(__name__)
+
+# An agent whose next time can't be worked out (a setting it can't read) is tried this much later.
+RETRY_UNSCHEDULABLE = timedelta(hours=1)
 
 
 def scheduled_keys() -> list[str]:
@@ -36,7 +39,10 @@ def tick(now: datetime | None = None) -> int:
     done = 0
     for state in due:
         if state.company.is_active and conf.ai_on(state.company):
-            done += run_state(state.pk, now)
+            try:
+                done += run_state(state.pk, now)
+            except Exception:  # one agent's trouble never stops the others
+                logger.exception("Agent state %s could not run", state.pk)
     return done
 
 
@@ -57,7 +63,16 @@ def run_state(state_id: int, now: datetime | None = None, *, forced: bool = Fals
         if not forced and (not state.enabled or (state.next_run_at and state.next_run_at > now)):
             return 0
         config = registry.config_of(agent, state)
-        state.next_run_at = agent.next_run(config, now, state.company)
+        try:
+            state.next_run_at = agent.next_run(config, now, state.company)
+        except Exception as exc:  # a stored setting it can't read: recorded, tried again later
+            logger.exception("Agent %s of company %s has no next time", agent.key, state.company_id)
+            state.next_run_at = now + RETRY_UNSCHEDULABLE
+            state.last_run_at, state.last_status = now, "error"
+            state.last_error = f"{type(exc).__name__}: {exc}"[:200]
+            fields = ["next_run_at", "last_run_at", "last_status", "last_error", "updated_at"]
+            state.save(update_fields=fields)
+            return 0
         state.running_since = now
         state.save(update_fields=["next_run_at", "running_since", "updated_at"])
     company = state.company

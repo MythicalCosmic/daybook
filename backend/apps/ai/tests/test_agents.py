@@ -476,6 +476,35 @@ def test_a_failing_agent_is_recorded(crew, monkeypatch):
     assert state.last_status == "error" and "boom" in state.last_error
 
 
+def test_an_agent_that_cannot_even_be_scheduled_does_not_stop_the_tick(
+    crew, company, member, ai_on, sent_messages, django_capture_on_commit_callbacks
+):
+    """A setting stored before it was checked (an old row, the Django admin) breaks the agent's
+    next time: that agent is recorded as failed, and the other agents and companies still run."""
+    from apps.companies.tests.factories import CompanyFactory
+
+    late_task(crew)
+    other = CompanyFactory(timezone="Asia/Tashkent")
+    ai_on(other)
+    for company_ in (company, other):
+        AgentState.objects.filter(company=company_).update(next_run_at=None)
+        state = agents.state_of(company_, morning_plan.KEY)
+        state.enabled = True
+        state.config = {"at": "half past eight", "who": "both"}
+        state.next_run_at = None
+        state.save()
+    broken = AgentState.objects.filter(key=morning_plan.KEY)
+
+    with django_capture_on_commit_callbacks(execute=True):
+        runner.tick(local(12))
+
+    watcher = AgentState.objects.get(company=company, key=deadline_watcher.KEY)
+    assert watcher.last_status == "ok"
+    assert len(sent_messages) == 1  # the late task still reached its giver
+    assert set(broken.values_list("last_status", flat=True)) == {"error"}
+    assert all(row.next_run_at is not None for row in broken)  # tried again later, not each tick
+
+
 # Events in three languages ---------------------------------------------------------------------
 
 
