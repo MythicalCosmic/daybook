@@ -1,4 +1,5 @@
-"""Tenant isolation, walked over every API route: ids from a client never cross companies.
+"""Tenant isolation and rights, walked over every API route: ids from a client never cross
+companies, and a write needs the right to make it.
 
 "Theirs" is the whole demo (Demo Dorixona and Demo Distribyutor, every module), seeded after
 every database sequence was moved to THEIRS: the first rows of every table are theirs and carry
@@ -13,6 +14,10 @@ answers:
 3. no answer about our company carries a name only they have (people, branches, the company).
 
 List routes get every id filter the API reads (`?branch=`, `?member=`, …) set to their ids.
+
+Then, inside their company: someone whose role holds only dashboard access writes nothing
+through the owner API, and a new employee changes none of the demo's rows through the mini app
+(`writes_without_rights`, `others_rows_untouched`), their own things apart.
 """
 
 import json
@@ -22,7 +27,7 @@ from io import StringIO
 
 import pytest
 from django.core.management import call_command
-from django.db import connection
+from django.db import connection, transaction
 from django.urls import URLResolver, get_resolver
 from django.utils import timezone
 from rest_framework.test import APIClient
@@ -114,7 +119,7 @@ OWN_THINGS = (
     "inbox/",
     "notification-preferences/",
     "projects/timers/",
-    "/ack/$",
+    "/ack/",
 )
 PARAM = re.compile(r"<(?:\w+:)?(?P<name>\w+)>|\(\?P<(?P<regex_name>\w+)>[^)]*\)")
 # Timestamps differ between two calls a moment apart.
@@ -240,13 +245,15 @@ def clients(company, member):
 
 @pytest.fixture
 def theirs(settings, company, clients):
-    """The whole demo, its rows numbered from THEIRS; sequences are put back afterwards."""
+    """The whole demo, its rows numbered from THEIRS; sequences are put back afterwards (a
+    walk that breaks the transaction is rolled back to the savepoint first, so they can be)."""
     settings.DEBUG = True
     sequences = restart_sequences(THEIRS)
     try:
-        call_command("seed_demo", stdout=StringIO())
-        settings.DEBUG = False
-        yield list(Company.objects.filter(slug__in=(seed_demo.SLUG, seed_demo.SMALL_SLUG)))
+        with transaction.atomic():
+            call_command("seed_demo", stdout=StringIO())
+            settings.DEBUG = False
+            yield list(Company.objects.filter(slug__in=(seed_demo.SLUG, seed_demo.SMALL_SLUG)))
     finally:
         put_back(sequences)
 
@@ -299,9 +306,23 @@ def test_every_route_keeps_companies_apart(company, clients, theirs):
 
     assert walked > 400
     assert not problems, "\n".join(problems)
-    # The same demo, then a second walk (one seed for both: it takes a minute).
-    found = writes_without_rights(their_company)
+    # The same demo, then two more walks (one seed for all: it takes a minute).
+    found = writes_without_rights(their_company) + others_rows_untouched(their_company)
     assert not found, "\n".join(found)
+
+
+def newcomer(company: Company, role: AccessRole) -> Membership:
+    """Approved and onboarded a moment ago in the company's first branch: no rows of their own."""
+    branch = company.branches.order_by("order", "pk").first()
+    person = MembershipFactory(
+        company=company,
+        role=role,
+        status=Membership.Status.APPROVED,
+        onboarded_at=timezone.now(),
+        home_branch=branch,
+    )
+    person.branches.add(branch)
+    return person
 
 
 def writes_without_rights(company_id: int) -> list[str]:
@@ -312,21 +333,31 @@ def writes_without_rights(company_id: int) -> list[str]:
     role = AccessRole.objects.create(
         company=company, name="Only the dashboard (walk)", permissions=[Perm.DASHBOARD_ACCESS]
     )
-    branch = company.branches.order_by("order", "pk").first()
-    viewer = MembershipFactory(
-        company=company,
-        role=role,
-        status=Membership.Status.APPROVED,
-        onboarded_at=timezone.now(),
-        home_branch=branch,
-    )
-    viewer.branches.add(branch)
     client = APIClient()
-    client.credentials(HTTP_AUTHORIZATION=f"Bearer {OwnerAccessToken.for_user(viewer.user)}")
+    token = OwnerAccessToken.for_user(newcomer(company, role).user)
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+    return _no_write_goes_through(client, company_id, owner=True, why="dashboard access alone")
+
+
+def others_rows_untouched(company_id: int) -> list[str]:
+    """A new employee (the company's default role) changes none of the demo's rows through the
+    mini app: they are all someone else's tasks, shifts, requests and pages."""
+    company = Company.objects.get(pk=company_id)
+    role = AccessRole.objects.filter(company=company, is_default=True).first()
+    client = APIClient()
+    client.credentials(
+        HTTP_AUTHORIZATION=f"Bearer {AccessToken.for_user(newcomer(company, role).user)}"
+    )
+    return _no_write_goes_through(client, company_id, owner=False, why="a new employee")
+
+
+def _no_write_goes_through(client, company_id: int, *, owner: bool, why: str) -> list[str]:
     found = []
     for route in routes():
-        if not route.owner or any(own in route.route for own in OWN_THINGS):
+        if route.owner != owner or any(own in route.route for own in OWN_THINGS):
             continue
+        if not owner and not route.has_ids:
+            continue  # their own new rows: a check-in, a request, a task for themselves
         for method in route.methods:
             if method in ("get", "head"):
                 continue
@@ -335,7 +366,7 @@ def writes_without_rights(company_id: int) -> list[str]:
                 if response.status_code < 300:
                     found.append(
                         f"{method.upper()} {route.route} ({row_id}) answers "
-                        f"{response.status_code} to dashboard access alone: {text(response)[:160]}"
+                        f"{response.status_code} to {why}: {text(response)[:160]}"
                     )
                     break
     return found
