@@ -6,13 +6,19 @@ import { useI18n } from "vue-i18n";
 
 import type { Range } from "@/api/types";
 import KpiCard from "@/components/KpiCard.vue";
+import { todayIn } from "@/lib/dates";
+import { useCompanyStore } from "@/stores/company";
 
 import { useSummary } from "../api";
+import { viewLink } from "../filters";
 
 const props = defineProps<{ companyId: number; range?: Range; compare?: Range | null }>();
 const { t } = useI18n();
+const company = useCompanyStore();
 const query = useSummary({ routines: "without" });
 const data = computed(() => query.data.value);
+// The Today view with its own dates: the tile counts what is due today.
+const to = computed(() => viewLink(props.companyId, "today", todayIn(company.timezone)));
 </script>
 
 <template>
@@ -26,6 +32,6 @@ const data = computed(() => query.data.value);
     :format="(value: number) => (data ? t('tasks.widget.ofTotal', { done: value, total: data.total_today }) : String(value))"
     :hint="t('tasks.kpi.doneTodayHintOneOff')"
     :loading="query.isPending.value"
-    :to="`/c/${props.companyId}/tasks?sv=today`"
+    :to="to"
   />
 </template>

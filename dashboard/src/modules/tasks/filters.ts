@@ -66,6 +66,21 @@ export function builtinViews(today: string): BuiltinView[] {
   ];
 }
 
+/**
+ * A link to the Tasks page on a built-in view with that view's chips, as clicking its tab does:
+ * `sv` alone only marks the tab and lists every task (the "Done today" tile opened "Today" over
+ * work of any date). `extra` adds chips of its own (a branch, routine work).
+ */
+export function viewLink(companyId: number, viewId: string, today: string, extra: Record<string, string> = {}): string {
+  const view = builtinViews(today).find((candidate) => candidate.id === viewId);
+  const query = new URLSearchParams();
+  if (viewId !== "open") query.set("sv", viewId);
+  for (const [key, value] of Object.entries(view?.params ?? {})) for (const item of Array.isArray(value) ? value : [value]) query.append(key, item);
+  if (view?.ordering && view.ordering !== "due_at") query.set("ordering", view.ordering);
+  for (const [key, value] of Object.entries(extra)) query.set(key, value);
+  return `/c/${companyId}/tasks?${query.toString()}`;
+}
+
 export function builtinTabs(t: T, views: BuiltinView[], isOwner: boolean): SavedViewTab[] {
   return views.filter((view) => isOwner || !view.ownerOnly).map((view) => ({ id: view.id, name: t(`tasks.views.${view.id}`), builtin: true }));
 }

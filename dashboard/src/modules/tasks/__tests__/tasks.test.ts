@@ -12,7 +12,7 @@ import { mountWithProviders, testApp } from "@/test/plugins";
 import { filterParams, moveInColumns, taskKeys, tasksApi } from "../api";
 import TaskDrawer from "../components/TaskDrawer.vue";
 import TaskTimeline from "../components/TaskTimeline.vue";
-import { asksForRoutines, builtinTabs, builtinViews, filterDefs, viewParams } from "../filters";
+import { asksForRoutines, builtinTabs, builtinViews, filterDefs, viewLink, viewParams } from "../filters";
 import en from "../i18n/en.json";
 import module from "../index";
 import { cardKey, lateness, minutesBetween, zonedIso, zonedParts } from "../meta";
@@ -172,6 +172,12 @@ describe("filters and views", () => {
     // Saved state may carry the view and ordering; only filters come back, as strings.
     expect(viewParams({ params: { status: ["todo"], overdue: true, view: "board", ordering: "-due_at", q: "" } })).toEqual({ status: ["todo"], overdue: "true" });
     expect(viewParams({ assignee: [11, 12] })).toEqual({ assignee: ["11", "12"] });
+  });
+
+  it("links to a built-in view with its chips, as its tab does", () => {
+    expect(viewLink(1, "today", "2026-11-02")).toBe("/c/1/tasks?sv=today&due_from=2026-11-02&due_to=2026-11-02");
+    expect(viewLink(1, "open", "2026-11-02")).toBe("/c/1/tasks?status=todo&status=in_progress&status=review&status=returned");
+    expect(viewLink(1, "review", "2026-11-02", { branch: "2", routines: "1" })).toBe("/c/1/tasks?sv=review&status=review&ordering=completed_at&branch=2&routines=1");
   });
 
   it("shows personal tasks only to owners", () => {

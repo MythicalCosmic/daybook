@@ -31,6 +31,7 @@ import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
 import { addDays, todayIn, zonedNow } from "@/lib/dates";
+import { useNow } from "@/lib/useNow";
 import { useCompanyStore } from "@/stores/company";
 
 import { useCompanyId, useCreateTasks, useTaskOptions, useTasksSettings } from "../api";
@@ -148,7 +149,9 @@ const recipients = computed(() => {
   return all.filter((p) => p.branch_id !== null && branches.value.includes(p.branch_id) && p.id !== me.value);
 });
 
-const hourNow = computed(() => zonedNow(company.timezone).getHours());
+// Read on a ticking clock: the dialog stays mounted, and "Today 18:00" must go after 17:00.
+const now = useNow();
+const hourNow = computed(() => zonedNow(company.timezone, now.value).getHours());
 const duePresets = computed(() => {
   const presets: Array<{ value: DuePreset; label: string }> = [];
   if (understood.value?.due_at) presets.push({ value: "parsed", label: understood.value.due_label ?? understood.value.due_at });

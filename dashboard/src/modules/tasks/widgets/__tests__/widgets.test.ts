@@ -71,6 +71,15 @@ describe("tasks Overview widgets", () => {
     for (const url of asked) expect(new URL(url, "http://x").searchParams.get("routines")).toBe("without");
   });
 
+  it("opens Today with today's dates, not every task under the Today tab", async () => {
+    stubSummary(summary);
+    const wrapper = await mountWidget(DoneTodayWidget);
+    const href = new URL(wrapper.find("a").attributes("href")!, "http://x");
+    expect(href.searchParams.get("sv")).toBe("today");
+    expect(href.searchParams.get("due_from")).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(href.searchParams.get("due_to")).toBe(href.searchParams.get("due_from"));
+  });
+
   it("leave today's half day out of the KPI sparkline and mark it 'so far' on the trend", async () => {
     stubSummary(summary);
     const tile = await mountWidget(OnTimeWidget);

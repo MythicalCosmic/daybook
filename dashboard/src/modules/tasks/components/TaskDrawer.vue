@@ -46,6 +46,7 @@ import { toast } from "@/components/useToast";
 import { useHotkey } from "@/core/hotkeys";
 import { todayIn, zonedDay } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
+import { useNow } from "@/lib/useNow";
 import { useCompanyStore } from "@/stores/company";
 
 import { tasksApi, taskKeys, useRefreshTasks, useTaskDetail, useTaskMutation, useTaskOptions } from "../api";
@@ -245,7 +246,7 @@ async function sendComment(mentions: number[] = []): Promise<void> {
   sending.value = true;
   try {
     const created = await tasksApi.comment(company.currentId!, current.id, comment.value.trim(), mentions);
-    client.setQueryData<TaskDetail>(taskKeys.detail(company.currentId!, current.id), { ...current, comments: [...current.comments, created] });
+    client.setQueryData<TaskDetail>(taskKeys.detail(company.currentId!, current.id), (old) => (old ? { ...old, comments: [...old.comments, created] } : old));
     comment.value = "";
     commentBox.value?.clear();
     void client.invalidateQueries({ queryKey: taskKeys.timeline(company.currentId!, current.id) });
@@ -315,13 +316,17 @@ const knownNames = computed(() => {
 /** Comment text split around @mentions, so they stand out. */
 const commentParts = (text: string) => highlightMentions(text, knownNames.value);
 
+// Read on a ticking clock, so an open drawer moves on: "next in 5 min" turns into "going out now",
+// and Nudge comes back after its cooldown.
+const now = useNow();
+
 // Reminders: a next reminder already due reads "going out now"; well behind means they've stopped.
 const reminderNext = computed(() => {
   const at = task.value?.reminders?.next_at;
   if (!at) return null;
-  const lag = reminderLag(at, new Date());
+  const lag = reminderLag(at, new Date(now.value));
   const words = { min: t("tasks.unit.min"), h: t("tasks.unit.h"), d: t("tasks.unit.d") };
-  if (new Date(at).getTime() > Date.now()) return { text: t("tasks.reminders.next", { time: fmt.relative(at) }), stuck: false };
+  if (new Date(at).getTime() > now.value) return { text: t("tasks.reminders.next", { time: fmt.relative(at) }), stuck: false };
   if (lag <= 5) return { text: t("tasks.reminders.nextNow"), stuck: false };
   return { text: t("tasks.reminders.stuck", { time: lateness(lag, words) }), stuck: true };
 });
@@ -337,7 +342,7 @@ const seen = computed(() => {
   if (current.seen_at) return { at: current.seen_at, text: t("tasks.seen.at", { time: fmt.instant(current.seen_at, "short") }), late: false };
   if (!isUnseen(current)) return null;
   // Not opened 30 minutes after it was given: worth a nudge.
-  return { at: null, text: t("tasks.seen.not"), late: minutesBetween(current.created_at, new Date()) > 30 };
+  return { at: null, text: t("tasks.seen.not"), late: minutesBetween(current.created_at, new Date(now.value)) > 30 };
 });
 
 /** When finished work was handed in (waiting for a check counts), and how late, if it was. */
@@ -372,7 +377,7 @@ function copyLink(): void {
 
 const nudgedRecently = computed(() => {
   const at = task.value?.last_nudged_at;
-  return !!at && Date.now() - new Date(at).getTime() < 10 * 60_000;
+  return !!at && now.value - new Date(at).getTime() < 10 * 60_000;
 });
 
 /**

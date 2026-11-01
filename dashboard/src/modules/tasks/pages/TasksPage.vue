@@ -158,7 +158,7 @@ const kpis = computed(() => {
       hint: t(`tasks.kpi.doneTodayHint${counts}`),
     },
     // The late list counts the same work as the number: with routine work when it's in.
-    { id: "late", label: t("tasks.kpi.lateNow"), value: data?.late_now ?? null, to: `/c/${cid}/tasks?sv=late&overdue=true${withRoutines.value ? "&routines=1" : ""}`, hint: t(`tasks.kpi.lateNowHint${counts}`) },
+    { id: "late", label: t("tasks.kpi.lateNow"), value: data?.late_now ?? null, to: `/c/${cid}/tasks?sv=late&overdue=true${routinesAsked.value ? "&routines=1" : ""}`, hint: t(`tasks.kpi.lateNowHint${counts}`) },
     { id: "review", label: t("tasks.kpi.review"), value: data?.review ?? null, to: `/c/${cid}/tasks/reviews`, hint: reviewHint.value ?? t(`tasks.kpi.reviewHint${counts}`) },
     {
       id: "on_time",

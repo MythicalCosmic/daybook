@@ -20,6 +20,7 @@ import { todayIn } from "@/lib/dates";
 import { useCompanyStore } from "@/stores/company";
 
 import { taskKeys, tasksApi } from "../api";
+import { viewLink } from "../filters";
 import type { TaskRow } from "../types";
 
 const props = defineProps<{ companyId: number; range?: Range; compare?: Range | null }>();
@@ -81,17 +82,16 @@ const failed = computed(() => summaries.value.find((query) => query.isError));
 
 const rows = computed(() => {
   const today = todayIn(company.timezone);
-  const base = `/c/${props.companyId}/tasks`;
   return branches.value.map((branch, index) => {
     const data = summaries.value[index]?.data;
     const waiting = answers.data.value?.get(branch.id) ?? null;
-    const scope = `branch=${branch.id}&routines=1`;
+    const link = (view: string) => viewLink(props.companyId, view, today, { branch: String(branch.id), routines: "1" });
     return {
       branch,
-      done: data ? { value: `${data.done_today}/${data.total_today}`, to: `${base}?sv=today&due_from=${today}&due_to=${today}&${scope}` } : null,
-      late: data ? { value: data.late_now, to: `${base}?sv=late&overdue=true&${scope}` } : null,
-      review: data ? { value: data.review, to: `${base}?sv=review&status=review&ordering=completed_at&${scope}` } : null,
-      answers: waiting ? { value: waiting.blocked + waiting.extension, to: waiting.blocked ? `${base}?sv=blocked&blocked=true&${scope}` : `${base}/reviews` } : null,
+      done: data ? { value: `${data.done_today}/${data.total_today}`, to: link("today") } : null,
+      late: data ? { value: data.late_now, to: link("late") } : null,
+      review: data ? { value: data.review, to: link("review") } : null,
+      answers: waiting ? { value: waiting.blocked + waiting.extension, to: waiting.blocked ? link("blocked") : `/c/${props.companyId}/tasks/reviews` } : null,
     };
   });
 });
