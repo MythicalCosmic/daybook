@@ -88,11 +88,13 @@ async def start_from_telegram(
 
 @sync_to_async
 def act_on_draft(member: Membership, data: AIDraftCallback) -> tuple[bot_messages.BotMessage, str]:
-    """What a card button does, and the card afterwards with a short note for the tap."""
+    """What a card button does, and the card afterwards with a short note for the tap.
+    Callback data can be forged: a draft that isn't the tapper's own is as good as gone, so
+    nobody else's transcript or tasks are ever drawn into the tapped message."""
     draft = (
         AIDraft.objects.for_company(member.company_id)
         .select_related("company", "created_by__user", "created_by__company", "created_by__role")
-        .filter(pk=data.id)
+        .filter(pk=data.id, created_by=member)
         .first()
     )
     if draft is None:

@@ -168,6 +168,58 @@ async def test_someone_elses_card_does_nothing(
     assert not await sync_to_async(Task.objects.exists)()
 
 
+@pytest.mark.parametrize("action", list(DraftAction))
+async def test_a_forged_button_shows_nothing_of_someone_elses_voice_note(
+    dp, bot, company, member, settings, heard, card_edits, action
+):
+    """Callback data can be forged (any client can send any bytes): another person's draft id
+    must not turn the tapped message into that draft's card, with its transcript and names."""
+    settings.AI_FAKE = True
+    manager = await team(company, member)
+    await dp.feed_update(bot, updates.voice(updates.tg_user(manager.user.telegram_id)))
+    draft = await sync_to_async(AIDraft.objects.get)()
+    other = await member.aregistered(company, "Manager")
+    bot.requests.clear()
+
+    forged = AIDraftCallback(action=action, id=draft.pk).pack()
+    await dp.feed_update(bot, updates.callback(updates.tg_user(other.user.telegram_id), forged))
+
+    shown = " ".join(r.text for r in bot.requests if isinstance(r, EditMessageText))
+    assert "Alisher" not in shown and "muzlatgich" not in shown.lower()
+    markups = [getattr(request, "reply_markup", None) for request in bot.requests]
+    assert f"aid:apply:{draft.pk}" not in str(markups)
+    await sync_to_async(draft.refresh_from_db)()
+    assert draft.status == AIDraft.Status.READY
+
+
+async def test_a_forged_button_on_a_group_message_edits_nothing_there(
+    dp, bot, company, member, settings, heard, card_edits
+):
+    """The card lives in a private chat: a draft (or "+1 hour") button forged onto one of the
+    bot's messages in a team group must not rewrite that group message."""
+    from apps.ai.callbacks import AILateCallback, LateAction
+
+    settings.AI_FAKE = True
+    manager = await team(company, member)
+    tg = updates.tg_user(manager.user.telegram_id)
+    await dp.feed_update(bot, updates.voice(tg))
+    draft = await sync_to_async(AIDraft.objects.get)()
+    task = await sync_to_async(Task.objects.create)(
+        company=company, title="Kassa", assignee=manager, created_by=manager
+    )
+    bot.requests.clear()
+
+    for data in (
+        AIDraftCallback(action=DraftAction.CANCEL, id=draft.pk).pack(),
+        AILateCallback(action=LateAction.HOUR_MORE, task_id=task.pk).pack(),
+    ):
+        await dp.feed_update(bot, updates.group_callback(tg, data))
+
+    assert not [r for r in bot.requests if isinstance(r, EditMessageText)]
+    await sync_to_async(draft.refresh_from_db)()
+    assert draft.status == AIDraft.Status.READY
+
+
 async def test_the_card_escapes_what_was_said(bot, company, member, settings):
     from apps.ai import bot_messages
 
