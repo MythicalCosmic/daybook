@@ -55,6 +55,7 @@ function guard(event: Event): void {
     :title="title"
     :description="description"
     :hide-header="hideHeader"
+    :hide-close="hideClose || hideHeader"
     :dismissable="dismissable"
     @closed="emit('closed')"
   >

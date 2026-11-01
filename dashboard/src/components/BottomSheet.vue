@@ -3,10 +3,14 @@
  * A phone sheet that slides up from the bottom (320 ms), with a grab handle you can drag down to
  * close. Drawers and dialogs become this on phones. Respects the bottom safe area.
  */
-import { DialogContent, DialogDescription, DialogOverlay, DialogPortal, DialogRoot, DialogTitle, VisuallyHidden } from "reka-ui";
-import { computed, ref, watch } from "vue";
+import { X } from "@lucide/vue";
+import { DialogClose, DialogContent, DialogDescription, DialogOverlay, DialogPortal, DialogRoot, DialogTitle, VisuallyHidden } from "reka-ui";
+import { computed, nextTick, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 
+import IconButton from "@/components/IconButton.vue";
 import { useBackCloses } from "@/lib/backStack";
+import { useKeyboardInset } from "@/lib/useKeyboardInset";
 
 const open = defineModel<boolean>("open", { default: false });
 
@@ -22,8 +26,10 @@ const props = withDefaults(
     tall?: boolean;
     /** No body padding: the content brings its own (drawers rendered as sheets). */
     flush?: boolean;
+    /** No close button: the content brings its own (a drawer without a header). */
+    hideClose?: boolean;
   }>(),
-  { title: "", description: undefined, hideHeader: false, dismissable: true, tall: false, flush: false },
+  { title: "", description: undefined, hideHeader: false, dismissable: true, tall: false, flush: false, hideClose: false },
 );
 
 const emit = defineEmits<{ closed: [] }>();
@@ -63,9 +69,36 @@ watch(open, (isOpen) => {
 // Telegram's Back (and Android's back gesture) closes the sheet instead of leaving the page.
 useBackCloses(() => open.value && props.dismissable, () => (open.value = false));
 
-const sheetStyle = computed(() =>
-  dragY.value > 0 ? { transform: `translate3d(0, ${dragY.value}px, 0)`, transition: dragging.value ? "none" : undefined } : undefined,
+const { t } = useI18n();
+
+// iOS leaves the sheet under the keyboard: lift it above and fit it in the space left (8 px keep
+// the top edge visible), then bring the field being typed in back into view.
+const keyboard = useKeyboardInset(open);
+const body = ref<HTMLElement | null>(null);
+watch(
+  () => keyboard.inset.value,
+  async (inset) => {
+    if (!inset) return;
+    await nextTick();
+    const field = document.activeElement;
+    if (field instanceof HTMLElement && body.value?.contains(field)) field.scrollIntoView?.({ block: "nearest" });
+  },
 );
+
+const sheetStyle = computed(() => {
+  const style: Record<string, string> = {};
+  if (dragY.value > 0) {
+    style.transform = `translate3d(0, ${dragY.value}px, 0)`;
+    if (dragging.value) style.transition = "none";
+  }
+  const left = keyboard.height.value;
+  if (keyboard.inset.value > 0 && left !== null) {
+    style.bottom = `${keyboard.inset.value}px`;
+    style.maxHeight = `${left - 8}px`;
+    if (props.tall) style.height = `${left - 8}px`;
+  }
+  return Object.keys(style).length ? style : undefined;
+});
 
 /** Focus the sheet itself: focusing a field would pop the phone keyboard over half the sheet. */
 function focusPanel(event: Event): void {
@@ -108,6 +141,10 @@ function onOutside(event: Event): void {
           <DialogTitle>{{ title }}</DialogTitle>
           <DialogDescription v-if="description">{{ description }}</DialogDescription>
         </VisuallyHidden>
+        <!-- Without a header the close button sits in the top corner, beside the grab handle. -->
+        <DialogClose v-if="dismissable && !hideClose && (hideHeader || !(title || $slots.title))" as-child>
+          <IconButton class="absolute right-2 top-1.5 z-10" :icon="X" :label="t('common.close')" size="lg" :tooltip="false" />
+        </DialogClose>
         <!-- The drawer's and dialog's own header pieces (a custom title, a "More" menu, a status)
              come along on phones too. -->
         <header v-else class="flex shrink-0 items-start gap-2 px-5 pb-3 pt-1">
@@ -117,13 +154,17 @@ function onOutside(event: Event): void {
             </slot>
             <DialogDescription v-if="description" class="mt-0.5 text-sm text-muted">{{ description }}</DialogDescription>
           </div>
-          <div v-if="$slots['header-actions']" class="-mr-1.5 -mt-0.5 flex shrink-0 items-center gap-1">
+          <div v-if="$slots['header-actions'] || (dismissable && !hideClose)" class="-mr-2.5 -mt-1.5 flex shrink-0 items-center gap-1">
             <slot name="header-actions" />
+            <DialogClose v-if="dismissable && !hideClose" as-child>
+              <IconButton :icon="X" :label="t('common.close')" size="lg" :tooltip="false" />
+            </DialogClose>
           </div>
         </header>
         <!-- The bottom safe area (Telegram's and the phone's) goes under whatever is last: the
              footer when there is one, else the body. -->
         <div
+          ref="body"
           :class="[
             'min-h-0 flex-1 overflow-y-auto overscroll-contain',
             flush ? !$slots.footer && 'pb-[var(--safe-bottom)]' : ['px-5', $slots.footer ? 'pb-4' : 'pb-[calc(16px+var(--safe-bottom))]'],
