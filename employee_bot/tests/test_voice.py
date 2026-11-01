@@ -103,6 +103,30 @@ async def test_dictating_replaces_the_new_task_title(
     assert await sync_to_async(AIDraft.objects.count)() == 1
 
 
+async def test_a_recording_that_cannot_be_fetched_does_not_keep_listening(
+    dp, bot, company, member, settings, monkeypatch
+):
+    """Telegram fails to hand over the file: "Listening…" must not stay on screen forever,
+    it turns into a line that says to send it again."""
+    from aiogram.exceptions import TelegramNetworkError
+    from aiogram.methods import GetFile
+
+    settings.AI_FAKE = True
+    manager = await team(company, member)
+
+    async def broken_download(*args, **kwargs):
+        raise TelegramNetworkError(method=GetFile(file_id="voice"), message="timeout")
+
+    monkeypatch.setattr(type(bot), "download", broken_download)
+
+    await dp.feed_update(bot, updates.voice(updates.tg_user(manager.user.telegram_id)))
+
+    assert bot.sent_texts()[0] == "Listening…"
+    [edited] = [r for r in bot.requests if isinstance(r, EditMessageText)]
+    assert edited.text == "Something went wrong with this voice note. Send it again."
+    assert not await sync_to_async(AIDraft.objects.exists)()
+
+
 async def test_a_recording_too_long_is_turned_down(dp, bot, company, member, settings):
     settings.AI_FAKE = True
     manager = await team(company, member)

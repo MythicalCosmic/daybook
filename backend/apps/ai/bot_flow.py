@@ -9,10 +9,11 @@ threads through sync_to_async) and starts the draft with that message's id, so t
 edits it into the card. `act_on_draft` is what the card's buttons do.
 """
 
+import logging
 from contextlib import suppress
 
 from aiogram import Bot
-from aiogram.exceptions import TelegramBadRequest
+from aiogram.exceptions import TelegramAPIError, TelegramBadRequest
 from aiogram.types import Message
 from asgiref.sync import sync_to_async
 from django.core.exceptions import PermissionDenied
@@ -24,6 +25,7 @@ from apps.core.exceptions import DomainError
 from apps.members.models import Membership
 
 SOURCES = {"employee": AIDraft.Source.BOT, "owner": AIDraft.Source.OWNER_BOT}
+logger = logging.getLogger(__name__)
 
 
 async def take_voice(
@@ -72,8 +74,14 @@ async def start_from_telegram(
     card: Message, membership: Membership, bot: Bot, media, *, seconds: int, bot_name: str
 ) -> None:
     """Download `media` (a Voice, Audio, VideoNote or its file id) and start its draft, to be
-    shown in `card`."""
-    downloaded = await bot.download(media)
+    shown in `card`. A file Telegram doesn't hand over turns "Listening…" into a line that says
+    to send it again, never a card that listens forever."""
+    try:
+        downloaded = await bot.download(media)
+    except TelegramAPIError:
+        logger.warning("Voice note of member %s could not be fetched", membership.pk)
+        await edit(card, (bot_messages.error_text("not_fetched"), None))
+        return
     try:
         await sync_to_async(services.start_draft)(
             membership,

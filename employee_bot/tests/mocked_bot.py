@@ -29,12 +29,13 @@ class MockedSession(BaseSession):
     ) -> Any:
         self.requests.append(method)
         if isinstance(method, SendMessage):
+            # Bound to the bot like a real answer, so a handler can edit what it sent.
             return Message(
                 message_id=len(self.requests),
                 date=datetime.now(),
                 chat=Chat(id=int(method.chat_id), type="private"),
                 text=method.text,
-            )
+            ).as_(bot)
         if isinstance(method, GetMe):
             return User(id=bot.id, is_bot=True, first_name="Daybook", username=BOT_USERNAME)
         if isinstance(method, GetFile):
