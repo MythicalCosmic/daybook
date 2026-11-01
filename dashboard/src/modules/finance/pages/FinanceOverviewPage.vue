@@ -33,7 +33,7 @@ import { useCompanyStore } from "@/stores/company";
 
 import { useCashFlow, useOverview } from "../api";
 import { useCssColor } from "../colors";
-import { ACCOUNT_ICONS, comparablePrevious, distinctColors, isNegative, isZeroMoney, share, topAccounts, trimLeadingEmpty } from "../lib";
+import { ACCOUNT_ICONS, comparablePrevious, distinctColors, foreignCashLine, isNegative, isZeroMoney, share, topAccounts, trimLeadingEmpty } from "../lib";
 import { openQuickAdd } from "../quickAdd";
 
 const { t } = useI18n();
@@ -48,7 +48,6 @@ const canRecord = computed(() => company.can("finance.record"));
 
 // KPIs ------------------------------------------------------------------------------------
 
-const foreign = computed(() => (data.value?.cash.by_currency ?? []).filter((row) => row.currency !== company.currency && !isZeroMoney(row.amount)));
 const kpis = computed(() => {
   const d = data.value;
   const vs = t("finance.overview.vsLastMonth");
@@ -65,7 +64,7 @@ const kpis = computed(() => {
       format: "money" as const,
       compact: true,
       icon: Wallet,
-      hint: foreign.value.length ? foreign.value.map((row) => fmt.money(row.amount, row.currency)).join(" · ") + ` ${t("finance.overview.included")}` : t("finance.overview.allAccounts"),
+      hint: foreignCashLine(d?.cash.by_currency ?? [], company.currency, (amount, currency) => fmt.money(amount, currency), t) ?? t("finance.overview.allAccounts"),
       to: `${base.value}/accounts`,
     },
     {

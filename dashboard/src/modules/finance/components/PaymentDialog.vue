@@ -35,24 +35,26 @@ const errors = reactive<Record<string, string | undefined>>({});
 const form = reactive({ account: null as number | null, amount: null as string | null, debt_amount: null as string | null, paid_on: null as string | null });
 
 const chipAccounts = computed(() => pickerOrder(options.data.value?.accounts ?? [], { branch: props.debt.branch?.id ?? null }));
+/** Today and an account in the debt's currency, once the options are there. */
+function fillDefaults(): void {
+  const data = options.data.value;
+  if (!data) return;
+  if (!form.paid_on) form.paid_on = data.today;
+  if (form.account === null) form.account = chipAccounts.value.find((a) => a.currency === props.debt.currency)?.id ?? chipAccounts.value[0]?.id ?? null;
+}
+// Opening again resets the form and picks the defaults at once: with the options already cached,
+// the options watcher below doesn't run, and the dialog used to open with no account chosen.
 watch(
   open,
   (isOpen) => {
     if (!isOpen) return;
     Object.assign(form, { account: null, amount: props.debt.outstanding, debt_amount: null, paid_on: options.data.value?.today ?? null });
     for (const key of Object.keys(errors)) delete errors[key];
+    fillDefaults();
   },
   { immediate: true },
 );
-watch(
-  () => options.data.value,
-  (data) => {
-    if (!data) return;
-    if (!form.paid_on) form.paid_on = data.today;
-    if (form.account === null) form.account = chipAccounts.value.find((a) => a.currency === props.debt.currency)?.id ?? chipAccounts.value[0]?.id ?? null;
-  },
-  { immediate: true },
-);
+watch(() => options.data.value, fillDefaults, { immediate: true });
 
 const account = computed(() => options.data.value?.accounts.find((a) => a.id === form.account) ?? null);
 const crossCurrency = computed(() => !!account.value && account.value.currency !== props.debt.currency);

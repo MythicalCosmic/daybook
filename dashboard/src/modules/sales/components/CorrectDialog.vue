@@ -33,6 +33,8 @@ interface Line {
   kind: MethodKind;
   sales: string | null;
   refunds: string | null;
+  /** Receipts counted on the shift: kept as they were (the server rebuilds every line it is sent). */
+  receipts: number;
 }
 
 const lines = ref<Line[]>([]);
@@ -40,18 +42,29 @@ const counted = ref<string | null>(null);
 const reason = ref("");
 const reasonError = ref<string | null>(null);
 
+function lineOf(method: { id: number; name: string; kind: MethodKind }): Line {
+  const typed = props.shift.payments.find((p) => p.method.id === method.id);
+  return { id: method.id, name: method.name, kind: method.kind, sales: typed?.sales ?? null, refunds: typed?.refunds ?? null, receipts: typed?.receipts ?? 0 };
+}
+
 function reset(): void {
-  const typed = new Map(props.shift.payments.map((p) => [p.method.id, p]));
+  const typed = new Set(props.shift.payments.map((p) => p.method.id));
   const methods = options.data.value?.methods ?? props.shift.payments.map((p) => ({ ...p.method, is_active: true }));
-  lines.value = methods
-    .filter((m) => m.is_active || typed.has(m.id))
-    .map((m) => ({ id: m.id, name: m.name, kind: m.kind, sales: typed.get(m.id)?.sales ?? null, refunds: typed.get(m.id)?.refunds ?? null }));
+  lines.value = methods.filter((m) => m.is_active || typed.has(m.id)).map(lineOf);
   counted.value = null;
   reason.value = "";
   reasonError.value = null;
 }
 watch(open, (value) => value && reset());
-watch(() => options.data.value, () => open.value && reset());
+// Methods that arrive with the options (or a refetch) join the form; what was typed stays.
+watch(
+  () => options.data.value,
+  (data) => {
+    if (!open.value || !data) return;
+    const shown = new Set(lines.value.map((line) => line.id));
+    for (const method of data.methods) if (method.is_active && !shown.has(method.id)) lines.value.push(lineOf(method));
+  },
+);
 
 const net = computed(() => sum(lines.value.map((line) => subtract(line.sales || "0", line.refunds || "0"))));
 const correct = useShiftWrite((cid, vars: { id: number; payments: PaymentLineInput[]; reason: string; counted_cash: string | null }) =>
@@ -65,7 +78,7 @@ async function submit(): Promise<void> {
   }
   const payments = lines.value
     .filter((line) => line.sales || line.refunds)
-    .map((line) => ({ method_id: line.id, sales: line.sales || "0", refunds: line.refunds || "0" }));
+    .map((line) => ({ method_id: line.id, sales: line.sales || "0", refunds: line.refunds || "0", receipts: line.receipts }));
   await correct.mutateAsync({ id: props.shift.id, payments, reason: reason.value.trim(), counted_cash: counted.value || null });
   toast.success(t("sales.correct.done", { code: props.shift.code }));
   open.value = false;

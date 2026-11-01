@@ -18,7 +18,7 @@ import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
 import { useCashFlow, useOverview } from "../api";
-import { isZeroMoney } from "../lib";
+import { foreignCashLine } from "../lib";
 
 defineProps<{ companyId: number; range?: Range; compare?: Range | null }>();
 
@@ -36,9 +36,9 @@ const spark = computed(() => {
   return data.series.map((point) => (running = running.plus(point.net)).toNumber());
 });
 const firstDay = computed(() => flow.data.value?.series[0]?.date ?? null);
-const foreign = computed(() => (cash.value?.by_currency ?? []).filter((row) => row.currency !== company.currency && !isZeroMoney(row.amount)));
 const hint = computed(() => {
-  if (foreign.value.length) return `${foreign.value.map((row) => fmt.money(row.amount, row.currency)).join(" · ")} ${t("finance.overview.included")}`;
+  const foreign = foreignCashLine(cash.value?.by_currency ?? [], company.currency, (amount, currency) => fmt.money(amount, currency), t);
+  if (foreign) return foreign;
   return cash.value?.rate.stale ? t("finance.rates.staleShort") : t("finance.overview.allAccounts");
 });
 </script>

@@ -317,6 +317,7 @@
   "finance.overview.firstBody": "Start with what each cash desk, bank account and card holds today. From then on every sale, expense and debt lands here.",
   "finance.overview.firstTitle": "Let's set up your books",
   "finance.overview.included": "included",
+  "finance.overview.notCounted": "{amounts}: not counted, no exchange rate yet",
   "finance.overview.income": "Income this month",
   "finance.overview.moneyIn": "Money in",
   "finance.overview.moneyOut": "Money out",

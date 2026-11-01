@@ -317,6 +317,7 @@
   "finance.overview.firstBody": "Har bir kassa, bank hisobi va kartada bugun qancha pul borligidan boshlang. Shundan keyin har bir savdo, xarajat va qarz shu yerga tushadi.",
   "finance.overview.firstTitle": "Keling, hisob-kitobni boshlaymiz",
   "finance.overview.included": "ham hisoblangan",
+  "finance.overview.notCounted": "{amounts}: kurs hali yo‘q, hisoblanmadi",
   "finance.overview.income": "Shu oydagi daromad",
   "finance.overview.moneyIn": "Kirim",
   "finance.overview.moneyOut": "Chiqim",

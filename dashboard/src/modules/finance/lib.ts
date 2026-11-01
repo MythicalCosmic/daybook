@@ -25,7 +25,7 @@ import type { StatusTone } from "@/components/StatusPill.vue";
 import type { SelectOption } from "@/components/options";
 import { dec, toMoney } from "@/lib/decimal";
 
-import type { AccountKind, AgingBucket, CategoryKind, CategoryNode, CounterpartyKind, DebtStatus, Pnl, PnlNode, Transaction, TransactionKind } from "./types";
+import type { AccountKind, AgingBucket, CategoryKind, CategoryNode, CounterpartyKind, CurrencyTotal, Debt, DebtStatus, Pnl, PnlNode, Transaction, TransactionKind } from "./types";
 
 export const ACCOUNT_ICONS: Record<AccountKind, LucideIcon> = {
   cash: Banknote,
@@ -259,6 +259,43 @@ export function absolute(value: string): string {
 }
 
 /** "9 Sept" this year, "23 Aug 2027" otherwise: due dates of long loans must not read as past days. */
+/**
+ * The line under a cash total in the company's currency: the foreign money counted in it, and the
+ * money left out because its currency has no rate yet (the server's `complete: false`). It used to
+ * say "included" for both, so a missing USD rate dropped the dollar accounts from "Cash now" unseen.
+ */
+export function foreignCashLine(
+  byCurrency: readonly CurrencyTotal[],
+  baseCurrency: string,
+  money: (amount: string, currency: CurrencyTotal["currency"]) => string,
+  t: (key: string, params?: Record<string, unknown>) => string,
+): string | null {
+  const foreign = byCurrency.filter((row) => row.currency !== baseCurrency && !dec(row.amount).isZero());
+  const counted = foreign.filter((row) => row.base !== null);
+  const left = foreign.filter((row) => row.base === null);
+  const list = (rows: readonly CurrencyTotal[]) => rows.map((row) => money(row.amount, row.currency)).join(" · ");
+  const parts = [counted.length ? `${list(counted)} ${t("finance.overview.included")}` : "", left.length ? t("finance.overview.notCounted", { amounts: list(left) }) : ""];
+  return parts.filter(Boolean).join(" · ") || null;
+}
+
+export interface DebtEdit {
+  due_on: string | null;
+  responsible: number | null;
+  description: string;
+}
+
+/**
+ * What an edit of a debt changes, and only that. A salary or advance debt reads with an empty
+ * description for people who may not see payroll: sending it back erased the real one.
+ */
+export function debtChanges(debt: Pick<Debt, "due_on" | "responsible" | "description" | "masked">, draft: DebtEdit): Partial<DebtEdit> {
+  const changes: Partial<DebtEdit> = {};
+  if (draft.due_on !== debt.due_on) changes.due_on = draft.due_on;
+  if (draft.responsible !== (debt.responsible?.id ?? null)) changes.responsible = draft.responsible;
+  if (!debt.masked && draft.description !== debt.description) changes.description = draft.description;
+  return changes;
+}
+
 export function dayStyle(day: string, now: Date = new Date()): "short" | "medium" {
   return day.slice(0, 4) === String(now.getFullYear()) ? "short" : "medium";
 }

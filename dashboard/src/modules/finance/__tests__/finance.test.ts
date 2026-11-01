@@ -23,7 +23,7 @@ import TransactionDrawer from "../components/TransactionDrawer.vue";
 import PnlTable from "../components/reports/PnlTable.vue";
 import en from "../i18n/en.json";
 import module from "../index";
-import { baseTotal, colorFor, comparablePrevious, dayStyle, distinctColors, dropEmptyCompare, fitTags, pickerOrder, topAccounts, trimLeadingEmpty, trimLeadingPeriods } from "../lib";
+import { baseTotal, colorFor, comparablePrevious, dayStyle, debtChanges, distinctColors, foreignCashLine, dropEmptyCompare, fitTags, pickerOrder, topAccounts, trimLeadingEmpty, trimLeadingPeriods } from "../lib";
 import type { Options, Pnl, PnlNode, Transaction, TransactionPage } from "../types";
 
 interface Call {
@@ -638,5 +638,73 @@ describe("CashFlowReport", () => {
     expect(text).not.toContain("115");
     expect(text).toContain(en["finance.reports.previousAmount"].replace("{amount}", "").trim());
     expect(text).toContain("411.1M");
+  });
+});
+
+describe("editing a debt", () => {
+  it("sends only what changed, and never the description of a masked (salary) debt", () => {
+    const debt = { due_on: "2026-11-10", responsible: { id: 4, name: "Farrux Aliyev" }, description: "", masked: true };
+    // The masked debt reads "" here: a new due date must not erase the real description.
+    expect(debtChanges(debt, { due_on: "2026-11-20", responsible: 4, description: "" })).toEqual({ due_on: "2026-11-20" });
+    const open = { ...debt, description: "Yetkazib beruvchi qarzi", masked: false };
+    expect(debtChanges(open, { due_on: "2026-11-10", responsible: null, description: "Yetkazib beruvchi qarzi (avans)" })).toEqual({
+      responsible: null,
+      description: "Yetkazib beruvchi qarzi (avans)",
+    });
+  });
+});
+
+describe("cash totals", () => {
+  it("says which foreign money is in the total and which is left out for want of a rate", () => {
+    const t = (key: string, params?: Record<string, unknown>) => (key === "finance.overview.included" ? "included" : `not counted: ${String(params?.amounts)}`);
+    const money = (amount: string, currency: string) => `${amount} ${currency}`;
+    expect(foreignCashLine([{ currency: "UZS", amount: "5000.00", base: "5000.00" }, { currency: "USD", amount: "1700.00", base: "21250000.00" }], "UZS", money, t)).toBe("1700.00 USD included");
+    // No USD rate: the server leaves the dollars out of the total (complete: false).
+    expect(foreignCashLine([{ currency: "UZS", amount: "5000.00", base: "5000.00" }, { currency: "USD", amount: "1700.00", base: null }], "UZS", money, t)).toBe("not counted: 1700.00 USD");
+    expect(foreignCashLine([{ currency: "UZS", amount: "5000.00", base: "5000.00" }], "UZS", money, t)).toBeNull();
+  });
+});
+
+describe("PaymentDialog", () => {
+  it("opens again with the account picked, the options already cached", async () => {
+    stub({ "GET options/": () => json(options()) });
+    const app = await testApp("/c/1/finance/debts");
+    const { default: PaymentDialog } = await import("../components/PaymentDialog.vue");
+    const debt = { id: 9, direction: "payable", currency: "UZS", outstanding: "1200000.00", branch: { id: 1, name: "Chilonzor", code: "CHL" }, party: { id: 2, name: "Grand Pharm" }, issued_on: "2026-10-01" };
+    const Host = defineComponent({
+      props: { open: Boolean },
+      setup: (props) => () => h(PaymentDialog, { open: props.open, debt }),
+    });
+    const wrapper = mount(Host, { props: { open: true }, global: { plugins: app.plugins }, attachTo: document.body });
+    await flushPromises();
+    await flushPromises();
+    const picked = () => document.body.querySelector('[role=radio][aria-checked="true"]')?.textContent?.trim();
+    expect(picked()).toBeTruthy();
+    await wrapper.setProps({ open: false });
+    await flushPromises();
+    await wrapper.setProps({ open: true });
+    await flushPromises();
+    expect(picked()).toBeTruthy();
+    wrapper.unmount();
+    document.body.innerHTML = "";
+  });
+});
+
+describe("CounterpartyFormDialog", () => {
+  it("adds a new tag to an existing counterparty (the cached list is read-only)", async () => {
+    stub({ "GET categories/": () => json([]) });
+    const app = await testApp("/c/1/finance/counterparties");
+    const { default: CounterpartyFormDialog } = await import("../components/CounterpartyFormDialog.vue");
+    const MultiSelect = (await import("@/components/MultiSelect.vue")).default;
+    const party = Object.freeze({ id: 2, name: "Grand Pharm", kind: "supplier", tags: Object.freeze(["dori"]), default_category: null, is_active: true });
+    const { wrapper } = mountWithProviders(CounterpartyFormDialog, { plugins: app.plugins, props: { open: true, party } });
+    await flushPromises();
+    const tags = wrapper.findComponent(MultiSelect);
+    tags.vm.$emit("create", "ulgurji");
+    await flushPromises();
+    expect(tags.props("modelValue")).toEqual(["dori", "ulgurji"]);
+    expect(party.tags).toEqual(["dori"]);
+    wrapper.unmount();
+    document.body.innerHTML = "";
   });
 });
