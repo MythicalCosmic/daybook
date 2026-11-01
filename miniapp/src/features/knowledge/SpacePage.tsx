@@ -9,6 +9,7 @@ import { Badge, EmptyState, ListCard, ListRow, LoadError, PageHeader, Screen, Sc
 import { flattenTree, useKbSpace } from "./api";
 import "./knowledge.css";
 import { messages } from "./messages";
+import { PageIcon } from "./icons";
 
 /** One space: its published pages as an indented list. */
 export function SpacePage({ params }: PageProps) {
@@ -47,7 +48,7 @@ export function SpacePage({ params }: PageProps) {
             <ListRow
               key={node.id}
               className={`kbm-depth-${Math.min(depth, 3)}`}
-              icon={<span className="kbm-emoji">{node.emoji || "📄"}</span>}
+              icon={<PageIcon emoji={node.emoji} />}
               title={node.title}
               value={node.require_ack ? <Badge tone="accent" size="small">{t("mustRead")}</Badge> : undefined}
               onClick={() => {

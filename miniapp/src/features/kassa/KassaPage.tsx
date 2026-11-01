@@ -3,7 +3,7 @@ import { useState } from "react";
 
 import { useI18n } from "../../i18n";
 import { errorText } from "../../lib/actions";
-import { amountFromTyping, sumMoney, type DecimalString } from "../../lib/money";
+import { amountFromTyping, isZero, subtractMoney, sumMoney, type DecimalString } from "../../lib/money";
 import { clock } from "../../lib/time";
 import { useNow } from "../../lib/useNow";
 import { useNavigation } from "../../state/navigation";
@@ -12,9 +12,9 @@ import { useToast } from "../../state/toast";
 import { confirm, haptic } from "../../telegram";
 import { BottomBar, Button, Card, countedTotal, cx, EmptyState, MoneyText, PageHeader, Screen, ScreenSkeleton, SectionHead, type NoteCounts } from "../../ui";
 import type { PageProps } from "../registry";
-import { isDenied, useKassa, useOpenShift, useVoidSale, type Kassa, type ShiftDetail } from "./api";
+import { useKassa, useOpenShift, useVoidSale, type Kassa, type ShiftDetail } from "./api";
 import { duration, minutesBetween, useKassaT, useMoney } from "./lib";
-import { CashCount, Denied, ErrorScreen, MovementRow, ShiftRow } from "./parts";
+import { beforeData, CashCount, MovementRow, ShiftRow } from "./parts";
 import { ReceivedList } from "./Received";
 
 const LAST_TILL = "daybook.kassa.till";
@@ -34,16 +34,8 @@ function lastTill(): number | null {
 export default function KassaPage(_: PageProps) {
   const member = useMember();
   const kassa = useKassa(member.companyId);
-  if (kassa.isPending) {
-    return (
-      <Screen variant="detail">
-        <ScreenSkeleton variant="detail" delay={150} />
-      </Screen>
-    );
-  }
-  if (kassa.isError) {
-    return <Screen variant="detail">{isDenied(kassa.error) ? <Denied /> : <ErrorScreen error={kassa.error} retry={() => kassa.refetch()} />}</Screen>;
-  }
+  const instead = beforeData(kassa, <ScreenSkeleton variant="detail" delay={150} />);
+  if (instead || !kassa.data) return <Screen variant="detail">{instead}</Screen>;
   return kassa.data.shift ? <ShiftNow kassa={kassa.data} shift={kassa.data.shift} /> : <OpenShift kassa={kassa.data} />;
 }
 
@@ -262,8 +254,8 @@ function SalesSoFar({ kassa, shift }: { kassa: Kassa; shift: ShiftDetail }) {
   const currency = kassa.settings.currency;
   const rows = kassa.methods
     .map((method) => ({ method, totals: shift.receipts_recorded[String(method.id)] }))
-    .filter((row) => row.totals && (row.totals.sales !== "0.00" || row.totals.refunds !== "0.00"));
-  const net = sumMoney(rows.map((row) => sumMoney([row.totals!.sales, `-${row.totals!.refunds}`])));
+    .filter((row) => row.totals && (!isZero(row.totals.sales) || !isZero(row.totals.refunds)));
+  const net = sumMoney(rows.map((row) => subtractMoney(row.totals!.sales, row.totals!.refunds)));
   const count = rows.reduce((total, row) => total + (row.totals?.receipts ?? 0), 0);
   return (
     <Card className="kassa-sofar">
@@ -275,7 +267,7 @@ function SalesSoFar({ kassa, shift }: { kassa: Kassa; shift: ShiftDetail }) {
           {rows.map((row) => (
             <span key={row.method.id} className="kassa-sofar-method">
               <span>{row.method.name}</span>
-              <MoneyText amount={sumMoney([row.totals!.sales, `-${row.totals!.refunds}`])} currency={currency} compact />
+              <MoneyText amount={subtractMoney(row.totals!.sales, row.totals!.refunds)} currency={currency} compact />
             </span>
           ))}
         </div>
@@ -291,24 +283,29 @@ function Entries({ shift, currency }: { shift: ShiftDetail; currency: string }) 
   const toast = useToast();
   const money = useMoney(currency);
   const voidSale = useVoidSale(member.companyId);
-  const [busy, setBusy] = useState<number | null>(null);
+  // Receipts being voided: each keeps its button off and hears its own answer, however many go
+  // at once (mutate()'s callbacks reach only the latest call).
+  const [busy, setBusy] = useState<ReadonlySet<number>>(() => new Set());
+  const mark = (id: number, on: boolean) =>
+    setBusy((old) => {
+      const next = new Set(old);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
 
   const ask = async (id: number, amount: string) => {
     if (!(await confirm(t("now.voidAsk", { amount: money(amount) })))) return;
-    setBusy(id);
-    voidSale.mutate(
-      { id, reason: t("now.voidReason") },
-      {
-        onSuccess: () => toast(t("now.voided")),
-        onError: (error) => toast(errorText(error, appT), { tone: "error" }),
-        onSettled: () => setBusy(null),
-      },
-    );
+    mark(id, true);
+    voidSale.mutateAsync({ id, reason: t("now.voidReason") }).then(
+      () => toast(t("now.voided")),
+      (error: unknown) => toast(errorText(error, appT), { tone: "error" }),
+    ).finally(() => mark(id, false));
   };
 
   return (
     <>
-      <SectionHead count={shift.entries.filter((entry) => !entry.voided_at).length}>{t("now.entries")}</SectionHead>
+      <SectionHead>{t("now.entries")}</SectionHead>
       {shift.entries.length ? (
         <div className="card list-card">
           {shift.entries.map((entry) => (
@@ -326,7 +323,7 @@ function Entries({ shift, currency }: { shift: ShiftDetail; currency: string }) 
               {entry.voided_at ? (
                 <span className="kassa-entry-void">{t("move.voided")}</span>
               ) : (
-                <button type="button" className="btn btn-ghost kassa-entry-undo" disabled={busy === entry.id} onClick={() => void ask(entry.id, entry.total)}>
+                <button type="button" className="btn btn-ghost kassa-entry-undo" disabled={busy.has(entry.id)} onClick={() => void ask(entry.id, entry.total)}>
                   <Undo2 size={16} strokeWidth={2.6} aria-hidden />
                   <span>{t("now.void")}</span>
                 </button>

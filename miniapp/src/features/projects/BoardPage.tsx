@@ -9,6 +9,7 @@ import { useMember } from "../../state/session";
 import { useToast } from "../../state/toast";
 import { haptic } from "../../telegram";
 import { Avatar, Badge, IconButton, LoadError, PageHeader, PullToRefresh, ScreenSkeleton, Segmented, cx } from "../../ui";
+import { errorText } from "../../lib/actions";
 import type { PageProps } from "../registry";
 import { useBoard, useMoveCard, useTimer, type Board, type Card } from "./api";
 import { colorClass, endOf, hhmm } from "./lib";
@@ -61,8 +62,7 @@ export default function BoardPage({ params }: PageProps) {
         toast(status === "done" ? t("movedDone", { key: result.card.key }) : status === "review" ? t("movedReview") : t("moved", { list: target.name }), { tone: "success" });
       } catch (error) {
         haptic.notify("error");
-        const detail = (error as { detail?: string | null }).detail;
-        toast(detail ?? t("moveFailed"), { tone: "error" });
+        toast(errorText(error, t, t("moveFailed")), { tone: "error" });
         if ((error as { body?: { code?: string } }).body?.code === "needs_proof") openCard(current.card);
       }
     },
@@ -220,8 +220,9 @@ export default function BoardPage({ params }: PageProps) {
                   onPointerCancel={onPointerCancel}
                   onContextMenu={(event) => event.preventDefault()}
                   onClick={(event) => {
-                    // Keyboard and screen readers: Enter/Space open the card (pointers use pointerup).
-                    if (event.detail === 0) openCard(card);
+                    // Keyboard and screen readers: Enter/Space open the card. A pointer opens a card it
+                    // can move on pointerup (a hold lifts it instead); one it can't move, here.
+                    if (event.detail === 0 || !card.can_move) openCard(card);
                   }}
                 >
                   <CardFace card={card} board={board} timed={timedCard === card.id} />

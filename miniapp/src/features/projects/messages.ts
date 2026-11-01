@@ -9,7 +9,7 @@ export const messages = defineMessages({
     kicker: "Projects",
     empty: "You're not on a project yet",
     emptyBody: "When you're added to a project or given a card on one, it shows up here.",
-    cards: "{done} of {total} cards done",
+    cards: "Cards done: {done} of {total}",
     myOpen_one: "{count} card of yours open",
     myOpen_other: "{count} cards of yours open",
     myNone: "Nothing open for you",

@@ -6,6 +6,7 @@ import type { TaskSlotProps } from "../registry";
 import { useTaskPages } from "./api";
 import { messages } from "./messages";
 import "./knowledge.css";
+import { PageIcon } from "./icons";
 
 /**
  * On the task screen (`task.actions`): "How to do this", the knowledge pages linked to the task
@@ -22,7 +23,7 @@ export function HowTo({ member, task }: TaskSlotProps) {
       {pages.map((page) => (
         <ListRow
           key={page.id}
-          icon={<span className="kbm-emoji">{page.emoji || "📄"}</span>}
+          icon={<PageIcon emoji={page.emoji} />}
           title={page.title}
           subtitle={`${page.space.icon} ${page.space.name}`.trim()}
           onClick={() => {

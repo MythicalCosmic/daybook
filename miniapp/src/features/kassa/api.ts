@@ -7,6 +7,7 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api, ApiError, apiForm, type FormFields } from "../../api/client";
+import { downscale } from "../../lib/image";
 import type { Page } from "../../api/types";
 import type { NoteCounts } from "../../ui";
 
@@ -219,8 +220,10 @@ export type MovementInput = {
 };
 
 export function useMovement(company: number, shiftId: number) {
-  return useKassaMutation(company, (input: MovementInput) =>
-    apiForm<Movement>(`${base(company)}/shifts/${shiftId}/movements/`, input as FormFields),
+  // The receipt photo is made smaller inside the request, so the button stays busy meanwhile: a
+  // second tap while it shrank sent the payout twice.
+  return useKassaMutation(company, async ({ photo, ...input }: MovementInput) =>
+    apiForm<Movement>(`${base(company)}/shifts/${shiftId}/movements/`, { ...input, photo: photo ? await downscale(photo) : null } as FormFields),
   );
 }
 

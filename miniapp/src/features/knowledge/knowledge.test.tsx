@@ -213,7 +213,9 @@ describe("How to do this, on the task screen", () => {
     const rows = [...container.querySelectorAll(".list-item")];
     expect(rows.map((row) => row.querySelector(".list-item-text > span")?.textContent)).toEqual(["Kassani ochish tartibi", "Terminal"]);
     expect(rows[0]!.textContent).toContain("💰 Kassa");
-    expect(rows[1]!.querySelector(".kbm-emoji")?.textContent).toBe("📄");
+    // A page without its own emoji gets the plain page icon, never an emoji the app picked.
+    expect(rows[1]!.querySelector(".kbm-emoji svg")).not.toBeNull();
+    expect(rows[1]!.querySelector(".kbm-emoji")?.textContent).toBe("");
     act(() => fireEvent.click(rows[1]!));
     expect(nav!.stack).toEqual([{ feature: "knowledge", page: "page", params: { id: 9 } }]);
   });

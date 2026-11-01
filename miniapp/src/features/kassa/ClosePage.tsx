@@ -31,11 +31,11 @@ import {
   useObjectUrl,
 } from "../../ui";
 import type { PageProps } from "../registry";
-import { closeShift, fetchShift, isDenied, isNetworkError, kassaKeys, tillMethods, useKassa, useShift, type Kassa, type PaymentLine, type ShiftDetail } from "./api";
+import { closeShift, fetchShift, isNetworkError, kassaKeys, tillMethods, useKassa, useShift, type Kassa, type PaymentLine, type ShiftDetail } from "./api";
 import { clearDraft, emptyDraft, STEPS, useCloseDraft, type CloseDraft, type Line, type PhotoKind, type Step } from "./draft";
-import { downscale } from "./image";
+import { downscale } from "../../lib/image";
 import { digits, useKassaT, useMoney, type KassaT } from "./lib";
-import { CashCount, Denied, ErrorScreen, Line as Row, Lines } from "./parts";
+import { beforeData, CashCount, Line as Row, Lines } from "./parts";
 
 /**
  * Closing a shift, in four steps: sales per payment method on the keypad, the Z-report and
@@ -48,16 +48,9 @@ export default function ClosePage({ params }: PageProps) {
   const kassa = useKassa(member.companyId);
   const [result, setResult] = useState<ShiftDetail | null>(null);
   if (result) return <CloseResult shift={result} kassa={kassa.data ?? null} />;
-  if (kassa.isPending) {
-    return (
-      <Screen variant="detail">
-        <ScreenSkeleton variant="detail" delay={150} />
-      </Screen>
-    );
-  }
-  if (kassa.isError) {
-    return <Screen variant="detail">{isDenied(kassa.error) ? <Denied /> : <ErrorScreen error={kassa.error} retry={() => kassa.refetch()} />}</Screen>;
-  }
+  // A refetch that fails while closing keeps the wizard (and its retries) on screen.
+  const instead = beforeData(kassa, <ScreenSkeleton variant="detail" delay={150} />);
+  if (instead || !kassa.data) return <Screen variant="detail">{instead}</Screen>;
   const shift = kassa.data.shift;
   if (!shift || shift.id !== shiftId) return <AlreadyClosed shiftId={shiftId} kassa={kassa.data} />;
   return <CloseWizard kassa={kassa.data} shift={shift} onClosed={setResult} />;
@@ -67,14 +60,8 @@ export default function ClosePage({ params }: PageProps) {
 function AlreadyClosed({ shiftId, kassa }: { shiftId: number; kassa: Kassa }) {
   const member = useMember();
   const shift = useShift(member.companyId, shiftId);
-  if (shift.isPending) {
-    return (
-      <Screen variant="detail">
-        <ScreenSkeleton variant="detail" delay={150} />
-      </Screen>
-    );
-  }
-  if (shift.isError) return <Screen variant="detail">{isDenied(shift.error) ? <Denied /> : <ErrorScreen error={shift.error} retry={() => shift.refetch()} />}</Screen>;
+  const instead = beforeData(shift, <ScreenSkeleton variant="detail" delay={150} />);
+  if (instead || !shift.data) return <Screen variant="detail">{instead}</Screen>;
   return <CloseResult shift={shift.data} kassa={kassa} />;
 }
 
@@ -97,6 +84,11 @@ function useCloseSubmit(
   const current = useRef<SendState>("idle");
   const attempts = useRef(0);
   const timer = useRef<number | undefined>(undefined);
+  // Bumped by cancel(): an answer to an older try then changes nothing and schedules no new one.
+  const round = useRef(0);
+  // Off once the page is left: no new try is scheduled then (the draft remembers the close, and
+  // the page resumes it on return), so two pages never send side by side.
+  const alive = useRef(true);
   const latest = useRef(handlers);
   latest.current = handlers;
   const move = (next: SendState) => {
@@ -107,25 +99,29 @@ function useCloseSubmit(
   const send = useCallback(async (): Promise<void> => {
     window.clearTimeout(timer.current);
     if (current.current === "sending") return;
+    const mine = round.current;
     move("sending");
     setError(null);
     latest.current.setPending(true);
     try {
       const shift = await closeShift(company, shiftId, latest.current.build());
+      if (round.current !== mine) return;
       attempts.current = 0;
       move("idle");
       latest.current.onDone(shift);
     } catch (failure) {
+      if (round.current !== mine) return;
       if (isNetworkError(failure)) {
         const delay = DELAYS[Math.min(attempts.current, DELAYS.length - 1)];
         attempts.current += 1;
         move("waiting");
-        timer.current = window.setTimeout(() => void send(), delay);
+        if (alive.current) timer.current = window.setTimeout(() => void send(), delay);
         return;
       }
       // A "no" may come from an earlier try that did close the shift: then it's done.
       try {
         const shift = await fetchShift(company, shiftId);
+        if (round.current !== mine) return;
         if (shift.status !== "open") {
           move("idle");
           latest.current.onDone(shift);
@@ -134,24 +130,36 @@ function useCloseSubmit(
       } catch {
         // Keep the first answer.
       }
+      if (round.current !== mine) return;
       latest.current.setPending(false);
       setError(errorText(failure, appT));
       move("failed");
     }
   }, [company, shiftId, appT]);
 
+  /** Stop: no try waiting to go out, and the answer to one on its way changes nothing. */
+  const cancel = useCallback(() => {
+    round.current += 1;
+    window.clearTimeout(timer.current);
+    attempts.current = 0;
+    setError(null);
+    move("idle");
+  }, []);
+
   useEffect(() => {
+    alive.current = true;
     const online = () => {
       if (current.current === "waiting") void send();
     };
     window.addEventListener("online", online);
     return () => {
+      alive.current = false;
       window.removeEventListener("online", online);
       window.clearTimeout(timer.current);
     };
   }, [send]);
 
-  return { state, error, send };
+  return { state, error, send, cancel };
 }
 
 const amountOf = (typing: string): DecimalString => amountFromTyping(typing) ?? "0";
@@ -227,15 +235,17 @@ function CloseWizard({ kassa, shift, onClosed }: { kassa: Kassa; shift: ShiftDet
     setPending: (pending) => update({ pending }),
   });
 
-  // A close that didn't get through before a reload goes again as soon as the screen is back.
+  // A close that didn't get through before a reload goes again as soon as the screen is back,
+  // with the photos it had: once they are read back from the phone.
   const resumed = useRef(false);
   const send = submit.send;
+  const photosReady = store.photosReady;
   useEffect(() => {
-    if (draft.pending && !resumed.current) {
+    if (draft.pending && photosReady && !resumed.current) {
       resumed.current = true;
       void send();
     }
-  }, [draft.pending, send]);
+  }, [draft.pending, photosReady, send]);
 
   const go = (step: Step) => {
     update({ step });
@@ -303,11 +313,15 @@ function CloseWizard({ kassa, shift, onClosed }: { kassa: Kassa; shift: ShiftDet
           <div className="kassa-restored">
             <FileText size={16} strokeWidth={2.5} aria-hidden />
             <span className="num">{t("close.restored", { time: clock(store.restoredAt, member.timeZone, locale) })}</span>
+            {/* Not while the close goes out: its next try would send the empty draft. */}
             <button
               type="button"
               className="btn btn-ghost kassa-restored-reset"
+              disabled={busy}
               onClick={async () => {
-                if (await confirm(t("close.startOverAsk"))) store.reset();
+                if (!(await confirm(t("close.startOverAsk")))) return;
+                submit.cancel();
+                store.reset();
               }}
             >
               {t("close.startOver")}

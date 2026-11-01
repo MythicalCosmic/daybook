@@ -28,6 +28,7 @@ export default function SwapSheet({ params, close }: SheetProps) {
   const shift = shifts.data?.find((item) => item.id === shiftId);
 
   if (shifts.isPending) return <SkeletonList count={3} height={56} />;
+  if (!shifts.data) return <LoadError compact error={shifts.error} onRetry={() => void shifts.refetch()} />;
   if (!shift) return <EmptyState compact icon={SearchX} tone="sage" title={t("ui.notFound.title")} body={t("ui.notFound.body")} />;
   return <SwapForm shift={shift} close={close} />;
 }

@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { useI18n } from "../../i18n";
 import { errorText } from "../../lib/actions";
+import { formatMoney } from "../../lib/money";
 import { useNow } from "../../lib/useNow";
 import { useMember } from "../../state/session";
 import { useToast } from "../../state/toast";
@@ -20,42 +21,37 @@ import "./kassa.css";
  */
 export function ReceivedCards({ member }: SlotProps) {
   const handovers = useHandovers(member.companyId);
+  const answer = useAnswer(member.companyId);
   const list = handovers.data ?? [];
   if (!list.length) return null;
   return (
     <>
       {list.map((handover) => (
-        <ReceivedCard key={handover.id} handover={handover} />
+        <ReceivedCard key={handover.id} handover={handover} answer={answer} />
       ))}
     </>
   );
 }
 
-/** The same cards inside the Kassa screen. */
-export function ReceivedList() {
-  const member = useMember();
-  return <ReceivedCards member={member} summary={undefined} />;
-}
+type Answer = ReturnType<typeof useAnswer>;
 
-function ReceivedCard({ handover }: { handover: Handover }) {
+/**
+ * Answering a handover, kept by the list rather than the card: the card goes away the moment it's
+ * answered, and the answer's word (the toast, or the card back with why) must still reach the
+ * person. A card's own callbacks would be dropped with it.
+ */
+function useAnswer(company: number) {
   const t = useKassaT();
-  const { t: appT, locale } = useI18n();
-  const member = useMember();
+  const { t: appT, lang } = useI18n();
   const toast = useToast();
-  const now = useNow();
-  const money = useMoney(handover.currency);
-  const answer = useAnswerHandover(member.companyId);
-  const [declining, setDeclining] = useState(false);
-  const [reason, setReason] = useState("");
-  const amount = money(handover.amount);
-
-  const send = (kind: "confirm" | "decline") => {
+  const answer = useAnswerHandover(company);
+  const send = (handover: Handover, kind: "confirm" | "decline", reason: string) =>
     answer.mutate(
       { id: handover.id, answer: kind, reason: kind === "decline" ? reason.trim() : "" },
       {
         onSuccess: () => {
           haptic.notify(kind === "confirm" ? "success" : "warning");
-          toast(kind === "confirm" ? t("received.confirmed", { amount }) : t("received.declined", { name: handover.from.name }), {
+          toast(kind === "confirm" ? t("received.confirmed", { amount: formatMoney(handover.amount, handover.currency, lang) }) : t("received.declined", { name: handover.from.name }), {
             tone: kind === "confirm" ? "success" : "default",
           });
         },
@@ -65,7 +61,26 @@ function ReceivedCard({ handover }: { handover: Handover }) {
         },
       },
     );
-  };
+  return { send, busy: (handover: Handover) => answer.isPending && answer.variables?.id === handover.id };
+}
+
+/** The same cards inside the Kassa screen. */
+export function ReceivedList() {
+  const member = useMember();
+  return <ReceivedCards member={member} summary={undefined} />;
+}
+
+function ReceivedCard({ handover, answer }: { handover: Handover; answer: Answer }) {
+  const t = useKassaT();
+  const { locale } = useI18n();
+  const member = useMember();
+  const now = useNow();
+  const money = useMoney(handover.currency);
+  const [declining, setDeclining] = useState(false);
+  const [reason, setReason] = useState("");
+  const amount = money(handover.amount);
+  const busy = answer.busy(handover);
+  const send = (kind: "confirm" | "decline") => answer.send(handover, kind, reason);
 
   return (
     <Card tone="accent" className="kassa-received">
@@ -92,20 +107,20 @@ function ReceivedCard({ handover }: { handover: Handover }) {
             <Input value={reason} onChange={(event) => setReason(event.target.value)} placeholder={t("received.reasonPlaceholder")} maxLength={300} autoFocus />
           </Field>
           <div className="kassa-received-actions">
-            <Button variant="ghost" onClick={() => setDeclining(false)} disabled={answer.isPending}>
+            <Button variant="ghost" onClick={() => setDeclining(false)} disabled={busy}>
               {t("received.cancel")}
             </Button>
-            <Button variant="primary" loading={answer.isPending} onClick={() => send("decline")}>
+            <Button variant="primary" loading={busy} onClick={() => send("decline")}>
               {t("received.send")}
             </Button>
           </div>
         </div>
       ) : (
         <div className="kassa-received-actions">
-          <Button variant="secondary" onClick={() => setDeclining(true)} disabled={answer.isPending}>
+          <Button variant="secondary" onClick={() => setDeclining(true)} disabled={busy}>
             {t("received.no")}
           </Button>
-          <Button variant="primary" icon={Check} loading={answer.isPending} onClick={() => send("confirm")}>
+          <Button variant="primary" icon={Check} loading={busy} onClick={() => send("confirm")}>
             {t("received.yes")}
           </Button>
         </div>

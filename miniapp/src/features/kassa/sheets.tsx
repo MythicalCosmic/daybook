@@ -10,10 +10,9 @@ import { useToast } from "../../state/toast";
 import { haptic } from "../../telegram";
 import { Avatar, Button, ChipGroup, cx, Field, Input, MoneyInput, NumberPad, PhotoInput, ScreenSkeleton, Segmented, SheetTitle, SlideToConfirm, type SlideState } from "../../ui";
 import type { SheetProps } from "../registry";
-import { isDenied, tillMethods, useKassa, useMovement, useSale, useVoidSale, type Kassa, type ShiftDetail } from "./api";
-import { downscale } from "./image";
+import { tillMethods, useKassa, useMovement, useSale, useVoidSale, type Kassa, type ShiftDetail } from "./api";
 import { useKassaT, useMoney } from "./lib";
-import { Denied, ErrorScreen, NoShift } from "./parts";
+import { beforeData, NoShift } from "./parts";
 
 type Body = (props: { kassa: Kassa; shift: ShiftDetail; close: () => void; params: SheetProps["params"] }) => React.ReactNode;
 
@@ -22,8 +21,9 @@ function withShift(Content: Body) {
   return function KassaSheet({ close, params }: SheetProps) {
     const member = useMember();
     const kassa = useKassa(member.companyId);
-    if (kassa.isPending) return <ScreenSkeleton variant="detail" delay={150} />;
-    if (kassa.isError) return isDenied(kassa.error) ? <Denied compact /> : <ErrorScreen compact error={kassa.error} retry={() => kassa.refetch()} />;
+    // A refetch that fails (back from the camera, after each sale) keeps the form and what's typed.
+    const instead = beforeData(kassa, <ScreenSkeleton variant="detail" delay={150} />, true);
+    if (instead || !kassa.data) return instead;
     if (!kassa.data.shift) return <NoShift onDone={close} />;
     return <Content kassa={kassa.data} shift={kassa.data.shift} close={close} params={params} />;
   };
@@ -63,10 +63,10 @@ const PayoutBody: Body = ({ kassa, shift, close }) => {
   const value = amountFromTyping(amount);
   const valid = Boolean(value && !isZero(value) && reason.trim());
 
-  const submit = async () => {
-    if (!value) return;
+  const submit = () => {
+    if (!value || move.isPending) return;
     move.mutate(
-      { kind: "payout", amount: value, category_id: category ? Number(category) : null, reason: reason.trim(), photo: photo ? await downscale(photo) : null },
+      { kind: "payout", amount: value, category_id: category ? Number(category) : null, reason: reason.trim(), photo },
       { onSuccess: () => done.ok(t("payout.done"), close), onError: done.fail },
     );
   };
@@ -88,7 +88,7 @@ const PayoutBody: Body = ({ kassa, shift, close }) => {
       <Field label={t("payout.photo")} hint={t("payout.photoHint")} optional>
         <PhotoInput value={photo} onChange={setPhoto} capture="environment" label={t("payout.photoCta")} />
       </Field>
-      <Button variant="primary" size="lg" block icon={HandCoins} disabled={!valid} loading={move.isPending} onClick={() => void submit()}>
+      <Button variant="primary" size="lg" block icon={HandCoins} disabled={!valid} loading={move.isPending} onClick={submit}>
         {value && !isZero(value) ? t("payout.submit", { amount: money(value) }) : t("payout.title")}
       </Button>
     </>

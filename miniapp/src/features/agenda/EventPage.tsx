@@ -149,10 +149,10 @@ export function EventPage({ params }: PageProps) {
 
 function when(event: AgendaEvent, today: string, timeZone: string, locale: string, words: { today: string; tomorrow: string }, allDay: string): string {
   const first = event.all_day ? event.start.slice(0, 10) : dayKey(event.start, timeZone);
-  const day = `${dayName(first, today, timeZone, locale, words)}, ${dayMonth(`${first}T12:00:00Z`, timeZone, locale)}`;
+  const day = `${dayName(first, today, timeZone, locale, words)}, ${dayMonth(first, timeZone, locale)}`;
   if (event.all_day) {
     const last = event.end?.slice(0, 10);
-    return last && last !== first ? `${day} – ${dayMonth(`${last}T12:00:00Z`, timeZone, locale)}` : `${day} · ${allDay}`;
+    return last && last !== first ? `${day} – ${dayMonth(last, timeZone, locale)}` : `${day} · ${allDay}`;
   }
   const start = clock(event.start, timeZone, locale);
   return event.end ? `${day} · ${start} – ${clock(event.end, timeZone, locale)}` : `${day} · ${start}`;

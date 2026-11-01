@@ -9,6 +9,7 @@ import { useMember } from "../../state/session";
 import { useToast } from "../../state/toast";
 import { haptic } from "../../telegram";
 import { Button, Chip, SheetTitle } from "../../ui";
+import { errorText } from "../../lib/actions";
 import type { SheetProps } from "../registry";
 import { useBoard, useMoveCard, useTimer, type Board } from "./api";
 import { elapsed, endOf, hhmm } from "./lib";
@@ -53,7 +54,7 @@ export default function CardSheet({ params, close }: SheetProps) {
     } catch (error) {
       haptic.notify("error");
       const code = (error as { body?: { code?: string } }).body?.code;
-      toast(code === "needs_proof" ? t("card.needsProof") : ((error as { detail?: string | null }).detail ?? t("moveFailed")), { tone: "error" });
+      toast(code === "needs_proof" ? t("card.needsProof") : errorText(error, t, t("moveFailed")), { tone: "error" });
     }
   }
 

@@ -61,9 +61,10 @@ export function CalendarHome() {
     />
   );
 
+  /** A week back or on, or (0) this week with today picked. */
   const shift = (weeks: number) => {
     haptic.select();
-    const next = addDays(monday, weeks * 7);
+    const next = weeks === 0 ? mondayOf(today) : addDays(monday, weeks * 7);
     setMonday(next);
     setSelected(weeks === 0 ? today : next);
   };
@@ -88,13 +89,13 @@ export function CalendarHome() {
                 type="button"
                 className={cx("agm-day", day === today && "agm-day--today")}
                 aria-pressed={day === selected}
-                aria-label={`${dayName(day, today, member.timeZone, locale, words)} ${dayMonth(`${day}T12:00:00Z`, member.timeZone, locale)}`}
+                aria-label={`${dayName(day, today, member.timeZone, locale, words)} ${dayMonth(day, member.timeZone, locale)}`}
                 onClick={() => {
                   haptic.select();
                   setSelected(day);
                 }}
               >
-                <span className="agm-day-name">{weekdayShort(`${day}T12:00:00Z`, member.timeZone, locale)}</span>
+                <span className="agm-day-name">{weekdayShort(day, member.timeZone, locale)}</span>
                 <span className="agm-day-num">{Number(day.slice(8))}</span>
                 <span className="agm-dots" aria-hidden>
                   {items.slice(0, 3).map((item) => (
@@ -114,7 +115,7 @@ export function CalendarHome() {
         size="small"
         action={monday !== mondayOf(today) || selected !== today ? { label: t("today"), onClick: () => shift(0) } : undefined}
       >
-        {dayName(selected, today, member.timeZone, locale, words)} · {dayMonth(`${selected}T12:00:00Z`, member.timeZone, locale)}
+        {dayName(selected, today, member.timeZone, locale, words)} · {dayMonth(selected, member.timeZone, locale)}
       </SectionHead>
       {!week.data ? (
         week.isError ? (
@@ -138,7 +139,7 @@ export function CalendarHome() {
       ) : (
         nextDays.map((day) => (
           <div key={day} className="agm-group">
-            <SectionHead size="small">{`${dayName(day, today, member.timeZone, locale, words)} · ${dayMonth(`${day}T12:00:00Z`, member.timeZone, locale)}`}</SectionHead>
+            <SectionHead size="small">{`${dayName(day, today, member.timeZone, locale, words)} · ${dayMonth(day, member.timeZone, locale)}`}</SectionHead>
             {(nextByDay.get(day) ?? []).map((item) => row(item, day))}
           </div>
         ))

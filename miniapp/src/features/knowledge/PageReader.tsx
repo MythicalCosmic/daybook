@@ -15,6 +15,7 @@ import { useFollowLink } from "./links";
 import "./knowledge.css";
 import { messages } from "./messages";
 import { safeHtml } from "./safeHtml";
+import { PageIcon } from "./icons";
 
 /** Reading a page, and confirming it with "I've read it" when the page asks for it. */
 export function PageReader({ params }: PageProps) {
@@ -95,7 +96,7 @@ export function PageReader({ params }: PageProps) {
               {data.children.map((child) => (
                 <ListRow
                   key={child.id}
-                  icon={<span className="kbm-emoji">{child.emoji || "📄"}</span>}
+                  icon={<PageIcon emoji={child.emoji} />}
                   title={child.title}
                   onClick={() => {
                     haptic.select();

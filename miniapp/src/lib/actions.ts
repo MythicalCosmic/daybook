@@ -10,8 +10,12 @@ import { useToast } from "../state/toast";
 import { haptic, popup } from "../telegram";
 import { isPending, sendLater, setPending, UNDO_MS } from "./delayedSend";
 
-export function errorText(error: unknown, t: Translate): string {
-  if (error instanceof ApiError) return error.detail ?? t("error.generic");
+/**
+ * What to tell the person when a request failed: the server's own reason, else `fallback` (what
+ * didn't work, "Couldn't move it") or a general line; no connection when it never got there.
+ */
+export function errorText(error: unknown, t: Translate, fallback?: string): string {
+  if (error instanceof ApiError) return error.detail ?? fallback ?? t("error.generic");
   return t("error.network");
 }
 

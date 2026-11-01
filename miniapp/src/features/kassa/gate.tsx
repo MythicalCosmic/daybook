@@ -4,24 +4,19 @@
  * at once, and the app never asks the server for a till it would refuse. Cash handed to them
  * still shows on the Kassa page, because answering it needs no permission.
  */
-import { Lock } from "lucide-react";
 import type { ComponentType } from "react";
 
 import { can } from "../../api/permissions";
 import { useNavigation } from "../../state/navigation";
 import { useMember, type Member } from "../../state/session";
-import { EmptyState, PageHeader, Screen } from "../../ui";
+import { PageHeader, Screen } from "../../ui";
 import type { PageProps, SheetProps } from "../registry";
 import { useKassaT } from "./lib";
+import { Denied } from "./parts";
 import { ReceivedList } from "./Received";
 
 /** The till itself: cashiers and whoever else may run one. */
 export const runsTill = (member: Member) => can(member, "sales.operate");
-
-function NoTill({ compact = false }: { compact?: boolean }) {
-  const t = useKassaT();
-  return <EmptyState compact={compact} icon={Lock} tone="sage" title={t("denied.title")} body={t("denied.body")} />;
-}
 
 function NoTillPage({ withReceived }: { withReceived: boolean }) {
   const t = useKassaT();
@@ -30,7 +25,7 @@ function NoTillPage({ withReceived }: { withReceived: boolean }) {
     <Screen variant="detail">
       <PageHeader title={t("kassa")} onBack={navigation.pop} />
       {withReceived && <ReceivedList />}
-      <NoTill />
+      <Denied />
     </Screen>
   );
 }
@@ -47,6 +42,6 @@ export function tillPage(Page: ComponentType<PageProps>, { withReceived = false 
 export function tillSheet(Sheet: ComponentType<SheetProps>): ComponentType<SheetProps> {
   return function TillSheet(props: SheetProps) {
     const member = useMember();
-    return runsTill(member) ? <Sheet {...props} /> : <NoTill compact />;
+    return runsTill(member) ? <Sheet {...props} /> : <Denied compact />;
   };
 }

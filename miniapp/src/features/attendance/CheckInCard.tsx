@@ -90,7 +90,8 @@ export function CheckInCard({ onOpen, compact = false }: { onOpen?: () => void; 
       </Card>
     );
   }
-  if (today.isError || !today.data) {
+  // A refetch that fails keeps what was shown (checked in at 08:57, the slide to check out).
+  if (!today.data) {
     return (
       <Card padding="lg" className="att-hero">
         <div className="att-hero-box-title">
@@ -175,7 +176,7 @@ export function CheckInCard({ onOpen, compact = false }: { onOpen?: () => void; 
 
   const slideState: SlideState = flash ? "done" : step.kind === "locating" || step.kind === "sending" ? "loading" : "idle";
   const look = describe(day, now, t, { timeZone: member.timeZone, locale, lang });
-  const chevron = onOpen && !natural ? <IconButton icon={ChevronRight} label={t("card.open")} size={36} variant="ghost" onClick={onOpen} /> : null;
+  const chevron = onOpen && !natural ? <IconButton icon={ChevronRight} label={t("card.open")} size={40} variant="ghost" onClick={onOpen} /> : null;
 
   if (compact && onOpen && !direction && step.kind === "idle") {
     const icon = day.state === "done" ? CircleCheck : day.state === "upcoming" ? CalendarClock : day.next_shift ? CalendarDays : CalendarOff;

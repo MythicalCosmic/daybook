@@ -41,7 +41,7 @@ export default function BoardPage() {
         <EmptyState icon={Lock} tone="sage" title={t("board.denied")} body={t("board.deniedBody")} />
       ) : board.isPending ? (
         <SkeletonList count={6} />
-      ) : board.isError || !data ? (
+      ) : !data ? (
         <LoadError error={board.error} onRetry={() => void board.refetch()} />
       ) : !data.people.length ? (
         <EmptyState icon={CalendarOff} tone="sage" title={t("board.empty")} body={t("board.emptyBody")} />

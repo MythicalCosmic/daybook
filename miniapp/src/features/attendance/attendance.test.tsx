@@ -31,6 +31,9 @@ vi.mock("../../api/client", async (importOriginal) => {
   const real = await importOriginal<typeof import("../../api/client")>();
   return { ...real, api: client.api, apiForm: client.apiForm };
 });
+// Photos are made smaller before they travel: here a stand-in that says it did.
+const image = vi.hoisted(() => ({ downscale: vi.fn(async (file: File) => new File([file], `small-${file.name}`, { type: file.type })) }));
+vi.mock("../../lib/image", () => image);
 
 const CHILONZOR = { id: 3, name: "Chilonzor", code: "CH", latitude: "41.2856000", longitude: "69.2034000", geofence_m: 150 };
 
@@ -287,7 +290,39 @@ describe("the check-in card", () => {
       fireEvent.click(screen.getByRole("button", { name: "Check in" }));
     });
     await waitFor(() => expect(client.apiForm).toHaveBeenCalledOnce());
-    expect(client.apiForm.mock.calls[0]).toEqual(["/companies/1/attendance/check-in/", { lat: "41.285600", lng: "69.203400", accuracy: 8, photo: selfie }]);
+    // A phone's 3-5 MB selfie goes made smaller, as receipts and proof photos do.
+    expect(image.downscale).toHaveBeenCalledWith(selfie);
+    expect(client.apiForm.mock.calls[0]).toEqual([
+      "/companies/1/attendance/check-in/",
+      { lat: "41.285600", lng: "69.203400", accuracy: 8, photo: expect.objectContaining({ name: "small-me.jpg" }) },
+    ]);
+  });
+
+  it("keeps the day on screen when a refetch behind it fails", async () => {
+    serve(day({ state: "in", record: RECORD as MyDay["record"] }));
+    const queries = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const me = { id: 1, telegram_id: 4242, telegram_username: "", first_name: "Alisher", last_name: "Valiyev", phone: "", memberships: [membership()] } as unknown as Me;
+    render(
+      <QueryClientProvider client={queries}>
+        <I18nProvider lang="en">
+          <ToastProvider>
+            <SessionProvider me={me}>
+              <NavigationProvider>
+                <CheckInCard />
+              </NavigationProvider>
+            </SessionProvider>
+          </ToastProvider>
+        </I18nProvider>
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByText("Checked in at 08:57")).toBeTruthy();
+    client.api.mockRejectedValue(new TypeError("Failed to fetch"));
+    await act(async () => {
+      await queries.refetchQueries();
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(screen.getByText("Checked in at 08:57")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
   });
 
   it("checks out while checked in, showing the time so far", async () => {

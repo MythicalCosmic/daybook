@@ -8,6 +8,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ApiError } from "../../api/client";
 import type { Me, Membership, Summary } from "../../api/types";
 import { I18nProvider } from "../../i18n";
 import { NavigationProvider } from "../../state/navigation";
@@ -15,7 +16,7 @@ import { SessionProvider, type Member } from "../../state/session";
 import { ToastProvider } from "../../state/toast";
 import type { Kassa, ShiftDetail } from "./api";
 import ClosePage from "./ClosePage";
-import { draftKey, emptyDraft, hasContent, readDraft, writeDraft } from "./draft";
+import { draftKey, emptyDraft, hasContent, photoStore, readDraft, writeDraft } from "./draft";
 import { KassaHero } from "./KassaHero";
 import KassaPage from "./KassaPage";
 import { ReceivedCards } from "./Received";
@@ -26,6 +27,11 @@ import { features, findFeature } from "../registry";
 const kassaFeature = findFeature(features, "kassa")!;
 
 const client = vi.hoisted(() => ({ api: vi.fn(), apiForm: vi.fn() }));
+// Making a photo smaller takes a moment on a phone: `delay` ms here (0 unless a test says).
+const image = vi.hoisted(() => ({ delay: 0 }));
+vi.mock("../../lib/image", () => ({
+  downscale: (file: File) => new Promise<File>((resolve) => setTimeout(() => resolve(file), image.delay)),
+}));
 vi.mock("../../api/client", async (importOriginal) => {
   const real = await importOriginal<typeof import("../../api/client")>();
   return { ...real, api: client.api, apiForm: client.apiForm };
@@ -121,7 +127,7 @@ function serve(gets: Record<string, unknown>, post: (path: string, options: { me
 
 function wrap(children: ReactNode, person: Me = me) {
   const queries = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity }, mutations: { retry: false } } });
-  return render(
+  const view = render(
     <QueryClientProvider client={queries}>
       <I18nProvider lang="en">
         <SessionProvider me={person}>
@@ -134,10 +140,12 @@ function wrap(children: ReactNode, person: Me = me) {
       </I18nProvider>
     </QueryClientProvider>,
   );
+  return Object.assign(view, { queries });
 }
 
 beforeEach(() => {
   localStorage.clear();
+  image.delay = 0;
   vi.stubGlobal("confirm", () => true);
 });
 
@@ -225,6 +233,59 @@ describe("during a shift", () => {
       }),
     );
     await waitFor(() => expect(close).toHaveBeenCalled());
+  });
+
+  it("sends one payout for a double tap, even while the receipt photo is made smaller", async () => {
+    serve({ "/sales/shifts/current/": kassa({ shift: shift() }) });
+    client.apiForm.mockResolvedValue({ id: 99 });
+    image.delay = 100;
+    wrap(<PayoutSheet params={{}} close={() => undefined} />);
+    fireEvent.change(await screen.findByLabelText("Amount"), { target: { value: "120000" } });
+    fireEvent.change(screen.getByLabelText("Details"), { target: { value: "Courier" } });
+    const receipt = new File(["photo"], "receipt.jpg", { type: "image/jpeg" });
+    fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [receipt] } });
+    // Two quick taps, a finger's 30 ms apart.
+    const pay = screen.getByRole("button", { name: /Pay out 120,000\sUZS/ });
+    fireEvent.click(pay);
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    fireEvent.click(pay);
+    await waitFor(() => expect(client.apiForm).toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    expect(client.apiForm).toHaveBeenCalledTimes(1);
+    expect(client.apiForm.mock.calls[0][1]).toEqual(expect.objectContaining({ photo: receipt }));
+  });
+
+  it("keeps a half-filled payout and the shift on screen when a refetch behind them fails", async () => {
+    serve({ "/sales/shifts/current/": kassa({ shift: shift() }) });
+    const { queries } = wrap(<PayoutSheet params={{}} close={() => undefined} />);
+    fireEvent.change(await screen.findByLabelText("Amount"), { target: { value: "120000" } });
+    // Back from the camera the till is fetched again, and this time the signal is gone.
+    client.api.mockRejectedValue(new TypeError("Failed to fetch"));
+    await act(async () => {
+      await queries.refetchQueries();
+      // The failure reaches the screen a moment later.
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(queries.getQueryState(["kassa", 1, "current"])?.status).toBe("error");
+    expect((screen.getByLabelText("Amount") as HTMLInputElement).value).toMatch(/120[\s,.]?000/);
+    expect(screen.queryByText("Kassa didn’t load")).toBeNull();
+  });
+
+  it("gives each of two receipts voided at once its own answer, a refusal included", async () => {
+    const entry = (id: number, total: string) => ({ id, kind: "sale" as const, total, number: "", sold_at: "2026-10-21T06:00:00Z", voided_at: null, methods: [{ id: 11, name: "Cash", amount: total }] });
+    const receipts = { ...kassa().settings, mode: "receipts" as const };
+    serve({ "/sales/shifts/current/": kassa({ settings: receipts, shift: shift({ entries: [entry(1, "15000.00"), entry(2, "27000.00")] }) }) }, (path) =>
+      path.endsWith("/entries/1/void/")
+        ? new Promise((_, reject) => setTimeout(() => reject(new ApiError(400, { detail: "Too late to void it" })), 60))
+        : Promise.resolve({ id: 2 }),
+    );
+    wrap(<KassaPage params={{}} />);
+    const [first, second] = await screen.findAllByRole("button", { name: "Void" });
+    fireEvent.click(first);
+    await waitFor(() => expect((first as HTMLButtonElement).disabled).toBe(true));
+    fireEvent.click(second);
+    // The second answer doesn't silence the first, nor free its button early.
+    expect(await screen.findByText("Too late to void it")).toBeTruthy();
   });
 
   it("shows the open shift on Home with its actions, and no cash total", async () => {
@@ -347,6 +408,31 @@ describe("closing", () => {
     expect(localStorage.getItem(draftKey(1, 5))).toBeNull();
   });
 
+  it("sends a close resumed after a reload with the photos kept on the phone, once they are read back", async () => {
+    serve({ "/sales/shifts/current/": kassa({ shift: shift(), settings: { ...kassa().settings, require_z_photo: true } }) });
+    writeDraft(1, 5, { ...emptyDraft(), step: "review", counts: { "200000": 1 }, pending: true });
+    const zReport = new File(["z"], "z.jpg", { type: "image/jpeg" });
+    // IndexedDB answers a moment after the screen is up.
+    vi.spyOn(photoStore, "get").mockImplementation(
+      (key) => new Promise((resolve) => setTimeout(() => resolve(key.endsWith(".z") ? zReport : null), 30)),
+    );
+    client.apiForm.mockResolvedValueOnce(shift({ status: "closed", closed_at: "2026-10-21T16:05:00Z", counted_cash: "200000.00" }));
+    wrap(<ClosePage params={{ id: 5 }} />);
+    expect(await screen.findByRole("heading", { name: "Shift closed" })).toBeTruthy();
+    expect(client.apiForm).toHaveBeenCalledTimes(1);
+    expect(client.apiForm.mock.calls[0][1]).toEqual(expect.objectContaining({ z_photo: zReport }));
+  });
+
+  it("doesn't let Start over empty a close that is still going out", async () => {
+    serve({ "/sales/shifts/current/": kassa({ shift: shift() }) });
+    writeDraft(1, 5, { ...emptyDraft(), step: "review", counts: { "200000": 1 }, zNumber: "0412", pending: true, savedAt: "2026-10-21T16:00:00Z" });
+    client.apiForm.mockRejectedValue(new TypeError("Failed to fetch"));
+    wrap(<ClosePage params={{ id: 5 }} />);
+    expect(await screen.findByText("No connection. Your close is safe on this phone.")).toBeTruthy();
+    // Its next try would send whatever the draft holds then: the button waits.
+    expect((screen.getByRole("button", { name: "Start over" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
   it("sends a close left pending by a reload as soon as the screen is back", async () => {
     serve({ "/sales/shifts/current/": kassa({ shift: shift() }) });
     writeDraft(1, 5, { ...emptyDraft(), step: "review", counts: { "200000": 1 }, pending: true });
@@ -379,6 +465,37 @@ describe("handovers", () => {
     await waitFor(() =>
       expect(client.api).toHaveBeenCalledWith("/companies/1/sales/handovers/9/confirm/", { method: "POST", json: { reason: "" } }),
     );
+  });
+});
+
+describe("answering a handover over a slow connection", () => {
+  const handover = {
+    id: 9,
+    amount: "1300000.00",
+    currency: "UZS",
+    from: { id: 4, name: "Madina Saidova" },
+    branch,
+    register: { id: 1, name: "Kassa 1" },
+    reason: "",
+    created_at: new Date(Date.now() - 30 * 60_000).toISOString(),
+  };
+
+  it("says it went through, though the card left the moment it was answered", async () => {
+    const slow = <T,>(value: T) => new Promise<T>((resolve) => setTimeout(() => resolve(value), 80));
+    serve({ "/sales/handovers/pending/": { results: [handover] } }, () => slow({ id: 9, status: "done" }));
+    wrap(<ReceivedCards member={member} summary={undefined} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Yes, I got it" }));
+    expect(await screen.findByText(/Thanks\. 1,300,000\sUZS is with you now\./)).toBeTruthy();
+  });
+
+  it("brings the card back and says why when the answer didn't go", async () => {
+    serve({ "/sales/handovers/pending/": { results: [handover] } }, () =>
+      new Promise((_, reject) => setTimeout(() => reject(new TypeError("Failed to fetch")), 80)),
+    );
+    wrap(<ReceivedCards member={member} summary={undefined} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Yes, I got it" }));
+    expect(await screen.findByText(/No connection/)).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "Yes, I got it" })).toBeTruthy();
   });
 });
 

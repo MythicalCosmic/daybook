@@ -3,6 +3,9 @@
  * dictionaries and every feature's, in all three languages, are plain words. Uzbek comes first in
  * the language list.
  */
+import { readdirSync, readFileSync } from "node:fs";
+import { join, relative } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import { DICTIONARIES, LANGUAGES } from ".";
@@ -29,6 +32,23 @@ describe("texts", () => {
   it("carry no emoji in any feature's dictionaries", () => {
     expect(Object.keys(features).length).toBeGreaterThan(3);
     const found = Object.entries(features).flatMap(([file, module]) => strings(module, file, []).filter(([, text]) => EMOJI.test(text)));
+    expect(found).toEqual([]);
+  });
+
+  it("carry no emoji in the screens' own code either (a fallback icon was a page emoji once)", () => {
+    // Owner-picked emoji (a knowledge space's icon) come from the server: only the code is checked.
+    const SRC = join(process.cwd(), "src");
+    const files = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((entry) => (entry.isDirectory() ? files(join(dir, entry.name)) : [join(dir, entry.name)]));
+    const found = files(SRC)
+      .filter((path) => /\.tsx?$/.test(path) && !/\.test\.tsx?$|\/dev\/|\/test\//.test(path))
+      .flatMap((path) =>
+        readFileSync(path, "utf8")
+          .split("\n")
+          .map((line, index) => [`${relative(SRC, path)}:${index + 1}`, line] as const)
+          // Comments may quote the bot's own buttons; only code reaches a screen.
+          .filter(([, line]) => EMOJI.test(line) && !/^\s*(\*|\/\/|\/\*)/.test(line)),
+      );
     expect(found).toEqual([]);
   });
 });

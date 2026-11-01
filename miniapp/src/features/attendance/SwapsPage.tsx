@@ -10,7 +10,7 @@ import { errorText } from "../../lib/actions";
 import { useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
 import { haptic } from "../../telegram";
-import { Avatar, Badge, Button, Card, EmptyState, PageHeader, Screen, SectionHead, Segmented, SkeletonList, useToast } from "../../ui";
+import { Avatar, Badge, Button, Card, EmptyState, LoadError, PageHeader, Screen, SectionHead, Segmented, SkeletonList, useToast } from "../../ui";
 import { useClaim, useOpenShifts, useSwapAction, useSwaps } from "./api";
 import { shiftDay, shiftLine } from "./lib";
 import { swapStatusLabel, usePageT } from "./pageText";
@@ -29,7 +29,8 @@ export default function SwapsPage() {
   const [tab, setTab] = useState<Tab>("forMe");
 
   const loading = swaps.isPending || (tab === "forMe" && open.isPending);
-  const failed = swaps.isError || (tab === "forMe" && open.isError);
+  // Only when nothing came: a refetch that fails keeps the lists on screen.
+  const failed = (swaps.isError && !swaps.data) || (tab === "forMe" && open.isError && !open.data);
 
   return (
     <Screen variant="detail">
@@ -51,15 +52,11 @@ export default function SwapsPage() {
       {loading ? (
         <SkeletonList count={3} height={150} />
       ) : failed ? (
-        <EmptyState
-          title={t("ui.failed.title")}
-          body={t("ui.failed.body")}
-          action={{
-            label: t("common.retry"),
-            onClick: () => {
-              void swaps.refetch();
-              void open.refetch();
-            },
+        <LoadError
+          error={swaps.error ?? open.error}
+          onRetry={() => {
+            void swaps.refetch();
+            void open.refetch();
           }}
         />
       ) : tab === "forMe" ? (

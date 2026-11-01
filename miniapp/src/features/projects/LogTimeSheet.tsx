@@ -8,6 +8,7 @@ import { useMember } from "../../state/session";
 import { useToast } from "../../state/toast";
 import { haptic } from "../../telegram";
 import { Button, ChipGroup, EmptyState, Field, IconButton, Input, SheetTitle } from "../../ui";
+import { errorText } from "../../lib/actions";
 import type { SheetProps } from "../registry";
 import { logTime, useBoard, useMyProjects, useRefresh, useWeek } from "./api";
 import { hhmm } from "./lib";
@@ -67,7 +68,7 @@ export default function LogTimeSheet({ params, close }: SheetProps) {
       close();
     } catch (error) {
       haptic.notify("error");
-      toast((error as { detail?: string | null }).detail ?? t("moveFailed"), { tone: "error" });
+      toast(errorText(error, t), { tone: "error" });
     } finally {
       setSaving(false);
     }
@@ -112,7 +113,7 @@ export default function LogTimeSheet({ params, close }: SheetProps) {
           onChange={(value) => value && setDay(value)}
           options={days.map((key, index) => ({
             value: key,
-            label: index === 0 ? t("today") : index === 1 ? t("log.yesterday") : weekdayShort(`${key}T12:00:00Z`, "UTC", locale),
+            label: index === 0 ? t("today") : index === 1 ? t("log.yesterday") : weekdayShort(key, "UTC", locale),
           }))}
           label={t("log.day")}
         />

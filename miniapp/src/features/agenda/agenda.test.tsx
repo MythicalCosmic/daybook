@@ -172,6 +172,24 @@ describe("CalendarHome", () => {
     expect(screen.queryByText("You’re invited")).toBeNull();
   });
 
+  it("goes back to this week with today picked when Today is pressed from another week", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-21T09:00:00+05:00"));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const briefing = entry({ id: "agenda.events:15", title: "Morning briefing", start: "2026-10-21T10:00:00+05:00", end: "2026-10-21T10:30:00+05:00" });
+    api.mockResolvedValue({ range: { from: "2026-10-19", to: "2026-11-03" }, sources: [], items: [briefing], mine: [], answers: {} });
+    renderWith(<CalendarHome />, client);
+    await waitFor(() => expect(screen.getAllByText("Morning briefing").length).toBeGreaterThan(0));
+
+    fireEvent.click(screen.getByRole("button", { name: "Next week" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Today" }));
+    // This week's strip again (21 October in it), today's event under the day, and no Today button.
+    await waitFor(() => expect(screen.getByRole("button", { name: /Today 21 Oct/ })).toBeTruthy());
+    expect(screen.queryByText("Nothing on this day.")).toBeNull();
+    expect(screen.getAllByText("Morning briefing").length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: "Today" })).toBeNull();
+  });
+
   it("lists the chosen day once: Coming up starts after it", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-21T09:00:00+05:00"));

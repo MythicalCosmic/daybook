@@ -59,7 +59,8 @@ export default function AttendancePage() {
         onDay={(date, recordId) => fix(recordId ? { record: recordId, date } : { date })}
       />
 
-      {sheet.data && <Totals data={sheet.data} />}
+      {/* The month on screen: while the next one loads, the last one's totals would read as its own. */}
+      {sheet.data?.month === month && <Totals data={sheet.data} />}
 
       <ListCard>
         <ListRow
@@ -127,7 +128,7 @@ function MonthCard({
         <div className="att-cal" role="group" aria-label={monthTitle(t, month)} aria-busy={loading && !shown}>
           {header.map((key) => (
             <span key={key} className="att-cal-weekday" aria-hidden>
-              {weekdayShort(`${key}T12:00:00Z`, "UTC", locale)}
+              {weekdayShort(key, "UTC", locale)}
             </span>
           ))}
           {weeks.flat().map((date, index) => {
@@ -137,7 +138,7 @@ function MonthCard({
             const code: CellCode = shown.holidays[date] && (!cell || cell.code === "off") ? "holiday" : (cell?.code ?? "off");
             const past = date < shown.today || (date === shown.today && code !== "planned");
             const tappable = past && FIXABLE.has(code) && (code !== "off" || date < shown.today);
-            const label = t("month.day", { day: dayMonth(`${date}T12:00:00Z`, "UTC", locale), status: codeLabel(t, code) });
+            const label = t("month.day", { day: dayMonth(date, "UTC", locale), status: codeLabel(t, code) });
             const classes = cx("att-cal-day", `att-cal-day--${code}`, date === shown.today && "att-cal-day--today");
             const number = Number(date.slice(8));
             return tappable ? (
@@ -205,7 +206,7 @@ function CorrectionRow({ item }: { item: Correction }) {
   const tone = item.status === "approved" ? "sage" : item.status === "rejected" ? "neutral" : "accent";
   return (
     <ListRow
-      title={`${weekdayShort(`${item.date}T12:00:00Z`, "UTC", locale)}, ${dayMonth(`${item.date}T12:00:00Z`, "UTC", locale)}`}
+      title={`${weekdayShort(item.date, "UTC", locale)}, ${dayMonth(item.date, "UTC", locale)}`}
       subtitle={[times, item.decision_note || item.reason].filter(Boolean).join(" · ")}
       value={
         <Badge tone={tone} size="small">

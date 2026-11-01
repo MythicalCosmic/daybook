@@ -40,7 +40,11 @@ function read(intervalMs: number): Date {
 function subscribe(intervalMs: number, listener: () => void): () => void {
   const clock = clockFor(intervalMs);
   clock.listeners.add(listener);
-  if (clock.listeners.size === 1) clock.timer = window.setInterval(() => tick(clock), intervalMs);
+  if (clock.listeners.size === 1) {
+    // The first screen in a while starts from this very moment (React reads it again once subscribed).
+    clock.now = new Date();
+    clock.timer = window.setInterval(() => tick(clock), intervalMs);
+  }
   return () => {
     clock.listeners.delete(listener);
     if (clock.listeners.size === 0) window.clearInterval(clock.timer);

@@ -1,5 +1,5 @@
 /** Small helpers of the calendar feature. */
-import { addDays, clock, dayKey, weekdayLong } from "../../lib/time";
+import { addDays, capitalise, clock, dayKey, weekdayLong } from "../../lib/time";
 import type { CalendarEntry } from "./api";
 
 // The backend's `console.registry.CALENDAR_COLORS` ("primary" kept for older items).
@@ -47,6 +47,5 @@ export function timeLabel(item: CalendarEntry, timeZone: string, locale: string,
 export function dayName(key: string, today: string, timeZone: string, locale: string, words: { today: string; tomorrow: string }): string {
   if (key === today) return words.today;
   if (key === addDays(today, 1)) return words.tomorrow;
-  const name = weekdayLong(`${key}T12:00:00Z`, timeZone, locale);
-  return name.charAt(0).toUpperCase() + name.slice(1);
+  return capitalise(weekdayLong(key, timeZone, locale));
 }
