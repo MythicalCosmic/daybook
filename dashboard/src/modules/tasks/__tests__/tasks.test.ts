@@ -395,6 +395,26 @@ describe("one-off tasks and routine work", () => {
     wrapper.unmount();
   });
 
+  it("asks for the list once on the first visit, already with All open's filters", async () => {
+    const calls = stub({
+      "GET tasks/": () => json(empty),
+      "GET tasks/summary/": () => json(summary),
+      "GET tasks/options/": () => json({ people: [], positions: [], routines: [], policies: [] }),
+      "GET saved-views/": () => json([]),
+    });
+    const app = await testApp("/c/1/tasks");
+    const { default: TasksPage } = await import("../pages/TasksPage.vue");
+    const { wrapper } = mountWithProviders(TasksPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    // The list itself (the "can't do it" and "more time" chips count with page_size=1).
+    const lists = calls.filter((c) => c.url.includes("/tasks/?") && !c.url.includes("page_size=1&") && !c.url.endsWith("page_size=1"));
+    expect(lists.map((c) => c.url)).toHaveLength(1);
+    expect(lists[0]!.url).toContain("status=todo&status=in_progress&status=review&status=returned");
+    expect(app.router.currentRoute.value.query.status).toEqual(["todo", "in_progress", "review", "returned"]);
+    wrapper.unmount();
+  });
+
   it("an empty one-off list offers routine work: a routine's title finds nothing otherwise", async () => {
     stub({
       "GET tasks/": () => json(empty),

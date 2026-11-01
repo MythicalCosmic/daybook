@@ -222,12 +222,14 @@ function who(routine: Routine): string {
             <span v-if="routine.checklist.length" class="inline-flex items-center gap-1"><ListChecks :size="14" />{{ t("routines.steps", { n: routine.checklist.length }, routine.checklist.length) }}</span>
           </div>
         </div>
-        <div class="flex shrink-0 items-center gap-4">
+        <!-- Phones: the share on the left, the switch and the menu on the right of one row (the
+             trend line has no room there, and the share's line may wrap). -->
+        <div class="flex shrink-0 items-center gap-4 max-md:justify-between" data-testid="routine-stats">
           <AvatarStack v-if="routine.assignees.length" :people="routine.assignees" :max="3" :size="24" class="max-md:hidden" />
-          <div v-if="!onboarding" class="flex items-center gap-3">
-            <SparkLine :data="sparkOf(routine)" :width="96" :height="28" color="var(--c-chart-2)" :label="t('routines.sparkLabel')" />
+          <div v-if="!onboarding" class="flex min-w-0 items-center gap-3">
+            <SparkLine :data="sparkOf(routine)" :width="96" :height="28" color="var(--c-chart-2)" :label="t('routines.sparkLabel')" class="max-sm:hidden" />
             <!-- On time is the headline (late runs count as done, so "done" alone is always green). -->
-            <div class="min-w-[84px] whitespace-nowrap text-right" :title="shareHint(routine)" data-testid="on-time-share">
+            <div class="min-w-[84px] md:whitespace-nowrap md:text-right" :title="shareHint(routine)" data-testid="on-time-share">
               <p :class="['text-md font-semibold tabular-nums', completionTone(onTimeShare(routine.stats)?.percent ?? null)]">
                 {{ onTimeShare(routine.stats) ? fmt.percent(wholePercent(onTimeShare(routine.stats)!.percent), 0) : "—" }}
               </p>

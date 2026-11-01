@@ -352,7 +352,7 @@ async function submit(): Promise<void> {
     </form>
 
     <template #footer>
-      <div class="mr-auto flex min-w-0 items-center gap-2 text-sm text-muted">
+      <div class="mr-auto flex min-w-0 items-center gap-2 text-sm text-muted" data-sheet-note>
         <AvatarStack v-if="recipients.length" :people="recipients" :max="4" :size="24" />
         <span class="truncate">{{ recipients.length ? t("tasks.create.makes", { n: recipients.length }, recipients.length) : t("tasks.create.nobodyYet") }}</span>
       </div>
