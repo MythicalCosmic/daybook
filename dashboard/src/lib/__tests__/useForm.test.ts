@@ -47,6 +47,16 @@ describe("useForm", () => {
     expect(form.submitting.value).toBe(false);
   });
 
+  it("shows a server refusal about a field the form doesn't have in formError", async () => {
+    const form = useForm(schema, { name: "Rent", amount: "100" }, {
+      onSubmit: () => {
+        throw new ApiError(400, { branch: ["Choose a branch."] });
+      },
+    });
+    await expect(form.submit()).resolves.toBe(false);
+    expect(form.formError.value).toBe("Choose a branch.");
+  });
+
   it("maps non_field_errors to formError", () => {
     const form = useForm(schema, { name: "a", amount: "1" });
     form.setErrors({ non_field_errors: ["Nobody approves their own claim."] });

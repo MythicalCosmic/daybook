@@ -72,6 +72,19 @@ export function parseErrorBody(body: unknown): { detail: string | null; fields: 
   return { detail, fields, code };
 }
 
+/**
+ * The message of a 400 that only names fields (the HTTP layer never toasts those: they belong next
+ * to their fields) when the form shows none of those fields: the first such message, else null.
+ * Every other error (a `detail`, offline, a bug) was toasted already, so it gives null for those.
+ */
+export function unshownFieldError(error: unknown, shown: readonly string[] = []): string | null {
+  if (!isApiError(error) || error.detail) return null;
+  for (const [field, messages] of Object.entries(error.fieldErrors)) {
+    if (!shown.includes(field) && messages[0]) return messages[0];
+  }
+  return null;
+}
+
 export type QueryValue = string | number | boolean | null | undefined | ReadonlyArray<string | number>;
 export type Query = Record<string, QueryValue>;
 

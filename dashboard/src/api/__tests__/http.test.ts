@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, apiUrl, buildQuery, configureHttp, http, ownerPath, parseErrorBody, request } from "@/api/http";
+import { ApiError, apiUrl, buildQuery, configureHttp, http, ownerPath, parseErrorBody, request, unshownFieldError } from "@/api/http";
 import { qk, keys, moduleKey } from "@/api/keys";
 import { json } from "@/test/fixtures";
 
@@ -208,5 +208,20 @@ describe("helpers", () => {
     expect(moduleKey(12, "finance")).toEqual([12, "finance"]);
     expect(keys.pulse(3)).toEqual([3, "shell", "pulse", {}]);
     expect(keys.search(3, "madina")).toEqual([3, "shell", "search", { q: "madina" }]);
+  });
+});
+
+describe("unshownFieldError", () => {
+  it("gives the first message of a field-only 400 the form has no field for", () => {
+    const error = new ApiError(400, { start: ["Pick a start time."], branch: ["Choose a branch."] });
+    expect(unshownFieldError(error, ["start"])).toBe("Choose a branch.");
+    expect(unshownFieldError(error)).toBe("Pick a start time.");
+    expect(unshownFieldError(error, ["start", "branch"])).toBeNull();
+  });
+
+  it("leaves errors the HTTP layer already toasted alone", () => {
+    expect(unshownFieldError(new ApiError(400, { detail: "Locked.", amount: ["x"] }))).toBeNull();
+    expect(unshownFieldError(new ApiError(0, null))).toBeNull();
+    expect(unshownFieldError(new Error("bug"))).toBeNull();
   });
 });
