@@ -664,6 +664,9 @@ def blocker_answer(task: Task, action: str, by: Membership, now: datetime) -> Bo
 
 
 def extension_answer(task: Task, approved: bool, by: Membership, now: datetime) -> BotMessage:
+    """The answer to "More time" (audit B-19): who decided, the title and the deadline now,
+    with the open button. The person's card itself is redrawn in place (C5): a second whole
+    card under it read the same, line for line."""
     name = {"name": html.quote(str(by))}
     if approved:
         # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
@@ -671,7 +674,10 @@ def extension_answer(task: Task, approved: bool, by: Membership, now: datetime) 
     else:
         # Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
         header = _("<b>The deadline stays</b> · %(name)s") % name
-    return task_card(task, task.assignee, now, header)
+    lines = [header, html.quote(display_title(task))]
+    if task.due_at is not None:
+        lines.append(_("Due: %(when)s") % {"when": format_due(task, now)})
+    return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=[[open_button(task)]])
 
 
 def copy_of(task: Task, member: Membership, kind: str, now: datetime) -> BotMessage:

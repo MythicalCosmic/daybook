@@ -585,3 +585,23 @@ def test_reminder_info_has_the_real_send_times(shop, api_as):
     data = api_as(shop.worker).get(employee_path(shop.company, f"{task.pk}/")).json()
 
     assert len(data["reminder"]["sent_times"]) == 1
+
+
+def test_the_answer_to_more_time_is_a_short_notice(shop, sent_messages, commit):
+    """Audit B-19: the answer came as a second whole card, and once C5 redrew it, it read the
+    same as the card above it, line for line."""
+    task = given(shop)
+    with commit():
+        task = services.request_extension(
+            task, by=shop.worker, until=task.due_at + timedelta(hours=2)
+        )
+    with commit():
+        services.decide_extension(task, by=shop.lead, approve=True)
+
+    [notice] = [
+        text
+        for text in texts(sent_messages, shop.worker.user.telegram_id)
+        if "More time given" in text
+    ]
+    assert "Status:" not in notice  # not the card again
+    assert task.title in notice and "Due: " in notice
