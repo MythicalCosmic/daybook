@@ -400,6 +400,7 @@
   "sales.entries.note": "Note",
   "sales.entries.notePlaceholder": "Clinic order: Tonggi Shabnam",
   "sales.entries.needPayment": "Add how the customer paid.",
+  "sales.entries.needMethod": "Choose how each amount was paid.",
   "sales.entries.submit": "Save receipt",
   "sales.entries.saved": "Receipt saved",
   "sales.entries.what": "Receipt",

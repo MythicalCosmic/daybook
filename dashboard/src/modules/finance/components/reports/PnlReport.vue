@@ -103,7 +103,7 @@ function toggleAll(): void {
           <UiButton v-if="company.can('finance.record')" variant="primary" :icon="Plus" @click="openQuickAdd('expense')">{{ t("finance.cmd.record") }}</UiButton>
         </EmptyState>
       </div>
-      <PnlTable v-else-if="data" ref="table" :data="data" />
+      <PnlTable v-else-if="data" ref="table" :data="data" :branch="props.branch" />
     </template>
   </div>
 </template>

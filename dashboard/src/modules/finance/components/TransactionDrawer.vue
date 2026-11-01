@@ -116,10 +116,22 @@ const files = ref<File[]>([]);
 const uploading = ref(false);
 watch(files, async (list) => {
   if (!list.length || !row.value) return;
+  // The entry the files were dropped on, read once: the drawer may close or open another entry
+  // while they upload, and every file still belongs to this one.
+  const cid = company.currentId ?? 0;
+  const entryId = row.value.id;
   uploading.value = true;
+  let added = 0;
   try {
-    for (const file of list) await financeApi.uploadReceipt(company.currentId ?? 0, file, row.value.id);
-    toast.success(t("finance.tx.receiptAdded", { n: list.length }, list.length));
+    for (const file of list) {
+      try {
+        await financeApi.uploadReceipt(cid, file, entryId);
+        added += 1;
+      } catch {
+        // The HTTP layer said why; the other files still go up.
+      }
+    }
+    if (added) toast.success(t("finance.tx.receiptAdded", { n: added }, added));
   } finally {
     files.value = [];
     uploading.value = false;

@@ -19,7 +19,8 @@ import { useCompanyStore } from "@/stores/company";
 import { colorFor, comparablePrevious, isNegative, isZeroMoney } from "../../lib";
 import type { Pnl, PnlNode } from "../../types";
 
-const props = defineProps<{ data: Pnl }>();
+// `branch`: the report's branch filter, carried into every drill-down link.
+const props = withDefaults(defineProps<{ data: Pnl; branch?: number[] }>(), { branch: () => [] });
 
 const { t } = useI18n();
 const fmt = useFormat();
@@ -51,12 +52,12 @@ function periodLabel(key: string): string {
   return label.charAt(0).toLocaleUpperCase() + label.slice(1);
 }
 
-/** Entries behind one cell: the category (with its subcategories) in that period. */
-function drill(node: PnlNode | null, index: number | "total"): Record<string, unknown> {
+/** Entries behind one cell: the category (with its subcategories) in that period, in the report's branches. */
+function drill(node: PnlNode, index: number | "total"): Record<string, unknown> {
   const range = index === "total" ? props.data.range : props.data.periods[index]!;
   return {
     path: `/c/${company.currentId}/finance/transactions`,
-    query: { from: range.from, to: range.to, ...(node ? { category: String(node.id) } : {}) },
+    query: { from: range.from, to: range.to, category: String(node.id), ...(props.branch.length ? { branch: props.branch.map(String) } : {}) },
   };
 }
 
@@ -140,13 +141,17 @@ const columnCount = computed(() => props.data.periods.length + 2 + (compare.valu
                 </span>
               </th>
               <td v-for="(amount, index) in row.node.amounts" :key="index" class="px-3 py-2 text-right tabular-nums group-hover:bg-surface-2/60">
-                <RouterLink v-if="!isZeroMoney(amount)" :to="drill(row.own ? null : row.node, index)" class="rounded-[4px] text-fg hover:text-accent-fg hover:underline">
+                <span v-if="isZeroMoney(amount)" class="text-subtle">—</span>
+                <!-- The entries list can't show a parent without its subcategories: the
+                     "without a subcategory" line has plain numbers, not links to every entry. -->
+                <span v-else-if="row.own" class="whitespace-nowrap text-fg">{{ num(amount) }}</span>
+                <RouterLink v-else :to="drill(row.node, index)" class="rounded-[4px] text-fg hover:text-accent-fg hover:underline">
                   <span class="whitespace-nowrap">{{ num(amount) }}</span>
                 </RouterLink>
-                <span v-else class="text-subtle">—</span>
               </td>
               <td class="px-3 py-2 text-right font-semibold tabular-nums text-fg group-hover:bg-surface-2/60">
-                <RouterLink :to="drill(row.own ? null : row.node, 'total')" class="hover:text-accent-fg hover:underline"><span class="whitespace-nowrap">{{ num(row.node.total) }}</span></RouterLink>
+                <span v-if="row.own" class="whitespace-nowrap">{{ num(row.node.total) }}</span>
+                <RouterLink v-else :to="drill(row.node, 'total')" class="hover:text-accent-fg hover:underline"><span class="whitespace-nowrap">{{ num(row.node.total) }}</span></RouterLink>
               </td>
               <template v-if="compare">
                 <td class="px-3 py-2 text-right tabular-nums text-muted group-hover:bg-surface-2/60"><span class="whitespace-nowrap">{{ num(row.node.previous) }}</span></td>

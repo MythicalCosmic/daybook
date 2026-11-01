@@ -136,17 +136,18 @@ const impliedRate = computed(() => {
 const branches = computed(() => options.data.value?.branches ?? []);
 const showBranch = computed(() => !isTransfer.value && !!fromAccount.value && !fromAccount.value.branch_id && branches.value.length > 1);
 
-watch(currency, () => {
-  if (fromAccount.value && fromAccount.value.currency !== currency.value && !isTransfer.value) form.account = null;
-});
 watch(
   [chipAccounts, () => options.isSuccess.value],
   () => {
-    if (form.account === null && chipAccounts.value.length && !isTransfer.value) form.account = chipAccounts.value[0]!.id;
     if (form.account !== null && props.request.account && !form.currency) {
       const picked = accounts.value.find((a) => a.id === form.account);
       if (picked) form.currency = picked.currency;
     }
+    if (isTransfer.value) return;
+    // Only an account the chips offer: a dollar safe picked for a transfer (or before the
+    // currency changed) would otherwise take a so‘m amount once the entry became an expense.
+    if (form.account !== null && options.isSuccess.value && !chipAccounts.value.some((a) => a.id === form.account)) form.account = null;
+    if (form.account === null && chipAccounts.value.length) form.account = chipAccounts.value[0]!.id;
   },
   { immediate: true },
 );

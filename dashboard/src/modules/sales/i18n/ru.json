@@ -400,6 +400,7 @@
   "sales.entries.note": "Заметка",
   "sales.entries.notePlaceholder": "Заказ клиники «Tonggi Shabnam»",
   "sales.entries.needPayment": "Укажите, как оплатил клиент.",
+  "sales.entries.needMethod": "Укажите способ оплаты для каждой суммы.",
   "sales.entries.submit": "Сохранить чек",
   "sales.entries.saved": "Чек сохранён",
   "sales.entries.what": "Чек",

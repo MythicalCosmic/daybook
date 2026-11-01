@@ -72,9 +72,14 @@ function clamp(value: number): number {
   return round(next);
 }
 
-/** "1 200,5" → 1200.5; junk → null. */
+/**
+ * "1 200,5" → 1200.5; junk → null. English groups with commas ("1,200" → 1200, "1,200.5") but a
+ * lone comma that can't be grouping is the decimal point a comma keypad sends ("12,5" → 12.5).
+ */
 function parse(raw: string): number | null {
-  const cleaned = raw.replace(/[\s  ']/g, "").replace(/[−–]/g, "-").replace(",", ".");
+  let cleaned = raw.replace(/[\s  ']/g, "").replace(/[−–]/g, "-");
+  if (fmt.lang.value === "en" && (cleaned.includes(".") || /^-?\d{1,3}(,\d{3})+$/.test(cleaned))) cleaned = cleaned.replace(/,/g, "");
+  cleaned = cleaned.replace(",", ".");
   if (!cleaned || cleaned === "-" || cleaned === ".") return null;
   if (!/^-?\d*\.?\d*$/.test(cleaned)) return null;
   const value = Number(cleaned);

@@ -9,7 +9,7 @@ import { ArrowDownLeft, ArrowUpRight, Clock, HandCoins, ShoppingBag } from "@luc
 import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { isApiError } from "@/api/http";
+import { isApiError, unshownFieldError } from "@/api/http";
 import type { Currency } from "@/api/types";
 import ComboBox from "@/components/ComboBox.vue";
 import DatePicker from "@/components/DatePicker.vue";
@@ -58,8 +58,21 @@ const form = reactive({
   category: null as number | null,
   responsible: null as number | null,
   description: "",
+  branch: null as number | null,
 });
 const partySelected = ref<SelectOption<number> | null>(null);
+
+// Someone limited to several branches must say whose debt it is (the server refuses a debt
+// without one: it would vanish from their own view); their home branch comes first.
+const branches = computed(() => options.data.value?.branches ?? []);
+const branchOptions = computed(() => branches.value.map((b) => ({ value: b.id, label: b.name, description: b.code })));
+const branchRequired = computed(() => (company.current?.branch_scope?.length ?? 0) > 1);
+function defaultBranch(): number | null {
+  const scope = company.current?.branch_scope;
+  if (!scope?.length) return null;
+  const home = company.current?.home_branch?.id;
+  return home && scope.includes(home) ? home : (scope[0] ?? null);
+}
 
 watch(
   open,
@@ -81,6 +94,7 @@ watch(
       category: null,
       responsible: null,
       description: "",
+      branch: defaultBranch(),
     });
     partySelected.value = props.counterparty ? { value: props.counterparty.id, label: props.counterparty.name } : null;
   },
@@ -160,6 +174,7 @@ async function save(): Promise<void> {
       category: form.mode === "category" ? form.category : null,
       responsible: form.responsible,
       description: form.description,
+      branch: form.branch,
     });
     toast.success(t("finance.debts.created"));
     emit("saved", debt);
@@ -167,6 +182,9 @@ async function save(): Promise<void> {
     open.value = false;
   } catch (error) {
     if (isApiError(error)) for (const [field, messages] of Object.entries(error.fieldErrors)) errors[field === "counterparty" || field === "member" ? "party" : field] = messages[0];
+    // A refusal about a field the form doesn't show (the days, the currency) is said aloud.
+    const unshown = unshownFieldError(error, ["counterparty", "member", "amount", "account", "category", ...(branches.value.length > 1 ? ["branch"] : [])]);
+    if (unshown) toast.error(unshown);
   } finally {
     saving.value = false;
   }
@@ -237,6 +255,9 @@ async function save(): Promise<void> {
           <SelectBox v-model="form.responsible" :options="people" clearable />
         </FormField>
       </div>
+      <FormField v-if="branches.length > 1" data-testid="debt-branch" :label="t('finance.field.branch')" :error="errors.branch" :required="branchRequired" :optional="!branchRequired">
+        <SelectBox v-model="form.branch" :options="branchOptions" :clearable="!branchRequired" :invalid="!!errors.branch" :placeholder="t('finance.quick.branchPlaceholder')" />
+      </FormField>
       <FormField :label="t('finance.field.note')" optional>
         <TextInput v-model="form.description" :maxlength="300" :placeholder="t('finance.debts.notePlaceholder')" />
       </FormField>
