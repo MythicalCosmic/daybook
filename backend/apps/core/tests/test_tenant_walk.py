@@ -24,12 +24,15 @@ import pytest
 from django.core.management import call_command
 from django.db import connection
 from django.urls import URLResolver, get_resolver
+from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
 from apps.companies.models import Branch, Company, Feature
 from apps.core.management.commands import seed_demo
-from apps.members.models import Membership
+from apps.members.models import AccessRole, Membership
+from apps.members.permissions import Perm
+from apps.members.tests.factories import MembershipFactory
 from apps.signin.tokens import OwnerAccessToken
 
 pytestmark = pytest.mark.django_db
@@ -104,6 +107,15 @@ BODIES = {
     r"attendance/swaps/(?P<pk>\d+)/reject/$": {"reason": "walk"},
     r"attendance/corrections/(?P<pk>\d+)/decide/$": {"approve": True},
 }
+# What anyone with the dashboard writes for themselves: their saved views, inbox and
+# notification settings, their own timer, "I've read it" on a page they're asked to read.
+OWN_THINGS = (
+    "saved-views/",
+    "inbox/",
+    "notification-preferences/",
+    "projects/timers/",
+    "/ack/$",
+)
 PARAM = re.compile(r"<(?:\w+:)?(?P<name>\w+)>|\(\?P<(?P<regex_name>\w+)>[^)]*\)")
 # Timestamps differ between two calls a moment apart.
 MOMENT = re.compile(r"\d{4}-\d\d-\d\dT[\d:.]+(Z|[+-]\d\d:\d\d)?")
@@ -287,6 +299,46 @@ def test_every_route_keeps_companies_apart(company, clients, theirs):
 
     assert walked > 400
     assert not problems, "\n".join(problems)
+    # The same demo, then a second walk (one seed for both: it takes a minute).
+    found = writes_without_rights(their_company)
+    assert not found, "\n".join(found)
+
+
+def writes_without_rights(company_id: int) -> list[str]:
+    """Inside their own company, someone whose role gives nothing but the dashboard changes
+    nothing: every owner write on the demo's first rows answers 400, 403 or 404 for them,
+    except their own things (`OWN_THINGS`)."""
+    company = Company.objects.get(pk=company_id)
+    role = AccessRole.objects.create(
+        company=company, name="Only the dashboard (walk)", permissions=[Perm.DASHBOARD_ACCESS]
+    )
+    branch = company.branches.order_by("order", "pk").first()
+    viewer = MembershipFactory(
+        company=company,
+        role=role,
+        status=Membership.Status.APPROVED,
+        onboarded_at=timezone.now(),
+        home_branch=branch,
+    )
+    viewer.branches.add(branch)
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {OwnerAccessToken.for_user(viewer.user)}")
+    found = []
+    for route in routes():
+        if not route.owner or any(own in route.route for own in OWN_THINGS):
+            continue
+        for method in route.methods:
+            if method in ("get", "head"):
+                continue
+            for row_id in range(THEIRS, THEIRS + (TRIES if route.has_ids else 1)):
+                response = call(client, method, route, company_id, row_id)
+                if response.status_code < 300:
+                    found.append(
+                        f"{method.upper()} {route.route} ({row_id}) answers "
+                        f"{response.status_code} to dashboard access alone: {text(response)[:160]}"
+                    )
+                    break
+    return found
 
 
 def test_the_walk_sees_every_api_route():
