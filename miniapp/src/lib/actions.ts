@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 
 import { api, ApiError } from "../api/client";
-import { isMissingEndpoint, keys, refreshAfterTaskChange, reopenTask, useTaskAction } from "../api/hooks";
+import { isMissingEndpoint, keys, refreshAfterTaskChange, refreshWork, reopenTask, useTaskAction } from "../api/hooks";
 import type { ConfirmMany, Task } from "../api/types";
 import { useI18n, type Translate } from "../i18n";
 import { useNavigation } from "../state/navigation";
@@ -149,11 +149,7 @@ export function useConfirmTasks(): (tasks: Task[]) => void {
     // Back in the list (or gone from it) only once the lists after the send have arrived.
     const settle = async (task?: Task) => {
       if (task) client.setQueryData(keys.task(companyId, task.id), task);
-      await Promise.allSettled([
-        client.invalidateQueries({ queryKey: keys.tasks(companyId) }),
-        client.invalidateQueries({ queryKey: keys.summary(companyId) }),
-        client.invalidateQueries({ queryKey: keys.activity(companyId) }),
-      ]);
+      await refreshWork(client, companyId);
       setPending(ids, false);
     };
     const job = sendLater(() => {

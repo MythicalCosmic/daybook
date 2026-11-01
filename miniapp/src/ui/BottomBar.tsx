@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 
 import { attachNativeButton, hasNativeButton, updateNativeButton, type NativeButtonKind, type NativeButtonLook } from "../telegram";
-import { nativeButtonColors } from "../theme";
+import { nativeButtonColors, onThemeApplied } from "../theme";
 import { Button } from "./Button";
 import { cx } from "./cx";
 import type { IconLike } from "./icon";
@@ -43,6 +43,13 @@ function refreshNative(kind: NativeButtonKind): void {
   updateNativeButton(kind, look);
   detachers[kind] ??= attachNativeButton(kind, () => owners[kind].at(-1)?.press()) ?? undefined;
 }
+
+// The buttons' colours are the theme's (nativeButtonColors): a switch to night mode while one
+// shows repaints it, instead of leaving light-theme colours on a dark screen.
+onThemeApplied(() => {
+  refreshNative("main");
+  refreshNative("secondary");
+});
 
 /**
  * Drive Telegram's main or secondary button from React state while `action` is set. Presses

@@ -136,7 +136,9 @@ function Detail({ task, comments, ctx }: { task: Task; comments: Comment[]; ctx:
   const toggle = useToggleChecklist(member.companyId);
   const action = useTaskAction(member.companyId);
   const summary = useSummary(member.companyId);
-  const activity = useActivity(member.companyId);
+  // The feed is only the last resort for who sent it back and why (the task says so itself): it
+  // isn't fetched for every task opened, only read when it's already here or nothing else tells.
+  const activity = useActivity(member.companyId, task.status === "returned" && !task.returned_by && !task.returned_reason);
   const toast = useToast();
   const [draftSeed, setDraftSeed] = useState<{ text: string; mention?: MemberBrief } | null>(null);
   const quiet = summary.data?.quiet_from && summary.data.quiet_until ? summary.data : null;

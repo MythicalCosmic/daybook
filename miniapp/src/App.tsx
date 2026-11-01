@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { ApiError } from "./api/client";
 import { OfflineBanner } from "./components/OfflineBanner";
-import { useMe, useSummary } from "./api/hooks";
+import { prefetchHome, refreshWork, useMe, useSummary } from "./api/hooks";
 import { isSuspended } from "./api/membership";
 import type { Membership } from "./api/types";
 import { TabBar } from "./components/TabBar";
@@ -25,7 +25,7 @@ import { Waiting } from "./screens/Waiting";
 import { Sheets } from "./sheets/Sheets";
 import { readScreenLink, resolveScreen, type ScreenLink } from "./state/deeplink";
 import { CORE, NavigationProvider, useNavigation, type NavigationInit, type PageRef } from "./state/navigation";
-import { SessionProvider, useMember, useSession } from "./state/session";
+import { SessionProvider, startingCompany, useMember, useSession } from "./state/session";
 import { ToastProvider } from "./state/toast";
 import { initData, onActivated, onThemeChange, openedWithoutSignIn, useBackButton } from "./telegram";
 import { applyTheme, savedThemeMode } from "./theme";
@@ -59,6 +59,13 @@ export function App() {
     // Only at launch.
   }, []);
   useEffect(() => onThemeChange(() => applyTheme(savedThemeMode())), []);
+  // Home's numbers and lists start loading while the splash is still up (it opens with them);
+  // a launch link opens another screen first, which fetches its own.
+  const client = useQueryClient();
+  const homeCompany = me.data && !launch ? startingCompany(me.data) : null;
+  useEffect(() => {
+    if (homeCompany !== null) prefetchHome(client, homeCompany);
+  }, [client, homeCompany]);
   const chosen = me.data?.language;
   useEffect(() => {
     if (!chosen) return;
@@ -168,31 +175,37 @@ function useStackBackButton() {
  */
 function useRefreshOnReturn(company: number) {
   const client = useQueryClient();
-  useEffect(
-    () =>
-      onActivated(() => {
-        void client.invalidateQueries({ queryKey: ["tasks", company] });
-        void client.invalidateQueries({ queryKey: ["summary", company] });
-        void client.invalidateQueries({ queryKey: ["activity", company] });
-      }),
-    [client, company],
-  );
+  // The webview's own focus refetch may have started the same requests a moment earlier: those
+  // carry on rather than being cancelled and sent again.
+  useEffect(() => onActivated(() => void refreshWork(client, company, { cancelRefetch: false })), [client, company]);
+}
+
+/**
+ * Whether the tab under the pages is drawn. A link that opens the app straight onto a page (a task
+ * from the bot) leaves the tab out until the person goes back to it: Home's dozen requests would
+ * otherwise race the one the page needs, for a screen nobody sees yet.
+ */
+function useTabShown(covered: boolean): boolean {
+  const [shown, setShown] = useState(!covered);
+  if (!shown && !covered) setShown(true);
+  return shown;
 }
 
 function MainApp() {
   const navigation = useNavigation();
   const member = useMember();
   const summary = useSummary(member.companyId);
+  const tabShown = useTabShown(navigation.stack.length > 0);
   useStackBackButton();
   useRefreshOnReturn(member.companyId);
 
   return (
     <>
       <OfflineBanner />
-      {navigation.tab === "home" && <Home />}
-      {navigation.tab === "tasks" && <Tasks />}
-      {navigation.tab === "activity" && <ActivityScreen />}
-      {navigation.tab === "profile" && <Profile />}
+      {tabShown && navigation.tab === "home" && <Home />}
+      {tabShown && navigation.tab === "tasks" && <Tasks />}
+      {tabShown && navigation.tab === "activity" && <ActivityScreen />}
+      {tabShown && navigation.tab === "profile" && <Profile />}
       {/* Pages cover the tabs, each over the last; an open task brings its own action bar. */}
       <StackPages />
       {navigation.stack.length === 0 && <TabBar unread={summary.data?.unread_activity ?? 0} />}

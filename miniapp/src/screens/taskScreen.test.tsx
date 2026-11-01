@@ -120,6 +120,34 @@ describe("what the task screen shows", () => {
     expect(screen.getByText("“Photo is unclear”")).toBeTruthy();
   });
 
+  it("doesn't fetch the whole feed for every task opened, only when nothing else says who sent it back", async () => {
+    const fetchedFeed = () => (api.mock.calls as Call[]).some(([path]) => path.includes("/activity/"));
+    const open = (task: Task) => {
+      routes(task);
+      renderApp(<TaskDetail taskId={task.id} />, {
+        init: { tab: "tasks", stack: [{ feature: "core", page: "task", params: { id: task.id } }] },
+        seed: (client) => {
+          client.setQueryData(keys.task(1, task.id), task);
+          client.setQueryData(keys.comments(1, task.id), []);
+          client.setQueryData(keys.summary(1), { quiet_from: null, quiet_until: null });
+          client.setQueryData(keys.review(1), []);
+          client.setQueryData(keys.members(1), []);
+        },
+      });
+    };
+    open(makeTask({ title: "Count the till" }));
+    expect(await screen.findByRole("heading", { name: "Count the till" })).toBeTruthy();
+    expect(fetchedFeed()).toBe(false);
+    cleanup();
+    open(makeTask({ status: "returned", actions: ["complete"], returned_by: { id: 3, name: "Bekzod Mirzayev", position: null }, returned_reason: "Add the total" }));
+    expect(await screen.findByText("Bekzod Mirzayev sent this back")).toBeTruthy();
+    expect(fetchedFeed()).toBe(false);
+    cleanup();
+    // An older return with no record of who did it: the feed is the last place that says.
+    open(makeTask({ status: "returned", actions: ["complete"] }));
+    await waitFor(() => expect(fetchedFeed()).toBe(true));
+  });
+
   it("tells the giver whether the worker has opened it", () => {
     show(makeTask({ seen_at: "2026-10-21T09:12:00+05:00", actions: ["edit", "cancel"] }), { me: manager() });
     expect(screen.getByText("Seen 09:12")).toBeTruthy();

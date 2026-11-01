@@ -54,6 +54,69 @@ function renderApp(person: Me) {
   return Object.assign(view, { client });
 }
 
+/**
+ * The app as Telegram hosts it (back button, events): a fresh module graph, so telegram.ts reads
+ * the stub. Returns the stub's parts, the App and the query keys of that graph.
+ */
+async function insideTelegram() {
+  const back = { show: vi.fn(), hide: vi.fn(), onClick: vi.fn(), offClick: vi.fn() };
+  const webApp = {
+    platform: "android",
+    initData: "",
+    initDataUnsafe: {},
+    isVersionAtLeast: () => true,
+    BackButton: back,
+    onEvent: vi.fn(),
+    offEvent: vi.fn(),
+    setHeaderColor: vi.fn(),
+    setBackgroundColor: vi.fn(),
+    setBottomBarColor: vi.fn(),
+    HapticFeedback: { impactOccurred: vi.fn(), notificationOccurred: vi.fn(), selectionChanged: vi.fn() },
+  };
+  vi.stubGlobal("Telegram", { WebApp: webApp });
+  vi.resetModules();
+  const { App: InTelegram } = await import("./App");
+  const { keys: freshKeys } = await import("./api/hooks");
+  return { back, webApp, InTelegram, freshKeys };
+}
+
+/** A query client with what Home and Me read already there (nothing reaches the network). */
+function seededClient(freshKeys: typeof keys, person: Me) {
+  const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } });
+  client.setQueryData(freshKeys.me, person);
+  client.setQueryData(freshKeys.summary(1), { today_total: 0, today_done: 0, unread_activity: 0, awaiting_review: 0, week: [] } as unknown as Summary);
+  client.setQueryData(freshKeys.board(1), []);
+  client.setQueryData(freshKeys.activity(1), []);
+  return client;
+}
+
+/** The fields of a task the task screen reads. */
+function taskFields(fields: Record<string, unknown>) {
+  return {
+    kind: "assigned",
+    routine: null,
+    description: "",
+    status: "todo",
+    priority: "normal",
+    due_at: null,
+    proof: "none",
+    needs_confirmation: false,
+    proof_text: "",
+    proof_photo: null,
+    proof_thumb: null,
+    reward: null,
+    assignee: { id: 7, name: "Alisher Valiyev", position: null },
+    created_by: { id: 3, name: "Bekzod Mirzayev", position: null },
+    confirmed_by: null,
+    checklist: [],
+    reminder: null,
+    repeat_weekdays: null,
+    actions: ["start", "complete"],
+    created_at: "2026-10-21T08:00:00+05:00",
+    ...fields,
+  };
+}
+
 /** `person` before they've made their account (their only membership not onboarded yet). */
 function creatingAccount(person: Me): Me {
   const [membership] = person.memberships;
@@ -81,6 +144,36 @@ describe("app", () => {
     expect(document.querySelector(".tabbar")).not.toBeNull();
     // Remembered for a later launch without a sign-in (joining.test.tsx, "opening the app").
     expect(localStorage.getItem("daybook.lang")).toBe("en");
+  });
+
+  it("starts loading Home's numbers and lists while the splash is still up", async () => {
+    const fetched: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        fetched.push(url);
+        const body = url.endsWith("/auth/telegram/") ? { access: "token" } : { results: [] };
+        return new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
+      }),
+    );
+    const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } });
+    client.setQueryData(keys.me, me("approved"));
+    render(
+      <QueryClientProvider client={client}>
+        <App />
+      </QueryClientProvider>,
+    );
+    await waitFor(() =>
+      expect(fetched).toEqual(
+        expect.arrayContaining([
+          "/api/v1/companies/1/summary/",
+          "/api/v1/companies/1/tasks/?scope=board&page_size=200",
+          "/api/v1/companies/1/activity/?page_size=100",
+        ]),
+      ),
+    );
+    // Still on the splash: Home will open with them.
+    expect(document.querySelector(".splash")).not.toBeNull();
   });
 
   it("opens the screen a launch link asks for", async () => {
@@ -186,6 +279,47 @@ describe("app", () => {
     expect(back.hide).toHaveBeenCalled();
     expect(back.offClick).toHaveBeenCalled();
     // A fresh module graph (to load telegram.ts with the stub) is slow when every file runs at once.
+  }, 20_000);
+
+  it("opens a task link without drawing Home under it, and draws Home once back there", async () => {
+    const { back, InTelegram, freshKeys } = await insideTelegram();
+    window.history.replaceState(null, "", "/app/?screen=task:5");
+    const client = seededClient(freshKeys, me("approved"));
+    client.setQueryData(freshKeys.task(1, 5), taskFields({ id: 5, title: "Count the till" }));
+    client.setQueryData(freshKeys.comments(1, 5), []);
+    render(
+      <QueryClientProvider client={client}>
+        <InTelegram />
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByRole("heading", { name: "Count the till" }, { timeout: 10_000 })).toBeTruthy();
+    // Home's cards and lists (a dozen requests) wait: nobody sees them under the task.
+    expect(screen.queryByRole("heading", { name: /^Good (morning|afternoon|evening)/ })).toBeNull();
+    act(() => (back.onClick.mock.calls.at(-1)![0] as () => void)());
+    expect(await screen.findByRole("heading", { name: /^Good (morning|afternoon|evening)/ })).toBeTruthy();
+  }, 20_000);
+
+  it("fetches the work again on coming back to the app, My team included, without cancelling what is on its way", async () => {
+    const { webApp, InTelegram, freshKeys } = await insideTelegram();
+    const client = seededClient(freshKeys, me("approved"));
+    render(
+      <QueryClientProvider client={client}>
+        <InTelegram />
+      </QueryClientProvider>,
+    );
+    await screen.findByRole("heading", { name: /^Good (morning|afternoon|evening)/ }, { timeout: 10_000 });
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+    const activated = webApp.onEvent.mock.calls.find(([name]) => name === "activated")?.[1] as () => void;
+    act(() => activated());
+    const refreshed = invalidate.mock.calls.map(([filters, options]) => [JSON.stringify(filters?.queryKey), options?.cancelRefetch]);
+    expect(refreshed).toEqual(
+      expect.arrayContaining([
+        ['["tasks",1]', false],
+        ['["summary",1]', false],
+        ['["activity",1]', false],
+        ['["myTeam",1]', false],
+      ]),
+    );
   }, 20_000);
 
   it("welcomes someone a team link let in the moment their account is made", async () => {
