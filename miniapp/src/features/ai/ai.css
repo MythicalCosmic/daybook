@@ -234,11 +234,19 @@ button.ai-rec-mic:active {
   color: color-mix(in srgb, var(--color-text) 70%, transparent);
 }
 
+/* Cancel and Done stay in sight at the foot of the sheet while recording: on a short phone
+   (360 × 740 in Telegram) the stage and the example pushed them below the fold. The same
+   offsets as a sheet's own action bar (`.sheet > .action-bar`). */
 .ai-rec-buttons {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-  margin-top: 2px;
+  position: sticky;
+  bottom: calc(-1 * (var(--bottom-inset) + 32px));
+  z-index: 2;
+  margin: 2px -22px calc(-1 * (var(--bottom-inset) + 32px));
+  padding: 10px 22px calc(var(--bottom-inset) + 20px);
+  background: var(--color-bg);
 }
 
 .ai-rec-buttons > .btn {
