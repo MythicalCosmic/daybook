@@ -1,0 +1,10 @@
+# Direct dependencies of server.py; requirements.txt pins the whole tree with hashes:
+#   uv pip compile requirements.in --python-version 3.12 --exclude-newer 2026-10-18 \
+#     --generate-hashes -o requirements.txt
+faster-whisper==1.2.1
+starlette==1.8.0
+uvicorn==0.54.0
+python-multipart==0.0.32
+# faster-whisper 1.2.1 opens files with av.open(..., metadata_errors="ignore"), which PyAV 19
+# removed: every file then fails to decode. 18.1 is the newest PyAV that still takes it.
+av==18.1.0

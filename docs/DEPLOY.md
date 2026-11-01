@@ -59,6 +59,8 @@ Optional:
 |---|---|
 | `ANTHROPIC_API_KEY` | turns on the AI features. Each company still opts in under Settings → AI. Without a key everything else works and briefings use templates |
 | `AI_GLOBAL_MONTHLY_CAP_USD` | what all companies together may spend on AI in a month (default 200). Also set a spend limit in the Anthropic Console as a backstop |
+| `AI_SPEECH_URL` | where voice messages are turned into text, for voice tasks. `http://stt:8000/v1` is the server's own Whisper service (the `stt` container, no key needed; the deploy adds this line). Any OpenAI-compatible transcription endpoint works too, e.g. `https://api.openai.com/v1` with `AI_SPEECH_MODEL=gpt-4o-transcribe`, or `https://api.groq.com/openai/v1` with `whisper-large-v3`; the key goes in `AI_SPEECH_API_KEY`. Empty: no voice, typed text still becomes tasks |
+| `STT_MODEL`, `STT_CPU_THREADS` | the Whisper model of the `stt` service (default `large-v3`, about 3 GB, downloaded on its first start) and how many CPU threads it may use (6) |
 | `OWNER_ACCESS_TOKEN_MINUTES`, `OWNER_INIT_DATA_MAX_AGE` | dashboard session lengths (defaults 15 minutes and an hour) |
 
 **Keep `FIELD_ENCRYPTION_KEY` and `FIELD_HASH_KEY` safe and never change them once people's data is stored**: passport, PINFL and card numbers are encrypted with them, and a lost key means those values are gone. To rotate the encryption key, put the new key first and keep the old one after a comma.
@@ -92,6 +94,7 @@ When HTTPS works, set `DJANGO_SECURE_HSTS_SECONDS=31536000` in `.env` and run `m
 | `worker` | Celery on the `celery` and `default` queues (8 processes, one job each at a time): notifications, group posts, exports, reports |
 | `ai-worker` | Celery on the `ai` queue (four at a time): AI answers, receipt reading, briefings. AI calls take seconds, so they never hold up reminders |
 | `stream` | uvicorn (ASGI) on port 8001: live AI answers as server-sent events at `/api/v1/owner/ai/turns/…` |
+| `stt` | speech to text for voice tasks (`deploy/stt`): Whisper on the CPU behind an OpenAI-compatible endpoint, reached only by the other containers. One voice message at a time, so a burst queues instead of slowing the site; the model sits in the `stt_models` volume |
 | `beat` | Celery beat: daily tasks, reminders, digests, reports and every module's schedule |
 | `employee_bot` | the employee bot, polling Telegram |
 | `owner_bot` | the owner bot, polling Telegram; idle when `OWNER_BOT_TOKEN` is empty |

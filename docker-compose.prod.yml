@@ -55,6 +55,33 @@ services:
   stream:
     ports: !reset []
 
+  # Speech to text for voice tasks (deploy/stt): Whisper on the CPU behind an OpenAI-compatible
+  # endpoint that only the app's containers reach, at AI_SPEECH_URL=http://stt:8000/v1. The models
+  # download into their volume on the first start (~4.5 GB, a few minutes); until then /health
+  # says "loading" and voice messages are retried for a while before "try again later".
+  stt:
+    build: ./deploy/stt
+    image: trello911-stt:latest
+    # Stock Whisper writes Uzbek poorly, so Uzbek speech goes to rubaiSTT v2 (Whisper medium
+    # fine-tuned on ~475 h of Uzbek, Tashkent dialect included; Apache-2.0), pinned to a commit.
+    environment:
+      STT_MODEL: ${STT_MODEL:-large-v3}
+      STT_MODELS_BY_LANGUAGE: ${STT_MODELS_BY_LANGUAGE:-uz=AlexAnoshka/fast-whisper-uz-rubaistt-v2-medium-ct2@a38c89604615d6c3fc6f10692375ecbf89502bdb}
+      STT_COMPUTE_TYPE: ${STT_COMPUTE_TYPE:-int8}
+      STT_CPU_THREADS: ${STT_CPU_THREADS:-6}
+      STT_BEAM_SIZE: ${STT_BEAM_SIZE:-1}
+    volumes:
+      - stt_models:/models
+    # Both models together hold about 5 GB once loaded.
+    mem_limit: 10g
+    logging:
+      driver: json-file
+      options:
+        max-size: 20m
+        max-file: "3"
+    restart: unless-stopped
+    profiles: ["app"]
+
   # Every night: a compressed database dump and an archive of the private files (receipts,
   # documents, contracts, payslips), keeping the last 14 days of each in ./backups.
   backup:
@@ -88,3 +115,4 @@ services:
 volumes:
   caddy_data:
   caddy_config:
+  stt_models:
