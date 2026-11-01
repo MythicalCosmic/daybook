@@ -430,6 +430,14 @@ describe("small layout fixes", () => {
     expect(labels[1]!.classes()).toContain("-top-2");
   });
 
+  it("CalendarWeek keeps the hours in view when a phone scrolls the week sideways", () => {
+    const week = mount(CalendarWeek, { props: { items: [], week: "2026-10-19", startHour: 7, endHour: 10 }, global: { plugins: plugins() } });
+    const hourColumn = week.find("[data-hour-label]").element.closest("[data-hour-column]");
+    expect(hourColumn?.className).toContain("sticky");
+    expect(hourColumn?.className).toContain("left-0");
+    expect(week.find("[data-hour-corner]").classes()).toEqual(expect.arrayContaining(["sticky", "left-0"]));
+  });
+
   it("UiDrawer lets its description run to two lines", async () => {
     await router.push("/c/1/tasks?task=1");
     const wrapper = mount(UiDrawer, {
