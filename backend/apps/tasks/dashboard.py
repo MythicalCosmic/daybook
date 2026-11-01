@@ -43,27 +43,23 @@ def board(tasks: QuerySet[Task], now: datetime, company) -> list[dict]:
     done_since = now - timedelta(days=7)
     wheres = {column: Q(status=column.value) for column in rules.Column}
     wheres[rules.Column.DONE] &= Q(completed_at__gte=done_since)
-    # One count for every column, the ids of each column's first cards, then the cards of all
-    # five columns with one set of relation queries (not five).
+    # One count for every column, then the cards of all five with one set of relation queries.
     counts = tasks.order_by().aggregate(
         **{column.value: Count("pk", filter=where) for column, where in wheres.items()}
     )
-    ids = {}
-    for column, where in wheres.items():
-        if column == rules.Column.DONE:
-            order = ("-completed_at", "-pk")
-        else:
-            order = (F("due_at").asc(nulls_last=True), "pk")
-        cards = tasks.filter(where).order_by(*order).values_list("pk", flat=True)
-        ids[column] = list(cards[:BOARD_LIMIT])
-    every = [pk for column_ids in ids.values() for pk in column_ids]
-    loaded = {task.pk: task for task in with_rows(tasks.filter(pk__in=every))} if every else {}
-    return [
+    by_deadline = (F("due_at").asc(nulls_last=True), "pk")
+    cards = queries.first_of_each(
+        with_rows(tasks),
         {
-            "id": column.value,
-            "count": counts[column.value],
-            "items": [loaded[pk] for pk in ids[column] if pk in loaded],
-        }
+            column: tasks.filter(where).order_by(
+                *(("-completed_at", "-pk") if column == rules.Column.DONE else by_deadline)
+            )
+            for column, where in wheres.items()
+        },
+        BOARD_LIMIT,
+    )
+    return [
+        {"id": column.value, "count": counts[column.value], "items": cards[column]}
         for column in rules.Column
     ]
 

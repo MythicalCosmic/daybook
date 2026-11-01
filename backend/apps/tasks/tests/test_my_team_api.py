@@ -62,3 +62,31 @@ def test_the_app_knows_which_departments_someone_heads(api_as, company, team):
     me = api_as(team["head"]).get("/api/v1/me/").data["memberships"][0]
 
     assert me["heads"] == ["Savdo"]
+
+
+# What one person's page costs (audit b, 2026-11-02): 29 queries on the demo before, 22 now: its
+# open and finished work load with one set of relation queries instead of two.
+PERSON_BUDGET = 17  # 20 before in this setup
+
+
+def test_a_persons_page_costs_the_same_whatever_their_work(api_as, company, team):
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    def more_work(n):
+        for index in range(n):
+            services.create_task(by=team["owner"], assignee=team["alisher"], title=f"Ish {index}")
+            done = services.create_task(by=team["owner"], assignee=team["alisher"], title="Bitdi")
+            services.complete_task(done, by=team["alisher"])
+
+    api = api_as(team["head"])
+    person = url(company, f"{team['alisher'].pk}/")
+    api.get(person)
+    with CaptureQueriesContext(connection) as few:
+        api.get(person)
+    more_work(5)
+    with CaptureQueriesContext(connection) as many:
+        response = api.get(person)
+
+    assert len(many) == len(few) <= PERSON_BUDGET
+    assert len(response.data["open"]) == 6 and len(response.data["done"]) == 6
