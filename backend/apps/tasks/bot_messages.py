@@ -398,6 +398,13 @@ def return_prompt(task: Task, member: Membership, now: datetime) -> BotMessage:
     return text, InlineKeyboardMarkup(inline_keyboard=rows, force_reply=True)
 
 
+def block_prompt(task: Task, member: Membership, now: datetime) -> BotMessage:
+    """The worker's card, asking why it can't be done: the question stays on the card (a toast
+    with it was gone in a second, leaving a list of reasons that asked nothing)."""
+    line = _("Why can't it be done?")
+    return f"{card_text(task, member, now)}\n\n<b>{line}</b>", block_keyboard(task)
+
+
 def block_keyboard(task: Task) -> InlineKeyboardMarkup:
     """Why it can't be done (research R2 T57): chips first, words only for "another reason"."""
     rows = [

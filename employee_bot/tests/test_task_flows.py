@@ -244,6 +244,9 @@ async def test_a_comment_by_button_and_by_reply(dp, bot, company, member, sent_m
     await dp.feed_update(bot, updates.callback(tg, press(TaskAction.COMMENT, task.pk)))
     assert of(bot, SendMessage)[-1].reply_markup.force_reply  # the reply field opens
     await dp.feed_update(bot, updates.message(tg, "Terminal cheki topilmayapti"))
+    # The question's Cancel button goes once the comment is in (it cancelled nothing).
+    [cleared] = of(bot, EditMessageReplyMarkup)
+    assert cleared.reply_markup is None
 
     card = TaskCallback(action=TaskAction.OPEN, task_id=task.pk).pack()
     markup = InlineKeyboardMarkup(
@@ -490,7 +493,11 @@ async def test_cant_do_it_from_the_card(dp, bot, company, member, sent_messages)
     tg = updates.tg_user(worker.user.telegram_id)
 
     await dp.feed_update(bot, updates.callback(tg, press(TaskAction.BLOCK, task.pk)))
-    assert of(bot, EditMessageReplyMarkup)  # the reasons, in place
+    # The reasons, in place, under the question on the card itself: a toast with it was gone
+    # in a second and left a list of reasons that asked nothing.
+    [asked] = of(bot, EditMessageText)
+    assert asked.text.endswith("<b>Why can't it be done?</b>")
+    assert "Out of stock" in str(asked.reply_markup)
     await dp.feed_update(
         bot,
         updates.callback(tg, ReasonCallback(kind="block", task_id=task.pk, code="no_stock").pack()),

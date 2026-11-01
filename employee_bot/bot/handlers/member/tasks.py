@@ -7,9 +7,11 @@ offers choices and says the deadline stays (R1 N4); replies to a task message be
 (R1 Q2); managers act on an escalation from its card (B-9).
 """
 
+from contextlib import suppress
 from datetime import datetime, timedelta
 
 from aiogram import Bot, F, Router, html
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command, Filter, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
@@ -416,20 +418,25 @@ async def ask_comment(
         await callback.answer(cards.gone(), show_alert=True)
         return
     await state.set_state(CommentTask.text)
-    await state.update_data(task_id=task.pk)
     text, markup = task_messages.comment_prompt(task)
-    await callback.message.answer(text, reply_markup=markup)
+    prompt = await callback.message.answer(text, reply_markup=markup)
+    await state.update_data(task_id=task.pk, prompt_id=prompt.message_id)
     await callback.answer()
 
 
 @router.message(CommentTask.text, F.text)
 async def write_comment(message: Message, membership: Membership, state: FSMContext, bot: Bot):
-    task_id = (await state.get_data())["task_id"]
+    data = await state.get_data()
     await state.clear()
+    if prompt_id := data.get("prompt_id"):  # its Cancel button has nothing left to cancel
+        with suppress(TelegramBadRequest):
+            await bot.edit_message_reply_markup(
+                chat_id=message.chat.id, message_id=prompt_id, reply_markup=None
+            )
     if message.text.strip().lower() in CANCEL_WORDS:
         await message.answer(_("Okay, cancelled."))
         return
-    alert = await _comment(membership, task_id, message.text)
+    alert = await _comment(membership, data["task_id"], message.text)
     await message.answer(alert or _("Comment added."))
 
 
@@ -525,8 +532,9 @@ async def block_reasons(
     if task is None:
         await callback.answer(cards.gone(), show_alert=True)
         return
-    await cards.edit_keyboard(callback, task_messages.block_keyboard(task))
-    await callback.answer(_("Why can't it be done?"))
+    message = await sync_to_async(task_messages.block_prompt)(task, membership, timezone.now())
+    await cards.edit(callback, message)
+    await callback.answer()
 
 
 @router.callback_query(ReasonCallback.filter(F.kind == "block"))
