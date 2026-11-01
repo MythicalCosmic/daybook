@@ -387,6 +387,21 @@ describe("problems → fixes", () => {
     expect(applied!.drafts[0]!.checklist).toEqual(["Haroratni yozib olish"]);
   });
 
+  it("keeps the review and says why when the server made none of the tasks", async () => {
+    server.handler = (path, method) => {
+      if (path.endsWith("/ai/status/")) return STATUS;
+      if (path.endsWith("/members/")) return PEOPLE;
+      if (path.endsWith("/task-drafts/41/")) return draft();
+      if (path.endsWith("/task-drafts/41/apply/") && method === "POST") return { draft: draft(), created: [], failed: [{ index: 0, detail: "Alisher is on leave today." }] };
+      return undefined;
+    };
+    renderApp(null, { me: person([giver()]), init: { sheet: { kind: "feature", feature: "ai", sheet: "draft", params: { id: 41 } } } });
+    fireEvent.click(await screen.findByRole("button", { name: "Create 1 task" }));
+    expect(await screen.findByText("Alisher is on leave today.")).toBeTruthy();
+    expect(screen.getByDisplayValue("Muzlatgich haroratini tekshirish")).toBeTruthy();
+    expect(screen.queryByText(/created/)).toBeNull();
+  });
+
   it("says plainly when nothing could be made out", async () => {
     server.handler = (path) => {
       if (path.endsWith("/ai/status/")) return STATUS;

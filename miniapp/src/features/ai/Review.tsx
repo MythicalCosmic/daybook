@@ -97,6 +97,12 @@ export function Review({
     }
     apply.mutate(applyPayload(cards, now, timeZone), {
       onSuccess: (result) => {
+        if (!result.created.length && result.failed.length) {
+          // Nothing went out: the review stays, with the server's reason for the first card it refused.
+          haptic.notify("error");
+          toast(result.failed[0]!.detail || t("error.generic"), { tone: "error" });
+          return;
+        }
         haptic.notify("success");
         onApplied(result);
       },
