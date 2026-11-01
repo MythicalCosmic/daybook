@@ -159,14 +159,16 @@ export function summarize(def: FilterDef, value: FilterValue, ctx: SummaryContex
 export function useUrlFilters(defs: MaybeRefOrGetter<readonly FilterDef[]>) {
   const route = useRoute();
   const router = useRouter();
+  // A paged list goes back to page 1 in the same navigation, not one request later.
+  const patch = (next: FilterValues) => patchQuery(router, { ...toQuery(toValue(defs), next), page: undefined });
   const values = computed<FilterValues>({
     get: () => fromQuery(toValue(defs), route.query),
-    set: (next) => patchQuery(router, toQuery(toValue(defs), next)),
+    set: patch,
   });
   return {
     values,
     params: computed(() => toParams(toValue(defs), values.value)),
     active: computed(() => activeCount(toValue(defs), values.value)),
-    clear: () => patchQuery(router, toQuery(toValue(defs), {})),
+    clear: () => patch({}),
   };
 }

@@ -102,6 +102,23 @@ describe("filter values and the URL", () => {
     await flushPromises();
     expect(app.router.currentRoute.value.query).toEqual({ view: "board" });
   });
+
+  it("goes back to page 1 in the same navigation as the filter (no request for the old page)", async () => {
+    const app = await testApp("/c/1/finance/transactions?status=open&page=3");
+    let filters!: ReturnType<typeof useUrlFilters>;
+    const Host = defineComponent({
+      setup() {
+        filters = useUrlFilters(defs);
+        return () => h("div");
+      },
+    });
+    mountWithProviders(Host, { plugins: app.plugins });
+    const seen: Array<Record<string, unknown>> = [];
+    app.router.afterEach((to) => void seen.push({ ...to.query }));
+    filters.values.value = { ...filters.values.value, status: ["late"] };
+    await flushPromises();
+    expect(seen).toEqual([{ status: ["late"] }]);
+  });
 });
 
 describe("FilterBar", () => {
