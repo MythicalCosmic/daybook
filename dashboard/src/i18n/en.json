@@ -374,6 +374,8 @@
   "shell.palette.searching": "Searching…",
   "shell.palette.empty": "Nothing found for “{q}”",
   "shell.palette.emptyHint": "Try another word, or ask the assistant.",
+  "shell.palette.failed": "Search didn’t work",
+  "shell.palette.failedHint": "Check the connection and try again.",
   "shell.palette.askAi": "Ask AI: “{q}”",
   "shell.palette.askAiHint": "Opens the assistant with your question",
   "shell.palette.navigate": "move",

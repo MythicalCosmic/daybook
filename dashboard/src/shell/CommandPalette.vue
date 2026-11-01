@@ -59,6 +59,7 @@ import { LANGUAGES, type SearchHit } from "@/api/types";
 import CompanyLogo from "@/components/CompanyLogo.vue";
 import { iconForKind } from "@/components/kindIcons";
 import KbdKey from "@/components/KbdKey.vue";
+import UiButton from "@/components/UiButton.vue";
 import UiSpinner from "@/components/UiSpinner.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { toast } from "@/components/useToast";
@@ -467,8 +468,16 @@ useBackCloses(() => palette.open, () => palette.hide());
             <ComboboxContent position="inline" class="min-h-0 flex-1 overflow-y-auto overscroll-contain">
               <ComboboxViewport class="p-2">
                 <ComboboxEmpty v-if="trimmed && !searching" class="flex flex-col items-center gap-1 px-6 py-10 text-center">
-                  <p class="text-base font-semibold text-fg">{{ t("shell.palette.empty", { q: trimmed }) }}</p>
-                  <p class="text-sm text-muted">{{ t("shell.palette.emptyHint") }}</p>
+                  <!-- A search that failed isn't a search that found nothing. -->
+                  <template v-if="search.isError.value">
+                    <p class="text-base font-semibold text-fg">{{ t("shell.palette.failed") }}</p>
+                    <p class="text-sm text-muted">{{ t("shell.palette.failedHint") }}</p>
+                    <UiButton class="mt-2" size="sm" variant="secondary" data-palette-retry @click="search.refetch()">{{ t("common.retry") }}</UiButton>
+                  </template>
+                  <template v-else>
+                    <p class="text-base font-semibold text-fg">{{ t("shell.palette.empty", { q: trimmed }) }}</p>
+                    <p class="text-sm text-muted">{{ t("shell.palette.emptyHint") }}</p>
+                  </template>
                 </ComboboxEmpty>
                 <ComboboxGroup v-for="section in sections" :key="section.id" class="mb-1 last:mb-0">
                   <ComboboxLabel v-if="section.label" class="px-2.5 pb-1 pt-2 text-xs font-medium text-subtle">{{ section.label }}</ComboboxLabel>

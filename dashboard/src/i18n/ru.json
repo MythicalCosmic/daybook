@@ -374,6 +374,8 @@
   "shell.palette.searching": "Ищем…",
   "shell.palette.empty": "По запросу «{q}» ничего нет",
   "shell.palette.emptyHint": "Попробуйте другое слово или спросите ассистента.",
+  "shell.palette.failed": "Не удалось выполнить поиск",
+  "shell.palette.failedHint": "Проверьте интернет и попробуйте ещё раз.",
   "shell.palette.askAi": "Спросить ИИ: «{q}»",
   "shell.palette.askAiHint": "Откроет ассистента с вашим вопросом",
   "shell.palette.navigate": "выбор",

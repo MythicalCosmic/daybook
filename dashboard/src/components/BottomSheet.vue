@@ -142,9 +142,11 @@ function onOutside(event: Event): void {
           <DialogDescription v-if="description">{{ description }}</DialogDescription>
         </VisuallyHidden>
         <!-- Without a header the close button sits in the top corner, beside the grab handle. -->
-        <DialogClose v-if="dismissable && !hideClose && (hideHeader || !(title || $slots.title))" as-child>
-          <IconButton class="absolute right-2 top-1.5 z-10" :icon="X" :label="t('common.close')" size="lg" :tooltip="false" />
-        </DialogClose>
+        <div v-if="dismissable && !hideClose && (hideHeader || !(title || $slots.title))" class="absolute right-2 top-1.5 z-10">
+          <DialogClose as-child>
+            <IconButton :icon="X" :label="t('common.close')" size="lg" :tooltip="false" />
+          </DialogClose>
+        </div>
         <!-- The drawer's and dialog's own header pieces (a custom title, a "More" menu, a status)
              come along on phones too. -->
         <header v-else class="flex shrink-0 items-start gap-2 px-5 pb-3 pt-1">
