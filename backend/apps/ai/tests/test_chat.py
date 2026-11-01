@@ -235,6 +235,70 @@ def test_a_cancel_during_a_call_leaves_nothing_of_the_turn_in_the_context(
     assert second["messages"][0]["content"][-1] == {"type": "text", "text": "Ikkinchi"}
 
 
+def test_a_turn_asks_before_every_call_not_only_when_it_was_queued(
+    owner_api, owner, company, fake_claude, django_capture_on_commit_callbacks
+):
+    """The budget and the AI switch are checked by the worker before each call: a question
+    queued before AI was switched off isn't sent, and a tool loop whose first round spent the
+    rest of the month's budget makes no second call."""
+    from apps.ai import chat, conf
+
+    client = owner_api(owner)
+    conversation = client.post(url(company, "conversations/")).json()
+    turn_id = client.post(
+        url(company, f"conversations/{conversation['id']}/turns/"), {"text": "?"}, format="json"
+    ).json()["turn_id"]  # queued; the job waits for the commit
+    conf.get_settings(company).__class__.objects.filter(company=company).update(enabled=False)
+
+    chat.run_turn(turn_id)
+
+    assert fake_claude.requests == []
+    assert AITurn.objects.get(pk=turn_id).status == "failed"
+
+    conf.get_settings(company).__class__.objects.filter(company=company).update(
+        enabled=True, monthly_budget_usd="0.01"
+    )
+    fake_claude.script(
+        fake_claude.message(
+            [tool_use("tasks_search", {"overdue": True})],
+            stop_reason="tool_use",
+            model="claude-sonnet-5-5",
+            input_tokens=10_000,  # $0.02 on Sonnet 5.5: more than the month's budget
+        ),
+        fake_claude.text("Hech qachon yuborilmaydi."),
+    )
+    _conversation, second = ask(client, company, "Yana", django_capture_on_commit_callbacks)
+
+    assert len(fake_claude.requests) == 1
+    turn = AITurn.objects.get(pk=second)
+    assert (turn.status, turn.error_code) == ("failed", "budget_reached")
+
+
+def test_a_turn_whose_job_died_does_not_hold_the_conversation_forever(
+    owner_api, owner, company, settings, django_capture_on_commit_callbacks
+):
+    """A worker restart loses a running turn: it stays "running" and every new question got
+    409 "busy". After a while it no longer counts: it is taken out (cancelled), and the next
+    question goes ahead."""
+    settings.AI_FAKE = True
+    client = owner_api(owner)
+    conversation = client.post(url(company, "conversations/")).json()
+    path = url(company, f"conversations/{conversation['id']}/turns/")
+    first = client.post(path, {"text": "?"}, format="json").json()["turn_id"]  # never run
+    assert client.post(path, {"text": "??"}, format="json").status_code == 409
+    AITurn.objects.filter(pk=first).update(
+        status="running", created_at=timezone.now() - timedelta(minutes=20)
+    )
+
+    with django_capture_on_commit_callbacks(execute=True):
+        again = client.post(path, {"text": "Nechta vazifa kechikmoqda?"}, format="json")
+
+    assert again.status_code == 202
+    assert AITurn.objects.get(pk=first).status == "cancelled"
+    assert not AIMessage.objects.filter(turn_id=first, in_context=True).exists()
+    assert AITurn.objects.get(pk=again.json()["turn_id"]).status == "done"
+
+
 def test_chat_needs_ai_use_and_is_private(owner_api, owner, company, member, settings):
     settings.AI_FAKE = True
     manager = member.registered(company, "Manager")
