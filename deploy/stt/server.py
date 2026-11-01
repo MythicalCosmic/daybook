@@ -18,7 +18,7 @@ Settings (environment): STT_MODEL (large-v3-turbo), STT_MODELS_BY_LANGUAGE ("");
 a model is a faster-whisper size ("large-v3") or a Hugging Face repository, optionally pinned to
 a commit ("org/model@<sha>"),
 STT_COMPUTE_TYPE (int8), STT_CPU_THREADS (4), STT_BEAM_SIZE (1), STT_CONCURRENCY (1),
-STT_MAX_BYTES (25 MB), STT_API_KEY (optional: when set, requests need
+STT_MAX_BYTES (25 MB), STT_MAX_SECONDS (300), STT_API_KEY (optional: when set, requests need
 `Authorization: Bearer <key>`).
 """
 
@@ -44,6 +44,10 @@ CPU_THREADS = int(os.environ.get("STT_CPU_THREADS", "4"))
 BEAM_SIZE = int(os.environ.get("STT_BEAM_SIZE", "1"))
 CONCURRENCY = int(os.environ.get("STT_CONCURRENCY", "1"))
 MAX_BYTES = int(os.environ.get("STT_MAX_BYTES", str(25 * 1024 * 1024)))
+# Clients say how long a recording is, but only the audio itself can be trusted: a few MB of
+# low-bitrate audio can hold an hour. Longer than this is refused after decoding, before Whisper.
+MAX_SECONDS = int(os.environ.get("STT_MAX_SECONDS", "300"))
+SAMPLE_RATE = 16_000  # what decode_audio gives and Whisper reads
 API_KEY = os.environ.get("STT_API_KEY", "")
 LANGUAGES = {"uz", "ru", "en", "tr", "kk", "tg", "ky"}
 PROMPT_MAX = 600  # characters; Whisper reads ~224 tokens of prompt at most
@@ -95,9 +99,18 @@ def _pick(language: str | None) -> tuple[str, object] | None:
     return None
 
 
+class TooLong(Exception):
+    pass
+
+
 def _transcribe(model, path: str, language: str | None, prompt: str | None) -> dict:
+    from faster_whisper import decode_audio
+
+    audio = decode_audio(path, sampling_rate=SAMPLE_RATE)
+    if len(audio) > MAX_SECONDS * SAMPLE_RATE:
+        raise TooLong
     segments, info = model.transcribe(
-        path,
+        audio,
         language=language,
         initial_prompt=prompt or None,
         beam_size=BEAM_SIZE,
@@ -152,6 +165,8 @@ async def transcriptions(request: Request):
         async with _slots:
             try:
                 result = await asyncio.to_thread(_transcribe, model, handle.name, language, prompt)
+            except TooLong:
+                return _error(413, f"Audio longer than {MAX_SECONDS} seconds.")
             except Exception as error:  # a file PyAV can't decode, mostly
                 log.warning("could not transcribe %s bytes: %s", len(data), error)
                 return _error(400, "Could not read the audio.")

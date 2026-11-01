@@ -26,6 +26,11 @@
 	# gunicorn would close them (GUNICORN_KEEPALIVE, 75 s), so none is ever reused just as the
 	# other side drops it.
 	handle {
+		# Uploads are at most 20 MB a file (apps.core.uploads), a few files a request; anything
+		# far bigger is refused here, before Django spools it to disk.
+		request_body {
+			max_size 100MB
+		}
 		encode zstd gzip
 		reverse_proxy backend:8000 {
 			transport http {
