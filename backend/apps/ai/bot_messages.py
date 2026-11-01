@@ -51,15 +51,22 @@ def gone() -> str:
     return _("This voice note is no longer here.")
 
 
-def voice_off(member: Membership, *, speech_missing: bool = False) -> str:
+def voice_off(member: Membership, *, speech_missing: bool = False, typed_here: bool = True) -> str:
     """The one line for a voice message while voice tasks can't be used: typed tasks still
-    work, and whoever can switch them on is told where."""
+    work (in the employee bot: the owner bot takes no typed task, `typed_here` False), and
+    whoever can switch them on is told where."""
     if speech_missing:
-        text = _("I can't listen to voice messages here yet. Type the task instead.")
+        if typed_here:
+            text = _("I can't listen to voice messages here yet. Type the task instead.")
+        else:
+            text = _("I can't listen to voice messages here yet.")
         if member.has_perm(Perm.AI_CONFIGURE):
             text += " " + _("Voice needs a speech service on the server (AI_SPEECH_URL).")
         return text
-    text = _("Voice tasks aren't switched on in this company. Type the task instead.")
+    if typed_here:
+        text = _("Voice tasks aren't switched on in this company. Type the task instead.")
+    else:
+        text = _("Voice tasks aren't switched on in this company.")
     if member.has_perm(Perm.AI_CONFIGURE):
         text += " " + _("You can switch them on in the dashboard: AI, then Agents.")
     return text

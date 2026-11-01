@@ -65,3 +65,5 @@ async def test_without_ai_the_owner_is_told_where_to_switch_it_on(dp, bot, compa
 
     [reply] = bot.sent()
     assert "dashboard" in reply.text
+    # The owner bot takes no typed task: it used to say "Type the task instead" (a dead end).
+    assert "Type the task" not in reply.text
