@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import { flushPromises, mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
@@ -97,5 +100,17 @@ describe("MarkdownView", () => {
     await chip.trigger("click", { button: 0 });
     await flushPromises();
     expect(app.router.currentRoute.value.fullPath).toBe("/c/1/tasks?task=345");
+  });
+});
+
+describe("record chips", () => {
+  const source = (path: string) => readFileSync(resolve(process.cwd(), "src", path), "utf8");
+
+  it("wrap a long title like a highlighted phrase in the shared rule, so no page needs its own", () => {
+    const rule = /\.md-body :deep\(\.md-chip\) \{([^}]*)\}/.exec(source("components/MarkdownView.vue"))?.[1] ?? "";
+    expect(rule).toContain("overflow-wrap: anywhere;");
+    expect(rule).toContain("white-space: normal;");
+    expect(rule).not.toContain("nowrap");
+    expect(source("modules/ai/pages/AskPage.vue")).not.toContain(".md-chip");
   });
 });
