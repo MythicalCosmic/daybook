@@ -100,7 +100,8 @@ watch(
   () => route.query.new,
   (value) => {
     if (value === "1") {
-      creating.value = true;
+      // Only for people who may create one: the others saw a form the server refuses.
+      if (canCreate.value) creating.value = true;
       const { new: _drop, ...rest } = route.query;
       void router.replace({ query: rest });
     }

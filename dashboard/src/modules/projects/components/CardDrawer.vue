@@ -63,11 +63,16 @@ const logging = ref(false);
 const lightbox = ref(false);
 const saving = ref(false);
 
-watch(card, (value) => {
-  if (!value) return;
-  title.value = value.title;
-  description.value = value.description;
-});
+// The boxes are filled when editing starts, never by a refetch: one landing mid-edit (a save
+// elsewhere, the pulse) used to put the server's text back over what was being typed.
+function editTitle(): void {
+  title.value = card.value?.title ?? "";
+  editingTitle.value = true;
+}
+function editDescription(): void {
+  description.value = card.value?.description ?? "";
+  editingDescription.value = true;
+}
 function close(): void {
   const { card: _card, ...rest } = route.query;
   void router.replace({ query: rest });
@@ -84,19 +89,22 @@ async function save(body: Parameters<typeof updateCard>[3], message?: string): P
   try {
     await updateCard(companyId.value, props.project.id, card.value.id, body);
     if (message) toast.success(message);
-    await query.refetch();
-    void refresh();
+    // One invalidation refetches the card too (its key is under the module's).
+    await refresh();
   } finally {
     saving.value = false;
   }
 }
 
+// Enter closes the box and its blur calls this again: only the first call saves.
 async function saveTitle(): Promise<void> {
+  if (!editingTitle.value) return;
   editingTitle.value = false;
   if (card.value && title.value.trim() && title.value.trim() !== card.value.title) await save({ title: title.value.trim() });
 }
 
 async function saveDescription(): Promise<void> {
+  if (!editingDescription.value) return;
   editingDescription.value = false;
   if (card.value && description.value !== card.value.description) await save({ description: description.value });
 }
@@ -116,8 +124,7 @@ async function changeList(value: number | null): Promise<void> {
     // No position: the server puts the card after everything already in the list.
     const result = await moveCard(companyId.value, props.project.id, card.value.id, value);
     toast.success(result.message || t("projects.drawer.moved", { list: props.project.lists.find((l) => l.id === value)?.name ?? "" }));
-    await query.refetch();
-    void refresh();
+    await refresh();
   } catch (error) {
     const detail = (error as { detail?: string } | null)?.detail;
     toast.warning(detail ?? t("projects.board.moveFailed"));
@@ -154,8 +161,7 @@ async function changeDue(value: string | null): Promise<void> {
   saving.value = true;
   try {
     await scheduleCard(companyId.value, props.project.id, card.value.id, start, value);
-    await query.refetch();
-    void refresh();
+    await refresh();
   } finally {
     saving.value = false;
   }
@@ -163,6 +169,8 @@ async function changeDue(value: string | null): Promise<void> {
 
 const checklistDone = computed(() => card.value?.checklist.filter((i) => i.is_done).length ?? 0);
 const tasksLink = computed(() => (card.value ? `/c/${company.currentId}/tasks?task=${card.value.id}` : ""));
+// Tasks opens for people who see every task; for the others the link led to the no-access page.
+const canOpenTasks = computed(() => company.can("tasks.view_all"));
 
 const timers = useTimers();
 const timerRunning = computed(() => !!card.value && (timers.data.value ?? []).some((timer) => timer.person.id === company.current?.membership_id && timer.task?.id === card.value?.id));
@@ -178,8 +186,7 @@ async function toggleTimer(): Promise<void> {
       await startTimer(companyId.value, { task: card.value.id });
       toast.success(t("projects.time.started", { key: card.value.key }));
     }
-    await Promise.all([query.refetch(), timers.refetch()]);
-    void refresh();
+    await refresh();
   } catch {
     // The HTTP layer showed why.
   } finally {
@@ -210,7 +217,7 @@ async function toggleTimer(): Promise<void> {
           <TextInput v-if="editingTitle" v-model="title" autofocus :maxlength="200" @enter="saveTitle" @blur="saveTitle" />
           <h2 v-else class="group flex items-start gap-2 text-lg font-semibold leading-snug text-fg">
             <span class="min-w-0 flex-1">{{ card.title }}</span>
-            <button v-if="canEditTask" type="button" class="mt-1 rounded-[6px] p-1 text-subtle opacity-0 transition-opacity hover:bg-highlight hover:text-fg focus:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100" :aria-label="t('projects.drawer.editTitle')" @click="editingTitle = true">
+            <button v-if="canEditTask" type="button" class="mt-1 rounded-[6px] p-1 text-subtle opacity-0 transition-opacity hover:bg-highlight hover:text-fg focus:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100" :aria-label="t('projects.drawer.editTitle')" @click="editTitle">
               <Pencil :size="14" />
             </button>
           </h2>
@@ -270,11 +277,11 @@ async function toggleTimer(): Promise<void> {
           <section class="mt-6">
             <div class="flex items-center gap-2">
               <h3 class="section-title flex-1">{{ t("projects.drawer.description") }}</h3>
-              <UiButton v-if="canEditTask && !editingDescription" size="sm" variant="ghost" :icon="Pencil" @click="editingDescription = true">{{ t("common.edit") }}</UiButton>
+              <UiButton v-if="canEditTask && !editingDescription" size="sm" variant="ghost" :icon="Pencil" @click="editDescription">{{ t("common.edit") }}</UiButton>
             </div>
             <div v-if="editingDescription" class="mt-2 flex flex-col gap-2">
               <TextArea v-model="description" :rows="5" autofocus :placeholder="t('projects.drawer.descriptionPlaceholder')" />
-              <div class="flex gap-2"><UiButton size="sm" variant="primary" :loading="saving" @click="saveDescription">{{ t("common.save") }}</UiButton><UiButton size="sm" variant="ghost" @click="editingDescription = false; description = card.description">{{ t("common.cancel") }}</UiButton></div>
+              <div class="flex gap-2"><UiButton size="sm" variant="primary" :loading="saving" @click="saveDescription">{{ t("common.save") }}</UiButton><UiButton size="sm" variant="ghost" @click="editingDescription = false">{{ t("common.cancel") }}</UiButton></div>
             </div>
             <MarkdownView v-else-if="card.description" :source="card.description" size="sm" class="mt-2" />
             <p v-else class="mt-1 text-sm text-subtle">{{ t("projects.drawer.noDescription") }}</p>
@@ -329,7 +336,7 @@ async function toggleTimer(): Promise<void> {
           </section>
         </div>
 
-        <footer class="flex shrink-0 flex-wrap items-center gap-2 border-t border-line bg-canvas/60 px-6 py-3">
+        <footer v-if="canOpenTasks" class="flex shrink-0 flex-wrap items-center gap-2 border-t border-line bg-canvas/60 px-6 py-3">
           <span class="text-xs text-muted">{{ t("projects.drawer.tasksHint") }}</span>
           <span class="flex-1" />
           <UiButton :to="tasksLink" variant="secondary" size="sm" :icon-right="ExternalLink">{{ t("projects.drawer.openTask") }}</UiButton>
