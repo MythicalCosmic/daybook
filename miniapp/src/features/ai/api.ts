@@ -1,76 +1,31 @@
 /**
- * The AI endpoints of the mini app (`/api/v1/companies/{id}/ai/…`, contract §4), typed by hand
- * until the lead regenerates the schema: what the AI can do here, and task drafts made from a
- * voice note or a typed instruction (poll while it works, edit, apply, discard).
+ * The AI endpoints of the mini app (`/api/v1/companies/{id}/ai/…`, contract §4): what the AI can
+ * do here, and task drafts made from a voice note or a typed instruction (poll while it works,
+ * edit, apply, discard). The shapes are the generated schema's.
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api, apiForm, ApiError } from "../../api/client";
 import { refreshAfterTaskChange } from "../../api/hooks";
+import type { components } from "../../api/schema";
 
-export type AIStatus = {
-  /** Voice notes become tasks here: AI on, the voice tasks agent on and speech ready. */
-  voice: boolean;
-  /** A typed instruction becomes tasks: AI on and the voice tasks agent on. */
-  smart_text: boolean;
-  engine: "claude" | "rules";
-  /** The longest voice note the company takes. */
-  max_seconds: number;
-  /** Tasks are given at once when every one is clear (the voice tasks agent's switch). */
-  auto_create: boolean;
-  /** The employee bot, for "send it a voice message instead". */
-  bot_username: string;
-};
+type Schemas = components["schemas"];
 
-export type DraftStatus = "queued" | "transcribing" | "thinking" | "ready" | "failed" | "applied" | "discarded" | "expired";
-
-export type Problem = "no_assignee_match" | "ambiguous_assignee" | "no_due" | "past_due" | "not_allowed";
-
-export type DraftItem = {
-  title: string;
-  description: string;
-  /** Null: for the author (then `assignee_guess` may name who was heard but not matched). */
-  assignee: { id: number; name: string; position: string | null } | null;
-  assignee_guess: string;
-  due_at: string | null;
-  due_text: string;
-  priority: "normal" | "urgent";
-  checklist: string[];
-  proof: "none" | "photo";
-  problems: Problem[];
-};
-
-export type AIDraft = {
-  id: number;
-  status: DraftStatus;
-  source: "bot" | "owner_bot" | "miniapp" | "dashboard";
-  author: { id: number; name: string };
-  created_at: string;
-  /** Null for typed text. */
-  audio: { seconds: number; url: string } | null;
-  transcript: string;
-  language: string;
-  engine: "claude" | "rules" | "fake";
-  drafts: DraftItem[];
-  questions: string[];
-  created_tasks: { id: number; title: string; assignee_name: string }[];
-  error_code: "" | "speech_unavailable" | "audio_unreadable" | "nothing_heard" | "ai_unavailable" | "expired";
-  error: string;
-};
-
+/**
+ * `voice`: voice notes become tasks (AI on, the voice tasks agent on, speech ready);
+ * `smart_text`: a typed instruction does; `max_seconds`: the longest note; `auto_create`: tasks go
+ * out at once when every one is clear; `bot_username`: for "send the bot a voice message instead".
+ */
+export type AIStatus = Schemas["AIVoiceStatus"];
+export type DraftStatus = Schemas["AiDraftStatusEnum"];
+export type Problem = Schemas["AiDraftProblemEnum"];
+/** One task as heard. `assignee` null: for the author (`assignee_guess` may name who was heard). */
+export type DraftItem = Schemas["AIDraftItem"];
+/** `audio` is null for typed text. */
+export type AIDraft = Schemas["AIDraft"];
 /** One task as the review sends it back (`apply/` replaces the stored drafts with these). */
-export type ApplyItem = {
-  title: string;
-  description: string;
-  /** Null: for me. */
-  assignee_id: number | null;
-  due_at: string | null;
-  priority: "normal" | "urgent";
-  checklist: string[];
-  proof: "none" | "photo";
-};
-
-export type ApplyResult = { draft: AIDraft; created: number[]; failed: { index: number; detail: string }[] };
+export type ApplyItem = Schemas["AIDraftEditRequest"];
+export type ApplyResult = Schemas["AIApplyResult"];
 
 /** Why a new draft was refused (`{"code": …}` on a 400, 403 or 429). */
 export type CreateRefusal = "audio_too_long" | "audio_too_big" | "audio_unreadable" | "text_too_long" | "ai_off" | "limit_reached";
