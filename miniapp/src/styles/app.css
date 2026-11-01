@@ -2242,6 +2242,15 @@ textarea.plus-title {
   font-size: 15px;
 }
 
+/* "New task" and, on its right, the tools features put beside it (the AI's mic). */
+.plus-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+}
+
 .plus-steps {
   display: flex;
   flex-direction: column;

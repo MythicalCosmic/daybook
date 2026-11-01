@@ -123,6 +123,8 @@ export const EXTENSION_POINTS = [
   "shell.company.create",
   "overview.hero",
   "tasks.toolbar",
+  /** The New task dialog, above the title: AI's "Dictate" and "Smart add" (context: companyId, title, close). */
+  "tasks.create.tools",
   "tasks.drawer.actions",
   "people.profile.actions",
   "comms.composer.tools",

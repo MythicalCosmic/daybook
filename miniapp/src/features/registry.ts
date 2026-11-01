@@ -18,7 +18,8 @@
  *
  * Home renders `homeHero`, `homeCards` (after its banners: things to act on today) and `homeEnd`
  * (after the day's tasks and news: overviews), Profile ("Me") renders `meItems` grouped by `group`,
- * the (+) sheet renders `plusActions` and the task screen renders `taskActions` (after the
+ * the (+) sheet renders `plusActions` and, beside its "New task" title, `plusTitle` (small tools
+ * given the title typed so far), and the task screen renders `taskActions` (after the
  * checklist; each block gets the task and renders nothing for a task it has nothing for).
  * `replaces` names a built-in entry the feature takes over ("timeOff" for the leave feature,
  * "teamResults" for a leaderboard that supersedes it); the built-in entry is hidden while that
@@ -77,6 +78,12 @@ export type TaskSlotProps = SlotProps & { task: Task };
  */
 export type TaskSlot = Slot<TaskSlotProps>;
 
+/** What a `plus.title` tool receives: the person, today's numbers and the title typed so far. */
+export type PlusTitleProps = SlotProps & { text: string };
+
+/** A small tool beside the (+) sheet's "New task" title (the AI's mic). Renders null when not for this person. */
+export type PlusTitleSlot = Slot<PlusTitleProps>;
+
 /** A sheet anywhere in the app: a feature's (`{feature, sheet}`) or a built-in one (`{feature: "core", sheet: "add"}`). */
 export type SheetRef = { feature: string; sheet: string; params?: Params };
 
@@ -118,6 +125,11 @@ export type PlusAction<K extends string, P extends string, S extends string> = {
   open: Open<P, S>;
   order?: number;
   visible?: Visible;
+  /**
+   * A React hook (it may call useQuery) for what `visible` can't know up front: whether a
+   * service the action needs is on for this company right now. False hides the action.
+   */
+  useVisible?: (props: SlotProps) => boolean;
 };
 
 /**
@@ -172,6 +184,8 @@ export type Feature = {
   taskActions?: readonly TaskSlot[];
   meItems?: readonly MeItem<string, string, string>[];
   plusActions?: readonly PlusAction<string, string, string>[];
+  /** Tools beside the (+) sheet's title, given the title typed so far (the `plus.title` slot). */
+  plusTitle?: readonly PlusTitleSlot[];
   /** Built-in entries this feature takes over while it is visible. */
   replaces?: readonly BuiltIn[];
   routes?: Partial<Record<string, Route<string, string>>>;
@@ -333,6 +347,11 @@ export function meItemsByGroup(
 
 export function plusActions(list: readonly Feature[], context: FeatureContext): Placed<PlusAction<string, string, string>>[] {
   return place(list, context, (feature) => feature.plusActions);
+}
+
+/** The tools beside the (+) sheet's title (`plus.title`), in order. */
+export function plusTitleSlots(list: readonly Feature[], context: FeatureContext): Placed<PlusTitleSlot>[] {
+  return place(list, context, (feature) => feature.plusTitle);
 }
 
 /** Built-in entries that a feature visible to this person takes over. */

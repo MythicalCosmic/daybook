@@ -17,6 +17,7 @@ import { RouterLink } from "vue-router";
 import AvatarStack from "@/components/AvatarStack.vue";
 import BranchPicker from "@/components/BranchPicker.vue";
 import DatePicker from "@/components/DatePicker.vue";
+import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import FormField from "@/components/FormField.vue";
 import MoneyInput from "@/components/MoneyInput.vue";
 import PersonPicker from "@/components/PersonPicker.vue";
@@ -135,6 +136,9 @@ const priority = computed<TaskPriority>({
 /** The title as it will be saved: without the understood words, unless the person said no. */
 const finalTitle = computed(() => (understood.value ? understood.value.title.trim() : title.value.trim()));
 
+/** For `tasks.create.tools` (AI's Dictate and Smart add): what was typed, and a way to step aside. */
+const toolsContext = computed(() => ({ companyId: companyId.value, title: title.value, close: () => (open.value = false) }));
+
 const pickerPeople = computed(() =>
   (options.data.value?.people ?? []).map((p) => ({ id: p.id, name: p.name, photo_url: p.photo_url, subtitle: [p.position, p.branch].filter(Boolean).join(" · ") })),
 );
@@ -236,6 +240,7 @@ async function submit(): Promise<void> {
   <UiDialog v-model:open="open" :title="t('tasks.create.title')" :description="t('tasks.create.description')" size="xl">
     <form class="grid gap-x-6 gap-y-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]" @submit.prevent="submit" @keydown.meta.enter.prevent="submit" @keydown.ctrl.enter.prevent="submit">
       <div class="flex min-w-0 flex-col gap-4">
+        <ExtensionSlot name="tasks.create.tools" :context="toolsContext" class="empty:hidden" />
         <FormField :label="t('tasks.field.title')" :error="titleError" :hint="quick.available.value && !understood ? t('tasks.quick.hint') : undefined" required>
           <TextInput v-model="title" :maxlength="200" :placeholder="t('tasks.create.titlePlaceholder')" autofocus data-testid="create-title" />
         </FormField>

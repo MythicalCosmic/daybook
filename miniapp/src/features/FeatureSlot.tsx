@@ -1,4 +1,4 @@
-import { Fragment, Suspense, type ReactNode } from "react";
+import { Fragment, Suspense, useCallback, useLayoutEffect, useState, type ReactNode } from "react";
 
 import type { Task } from "../api/types";
 import { useI18n, type Key } from "../i18n";
@@ -14,6 +14,7 @@ import {
   meItemsByGroup,
   ME_GROUPS,
   plusActions,
+  plusTitleSlots,
   taskSlots,
   type Feature,
   type FeatureContext,
@@ -23,6 +24,7 @@ import {
   type Placed,
   type PlusAction,
   type SlotName,
+  type SlotProps,
 } from "./registry";
 
 type Props =
@@ -30,6 +32,8 @@ type Props =
   /** `builtIns`: the app's own rows for a group (Team results); feature rows follow them. */
   | { name: "me.items"; builtIns?: Partial<Record<MeGroup, ReactNode>> }
   | { name: "plus.actions" }
+  /** Tools beside the (+) sheet's title, given the title typed so far. */
+  | { name: "plus.title"; text: string }
   /** The task screen's blocks, each given the task. */
   | { name: "task.actions"; task: Task };
 
@@ -77,7 +81,19 @@ function FeatureSlotHost(props: Props) {
     case "me.items":
       return <MeGroups builtIns={props.builtIns} placed={meItemsByGroup(features, context)} context={context} />;
     case "plus.actions":
-      return <PlusActions placed={plusActions(features, context)} />;
+      return <PlusActions placed={plusActions(features, context)} context={context} />;
+    case "plus.title":
+      return (
+        <>
+          {plusTitleSlots(features, context).map(({ feature, item }) => (
+            <FeatureBoundary key={`${feature.id}.${item.id}`} name={`${feature.id}.${item.id}`}>
+              <Suspense fallback={null}>
+                <item.component member={context.member} summary={context.summary} text={props.text} />
+              </Suspense>
+            </FeatureBoundary>
+          ))}
+        </>
+      );
     case "task.actions": {
       const { task } = props;
       return (
@@ -150,30 +166,70 @@ function MeRow({ feature, item, context }: { feature: Feature; item: MeItem<stri
   );
 }
 
-function PlusActions({ placed }: { placed: Placed<PlusAction<string, string, string>>[] }) {
-  const { t, lang } = useI18n();
-  const navigation = useNavigation();
+function PlusActions({ placed, context }: { placed: Placed<PlusAction<string, string, string>>[]; context: FeatureContext }) {
+  const { t } = useI18n();
+  // Actions that decide at render time (`useVisible`) each report back, so a block whose every
+  // action said no leaves no empty "Quick add" heading behind.
+  const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set());
+  const report = useCallback((key: string, shown: boolean) => {
+    setHidden((current) => {
+      if (current.has(key) === !shown) return current;
+      const next = new Set(current);
+      if (shown) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
   if (!placed.length) return null;
+  const allHidden = placed.every(({ feature, item }) => hidden.has(`${feature.id}.${item.id}`));
   return (
     // A hairline below sets the quick actions apart from the new-task form that follows.
-    <div className="field ui-plus-block">
+    <div className="field ui-plus-block" hidden={allHidden}>
       <span className="field-label">{t("plus.title")}</span>
       <div className="ui-plus-actions">
         {placed.map(({ feature, item }) => (
-          <button
-            key={`${feature.id}.${item.id}`}
-            type="button"
-            className="ui-plus-action"
-            onClick={() => {
-              haptic();
-              openTarget(navigation, feature, item.open);
-            }}
-          >
-            <span className="circle">{renderIcon(item.icon, 21)}</span>
-            <span>{featureText(feature.messages, lang, item.label)}</span>
-          </button>
+          <FeatureBoundary key={`${feature.id}.${item.id}`} name={`${feature.id}.${item.id}`}>
+            <PlusActionButton feature={feature} item={item} context={context} report={report} />
+          </FeatureBoundary>
         ))}
       </div>
     </div>
+  );
+}
+
+const alwaysVisible = (): boolean => true;
+
+/** One quick action; its own component, so a feature's `useVisible` hook always runs in the same place. */
+function PlusActionButton({
+  feature,
+  item,
+  context,
+  report,
+}: {
+  feature: Feature;
+  item: PlusAction<string, string, string>;
+  context: SlotProps;
+  report: (key: string, shown: boolean) => void;
+}) {
+  const { lang } = useI18n();
+  const navigation = useNavigation();
+  const useVisible = item.useVisible ?? alwaysVisible;
+  const shown = useVisible(context);
+  const key = `${feature.id}.${item.id}`;
+  // Before paint, so a block whose every action hides never flashes its heading.
+  useLayoutEffect(() => report(key, shown), [key, shown, report]);
+  if (!shown) return null;
+  return (
+    <button
+      type="button"
+      className="ui-plus-action"
+      onClick={() => {
+        haptic();
+        openTarget(navigation, feature, item.open);
+      }}
+    >
+      <span className="circle">{renderIcon(item.icon, 21)}</span>
+      <span>{featureText(feature.messages, lang, item.label)}</span>
+    </button>
   );
 }
