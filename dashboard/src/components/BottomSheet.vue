@@ -99,20 +99,39 @@ function onOutside(event: Event): void {
         >
           <span class="h-1 w-9 rounded-full bg-line-strong" aria-hidden="true" />
         </div>
-        <VisuallyHidden v-if="hideHeader || !title">
+        <VisuallyHidden v-if="hideHeader || !(title || $slots.title)">
           <DialogTitle>{{ title }}</DialogTitle>
           <DialogDescription v-if="description">{{ description }}</DialogDescription>
         </VisuallyHidden>
-        <header v-else class="shrink-0 px-5 pb-3 pt-1">
-          <DialogTitle class="text-md font-semibold text-fg">{{ title }}</DialogTitle>
-          <DialogDescription v-if="description" class="mt-0.5 text-sm text-muted">{{ description }}</DialogDescription>
+        <!-- The drawer's and dialog's own header pieces (a custom title, a "More" menu, a status)
+             come along on phones too. -->
+        <header v-else class="flex shrink-0 items-start gap-2 px-5 pb-3 pt-1">
+          <div class="min-w-0 flex-1">
+            <slot name="title">
+              <DialogTitle class="text-md font-semibold text-fg">{{ title }}</DialogTitle>
+            </slot>
+            <DialogDescription v-if="description" class="mt-0.5 text-sm text-muted">{{ description }}</DialogDescription>
+          </div>
+          <div v-if="$slots['header-actions']" class="-mr-1.5 -mt-0.5 flex shrink-0 items-center gap-1">
+            <slot name="header-actions" />
+          </div>
         </header>
-        <div :class="['min-h-0 flex-1 overflow-y-auto overscroll-contain', flush ? 'pb-[var(--safe-bottom)]' : 'px-5 pb-[calc(16px+var(--safe-bottom))]']">
+        <!-- The bottom safe area (Telegram's and the phone's) goes under whatever is last: the
+             footer when there is one, else the body. -->
+        <div
+          :class="[
+            'min-h-0 flex-1 overflow-y-auto overscroll-contain',
+            flush ? !$slots.footer && 'pb-[var(--safe-bottom)]' : ['px-5', $slots.footer ? 'pb-4' : 'pb-[calc(16px+var(--safe-bottom))]'],
+          ]"
+          data-sheet-body
+        >
           <slot />
         </div>
+        <!-- Buttons share the row; a note (`data-sheet-note`, e.g. "Creates 3 tasks") takes a row
+             of its own above them instead of being squeezed to a third. -->
         <footer
           v-if="$slots.footer"
-          class="flex shrink-0 gap-2 border-t border-line px-5 pb-[calc(12px+var(--safe-bottom))] pt-3 [&>*]:flex-1"
+          class="flex shrink-0 flex-wrap gap-2 border-t border-line px-5 pb-[calc(12px+var(--safe-bottom))] pt-3 [&>*]:flex-1 [&>[data-sheet-note]]:basis-full"
         >
           <slot name="footer" />
         </footer>
