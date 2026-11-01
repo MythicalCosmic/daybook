@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { ApiError } from "./api/client";
 import { OfflineBanner } from "./components/OfflineBanner";
@@ -10,18 +10,12 @@ import { TabBar } from "./components/TabBar";
 import { FeatureBoundary, FeaturePage } from "./features/hosts";
 import { features, suspendedGate, visibleFeatures } from "./features/registry";
 import { asLang, I18nProvider, useI18n } from "./i18n";
+import { lazyScreen, whenIdle } from "./lib/lazy";
 import { ActivityScreen } from "./screens/Activity";
-import { CreateAccount } from "./screens/CreateAccount";
 import { Blocked, Declined, Failure, Left, NoAccess, Suspended } from "./screens/Gate";
 import { Home } from "./screens/Home";
-import { Profile } from "./screens/Profile";
 import { Splash } from "./screens/Splash";
-import { TaskDetail } from "./screens/TaskDetail";
 import { Tasks } from "./screens/Tasks";
-import { Team } from "./screens/Team";
-import { MyTeam } from "./screens/MyTeam";
-import { TeamPerson } from "./screens/TeamPerson";
-import { Waiting } from "./screens/Waiting";
 import { Sheets } from "./sheets/Sheets";
 import { readScreenLink, resolveScreen, type ScreenLink } from "./state/deeplink";
 import { CORE, NavigationProvider, useNavigation, type NavigationInit, type PageRef } from "./state/navigation";
@@ -29,9 +23,20 @@ import { SessionProvider, startingCompany, useMember, useSession } from "./state
 import { ToastProvider } from "./state/toast";
 import { initData, onActivated, onThemeChange, openedWithoutSignIn, useBackButton } from "./telegram";
 import { applyTheme, savedThemeMode } from "./theme";
+import { Screen, ScreenSkeleton } from "./ui";
 
 const SPLASH_MS = 900;
 const LAST_LANGUAGE = "daybook.lang";
+
+// Loaded when first opened, so Home's code comes first: the task screen and Me are fetched as
+// soon as the browser is idle (a task from a bot link at once), the rest when someone opens them.
+const TaskDetail = lazyScreen(() => import("./screens/TaskDetail").then((m) => ({ default: m.TaskDetail })));
+const Profile = lazyScreen(() => import("./screens/Profile").then((m) => ({ default: m.Profile })));
+const Team = lazyScreen(() => import("./screens/Team").then((m) => ({ default: m.Team })));
+const MyTeam = lazyScreen(() => import("./screens/MyTeam").then((m) => ({ default: m.MyTeam })));
+const TeamPerson = lazyScreen(() => import("./screens/TeamPerson").then((m) => ({ default: m.TeamPerson })));
+const CreateAccount = lazyScreen(() => import("./screens/CreateAccount").then((m) => ({ default: m.CreateAccount })));
+const Waiting = lazyScreen(() => import("./screens/Waiting").then((m) => ({ default: m.Waiting })));
 
 /**
  * The language the person last used the app in. A screen without a sign-in (an old keyboard
@@ -50,8 +55,12 @@ export function App() {
   const me = useMe({ enabled: signedIn });
   // Read once at launch: `?screen=payslip:12` or a startapp parameter picks the first screen.
   const [launch] = useState<ScreenLink | null>(() => readScreenLink());
-  // A link from the bot ("Open in app" on a task) goes straight there: no splash to sit through.
-  const [splashOver, setSplashOver] = useState(() => launch !== null);
+  // A link from the bot ("Open in app" on a task) goes straight there: no splash to sit through,
+  // and the task screen's code is fetched while the app signs in.
+  const [splashOver, setSplashOver] = useState(() => {
+    if (launch?.name === "task") void TaskDetail.preload();
+    return launch !== null;
+  });
   useEffect(() => {
     if (splashOver) return;
     const timer = window.setTimeout(() => setSplashOver(true), SPLASH_MS);
@@ -155,11 +164,40 @@ function Gatekeeper() {
   if (status === "rejected") return <Declined membership={membership} />;
   if (status === "blocked") return <Blocked />;
   if (isSuspended(membership)) return <PausedApp membership={membership} />;
-  if (!membership.is_onboarded) return <CreateAccount membership={membership} />;
+  if (!membership.is_onboarded) {
+    return (
+      <Suspense fallback={<SplashScreen />}>
+        <CreateAccount membership={membership} />
+      </Suspense>
+    );
+  }
   if (status === "pending" || celebrating) {
-    return <Waiting membership={membership} onOpen={() => setCelebrating(false)} />;
+    return (
+      <Suspense fallback={<SplashScreen />}>
+        <Waiting membership={membership} onOpen={() => setCelebrating(false)} />
+      </Suspense>
+    );
   }
   return <MainApp />;
+}
+
+/** The screens a person is likely to open next, fetched once the browser is idle. */
+function usePreloadNext(member: { heads?: readonly string[] | null; permissions: readonly string[] }) {
+  const heads = (member.heads?.length ?? 0) > 0;
+  const reports = member.permissions.includes("reports.view");
+  useEffect(
+    () =>
+      whenIdle(() => {
+        void TaskDetail.preload();
+        void Profile.preload();
+        if (heads) {
+          void MyTeam.preload();
+          void TeamPerson.preload();
+        }
+        if (reports) void Team.preload();
+      }),
+    [heads, reports],
+  );
 }
 
 /** Telegram's back button closes a sheet first, then the page on top (an open task, a page). */
@@ -198,6 +236,7 @@ function MainApp() {
   const tabShown = useTabShown(navigation.stack.length > 0);
   useStackBackButton();
   useRefreshOnReturn(member.companyId);
+  usePreloadNext(member);
 
   return (
     <>
@@ -205,7 +244,11 @@ function MainApp() {
       {tabShown && navigation.tab === "home" && <Home />}
       {tabShown && navigation.tab === "tasks" && <Tasks />}
       {tabShown && navigation.tab === "activity" && <ActivityScreen />}
-      {tabShown && navigation.tab === "profile" && <Profile />}
+      {tabShown && navigation.tab === "profile" && (
+        <Suspense fallback={<TabPlaceholder />}>
+          <Profile />
+        </Suspense>
+      )}
       {/* Pages cover the tabs, each over the last; an open task brings its own action bar. */}
       <StackPages />
       {navigation.stack.length === 0 && <TabBar unread={summary.data?.unread_activity ?? 0} />}
@@ -241,9 +284,30 @@ function StackPages() {
   return (
     <>
       {stack.map((page, index) => (
-        <StackPage key={pageKey(page, index)} page={page} />
+        // A page whose code is still on its way shows the page placeholder, over the tab as usual.
+        <Suspense key={pageKey(page, index)} fallback={<PagePlaceholder />}>
+          <StackPage page={page} />
+        </Suspense>
       ))}
     </>
+  );
+}
+
+function PagePlaceholder() {
+  return (
+    <div className="detail-layer">
+      <Screen variant="detail">
+        <ScreenSkeleton variant="detail" delay={150} />
+      </Screen>
+    </div>
+  );
+}
+
+function TabPlaceholder() {
+  return (
+    <Screen>
+      <ScreenSkeleton variant="hero" delay={150} />
+    </Screen>
   );
 }
 
