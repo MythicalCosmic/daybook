@@ -11,6 +11,7 @@ export { Button, IconButton, Spinner, type ButtonProps, type ButtonVariant } fro
 export { Card, CardButton, CardTitle, type CardTone } from "./Card";
 export { Chip, ChipGroup, type ChipOption } from "./Chip";
 export { cx } from "./cx";
+export { DateInput, TimeInput } from "./DateTime";
 export { DenominationCounter, UZS_NOTES, countedNotes, countedTotal, type NoteCounts } from "./DenominationCounter";
 export { EmptyState, LoadError } from "./EmptyState";
 export { Field, Input, Select, Textarea, useFieldControl } from "./Field";

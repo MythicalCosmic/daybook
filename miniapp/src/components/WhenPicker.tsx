@@ -1,6 +1,7 @@
 import { useI18n } from "../i18n";
 import { addDays, clock, dayKey, hourIn, zonedInstant, type DayKey } from "../lib/time";
 import { haptic } from "../telegram";
+import { DateInput, TimeInput } from "../ui";
 
 /**
  * "When" for a new task, as the (+) sheet asks it: Today, Tomorrow, Other day or No deadline,
@@ -83,22 +84,9 @@ export function WhenPicker({
       {value.when !== "none" && (
         <div className="plus-when">
           {value.when === "date" && (
-            <input
-              className="input num"
-              type="date"
-              aria-label={t("add.date")}
-              min={addDays(today, 1)}
-              value={value.date}
-              onChange={(event) => set({ date: event.target.value })}
-            />
+            <DateInput label={t("add.date")} min={addDays(today, 1)} today={today} value={value.date} onChange={(date) => set({ date })} />
           )}
-          <input
-            className="input num"
-            type="time"
-            aria-label={t("add.time")}
-            value={value.time}
-            onChange={(event) => set({ time: event.target.value || value.time })}
-          />
+          <TimeInput label={t("add.time")} value={value.time} onChange={(time) => set({ time: time || value.time })} />
         </div>
       )}
       {rolled && due && <span className="field-note num">{t("add.rolled", { time: clock(due, timeZone, locale) })}</span>}

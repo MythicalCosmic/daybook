@@ -559,6 +559,10 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
 
   "ui.optional": "(необязательно)",
   "ui.back": "Назад",
+  "ui.time.hour": "Часы",
+  "ui.time.minute": "Минуты",
+  "ui.date.prevMonth": "Предыдущий месяц",
+  "ui.date.nextMonth": "Следующий месяц",
   "sheet.discardAsk": "Закрыть? Введённое не сохранится.",
   "ui.photo.add": "Сфотографируйте или выберите фото",
   "ui.photo.camera": "Сделать фото",

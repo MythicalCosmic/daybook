@@ -26,7 +26,7 @@ import { useNavigation } from "../state/navigation";
 import { useMember } from "../state/session";
 import { useToast } from "../state/toast";
 import { haptic, popup } from "../telegram";
-import { Avatar, Skeleton, SheetTitle } from "../ui";
+import { Avatar, DateInput, Skeleton, SheetTitle, TimeInput } from "../ui";
 
 /** The task (usually from the cache) for a sheet about it. */
 export function WithTask({ taskId, children }: { taskId: number; children: (task: Task) => ReactNode }) {
@@ -270,8 +270,8 @@ function ExtensionForm({ task }: { task: Task }) {
       </div>
       {choice === "pick" && (
         <div className="plus-when">
-          <input className="input num" type="date" aria-label={t("extension.date")} min={today} value={day} onChange={(event) => setDay(event.target.value)} />
-          <input className="input num" type="time" aria-label={t("extension.time")} value={time} onChange={(event) => setTime(event.target.value || time)} />
+          <DateInput label={t("extension.date")} min={today} today={today} value={day} onChange={setDay} />
+          <TimeInput label={t("extension.time")} value={time} onChange={(value) => setTime(value || time)} />
         </div>
       )}
       {until && (
@@ -404,8 +404,8 @@ function DueForm({ task, resolve }: { task: Task; resolve: boolean }) {
       )}
       {!(canClear && none) && (
         <div className="plus-when">
-          <input className="input num" type="date" aria-label={t("extension.date")} min={today} value={day} onChange={(event) => setDay(event.target.value)} />
-          <input className="input num" type="time" aria-label={t("extension.time")} value={time} onChange={(event) => setTime(event.target.value || time)} />
+          <DateInput label={t("extension.date")} min={today} today={today} value={day} onChange={setDay} />
+          <TimeInput label={t("extension.time")} value={time} onChange={(value) => setTime(value || time)} />
         </div>
       )}
       <button type="button" className="btn btn-primary btn-lg btn-block" disabled={!valid || action.isPending} onClick={save}>

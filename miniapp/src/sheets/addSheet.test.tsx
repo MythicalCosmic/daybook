@@ -3,7 +3,7 @@
  * the weekday and the date before anything is saved; "Not a date" keeps the words; the sheet works
  * as before on a backend that can't read dates; managers give tasks to colleagues.
  */
-import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "../api/client";
@@ -185,7 +185,7 @@ describe("quick add in the (+) sheet", () => {
     answer({ title: "Fridge", due_at: null, due_label: null, priority: null, repeat: null });
     openSheet();
     type("Fridge");
-    fireEvent.change(screen.getByLabelText("Time"), { target: { value: "09:00" } });
+    fireEvent.change(within(screen.getByRole("group", { name: "Time" })).getByRole("combobox", { name: "Hour" }), { target: { value: "09" } });
     expect(screen.getByText("Today's 09:00 has passed, so it's set for tomorrow.")).toBeTruthy();
     add();
     await waitFor(() => expect(created()[0]).toMatchObject({ due_at: "2026-10-22T04:00:00.000Z" }));
