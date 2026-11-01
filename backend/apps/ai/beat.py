@@ -4,4 +4,17 @@ Read by file path when the settings load: import only the standard library and
 `celery.schedules`. Keys must be unique across apps (duplicates stop the settings).
 """
 
-SCHEDULE = {}
+from celery.schedules import crontab
+
+SCHEDULE = {
+    # Ready drafts nobody used for a day expire; drafts whose job died fail.
+    "ai-expire-drafts": {
+        "task": "apps.ai.tasks.expire_drafts",
+        "schedule": crontab(minute="*/15"),
+    },
+    # Voice recordings are kept `voice_retention_days` (30); the transcripts stay.
+    "ai-purge-voice-notes": {
+        "task": "apps.ai.tasks.purge_voice_notes",
+        "schedule": crontab(hour=3, minute=40),
+    },
+}

@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-30 16:10+0500\n"
+"POT-Creation-Date: 2026-11-02 02:33+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -452,6 +452,471 @@ msgstr "Вы не приглашены на это событие."
 msgid "This event is over."
 msgstr "Это событие уже прошло."
 
+#: backend/apps/ai/admin.py
+msgid "Spent this month (USD)"
+msgstr "Потрачено в этом месяце (USD)"
+
+#: backend/apps/ai/admin.py
+msgid "Cost (USD)"
+msgstr "Стоимость (USD)"
+
+#: backend/apps/ai/admin.py
+#, python-format
+msgid "AI usage: %(usd)s USD"
+msgstr "Расход AI: %(usd)s USD"
+
+#: backend/apps/ai/agents/registry.py
+msgid "Choose on or off."
+msgstr "Включите или выключите."
+
+#: backend/apps/ai/agents/registry.py
+msgid "Enter a whole number."
+msgstr "Введите целое число."
+
+#: backend/apps/ai/agents/registry.py
+#, python-format
+msgid "At least %(min)s."
+msgstr "Не меньше %(min)s."
+
+#: backend/apps/ai/agents/registry.py
+#, python-format
+msgid "At most %(max)s."
+msgstr "Не больше %(max)s."
+
+#: backend/apps/ai/agents/registry.py
+msgid "Enter a time as HH:MM."
+msgstr "Введите время как ЧЧ:ММ."
+
+#: backend/apps/ai/agents/registry.py
+msgid "Pick one of the options."
+msgstr "Выберите один из вариантов."
+
+#: backend/apps/ai/agents/registry.py
+msgid "Unknown setting."
+msgstr "Неизвестная настройка."
+
+#: backend/apps/ai/agents/voice_tasks.py
+msgid "When someone dictates; creates the tasks at once"
+msgstr "Когда кто-то диктует; задачи создаются сразу"
+
+#: backend/apps/ai/agents/voice_tasks.py
+msgid "When someone dictates"
+msgstr "Когда кто-то диктует"
+
+#: backend/apps/ai/agents/voice_tasks.py
+msgid "Voice tasks"
+msgstr "Голосовые задачи"
+
+#: backend/apps/ai/agents/voice_tasks.py
+msgid ""
+"Turns voice messages and typed instructions into tasks: who it is for, by "
+"when, urgent or not, photo or not."
+msgstr ""
+"Превращает голосовые сообщения и написанные поручения в задачи: для кого, к "
+"какому сроку, срочно ли, нужно ли фото."
+
+#: backend/apps/ai/agents/voice_tasks.py
+msgid "Create at once"
+msgstr "Создавать сразу"
+
+#: backend/apps/ai/agents/voice_tasks.py
+msgid ""
+"Create the tasks without asking when everyone is known and every time is "
+"clear. The message keeps an Undo button for 10 minutes."
+msgstr ""
+"Если все исполнители и сроки понятны, задачи создаются без вопроса. В "
+"сообщении 10 минут остаётся кнопка «Отменить»."
+
+#: backend/apps/ai/agents/voice_tasks.py
+msgid "Longest voice message"
+msgstr "Самое длинное голосовое"
+
+#: backend/apps/ai/agents/voice_tasks.py
+msgid "seconds"
+msgstr "секунд"
+
+#: backend/apps/ai/agents/voice_tasks.py
+#, python-format
+msgid "Understood %(count)s task from %(author)s"
+msgid_plural "Understood %(count)s tasks from %(author)s"
+msgstr[0] "%(author)s: распознана %(count)s задача"
+msgstr[1] "%(author)s: распознаны %(count)s задачи"
+msgstr[2] "%(author)s: распознано %(count)s задач"
+msgstr[3] "%(author)s: распознано %(count)s задачи"
+
+#: backend/apps/ai/agents/voice_tasks.py
+#, python-format
+msgid "%(actor)s created %(count)s task from a voice note"
+msgid_plural "%(actor)s created %(count)s tasks from a voice note"
+msgstr[0] "%(actor)s: из голосового создана %(count)s задача"
+msgstr[1] "%(actor)s: из голосового созданы %(count)s задачи"
+msgstr[2] "%(actor)s: из голосового создано %(count)s задач"
+msgstr[3] "%(actor)s: из голосового создано %(count)s задачи"
+
+#: backend/apps/ai/agents/voice_tasks.py
+#, python-format
+msgid "Created %(count)s task at once from a voice note by %(author)s"
+msgid_plural "Created %(count)s tasks at once from a voice note by %(author)s"
+msgstr[0] "Из голосового сразу создана %(count)s задача (%(author)s)"
+msgstr[1] "Из голосового сразу созданы %(count)s задачи (%(author)s)"
+msgstr[2] "Из голосового сразу создано %(count)s задач (%(author)s)"
+msgstr[3] "Из голосового сразу создано %(count)s задачи (%(author)s)"
+
+#: backend/apps/ai/agents/voice_tasks.py
+#, python-format
+msgid "Could not understand a voice note from %(author)s"
+msgstr "Не удалось разобрать голосовое (%(author)s)"
+
+#: backend/apps/ai/agents/voice_tasks.py
+#, python-format
+msgid "%(actor)s took back the tasks of a voice note"
+msgstr "%(actor)s: задачи из голосового отменены"
+
+#: backend/apps/ai/audit_actions.py
+msgid "Turned AI on"
+msgstr "Включил AI"
+
+#: backend/apps/ai/audit_actions.py
+msgid "Turned AI off"
+msgstr "Выключил AI"
+
+#: backend/apps/ai/audit_actions.py
+msgid "Changed the AI settings"
+msgstr "Изменил настройки AI"
+
+#: backend/apps/ai/audit_actions.py
+msgid "Changed an AI agent"
+msgstr "Изменил AI-агента"
+
+#: backend/apps/ai/bot_messages.py
+msgid "Listening…"
+msgstr "Слушаю…"
+
+#: backend/apps/ai/bot_messages.py
+msgid "Understanding…"
+msgstr "Разбираю…"
+
+#: backend/apps/ai/bot_messages.py backend/apps/ai/services.py
+#, python-format
+msgid "The recording is too long: %(max)s seconds at most."
+msgstr "Запись слишком длинная: не больше %(max)s секунд."
+
+#: backend/apps/ai/bot_messages.py backend/apps/ai/services.py
+msgid "The recording is too big: 10 MB at most."
+msgstr "Запись слишком большая: не больше 10 МБ."
+
+#: backend/apps/ai/bot_messages.py
+msgid "This voice note is no longer here."
+msgstr "Этого голосового больше нет."
+
+#: backend/apps/ai/bot_messages.py
+msgid "I can't listen to voice messages here yet. Type the task instead."
+msgstr "Здесь я пока не слушаю голосовые. Напишите задачу текстом."
+
+#: backend/apps/ai/bot_messages.py
+msgid "Voice needs a speech service on the server (AI_SPEECH_URL)."
+msgstr "Для голоса на сервере нужен сервис распознавания речи (AI_SPEECH_URL)."
+
+#: backend/apps/ai/bot_messages.py
+msgid "Voice tasks aren't switched on in this company. Type the task instead."
+msgstr "В этой компании голосовые задачи не включены. Напишите задачу текстом."
+
+#: backend/apps/ai/bot_messages.py
+msgid "You can switch them on in the dashboard: AI, then Agents."
+msgstr "Включить их можно в панели управления: AI, затем Агенты."
+
+#: backend/apps/ai/bot_messages.py backend/apps/ai/drafts.py
+msgid "This voice note is too old. Send it again."
+msgstr "Это голосовое устарело. Отправьте его ещё раз."
+
+#: backend/apps/ai/bot_messages.py
+msgid "Taken back: the tasks were cancelled."
+msgstr "Отменено: задачи сняты."
+
+#: backend/apps/ai/bot_messages.py
+msgid "Cancelled."
+msgstr "Отменено."
+
+#: backend/apps/ai/bot_messages.py
+msgid "I didn't hear a task in this. Say who should do what, and by when."
+msgstr ""
+"Я не услышал здесь задачи. Скажите, кто, что и к какому сроку должен сделать."
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Understood %(count)s task"
+msgid_plural "Understood %(count)s tasks"
+msgstr[0] "Распознана %(count)s задача"
+msgstr[1] "Распознаны %(count)s задачи"
+msgstr[2] "Распознано %(count)s задач"
+msgstr[3] "Распознано %(count)s задачи"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Create %(count)s task"
+msgid_plural "Create %(count)s tasks"
+msgstr[0] "Создать %(count)s задачу"
+msgstr[1] "Создать %(count)s задачи"
+msgstr[2] "Создать %(count)s задач"
+msgstr[3] "Создать %(count)s задачи"
+
+#: backend/apps/ai/bot_messages.py backend/apps/announcements/bot_messages.py
+#: backend/apps/attendance/bot_messages.py backend/apps/tasks/bot_messages.py
+#: employee_bot/bot/handlers/member/tasks.py owner_bot/ownerbot/bot_messages.py
+msgid "Cancel"
+msgstr "Отмена"
+
+#: backend/apps/ai/bot_messages.py
+msgid "Untitled task"
+msgstr "Задача без названия"
+
+#: backend/apps/ai/bot_messages.py
+msgid "for you"
+msgstr "для вас"
+
+#: backend/apps/ai/bot_messages.py
+msgid "urgent"
+msgstr "срочно"
+
+#: backend/apps/ai/bot_messages.py
+msgid "with a photo"
+msgstr "с фото"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Several people are called “%(name)s”: choose one in the app."
+msgstr "Несколько человек с именем «%(name)s»: выберите в приложении."
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "“%(name)s” isn't among your people: for now it's for you."
+msgstr "«%(name)s» нет среди ваших людей: пока задача для вас."
+
+#: backend/apps/ai/bot_messages.py
+msgid "You can't give work to this person."
+msgstr "Этому человеку вы не можете давать задачи."
+
+#: backend/apps/ai/bot_messages.py
+msgid "No deadline was heard."
+msgstr "Срок не прозвучал."
+
+#: backend/apps/ai/bot_messages.py
+msgid "That time has already passed."
+msgstr "Это время уже прошло."
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Created %(count)s task"
+msgid_plural "Created %(count)s tasks"
+msgstr[0] "Создана %(count)s задача"
+msgstr[1] "Созданы %(count)s задачи"
+msgstr[2] "Создано %(count)s задач"
+msgstr[3] "Создано %(count)s задачи"
+
+#: backend/apps/ai/bot_messages.py
+msgid "Created at once. You can undo it for 10 minutes."
+msgstr "Создано сразу. Отменить можно в течение 10 минут."
+
+#: backend/apps/ai/bot_messages.py backend/apps/tasks/bot_messages.py
+msgid "Undo"
+msgstr "Отменить"
+
+#: backend/apps/ai/bot_messages.py
+msgid "I can't listen to voice messages right now. Type the task instead."
+msgstr "Сейчас я не могу слушать голосовые. Напишите задачу текстом."
+
+#: backend/apps/ai/bot_messages.py
+msgid "I couldn't play this recording. Record it again."
+msgstr "Не удалось открыть эту запись. Запишите ещё раз."
+
+#: backend/apps/ai/bot_messages.py
+msgid "I didn't hear any words. Record it again, a little closer."
+msgstr "Слов не слышно. Запишите ещё раз, держа телефон поближе."
+
+#: backend/apps/ai/bot_messages.py
+msgid "Something went wrong with this voice note. Send it again."
+msgstr "С этим голосовым что-то пошло не так. Отправьте его ещё раз."
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Open: %(title)s"
+msgstr "Открыть: %(title)s"
+
+#: backend/apps/ai/bot_messages.py
+msgid "Edit in the app"
+msgstr "Изменить в приложении"
+
+#: backend/apps/ai/drafts.py
+msgid "There is nothing to create."
+msgstr "Создавать нечего."
+
+#: backend/apps/ai/drafts.py backend/apps/tasks/services.py
+msgid "Tasks can only go to registered members of your company."
+msgstr ""
+"Задачи можно назначать только зарегистрированным сотрудникам вашей компании."
+
+#: backend/apps/ai/drafts.py
+msgid "This task couldn't be created."
+msgstr "Эту задачу не удалось создать."
+
+#: backend/apps/ai/drafts.py
+msgid "Only the person who dictated this can use it."
+msgstr "Этим может воспользоваться только тот, кто это надиктовал."
+
+#: backend/apps/ai/drafts.py
+msgid "This voice note was cancelled."
+msgstr "Это голосовое отменено."
+
+#: backend/apps/ai/drafts.py
+msgid "This voice note couldn't be understood. Send it again."
+msgstr "Это голосовое не удалось разобрать. Отправьте его ещё раз."
+
+#: backend/apps/ai/drafts.py
+msgid "Still listening. Try again in a moment."
+msgstr "Ещё слушаю. Попробуйте через минуту."
+
+#: backend/apps/ai/drafts.py
+msgid "The tasks were already created."
+msgstr "Задачи уже созданы."
+
+#: backend/apps/ai/drafts.py
+msgid "Too late to undo. Cancel the tasks one by one instead."
+msgstr "Отменить уже поздно. Отмените задачи по одной."
+
+#: backend/apps/ai/models.py
+msgid "An owner turned AI on."
+msgstr "Владелец включил AI."
+
+#: backend/apps/ai/models.py
+msgid "The platform switched AI off for this company."
+msgstr "Платформа отключила AI для этой компании."
+
+#: backend/apps/ai/models.py
+msgid "AI settings"
+msgstr "Настройки AI"
+
+#: backend/apps/ai/models.py backend/apps/tasks/hooks.py
+#: owner_bot/ownerbot/brief.py
+msgid "Tasks"
+msgstr "Задачи"
+
+#: backend/apps/ai/models.py backend/apps/signin/models.py
+msgid "Employee bot"
+msgstr "Бот для сотрудников"
+
+#: backend/apps/ai/models.py backend/apps/signin/models.py
+msgid "Owner bot"
+msgstr "Бот для владельцев"
+
+#: backend/apps/ai/models.py backend/apps/attendance/models.py
+#: backend/apps/sales/models.py
+msgid "Mini app"
+msgstr "Мини-приложение"
+
+#: backend/apps/ai/models.py backend/apps/sales/models.py
+#: owner_bot/ownerbot/commands.py
+msgid "Dashboard"
+msgstr "Панель управления"
+
+#: backend/apps/ai/models.py
+msgid "Queued"
+msgstr "В очереди"
+
+#: backend/apps/ai/models.py
+msgid "Listening"
+msgstr "Слушаем"
+
+#: backend/apps/ai/models.py
+msgid "Understanding"
+msgstr "Разбираем"
+
+#: backend/apps/ai/models.py backend/apps/exports/models.py
+msgid "Ready"
+msgstr "Готово"
+
+#: backend/apps/ai/models.py backend/apps/exports/models.py
+msgid "Failed"
+msgstr "Ошибка"
+
+#: backend/apps/ai/models.py
+msgid "Tasks created"
+msgstr "Задачи созданы"
+
+#: backend/apps/ai/models.py
+msgid "Discarded"
+msgstr "Отброшено"
+
+#: backend/apps/ai/models.py backend/apps/attendance/models.py
+#: backend/apps/attendance/services.py backend/apps/members/models.py
+#: backend/apps/signin/models.py
+msgid "Expired"
+msgstr "Срок истёк"
+
+#: backend/apps/ai/models.py
+msgid "Rules"
+msgstr "Правила"
+
+#: backend/apps/ai/models.py
+msgid "Demo"
+msgstr "Демо"
+
+#: backend/apps/ai/models.py
+msgid "The model that answered."
+msgstr "Модель, которая ответила."
+
+#: backend/apps/ai/models.py backend/apps/inbox/models.py
+msgid "Info"
+msgstr "Информация"
+
+#: backend/apps/ai/models.py
+msgid "Success"
+msgstr "Успех"
+
+#: backend/apps/ai/models.py backend/apps/inbox/models.py
+msgid "Warning"
+msgstr "Предупреждение"
+
+#: backend/apps/ai/models.py backend/apps/knowledge/models.py
+#: backend/apps/projects/hooks.py backend/apps/tasks/hooks.py
+msgid "Task"
+msgstr "Задача"
+
+#: backend/apps/ai/models.py backend/apps/finance/exporters.py
+#: backend/apps/projects/hooks.py backend/apps/timeoff/providers.py
+msgid "Person"
+msgstr "Сотрудник"
+
+#: backend/apps/ai/models.py
+msgid "Voice note"
+msgstr "Голосовое"
+
+#: backend/apps/ai/services.py
+msgid "Voice tasks are switched off in this company."
+msgstr "В этой компании голосовые задачи выключены."
+
+#: backend/apps/ai/services.py
+msgid "Write what needs to be done."
+msgstr "Напишите, что нужно сделать."
+
+#: backend/apps/ai/services.py
+#, python-format
+msgid "That's too long: %(max)s characters at most."
+msgstr "Слишком длинно: не больше %(max)s символов."
+
+#: backend/apps/ai/services.py
+#, python-format
+msgid "That's all the voice tasks for today (%(limit)s). Try again tomorrow."
+msgstr ""
+"На сегодня голосовые задачи закончились (%(limit)s). Попробуйте завтра."
+
+#: backend/apps/ai/services.py
+msgid "You can't change the AI settings."
+msgstr "Вы не можете менять настройки AI."
+
+#: backend/apps/ai/services.py
+msgid "AI is switched off for this company by the platform."
+msgstr "Платформа отключила AI для этой компании."
+
 #: backend/apps/announcements/admin.py backend/apps/finance/models.py
 msgid "Read"
 msgstr "Прочитано"
@@ -566,12 +1031,6 @@ msgstr "…и ещё %(count)d"
 #: backend/apps/announcements/bot_messages.py
 msgid "Who has read it?"
 msgstr "Кто прочитал?"
-
-#: backend/apps/announcements/bot_messages.py
-#: backend/apps/attendance/bot_messages.py backend/apps/tasks/bot_messages.py
-#: employee_bot/bot/handlers/member/tasks.py owner_bot/ownerbot/bot_messages.py
-msgid "Cancel"
-msgstr "Отмена"
 
 #: backend/apps/announcements/hooks.py
 #, python-format
@@ -1377,11 +1836,6 @@ msgstr "Одобрено"
 msgid "Rejected"
 msgstr "Отклонено"
 
-#: backend/apps/attendance/models.py backend/apps/attendance/services.py
-#: backend/apps/members/models.py backend/apps/signin/models.py
-msgid "Expired"
-msgstr "Срок истёк"
-
 #: backend/apps/attendance/models.py
 msgid "The colleague asked; empty: anyone eligible."
 msgstr "Коллега, которого попросили; пусто: любой подходящий."
@@ -1409,10 +1863,6 @@ msgstr "Неявка"
 #: backend/apps/attendance/models.py
 msgid "Excused"
 msgstr "По уважительной причине"
-
-#: backend/apps/attendance/models.py backend/apps/sales/models.py
-msgid "Mini app"
-msgstr "Мини-приложение"
 
 #: backend/apps/attendance/models.py backend/apps/sales/models.py
 msgid "Bot"
@@ -2647,6 +3097,10 @@ msgid "US dollar"
 msgstr "Доллар США"
 
 #: backend/apps/core/uploads.py
+msgid "This isn't a recording we can play. Record it again."
+msgstr "Эту запись не открыть. Запишите ещё раз."
+
+#: backend/apps/core/uploads.py
 msgid "The file is empty."
 msgstr "Файл пустой."
 
@@ -2722,14 +3176,6 @@ msgstr "В очереди"
 #: backend/apps/exports/models.py
 msgid "Building"
 msgstr "Готовится"
-
-#: backend/apps/exports/models.py
-msgid "Ready"
-msgstr "Готово"
-
-#: backend/apps/exports/models.py
-msgid "Failed"
-msgstr "Ошибка"
 
 #: backend/apps/exports/models.py
 msgid "Registered exporter, e.g. tasks.tasks."
@@ -3029,11 +3475,6 @@ msgstr "Категория"
 #: backend/apps/finance/exporters.py
 msgid "Counterparty"
 msgstr "Контрагент"
-
-#: backend/apps/finance/exporters.py backend/apps/projects/hooks.py
-#: backend/apps/timeoff/providers.py
-msgid "Person"
-msgstr "Сотрудник"
 
 #: backend/apps/finance/exporters.py backend/apps/sales/hooks.py
 #: backend/apps/tasks/hooks.py
@@ -4578,14 +5019,6 @@ msgid "Messages from 911"
 msgstr "Сообщения от 911"
 
 #: backend/apps/inbox/models.py
-msgid "Info"
-msgstr "Информация"
-
-#: backend/apps/inbox/models.py
-msgid "Warning"
-msgstr "Предупреждение"
-
-#: backend/apps/inbox/models.py
 msgid "Critical"
 msgstr "Критично"
 
@@ -4836,11 +5269,6 @@ msgstr ""
 #: backend/apps/knowledge/models.py
 msgid "What changed."
 msgstr "Что изменилось."
-
-#: backend/apps/knowledge/models.py backend/apps/projects/hooks.py
-#: backend/apps/tasks/hooks.py
-msgid "Task"
-msgstr "Задача"
 
 #: backend/apps/knowledge/models.py backend/apps/tasks/hooks.py
 msgid "Routine"
@@ -8141,10 +8569,6 @@ msgstr "Продажа"
 msgid "Refund"
 msgstr "Возврат"
 
-#: backend/apps/sales/models.py owner_bot/ownerbot/commands.py
-msgid "Dashboard"
-msgstr "Панель управления"
-
 #: backend/apps/sales/models.py
 msgid "Import"
 msgstr "Импорт"
@@ -8661,14 +9085,6 @@ msgid "Used"
 msgstr "Использовано"
 
 #: backend/apps/signin/models.py
-msgid "Owner bot"
-msgstr "Бот для владельцев"
-
-#: backend/apps/signin/models.py
-msgid "Employee bot"
-msgstr "Бот для сотрудников"
-
-#: backend/apps/signin/models.py
 msgid "unknown device"
 msgstr "неизвестное устройство"
 
@@ -8912,10 +9328,6 @@ msgstr "Нужно время"
 msgctxt "task button"
 msgid "Can't do it"
 msgstr "Не получается"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "Undo"
-msgstr "Отменить"
 
 #: backend/apps/tasks/bot_messages.py
 msgid "Confirm"
@@ -9466,10 +9878,6 @@ msgstr "Регулярные задачи"
 msgid "Onboarding tasks"
 msgstr "Задачи адаптации"
 
-#: backend/apps/tasks/hooks.py owner_bot/ownerbot/brief.py
-msgid "Tasks"
-msgstr "Задачи"
-
 #: backend/apps/tasks/hooks.py
 msgid "No."
 msgstr "№"
@@ -9891,11 +10299,6 @@ msgstr "Вы не можете передать эту задачу другом
 #, python-format
 msgid "%(name)s already has this task."
 msgstr "Эта задача уже назначена: %(name)s."
-
-#: backend/apps/tasks/services.py
-msgid "Tasks can only go to registered members of your company."
-msgstr ""
-"Задачи можно назначать только зарегистрированным сотрудникам вашей компании."
 
 #: backend/apps/tasks/services.py
 msgid "Given to someone else"
@@ -11165,6 +11568,10 @@ msgstr "Открыть панель управления"
 #: owner_bot/ownerbot/commands.py
 msgid "Create a company"
 msgstr "Создать компанию"
+
+#: owner_bot/ownerbot/handlers/voice.py
+msgid "Which company is this voice note for?"
+msgstr "Для какой компании это голосовое?"
 
 #: owner_bot/ownerbot/invite.py
 msgid "You can't invite people to this company."

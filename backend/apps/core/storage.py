@@ -33,6 +33,13 @@ SAFE_EXTENSIONS = {
     ".xlsx": ".xlsx",
     ".csv": ".csv",
     ".zip": ".zip",
+    # Voice notes (apps.core.uploads.accept_audio).
+    ".ogg": ".ogg",
+    ".webm": ".webm",
+    ".m4a": ".m4a",
+    ".mp3": ".mp3",
+    ".wav": ".wav",
+    ".aac": ".aac",
 }
 
 

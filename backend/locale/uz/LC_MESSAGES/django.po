@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-30 16:10+0500\n"
+"POT-Creation-Date: 2026-11-02 02:33+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -453,6 +453,457 @@ msgstr "Siz bu tadbirga taklif qilinmagansiz."
 msgid "This event is over."
 msgstr "Bu tadbir tugagan."
 
+#: backend/apps/ai/admin.py
+msgid "Spent this month (USD)"
+msgstr "Shu oy sarflangan (USD)"
+
+#: backend/apps/ai/admin.py
+msgid "Cost (USD)"
+msgstr "Narxi (USD)"
+
+#: backend/apps/ai/admin.py
+#, python-format
+msgid "AI usage: %(usd)s USD"
+msgstr "AI sarfi: %(usd)s USD"
+
+#: backend/apps/ai/agents/registry.py
+msgid "Choose on or off."
+msgstr "Yoqing yoki o‘chiring."
+
+#: backend/apps/ai/agents/registry.py
+msgid "Enter a whole number."
+msgstr "Butun son kiriting."
+
+#: backend/apps/ai/agents/registry.py
+#, python-format
+msgid "At least %(min)s."
+msgstr "Kamida %(min)s."
+
+#: backend/apps/ai/agents/registry.py
+#, python-format
+msgid "At most %(max)s."
+msgstr "Ko‘pi bilan %(max)s."
+
+#: backend/apps/ai/agents/registry.py
+msgid "Enter a time as HH:MM."
+msgstr "Vaqtni 08:30 kabi kiriting."
+
+#: backend/apps/ai/agents/registry.py
+msgid "Pick one of the options."
+msgstr "Variantlardan birini tanlang."
+
+#: backend/apps/ai/agents/registry.py
+msgid "Unknown setting."
+msgstr "Noma’lum sozlama."
+
+#: backend/apps/ai/agents/voice_tasks.py
+msgid "When someone dictates; creates the tasks at once"
+msgstr "Kimdir aytib berganda; vazifalarni darhol yaratadi"
+
+#: backend/apps/ai/agents/voice_tasks.py
+msgid "When someone dictates"
+msgstr "Kimdir aytib berganda"
+
+#: backend/apps/ai/agents/voice_tasks.py
+msgid "Voice tasks"
+msgstr "Ovozli vazifalar"
+
+#: backend/apps/ai/agents/voice_tasks.py
+msgid ""
+"Turns voice messages and typed instructions into tasks: who it is for, by "
+"when, urgent or not, photo or not."
+msgstr ""
+"Ovozli xabar va yozma ko‘rsatmalarni vazifaga aylantiradi: kim uchun, "
+"qachongacha, shoshilinchmi, rasm kerakmi."
+
+#: backend/apps/ai/agents/voice_tasks.py
+msgid "Create at once"
+msgstr "Darhol yaratish"
+
+#: backend/apps/ai/agents/voice_tasks.py
+msgid ""
+"Create the tasks without asking when everyone is known and every time is "
+"clear. The message keeps an Undo button for 10 minutes."
+msgstr ""
+"Hamma ijrochi va vaqt aniq bo‘lsa, vazifalar so‘ramasdan yaratiladi. Xabarda "
+"10 daqiqa davomida «Qaytarib olish» tugmasi turadi."
+
+#: backend/apps/ai/agents/voice_tasks.py
+msgid "Longest voice message"
+msgstr "Eng uzun ovozli xabar"
+
+#: backend/apps/ai/agents/voice_tasks.py
+msgid "seconds"
+msgstr "soniya"
+
+#: backend/apps/ai/agents/voice_tasks.py
+#, python-format
+msgid "Understood %(count)s task from %(author)s"
+msgid_plural "Understood %(count)s tasks from %(author)s"
+msgstr[0] "%(author)s: %(count)s ta vazifa tushunildi"
+
+#: backend/apps/ai/agents/voice_tasks.py
+#, python-format
+msgid "%(actor)s created %(count)s task from a voice note"
+msgid_plural "%(actor)s created %(count)s tasks from a voice note"
+msgstr[0] "%(actor)s ovozli xabardan %(count)s ta vazifa yaratdi"
+
+#: backend/apps/ai/agents/voice_tasks.py
+#, python-format
+msgid "Created %(count)s task at once from a voice note by %(author)s"
+msgid_plural "Created %(count)s tasks at once from a voice note by %(author)s"
+msgstr[0] "Ovozli xabardan %(count)s ta vazifa darhol yaratildi (%(author)s)"
+
+#: backend/apps/ai/agents/voice_tasks.py
+#, python-format
+msgid "Could not understand a voice note from %(author)s"
+msgstr "Ovozli xabarni tushunib bo‘lmadi (%(author)s)"
+
+#: backend/apps/ai/agents/voice_tasks.py
+#, python-format
+msgid "%(actor)s took back the tasks of a voice note"
+msgstr "%(actor)s ovozli xabar vazifalarini qaytarib oldi"
+
+#: backend/apps/ai/audit_actions.py
+msgid "Turned AI on"
+msgstr "AI funksiyalarini yoqdi"
+
+#: backend/apps/ai/audit_actions.py
+msgid "Turned AI off"
+msgstr "AI funksiyalarini o‘chirdi"
+
+#: backend/apps/ai/audit_actions.py
+msgid "Changed the AI settings"
+msgstr "AI sozlamalarini o‘zgartirdi"
+
+#: backend/apps/ai/audit_actions.py
+msgid "Changed an AI agent"
+msgstr "AI agentini o‘zgartirdi"
+
+#: backend/apps/ai/bot_messages.py
+msgid "Listening…"
+msgstr "Eshitayapman…"
+
+#: backend/apps/ai/bot_messages.py
+msgid "Understanding…"
+msgstr "Tushunyapman…"
+
+#: backend/apps/ai/bot_messages.py backend/apps/ai/services.py
+#, python-format
+msgid "The recording is too long: %(max)s seconds at most."
+msgstr "Yozuv juda uzun: ko‘pi bilan %(max)s soniya."
+
+#: backend/apps/ai/bot_messages.py backend/apps/ai/services.py
+msgid "The recording is too big: 10 MB at most."
+msgstr "Yozuv juda katta: ko‘pi bilan 10 MB."
+
+#: backend/apps/ai/bot_messages.py
+msgid "This voice note is no longer here."
+msgstr "Bu ovozli xabar endi yo‘q."
+
+#: backend/apps/ai/bot_messages.py
+msgid "I can't listen to voice messages here yet. Type the task instead."
+msgstr ""
+"Bu yerda hali ovozli xabarlarni eshita olmayman. Vazifani yozib yuboring."
+
+#: backend/apps/ai/bot_messages.py
+msgid "Voice needs a speech service on the server (AI_SPEECH_URL)."
+msgstr "Ovoz uchun serverda nutqni tanish xizmati kerak (AI_SPEECH_URL)."
+
+#: backend/apps/ai/bot_messages.py
+msgid "Voice tasks aren't switched on in this company. Type the task instead."
+msgstr "Bu kompaniyada ovozli vazifalar yoqilmagan. Vazifani yozib yuboring."
+
+#: backend/apps/ai/bot_messages.py
+msgid "You can switch them on in the dashboard: AI, then Agents."
+msgstr "Ularni boshqaruv panelida yoqish mumkin: AI, keyin Agentlar."
+
+#: backend/apps/ai/bot_messages.py backend/apps/ai/drafts.py
+msgid "This voice note is too old. Send it again."
+msgstr "Bu ovozli xabar eskirgan. Qaytadan yuboring."
+
+#: backend/apps/ai/bot_messages.py
+msgid "Taken back: the tasks were cancelled."
+msgstr "Qaytarib olindi: vazifalar bekor qilindi."
+
+#: backend/apps/ai/bot_messages.py
+msgid "Cancelled."
+msgstr "Bekor qilindi."
+
+#: backend/apps/ai/bot_messages.py
+msgid "I didn't hear a task in this. Say who should do what, and by when."
+msgstr ""
+"Bunda vazifani eshitmadim. Kim, nima va qachongacha qilishi kerakligini "
+"ayting."
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Understood %(count)s task"
+msgid_plural "Understood %(count)s tasks"
+msgstr[0] "%(count)s ta vazifa tushunildi"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Create %(count)s task"
+msgid_plural "Create %(count)s tasks"
+msgstr[0] "%(count)s ta vazifa yaratish"
+
+#: backend/apps/ai/bot_messages.py backend/apps/announcements/bot_messages.py
+#: backend/apps/attendance/bot_messages.py backend/apps/tasks/bot_messages.py
+#: employee_bot/bot/handlers/member/tasks.py owner_bot/ownerbot/bot_messages.py
+msgid "Cancel"
+msgstr "Bekor qilish"
+
+#: backend/apps/ai/bot_messages.py
+msgid "Untitled task"
+msgstr "Nomsiz vazifa"
+
+#: backend/apps/ai/bot_messages.py
+msgid "for you"
+msgstr "o‘zingiz uchun"
+
+#: backend/apps/ai/bot_messages.py
+msgid "urgent"
+msgstr "shoshilinch"
+
+#: backend/apps/ai/bot_messages.py
+msgid "with a photo"
+msgstr "rasm bilan"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Several people are called “%(name)s”: choose one in the app."
+msgstr "«%(name)s» ismli bir nechta odam bor: ilovada birini tanlang."
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "“%(name)s” isn't among your people: for now it's for you."
+msgstr ""
+"«%(name)s» sizning odamlaringiz orasida yo‘q: hozircha vazifa o‘zingiz uchun."
+
+#: backend/apps/ai/bot_messages.py
+msgid "You can't give work to this person."
+msgstr "Bu odamga vazifa bera olmaysiz."
+
+#: backend/apps/ai/bot_messages.py
+msgid "No deadline was heard."
+msgstr "Muddat aytilmadi."
+
+#: backend/apps/ai/bot_messages.py
+msgid "That time has already passed."
+msgstr "Bu vaqt allaqachon o‘tib ketgan."
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Created %(count)s task"
+msgid_plural "Created %(count)s tasks"
+msgstr[0] "%(count)s ta vazifa yaratildi"
+
+#: backend/apps/ai/bot_messages.py
+msgid "Created at once. You can undo it for 10 minutes."
+msgstr "Darhol yaratildi. 10 daqiqa ichida qaytarib olish mumkin."
+
+#: backend/apps/ai/bot_messages.py backend/apps/tasks/bot_messages.py
+msgid "Undo"
+msgstr "Qaytarib olish"
+
+#: backend/apps/ai/bot_messages.py
+msgid "I can't listen to voice messages right now. Type the task instead."
+msgstr "Hozir ovozli xabarlarni eshita olmayapman. Vazifani yozib yuboring."
+
+#: backend/apps/ai/bot_messages.py
+msgid "I couldn't play this recording. Record it again."
+msgstr "Bu yozuvni ocha olmadim. Qaytadan yozib yuboring."
+
+#: backend/apps/ai/bot_messages.py
+msgid "I didn't hear any words. Record it again, a little closer."
+msgstr ""
+"Hech qanday so‘z eshitilmadi. Telefonni yaqinroq tutib, qaytadan yozing."
+
+#: backend/apps/ai/bot_messages.py
+msgid "Something went wrong with this voice note. Send it again."
+msgstr "Bu ovozli xabarda nimadir xato ketdi. Qaytadan yuboring."
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Open: %(title)s"
+msgstr "Ochish: %(title)s"
+
+#: backend/apps/ai/bot_messages.py
+msgid "Edit in the app"
+msgstr "Ilovada tahrirlash"
+
+#: backend/apps/ai/drafts.py
+msgid "There is nothing to create."
+msgstr "Yaratadigan narsa yo‘q."
+
+#: backend/apps/ai/drafts.py backend/apps/tasks/services.py
+msgid "Tasks can only go to registered members of your company."
+msgstr ""
+"Vazifani faqat kompaniyangizning ro‘yxatdan o‘tgan xodimlariga berish mumkin."
+
+#: backend/apps/ai/drafts.py
+msgid "This task couldn't be created."
+msgstr "Bu vazifani yaratib bo‘lmadi."
+
+#: backend/apps/ai/drafts.py
+msgid "Only the person who dictated this can use it."
+msgstr "Buni faqat uni aytgan odam ishlata oladi."
+
+#: backend/apps/ai/drafts.py
+msgid "This voice note was cancelled."
+msgstr "Bu ovozli xabar bekor qilingan."
+
+#: backend/apps/ai/drafts.py
+msgid "This voice note couldn't be understood. Send it again."
+msgstr "Bu ovozli xabarni tushunib bo‘lmadi. Qaytadan yuboring."
+
+#: backend/apps/ai/drafts.py
+msgid "Still listening. Try again in a moment."
+msgstr "Hali eshityapman. Birozdan keyin qayta urinib ko‘ring."
+
+#: backend/apps/ai/drafts.py
+msgid "The tasks were already created."
+msgstr "Vazifalar allaqachon yaratilgan."
+
+#: backend/apps/ai/drafts.py
+msgid "Too late to undo. Cancel the tasks one by one instead."
+msgstr "Qaytarib olishga kech. Vazifalarni birma-bir bekor qiling."
+
+#: backend/apps/ai/models.py
+msgid "An owner turned AI on."
+msgstr "Egasi AI funksiyalarini yoqqan."
+
+#: backend/apps/ai/models.py
+msgid "The platform switched AI off for this company."
+msgstr "Platforma bu kompaniya uchun AI funksiyalarini o‘chirib qo‘ygan."
+
+#: backend/apps/ai/models.py
+msgid "AI settings"
+msgstr "AI sozlamalari"
+
+#: backend/apps/ai/models.py backend/apps/tasks/hooks.py
+#: owner_bot/ownerbot/brief.py
+msgid "Tasks"
+msgstr "Vazifalar"
+
+#: backend/apps/ai/models.py backend/apps/signin/models.py
+msgid "Employee bot"
+msgstr "Xodimlar boti"
+
+#: backend/apps/ai/models.py backend/apps/signin/models.py
+msgid "Owner bot"
+msgstr "Egalar boti"
+
+#: backend/apps/ai/models.py backend/apps/attendance/models.py
+#: backend/apps/sales/models.py
+msgid "Mini app"
+msgstr "Mini ilova"
+
+#: backend/apps/ai/models.py backend/apps/sales/models.py
+#: owner_bot/ownerbot/commands.py
+msgid "Dashboard"
+msgstr "Boshqaruv paneli"
+
+#: backend/apps/ai/models.py
+msgid "Queued"
+msgstr "Navbatda"
+
+#: backend/apps/ai/models.py
+msgid "Listening"
+msgstr "Eshitilmoqda"
+
+#: backend/apps/ai/models.py
+msgid "Understanding"
+msgstr "Tushunilmoqda"
+
+#: backend/apps/ai/models.py backend/apps/exports/models.py
+msgid "Ready"
+msgstr "Tayyor"
+
+#: backend/apps/ai/models.py backend/apps/exports/models.py
+msgid "Failed"
+msgstr "Xatolik"
+
+#: backend/apps/ai/models.py
+msgid "Tasks created"
+msgstr "Vazifalar yaratildi"
+
+#: backend/apps/ai/models.py
+msgid "Discarded"
+msgstr "Bekor qilingan"
+
+#: backend/apps/ai/models.py backend/apps/attendance/models.py
+#: backend/apps/attendance/services.py backend/apps/members/models.py
+#: backend/apps/signin/models.py
+msgid "Expired"
+msgstr "Muddati o‘tgan"
+
+#: backend/apps/ai/models.py
+msgid "Rules"
+msgstr "Qoidalar"
+
+#: backend/apps/ai/models.py
+msgid "Demo"
+msgstr "Demo"
+
+#: backend/apps/ai/models.py
+msgid "The model that answered."
+msgstr "Javob bergan model."
+
+#: backend/apps/ai/models.py backend/apps/inbox/models.py
+msgid "Info"
+msgstr "Ma’lumot"
+
+#: backend/apps/ai/models.py
+msgid "Success"
+msgstr "Muvaffaqiyat"
+
+#: backend/apps/ai/models.py backend/apps/inbox/models.py
+msgid "Warning"
+msgstr "Ogohlantirish"
+
+#: backend/apps/ai/models.py backend/apps/knowledge/models.py
+#: backend/apps/projects/hooks.py backend/apps/tasks/hooks.py
+msgid "Task"
+msgstr "Vazifa"
+
+#: backend/apps/ai/models.py backend/apps/finance/exporters.py
+#: backend/apps/projects/hooks.py backend/apps/timeoff/providers.py
+msgid "Person"
+msgstr "Xodim"
+
+#: backend/apps/ai/models.py
+msgid "Voice note"
+msgstr "Ovozli xabar"
+
+#: backend/apps/ai/services.py
+msgid "Voice tasks are switched off in this company."
+msgstr "Bu kompaniyada ovozli vazifalar o‘chirilgan."
+
+#: backend/apps/ai/services.py
+msgid "Write what needs to be done."
+msgstr "Nima qilish kerakligini yozing."
+
+#: backend/apps/ai/services.py
+#, python-format
+msgid "That's too long: %(max)s characters at most."
+msgstr "Juda uzun: ko‘pi bilan %(max)s belgi."
+
+#: backend/apps/ai/services.py
+#, python-format
+msgid "That's all the voice tasks for today (%(limit)s). Try again tomorrow."
+msgstr ""
+"Bugungi ovozli vazifalar tugadi (%(limit)s). Ertaga qayta urinib ko‘ring."
+
+#: backend/apps/ai/services.py
+msgid "You can't change the AI settings."
+msgstr "AI sozlamalarini o‘zgartira olmaysiz."
+
+#: backend/apps/ai/services.py
+msgid "AI is switched off for this company by the platform."
+msgstr "Platforma bu kompaniya uchun AI funksiyalarini o‘chirib qo‘ygan."
+
 #: backend/apps/announcements/admin.py backend/apps/finance/models.py
 msgid "Read"
 msgstr "O‘qilgan"
@@ -566,12 +1017,6 @@ msgstr "…va yana %(count)d ta"
 #: backend/apps/announcements/bot_messages.py
 msgid "Who has read it?"
 msgstr "Kim o‘qidi?"
-
-#: backend/apps/announcements/bot_messages.py
-#: backend/apps/attendance/bot_messages.py backend/apps/tasks/bot_messages.py
-#: employee_bot/bot/handlers/member/tasks.py owner_bot/ownerbot/bot_messages.py
-msgid "Cancel"
-msgstr "Bekor qilish"
 
 #: backend/apps/announcements/hooks.py
 #, python-format
@@ -1388,11 +1833,6 @@ msgstr "Tasdiqlangan"
 msgid "Rejected"
 msgstr "Rad etilgan"
 
-#: backend/apps/attendance/models.py backend/apps/attendance/services.py
-#: backend/apps/members/models.py backend/apps/signin/models.py
-msgid "Expired"
-msgstr "Muddati o‘tgan"
-
 #: backend/apps/attendance/models.py
 msgid "The colleague asked; empty: anyone eligible."
 msgstr "So‘ralgan hamkasb; bo‘sh: mos keladigan har kim."
@@ -1420,10 +1860,6 @@ msgstr "Kelmagan"
 #: backend/apps/attendance/models.py
 msgid "Excused"
 msgstr "Uzrli"
-
-#: backend/apps/attendance/models.py backend/apps/sales/models.py
-msgid "Mini app"
-msgstr "Mini ilova"
 
 #: backend/apps/attendance/models.py backend/apps/sales/models.py
 msgid "Bot"
@@ -2683,6 +3119,10 @@ msgid "US dollar"
 msgstr "AQSh dollari"
 
 #: backend/apps/core/uploads.py
+msgid "This isn't a recording we can play. Record it again."
+msgstr "Bu yozuvni ochib bo‘lmaydi. Qaytadan yozib yuboring."
+
+#: backend/apps/core/uploads.py
 msgid "The file is empty."
 msgstr "Fayl bo‘sh."
 
@@ -2758,14 +3198,6 @@ msgstr "Navbatda"
 #: backend/apps/exports/models.py
 msgid "Building"
 msgstr "Tayyorlanmoqda"
-
-#: backend/apps/exports/models.py
-msgid "Ready"
-msgstr "Tayyor"
-
-#: backend/apps/exports/models.py
-msgid "Failed"
-msgstr "Xatolik"
 
 #: backend/apps/exports/models.py
 msgid "Registered exporter, e.g. tasks.tasks."
@@ -3066,11 +3498,6 @@ msgstr "Toifa"
 #: backend/apps/finance/exporters.py
 msgid "Counterparty"
 msgstr "Kontragent"
-
-#: backend/apps/finance/exporters.py backend/apps/projects/hooks.py
-#: backend/apps/timeoff/providers.py
-msgid "Person"
-msgstr "Xodim"
 
 #: backend/apps/finance/exporters.py backend/apps/sales/hooks.py
 #: backend/apps/tasks/hooks.py
@@ -4643,14 +5070,6 @@ msgid "Messages from 911"
 msgstr "911 xabarlari"
 
 #: backend/apps/inbox/models.py
-msgid "Info"
-msgstr "Ma’lumot"
-
-#: backend/apps/inbox/models.py
-msgid "Warning"
-msgstr "Ogohlantirish"
-
-#: backend/apps/inbox/models.py
 msgid "Critical"
 msgstr "Jiddiy"
 
@@ -4903,11 +5322,6 @@ msgstr ""
 #: backend/apps/knowledge/models.py
 msgid "What changed."
 msgstr "Nima o‘zgargani."
-
-#: backend/apps/knowledge/models.py backend/apps/projects/hooks.py
-#: backend/apps/tasks/hooks.py
-msgid "Task"
-msgstr "Vazifa"
 
 #: backend/apps/knowledge/models.py backend/apps/tasks/hooks.py
 msgid "Routine"
@@ -8231,10 +8645,6 @@ msgstr "Sotuv"
 msgid "Refund"
 msgstr "Qaytarish"
 
-#: backend/apps/sales/models.py owner_bot/ownerbot/commands.py
-msgid "Dashboard"
-msgstr "Boshqaruv paneli"
-
 #: backend/apps/sales/models.py
 msgid "Import"
 msgstr "Import"
@@ -8763,14 +9173,6 @@ msgid "Used"
 msgstr "Ishlatilgan"
 
 #: backend/apps/signin/models.py
-msgid "Owner bot"
-msgstr "Egalar boti"
-
-#: backend/apps/signin/models.py
-msgid "Employee bot"
-msgstr "Xodimlar boti"
-
-#: backend/apps/signin/models.py
 msgid "unknown device"
 msgstr "noma’lum qurilma"
 
@@ -9020,10 +9422,6 @@ msgstr "Vaqt so‘rash"
 msgctxt "task button"
 msgid "Can't do it"
 msgstr "Bajara olmayman"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "Undo"
-msgstr "Qaytarib olish"
 
 #: backend/apps/tasks/bot_messages.py
 msgid "Confirm"
@@ -9573,10 +9971,6 @@ msgstr "Muntazam vazifalar"
 msgid "Onboarding tasks"
 msgstr "Yangi xodim vazifalari"
 
-#: backend/apps/tasks/hooks.py owner_bot/ownerbot/brief.py
-msgid "Tasks"
-msgstr "Vazifalar"
-
 #: backend/apps/tasks/hooks.py
 msgid "No."
 msgstr "№"
@@ -10006,11 +10400,6 @@ msgstr "Bu vazifani boshqa xodimga bera olmaysiz."
 #, python-format
 msgid "%(name)s already has this task."
 msgstr "Bu vazifa allaqachon %(name)s zimmasida."
-
-#: backend/apps/tasks/services.py
-msgid "Tasks can only go to registered members of your company."
-msgstr ""
-"Vazifani faqat kompaniyangizning ro‘yxatdan o‘tgan xodimlariga berish mumkin."
 
 #: backend/apps/tasks/services.py
 msgid "Given to someone else"
@@ -11282,6 +11671,10 @@ msgstr "Boshqaruv panelini ochish"
 #: owner_bot/ownerbot/commands.py
 msgid "Create a company"
 msgstr "Kompaniya yaratish"
+
+#: owner_bot/ownerbot/handlers/voice.py
+msgid "Which company is this voice note for?"
+msgstr "Bu ovozli xabar qaysi kompaniya uchun?"
 
 #: owner_bot/ownerbot/invite.py
 msgid "You can't invite people to this company."

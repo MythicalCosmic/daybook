@@ -38,6 +38,9 @@ BOT_FSM_REDIS_URL = ""
 # ...nor Anthropic: AI tests use the scripted fake client (apps/ai/fakes.py).
 ANTHROPIC_API_KEY = ""
 AI_FAKE = False
+# ...nor a speech service: speech tests give the HTTP client a mock transport.
+AI_SPEECH_URL = ""
+AI_SPEECH_API_KEY = ""
 
 DASHBOARD_DEV_LOGIN = False
 DASHBOARD_URL = ""

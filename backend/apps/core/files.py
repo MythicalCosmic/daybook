@@ -23,6 +23,7 @@ only for pictures and PDFs; everything else is a download.
 """
 
 import logging
+import re
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -58,6 +59,13 @@ SERVED_TYPES = {
     ".xlsx": ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", False),
     ".csv": ("text/csv; charset=utf-8", False),
     ".zip": ("application/zip", False),
+    # Voice notes, played in the page (apps.core.uploads.accept_audio).
+    ".ogg": ("audio/ogg", True),
+    ".webm": ("audio/webm", True),
+    ".m4a": ("audio/mp4", True),
+    ".mp3": ("audio/mpeg", True),
+    ".wav": ("audio/wav", True),
+    ".aac": ("audio/aac", True),
 }
 
 STORAGES: dict[str, Storage] = {"private": private_storage, "default": default_storage}
@@ -168,17 +176,48 @@ class PrivateFileView(View):
             handle = grant.storage.open(grant.name, "rb")
         except (FileNotFoundError, OSError) as exc:
             raise Http404 from exc
-        response = FileResponse(
-            handle,
-            content_type=content_type,
-            as_attachment=not inline,
-            filename=grant.filename or PurePosixPath(grant.name).name,
-        )
+        filename = grant.filename or PurePosixPath(grant.name).name
+        if content_type.startswith("audio/"):
+            response = _audio_response(request, handle, content_type, filename)
+        else:
+            response = FileResponse(
+                handle, content_type=content_type, as_attachment=not inline, filename=filename
+            )
         for header, value in SANDBOX_HEADERS.items():
             response[header] = value
         response["Cache-Control"] = "private, no-store"
         response["Referrer-Policy"] = "no-referrer"
         return response
+
+
+_RANGE = re.compile(r"^bytes=(\d*)-(\d*)$")
+
+
+def _audio_response(request, handle, content_type: str, filename: str) -> HttpResponse:
+    """A voice note, with byte ranges: Safari (and Telegram's iOS web view) plays an <audio>
+    only from a server that answers `Range: bytes=0-1` with 206."""
+    with handle:
+        data = handle.read()
+    size = len(data)
+    match = _RANGE.match(request.headers.get("Range", "").strip())
+    status, body = 200, data
+    if match and (match[1] or match[2]):
+        if match[1]:
+            start = int(match[1])
+            end = min(int(match[2]), size - 1) if match[2] else size - 1
+        else:  # the last N bytes
+            start, end = max(size - int(match[2]), 0), size - 1
+        if start >= size or start > end:
+            response = HttpResponse(status=416)
+            response["Content-Range"] = f"bytes */{size}"
+            return response
+        status, body = 206, data[start : end + 1]
+    response = HttpResponse(body, status=status, content_type=content_type)
+    if status == 206:
+        response["Content-Range"] = f"bytes {start}-{end}/{size}"
+    response["Accept-Ranges"] = "bytes"
+    response["Content-Disposition"] = f'inline; filename="{filename}"'
+    return response
 
 
 @extend_schema_field(serializers.CharField(allow_null=True, help_text="Signed download link."))

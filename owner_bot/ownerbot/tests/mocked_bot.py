@@ -7,10 +7,12 @@ from aiogram import Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.base import BaseSession
 from aiogram.enums import ParseMode
-from aiogram.methods import AnswerCallbackQuery, GetMe, SendMessage, TelegramMethod
-from aiogram.types import Chat, Message, User
+from aiogram.methods import AnswerCallbackQuery, GetFile, GetMe, SendMessage, TelegramMethod
+from aiogram.types import Chat, File, Message, User
 
 BOT_USERNAME = "owner_test_bot"
+# What every downloaded file contains: the start of an Ogg voice message.
+FILE_CONTENT = b"OggS\x00\x02" + b"\x00" * 64
 
 
 class MockedSession(BaseSession):
@@ -34,13 +36,19 @@ class MockedSession(BaseSession):
             )
         if isinstance(method, GetMe):
             return User(id=bot.id, is_bot=True, first_name="Owner", username=BOT_USERNAME)
+        if isinstance(method, GetFile):
+            return File(
+                file_id=method.file_id,
+                file_unique_id=f"unique-{method.file_id}",
+                file_path=f"voice/{method.file_id}.oga",
+            )
         return True
 
     async def close(self) -> None:
         pass
 
-    async def stream_content(self, *args, **kwargs):  # pragma: no cover - not used
-        yield b""
+    async def stream_content(self, *args, **kwargs):
+        yield FILE_CONTENT
 
 
 class MockedBot(Bot):

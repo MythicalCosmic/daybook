@@ -275,6 +275,323 @@ paths:
           description: ''
         '400':
           description: Not allowed, bad code or bad input.
+  /api/v1/owner/companies/{company_id}/ai/settings/:
+    get:
+      operationId: companies_ai_settings_retrieve
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AISettings'
+          description: ''
+    patch:
+      operationId: companies_ai_settings_partial_update
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAISettingsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAISettingsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAISettingsRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AISettings'
+          description: ''
+  /api/v1/owner/companies/{company_id}/ai/settings/disable/:
+    post:
+      operationId: companies_ai_settings_disable_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIOwnerStatus'
+          description: ''
+  /api/v1/owner/companies/{company_id}/ai/settings/enable/:
+    post:
+      operationId: companies_ai_settings_enable_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIEnableRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AIEnableRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AIEnableRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIOwnerStatus'
+          description: ''
+  /api/v1/owner/companies/{company_id}/ai/status/:
+    get:
+      operationId: companies_ai_status_retrieve
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIOwnerStatus'
+          description: ''
+  /api/v1/owner/companies/{company_id}/ai/task-drafts/:
+    get:
+      operationId: companies_ai_task_drafts_list
+      description: |-
+        The task-draft handlers both APIs share; `self.membership` is set by their permission
+        classes, `source` names where drafts come from, `visible_drafts()` what the caller sees.
+      parameters:
+      - in: query
+        name: author
+        schema:
+          type: integer
+        description: The author's membership id.
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: source
+        schema:
+          type: string
+        description: bot, owner_bot, miniapp or dashboard.
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: Comma-separated statuses.
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAIDraftList'
+          description: ''
+    post:
+      operationId: companies_ai_task_drafts_create
+      description: |-
+        The task-draft handlers both APIs share; `self.membership` is set by their permission
+        classes, `source` names where drafts come from, `visible_drafts()` what the caller sees.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AIDraftCreateRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIDraftCreateRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIDraft'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIError'
+          description: audio_* or text_too_long
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIError'
+          description: ai_off
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIError'
+          description: limit_reached
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIDraft'
+          description: ''
+  /api/v1/owner/companies/{company_id}/ai/task-drafts/{draft_id}/:
+    get:
+      operationId: companies_ai_task_drafts_retrieve
+      description: |-
+        The task-draft handlers both APIs share; `self.membership` is set by their permission
+        classes, `source` names where drafts come from, `visible_drafts()` what the caller sees.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: draft_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIDraft'
+          description: ''
+  /api/v1/owner/companies/{company_id}/ai/task-drafts/{draft_id}/apply/:
+    post:
+      operationId: companies_ai_task_drafts_apply_create
+      description: |-
+        The task-draft handlers both APIs share; `self.membership` is set by their permission
+        classes, `source` names where drafts come from, `visible_drafts()` what the caller sees.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: draft_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIDraftApplyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AIDraftApplyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AIDraftApplyRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIApplyResult'
+          description: ''
+  /api/v1/owner/companies/{company_id}/ai/task-drafts/{draft_id}/discard/:
+    post:
+      operationId: companies_ai_task_drafts_discard_create
+      description: |-
+        The task-draft handlers both APIs share; `self.membership` is set by their permission
+        classes, `source` names where drafts come from, `visible_drafts()` what the caller sees.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: draft_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/owner/companies/{company_id}/announcements/:
     get:
       operationId: companies_announcements_list
@@ -13829,6 +14146,368 @@ paths:
           description: ''
 components:
   schemas:
+    AIApplyFailure:
+      type: object
+      properties:
+        index:
+          type: integer
+        detail:
+          type: string
+      required:
+      - detail
+      - index
+    AIApplyResult:
+      type: object
+      properties:
+        draft:
+          $ref: '#/components/schemas/AIDraft'
+        created:
+          type: array
+          items:
+            type: integer
+        failed:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIApplyFailure'
+      required:
+      - created
+      - draft
+      - failed
+    AIAssignee:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        position:
+          type: string
+      required:
+      - id
+      - name
+      - position
+    AIAudio:
+      type: object
+      properties:
+        seconds:
+          type: integer
+          nullable: true
+        url:
+          type: string
+          nullable: true
+          description: Signed link to the recording.
+      required:
+      - seconds
+      - url
+    AIBudget:
+      type: object
+      properties:
+        monthly_usd:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        spent_usd:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        resets_on:
+          type: string
+          format: date
+      required:
+      - monthly_usd
+      - resets_on
+      - spent_usd
+    AICreatedTask:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        assignee_name:
+          type: string
+      required:
+      - assignee_name
+      - id
+      - title
+    AIDraft:
+      type: object
+      description: One voice note or typed instruction and the tasks it became.
+      properties:
+        id:
+          type: integer
+        status:
+          $ref: '#/components/schemas/AiDraftStatusEnum'
+        source:
+          $ref: '#/components/schemas/AiDraftSourceEnum'
+        author:
+          $ref: '#/components/schemas/AIPerson'
+        created_at:
+          type: string
+          format: date-time
+        audio:
+          allOf:
+          - $ref: '#/components/schemas/AIAudio'
+          nullable: true
+          description: null for typed text.
+        transcript:
+          type: string
+        language:
+          type: string
+        engine:
+          type: string
+          description: claude, rules or fake.
+        drafts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIDraftItem'
+        questions:
+          type: array
+          items:
+            type: string
+        created_tasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/AICreatedTask'
+        error_code:
+          type: string
+          description: 'Empty, or one of: speech_unavailable, audio_unreadable, nothing_heard,
+            ai_unavailable, expired.'
+        error:
+          type: string
+          description: error_code in words.
+      required:
+      - audio
+      - author
+      - created_at
+      - created_tasks
+      - drafts
+      - engine
+      - error
+      - error_code
+      - id
+      - language
+      - questions
+      - source
+      - status
+      - transcript
+    AIDraftApplyRequest:
+      type: object
+      properties:
+        drafts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIDraftEditRequest'
+    AIDraftCreateRequest:
+      type: object
+      description: Multipart `audio` (+ `seconds`, `language`) or JSON `text`.
+      properties:
+        audio:
+          type: string
+          format: binary
+        seconds:
+          type: number
+          format: double
+          minimum: 0
+          nullable: true
+        language:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        text:
+          type: string
+          description: 1–2000 characters.
+    AIDraftEditRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          default: ''
+          maxLength: 2000
+        assignee_id:
+          type: integer
+          nullable: true
+        due_at:
+          type: string
+          format: date-time
+          nullable: true
+        priority:
+          allOf:
+          - $ref: '#/components/schemas/AiDraftPriorityEnum'
+          default: normal
+        checklist:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 200
+          maxItems: 20
+        proof:
+          allOf:
+          - $ref: '#/components/schemas/AiDraftProofEnum'
+          default: none
+      required:
+      - title
+    AIDraftItem:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        assignee:
+          allOf:
+          - $ref: '#/components/schemas/AIAssignee'
+          nullable: true
+          description: 'null: for the author.'
+        assignee_guess:
+          type: string
+          description: Who was heard but not matched, when assignee is null.
+        due_at:
+          type: string
+          format: date-time
+          nullable: true
+        due_text:
+          type: string
+          description: Ertaga, 10:00
+        priority:
+          $ref: '#/components/schemas/AiDraftPriorityEnum'
+        checklist:
+          type: array
+          items:
+            type: string
+        proof:
+          $ref: '#/components/schemas/AiDraftProofEnum'
+        problems:
+          type: array
+          items:
+            $ref: '#/components/schemas/AiDraftProblemEnum'
+      required:
+      - assignee
+      - assignee_guess
+      - checklist
+      - description
+      - due_at
+      - due_text
+      - priority
+      - problems
+      - proof
+      - title
+    AIEnableRequest:
+      type: object
+      properties:
+        accept_terms:
+          type: boolean
+      required:
+      - accept_terms
+    AIError:
+      type: object
+      properties:
+        code:
+          type: string
+        detail:
+          type: string
+      required:
+      - code
+      - detail
+    AIFeatures:
+      type: object
+      properties:
+        voice:
+          type: boolean
+        smart_text:
+          type: boolean
+        chat:
+          type: boolean
+        photo_checker:
+          type: boolean
+      required:
+      - chat
+      - photo_checker
+      - smart_text
+      - voice
+    AIOwnerStatus:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        can_configure:
+          type: boolean
+        claude:
+          $ref: '#/components/schemas/AiClaudeStateEnum'
+        speech:
+          $ref: '#/components/schemas/AiSpeechStateEnum'
+        features:
+          $ref: '#/components/schemas/AIFeatures'
+        budget:
+          allOf:
+          - $ref: '#/components/schemas/AIBudget'
+          nullable: true
+          description: Only for ai.configure.
+      required:
+      - budget
+      - can_configure
+      - claude
+      - enabled
+      - features
+      - speech
+    AIPerson:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    AISettings:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          readOnly: true
+          description: An owner turned AI on.
+        enabled_by_name:
+          type: string
+          readOnly: true
+        enabled_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        platform_blocked:
+          type: boolean
+          readOnly: true
+          description: The platform switched AI off for this company.
+        monthly_budget_usd:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        share_task_text:
+          type: boolean
+        share_finance:
+          type: boolean
+        share_salaries:
+          type: boolean
+        voice_retention_days:
+          type: integer
+          maximum: 365
+          minimum: 1
+        member_daily_drafts:
+          type: integer
+          maximum: 500
+          minimum: 1
+      required:
+      - enabled
+      - enabled_at
+      - enabled_by_name
+      - platform_blocked
     Access:
       type: object
       properties:
@@ -14368,6 +15047,94 @@ components:
       required:
       - key
       - label
+    AiClaudeStateEnum:
+      enum:
+      - connected
+      - not_configured
+      - fake
+      - blocked
+      - budget_reached
+      - unavailable
+      type: string
+      description: |-
+        * `connected` - connected
+        * `not_configured` - not_configured
+        * `fake` - fake
+        * `blocked` - blocked
+        * `budget_reached` - budget_reached
+        * `unavailable` - unavailable
+    AiDraftPriorityEnum:
+      enum:
+      - normal
+      - urgent
+      type: string
+      description: |-
+        * `normal` - normal
+        * `urgent` - urgent
+    AiDraftProblemEnum:
+      enum:
+      - no_assignee_match
+      - ambiguous_assignee
+      - no_due
+      - past_due
+      - not_allowed
+      type: string
+      description: |-
+        * `no_assignee_match` - no_assignee_match
+        * `ambiguous_assignee` - ambiguous_assignee
+        * `no_due` - no_due
+        * `past_due` - past_due
+        * `not_allowed` - not_allowed
+    AiDraftProofEnum:
+      enum:
+      - none
+      - photo
+      type: string
+      description: |-
+        * `none` - none
+        * `photo` - photo
+    AiDraftSourceEnum:
+      enum:
+      - bot
+      - owner_bot
+      - miniapp
+      - dashboard
+      type: string
+      description: |-
+        * `bot` - Employee bot
+        * `owner_bot` - Owner bot
+        * `miniapp` - Mini app
+        * `dashboard` - Dashboard
+    AiDraftStatusEnum:
+      enum:
+      - queued
+      - transcribing
+      - thinking
+      - ready
+      - failed
+      - applied
+      - discarded
+      - expired
+      type: string
+      description: |-
+        * `queued` - Queued
+        * `transcribing` - Listening
+        * `thinking` - Understanding
+        * `ready` - Ready
+        * `failed` - Failed
+        * `applied` - Tasks created
+        * `discarded` - Discarded
+        * `expired` - Expired
+    AiSpeechStateEnum:
+      enum:
+      - ready
+      - not_configured
+      - fake
+      type: string
+      description: |-
+        * `ready` - ready
+        * `not_configured` - not_configured
+        * `fake` - fake
     AnnouncementsAudience:
       type: object
       properties:
@@ -19868,6 +20635,29 @@ components:
       - revoked_at
       - revoked_by
       - status
+    PaginatedAIDraftList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIDraft'
     PaginatedAgendaEventList:
       type: object
       required:
@@ -20537,6 +21327,27 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Transfer'
+    PatchedAISettingsRequest:
+      type: object
+      properties:
+        monthly_budget_usd:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        share_task_text:
+          type: boolean
+        share_finance:
+          type: boolean
+        share_salaries:
+          type: boolean
+        voice_retention_days:
+          type: integer
+          maximum: 365
+          minimum: 1
+        member_daily_drafts:
+          type: integer
+          maximum: 500
+          minimum: 1
     PatchedAccountUpdateRequest:
       type: object
       properties:
