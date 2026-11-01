@@ -434,6 +434,23 @@ describe("smart add", () => {
     expect(screen.getByText("You wrote")).toBeTruthy();
   });
 
+  it("says so when auto-create made the tasks without a review", async () => {
+    server.handler = (path, method) => {
+      if (path.endsWith("/ai/status/")) return { ...STATUS, auto_create: true };
+      if (path.endsWith("/task-drafts/") && method === "POST") return draft({ status: "queued", audio: null, drafts: [] });
+      if (path.endsWith("/task-drafts/41/")) return draft({ status: "applied", audio: null, created_tasks: [{ id: 501, title: "Muzlatgich haroratini tekshirish", assignee_name: "Alisher Valiyev" }] });
+      return undefined;
+    };
+    const first = renderApp(null, { me: person([giver()]), init: { sheet: { kind: "feature", feature: "ai", sheet: "draft", params: { mode: "text", text: "Alisher muzlatgichni tekshirsin", send: 1 } } } });
+    expect(await screen.findByText("1 task created", {}, { timeout: 3000 })).toBeTruthy();
+    expect(screen.getByText(/Everything was clear, so they were created right away\./)).toBeTruthy();
+    first.unmount();
+    // The same draft opened from the bot (applied there, maybe by a tap): no claim about how.
+    renderApp(null, { me: person([giver()]), init: { sheet: { kind: "feature", feature: "ai", sheet: "draft", params: { id: 41 } } } });
+    expect(await screen.findByText("1 task created")).toBeTruthy();
+    expect(screen.queryByText(/created right away/)).toBeNull();
+  });
+
   it("starts Write more from an empty box instead of sending the same words again", async () => {
     let status: AIDraft["status"] = "ready";
     server.handler = (path, method, json) => {

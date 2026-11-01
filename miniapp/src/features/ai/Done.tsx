@@ -13,11 +13,14 @@ import { messages } from "./messages";
 export function Done({
   draft,
   failed,
+  auto = false,
   onAgain,
   onClose,
 }: {
   draft: AIDraft;
   failed: ApplyResult["failed"];
+  /** Created by the server at once, without a review (every task was clear: "auto-create"). */
+  auto?: boolean;
   onAgain: (() => void) | null;
   onClose: () => void;
 }) {
@@ -34,7 +37,7 @@ export function Done({
           </svg>
         </span>
         <div className="heading title-sm">{t("done.title", { count: created.length })}</div>
-        <p className="ai-state-body">{t("done.body")}</p>
+        <p className="ai-state-body">{auto ? `${t("done.auto")} ${t("done.body")}` : t("done.body")}</p>
       </div>
 
       {created.length > 0 && (

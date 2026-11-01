@@ -36,15 +36,21 @@ export function DraftSheet({ params, close }: SheetProps) {
   // What the (+) sheet handed over (its typed title, sent at once) is for the first draft only:
   // "Write more" starts from an empty box, never sends the same words twice.
   const [prefill, setPrefill] = useState(() => ({ text: typeof params.text === "string" ? params.text : "", send: params.send === 1 }));
+  // Who made the draft "applied": this person pressing Create, or the server at once (the voice
+  // tasks agent's "auto-create" when every task was clear). Only a draft sent from this sheet can
+  // be the second kind; one opened from the bot may have been created there.
+  const [made, setMade] = useState<"here" | "sent" | null>(null);
 
   const sent = (draft: AIDraft) => {
     setSince(Date.now());
     setDraftId(draft.id);
+    setMade("sent");
   };
   const again = (next: Mode) => {
     setDraftId(null);
     setFailed([]);
     setPrefill({ text: "", send: false });
+    setMade(null);
     setMode(next);
   };
 
@@ -54,9 +60,13 @@ export function DraftSheet({ params, close }: SheetProps) {
         id={draftId}
         since={since}
         failed={failed}
+        auto={made === "sent"}
         canVoice={entry.voice}
         canType={entry.text}
-        onApplied={(result) => setFailed(result.failed)}
+        onApplied={(result) => {
+          setFailed(result.failed);
+          setMade("here");
+        }}
         onKeepWaiting={() => setSince(Date.now())}
         onAgain={again}
         close={close}
@@ -85,6 +95,7 @@ function DraftView({
   id,
   since,
   failed,
+  auto,
   canVoice,
   canType,
   onApplied,
@@ -95,6 +106,8 @@ function DraftView({
   id: number;
   since: number;
   failed: ApplyResult["failed"];
+  /** The draft was sent from this sheet and nobody here pressed Create: an "applied" one went out at once. */
+  auto: boolean;
   canVoice: boolean;
   canType: boolean;
   onApplied: (result: ApplyResult) => void;
@@ -134,7 +147,7 @@ function DraftView({
     case "ready":
       return <Review key={draft.id} draft={draft} onApplied={onApplied} onDiscarded={close} onAgain={again ?? close} />;
     case "applied":
-      return <Done draft={draft} failed={failed} onAgain={again} onClose={close} />;
+      return <Done draft={draft} failed={failed} auto={auto} onAgain={again} onClose={close} />;
     case "discarded":
       return (
         <StateView icon={CircleSlash} tone="sage" title={t("discarded.title")} body={t("discarded.body")}>
