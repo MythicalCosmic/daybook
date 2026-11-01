@@ -12,6 +12,7 @@ import BottomSheet from "@/components/BottomSheet.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import UiDrawer from "@/components/UiDrawer.vue";
 import { i18n, setLanguage } from "@/i18n";
+import { closeTopOverlay, overlayOpen } from "@/lib/backStack";
 
 vi.mock("@/lib/useBreakpoints", () => ({
   useBreakpoints: () => ({ isPhone: ref(true), isTablet: ref(false), isDesktop: ref(false) }),
@@ -107,5 +108,33 @@ describe("BottomSheet", () => {
     await flushPromises();
     expect(sheet().querySelector("[data-sheet-body]")!.className).toContain("var(--safe-bottom)");
     wrapper.unmount();
+  });
+});
+
+describe("Back on a phone", () => {
+  it("closes an open sheet first (Telegram's BackButton), but never one that must stay", async () => {
+    const wrapper = mount(BottomSheet, {
+      props: { open: true, title: "Filters", "onUpdate:open": (value: boolean) => wrapper.setProps({ open: value }) },
+      slots: { default: () => h("p", "chips") },
+      global: { plugins: plugins() },
+      attachTo: document.body,
+    });
+    await flushPromises();
+    expect(overlayOpen.value).toBe(true);
+    expect(closeTopOverlay()).toBe(true);
+    await flushPromises();
+    expect(wrapper.props("open")).toBe(false);
+    expect(overlayOpen.value).toBe(false);
+    wrapper.unmount();
+
+    const busy = mount(BottomSheet, {
+      props: { open: true, title: "Saving", dismissable: false },
+      slots: { default: () => h("p", "wait") },
+      global: { plugins: plugins() },
+      attachTo: document.body,
+    });
+    await flushPromises();
+    expect(overlayOpen.value).toBe(false);
+    busy.unmount();
   });
 });

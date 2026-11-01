@@ -6,6 +6,8 @@
 import { DialogContent, DialogDescription, DialogOverlay, DialogPortal, DialogRoot, DialogTitle, VisuallyHidden } from "reka-ui";
 import { computed, ref, watch } from "vue";
 
+import { useBackCloses } from "@/lib/backStack";
+
 const open = defineModel<boolean>("open", { default: false });
 
 const props = withDefaults(
@@ -57,6 +59,9 @@ function onPointerUp(event: PointerEvent): void {
 watch(open, (isOpen) => {
   if (isOpen) dragY.value = 0;
 });
+
+// Telegram's Back (and Android's back gesture) closes the sheet instead of leaving the page.
+useBackCloses(() => open.value && props.dismissable, () => (open.value = false));
 
 const sheetStyle = computed(() =>
   dragY.value > 0 ? { transform: `translate3d(0, ${dragY.value}px, 0)`, transition: dragging.value ? "none" : undefined } : undefined,

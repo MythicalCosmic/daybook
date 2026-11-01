@@ -7,6 +7,7 @@ import { watch } from "vue";
 import type { RouteLocationRaw, Router } from "vue-router";
 
 import type { DashboardModule } from "@/core/modules";
+import { closeTopOverlay, overlayOpen } from "@/lib/backStack";
 import { useUiStore } from "@/stores/ui";
 
 interface Insets {
@@ -170,14 +171,18 @@ export function bindTelegram(router: Router): void {
   webApp.onEvent("safeAreaChanged", () => applyInsets(webApp));
   webApp.onEvent("contentSafeAreaChanged", () => applyInsets(webApp));
 
-  // BackButton mirrors the browser history: shown whenever there is somewhere to go back to.
-  const back = () => router.back();
-  webApp.BackButton.onClick(back);
-  router.afterEach(() => {
-    const canGoBack = !!(window.history.state as { back?: string | null } | null)?.back;
-    if (canGoBack) webApp.BackButton.show();
-    else webApp.BackButton.hide();
+  // BackButton closes the sheet, dialog or palette on top first (lib/backStack), then mirrors the
+  // browser history: shown whenever there is an overlay to close or somewhere to go back to.
+  webApp.BackButton.onClick(() => {
+    if (!closeTopOverlay()) router.back();
   });
+  const syncBackButton = () => {
+    const canGoBack = !!(window.history.state as { back?: string | null } | null)?.back;
+    if (canGoBack || overlayOpen.value) webApp.BackButton.show();
+    else webApp.BackButton.hide();
+  };
+  router.afterEach(syncBackButton);
+  watch(overlayOpen, syncBackButton);
 }
 
 /**
