@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-30 16:10+0500\n"
+"POT-Creation-Date: 2026-11-02 03:05+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -2661,6 +2661,10 @@ msgstr "Bu ko‘rinishda ma’lumot juda ko‘p, uni saqlab bo‘lmaydi."
 #: backend/apps/console/services.py
 msgid "You already have a view with this name here."
 msgstr "Bu yerda shu nomli ko‘rinishingiz allaqachon bor."
+
+#: backend/apps/core/bot_runtime.py
+msgid "Something went wrong. Please try again in a moment."
+msgstr "Nimadir xato ketdi. Birozdan keyin qayta urinib ko‘ring."
 
 #: backend/apps/core/crypto.py
 msgid "Encrypted text"
@@ -7470,18 +7474,17 @@ msgstr ""
 "o‘rtacha chek, naqd pul sanog‘i qanchalik tez-tez to‘g‘ri chiqqani, kamomad "
 "va ortiqchalar, kassani kech ochish holatlari va tasdiqlashlar."
 
-#: backend/apps/sales/alerts.py backend/apps/sales/bot_messages.py
-#: backend/apps/sales/queries.py backend/apps/sales/services.py
+#: backend/apps/sales/alerts.py backend/apps/sales/queries.py
+#: backend/apps/sales/services.py
 msgid "Received"
 msgstr "Olindi"
 
-#: backend/apps/sales/alerts.py backend/apps/sales/bot_messages.py
-#: backend/apps/sales/queries.py backend/apps/sales/services.py
+#: backend/apps/sales/alerts.py backend/apps/sales/queries.py
+#: backend/apps/sales/services.py
 msgid "Not received"
 msgstr "Olinmadi"
 
-#: backend/apps/sales/alerts.py backend/apps/sales/bot_messages.py
-#: backend/apps/sales/queries.py
+#: backend/apps/sales/alerts.py backend/apps/sales/queries.py
 msgid "Verify"
 msgstr "Tasdiqlash"
 
@@ -9122,10 +9125,6 @@ msgid "Write your comment on <b>%(title)s</b>:"
 msgstr "<b>%(title)s</b> vazifasiga izoh yozing:"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "What needs to be fixed? Send a short comment."
-msgstr "Nimani tuzatish kerak? Qisqa izoh yuboring."
-
-#: backend/apps/tasks/bot_messages.py
 msgid "Photo is unclear"
 msgstr "Rasm tushunarsiz"
 
@@ -10690,10 +10689,6 @@ msgstr "Hozir: %(company)s"
 msgid "Thanks, your phone number is saved. Now finish your account in the app."
 msgstr ""
 "Rahmat, telefon raqamingiz saqlandi. Endi hisobingizni ilovada yakunlang."
-
-#: employee_bot/bot/handlers/errors.py owner_bot/ownerbot/handlers/errors.py
-msgid "Something went wrong. Please try again in a moment."
-msgstr "Nimadir xato ketdi. Birozdan keyin qayta urinib ko‘ring."
 
 #: employee_bot/bot/handlers/features/agenda.py
 msgid "you'll come"

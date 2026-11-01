@@ -1,6 +1,6 @@
 from aiogram import Dispatcher
 
-from ownerbot.handlers.errors import on_error
+from apps.core.bot_runtime import on_error
 from ownerbot.handlers.inbox_actions import router as inbox_actions_router
 from ownerbot.handlers.invite import router as invite_router
 from ownerbot.handlers.language import router as language_router

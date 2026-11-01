@@ -65,10 +65,6 @@ def recordable_accounts(member: Membership) -> QuerySet[MoneyAccount]:
     return accounts.filter(own_accounts_q(member)).distinct()
 
 
-def may_record_on(member: Membership, account: MoneyAccount) -> bool:
-    return recordable_accounts(member).filter(pk=account.pk).exists()
-
-
 def transfer_targets(member: Membership) -> QuerySet[MoneyAccount]:
     """Accounts money may be moved to: every active account in the member's branch scope (a
     cashier hands cash to the branch safe) plus their own."""
@@ -131,11 +127,6 @@ def masks_row(member: Membership, row: Transaction) -> bool:
 
 def masks_debt(member: Membership, debt: Debt) -> bool:
     return is_sensitive_debt(debt) and not sees_salary_detail(member)
-
-
-def sensitive_rows_q() -> Q:
-    """Rows whose per-person detail is hidden without payroll.view (for searches)."""
-    return Q(category__is_sensitive=True) | Q(debt__kind__in=Debt.SENSITIVE_KINDS)
 
 
 def branch_filter(member_scope: list[int] | None, wanted: list[int]) -> list[int] | None:

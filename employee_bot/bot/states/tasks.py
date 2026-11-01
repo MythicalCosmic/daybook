@@ -32,10 +32,6 @@ class BlockTask(StatesGroup):
     note = State()  # "can't do it" for another reason: what's in the way
 
 
-class PickLanguage(StatesGroup):
-    first = State()  # first contact: the /start parameter waits for the language
-
-
 class Announce(StatesGroup):
     text = State()
     audience = State()

@@ -556,10 +556,6 @@ class GiveTodayInputSerializer(serializers.Serializer):
     )
 
 
-def now_context() -> dict:
-    return {"now": timezone.now()}
-
-
 # Routine work (the Routines page) ----------------------------------------------------------
 
 
