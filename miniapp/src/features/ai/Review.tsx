@@ -1,5 +1,5 @@
 import { AlertCircle, CalendarClock, Camera, Check, Flag, MessageCircleQuestion, Mic, PenLine, RotateCcw, UserRound, X } from "lucide-react";
-import { useId, useMemo, useRef, useState } from "react";
+import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { useMembers } from "../../api/hooks";
 import { givesWork } from "../../api/permissions";
@@ -109,7 +109,7 @@ export function Review({
 
   const drop = async () => {
     if (discard.isPending) return;
-    if (edited && !(await confirm(t("review.discard")))) return;
+    if (edited && !(await confirm(t("review.discardAsk")))) return;
     discard.mutate(undefined, {
       onSuccess: () => {
         toast(t("review.discarded"));
@@ -236,8 +236,13 @@ function DraftCard({
   const member = useMember();
   const ids = useId();
   const select = useRef<HTMLSelectElement>(null);
+  const titleBox = useRef<HTMLTextAreaElement>(null);
   const [editingWhen, setEditingWhen] = useState(false);
   const timeZone = member.timeZone;
+  // The title box is as tall as its words (a long title wraps instead of scrolling inside).
+  useLayoutEffect(() => {
+    if (titleBox.current) grow(titleBox.current);
+  }, [card.title, card.removed]);
 
   if (card.removed) {
     return (
@@ -350,13 +355,8 @@ function DraftCard({
           rows={1}
           maxLength={200}
           aria-label={t("review.taskTitle")}
-          onChange={(event) => {
-            onChange({ ...card, title: event.target.value.replace(/\s*\n\s*/g, " ") });
-            grow(event.target);
-          }}
-          ref={(box) => {
-            if (box) grow(box);
-          }}
+          onChange={(event) => onChange({ ...card, title: event.target.value.replace(/\s*\n\s*/g, " ") })}
+          ref={titleBox}
         />
         <button
           type="button"

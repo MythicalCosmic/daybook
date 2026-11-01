@@ -36,6 +36,8 @@ export const messages = defineMessages({
     "text.submit": "Make tasks",
 
     sending: "Sending…",
+    "send.failedTitle": "Couldn’t send the recording",
+    "send.again": "Send again",
     "work.listening": "Listening…",
     "work.thinking": "Thinking…",
     "work.stepListen": "Writing down what you said",
@@ -63,6 +65,7 @@ export const messages = defineMessages({
     "review.fixFirst": "Fix the marked task first",
     "review.discard": "Discard all",
     "review.discarded": "Discarded",
+    "review.discardAsk": "Discard this list? Your changes won’t be kept.",
     "review.emptyTitle": "No tasks found",
     "review.emptyBody": "Say a little more clearly who should do what.",
 
@@ -148,6 +151,8 @@ export const messages = defineMessages({
     "text.submit": "Разложить на задачи",
 
     sending: "Отправляем…",
+    "send.failedTitle": "Не удалось отправить запись",
+    "send.again": "Отправить ещё раз",
     "work.listening": "Слушаю…",
     "work.thinking": "Разбираю…",
     "work.stepListen": "Записываю сказанное",
@@ -179,6 +184,7 @@ export const messages = defineMessages({
     "review.fixFirst": "Сначала исправьте отмеченную задачу",
     "review.discard": "Отменить всё",
     "review.discarded": "Отменено",
+    "review.discardAsk": "Отменить этот список? Правки не сохранятся.",
     "review.emptyTitle": "Задач не нашлось",
     "review.emptyBody": "Скажите чуть чётче, кому и что нужно сделать.",
 
@@ -262,6 +268,8 @@ export const messages = defineMessages({
     "text.submit": "Vazifalarga ajratish",
 
     sending: "Yuborilmoqda…",
+    "send.failedTitle": "Yozuvni yuborib bo‘lmadi",
+    "send.again": "Qayta yuborish",
     "work.listening": "Eshitayapman…",
     "work.thinking": "Tushunyapman…",
     "work.stepListen": "Aytganlaringizni yozib olyapman",
@@ -289,6 +297,7 @@ export const messages = defineMessages({
     "review.fixFirst": "Avval belgilangan vazifani tuzating",
     "review.discard": "Hammasini bekor qilish",
     "review.discarded": "Bekor qilindi",
+    "review.discardAsk": "Bu ro‘yxat bekor qilinsinmi? Kiritgan o‘zgarishlaringiz saqlanmaydi.",
     "review.emptyTitle": "Vazifa topilmadi",
     "review.emptyBody": "Kim nima qilishi kerakligini biroz aniqroq ayting.",
 

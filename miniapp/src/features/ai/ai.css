@@ -146,6 +146,12 @@ button.ai-rec-mic:active {
   text-align: center;
 }
 
+/* A live region keeps its own box (some readers drop roles on display: contents). */
+.ai-rec-said {
+  display: flex;
+  justify-content: center;
+}
+
 .ai-rec-live {
   display: inline-flex;
   align-items: center;

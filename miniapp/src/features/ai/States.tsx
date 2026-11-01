@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { can } from "../../api/permissions";
 import { useFeatureT } from "../../i18n/feature";
 import { useMember } from "../../state/session";
+import { Button } from "../../ui/Button";
 import { renderIcon, type IconLike } from "../../ui/icon";
 import { cx } from "../../ui/cx";
 import { messages } from "./messages";
@@ -84,8 +85,16 @@ export function Working({ phase, voice = true, heard }: { phase: WorkingPhase; v
 }
 
 /** AI is off for this company: owners are told where to turn it on, others whom to ask. */
-export function AIOff() {
+export function AIOff({ onClose }: { onClose?: () => void }) {
   const t = useFeatureT(messages);
   const member = useMember();
-  return <StateView icon={Sparkles} tone="sage" title={t("off.title")} body={t(can(member, "ai.configure") ? "off.owner" : "off.member")} />;
+  return (
+    <StateView icon={Sparkles} tone="sage" title={t("off.title")} body={t(can(member, "ai.configure") ? "off.owner" : "off.member")}>
+      {onClose && (
+        <Button variant="secondary" size="lg" onClick={onClose}>
+          {t("common.close")}
+        </Button>
+      )}
+    </StateView>
+  );
 }

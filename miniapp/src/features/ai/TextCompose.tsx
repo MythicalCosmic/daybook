@@ -19,11 +19,13 @@ export function TextCompose({
   initial,
   send = false,
   onSent,
+  onClose,
 }: {
   initial: string;
   /** Send `initial` at once (the (+) sheet's sparkle with a title typed): the box shows only on a refusal. */
   send?: boolean;
   onSent: (draft: AIDraft) => void;
+  onClose: () => void;
 }) {
   const t = useFeatureT(messages);
   const member = useMember();
@@ -48,7 +50,7 @@ export function TextCompose({
   }, []);
 
   const refusal = create.isError ? refusalOf(create.error) : null;
-  if (refusal === "ai_off") return <AIOff />;
+  if (refusal === "ai_off") return <AIOff onClose={onClose} />;
   // Sending what was typed: the box only comes back when the server says no.
   if (send && initial.trim() && !create.isError) return <Working phase="sending" voice={false} />;
 

@@ -562,6 +562,29 @@ describe("recorder", () => {
     expect(await screen.findByLabelText("Who should do what?")).toBeTruthy();
   });
 
+  it("sends the same note again after the signal drops, without asking to speak again", async () => {
+    fakeMicrophone();
+    let online = false;
+    server.handler = (path, method) => {
+      if (path.endsWith("/ai/status/")) return STATUS;
+      if (path.endsWith("/task-drafts/") && method === "POST") return online ? draft({ status: "queued", transcript: "", drafts: [] }) : new TypeError("Failed to fetch");
+      if (path.endsWith("/task-drafts/41/")) return draft({ status: "transcribing", transcript: "", drafts: [] });
+      return undefined;
+    };
+    renderApp(null, { me: person([giver()]), init: { sheet: { kind: "feature", feature: "ai", sheet: "draft", params: { mode: "voice" } } } });
+    expect(await screen.findByText("Listening to you")).toBeTruthy();
+    vi.spyOn(performance, "now").mockReturnValue(performance.now() + 4000);
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    expect(await screen.findByText("Couldn’t send the recording")).toBeTruthy();
+    online = true;
+    fireEvent.click(screen.getByRole("button", { name: "Send again" }));
+    expect(await screen.findByText("Listening…")).toBeTruthy();
+    const posts = server.calls.filter((call) => call.path.endsWith("/task-drafts/") && call.method === "POST");
+    expect(posts).toHaveLength(2);
+    const [first, again] = posts.map((call) => call.form?.get("audio") as File);
+    expect([again!.name, again!.size, again!.type]).toEqual([first!.name, first!.size, first!.type]);
+  });
+
   it("uploads the voice note as multipart with its length and language", async () => {
     fakeMicrophone();
     server.handler = (path, method) => {

@@ -48,13 +48,14 @@ export function VoiceCompose({
 
   // Stopped with a recording: send it, once per recording.
   const recording = recorder.recording;
+  const send = () => {
+    if (!recording) return;
+    create.mutate({ voice: { blob: recording.blob, seconds: recording.seconds, fileName: recording.fileName, language: lang } }, { onSuccess: onSent });
+  };
   useEffect(() => {
     if (!recording || sentFor.current === recording.blob) return;
     sentFor.current = recording.blob;
-    create.mutate(
-      { voice: { blob: recording.blob, seconds: recording.seconds, fileName: recording.fileName, language: lang } },
-      { onSuccess: onSent },
-    );
+    send();
   }, [recording]);
 
   if (recorder.phase === "denied" || recorder.phase === "unsupported" || recorder.phase === "failed") {
@@ -67,20 +68,27 @@ export function VoiceCompose({
 
   if (create.isError) {
     const refusal = refusalOf(create.error);
-    if (refusal === "ai_off") return <AIOff />;
+    if (refusal === "ai_off") return <AIOff onClose={onCancel} />;
     const limit = refusal === "limit_reached";
+    // Lost on the way (no signal, a server hiccup): the same note goes again, nobody repeats themselves.
+    const lost = !refusal && recording !== null;
     return (
-      <StateView icon={MicOff} tone="warn" title={t("failed.title")} body={refusal ? t(`refusal.${refusal}`) : errorText(create.error, t)}>
+      <StateView icon={MicOff} tone="warn" title={t(lost ? "send.failedTitle" : "failed.title")} body={refusal ? t(`refusal.${refusal}`) : errorText(create.error, t)}>
         {limit ? (
           <Button variant="primary" size="lg" onClick={onCancel}>
             {t("common.close")}
           </Button>
         ) : (
           <>
+            {lost && (
+              <Button variant="primary" size="lg" icon={RotateCw} onClick={send}>
+                {t("send.again")}
+              </Button>
+            )}
             <Button
-              variant="primary"
+              variant={lost ? "secondary" : "primary"}
               size="lg"
-              icon={RotateCw}
+              icon={Mic}
               onClick={() => {
                 create.reset();
                 void recorder.start();
@@ -134,19 +142,24 @@ function Listening({ recorder, max, onCancel }: { recorder: Recorder; max: numbe
         )}
       </div>
 
-      <div className="ai-rec-status" role="status" aria-live="polite">
-        {starting ? (
-          <span className="ai-rec-hint">{t("rec.starting")}</span>
-        ) : recorder.phase === "idle" && recorder.tooShort ? (
-          <span className="ai-rec-hint ai-rec-hint--warn">{t("rec.tooShort")}</span>
-        ) : (
-          <>
+      {/* The words are announced; the clock is a timer, read only when someone asks for it. */}
+      <div className="ai-rec-status">
+        <span role="status" className="ai-rec-said">
+          {starting ? (
+            <span className="ai-rec-hint">{t("rec.starting")}</span>
+          ) : recorder.phase === "idle" && recorder.tooShort ? (
+            <span className="ai-rec-hint ai-rec-hint--warn">{t("rec.tooShort")}</span>
+          ) : (
             <span className="ai-rec-live">
               <span className="ai-rec-dot" aria-hidden />
               {t("rec.listening")}
             </span>
-            <span className="ai-rec-clock num">{formatClock(recorder.seconds)}</span>
-          </>
+          )}
+        </span>
+        {!starting && !(recorder.phase === "idle" && recorder.tooShort) && (
+          <span className="ai-rec-clock num" role="timer">
+            {formatClock(recorder.seconds)}
+          </span>
         )}
       </div>
 

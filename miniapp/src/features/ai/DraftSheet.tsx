@@ -69,12 +69,12 @@ export function DraftSheet({ params, close }: SheetProps) {
     );
   }
   if (status.isError && !isMissingEndpoint(status.error)) return <LoadError compact error={status.error} onRetry={() => void status.refetch()} />;
-  if (!entry.any || !status.data) return <AIOff />;
+  if (!entry.any || !status.data) return <AIOff onClose={close} />;
 
   if ((mode === "voice" && entry.voice) || !entry.text) {
     return <VoiceCompose status={status.data} onSent={sent} onType={entry.text ? () => setMode("text") : null} onCancel={close} />;
   }
-  return <TextCompose initial={typeof params.text === "string" ? params.text : ""} send={params.send === 1} onSent={sent} />;
+  return <TextCompose initial={typeof params.text === "string" ? params.text : ""} send={params.send === 1} onSent={sent} onClose={close} />;
 }
 
 function DraftView({
