@@ -609,10 +609,17 @@ button.ai-rec-mic:active {
   background: var(--color-bg);
 }
 
+/* A value nobody picks here ("Me" for someone who doesn't give work): the pill, without a chevron. */
 .ai-row-value {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 0;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-bg) 55%, transparent);
   font-size: 15px;
   font-weight: 700;
-  min-width: 0;
 }
 
 .ai-row-button {
