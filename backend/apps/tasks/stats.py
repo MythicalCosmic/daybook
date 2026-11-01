@@ -1,6 +1,8 @@
 from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
+from django.db.models import Count, F, Q
+from django.db.models.functions import TruncDate
 from django.utils import timezone
 
 from apps.members.models import Membership
@@ -15,38 +17,42 @@ FINISHED = (Task.Status.DONE, Task.Status.REVIEW)
 # A streak counts shared work: routine work and tasks given by hand (project cards are given
 # tasks too). Personal tasks never count (docs/PLAN-OWNER.md §3.16).
 STREAK_KINDS = (Task.Kind.DAILY, Task.Kind.ASSIGNED)
+# Finished by its deadline: done or waiting for a check, no later than it was due.
+ON_TIME = Q(status__in=FINISHED, completed_at__lte=F("due_at"))
 
 
 def summary(member: Membership, now: datetime) -> dict:
     """The numbers on the mini app's home screen."""
     tz = ZoneInfo(member.company.timezone)
-    start, end = _day_bounds(timezone.localtime(now, tz).date(), tz)
-    mine = Task.objects.filter(assignee=member).exclude(status=Task.Status.CANCELLED)
-    todays = list(mine.filter(due_at__gte=start, due_at__lt=end).values_list("status", flat=True))
-    days = _day_results(member, now, lookback=STREAK_LOOKBACK_DAYS)
     today = timezone.localtime(now, tz).date()
-    month_start, _ = _day_bounds(today.replace(day=1), tz)
-    month = mine.filter(completed_at__gte=month_start, status__in=FINISHED)
-    # Only deadlines already behind us count: a task due tonight isn't late yet.
-    dated = list(
-        mine.filter(due_at__gte=month_start, due_at__lt=now).values_list(
-            "status", "completed_at", "due_at"
+    start, end = _day_bounds(today, tz)
+    month_start, _end = _day_bounds(today.replace(day=1), tz)
+    # Only deadlines already behind us count for the month: a task due tonight isn't late yet.
+    this_month = Q(due_at__gte=month_start, due_at__lt=now)
+    today_due = Q(due_at__gte=start, due_at__lt=end)
+    counts = (
+        Task.objects.filter(assignee=member)
+        .exclude(status=Task.Status.CANCELLED)
+        .aggregate(
+            today_total=Count("pk", filter=today_due),
+            today_done=Count("pk", filter=today_due & Q(status__in=FINISHED)),
+            late=Count("pk", filter=Q(status__in=Task.OPEN_STATUSES, due_at__lt=now)),
+            month_done=Count("pk", filter=Q(completed_at__gte=month_start, status__in=FINISHED)),
+            month_dated=Count("pk", filter=this_month),
+            month_on_time=Count("pk", filter=this_month & ON_TIME),
         )
     )
-    finished_dated = [row for row in dated if row[0] in FINISHED]
+    days = _day_results(member, now, lookback=STREAK_LOOKBACK_DAYS)
+    dated = counts["month_dated"]
     policy = default_policy(member.company_id)
     return {
-        "today_total": len(todays),
-        "today_done": sum(status in FINISHED for status in todays),
-        "late": mine.filter(status__in=Task.OPEN_STATUSES, due_at__lt=now).count(),
+        "today_total": counts["today_total"],
+        "today_done": counts["today_done"],
+        "late": counts["late"],
         "streak_days": _streak(days, today),
         "week": _week(days, today),
-        "month_done": month.count(),
-        "month_on_time_percent": (
-            round(100 * sum(_in_time(done, due) for _, done, due in finished_dated) / len(dated))
-            if dated
-            else None
-        ),
+        "month_done": counts["month_done"],
+        "month_on_time_percent": round(100 * counts["month_on_time"] / dated) if dated else None,
         "quiet_from": policy.quiet_from,
         "quiet_until": policy.quiet_until,
         "unread_activity": Activity.objects.filter(recipient=member, read_at__isnull=True).count(),
@@ -69,24 +75,24 @@ def streak(member: Membership, now: datetime) -> int:
 
 
 def _day_results(member: Membership, now: datetime, lookback: int) -> dict[date, bool]:
-    """For each day `member` had shared work due: whether all of it was finished on time."""
+    """For each day `member` had shared work due: whether all of it was finished on time.
+    Postgres sums the days up: a year of routines is thousands of tasks but at most 366 days."""
     tz = ZoneInfo(member.company.timezone)
     today = timezone.localtime(now, tz).date()
-    since, _ = _day_bounds(today - timedelta(days=lookback), tz)
-    _, until = _day_bounds(today, tz)
-    tasks = (
+    since, _end = _day_bounds(today - timedelta(days=lookback), tz)
+    _start, until = _day_bounds(today, tz)
+    per_day = (
         Task.objects.filter(
             assignee=member, kind__in=STREAK_KINDS, due_at__gte=since, due_at__lt=until
         )
         .exclude(status=Task.Status.CANCELLED)
-        .values_list("due_at", "status", "completed_at")
+        .annotate(day=TruncDate("due_at", tzinfo=tz))
+        .order_by()
+        .values("day")
+        .annotate(total=Count("pk"), on_time=Count("pk", filter=ON_TIME))
+        .values_list("day", "total", "on_time")
     )
-    days: dict[date, bool] = {}
-    for due_at, status, completed_at in tasks:
-        day = timezone.localtime(due_at, tz).date()
-        on_time = status in FINISHED and completed_at is not None and completed_at <= due_at
-        days[day] = days.get(day, True) and on_time
-    return days
+    return {day: total == on_time for day, total, on_time in per_day}
 
 
 def _streak(days: dict[date, bool], today: date) -> int:
@@ -111,10 +117,6 @@ def _week(days: dict[date, bool], today: date) -> list[dict]:
             state = "done" if days[day] else "missed"
         week.append({"date": day, "state": state})
     return week
-
-
-def _in_time(completed_at: datetime | None, due_at: datetime) -> bool:
-    return completed_at is not None and completed_at <= due_at
 
 
 def _day_bounds(day: date, tz: ZoneInfo) -> tuple[datetime, datetime]:

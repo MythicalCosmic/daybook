@@ -41,21 +41,31 @@ def board(tasks: QuerySet[Task], now: datetime, company) -> list[dict]:
     filtered queryset; each capped at `BOARD_LIMIT`, with its full count. Done shows the last
     7 days, newest first; the others by deadline."""
     done_since = now - timedelta(days=7)
-    columns = []
-    for column in rules.Column:
-        cards = tasks.filter(status=column.value)
+    wheres = {column: Q(status=column.value) for column in rules.Column}
+    wheres[rules.Column.DONE] &= Q(completed_at__gte=done_since)
+    # One count for every column, the ids of each column's first cards, then the cards of all
+    # five columns with one set of relation queries (not five).
+    counts = tasks.order_by().aggregate(
+        **{column.value: Count("pk", filter=where) for column, where in wheres.items()}
+    )
+    ids = {}
+    for column, where in wheres.items():
         if column == rules.Column.DONE:
-            cards = cards.filter(completed_at__gte=done_since).order_by("-completed_at", "-pk")
+            order = ("-completed_at", "-pk")
         else:
-            cards = cards.order_by(F("due_at").asc(nulls_last=True), "pk")
-        columns.append(
-            {
-                "id": column.value,
-                "count": cards.count(),
-                "items": list(with_rows(cards)[:BOARD_LIMIT]),
-            }
-        )
-    return columns
+            order = (F("due_at").asc(nulls_last=True), "pk")
+        cards = tasks.filter(where).order_by(*order).values_list("pk", flat=True)
+        ids[column] = list(cards[:BOARD_LIMIT])
+    every = [pk for column_ids in ids.values() for pk in column_ids]
+    loaded = {task.pk: task for task in with_rows(tasks.filter(pk__in=every))} if every else {}
+    return [
+        {
+            "id": column.value,
+            "count": counts[column.value],
+            "items": [loaded[pk] for pk in ids[column] if pk in loaded],
+        }
+        for column in rules.Column
+    ]
 
 
 # Calendar ----------------------------------------------------------------------------------
