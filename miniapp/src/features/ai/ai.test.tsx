@@ -441,9 +441,22 @@ describe("smart add", () => {
       if (path.endsWith("/task-drafts/41/")) return draft({ status: "applied", audio: null, created_tasks: [{ id: 501, title: "Muzlatgich haroratini tekshirish", assignee_name: "Alisher Valiyev" }] });
       return undefined;
     };
-    const first = renderApp(null, { me: person([giver()]), init: { sheet: { kind: "feature", feature: "ai", sheet: "draft", params: { mode: "text", text: "Alisher muzlatgichni tekshirsin", send: 1 } } } });
+    const refreshed: string[] = [];
+    const first = renderApp(null, {
+      me: person([giver()]),
+      init: { sheet: { kind: "feature", feature: "ai", sheet: "draft", params: { mode: "text", text: "Alisher muzlatgichni tekshirsin", send: 1 } } },
+      seed: (client) => {
+        const invalidate = client.invalidateQueries.bind(client);
+        client.invalidateQueries = ((filters, options) => {
+          refreshed.push(JSON.stringify(filters?.queryKey));
+          return invalidate(filters, options);
+        }) as typeof client.invalidateQueries;
+      },
+    });
     expect(await screen.findByText("1 task created", {}, { timeout: 3000 })).toBeTruthy();
     expect(screen.getByText(/Everything was clear, so they were created right away\./)).toBeTruthy();
+    // The server made the tasks: Home's numbers, the lists and My team show them without a reload.
+    expect(refreshed).toEqual(expect.arrayContaining(['["tasks",1]', '["summary",1]', '["myTeam",1]']));
     first.unmount();
     // The same draft opened from the bot (applied there, maybe by a tap): no claim about how.
     renderApp(null, { me: person([giver()]), init: { sheet: { kind: "feature", feature: "ai", sheet: "draft", params: { id: 41 } } } });
