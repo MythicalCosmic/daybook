@@ -234,6 +234,23 @@ describe("CardDrawer", () => {
   });
 });
 
+describe("ProjectsPage KPI strip", () => {
+  it("says the summary failed and offers Try again", async () => {
+    stubApi({
+      "GET projects/": () => json({ count: 0, next: null, previous: null, results: [] }),
+      "GET projects/summary/": () => json({ detail: "Server error." }, 500),
+      "GET projects/people/": () => json([]),
+      "GET projects/options/": () => json({ branches: [], clients: [], currency: "UZS", can_create: true }),
+    });
+    const app = await testApp("/c/1/projects");
+    const { wrapper } = mountWithProviders(ProjectsPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect([...document.body.querySelectorAll("button")].some((b) => b.textContent?.trim() === "Try again")).toBe(true);
+    wrapper.unmount();
+  });
+});
+
 describe("ProjectsPage ?new=1", () => {
   it("doesn't open the new project form for someone who can't create one", async () => {
     stubApi({

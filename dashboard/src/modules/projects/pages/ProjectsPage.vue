@@ -154,7 +154,8 @@ function open(row: ProjectItem): void {
       </template>
     </PageHeader>
 
-    <KpiStrip :items="kpis" :loading="summary.isPending.value" class="mb-5 max-md:hidden" />
+    <ErrorState v-if="summary.isError.value" compact class="mb-5" :error="summary.error.value" :retry="() => summary.refetch()" />
+    <KpiStrip v-else :items="kpis" :loading="summary.isPending.value" class="mb-5 max-md:hidden" />
     <div v-if="summary.data.value" class="no-scrollbar -mx-4 mb-4 flex gap-2 overflow-x-auto px-4 md:hidden" role="list" :aria-label="t('projects.title')">
       <span v-for="item in kpis" :key="item.id" role="listitem" class="flex shrink-0 flex-col rounded-[12px] border border-line bg-surface px-3 py-2">
         <span class="text-[11px] font-medium text-muted">{{ item.label }}</span>
