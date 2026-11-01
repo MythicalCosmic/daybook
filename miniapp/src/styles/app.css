@@ -1268,6 +1268,42 @@ textarea.plus-title {
   animation: enter 340ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+/* The proof photo on the task, cropped to the page; a tap opens all of it (.photo-full). */
+.proof-photo {
+  display: block;
+  flex: none;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.proof-photo img {
+  display: block;
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+}
+
+.photo-full {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.photo-full img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+}
+
 .detail-line {
   display: flex;
   justify-content: space-between;

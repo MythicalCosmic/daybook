@@ -74,6 +74,13 @@ describe("style sheets", () => {
     expect(px(".ui-stepper--sm .ui-stepper-input", "height")).toBeGreaterThanOrEqual(40);
   });
 
+  it("put the till's Open shift button under its words on a phone, not beside them", () => {
+    // Beside them, Russian read "Касса / закрыта" and "Пересчита…" on a 390 px phone.
+    expect(declarationsOf(".kassa-hero--closed")).toMatch(/container-type:\s*inline-size/);
+    const narrow = all.find((rule) => rule.selector === ".kassa-hero-cta" && rule.within.some((at) => at.startsWith("@container")));
+    expect(narrow?.declarations).toMatch(/grid-column:\s*2 \/ -1/);
+  });
+
   it("keep the offline pill on one line and the screens clear of it", () => {
     const pill = declarationsOf(".offline-banner");
     // Placed at left: 50%, the box could only grow to half the screen: the sentence broke in two.

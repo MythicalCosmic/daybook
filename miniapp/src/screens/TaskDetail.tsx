@@ -334,8 +334,11 @@ function Detail({ task, comments, ctx }: { task: Task; comments: Comment[]; ctx:
             <p style={{ margin: 0, fontSize: 16, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{task.proof_text}</p>
           </div>
         )}
+        {/* Cropped to fit the page: a tap shows the whole photo (a fridge's thermometer may be at its edge). */}
         {task.proof_photo && (
-          <img src={task.proof_photo} alt="" style={{ width: "100%", borderRadius: "var(--radius-lg)", objectFit: "cover", maxHeight: 320 }} />
+          <button type="button" className="proof-photo" aria-label={t("myTeam.photo")} onClick={() => navigation.openSheet({ kind: "photo", src: task.proof_photo! })}>
+            <img src={task.proof_photo} alt="" decoding="async" />
+          </button>
         )}
 
         <div className="card" style={{ padding: "6px 20px", gap: 0 }}>

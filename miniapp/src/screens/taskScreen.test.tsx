@@ -148,6 +148,17 @@ describe("what the task screen shows", () => {
     await waitFor(() => expect(fetchedFeed()).toBe(true));
   });
 
+  it("opens the whole proof photo from the task, cropped there, and a tap closes it", () => {
+    show(makeTask({ status: "review", actions: ["confirm", "return"], proof_photo: "/media/proof/42.jpg" }), { me: manager() });
+    fireEvent.click(screen.getByRole("button", { name: "Proof photo" }));
+    expect(navigationState().sheet).toEqual({ kind: "photo", src: "/media/proof/42.jpg" });
+    const viewer = screen.getByRole("dialog", { name: "Proof photo" });
+    expect(within(viewer).getByRole("img", { name: "Proof photo" }).getAttribute("src")).toBe("/media/proof/42.jpg");
+    // The photo itself closes it, as the round Close does where Telegram draws no Back.
+    fireEvent.click(viewer.querySelector(".photo-full")!);
+    expect(navigationState().sheet).toBeNull();
+  });
+
   it("tells the giver whether the worker has opened it", () => {
     show(makeTask({ seen_at: "2026-10-21T09:12:00+05:00", actions: ["edit", "cancel"] }), { me: manager() });
     expect(screen.getByText("Seen 09:12")).toBeTruthy();
