@@ -136,6 +136,25 @@ describe("status → ways in", () => {
     expect(navigationState().sheet).toEqual({ kind: "feature", feature: "ai", sheet: "draft", params: { mode: "voice" } });
   });
 
+  it("fetches the sheet's code while idle once a way in shows, so the first tap shows no placeholder", async () => {
+    const { DraftSheetScreen } = await import("./sheet");
+    const preload = vi.spyOn(DraftSheetScreen, "preload");
+    try {
+      const worker = membership();
+      const first = renderApp(<DictateCard member={{ ...worker, timeZone: TZ, companyId: 1 }} summary={undefined} />, { me: person([worker]) });
+      await waitFor(() => expect(server.calls.some((call) => call.path.endsWith("/ai/status/"))).toBe(true));
+      await new Promise((resolve) => setTimeout(resolve, 700));
+      // No Home card for someone who doesn't give work: nothing fetched for it.
+      expect(preload).not.toHaveBeenCalled();
+      first.unmount();
+      renderApp(<DictateCard member={{ ...giver(), timeZone: TZ, companyId: 1 }} summary={undefined} />, { me: person([giver()]) });
+      expect(await screen.findByText("Give tasks by voice")).toBeTruthy();
+      await waitFor(() => expect(preload).toHaveBeenCalled(), { timeout: 2000 });
+    } finally {
+      preload.mockRestore();
+    }
+  });
+
   it("offers typing on Home when only smart text works", async () => {
     server.handler = (path) => (path.endsWith("/ai/status/") ? { ...STATUS, voice: false } : undefined);
     renderApp(<DictateCard member={{ ...giver(), timeZone: TZ, companyId: 1 }} summary={undefined} />, { me: person([giver()]) });

@@ -1,8 +1,10 @@
 import { Mic, Sparkles } from "lucide-react";
+import { useEffect } from "react";
 
 import { givesWork } from "../../api/permissions";
 import { useI18n } from "../../i18n";
 import { useFeatureT } from "../../i18n/feature";
+import { whenIdle } from "../../lib/lazy";
 import { closeUnlessDraft } from "../../lib/useDraftGuard";
 import { useNavigation } from "../../state/navigation";
 import { haptic } from "../../telegram";
@@ -11,6 +13,7 @@ import { cx } from "../../ui/cx";
 import type { PlusTitleProps, SlotProps } from "../registry";
 import { entryOf, useAIStatus } from "./api";
 import { messages } from "./messages";
+import { DraftSheetScreen } from "./sheet";
 import "./ai.css";
 
 type Open = ReturnType<typeof useOpenDraft>;
@@ -23,6 +26,11 @@ export function useOpenDraft() {
     // Typed text goes straight to the AI (the sheet sends it as it opens); without, the box opens.
     navigation.openSheet({ kind: "feature", feature: "ai", sheet: "draft", params: text ? { mode, text, send: 1 } : { mode } });
   };
+}
+
+/** Once a way in shows, the sheet's code is fetched while the browser is idle. */
+function usePreloadSheet(shown: boolean) {
+  useEffect(() => (shown ? whenIdle(() => void DraftSheetScreen.preload()) : undefined), [shown]);
 }
 
 /** Whether the (+) sheet's "Dictate tasks" shows: the company's voice notes work right now. */
@@ -39,7 +47,9 @@ export function DictateCard({ member }: SlotProps) {
   const status = useAIStatus(member.companyId);
   const open = useOpenDraft();
   const entry = entryOf(status.data);
-  if (!entry.any || !givesWork(member)) return null;
+  const shown = entry.any && givesWork(member);
+  usePreloadSheet(shown);
+  if (!shown) return null;
   return (
     <CardButton tone="outline" layout="row" className="ai-home fade-in" onClick={() => open(entry.voice ? "voice" : "text")}>
       <span className="ai-home-text">
@@ -68,6 +78,7 @@ export function PlusTitleTools({ member, text }: PlusTitleProps) {
   const status = useAIStatus(member.companyId);
   const open: Open = useOpenDraft();
   const entry = entryOf(status.data);
+  usePreloadSheet(entry.any);
   if (!entry.any) return null;
   const typed = text.trim();
   return (
