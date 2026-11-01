@@ -73,8 +73,8 @@ watch(
 const keepReference = (item: Item) => item;
 
 /** The card objects the page gave, not the board's reactive copies. */
-function plain(move: KanbanMove<Item>): KanbanMove<Item> {
-  return { ...move, item: toRaw(move.item), before: move.before && toRaw(move.before), after: move.after && toRaw(move.after) };
+function plain(move: Omit<KanbanMove<Item>, "revert">): KanbanMove<Item> {
+  return { ...move, item: toRaw(move.item), before: move.before && toRaw(move.before), after: move.after && toRaw(move.after), revert: sync };
 }
 
 function allowed(item: Item, from: string, to: string): boolean {
@@ -224,11 +224,11 @@ function wipTone(column: KanbanColumn): "over" | "at" | null {
         :key="column.id"
         :aria-label="column.title"
         :class="[
-          'flex h-full shrink-0 snap-start flex-col rounded-[12px] bg-surface-2/60 transition-[opacity,box-shadow] duration-150 max-md:w-[85vw] dark:bg-surface-2/70',
+          'flex h-full shrink-0 snap-start flex-col rounded-[12px] bg-surface-2/60 transition-[opacity,box-shadow] duration-150 max-md:w-[85vw] md:w-[var(--column-w)] dark:bg-surface-2/70',
           blocked.has(column.id) && 'opacity-45',
           (dragging || lifted) && !blocked.has(column.id) && 'shadow-[inset_0_0_0_1px_var(--c-border-strong)]',
         ]"
-        :style="{ width: `${columnWidth}px` }"
+        :style="{ '--column-w': `${columnWidth}px` }"
       >
         <header class="flex shrink-0 items-center gap-2 px-3 pb-2 pt-3">
           <slot name="column-header" :column="column" :count="lists[column.id]?.length ?? 0">
