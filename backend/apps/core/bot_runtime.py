@@ -32,7 +32,7 @@ from aiogram import Dispatcher
 from aiogram.client.default import Default
 from aiogram.client.session.middlewares.base import BaseRequestMiddleware
 from aiogram.enums import ChatType
-from aiogram.exceptions import TelegramAPIError, TelegramRetryAfter
+from aiogram.exceptions import TelegramAPIError, TelegramBadRequest, TelegramRetryAfter
 from aiogram.methods import (
     EditMessageCaption,
     EditMessageText,
@@ -41,7 +41,7 @@ from aiogram.methods import (
     SendPhoto,
     SendVideo,
 )
-from aiogram.types import ErrorEvent, Update
+from aiogram.types import ErrorEvent, InaccessibleMessage, Update
 from asgiref.sync import SyncToAsync, ThreadSensitiveContext
 from django.conf import settings
 from django.db import close_old_connections, connections
@@ -201,13 +201,47 @@ def _fit(text: str, limit: int, parse_mode) -> str:
     return text if len(text) <= limit else text[: limit - len(ELLIPSIS)] + ELLIPSIS
 
 
+# What Telegram answers about a message the bot can no longer edit or delete.
+GONE_MESSAGE_ERRORS = (
+    "message to edit not found",
+    "message to delete not found",
+    "message can't be edited",
+    "message can't be deleted",
+    "message_id_invalid",
+)
+
+
+def tapped_a_gone_message(event: ErrorEvent) -> bool:
+    """A button under a message that is gone or too old: Telegram sends an InaccessibleMessage
+    (no edit_text/delete, so the handler raised), or refused the edit. Not a bug, so a toast
+    that says what to do, not "Something went wrong"."""
+    query = event.update.callback_query
+    if query is None:
+        return False
+    if query.message is None or isinstance(query.message, InaccessibleMessage):
+        return True
+    error = event.exception
+    return isinstance(error, TelegramBadRequest) and any(
+        words in str(error).lower() for words in GONE_MESSAGE_ERRORS
+    )
+
+
 async def on_error(event: ErrorEvent, user: User | None = None) -> bool:
     """When a handler fails, in either bot (research R1 F1): every button tap still gets an
     answer, so no spinner runs forever, and every private message a reply. The failure is
-    logged with its traceback."""
-    logger.error("Update %s failed", event.update.update_id, exc_info=event.exception)
+    logged with its traceback; a tap on a message that is too old is only noted."""
+    gone = tapped_a_gone_message(event)
+    if gone:
+        logger.info(
+            "Update %s tapped a message out of reach: %r", event.update.update_id, event.exception
+        )
+    else:
+        logger.error("Update %s failed", event.update.update_id, exc_info=event.exception)
     with translation.override(user.language if user is not None else "uz"):
-        text = _("Something went wrong. Please try again in a moment.")
+        if gone:
+            text = _("This message is too old. Open it again from the menu.")
+        else:
+            text = _("Something went wrong. Please try again in a moment.")
     update = event.update
     with contextlib.suppress(TelegramAPIError):
         if update.callback_query is not None:

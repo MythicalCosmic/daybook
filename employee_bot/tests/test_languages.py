@@ -202,3 +202,31 @@ async def test_someone_waiting_for_approval_can_change_the_language(dp, bot, com
     user = await sync_to_async(User.objects.get)(pk=waiting.user_id)
     assert user.language == "uz"
     assert sent(bot)  # their status, in Uzbek
+
+
+async def test_a_tap_on_a_message_out_of_reach_says_so(dp, bot):
+    """Telegram sends an InaccessibleMessage for a deleted or too old message: the handler
+    can't edit it, and the person was told "Something went wrong"."""
+    from aiogram.methods import AnswerCallbackQuery
+    from aiogram.types import InaccessibleMessage
+
+    person = updates.tg_user(9_005)
+    await dp.feed_update(bot, updates.message(person, "/start"))
+    update = Update(
+        update_id=next(_ids),
+        callback_query=CallbackQuery(
+            id=str(next(_ids)),
+            from_user=person,
+            chat_instance="test",
+            data=LangCallback(code="ru", mode="welcome").pack(),
+            message=InaccessibleMessage(
+                chat=Chat(id=person.id, type="private"), message_id=next(_ids)
+            ),
+        ),
+    )
+
+    await dp.feed_update(bot, update)
+
+    [answer] = [r for r in bot.requests if isinstance(r, AnswerCallbackQuery)][-1:]
+    assert answer.text == said("uz", "This message is too old. Open it again from the menu.")
+    assert answer.text != said("uz", "Something went wrong. Please try again in a moment.")
