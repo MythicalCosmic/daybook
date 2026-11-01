@@ -60,6 +60,21 @@ export const CATALOG: readonly CatalogEntry[] = [
       { id: "photos", to: "tasks/photos", perm: "tasks.view_all" },
     ],
   },
+  // AI right after Tasks (v0.2): its agents do task work. Not behind the "ai" switch, since turning
+  // AI on is what adds it (the Agents page offers that to owners).
+  {
+    id: "ai",
+    group: "work",
+    order: 15,
+    pkg: "K",
+    perm: "dashboard.access",
+    pages: [
+      { id: "agents", to: "ai" },
+      { id: "activity", to: "ai/activity" },
+      { id: "voice", to: "ai/voice" },
+      { id: "ask", to: "ai/ask", perm: "ai.use" },
+    ],
+  },
   {
     id: "projects",
     group: "work",
@@ -286,7 +301,6 @@ export const CATALOG: readonly CatalogEntry[] = [
       { id: "briefings", to: "briefings" },
     ],
   },
-  { id: "ai", group: "insights", order: 30, pkg: "K", perm: "ai.use", feature: "ai", pages: [{ id: "assistant", to: "ai" }] },
 
   // Company
   { id: "settings", group: "company", order: 10, pkg: "A", hotkey: ",", pages: [{ id: "panels", to: "settings" }] },
