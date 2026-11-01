@@ -673,7 +673,7 @@ describe("PaymentDialog", () => {
     const debt = { id: 9, direction: "payable", currency: "UZS", outstanding: "1200000.00", branch: { id: 1, name: "Chilonzor", code: "CHL" }, party: { id: 2, name: "Grand Pharm" }, issued_on: "2026-10-01" };
     const Host = defineComponent({
       props: { open: Boolean },
-      setup: (props) => () => h(PaymentDialog, { open: props.open, debt }),
+      setup: (props) => () => h(PaymentDialog, { open: props.open, debt } as never),
     });
     const wrapper = mount(Host, { props: { open: true }, global: { plugins: app.plugins }, attachTo: document.body });
     await flushPromises();
@@ -702,7 +702,7 @@ describe("CounterpartyFormDialog", () => {
     const tags = wrapper.findComponent(MultiSelect);
     tags.vm.$emit("create", "ulgurji");
     await flushPromises();
-    expect(tags.props("modelValue")).toEqual(["dori", "ulgurji"]);
+    expect((tags.props() as { modelValue: string[] }).modelValue).toEqual(["dori", "ulgurji"]);
     expect(party.tags).toEqual(["dori"]);
     wrapper.unmount();
     document.body.innerHTML = "";

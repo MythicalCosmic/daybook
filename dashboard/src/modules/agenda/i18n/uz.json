@@ -88,7 +88,7 @@
   "agenda.dialog.untilAfterStart": "Birinchi kundan keyingi kunni tanlang",
   "agenda.drawer.title": "Tadbir",
   "agenda.drawer.when": "Qachon",
-  "agenda.drawer.until": "{day} gacha",
+  "agenda.drawer.until": "Tugashi: {day}",
   "agenda.drawer.reminder": "Eslatma: {when}",
   "agenda.drawer.yourAnswer": "Kelasizmi?",
   "agenda.drawer.answerGoing": "Kelaman",
