@@ -169,6 +169,51 @@ def test_an_hour_more(crew):
         services.give_an_hour(task.pk, by=crew["worker"])
 
 
+def test_an_hour_more_is_only_for_tasks_the_tapper_may_see(crew, company, member):
+    """The button's task id can be forged: someone who gives work in one branch must not move
+    the deadline of a task in another branch they can't even open."""
+    from apps.companies.models import Branch
+    from apps.core.exceptions import DomainError
+    from apps.members.models import AccessRole
+    from apps.members.permissions import Perm
+
+    here, there = (Branch.objects.create(company=company, name=name) for name in ("A", "B"))
+    AccessRole.objects.create(company=company, name="Branch lead", permissions=[Perm.TASKS_ASSIGN])
+    lead = member.registered(company, "Branch lead", home_branch=here)
+    lead.branches.add(here)
+    task = late_task(crew, branch=there)
+    due = task.due_at
+
+    with pytest.raises((DomainError, PermissionDenied)):
+        services.give_an_hour(task.pk, by=lead)
+
+    task.refresh_from_db()
+    assert task.due_at == due
+
+
+def test_a_head_who_cannot_change_the_task_gets_no_hour_button(
+    crew, company, member, sent_messages, django_capture_on_commit_callbacks
+):
+    """When the giver is gone the assignee's head hears; a head without the right to change
+    the task gets Open only, not a "+1 hour" that would answer "You can't change this task"."""
+    from apps.members.models import Department, Membership
+
+    head = member.registered(company, first_name="Dilnoza")  # a head, but an Employee's rights
+    head.user.telegram_id = 9_100_000
+    head.user.save(update_fields=["telegram_id"])
+    department = Department.objects.create(company=company, name="Chilonzor", head=head)
+    Membership.objects.filter(pk=crew["worker"].pk).update(department=department)
+    late_task(crew)
+    Membership.objects.filter(pk=crew["giver"].pk).update(status=Membership.Status.LEFT)
+
+    with django_capture_on_commit_callbacks(execute=True):
+        deadline_watcher.run(company, agents.state_of(company, deadline_watcher.KEY), local(12))
+
+    [message] = sent_messages
+    assert message["chat_id"] == head.user.telegram_id
+    assert "ail:hour:" not in str(message["reply_markup"])
+
+
 def test_the_morning_plan_says_the_teams_day(
     crew, sent_messages, django_capture_on_commit_callbacks
 ):

@@ -272,11 +272,12 @@ def update_agent(
 def give_an_hour(task_id: int, *, by: Membership):
     """The deadline watcher's "+1 hour": the late task's new deadline is an hour from now (on
     the next five minutes), through `tasks.services.update_task` (its rights, reminders and
-    notice to the assignee)."""
+    notice to the assignee). The id comes from a button and may be forged: only a task the
+    tapper may see is found."""
+    from apps.tasks import queries as task_queries
     from apps.tasks import services as task_services
-    from apps.tasks.models import Task
 
-    task = Task.objects.for_company(by.company).filter(pk=task_id).first()
+    task = task_queries.visible_tasks(by).filter(pk=task_id).first()
     if task is None:
         raise DomainError(_("This task is no longer here."))
     later = timezone.now() + timedelta(hours=1)
