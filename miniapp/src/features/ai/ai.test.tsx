@@ -179,6 +179,16 @@ describe("status → ways in", () => {
     expect(navigationState().sheet).toEqual({ kind: "feature", feature: "ai", sheet: "draft", params: { mode: "voice" } });
   });
 
+  it("puts the mic beside the (+) sheet's title, and it opens the recorder", async () => {
+    renderApp(null, { me: person([giver()]), init: { sheet: { kind: "add" } } });
+    const mics = await screen.findAllByRole("button", { name: "Dictate tasks" });
+    // The quick action and the title row's mic.
+    expect(mics).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "Smart add: several tasks in one text" })).toBeTruthy();
+    fireEvent.click(mics[1]!);
+    expect(navigationState().sheet).toEqual({ kind: "feature", feature: "ai", sheet: "draft", params: { mode: "voice" } });
+  });
+
   it("answers the bot's Edit in the app link with the review sheet", () => {
     expect(resolveScreen({ name: "drafts", arg: "41" }, features)).toEqual({
       tab: "home",
