@@ -186,6 +186,19 @@ describe("ExtensionSlot", () => {
   });
 });
 
+describe("KpiCard money tooltip", () => {
+  it("shows the full amount in the tile's own currency (a dollar tile's tooltip said so‘m)", () => {
+    const card = mount(KpiCard, {
+      props: { label: "Cash in USD", value: "1700.00", format: "money", compact: true, currency: "USD" },
+      global: { plugins: plugins() },
+    });
+    const title = card.find(".kpi-value").attributes("title") ?? "";
+    expect(title).toMatch(/\$|USD/);
+    expect(title).not.toMatch(/so‘m|UZS/);
+    card.unmount();
+  });
+});
+
 describe("KpiStrip", () => {
   const items = (n: number) => Array.from({ length: n }, (_, i) => ({ label: `K${i}`, value: i, hint: "hint" }));
   const strip = (props: Record<string, unknown>) => mount(KpiStrip, { props, global: { plugins: plugins() } }).find(".kpi-strip");

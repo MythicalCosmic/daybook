@@ -129,7 +129,7 @@ watch(files, async (list) => {
 
 async function removeReceipt(receiptId: number): Promise<void> {
   if (!row.value) return;
-  const answer = await confirm({ title: t("finance.tx.removeReceipt"), message: t("finance.tx.removeReceiptBody"), tone: "danger", confirmLabel: t("common.file.remove") });
+  const answer = await confirm({ title: t("finance.tx.removeReceipt"), message: t("finance.tx.removeReceiptBody"), tone: "danger", confirmLabel: t("common.delete") });
   if (!answer) return;
   await financeApi.removeReceipt(company.currentId ?? 0, row.value.id, receiptId);
   refresh();
@@ -367,7 +367,7 @@ const fieldLabels = computed(() => ({
                     class="absolute right-1 top-1 hidden rounded-full bg-surface/90 px-1.5 text-xs font-semibold text-danger shadow-xs group-hover:block focus:block pointer-coarse:block"
                     @click="removeReceipt(receipt.id)"
                   >
-                    {{ t("common.file.remove") }}
+                    {{ t("common.delete") }}
                   </button>
                 </li>
               </ul>

@@ -62,9 +62,12 @@ export const useSessionStore = defineStore("session", () => {
     me.value = null;
   }
 
+  /** Signs out here even when the server can't be reached: the caller goes on to the login page. */
   async function logout(): Promise<void> {
     try {
       await shellApi.logout();
+    } catch {
+      // The session ends in this tab either way; an error here stopped the redirect.
     } finally {
       endSession();
     }

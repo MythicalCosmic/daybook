@@ -65,7 +65,9 @@ function engine(options: MarkdownOptions): MarkdownIt {
   if (!options.allowImages) md.disable("image");
   const names = kindAlternation(kinds);
   // A bare reference stands alone: not part of a word, a path or a URL ("http://x/task:3" stays text).
-  const pattern = new RegExp(`(?<![\\w/:.-])(${names}):(\\d{1,12})(?![\\w:])`, "g");
+  // The character before it is matched, not looked behind: lookbehind is a SyntaxError on iOS
+  // before 16.4, which is still in Telegram on older iPhones.
+  const pattern = new RegExp(`(^|[^\\w/:.-])(${names}):(\\d{1,12})(?![\\w:])`, "g");
   const exact = new RegExp(`^(${names}):(\\d{1,12})$`);
 
   md.core.ruler.push("record_chips", (state) => {
@@ -84,13 +86,14 @@ function engine(options: MarkdownOptions): MarkdownIt {
         let last = 0;
         pattern.lastIndex = 0;
         for (let match = pattern.exec(text); match; match = pattern.exec(text)) {
-          if (match.index > last) {
+          const start = match.index + match[1]!.length;
+          if (start > last) {
             const piece = new state.Token("text", "", 0);
-            piece.content = text.slice(last, match.index);
+            piece.content = text.slice(last, start);
             out.push(piece);
           }
           const chip = new state.Token("record_chip", "", 0);
-          chip.meta = { kind: match[1], id: match[2] };
+          chip.meta = { kind: match[2], id: match[3] };
           out.push(chip);
           last = match.index + match[0].length;
         }
