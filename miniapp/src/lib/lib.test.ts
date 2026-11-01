@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Task, TimeOff } from "../api/types";
 import en from "../i18n/en";
-import { translate } from "../i18n";
+import { translate, translateFrom } from "../i18n";
 import ru from "../i18n/ru";
 import uz from "../i18n/uz";
 import { glyph, groupTasks, repeatLabel, rowMeta, rowRight, type ViewContext } from "./taskView";
@@ -186,7 +186,9 @@ describe("translations", () => {
   });
 
   it("fall back to English for anything missing", () => {
-    expect(translate("uz", "app.name")).toBe("Daybook");
+    // The chain the app uses: the language, then Uzbek, then English.
+    expect(translateFrom([{}, {}, { "x.brand": "Daybook" }], "uz", "x.brand")).toBe("Daybook");
+    expect(translateFrom([{ "x.brand": "Kundalik" }, {}, { "x.brand": "Daybook" }], "uz", "x.brand")).toBe("Kundalik");
   });
 });
 

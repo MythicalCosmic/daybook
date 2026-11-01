@@ -125,7 +125,7 @@ export function AddSheet() {
           toast(t("toast.added"));
         }
       },
-      onError: (error) => toast(errorText(error, t)),
+      onError: (error) => toast(errorText(error, t), { tone: "error" }),
     });
   };
 

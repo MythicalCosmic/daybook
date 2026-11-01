@@ -148,7 +148,3 @@ export function useMember(): Member {
   if (!membership) throw new Error("useMember without a membership");
   return { ...membership, timeZone: membership.company.timezone, companyId: membership.company.id };
 }
-
-export function initials(first: string, last: string): string {
-  return `${first.trim().charAt(0)}${last.trim().charAt(0)}`.toUpperCase() || "?";
-}

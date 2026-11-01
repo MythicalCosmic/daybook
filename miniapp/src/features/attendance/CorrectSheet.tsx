@@ -71,7 +71,7 @@ function CorrectForm({ record, initialDate, close }: { record: AttendanceRecord 
         },
         onError: (error) => {
           haptic.notify("error");
-          toast(errorText(error, t));
+          toast(errorText(error, t), { tone: "error" });
         },
       },
     );

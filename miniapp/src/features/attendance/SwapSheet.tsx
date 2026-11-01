@@ -69,7 +69,7 @@ function SwapForm({ shift, close }: { shift: Shift; close: () => void }) {
         },
         onError: (error) => {
           haptic.notify("error");
-          toast(errorText(error, t));
+          toast(errorText(error, t), { tone: "error" });
         },
       },
     );

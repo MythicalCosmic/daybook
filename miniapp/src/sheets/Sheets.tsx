@@ -249,7 +249,7 @@ function TimeOffSheet() {
           navigation.closeSheet();
           toast(t(created.status === "approved" ? "timeOff.toastTaken" : "timeOff.toastSent"));
         },
-        onError: (error) => toast(errorText(error, t)),
+        onError: (error) => toast(errorText(error, t), { tone: "error" }),
       },
     );
   };

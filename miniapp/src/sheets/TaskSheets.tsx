@@ -16,7 +16,7 @@ import { useId, useState, type ReactNode } from "react";
 
 import { useMembers, useTask, useTaskAction } from "../api/hooks";
 import type { BlockerReason, SnoozePreset, Task } from "../api/types";
-import type { Key } from "../i18n";
+import { useI18n, type Key } from "../i18n";
 import { errorText } from "../lib/actions";
 import { formatDue, type ViewContext } from "../lib/taskView";
 import { addDays, clock, dayKey, hourIn, zonedInstant } from "../lib/time";
@@ -132,7 +132,7 @@ const REASONS: { code: BlockerReason; icon: LucideIcon }[] = [
 
 /** "Can't do it" (R2 T57): a reason in one tap, a note if needed; reminders pause, the giver hears. */
 function BlockerForm({ task }: { task: Task }) {
-  const { t } = useViewContext();
+  const { t } = useI18n();
   const member = useMember();
   const navigation = useNavigation();
   const toast = useToast();
@@ -302,7 +302,7 @@ export function ReassignSheet({ taskId }: { taskId: number }) {
 
 /** Hand blocked work to someone else on the branch team. */
 function ReassignForm({ task }: { task: Task }) {
-  const { t } = useViewContext();
+  const { t } = useI18n();
   const member = useMember();
   const navigation = useNavigation();
   const toast = useToast();
@@ -422,7 +422,7 @@ export function EditSheet({ taskId }: { taskId: number }) {
 }
 
 function EditForm({ task }: { task: Task }) {
-  const { t } = useViewContext();
+  const { t } = useI18n();
   const member = useMember();
   const navigation = useNavigation();
   const toast = useToast();
@@ -473,7 +473,7 @@ export function TaskMenuSheet({ taskId }: { taskId: number }) {
  * delete my own task (cancel someone's work), as `task.actions` allows.
  */
 function TaskMenu({ task }: { task: Task }) {
-  const { t } = useViewContext();
+  const { t } = useI18n();
   const member = useMember();
   const navigation = useNavigation();
   const toast = useToast();

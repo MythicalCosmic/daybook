@@ -232,7 +232,6 @@ const uz: Partial<Record<Key, string>> = {
   "detail.banner.cancelled": "Vazifa bekor qilingan",
   "detail.late.title": "{duration} kechikdi",
   "detail.late.body": "Muddat soat {time} edi.",
-  "detail.reminder": "Muddatgacha bajarilmasa, bot eslata boshlaydi.",
   "detail.reminders.progress": "Eslatmalar: {sent}/{total} yuborildi · keyingisi: {time}",
   "detail.reminders.allSent": "Barcha {total} ta eslatma yuborildi",
   "detail.reminders.first": "Birinchi eslatma: {time}",
@@ -304,7 +303,6 @@ const uz: Partial<Record<Key, string>> = {
   "detail.sendBack": "Qaytarish",
 
   "toast.started": "Boshlandi. Omad!",
-  "toast.done": "Ajoyib! Bajarildi deb belgilandi.",
   "toast.doneShort": "Bajarildi",
   "toast.reopened": "Vazifa yana ro‘yxatingizda.",
   "toast.undoFailed": "Bekor qilib bo‘lmadi. O‘zgartirish uchun vazifani oching.",
@@ -533,7 +531,6 @@ const uz: Partial<Record<Key, string>> = {
   "lang.changed": "Til o‘zgartirildi. Bot ham endi o‘zbek tilida yozadi.",
 
   "ui.optional": "(ixtiyoriy)",
-  "ui.loading": "Yuklanmoqda…",
   "ui.back": "Orqaga",
   "ui.photo.add": "Rasmga oling yoki tanlang",
   "ui.photo.camera": "Rasmga olish",
@@ -550,7 +547,6 @@ const uz: Partial<Record<Key, string>> = {
   "ui.pull.release": "Yangilash uchun qo‘yib yuboring",
   "ui.pull.refreshing": "Yangilanmoqda…",
   "ui.toast.undo": "Bekor qilish",
-  "ui.slide.done": "Tayyor",
   "ui.notFound.title": "Bu sahifa topilmadi",
   "ui.notFound.body": "U ko‘chirilgan yoki sizga ochiq emas.",
   "ui.notFound.back": "Orqaga",

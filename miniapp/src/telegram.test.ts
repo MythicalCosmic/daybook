@@ -78,12 +78,11 @@ describe("telegram helpers", () => {
     expect(() => {
       telegram.haptic.notify("success");
       telegram.disableVerticalSwipes()();
-      telegram.exitFullscreen();
+      telegram.confirmClosing()();
+      telegram.updateNativeButton("main", { text: "Send" });
     }).not.toThrow();
-    expect(telegram.requestFullscreen()).toBe(false);
-    expect(telegram.showNativeButton("main", { text: "Send", onClick: () => undefined })).toBeNull();
+    expect(telegram.attachNativeButton("main", () => undefined)).toBeNull();
     expect(telegram.hasNativeBackButton()).toBe(false);
-    expect(await telegram.scanQr()).toBeNull();
     expect(telegram.startParam()).toBeNull();
   });
 
@@ -93,7 +92,7 @@ describe("telegram helpers", () => {
     const telegram = await load(browser);
     expect(telegram.insideTelegram()).toBe(false);
     expect(telegram.hasNativeButton("main")).toBe(false);
-    expect(telegram.bottomButton({ text: "Send", onClick: () => undefined })).toBeNull();
+    expect(telegram.attachNativeButton("main", () => undefined)).toBeNull();
     expect(browser.MainButton.show).not.toHaveBeenCalled();
     expect((await load(fakeWebApp("6.0"))).insideTelegram()).toBe(true);
   });
@@ -114,10 +113,11 @@ describe("telegram helpers", () => {
 
   it("drive the main and secondary buttons and clean up after them", async () => {
     const webApp = fakeWebApp("7.10");
-    const { showNativeButton, hasNativeButton } = await load(webApp);
+    const { attachNativeButton, hasNativeButton, updateNativeButton } = await load(webApp);
     expect(hasNativeButton("secondary")).toBe(true);
     const onClick = vi.fn();
-    const cleanup = showNativeButton("main", { text: "Close the till", onClick, loading: true, color: "#c67139", textColor: "#f5ead8", shine: true });
+    updateNativeButton("main", { text: "Close the till", loading: true, color: "#c67139", textColor: "#f5ead8", shine: true });
+    const cleanup = attachNativeButton("main", onClick);
     expect(webApp.MainButton.setParams).toHaveBeenCalledWith({
       text: "Close the till",
       color: "#c67139",
@@ -193,10 +193,10 @@ describe("telegram helpers", () => {
   });
 
   it("have no secondary button before Bot API 7.10", async () => {
-    const { hasNativeButton, secondaryButton } = await load(fakeWebApp("7.7"));
+    const { attachNativeButton, hasNativeButton } = await load(fakeWebApp("7.7"));
     expect(hasNativeButton("main")).toBe(true);
     expect(hasNativeButton("secondary")).toBe(false);
-    expect(secondaryButton({ text: "Later", onClick: () => undefined })).toBeNull();
+    expect(attachNativeButton("secondary", () => undefined)).toBeNull();
   });
 
   it("stack vertical swipe locks so nested sheets don't re-enable them early", async () => {
@@ -210,24 +210,6 @@ describe("telegram helpers", () => {
     expect(webApp.enableVerticalSwipes).not.toHaveBeenCalled();
     outer();
     expect(webApp.enableVerticalSwipes).toHaveBeenCalledOnce();
-  });
-
-  it("guard full screen behind Bot API 8.0", async () => {
-    const modern = fakeWebApp("8.0");
-    expect((await load(modern)).requestFullscreen()).toBe(true);
-    expect(modern.requestFullscreen).toHaveBeenCalledOnce();
-    const older = fakeWebApp("7.10");
-    expect((await load(older)).requestFullscreen()).toBe(false);
-    expect(older.requestFullscreen).not.toHaveBeenCalled();
-  });
-
-  it("resolve a scanned QR code and close the scanner", async () => {
-    const webApp = fakeWebApp("8.0");
-    webApp.showScanQrPopup.mockImplementation((_params: unknown, callback: (data: string) => boolean) => callback("SKU-1042"));
-    const { scanQr } = await load(webApp);
-    expect(await scanQr("Point at the barcode")).toBe("SKU-1042");
-    expect(webApp.closeScanQrPopup).toHaveBeenCalled();
-    expect(webApp.offEvent).toHaveBeenCalledWith("scanQrPopupClosed", expect.any(Function));
   });
 
   it("read the start parameter", async () => {

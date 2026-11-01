@@ -3,7 +3,7 @@ import { AlarmClock, BellRing, Clock3 } from "lucide-react";
 import type { ReminderInfo, Task } from "../api/types";
 import { duration, lateBy, type ViewContext } from "../lib/taskView";
 import { clock } from "../lib/time";
-import { initials } from "../state/session";
+import { nameInitials } from "../lib/team";
 
 type Node = { key: string; mark: string; time: string; caption: string; state: "sent" | "next" | "future" | "escalation" };
 
@@ -172,11 +172,11 @@ function timeline(task: Task, reminder: ReminderInfo, ctx: ViewContext): Node[] 
     });
   }
   const name = reminder.escalate_to;
-  const [first = "", last = ""] = (name ?? "").split(" ");
+  const first = (name ?? "").trim().split(/\s+/)[0] ?? "";
   const escalatedAt = reminder.escalated_at ? Date.parse(reminder.escalated_at) : moment(total);
   nodes.push({
     key: "escalation",
-    mark: name ? initials(first, last) : "M",
+    mark: name ? nameInitials(name) : "M",
     time: escalatedAt === null ? "" : at(escalatedAt),
     // A caption under the dot, capitalised like "Sent" and "Next" beside it.
     caption: first || ctx.t("detail.node.manager"),

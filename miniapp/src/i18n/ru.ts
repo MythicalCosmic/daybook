@@ -244,7 +244,6 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
   "detail.banner.cancelled": "Задача отменена",
   "detail.late.title": "Просрочено на {duration}",
   "detail.late.body": "Срок был в {time}.",
-  "detail.reminder": "Если задача не будет готова к сроку, бот начнёт напоминать.",
   "detail.reminders.progress": "Отправлено напоминаний: {sent} из {total} · следующее в {time}",
   "detail.reminders.allSent": "Все напоминания отправлены ({total})",
   "detail.reminders.first": "Первое напоминание в {time}",
@@ -316,7 +315,6 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
   "detail.sendBack": "Вернуть",
 
   "toast.started": "Начали. Так держать!",
-  "toast.done": "Отлично! Отмечено как готово.",
   "toast.doneShort": "Готово",
   "toast.reopened": "Задача снова в списке.",
   "toast.undoFailed": "Не удалось отменить. Откройте задачу, чтобы изменить её.",
@@ -555,7 +553,6 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
   "lang.changed": "Язык изменён. Бот тоже будет писать по-русски.",
 
   "ui.optional": "(необязательно)",
-  "ui.loading": "Загрузка…",
   "ui.back": "Назад",
   "ui.photo.add": "Сфотографируйте или выберите фото",
   "ui.photo.camera": "Сделать фото",
@@ -574,7 +571,6 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
   "ui.pull.release": "Отпустите, чтобы обновить",
   "ui.pull.refreshing": "Обновляем…",
   "ui.toast.undo": "Отменить",
-  "ui.slide.done": "Готово",
   "ui.notFound.title": "Такой страницы нет",
   "ui.notFound.body": "Возможно, она переехала или недоступна вам.",
   "ui.notFound.back": "Назад",

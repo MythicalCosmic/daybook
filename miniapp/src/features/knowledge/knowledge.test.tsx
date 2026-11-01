@@ -92,6 +92,11 @@ describe("safeHtml", () => {
     expect(clean).toContain('<div data-callout="warning">');
     expect(clean).toMatch(/<input type="checkbox" checked="" disabled="">/);
   });
+
+  it("puts a table in its own sideways-scrolling box, so a wide one never widens the page", () => {
+    const clean = safeHtml("<table><tbody><tr><td>Paracetamol</td><td>500 mg</td></tr></tbody></table>");
+    expect(clean).toBe('<div class="kbm-table"><table><tbody><tr><td>Paracetamol</td><td>500 mg</td></tr></tbody></table></div>');
+  });
 });
 
 describe("flattenTree", () => {

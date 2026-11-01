@@ -120,7 +120,7 @@ function RequestCard({ swap }: { swap: Swap }) {
         },
         onError: (error) => {
           haptic.notify("error");
-          toast(errorText(error, t));
+          toast(errorText(error, t), { tone: "error" });
         },
         onSettled: () => setBusy(null),
       },
@@ -188,7 +188,7 @@ function OpenShiftCard({ shift }: { shift: OpenShift }) {
               },
               onError: (error) => {
                 haptic.notify("error");
-                toast(errorText(error, t));
+                toast(errorText(error, t), { tone: "error" });
               },
             })
           }
@@ -258,7 +258,7 @@ function MineCard({ swap, mine }: { swap: Swap; mine: boolean }) {
                 { id: swap.id, verb: "cancel" },
                 {
                   onSuccess: () => toast(t("swap.cancelledToast")),
-                  onError: (error) => toast(errorText(error, t)),
+                  onError: (error) => toast(errorText(error, t), { tone: "error" }),
                 },
               )
             }

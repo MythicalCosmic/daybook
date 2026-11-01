@@ -44,7 +44,6 @@ export const messages = defineMessages({
     "action.toSafeHint": "Keep the till light",
     "action.fromSafe": "From the safe",
     "action.fromSafeHint": "Change for the till",
-    "action.close": "Close shift",
 
     "open.title": "Open a shift",
     "open.subtitle": "Pick your till and count the change in it before the first sale.",
@@ -294,7 +293,6 @@ export const messages = defineMessages({
     "action.toSafeHint": "Разгрузить кассу",
     "action.fromSafe": "Из сейфа",
     "action.fromSafeHint": "Размен для кассы",
-    "action.close": "Закрыть смену",
 
     "open.title": "Открыть смену",
     "open.subtitle": "Выберите кассу и пересчитайте размен в ней до первой продажи.",
@@ -546,7 +544,6 @@ export const messages = defineMessages({
     "action.toSafeHint": "Kassani yengillatish",
     "action.fromSafe": "Seyfdan",
     "action.fromSafeHint": "Kassaga mayda pul",
-    "action.close": "Smenani yopish",
 
     "open.title": "Smenani ochish",
     "open.subtitle": "Kassangizni tanlang va birinchi savdodan oldin undagi maydani sanang.",

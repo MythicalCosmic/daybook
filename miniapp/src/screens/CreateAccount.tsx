@@ -1,11 +1,11 @@
 import { Check, Phone } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { ApiError } from "../api/client";
 import { useMe, useOnboard, usePositions } from "../api/hooks";
 import type { Membership } from "../api/types";
 import { Mark } from "../components/Mark";
 import { useI18n } from "../i18n";
+import { errorText } from "../lib/actions";
 import { formatPhone } from "../lib/phone";
 import { useSession } from "../state/session";
 import { useToast } from "../state/toast";
@@ -100,7 +100,7 @@ export function CreateAccount({ membership }: { membership: Membership }) {
         { first_name: first.trim(), last_name: last.trim(), position_id: positionId },
         {
           onSuccess: () => haptic("success"),
-          onError: (error) => toast((error instanceof ApiError && error.detail) || t("error.generic")),
+          onError: (error) => toast(errorText(error, t), { tone: "error" }),
         },
       );
     }

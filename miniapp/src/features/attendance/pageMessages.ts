@@ -38,7 +38,6 @@ export const pageMessages = defineMessages({
     "code.unscheduled": "Extra day",
 
     "board.title": "Who’s in",
-    "board.live": "Live",
     "board.state.in": "In",
     "board.state.late": "Came late",
     "board.state.not_yet": "Not here yet",
@@ -174,7 +173,6 @@ export const pageMessages = defineMessages({
     "code.unscheduled": "Дополнительный день",
 
     "board.title": "Кто на работе",
-    "board.live": "Сейчас",
     "board.state.in": "На месте",
     "board.state.late": "Опоздали",
     "board.state.not_yet": "Ещё не пришли",
@@ -310,7 +308,6 @@ export const pageMessages = defineMessages({
     "code.unscheduled": "Qo‘shimcha kun",
 
     "board.title": "Kim ishda",
-    "board.live": "Hozir",
     "board.state.in": "Ishda",
     "board.state.late": "Kechikib keldi",
     "board.state.not_yet": "Hali kelmagan",

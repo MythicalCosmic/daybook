@@ -8,7 +8,6 @@ export type Position = Schemas["Position"];
 export type TeamMember = Schemas["TeamMember"];
 export type MyTeam = Schemas["MyTeam"];
 export type TeamPerson = Omit<Schemas["TeamPerson"], "open" | "done"> & { open: Task[]; done: Task[] };
-export type TaskStatus = Schemas["TaskStatusEnum"];
 export type Priority = Schemas["PriorityEnum"];
 
 /** Why the person can't do the task (`POST tasks/{id}/blocker/`). */
@@ -55,7 +54,6 @@ export type QuickAdd = {
 
 export type SnoozePreset = "15m" | "1h" | "tomorrow_morning";
 export type BlockerResolution = "reassign" | "new_due" | "cancel";
-export type TaskAction = Schemas["ActionsEnum"];
 export type Comment = Schemas["Comment"];
 /** An inbox entry. The backend may add kinds (a blocker, a request for more time) before this app
  * knows them: screens show those with a neutral look rather than break. */
@@ -72,9 +70,7 @@ export type Score = Schemas["Score"];
 export type TeamRow = Schemas["TeamRow"];
 export type TeamStats = Schemas["TeamStats"];
 export type TimeOff = Schemas["TimeOff"];
-export type TimeOffStatus = Schemas["TimeOffStatusEnum"];
 export type Holiday = Schemas["Holiday"];
-export type OffToday = Schemas["OffToday"];
 
 /** `POST tasks/confirm/`: how confirming several tasks went, one result per id. */
 export type ConfirmMany = { done: number; failed: number; results: { id: number; ok: boolean; error: string }[] };

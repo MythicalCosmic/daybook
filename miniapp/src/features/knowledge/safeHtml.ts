@@ -59,5 +59,12 @@ export function safeHtml(html: string): string {
   const root = inert.createElement("div");
   root.innerHTML = html;
   clean(root);
+  // A wide table scrolls sideways in its own box instead of making the page wider than the phone.
+  for (const table of Array.from(root.querySelectorAll("table"))) {
+    const box = inert.createElement("div");
+    box.className = "kbm-table";
+    table.replaceWith(box);
+    box.append(table);
+  }
   return root.innerHTML;
 }

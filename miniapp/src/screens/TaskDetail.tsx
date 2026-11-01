@@ -53,10 +53,10 @@ import { clock } from "../lib/time";
 import { useDraftGuard } from "../lib/useDraftGuard";
 import { useViewContext } from "../lib/useNow";
 import { useNavigation } from "../state/navigation";
-import { initials, useMember, useSession } from "../state/session";
+import { useMember, useSession } from "../state/session";
 import { useToast } from "../state/toast";
 import { haptic } from "../telegram";
-import { BottomBar, LoadError, ScreenSkeleton, type BottomAction } from "../ui";
+import { Avatar, BottomBar, LoadError, ScreenSkeleton, type BottomAction } from "../ui";
 
 export function TaskDetail({ taskId }: { taskId: number }) {
   const ctx = useViewContext();
@@ -667,10 +667,9 @@ function Comments({ task, comments, people, ctx, seed }: {
       </div>
       {comments.map((comment) => {
         const name = comment.author?.name ?? t("activity.someone");
-        const [first = "", last = ""] = name.split(" ");
         return (
           <div key={comment.id} style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
-            <div className="avatar" style={{ width: 34, height: 34, fontSize: 13 }}>{initials(first, last)}</div>
+            <Avatar name={name} size="sm" />
             <div style={{ flex: 1, minWidth: 0, padding: "10px 14px", borderRadius: "var(--radius-md) var(--radius-md) var(--radius-md) var(--radius-sm)", background: "var(--color-surface)" }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 6, fontSize: 13 }}>
                 <span style={{ fontWeight: 700 }}>{name}</span>
@@ -702,7 +701,7 @@ function Comments({ task, comments, people, ctx, seed }: {
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => pick(person)}
                 >
-                  <span className="avatar" style={{ width: 30, height: 30, fontSize: 12 }}>{nameInitials(person.name)}</span>
+                  <Avatar name={person.name} size="xs" />
                   <span className="mention-option-text">
                     <span className="mention-option-name">{person.name}</span>
                     <span className="mention-option-role">{person.role ? t(ROLE_LABEL[person.role]) : person.position ?? ""}</span>
@@ -784,11 +783,6 @@ function Comments({ task, comments, people, ctx, seed }: {
   );
 }
 
-function nameInitials(name: string): string {
-  const [first = "", last = ""] = name.split(" ");
-  return initials(first, last);
-}
-
 function candidatesName(id: number, people: MemberBrief[], team: MemberBrief[] | undefined): string {
   return people.find((person) => person.id === id)?.name ?? team?.find((person) => person.id === id)?.name ?? "";
 }
@@ -836,7 +830,7 @@ const CONFIRM_GUARD_MS = 800;
  * Send back). Outside Telegram, or on an older client, the same two buttons sit in the page.
  */
 function ActionBar({ task, isMine }: { task: Task; isMine: boolean }) {
-  const { t } = useViewContext();
+  const { t } = useI18n();
   const member = useMember();
   const navigation = useNavigation();
   const action = useTaskAction(member.companyId);
