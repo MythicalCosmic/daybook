@@ -17,6 +17,7 @@ from zoneinfo import ZoneInfo
 from aiogram import html
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from django.conf import settings
+from django.db.models import Min
 from django.utils import timezone, translation
 from django.utils.translation import gettext as _
 
@@ -71,6 +72,7 @@ def _post_for(company: Company, day: date, now: datetime, already_sent: int) -> 
     rostered, shifts = _shifts(company, day, people)
     day_start, day_end = _bounds(company, day)
     morning_at = datetime.combine(day, company.morning_report_at, tzinfo=day_start.tzinfo)
+    firsts = _first_tasks(people, day_start, day_end)
     sent = 0
     for person in people:
         shift = shifts.get(person.pk)
@@ -81,7 +83,7 @@ def _post_for(company: Company, day: date, now: datetime, already_sent: int) -> 
             send_at = shift[0] - SHIFT_LEAD
             until = max(day_end, shift[1])
         else:
-            send_at = _send_time(person, morning_at, day_start, day_end)
+            send_at = _send_time(firsts.get(person.pk), morning_at, day_start)
         if not send_at <= now < send_at + REPORT_WINDOW:
             continue
         # The unique row is the claim: a second run that gets here skips the person.
@@ -106,24 +108,27 @@ def _post_for(company: Company, day: date, now: datetime, already_sent: int) -> 
     return sent
 
 
-def _send_time(person: Membership, morning: datetime, start: datetime, end: datetime) -> datetime:
-    """The morning time, or half an hour before the person's first task today if that's earlier,
-    but not before 07:00."""
-    first = (
-        Task.objects.filter(
-            assignee=person,
-            status__in=Task.OPEN_STATUSES,
-            due_at__gte=start,
-            due_at__lt=end,
-        )
-        .order_by("due_at")
-        .values_list("due_at", flat=True)
-        .first()
-    )
+def _send_time(first: datetime | None, morning: datetime, start: datetime) -> datetime:
+    """The morning time, or half an hour before the person's first task today (`first`) if
+    that's earlier, but not before 07:00."""
     if first is None:
         return morning
     earliest = datetime.combine(start.date(), EARLIEST, tzinfo=start.tzinfo)
     return max(earliest, min(morning, first - FIRST_TASK_LEAD))
+
+
+def _first_tasks(people: list[Membership], start: datetime, end: datetime) -> dict[int, datetime]:
+    """Each person's first open task due between `start` and `end`, for everyone in one query
+    (the job runs every five minutes over everyone not sent their digest yet)."""
+    return dict(
+        Task.objects.filter(
+            assignee__in=people, status__in=Task.OPEN_STATUSES, due_at__gte=start, due_at__lt=end
+        )
+        .order_by()
+        .values("assignee")
+        .annotate(first=Min("due_at"))
+        .values_list("assignee", "first")
+    )
 
 
 def _shifts(
