@@ -101,6 +101,14 @@
     -webkit-appearance: none;
     margin: 0;
   }
+  /* iOS zooms the whole page into a field whose text is under 16 px when it takes focus, Telegram's
+     in-app browser included, and the page stays zoomed: on touch screens fields write at 16 px. */
+  @media (pointer: coarse) {
+    .ui-control {
+      font-size: var(--text-md);
+    }
+  }
+
   /* A clearable search field has its own clear button; Chromium and Safari would add a second. */
   .ui-input[type="search"][data-clearable]::-webkit-search-cancel-button {
     -webkit-appearance: none;

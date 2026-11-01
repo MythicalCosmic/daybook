@@ -206,7 +206,7 @@ async function toggleTimer(): Promise<void> {
           <TextInput v-if="editingTitle" v-model="title" autofocus :maxlength="200" @enter="saveTitle" @blur="saveTitle" />
           <h2 v-else class="group flex items-start gap-2 text-lg font-semibold leading-snug text-fg">
             <span class="min-w-0 flex-1">{{ card.title }}</span>
-            <button v-if="canEditTask" type="button" class="mt-1 rounded-[6px] p-1 text-subtle opacity-0 transition-opacity hover:bg-highlight hover:text-fg focus:opacity-100 group-hover:opacity-100" :aria-label="t('projects.drawer.editTitle')" @click="editingTitle = true">
+            <button v-if="canEditTask" type="button" class="mt-1 rounded-[6px] p-1 text-subtle opacity-0 transition-opacity hover:bg-highlight hover:text-fg focus:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100" :aria-label="t('projects.drawer.editTitle')" @click="editingTitle = true">
               <Pencil :size="14" />
             </button>
           </h2>

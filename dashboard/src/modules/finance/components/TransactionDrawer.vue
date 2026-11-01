@@ -364,7 +364,7 @@ const fieldLabels = computed(() => ({
                   <button
                     v-if="row.can_edit"
                     type="button"
-                    class="absolute right-1 top-1 hidden rounded-full bg-surface/90 px-1.5 text-xs font-semibold text-danger shadow-xs group-hover:block focus:block"
+                    class="absolute right-1 top-1 hidden rounded-full bg-surface/90 px-1.5 text-xs font-semibold text-danger shadow-xs group-hover:block focus:block pointer-coarse:block"
                     @click="removeReceipt(receipt.id)"
                   >
                     {{ t("common.file.remove") }}

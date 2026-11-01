@@ -8,6 +8,13 @@
   overflow-wrap: anywhere;
 }
 
+/* The editor on a touch screen: iOS zooms the page into editable text under 16 px. */
+@media (pointer: coarse) {
+  .kb-prose[contenteditable="true"] {
+    font-size: 1rem;
+  }
+}
+
 .kb-prose > :first-child {
   margin-top: 0;
 }

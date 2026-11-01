@@ -581,6 +581,16 @@ describe("TreeList on touch", () => {
     for (const handle of handles) expect(handle.classes()).toEqual(expect.arrayContaining(["touch-none", "pointer-coarse:opacity-100"]));
     tree.unmount();
   });
+
+  it("shows each row's actions (the finance categories' menu), which only appeared on hover", () => {
+    const tree = mount(TreeList, {
+      props: { nodes: [{ id: 1, label: "Ijara" }] },
+      slots: { actions: () => h("button", { class: "row-menu" }, "…") },
+      global: { plugins: plugins() },
+    });
+    expect(tree.find(".row-menu").element.parentElement!.classList).toContain("pointer-coarse:opacity-100");
+    tree.unmount();
+  });
 });
 
 describe("v-truncate-title", () => {

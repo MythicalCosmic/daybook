@@ -99,7 +99,7 @@ onMounted(() => input.value?.focus());
       rows="2"
       maxlength="200"
       :placeholder="t('projects.quick.placeholder')"
-      class="w-full resize-none rounded-[6px] bg-transparent px-1 text-sm text-fg outline-none placeholder:text-subtle"
+      class="w-full resize-none rounded-[6px] bg-transparent px-1 text-sm text-fg outline-none placeholder:text-subtle pointer-coarse:text-md"
       :aria-label="t('projects.quick.placeholder')"
       @keydown="onKey"
     />

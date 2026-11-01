@@ -270,7 +270,7 @@ const unreadBadge = computed(() => (notes.data.value && notesFilter.value === "u
                         :id="`reason-${itemKey(item)}`"
                         v-model="reason"
                         rows="2"
-                        class="w-full resize-none rounded-input border border-line bg-surface px-2.5 py-2 text-base outline-none transition-shadow focus:border-primary focus:shadow-[0_0_0_3px_var(--c-accent-soft)]"
+                        class="w-full resize-none rounded-input border border-line bg-surface px-2.5 py-2 text-base outline-none transition-shadow focus:border-primary focus:shadow-[0_0_0_3px_var(--c-accent-soft)] pointer-coarse:text-md"
                         :placeholder="t('common.reasonPlaceholder')"
                         autofocus
                       />

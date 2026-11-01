@@ -299,7 +299,7 @@ useHotkey("h", () => canEdit.value && openDrawer("history"), { description: "kno
                 <span class="block truncate text-sm font-medium text-fg">{{ link.target_title || `#${link.target_id}` }}</span>
                 <span class="block text-[11px] text-muted">{{ t(`knowledge.links.${link.target_type}`) }}</span>
               </span>
-              <IconButton v-if="canEdit" :icon="X" :label="t('knowledge.links.remove')" size="sm" :tooltip="false" class="opacity-0 group-hover:opacity-100 focus:opacity-100" @click="unlink(link.id)" />
+              <IconButton v-if="canEdit" :icon="X" :label="t('knowledge.links.remove')" size="sm" :tooltip="false" class="opacity-0 group-hover:opacity-100 focus:opacity-100 pointer-coarse:opacity-100" @click="unlink(link.id)" />
             </li>
           </ul>
         </section>

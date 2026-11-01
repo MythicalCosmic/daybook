@@ -228,7 +228,7 @@ onBeforeUnmount(cancelDrag);
           <span v-if="row.node.meta" class="shrink-0 truncate text-xs font-normal text-subtle">{{ row.node.meta }}</span>
           <span v-if="row.node.badge !== undefined" class="shrink-0 rounded-full px-1.5 text-[11px] font-semibold tabular-nums text-muted">{{ row.node.badge }}</span>
         </slot>
-        <span v-if="$slots.actions" class="flex shrink-0 items-center opacity-0 transition-opacity focus-within:opacity-100 group-hover/row:opacity-100" @click.stop>
+        <span v-if="$slots.actions" class="flex shrink-0 items-center opacity-0 transition-opacity focus-within:opacity-100 group-hover/row:opacity-100 pointer-coarse:opacity-100" @click.stop>
           <slot name="actions" :node="row.node" />
         </span>
       </li>
