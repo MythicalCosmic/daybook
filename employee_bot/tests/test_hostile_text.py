@@ -3,6 +3,8 @@
 the whole message. The `bot` fixture fails a test on any message Telegram would refuse
 (apps.notifications.tests.telegram_checks); these walk the screens with such texts everywhere."""
 
+from datetime import timedelta
+
 import pytest
 from asgiref.sync import sync_to_async
 from django.core.files.base import ContentFile
@@ -45,7 +47,7 @@ def team(company, member):
             assignee=worker,
             created_by=head,
             branch=worker.home_branch,
-            due_at=now + timezone.timedelta(hours=2),
+            due_at=now + timedelta(hours=2),
             blocker_note="<yo‘q>",
         )
         ChecklistItem.objects.create(task=open_task, text="Qadam <1> & 2", order=0)
