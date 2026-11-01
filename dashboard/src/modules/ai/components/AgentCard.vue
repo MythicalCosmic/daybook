@@ -36,6 +36,8 @@ const scheduled = computed(() => SCHEDULED.has(props.agent.key) || props.agent.n
 const on = computed(() => props.aiOn && props.agent.enabled);
 const blocked = computed(() => !props.agent.available && props.agent.unavailable_reason !== "" && props.agent.unavailable_reason !== "ai_off");
 const switchDisabled = computed(() => !props.canConfigure || !props.aiOn || (blocked.value && !props.agent.enabled));
+/** "Sends task photos to Claude", unless the agent's own description already says so. */
+const photoNote = computed(() => props.agent.key === "photo_checker" && !props.agent.description.includes("Claude"));
 const lastRun = computed(() => (props.agent.last_run_at ? fmt.relative(props.agent.last_run_at, now.value) : null));
 const nextRun = computed(() => (props.agent.next_run_at && on.value ? fmt.relative(props.agent.next_run_at, now.value) : null));
 </script>
@@ -75,10 +77,10 @@ const nextRun = computed(() => (props.agent.next_run_at && on.value ? fmt.relati
 
     <p class="text-base leading-[1.45] text-fg/90" :class="!on && 'text-muted'">{{ agent.description }}</p>
 
-    <div v-if="blocked || agent.key === 'photo_checker'" class="flex flex-wrap gap-1.5">
+    <div v-if="blocked || photoNote" class="flex flex-wrap gap-1.5">
       <UiBadge v-if="agent.unavailable_reason === 'needs_claude'" tone="warning" size="md"><Lock :size="12" class="mr-1" aria-hidden="true" />{{ t("ai.agents.needsClaude") }}</UiBadge>
       <UiBadge v-else-if="agent.unavailable_reason === 'needs_speech'" tone="warning" size="md"><Lock :size="12" class="mr-1" aria-hidden="true" />{{ t("ai.agents.needsSpeech") }}</UiBadge>
-      <UiBadge v-if="agent.key === 'photo_checker'" tone="info" size="md"><ScanEye :size="12" class="mr-1" aria-hidden="true" />{{ t("ai.agents.sendsPhotos") }}</UiBadge>
+      <UiBadge v-if="photoNote" tone="info" size="md"><ScanEye :size="12" class="mr-1" aria-hidden="true" />{{ t("ai.agents.sendsPhotos") }}</UiBadge>
     </div>
 
     <div class="mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line pt-3 text-sm">

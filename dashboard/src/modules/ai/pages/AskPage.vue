@@ -160,6 +160,7 @@ watch(() => messages.data.value?.length, scrollDown);
 
 const empty = computed(() => !conversationId.value && !pending.value && !failed.value);
 const conversationTitle = (conversation: Conversation) => conversation.title || t("ai.chat.untitled");
+const conversationTime = (conversation: Conversation) => fmt.relative(conversation.last_activity_at ?? conversation.created_at);
 </script>
 
 <template>
@@ -213,7 +214,7 @@ const conversationTitle = (conversation: Conversation) => conversation.title || 
                 @click="pick(conversation)"
               >
                 <span class="truncate text-sm font-medium">{{ conversationTitle(conversation) }}</span>
-                <span class="num text-xs text-muted">{{ fmt.relative(conversation.created_at) }}</span>
+                <span class="num text-xs text-muted">{{ conversationTime(conversation) }}</span>
               </button>
             </li>
           </ul>
@@ -257,7 +258,7 @@ const conversationTitle = (conversation: Conversation) => conversation.title || 
                 <span class="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-accent-soft text-accent-fg" aria-hidden="true"><Sparkles :size="15" /></span>
                 <div class="flex min-w-0 flex-1 flex-col gap-2">
                   <TurnSteps :steps="message.steps" />
-                  <MarkdownView :source="message.text" />
+                  <MarkdownView class="ai-answer" :source="message.text" />
                 </div>
               </div>
             </template>
@@ -271,7 +272,7 @@ const conversationTitle = (conversation: Conversation) => conversation.title || 
                 <span class="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-accent-soft text-accent-fg" aria-hidden="true"><Sparkles :size="15" class="animate-pulse" /></span>
                 <div class="flex min-w-0 flex-1 flex-col gap-2">
                   <TurnSteps :steps="turn.data.value?.steps ?? []" live />
-                  <MarkdownView v-if="turn.data.value?.text" :source="turn.data.value.text" />
+                  <MarkdownView v-if="turn.data.value?.text" class="ai-answer" :source="turn.data.value.text" />
                 </div>
               </div>
             </template>
@@ -328,7 +329,7 @@ const conversationTitle = (conversation: Conversation) => conversation.title || 
               @click="pick(conversation)"
             >
               <span class="truncate text-base font-medium">{{ conversationTitle(conversation) }}</span>
-              <span class="num text-sm text-muted">{{ fmt.relative(conversation.created_at) }}</span>
+              <span class="num text-sm text-muted">{{ conversationTime(conversation) }}</span>
             </button>
           </li>
         </ul>
@@ -343,6 +344,22 @@ const conversationTitle = (conversation: Conversation) => conversation.title || 
     radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--c-primary) 14%, transparent) 0%, transparent 55%),
     radial-gradient(90% 120% at 100% 100%, color-mix(in srgb, var(--c-info) 12%, transparent) 0%, transparent 60%),
     var(--c-surface);
+}
+/* A record chip with a long task title wraps like a highlighted phrase instead of pushing the
+   answer past a phone's edge (the shared chip never wraps). */
+.ai-answer.ai-answer :deep(.md-chip) {
+  display: inline;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  padding: 1px 7px 1px 6px;
+  line-height: 1.95;
+}
+.ai-answer.ai-answer :deep(.md-chip::before) {
+  display: inline-block;
+  margin: 0 5px 2px 0;
+  vertical-align: middle;
 }
 .ai-composer {
   field-sizing: content;

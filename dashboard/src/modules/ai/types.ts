@@ -192,6 +192,8 @@ export interface Conversation {
   id: number;
   title: string;
   created_at: string;
+  /** The last question or answer (the real API sends it; the list is ordered by it). */
+  last_activity_at?: string;
 }
 
 export interface TurnStep {
