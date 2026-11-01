@@ -27,7 +27,7 @@ import AgentDrawerBody from "../components/AgentDrawerBody.vue";
 import AiHeader from "../components/AiHeader.vue";
 import TurnOnCard from "../components/TurnOnCard.vue";
 import { openDictation } from "../dictation";
-import { aiVisibility } from "../lib";
+import { aiVisibility, isMissingEndpoint } from "../lib";
 import type { Agent } from "../types";
 
 const { t } = useI18n();
@@ -116,6 +116,14 @@ const settingsPath = computed(() => `/c/${company.currentId}/settings/ai`);
       <div v-if="agents.isPending.value" class="grid gap-3 md:grid-cols-2" aria-hidden="true">
         <SkeletonBlock v-for="n in 4" :key="n" height="196px" radius="12px" />
       </div>
+      <EmptyState
+        v-else-if="agents.isError.value && isMissingEndpoint(agents.error.value)"
+        class="ui-card py-10"
+        :icon="Bot"
+        :title="t('ai.agents.comingTitle')"
+        :description="t('ai.agents.comingBody')"
+        data-testid="ai-agents-coming"
+      />
       <ErrorState v-else-if="agents.isError.value" :error="agents.error.value" :retry="() => agents.refetch()" />
       <EmptyState v-else-if="!agents.data.value?.length" :icon="Bot" :title="t('ai.agents.empty')" :description="t('ai.agents.emptyBody')" />
       <div v-else class="grid gap-3 md:grid-cols-2">

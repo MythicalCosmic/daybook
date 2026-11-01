@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { ApiError } from "@/api/http";
+
 import {
   aiVisibility,
   applyBlockers,
@@ -10,6 +12,7 @@ import {
   coerceValue,
   fieldControl,
   formatSeconds,
+  isMissingEndpoint,
   isWorking,
   liveProblems,
   mergeActivity,
@@ -228,5 +231,15 @@ describe("formats", () => {
     expect(budgetShare({ monthly_usd: "0", spent_usd: "5.00" })).toBe(0);
     expect(budgetShare({ monthly_usd: "10", spent_usd: "50" })).toBe(1);
     expect(budgetShare(null)).toBe(0);
+  });
+});
+
+describe("a server without the endpoint yet", () => {
+  it("tells a missing endpoint (an AI step not deployed) from a real refusal", () => {
+    expect(isMissingEndpoint(new ApiError(404, "<h1>Not Found</h1>"))).toBe(true);
+    expect(isMissingEndpoint(new ApiError(405, null))).toBe(true);
+    expect(isMissingEndpoint(new ApiError(404, { code: "not_found", detail: "No such agent" }))).toBe(false);
+    expect(isMissingEndpoint(new ApiError(500, null))).toBe(false);
+    expect(isMissingEndpoint(new Error("x"))).toBe(false);
   });
 });

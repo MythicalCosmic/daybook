@@ -18,6 +18,7 @@ import { useActivityFeed, useAgents, useAiStatus } from "../api";
 import ActivityFeed from "../components/ActivityFeed.vue";
 import AgentIcon from "../components/AgentIcon.vue";
 import AiHeader from "../components/AiHeader.vue";
+import { isMissingEndpoint } from "../lib";
 
 const { t } = useI18n();
 const status = useAiStatus();
@@ -61,7 +62,7 @@ const filters = computed(() => [{ key: "", name: t("ai.activity.all"), icon: nul
           <div class="flex flex-1 flex-col gap-1.5"><SkeletonBlock height="14px" width="80%" /><SkeletonBlock height="12px" width="40%" /></div>
         </div>
       </div>
-      <ErrorState v-else-if="feed.isError.value" :error="feed.error.value" :retry="() => feed.refetch()" />
+      <ErrorState v-else-if="feed.isError.value && !isMissingEndpoint(feed.error.value)" :error="feed.error.value" :retry="() => feed.refetch()" />
       <EmptyState
         v-else-if="!feed.items.value.length"
         class="py-10"

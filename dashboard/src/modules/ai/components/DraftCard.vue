@@ -141,6 +141,8 @@ async function runFix(fix: Fix): Promise<void> {
   model.value = applyFix(edit.value, fix, { timeZone: props.timeZone });
 }
 
+/** The server takes up to 20 steps a task. */
+const STEPS_MAX = 20;
 const steps = computed(() => edit.value.checklist);
 function setStep(index: number, text: string): void {
   patch({ checklist: steps.value.map((step, at) => (at === index ? text : step)) });
@@ -167,17 +169,21 @@ function removeStep(index: number): void {
     <div class="flex items-start gap-2.5">
       <span class="num mt-1.5 grid size-6 shrink-0 place-items-center rounded-full bg-accent-soft text-xs font-semibold text-accent-fg" aria-hidden="true">{{ index + 1 }}</span>
       <div class="min-w-0 flex-1">
-        <TextInput
+        <!-- One line that grows: a long title wraps instead of being cut; Enter adds no line. -->
+        <TextArea
           :model-value="edit.title"
+          :rows="1"
+          :max-rows="3"
+          autosize
           :maxlength="200"
           :disabled="disabled"
           :invalid="!edit.title.trim()"
           :aria-label="t('ai.review.titleLabel', { n: index + 1 })"
           :placeholder="t('ai.review.titlePlaceholder')"
-          :size="size"
-          class="font-medium"
+          class="font-medium max-sm:text-md"
           data-testid="draft-title"
-          @update:model-value="(value) => patch({ title: value ?? '' })"
+          @update:model-value="(value) => patch({ title: (value ?? '').replace(/\s*\n\s*/g, ' ') })"
+          @keydown.enter.prevent
         />
       </div>
       <UiButton variant="ghost" size="md" class="!size-10 !px-0 text-muted md:!size-8" :aria-label="t('ai.review.remove', { n: index + 1 })" :disabled="disabled" @click="patch({ removed: true })">
@@ -185,7 +191,7 @@ function removeStep(index: number): void {
       </UiButton>
     </div>
 
-    <div class="grid gap-3 pl-8 sm:grid-cols-2">
+    <div class="grid gap-3 sm:grid-cols-2 sm:pl-8">
       <div ref="picker" class="flex min-w-0 flex-col gap-1">
         <span class="flex items-center gap-1.5 text-xs font-medium text-muted"><UserRound :size="13" aria-hidden="true" />{{ t("ai.review.for") }}</span>
         <PersonPicker v-model="assignee" :people="options" :clearable="false" :size="size" :disabled="disabled" :invalid="problems.some((p) => p !== 'no_due' && p !== 'past_due')" />
@@ -222,7 +228,7 @@ function removeStep(index: number): void {
       </div>
     </div>
 
-    <div class="flex flex-wrap items-center gap-1.5 pl-8" role="group" :aria-label="t('ai.review.options')">
+    <div class="flex flex-wrap items-center gap-1.5 sm:pl-8" role="group" :aria-label="t('ai.review.options')">
       <button
         type="button"
         :aria-pressed="edit.priority === 'urgent'"
@@ -267,7 +273,7 @@ function removeStep(index: number): void {
       </button>
     </div>
 
-    <div v-if="showDetails" class="pl-8">
+    <div v-if="showDetails" class="sm:pl-8">
       <TextArea
         :model-value="edit.description"
         :rows="2"
@@ -280,7 +286,7 @@ function removeStep(index: number): void {
       />
     </div>
 
-    <div v-if="steps.length" class="flex flex-col gap-1.5 pl-8">
+    <div v-if="steps.length" class="flex flex-col gap-1.5 sm:pl-8">
       <span class="flex items-center gap-1.5 text-xs font-medium text-muted"><ListChecks :size="13" aria-hidden="true" />{{ t("ai.review.checklist") }}</span>
       <div v-for="(step, stepIndex) in steps" :key="stepIndex" class="flex items-center gap-1.5">
         <span class="size-1.5 shrink-0 rounded-full bg-line-strong" aria-hidden="true" />
@@ -293,16 +299,16 @@ function removeStep(index: number): void {
           :size="size"
           class="flex-1"
           @update:model-value="(value) => setStep(stepIndex, value ?? '')"
-          @keydown.enter.prevent="addStep"
+          @keydown.enter.prevent="steps.length < STEPS_MAX && addStep()"
         />
         <UiButton variant="ghost" size="md" class="!size-9 !px-0 text-muted md:!size-8" :aria-label="t('ai.review.removeStep', { n: stepIndex + 1 })" :disabled="disabled" @click="removeStep(stepIndex)">
           <X :size="15" aria-hidden="true" />
         </UiButton>
       </div>
-      <UiButton variant="ghost" size="sm" class="w-fit" :icon="Plus" :disabled="disabled || steps.length >= 50" @click="addStep">{{ t("ai.review.addStep") }}</UiButton>
+      <UiButton variant="ghost" size="sm" class="w-fit" :icon="Plus" :disabled="disabled || steps.length >= STEPS_MAX" @click="addStep">{{ t("ai.review.addStep") }}</UiButton>
     </div>
 
-    <ul v-if="problems.length || failure" class="flex flex-col gap-2 pl-8" :aria-label="t('ai.review.problems')">
+    <ul v-if="problems.length || failure" class="flex flex-col gap-2 sm:pl-8" :aria-label="t('ai.review.problems')">
       <li v-if="failure" class="flex items-start gap-2 rounded-[10px] bg-danger-soft px-3 py-2 text-sm text-danger" role="alert">
         <CircleAlert :size="15" class="mt-0.5 shrink-0" aria-hidden="true" />{{ failure }}
       </li>

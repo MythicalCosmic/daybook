@@ -49,7 +49,8 @@ const drafts = useDrafts(() => ({ status: statusFilter.value, source: (source.va
 const rows = computed(() => drafts.data.value?.results ?? []);
 const total = computed(() => drafts.data.value?.count ?? 0);
 
-const sourceOptions = computed(() => [{ value: "", label: t("ai.voice.allSources") }, ...SOURCES.map((value) => ({ value, label: t(`ai.source.${value}`) }))]);
+const sourceOptions = computed(() => SOURCES.map((value) => ({ value, label: t(`ai.source.${value}`) })));
+const sourcePick = computed<string | null>({ get: () => source.value || null, set: (value) => (source.value = value ?? "") });
 
 function open(draft: AiDraft): void {
   patchQuery(router, { draft: String(draft.id) }, true);
@@ -88,7 +89,7 @@ function taskCount(draft: AiDraft): string {
           {{ t(`ai.voice.filter.${value || "all"}`) }}
         </button>
       </div>
-      <SelectBox v-model="source" :options="sourceOptions" :size="isPhone ? 'lg' : 'md'" class="w-full sm:w-[200px]" :aria-label="t('ai.voice.source')" />
+      <SelectBox v-model="sourcePick" :options="sourceOptions" :placeholder="t('ai.voice.allSources')" clearable :size="isPhone ? 'lg' : 'md'" class="w-full sm:w-[200px]" :aria-label="t('ai.voice.source')" />
     </div>
 
     <section class="ui-card overflow-hidden">
@@ -123,7 +124,7 @@ function taskCount(draft: AiDraft): string {
                 <span aria-hidden="true">·</span>
                 <time class="num" :datetime="draft.created_at" :title="fmt.instant(draft.created_at)">{{ fmt.relative(draft.created_at, now) }}</time>
                 <span aria-hidden="true">·</span>
-                <span v-if="draft.audio" class="num inline-flex items-center gap-1"><Mic :size="12" aria-hidden="true" />{{ formatSeconds(draft.audio.seconds) }}</span>
+                <span v-if="draft.audio" class="num inline-flex items-center gap-1"><Mic :size="12" aria-hidden="true" />{{ draft.audio.seconds !== null ? formatSeconds(draft.audio.seconds) : t("ai.voice.voice") }}</span>
                 <span v-else class="inline-flex items-center gap-1"><Keyboard :size="12" aria-hidden="true" />{{ t("ai.voice.typed") }}</span>
                 <template v-if="taskCount(draft)"><span aria-hidden="true">·</span><span>{{ taskCount(draft) }}</span></template>
               </span>

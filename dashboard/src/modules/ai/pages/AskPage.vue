@@ -187,7 +187,7 @@ const conversationTitle = (conversation: Conversation) => conversation.title || 
         </ul>
         <p class="flex items-start gap-2 rounded-[10px] bg-surface/80 px-3 py-2.5 text-sm text-fg ring-1 ring-line">
           <KeyRound :size="15" class="mt-0.5 shrink-0 text-accent-fg" aria-hidden="true" />
-          <span>{{ status.data.value?.enabled ? t("ai.chat.teaserKey") : t("ai.chat.teaserOff") }}</span>
+          <span>{{ !status.data.value?.enabled ? t("ai.chat.teaserOff") : status.data.value.claude === "not_configured" ? t("ai.chat.teaserKey") : t("ai.chat.teaserSoon") }}</span>
         </p>
         <div v-if="!status.data.value?.enabled">
           <UiButton variant="primary" :size="isPhone ? 'lg' : 'md'" :icon="Sparkles" :to="{ name: 'ai.agents', params: { companyId: company.currentId } }">{{ t("ai.turnOn.button") }}</UiButton>

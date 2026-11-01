@@ -11,6 +11,7 @@ import { useI18n } from "vue-i18n";
 import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import UiBadge from "@/components/UiBadge.vue";
 import UiButton from "@/components/UiButton.vue";
+import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useFormat } from "@/lib/useFormat";
 import { useNow } from "@/lib/useNow";
 
@@ -27,6 +28,7 @@ const { t } = useI18n();
 const fmt = useFormat();
 const now = useNow();
 const switchId = useId();
+const { isPhone } = useBreakpoints();
 
 /** The scheduled agents (contract §3); a backend that names the next run says so for any other. */
 const SCHEDULED = new Set(["deadline_watcher", "morning_plan"]);
@@ -94,7 +96,7 @@ const nextRun = computed(() => (props.agent.next_run_at && on.value ? fmt.relati
         v-if="scheduled && canConfigure && on && !agent.running"
         class="relative z-[1] ml-auto"
         variant="ghost"
-        size="sm"
+        :size="isPhone ? 'lg' : 'sm'"
         :icon="Play"
         :loading="starting"
         :data-testid="`agent-run-${agent.key}`"

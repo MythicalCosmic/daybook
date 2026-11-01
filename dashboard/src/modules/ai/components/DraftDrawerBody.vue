@@ -73,8 +73,13 @@ async function throwAway(): Promise<void> {
       </div>
 
       <div v-if="draft.audio" class="flex flex-col gap-1.5 rounded-card border border-line bg-surface-2 p-3 dark:bg-surface-3">
-        <audio class="ai-audio h-10 w-full" controls preload="metadata" :src="draft.audio.url" :aria-label="t('ai.voice.recording')" />
-        <p class="num px-1 text-xs text-muted">{{ t("ai.voice.length", { time: formatSeconds(draft.audio.seconds) }) }}<template v-if="te(`ai.engine.${draft.engine}`)"> · {{ t(`ai.engine.${draft.engine}`) }}</template></p>
+        <audio v-if="draft.audio.url" class="ai-audio h-10 w-full" controls preload="metadata" :src="draft.audio.url" :aria-label="t('ai.voice.recording')" />
+        <p v-else class="px-1 text-sm text-muted">{{ t("ai.voice.audioGone") }}</p>
+        <p class="num px-1 text-xs text-muted">
+          <template v-if="draft.audio.seconds !== null">{{ t("ai.voice.length", { time: formatSeconds(draft.audio.seconds) }) }}</template>
+          <template v-if="draft.audio.seconds !== null && te(`ai.engine.${draft.engine}`)"> · </template>
+          <template v-if="te(`ai.engine.${draft.engine}`)">{{ t(`ai.engine.${draft.engine}`) }}</template>
+        </p>
       </div>
 
       <WorkingState v-if="isWorking(draft.status) && !watched.gaveUp.value" :phase="workingPhase(draft.status, !!draft.audio)" :voice="!!draft.audio" compact />

@@ -5,6 +5,7 @@
  */
 import { TZDate } from "@date-fns/tz";
 
+import { isApiError } from "@/api/http";
 import { addDays } from "@/lib/dates";
 
 import type {
@@ -342,6 +343,16 @@ export const TURN_POLL_MS = 1000;
 
 export function turnIsLive(status: TurnStatus | undefined | null): boolean {
   return status === "queued" || status === "running";
+}
+
+// ─── A server without the endpoint yet ──────────────────────────────────────
+
+/**
+ * The server doesn't have this endpoint yet (an AI step not deployed): Django's 404 without a body
+ * of ours, or 405. The pages then show their quiet "coming" state instead of an error.
+ */
+export function isMissingEndpoint(error: unknown): boolean {
+  return isApiError(error) && (error.status === 405 || (error.status === 404 && !error.code));
 }
 
 // ─── Small formats ──────────────────────────────────────────────────────────

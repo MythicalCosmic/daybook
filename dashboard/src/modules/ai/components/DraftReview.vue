@@ -5,6 +5,7 @@
  * host draws "Create N tasks" from `review`.
  */
 import { ChevronDown, CircleHelp, Quote } from "@lucide/vue";
+import { useResizeObserver } from "@vueuse/core";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -25,7 +26,12 @@ const people = useCompanyPeople(
 );
 const myId = computed(() => company.current?.membership_id ?? 0);
 const quoteOpen = ref(false);
-const longQuote = computed(() => props.draft.transcript.length > 160);
+const quote = ref<HTMLElement | null>(null);
+const longQuote = ref(false);
+useResizeObserver(quote, () => {
+  const element = quote.value;
+  if (element && !quoteOpen.value) longQuote.value = element.scrollHeight > element.clientHeight + 1;
+});
 
 /** "Couldn't create" per kept card, after apply. */
 const failures = computed(() => {
@@ -47,7 +53,7 @@ const failures = computed(() => {
       <figcaption class="mb-1 flex items-center gap-1.5 text-xs font-semibold text-muted">
         <Quote :size="13" aria-hidden="true" />{{ draft.audio ? t("ai.review.heard") : t("ai.review.typed") }}
       </figcaption>
-      <blockquote :class="['whitespace-pre-line text-base leading-[1.5] text-fg', !quoteOpen && longQuote && 'line-clamp-2']">{{ draft.transcript }}</blockquote>
+      <blockquote ref="quote" :class="['whitespace-pre-line text-base leading-[1.5] text-fg', !quoteOpen && 'line-clamp-2']">{{ draft.transcript }}</blockquote>
       <button
         v-if="longQuote"
         type="button"

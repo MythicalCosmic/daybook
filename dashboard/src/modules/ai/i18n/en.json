@@ -300,6 +300,7 @@
   "ai.chat.teaserBody": "Ask about your pharmacy in plain words: who is late, what waits for a check, how the fridge checks went. The answers link to the tasks and people they mention.",
   "ai.chat.teaserKey": "Add ANTHROPIC_API_KEY on the server and Ask AI turns on by itself.",
   "ai.chat.teaserOff": "Turn on AI first, then connect Claude on the server.",
+  "ai.chat.teaserSoon": "Ask AI arrives with the next server update.",
   "ai.chat.unavailable": "Ask AI isn’t available yet",
   "ai.chat.unavailableBody": "It turns on once the owner connects Claude.",
 
@@ -337,5 +338,10 @@
   "ai.kpi.today": "AI agents today",
   "ai.kpi.actions": "{n} actions | {n} action | {n} actions",
   "ai.kpi.week": "{n} this week | {n} this week | {n} this week",
-  "ai.kpi.off": "AI is off"
+  "ai.kpi.off": "AI is off",
+  "ai.agents.comingTitle": "The agents start soon",
+  "ai.agents.comingBody": "Voice and typed tasks already work: press Dictate or Smart add. The agents that work by themselves arrive with the next server update.",
+  "ai.voice.voice": "Voice",
+  "ai.voice.audioGone": "The recording was deleted after the retention period; the transcript and tasks stay.",
+  "ai.kpi.soon": "Agents start soon"
 }

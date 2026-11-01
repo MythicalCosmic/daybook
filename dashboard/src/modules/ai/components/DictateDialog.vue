@@ -216,7 +216,12 @@ watch(
 
       <ErrorState v-else-if="step === 'failed'" :title="t('ai.error.title')" :description="failure" />
 
-      <DraftReview v-else-if="step === 'review' && draft" :draft="draft" :review="review" :disabled="review.applying.value" />
+      <template v-else-if="step === 'review' && draft">
+        <DraftReview :draft="draft" :review="review" :disabled="review.applying.value" />
+        <p v-if="review.blockers.value.problems || review.blockers.value.untitled" class="text-sm font-medium text-warning sm:hidden" role="status">
+          {{ review.blockers.value.untitled ? t("ai.review.needTitles") : t("ai.review.fixFirst") }}
+        </p>
+      </template>
 
       <CreatedTasks v-else-if="step === 'done'" :tasks="created" :failed="failedLines" celebrate @navigate="open = false" />
     </div>

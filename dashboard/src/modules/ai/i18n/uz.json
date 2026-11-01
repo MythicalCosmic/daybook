@@ -300,6 +300,7 @@
   "ai.chat.teaserBody": "Dorixonangiz haqida oddiy so‘zlar bilan so‘rang: kim kechikdi, nima tekshiruvni kutyapti, muzlatgich tekshiruvlari qanday o‘tdi. Javoblar tilga olingan vazifa va xodimlarni ochadi.",
   "ai.chat.teaserKey": "Serverga ANTHROPIC_API_KEY qo‘shing, shunda AIdan so‘rash o‘zi yoqiladi.",
   "ai.chat.teaserOff": "Avval AIni yoqing, keyin serverda Claude xizmatini ulang.",
+  "ai.chat.teaserSoon": "AIdan so‘rash serverning keyingi yangilanishi bilan keladi.",
   "ai.chat.unavailable": "AIdan so‘rash hali mavjud emas",
   "ai.chat.unavailableBody": "Egasi Claude xizmatini ulagach, u yoqiladi.",
 
@@ -337,5 +338,10 @@
   "ai.kpi.today": "Bugun AI agentlar",
   "ai.kpi.actions": "{n} ta ish | {n} ta ish | {n} ta ish",
   "ai.kpi.week": "Shu hafta: {n} | Shu hafta: {n} | Shu hafta: {n}",
-  "ai.kpi.off": "AI o‘chirilgan"
+  "ai.kpi.off": "AI o‘chirilgan",
+  "ai.agents.comingTitle": "Agentlar tez orada ishga tushadi",
+  "ai.agents.comingBody": "Ovozli va yozma vazifalar hozir ham ishlaydi: «Ovoz bilan berish» yoki «Aqlli qo‘shish» tugmasini bosing. O‘zi ishlaydigan agentlar serverning keyingi yangilanishi bilan keladi.",
+  "ai.voice.voice": "Ovozli",
+  "ai.voice.audioGone": "Yozuv saqlash muddati o‘tgach o‘chirildi; matn va vazifalar qoladi.",
+  "ai.kpi.soon": "Agentlar tez orada ishga tushadi"
 }

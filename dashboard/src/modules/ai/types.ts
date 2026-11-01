@@ -91,7 +91,8 @@ export interface AiDraft {
   source: DraftSource;
   author: { id: number; name: string } | null;
   created_at: string;
-  audio: { seconds: number; url: string } | null;
+  /** null for typed text; `url` is a signed link, null once the recording was deleted. */
+  audio: { seconds: number | null; url: string | null } | null;
   transcript: string;
   language: string;
   engine: "claude" | "rules" | "fake" | string;
