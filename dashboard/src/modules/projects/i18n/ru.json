@@ -154,7 +154,7 @@
   "projects.list.wipLabel": "Лимит карточек",
   "projects.list.wipHelp": "Колонка предупредит, если карточек станет больше.",
   "projects.list.wipNone": "Без лимита",
-  "projects.list.wipNow": "Лимит: {n}",
+  "projects.list.wipNow": "Лимит: {n} карточка | Лимит: {n} карточки | Лимит: {n} карточек",
   "projects.list.delete": "Удалить колонку",
   "projects.list.deleteTitle": "Удалить «{name}»?",
   "projects.list.deleteBody": "Её карточки переедут в первую колонку. Больше ничего не изменится.",
@@ -460,5 +460,6 @@
   "projects.taskPriority.urgent": "Срочно",
   "projects.money.remaining": "Остаток бюджета",
   "projects.money.remainingHint": "Бюджет минус расходы",
-  "projects.drawer.close": "Закрыть карточку"
+  "projects.drawer.close": "Закрыть карточку",
+  "projects.list.csvName": "Карточки {key}"
 }

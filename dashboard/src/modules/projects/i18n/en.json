@@ -154,7 +154,7 @@
   "projects.list.wipLabel": "Card limit",
   "projects.list.wipHelp": "The list warns when it holds more cards than this.",
   "projects.list.wipNone": "No card limit",
-  "projects.list.wipNow": "Limit: {n} cards",
+  "projects.list.wipNow": "Limit: {n} cards | Limit: {n} card | Limit: {n} cards",
   "projects.list.delete": "Delete list",
   "projects.list.deleteTitle": "Delete “{name}”?",
   "projects.list.deleteBody": "Its cards move to the first list. Nothing else changes.",
@@ -460,5 +460,6 @@
   "projects.taskPriority.urgent": "Urgent",
   "projects.money.remaining": "Left in budget",
   "projects.money.remainingHint": "Budget minus spent",
-  "projects.drawer.close": "Close the card"
+  "projects.drawer.close": "Close the card",
+  "projects.list.csvName": "{key} cards"
 }

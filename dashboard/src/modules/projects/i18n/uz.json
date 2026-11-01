@@ -154,7 +154,7 @@
   "projects.list.wipLabel": "Kartalar chegarasi",
   "projects.list.wipHelp": "Kartalar soni bundan oshsa, ro‘yxat ogohlantiradi.",
   "projects.list.wipNone": "Chegarasiz",
-  "projects.list.wipNow": "Chegara: {n} ta karta",
+  "projects.list.wipNow": "Chegara: {n} ta karta | Chegara: {n} ta karta | Chegara: {n} ta karta",
   "projects.list.delete": "Ro‘yxatni o‘chirish",
   "projects.list.deleteTitle": "«{name}» o‘chirilsinmi?",
   "projects.list.deleteBody": "Undagi kartalar birinchi ro‘yxatga o‘tadi. Boshqa hech narsa o‘zgarmaydi.",
@@ -460,5 +460,6 @@
   "projects.taskPriority.urgent": "Shoshilinch",
   "projects.money.remaining": "Byudjetda qoldi",
   "projects.money.remainingHint": "Byudjet minus xarajat",
-  "projects.drawer.close": "Kartani yopish"
+  "projects.drawer.close": "Kartani yopish",
+  "projects.list.csvName": "{key} kartalari"
 }

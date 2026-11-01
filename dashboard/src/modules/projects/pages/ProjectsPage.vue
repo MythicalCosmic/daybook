@@ -209,7 +209,7 @@ function open(row: ProjectItem): void {
       :empty-title="filtered ? t('projects.empty.filteredTitle') : t('projects.empty.title')"
       :empty-description="filtered ? t('projects.empty.filteredBody') : t('projects.empty.body')"
       :empty-icon="FolderKanban"
-      csv-name="projects"
+      :csv-name="t('projects.title')"
       :caption="t('projects.title')"
       @row-click="open"
       @clear-filters="filters.clear(); search = ''"

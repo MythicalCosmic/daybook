@@ -16,6 +16,7 @@ import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
 import { todayIn } from "@/lib/dates";
+import { useFormat } from "@/lib/useFormat";
 import { useCompanyId, useCompanyStore } from "@/stores/company";
 
 import { logTime, useCards, useMembers, useRefreshProjects } from "../api";
@@ -32,6 +33,7 @@ const props = withDefaults(defineProps<{ project: ProjectDetail; taskId?: number
 const emit = defineEmits<{ saved: [] }>();
 
 const { t } = useI18n();
+const fmt = useFormat();
 const company = useCompanyStore();
 const companyId = useCompanyId();
 const refresh = useRefreshProjects();
@@ -119,7 +121,7 @@ async function save(): Promise<void> {
           :class="minutes === chip ? 'border-primary bg-accent-soft text-accent-fg' : 'border-line text-muted hover:bg-highlight'"
           @click="duration = hhmm(chip)"
         >
-          {{ chip < 60 ? t("projects.time.minutesShort", { n: chip }) : t("projects.time.hoursShort", { n: chip / 60 }) }}
+          {{ chip < 60 ? t("projects.time.minutesShort", { n: chip }) : t("projects.time.hoursShort", { n: fmt.number(chip / 60, 1) }) }}
         </button>
       </div>
       <FormField v-if="!taskId" :label="t('projects.time.card')" optional>
