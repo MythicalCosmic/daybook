@@ -483,6 +483,18 @@ describe("routine work", () => {
   });
   afterEach(() => vi.useRealTimers());
 
+  it("asks history for at most 92 days, the server's limit (a longer range broke the page)", async () => {
+    const calls = stub({
+      "GET routines/history/": () => json({ range: {}, days: [], routines: [], series: [], people: [], totals: {} }),
+      "GET tasks/options/": () => json(options),
+    });
+    await mountPage("/c/1/routines/history?preset=custom&from=2026-01-01&to=2026-10-21", "HistoryPage");
+    const asked = calls.filter((c) => c.url.includes("/routines/history/")).map((c) => new URL(c.url, "http://x").searchParams);
+    expect(asked.length).toBeGreaterThan(0);
+    expect(asked.at(-1)!.get("to")).toBe("2026-10-21");
+    expect(asked.at(-1)!.get("from")).toBe("2026-07-22");
+  });
+
   it("reads a day, its history and what waits for confirmation, and confirms through the tasks bulk endpoint", async () => {
     const calls = stub({
       "GET routines/day/": () => json({ day: "2026-10-21", holiday: false, idle: 0, totals: {}, routines: [] }),
