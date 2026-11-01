@@ -69,7 +69,9 @@ const params = computed<Record<string, string | string[]>>(() => {
   const base = search.value ? { ...filters.params.value, q: search.value } : filters.params.value;
   return routinesAsked.value ? base : { ...base, routines: "without" };
 });
-const filtered = computed(() => filters.active.value > 0 || !!search.value);
+// Filtered = narrowed beyond the view: the default view's own chips (All open's statuses) are not a
+// filter, so an empty list under it says "No tasks yet", not "nothing matches, clear the filters".
+const filtered = computed(() => (paramsOfView(viewId.value) ? dirty.value : filters.active.value > 0) || !!search.value);
 /** Phones: the filter chips open in a sheet. */
 const filtersOpen = ref(false);
 

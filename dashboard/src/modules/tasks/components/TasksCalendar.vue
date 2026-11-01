@@ -131,7 +131,10 @@ function openItem(item: CalendarItem): void {
           </p>
         </template>
       </CalendarMonth>
-      <CalendarWeek v-else v-model:week="week" :items="items" :start-hour="7" :end-hour="23" @item-click="openItem" />
+      <!-- The week grid has no loading look of its own: dimmed and busy while its tasks load. -->
+      <div v-else data-testid="week-view" :aria-busy="query.isFetching.value || undefined" :class="['transition-opacity', query.isFetching.value && 'opacity-60']">
+        <CalendarWeek v-model:week="week" :items="items" :start-hour="7" :end-hour="23" @item-click="openItem" />
+      </div>
     </div>
   </div>
 </template>

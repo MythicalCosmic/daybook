@@ -57,6 +57,18 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
+describe("TasksCalendar week", () => {
+  it("looks busy while the week's tasks load", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>(() => undefined)));
+    const app = await testApp("/c/1/tasks?view=calendar&cal=week");
+    const { default: TasksCalendar } = await import("../components/TasksCalendar.vue");
+    const { wrapper } = mountWithProviders(TasksCalendar, { plugins: app.plugins, props: { params: {} } });
+    await flushPromises();
+    expect(document.body.querySelector("[aria-busy=true]")).not.toBeNull();
+    wrapper.unmount();
+  });
+});
+
 describe("TasksPage", () => {
   it("shows Try again when the KPI summary fails", async () => {
     const { wrapper, calls } = await mountTasks(true);
@@ -66,6 +78,14 @@ describe("TasksPage", () => {
     retry!.click();
     await flushPromises();
     expect(calls.filter((c) => c.url.includes("/tasks/summary/")).length).toBe(before + 1);
+    wrapper.unmount();
+  });
+
+  it("says No tasks yet under the default view (its own chips are not a filter)", async () => {
+    const { wrapper } = await mountTasks();
+    await flushPromises();
+    expect(document.body.textContent).toContain("No tasks yet");
+    expect(document.body.textContent).not.toContain("No tasks match");
     wrapper.unmount();
   });
 
