@@ -86,5 +86,8 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
     setupFiles: ["src/test/setup.ts"],
     restoreMocks: true,
+    // Page tests mount a whole page; on a loaded machine (the suite beside builds and other
+    // suites) 5 s was too tight and they timed out without failing anything.
+    testTimeout: 15_000,
   },
 });

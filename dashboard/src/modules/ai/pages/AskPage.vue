@@ -298,7 +298,7 @@ const conversationTime = (conversation: Conversation) => fmt.relative(conversati
               v-model="text"
               rows="1"
               :maxlength="2000"
-              class="ai-composer max-h-[160px] min-h-10 flex-1 resize-none bg-transparent px-1.5 py-2 text-base text-fg outline-none placeholder:text-subtle"
+              class="ai-composer max-h-[160px] min-h-10 flex-1 resize-none bg-transparent px-1.5 py-2 text-base pointer-coarse:text-md text-fg outline-none placeholder:text-subtle"
               :placeholder="t('ai.chat.placeholder')"
               :aria-label="t('ai.chat.placeholder')"
               :disabled="sending"
