@@ -102,7 +102,7 @@ export function App() {
             // button does sign in. Outside Telegram (a browser), say where the app lives.
             <Problem kind={openedWithoutSignIn() ? "unsigned" : "outside"} />
           ) : me.isError ? (
-            <Problem kind={me.error instanceof ApiError && me.error.status === 401 ? "expired" : "network"} retry={() => void me.refetch()} />
+            <Problem kind={launchFailure(me.error)} retry={() => void me.refetch()} />
           ) : !me.data || !splashOver ? (
             <SplashScreen />
           ) : (
@@ -137,8 +137,16 @@ function SplashScreen() {
   return <Splash tagline={t("app.tagline")} />;
 }
 
-function Problem({ kind, retry }: { kind: "outside" | "unsigned" | "expired" | "network"; retry?: () => void }) {
-  return <Failure kind={kind} onRetry={kind === "network" ? retry : undefined} />;
+type ProblemKind = "outside" | "unsigned" | "expired" | "network" | "server";
+
+/** Why signing in failed: the session ran out, the server answered with an error, or nothing came back. */
+function launchFailure(error: unknown): ProblemKind {
+  if (!(error instanceof ApiError)) return "network";
+  return error.status === 401 ? "expired" : "server";
+}
+
+function Problem({ kind, retry }: { kind: ProblemKind; retry?: () => void }) {
+  return <Failure kind={kind} onRetry={kind === "network" || kind === "server" ? retry : undefined} />;
 }
 
 /** Decides what the person may see: account creation, the waiting room, or the app. */

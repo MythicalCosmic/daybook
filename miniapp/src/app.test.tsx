@@ -83,6 +83,25 @@ describe("app", () => {
     expect(localStorage.getItem("daybook.lang")).toBe("en");
   });
 
+  it("says why it couldn't open: no connection, or the server failed (never \"no internet\" then)", async () => {
+    const launch = () =>
+      render(
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <App />
+        </QueryClientProvider>,
+      );
+    localStorage.setItem("daybook.lang", "en");
+    launch();
+    expect(await screen.findByRole("heading", { name: "No connection" }, { timeout: 3000 })).toBeTruthy();
+    expect(screen.getByText("Check your internet and try again.")).toBeTruthy();
+    cleanup();
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("Bad gateway", { status: 502 })));
+    launch();
+    expect(await screen.findByRole("heading", { name: "Daybook didn't open" }, { timeout: 3000 })).toBeTruthy();
+    expect(screen.queryByText(/internet/)).toBeNull();
+    expect(screen.getByRole("button", { name: "Try again" })).toBeTruthy();
+  });
+
   it("starts loading Home's numbers and lists while the splash is still up", async () => {
     const fetched: string[] = [];
     vi.stubGlobal(

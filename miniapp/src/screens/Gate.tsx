@@ -1,4 +1,4 @@
-import { Ban, CirclePause, Clock3, DoorOpen, KeyRound, MessageCircle, Mic, Send, SendHorizontal, Smartphone, WifiOff, type LucideIcon } from "lucide-react";
+import { Ban, CirclePause, Clock3, CloudOff, DoorOpen, KeyRound, MessageCircle, Mic, Send, SendHorizontal, Smartphone, WifiOff, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { suspendedUntil } from "../api/membership";
@@ -128,7 +128,9 @@ const FAILURES = {
   outside: { icon: Send, title: "error.outsideTitle", body: "error.outsideTelegram" },
   unsigned: { icon: MessageCircle, title: "error.unsignedTitle", body: "error.unsigned" },
   expired: { icon: Clock3, title: "error.expiredTitle", body: "error.expired" },
-  network: { icon: WifiOff, title: "error.generic", body: "error.network" },
+  network: { icon: WifiOff, title: "error.networkTitle", body: "error.networkBody" },
+  // The server failed (the phone's connection is fine): not "no internet".
+  server: { icon: CloudOff, title: "error.serverTitle", body: "error.server" },
 } as const;
 
 /**
