@@ -1122,7 +1122,8 @@ def team_summary(head: Membership) -> BotMessage:
     lines.append("")
     for person in people:
         total, late = counts[person.pk]
-        facts = _("Open: %(count)d") % {"count": total}
+        # Translators: mid-line after a person's name ("Alisher Valiyev — open: 3"), lowercase.
+        facts = _("open: %(count)d") % {"count": total}
         if late:
             facts += " · " + _("late: %(count)d") % {"count": late}
         lines.append(f"{html.quote(str(person))} — {facts}")
@@ -1146,7 +1147,7 @@ def team_summary(head: Membership) -> BotMessage:
             rows.append(
                 [
                     InlineKeyboardButton(
-                        text=display_title(task)[:32],
+                        text=_cut(display_title(task), TEAM_BUTTON),
                         callback_data=TaskCallback(action=TaskAction.OPEN, task_id=task.pk).pack(),
                     ),
                     InlineKeyboardButton(
@@ -1157,7 +1158,8 @@ def team_summary(head: Membership) -> BotMessage:
             )
     people_buttons = [
         InlineKeyboardButton(
-            text=str(person)[:30], callback_data=TeamCallback(member_id=person.pk).pack()
+            text=_cut(str(person), TEAM_BUTTON),
+            callback_data=TeamCallback(member_id=person.pk).pack(),
         )
         for person in people
     ]
@@ -1178,14 +1180,20 @@ def team_summary(head: Membership) -> BotMessage:
 
 PERSON_DONE_DAYS = 7
 PERSON_SHOWN = 10
+# Button labels on My team: cut with "…", never mid-word without a sign.
+TEAM_BUTTON = 30
+PERSON_BUTTON = 40
 
 
 def team_person(head: Membership, person: Membership) -> BotMessage:
     """One of a head's people: their open work and what they finished in the last week, with
     how each was proven; every task opens as its card (the photo with it)."""
     now = timezone.now()
-    zone = ZoneInfo(person.company.timezone)
-    work = Task.objects.filter(assignee=person).exclude(kind=Task.Kind.PERSONAL)
+    work = (
+        Task.objects.filter(assignee=person)
+        .exclude(kind=Task.Kind.PERSONAL)
+        .select_related("company")  # each line writes its day in the company's zone
+    )
     open_tasks = list(work.filter(status__in=Task.OPEN_STATUSES).order_by("due_at")[:PERSON_SHOWN])
     finished = list(
         work.filter(
@@ -1201,17 +1209,14 @@ def team_person(head: Membership, person: Membership) -> BotMessage:
     lines.append(_("<b>Open</b>") if open_tasks else _("Nothing open."))
     for task in open_tasks:
         line = html.quote(display_title(task))
-        if task.due_at is not None:
-            when = timezone.localtime(task.due_at, zone).strftime("%d.%m %H:%M")
-            line += " — " + (
-                _("late since %(time)s") % {"time": when} if task.due_at < now else when
-            )
+        if task.due_at is not None:  # as the card says it: "bugun, 08:15 · 2 soat kechikdi"
+            line += " — " + format_due(task, now)
         lines.append(line)
-        rows.append([_button(display_title(task)[:40], TaskAction.OPEN, task.pk)])
+        rows.append([_button(_cut(display_title(task), PERSON_BUTTON), TaskAction.OPEN, task.pk)])
     done_header = _("<b>Done in the last 7 days</b>")
     lines += ["", done_header if finished else _("Nothing done in the last 7 days.")]
     for task in finished:
-        when = timezone.localtime(task.completed_at, zone).strftime("%d.%m %H:%M")
+        when = _short(task, task.completed_at, now)
         proof = ""
         if task.proof_photo:
             proof = " · " + _("photo")
@@ -1219,7 +1224,7 @@ def team_person(head: Membership, person: Membership) -> BotMessage:
             proof = " · " + _("report")
         waiting = " · " + _("waiting for check") if task.status == Task.Status.REVIEW else ""
         lines.append(f"{html.quote(display_title(task))} — {when}{proof}{waiting}")
-        rows.append([_button(display_title(task)[:40], TaskAction.OPEN, task.pk)])
+        rows.append([_button(_cut(display_title(task), PERSON_BUTTON), TaskAction.OPEN, task.pk)])
     rows.append(
         [InlineKeyboardButton(text=_("Back"), callback_data=TeamCallback(member_id=0).pack())]
     )
