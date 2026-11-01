@@ -120,6 +120,11 @@ function Listening({ recorder, max, onCancel }: { recorder: Recorder; max: numbe
   const starting = recorder.phase === "starting";
   const left = Math.max(0, Math.ceil(max - recorder.seconds));
   const level = live ? recorder.levels.at(-1) ?? 0 : 0;
+  // The last ten seconds begin: a light tap, felt even with the eyes elsewhere.
+  const closing = live && left <= WARN_SECONDS;
+  useEffect(() => {
+    if (closing) haptic.impact("light");
+  }, [closing]);
   return (
     <div className="ai-stage ai-rec fade-in">
       <div className="ai-rec-head">
@@ -165,8 +170,8 @@ function Listening({ recorder, max, onCancel }: { recorder: Recorder; max: numbe
 
       <Meter levels={recorder.levels} live={live} />
 
-      <div className={cx("ai-rec-limit num", live && left <= WARN_SECONDS && "ai-rec-limit--warn")}>
-        {live && left <= WARN_SECONDS ? t("rec.left", { count: left }) : t("rec.limit", { time: formatClock(max) })}
+      <div className={cx("ai-rec-limit num", closing && "ai-rec-limit--warn")}>
+        {closing ? t("rec.left", { count: left }) : t("rec.limit", { time: formatClock(max) })}
       </div>
 
       <p className="ai-rec-example">{t("rec.example")}</p>
