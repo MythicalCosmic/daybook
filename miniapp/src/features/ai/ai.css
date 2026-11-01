@@ -666,6 +666,13 @@ button.ai-rec-mic:active {
   min-height: 48px;
 }
 
+/* The calendar takes the box's whole width (inside a card a 360 px phone has room for 41 px days). */
+.ai-when .plus-when > .ui-cal {
+  margin-inline: -12px;
+  padding-inline: 0;
+  border: 0;
+}
+
 .ai-problem {
   display: flex;
   flex-direction: column;

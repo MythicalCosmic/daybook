@@ -190,6 +190,26 @@ describe("quick add in the (+) sheet", () => {
     add();
     await waitFor(() => expect(created()[0]).toMatchObject({ due_at: "2026-10-22T04:00:00.000Z" }));
   });
+
+  it("opens the calendar for another day at once, in 24 hours whatever the phone says", async () => {
+    answer({ title: "Insulin", due_at: null, due_label: null, priority: null, repeat: null });
+    openSheet();
+    type("Insulin");
+    fireEvent.click(screen.getByRole("button", { name: "Other day" }));
+    // Days from tomorrow; the default (two days on) is chosen.
+    expect(screen.getByRole("grid", { name: "October 2026" })).toBeTruthy();
+    expect((screen.getByRole("button", { name: "Wednesday, 21 October" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByRole("button", { name: "Friday, 23 October" }).getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(screen.getByRole("button", { name: "Next month" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tuesday, 3 November" }));
+    expect(screen.queryByRole("grid")).toBeNull();
+    const hour = within(screen.getByRole("group", { name: "Time" })).getByRole("combobox", { name: "Hour" }) as HTMLSelectElement;
+    expect([...hour.options].map((option) => option.text).slice(12, 15)).toEqual(["12", "13", "14"]);
+    fireEvent.change(hour, { target: { value: "14" } });
+    fireEvent.change(within(screen.getByRole("group", { name: "Time" })).getByRole("combobox", { name: "Minutes" }), { target: { value: "30" } });
+    add();
+    await waitFor(() => expect(created()[0]).toMatchObject({ title: "Insulin", due_at: "2026-11-03T09:30:00.000Z" }));
+  });
 });
 
 describe("giving a task from the (+) sheet", () => {

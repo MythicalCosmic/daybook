@@ -187,6 +187,7 @@ export function DateInput({
   max,
   today,
   long = false,
+  defaultOpen = false,
   id,
   className,
 }: {
@@ -200,6 +201,8 @@ export function DateInput({
   today?: DayKey;
   /** "Seshanba, 3-noyabr" where the field has the whole line. */
   long?: boolean;
+  /** Open the calendar as the field appears (the person just asked for another day). */
+  defaultOpen?: boolean;
   id?: string;
   className?: string;
 }) {
@@ -207,7 +210,7 @@ export function DateInput({
   const control = useFieldControl({ id });
   const panelId = useId();
   const trigger = useRef<HTMLButtonElement>(null);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const shown = value
     ? capitalise(long ? `${weekdayLong(value, "UTC", locale)}, ${dayMonthLong(value, "UTC", locale)}` : `${weekdayShort(value, "UTC", locale)}, ${dayMonth(value, "UTC", locale)}`)
     : "";

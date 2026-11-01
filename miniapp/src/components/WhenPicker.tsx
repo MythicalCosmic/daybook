@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { useI18n } from "../i18n";
 import { addDays, clock, dayKey, hourIn, zonedInstant, type DayKey } from "../lib/time";
 import { haptic } from "../telegram";
@@ -63,6 +65,8 @@ export function WhenPicker({
   const today = dayKey(now, timeZone);
   const { due, rolled } = whenDue(value, now, timeZone);
   const set = (patch: Partial<WhenValue>) => onChange({ ...value, ...patch });
+  // "Other day" tapped: its calendar opens at once (a value that was already another day doesn't).
+  const [askedForDay, setAskedForDay] = useState(false);
   return (
     <>
       <div className="ui-chips plus-days" role="group" aria-labelledby={labelledBy}>
@@ -74,6 +78,7 @@ export function WhenPicker({
             aria-pressed={value.when === option}
             onClick={() => {
               haptic.select();
+              setAskedForDay(option === "date" && value.when !== "date");
               set({ when: option });
             }}
           >
@@ -84,7 +89,14 @@ export function WhenPicker({
       {value.when !== "none" && (
         <div className="plus-when">
           {value.when === "date" && (
-            <DateInput label={t("add.date")} min={addDays(today, 1)} today={today} value={value.date} onChange={(date) => set({ date })} />
+            <DateInput
+              label={t("add.date")}
+              min={addDays(today, 1)}
+              today={today}
+              value={value.date}
+              defaultOpen={askedForDay}
+              onChange={(date) => set({ date })}
+            />
           )}
           <TimeInput label={t("add.time")} value={value.time} onChange={(time) => set({ time: time || value.time })} />
         </div>
