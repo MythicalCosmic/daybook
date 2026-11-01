@@ -6,7 +6,8 @@ import { useMember } from "../../state/session";
 import { Button, EmptyState, PageHeader, PullToRefresh, ScreenSkeleton, SectionHead } from "../../ui";
 import type { PageProps } from "../registry";
 import { useHistory, useKassa, type Shift } from "./api";
-import { monthYear, useKassaT } from "./lib";
+import { monthYear } from "../../lib/time";
+import { useKassaT } from "./lib";
 import { beforeData, ShiftRow } from "./parts";
 
 /** All my shifts, newest first, by month. The result shows once a manager checked the shift. */

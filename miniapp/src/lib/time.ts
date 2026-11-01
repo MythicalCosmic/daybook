@@ -122,6 +122,18 @@ export function longDate(moment: Date, timeZone: string, locale: string): string
   return capitalise(formatter(locale, { timeZone, weekday: "long", day: "numeric", month: "long" }).format(moment));
 }
 
+/** "Oktabr 2026", "Октябрь 2026 г.", "October 2026" for "2026-10" (Uzbek names spelled out). */
+export function monthYear(month: string, locale: string): string {
+  const [year, number] = month.split("-").map(Number);
+  if (isUzbek(locale)) return capitalise(`${UZ_MONTHS[number - 1]} ${year}`);
+  return capitalise(formatter(locale, { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(year, number - 1, 15))));
+}
+
+/** Whole minutes from `from` to `to` (never negative). */
+export function minutesBetween(from: string | Date, to: string | Date): number {
+  return Math.max(0, Math.floor((new Date(to).getTime() - new Date(from).getTime()) / 60_000));
+}
+
 /** The first letter up: a date or weekday that starts a line. */
 export function capitalise(text: string): string {
   return text.charAt(0).toLocaleUpperCase() + text.slice(1);

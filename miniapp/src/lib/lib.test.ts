@@ -15,6 +15,8 @@ import {
   dayMonth,
   daysFromToday,
   longDate,
+  minutesBetween,
+  monthYear,
   weekdayShort,
   zonedInstant,
 } from "./time";
@@ -88,6 +90,14 @@ describe("time", () => {
     expect(daysFromToday("2026-10-19T18:00:00Z", NOW, TASHKENT)).toBe(0); // 23:00 tonight, local
     expect(daysFromToday("2026-10-18T19:30:00Z", NOW, TASHKENT)).toBe(0); // 00:30 local
     expect(addDays("2026-12-31", 1)).toBe("2027-01-01");
+  });
+
+  it("names a month with its year, and counts whole minutes between two moments", () => {
+    expect(monthYear("2026-10", "en-GB")).toBe("October 2026");
+    expect(monthYear("2026-10", "uz-Latn-UZ")).toBe("Oktabr 2026");
+    expect(monthYear("2026-10", "ru-RU")).toBe("Октябрь 2026 г.");
+    expect(minutesBetween("2026-10-21T08:00:00Z", new Date("2026-10-21T09:30:59Z"))).toBe(90);
+    expect(minutesBetween("2026-10-21T09:00:00Z", "2026-10-21T08:00:00Z")).toBe(0);
   });
 
   it("shows a calendar date (a holiday, a shift's day, a report's range) as that very day in every zone", () => {

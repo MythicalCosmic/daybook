@@ -5,7 +5,7 @@ import { ArchiveRestore, ArrowRightLeft, HandCoins, Landmark, PiggyBank, Vault }
 import { useI18n, type Lang } from "../../i18n";
 import { useFeatureT, type FeatureTranslate } from "../../i18n/feature";
 import { compareMoney, formatMoney, isZero, type MoneyFormat } from "../../lib/money";
-import { clock, dayMonth, daysFromToday } from "../../lib/time";
+import { clock, dayMonth, daysFromToday, minutesBetween } from "../../lib/time";
 import type { BadgeTone } from "../../ui";
 import type { Movement, MovementKind, Shift } from "./api";
 import { messages } from "./messages";
@@ -21,10 +21,6 @@ export function useKassaT(): KassaT {
 export function useMoney(currency: string) {
   const { lang } = useI18n();
   return (amount: string | null | undefined, options: MoneyFormat = {}) => formatMoney(amount, currency, lang, options);
-}
-
-export function minutesBetween(from: string, to: Date): number {
-  return Math.max(0, Math.floor((to.getTime() - new Date(from).getTime()) / 60_000));
 }
 
 /** "3 h 12 min", "25 min". */
@@ -102,17 +98,6 @@ export function movementMeta(movement: Movement, t: KassaT, timeZone: string, lo
   // A payout's title is its reason (or its category when there is none); others show the note.
   const extra = movement.kind === "payout" ? (movement.reason ? movement.category?.name : null) : movement.reason;
   return { text: extra ? `${at} · ${extra}` : at, alert: false };
-}
-
-// Chromium may ship without Uzbek month names ("M10 2026"), as lib/time.ts notes.
-const UZ_MONTHS = ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"];
-
-/** "October 2026", "Октябрь 2026 г.", "Oktabr 2026" for "2026-10". */
-export function monthYear(month: string, locale: string): string {
-  const [year, number] = month.split("-").map(Number);
-  if (locale.startsWith("uz")) return `${UZ_MONTHS[number - 1]} ${year}`;
-  const text = new Intl.DateTimeFormat(locale, { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(year, number - 1, 15)));
-  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 /** Digits only, for counters typed into plain inputs. */

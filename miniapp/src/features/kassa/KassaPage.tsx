@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useI18n } from "../../i18n";
 import { errorText } from "../../lib/actions";
 import { amountFromTyping, isZero, subtractMoney, sumMoney, type DecimalString } from "../../lib/money";
-import { clock } from "../../lib/time";
+import { clock, minutesBetween } from "../../lib/time";
 import { useNow } from "../../lib/useNow";
 import { useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
@@ -13,7 +13,7 @@ import { confirm, haptic } from "../../telegram";
 import { BottomBar, Button, Card, countedTotal, cx, EmptyState, MoneyText, PageHeader, Screen, ScreenSkeleton, SectionHead, type NoteCounts } from "../../ui";
 import type { PageProps } from "../registry";
 import { useKassa, useOpenShift, useVoidSale, type Kassa, type ShiftDetail } from "./api";
-import { duration, minutesBetween, useKassaT, useMoney } from "./lib";
+import { duration, useKassaT, useMoney } from "./lib";
 import { beforeData, CashCount, MovementRow, ShiftRow } from "./parts";
 import { ReceivedList } from "./Received";
 
