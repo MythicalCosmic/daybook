@@ -94,10 +94,18 @@ function open(row: Debt): void {
 }
 
 const activeKey = computed(() => (typeof route.query.debt === "string" ? route.query.debt : null));
-const formOpen = ref(route.query.new === "1");
-watch(formOpen, (isOpen) => {
-  if (!isOpen && route.query.new) void router.replace({ query: { ...route.query, new: undefined } });
-});
+// "Record debt" opens from the palette too (?new=1), also on this page when it is already open.
+const formOpen = ref(false);
+const newParam = useRouteState("new", rs.boolean(false));
+watch(
+  newParam,
+  (value) => {
+    if (!value) return;
+    newParam.value = false;
+    if (canRecord.value) formOpen.value = true;
+  },
+  { immediate: true },
+);
 const exportParams = computed(() => ({ direction: direction.value, ...filters.params.value }));
 </script>
 

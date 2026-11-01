@@ -363,6 +363,7 @@
   "sales.targets.scope.person": "Кассир",
   "sales.targets.amount": "План по выручке",
   "sales.targets.pickBranch": "Выберите филиал.",
+  "sales.targets.errAmount": "Введите план больше нуля.",
   "sales.targets.pickPerson": "Выберите кассира.",
   "sales.targets.saved": "План сохранён",
   "sales.targets.company": "План компании",

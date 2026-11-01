@@ -363,6 +363,7 @@
   "sales.targets.scope.person": "Cashier",
   "sales.targets.amount": "Net sales target",
   "sales.targets.pickBranch": "Pick the branch.",
+  "sales.targets.errAmount": "Enter a target above zero.",
   "sales.targets.pickPerson": "Pick the cashier.",
   "sales.targets.saved": "Target saved",
   "sales.targets.company": "Company target",

@@ -7,7 +7,6 @@
 import { ChevronLeft, ChevronRight, Pencil, Plus, Target, Trash2 } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRoute, useRouter } from "vue-router";
 
 import BulletBar from "@/components/BulletBar.vue";
 import ChartCard from "@/components/ChartCard.vue";
@@ -36,8 +35,6 @@ import type { Target as SalesTarget } from "../types";
 
 const { t } = useI18n();
 const fmt = useFormat();
-const route = useRoute();
-const router = useRouter();
 const company = useCompanyStore();
 const confirm = useConfirm();
 
@@ -70,13 +67,22 @@ const chart = computed(() => {
   };
 });
 
-const dialog = ref(route.query.new === "target");
+const dialog = ref(false);
 const editing = ref<SalesTarget | null>(null);
+// "Set a target" opens from the palette too (?new=target), also on this page when it is already
+// open: the link is read whenever it arrives, then taken out of the URL.
+const newParam = useRouteState("new", rs.string(""));
+watch(
+  newParam,
+  (value) => {
+    if (value !== "target") return;
+    newParam.value = "";
+    if (canManage.value) dialog.value = true;
+  },
+  { immediate: true },
+);
 watch(dialog, (value) => {
-  if (!value) {
-    editing.value = null;
-    if (route.query.new) void router.replace({ query: { ...route.query, new: undefined } });
-  }
+  if (!value) editing.value = null;
 });
 function edit(target: SalesTarget): void {
   editing.value = target;

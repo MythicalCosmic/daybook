@@ -13,9 +13,12 @@ import SegmentedControl from "@/components/SegmentedControl.vue";
 import SelectBox from "@/components/SelectBox.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
+import { unshownFieldError } from "@/api/http";
 import { toast } from "@/components/useToast";
 import { formatDay } from "@/lib/dates";
+import { dec } from "@/lib/decimal";
 import { useFormat } from "@/lib/useFormat";
+import { useCompanyStore } from "@/stores/company";
 
 import { salesApi, useOptions, useSalesMutation } from "../api";
 import type { Target as SalesTarget } from "../types";
@@ -26,6 +29,9 @@ const props = withDefaults(defineProps<{ month: string; target?: SalesTarget | n
 const { t } = useI18n();
 const fmt = useFormat();
 const options = useOptions();
+const company = useCompanyStore();
+// A manager limited to some branches sets targets for their branches and people, never the company.
+const limited = computed(() => company.current?.branch_scope != null);
 type Scope = "company" | "branch" | "person";
 const scope = ref<Scope>("company");
 const branch = ref<number | null>(null);
@@ -35,14 +41,16 @@ const error = ref<string | null>(null);
 
 watch(open, (value) => {
   if (!value) return;
-  scope.value = props.target?.scope ?? "company";
-  branch.value = props.target?.branch?.id ?? null;
+  scope.value = props.target?.scope ?? (limited.value ? "branch" : "company");
+  branch.value = props.target?.branch?.id ?? (limited.value ? (options.data.value?.branches[0]?.id ?? null) : null);
   member.value = props.target?.member?.id ?? null;
   amount.value = props.target?.amount ?? null;
   error.value = null;
 });
 
-const scopes = computed(() => (["company", "branch", "person"] as const).map((value) => ({ value, label: t(`sales.targets.scope.${value}`) })));
+const scopes = computed(() =>
+  (["company", "branch", "person"] as const).filter((value) => !(limited.value && value === "company")).map((value) => ({ value, label: t(`sales.targets.scope.${value}`) })),
+);
 const branchOptions = computed(() => (options.data.value?.branches ?? []).map((b) => ({ value: b.id, label: b.name })));
 const people = computed(() => (options.data.value?.cashiers ?? []).map((p) => ({ value: p.id, label: p.name, avatar: { name: p.name } })));
 const monthLabel = computed(() => formatDay(props.month, fmt.lang.value, "monthYear"));
@@ -53,14 +61,21 @@ const save = useSalesMutation((cid, input: { month: string; amount: string; bran
 
 async function submit(): Promise<void> {
   if (!amount.value) return void (error.value = t("common.form.required"));
+  if (dec(amount.value).lte(0)) return void (error.value = t("sales.targets.errAmount"));
   if (scope.value === "branch" && !branch.value) return void (error.value = t("sales.targets.pickBranch"));
   if (scope.value === "person" && !member.value) return void (error.value = t("sales.targets.pickPerson"));
-  await save.mutateAsync({
-    month: props.month,
-    amount: amount.value,
-    branch_id: scope.value === "branch" ? branch.value : null,
-    member_id: scope.value === "person" ? member.value : null,
-  });
+  try {
+    await save.mutateAsync({
+      month: props.month,
+      amount: amount.value,
+      branch_id: scope.value === "branch" ? branch.value : null,
+      member_id: scope.value === "person" ? member.value : null,
+    });
+  } catch (failure) {
+    // The form has one place for a message: a refusal about the month or the scope goes there too.
+    error.value = unshownFieldError(failure) ?? error.value;
+    return;
+  }
   toast.success(t("sales.targets.saved"));
   open.value = false;
 }

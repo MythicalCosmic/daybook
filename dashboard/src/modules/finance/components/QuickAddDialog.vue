@@ -55,7 +55,9 @@ const options = useOptions();
 const categories = useCategories();
 
 const canManage = computed(() => company.can("finance.manage"));
-const mode = ref<QuickAddMode>(props.request.mode);
+// Owner money and opening balances need finance.manage: anyone else asking for them (a link, a
+// command) starts on an expense instead of a form the server would refuse.
+const mode = ref<QuickAddMode>((props.request.mode === "owner" || props.request.mode === "opening") && !canManage.value ? "expense" : props.request.mode);
 const direction = ref<"in" | "out">("in");
 const saving = ref(false);
 const errors = reactive<Record<string, string | undefined>>({});

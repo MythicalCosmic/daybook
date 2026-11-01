@@ -363,6 +363,7 @@
   "sales.targets.scope.person": "Kassir",
   "sales.targets.amount": "Sof savdo rejasi",
   "sales.targets.pickBranch": "Filialni tanlang.",
+  "sales.targets.errAmount": "Noldan katta reja kiriting.",
   "sales.targets.pickPerson": "Kassirni tanlang.",
   "sales.targets.saved": "Reja saqlandi",
   "sales.targets.company": "Kompaniya rejasi",

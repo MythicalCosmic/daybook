@@ -45,6 +45,8 @@ const data = computed(() => overview.data.value);
 const skeleton = useDelayedPending(computed(() => overview.isPending.value));
 const base = computed(() => `/c/${company.currentId}/finance`);
 const canRecord = computed(() => company.can("finance.record"));
+// Rates and opening balances are set by someone who manages finance (the settings page needs it).
+const canManage = computed(() => company.can("finance.manage"));
 
 // KPIs ------------------------------------------------------------------------------------
 
@@ -162,8 +164,7 @@ const alerts = computed(() => {
       tone: "warning",
       title: t("finance.overview.alertRate"),
       body: d.rate.rate ? t("finance.overview.alertRateBody", { rate: fmt.number(d.rate.rate, 2), date: d.rate.date ? fmt.day(d.rate.date, "short") : "—" }) : t("finance.overview.alertNoRate"),
-      to: `${base.value}/settings/rates`,
-      action: t("finance.overview.alertRateAction"),
+      ...(canManage.value ? { to: `${base.value}/settings/rates`, action: t("finance.overview.alertRateAction") } : {}),
     });
   }
   for (const account of d.negative_accounts) {
@@ -196,7 +197,7 @@ const firstRun = computed(() => !!data.value && !data.value.has_ledger);
       <div v-if="firstRun" class="ui-card">
         <EmptyState :icon="Landmark" size="lg" :title="t('finance.overview.firstTitle')" :description="t('finance.overview.firstBody')">
           <div class="flex flex-wrap justify-center gap-2">
-            <UiButton variant="primary" :to="`${base}/accounts?setup=opening`">{{ t("finance.overview.firstAction") }}</UiButton>
+            <UiButton v-if="canManage" variant="primary" :to="`${base}/accounts?setup=opening`">{{ t("finance.overview.firstAction") }}</UiButton>
             <UiButton v-if="canRecord" variant="secondary" @click="openQuickAdd('expense')">{{ t("finance.cmd.record") }}</UiButton>
           </div>
         </EmptyState>

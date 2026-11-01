@@ -5,7 +5,7 @@
  * shift drawer (`?shift=`). On phones the table becomes cards.
  */
 import { AlertTriangle, Building2, Check, CircleDot, ClipboardList, Sparkles, UserRound } from "@lucide/vue";
-import { computed, onMounted } from "vue";
+import { computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
@@ -132,11 +132,15 @@ function openShift(row: ShiftRow): void {
 const filtered = computed(() => filters.active.value > 0 || !!search.value);
 
 // A link to a built-in view without its filters (?view=verify from the palette or a
-// notification) gets them, so the list matches the tab.
-onMounted(() => {
-  const builtinView = BUILTIN.value.find((v) => v.id === view.value);
-  if (builtinView && view.value !== "all" && !filters.active.value) activeView.value = builtinView.id;
-});
+// notification) gets them, so the list matches the tab: on arrival and on this page already open.
+watch(
+  view,
+  (id) => {
+    const builtinView = BUILTIN.value.find((v) => v.id === id);
+    if (builtinView && id !== "all" && !filters.active.value) activeView.value = builtinView.id;
+  },
+  { immediate: true },
+);
 </script>
 
 <template>

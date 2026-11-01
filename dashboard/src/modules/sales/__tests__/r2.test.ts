@@ -7,7 +7,8 @@ import { defineComponent, h, ref } from "vue";
 
 import MoneyInput from "@/components/MoneyInput.vue";
 import { ensureModuleMessages } from "@/i18n";
-import { json } from "@/test/fixtures";
+import { useSessionStore } from "@/stores/session";
+import { company, json, me } from "@/test/fixtures";
 import { mountWithProviders, testApp } from "@/test/plugins";
 
 import salesModule from "..";
@@ -101,6 +102,103 @@ describe("EntryDialog", () => {
     await flushPromises();
     expect(document.body.textContent).toContain("Uzcard is switched off.");
     expect(open.value).toBe(true);
+    wrapper.unmount();
+  });
+});
+
+describe("TargetDialog", () => {
+  it("offers a branch-limited manager their branch, never the whole company the server refuses", async () => {
+    const calls = stub({ "GET sales/options/": () => json(options()), "POST sales/targets/": () => json({ id: 3 }, 201) });
+    const TargetDialog = (await import("../components/TargetDialog.vue")).default;
+    const app = await testApp("/c/1/sales/targets");
+    await ensureModuleMessages(salesModule);
+    useSessionStore().me = me([company({ is_owner: false, permissions: ["sales.view", "sales.manage"], branch_scope: [1] })]);
+    const open = ref(false);
+    const Host = defineComponent({ setup: () => () => h(TargetDialog, { open: open.value, month: "2026-10-01", "onUpdate:open": (value: boolean) => (open.value = value) } as never) });
+    const { wrapper } = mountWithProviders(Host, { plugins: app.plugins });
+    await flushPromises();
+    open.value = true;
+    await flushPromises();
+    await flushPromises();
+    expect(document.body.textContent).not.toContain(en["sales.targets.scope.company"]);
+    wrapper.findComponent(MoneyInput).vm.$emit("update:modelValue", "90000000.00");
+    await flushPromises();
+    button("Save").click();
+    await flushPromises();
+    expect(calls.find((c) => c.method === "POST")?.body).toMatchObject({ branch_id: 1, member_id: null });
+    wrapper.unmount();
+  });
+
+  it("refuses a zero target and shows a field-only refusal", async () => {
+    const calls = stub({ "GET sales/options/": () => json(options()), "POST sales/targets/": () => json({ month: ["Targets are set for this month or later."] }, 400) });
+    const TargetDialog = (await import("../components/TargetDialog.vue")).default;
+    const app = await testApp("/c/1/sales/targets");
+    await ensureModuleMessages(salesModule);
+    const open = ref(false);
+    const Host = defineComponent({ setup: () => () => h(TargetDialog, { open: open.value, month: "2026-10-01", "onUpdate:open": (value: boolean) => (open.value = value) } as never) });
+    const { wrapper } = mountWithProviders(Host, { plugins: app.plugins });
+    await flushPromises();
+    open.value = true;
+    await flushPromises();
+    wrapper.findComponent(MoneyInput).vm.$emit("update:modelValue", "0.00");
+    await flushPromises();
+    button("Save").click();
+    await flushPromises();
+    expect(calls.some((c) => c.method === "POST")).toBe(false);
+    expect(document.body.textContent).toContain(en["sales.targets.errAmount"]);
+    wrapper.findComponent(MoneyInput).vm.$emit("update:modelValue", "1000000.00");
+    await flushPromises();
+    button("Save").click();
+    await flushPromises();
+    await flushPromises();
+    expect(document.body.textContent).toContain("Targets are set for this month or later.");
+    wrapper.unmount();
+  });
+});
+
+describe("palette links on a page already open", () => {
+  it("opens Set a target when ?new=target arrives on the targets page", async () => {
+    stub({
+      "GET sales/options/": () => json(options()),
+      "GET sales/targets/": () => json({ month: "2026-10", today: "2026-10-21", targets: [], series: [] }),
+    });
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe(): void {}
+        unobserve(): void {}
+        disconnect(): void {}
+      },
+    );
+    const TargetsPage = (await import("../pages/TargetsPage.vue")).default;
+    const app = await testApp("/c/1/sales/targets");
+    await ensureModuleMessages(salesModule);
+    const { wrapper } = mountWithProviders(TargetsPage, { plugins: app.plugins });
+    await flushPromises();
+    await app.router.push("/c/1/sales/targets?new=target");
+    await flushPromises();
+    await flushPromises();
+    expect(document.querySelector('[role="dialog"]')?.textContent).toContain(en["sales.targets.newTitle"]);
+    expect(app.router.currentRoute.value.query.new).toBeUndefined();
+    wrapper.unmount();
+  });
+
+  it("applies the To check view's filters when the palette opens it on the shifts page", async () => {
+    const calls = stub({
+      "GET sales/options/": () => json(options()),
+      "GET sales/settings/": () => json({ mode: "shift_totals", cash_tolerance: "5000.00" }),
+      "GET sales/shifts/": () => json({ count: 0, next: null, previous: null, results: [] }),
+    });
+    const ShiftsPage = (await import("../pages/ShiftsPage.vue")).default;
+    const app = await testApp("/c/1/sales/shifts");
+    await ensureModuleMessages(salesModule);
+    const { wrapper } = mountWithProviders(ShiftsPage, { plugins: app.plugins });
+    await flushPromises();
+    await app.router.push("/c/1/sales/shifts?view=verify");
+    await flushPromises();
+    await flushPromises();
+    expect(app.router.currentRoute.value.query.status).toEqual(["closed"]);
+    expect(calls.filter((c) => c.url.includes("sales/shifts/")).at(-1)?.url).toContain("status=closed");
     wrapper.unmount();
   });
 });
