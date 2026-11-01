@@ -101,6 +101,27 @@ describe("GanttTimeline", () => {
     expect(inner.emitted("bar-click")).toHaveLength(1);
   });
 
+  it("never moves dates with a finger: a swipe over a bar scrolls, a mouse drag still moves it", async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: Date.UTC(2026, 9, 20, 6) });
+    const app = await testApp("/c/1/projects/1");
+    const { inner } = mountWithProviders(GanttTimeline, { props: { rows, zoom: "day" }, plugins: app.plugins });
+    await flushPromises();
+    const bar = inner.findAll("[role=button]").find((el) => el.attributes("aria-label")?.startsWith("Fit-out"))!;
+    // jsdom has no PointerEvent: a MouseEvent with the pointer fields stands in.
+    const pointer = (type: string, clientX: number, pointerType: string) =>
+      bar.element.dispatchEvent(Object.assign(new MouseEvent(type, { bubbles: true, button: 0, clientX }), { pointerType, pointerId: 1 }));
+    (bar.element as HTMLElement & { setPointerCapture: () => void }).setPointerCapture = () => undefined;
+    expect(bar.classes()).not.toContain("touch-none");
+    pointer("pointerdown", 400, "touch");
+    pointer("pointermove", 520, "touch");
+    pointer("pointerup", 520, "touch");
+    expect(inner.emitted("change")).toBeUndefined();
+    pointer("pointerdown", 400, "mouse");
+    pointer("pointermove", 520, "mouse");
+    pointer("pointerup", 520, "mouse");
+    expect(inner.emitted("change")).toHaveLength(1);
+  });
+
   it("shows milestones and leaves read-only bars alone", async () => {
     const app = await testApp("/c/1/projects/roadmap");
     const { inner } = mountWithProviders(GanttTimeline, { props: { rows, editable: false }, plugins: app.plugins });

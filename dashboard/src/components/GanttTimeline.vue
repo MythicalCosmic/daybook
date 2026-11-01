@@ -112,26 +112,33 @@ function canEdit(item: { editable?: boolean }): boolean {
   return props.editable && item.editable !== false;
 }
 
+/**
+ * A finger never moves dates: a sideways swipe over a bar scrolls the timeline (the browser takes
+ * the gesture and cancels the pointer) and a tap opens the bar. Dates move with a mouse or pen, or
+ * with the arrow keys. A swipe used to reschedule the bar it started on, and save it.
+ */
+const draggable = (event: PointerEvent) => event.pointerType !== "touch";
+
 function onBarDown(event: PointerEvent, row: GanttRow, bar: GanttBar): void {
   if (event.button !== 0) return;
   const target = event.currentTarget as HTMLElement;
   const rect = target.getBoundingClientRect();
   const mode = canEdit(bar) ? dragModeAt(event.clientX - rect.left, rect.width) : "move";
   drag.value = { kind: "bar", rowId: row.id, id: bar.id, start: bar.start, end: bar.end, mode, x: event.clientX, delta: 0, moved: false };
-  target.setPointerCapture(event.pointerId);
+  if (draggable(event)) target.setPointerCapture(event.pointerId);
 }
 
 function onMilestoneDown(event: PointerEvent, row: GanttRow, milestone: GanttMilestone): void {
   if (event.button !== 0) return;
   drag.value = { kind: "milestone", rowId: row.id, id: milestone.id, start: milestone.date, end: milestone.date, mode: "move", x: event.clientX, delta: 0, moved: false };
-  (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+  if (draggable(event)) (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
 }
 
 function onPointerMove(event: PointerEvent, item: { editable?: boolean }): void {
   const state = drag.value;
   if (!state) return;
   if (Math.abs(event.clientX - state.x) > 3) state.moved = true;
-  if (canEdit(item)) state.delta = pxToDays(event.clientX - state.x, zoom.value);
+  if (canEdit(item) && draggable(event)) state.delta = pxToDays(event.clientX - state.x, zoom.value);
 }
 
 function onBarUp(row: GanttRow, bar: GanttBar): void {
@@ -268,7 +275,7 @@ watch(zoom, () => void scrollToToday(false));
                   tabindex="0"
                   :aria-label="`${bar.label ?? row.label}: ${rangeText(preview(row, bar))}`"
                   :class="[
-                    'gantt-bar group/bar absolute top-1/2 flex h-7 -translate-y-1/2 touch-none select-none items-center overflow-visible rounded-[7px] outline-offset-2',
+                    'gantt-bar group/bar absolute top-1/2 flex h-7 -translate-y-1/2 select-none items-center overflow-visible rounded-[7px] outline-offset-2',
                     canEdit(bar) ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
                     drag?.kind === 'bar' && drag.id === bar.id ? 'z-[3] shadow-pop' : 'z-[2]',
                   ]"
@@ -313,7 +320,7 @@ watch(zoom, () => void scrollToToday(false));
                   role="button"
                   tabindex="0"
                   :aria-label="`${t('common.gantt.milestone')}: ${milestone.label}, ${formatDay(previewDate(row, milestone), fmt.lang.value, 'medium')}`"
-                  class="absolute top-1/2 z-[2] flex -translate-y-1/2 touch-none select-none items-center gap-1.5 outline-offset-2"
+                  class="absolute top-1/2 z-[2] flex -translate-y-1/2 select-none items-center gap-1.5 outline-offset-2"
                   :class="canEdit(milestone) ? 'cursor-grab active:cursor-grabbing' : ''"
                   :style="{ left: `${dayCenter(previewDate(row, milestone), range.from, zoom) - 7}px` }"
                   @pointerdown="onMilestoneDown($event, row, milestone)"
