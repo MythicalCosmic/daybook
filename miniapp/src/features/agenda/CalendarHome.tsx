@@ -3,11 +3,11 @@ import { useMemo, useState } from "react";
 
 import { useI18n } from "../../i18n";
 import { useFeatureT } from "../../i18n/feature";
-import { addDays, dayKey, dayMonth, weekdayShort } from "../../lib/time";
+import { addDays, dayKey, dayMonth, monthYear, weekdayShort } from "../../lib/time";
 import { useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
 import { haptic } from "../../telegram";
-import { Badge, Card, EmptyState, ListRow, LoadError, PageHeader, Screen, ScreenSkeleton, SectionHead, cx } from "../../ui";
+import { Badge, Card, EmptyState, IconButton, ListRow, LoadError, PageHeader, Screen, ScreenSkeleton, SectionHead, cx } from "../../ui";
 import { eventIdOf, useCalendar, type CalendarEntry } from "./api";
 import "./agenda.css";
 import { byDay, colorClass, dayName, mondayOf, timeLabel, weekDays } from "./lib";
@@ -77,10 +77,13 @@ export function CalendarHome() {
     <Screen variant="detail">
       <PageHeader kicker={member.company.name} title={t("title")} onBack={navigation.pop} />
       <Card padding="flush">
+        {/* The arrows sit by the month, so the seven days get the row's whole width. */}
+        <div className="agm-week-head">
+          <span className="agm-week-title">{monthYear(selected.slice(0, 7), locale)}</span>
+          <IconButton icon={ChevronLeft} label={t("week.prev")} size={40} variant="ghost" onClick={() => shift(-1)} />
+          <IconButton icon={ChevronRight} label={t("week.next")} size={40} variant="ghost" onClick={() => shift(1)} />
+        </div>
         <div className="agm-week">
-          <button type="button" className="agm-week-nav" aria-label={t("week.prev")} onClick={() => shift(-1)}>
-            <ChevronLeft size={20} strokeWidth={2.5} aria-hidden />
-          </button>
           {days.map((day) => {
             const items = weekByDay.get(day) ?? [];
             return (
@@ -105,9 +108,6 @@ export function CalendarHome() {
               </button>
             );
           })}
-          <button type="button" className="agm-week-nav" aria-label={t("week.next")} onClick={() => shift(1)}>
-            <ChevronRight size={20} strokeWidth={2.5} aria-hidden />
-          </button>
         </div>
       </Card>
 

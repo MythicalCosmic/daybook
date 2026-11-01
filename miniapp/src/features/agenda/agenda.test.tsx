@@ -190,6 +190,23 @@ describe("CalendarHome", () => {
     expect(screen.queryByRole("button", { name: "Today" })).toBeNull();
   });
 
+  it("gives the seven days the strip's whole width: the week arrows sit by the month above them", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-21T09:00:00+05:00"));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    api.mockResolvedValue({ range: { from: "2026-10-19", to: "2026-11-03" }, sources: [], items: [], mine: [], answers: {} });
+    const { container } = renderWith(<CalendarHome />, client);
+
+    // In the day row, the two arrows left each day 32 px on a 360 px phone.
+    expect(container.querySelectorAll(".agm-week button")).toHaveLength(7);
+    expect(screen.getByText("October 2026")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Next week" }));
+    fireEvent.click(screen.getByRole("button", { name: "Next week" }));
+    // Monday 2 November picked: the month follows the day shown.
+    expect(await screen.findByText("November 2026")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Monday 2 Nov/, pressed: true })).toBeTruthy();
+  });
+
   it("lists the chosen day once: Coming up starts after it", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-21T09:00:00+05:00"));

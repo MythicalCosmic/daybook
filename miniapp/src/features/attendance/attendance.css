@@ -136,6 +136,13 @@ button.att-cal-day {
   cursor: pointer;
 }
 
+/* A day is 36-39 px on a phone: a tap in the 6 px between days lands on the nearer one. */
+button.att-cal-day::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+}
+
 button.att-cal-day:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;

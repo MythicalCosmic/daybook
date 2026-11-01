@@ -74,6 +74,16 @@ describe("style sheets", () => {
     expect(px(".ui-stepper--sm .ui-stepper-input", "height")).toBeGreaterThanOrEqual(40);
   });
 
+  it("give calendar days a finger's width", () => {
+    // The calendar's week strip: only the seven days in the row (with the two arrows in it too,
+    // a day was 32 px wide on a 360 px phone).
+    expect(declarationsOf(".agm-week")).toMatch(/grid-template-columns:\s*repeat\(7, minmax\(0, 1fr\)\);/);
+    // The attendance month: a day is 36-39 px with 6 px between days; a tap in between lands on
+    // the nearer day instead of nowhere.
+    expect(declarationsOf(".att-cal")).toMatch(/gap:\s*6px/);
+    expect(declarationsOf("button.att-cal-day::before")).toMatch(/inset:\s*-3px/);
+  });
+
   it("put the till's Open shift button under its words on a phone, not beside them", () => {
     // Beside them, Russian read "Касса / закрыта" and "Пересчита…" on a 390 px phone.
     expect(declarationsOf(".kassa-hero--closed")).toMatch(/container-type:\s*inline-size/);
