@@ -189,6 +189,27 @@ describe("status → ways in", () => {
     expect(navigationState().sheet).toEqual({ kind: "feature", feature: "ai", sheet: "draft", params: { mode: "voice" } });
   });
 
+  it("asks before the (+) sheet's mic or a quick action throws away a task being written", async () => {
+    const ask = vi.spyOn(window, "confirm").mockReturnValue(false);
+    try {
+      renderApp(null, { me: person([giver()]), init: { sheet: { kind: "add" } } });
+      const mics = await screen.findAllByRole("button", { name: "Dictate tasks" });
+      fireEvent.change(screen.getByRole("textbox", { name: "What needs doing?" }), { target: { value: "Order insulin" } });
+      // The title row's mic, answered Cancel: the sheet and the words stay.
+      fireEvent.click(mics[1]!);
+      await waitFor(() => expect(ask).toHaveBeenCalledWith("Close it? What you entered won't be saved."));
+      expect(navigationState().sheet).toEqual({ kind: "add" });
+      expect(screen.getByRole("textbox", { name: "What needs doing?" })).toHaveProperty("value", "Order insulin");
+      // The quick action, answered OK: the recorder takes the sheet's place.
+      ask.mockReturnValue(true);
+      fireEvent.click(mics[0]!);
+      await waitFor(() => expect(navigationState().sheet).toEqual({ kind: "feature", feature: "ai", sheet: "draft", params: { mode: "voice" } }));
+      expect(ask).toHaveBeenCalledTimes(2);
+    } finally {
+      ask.mockRestore();
+    }
+  });
+
   it("answers the bot's Edit in the app link with the review sheet", () => {
     expect(resolveScreen({ name: "drafts", arg: "41" }, features)).toEqual({
       tab: "home",

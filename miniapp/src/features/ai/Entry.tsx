@@ -1,7 +1,9 @@
 import { Mic, Sparkles } from "lucide-react";
 
 import { givesWork } from "../../api/permissions";
+import { useI18n } from "../../i18n";
 import { useFeatureT } from "../../i18n/feature";
+import { closeUnlessDraft } from "../../lib/useDraftGuard";
 import { useNavigation } from "../../state/navigation";
 import { haptic } from "../../telegram";
 import { CardButton } from "../../ui";
@@ -62,6 +64,7 @@ export function DictateCard({ member }: SlotProps) {
  */
 export function PlusTitleTools({ member, text }: PlusTitleProps) {
   const t = useFeatureT(messages);
+  const app = useI18n();
   const status = useAIStatus(member.companyId);
   const open: Open = useOpenDraft();
   const entry = entryOf(status.data);
@@ -81,7 +84,15 @@ export function PlusTitleTools({ member, text }: PlusTitleProps) {
         </button>
       )}
       {entry.voice && (
-        <button type="button" className="ai-tool ai-tool--mic" aria-label={t("title.mic")} title={t("title.mic")} onClick={() => open("voice")}>
+        <button
+          type="button"
+          className="ai-tool ai-tool--mic"
+          aria-label={t("title.mic")}
+          title={t("title.mic")}
+          // The recorder takes the (+) sheet's place: what was written there asks first (the
+          // sparkle carries the title along instead).
+          onClick={() => void closeUnlessDraft(() => open("voice"), app.t("sheet.discardAsk"))}
+        >
           <Mic size={21} strokeWidth={2.4} />
         </button>
       )}
