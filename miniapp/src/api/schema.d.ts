@@ -63,6 +63,103 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/ai/status/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description What the mini app may offer this member: recording, typed instructions, the limits. */
+        get: operations["v1_companies_ai_status_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/ai/task-drafts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description The task-draft handlers both APIs share; `self.membership` is set by their permission
+         *     classes, `source` names where drafts come from, `visible_drafts()` what the caller sees.
+         */
+        post: operations["v1_companies_ai_task_drafts_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/ai/task-drafts/{draft_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The task-draft handlers both APIs share; `self.membership` is set by their permission
+         *     classes, `source` names where drafts come from, `visible_drafts()` what the caller sees.
+         */
+        get: operations["v1_companies_ai_task_drafts_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/ai/task-drafts/{draft_id}/apply/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description The task-draft handlers both APIs share; `self.membership` is set by their permission
+         *     classes, `source` names where drafts come from, `visible_drafts()` what the caller sees.
+         */
+        post: operations["v1_companies_ai_task_drafts_apply_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/ai/task-drafts/{draft_id}/discard/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description The task-draft handlers both APIs share; `self.membership` is set by their permission
+         *     classes, `source` names where drafts come from, `visible_drafts()` what the caller sees.
+         */
+        post: operations["v1_companies_ai_task_drafts_discard_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/announcements/": {
         parameters: {
             query?: never;
@@ -1455,6 +1552,112 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AIApplyFailure: {
+            index: number;
+            detail: string;
+        };
+        AIApplyResult: {
+            draft: components["schemas"]["AIDraft"];
+            created: number[];
+            failed: components["schemas"]["AIApplyFailure"][];
+        };
+        AIAssignee: {
+            id: number;
+            name: string;
+            position: string;
+        };
+        AIAudio: {
+            seconds: number | null;
+            /** @description Signed link to the recording. */
+            url: string | null;
+        };
+        AICreatedTask: {
+            id: number;
+            title: string;
+            assignee_name: string;
+        };
+        /** @description One voice note or typed instruction and the tasks it became. */
+        AIDraft: {
+            id: number;
+            status: components["schemas"]["AiDraftStatusEnum"];
+            source: components["schemas"]["AiDraftSourceEnum"];
+            author: components["schemas"]["AIPerson"];
+            /** Format: date-time */
+            created_at: string;
+            /** @description null for typed text. */
+            audio: components["schemas"]["AIAudio"] | null;
+            transcript: string;
+            language: string;
+            /** @description claude, rules or fake. */
+            engine: string;
+            drafts: components["schemas"]["AIDraftItem"][];
+            questions: string[];
+            created_tasks: components["schemas"]["AICreatedTask"][];
+            /** @description Empty, or one of: speech_unavailable, audio_unreadable, nothing_heard, ai_unavailable, expired. */
+            error_code: string;
+            /** @description error_code in words. */
+            error: string;
+        };
+        AIDraftApplyRequest: {
+            drafts?: components["schemas"]["AIDraftEditRequest"][];
+        };
+        /** @description Multipart `audio` (+ `seconds`, `language`) or JSON `text`. */
+        AIDraftCreateRequest: {
+            /** Format: binary */
+            audio?: string;
+            /** Format: double */
+            seconds?: number | null;
+            language?: (components["schemas"]["LanguageEnum"] | components["schemas"]["NullEnum"]) | null;
+            /** @description 1–2000 characters. */
+            text?: string;
+        };
+        AIDraftEditRequest: {
+            title: string;
+            /** @default  */
+            description: string;
+            assignee_id?: number | null;
+            /** Format: date-time */
+            due_at?: string | null;
+            /** @default normal */
+            priority: components["schemas"]["AiDraftPriorityEnum"];
+            checklist?: string[];
+            /** @default none */
+            proof: components["schemas"]["AiDraftProofEnum"];
+        };
+        AIDraftItem: {
+            title: string;
+            description: string;
+            /** @description null: for the author. */
+            assignee: components["schemas"]["AIAssignee"] | null;
+            /** @description Who was heard but not matched, when assignee is null. */
+            assignee_guess: string;
+            /** Format: date-time */
+            due_at: string | null;
+            /** @description Ertaga, 10:00 */
+            due_text: string;
+            priority: components["schemas"]["AiDraftPriorityEnum"];
+            checklist: string[];
+            proof: components["schemas"]["AiDraftProofEnum"];
+            problems: components["schemas"]["AiDraftProblemEnum"][];
+        };
+        AIError: {
+            code: string;
+            detail: string;
+        };
+        AIPerson: {
+            id: number;
+            name: string;
+        };
+        AIVoiceStatus: {
+            /** @description Recording is offered. */
+            voice: boolean;
+            /** @description Typed instructions are offered. */
+            smart_text: boolean;
+            engine: components["schemas"]["AiEngineEnum"];
+            max_seconds: number;
+            auto_create: boolean;
+            bot_username: string;
+        };
         AccessToken: {
             /** @description Bearer token for the API. When it expires, sign in with initData again. */
             access: string;
@@ -1620,6 +1823,53 @@ export interface components {
             key: string;
             label: string;
         };
+        /**
+         * @description * `normal` - normal
+         *     * `urgent` - urgent
+         * @enum {string}
+         */
+        AiDraftPriorityEnum: "normal" | "urgent";
+        /**
+         * @description * `no_assignee_match` - no_assignee_match
+         *     * `ambiguous_assignee` - ambiguous_assignee
+         *     * `no_due` - no_due
+         *     * `past_due` - past_due
+         *     * `not_allowed` - not_allowed
+         * @enum {string}
+         */
+        AiDraftProblemEnum: "no_assignee_match" | "ambiguous_assignee" | "no_due" | "past_due" | "not_allowed";
+        /**
+         * @description * `none` - none
+         *     * `photo` - photo
+         * @enum {string}
+         */
+        AiDraftProofEnum: "none" | "photo";
+        /**
+         * @description * `bot` - Employee bot
+         *     * `owner_bot` - Owner bot
+         *     * `miniapp` - Mini app
+         *     * `dashboard` - Dashboard
+         * @enum {string}
+         */
+        AiDraftSourceEnum: "bot" | "owner_bot" | "miniapp" | "dashboard";
+        /**
+         * @description * `queued` - Queued
+         *     * `transcribing` - Listening
+         *     * `thinking` - Understanding
+         *     * `ready` - Ready
+         *     * `failed` - Failed
+         *     * `applied` - Tasks created
+         *     * `discarded` - Discarded
+         *     * `expired` - Expired
+         * @enum {string}
+         */
+        AiDraftStatusEnum: "queued" | "transcribing" | "thinking" | "ready" | "failed" | "applied" | "discarded" | "expired";
+        /**
+         * @description * `claude` - claude
+         *     * `rules` - rules
+         * @enum {string}
+         */
+        AiEngineEnum: "claude" | "rules";
         /**
          * @description * `payout` - payout
          *     * `handover` - handover
@@ -3675,6 +3925,159 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Marked"];
                 };
+            };
+        };
+    };
+    v1_companies_ai_status_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AIVoiceStatus"];
+                };
+            };
+        };
+    };
+    v1_companies_ai_task_drafts_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": components["schemas"]["AIDraftCreateRequest"];
+                "application/json": components["schemas"]["AIDraftCreateRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AIDraft"];
+                };
+            };
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AIDraft"];
+                };
+            };
+            /** @description audio_* or text_too_long */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AIError"];
+                };
+            };
+            /** @description ai_off */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AIError"];
+                };
+            };
+            /** @description limit_reached */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AIError"];
+                };
+            };
+        };
+    };
+    v1_companies_ai_task_drafts_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                draft_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AIDraft"];
+                };
+            };
+        };
+    };
+    v1_companies_ai_task_drafts_apply_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                draft_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["AIDraftApplyRequest"];
+                "multipart/form-data": components["schemas"]["AIDraftApplyRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["AIDraftApplyRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AIApplyResult"];
+                };
+            };
+        };
+    };
+    v1_companies_ai_task_drafts_discard_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                draft_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

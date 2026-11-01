@@ -17,6 +17,7 @@ from aiogram.types import (
     Sticker,
     Update,
     User,
+    Voice,
 )
 
 from tests.mocked_bot import BOT_USERNAME
@@ -89,6 +90,26 @@ def photo(from_user: User, caption: str | None = None, media_group_id: str | Non
                 PhotoSize(file_id="small", file_unique_id="s", width=90, height=90),
                 PhotoSize(file_id="large", file_unique_id="l", width=1280, height=1280),
             ],
+        ),
+    )
+
+
+def voice(from_user: User, duration: int = 9, file_size: int = 24_000) -> Update:
+    """A voice message (Telegram sends OGG Opus)."""
+    return Update(
+        update_id=next(_ids),
+        message=Message(
+            message_id=next(_ids),
+            date=datetime.now(),
+            chat=Chat(id=from_user.id, type="private"),
+            from_user=from_user,
+            voice=Voice(
+                file_id="voice",
+                file_unique_id="v",
+                duration=duration,
+                mime_type="audio/ogg",
+                file_size=file_size,
+            ),
         ),
     )
 

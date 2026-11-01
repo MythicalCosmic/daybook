@@ -115,6 +115,46 @@ def accept_document(
     return SanitizedFile(data, name=f"{uuid.uuid4().hex}.{DOCUMENT_KINDS[kind]}")
 
 
+# Audio containers `accept_audio` knows, judged from the first bytes, and their extensions.
+AUDIO_CONTENT_TYPES = {
+    "ogg": "audio/ogg",
+    "webm": "audio/webm",
+    "m4a": "audio/mp4",
+    "mp3": "audio/mpeg",
+    "wav": "audio/wav",
+    "aac": "audio/aac",
+}
+
+
+def audio_kind(data: bytes) -> str | None:
+    """The audio container of `data` (a key of AUDIO_CONTENT_TYPES), from its magic bytes only:
+    nothing is decoded here (voice notes are decoded by the speech service, never in the web
+    process)."""
+    if data.startswith(b"OggS"):
+        return "ogg"  # Telegram voice messages, Firefox
+    if data.startswith(b"\x1a\x45\xdf\xa3"):
+        return "webm"  # Chrome and Android's MediaRecorder
+    if len(data) > 12 and data[4:8] == b"ftyp":
+        return "m4a"  # iOS recordings, Telegram video notes
+    if data.startswith(b"RIFF") and data[8:12] == b"WAVE":
+        return "wav"
+    if data.startswith(b"ID3") or data[:2] in (b"\xff\xfb", b"\xff\xf3", b"\xff\xf2"):
+        return "mp3"
+    if data[:2] in (b"\xff\xf1", b"\xff\xf9"):
+        return "aac"  # ADTS
+    return None
+
+
+def accept_audio(file, *, max_bytes: int = MAX_UPLOAD_BYTES) -> SanitizedFile:
+    """A voice recording stored byte for byte as `<uuid>.<ext>`, the extension chosen from its
+    content."""
+    data = _read(file, max_bytes)
+    kind = audio_kind(data)
+    if kind is None:
+        raise InvalidUpload(_("This isn't a recording we can play. Record it again."))
+    return SanitizedFile(data, name=f"{uuid.uuid4().hex}.{kind}")
+
+
 def _read(file, max_bytes: int) -> bytes:
     if isinstance(file, bytes | bytearray):
         data = bytes(file)

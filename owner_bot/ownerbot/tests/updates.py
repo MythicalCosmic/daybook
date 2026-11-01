@@ -12,6 +12,7 @@ from aiogram.types import (
     Message,
     Update,
     User,
+    Voice,
 )
 
 from ownerbot.tests.mocked_bot import BOT_USERNAME
@@ -39,6 +40,21 @@ def message(from_user: User, text: str) -> Update:
             chat=Chat(id=from_user.id, type="private"),
             from_user=from_user,
             text=text,
+        ),
+    )
+
+
+def voice(from_user: User, duration: int = 9) -> Update:
+    return Update(
+        update_id=next(_ids),
+        message=Message(
+            message_id=next(_ids),
+            date=datetime.now(),
+            chat=Chat(id=from_user.id, type="private"),
+            from_user=from_user,
+            voice=Voice(
+                file_id="voice", file_unique_id="v", duration=duration, mime_type="audio/ogg"
+            ),
         ),
     )
 

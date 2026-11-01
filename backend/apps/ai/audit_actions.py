@@ -1,1 +1,11 @@
 """Audit action codes and labels of the AI features (`apps.audit.registry.register`)."""
+
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+
+
+class AIAction(models.TextChoices):
+    ENABLED = "ai.enabled", _("Turned AI on")
+    DISABLED = "ai.disabled", _("Turned AI off")
+    SETTINGS_CHANGED = "ai.settings_changed", _("Changed the AI settings")
+    AGENT_CHANGED = "ai.agent_changed", _("Changed an AI agent")

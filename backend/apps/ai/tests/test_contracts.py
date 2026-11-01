@@ -21,13 +21,14 @@ from apps.timeoff.queries import balance, leave_summary
 pytestmark = pytest.mark.django_db
 
 
-def test_ai_is_not_configured_until_package_k(company, member):
+def test_ai_is_not_configured_without_a_key(company, member):
     owner = member.registered(company, "Owner")
 
     status = availability.status(company, membership=owner)
 
     assert status.state == availability.AIState.NOT_CONFIGURED
     assert not status.available
+    assert status.can_configure
     assert availability.status(company).state == "not_configured"
     assert availability.AIStatus(availability.AIState.AVAILABLE).available
 

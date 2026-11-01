@@ -24,6 +24,12 @@ class InvitePick(CallbackData, prefix="oiv"):
     company: int
 
 
+class VoicePick(CallbackData, prefix="ovc"):
+    """Which company a voice note is for, when the owner has several."""
+
+    company: int
+
+
 class InviteAct(CallbackData, prefix="oia"):
     """A button of `/invite`: `main` (the main link's QR code), `show` (team link `link`'s QR
     code), `stop` (stop team link `link`) or `list` (the company's links again)."""

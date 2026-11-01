@@ -8,12 +8,13 @@ from ownerbot.handlers.new_company import router as new_company_router
 from ownerbot.handlers.signin import router as signin_router
 from ownerbot.handlers.start import router as start_router
 from ownerbot.handlers.today import router as today_router
+from ownerbot.handlers.voice import router as voice_router
 
 
 def register_all_handlers(dp: Dispatcher) -> None:
     # Buttons with their own callback data first (notifications, sign-in); then /start and the
-    # menu commands, which end any conversation; the /new conversation last, so its "waiting
-    # for text" handlers never swallow a command.
+    # menu commands, which end any conversation; voice notes (tasks by voice, outside /new);
+    # the /new conversation last, so its "waiting for text" handlers never swallow a command.
     dp.include_routers(
         inbox_actions_router,
         signin_router,
@@ -21,6 +22,7 @@ def register_all_handlers(dp: Dispatcher) -> None:
         language_router,
         today_router,
         invite_router,
+        voice_router,
         new_company_router,
     )
     # A handler that fails still answers the tap or the message (research R1 F1).
