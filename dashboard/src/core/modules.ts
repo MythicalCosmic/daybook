@@ -11,7 +11,7 @@ import type { RouteLocationRaw, RouteRecordRaw, Router } from "vue-router";
 
 import type { Company, Language, Pulse, Range } from "@/api/types";
 import type { CompanyFeature } from "@/core/features";
-import type { Perm, PermRequirement } from "@/core/perms";
+import type { PermRequirement } from "@/core/perms";
 
 export type ModuleGroup = "overview" | "work" | "people" | "money" | "comms" | "insights" | "company";
 
@@ -224,8 +224,3 @@ export function findModule(id: string | undefined): DashboardModule | undefined 
   return id ? modules.find((m) => m.id === id) : undefined;
 }
 
-/** The permission list a requirement names, for display ("Needs: Finance › View"). */
-export function requirementList(required?: PermRequirement): Perm[] {
-  if (required === undefined) return [];
-  return typeof required === "string" ? [required] : [...required];
-}

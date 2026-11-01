@@ -15,7 +15,6 @@ import { useCompanyStore } from "@/stores/company";
 import type {
   CashierScore,
   CashPositions,
-  DailyRow,
   Entry,
   EntryInput,
   GroupBy,
@@ -57,7 +56,6 @@ export const salesApi = {
   options: (cid: number) => http.get<SalesOptions>(path(cid, "options/")),
   today: (cid: number) => http.get<{ branches: BranchTodaySales[] }>(path(cid, "today/")),
   summary: (cid: number, params: Query) => http.get<SalesSummary>(path(cid, "summary/"), params),
-  daily: (cid: number, params: Query) => http.get<Page<DailyRow>>(path(cid, "daily/"), params),
   cashiers: (cid: number, params: Query) => http.get<{ range: { from: string; to: string }; results: CashierScore[] }>(path(cid, "cashiers/"), params),
 
   shifts: (cid: number, params: Query, signal?: AbortSignal) => http.get<Page<ShiftRow>>(path(cid, "shifts/"), params, { signal }),

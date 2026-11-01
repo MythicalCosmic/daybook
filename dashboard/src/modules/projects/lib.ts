@@ -23,6 +23,7 @@ import {
 
 import type { StatusTone } from "@/components/StatusPill.vue";
 import { positionBetween } from "@/components/kanban";
+import { diffDays } from "@/lib/dates";
 
 import type { Card, Health, PaletteColor, ProjectStatus, TaskStatus } from "./types";
 
@@ -151,10 +152,6 @@ export function cardSort(a: Card, b: Card): number {
   return a.position - b.position || a.id - b.id;
 }
 
-/** Whole days between two "YYYY-MM-DD" days (b − a). */
-export function daysBetween(a: string, b: string): number {
-  return Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86_400_000);
-}
 
 /**
  * Milestone labels sized to the room before the next diamond: shortened with "…" when the next
@@ -164,7 +161,7 @@ export function daysBetween(a: string, b: string): number {
 export function declutterMilestones<M extends { date: string; label: string }>(milestones: readonly M[], pxPerDay: number): M[] {
   const sorted = [...milestones].sort((a, b) => a.date.localeCompare(b.date));
   const first = sorted[0]?.date;
-  const x = (milestone: M) => (first ? daysBetween(first, milestone.date) * pxPerDay : 0);
+  const x = (milestone: M) => (first ? diffDays(first, milestone.date) * pxPerDay : 0);
   const CHAR = 6.4;
   return sorted.map((milestone, index) => {
     const next = sorted[index + 1];

@@ -70,7 +70,6 @@ export const shellApi = {
   unreadCount: (companyId: number, signal?: AbortSignal) => http.get<UnreadCount>(ownerPath(companyId, "inbox/unread-count/"), undefined, { signal }),
   markRead: (companyId: number, ids: number[] | "all") =>
     http.post<{ updated: number }>(ownerPath(companyId, "inbox/read/"), ids === "all" ? { all: true } : { ids }, { toast: false }),
-  archive: (companyId: number, id: number) => http.post<Notification>(ownerPath(companyId, `inbox/${id}/archive/`)),
   runInboxAction: (companyId: number, id: number, key: string, reason?: string) =>
     http.post<NotificationActionResult>(ownerPath(companyId, `inbox/${id}/actions/${key}/`), reason ? { reason } : {}),
 };

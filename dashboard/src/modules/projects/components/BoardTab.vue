@@ -32,7 +32,7 @@ import { rs, useRouteState } from "@/lib/useRouteState";
 import { useSessionStore } from "@/stores/session";
 
 import { deleteList, useBoard, useCompanyId, useMoveCard, useRefreshProjects } from "../api";
-import { colorVar, dropPosition, tint } from "../lib";
+import { cardSort, colorVar, dropPosition, tint } from "../lib";
 import type { BoardList, Card, ProjectDetail } from "../types";
 import BoardCard from "./BoardCard.vue";
 import ListDialog from "./ListDialog.vue";
@@ -83,7 +83,7 @@ const cards = computed<Card[]>(() => {
       if (mine.value && card.assignee?.id !== me.value) return false;
       return true;
     })
-    .sort((a, b) => a.position - b.position || a.id - b.id);
+    .sort(cardSort);
 });
 const filtering = computed(() => !!q.value || people.value.length > 0 || labels.value.length > 0 || !!milestone.value || mine.value);
 

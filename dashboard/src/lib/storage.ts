@@ -26,7 +26,6 @@ export function writeStored(key: string, value: unknown): void {
   }
 }
 
-export const isString = (value: unknown): value is string => typeof value === "string";
 export const isNumber = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
 export const isBoolean = (value: unknown): value is boolean => typeof value === "boolean";
 export const oneOf =

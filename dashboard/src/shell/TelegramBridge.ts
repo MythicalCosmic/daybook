@@ -6,6 +6,7 @@
 import { watch } from "vue";
 import type { RouteLocationRaw, Router } from "vue-router";
 
+import { shellApi } from "@/api/shell";
 import type { DashboardModule } from "@/core/modules";
 import { closeTopOverlay, overlayOpen } from "@/lib/backStack";
 import { useUiStore } from "@/stores/ui";
@@ -113,14 +114,8 @@ export function initDataExpired(now = Date.now()): boolean {
 export async function telegramRelogin(): Promise<string | null> {
   if (!context.initData || initDataExpired()) return null;
   try {
-    const response = await fetch("/api/v1/owner/auth/telegram/", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json", Accept: "application/json", "X-Requested-With": "dashboard" },
-      body: JSON.stringify({ init_data: context.initData }),
-    });
-    if (!response.ok) return null;
-    return ((await response.json()) as { access?: string }).access ?? null;
+    // The shell's own call: the API base and the language headers in one place.
+    return (await shellApi.telegramLogin(context.initData)).access ?? null;
   } catch {
     return null;
   }

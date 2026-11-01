@@ -150,8 +150,6 @@ export const logTime = (
   companyId: number,
   body: { day: string; minutes: number; project?: number | null; task?: number | null; note?: string; billable?: boolean; person?: number | null },
 ) => http.post<TimeEntry>(p(companyId, "time/"), body);
-export const updateTime = (companyId: number, entryId: number, body: { minutes?: number; day?: string; note?: string; billable?: boolean }) =>
-  http.patch<TimeEntry>(p(companyId, `time/${entryId}/`), body);
 export const deleteTime = (companyId: number, entryId: number) => http.delete(p(companyId, `time/${entryId}/`));
 export const listTimers = (companyId: number, signal?: AbortSignal) => http.get<Timer[]>(p(companyId, "timers/"), undefined, { signal });
 export const startTimer = (companyId: number, body: { task?: number | null; project?: number | null; note?: string }) => http.post<Timer>(p(companyId, "timers/"), body);
@@ -352,9 +350,3 @@ export function useCreateCard(projectId: MaybeRefOrGetter<number>) {
   });
 }
 
-/** A mutation that refreshes the module afterwards. */
-export function useProjectMutation<V, R>(fn: (companyId: number, vars: V) => Promise<R>) {
-  const companyId = useCompanyId();
-  const refresh = useRefreshProjects();
-  return useMutation({ mutationFn: (vars: V) => fn(companyId.value, vars), onSuccess: () => void refresh() });
-}

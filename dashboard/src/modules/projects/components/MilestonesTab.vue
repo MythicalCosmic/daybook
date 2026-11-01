@@ -18,12 +18,11 @@ import UiButton from "@/components/UiButton.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { useDelayedPending } from "@/lib/useDelayedPending";
-import { todayIn } from "@/lib/dates";
+import { diffDays, todayIn } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
 import { deleteMilestone, updateMilestone, useCompanyId, useMilestones, useRefreshProjects } from "../api";
-import { daysBetween } from "../lib";
 import type { Milestone, ProjectDetail } from "../types";
 import MilestoneDialog from "./MilestoneDialog.vue";
 
@@ -75,7 +74,7 @@ function menu(m: Milestone): MenuEntry[] {
 function dueText(m: Milestone): string {
   if (!m.due_on) return t("projects.milestones.noDate");
   if (m.status === "done") return fmt.day(m.due_on, "medium");
-  const days = daysBetween(today.value, m.due_on);
+  const days = diffDays(today.value, m.due_on);
   if (days < 0) return t("projects.milestones.lateBy", { n: -days });
   if (days === 0) return t("projects.milestones.dueToday");
   return t("projects.milestones.inDays", { n: days, day: fmt.day(m.due_on, "short") });

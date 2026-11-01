@@ -71,7 +71,6 @@ export const financeApi = {
   options: (cid: number) => http.get<Options>(path(cid, "options/")),
 
   accounts: (cid: number, archived = false) => http.get<AccountsResponse>(path(cid, "accounts/"), archived ? { archived: "true" } : undefined),
-  account: (cid: number, id: number) => http.get<Account>(path(cid, `accounts/${id}/`)),
   createAccount: (cid: number, input: AccountInput) => http.post<Account>(path(cid, "accounts/"), input),
   updateAccount: (cid: number, id: number, input: Partial<AccountInput>) => http.patch<Account>(path(cid, `accounts/${id}/`), input),
   archiveAccount: (cid: number, id: number) => http.post<Account>(path(cid, `accounts/${id}/archive/`)),
@@ -106,9 +105,7 @@ export const financeApi = {
   },
   removeReceipt: (cid: number, transactionId: number, receiptId: number) => http.delete(path(cid, `transactions/${transactionId}/receipts/${receiptId}/`)),
 
-  transfers: (cid: number, params: Query = {}) => http.get<Page<Transfer>>(path(cid, "transfers/"), params),
   createTransfer: (cid: number, input: TransferInput) => http.post<Transfer>(path(cid, "transfers/"), input),
-  voidTransfer: (cid: number, id: number, reason: string) => http.post<Transfer>(path(cid, `transfers/${id}/void/`), { reason }),
 
   debts: (cid: number, params: Query, signal?: AbortSignal) => http.get<Page<Debt>>(path(cid, "debts/"), params, { signal }),
   debtSummary: (cid: number) => http.get<DebtSummary>(path(cid, "debts/summary/")),
@@ -167,7 +164,6 @@ export const useOverview = () => useResource("overview", {}, (cid) => financeApi
 export const useOptions = (enabled: MaybeRefOrGetter<boolean> = true) => useResource("options", {}, (cid) => financeApi.options(cid), { enabled, staleTime: 60_000 });
 export const useAccounts = (archived: MaybeRefOrGetter<boolean> = false) =>
   useResource("accounts", () => ({ archived: toValue(archived) }), (cid, p) => financeApi.accounts(cid, Boolean(p.archived)), { keepPrevious: true });
-export const useAccount = (id: MaybeRefOrGetter<number>) => useResource("account", () => ({ id: toValue(id) }), (cid, p) => financeApi.account(cid, Number(p.id)));
 export const useStatement = (id: MaybeRefOrGetter<number>, range: MaybeRefOrGetter<{ from: string; to: string }>) =>
   useResource("statement", () => ({ id: toValue(id), ...toValue(range) }), (cid, p) => financeApi.statement(cid, Number(p.id), { from: String(p.from), to: String(p.to) }), { keepPrevious: true });
 export const useCategories = (enabled: MaybeRefOrGetter<boolean> = true) => useResource("categories", {}, (cid) => financeApi.categories(cid), { enabled, staleTime: 60_000 });
@@ -178,7 +174,6 @@ export const useTransactions = (params: MaybeRefOrGetter<Query>) =>
   useResource("transactions", () => ({ ...toValue(params) }), (cid, p) => financeApi.transactions(cid, p as Query), { keepPrevious: true });
 export const useTransaction = (id: MaybeRefOrGetter<number | null>) =>
   useResource("transaction", () => ({ id: toValue(id) }), (cid, p) => financeApi.transaction(cid, Number(p.id)), { enabled: () => !!toValue(id) });
-export const useTransfers = (params: MaybeRefOrGetter<Query>) => useResource("transfers", () => ({ ...toValue(params) }), (cid, p) => financeApi.transfers(cid, p as Query));
 export const useDebts = (params: MaybeRefOrGetter<Query>) => useResource("debts", () => ({ ...toValue(params) }), (cid, p) => financeApi.debts(cid, p as Query), { keepPrevious: true });
 export const useDebtSummary = () => useResource("debt-summary", {}, (cid) => financeApi.debtSummary(cid));
 export const useDebt = (id: MaybeRefOrGetter<number | null>) => useResource("debt", () => ({ id: toValue(id) }), (cid, p) => financeApi.debt(cid, Number(p.id)), { enabled: () => !!toValue(id) });
@@ -202,13 +197,6 @@ export function useRefresh() {
     void client.invalidateQueries({ queryKey: financeKeys.all(cid.value) });
     void client.invalidateQueries({ queryKey: [cid.value, "shell", "pulse"] });
   };
-}
-
-/** A write that refreshes the module when it settles. `fn` gets the company id. */
-export function useFinanceMutation<V, R>(fn: (cid: number, vars: V) => Promise<R>) {
-  const cid = useCompanyId();
-  const refresh = useRefresh();
-  return useMutation({ mutationFn: (vars: V) => fn(cid.value, vars), onSettled: refresh });
 }
 
 type TransactionPages = TransactionPage;

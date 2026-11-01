@@ -5,8 +5,6 @@
  */
 import {
   ArrowDownToLine,
-  ArrowLeftRight,
-  ArrowUpFromLine,
   Banknote,
   CreditCard,
   HandCoins,
@@ -65,9 +63,6 @@ export const MOVEMENT_KINDS: MovementKind[] = ["payout", "handover", "to_safe", 
 export function movementSign(kind: MovementKind): 1 | -1 {
   return kind === "deposit" || kind === "from_safe" ? 1 : -1;
 }
-
-export const TRANSFER_ICON = ArrowLeftRight;
-export const OUT_ICON = ArrowUpFromLine;
 
 /** How a cash difference reads: none, within tolerance, short or over. */
 export type DifferenceLevel = "none" | "ok" | "short" | "over" | "unknown";

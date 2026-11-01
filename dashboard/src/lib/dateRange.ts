@@ -47,6 +47,3 @@ export function rangeParams(value: DateRangeValue): Record<string, string> {
   return params;
 }
 
-export function sameValue(a: DateRangeValue, b: DateRangeValue): boolean {
-  return a.preset === b.preset && a.compare === b.compare && a.range.from === b.range.from && a.range.to === b.range.to;
-}

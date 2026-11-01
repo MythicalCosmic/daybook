@@ -46,7 +46,6 @@ export const knowledgeApi = {
   updateSpace: (cid: number, id: number, input: Partial<SpaceInput>) => http.patch<Space>(path(cid, `spaces/${id}/`), input),
   archiveSpace: (cid: number, id: number) => http.post<Space>(path(cid, `spaces/${id}/archive/`)),
   restoreSpace: (cid: number, id: number) => http.post<Space>(path(cid, `spaces/${id}/restore/`)),
-  reorderSpaces: (cid: number, ids: number[]) => http.post<void>(path(cid, "spaces/reorder/"), { ids }),
   tree: (cid: number, spaceId: number, signal?: AbortSignal) => http.get<TreeNodeData[]>(path(cid, `spaces/${spaceId}/tree/`), undefined, { signal }),
   pages: (cid: number, params: PageListParams, signal?: AbortSignal) =>
     http.get<Page<PageRow>>(path(cid, "pages/"), { ...params, require_ack: params.require_ack ? true : undefined }, { signal }),
@@ -91,7 +90,6 @@ export const kbKeys = {
   overview: (cid: number) => qk(cid, MODULE, "overview"),
   spaces: (cid: number, archived = false) => qk(cid, MODULE, "spaces", { archived }),
   tree: (cid: number, spaceId: number) => qk(cid, MODULE, "tree", { spaceId }),
-  trees: (cid: number) => [cid, MODULE, "tree"] as const,
   pages: (cid: number, params: PageListParams) => qk(cid, MODULE, "pages", { ...params }),
   page: (cid: number, id: number) => qk(cid, MODULE, "page", { id }),
   versions: (cid: number, id: number) => qk(cid, MODULE, "versions", { id }),

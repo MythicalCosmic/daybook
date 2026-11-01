@@ -18,12 +18,11 @@ import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UiButton from "@/components/UiButton.vue";
 import { isNegative, isZero, subtract } from "@/lib/decimal";
 import { useDelayedPending } from "@/lib/useDelayedPending";
-import { todayIn } from "@/lib/dates";
+import { diffDays, todayIn } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
 import { useFinancials } from "../api";
-import { daysBetween } from "../lib";
 import type { ProjectDetail } from "../types";
 import ExpenseDialog from "./ExpenseDialog.vue";
 
@@ -44,9 +43,9 @@ const money = computed(() => query.data.value);
 const expected = computed(() => {
   const { start_on: start, due_on: due } = props.project;
   if (!start || !due) return null;
-  const total = daysBetween(start, due);
+  const total = diffDays(start, due);
   if (total <= 0) return null;
-  const gone = daysBetween(start, todayIn(company.timezone));
+  const gone = diffDays(start, todayIn(company.timezone));
   return Math.max(0, Math.min(1, gone / total));
 });
 

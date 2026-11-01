@@ -1,7 +1,5 @@
 /** Colors, icons and words for task statuses, priorities and deadlines, shared by every view. */
 import { TZDate } from "@date-fns/tz";
-import { CalendarClock, CircleCheck, CircleDashed, CircleDot, CircleSlash, Hourglass, RotateCcw } from "@lucide/vue";
-import type { Component } from "vue";
 
 import type { StatusTone } from "@/components/StatusPill.vue";
 
@@ -16,15 +14,6 @@ export const STATUS_TONE: Record<TaskStatus, StatusTone> = {
   cancelled: "neutral",
 };
 
-export const STATUS_ICON: Record<TaskStatus, Component> = {
-  todo: CircleDashed,
-  in_progress: CircleDot,
-  review: Hourglass,
-  returned: RotateCcw,
-  done: CircleCheck,
-  cancelled: CircleSlash,
-};
-
 /** Column dot colors on the board: tokens only. */
 export const COLUMN_COLOR: Record<BoardColumnId, string> = {
   todo: "var(--c-subtle)",
@@ -33,16 +22,6 @@ export const COLUMN_COLOR: Record<BoardColumnId, string> = {
   returned: "var(--c-danger)",
   done: "var(--c-success)",
 };
-
-/** Only Urgent is coloured (red, with its word); High is a plain flag, as in the app and the bot. */
-export const PRIORITY_TONE: Record<TaskPriority, StatusTone> = {
-  urgent: "danger",
-  high: "neutral",
-  normal: "neutral",
-  low: "neutral",
-};
-
-export const DUE_ICON = CalendarClock;
 
 /**
  * How cards stand in an open column (To do, In progress, Sent back), the order the app and the bot

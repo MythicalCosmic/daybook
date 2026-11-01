@@ -2,23 +2,14 @@
  * Small pure helpers shared by the attendance pages: tones for states and cells, colour slots,
  * distances, hour arithmetic on "HH:MM" strings and naive local date-times for the API.
  */
-import type { StatusTone } from "@/components/StatusPill.vue";
 import { currentLanguage } from "@/i18n";
 import { formatNumber } from "@/lib/format";
 import { addDays } from "@/lib/dates";
 import { toMinutes } from "@/lib/time";
 
-import type { BoardState, CellCode, RecordFlag, ShiftStatus, SwapKind } from "./types";
+import type { BoardState, CellCode } from "./types";
 
 export const BOARD_STATES: readonly BoardState[] = ["in", "late", "not_yet", "absent", "off"];
-
-export const STATE_TONES: Record<BoardState, StatusTone> = {
-  in: "success",
-  late: "warning",
-  not_yet: "info",
-  absent: "danger",
-  off: "neutral",
-};
 
 /** Token colour of a board state (dots, column accents). */
 export const STATE_COLORS: Record<BoardState, string> = {
@@ -28,13 +19,6 @@ export const STATE_COLORS: Record<BoardState, string> = {
   absent: "var(--c-danger)",
   off: "var(--c-subtle)",
 };
-
-export interface CellStyle {
-  /** Background and text classes from the design tokens. */
-  classes: string;
-  /** Short label inside the cell when it has no hours ("A", "L"…), from i18n. */
-  short?: string;
-}
 
 /** Timesheet cell look per code (labels are i18n keys `attendance.cell.<code>.short`). */
 export const CELL_CLASSES: Record<CellCode, string> = {
@@ -53,18 +37,6 @@ export const CELL_CLASSES: Record<CellCode, string> = {
 
 /** Codes that carry hours in the cell. */
 export const CELL_WITH_HOURS: ReadonlySet<CellCode> = new Set(["present", "late", "auto", "unscheduled"]);
-
-export const SHIFT_STATUS_TONES: Record<ShiftStatus, StatusTone> = {
-  planned: "primary",
-  open: "warning",
-  leave: "info",
-  cancelled: "neutral",
-};
-
-export const SWAP_TONES: Record<SwapKind, StatusTone> = { cover: "info", swap: "primary", claim: "warning" };
-
-/** Flags worth a warning next to a check-in (the rest are informational). */
-export const WARNING_FLAGS: ReadonlySet<RecordFlag> = new Set(["outside_geofence", "auto_closed", "no_location"]);
 
 /** A schedule or template colour slot (1–8) as the chart token behind it. */
 export function slotColor(slot: number | null | undefined): string {
@@ -156,8 +128,3 @@ export function isWeekend(day: string): boolean {
   return weekdayIndex(day) === 6;
 }
 
-/** First names are enough on dense boards ("Alisher V."). */
-export function shortName(name: string): string {
-  const [first = name, last] = name.split(" ");
-  return last ? `${first} ${last.charAt(0)}.` : first;
-}
