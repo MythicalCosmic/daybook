@@ -8,13 +8,20 @@ from datetime import datetime
 import pytest
 from aiogram import BaseMiddleware, Bot, Dispatcher, Router
 from aiogram.exceptions import TelegramRetryAfter
-from aiogram.methods import SendMessage
+from aiogram.methods import SendMessage, SendPhoto
 from aiogram.types import Chat, Message, Update
 from aiogram.types import User as TgUser
 from asgiref.sync import sync_to_async
 
 from apps.core import bot_runtime
-from apps.core.bot_runtime import DatabaseContext, OrderedDispatcher, WaitOnFloodLimit, person_of
+from apps.core.bot_runtime import (
+    DatabaseContext,
+    FitTelegramLimits,
+    OrderedDispatcher,
+    WaitOnFloodLimit,
+    person_of,
+)
+from apps.notifications.html_limits import CAPTION_LIMIT, TEXT_LIMIT, problems, visible_length
 
 
 class Database(BaseMiddleware):
@@ -207,3 +214,25 @@ async def test_the_flood_limit_wait_gives_up_after_a_few_tries_or_a_long_wait(bo
     with pytest.raises(TelegramRetryAfter):
         await middleware(flood_limit(60, "never"), bot, method)
     assert waits == []  # a minute's wait isn't worth holding the person's next update
+
+
+async def test_a_reply_past_telegrams_length_is_cut_to_fit(bot):
+    sent = []
+
+    async def make_request(bot_, method):
+        sent.append(method)
+        return "sent"
+
+    middleware = FitTelegramLimits()
+    long = "\n".join(f"<b>{n}</b> " + "x" * 80 for n in range(100))
+
+    await middleware(make_request, bot, SendMessage(chat_id=7, text=long))
+    await middleware(make_request, bot, SendPhoto(chat_id=7, photo="file-id", caption=long))
+    await middleware(make_request, bot, SendMessage(chat_id=7, text="<b>short</b>"))
+    await middleware(make_request, bot, SendMessage(chat_id=7, text="x" * 5000, parse_mode=None))
+
+    message, photo, short, plain = sent
+    assert visible_length(message.text) <= TEXT_LIMIT and problems(message.text) == []
+    assert visible_length(photo.caption) <= CAPTION_LIMIT and problems(photo.caption) == []
+    assert short.text == "<b>short</b>"
+    assert len(plain.text) == TEXT_LIMIT

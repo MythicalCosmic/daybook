@@ -22,13 +22,13 @@ from django.utils.translation import gettext as _
 from apps.core.exceptions import DomainError
 from apps.members.bot_messages import BotMessage
 from apps.members.models import Membership
+from apps.notifications.html_limits import CAPTION_LIMIT, fit
 from apps.tasks import bot_messages as task_messages
 from apps.tasks import queries, rules, services
 from apps.tasks import tasks as jobs
 from apps.tasks.models import Task
 from apps.tasks.queries import TASK_RELATIONS
 
-CAPTION_LIMIT = 1024
 # An album's other photos arrive as their own messages within a moment of the first.
 ALBUM_WINDOW = 30.0
 _albums: dict[str, float] = {}
@@ -213,8 +213,5 @@ def drop_undo_later(task: Task, member: Membership, message: Message) -> None:
 
 
 def _caption(text: str) -> str:
-    if len(text) <= CAPTION_LIMIT:
-        return text
-    # Cut at a line break, so no HTML tag is left open.
-    cut = text.rfind("\n", 0, CAPTION_LIMIT - 1)
-    return text[: cut if cut > 0 else CAPTION_LIMIT - 1] + "\n…"
+    """A card drawn on a photo: at most a caption's length, cut at a line end."""
+    return fit(text, CAPTION_LIMIT)

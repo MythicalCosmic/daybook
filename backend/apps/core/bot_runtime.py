@@ -14,8 +14,9 @@ them. Two pieces fix that, and neither changes a handler:
   sent them, so a quick second tap or message never overtakes the first; different people's
   run side by side.
 
-And `WaitOnFloodLimit` (on each bot's session): past Telegram's rate for one bot, a reply waits
-the seconds Telegram asks for and goes, instead of being dropped.
+And on each bot's session: `WaitOnFloodLimit` (past Telegram's rate for one bot, a reply waits
+the seconds Telegram asks for and goes, instead of being dropped) and `FitTelegramLimits` (a
+text past Telegram's length is cut to fit, instead of refused).
 """
 
 import asyncio
@@ -25,12 +26,23 @@ from concurrent.futures import ThreadPoolExecutor
 from weakref import WeakValueDictionary
 
 from aiogram import Dispatcher
+from aiogram.client.default import Default
 from aiogram.client.session.middlewares.base import BaseRequestMiddleware
 from aiogram.exceptions import TelegramRetryAfter
+from aiogram.methods import (
+    EditMessageCaption,
+    EditMessageText,
+    SendDocument,
+    SendMessage,
+    SendPhoto,
+    SendVideo,
+)
 from aiogram.types import Update
 from asgiref.sync import SyncToAsync, ThreadSensitiveContext
 from django.conf import settings
 from django.db import close_old_connections, connections
+
+from apps.notifications.html_limits import CAPTION_LIMIT, ELLIPSIS, TEXT_LIMIT, fit
 
 
 class DatabaseThreads(ThreadPoolExecutor):
@@ -153,3 +165,26 @@ class WaitOnFloodLimit(BaseRequestMiddleware):
                     raise
                 attempt += 1
                 await self.sleep(exc.retry_after)
+
+
+CAPTIONED = (SendPhoto, SendDocument, SendVideo, EditMessageCaption)
+
+
+class FitTelegramLimits(BaseRequestMiddleware):
+    """Telegram refuses a message over 4096 characters and a caption over 1024 (a long list,
+    a long description on a photo card): such a text is cut to fit, at a line end and with its
+    HTML tags closed (`html_limits.fit`), and goes. Texts that fit are left alone."""
+
+    async def __call__(self, make_request, bot, method):
+        if isinstance(method, SendMessage | EditMessageText):
+            method.text = _fit(method.text, TEXT_LIMIT, method.parse_mode)
+        elif isinstance(method, CAPTIONED) and method.caption:
+            method.caption = _fit(method.caption, CAPTION_LIMIT, method.parse_mode)
+        return await make_request(bot, method)
+
+
+def _fit(text: str, limit: int, parse_mode) -> str:
+    # Both bots default to HTML; a method sent with parse_mode=None is plain text.
+    if isinstance(parse_mode, Default) or (parse_mode or "").upper() == "HTML":
+        return fit(text, limit)
+    return text if len(text) <= limit else text[: limit - len(ELLIPSIS)] + ELLIPSIS
