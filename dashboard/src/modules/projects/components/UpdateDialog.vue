@@ -8,8 +8,9 @@ import TextArea from "@/components/TextArea.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
+import { useCompanyId } from "@/stores/company";
 
-import { postUpdate, useCompanyId, useRefreshProjects } from "../api";
+import { postUpdate, useRefreshProjects } from "../api";
 import { healthVar } from "../lib";
 import { HEALTHS, type Health, type ProjectDetail } from "../types";
 

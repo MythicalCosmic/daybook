@@ -12,7 +12,7 @@ import { http, ownerPath, type Query } from "@/api/http";
 import { moduleKey, qk } from "@/api/keys";
 import type { Page } from "@/api/types";
 import type { DateRangeValue } from "@/lib/dateRange";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId } from "@/stores/company";
 
 import type {
   Account,
@@ -143,11 +143,6 @@ export const financeKeys = {
 };
 
 // ─── Queries ────────────────────────────────────────────────────────────────
-
-export function useCompanyId() {
-  const company = useCompanyStore();
-  return computed(() => company.currentId ?? 0);
-}
 
 function useResource<T>(resource: string, params: MaybeRefOrGetter<Record<string, unknown>>, fetcher: (cid: number, params: Record<string, unknown>) => Promise<T>, options: { enabled?: MaybeRefOrGetter<boolean>; keepPrevious?: boolean; staleTime?: number } = {}) {
   const cid = useCompanyId();

@@ -19,7 +19,7 @@ import { qk } from "@/api/keys";
 import { arrange, type LayoutWidget, type WidgetLayout } from "@/components/widgetLayout";
 import type { WidgetSpan } from "@/core/modules";
 import type { SavedView } from "@/lib/useSavedViews";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId } from "@/stores/company";
 
 /** The personal layout's SavedView (plan §3.3): `module="overview"`, `name="layout"`. */
 export const LAYOUT_VIEW = "layout";
@@ -53,8 +53,7 @@ export function isDefaultLayout(widgets: readonly LayoutWidget[], layout: Widget
  * not in api.ts, which the widgets share: the page stays light (README "Budgets").
  */
 export function useOverviewViews() {
-  const company = useCompanyStore();
-  const companyId = computed(() => company.currentId ?? 0);
+  const companyId = useCompanyId();
   return useQuery({
     queryKey: computed(() => qk(companyId.value, "shell", "saved-views", { module: "overview" })),
     queryFn: ({ signal }) => http.get<SavedView[]>(ownerPath(companyId.value, "saved-views/"), { module: "overview" }, { signal }),

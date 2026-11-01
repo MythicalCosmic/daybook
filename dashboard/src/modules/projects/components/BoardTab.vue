@@ -30,8 +30,9 @@ import { useHotkey } from "@/core/hotkeys";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { rs, useRouteState } from "@/lib/useRouteState";
 import { useSessionStore } from "@/stores/session";
+import { useCompanyId } from "@/stores/company";
 
-import { deleteList, useBoard, useCompanyId, useMoveCard, useRefreshProjects } from "../api";
+import { deleteList, useBoard, useMoveCard, useRefreshProjects } from "../api";
 import { cardSort, colorVar, dropPosition, tint } from "../lib";
 import type { BoardList, Card, ProjectDetail } from "../types";
 import BoardCard from "./BoardCard.vue";

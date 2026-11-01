@@ -8,8 +8,9 @@ import NumberInput from "@/components/NumberInput.vue";
 import TextInput from "@/components/TextInput.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
+import { useCompanyId } from "@/stores/company";
 
-import { createList, updateList, useCompanyId, useRefreshProjects } from "../api";
+import { createList, updateList, useRefreshProjects } from "../api";
 import type { BoardList } from "../types";
 
 const open = defineModel<boolean>("open", { default: false });

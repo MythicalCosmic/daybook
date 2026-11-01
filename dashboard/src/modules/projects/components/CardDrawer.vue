@@ -31,9 +31,9 @@ import UserAvatar from "@/components/UserAvatar.vue";
 import { toast } from "@/components/useToast";
 import { zonedDay } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyStore } from "@/stores/company";
 
-import { moveCard, scheduleCard, startTimer, stopTimer, updateCard, useCard, useCompanyId, useRefreshProjects, useTimers } from "../api";
+import { moveCard, scheduleCard, startTimer, stopTimer, updateCard, useCard, useRefreshProjects, useTimers } from "../api";
 import { colorVar, hhmm, TASK_TONE, tint } from "../lib";
 import type { CardDetail, ProjectDetail, TaskPriority } from "../types";
 import LogTimeDialog from "./LogTimeDialog.vue";

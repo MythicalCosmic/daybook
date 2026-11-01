@@ -26,9 +26,9 @@ import { endOfMonth, todayIn } from "@/lib/dates";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyStore } from "@/stores/company";
 
-import { createRecord, useCompanyId, useRefresh, useSummary, useTimesheet } from "../api";
+import { createRecord, useRefresh, useSummary, useTimesheet } from "../api";
 import AttendanceHeader from "../components/AttendanceHeader.vue";
 import BranchSwitch from "../components/BranchSwitch.vue";
 import RecordDrawer from "../components/RecordDrawer.vue";

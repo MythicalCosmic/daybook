@@ -19,9 +19,9 @@ import UiButton from "@/components/UiButton.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { useDelayedPending } from "@/lib/useDelayedPending";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyStore } from "@/stores/company";
 
-import { settingsKeys, useCompanyId, useJoinLinkMutations, useJoinLinks } from "../api";
+import { settingsKeys, useJoinLinkMutations, useJoinLinks } from "../api";
 import { ENDED_OPEN_MAX, botOf, groupLinks, telegramShare } from "../teamLinks";
 import type { JoinLink, PosterTarget } from "../types";
 import TeamLinkRow from "./TeamLinkRow.vue";

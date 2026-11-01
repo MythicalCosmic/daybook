@@ -14,7 +14,7 @@ import { computed } from "vue";
 import { http, ownerPath } from "@/api/http";
 import { qk } from "@/api/keys";
 import type { PersonRef } from "@/api/types";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId } from "@/stores/company";
 
 /** One row of `GET saved-views/` (apps.console.owner_api.SavedViewSerializer). */
 export interface SavedView {
@@ -61,9 +61,8 @@ export function savedViewsApi(companyId: number) {
 }
 
 export function useSavedViews(module: string) {
-  const company = useCompanyStore();
   const client = useQueryClient();
-  const companyId = computed(() => company.currentId ?? 0);
+  const companyId = useCompanyId();
   // The shell refetches these when the `console.saved_views` pulse key moves (a colleague shared one).
   const key = computed(() => qk(companyId.value, "shell", "saved-views", { module }));
   const api = computed(() => savedViewsApi(companyId.value));

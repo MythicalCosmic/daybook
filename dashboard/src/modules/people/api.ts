@@ -9,7 +9,7 @@ import { computed, toValue, type MaybeRefOrGetter } from "vue";
 import { http, ownerPath } from "@/api/http";
 import { moduleKey, qk } from "@/api/keys";
 import type { Page, PermissionInfo } from "@/api/types";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId } from "@/stores/company";
 
 import type {
   ApproveInput,
@@ -116,11 +116,6 @@ export const peopleKeys = {
 
 /** Current people of a department and of every one below it (the panel keeps those directly in it). */
 export const departmentPeopleParams = (id: number): PeopleParams => ({ department: [String(id)], status: "current", ordering: "name", page_size: 500 });
-
-export function useCompanyId() {
-  const company = useCompanyStore();
-  return computed(() => company.currentId ?? 0);
-}
 
 export function usePeople(params: MaybeRefOrGetter<PeopleParams>, enabled: MaybeRefOrGetter<boolean> = true) {
   const cid = useCompanyId();

@@ -10,7 +10,7 @@ import { computed, toValue, type MaybeRefOrGetter } from "vue";
 import { http, ownerPath, type Query } from "@/api/http";
 import { moduleKey, qk } from "@/api/keys";
 import type { Page } from "@/api/types";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId } from "@/stores/company";
 
 import type {
   CashierScore,
@@ -91,11 +91,6 @@ export const salesKeys = {
   all: (cid: number) => moduleKey(cid, MODULE),
   resource: (cid: number, name: string, params: Record<string, unknown> = {}) => qk(cid, MODULE, name, params),
 };
-
-export function useCompanyId() {
-  const company = useCompanyStore();
-  return computed(() => company.currentId ?? 0);
-}
 
 function useResource<T>(name: string, params: MaybeRefOrGetter<Record<string, unknown>>, fetcher: (cid: number, params: Record<string, unknown>) => Promise<T>, options: { keep?: boolean; enabled?: MaybeRefOrGetter<boolean>; staleTime?: number } = {}) {
   const cid = useCompanyId();

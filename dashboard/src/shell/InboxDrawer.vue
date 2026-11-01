@@ -31,7 +31,7 @@ import { companyUrl as linkInCompany } from "@/lib/links";
 import { applyQueryPatch, closeQueryKey } from "@/lib/useRouteState";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyStore } from "@/stores/company";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -41,7 +41,7 @@ const company = useCompanyStore();
 const fmt = useFormat();
 const confirm = useConfirm();
 
-const companyId = computed(() => company.currentId ?? 0);
+const companyId = useCompanyId();
 const isOpen = computed(() => route.query.inbox !== undefined);
 const tab = computed<"needs" | "notifications">(() => (route.query.inbox === "notifications" ? "notifications" : "needs"));
 const notesFilter = ref<"unread" | "all">("unread");

@@ -24,9 +24,9 @@ import { addDays, formatRange, startOfWeek, todayIn } from "@/lib/dates";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyStore } from "@/stores/company";
 
-import { bulkRoster, publishRoster, useCompanyId, useRefresh, useRoster, useShiftCreate, useShiftUpdate } from "../api";
+import { bulkRoster, publishRoster, useRefresh, useRoster, useShiftCreate, useShiftUpdate } from "../api";
 import AttendanceHeader from "../components/AttendanceHeader.vue";
 import BranchSwitch from "../components/BranchSwitch.vue";
 import ShiftDialog, { type ShiftDraft } from "../components/ShiftDialog.vue";

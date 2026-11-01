@@ -10,7 +10,7 @@ import { computed, toValue, type MaybeRefOrGetter } from "vue";
 import { http, ownerPath } from "@/api/http";
 import { moduleKey, qk } from "@/api/keys";
 import type { Page } from "@/api/types";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId } from "@/stores/company";
 
 import type {
   Board,
@@ -182,11 +182,6 @@ export const projectKeys = {
 };
 
 // ─── Queries ────────────────────────────────────────────────────────────────
-
-export function useCompanyId() {
-  const company = useCompanyStore();
-  return computed(() => company.currentId ?? 0);
-}
 
 function enabledFor(companyId: { value: number }, extra: MaybeRefOrGetter<boolean> = true) {
   return computed(() => companyId.value > 0 && toValue(extra));

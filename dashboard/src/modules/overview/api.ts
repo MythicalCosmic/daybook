@@ -9,7 +9,7 @@ import { computed } from "vue";
 import { http, ownerPath } from "@/api/http";
 import { qk } from "@/api/keys";
 import type { BranchToday, StreamItem } from "@/api/types";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId } from "@/stores/company";
 
 export const MODULE = "overview";
 
@@ -26,11 +26,6 @@ export const overviewKeys = {
   branches: (companyId: number) => qk(companyId, MODULE, "branches"),
   stream: (companyId: number, limit: number) => qk(companyId, MODULE, "stream", { limit }),
 };
-
-function useCompanyId() {
-  const company = useCompanyStore();
-  return computed(() => company.currentId ?? 0);
-}
 
 /** Branch cards; refreshed every minute, since "not opened" depends on the clock as much as on data. */
 export function useBranchesToday() {

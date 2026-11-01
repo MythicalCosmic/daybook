@@ -22,7 +22,7 @@ import { http, ownerPath } from "@/api/http";
 import { qk } from "@/api/keys";
 import type { Page } from "@/api/types";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId } from "@/stores/company";
 
 import { inFieldOrder } from "./audit";
 import EmptyState from "./EmptyState.vue";
@@ -70,8 +70,7 @@ const props = withDefaults(
 
 const { t } = useI18n();
 const fmt = useFormat();
-const company = useCompanyStore();
-const companyId = computed(() => company.currentId ?? 0);
+const companyId = useCompanyId();
 
 const query = useInfiniteQuery({
   queryKey: computed(() => qk(companyId.value, "shell", "audit-records", { type: props.targetType, id: props.targetId })),

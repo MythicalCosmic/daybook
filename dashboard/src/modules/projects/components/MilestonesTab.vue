@@ -20,9 +20,9 @@ import { toast } from "@/components/useToast";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { diffDays, todayIn } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyStore } from "@/stores/company";
 
-import { deleteMilestone, updateMilestone, useCompanyId, useMilestones, useRefreshProjects } from "../api";
+import { deleteMilestone, updateMilestone, useMilestones, useRefreshProjects } from "../api";
 import type { Milestone, ProjectDetail } from "../types";
 import MilestoneDialog from "./MilestoneDialog.vue";
 

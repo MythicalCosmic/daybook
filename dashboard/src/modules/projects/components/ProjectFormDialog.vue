@@ -25,8 +25,9 @@ import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
 import { useForm } from "@/lib/useForm";
+import { useCompanyId } from "@/stores/company";
 
-import { createProject, updateProject, useCompanyId, useOptions, usePeople, useRefreshProjects, useSettings } from "../api";
+import { createProject, updateProject, useOptions, usePeople, useRefreshProjects, useSettings } from "../api";
 import { colorVar, ICON_NAMES, projectIcon } from "../lib";
 import { PALETTE, PROJECT_STATUSES, type PaletteColor, type ProjectDetail, type ProjectInput, type ProjectPriority, type ProjectStatus, type Visibility } from "../types";
 

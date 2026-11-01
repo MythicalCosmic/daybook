@@ -16,9 +16,9 @@ import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
 import { todayIn } from "@/lib/dates";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyStore } from "@/stores/company";
 
-import { logTime, useCards, useCompanyId, useMembers, useRefreshProjects } from "../api";
+import { logTime, useCards, useMembers, useRefreshProjects } from "../api";
 import { hhmm, parseDuration } from "../lib";
 import type { ProjectDetail } from "../types";
 

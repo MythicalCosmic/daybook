@@ -19,8 +19,9 @@ import TextInput from "@/components/TextInput.vue";
 import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import UiButton from "@/components/UiButton.vue";
 import { toast } from "@/components/useToast";
+import { useCompanyId } from "@/stores/company";
 
-import { saveSettings, useCompanyId, useSettings } from "../api";
+import { saveSettings, useSettings } from "../api";
 import type { ProjectSettings } from "../types";
 
 const { t } = useI18n();

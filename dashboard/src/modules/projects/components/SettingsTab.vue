@@ -15,8 +15,9 @@ import UiButton from "@/components/UiButton.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { useFormat } from "@/lib/useFormat";
+import { useCompanyId } from "@/stores/company";
 
-import { archiveProject, createLabel, deleteLabel, deleteList, reorderLists, restoreProject, updateLabel, useCompanyId, useRefreshProjects } from "../api";
+import { archiveProject, createLabel, deleteLabel, deleteList, reorderLists, restoreProject, updateLabel, useRefreshProjects } from "../api";
 import { colorVar, tint } from "../lib";
 import { PALETTE, type BoardList, type Label, type PaletteColor, type ProjectDetail } from "../types";
 import ListDialog from "./ListDialog.vue";

@@ -22,9 +22,9 @@ import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { useNow } from "@/lib/useNow";
 import { rs, useRouteState } from "@/lib/useRouteState";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyStore } from "@/stores/company";
 
-import { deleteTime, startTimer, stopTimer, useCompanyId, useRefreshProjects, useTimeWeek } from "../api";
+import { deleteTime, startTimer, stopTimer, useRefreshProjects, useTimeWeek } from "../api";
 import { colorVar, hhmm } from "../lib";
 import type { ProjectDetail, TimeEntry } from "../types";
 import LogTimeDialog from "./LogTimeDialog.vue";

@@ -18,8 +18,9 @@ import TextInput from "@/components/TextInput.vue";
 import UiButton from "@/components/UiButton.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
+import { useCompanyId } from "@/stores/company";
 
-import { addLink, deleteFile, deleteLink, uploadFile, useCompanyId, useFiles, useLinks, useRefreshProjects } from "../api";
+import { addLink, deleteFile, deleteLink, uploadFile, useFiles, useLinks, useRefreshProjects } from "../api";
 import type { ProjectDetail, ProjectFile, ProjectLink } from "../types";
 
 const props = defineProps<{ project: ProjectDetail }>();

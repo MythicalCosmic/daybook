@@ -16,8 +16,9 @@ import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import TimelineList, { type TimelineEvent } from "@/components/TimelineList.vue";
 import UiButton from "@/components/UiButton.vue";
 import { useFormat } from "@/lib/useFormat";
+import { useCompanyId } from "@/stores/company";
 
-import { listHistory, peopleKeys, useCompanyId } from "../api";
+import { listHistory, peopleKeys } from "../api";
 import type { HistoryRecord } from "../types";
 
 const props = defineProps<{ memberId: number }>();

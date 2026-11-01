@@ -25,7 +25,7 @@ import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { useHotkey } from "@/core/hotkeys";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId } from "@/stores/company";
 
 import { knowledgeApi, usePage, usePutPage, useRefresh, useSpaces, useTree } from "../api";
 import EmojiPicker from "../components/EmojiPicker.vue";
@@ -37,11 +37,10 @@ const { t } = useI18n();
 const fmt = useFormat();
 const route = useRoute();
 const router = useRouter();
-const company = useCompanyStore();
 const confirm = useConfirm();
 const refresh = useRefresh();
 const putPage = usePutPage();
-const cid = computed(() => company.currentId ?? 0);
+const cid = useCompanyId();
 const base = computed(() => `/c/${cid.value}/knowledge`);
 
 const pageId = computed(() => (route.params.pageId ? Number(route.params.pageId) : null));

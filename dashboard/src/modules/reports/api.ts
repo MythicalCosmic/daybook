@@ -9,7 +9,7 @@ import { computed, toValue, type MaybeRefOrGetter } from "vue";
 import { http, ownerPath } from "@/api/http";
 import { qk } from "@/api/keys";
 import type { DateRangeValue } from "@/lib/dateRange";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId } from "@/stores/company";
 
 import type { GroupBy, RoutineReport, TeamReport } from "./types";
 
@@ -28,11 +28,6 @@ export const reportsApi = {
   team: (cid: number, params: Params, signal?: AbortSignal) => http.get<TeamReport>(ownerPath(cid, "reports/team/"), params, { signal }),
   routines: (cid: number, params: Params, signal?: AbortSignal) => http.get<RoutineReport>(ownerPath(cid, "reports/routines/"), params, { signal }),
 };
-
-function useCompanyId() {
-  const company = useCompanyStore();
-  return computed(() => company.currentId ?? 0);
-}
 
 export function useTeamReport(period: MaybeRefOrGetter<DateRangeValue>, groupBy: MaybeRefOrGetter<GroupBy>, branches: MaybeRefOrGetter<string[]> = []) {
   const cid = useCompanyId();

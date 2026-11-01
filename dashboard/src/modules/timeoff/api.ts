@@ -8,7 +8,7 @@ import { computed, toValue, type MaybeRefOrGetter } from "vue";
 import { http, ownerPath } from "@/api/http";
 import { moduleKey, qk } from "@/api/keys";
 import type { Page } from "@/api/types";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId } from "@/stores/company";
 
 import type { CalendarMonth, Holiday, RecordInput, TimeOffParams, TimeOffRow, TimeOffStats } from "./types";
 
@@ -66,11 +66,6 @@ export const timeOffKeys = {
   stats: (cid: number) => qk(cid, MODULE, "stats"),
   holidays: (cid: number, year: number | null) => qk(cid, MODULE, "holidays", { year }),
 };
-
-export function useCompanyId() {
-  const company = useCompanyStore();
-  return computed(() => company.currentId ?? 0);
-}
 
 export function useTimeOffList(params: MaybeRefOrGetter<TimeOffParams>, enabled: MaybeRefOrGetter<boolean> = true) {
   const cid = useCompanyId();

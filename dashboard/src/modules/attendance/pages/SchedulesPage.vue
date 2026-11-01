@@ -33,9 +33,9 @@ import { toast } from "@/components/useToast";
 import { todayIn } from "@/lib/dates";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyStore } from "@/stores/company";
 
-import { archiveSchedule, assignSchedule, removeTemplate, saveTemplate, unassignSchedule, useCompanyId, useRefresh, useSchedules, useStaff, useTemplates } from "../api";
+import { archiveSchedule, assignSchedule, removeTemplate, saveTemplate, unassignSchedule, useRefresh, useSchedules, useStaff, useTemplates } from "../api";
 import AttendanceHeader from "../components/AttendanceHeader.vue";
 import ScheduleEditor from "../components/ScheduleEditor.vue";
 import { compactTime, slotColor } from "../lib";

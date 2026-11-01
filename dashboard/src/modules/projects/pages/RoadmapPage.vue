@@ -21,9 +21,9 @@ import { toast } from "@/components/useToast";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyStore } from "@/stores/company";
 
-import { scheduleProject, useCompanyId, useRefreshProjects, useRoadmap } from "../api";
+import { scheduleProject, useRefreshProjects, useRoadmap } from "../api";
 import HealthDot from "../components/HealthDot.vue";
 import ProjectBadge from "../components/ProjectBadge.vue";
 import { colorVar, declutterMilestones, healthVar } from "../lib";
