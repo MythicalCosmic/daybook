@@ -198,6 +198,39 @@ def test_the_morning_plan_says_the_teams_day(
     assert event.params == {"to": "Bekzod Mirzayev", "due_today": 1, "late": 1, "to_check": 0}
 
 
+def test_the_morning_plan_tells_only_what_the_reader_may_see(
+    crew, company, member, sent_messages, django_capture_on_commit_callbacks
+):
+    """Someone's own personal tasks are theirs alone (tasks.queries.visible_tasks), and a
+    manager who may give work but not see everyone's tasks hears only about work they can
+    open: neither is counted or named in the plan."""
+    from apps.members.models import AccessRole
+    from apps.members.permissions import Perm
+
+    TaskFactory(
+        company=company,
+        kind=Task.Kind.PERSONAL,
+        created_by=crew["worker"],
+        assignee=crew["worker"],
+        due_at=local(12) - timedelta(hours=27),
+        title="Shifokorga borish",
+    )
+    AccessRole.objects.create(company=company, name="Shift lead", permissions=[Perm.TASKS_ASSIGN])
+    lead = member.registered(company, "Shift lead", first_name="Jasur")
+    lead.user.telegram_id = 9_100_000 + lead.pk
+    lead.user.save(update_fields=["telegram_id"])
+    late_task(crew, hours=27)  # the giver's work, not the shift lead's to see
+
+    with django_capture_on_commit_callbacks(execute=True):
+        morning_plan.run(company, agents.state_of(company, morning_plan.KEY), local(8, 35))
+
+    texts = {message["chat_id"]: message["text"] for message in sent_messages}
+    for text in texts.values():
+        assert "Shifokorga" not in text
+    assert "Late: 1" in texts[crew["giver"].user.telegram_id]
+    assert lead.user.telegram_id not in texts  # nothing he may see is late
+
+
 def test_nothing_to_say_means_no_plan(crew, sent_messages):
     company = crew["giver"].company
 

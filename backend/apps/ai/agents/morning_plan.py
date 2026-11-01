@@ -81,14 +81,17 @@ def recipients(company, who: str) -> list[Membership]:
 
 
 def team_day(member: Membership, now: datetime) -> dict:
-    """The facts of a head's or manager's team today, from the database."""
+    """The facts of a head's or manager's team today, from the database: only work the reader
+    may open (`visible_tasks`: never someone's personal tasks, nor what their rights hide)."""
     zone = ZoneInfo(member.company.timezone)
     local = timezone.localtime(now, zone)
     today = local.date()
     start = datetime.combine(today, time.min, tzinfo=zone)
     end = start + timedelta(days=1)
     team = list(departments.assignable(member).values_list("pk", flat=True))
-    work = Task.objects.filter(assignee_id__in=team, status__in=Task.OPEN_STATUSES)
+    work = task_queries.visible_tasks(member).filter(
+        assignee_id__in=team, status__in=Task.OPEN_STATUSES
+    )
     due_today = work.filter(due_at__gte=max(start, now), due_at__lt=end).count()
     late = list(
         work.filter(due_at__lt=now).select_related("assignee__user").order_by("due_at")[:50]
