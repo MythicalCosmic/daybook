@@ -1,6 +1,7 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, h, nextTick } from "vue";
+import { useRoute } from "vue-router";
 
 import DataTable from "@/components/DataTable.vue";
 import type { TableColumn } from "@/components/table";
@@ -86,6 +87,31 @@ describe("useDataTable", () => {
     state.page.value = 1;
     await flushPromises();
     expect(app.router.currentRoute.value.query).toEqual({});
+  });
+
+  it("turns the page when filters come from the URL, and goes back to page 1 only when they change", async () => {
+    // Filters rebuilt from the URL are a new object after every navigation, the page's own included:
+    // a deep watcher on them snapped every list back to page 1 (Team, Transactions, Shifts…).
+    let state!: DataTableState;
+    const Host = defineComponent({
+      setup() {
+        const route = useRoute();
+        state = useDataTable({ url: true });
+        state.resetPageOn(() => ({ status: route.query.status ?? null }));
+        return () => h("div");
+      },
+    });
+    mount(Host, { global: { plugins: app.plugins } });
+    await flushPromises();
+    state.page.value = 2;
+    await flushPromises();
+    await flushPromises();
+    expect(app.router.currentRoute.value.query.page).toBe("2");
+    expect(state.page.value).toBe(2);
+    await app.router.push({ query: { ...app.router.currentRoute.value.query, status: "open" } });
+    await flushPromises();
+    await flushPromises();
+    expect(state.page.value).toBe(1);
   });
 
   it("remembers hidden columns per table id", async () => {

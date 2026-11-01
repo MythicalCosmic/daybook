@@ -4,7 +4,7 @@
  * newest first, with who got it, for which task, and whether it arrived. Filters in the URL.
  */
 import { AlarmClock, BellRing, CircleCheck, CircleX, Siren, UserX } from "@lucide/vue";
-import { computed, watch } from "vue";
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
 
@@ -41,7 +41,7 @@ const filters = useUrlFilters(defs);
 const search = useRouteState("q", rs.string(""));
 const table = useDataTable({ id: "reminders.log", url: "log_", pageSize: 50 });
 const params = computed(() => ({ ...filters.params.value, ...(search.value ? { q: search.value } : {}), page: table.page.value, page_size: table.pageSize.value }));
-watch(() => JSON.stringify([filters.params.value, search.value]), () => table.resetPage());
+table.resetPageOn(() => [filters.params.value, search.value]);
 const query = useReminderLog(params);
 
 const icons = { heads_up: AlarmClock, reminder: BellRing, escalation: Siren, blocked: UserX } as const;

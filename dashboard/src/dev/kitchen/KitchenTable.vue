@@ -73,7 +73,7 @@ watch(view, (id) => {
   else if (id === 101) filters.value = { category: ["Supplies"] };
   else filters.value = {};
 });
-watch([filters, search], () => table.resetPage(), { deep: true });
+table.resetPageOn(() => [filters.value, search.value]);
 
 const filtered = computed(() => {
   const f = filters.value;

@@ -105,7 +105,7 @@ const filters = useUrlFilters(defs);
 const search = useRouteState("q", rs.string(""));
 const table = useDataTable({ id: "finance.transactions", ordering: "-occurred_on", url: true, hidden: branches.value.length > 1 ? [] : ["branch"] });
 
-watch([() => filters.params.value, search], () => table.resetPage(), { deep: true });
+table.resetPageOn(() => [filters.params.value, search.value]);
 
 const params = computed(() => ({ ...filters.params.value, ...(search.value ? { q: search.value } : {}), ...table.params.value }));
 const query = useTransactions(params);

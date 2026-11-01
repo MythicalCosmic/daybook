@@ -5,7 +5,7 @@
  * open the drawer (`?task=`).
  */
 import { BellRing, CalendarClock, Check, CheckCheck, Eye, EyeOff, Flag, FolderKanban, Gift, Inbox, Repeat, UserRoundCog, X } from "@lucide/vue";
-import { computed, ref, watch } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import DataTable from "@/components/DataTable.vue";
@@ -58,10 +58,7 @@ const emptyBody = computed(() => {
 const options = useTaskOptions();
 const people = computed(() => (options.data.value?.people ?? []).map((p) => ({ id: p.id, name: p.name, photo_url: p.photo_url, subtitle: [p.position, p.branch].filter(Boolean).join(" · ") })));
 
-watch(
-  () => JSON.stringify(props.params),
-  () => props.state.resetPage(),
-);
+props.state.resetPageOn(() => props.params);
 
 const columns = computed<TableColumn<TaskRow>[]>(() => [
   { id: "title", header: t("tasks.col.task"), sortable: true, minWidth: 260, hideable: false, sticky: true, csv: (row) => row.title },
