@@ -8,6 +8,7 @@ The tasks app owns both, and both are read through its contract: tasks with
 from __future__ import annotations
 
 from dataclasses import dataclass
+from zoneinfo import ZoneInfo
 
 from django.utils import timezone
 
@@ -44,7 +45,9 @@ def _task_subtitle(task) -> str:
     """Whose task it is and the day it is due: tasks often share a title."""
     parts = [task.assignee.full_name] if task.assignee_id else []
     if task.due_at:
-        parts.append(timezone.localtime(task.due_at).strftime("%d.%m"))
+        # The company's day, not the server's.
+        due = timezone.localtime(task.due_at, ZoneInfo(task.company.timezone))
+        parts.append(due.strftime("%d.%m"))
     return " · ".join(part for part in parts if part) or f"#{task.pk}"
 
 
