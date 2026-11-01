@@ -570,6 +570,38 @@ describe("names cut short", () => {
   });
 });
 
+describe("TextInput debounce", () => {
+  it("passes a search on once typing pauses, and at once on Enter (a request per key before)", async () => {
+    vi.useFakeTimers();
+    const updates: string[] = [];
+    // A v-model parent: the prop follows each update.
+    const wrapper = mount(TextInput, {
+      props: {
+        modelValue: "",
+        debounce: 300,
+        "onUpdate:modelValue": (value: string | null) => {
+          updates.push(value ?? "");
+          void wrapper.setProps({ modelValue: value });
+        },
+      },
+      global: { plugins: plugins() },
+    });
+    const input = wrapper.find("input");
+    for (const text of ["d", "do", "dor"]) await input.setValue(text);
+    expect(updates).toEqual([]);
+    vi.advanceTimersByTime(300);
+    expect(updates).toEqual(["dor"]);
+    await input.setValue("dori");
+    await input.trigger("keydown", { key: "Enter" });
+    expect(updates).toEqual(["dor", "dori"]);
+    await flushPromises();
+    // A change from outside (Back, a cleared filter) shows in the field.
+    await wrapper.setProps({ modelValue: "" });
+    expect((input.element as HTMLInputElement).value).toBe("");
+    wrapper.unmount();
+  });
+});
+
 describe("TreeList on touch", () => {
   it("shows its drag handles and keeps the finger's drag from scrolling the page", () => {
     const tree = mount(TreeList, {

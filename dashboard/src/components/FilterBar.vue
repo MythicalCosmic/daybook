@@ -118,6 +118,7 @@ const chipHeight = computed(() => (props.size === "sm" ? "h-7" : "h-8"));
       clearable
       :size="size"
       :placeholder="searchPlaceholder ?? t('common.filter.search')"
+      :debounce="300"
       class="w-full sm:w-[240px]"
       @update:model-value="(value) => (search = value ?? '')"
     />

@@ -279,7 +279,7 @@ const viewOptions = computed(() => [
         </template>
         <!-- Phones: search, one Filters button (the chips live in a sheet), the view switch. -->
         <template v-else>
-          <TextInput v-model="search" :icon="Search" clearable :placeholder="t('tasks.searchPlaceholder')" class="min-w-0 flex-1" />
+          <TextInput v-model="search" :icon="Search" clearable :debounce="300" :placeholder="t('tasks.searchPlaceholder')" class="min-w-0 flex-1" />
           <UiButton :icon="ListFilter" :aria-label="t('tasks.filters.title')" data-testid="phone-filters" @click="filtersOpen = true">
             <span v-if="filters.active.value + (routinesAsked ? 1 : 0)" class="tabular-nums">{{ filters.active.value + (routinesAsked ? 1 : 0) }}</span>
           </UiButton>

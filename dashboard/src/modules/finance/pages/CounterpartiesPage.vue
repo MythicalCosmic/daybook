@@ -111,7 +111,7 @@ const formOpen = ref(false);
     >
       <template #toolbar>
         <div class="flex flex-wrap items-center gap-2">
-          <TextInput v-model="search" type="search" size="sm" class="w-full sm:w-64" :placeholder="t('finance.parties.searchPlaceholder')" clearable />
+          <TextInput v-model="search" :debounce="300" type="search" size="sm" class="w-full sm:w-64" :placeholder="t('finance.parties.searchPlaceholder')" clearable />
           <SegmentedControl
             v-model="kind"
             size="sm"
