@@ -9,7 +9,7 @@ bot (`OwnerUserMiddleware` records it). Deep links:
 
 from aiogram import F, Router
 from aiogram.enums import ChatMemberStatus, ChatType
-from aiogram.filters import CommandObject, CommandStart
+from aiogram.filters import Command, CommandObject, CommandStart, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import ChatMemberUpdated, Message
 from asgiref.sync import sync_to_async
@@ -20,6 +20,8 @@ from ownerbot import bot_messages, brief
 from ownerbot.handlers import language, new_company, signin
 
 router = Router(name="start")
+# Last of all (handlers/__init__.py): whatever no other handler took.
+fallback_router = Router(name="fallback")
 
 
 @router.message(CommandStart(), F.chat.type == ChatType.PRIVATE)
@@ -38,6 +40,11 @@ async def cmd_start(
         )
         return
     await state.clear()
+    await home(message, user)
+
+
+async def home(message: Message, user: User) -> None:
+    """The home message: the person's companies and what the bot does."""
     companies = await sync_to_async(brief.companies_summary)(user)
     if not companies and await sync_to_async(brief.works_elsewhere)(user):
         text, markup = bot_messages.not_for_you(), None  # a manager, not an owner or top manager
@@ -45,6 +52,19 @@ async def cmd_start(
         text, markup = bot_messages.welcome(user, companies)
     # Everyone starts in Uzbek; this one small button offers the other languages.
     await message.answer(text, reply_markup=language.with_language_button(markup))
+
+
+@router.message(Command("help"), F.chat.type == ChatType.PRIVATE)
+async def cmd_help(message: Message, user: User, state: FSMContext) -> None:
+    await state.clear()
+    await home(message, user)
+
+
+@fallback_router.message(F.chat.type == ChatType.PRIVATE, StateFilter(None))
+async def anything_else(message: Message, user: User) -> None:
+    """Text, a command or a file the bot has no use for: the home message, so nobody is
+    left without an answer (an owner typed /help or a task and heard nothing)."""
+    await home(message, user)
 
 
 @router.my_chat_member(F.chat.type == ChatType.PRIVATE)
