@@ -482,6 +482,7 @@ const en = {
   "profile.theme": "Theme",
   "profile.company": "Company",
   "profile.close": "Close the app",
+  "profile.version": "Version {version}",
   "timeOff.section": "Time off",
   "timeOff.request": "Ask for days off",
   "timeOff.title": "Days off",

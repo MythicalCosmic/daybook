@@ -2589,3 +2589,11 @@ textarea.plus-title {
 .app:has(> .offline-banner) {
   --top-inset: calc(var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px) + 44px);
 }
+
+/* Me: the release, quietly, under the last button. */
+.profile-version {
+  margin: var(--space-3) 0 0;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--muted);
+}

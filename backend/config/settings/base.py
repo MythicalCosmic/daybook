@@ -1,4 +1,5 @@
 import re
+import tomllib
 from datetime import timedelta
 from decimal import Decimal
 from pathlib import Path
@@ -12,6 +13,9 @@ from apps.core.schema import enum_name_overrides
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 ROOT_DIR = BASE_DIR.parent
+# The release, written in one place (pyproject.toml); /health/ and the API schema say it.
+with (ROOT_DIR / "pyproject.toml").open("rb") as _pyproject:
+    APP_VERSION = tomllib.load(_pyproject)["project"]["version"]
 
 env = environ.Env()
 environ.Env.read_env(ROOT_DIR / ".env")
@@ -272,7 +276,7 @@ SCHEMA_AUDIENCE = env("SCHEMA_AUDIENCE", default="")
 SPECTACULAR_SETTINGS = {
     "TITLE": "911 Trello API",
     "DESCRIPTION": "API for the employee mini app and the owner dashboard.",
-    "VERSION": "0.1.0",
+    "VERSION": APP_VERSION,
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
     # Several models have a "status"/"kind"; name the enums so generated clients read well.

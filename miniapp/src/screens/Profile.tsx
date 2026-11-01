@@ -204,6 +204,7 @@ export function Profile() {
       <button className="btn btn-secondary btn-block" style={{ minHeight: 52, fontSize: 17, marginTop: "var(--space-3)" }} onClick={close}>
         {t("profile.close")}
       </button>
+      <p className="profile-version num">{t("profile.version", { version: __APP_VERSION__ })}</p>
     </div>
   );
 }

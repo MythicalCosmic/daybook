@@ -10,7 +10,7 @@ def health(request):
     checks = {"database": _check_database(), "redis": _check_redis()}
     healthy = all(result == "ok" for result in checks.values())
     return JsonResponse(
-        {"status": "ok" if healthy else "error", "checks": checks},
+        {"status": "ok" if healthy else "error", "version": settings.APP_VERSION, "checks": checks},
         status=200 if healthy else 503,
     )
 

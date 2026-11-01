@@ -484,6 +484,7 @@ const uz: Partial<Record<Key, string>> = {
   "profile.theme": "Mavzu",
   "profile.company": "Kompaniya",
   "profile.close": "Ilovani yopish",
+  "profile.version": "Versiya {version}",
   "timeOff.section": "Dam olish",
   "timeOff.request": "Dam olish so‘rash",
   "timeOff.title": "Dam olish kunlari",

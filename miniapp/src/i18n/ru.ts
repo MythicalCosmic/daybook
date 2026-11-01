@@ -500,6 +500,7 @@ const ru: Partial<Record<Key | `${string}_${"few" | "many"}`, string>> = {
   "profile.theme": "Тема",
   "profile.company": "Компания",
   "profile.close": "Закрыть приложение",
+  "profile.version": "Версия {version}",
   "timeOff.section": "Отгулы",
   "timeOff.request": "Попросить отгул",
   "timeOff.title": "Отгул",
