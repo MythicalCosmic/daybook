@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, h, ref } from "vue";
 
 import MoneyInput from "@/components/MoneyInput.vue";
+import { toasts } from "@/components/useToast";
 import { ensureModuleMessages } from "@/i18n";
 import { useSessionStore } from "@/stores/session";
 import { company, json, me } from "@/test/fixtures";
@@ -54,6 +55,7 @@ function options() {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  toasts.splice(0, toasts.length);
   document.body.innerHTML = "";
 });
 
@@ -152,6 +154,68 @@ describe("TargetDialog", () => {
     await flushPromises();
     await flushPromises();
     expect(document.body.textContent).toContain("Targets are set for this month or later.");
+    wrapper.unmount();
+  });
+});
+
+describe("sales forms say field-only refusals", () => {
+  it("sales settings refused for a field the panel has no message for", async () => {
+    stub({
+      "GET sales/options/": () => json(options()),
+      "GET sales/settings/": () => json({ mode: "receipts", blind_cash_count: true, cash_tolerance: "5000.00", business_day_ends_at: "04:00" }),
+      "PATCH sales/settings/": () => json({ cash_tolerance: ["Keep the tolerance under 1,000,000."] }, 400),
+    });
+    const SalesSettingsPanel = (await import("../components/SalesSettingsPanel.vue")).default;
+    const app = await testApp("/c/1/settings/sales");
+    await ensureModuleMessages(salesModule);
+    const { wrapper } = mountWithProviders(SalesSettingsPanel, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    await wrapper.find("form").trigger("submit");
+    await flushPromises();
+    await flushPromises();
+    expect(toasts.map((toast) => toast.title)).toContain("Keep the tolerance under 1,000,000.");
+    wrapper.unmount();
+  });
+
+  it("a cash movement refused for its till (under the till) and for its kind (said aloud)", async () => {
+    stub({ "GET sales/options/": () => json(options()), "POST sales/cash-movements/": () => json({ register_id: ["This till is closed."], kind: ["Payouts are switched off."] }, 400) });
+    const MovementDialog = (await import("../components/MovementDialog.vue")).default;
+    const { wrapper } = await openDialog(MovementDialog, "/c/1/sales/cash");
+    wrapper.findComponent(MoneyInput).vm.$emit("update:modelValue", "100000.00");
+    const { default: TextInput } = await import("@/components/TextInput.vue");
+    for (const input of wrapper.findAllComponents(TextInput)) input.vm.$emit("update:modelValue", "Svet uchun");
+    await flushPromises();
+    button(en["sales.movement.submit"]).click();
+    await flushPromises();
+    await flushPromises();
+    expect(document.body.textContent).toContain("This till is closed.");
+    expect(toasts.map((toast) => toast.title)).toContain("Payouts are switched off.");
+    wrapper.unmount();
+  });
+
+  it("a new till refused for its serial number", async () => {
+    stub({
+      "GET sales/options/": () => json(options()),
+      "GET sales/registers/": () => json([]),
+      "POST sales/registers/": () => json({ fiscal_serial: ["Kassa 2 already has this serial number."] }, 400),
+    });
+    const RegistersPanel = (await import("../components/RegistersPanel.vue")).default;
+    const app = await testApp("/c/1/settings/registers");
+    await ensureModuleMessages(salesModule);
+    const { wrapper } = mountWithProviders(RegistersPanel, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    button(en["sales.registers.add"]).click();
+    await flushPromises();
+    const { default: TextInput } = await import("@/components/TextInput.vue");
+    wrapper.findComponent(TextInput).vm.$emit("update:modelValue", "Kassa 3");
+    await flushPromises();
+    // The dialog's own button (the empty state's "Add till" reads the same).
+    [...document.querySelectorAll<HTMLButtonElement>('[role="dialog"] button')].find((b) => b.textContent?.trim() === en["sales.registers.create"])!.click();
+    await flushPromises();
+    await flushPromises();
+    expect(toasts.map((toast) => toast.title)).toContain("Kassa 2 already has this serial number.");
     wrapper.unmount();
   });
 });

@@ -30,6 +30,7 @@ import TextInput from "@/components/TextInput.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDrawer from "@/components/UiDrawer.vue";
 import { useConfirm } from "@/components/useConfirm";
+import { unshownFieldError } from "@/api/http";
 import { toast } from "@/components/useToast";
 import { addDays } from "@/lib/dates";
 import { companyUrl } from "@/lib/links";
@@ -200,6 +201,10 @@ async function saveEdit(): Promise<void> {
     toast.success(t("finance.tx.saved"));
     editing.value = false;
     refresh();
+  } catch (failure) {
+    // A refused day (a locked period) or account would otherwise leave the editor without a word.
+    const unshown = unshownFieldError(failure);
+    if (unshown) toast.error(unshown);
   } finally {
     saving.value = false;
   }

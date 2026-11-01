@@ -19,6 +19,7 @@ import StickyActionBar from "@/components/StickyActionBar.vue";
 import TimePicker from "@/components/TimePicker.vue";
 import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import UiButton from "@/components/UiButton.vue";
+import { unshownFieldError } from "@/api/http";
 import { toast } from "@/components/useToast";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useCompanyStore } from "@/stores/company";
@@ -63,9 +64,15 @@ const modes = computed(() => [
 
 const save = useSalesMutation((cid, input: Partial<SalesSettings>) => salesApi.saveSettings(cid, input));
 async function submit(): Promise<void> {
-  const saved = await save.mutateAsync({ ...form });
-  loaded.value = JSON.stringify(saved);
-  toast.success(t("sales.settings.saved"));
+  try {
+    const saved = await save.mutateAsync({ ...form });
+    loaded.value = JSON.stringify(saved);
+    toast.success(t("sales.settings.saved"));
+  } catch (failure) {
+    // The panel has no message under its fields: a field-only refusal is said aloud (others were).
+    const unshown = unshownFieldError(failure);
+    if (unshown) toast.error(unshown);
+  }
 }
 </script>
 
