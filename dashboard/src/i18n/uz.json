@@ -61,6 +61,7 @@
   "common.export.telegram": "Uni Telegram’dagi chatingizga ham yubordik.",
   "common.export.failed": "Eksport amalga oshmadi. Qayta urinib ko‘ring.",
   "common.export.download": "Yuklab olish",
+  "common.export.noSaveInTelegram": "Telegram bu faylni shu yerda saqlay olmaydi. Konsolni brauzerda oching yoki Excel eksportidan foydalaning.",
 
   "common.calendar.prevWeek": "Oldingi hafta",
   "common.calendar.nextWeek": "Keyingi hafta",

@@ -61,6 +61,7 @@
   "common.export.telegram": "Мы также отправили его вам в Telegram.",
   "common.export.failed": "Экспорт не удался. Попробуйте ещё раз.",
   "common.export.download": "Скачать",
+  "common.export.noSaveInTelegram": "Telegram не может сохранить этот файл здесь. Откройте консоль в браузере или выгрузите в Excel.",
 
   "common.calendar.prevWeek": "Предыдущая неделя",
   "common.calendar.nextWeek": "Следующая неделя",
