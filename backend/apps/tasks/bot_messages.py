@@ -236,14 +236,17 @@ def card_keyboard(
             more.append(_button(_("Comment"), TaskAction.COMMENT, task.pk))
         rows.append(more)
     last = []
-    if task.proof_photo and photo_button:
-        last.append(_button(_("Photo"), TaskAction.PHOTO, task.pk))
     if app := app_button(task):
         last.append(app)
     if mine:
         last.append(_button(_("My tasks"), TaskAction.LIST))
-    if last:
-        rows.append(last)
+    if task.proof_photo and photo_button:
+        photo = _button(_("Photo"), TaskAction.PHOTO, task.pk)
+        if len(last) < 2:
+            last.insert(0, photo)
+        else:  # never three a row: "Open in app" is long and a phone cuts it
+            rows.append([photo])
+    rows.append(last)
     rows = [row for row in rows if row]
     return InlineKeyboardMarkup(inline_keyboard=rows) if rows else None
 
