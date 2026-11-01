@@ -112,25 +112,46 @@ def test_the_tool_loop_with_claude(
     assert json.loads(results[0]["content"])["total"] == 1
 
 
-def test_history_is_replayed_as_stored(
-    owner_api, owner, company, fake_claude, django_capture_on_commit_callbacks
+def test_two_turns_send_the_same_system_and_tools_and_replay_the_history(
+    owner_api, owner, company, fake_claude, monkeypatch, django_capture_on_commit_callbacks
 ):
-    fake_claude.script(fake_claude.text("Birinchi javob."), fake_claude.text("Ikkinchi javob."))
+    """PLAN §8.4: the cached prefix is byte-identical across turns, whatever the time, the page
+    or the asker's language; turn 2 replays turn 1's stored messages exactly."""
+    from apps.ai import chat
+
+    fake_claude.script(
+        fake_claude.json({"x": 1}),  # a thinking block and text, as Opus/Sonnet answer
+        fake_claude.text("Ikkinchi javob."),
+    )
     client = owner_api(owner)
     conversation, _turn = ask(client, company, "Salom", django_capture_on_commit_callbacks)
+    later = timezone.now() + timedelta(minutes=7)
+    monkeypatch.setattr(chat.timezone, "now", lambda: later)
+    owner.user.language = "ru"
+    owner.user.save(update_fields=["language"])
 
     with django_capture_on_commit_callbacks(execute=True):
         client.post(
             url(company, f"conversations/{conversation['id']}/turns/"),
-            {"text": "Yana"},
+            {"text": "Yana", "page": "/people/17"},
             format="json",
         )
 
     first, second = fake_claude.requests
-    assert second["messages"][: len(first["messages"])] == first["messages"]
-    assert second["messages"][-1] == {"role": "user", "content": [{"type": "text", "text": "Yana"}]}
-    assert second["system"] == first["system"]
-    assert second["tools"] == first["tools"]
+    assert json.dumps(second["system"]) == json.dumps(first["system"])
+    assert json.dumps(second["tools"]) == json.dumps(first["tools"])
+    assert second["system"][-1]["cache_control"] == {"type": "ephemeral"}
+    assert "now=" not in json.dumps(first["system"]) and "page=" not in json.dumps(first["system"])
+    stored = [
+        {"role": message.role, "content": message.content}
+        for message in AIMessage.objects.filter(conversation_id=conversation["id"]).order_by("seq")
+    ]
+    assert second["messages"][: len(first["messages"])] == first["messages"] == stored[:1]
+    assert second["messages"][1] == stored[1]  # turn 1's answer, thinking block included
+    assert stored[1]["content"][0]["type"] == "thinking"
+    context, question = second["messages"][-1]["content"]
+    assert question == {"type": "text", "text": "Yana"}
+    assert "page=/people/17" in context["text"] and "language=Russian" in context["text"]
 
 
 def test_the_loop_stops_after_eight_rounds(
