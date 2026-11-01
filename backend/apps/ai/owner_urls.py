@@ -29,4 +29,8 @@ urlpatterns = [
         owner_api.TaskDraftDiscardView.as_view(),
         name="owner-ai-task-draft-discard",
     ),
+    path("ai/agents/", owner_api.AgentListView.as_view(), name="owner-ai-agents"),
+    path("ai/agents/<str:key>/", owner_api.AgentView.as_view(), name="owner-ai-agent"),
+    path("ai/agents/<str:key>/run/", owner_api.AgentRunView.as_view(), name="owner-ai-agent-run"),
+    path("ai/activity/", owner_api.ActivityView.as_view(), name="owner-ai-activity"),
 ]

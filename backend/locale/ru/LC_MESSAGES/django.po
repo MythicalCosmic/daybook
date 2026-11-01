@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-02 02:33+0500\n"
+"POT-Creation-Date: 2026-11-02 02:57+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -465,6 +465,147 @@ msgstr "Стоимость (USD)"
 msgid "AI usage: %(usd)s USD"
 msgstr "Расход AI: %(usd)s USD"
 
+#: backend/apps/ai/agents/deadline_watcher.py
+#, python-format
+msgid "Every 30 minutes, %(start)s–%(end)s"
+msgstr "Каждые 30 минут, %(start)s–%(end)s"
+
+#: backend/apps/ai/agents/deadline_watcher.py
+msgid "Deadline watcher"
+msgstr "Контроль сроков"
+
+#: backend/apps/ai/agents/deadline_watcher.py
+msgid ""
+"Tells whoever gave a task when it is late, once, with a button to open it or "
+"give an hour more. Never repeats what the reminders already said."
+msgstr ""
+"Когда задача опаздывает, один раз сообщает тому, кто её дал: с кнопками "
+"«Открыть» и «+1 час». Не повторяет то, что уже сказали напоминания."
+
+#: backend/apps/ai/agents/deadline_watcher.py
+msgid "Late by"
+msgstr "Опоздание"
+
+#: backend/apps/ai/agents/deadline_watcher.py
+msgid "How late a task is before its giver hears."
+msgstr "Насколько задача должна опоздать, чтобы узнал тот, кто её дал."
+
+#: backend/apps/ai/agents/deadline_watcher.py
+msgid "hours"
+msgstr "часов"
+
+#: backend/apps/ai/agents/deadline_watcher.py
+msgid "Quiet from"
+msgstr "Тишина с"
+
+#: backend/apps/ai/agents/deadline_watcher.py
+msgid "Quiet until"
+msgstr "Тишина до"
+
+#: backend/apps/ai/agents/deadline_watcher.py
+#, python-format
+msgid "Told %(to)s that «%(task)s» is late (%(assignee)s)"
+msgstr "%(to)s: сообщено, что «%(task)s» опаздывает (%(assignee)s)"
+
+#: backend/apps/ai/agents/morning_plan.py
+#, python-format
+msgid "Workdays at %(time)s"
+msgstr "По рабочим дням в %(time)s"
+
+#: backend/apps/ai/agents/morning_plan.py backend/apps/groups/models.py
+msgid "Morning plan"
+msgstr "Утренний план"
+
+#: backend/apps/ai/agents/morning_plan.py
+msgid ""
+"Each workday morning, every head and manager gets their team's day: what is "
+"due, what is late, what waits for their check and who is off."
+msgstr ""
+"Каждое рабочее утро каждый руководитель и менеджер получает день своей "
+"команды: что к сроку, что опаздывает, что ждёт проверки и кто отдыхает."
+
+#: backend/apps/ai/agents/morning_plan.py
+msgid "Send at"
+msgstr "Отправлять в"
+
+#: backend/apps/ai/agents/morning_plan.py
+msgid "Who gets it"
+msgstr "Кто получает"
+
+#: backend/apps/ai/agents/morning_plan.py
+msgid "Department heads"
+msgstr "Руководители отделов"
+
+#: backend/apps/ai/agents/morning_plan.py
+msgid "Managers"
+msgstr "Менеджеры"
+
+#: backend/apps/ai/agents/morning_plan.py
+msgid "Heads and managers"
+msgstr "Руководители и менеджеры"
+
+#: backend/apps/ai/agents/morning_plan.py
+#, python-format
+msgid ""
+"Morning plan for %(to)s: %(due_today)s due today, %(late)s late, "
+"%(to_check)s to check"
+msgstr ""
+"Утренний план (%(to)s): сегодня к сроку — %(due_today)s, опаздывают — "
+"%(late)s, на проверке — %(to_check)s"
+
+#: backend/apps/ai/agents/photo_checker.py
+msgid "When a routine is finished with a photo"
+msgstr "Когда регулярная задача выполнена с фото"
+
+#: backend/apps/ai/agents/photo_checker.py
+msgid "When a task is finished with a photo"
+msgstr "Когда задача выполнена с фото"
+
+#: backend/apps/ai/agents/photo_checker.py
+msgid "The fridge shows 5 °C, inside 2-8 °C."
+msgstr "Холодильник показывает 5 °C, в пределах 2-8 °C."
+
+#: backend/apps/ai/agents/photo_checker.py
+msgid "The photo is a little dark: take a quick look."
+msgstr "Фото темноватое: взгляните сами."
+
+#: backend/apps/ai/agents/photo_checker.py
+msgid "Photo checker"
+msgstr "Проверка фото"
+
+#: backend/apps/ai/agents/photo_checker.py
+msgid ""
+"Reads the proof photo when a task is finished (a fridge thermometer, expiry "
+"dates) and leaves a note for whoever checks the work. Sends task photos to "
+"Claude."
+msgstr ""
+"Читает фото-подтверждение, когда задача выполнена (термометр холодильника, "
+"сроки годности), и оставляет заметку проверяющему. Отправляет фото задач в "
+"Claude."
+
+#: backend/apps/ai/agents/photo_checker.py
+msgid "Only routines"
+msgstr "Только регулярные задачи"
+
+#: backend/apps/ai/agents/photo_checker.py
+msgid "Check only the photos of daily routines."
+msgstr "Проверять фото только ежедневных регулярных задач."
+
+#: backend/apps/ai/agents/photo_checker.py
+#, python-format
+msgid "Photo of «%(task)s» looks right: %(note)s"
+msgstr "Фото «%(task)s» в порядке: %(note)s"
+
+#: backend/apps/ai/agents/photo_checker.py
+#, python-format
+msgid "Photo of «%(task)s» needs a look: %(note)s"
+msgstr "Фото «%(task)s» стоит проверить: %(note)s"
+
+#: backend/apps/ai/agents/photo_checker.py
+#, python-format
+msgid "Photo of «%(task)s» doesn't show enough: %(note)s"
+msgstr "На фото «%(task)s» видно недостаточно: %(note)s"
+
 #: backend/apps/ai/agents/registry.py
 msgid "Choose on or off."
 msgstr "Включите или выключите."
@@ -746,6 +887,64 @@ msgstr "Открыть: %(title)s"
 msgid "Edit in the app"
 msgstr "Изменить в приложении"
 
+#: backend/apps/ai/bot_messages.py
+msgid "Late task"
+msgstr "Задача опаздывает"
+
+#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
+#: backend/apps/ai/bot_messages.py backend/apps/tasks/bot_messages.py
+#, python-format
+msgid "For: %(name)s"
+msgstr "Исполнитель: %(name)s"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Deadline: %(when)s"
+msgstr "Срок: %(when)s"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Late by: %(late)s"
+msgstr "Опоздание: %(late)s"
+
+#: backend/apps/ai/bot_messages.py backend/apps/tasks/bot_messages.py
+msgid "+1 hour"
+msgstr "+1 час"
+
+#: backend/apps/ai/bot_messages.py
+msgid "Your team today"
+msgstr "Ваша команда сегодня"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Due today: %(count)s"
+msgstr "Сегодня к сроку: %(count)s"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Late: %(count)s"
+msgstr "Опаздывают: %(count)s"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "Waiting for your check: %(count)s"
+msgstr "Ждут вашей проверки: %(count)s"
+
+#: backend/apps/ai/bot_messages.py owner_bot/ownerbot/brief.py
+#, python-format
+msgid "Off today: %(names)s"
+msgstr "Сегодня не работают: %(names)s"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "To check (%(count)s)"
+msgstr "Проверить (%(count)s)"
+
+#: backend/apps/ai/bot_messages.py
+#, python-format
+msgid "New deadline for «%(title)s»: %(when)s"
+msgstr "Новый срок для «%(title)s»: %(when)s"
+
 #: backend/apps/ai/drafts.py
 msgid "There is nothing to create."
 msgstr "Создавать нечего."
@@ -890,6 +1089,11 @@ msgstr "Сотрудник"
 msgid "Voice note"
 msgstr "Голосовое"
 
+#: backend/apps/ai/queries.py
+#, python-format
+msgid "Voice note · %(name)s"
+msgstr "Голосовое · %(name)s"
+
 #: backend/apps/ai/services.py
 msgid "Voice tasks are switched off in this company."
 msgstr "В этой компании голосовые задачи выключены."
@@ -916,6 +1120,26 @@ msgstr "Вы не можете менять настройки AI."
 #: backend/apps/ai/services.py
 msgid "AI is switched off for this company by the platform."
 msgstr "Платформа отключила AI для этой компании."
+
+#: backend/apps/ai/services.py
+msgid "There is no such agent."
+msgstr "Такого агента нет."
+
+#: backend/apps/ai/services.py
+msgid "This agent needs Claude: add ANTHROPIC_API_KEY on the server."
+msgstr "Этому агенту нужен Claude: добавьте ANTHROPIC_API_KEY на сервере."
+
+#: backend/apps/ai/services.py
+msgid "This task is no longer here."
+msgstr "Этой задачи больше нет."
+
+#: backend/apps/ai/services.py
+msgid "This agent works by itself when something happens."
+msgstr "Этот агент работает сам, когда что-то происходит."
+
+#: backend/apps/ai/services.py
+msgid "Turn AI on first."
+msgstr "Сначала включите AI."
 
 #: backend/apps/announcements/admin.py backend/apps/finance/models.py
 msgid "Read"
@@ -4895,10 +5119,6 @@ msgstr "Просроченные задачи"
 #: backend/apps/groups/models.py
 msgid "New people"
 msgstr "Новые сотрудники"
-
-#: backend/apps/groups/models.py
-msgid "Morning plan"
-msgstr "Утренний план"
 
 #: backend/apps/groups/models.py
 msgid "End-of-day summary"
@@ -9286,12 +9506,6 @@ msgstr "Премия: +%(amount)s"
 msgid "From: %(name)s"
 msgstr "От: %(name)s"
 
-#. Translators: %(name)s is a person's name, Latin or Cyrillic: no case endings on it.
-#: backend/apps/tasks/bot_messages.py
-#, python-format
-msgid "For: %(name)s"
-msgstr "Исполнитель: %(name)s"
-
 #: backend/apps/tasks/bot_messages.py
 #, python-format
 msgid "Checklist: %(done)d of %(total)d"
@@ -9447,10 +9661,6 @@ msgstr "Что исправить? Выберите причину или нап
 #: backend/apps/tasks/bot_messages.py
 msgid "+30 min"
 msgstr "+30 мин"
-
-#: backend/apps/tasks/bot_messages.py
-msgid "+1 hour"
-msgstr "+1 час"
 
 #: backend/apps/tasks/bot_messages.py
 msgid "In 1 hour"
@@ -11525,11 +11735,6 @@ msgstr "Заявки на вступление: %(count)d"
 #, python-format
 msgid "New this week: %(names)s"
 msgstr "Новые на этой неделе: %(names)s"
-
-#: owner_bot/ownerbot/brief.py
-#, python-format
-msgid "Off today: %(names)s"
-msgstr "Сегодня не работают: %(names)s"
 
 #: owner_bot/ownerbot/brief.py
 #, python-format

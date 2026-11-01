@@ -82,10 +82,14 @@ class Agent:
     fields: tuple[Field, ...]
     schedule: Callable[[dict], str]
     events: dict[str, EventTemplate] = field(default_factory=dict)
-    # For agents that work on a schedule: run(company, state) -> number of things done.
+    # For agents that work on a schedule: run(company, state, now) -> how many things it
+    # did, and next_run(config, now, company) -> when it runs again.
     run: Callable | None = None
+    next_run: Callable | None = None
     # Whether it needs a speech service to do all it says (voice tasks).
     needs_speech: bool = False
+    # Where the dashboard lists it (lowest first).
+    order: int = 100
 
     @property
     def scheduled(self) -> bool:
@@ -117,8 +121,8 @@ def get(key: str) -> Agent | None:
 
 
 def all_agents() -> list[Agent]:
-    """In the order they were registered (the dashboard's order)."""
-    return list(_agents.values())
+    """In the dashboard's order."""
+    return sorted(_agents.values(), key=lambda agent: (agent.order, agent.key))
 
 
 def state_of(company, key: str):

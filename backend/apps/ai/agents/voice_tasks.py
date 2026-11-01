@@ -24,6 +24,7 @@ def _schedule(config: dict) -> str:
 AGENT = register(
     Agent(
         key=KEY,
+        order=10,
         name=gettext_lazy("Voice tasks"),
         description=gettext_lazy(
             "Turns voice messages and typed instructions into tasks: who it is for, by when, "

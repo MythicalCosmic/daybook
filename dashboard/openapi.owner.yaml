@@ -275,6 +275,124 @@ paths:
           description: ''
         '400':
           description: Not allowed, bad code or bad input.
+  /api/v1/owner/companies/{company_id}/ai/activity/:
+    get:
+      operationId: companies_ai_activity_retrieve
+      parameters:
+      - in: query
+        name: agent
+        schema:
+          type: string
+        description: One agent's key.
+      - in: query
+        name: before
+        schema:
+          type: integer
+        description: 'The page after: next_before.'
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: limit
+        schema:
+          type: integer
+        description: How many (30; at most 100).
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIActivityPage'
+          description: ''
+  /api/v1/owner/companies/{company_id}/ai/agents/:
+    get:
+      operationId: companies_ai_agents_list
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AIAgent'
+          description: ''
+  /api/v1/owner/companies/{company_id}/ai/agents/{key}/:
+    patch:
+      operationId: companies_ai_agents_partial_update
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: key
+        schema:
+          type: string
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAIAgentUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAIAgentUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAIAgentUpdateRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIAgent'
+          description: ''
+  /api/v1/owner/companies/{company_id}/ai/agents/{key}/run/:
+    post:
+      operationId: companies_ai_agents_run_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: key
+        schema:
+          type: string
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIQueued'
+          description: ''
   /api/v1/owner/companies/{company_id}/ai/settings/:
     get:
       operationId: companies_ai_settings_retrieve
@@ -14146,6 +14264,212 @@ paths:
           description: ''
 components:
   schemas:
+    AIActivityActor:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        photo:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+      - photo
+    AIActivityItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        agent:
+          type: string
+        agent_name:
+          type: string
+        icon:
+          type: string
+        kind:
+          type: string
+        level:
+          $ref: '#/components/schemas/LevelEnum'
+        text:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        actor:
+          allOf:
+          - $ref: '#/components/schemas/AIActivityActor'
+          nullable: true
+        subject:
+          allOf:
+          - $ref: '#/components/schemas/AIActivitySubject'
+          nullable: true
+      required:
+      - actor
+      - agent
+      - agent_name
+      - created_at
+      - icon
+      - id
+      - kind
+      - level
+      - subject
+      - text
+    AIActivityPage:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIActivityItem'
+        next_before:
+          type: integer
+          nullable: true
+      required:
+      - next_before
+      - results
+    AIActivitySubject:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/AIActivitySubjectTypeEnum'
+        id:
+          type: integer
+        label:
+          type: string
+      required:
+      - id
+      - label
+      - type
+    AIActivitySubjectTypeEnum:
+      enum:
+      - task
+      - member
+      - draft
+      type: string
+      description: |-
+        * `task` - task
+        * `member` - member
+        * `draft` - draft
+    AIAgent:
+      type: object
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+          description: A lucide icon name.
+        enabled:
+          type: boolean
+        needs_claude:
+          type: boolean
+        available:
+          type: boolean
+        unavailable_reason:
+          oneOf:
+          - $ref: '#/components/schemas/UnavailableReasonEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        schedule:
+          type: string
+        running:
+          type: boolean
+        last_run_at:
+          type: string
+          format: date-time
+          nullable: true
+        next_run_at:
+          type: string
+          format: date-time
+          nullable: true
+        stats:
+          $ref: '#/components/schemas/AIAgentStats'
+        config:
+          type: object
+          additionalProperties: {}
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIAgentField'
+      required:
+      - available
+      - config
+      - description
+      - enabled
+      - fields
+      - icon
+      - key
+      - last_run_at
+      - name
+      - needs_claude
+      - next_run_at
+      - running
+      - schedule
+      - stats
+      - unavailable_reason
+    AIAgentField:
+      type: object
+      properties:
+        key:
+          type: string
+        type:
+          $ref: '#/components/schemas/AIAgentFieldTypeEnum'
+        label:
+          type: string
+        help:
+          type: string
+        min:
+          type: integer
+        max:
+          type: integer
+        unit:
+          type: string
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIAgentOption'
+      required:
+      - help
+      - key
+      - label
+      - type
+    AIAgentFieldTypeEnum:
+      enum:
+      - bool
+      - int
+      - time
+      - choice
+      type: string
+      description: |-
+        * `bool` - bool
+        * `int` - int
+        * `time` - time
+        * `choice` - choice
+    AIAgentOption:
+      type: object
+      properties:
+        value:
+          type: string
+        label:
+          type: string
+      required:
+      - label
+      - value
+    AIAgentStats:
+      type: object
+      properties:
+        today:
+          type: integer
+        week:
+          type: integer
+      required:
+      - today
+      - week
     AIApplyFailure:
       type: object
       properties:
@@ -14466,6 +14790,13 @@ components:
       required:
       - id
       - name
+    AIQueued:
+      type: object
+      properties:
+        queued:
+          type: boolean
+      required:
+      - queued
     AISettings:
       type: object
       properties:
@@ -15610,6 +15941,9 @@ components:
       - target
       - target_id
       - target_type
+    BlankEnum:
+      enum:
+      - ''
     BlockerResolveActionEnum:
       enum:
       - reassign
@@ -19453,6 +19787,16 @@ components:
         * `uz` - O‘zbekcha
         * `ru` - Русский
         * `en` - English
+    LevelEnum:
+      enum:
+      - info
+      - success
+      - warning
+      type: string
+      description: |-
+        * `info` - info
+        * `success` - success
+        * `warning` - warning
     LockRequest:
       type: object
       properties:
@@ -21327,6 +21671,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Transfer'
+    PatchedAIAgentUpdateRequest:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        config:
+          type: object
+          additionalProperties: {}
     PatchedAISettingsRequest:
       type: object
       properties:
@@ -29266,6 +29618,14 @@ components:
           maxItems: 500
       required:
       - member_ids
+    UnavailableReasonEnum:
+      enum:
+      - needs_claude
+      - needs_speech
+      - ai_off
+      type: string
+      description: "* `` - \n* `needs_claude` - needs_claude\n* `needs_speech` - needs_speech\n*
+        `ai_off` - ai_off"
     Updated:
       type: object
       properties:
