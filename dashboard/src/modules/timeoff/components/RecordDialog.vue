@@ -8,6 +8,7 @@ import { CalendarPlus } from "@lucide/vue";
 import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
+import { isApiError, unshownFieldError } from "@/api/http";
 import DatePicker from "@/components/DatePicker.vue";
 import FileDrop from "@/components/FileDrop.vue";
 import FormField from "@/components/FormField.vue";
@@ -69,8 +70,11 @@ async function submit(): Promise<void> {
     emit("recorded", row);
     open.value = false;
   } catch (error) {
-    const fields = (error as { fieldErrors?: Record<string, string[]> }).fieldErrors ?? {};
-    if (fields.member_id) errors.value = { member: fields.member_id[0]! };
+    const fields = isApiError(error) ? error.fieldErrors : {};
+    const shown = { member: fields.member_id?.[0], first: fields.first_day?.[0], last: fields.last_day?.[0] };
+    errors.value = Object.fromEntries(Object.entries(shown).filter((entry): entry is [string, string] => !!entry[1]));
+    // A refusal about anything else (the reason, the file, the policy) is said at the top.
+    formError.value = unshownFieldError(error, ["member_id", "first_day", "last_day"]);
   }
 }
 </script>

@@ -181,6 +181,25 @@ describe("LeaveMonthGrid", () => {
   });
 });
 
+describe("RecordDialog", () => {
+  it("says a refusal about a field the dialog doesn't show (it showed nothing)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string) => (input.includes("time-off/record/") ? json({ reason: ["Say why for more than three days."] }, 400) : json([]))),
+    );
+    const { default: RecordDialog } = await import("../components/RecordDialog.vue");
+    const app = await testApp("/c/1/time-off");
+    const { wrapper } = mountWithProviders(RecordDialog, { plugins: app.plugins, props: { open: true, memberId: 7 } });
+    await flushPromises();
+    const button = [...document.body.querySelectorAll("button")].find((b) => b.textContent?.trim() === en["timeoff.record.confirm"])!;
+    button.click();
+    await flushPromises();
+    await flushPromises();
+    expect(document.body.textContent).toContain("Say why for more than three days.");
+    wrapper.unmount();
+  });
+});
+
 describe("PersonTimeOffTab", () => {
   it("lists their time off with this year's approved days, leaving Record time off to the profile header", async () => {
     const row = (id: number, first: string, last: string, days: number, status: string) => ({

@@ -8,9 +8,11 @@ import { CalendarPlus, Trash2 } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
+import { unshownFieldError } from "@/api/http";
 import CheckBox from "@/components/CheckBox.vue";
 import DatePicker from "@/components/DatePicker.vue";
 import FormField from "@/components/FormField.vue";
+import InlineAlert from "@/components/InlineAlert.vue";
 import NumberInput from "@/components/NumberInput.vue";
 import type { SelectOption } from "@/components/options";
 import { useScopedBranches } from "@/components/pickers";
@@ -47,11 +49,13 @@ const remove = useShiftDelete();
 const OPEN = 0;
 const form = ref({ member: OPEN as number, date: "", start: "09:00", end: "18:00", breakMinutes: 60 as number | null, branch: 0 as number, position: 0 as number, note: "", publish: false });
 const editing = computed(() => !!props.draft?.shift);
+const failure = ref<string | null>(null);
 
 watch(
   () => [open.value, props.draft] as const,
   ([isOpen, draft]) => {
     if (!isOpen || !draft) return;
+    failure.value = null;
     const shift = draft.shift;
     const member = props.members.find((m) => m.id === (shift?.member_id ?? draft.memberId));
     form.value = {
@@ -109,14 +113,16 @@ async function save(): Promise<void> {
     position_id: value.position || null,
     note: value.note,
   };
+  failure.value = null;
   try {
     const shift = props.draft?.shift;
     if (shift) await update.mutateAsync({ shift, patch: body });
     else await create.mutateAsync({ ...body, publish: value.publish });
     toast.success(shift ? t("attendance.roster.saved") : value.publish ? t("attendance.roster.addedPublished") : t("attendance.roster.added"));
     open.value = false;
-  } catch {
-    // The server's message is shown by the HTTP client.
+  } catch (error) {
+    // A reason was toasted by the HTTP client; a refusal naming a field is said here (no field shows one).
+    failure.value = unshownFieldError(error);
   }
 }
 
@@ -183,6 +189,7 @@ async function destroy(): Promise<void> {
         <TextInput v-model="form.note" :maxlength="200" :placeholder="t('attendance.roster.notePlaceholder')" />
       </FormField>
       <CheckBox v-if="!editing" v-model="form.publish" :label="t('attendance.roster.publishNow')" :description="t('attendance.roster.publishNowHint')" />
+      <InlineAlert v-if="failure" tone="danger" :description="failure" />
     </form>
     <template #footer>
       <UiButton v-if="editing" variant="ghost" :icon="Trash2" class="mr-auto text-danger" :disabled="busy || draft?.shift?.has_record" @click="destroy">{{ t("common.delete") }}</UiButton>

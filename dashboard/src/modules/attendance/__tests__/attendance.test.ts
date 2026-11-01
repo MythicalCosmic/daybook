@@ -524,6 +524,37 @@ describe("TimesheetPage", () => {
   });
 });
 
+describe("a refusal that names a field the form doesn't show", () => {
+  it("is said in the shift dialog", async () => {
+    stubApi({ "POST attendance/shifts/": () => json({ member_id: ["Alisher already works 09:00-18:00 that day."] }, 400) });
+    const app = await testApp("/c/1/attendance/roster");
+    const { default: ShiftDialog } = await import("../components/ShiftDialog.vue");
+    const { wrapper } = mountWithProviders(ShiftDialog, { plugins: app.plugins, props: { open: true, draft: { date: "2026-10-21", memberId: 7 }, members: roster().members, templates: [] } });
+    await flushPromises();
+    document.body.querySelector<HTMLFormElement>("form")!.requestSubmit();
+    await flushPromises();
+    await flushPromises();
+    expect(document.body.textContent).toContain("Alisher already works 09:00-18:00 that day.");
+    wrapper.unmount();
+  });
+
+  it("is said under the attendance settings", async () => {
+    const settings = { geofence_m: 150, require_photo: false, grace_minutes: 10, auto_close_hours: 14, overtime_needs_approval: true };
+    stubApi({ "GET attendance/settings/": () => json(settings), "PATCH attendance/settings/": () => json({ grace_minutes: ["Grace can't be longer than the shift."] }, 400) });
+    const app = await testApp("/c/1/attendance");
+    const { default: SettingsForm } = await import("../components/SettingsForm.vue");
+    const { wrapper } = mountWithProviders(SettingsForm, { plugins: app.plugins });
+    await flushPromises();
+    await wrapper.find('[role="switch"]').trigger("click");
+    await flushPromises();
+    await wrapper.findAll("button").find((b) => b.text() === "Save")!.trigger("click");
+    await flushPromises();
+    await flushPromises();
+    expect(wrapper.text()).toContain("Grace can't be longer than the shift.");
+    wrapper.unmount();
+  });
+});
+
 describe("PersonMonth", () => {
   const month = {
     member: { id: 7, name: "Alisher Valiyev", photo_url: null },

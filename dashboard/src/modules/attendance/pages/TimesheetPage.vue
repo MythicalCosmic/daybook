@@ -9,11 +9,13 @@ import { CalendarDays, ChevronLeft, ChevronRight, Users } from "@lucide/vue";
 import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
+import { unshownFieldError } from "@/api/http";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import ExportButton from "@/components/ExportButton.vue";
 import FormField from "@/components/FormField.vue";
 import IconButton from "@/components/IconButton.vue";
+import InlineAlert from "@/components/InlineAlert.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import TextArea from "@/components/TextArea.vue";
@@ -92,6 +94,8 @@ const draft = ref<{ row: TimesheetRow; day: string } | null>(null);
 const form = ref({ in: "09:00", out: "18:00", reason: "" });
 const saving = ref(false);
 const formError = ref<string | null>(null);
+/** The server's refusal about the times (the dialog has no field that shows one). */
+const saveFailure = ref<string | null>(null);
 const canManage = computed(() => company.can("attendance.manage"));
 
 function openCell(row: TimesheetRow, day: string, cell: Cell): void {
@@ -103,6 +107,7 @@ function openCell(row: TimesheetRow, day: string, cell: Cell): void {
   draft.value = { row, day };
   form.value = { in: "09:00", out: "18:00", reason: "" };
   formError.value = null;
+  saveFailure.value = null;
 }
 
 async function saveDraft(): Promise<void> {
@@ -113,6 +118,7 @@ async function saveDraft(): Promise<void> {
     return;
   }
   saving.value = true;
+  saveFailure.value = null;
   try {
     await createRecord(companyId.value, {
       member_id: target.row.member.id,
@@ -124,8 +130,10 @@ async function saveDraft(): Promise<void> {
     toast.success(t("attendance.sheet.recorded"));
     draft.value = null;
     refresh();
-  } catch {
-    // The HTTP client shows the server's message.
+  } catch (error) {
+    // A reason was toasted by the HTTP client; a refusal naming a time is said in the dialog.
+    saveFailure.value = unshownFieldError(error, ["reason"]);
+    if (!saveFailure.value) formError.value = unshownFieldError(error) ?? formError.value;
   } finally {
     saving.value = false;
   }
@@ -284,6 +292,7 @@ watch(
         <FormField :label="t('common.reason')" :error="formError" required :hint="t('attendance.record.reasonHint')">
           <TextArea v-model="form.reason" :rows="2" :maxlength="300" :placeholder="t('attendance.record.reasonPlaceholder')" />
         </FormField>
+        <InlineAlert v-if="saveFailure" tone="danger" :description="saveFailure" />
       </form>
       <template #footer>
         <UiButton variant="ghost" @click="draft = null">{{ t("common.cancel") }}</UiButton>
