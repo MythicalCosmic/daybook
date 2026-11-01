@@ -4,11 +4,14 @@ import { useId, useMemo, useState } from "react";
 import { type NewTask, useCreateTask, useFinishRule, useMembers } from "../api/hooks";
 import { givesWork } from "../api/permissions";
 import type { QuickAdd, Repeat } from "../api/types";
+import { AssigneeSelect } from "../components/AssigneeSelect";
+import { StepsEditor } from "../components/StepsEditor";
+import { defaultWhen, whenDue, WhenPicker, type WhenValue } from "../components/WhenPicker";
 import { FeatureSlot } from "../features/FeatureSlot";
 import { useI18n } from "../i18n";
 import { errorText } from "../lib/actions";
 import { quickAddAvailable, readPassed, readSignature, recognised, useQuickAdd } from "../lib/quickAdd";
-import { addDays, clock, dayKey, hourIn, zonedInstant } from "../lib/time";
+import { clock } from "../lib/time";
 import { useDraftGuard } from "../lib/useDraftGuard";
 import { useNavigation } from "../state/navigation";
 import { useMember } from "../state/session";
@@ -17,9 +20,7 @@ import { haptic } from "../telegram";
 import { BottomBar, Select } from "../ui";
 
 const REPEATS: Repeat[] = ["none", "daily", "weekdays", "weekly"];
-type When = "today" | "tomorrow" | "date" | "none";
 const TITLE_MAX = 200;
-const STEPS_MAX = 50;
 
 /**
  * The (+) sheet: a task for me, or (for whoever hands out work) for a colleague. The title is read
@@ -39,12 +40,9 @@ export function AddSheet() {
   const finishRule = useFinishRule(member.companyId, canAssign).data?.on_finish ?? "auto";
 
   const [now] = useState(() => new Date());
-  const hour = hourIn(now, member.timeZone);
-  const today = dayKey(now, member.timeZone);
   // Default to the next full hour today, or tomorrow morning when the day is nearly over.
-  const [when, setWhen] = useState<When>(hour < 22 ? "today" : "tomorrow");
-  const [time, setTime] = useState(hour < 22 ? `${String(hour + 1).padStart(2, "0")}:00` : "09:00");
-  const [date, setDate] = useState(addDays(today, 2));
+  const [whenValue, setWhenValue] = useState<WhenValue>(() => defaultWhen(now, member.timeZone));
+  const { when, date } = whenValue;
   const [title, setTitle] = useState("");
   const [repeat, setRepeat] = useState<Repeat>("none");
   const [assignee, setAssignee] = useState<number | null>(null);
@@ -74,10 +72,7 @@ export function AddSheet() {
   const urgent = urgentChoice ?? read?.priority === "urgent";
 
   // What the manual "When" means: a past time today rolls to tomorrow, and says so (as the bot does).
-  const manualDay = when === "today" ? today : when === "tomorrow" ? addDays(today, 1) : when === "date" ? date : null;
-  const manualInstant = manualDay ? zonedInstant(manualDay, time, member.timeZone) : null;
-  const rolled = when === "today" && manualInstant !== null && manualInstant <= now;
-  const manualDue = manualInstant && rolled ? zonedInstant(addDays(today, 1), time, member.timeZone) : manualInstant;
+  const manualDue = whenDue(whenValue, now, member.timeZone).due;
   const due = readsDue ? read!.due_at : manualDue ? manualDue.toISOString() : null;
 
   const filledSteps = steps.map((step) => step.trim()).filter(Boolean);
@@ -132,27 +127,16 @@ export function AddSheet() {
   return (
     <>
       <FeatureSlot name="plus.actions" />
-      <div className="heading title-sm">{t("add.title")}</div>
+      {/* The title row: features add their tools beside it (the AI's dictate and smart add). */}
+      <div className="plus-head">
+        <div className="heading title-sm">{t("add.title")}</div>
+        <FeatureSlot name="plus.title" text={title} />
+      </div>
 
       {canAssign && (
         <div className="field">
           <label htmlFor={`${ids}-for`}>{t("add.for")}</label>
-          {/* The shared picker: with its chevron, "Me" reads as a choice, not as plain text. */}
-          <Select
-            id={`${ids}-for`}
-            value={assignee ?? ""}
-            onChange={(event) => {
-              haptic.select();
-              setAssignee(event.target.value ? Number(event.target.value) : null);
-            }}
-          >
-            <option value="">{t("add.forMe")}</option>
-            {people.map((person) => (
-              <option key={person.id} value={person.id}>
-                {person.position ? `${person.name} · ${person.position}` : person.name}
-              </option>
-            ))}
-          </Select>
+          <AssigneeSelect id={`${ids}-for`} value={assignee} people={people} onChange={setAssignee} />
         </div>
       )}
 
@@ -214,8 +198,7 @@ export function AddSheet() {
                   haptic.select();
                   const words = quick.result?.title.trim();
                   if (words) setTitle(words);
-                  setWhen("tomorrow");
-                  setTime(clock(passedAt, member.timeZone, "en-GB"));
+                  setWhenValue({ ...whenValue, when: "tomorrow", time: clock(passedAt, member.timeZone, "en-GB") });
                 }}
               >
                 <CalendarClock size={16} strokeWidth={2.5} aria-hidden />
@@ -223,38 +206,7 @@ export function AddSheet() {
               </button>
             </div>
           )}
-          <div className="ui-chips plus-days" role="group" aria-labelledby={`${ids}-when`}>
-            {(["today", "tomorrow", "date", "none"] as const).map((option) => (
-              <button
-                key={option}
-                type="button"
-                className="ui-chip"
-                aria-pressed={when === option}
-                onClick={() => {
-                  haptic.select();
-                  setWhen(option);
-                }}
-              >
-                <span>{t(WHEN_LABEL[option])}</span>
-              </button>
-            ))}
-          </div>
-          {when !== "none" && (
-            <div className="plus-when">
-              {when === "date" && (
-                <input
-                  className="input num"
-                  type="date"
-                  aria-label={t("add.date")}
-                  min={addDays(today, 1)}
-                  value={date}
-                  onChange={(event) => setDate(event.target.value)}
-                />
-              )}
-              <input className="input num" type="time" aria-label={t("add.time")} value={time} onChange={(event) => setTime(event.target.value || time)} />
-            </div>
-          )}
-          {rolled && manualDue && <span className="field-note num">{t("add.rolled", { time: clock(manualDue, member.timeZone, locale) })}</span>}
+          <WhenPicker value={whenValue} onChange={setWhenValue} now={now} timeZone={member.timeZone} labelledBy={`${ids}-when`} />
         </div>
       )}
 
@@ -343,8 +295,6 @@ function grow(box: HTMLTextAreaElement): void {
   box.style.height = `${Math.min(box.scrollHeight, 240)}px`;
 }
 
-const WHEN_LABEL = { today: "day.today", tomorrow: "day.tomorrow", date: "add.otherDay", none: "add.noDeadline" } as const;
-
 /** The reading, unless it found nothing or the person said it isn't one. */
 function applied(result: QuickAdd | null, dismissed: string | null): QuickAdd | null {
   return recognised(result) && readSignature(result) !== dismissed ? result : null;
@@ -404,50 +354,6 @@ function QuickRead({
           <span>{t(read.due_at ? "add.read.notDate" : "add.read.keep")}</span>
         </button>
       </span>
-    </div>
-  );
-}
-
-/** Checklist steps for the new task: a line each, added and removed in place. */
-function StepsEditor({ steps, onChange }: { steps: string[]; onChange: (steps: string[]) => void }) {
-  const { t } = useI18n();
-  const id = useId();
-  const set = (index: number, text: string) => onChange(steps.map((step, at) => (at === index ? text : step)));
-  return (
-    <div className="field">
-      <span className="field-label" id={`${id}-steps`}>{t("detail.checklist")}</span>
-      <div className="plus-steps" role="group" aria-labelledby={`${id}-steps`}>
-        {steps.map((step, index) => (
-          <div key={index} className="plus-step">
-            <input
-              className="input"
-              value={step}
-              maxLength={200}
-              aria-label={t("add.step", { n: index + 1 })}
-              placeholder={t("add.stepPlaceholder")}
-              autoFocus={index === steps.length - 1 && !step}
-              onChange={(event) => set(index, event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && step.trim() && steps.length < STEPS_MAX) onChange([...steps, ""]);
-              }}
-            />
-            <button
-              type="button"
-              className="btn btn-ghost btn-icon plus-step-remove"
-              aria-label={t("add.stepRemove", { n: index + 1 })}
-              onClick={() => onChange(steps.filter((_, at) => at !== index))}
-            >
-              <X size={18} strokeWidth={2.5} />
-            </button>
-          </div>
-        ))}
-        {steps.length < STEPS_MAX && (
-          <button type="button" className="btn btn-secondary plus-step-add" onClick={() => onChange([...steps, ""])}>
-            <Plus size={17} strokeWidth={2.6} aria-hidden />
-            <span>{t("add.stepAdd")}</span>
-          </button>
-        )}
-      </div>
     </div>
   );
 }
