@@ -23,7 +23,7 @@ import {
 
 import type { StatusTone } from "@/components/StatusPill.vue";
 import { positionBetween } from "@/components/kanban";
-import { diffDays } from "@/lib/dates";
+import { diffDays, todayIn, zonedDay } from "@/lib/dates";
 
 import type { Card, Health, PaletteColor, ProjectStatus, TaskStatus } from "./types";
 
@@ -73,14 +73,14 @@ export function burnTone(burn: number | null | undefined): "success" | "warning"
 
 export type DueState = "overdue" | "today" | "soon" | "later" | "done";
 
-/** How a card's deadline reads: overdue, due today, within 2 days, later (or done). */
-export function dueState(card: Pick<Card, "due_at" | "status">, now: number = Date.now()): DueState | null {
+/** How a card's deadline reads: overdue, due today (in the company's day), within 2 days, later (or done). */
+export function dueState(card: Pick<Card, "due_at" | "status">, now: number, tz: string): DueState | null {
   if (!card.due_at) return null;
   if (card.status === "done") return "done";
   const due = new Date(card.due_at).getTime();
   if (due < now) return "overdue";
   const hours = (due - now) / 3_600_000;
-  if (hours < 24 && new Date(card.due_at).toDateString() === new Date(now).toDateString()) return "today";
+  if (hours < 24 && zonedDay(card.due_at, tz) === todayIn(tz, now)) return "today";
   if (hours < 48) return "soon";
   return "later";
 }

@@ -192,11 +192,15 @@ describe("helpers", () => {
 
   it("tells how close a deadline is", () => {
     const now = Date.parse("2026-10-21T08:00:00Z");
-    expect(dueState(card({ due_at: "2026-10-20T13:00:00Z" }), now)).toBe("overdue");
-    expect(dueState(card({ due_at: "2026-10-22T13:00:00Z" }), now)).toBe("soon");
-    expect(dueState(card({ due_at: "2026-10-30T13:00:00Z" }), now)).toBe("later");
-    expect(dueState(card({ status: "done", due_at: "2026-10-20T13:00:00Z" }), now)).toBe("done");
-    expect(dueState(card({ due_at: null }), now)).toBeNull();
+    const tz = "Asia/Tashkent";
+    expect(dueState(card({ due_at: "2026-10-20T13:00:00Z" }), now, tz)).toBe("overdue");
+    expect(dueState(card({ due_at: "2026-10-22T13:00:00Z" }), now, tz)).toBe("soon");
+    expect(dueState(card({ due_at: "2026-10-30T13:00:00Z" }), now, tz)).toBe("later");
+    expect(dueState(card({ status: "done", due_at: "2026-10-20T13:00:00Z" }), now, tz)).toBe("done");
+    expect(dueState(card({ due_at: null }), now, tz)).toBeNull();
+    // "Today" is the company's day: 01:00 tomorrow in New York is not "today" there, whatever the
+    // browser's own zone says.
+    expect(dueState(card({ due_at: "2026-10-22T05:00:00Z" }), Date.parse("2026-10-22T02:00:00Z"), "America/New_York")).toBe("soon");
   });
 
   it("shortens milestone labels that would run into the next diamond", () => {

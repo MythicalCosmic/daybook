@@ -256,6 +256,22 @@ describe("UiDialog", () => {
   });
 });
 
+describe("PersonCell links", () => {
+  it("links a name to the person only for people who may open People (others got the no-access page)", async () => {
+    const { manager } = await import("@/test/fixtures");
+    const person = { id: 31, name: "Madina Saidova", photo_url: null };
+    useSessionStore().me = me([manager(["tasks.view_all"], { id: 1 })]);
+    useCompanyStore().setCurrent(1);
+    const without = mount(PersonCell, { props: { person, link: true }, global: { plugins: plugins() } });
+    expect(without.find("a").exists()).toBe(false);
+    without.unmount();
+    useSessionStore().me = me([manager(["tasks.view_all", "members.view"], { id: 1 })]);
+    const allowed = mount(PersonCell, { props: { person, link: true }, global: { plugins: plugins() } });
+    expect(allowed.find("a").attributes("href")).toContain("/c/1/people/31");
+    allowed.unmount();
+  });
+});
+
 describe("PersonCell", () => {
   it("lets a tap on a plain name reach the row (phone cards), while a linked name opens the person", async () => {
     const rowClick = vi.fn();

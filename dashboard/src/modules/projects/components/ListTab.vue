@@ -18,6 +18,7 @@ import { useDataTable } from "@/components/useDataTable";
 import { useFormat } from "@/lib/useFormat";
 import { useNow } from "@/lib/useNow";
 import { rs, useRouteState } from "@/lib/useRouteState";
+import { useCompanyStore } from "@/stores/company";
 
 import { useCards } from "../api";
 import { colorVar, DUE_CLASS, dueState, hhmm, TASK_TONE, tint } from "../lib";
@@ -27,6 +28,7 @@ const props = defineProps<{ project: ProjectDetail }>();
 
 const { t } = useI18n();
 const fmt = useFormat();
+const company = useCompanyStore();
 const router = useRouter();
 const now = useNow();
 const q = useRouteState("q", rs.string());
@@ -122,7 +124,7 @@ function open(card: Card): void {
       <template #cell-status="{ row }"><StatusPill size="sm" :tone="TASK_TONE[row.status]" :label="t(`projects.taskStatus.${row.status}`)" /></template>
       <template #cell-assignee="{ row }"><PersonCell :person="row.assignee" size="sm" /></template>
       <template #cell-due_at="{ row }">
-        <span v-if="row.due_at" :class="['inline-flex h-6 items-center rounded-[6px] px-1.5 text-xs font-medium tabular-nums', DUE_CLASS[dueState(row, now) ?? 'later']]">{{ fmt.instant(row.due_at, "short") }}</span>
+        <span v-if="row.due_at" :class="['inline-flex h-6 items-center rounded-[6px] px-1.5 text-xs font-medium tabular-nums', DUE_CLASS[dueState(row, now, company.timezone) ?? 'later']]">{{ fmt.instant(row.due_at, "short") }}</span>
         <span v-else class="text-subtle">—</span>
       </template>
       <template #cell-labels="{ row }">

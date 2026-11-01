@@ -30,7 +30,10 @@ const props = withDefaults(
 );
 
 const company = useCompanyStore();
-const to = computed(() => (props.link && props.person?.id && company.currentId ? `/c/${company.currentId}/people/${props.person.id}` : undefined));
+// Only for people who may open People: the link landed others on the no-access page.
+const to = computed(() =>
+  props.link && props.person?.id && company.currentId && company.can("members.view") ? `/c/${company.currentId}/people/${props.person.id}` : undefined,
+);
 const avatar = { sm: 22, md: 28, lg: 36 } as const;
 const card = computed<PersonPreview | null>(() => {
   if (!props.person || !props.preview) return null;

@@ -26,7 +26,7 @@ const now = useNow();
 const company = useCompanyStore();
 
 const cardLabels = computed(() => props.card.label_ids.map((id) => props.labels.find((l) => l.id === id)).filter((l): l is Label => !!l));
-const due = computed(() => dueState(props.card, now.value));
+const due = computed(() => dueState(props.card, now.value, company.timezone));
 const done = computed(() => props.card.status === "done");
 const dueText = computed(() => {
   if (!props.card.due_at) return "";
