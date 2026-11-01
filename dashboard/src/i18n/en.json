@@ -349,6 +349,7 @@
   "shell.user.shortcuts": "Keyboard shortcuts",
   "shell.user.signOut": "Log out",
   "shell.user.appearance": "Appearance",
+  "shell.user.version": "Version {version}",
 
   "shell.company.switch": "Switch company",
   "shell.company.yours": "Your companies",

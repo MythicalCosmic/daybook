@@ -349,6 +349,7 @@
   "shell.user.shortcuts": "Горячие клавиши",
   "shell.user.signOut": "Выйти",
   "shell.user.appearance": "Внешний вид",
+  "shell.user.version": "Версия {version}",
 
   "shell.company.switch": "Сменить компанию",
   "shell.company.yours": "Ваши компании",

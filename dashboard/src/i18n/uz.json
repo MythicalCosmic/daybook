@@ -349,6 +349,7 @@
   "shell.user.shortcuts": "Tezkor tugmalar",
   "shell.user.signOut": "Chiqish",
   "shell.user.appearance": "Ko‘rinish",
+  "shell.user.version": "Versiya {version}",
 
   "shell.company.switch": "Kompaniyani almashtirish",
   "shell.company.yours": "Kompaniyalaringiz",
