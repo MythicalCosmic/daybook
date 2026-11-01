@@ -43,9 +43,16 @@ export function exportsApi(companyId: number) {
 /**
  * Downloads a ready export through its signed link (valid 10 minutes; the server checks access
  * again). The link is same-origin and served as an attachment, so the page stays where it is.
+ * Inside Telegram the webview ignores `<a download>`: Telegram's own prompt takes the link (the
+ * signed link needs no sign-in, so Telegram can fetch it itself).
  */
 export function downloadExport(job: Pick<ExportJob, "file_url" | "file_name">): void {
   if (!job.file_url) return;
+  const webApp = typeof window !== "undefined" ? window.Telegram?.WebApp : undefined;
+  if (webApp?.initData && webApp.downloadFile && webApp.isVersionAtLeast("8.0")) {
+    webApp.downloadFile({ url: new URL(job.file_url, window.location.origin).href, file_name: job.file_name ?? "export" });
+    return;
+  }
   const link = document.createElement("a");
   link.href = job.file_url;
   link.download = job.file_name ?? "";

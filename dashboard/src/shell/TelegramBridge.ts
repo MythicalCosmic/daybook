@@ -40,6 +40,8 @@ export interface TelegramWebApp {
   offEvent: (event: string, handler: () => void) => void;
   BackButton: { show: () => void; hide: () => void; onClick: (cb: () => void) => void; offClick: (cb: () => void) => void };
   HapticFeedback?: { impactOccurred: (style: "light" | "medium") => void; notificationOccurred: (kind: "success" | "warning" | "error") => void };
+  /** Bot API 8.0: Telegram's own download prompt (its webviews ignore `<a download>`). */
+  downloadFile?: (params: { url: string; file_name: string }, callback?: (accepted: boolean) => void) => void;
 }
 
 declare global {
