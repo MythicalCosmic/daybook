@@ -24,7 +24,7 @@ from apps.members.scope import allows, branch_ids
 from apps.reminders.models import ReminderPolicy
 from apps.reminders.policies import escalation_recipients, policy_for
 from apps.reminders.schedule import first_reminder_at
-from apps.tasks import conf, dates, generation, queries, rules, visibility
+from apps.tasks import conf, dates, generation, queries, rules, signals, visibility
 from apps.tasks import tasks as jobs
 from apps.tasks.audit_actions import TasksAction
 from apps.tasks.models import (
@@ -224,6 +224,12 @@ def complete_task(
     transaction.on_commit(
         partial(group_jobs.announce_task_done.apply_async, (task.pk, stamp), countdown=wait)
     )
+    if proof_photo is not None:
+        transaction.on_commit(
+            partial(
+                signals.completed_with_photo.send, sender=Task, task_id=task.pk, completed_at=stamp
+            )
+        )
     _refresh_copies(task)
     return task
 

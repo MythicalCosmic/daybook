@@ -231,6 +231,10 @@ REST_FRAMEWORK = {
         # Per signed-in person.
         "task_parse": "300/min",
         "export_create": "10/min",
+        # Voice notes and typed instructions turned into task drafts (apps.ai).
+        "ai_draft": "20/min",
+        # Ask AI questions (each one a Claude tool loop).
+        "ai_turn": "20/min",
     }
     | rate_overrides(env("THROTTLE_RATES", default="")),
     # Caddy sits in front: throttles and stored IPs use the client's address, not Caddy's.
@@ -278,6 +282,9 @@ SPECTACULAR_SETTINGS = {
             "MembershipStatusEnum": "apps.members.models.Membership.Status",
             "TaskStatusEnum": "apps.tasks.models.Task.Status",
             "TaskKindEnum": "apps.tasks.models.Task.Kind",
+            # Kept by name: AI drafts have their own narrower priority and proof choices.
+            "PriorityEnum": "apps.tasks.models.Task.Priority",
+            "ProofEnum": "apps.tasks.models.Proof",
             "ActivityKindEnum": "apps.tasks.models.Activity.Kind",
             "WeekdayEnum": "apps.tasks.models.Weekday",
             "RepeatEnum": "apps.tasks.models.Repeat",
@@ -327,8 +334,16 @@ AI_FAKE = env.bool("AI_FAKE", default=False)
 AI_MODEL_CHAT = env("AI_MODEL_CHAT", default="claude-sonnet-5-5")
 AI_MODEL_DEEP = env("AI_MODEL_DEEP", default="claude-opus-5-5")
 AI_MODEL_FAST = env("AI_MODEL_FAST", default="claude-haiku-5-5")
+# Voice and typed instructions turned into task drafts (apps.ai.drafting).
+AI_MODEL_DRAFTS = env("AI_MODEL_DRAFTS", default="claude-opus-5-5")
 # What all tenants together may spend in a month; one key pays for everyone.
 AI_GLOBAL_MONTHLY_CAP_USD = Decimal(env("AI_GLOBAL_MONTHLY_CAP_USD", default="200"))
+# Speech to text (apps.ai.speech): an OpenAI-compatible /audio/transcriptions service, e.g. the
+# local Whisper service http://stt:8000/v1. Empty: voice is off unless AI_FAKE gives canned text.
+AI_SPEECH_URL = env("AI_SPEECH_URL", default="")
+AI_SPEECH_API_KEY = env("AI_SPEECH_API_KEY", default="")
+AI_SPEECH_MODEL = env("AI_SPEECH_MODEL", default="large-v3")
+AI_SPEECH_TIMEOUT = env.float("AI_SPEECH_TIMEOUT", default=90)
 
 LOGGING = {
     "version": 1,
