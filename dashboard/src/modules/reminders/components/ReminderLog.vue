@@ -83,7 +83,8 @@ const columns = computed<TableColumn<LogRow>[]>(() => [
       </template>
       <template #cell-recipient="{ row }"><PersonCell :person="row.recipient" :subtitle="row.recipient?.position" size="sm" link /></template>
       <template #cell-task="{ row }">
-        <RouterLink :to="`/c/${company.currentId}/tasks?task=${row.task.id}`" class="block truncate text-sm font-medium text-fg hover:underline" @click.stop>{{ row.task.title }}</RouterLink>
+        <RouterLink v-if="company.can('tasks.view_all')" :to="`/c/${company.currentId}/tasks?task=${row.task.id}`" class="block truncate text-sm font-medium text-fg hover:underline" @click.stop>{{ row.task.title }}</RouterLink>
+        <span v-else class="block truncate text-sm font-medium text-fg">{{ row.task.title }}</span>
       </template>
       <template #cell-branch="{ row }"><span class="text-sm text-muted">{{ row.branch?.name ?? "—" }}</span></template>
       <template #cell-delivered="{ row }">

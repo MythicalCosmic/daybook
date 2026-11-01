@@ -43,7 +43,13 @@ const skeleton = useDelayedPending(computed(() => query.isPending.value));
           <p class="mt-0.5 text-xs text-subtle">{{ t("reminders.blocked.since") }} <RelativeTime :value="row.blocked_at" /></p>
         </div>
         <div class="shrink-0 text-right">
-          <RouterLink :to="`/c/${company.currentId}/tasks?assignee=${row.member.id}&status=todo&status=in_progress&status=review&status=returned`" class="block text-md font-semibold tabular-nums text-fg hover:underline">{{ row.open_tasks }}</RouterLink>
+          <RouterLink
+            v-if="company.can('tasks.view_all')"
+            :to="`/c/${company.currentId}/tasks?assignee=${row.member.id}&status=todo&status=in_progress&status=review&status=returned`"
+            class="block text-md font-semibold tabular-nums text-fg hover:underline"
+            >{{ row.open_tasks }}</RouterLink
+          >
+          <span v-else class="block text-md font-semibold tabular-nums text-fg">{{ row.open_tasks }}</span>
           <p class="text-xs text-muted">{{ t("reminders.blocked.open") }}</p>
           <p v-if="row.late_tasks" class="text-xs font-semibold text-danger">{{ t("reminders.blocked.late", { n: row.late_tasks }) }}</p>
         </div>

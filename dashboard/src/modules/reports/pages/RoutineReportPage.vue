@@ -149,14 +149,14 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
       </template>
       <template #cell-completion_percent="{ row }"><span class="tabular-nums text-muted">{{ fmt.percent(row.completion_percent, 0) }}</span></template>
       <template #card="{ row }">
-        <RouterLink :to="`/c/${company.currentId}/routines/${row.id}`" class="flex min-w-0 items-center gap-3">
+        <component :is="company.can('tasks.templates') ? RouterLink : 'div'" :to="`/c/${company.currentId}/routines/${row.id}`" class="flex min-w-0 items-center gap-3">
           <div class="min-w-0 flex-1">
             <p class="truncate text-sm font-semibold text-fg">{{ row.title }}</p>
             <p class="mt-0.5 text-xs text-muted">{{ row.made === 0 ? t("reports.idle") : t("reports.card", { total: row.made, late: row.late, missed: row.missed }) }}</p>
           </div>
           <span class="text-md font-semibold tabular-nums text-fg">{{ row.made ? fmt.percent(row.on_time_percent, 0) : "—" }}</span>
-          <ChevronRight :size="16" class="text-subtle" />
-        </RouterLink>
+          <ChevronRight v-if="company.can('tasks.templates')" :size="16" class="text-subtle" />
+        </component>
       </template>
     </DataTable>
   </div>

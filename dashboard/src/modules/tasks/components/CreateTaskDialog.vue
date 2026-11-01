@@ -275,7 +275,7 @@ async function submit(): Promise<void> {
         <!-- Repeating work is a routine, not a one-off task. -->
         <p v-if="understood?.repeat" class="-mt-2 text-xs text-muted" data-testid="quick-add-repeat">
           {{ t("tasks.quick.repeatHint") }}
-          <RouterLink :to="`/c/${company.currentId}/routines/all?new=1`" class="font-medium text-accent-fg hover:underline">{{ t("tasks.quick.makeRoutine") }}</RouterLink>
+          <RouterLink v-if="company.can('tasks.templates')" :to="`/c/${company.currentId}/routines/all?new=1`" class="font-medium text-accent-fg hover:underline">{{ t("tasks.quick.makeRoutine") }}</RouterLink>
         </p>
         <FormField :label="t('tasks.field.description')" optional>
           <TextArea v-model="description" :rows="2" :max-rows="6" :placeholder="t('tasks.create.descriptionPlaceholder')" />

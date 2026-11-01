@@ -616,9 +616,13 @@ const formatAudit = (field: string, value: unknown) => {
           <template v-if="task.routine">
             <dt class="text-muted">{{ t("tasks.field.routine") }}</dt>
             <dd class="min-w-0">
-              <RouterLink :to="`/c/${company.currentId}/routines/${task.routine.id}`" class="inline-flex min-w-0 items-center gap-1 text-primary hover:underline">
+              <component
+                :is="company.can('tasks.templates') ? RouterLink : 'span'"
+                :to="`/c/${company.currentId}/routines/${task.routine.id}`"
+                :class="['inline-flex min-w-0 items-center gap-1', company.can('tasks.templates') ? 'text-primary hover:underline' : 'text-fg']"
+              >
                 <Repeat :size="13" class="shrink-0" /><span class="truncate">{{ task.routine.title }}</span>
-              </RouterLink>
+              </component>
             </dd>
           </template>
           <template v-if="task.created_by && task.kind !== 'personal'">
