@@ -187,6 +187,9 @@ describe("lib", () => {
   it("does the hour arithmetic the pages show", () => {
     expect(spanMinutes("09:00", "18:00", 60)).toBe(480);
     expect(spanMinutes("22:00", "06:00", 0)).toBe(480);
+    // A time cleared in the picker is null: the shift dialog's render threw on it.
+    expect(spanMinutes(null, "18:00", 0)).toBe(0);
+    expect(spanMinutes("09:00", null, 60)).toBe(0);
     expect(hours(480)).toBe("8");
     expect(hours(495)).toBe("8.3");
     expect(clockOf("2026-10-21T08:57:00+05:00")).toBe("08:57");
@@ -497,5 +500,26 @@ describe("SwapsPage", () => {
     await flushPromises();
     expect(calls.some((c) => c.method === "POST" && c.url.endsWith("swaps/1/approve/"))).toBe(true);
     expect(toasts.at(-1)?.title).toContain("Approved");
+  });
+});
+
+describe("TimesheetPage", () => {
+  it("asks for the KPIs of the month it shows, ending on its last day", async () => {
+    const calls = stubApi({
+      "GET attendance/timesheet/": () => json({ month: "2026-11", days: [], people: [], totals: {} }),
+      "GET attendance/summary/": () => json({ totals: {}, by_day: [], by_branch: [] }),
+    });
+    const app = await testApp("/c/1/attendance/timesheet?month=2026-11");
+    const { default: TimesheetPage } = await import("../pages/TimesheetPage.vue");
+    const { wrapper } = mountWithProviders(TimesheetPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    const summaries = calls.filter((c) => c.url.includes("/attendance/summary/")).map((c) => new URL(c.url, "http://x").searchParams);
+    expect(summaries.length).toBeGreaterThan(0);
+    for (const params of summaries) {
+      expect(params.get("from")).toBe("2026-11-01");
+      expect(params.get("to")).toBe("2026-11-30");
+    }
+    wrapper.unmount();
   });
 });

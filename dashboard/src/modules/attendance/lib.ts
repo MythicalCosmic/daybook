@@ -6,6 +6,7 @@ import type { StatusTone } from "@/components/StatusPill.vue";
 import { currentLanguage } from "@/i18n";
 import { formatNumber } from "@/lib/format";
 import { addDays } from "@/lib/dates";
+import { toMinutes } from "@/lib/time";
 
 import type { BoardState, CellCode, RecordFlag, ShiftStatus, SwapKind } from "./types";
 
@@ -102,13 +103,12 @@ export function compactTime(time: string): string {
   return `${Number(h)}:${m.slice(0, 2).padStart(2, "0")}`;
 }
 
-export function toMinutes(time: string): number {
-  const [h = "0", m = "0"] = time.split(":");
-  return Number(h) * 60 + Number(m);
-}
-
-/** Planned minutes of a shift from "HH:MM" times (an end before the start is the next day). */
-export function spanMinutes(start: string, end: string, breakMinutes = 0): number {
+/**
+ * Planned minutes of a shift from "HH:MM" times (an end before the start is the next day); 0 while a
+ * time is cleared (TimePicker sets null, and the dialog's render threw on it).
+ */
+export function spanMinutes(start: string | null, end: string | null, breakMinutes = 0): number {
+  if (!start || !end) return 0;
   let span = toMinutes(end) - toMinutes(start);
   if (span <= 0) span += 24 * 60;
   return Math.max(0, span - breakMinutes);

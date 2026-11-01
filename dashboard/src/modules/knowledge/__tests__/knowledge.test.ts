@@ -402,7 +402,7 @@ describe("PageEditor saves", () => {
     const saves = calls.filter((c) => c.method === "PATCH");
     expect(saves).toHaveLength(1);
     expect(saves[0]!.body).toMatchObject({ base_version: 3 });
-    answer?.();
+    (answer as (() => void) | null)?.();
     await flushPromises();
     wrapper.unmount();
     document.body.innerHTML = "";
