@@ -601,6 +601,48 @@ describe("TeamPage paging", () => {
   });
 });
 
+describe("what a viewer may not do", () => {
+  async function mountAt(url: string, component: object) {
+    const app = await testApp(url);
+    signInAs(manager(["members.view", "roles.manage"], { id: 1, name: "Demo Dorixona" }));
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: "/c/:companyId/people", component },
+        { path: "/c/:companyId/people/:memberId(\\d+)/:tab?", component },
+        { path: "/:any(.*)*", component: { render: () => null } },
+      ],
+    });
+    await router.push(url);
+    const mounted = mountWithProviders(component, { plugins: [app.pinia, router, i18n, [VueQueryPlugin, { queryClient: app.client }]] });
+    await flushPromises();
+    await flushPromises();
+    return mounted;
+  }
+
+  it("offers Change role only when the save (PATCH people/, members.manage) can go through", async () => {
+    const overview = { trend: [], on_time: 0, late: 0, missed: 0, total: 0, on_time_percent: null, streak: 0, joined_on: null, left_on: null, tenure_days: null, days_off_this_year: 0, range: { from: "2026-09-27", to: "2026-10-26" }, upcoming_time_off: [], open_now: 0, late_now: 0, done: 0 };
+    const detail = (can: Record<string, boolean>) => ({ ...person(22, "Dilshod Rahimov", null), language: "uz", overview, can });
+    let can: Record<string, boolean> = { change_role: true, edit: false };
+    stub((call) => (call.url.endsWith("/people/22/") ? json(detail(can)) : undefined));
+    const PersonPage = (await import("../pages/PersonPage.vue")).default;
+    const { wrapper } = await mountAt("/c/1/people/22", PersonPage);
+    expect(wrapper.find('[aria-label="More actions"]').exists()).toBe(false);
+    wrapper.unmount();
+    can = { change_role: true, edit: true };
+    const again = await mountAt("/c/1/people/22", PersonPage);
+    expect(again.wrapper.find('[aria-label="More actions"]').exists()).toBe(true);
+  });
+
+  it("offers the server export of the team only with members.manage (every phone number)", async () => {
+    stub();
+    const TeamPage = (await import("../pages/TeamPage.vue")).default;
+    const ExportButton = (await import("@/components/ExportButton.vue")).default;
+    const { wrapper } = await mountAt("/c/1/people", TeamPage);
+    expect(wrapper.findComponent(ExportButton).props("kind")).toBeUndefined();
+  });
+});
+
 describe("PersonEditDialog", () => {
   it("moves someone to another department with department_id", async () => {
     const calls = stub((call) => {

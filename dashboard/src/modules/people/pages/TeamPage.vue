@@ -261,7 +261,7 @@ function clearAll(): void {
         :error="query.error.value"
         :retry="() => query.refetch()"
         :filtered="filtered"
-        export-kind="members.people"
+        :export-kind="can('members.manage') ? 'members.people' : undefined"
         :export-params="{ status, q: search || undefined }"
         csv-name="Team"
         :empty-title="t('people.team.emptyTitle')"
