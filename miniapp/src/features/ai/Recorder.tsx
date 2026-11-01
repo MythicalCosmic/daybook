@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useFeatureT } from "../../i18n/feature";
 import { useI18n } from "../../i18n";
 import { errorText } from "../../lib/actions";
+import { useDraftGuard } from "../../lib/useDraftGuard";
 import { useMember } from "../../state/session";
 import { haptic, openTelegramLink } from "../../telegram";
 import { Button } from "../../ui";
@@ -120,6 +121,8 @@ function Listening({ recorder, max, onCancel }: { recorder: Recorder; max: numbe
   const starting = recorder.phase === "starting";
   const left = Math.max(0, Math.ceil(max - recorder.seconds));
   const level = live ? recorder.levels.at(-1) ?? 0 : 0;
+  // Closing the app mid-sentence asks first: the note would be lost.
+  useDraftGuard(live);
   // The last ten seconds begin: a light tap, felt even with the eyes elsewhere.
   const closing = live && left <= WARN_SECONDS;
   useEffect(() => {
