@@ -821,21 +821,23 @@ textarea.ai-text-box {
 
 /* — the ways in — */
 
+/* A tool, not something that can't wait: Home's plain surface (tints are for late work and the
+   day itself), with a faint sage sheen where the microphone sits. */
 .card.ai-home {
   align-items: center;
   gap: 14px;
   padding: 16px 16px 16px 20px;
   box-shadow: none;
   background:
-    radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--color-accent-2-100) 85%, transparent), transparent 60%),
-    var(--color-accent-100);
-  color: var(--color-accent-900);
+    radial-gradient(90% 120% at 100% 50%, color-mix(in srgb, var(--color-accent-2-100) 70%, transparent), transparent 70%),
+    var(--color-surface);
+  color: var(--color-text);
 }
 
 .card--tap.ai-home:hover {
   background:
-    radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--color-accent-2-100) 85%, transparent), transparent 60%),
-    color-mix(in srgb, var(--color-accent-100) 92%, var(--color-accent));
+    radial-gradient(90% 120% at 100% 50%, color-mix(in srgb, var(--color-accent-2-100) 70%, transparent), transparent 70%),
+    color-mix(in srgb, var(--color-surface) 94%, var(--color-text));
 }
 
 .ai-home-text {
