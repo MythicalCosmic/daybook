@@ -841,10 +841,13 @@ textarea.ai-text-box {
   color: var(--color-text);
 }
 
-.card--tap.ai-home:hover {
-  background:
-    radial-gradient(90% 120% at 100% 50%, color-mix(in srgb, var(--color-accent-2-100) 70%, transparent), transparent 70%),
-    color-mix(in srgb, var(--color-surface) 94%, var(--color-text));
+/* Only where there is a mouse: on a phone a tapped card would keep the hover colour. */
+@media (hover: hover) {
+  .card--tap.ai-home:hover {
+    background:
+      radial-gradient(90% 120% at 100% 50%, color-mix(in srgb, var(--color-accent-2-100) 70%, transparent), transparent 70%),
+      color-mix(in srgb, var(--color-surface) 94%, var(--color-text));
+  }
 }
 
 .ai-home-text {
