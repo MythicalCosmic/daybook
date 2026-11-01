@@ -23,27 +23,26 @@
   --agm-c-danger: #f07a63;
 }
 
-.agm-week {
-  display: grid;
-  grid-template-columns: 34px repeat(7, minmax(0, 1fr)) 34px;
+.agm-week-head {
+  display: flex;
   align-items: center;
   gap: 2px;
-  padding: 10px 6px;
+  padding: 8px 6px 0 16px;
 }
 
-.agm-week-nav {
+.agm-week-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.agm-week {
   display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 999px;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-}
-
-.agm-week-nav:active {
-  background: var(--hairline);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px 10px;
 }
 
 .agm-day {

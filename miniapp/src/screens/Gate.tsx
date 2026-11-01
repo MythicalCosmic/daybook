@@ -1,4 +1,4 @@
-import { Ban, CirclePause, Clock3, DoorOpen, KeyRound, MessageCircle, Mic, Send, SendHorizontal, Smartphone, WifiOff, type LucideIcon } from "lucide-react";
+import { Ban, CirclePause, Clock3, CloudOff, DoorOpen, KeyRound, MessageCircle, Mic, Send, SendHorizontal, Smartphone, WifiOff, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { suspendedUntil } from "../api/membership";
@@ -115,8 +115,8 @@ export function Blocked() {
 export function Suspended({ membership }: { membership: Membership }) {
   const { t, locale } = useI18n();
   const until = suspendedUntil(membership);
-  // A date without a time: read it at noon UTC so no timezone moves the day.
-  const body = until ? t("gate.suspended.until", { date: whole(dayMonthLong(`${until}T12:00:00Z`, "UTC", locale)) }) : t("gate.suspended.body");
+  // A calendar date ("2026-11-12"): the same day in any zone (lib/time).
+  const body = until ? t("gate.suspended.until", { date: whole(dayMonthLong(until, "UTC", locale)) }) : t("gate.suspended.body");
   return (
     <Message icon={CirclePause} tone="sage" title={t("gate.suspended.title")} body={body}>
       <CloseButton />
@@ -128,7 +128,9 @@ const FAILURES = {
   outside: { icon: Send, title: "error.outsideTitle", body: "error.outsideTelegram" },
   unsigned: { icon: MessageCircle, title: "error.unsignedTitle", body: "error.unsigned" },
   expired: { icon: Clock3, title: "error.expiredTitle", body: "error.expired" },
-  network: { icon: WifiOff, title: "error.generic", body: "error.network" },
+  network: { icon: WifiOff, title: "error.networkTitle", body: "error.networkBody" },
+  // The server failed (the phone's connection is fine): not "no internet".
+  server: { icon: CloudOff, title: "error.serverTitle", body: "error.server" },
 } as const;
 
 /**

@@ -68,14 +68,6 @@ export function can(member: HasPermissions, perm: Perm): boolean {
   return member.permissions.includes(perm);
 }
 
-export function canAny(member: HasPermissions, perms: readonly Perm[]): boolean {
-  return perms.some((perm) => can(member, perm));
-}
-
-export function canAll(member: HasPermissions, perms: readonly Perm[]): boolean {
-  return perms.every((perm) => can(member, perm));
-}
-
 type Member = HasPermissions & { team_size?: number };
 
 /** Whether they head a department: they give and check their people's work (whatever their role). */

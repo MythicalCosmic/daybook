@@ -3,9 +3,10 @@ import { BellRing, Building2, CalendarDays, CircleX, MapPin, Repeat } from "luci
 import type { PageProps } from "../registry";
 import { useI18n } from "../../i18n";
 import { useFeatureT } from "../../i18n/feature";
+import { nameInitials } from "../../lib/team";
 import { clock, dayKey, dayMonth } from "../../lib/time";
 import { useNavigation } from "../../state/navigation";
-import { initials, useMember } from "../../state/session";
+import { useMember } from "../../state/session";
 import { useToast } from "../../state/toast";
 import { haptic } from "../../telegram";
 import { Badge, Banner, BottomBar, Card, ListCard, ListRow, LoadError, PageHeader, Screen, ScreenSkeleton, SectionHead, Segmented, cx } from "../../ui";
@@ -120,11 +121,10 @@ export function EventPage({ params }: PageProps) {
             <SectionHead>{t("attendees", { count: event.attendees.length })}</SectionHead>
             <ListCard>
               {event.attendees.map((attendee) => {
-                const [first = "", last = ""] = attendee.member.name.split(" ");
                 return (
                   <ListRow
                     key={attendee.member.id}
-                    icon={<span className="agm-person">{initials(first, last)}</span>}
+                    icon={<span className="agm-person">{nameInitials(attendee.member.name)}</span>}
                     title={attendee.member.name}
                     subtitle={attendee.member.position ?? undefined}
                     value={<Badge tone={ANSWER_TONE[attendee.response]} size="small">{t(attendee.response === "going" ? "answer.going" : attendee.response === "declined" ? "answer.declined" : "answer.pending")}</Badge>}
@@ -149,10 +149,10 @@ export function EventPage({ params }: PageProps) {
 
 function when(event: AgendaEvent, today: string, timeZone: string, locale: string, words: { today: string; tomorrow: string }, allDay: string): string {
   const first = event.all_day ? event.start.slice(0, 10) : dayKey(event.start, timeZone);
-  const day = `${dayName(first, today, timeZone, locale, words)}, ${dayMonth(`${first}T12:00:00Z`, timeZone, locale)}`;
+  const day = `${dayName(first, today, timeZone, locale, words)}, ${dayMonth(first, timeZone, locale)}`;
   if (event.all_day) {
     const last = event.end?.slice(0, 10);
-    return last && last !== first ? `${day} – ${dayMonth(`${last}T12:00:00Z`, timeZone, locale)}` : `${day} · ${allDay}`;
+    return last && last !== first ? `${day} – ${dayMonth(last, timeZone, locale)}` : `${day} · ${allDay}`;
   }
   const start = clock(event.start, timeZone, locale);
   return event.end ? `${day} · ${start} – ${clock(event.end, timeZone, locale)}` : `${day} · ${start}`;

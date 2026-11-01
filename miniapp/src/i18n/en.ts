@@ -2,7 +2,6 @@
 // and are picked with Intl.PluralRules.
 
 const en = {
-  "app.name": "Daybook",
   "app.tagline": "Every task, on time.",
 
   "tab.home": "Home",
@@ -15,6 +14,10 @@ const en = {
   "common.retry": "Try again",
   "error.generic": "Something went wrong. Try again.",
   "error.network": "No connection. Check your internet and try again.",
+  "error.networkTitle": "No connection",
+  "error.networkBody": "Check your internet and try again.",
+  "error.serverTitle": "Daybook didn't open",
+  "error.server": "Something broke on our side. Try again in a minute.",
   "error.outsideTitle": "Open Daybook in Telegram",
   "error.outsideTelegram": "This app works inside Telegram. Open it from your company's bot.",
   "error.expiredTitle": "Session expired",
@@ -231,7 +234,6 @@ const en = {
   "detail.banner.cancelled": "This task was cancelled",
   "detail.late.title": "{duration} late",
   "detail.late.body": "It was due at {time}.",
-  "detail.reminder": "If it's not done by the deadline, the bot will start reminding you.",
   "detail.reminders.progress": "Reminder {sent} of {total} sent · next at {time}",
   "detail.reminders.allSent": "All {total} reminders sent",
   "detail.reminders.first": "First reminder at {time}",
@@ -303,7 +305,6 @@ const en = {
   "detail.sendBack": "Send back",
 
   "toast.started": "Started. Keep going!",
-  "toast.done": "Nice! Marked as done.",
   "toast.doneShort": "Done",
   "toast.reopened": "Back on your list.",
   "toast.undoFailed": "Couldn't undo it. Open the task to change it.",
@@ -533,7 +534,6 @@ const en = {
 
   // Shared building blocks (src/ui) and the feature hosts.
   "ui.optional": "(optional)",
-  "ui.loading": "Loading…",
   "ui.back": "Back",
   "ui.photo.add": "Take or choose a photo",
   "ui.photo.camera": "Take a photo",
@@ -550,7 +550,6 @@ const en = {
   "ui.pull.release": "Release to refresh",
   "ui.pull.refreshing": "Refreshing…",
   "ui.toast.undo": "Undo",
-  "ui.slide.done": "Done",
   "ui.notFound.title": "This page isn't here",
   "ui.notFound.body": "It may have moved, or it isn't open to you.",
   "ui.notFound.back": "Go back",

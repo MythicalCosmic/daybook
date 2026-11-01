@@ -3,11 +3,11 @@ import { useMemo, useState } from "react";
 
 import { useI18n } from "../../i18n";
 import { useFeatureT } from "../../i18n/feature";
-import { addDays, dayKey, dayMonth, weekdayShort } from "../../lib/time";
+import { addDays, dayKey, dayMonth, monthYear, weekdayShort } from "../../lib/time";
 import { useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
 import { haptic } from "../../telegram";
-import { Badge, Card, EmptyState, ListRow, LoadError, PageHeader, Screen, ScreenSkeleton, SectionHead, cx } from "../../ui";
+import { Badge, Card, EmptyState, IconButton, ListRow, LoadError, PageHeader, Screen, ScreenSkeleton, SectionHead, cx } from "../../ui";
 import { eventIdOf, useCalendar, type CalendarEntry } from "./api";
 import "./agenda.css";
 import { byDay, colorClass, dayName, mondayOf, timeLabel, weekDays } from "./lib";
@@ -61,9 +61,10 @@ export function CalendarHome() {
     />
   );
 
+  /** A week back or on, or (0) this week with today picked. */
   const shift = (weeks: number) => {
     haptic.select();
-    const next = addDays(monday, weeks * 7);
+    const next = weeks === 0 ? mondayOf(today) : addDays(monday, weeks * 7);
     setMonday(next);
     setSelected(weeks === 0 ? today : next);
   };
@@ -76,10 +77,13 @@ export function CalendarHome() {
     <Screen variant="detail">
       <PageHeader kicker={member.company.name} title={t("title")} onBack={navigation.pop} />
       <Card padding="flush">
+        {/* The arrows sit by the month, so the seven days get the row's whole width. */}
+        <div className="agm-week-head">
+          <span className="agm-week-title">{monthYear(selected.slice(0, 7), locale)}</span>
+          <IconButton icon={ChevronLeft} label={t("week.prev")} size={40} variant="ghost" onClick={() => shift(-1)} />
+          <IconButton icon={ChevronRight} label={t("week.next")} size={40} variant="ghost" onClick={() => shift(1)} />
+        </div>
         <div className="agm-week">
-          <button type="button" className="agm-week-nav" aria-label={t("week.prev")} onClick={() => shift(-1)}>
-            <ChevronLeft size={20} strokeWidth={2.5} aria-hidden />
-          </button>
           {days.map((day) => {
             const items = weekByDay.get(day) ?? [];
             return (
@@ -88,13 +92,13 @@ export function CalendarHome() {
                 type="button"
                 className={cx("agm-day", day === today && "agm-day--today")}
                 aria-pressed={day === selected}
-                aria-label={`${dayName(day, today, member.timeZone, locale, words)} ${dayMonth(`${day}T12:00:00Z`, member.timeZone, locale)}`}
+                aria-label={`${dayName(day, today, member.timeZone, locale, words)} ${dayMonth(day, member.timeZone, locale)}`}
                 onClick={() => {
                   haptic.select();
                   setSelected(day);
                 }}
               >
-                <span className="agm-day-name">{weekdayShort(`${day}T12:00:00Z`, member.timeZone, locale)}</span>
+                <span className="agm-day-name">{weekdayShort(day, member.timeZone, locale)}</span>
                 <span className="agm-day-num">{Number(day.slice(8))}</span>
                 <span className="agm-dots" aria-hidden>
                   {items.slice(0, 3).map((item) => (
@@ -104,9 +108,6 @@ export function CalendarHome() {
               </button>
             );
           })}
-          <button type="button" className="agm-week-nav" aria-label={t("week.next")} onClick={() => shift(1)}>
-            <ChevronRight size={20} strokeWidth={2.5} aria-hidden />
-          </button>
         </div>
       </Card>
 
@@ -114,7 +115,7 @@ export function CalendarHome() {
         size="small"
         action={monday !== mondayOf(today) || selected !== today ? { label: t("today"), onClick: () => shift(0) } : undefined}
       >
-        {dayName(selected, today, member.timeZone, locale, words)} · {dayMonth(`${selected}T12:00:00Z`, member.timeZone, locale)}
+        {dayName(selected, today, member.timeZone, locale, words)} · {dayMonth(selected, member.timeZone, locale)}
       </SectionHead>
       {!week.data ? (
         week.isError ? (
@@ -138,7 +139,7 @@ export function CalendarHome() {
       ) : (
         nextDays.map((day) => (
           <div key={day} className="agm-group">
-            <SectionHead size="small">{`${dayName(day, today, member.timeZone, locale, words)} · ${dayMonth(`${day}T12:00:00Z`, member.timeZone, locale)}`}</SectionHead>
+            <SectionHead size="small">{`${dayName(day, today, member.timeZone, locale, words)} · ${dayMonth(day, member.timeZone, locale)}`}</SectionHead>
             {(nextByDay.get(day) ?? []).map((item) => row(item, day))}
           </div>
         ))

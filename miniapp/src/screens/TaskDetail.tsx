@@ -53,10 +53,10 @@ import { clock } from "../lib/time";
 import { useDraftGuard } from "../lib/useDraftGuard";
 import { useViewContext } from "../lib/useNow";
 import { useNavigation } from "../state/navigation";
-import { initials, useMember, useSession } from "../state/session";
+import { useMember, useSession } from "../state/session";
 import { useToast } from "../state/toast";
 import { haptic } from "../telegram";
-import { BottomBar, LoadError, ScreenSkeleton, type BottomAction } from "../ui";
+import { Avatar, BottomBar, LoadError, ScreenSkeleton, type BottomAction } from "../ui";
 
 export function TaskDetail({ taskId }: { taskId: number }) {
   const ctx = useViewContext();
@@ -136,7 +136,9 @@ function Detail({ task, comments, ctx }: { task: Task; comments: Comment[]; ctx:
   const toggle = useToggleChecklist(member.companyId);
   const action = useTaskAction(member.companyId);
   const summary = useSummary(member.companyId);
-  const activity = useActivity(member.companyId);
+  // The feed is only the last resort for who sent it back and why (the task says so itself): it
+  // isn't fetched for every task opened, only read when it's already here or nothing else tells.
+  const activity = useActivity(member.companyId, task.status === "returned" && !task.returned_by && !task.returned_reason);
   const toast = useToast();
   const [draftSeed, setDraftSeed] = useState<{ text: string; mention?: MemberBrief } | null>(null);
   const quiet = summary.data?.quiet_from && summary.data.quiet_until ? summary.data : null;
@@ -332,8 +334,11 @@ function Detail({ task, comments, ctx }: { task: Task; comments: Comment[]; ctx:
             <p style={{ margin: 0, fontSize: 16, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{task.proof_text}</p>
           </div>
         )}
+        {/* Cropped to fit the page: a tap shows the whole photo (a fridge's thermometer may be at its edge). */}
         {task.proof_photo && (
-          <img src={task.proof_photo} alt="" style={{ width: "100%", borderRadius: "var(--radius-lg)", objectFit: "cover", maxHeight: 320 }} />
+          <button type="button" className="proof-photo" aria-label={t("myTeam.photo")} onClick={() => navigation.openSheet({ kind: "photo", src: task.proof_photo! })}>
+            <img src={task.proof_photo} alt="" decoding="async" />
+          </button>
         )}
 
         <div className="card" style={{ padding: "6px 20px", gap: 0 }}>
@@ -662,10 +667,9 @@ function Comments({ task, comments, people, ctx, seed }: {
       </div>
       {comments.map((comment) => {
         const name = comment.author?.name ?? t("activity.someone");
-        const [first = "", last = ""] = name.split(" ");
         return (
           <div key={comment.id} style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
-            <div className="avatar" style={{ width: 34, height: 34, fontSize: 13 }}>{initials(first, last)}</div>
+            <Avatar name={name} size="sm" />
             <div style={{ flex: 1, minWidth: 0, padding: "10px 14px", borderRadius: "var(--radius-md) var(--radius-md) var(--radius-md) var(--radius-sm)", background: "var(--color-surface)" }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 6, fontSize: 13 }}>
                 <span style={{ fontWeight: 700 }}>{name}</span>
@@ -697,7 +701,7 @@ function Comments({ task, comments, people, ctx, seed }: {
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => pick(person)}
                 >
-                  <span className="avatar" style={{ width: 30, height: 30, fontSize: 12 }}>{nameInitials(person.name)}</span>
+                  <Avatar name={person.name} size="xs" />
                   <span className="mention-option-text">
                     <span className="mention-option-name">{person.name}</span>
                     <span className="mention-option-role">{person.role ? t(ROLE_LABEL[person.role]) : person.position ?? ""}</span>
@@ -779,11 +783,6 @@ function Comments({ task, comments, people, ctx, seed }: {
   );
 }
 
-function nameInitials(name: string): string {
-  const [first = "", last = ""] = name.split(" ");
-  return initials(first, last);
-}
-
 function candidatesName(id: number, people: MemberBrief[], team: MemberBrief[] | undefined): string {
   return people.find((person) => person.id === id)?.name ?? team?.find((person) => person.id === id)?.name ?? "";
 }
@@ -831,7 +830,7 @@ const CONFIRM_GUARD_MS = 800;
  * Send back). Outside Telegram, or on an older client, the same two buttons sit in the page.
  */
 function ActionBar({ task, isMine }: { task: Task; isMine: boolean }) {
-  const { t } = useViewContext();
+  const { t } = useI18n();
   const member = useMember();
   const navigation = useNavigation();
   const action = useTaskAction(member.companyId);

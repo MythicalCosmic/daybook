@@ -68,6 +68,17 @@ function launchCompany(me: Me): number | null {
   return working ? (me.bot_company ?? null) : savedCompany();
 }
 
+/**
+ * The company the app opens in, when it is known at launch (null for someone who isn't working in
+ * one yet, or who must wait for the cloud's answer): what Home's data can be fetched for early.
+ */
+export function startingCompany(me: Me): number | null {
+  const preferred = launchCompany(me);
+  if (preferred === null && me.memberships.filter((m) => m.status === "approved").length > 1) return null;
+  const membership = pickMembership(me, preferred);
+  return membership?.status === "approved" && membership.is_onboarded ? membership.company.id : null;
+}
+
 export function SessionProvider({ me, children }: { me: Me; children: ReactNode }) {
   const [preferred, setPreferred] = useState<number | null>(() => launchCompany(me));
   // Nothing remembered on this phone and more than one company: ask Telegram's cloud for the one
@@ -136,8 +147,4 @@ export function useMember(): Member {
   const { membership } = useSession();
   if (!membership) throw new Error("useMember without a membership");
   return { ...membership, timeZone: membership.company.timezone, companyId: membership.company.id };
-}
-
-export function initials(first: string, last: string): string {
-  return `${first.trim().charAt(0)}${last.trim().charAt(0)}`.toUpperCase() || "?";
 }

@@ -6,6 +6,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api, apiForm } from "../../api/client";
+import { downscale } from "../../lib/image";
 import type { AttendanceRecord, Board, Candidate, CheckResult, Correction, MyDay, MyMonth, MySwaps, OpenShift, Shift, Swap } from "./types";
 
 export const attendanceKeys = {
@@ -100,9 +101,10 @@ function useInvalidate(company: number) {
 export function useCheck(company: number) {
   const invalidate = useInvalidate(company);
   return useMutation({
-    mutationFn: ({ direction, tap, photo }: { direction: "in" | "out"; tap: Tap; photo?: File | null }) => {
+    mutationFn: async ({ direction, tap, photo }: { direction: "in" | "out"; tap: Tap; photo?: File | null }) => {
       const path = `${base(company)}/check-${direction}/`;
-      if (direction === "in" && photo) return apiForm<CheckResult>(path, { ...tapFields(tap), photo });
+      // A phone's selfie is 3-5 MB: made smaller first, as receipts and proof photos are.
+      if (direction === "in" && photo) return apiForm<CheckResult>(path, { ...tapFields(tap), photo: await downscale(photo) });
       return api<CheckResult>(path, { method: "POST", json: tapFields(tap) });
     },
     onSettled: invalidate,

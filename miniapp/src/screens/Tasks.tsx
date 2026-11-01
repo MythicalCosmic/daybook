@@ -26,7 +26,7 @@ import { useViewContext } from "../lib/useNow";
 import { useNavigation, type TasksTab } from "../state/navigation";
 import { useMember } from "../state/session";
 import { haptic } from "../telegram";
-import { EmptyState, LoadError } from "../ui";
+import { EmptyState, LoadError, Segmented } from "../ui";
 import { useScrollEdges } from "../ui/useScrollEdges";
 
 /** Scroll the tab strip just enough to show the chosen tab (no page jump). */
@@ -82,7 +82,7 @@ export function Tasks() {
   useEffect(strip.update);
   const counts = tabs.map((item) => item.count).join(",");
   useEffect(() => {
-    keepInView(strip.ref.current?.querySelector<HTMLButtonElement>('[aria-pressed="true"]') ?? null);
+    keepInView(strip.ref.current?.querySelector<HTMLButtonElement>('[aria-selected="true"]') ?? null);
   }, [tab, counts, strip.ref]);
 
   return (
@@ -97,24 +97,15 @@ export function Tasks() {
 
       {/* Four or five tabs with counts don't fit a phone in every language: the strip scrolls
           sideways then, keeping the chosen tab in view. */}
-      <div ref={strip.ref} className="seg seg--scroll" role="tablist">
-        {tabs.map(({ key, count }) => (
-          <button
-            key={key}
-            ref={tab === key ? keepInView : undefined}
-            className="seg-opt"
-            role="tab"
-            aria-pressed={tab === key}
-            onClick={() => {
-              haptic();
-              navigation.setTasksTab(key);
-            }}
-          >
-            <span>{t(`tasks.tab.${key}`)}</span>
-            {count > 0 && <span className="count">{count}</span>}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        ref={strip.ref}
+        role="tablist"
+        className="seg--scroll"
+        label={t("tasks.title")}
+        options={tabs.map(({ key, count }) => ({ value: key, label: t(`tasks.tab.${key}`), count }))}
+        value={tab}
+        onChange={navigation.setTasksTab}
+      />
 
       {tab === "review" ? (
         <ReviewQueue tasks={reviews.data} loading={reviews.isPending} error={reviews.error} onRetry={() => void reviews.refetch()} ctx={ctx} onOpen={open} rule={finishRule.data?.on_finish} />

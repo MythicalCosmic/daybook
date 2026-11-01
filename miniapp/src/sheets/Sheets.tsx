@@ -1,7 +1,7 @@
 import { Camera, Check } from "lucide-react";
 import { useId, useRef, useState } from "react";
 
-import { useRequestTimeOff, useSetLanguage, useTask, useTaskAction } from "../api/hooks";
+import { useRequestTimeOff, useSetLanguage, useTaskAction } from "../api/hooks";
 import type { Task } from "../api/types";
 import { FeatureSheet } from "../features/hosts";
 import { LANGUAGES, translate, useI18n, type Key, type Lang } from "../i18n";
@@ -16,7 +16,7 @@ import { haptic } from "../telegram";
 import { Sheet } from "../ui/Sheet";
 import { useObjectUrl } from "../ui/useObjectUrl";
 import { AddSheet } from "./AddSheet";
-import { BlockerSheet, DueSheet, EditSheet, ExtensionSheet, ReassignSheet, SnoozeSheet, TaskMenuSheet } from "./TaskSheets";
+import { BlockerSheet, DueSheet, EditSheet, ExtensionSheet, ReassignSheet, SnoozeSheet, TaskMenuSheet, WithTask } from "./TaskSheets";
 
 export function Sheets() {
   const navigation = useNavigation();
@@ -24,8 +24,14 @@ export function Sheets() {
   const sheet = navigation.sheet;
   if (!sheet) return null;
   return (
-    <Sheet onClose={navigation.closeSheet} full={sheet.kind === "add"} closeLabel={t("common.close")}>
-      {sheet.kind === "complete" && <CompleteSheet taskId={sheet.taskId} />}
+    <Sheet
+      onClose={navigation.closeSheet}
+      full={sheet.kind === "add" || sheet.kind === "photo"}
+      closeLabel={t("common.close")}
+      label={sheet.kind === "photo" ? t("myTeam.photo") : undefined}
+    >
+      {sheet.kind === "complete" && <WithTask taskId={sheet.taskId}>{(task) => <CompleteForm task={task} />}</WithTask>}
+      {sheet.kind === "photo" && <PhotoSheet src={sheet.src} onClose={navigation.closeSheet} />}
       {sheet.kind === "return" && <ReturnSheet taskId={sheet.taskId} />}
       {sheet.kind === "snooze" && <SnoozeSheet taskId={sheet.taskId} />}
       {sheet.kind === "blocker" && <BlockerSheet taskId={sheet.taskId} />}
@@ -43,10 +49,14 @@ export function Sheets() {
   );
 }
 
-function CompleteSheet({ taskId }: { taskId: number }) {
-  const member = useMember();
-  const task = useTask(member.companyId, taskId);
-  return task.data ? <CompleteForm task={task.data} /> : <div className="skeleton" style={{ height: 220 }} />;
+/** A proof photo on the whole screen, all of it; a tap (or Back) closes it. */
+function PhotoSheet({ src, onClose }: { src: string; onClose: () => void }) {
+  const { t } = useI18n();
+  return (
+    <button type="button" className="photo-full" aria-label={t("common.close")} onClick={onClose}>
+      <img src={src} alt={t("myTeam.photo")} decoding="async" />
+    </button>
+  );
 }
 
 function CompleteForm({ task }: { task: Task }) {
@@ -239,7 +249,7 @@ function TimeOffSheet() {
           navigation.closeSheet();
           toast(t(created.status === "approved" ? "timeOff.toastTaken" : "timeOff.toastSent"));
         },
-        onError: (error) => toast(errorText(error, t)),
+        onError: (error) => toast(errorText(error, t), { tone: "error" }),
       },
     );
   };

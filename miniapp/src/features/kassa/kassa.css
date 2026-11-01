@@ -94,14 +94,25 @@
   flex: none;
 }
 
+/* Icon, words, and "Open shift" beside them where the card is wide; on a phone the button goes under
+   the words (beside them it left "Касса / закрыта" and "Пересчита…" a few letters a line). */
 .kassa-hero--closed {
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 14px;
+  gap: 12px 14px;
   padding: 16px 16px 16px 18px;
   border: 0;
   text-align: left;
   color: var(--color-text);
+  container-type: inline-size;
+}
+
+@container (max-width: 400px) {
+  .kassa-hero-cta {
+    grid-column: 2 / -1;
+    justify-self: start;
+  }
 }
 
 .kassa-hero-icon {

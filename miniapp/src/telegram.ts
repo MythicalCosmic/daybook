@@ -179,8 +179,6 @@ export type NativeButtonLook = {
   position?: "left" | "right" | "top" | "bottom";
 };
 
-export type NativeButtonParams = NativeButtonLook & { onClick: () => void };
-
 function nativeButton(kind: NativeButtonKind) {
   if (!webApp) return null;
   if (kind === "main") return webApp.MainButton && supports("6.0") ? webApp.MainButton : null;
@@ -226,22 +224,7 @@ export function attachNativeButton(kind: NativeButtonKind, onClick: () => void):
   };
 }
 
-/**
- * Show Telegram's main ("bottom") or secondary button with these settings in one call. Returns
- * the cleanup, or null when the client has no such button (render an in-page button instead;
- * `ui/BottomBar` does both and keeps the button in sync with React state).
- */
-export function showNativeButton(kind: NativeButtonKind, params: NativeButtonParams): (() => void) | null {
-  if (!nativeButton(kind)) return null;
-  updateNativeButton(kind, params);
-  return attachNativeButton(kind, params.onClick);
-}
-
-/** `showNativeButton("main", …)`: the Bot API calls it the bottom button since 7.10. */
-export const bottomButton = (params: NativeButtonParams) => showNativeButton("main", params);
-export const secondaryButton = (params: NativeButtonParams) => showNativeButton("secondary", params);
-
-// — vertical swipes and fullscreen —
+// — vertical swipes and closing —
 
 let swipeLocks = 0;
 
@@ -282,55 +265,7 @@ export function confirmClosing(): () => void {
   };
 }
 
-/** Ask for full screen (8.0+; mobile clients). Returns false when unsupported. */
-export function requestFullscreen(): boolean {
-  if (!webApp || !supports("8.0")) return false;
-  webApp.requestFullscreen();
-  return true;
-}
-
-export function exitFullscreen(): void {
-  if (webApp && supports("8.0") && webApp.isFullscreen) webApp.exitFullscreen();
-}
-
-export function isFullscreen(): boolean {
-  return Boolean(webApp && supports("8.0") && webApp.isFullscreen);
-}
-
-export function onFullscreenChange(callback: () => void): () => void {
-  if (!webApp || !supports("8.0")) return () => {};
-  webApp.onEvent("fullscreenChanged", callback);
-  return () => webApp.offEvent("fullscreenChanged", callback);
-}
-
-// — QR scanner, dialogs, links —
-
-/**
- * Open Telegram's QR scanner and resolve with the first code read, or null when the person
- * closes it or the client can't scan (6.4+).
- */
-export function scanQr(text?: string): Promise<string | null> {
-  return new Promise((resolve) => {
-    if (!webApp || !supports("6.4")) {
-      resolve(null);
-      return;
-    }
-    let settled = false;
-    const closed = () => finish(null);
-    const finish = (value: string | null) => {
-      if (settled) return;
-      settled = true;
-      webApp.offEvent("scanQrPopupClosed", closed);
-      resolve(value);
-    };
-    webApp.onEvent("scanQrPopupClosed", closed);
-    webApp.showScanQrPopup(text ? { text } : {}, (data) => {
-      finish(data);
-      webApp.closeScanQrPopup();
-      return true;
-    });
-  });
-}
+// — dialogs, links —
 
 export type PopupButton = { id: string; text?: string; type?: "default" | "ok" | "close" | "cancel" | "destructive" };
 

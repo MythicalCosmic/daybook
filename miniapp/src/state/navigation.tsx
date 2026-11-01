@@ -38,6 +38,8 @@ export type Sheet =
   | { kind: "edit"; taskId: number }
   /** Edit, reschedule, delete: what `task.actions` allows. */
   | { kind: "taskMenu"; taskId: number }
+  /** A proof photo on the whole screen, all of it (the task screen shows it cropped). */
+  | { kind: "photo"; src: string }
   | { kind: "add" }
   | { kind: "language" }
   | { kind: "company" }

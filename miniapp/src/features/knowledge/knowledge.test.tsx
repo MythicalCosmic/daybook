@@ -92,6 +92,11 @@ describe("safeHtml", () => {
     expect(clean).toContain('<div data-callout="warning">');
     expect(clean).toMatch(/<input type="checkbox" checked="" disabled="">/);
   });
+
+  it("puts a table in its own sideways-scrolling box, so a wide one never widens the page", () => {
+    const clean = safeHtml("<table><tbody><tr><td>Paracetamol</td><td>500 mg</td></tr></tbody></table>");
+    expect(clean).toBe('<div class="kbm-table"><table><tbody><tr><td>Paracetamol</td><td>500 mg</td></tr></tbody></table></div>');
+  });
 });
 
 describe("flattenTree", () => {
@@ -213,7 +218,9 @@ describe("How to do this, on the task screen", () => {
     const rows = [...container.querySelectorAll(".list-item")];
     expect(rows.map((row) => row.querySelector(".list-item-text > span")?.textContent)).toEqual(["Kassani ochish tartibi", "Terminal"]);
     expect(rows[0]!.textContent).toContain("💰 Kassa");
-    expect(rows[1]!.querySelector(".kbm-emoji")?.textContent).toBe("📄");
+    // A page without its own emoji gets the plain page icon, never an emoji the app picked.
+    expect(rows[1]!.querySelector(".kbm-emoji svg")).not.toBeNull();
+    expect(rows[1]!.querySelector(".kbm-emoji")?.textContent).toBe("");
     act(() => fireEvent.click(rows[1]!));
     expect(nav!.stack).toEqual([{ feature: "knowledge", page: "page", params: { id: 9 } }]);
   });

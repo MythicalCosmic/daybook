@@ -151,16 +151,22 @@ export function useCloseDraft(company: number, shift: number, fresh: () => Close
     return { draft: saved ?? fresh(), restoredAt: saved && hasContent(saved) ? saved.savedAt : null };
   });
   const [photos, setPhotos] = useState<Photos>({ z: null, terminal: null });
+  // The stored photos come back a moment after the draft: a close resumed before that would go
+  // without them (and then clear the stored copies).
+  const [photosReady, setPhotosReady] = useState(false);
   const touched = useRef<Set<PhotoKind>>(new Set());
 
   useEffect(() => {
     let alive = true;
-    for (const kind of ["z", "terminal"] as const) {
-      void photoStore.get(`${company}.${shift}.${kind}`).then((file) => {
+    const reads = (["z", "terminal"] as const).map((kind) =>
+      photoStore.get(`${company}.${shift}.${kind}`).then((file) => {
         // A photo picked while the store was being read wins over the stored one.
         if (alive && file && !touched.current.has(kind)) setPhotos((old) => ({ ...old, [kind]: file }));
-      });
-    }
+      }),
+    );
+    void Promise.allSettled(reads).then(() => {
+      if (alive) setPhotosReady(true);
+    });
     return () => {
       alive = false;
     };
@@ -196,5 +202,5 @@ export function useCloseDraft(company: number, shift: number, fresh: () => Close
 
   const dismissRestored = useCallback(() => setState((old) => ({ ...old, restoredAt: null })), []);
 
-  return { draft: state.draft, restoredAt: state.restoredAt, update, photos, setPhoto, reset, dismissRestored };
+  return { draft: state.draft, restoredAt: state.restoredAt, update, photos, photosReady, setPhoto, reset, dismissRestored };
 }

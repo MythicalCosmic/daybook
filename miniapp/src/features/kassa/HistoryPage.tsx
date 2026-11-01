@@ -5,9 +5,10 @@ import { useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
 import { Button, EmptyState, PageHeader, PullToRefresh, ScreenSkeleton, SectionHead } from "../../ui";
 import type { PageProps } from "../registry";
-import { isDenied, useHistory, useKassa, type Shift } from "./api";
-import { monthYear, useKassaT } from "./lib";
-import { Denied, ErrorScreen, ShiftRow } from "./parts";
+import { useHistory, useKassa, type Shift } from "./api";
+import { monthYear } from "../../lib/time";
+import { useKassaT } from "./lib";
+import { beforeData, ShiftRow } from "./parts";
 
 /** All my shifts, newest first, by month. The result shows once a manager checked the shift. */
 export default function HistoryPage(_: PageProps) {
@@ -28,15 +29,7 @@ export default function HistoryPage(_: PageProps) {
   return (
     <PullToRefresh className="screen screen--detail" onRefresh={() => history.refetch()}>
       <PageHeader kicker={t("kassa")} title={t("history.title")} subtitle={t("history.subtitle")} onBack={navigation.pop} />
-      {history.isPending ? (
-        <ScreenSkeleton variant="list" delay={150} />
-      ) : history.isError ? (
-        isDenied(history.error) ? (
-          <Denied />
-        ) : (
-          <ErrorScreen error={history.error} retry={() => history.refetch()} />
-        )
-      ) : shifts.length === 0 ? (
+      {beforeData(history, <ScreenSkeleton variant="list" delay={150} />) ?? (shifts.length === 0 ? (
         <EmptyState icon={CalendarClock} tone="sage" title={t("history.empty.title")} body={t("history.empty.body")} />
       ) : (
         <>
@@ -56,7 +49,7 @@ export default function HistoryPage(_: PageProps) {
             </Button>
           )}
         </>
-      )}
+      ))}
     </PullToRefresh>
   );
 }

@@ -13,12 +13,13 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useI18n, type Lang } from "../../i18n";
 import { errorText } from "../../lib/actions";
 import { formatDistance, getLocation, openLocationSettings, type LocationFailure } from "../../lib/location";
+import { minutesBetween } from "../../lib/time";
 import { useNow } from "../../lib/useNow";
 import { useMember } from "../../state/session";
 import { haptic } from "../../telegram";
 import { Badge, Banner, Button, Card, CardTitle, IconButton, PhotoInput, Skeleton, SlideToConfirm, useToast, type CardTone, type SlideState } from "../../ui";
 import { useCheck, useToday, type Tap } from "./api";
-import { fenceCheck, minutesBetween, shiftDay, shiftLine, wallClock, type FenceCheck } from "./lib";
+import { fenceCheck, shiftDay, shiftLine, wallClock, type FenceCheck } from "./lib";
 import { duration, useT, whereLabel, type T } from "./text";
 import type { CheckResult, MyDay } from "./types";
 import "./attendance.css";
@@ -90,7 +91,8 @@ export function CheckInCard({ onOpen, compact = false }: { onOpen?: () => void; 
       </Card>
     );
   }
-  if (today.isError || !today.data) {
+  // A refetch that fails keeps what was shown (checked in at 08:57, the slide to check out).
+  if (!today.data) {
     return (
       <Card padding="lg" className="att-hero">
         <div className="att-hero-box-title">
@@ -175,7 +177,7 @@ export function CheckInCard({ onOpen, compact = false }: { onOpen?: () => void; 
 
   const slideState: SlideState = flash ? "done" : step.kind === "locating" || step.kind === "sending" ? "loading" : "idle";
   const look = describe(day, now, t, { timeZone: member.timeZone, locale, lang });
-  const chevron = onOpen && !natural ? <IconButton icon={ChevronRight} label={t("card.open")} size={36} variant="ghost" onClick={onOpen} /> : null;
+  const chevron = onOpen && !natural ? <IconButton icon={ChevronRight} label={t("card.open")} size={40} variant="ghost" onClick={onOpen} /> : null;
 
   if (compact && onOpen && !direction && step.kind === "idle") {
     const icon = day.state === "done" ? CircleCheck : day.state === "upcoming" ? CalendarClock : day.next_shift ? CalendarDays : CalendarOff;

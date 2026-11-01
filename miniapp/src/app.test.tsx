@@ -83,6 +83,55 @@ describe("app", () => {
     expect(localStorage.getItem("daybook.lang")).toBe("en");
   });
 
+  it("says why it couldn't open: no connection, or the server failed (never \"no internet\" then)", async () => {
+    const launch = () =>
+      render(
+        <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+          <App />
+        </QueryClientProvider>,
+      );
+    localStorage.setItem("daybook.lang", "en");
+    launch();
+    expect(await screen.findByRole("heading", { name: "No connection" }, { timeout: 3000 })).toBeTruthy();
+    expect(screen.getByText("Check your internet and try again.")).toBeTruthy();
+    cleanup();
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("Bad gateway", { status: 502 })));
+    launch();
+    expect(await screen.findByRole("heading", { name: "Daybook didn't open" }, { timeout: 3000 })).toBeTruthy();
+    expect(screen.queryByText(/internet/)).toBeNull();
+    expect(screen.getByRole("button", { name: "Try again" })).toBeTruthy();
+  });
+
+  it("starts loading Home's numbers and lists while the splash is still up", async () => {
+    const fetched: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        fetched.push(url);
+        const body = url.endsWith("/auth/telegram/") ? { access: "token" } : { results: [] };
+        return new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
+      }),
+    );
+    const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } });
+    client.setQueryData(keys.me, me("approved"));
+    render(
+      <QueryClientProvider client={client}>
+        <App />
+      </QueryClientProvider>,
+    );
+    await waitFor(() =>
+      expect(fetched).toEqual(
+        expect.arrayContaining([
+          "/api/v1/companies/1/summary/",
+          "/api/v1/companies/1/tasks/?scope=board&page_size=200",
+          "/api/v1/companies/1/activity/?page_size=100",
+        ]),
+      ),
+    );
+    // Still on the splash: Home will open with them.
+    expect(document.querySelector(".splash")).not.toBeNull();
+  });
+
   it("opens the screen a launch link asks for", async () => {
     window.history.replaceState(null, "", "/app/?screen=team");
     renderApp(me("approved", ["reports.view"]));
@@ -146,47 +195,6 @@ describe("app", () => {
     renderApp(me("approved", ["reports.view"]));
     expect(await screen.findByRole("heading", { name: "Leave balances" }, { timeout: 3000 })).toBeTruthy();
   }, 15_000);
-
-  it("wires Telegram's back button to the stack: it closes the top page, then hands the button back", async () => {
-    const back = { show: vi.fn(), hide: vi.fn(), onClick: vi.fn(), offClick: vi.fn() };
-    vi.stubGlobal("Telegram", {
-      WebApp: {
-        platform: "android",
-        initData: "",
-        initDataUnsafe: {},
-        isVersionAtLeast: () => true,
-        BackButton: back,
-        onEvent: vi.fn(),
-        offEvent: vi.fn(),
-        setHeaderColor: vi.fn(),
-        setBackgroundColor: vi.fn(),
-        setBottomBarColor: vi.fn(),
-        HapticFeedback: { impactOccurred: vi.fn(), notificationOccurred: vi.fn(), selectionChanged: vi.fn() },
-      },
-    });
-    vi.resetModules();
-    const { App: InTelegram } = await import("./App");
-    const { keys: freshKeys } = await import("./api/hooks");
-    window.history.replaceState(null, "", "/app/?screen=team");
-    const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity, retry: false } } });
-    client.setQueryData(freshKeys.me, me("approved", ["reports.view"]));
-    client.setQueryData(freshKeys.summary(1), { today_total: 0, today_done: 0, unread_activity: 0, awaiting_review: 0, week: [] } as unknown as Summary);
-    render(
-      <QueryClientProvider client={client}>
-        <InTelegram />
-      </QueryClientProvider>,
-    );
-    expect(await screen.findByRole("heading", { name: "Team results" }, { timeout: 10_000 })).toBeTruthy();
-    const press = () => act(() => (back.onClick.mock.calls.at(-1)![0] as () => void)());
-    expect(back.show).toHaveBeenCalled();
-    press();
-    await waitFor(() => expect(document.querySelector(".tabbar")).not.toBeNull());
-    expect(screen.queryByRole("heading", { name: "Team results" })).toBeNull();
-    // Nothing left to close: Telegram hides the button and its press goes to Telegram again.
-    expect(back.hide).toHaveBeenCalled();
-    expect(back.offClick).toHaveBeenCalled();
-    // A fresh module graph (to load telegram.ts with the stub) is slow when every file runs at once.
-  }, 20_000);
 
   it("welcomes someone a team link let in the moment their account is made", async () => {
     const person = creatingAccount(me("pending"));

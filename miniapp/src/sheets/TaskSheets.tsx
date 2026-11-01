@@ -16,7 +16,7 @@ import { useId, useState, type ReactNode } from "react";
 
 import { useMembers, useTask, useTaskAction } from "../api/hooks";
 import type { BlockerReason, SnoozePreset, Task } from "../api/types";
-import type { Key } from "../i18n";
+import { useI18n, type Key } from "../i18n";
 import { errorText } from "../lib/actions";
 import { formatDue, type ViewContext } from "../lib/taskView";
 import { addDays, clock, dayKey, hourIn, zonedInstant } from "../lib/time";
@@ -26,22 +26,13 @@ import { useNavigation } from "../state/navigation";
 import { useMember } from "../state/session";
 import { useToast } from "../state/toast";
 import { haptic, popup } from "../telegram";
-import { Avatar } from "../ui";
+import { Avatar, Skeleton, SheetTitle } from "../ui";
 
 /** The task (usually from the cache) for a sheet about it. */
-function WithTask({ taskId, children }: { taskId: number; children: (task: Task) => ReactNode }) {
+export function WithTask({ taskId, children }: { taskId: number; children: (task: Task) => ReactNode }) {
   const member = useMember();
   const task = useTask(member.companyId, taskId);
-  return task.data ? <>{children(task.data)}</> : <div className="skeleton" style={{ height: 220 }} />;
-}
-
-function SheetHead({ kicker, title }: { kicker: string; title: string }) {
-  return (
-    <div className="ui-sheet-title">
-      <div className="ui-kicker">{kicker}</div>
-      <div className="heading title-sm">{title}</div>
-    </div>
-  );
+  return task.data ? <>{children(task.data)}</> : <Skeleton height={220} />;
 }
 
 // — snooze —
@@ -92,7 +83,7 @@ function SnoozeForm({ task }: { task: Task }) {
   };
   return (
     <>
-      <SheetHead kicker={t("snooze.title")} title={task.title} />
+      <SheetTitle kicker={t("snooze.title")}>{task.title}</SheetTitle>
       <div className="card list-card sheet-options">
         {SNOOZES.filter((option) => personal || option.preset !== "tomorrow_morning").map(({ preset, label: key, icon: Icon }) => (
           <button key={preset} type="button" className="list-item sheet-option" disabled={action.isPending} onClick={() => pick(preset)}>
@@ -141,7 +132,7 @@ const REASONS: { code: BlockerReason; icon: LucideIcon }[] = [
 
 /** "Can't do it" (R2 T57): a reason in one tap, a note if needed; reminders pause, the giver hears. */
 function BlockerForm({ task }: { task: Task }) {
-  const { t } = useViewContext();
+  const { t } = useI18n();
   const member = useMember();
   const navigation = useNavigation();
   const toast = useToast();
@@ -168,7 +159,7 @@ function BlockerForm({ task }: { task: Task }) {
   };
   return (
     <>
-      <SheetHead kicker={t("blocker.open")} title={t("blocker.title")} />
+      <SheetTitle kicker={t("blocker.open")}>{t("blocker.title")}</SheetTitle>
       <div className="ui-chips" role="radiogroup" aria-label={t("blocker.title")}>
         {REASONS.map(({ code: option, icon: Icon }) => (
           <button
@@ -258,7 +249,7 @@ function ExtensionForm({ task }: { task: Task }) {
   };
   return (
     <>
-      <SheetHead kicker={t("extension.open")} title={t("extension.title")} />
+      <SheetTitle kicker={t("extension.open")}>{t("extension.title")}</SheetTitle>
       <div className="ui-chips" role="radiogroup" aria-label={t("extension.title")}>
         {(["30m", "1h", "tomorrow", "pick"] as const).map((option) => (
           <button
@@ -311,7 +302,7 @@ export function ReassignSheet({ taskId }: { taskId: number }) {
 
 /** Hand blocked work to someone else on the branch team. */
 function ReassignForm({ task }: { task: Task }) {
-  const { t } = useViewContext();
+  const { t } = useI18n();
   const member = useMember();
   const navigation = useNavigation();
   const toast = useToast();
@@ -320,7 +311,7 @@ function ReassignForm({ task }: { task: Task }) {
   const people = (members.data ?? []).filter((person) => person.id !== task.assignee.id);
   return (
     <>
-      <SheetHead kicker={t("blocker.reassign")} title={task.title} />
+      <SheetTitle kicker={t("blocker.reassign")}>{task.title}</SheetTitle>
       {members.isPending ? (
         <div className="skeleton" style={{ height: 160 }} />
       ) : people.length === 0 ? (
@@ -400,7 +391,7 @@ function DueForm({ task, resolve }: { task: Task; resolve: boolean }) {
   };
   return (
     <>
-      <SheetHead kicker={t(resolve ? "blocker.newDue" : "menu.due")} title={task.title} />
+      <SheetTitle kicker={t(resolve ? "blocker.newDue" : "menu.due")}>{task.title}</SheetTitle>
       {canClear && (
         <div className="ui-chips">
           <button type="button" className="ui-chip" aria-pressed={!none} onClick={() => setNone(false)}>
@@ -431,7 +422,7 @@ export function EditSheet({ taskId }: { taskId: number }) {
 }
 
 function EditForm({ task }: { task: Task }) {
-  const { t } = useViewContext();
+  const { t } = useI18n();
   const member = useMember();
   const navigation = useNavigation();
   const toast = useToast();
@@ -482,7 +473,7 @@ export function TaskMenuSheet({ taskId }: { taskId: number }) {
  * delete my own task (cancel someone's work), as `task.actions` allows.
  */
 function TaskMenu({ task }: { task: Task }) {
-  const { t } = useViewContext();
+  const { t } = useI18n();
   const member = useMember();
   const navigation = useNavigation();
   const toast = useToast();

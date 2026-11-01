@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
+import { queryOptions, useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
 import { isPending, usePendingVersion } from "../lib/delayedSend";
@@ -49,21 +49,46 @@ export function useMe(options: { poll?: boolean; enabled?: boolean } = {}) {
   });
 }
 
-export function useSummary(company: number) {
-  return useQuery({
+/** Today's numbers, as Home and the tab bar read them (`useSummary`, and `prefetchHome`). */
+const summaryQuery = (company: number) =>
+  queryOptions({
     queryKey: keys.summary(company),
     refetchInterval: LIVE_MS,
     queryFn: () => api<Summary>(`/companies/${company}/summary/`),
   });
+
+/** My open and today's work: Home's "Up next" and the Tasks tabs. */
+const boardQuery = (company: number) =>
+  queryOptions({
+    queryKey: keys.board(company),
+    refetchInterval: LIVE_MS,
+    queryFn: () => api<Page<Task>>(`${tasksPath(company)}/?scope=board&page_size=200`).then((page) => page.results),
+  });
+
+/** The feed: Home's news and the Activity tab. */
+const activityQuery = (company: number) =>
+  queryOptions({
+    queryKey: keys.activity(company),
+    refetchInterval: LIVE_MS,
+    queryFn: () => api<Page<Activity>>(`/companies/${company}/activity/?page_size=100`).then((page) => page.results),
+  });
+
+/**
+ * Start fetching what Home shows while the splash is still up, so Home opens with its numbers
+ * and lists instead of placeholders.
+ */
+export function prefetchHome(client: QueryClient, company: number): void {
+  void client.prefetchQuery(summaryQuery(company));
+  void client.prefetchQuery(boardQuery(company));
+  void client.prefetchQuery(activityQuery(company));
+}
+
+export function useSummary(company: number) {
+  return useQuery(summaryQuery(company));
 }
 
 export function useBoard(company: number) {
-  return useQuery({
-    queryKey: keys.board(company),
-    refetchInterval: LIVE_MS,
-    queryFn: () =>
-      api<Page<Task>>(`${tasksPath(company)}/?scope=board&page_size=200`).then((page) => page.results),
-  });
+  return useQuery(boardQuery(company));
 }
 
 /**
@@ -129,15 +154,8 @@ export function useComments(company: number, id: number) {
   });
 }
 
-export function useActivity(company: number) {
-  return useQuery({
-    queryKey: keys.activity(company),
-    refetchInterval: LIVE_MS,
-    queryFn: () =>
-      api<Page<Activity>>(`/companies/${company}/activity/?page_size=100`).then(
-        (page) => page.results,
-      ),
-  });
+export function useActivity(company: number, enabled = true) {
+  return useQuery({ ...activityQuery(company), enabled });
 }
 
 export function useTeamStats(company: number, period: Period) {
@@ -214,14 +232,24 @@ export function usePositions(company: number) {
 }
 
 /**
+ * Everything someone's work shows up in, fetched again: the task lists, the day's numbers, the
+ * feed and a head's My team (its counts and each person's work). Resolves once all have settled.
+ */
+export function refreshWork(client: QueryClient, company: number, options?: { cancelRefetch?: boolean }): Promise<unknown> {
+  return Promise.allSettled(
+    [keys.tasks(company), keys.summary(company), keys.activity(company), keys.myTeam(company)].map((queryKey) =>
+      client.invalidateQueries({ queryKey }, options),
+    ),
+  );
+}
+
+/**
  * After anything changes a task: refresh lists, numbers and the feed. A plain function as well as
  * a hook, for work that outlives its screen (an Undo pressed after the task closed).
  */
 export function refreshAfterTaskChange(client: QueryClient, company: number, task?: Task) {
   if (task) client.setQueryData(keys.task(company, task.id), task);
-  void client.invalidateQueries({ queryKey: keys.tasks(company) });
-  void client.invalidateQueries({ queryKey: keys.summary(company) });
-  void client.invalidateQueries({ queryKey: keys.activity(company) });
+  void refreshWork(client, company);
 }
 
 function useRefreshAfterTaskChange(company: number) {

@@ -5,6 +5,7 @@ import { useMember } from "../../state/session";
 import { useToast } from "../../state/toast";
 import { haptic } from "../../telegram";
 import { Button, Field, SheetTitle, Textarea } from "../../ui";
+import { errorText } from "../../lib/actions";
 import type { SheetProps } from "../registry";
 import { postUpdate, useRefresh, type Health } from "./api";
 import { messages } from "./messages";
@@ -33,7 +34,7 @@ export default function UpdateSheet({ params, close }: SheetProps) {
       close();
     } catch (error) {
       haptic.notify("error");
-      toast((error as { detail?: string | null }).detail ?? t("moveFailed"), { tone: "error" });
+      toast(errorText(error, t), { tone: "error" });
     } finally {
       setSaving(false);
     }

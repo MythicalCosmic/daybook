@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Task, TimeOff } from "../api/types";
 import en from "../i18n/en";
-import { translate } from "../i18n";
+import { translate, translateFrom } from "../i18n";
 import ru from "../i18n/ru";
 import uz from "../i18n/uz";
 import { glyph, groupTasks, repeatLabel, rowMeta, rowRight, type ViewContext } from "./taskView";
@@ -15,6 +15,8 @@ import {
   dayMonth,
   daysFromToday,
   longDate,
+  minutesBetween,
+  monthYear,
   weekdayShort,
   zonedInstant,
 } from "./time";
@@ -88,6 +90,29 @@ describe("time", () => {
     expect(daysFromToday("2026-10-19T18:00:00Z", NOW, TASHKENT)).toBe(0); // 23:00 tonight, local
     expect(daysFromToday("2026-10-18T19:30:00Z", NOW, TASHKENT)).toBe(0); // 00:30 local
     expect(addDays("2026-12-31", 1)).toBe("2027-01-01");
+  });
+
+  it("names a month with its year, and counts whole minutes between two moments", () => {
+    expect(monthYear("2026-10", "en-GB")).toBe("October 2026");
+    expect(monthYear("2026-10", "uz-Latn-UZ")).toBe("Oktabr 2026");
+    expect(monthYear("2026-10", "ru-RU")).toBe("Октябрь 2026 г.");
+    expect(minutesBetween("2026-10-21T08:00:00Z", new Date("2026-10-21T09:30:59Z"))).toBe(90);
+    expect(minutesBetween("2026-10-21T09:00:00Z", "2026-10-21T08:00:00Z")).toBe(0);
+  });
+
+  it("shows a calendar date (a holiday, a shift's day, a report's range) as that very day in every zone", () => {
+    // A bare "2026-11-02" parses as UTC midnight: the evening before west of Greenwich, and noon
+    // UTC is already the next day in Kiribati (+14).
+    for (const zone of ["America/New_York", TASHKENT, "Pacific/Kiritimati", "UTC"]) {
+      expect(dayKey("2026-11-02", zone)).toBe("2026-11-02");
+      expect(dayMonth("2026-11-02", zone, "en-GB")).toBe("2 Nov");
+      expect(dayMonth("2026-11-02", zone, "uz-Latn-UZ")).toBe("2-noy");
+      expect(weekdayShort("2026-11-02", zone, "en-GB")).toBe("Mon");
+      expect(weekdayShort("2026-11-02", zone, "uz-Latn-UZ")).toBe("Dush");
+    }
+    // A moment still reads in the zone given.
+    expect(dayMonth("2026-11-01T22:00:00Z", TASHKENT, "en-GB")).toBe("2 Nov");
+    expect(dayMonth("2026-11-01T22:00:00Z", "America/New_York", "en-GB")).toBe("1 Nov");
   });
 });
 
@@ -171,7 +196,9 @@ describe("translations", () => {
   });
 
   it("fall back to English for anything missing", () => {
-    expect(translate("uz", "app.name")).toBe("Daybook");
+    // The chain the app uses: the language, then Uzbek, then English.
+    expect(translateFrom([{}, {}, { "x.brand": "Daybook" }], "uz", "x.brand")).toBe("Daybook");
+    expect(translateFrom([{ "x.brand": "Kundalik" }, {}, { "x.brand": "Daybook" }], "uz", "x.brand")).toBe("Kundalik");
   });
 });
 

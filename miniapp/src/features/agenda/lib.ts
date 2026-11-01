@@ -1,6 +1,6 @@
 /** Small helpers of the calendar feature. */
-import { addDays, clock, dayKey, weekdayLong } from "../../lib/time";
-import type { CalendarEntry } from "./api";
+import { addDays, capitalise, clock, dayKey, weekdayLong } from "../../lib/time";
+import { itemDays, type CalendarEntry } from "./api";
 
 // The backend's `console.registry.CALENDAR_COLORS` ("primary" kept for older items).
 const TOKENS = new Set(["chart-1", "chart-2", "chart-3", "chart-4", "chart-5", "chart-6", "chart-7", "chart-8", "danger", "success", "accent", "primary", "warning", "info"]);
@@ -26,8 +26,7 @@ export function weekDays(monday: string): string[] {
 export function byDay(items: readonly CalendarEntry[], days: readonly string[], timeZone: string): Map<string, CalendarEntry[]> {
   const map = new Map<string, CalendarEntry[]>(days.map((day) => [day, []]));
   for (const item of items) {
-    const first = item.all_day ? item.start.slice(0, 10) : dayKey(item.start, timeZone);
-    const last = item.all_day ? (item.end ?? item.start).slice(0, 10) : first;
+    const { first, last } = itemDays(item, (iso) => dayKey(iso, timeZone));
     for (const day of days) if (day >= first && day <= last) map.get(day)!.push(item);
   }
   for (const list of map.values()) {
@@ -47,6 +46,5 @@ export function timeLabel(item: CalendarEntry, timeZone: string, locale: string,
 export function dayName(key: string, today: string, timeZone: string, locale: string, words: { today: string; tomorrow: string }): string {
   if (key === today) return words.today;
   if (key === addDays(today, 1)) return words.tomorrow;
-  const name = weekdayLong(`${key}T12:00:00Z`, timeZone, locale);
-  return name.charAt(0).toUpperCase() + name.slice(1);
+  return capitalise(weekdayLong(key, timeZone, locale));
 }

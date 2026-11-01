@@ -69,8 +69,10 @@
   transform: scale(0.985);
 }
 
-.card--tap.card:not(.card--accent):not(.card--sage):hover {
-  background: color-mix(in srgb, var(--color-surface) 94%, var(--color-text));
+@media (hover: hover) {
+  .card--tap.card:not(.card--accent):not(.card--sage):hover {
+    background: color-mix(in srgb, var(--color-surface) 94%, var(--color-text));
+  }
 }
 
 .ui-card-head {
@@ -526,14 +528,14 @@
 }
 
 .ui-stepper--sm .ui-stepper-btn {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
 }
 
 .ui-stepper--sm .ui-stepper-value,
 .ui-stepper--sm .ui-stepper-input {
-  width: 44px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   font-size: 16px;
 }
 

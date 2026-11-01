@@ -1,9 +1,10 @@
 /** A department head's My team: their people with counts, one person's open and finished work. */
+import type { QueryClient } from "@tanstack/react-query";
 import { cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { keys } from "../api/hooks";
-import { makeTask, membership, person, renderApp } from "../test/harness";
+import { makeTask, membership, navigationState, person, renderApp } from "../test/harness";
 import { Home } from "./Home";
 import { MyTeam } from "./MyTeam";
 import { Profile } from "./Profile";
@@ -65,6 +66,39 @@ describe("My team", () => {
     }
     renderApp(<Home />, { me: person([membership()]) });
     expect(screen.queryByRole("button", { name: /My team/ })).toBeNull();
+  });
+
+  it("draws each person as a row (avatar, numbers, chevron), a borderless card button", () => {
+    renderApp(<MyTeam />, {
+      me: head(),
+      seed: (client) =>
+        client.setQueryData(keys.myTeam(1), {
+          departments: ["Moliya Bolimi"],
+          people: [{ id: 9, name: "Alisher Valiyev", position: "Kassir", department: "Moliya Bolimi", open: 3, late: 0, done_week: 5 }],
+        }),
+    });
+    // Was a plain `.card` button: a column with everything centred and the button's own border.
+    const row = screen.getByRole("button", { name: /Alisher Valiyev/ });
+    expect(row.classList.contains("card--row")).toBe(true);
+    expect(row.classList.contains("card--tap")).toBe(true);
+    expect(row.querySelector(".avatar")?.textContent).toBe("AV");
+  });
+
+  it("has a way back on My team, a person and team results where Telegram draws no back button", () => {
+    const seed = (client: QueryClient) => {
+      client.setQueryData(keys.myTeam(1), { departments: ["Moliya Bolimi"], people: [] });
+      client.setQueryData(keys.teamPerson(1, 9), {
+        person: { id: 9, name: "Alisher Valiyev", position: "Kassir", department: "Moliya Bolimi", open: 0, late: 0, done_week: 0 },
+        open: [],
+        done: [],
+      });
+    };
+    for (const page of [<MyTeam key="team" />, <TeamPerson key="person" memberId={9} />]) {
+      renderApp(page, { me: head(), seed, init: { stack: [{ feature: "core", page: "myTeam" }, { feature: "core", page: "teamPerson", params: { id: 9 } }] } });
+      fireEvent.click(screen.getByRole("button", { name: "Back" }));
+      expect(navigationState().stack).toHaveLength(1);
+      cleanup();
+    }
   });
 
   it("is on Me only for someone who heads a department", () => {

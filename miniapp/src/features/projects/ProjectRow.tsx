@@ -3,7 +3,6 @@ import { CalendarDays, Check, Flag } from "lucide-react";
 import { useI18n } from "../../i18n";
 import { useFeatureT } from "../../i18n/feature";
 import { dayMonth } from "../../lib/time";
-import { useMember } from "../../state/session";
 import { Badge, CardButton, ProgressRing } from "../../ui";
 import type { Project } from "./api";
 import { colorClass, healthTone } from "./lib";
@@ -14,7 +13,6 @@ import "./projects.css";
 export function ProjectRow({ project, onOpen, compact = false }: { project: Project; onOpen: () => void; compact?: boolean }) {
   const t = useFeatureT(messages);
   const { locale } = useI18n();
-  const member = useMember();
   const tone = healthTone(project.health);
   const live = project.status === "active";
   return (
@@ -41,12 +39,12 @@ export function ProjectRow({ project, onOpen, compact = false }: { project: Proj
           </span>
           {!compact && project.next_milestone?.due_on && (
             <span className="prj-meta">
-              <Flag size={12} strokeWidth={2.4} aria-hidden /> {t("next", { name: project.next_milestone.name, date: dayMonth(`${project.next_milestone.due_on}T12:00:00Z`, "UTC", locale) })}
+              <Flag size={12} strokeWidth={2.4} aria-hidden /> {t("next", { name: project.next_milestone.name, date: dayMonth(project.next_milestone.due_on, "UTC", locale) })}
             </span>
           )}
           {!compact && !project.next_milestone && project.due_on && (
             <span className="prj-meta">
-              <CalendarDays size={12} strokeWidth={2.4} aria-hidden /> {t("due", { date: dayMonth(`${project.due_on}T12:00:00Z`, member.timeZone, locale) })}
+              <CalendarDays size={12} strokeWidth={2.4} aria-hidden /> {t("due", { date: dayMonth(project.due_on, "UTC", locale) })}
             </span>
           )}
         </span>

@@ -25,6 +25,18 @@ export type PluralKey = PluralBase<Key>;
 export type { Key };
 export type Translate = (key: Key | PluralKey, vars?: Vars) => string;
 
+const pluralRules = new Map<Lang, Intl.PluralRules>();
+
+/** The language's plural category for `count` ("one", "few", "many", "other"); one rule object per language. */
+function pluralOf(lang: Lang, count: number): Intl.LDMLPluralRule {
+  let rules = pluralRules.get(lang);
+  if (!rules) {
+    rules = new Intl.PluralRules(LOCALES[lang]);
+    pluralRules.set(lang, rules);
+  }
+  return rules.select(count);
+}
+
 /**
  * Look `key` up through `chain` (most specific dictionary first). With a numeric `count`, the
  * plural form for the language wins over the plain key in every dictionary of the chain.
@@ -32,7 +44,7 @@ export type Translate = (key: Key | PluralKey, vars?: Vars) => string;
 export function translateFrom(chain: readonly Dictionary[], lang: Lang, key: string, vars?: Vars): string {
   let template: string | undefined;
   if (typeof vars?.count === "number") {
-    const rule = new Intl.PluralRules(LOCALES[lang]).select(vars.count);
+    const rule = pluralOf(lang, vars.count);
     for (const dictionary of chain) {
       template = dictionary[`${key}_${rule}`] ?? dictionary[`${key}_other`];
       if (template !== undefined) break;

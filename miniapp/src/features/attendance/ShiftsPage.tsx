@@ -45,7 +45,7 @@ export default function ShiftsPage() {
 
       {shifts.isPending ? (
         <SkeletonList count={5} />
-      ) : shifts.isError ? (
+      ) : shifts.isError && !shifts.data ? (
         <LoadError error={shifts.error} onRetry={() => void shifts.refetch()} />
       ) : !shifts.data?.length ? (
         <EmptyState icon={CalendarX2} tone="sage" title={t("shifts.empty")} body={t("shifts.emptyBody")} />

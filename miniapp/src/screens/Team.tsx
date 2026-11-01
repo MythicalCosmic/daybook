@@ -5,11 +5,11 @@ import type { Period, Score, TeamRow } from "../api/types";
 import { Ring } from "../components/Ring";
 import { useI18n, type Translate } from "../i18n";
 import { duration } from "../lib/taskView";
-import { nameInitials, tone, type Tone } from "../lib/team";
+import { tone, type Tone } from "../lib/team";
 import { dayMonth } from "../lib/time";
+import { useNavigation } from "../state/navigation";
 import { useMember } from "../state/session";
-import { haptic } from "../telegram";
-import { LoadError } from "../ui";
+import { Avatar, Card, LoadError, PageHeader, Screen, SectionHead, Segmented, Skeleton } from "../ui";
 
 const PERIODS: Period[] = ["week", "last_week", "month"];
 const TONE_TAG: Record<Tone, string> = {
@@ -23,99 +23,79 @@ const TONE_TAG: Record<Tone, string> = {
 export function Team() {
   const { t, locale } = useI18n();
   const member = useMember();
+  const navigation = useNavigation();
   const [period, setPeriod] = useState<Period>("week");
   const stats = useTeamStats(member.companyId, period);
   const data = stats.data;
-  // Dates without a time: read them at noon UTC so no timezone moves the day.
-  const day = (date: string) => dayMonth(`${date}T12:00:00Z`, "UTC", locale);
 
   return (
     <div className="detail-layer">
-      <div className="screen screen--detail">
-        <div style={{ padding: "0 4px" }}>
-          <div className="muted" style={{ fontSize: 14, fontWeight: 600 }}>{member.company.name}</div>
-          <h1 className="heading" style={{ fontSize: 30, lineHeight: 1.1 }}>{t("team.title")}</h1>
-        </div>
+      <Screen variant="detail">
+        <PageHeader kicker={member.company.name} title={t("team.title")} onBack={navigation.pop} />
 
-        <div className="seg seg--fit">
-          {PERIODS.map((option) => (
-            <button
-              key={option}
-              className="seg-opt"
-              aria-pressed={period === option}
-              onClick={() => {
-                haptic();
-                setPeriod(option);
-              }}
-            >
-              {t(`team.period.${option}`)}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          fit
+          label={t("team.title")}
+          options={PERIODS.map((option) => ({ value: option, label: t(`team.period.${option}`) }))}
+          value={period}
+          onChange={setPeriod}
+        />
 
         {!data ? (
           stats.isError ? (
             <LoadError compact error={stats.error} onRetry={() => void stats.refetch()} />
           ) : (
             <>
-              <div className="skeleton" style={{ height: 132 }} />
-              <div className="skeleton" style={{ height: 260 }} />
+              <Skeleton height={132} />
+              <Skeleton height={260} />
             </>
           )
         ) : (
           <>
-            <Totals score={data.totals} range={`${day(data.start)}–${day(data.end)}`} t={t} />
-            <div className="section-head section-head--small">{t("team.people")}</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <Totals score={data.totals} range={`${dayMonth(data.start, member.timeZone, locale)}–${dayMonth(data.end, member.timeZone, locale)}`} t={t} />
+            <SectionHead size="small">{t("team.people")}</SectionHead>
+            <div className="team-people">
               {data.members.map((row) => (
                 <Person key={row.member.id} row={row} t={t} />
               ))}
             </div>
           </>
         )}
-      </div>
+      </Screen>
     </div>
   );
 }
 
 function Totals({ score, range, t }: { score: Score; range: string; t: Translate }) {
   return (
-    <div className="card" style={{ padding: 18, gap: 14 }}>
+    <Card className="team-totals">
       {score.total === 0 ? (
-        <span className="muted" style={{ fontSize: 15 }}>
+        <span className="muted">
           {t("team.empty")} <span className="num">{range}</span>
         </span>
       ) : (
         <>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div className="team-totals-head">
             <Ring done={score.on_time} total={score.total} />
-            <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
-              <span className="heading num" style={{ fontSize: 32, lineHeight: 1 }}>
-                {score.on_time_percent}%
-              </span>
-              <span style={{ fontSize: 14, fontWeight: 600 }}>
+            <div className="team-totals-text">
+              <span className="heading num team-totals-percent">{score.on_time_percent}%</span>
+              <span className="team-totals-label">
                 {t("team.onTime")} · <span className="num">{range}</span>
               </span>
             </div>
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          <div className="team-totals-tags">
             {score.late > 0 && <span className="tag tag-neutral">{t("team.late", { count: score.late })}</span>}
             {score.missed > 0 && <span className="tag tag-accent">{t("team.missed", { count: score.missed })}</span>}
             {score.avg_delay_minutes != null && (
-              <span className="tag tag-neutral">
-                {t("team.avgDelay", { duration: duration(score.avg_delay_minutes, t) })}
-              </span>
+              <span className="tag tag-neutral">{t("team.avgDelay", { duration: duration(score.avg_delay_minutes, t) })}</span>
             )}
-            {score.reminders > 0 && (
-              <span className="tag tag-neutral">{t("team.reminders", { count: score.reminders })}</span>
-            )}
+            {score.reminders > 0 && <span className="tag tag-neutral">{t("team.reminders", { count: score.reminders })}</span>}
           </div>
         </>
       )}
-      {score.late_now > 0 && (
-        <span className="row-meta row-meta--alert">{t("team.lateNow", { count: score.late_now })}</span>
-      )}
-    </div>
+      {score.late_now > 0 && <span className="row-meta row-meta--alert">{t("team.lateNow", { count: score.late_now })}</span>}
+    </Card>
   );
 }
 
@@ -130,19 +110,13 @@ function Person({ row, t }: { row: TeamRow; t: Translate }) {
     .join(" · ");
   return (
     <div className="row row--static">
-      <span className="avatar" style={{ width: 40, height: 40, fontSize: 14 }}>
-        {nameInitials(row.member.name)}
-      </span>
+      <Avatar name={row.member.name} size="md" />
       <div className="row-main">
         <span className="row-title">{row.member.name}</span>
         <span className="row-meta row-meta--wrap">{meta}</span>
-        {row.late_now > 0 && (
-          <span className="row-meta row-meta--alert">{t("team.lateNow", { count: row.late_now })}</span>
-        )}
+        {row.late_now > 0 && <span className="row-meta row-meta--alert">{t("team.lateNow", { count: row.late_now })}</span>}
       </div>
-      {row.on_time_percent != null && (
-        <span className={`tag ${TONE_TAG[tone(row)]} num`}>{row.on_time_percent}%</span>
-      )}
+      {row.on_time_percent != null && <span className={`tag ${TONE_TAG[tone(row)]} num`}>{row.on_time_percent}%</span>}
     </div>
   );
 }

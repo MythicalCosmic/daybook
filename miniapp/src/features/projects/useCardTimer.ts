@@ -1,6 +1,7 @@
 import { useFeatureT } from "../../i18n/feature";
 import { useToast } from "../../state/toast";
 import { haptic } from "../../telegram";
+import { errorText } from "../../lib/actions";
 import { useTimerAction } from "./api";
 import { hhmm } from "./lib";
 import { messages } from "./messages";
@@ -15,7 +16,7 @@ export function useCardTimer(company: number) {
   const action = useTimerAction(company);
   const failed = (error: unknown) => {
     haptic.notify("error");
-    toast((error as { detail?: string | null }).detail ?? t("timerFailed"), { tone: "error" });
+    toast(errorText(error, t, t("timerFailed")), { tone: "error" });
   };
   return {
     busy: action.isPending,

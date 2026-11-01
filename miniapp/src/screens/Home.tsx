@@ -84,7 +84,7 @@ export function Home() {
             numbers.off_today.until === dayKey(ctx.now, ctx.timeZone)
               ? t("home.offTodayBody")
               : // The full month: "25-oktabrgacha" reads right, "25-oktgacha" would not.
-                t("home.offUntil", { date: dayMonthLong(`${numbers.off_today.until}T12:00:00Z`, "UTC", ctx.locale) })
+                t("home.offUntil", { date: dayMonthLong(numbers.off_today.until, ctx.timeZone, ctx.locale) })
           }
           wrap
         />

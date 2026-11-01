@@ -3,7 +3,7 @@
  * check-out opens it with the record): the times I really came and left and what happened. The
  * manager decides; the change is audited on their side.
  */
-import { SearchX, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { useState } from "react";
 
 import { useI18n } from "../../i18n";
@@ -11,7 +11,7 @@ import { errorText } from "../../lib/actions";
 import { addDays, dayKey, dayMonth, weekdayShort } from "../../lib/time";
 import { useMember } from "../../state/session";
 import { haptic } from "../../telegram";
-import { Button, EmptyState, Field, Input, SheetTitle, SkeletonList, Textarea, useToast } from "../../ui";
+import { Button, Field, Input, LoadError, SheetTitle, SkeletonList, Textarea, useToast } from "../../ui";
 import type { SheetProps } from "../registry";
 import { useRecord, useRequestCorrection } from "./api";
 import { wallClock } from "./lib";
@@ -21,12 +21,11 @@ import type { AttendanceRecord } from "./types";
 import "./attendance.css";
 
 export default function CorrectSheet({ params, close }: SheetProps) {
-  const t = usePageT();
   const member = useMember();
   const recordId = params.record !== undefined && Number.isFinite(Number(params.record)) ? Number(params.record) : null;
   const record = useRecord(member.companyId, recordId);
   if (recordId !== null && record.isPending) return <SkeletonList count={3} height={56} />;
-  if (recordId !== null && record.isError) return <EmptyState compact icon={SearchX} tone="sage" title={t("ui.notFound.title")} body={t("ui.notFound.body")} />;
+  if (recordId !== null && !record.data) return <LoadError compact error={record.error} onRetry={() => void record.refetch()} />;
   const date = record.data?.date ?? (typeof params.date === "string" ? params.date : null);
   return <CorrectForm record={record.data ?? null} initialDate={date} close={close} />;
 }
@@ -72,13 +71,13 @@ function CorrectForm({ record, initialDate, close }: { record: AttendanceRecord 
         },
         onError: (error) => {
           haptic.notify("error");
-          toast(errorText(error, t));
+          toast(errorText(error, t), { tone: "error" });
         },
       },
     );
   };
 
-  const kicker = date ? `${weekdayShort(`${date}T12:00:00Z`, "UTC", locale)}, ${dayMonth(`${date}T12:00:00Z`, "UTC", locale)}` : undefined;
+  const kicker = date ? `${weekdayShort(date, "UTC", locale)}, ${dayMonth(date, "UTC", locale)}` : undefined;
   return (
     <div className="att-sheet">
       <SheetTitle kicker={kicker}>{t("link.fix")}</SheetTitle>

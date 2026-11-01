@@ -9,7 +9,7 @@ import { useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
 import { openLink } from "../../telegram";
 import { Badge, Button, cx, DenominationCounter, EmptyState, NumberPad, type NoteCounts } from "../../ui";
-import type { Movement, Shift } from "./api";
+import { isDenied, type Movement, type Shift } from "./api";
 import { leavesTill, MOVEMENT_ICON, movementMeta, movementTitle, shiftLook, useKassaT, useMoney } from "./lib";
 
 /**
@@ -98,12 +98,11 @@ export function ShiftRow({ shift, currency }: { shift: Shift; currency: string }
   const { timeZone } = useMember();
   const navigation = useNavigation();
   const money = useMoney(currency);
-  const day = new Date(`${shift.business_day}T12:00:00Z`);
   return (
     <button type="button" className="row kassa-shift-row" onClick={() => navigation.push({ feature: "kassa", page: "shift", params: { id: shift.id } })}>
       <span className="kassa-day" aria-hidden>
-        <span className="kassa-day-num num">{day.getUTCDate()}</span>
-        <span className="kassa-day-week">{weekdayShort(day, "UTC", locale)}</span>
+        <span className="kassa-day-num num">{Number(shift.business_day.slice(8))}</span>
+        <span className="kassa-day-week">{weekdayShort(shift.business_day, "UTC", locale)}</span>
       </span>
       <span className="row-main">
         <span className="row-title num">{money(shift.net, { compact: true })}</span>
@@ -158,6 +157,22 @@ export function NoShift({ onDone }: { onDone: () => void }) {
 export function Denied({ compact = false }: { compact?: boolean }) {
   const t = useKassaT();
   return <EmptyState compact={compact} icon={Lock} tone="sage" title={t("denied.title")} body={t("denied.body")} />;
+}
+
+/**
+ * What a till screen shows instead of its data, or null when the data is there to show: the
+ * placeholder while it first loads, "not yours" when the server refuses, what failed (with a
+ * retry) when nothing loaded. A background refetch that fails keeps the screen as it was: data
+ * already here wins, and a form half filled in stays.
+ */
+export function beforeData(
+  query: { data: unknown; isError: boolean; error: unknown; refetch: () => unknown },
+  placeholder: ReactNode,
+  compact = false,
+): ReactNode {
+  if (query.isError && isDenied(query.error)) return <Denied compact={compact} />;
+  if (query.data !== undefined) return null;
+  return query.isError ? <ErrorScreen compact={compact} error={query.error} retry={() => void query.refetch()} /> : placeholder;
 }
 
 /** Something failed to load: say so and offer a retry. */

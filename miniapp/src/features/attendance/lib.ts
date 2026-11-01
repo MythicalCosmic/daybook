@@ -23,11 +23,6 @@ export function fenceCheck(branch: BranchGeo | null, fix: Pick<LocationFix, "lat
   return { distance, outside: distance > branch.geofence_m + allowance };
 }
 
-/** Whole minutes from `from` to `to` (never negative). */
-export function minutesBetween(from: string | Date, to: string | Date): number {
-  return Math.max(0, Math.floor((new Date(to).getTime() - new Date(from).getTime()) / 60_000));
-}
-
 /** Hours and minutes of a duration, for the "{h} h {m} min" style messages. */
 export function hoursMinutes(minutes: number): { h: number; m: number } {
   const total = Math.max(0, Math.round(minutes));

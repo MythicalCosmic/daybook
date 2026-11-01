@@ -68,6 +68,21 @@ describe("bottom bar", () => {
     expect(main.setParams).toHaveBeenLastCalledWith(expect.objectContaining({ text: "Mark as done" }));
   });
 
+  it("repaints Telegram's buttons in the new theme's colours when the theme changes", async () => {
+    const { BottomBar, main, secondary } = await setup();
+    Object.assign(window.Telegram.WebApp, { setHeaderColor: vi.fn(), setBackgroundColor: vi.fn(), setBottomBarColor: vi.fn() });
+    const { applyTheme } = await import("../theme");
+    applyTheme("light");
+    render(<BottomBar primary={{ text: "Send", onClick: () => undefined }} secondary={{ text: "Later", onClick: () => undefined }} />);
+    expect(main.setParams).toHaveBeenLastCalledWith(expect.objectContaining({ text: "Send", text_color: "#f5ead8" }));
+    expect(secondary.setParams).toHaveBeenLastCalledWith(expect.objectContaining({ text: "Later", color: "#ebddc5" }));
+    // Telegram went to night mode (or Me's theme was picked) while the buttons show.
+    applyTheme("dark");
+    expect(main.setParams).toHaveBeenLastCalledWith(expect.objectContaining({ text: "Send", text_color: "#24221d" }));
+    expect(secondary.setParams).toHaveBeenLastCalledWith(expect.objectContaining({ text: "Later", color: "#2e2b25", text_color: "#f5ead8" }));
+    applyTheme("light");
+  });
+
   it("uses Telegram's buttons when the client has them, and draws nothing in the page", async () => {
     const { BottomBar, main, secondary } = await setup();
     const send = vi.fn();

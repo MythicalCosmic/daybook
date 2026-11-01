@@ -23,11 +23,25 @@ export function saveThemeMode(mode: ThemeMode): void {
   }
 }
 
+const repainters = new Set<() => void>();
+
+/**
+ * Run `repaint` whenever the theme changes (Telegram switched to night mode, or Me's theme was
+ * picked): what draws with the theme's colours outside CSS, such as Telegram's own buttons, takes
+ * the new ones. Returns the function that stops it.
+ */
+export function onThemeApplied(repaint: () => void): () => void {
+  repainters.add(repaint);
+  return () => repainters.delete(repaint);
+}
+
 export function applyTheme(mode: ThemeMode): void {
   const dark = mode === "dark" || (mode === "auto" && colorScheme() === "dark");
   const theme = dark ? "dark" : "light";
+  const changed = document.documentElement.dataset.theme !== theme;
   document.documentElement.dataset.theme = theme;
   paintChrome(GROUND[theme]);
+  if (changed) repainters.forEach((repaint) => repaint());
 }
 
 // Telegram's native buttons take plain hex too: the accent and surface of each theme.

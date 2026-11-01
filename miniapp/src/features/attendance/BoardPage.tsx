@@ -9,12 +9,12 @@ import { CalendarOff, Lock, MapPin } from "lucide-react";
 import { can } from "../../api/permissions";
 import { useI18n } from "../../i18n";
 import { formatDistance } from "../../lib/location";
-import { longDate } from "../../lib/time";
+import { longDate, minutesBetween } from "../../lib/time";
 import { useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
 import { Avatar, Badge, EmptyState, ListCard, ListRow, LoadError, PageHeader, Screen, SectionHead, SkeletonList, Stat, StatGrid } from "../../ui";
 import { useBoard } from "./api";
-import { minutesBetween, wallClock } from "./lib";
+import { wallClock } from "./lib";
 import { codeLabel, usePageT, type PageKey, type PageT } from "./pageText";
 import { duration } from "./text";
 import type { Board, BoardRow, BoardState } from "./types";
@@ -41,7 +41,7 @@ export default function BoardPage() {
         <EmptyState icon={Lock} tone="sage" title={t("board.denied")} body={t("board.deniedBody")} />
       ) : board.isPending ? (
         <SkeletonList count={6} />
-      ) : board.isError || !data ? (
+      ) : !data ? (
         <LoadError error={board.error} onRetry={() => void board.refetch()} />
       ) : !data.people.length ? (
         <EmptyState icon={CalendarOff} tone="sage" title={t("board.empty")} body={t("board.emptyBody")} />

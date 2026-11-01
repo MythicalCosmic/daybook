@@ -1,4 +1,4 @@
-import { BarChart3, Check, ChevronRight, Flame, PartyPopper, TreePalm, Users } from "lucide-react";
+import { BarChart3, Check, Flame, PartyPopper, TreePalm, Users } from "lucide-react";
 import { useState } from "react";
 
 import { useCancelTimeOff, useHolidays, useSummary, useTimeOff } from "../api/hooks";
@@ -11,10 +11,12 @@ import { cancellable, current, STATUS_TAG } from "../lib/timeOff";
 import { dayKey, dayMonth, weekdayShort } from "../lib/time";
 import { useToast } from "../state/toast";
 import { CORE, useNavigation } from "../state/navigation";
-import { initials, useMember, useSession } from "../state/session";
-import { close, haptic } from "../telegram";
+import { useMember, useSession } from "../state/session";
+import { close } from "../telegram";
 import { applyTheme, saveThemeMode, savedThemeMode, type ThemeMode } from "../theme";
-import { Skeleton } from "../ui";
+import { Avatar, ListRow, Segmented, Skeleton } from "../ui";
+
+const THEMES: readonly ThemeMode[] = ["auto", "light", "dark"];
 
 export function Profile() {
   const { t, lang, locale } = useI18n();
@@ -31,8 +33,7 @@ export function Profile() {
   const replaced = useReplacedEntries();
   const numbers = summary.data;
   const today = dayKey(new Date(), member.timeZone);
-  // Dates without a time: read them at noon UTC so no timezone moves the day.
-  const day = (date: string) => dayMonth(`${date}T12:00:00Z`, "UTC", locale);
+  const day = (date: string) => dayMonth(date, member.timeZone, locale);
   const whole = (date: string) => <span className="nowrap">{day(date)}</span>;
   const span = (first: string, last: string) =>
     first === last ? (
@@ -44,18 +45,23 @@ export function Profile() {
     );
 
   const pickTheme = (mode: ThemeMode) => {
-    haptic();
     setTheme(mode);
     saveThemeMode(mode);
     applyTheme(mode);
   };
+  const teamRows = [
+    (member.heads?.length ?? 0) > 0 && (
+      <ListRow key="myTeam" icon={Users} title={t("myTeam.title")} value={member.heads?.join(", ")} onClick={() => navigation.push({ feature: CORE, page: "myTeam" })} />
+    ),
+    member.permissions.includes("reports.view") && !replaced.has("teamResults") && (
+      <ListRow key="results" icon={BarChart3} title={t("profile.team")} onClick={() => navigation.openPage("team")} />
+    ),
+  ].filter(Boolean);
 
   return (
     <div className="screen fade-in">
       <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "0 4px var(--space-2)" }}>
-        <div className="avatar" style={{ width: 64, height: 64, fontSize: 22 }}>
-          {initials(member.first_name, member.last_name)}
-        </div>
+        <Avatar name={`${member.first_name} ${member.last_name}`} size="lg" />
         <div style={{ minWidth: 0 }}>
           <h1 className="heading" style={{ fontSize: 26, lineHeight: 1.1 }}>
             {member.first_name} {member.last_name}
@@ -93,7 +99,7 @@ export function Profile() {
         </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
           {(numbers?.week ?? []).map((day) => (
-            <WeekDot key={day.date} day={day} label={day.state === "today" ? t("week.today") : weekdayShort(`${day.date}T12:00:00Z`, "UTC", locale)} />
+            <WeekDot key={day.date} day={day} label={day.state === "today" ? t("week.today") : weekdayShort(day.date, member.timeZone, locale)} />
           ))}
         </div>
       </div>
@@ -133,7 +139,7 @@ export function Profile() {
                       onClick={() =>
                         cancelTimeOff.mutate(item.id, {
                           onSuccess: () => toast(t("timeOff.toastCancelled")),
-                          onError: (error) => toast(errorText(error, t)),
+                          onError: (error) => toast(errorText(error, t), { tone: "error" }),
                         })
                       }
                     >
@@ -152,71 +158,25 @@ export function Profile() {
                 <span className="list-item-value num">{day(holiday.date)}</span>
               </div>
             ))}
-            <button className="list-item" onClick={() => navigation.openSheet({ kind: "timeOff" })}>
-              <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <TreePalm size={20} strokeWidth={2.4} />
-                {t("timeOff.request")}
-              </span>
-              <span className="list-item-value">
-                <ChevronRight size={18} strokeWidth={2.5} />
-              </span>
-            </button>
+            <ListRow icon={TreePalm} title={t("timeOff.request")} onClick={() => navigation.openSheet({ kind: "timeOff" })} />
           </div>
         </>
       )}
 
-      {/* A department head's people and their work. */}
-      {(member.heads?.length ?? 0) > 0 && (
-        <div className="card list-card">
-          <button className="list-item" onClick={() => navigation.push({ feature: CORE, page: "myTeam" })}>
-            <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <Users size={20} strokeWidth={2.4} />
-              {t("myTeam.title")}
-            </span>
-            <span className="list-item-value">
-              {member.heads?.join(", ")}
-              <ChevronRight size={18} strokeWidth={2.5} />
-            </span>
-          </button>
-        </div>
-      )}
-
-      {/* Feature rows on Me, grouped; the built-in Team results row leads the team group. */}
-      <FeatureSlot
-        name="me.items"
-        builtIns={{
-          team: member.permissions.includes("reports.view") && !replaced.has("teamResults") && (
-            <button className="list-item" onClick={() => navigation.openPage("team")}>
-              <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <BarChart3 size={20} strokeWidth={2.4} />
-                {t("profile.team")}
-              </span>
-              <span className="list-item-value">
-                <ChevronRight size={18} strokeWidth={2.5} />
-              </span>
-            </button>
-          ),
-        }}
-      />
+      {/* Feature rows on Me, grouped; the team group starts with the app's own rows: a head's
+          people (My team) and the team results. */}
+      <FeatureSlot name="me.items" builtIns={{ team: teamRows.length ? <>{teamRows}</> : undefined }} />
 
       <div className="section-head section-head--small">{t("profile.settings")}</div>
       <div className="card list-card">
         {companies.length > 1 && (
-          <button className="list-item" onClick={() => navigation.openSheet({ kind: "company" })}>
-            <span>{t("profile.company")}</span>
-            <span className="list-item-value">
-              {member.company.name}
-              <ChevronRight size={18} strokeWidth={2.5} />
-            </span>
-          </button>
+          <ListRow title={t("profile.company")} value={member.company.name} onClick={() => navigation.openSheet({ kind: "company" })} />
         )}
-        <button className="list-item" onClick={() => navigation.openSheet({ kind: "language" })}>
-          <span>{t("profile.language")}</span>
-          <span className="list-item-value">
-            {LANGUAGES.find((language) => language.code === lang)?.name}
-            <ChevronRight size={18} strokeWidth={2.5} />
-          </span>
-        </button>
+        <ListRow
+          title={t("profile.language")}
+          value={LANGUAGES.find((language) => language.code === lang)?.name}
+          onClick={() => navigation.openSheet({ kind: "language" })}
+        />
         {/* Quiet hours sit with the settings: a "My work" group above the features' "Work" read as two. */}
         {numbers?.quiet_from && numbers.quiet_until && (
           <div className="list-item">
@@ -231,13 +191,13 @@ export function Profile() {
         )}
         <div className="list-item" style={{ minHeight: 58 }}>
           <span>{t("profile.theme")}</span>
-          <div className="seg seg--small">
-            {(["auto", "light", "dark"] as const).map((mode) => (
-              <button key={mode} className="seg-opt" aria-pressed={theme === mode} onClick={() => pickTheme(mode)}>
-                {t(`theme.${mode}`)}
-              </button>
-            ))}
-          </div>
+          <Segmented
+            size="small"
+            label={t("profile.theme")}
+            options={THEMES.map((mode) => ({ value: mode, label: t(`theme.${mode}`) }))}
+            value={theme}
+            onChange={pickTheme}
+          />
         </div>
       </div>
 

@@ -308,6 +308,33 @@ describe("screens", () => {
     expect(nav!.sheet).toEqual({ kind: "feature", feature: "projects", sheet: "card", params: { project: 5, id: 2 } });
   });
 
+  it("open a card I can't move on tap too (a colleague's card), as a finger taps it", async () => {
+    renderWith(<BoardPage params={{ id: 5 }} />);
+    const tile = (await screen.findByText("Order shelves")).closest("button")!;
+    act(() => {
+      fireEvent.pointerDown(tile, { pointerId: 1, clientX: 10, clientY: 10, button: 0 });
+      fireEvent.pointerUp(tile, { pointerId: 1 });
+      fireEvent.click(tile, { detail: 1 });
+    });
+    expect(nav!.sheet).toEqual({ kind: "feature", feature: "projects", sheet: "card", params: { project: 5, id: 3 } });
+  });
+
+  it("refresh my task lists and the day's numbers after a card moves (a card is a task)", async () => {
+    server.handler = (path, method, json) => {
+      if (path.endsWith("/cards/1/move/") && method === "POST") return { card: card(1, (json as { list: number }).list, { status: "done" }), message: "" };
+      if (path === "/companies/1/projects/5/board/") return state.board;
+      if (path === "/companies/1/projects/timer/") return { timer: null };
+      return undefined;
+    };
+    const { client } = renderWith(<CardSheet params={{ project: 5, id: 1 }} close={() => {}} />);
+    client.setQueryData(["tasks", 1, "board"], []);
+    client.setQueryData(["summary", 1], {});
+    await screen.findByText("Move to");
+    act(() => fireEvent.click(screen.getByRole("button", { name: "Done" })));
+    await waitFor(() => expect(client.getQueryState(["tasks", 1, "board"])?.isInvalidated).toBe(true));
+    expect(client.getQueryState(["summary", 1])?.isInvalidated).toBe(true);
+  });
+
   it("move my card at once and keep the server's answer", async () => {
     let release: (value: unknown) => void = () => {};
     server.handler = (path, method, json) => {

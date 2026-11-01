@@ -6,6 +6,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "../../api/client";
+import { refreshWork } from "../../api/hooks";
 
 export type Health = "on_track" | "at_risk" | "off_track";
 export type ProjectStatus = "planning" | "active" | "on_hold" | "completed" | "cancelled";
@@ -179,6 +180,11 @@ export function useMoveCard(company: number, projectId: number) {
     onError: (_error, _vars, context) => {
       if (context?.snapshot) client.setQueryData(context.key, context.snapshot);
     },
-    onSettled: () => void refresh(),
+    // A card is a task: moved to Done or Review it is finished (the server completes it), so my
+    // lists, the day's numbers and the feed change too.
+    onSettled: () => {
+      void refresh();
+      void refreshWork(client, company);
+    },
   });
 }

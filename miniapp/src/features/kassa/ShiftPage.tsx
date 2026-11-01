@@ -8,25 +8,17 @@ import { useMember } from "../../state/session";
 import { openLink } from "../../telegram";
 import { Banner, Card, CardTitle, PageHeader, Screen, ScreenSkeleton, SectionHead } from "../../ui";
 import type { PageProps } from "../registry";
-import { isDenied, useKassa, useShift, type ShiftDetail } from "./api";
+import { useKassa, useShift, type ShiftDetail } from "./api";
 import { useKassaT, useMoney } from "./lib";
-import { Denied, ErrorScreen, Line, Lines, MovementRow, ShiftBadge } from "./parts";
+import { beforeData, Line, Lines, MovementRow, ShiftBadge } from "./parts";
 
 /** One of my shifts: how it ended (once checked), the sales, the cash, the moves and photos. */
 export default function ShiftPage({ params }: PageProps) {
   const member = useMember();
   const shift = useShift(member.companyId, Number(params.id));
   const kassa = useKassa(member.companyId);
-  if (shift.isPending) {
-    return (
-      <Screen variant="detail">
-        <ScreenSkeleton variant="detail" delay={150} />
-      </Screen>
-    );
-  }
-  if (shift.isError) {
-    return <Screen variant="detail">{isDenied(shift.error) ? <Denied /> : <ErrorScreen error={shift.error} retry={() => shift.refetch()} />}</Screen>;
-  }
+  const instead = beforeData(shift, <ScreenSkeleton variant="detail" delay={150} />);
+  if (instead || !shift.data) return <Screen variant="detail">{instead}</Screen>;
   return <Detail shift={shift.data} currency={kassa.data?.settings.currency ?? "UZS"} />;
 }
 
@@ -36,7 +28,6 @@ function Detail({ shift, currency }: { shift: ShiftDetail; currency: string }) {
   const { timeZone } = useMember();
   const navigation = useNavigation();
   const money = useMoney(currency);
-  const day = new Date(`${shift.business_day}T12:00:00Z`);
   const hours = shift.closed_at
     ? `${clock(shift.opened_at, timeZone, locale)}–${clock(shift.closed_at, timeZone, locale)}`
     : t("time.since", { time: clock(shift.opened_at, timeZone, locale) });
@@ -53,7 +44,7 @@ function Detail({ shift, currency }: { shift: ShiftDetail; currency: string }) {
         title={shift.code}
         subtitle={
           <span className="num">
-            {weekdayLong(day, "UTC", locale)}, {dayMonth(day, "UTC", locale)} · {hours}
+            {weekdayLong(shift.business_day, "UTC", locale)}, {dayMonth(shift.business_day, "UTC", locale)} · {hours}
           </span>
         }
         actions={<ShiftBadge shift={shift} currency={currency} />}

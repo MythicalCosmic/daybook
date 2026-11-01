@@ -9,10 +9,9 @@ import { useMember } from "../../state/session";
 import { haptic } from "../../telegram";
 import { EmptyState, Input, ListCard, ListRow, LoadError, PageHeader, Screen, ScreenSkeleton, SectionHead } from "../../ui";
 import { useKbHome, useKbSearch, type KbPageRow } from "./api";
+import { PageIcon, SpaceIcon } from "./icons";
 import "./knowledge.css";
 import { messages } from "./messages";
-
-const emoji = (value: string) => <span className="kbm-emoji">{value || "📄"}</span>;
 
 /** The knowledge base in the app: search, what to read, the spaces and what changed lately. */
 export function KnowledgeHome() {
@@ -48,7 +47,7 @@ export function KnowledgeHome() {
         ) : (
           <ListCard>
             {(search.data ?? []).map((row) => (
-              <ListRow key={row.id} icon={emoji(row.emoji)} title={row.title} subtitle={`${row.space.icon} ${row.space.name}`} onClick={() => openPage(row)} />
+              <ListRow key={row.id} icon={<PageIcon emoji={row.emoji} />} title={row.title} subtitle={`${row.space.icon} ${row.space.name}`} onClick={() => openPage(row)} />
             ))}
           </ListCard>
         )
@@ -67,7 +66,7 @@ export function KnowledgeHome() {
               <SectionHead count={home.data.to_read.length}>{t("toRead.title")}</SectionHead>
               {/* Each page says "read it to the end and confirm" itself; the list needs no hint. */}
               {home.data.to_read.map((row) => (
-                <ListRow key={row.id} variant="card" tone="accent" icon={emoji(row.emoji)} title={row.title} subtitle={`${row.space.icon} ${row.space.name} · ${t("mustRead")}`} alert onClick={() => openPage(row)} />
+                <ListRow key={row.id} variant="card" tone="accent" icon={<PageIcon emoji={row.emoji} />} title={row.title} subtitle={`${row.space.icon} ${row.space.name} · ${t("mustRead")}`} alert onClick={() => openPage(row)} />
               ))}
             </>
           )}
@@ -77,7 +76,7 @@ export function KnowledgeHome() {
             {home.data.spaces.map((space) => (
               <ListRow
                 key={space.id}
-                icon={<span className="kbm-space-icon">{space.icon || "📁"}</span>}
+                icon={<SpaceIcon icon={space.icon} />}
                 title={space.name}
                 subtitle={space.description || t("pages", { count: space.counts.pages })}
                 value={space.description ? String(space.counts.pages) : undefined}
@@ -94,7 +93,7 @@ export function KnowledgeHome() {
               <SectionHead>{t("recent")}</SectionHead>
               <ListCard>
                 {home.data.recent.map((row) => (
-                  <ListRow key={row.id} icon={emoji(row.emoji)} title={row.title} subtitle={`${updated(row)} · ${row.space.name}`} onClick={() => openPage(row)} />
+                  <ListRow key={row.id} icon={<PageIcon emoji={row.emoji} />} title={row.title} subtitle={`${updated(row)} · ${row.space.name}`} onClick={() => openPage(row)} />
                 ))}
               </ListCard>
             </>

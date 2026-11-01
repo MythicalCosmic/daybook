@@ -3,13 +3,13 @@ import { ArrowRightLeft, ChevronRight, HandCoins, Hourglass, LockKeyhole, Receip
 import { can } from "../../api/permissions";
 import { useI18n } from "../../i18n";
 import { subtractMoney, sumMoney } from "../../lib/money";
-import { clock } from "../../lib/time";
+import { clock, minutesBetween } from "../../lib/time";
 import { useNow } from "../../lib/useNow";
 import { useNavigation } from "../../state/navigation";
 import { Button, Card, CardButton, Dot, Skeleton } from "../../ui";
 import type { SlotProps } from "../registry";
 import { useKassa } from "./api";
-import { duration, minutesBetween, useKassaT, useMoney } from "./lib";
+import { duration, useKassaT, useMoney } from "./lib";
 import "./kassa.css";
 
 /**
