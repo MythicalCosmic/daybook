@@ -614,3 +614,35 @@ def test_the_activity_feed(owner_api, crew, company, member):
     assert item["subject"]["label"] == "Muzlatgich haroratini tekshirish"
     only = client.get(owner_url(company, "activity/?agent=morning_plan")).json()
     assert only["results"] == []
+
+
+def test_the_activity_feed_keeps_to_the_readers_branches(owner_api, crew, company, member):
+    """Someone who sees one branch reads the events about that branch: not those about another
+    branch, nor those about company-wide work or people without a branch (apps.members.scope:
+    rows without a branch are for those who see every branch)."""
+    from apps.companies.models import Branch
+    from apps.members.models import AccessRole
+    from apps.members.permissions import Perm
+
+    here, there = (Branch.objects.create(company=company, name=name) for name in ("A", "B"))
+    AccessRole.objects.create(
+        company=company, name="Branch view", permissions=[Perm.DASHBOARD_ACCESS]
+    )
+    reader = member.registered(company, "Branch view", home_branch=here)
+    reader.branches.add(here)
+    for title, branch in (("Here", here), ("There", there), ("Nowhere", None)):
+        task = late_task(crew, branch=branch)
+        events.log(
+            company,
+            "deadline_watcher",
+            "escalated",
+            params={"task": title, "assignee": "Alisher", "to": "Bekzod"},
+            subject=("task", task.pk),
+            branch_id=branch.pk if branch else None,
+        )
+
+    page = owner_api(reader).get(owner_url(company, "activity/")).json()
+
+    assert [item["text"] for item in page["results"]] == [
+        "Told Bekzod that «Here» is late (Alisher)"
+    ]
