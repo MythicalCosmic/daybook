@@ -81,11 +81,14 @@ def process(draft_id: int) -> None:
 
 
 def _process(draft: AIDraft, author: Membership) -> None:
-    draft.started_at = draft.started_at or timezone.now()
+    """Each step is written only while the draft is still working: a person who cancels it
+    meanwhile (the card's Cancel, the app) has the last word, and nothing is made of it."""
     language = draft.language or dates.language(author.user.language)
     people = drafting.candidates(author)
+    started = {"started_at": draft.started_at or timezone.now()}
     if draft.audio and not draft.transcript:
-        _set_status(draft, AIDraft.Status.TRANSCRIBING)
+        if not _advance(draft, status=AIDraft.Status.TRANSCRIBING, **started):
+            return
         try:
             heard = speech.transcribe(
                 _read_audio(draft),
@@ -106,13 +109,17 @@ def _process(draft: AIDraft, author: Membership) -> None:
         if not heard.text.strip():
             _fail(draft, "nothing_heard")
             return
-        draft.transcript = heard.text.strip()[:5000]
-        draft.language = language or heard.language
-        draft.transcribed_at = timezone.now()
+        heard_fields = {
+            "transcript": heard.text.strip()[:5000],
+            "language": language or heard.language,
+            "transcribed_at": timezone.now(),
+        }
     elif not draft.transcript:
-        draft.transcript = draft.input_text
-        draft.language = language
-    _set_status(draft, AIDraft.Status.THINKING)
+        heard_fields = {"transcript": draft.input_text, "language": language}
+    else:
+        heard_fields = {}
+    if not _advance(draft, status=AIDraft.Status.THINKING, **started, **heard_fields):
+        return
     try:
         found = drafting.understand(
             author, draft.transcript, language=draft.language, people=people
@@ -121,11 +128,14 @@ def _process(draft: AIDraft, author: Membership) -> None:
         logger.exception("Draft %s could not be understood", draft.pk)
         _fail(draft, "ai_unavailable")
         return
-    draft.engine = found.engine
-    draft.payload = {"drafts": found.drafts, "questions": found.questions}
-    draft.status = AIDraft.Status.READY
-    draft.finished_at = timezone.now()
-    draft.save()
+    if not _advance(
+        draft,
+        status=AIDraft.Status.READY,
+        engine=found.engine,
+        payload={"drafts": found.drafts, "questions": found.questions},
+        finished_at=timezone.now(),
+    ):
+        return
     events.log(
         author.company,
         voice_tasks.KEY,
@@ -180,16 +190,23 @@ def moment(value) -> datetime | None:
     return parsed if parsed.tzinfo else None
 
 
-def _set_status(draft: AIDraft, status: str) -> None:
-    draft.status = status
-    draft.save()
+def _advance(draft: AIDraft, **fields) -> bool:
+    """Write `fields` (a new status and what goes with it) only while the draft is still
+    working; False, writing nothing, once it was cancelled or finished elsewhere meanwhile."""
+    fields["updated_at"] = timezone.now()
+    if not AIDraft.objects.filter(pk=draft.pk, status__in=AIDraft.WORKING).update(**fields):
+        return False
+    for name, value in fields.items():
+        setattr(draft, name, value)
+    return True
 
 
 def _fail(draft: AIDraft, code: str) -> None:
-    draft.status = AIDraft.Status.FAILED
-    draft.error_code = code
-    draft.finished_at = timezone.now()
-    draft.save()
+    """A working draft fails (the card says why); one cancelled meanwhile stays cancelled."""
+    if not _advance(
+        draft, status=AIDraft.Status.FAILED, error_code=code, finished_at=timezone.now()
+    ):
+        return
     events.log(
         draft.company,
         voice_tasks.KEY,

@@ -315,6 +315,37 @@ def test_auto_create_makes_the_tasks_at_once_and_undo_takes_them_back(
     assert draft.status == AIDraft.Status.DISCARDED and draft.undone_at is not None
 
 
+@pytest.mark.parametrize("auto_create", [False, True])
+def test_cancel_while_it_is_being_understood_sticks(
+    company, member, ai_on, monkeypatch, card_edits, django_capture_on_commit_callbacks, auto_create
+):
+    """The person taps Cancel (or the app's cancel) while the job still reads the draft: the
+    job must not bring it back to "ready", and auto-create must not make its tasks."""
+    ai_on(company, auto_create=auto_create)
+    manager = member.registered(company, "Manager", first_name="Bekzod", last_name="Mirzayev")
+    member.registered(company, first_name="Alisher", last_name="Valiyev")
+    understand = drafts.drafting.understand
+
+    def cancelled_meanwhile(author, text, **kwargs):
+        found = understand(author, text, **kwargs)
+        services.discard_draft(AIDraft.objects.get(created_by=author), author)
+        return found
+
+    monkeypatch.setattr(drafts.drafting, "understand", cancelled_meanwhile)
+
+    draft = start(
+        manager,
+        django_capture_on_commit_callbacks,
+        text="Alisher, ertaga soat 10 gacha muzlatgich haroratini tekshir.",
+        tg={"bot": "employee", "chat_id": 77, "message_id": 5},
+    )
+
+    assert draft.status == AIDraft.Status.DISCARDED
+    assert not Task.objects.exists()
+    assert card_edits[-1]["text"] == "Cancelled."
+    assert not AgentEvent.objects.filter(kind__in=("draft_ready", "draft_auto_applied")).exists()
+
+
 def test_auto_create_waits_when_a_draft_has_no_time(
     company, member, ai_on, django_capture_on_commit_callbacks
 ):
