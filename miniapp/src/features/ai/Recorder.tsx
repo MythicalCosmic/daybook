@@ -121,8 +121,8 @@ function Listening({ recorder, max, onCancel }: { recorder: Recorder; max: numbe
   const starting = recorder.phase === "starting";
   const left = Math.max(0, Math.ceil(max - recorder.seconds));
   const level = live ? recorder.levels.at(-1) ?? 0 : 0;
-  // Closing the app mid-sentence asks first: the note would be lost.
-  useDraftGuard(live);
+  // Closing the app or the sheet mid-sentence asks first: the note would be lost.
+  useDraftGuard(live, t("rec.closeAsk"));
   // The last ten seconds begin: a light tap, felt even with the eyes elsewhere.
   const closing = live && left <= WARN_SECONDS;
   useEffect(() => {

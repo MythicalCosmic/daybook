@@ -28,6 +28,7 @@ export const messages = defineMessages({
     "rec.done": "Done",
     "rec.tooShort": "That was too short. Say the tasks, then tap Done.",
     "rec.listening": "Listening to you",
+    "rec.closeAsk": "Stop recording? What you said won’t be kept.",
 
     "text.title": "Smart add",
     "text.lead": "Write several people’s tasks in one text, and the app splits them up.",
@@ -144,6 +145,7 @@ export const messages = defineMessages({
     "rec.done": "Готово",
     "rec.tooShort": "Слишком коротко. Скажите задачи и нажмите «Готово».",
     "rec.listening": "Слушаю вас",
+    "rec.closeAsk": "Остановить запись? Сказанное не сохранится.",
 
     "text.title": "Умное добавление",
     "text.lead": "Напишите поручения для нескольких людей одним текстом — приложение разложит их на задачи.",
@@ -262,6 +264,7 @@ export const messages = defineMessages({
     "rec.done": "Tayyor",
     "rec.tooShort": "Juda qisqa chiqdi. Vazifalarni aytib, «Tayyor» tugmasini bosing.",
     "rec.listening": "Sizni tinglayapman",
+    "rec.closeAsk": "Yozib olish to‘xtatilsinmi? Aytganlaringiz saqlanmaydi.",
 
     "text.title": "Aqlli qo‘shish",
     "text.lead": "Bir nechta odamning vazifalarini bitta matnda yozing — ilova ularni ajratib beradi.",

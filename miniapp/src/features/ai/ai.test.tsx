@@ -689,6 +689,22 @@ describe("recorder", () => {
     expect(none.result.current.phase).toBe("unsupported");
   });
 
+  it("asks in its own words before Escape or Back throws a recording away", async () => {
+    fakeMicrophone();
+    const ask = vi.spyOn(window, "confirm").mockReturnValue(false);
+    try {
+      renderApp(null, { me: person([giver()]), init: { sheet: { kind: "feature", feature: "ai", sheet: "draft", params: { mode: "voice" } } } });
+      expect(await screen.findByText("Listening to you")).toBeTruthy();
+      await waitFor(() => expect(screen.getByRole("button", { name: "Done" })).toHaveProperty("disabled", false));
+      fireEvent.keyDown(document, { key: "Escape" });
+      // Not "What you entered won't be saved": nothing was typed, something was said.
+      await waitFor(() => expect(ask).toHaveBeenCalledWith("Stop recording? What you said won’t be kept."));
+      expect(screen.getByText("Listening to you")).toBeTruthy();
+    } finally {
+      ask.mockRestore();
+    }
+  });
+
   it("sends the person to the bot when recording isn't possible here", async () => {
     vi.stubGlobal("MediaRecorder", undefined);
     renderApp(null, { me: person([giver()]), init: { sheet: { kind: "feature", feature: "ai", sheet: "draft", params: { mode: "voice" } } } });
