@@ -10,7 +10,7 @@ is edited. Every text a person wrote or said is escaped.
 from aiogram import html
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from django.conf import settings
-from django.utils import timezone
+from django.utils import timezone, translation
 from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
 
@@ -90,7 +90,7 @@ def _ready(draft: AIDraft) -> BotMessage:
     items = draft.drafts
     company = draft.company
     now = timezone.localtime(timezone.now(), _zone(company))
-    lang = dates.language(None)
+    lang = _lang()
     people = _people(draft, [item.get("assignee_id") for item in items])
     allowed = _allowed(draft) if people else set()
     if not items:
@@ -129,8 +129,7 @@ def _draft_line(number: int, item: dict, people: dict, now, lang: str) -> str:
     parts = [who]
     if due := _moment(item.get("due_at")):
         local = timezone.localtime(due, now.tzinfo)
-        when = dates.short_due(local, now, lang)
-        parts.append(when[0].upper() + when[1:])
+        parts.append(dates.short_due(local, now, lang))
     if item.get("priority") == "urgent":
         parts.append(_("urgent"))
     if item.get("proof") == "photo":
@@ -170,16 +169,16 @@ def _applied(draft: AIDraft) -> BotMessage:
     )
     tasks.sort(key=lambda task: draft.applied_ids.index(task.pk))
     now = timezone.localtime(timezone.now(), _zone(draft.company))
-    lang = dates.language(None)
+    lang = _lang()
     header = ngettext("Created %(count)s task", "Created %(count)s tasks", len(tasks)) % {
         "count": len(tasks)
     }
     lines = [f"<b>{header}</b>", ""]
     for number, task in enumerate(tasks, start=1):
-        parts = [html.quote(str(task.assignee))]
+        mine = task.assignee_id == draft.created_by_id
+        parts = [_("for you") if mine else html.quote(str(task.assignee))]
         if task.due_at:
-            when = dates.short_due(timezone.localtime(task.due_at, now.tzinfo), now, lang)
-            parts.append(when[0].upper() + when[1:])
+            parts.append(dates.short_due(timezone.localtime(task.due_at, now.tzinfo), now, lang))
         lines.append(f"{number}. {html.bold(html.quote(task.title))} — " + " · ".join(parts))
     rows = [[button] for task in tasks if (button := _open_button(draft, task))]
     from apps.ai.drafts import can_undo
@@ -275,6 +274,11 @@ def _moment(value):
     return moment(value)
 
 
+def _lang() -> str:
+    """The reader's language for dates (the message is built under their translation)."""
+    return dates.language(translation.get_language())
+
+
 def _zone(company):
     from zoneinfo import ZoneInfo
 
@@ -295,7 +299,7 @@ def late_task(task: Task, recipient: Membership, now) -> BotMessage:
         "",
         html.bold(html.quote(task.title)),
         _("For: %(name)s") % {"name": html.quote(str(task.assignee))},
-        _("Deadline: %(when)s") % {"when": dates.due_label(due, local_now, dates.language(None))},
+        _("Deadline: %(when)s") % {"when": dates.short_due(due, local_now, _lang())},
         _("Late by: %(late)s") % {"late": task_messages.format_duration(now - task.due_at)},
     ]
     later = InlineKeyboardButton(
@@ -311,7 +315,7 @@ def morning_plan(member: Membership, day: dict, now, *, summary: str = "") -> Bo
     from apps.tasks.callbacks import ListCallback
 
     local_now = timezone.localtime(now, _zone(member.company))
-    lang = dates.language(None)
+    lang = _lang()
     lines = ["<b>" + _("Your team today") + "</b>"]
     if summary:
         lines += ["", html.quote(summary)]
@@ -340,5 +344,5 @@ def hour_more_done(task: Task, now) -> str:
     due = timezone.localtime(task.due_at, local_now.tzinfo)
     return _("New deadline for «%(title)s»: %(when)s") % {
         "title": html.quote(task.title),
-        "when": dates.due_label(due, local_now, dates.language(None)),
+        "when": dates.short_due(due, local_now, _lang()),
     }

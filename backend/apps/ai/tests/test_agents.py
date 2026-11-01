@@ -536,3 +536,18 @@ def test_the_activity_feed(owner_api, crew, company, member):
     assert item["subject"]["label"] == "Muzlatgich haroratini tekshirish"
     only = client.get(owner_url(company, "activity/?agent=morning_plan")).json()
     assert only["results"] == []
+
+
+def test_the_late_note_is_in_the_readers_language(crew):
+    """It said "Срок: Bugun, 2-noyabr (dushanba), 09:00" to a Russian reader."""
+    from django.utils import translation
+
+    from apps.ai import bot_messages
+
+    task = late_task(crew)
+
+    with translation.override("ru"):
+        text, _markup = bot_messages.late_task(task, crew["giver"], local(12))
+
+    assert "Срок: сегодня, 09:00" in text
+    assert "Bugun" not in text

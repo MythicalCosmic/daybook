@@ -386,3 +386,49 @@ def test_old_recordings_are_deleted_and_the_words_stay(
     import os
 
     assert not os.path.exists(path)
+
+
+def test_the_card_writes_dates_in_the_readers_language(team, django_capture_on_commit_callbacks):
+    """A Russian reader saw "Ertaga, 10:00" (the Uzbek word, capitalised mid-line)."""
+    from django.utils import translation
+
+    from apps.ai import bot_messages
+
+    draft = start(team["manager"], django_capture_on_commit_callbacks, text=SAID)
+
+    with translation.override("ru"):
+        text, _markup = bot_messages.draft_card(draft)
+    with translation.override("en"):
+        english, _markup = bot_messages.draft_card(draft)
+
+    lines = text.split("<blockquote")[0].lower()  # the transcript itself stays as said
+    assert "10:00" in lines and "18:00" in lines
+    assert ("сегодня, " in lines or "завтра, " in lines) and "с фото" in lines
+    assert "ertaga" not in lines and "bugun" not in lines
+    first = english.split("<blockquote")[0]
+    assert "today, " in first or "tomorrow, " in first
+    assert "Today" not in first and "Tomorrow" not in first
+
+
+def test_a_created_task_of_ones_own_says_for_you(
+    company, member, ai_on, django_capture_on_commit_callbacks
+):
+    """The card said "for you" before Create and the author's own name after."""
+    from django.utils import translation
+
+    from apps.ai import bot_messages
+
+    ai_on(company)
+    worker = member.registered(company, first_name="Alisher", last_name="Valiyev")
+    draft = start(
+        worker, django_capture_on_commit_callbacks, text="Ertaga soat 10 da kassani sanash."
+    )
+    with django_capture_on_commit_callbacks(execute=True):
+        services.apply_draft(draft, worker)
+    draft.refresh_from_db()
+
+    with translation.override("en"):
+        text, _markup = bot_messages.draft_card(draft)
+
+    assert "for you" in text
+    assert "Alisher Valiyev" not in text
