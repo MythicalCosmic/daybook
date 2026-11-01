@@ -357,6 +357,26 @@ describe("problems → fixes", () => {
     expect(navigationState().stack).toEqual([{ feature: "core", page: "task", params: { id: 502 } }]);
   });
 
+  it("adds checklist steps to a card the AI heard none for", async () => {
+    let applied: { drafts: { checklist: string[] }[] } | null = null;
+    server.handler = (path, method, json) => {
+      if (path.endsWith("/ai/status/")) return STATUS;
+      if (path.endsWith("/members/")) return PEOPLE;
+      if (path.endsWith("/task-drafts/41/")) return draft();
+      if (path.endsWith("/task-drafts/41/apply/") && method === "POST") {
+        applied = json as typeof applied;
+        return { draft: draft({ status: "applied", created_tasks: [{ id: 501, title: "x", assignee_name: "Alisher Valiyev" }] }), created: [501], failed: [] };
+      }
+      return undefined;
+    };
+    renderApp(null, { me: person([giver()]), init: { sheet: { kind: "feature", feature: "ai", sheet: "draft", params: { id: 41 } } } });
+    fireEvent.click(await screen.findByRole("button", { name: "Add a step" }));
+    fireEvent.change(screen.getByLabelText("Step 1"), { target: { value: "Haroratni yozib olish" } });
+    fireEvent.click(screen.getByRole("button", { name: "Create 1 task" }));
+    await screen.findByText("1 task created");
+    expect(applied!.drafts[0]!.checklist).toEqual(["Haroratni yozib olish"]);
+  });
+
   it("says plainly when nothing could be made out", async () => {
     server.handler = (path) => {
       if (path.endsWith("/ai/status/")) return STATUS;

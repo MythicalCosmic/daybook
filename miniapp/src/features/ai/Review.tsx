@@ -1,4 +1,4 @@
-import { AlertCircle, CalendarClock, Camera, Check, Flag, MessageCircleQuestion, Mic, PenLine, RotateCcw, UserRound, X } from "lucide-react";
+import { AlertCircle, CalendarClock, Camera, Check, Flag, MessageCircleQuestion, Mic, PenLine, Plus, RotateCcw, UserRound, X } from "lucide-react";
 import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { useMembers } from "../../api/hooks";
@@ -447,6 +447,19 @@ function DraftCard({
           <Camera size={16} strokeWidth={2.5} aria-hidden />
           <span>{t("proof.tag.photo")}</span>
         </button>
+        {card.checklist.length === 0 && (
+          <button
+            type="button"
+            className="ui-chip"
+            onClick={() => {
+              haptic.select();
+              onChange({ ...card, checklist: [""] });
+            }}
+          >
+            <Plus size={16} strokeWidth={2.6} aria-hidden />
+            <span>{t("add.stepAdd")}</span>
+          </button>
+        )}
       </div>
 
       {card.description && (
