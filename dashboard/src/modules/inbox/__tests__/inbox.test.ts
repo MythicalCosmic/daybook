@@ -183,6 +183,18 @@ describe("InboxPage", () => {
     expect(toasts.at(-1)?.title).toBe("Done: Approve");
   });
 
+  it("keeps item 1 usable while item 12 is being decided (its key started with item 1's)", async () => {
+    const view: QueueView = { total: 2, kinds: [{ kind: "tasks.review", label: "Waiting for your check", count: 2 }], items: [item(1, "tasks.review"), item(12, "tasks.review")] };
+    const { wrapper } = await page("/c/1/inbox", {
+      ...queueRoutes(view),
+      "POST tasks.review/12/approve/": () => new Promise<Response>(() => undefined),
+    });
+    await wrapper.findAll("[data-queue-item]")[1]!.findAll("button").find((b) => b.text() === "Approve")!.trigger("click");
+    await flushPromises();
+    const first = wrapper.findAll("[data-queue-item]").find((c) => c.text().includes("Item 1"))!;
+    expect(first.findAll("button").find((b) => b.text() === "Approve")!.attributes("disabled")).toBeUndefined();
+  });
+
   it("puts an item back when the server refuses", async () => {
     const { wrapper } = await page("/c/1/inbox", {
       ...queueRoutes(queue()),

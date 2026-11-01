@@ -142,6 +142,9 @@ function stillWaiting(id: number): boolean {
 }
 
 function accept(task: TaskReview): void {
+  // A card on its way out stays clickable for the leave animation: a second click scheduled a
+  // second send and Undo cancelled only that one, so the work was accepted anyway.
+  if (pending.has(task.id)) return;
   const index = cards.value.findIndex((card) => card.id === task.id);
   hide(task.id, true);
   const toastId = `tasks.review.${task.id}`;

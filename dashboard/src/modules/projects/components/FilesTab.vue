@@ -62,16 +62,26 @@ async function removeFile(file: ProjectFile): Promise<void> {
   void refresh();
 }
 
+// One link at a time: Enter twice, or Enter and a click, added it twice.
+const savingLink = ref(false);
 async function saveLink(): Promise<void> {
+  if (savingLink.value) return;
   linkError.value = null;
   if (!/^https?:\/\//i.test(linkUrl.value.trim())) {
     linkError.value = t("projects.files.linkInvalid");
     return;
   }
-  await addLink(companyId.value, props.project.id, { title: linkTitle.value.trim(), url: linkUrl.value.trim() });
-  linkTitle.value = "";
-  linkUrl.value = "";
-  void refresh();
+  savingLink.value = true;
+  try {
+    await addLink(companyId.value, props.project.id, { title: linkTitle.value.trim(), url: linkUrl.value.trim() });
+    linkTitle.value = "";
+    linkUrl.value = "";
+    void refresh();
+  } catch {
+    // The HTTP layer showed why; the link stays in the form.
+  } finally {
+    savingLink.value = false;
+  }
 }
 
 async function removeLink(link: ProjectLink): Promise<void> {
@@ -137,11 +147,12 @@ const host = (url: string) => {
         <TextInput v-model="linkUrl" type="url" size="sm" placeholder="https://" :invalid="!!linkError" />
         <div class="flex gap-2">
           <TextInput v-model="linkTitle" size="sm" :placeholder="t('projects.files.linkTitle')" class="flex-1" />
-          <UiButton type="submit" size="sm" variant="secondary" :icon="Plus" :disabled="!linkUrl.trim()">{{ t("projects.files.addLink") }}</UiButton>
+          <UiButton type="submit" size="sm" variant="secondary" :icon="Plus" :disabled="!linkUrl.trim()" :loading="savingLink">{{ t("projects.files.addLink") }}</UiButton>
         </div>
         <p v-if="linkError" class="text-xs text-danger">{{ linkError }}</p>
       </form>
       <div v-if="links.isPending.value" class="flex flex-col gap-2"><SkeletonBlock v-for="n in 2" :key="n" height="48px" radius="10px" /></div>
+      <ErrorState v-else-if="links.isError.value" compact :error="links.error.value" :retry="() => links.refetch()" />
       <EmptyState v-else-if="!(links.data.value ?? []).length" size="sm" tone="neutral" :icon="Link2" :title="t('projects.files.noLinks')" :description="t('projects.files.noLinksBody')" />
       <ul v-else class="ui-card divide-y divide-line overflow-hidden">
         <li v-for="link in links.data.value" :key="link.id" class="flex items-center gap-3 px-4 py-2.5">

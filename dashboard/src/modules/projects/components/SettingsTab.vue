@@ -65,11 +65,20 @@ async function removeList(list: BoardList): Promise<void> {
   void refresh();
 }
 
+// One label at a time: Enter twice created it twice.
+const addingLabel = ref(false);
 async function addLabel(): Promise<void> {
-  if (!newLabel.value.trim()) return;
-  await createLabel(companyId.value, props.project.id, { name: newLabel.value.trim(), color: newColor.value });
-  newLabel.value = "";
-  void refresh();
+  if (!newLabel.value.trim() || addingLabel.value) return;
+  addingLabel.value = true;
+  try {
+    await createLabel(companyId.value, props.project.id, { name: newLabel.value.trim(), color: newColor.value });
+    newLabel.value = "";
+    void refresh();
+  } catch {
+    // The HTTP layer showed why.
+  } finally {
+    addingLabel.value = false;
+  }
 }
 
 async function recolor(label: Label, color: PaletteColor): Promise<void> {
@@ -175,7 +184,7 @@ async function toggleArchive(): Promise<void> {
               @click="newColor = color"
             />
           </div>
-          <UiButton type="submit" size="sm" :icon="Plus" :disabled="!newLabel.trim()">{{ t("projects.labels.add") }}</UiButton>
+          <UiButton type="submit" size="sm" :icon="Plus" :disabled="!newLabel.trim()" :loading="addingLabel">{{ t("projects.labels.add") }}</UiButton>
         </form>
       </div>
     </PageSection>

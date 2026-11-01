@@ -358,3 +358,24 @@ describe("quick add", () => {
     wrapper.unmount();
   });
 });
+
+describe("TimeTab timer", () => {
+  it("starts the timer once when tapped twice (the second start logged a bogus minute)", async () => {
+    const week = { start: "2026-10-26", end: "2026-11-01", days: [], rows: [], totals: [], total: 0, billable: 0, entries: [], running: [] };
+    const calls = stubApi({
+      "GET projects/time/": () => json(week),
+      "POST projects/timers/": () => new Promise<Response>(() => undefined),
+    });
+    const app = await testApp("/c/1/projects/1/time");
+    const { default: TimeTab } = await import("../components/TimeTab.vue");
+    const { wrapper } = mountWithProviders(TimeTab, { props: { project: detail() }, plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    const start = wrapper.findAll("button").find((b) => b.text() === en["projects.time.startProject"])!;
+    await start.trigger("click");
+    await start.trigger("click");
+    await flushPromises();
+    expect(calls.filter((c) => c.method === "POST" && c.url.endsWith("/timers/"))).toHaveLength(1);
+    wrapper.unmount();
+  });
+});

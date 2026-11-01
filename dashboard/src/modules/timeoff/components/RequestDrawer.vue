@@ -105,8 +105,8 @@ async function run(approve: boolean): Promise<void> {
     </div>
     <template v-if="row && (row.can_decide || row.can_revoke)" #footer>
       <template v-if="row.can_decide">
-        <UiButton :icon="X" class="hover:!text-danger" :loading="decide.isPending.value && decide.variables.value?.approve === false" @click="run(false)">{{ t("common.reject") }}</UiButton>
-        <UiButton variant="primary" :icon="Check" :loading="decide.isPending.value && decide.variables.value?.approve === true" @click="run(true)">{{ t("common.approve") }}</UiButton>
+        <UiButton :icon="X" class="hover:!text-danger" :loading="decide.isPending.value && decide.variables.value?.approve === false" :disabled="decide.isPending.value" @click="run(false)">{{ t("common.reject") }}</UiButton>
+        <UiButton variant="primary" :icon="Check" :loading="decide.isPending.value && decide.variables.value?.approve === true" :disabled="decide.isPending.value" @click="run(true)">{{ t("common.approve") }}</UiButton>
       </template>
       <UiButton v-else-if="row.can_revoke" :icon="CalendarX2" class="hover:!text-danger" @click="revoking = true">{{ t("timeoff.revoke.action") }}</UiButton>
     </template>
