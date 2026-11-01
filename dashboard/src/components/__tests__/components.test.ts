@@ -652,6 +652,18 @@ describe("TreeList on touch", () => {
     expect(tree.find(".row-menu").element.parentElement!.classList).toContain("pointer-coarse:opacity-100");
     tree.unmount();
   });
+
+  it("leaves Enter and Space on a row's own button to that button", async () => {
+    const tree = mount(TreeList, {
+      props: { nodes: [{ id: 1, label: "Ijara" }] },
+      slots: { actions: () => h("button", { class: "row-menu" }, "…") },
+      global: { plugins: plugins() },
+    });
+    await tree.find(".row-menu").trigger("keydown", { key: "Enter" });
+    await tree.find(".row-menu").trigger("keydown", { key: " " });
+    expect(tree.emitted("select")).toBeUndefined();
+    tree.unmount();
+  });
 });
 
 describe("v-truncate-title", () => {

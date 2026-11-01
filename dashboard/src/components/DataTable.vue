@@ -19,6 +19,7 @@ import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, ChevronsUpDown, Columns3
 import { computed, ref, watch, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 
+import { fromInnerControl } from "@/core/hotkeys";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
@@ -228,6 +229,8 @@ function onRowKeydown(event: KeyboardEvent, row: Row, key: string): void {
     const sibling = (event.key === "ArrowDown" ? target.nextElementSibling : target.previousElementSibling) as HTMLElement | null;
     if (sibling?.dataset.rowKey) sibling.focus();
     else if (event.key === "ArrowDown" && virtualOn.value) virtualizer.value.scrollBy(rowHeight.value * 4);
+  } else if (fromInnerControl(event)) {
+    // Enter or Space on a button or link in a cell is that control's own.
   } else if (event.key === "Enter" && props.clickable) {
     event.preventDefault();
     emit("row-click", row);
@@ -240,7 +243,7 @@ function onRowKeydown(event: KeyboardEvent, row: Row, key: string): void {
 function onRowClick(event: MouseEvent, row: Row): void {
   if (!props.clickable) return;
   // Clicks on links, buttons and inputs inside a cell keep their own meaning.
-  if ((event.target as HTMLElement).closest("a, button, input, label, [role=checkbox]")) return;
+  if (fromInnerControl(event)) return;
   emit("row-click", row);
 }
 
@@ -364,7 +367,7 @@ const tableMinWidth = computed(
         ]"
         :tabindex="clickable ? 0 : undefined"
         @click="onRowClick($event, row.original)"
-        @keydown.enter="clickable && emit('row-click', row.original)"
+        @keydown.enter="clickable && !fromInnerControl($event) && emit('row-click', row.original)"
       >
         <CheckBox
           v-if="selectable"

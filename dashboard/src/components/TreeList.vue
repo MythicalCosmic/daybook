@@ -11,6 +11,8 @@ import { ChevronRight, GripVertical } from "@lucide/vue";
 import { computed, nextTick, onBeforeUnmount, ref, useId } from "vue";
 import { useI18n } from "vue-i18n";
 
+import { fromInnerControl } from "@/core/hotkeys";
+
 import { dropMove, flattenTree, keyboardMove, locate, zoneAt, type DropZone, type FlatNode, type TreeId, type TreeMove, type TreeNode } from "./tree";
 
 const selected = defineModel<TreeId | null>("selected", { default: null });
@@ -70,6 +72,8 @@ function commit(move: TreeMove | null): void {
 
 function onKeydown(event: KeyboardEvent, row: FlatNode, position: number): void {
   const id = row.node.id;
+  // Keys on a row's own button (its menu) or a field in it are that control's.
+  if (fromInnerControl(event)) return;
   if (event.altKey && props.draggable && !row.node.locked) {
     const action = { ArrowUp: "up", ArrowDown: "down", ArrowRight: "indent", ArrowLeft: "outdent" }[event.key] as "up" | "down" | "indent" | "outdent" | undefined;
     if (action) {
