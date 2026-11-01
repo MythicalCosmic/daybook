@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { ApiError } from "./api/client";
 import { OfflineBanner } from "./components/OfflineBanner";
@@ -11,6 +11,7 @@ import { FeatureBoundary, FeaturePage } from "./features/hosts";
 import { features, suspendedGate, visibleFeatures } from "./features/registry";
 import { asLang, I18nProvider, useI18n } from "./i18n";
 import { lazyScreen, whenIdle } from "./lib/lazy";
+import { closeUnlessDraft } from "./lib/useDraftGuard";
 import { ActivityScreen } from "./screens/Activity";
 import { Blocked, Declined, Failure, Left, NoAccess, Suspended } from "./screens/Gate";
 import { Home } from "./screens/Home";
@@ -208,10 +209,18 @@ function usePreloadNext(member: { heads?: readonly string[] | null; permissions:
   );
 }
 
-/** Telegram's back button closes a sheet first, then the page on top (an open task, a page). */
+/**
+ * Telegram's back button closes a sheet first (asking first when it holds a draft), then the page
+ * on top (an open task, a page).
+ */
 function useStackBackButton() {
   const { sheet, stack, closeSheet, pop } = useNavigation();
-  const back = sheet ? closeSheet : stack.length ? pop : null;
+  const { t } = useI18n();
+  const question = t("sheet.discardAsk");
+  const back = useMemo(
+    () => (sheet ? () => void closeUnlessDraft(closeSheet, question) : stack.length ? pop : null),
+    [sheet, stack.length, closeSheet, pop, question],
+  );
   useEffect(() => useBackButton(back), [back]);
 }
 

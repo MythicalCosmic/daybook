@@ -4,7 +4,7 @@
  * reset would load from another graph).
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { keys } from "./api/hooks";
@@ -170,6 +170,32 @@ describe("app inside Telegram", () => {
     expect(screen.queryByRole("heading", { name: /^Good (morning|afternoon|evening)/ })).toBeNull();
     act(() => (back.onClick.mock.calls.at(-1)![0] as () => void)());
     expect(await screen.findByRole("heading", { name: /^Good (morning|afternoon|evening)/ })).toBeTruthy();
+  }, 20_000);
+
+  it("asks before Back throws away a task being written in the (+) sheet", async () => {
+    const { back, webApp, InTelegram, freshKeys } = await insideTelegram();
+    const answers = [false, true];
+    const showConfirm = vi.fn((_message: string, done: (ok: boolean) => void) => done(answers.shift()!));
+    Object.assign(webApp, { showConfirm, enableClosingConfirmation: vi.fn(), disableClosingConfirmation: vi.fn() });
+    window.history.replaceState(null, "", "/app/?screen=add");
+    render(
+      <QueryClientProvider client={seededClient(freshKeys, me("approved"))}>
+        <InTelegram />
+      </QueryClientProvider>,
+    );
+    const what = await screen.findByRole("textbox", { name: "What needs doing?" }, { timeout: 10_000 });
+    fireEvent.change(what, { target: { value: "Order insulin" } });
+    const press = () => act(() => (back.onClick.mock.calls.at(-1)![0] as () => void)());
+
+    // Cancel: the sheet and the words stay.
+    press();
+    expect(showConfirm).toHaveBeenCalledWith("Close it? What you entered won't be saved.", expect.any(Function));
+    await act(async () => undefined);
+    expect(screen.getByRole("textbox", { name: "What needs doing?" })).toHaveProperty("value", "Order insulin");
+    // OK: closed.
+    press();
+    await waitFor(() => expect(screen.queryByRole("textbox", { name: "What needs doing?" })).toBeNull());
+    expect(showConfirm).toHaveBeenCalledTimes(2);
   }, 20_000);
 
   it("fetches the work again on coming back to the app, My team included, without cancelling what is on its way", async () => {

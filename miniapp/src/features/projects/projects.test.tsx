@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../../api/client";
 import type { Me, Membership, Task } from "../../api/types";
 import { I18nProvider } from "../../i18n";
+import { InSheet, sheetHasDraft } from "../../lib/useDraftGuard";
 import { NavigationProvider, useNavigation, type Navigation } from "../../state/navigation";
 import { SessionProvider } from "../../state/session";
 import { ToastProvider } from "../../state/toast";
@@ -402,6 +403,18 @@ describe("screens", () => {
     expect(post?.json).toMatchObject({ minutes: 90, project: 5, task: 2, note: "Sign brackets" });
     expect((post?.json as { day: string }).day).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     await waitFor(() => expect(close).toHaveBeenCalled());
+  });
+
+  it("keep a typed time note from a stray tap: closing the sheet asks first", async () => {
+    renderWith(
+      <InSheet.Provider value>
+        <LogTimeSheet params={{ project: 5, task: 2 }} close={() => {}} />
+      </InSheet.Provider>,
+    );
+    const note = await screen.findByPlaceholderText("e.g. Set up the new vitamins shelf");
+    expect(sheetHasDraft()).toBe(false);
+    act(() => fireEvent.change(note, { target: { value: "Sign brackets" } }));
+    expect(sheetHasDraft()).toBe(true);
   });
 
   it("explain that logging needs a project", async () => {

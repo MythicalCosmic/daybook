@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { useI18n } from "../../i18n";
 import { errorText } from "../../lib/actions";
+import { useDraftGuard } from "../../lib/useDraftGuard";
 import { amountFromTyping, isZero } from "../../lib/money";
 import { useMember } from "../../state/session";
 import { useToast } from "../../state/toast";
@@ -60,6 +61,7 @@ const PayoutBody: Body = ({ kassa, shift, close }) => {
   const [category, setCategory] = useState<string | null>(categories[0] ? String(categories[0].id) : null);
   const [reason, setReason] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
+  useDraftGuard(Boolean(amount || reason.trim() || photo));
   const value = amountFromTyping(amount);
   const valid = Boolean(value && !isZero(value) && reason.trim());
 
@@ -111,6 +113,7 @@ const HandoverBody: Body = ({ kassa, shift, close }) => {
   const [reason, setReason] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [slide, setSlide] = useState<SlideState>("idle");
+  useDraftGuard(Boolean(amount || reason.trim()));
   const value = amountFromTyping(amount);
   const receiver = kassa.receivers.find((row) => row.id === receiverId) ?? null;
   const valid = Boolean(value && !isZero(value) && receiver);
@@ -210,6 +213,7 @@ const SafeBody: Body = ({ kassa, shift, close, params }) => {
   const [direction, setDirection] = useState<"to_safe" | "from_safe">(params.direction === "from_safe" ? "from_safe" : "to_safe");
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
+  useDraftGuard(Boolean(amount || reason.trim()));
   const value = amountFromTyping(amount);
   const valid = Boolean(value && !isZero(value));
 
@@ -266,6 +270,7 @@ const SaleBody: Body = ({ kassa, shift }) => {
   const [method, setMethod] = useState<string | null>(methods[0] ? String(methods[0].id) : null);
   const [amount, setAmount] = useState("");
   const [last, setLast] = useState<{ id: number; text: string } | null>(null);
+  useDraftGuard(Boolean(amount));
   const value = amountFromTyping(amount);
   const valid = Boolean(value && !isZero(value) && method);
   const methodName = methods.find((row) => String(row.id) === method)?.name ?? "";

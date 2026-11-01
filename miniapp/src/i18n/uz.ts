@@ -537,6 +537,7 @@ const uz: Partial<Record<Key, string>> = {
 
   "ui.optional": "(ixtiyoriy)",
   "ui.back": "Orqaga",
+  "sheet.discardAsk": "Yopilsinmi? Kiritganlaringiz saqlanmaydi.",
   "ui.photo.add": "Rasmga oling yoki tanlang",
   "ui.photo.camera": "Rasmga olish",
   "ui.photo.gallery": "Galereyadan tanlash",

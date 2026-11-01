@@ -85,6 +85,11 @@ export function useI18n(): I18n {
   return value;
 }
 
+/** The app's language for a part that also shows outside the app's provider (a sheet in a test): Uzbek there. */
+export function useLangOrDefault(): Lang {
+  return useContext(I18nContext)?.lang ?? "uz";
+}
+
 export function asLang(code: string | undefined): Lang {
   return code === "ru" || code === "uz" || code === "en" ? code : "uz";
 }
