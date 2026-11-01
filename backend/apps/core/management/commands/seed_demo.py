@@ -34,7 +34,7 @@ from django.apps import apps as django_apps
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
-from django.db.models import F, ProtectedError, Q
+from django.db.models import F, ProtectedError, Q, RestrictedError
 from django.utils import timezone, translation
 
 from apps.accounts.models import User
@@ -277,7 +277,8 @@ class Command(BaseCommand):
                 try:
                     with transaction.atomic():
                         model.objects.filter(company=company).delete()
-                except ProtectedError:
+                # PROTECT and RESTRICT links (a job title's role) both wait for their rows to go.
+                except (ProtectedError, RestrictedError):
                     blocked.append(model)
             if len(blocked) == len(remaining):
                 raise CommandError(f"Can't remove the demo: {blocked} keep pointing at it.")

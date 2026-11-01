@@ -542,3 +542,21 @@ def test_the_head_of_chilonzor_sees_and_runs_chilonzor_only(debug):
     # Both demo companies accept finished work automatically, like every new company.
     rules = TasksSettings.objects.filter(company__slug__in=(PHARMACY, DISTRIBUTOR))
     assert sorted(rules.values_list("on_finish", flat=True)) == [OnFinish.AUTO] * 2
+
+
+def test_removing_a_company_waits_for_restricted_links(monkeypatch):
+    """A job title's role is RESTRICT (42e246c): deleting the roles before the job titles that
+    point at them raised RestrictedError, which the reset didn't expect, and `make demo` failed."""
+    from django.apps import apps as django_apps
+
+    company = CompanyFactory()
+    role = AccessRole.objects.create(company=company, name="Kassir")
+    Position.objects.create(company=company, name="Kassir", role=role)
+    models = django_apps.get_models()
+    roles_first = [AccessRole, Position] + [m for m in models if m not in (AccessRole, Position)]
+    monkeypatch.setattr(django_apps, "get_models", lambda *args, **kwargs: roles_first)
+
+    seed_demo.Command()._remove_company(company)
+
+    assert not Company.objects.filter(pk=company.pk).exists()
+    assert not AccessRole.objects.filter(pk=role.pk).exists()
