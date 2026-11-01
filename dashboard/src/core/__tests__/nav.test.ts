@@ -136,6 +136,21 @@ describe("extensions", () => {
     expect(extensionsFor("tasks.toolbar", manager([]), all).map((e) => e.moduleId)).toEqual(["tasks"]);
     expect(hasExtension("shell.panel", company(), all)).toBe(false);
   });
+
+  it("offers New company to a person with no company yet (it was an empty dialog on /welcome)", () => {
+    const setup = defineModule({
+      id: "setup",
+      group: "overview",
+      order: 90,
+      icon: Icon,
+      title: "setup.title",
+      routes: [],
+      extensions: { "shell.company.create": [Page] },
+      messages: () => Promise.resolve({}),
+    });
+    expect(extensionsFor("shell.company.create", null, [setup]).map((e) => e.moduleId)).toEqual(["setup"]);
+    expect(extensionsFor("shell.company.create", manager([]), [setup]).map((e) => e.moduleId)).toEqual(["setup"]);
+  });
 });
 
 describe("pulse", () => {
