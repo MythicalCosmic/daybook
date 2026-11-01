@@ -128,9 +128,18 @@ async def got_assignee(
         await cards.edit_keyboard(callback, markup)
         await callback.answer()
         return
+    if callback_data.member_id and not await _may_give_to(membership, callback_data.member_id):
+        # Only someone from the picker: the button's data comes from the person's phone.
+        await callback.answer(_("That person isn't in your company."), show_alert=True)
+        return
     await state.update_data(assignee_id=callback_data.member_id or None)
     await callback.answer()
     await _next(callback.message, membership, state, edit=True)
+
+
+@sync_to_async
+def _may_give_to(member: Membership, person_id: int) -> bool:
+    return departments.assignable(member).filter(pk=person_id).exists()
 
 
 async def _next(target: Message, membership: Membership, state: FSMContext, *, edit: bool):
@@ -247,7 +256,12 @@ def _preview_message(membership: Membership, data: dict) -> BotMessage:
     label = dates.due_label(due, now, translation.get_language()) if due else None
     assignee = None
     if data.get("assignee_id"):
-        person = Membership.objects.filter(pk=data["assignee_id"]).select_related("user").first()
+        person = (
+            Membership.objects.for_company(membership.company_id)
+            .filter(pk=data["assignee_id"])
+            .select_related("user")
+            .first()
+        )
         assignee = str(person) if person else None
     repeat = data.get("repeat") if not data.get("assignee_id") and due else None
     return task_messages.quick_add_preview(

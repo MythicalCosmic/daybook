@@ -346,6 +346,27 @@ async def test_a_manager_gives_work_from_new_task(dp, bot, company, member):
     assert task.assignee_id == worker.pk and task.kind == Task.Kind.ASSIGNED
 
 
+async def test_new_task_takes_only_someone_from_the_picker(dp, bot, company, member):
+    """A button's data comes from the person's phone and can be made up: someone of another
+    company (or anyone not in the picker) is refused, and their name never shows."""
+    manager = await member.aregistered(company, "Manager")
+    elsewhere = await member.aregistered(
+        await sync_to_async(CompanyFactory)(), first_name="Begona", last_name="Odam"
+    )
+    tg = updates.tg_user(manager.user.telegram_id)
+
+    await dp.feed_update(bot, updates.message(tg, "/new"))
+    await dp.feed_update(bot, updates.message(tg, "Kassa lentasini olib kel"))
+    await dp.feed_update(
+        bot, updates.callback(tg, PickCallback(task_id=0, member_id=elsewhere.pk).pack())
+    )
+    await dp.feed_update(bot, updates.callback(tg, DueCallback(preset=DuePreset.IN_AN_HOUR).pack()))
+
+    assert answers(bot)[-2].text == "That person isn't in your company."
+    texts = [r.text for r in bot.requests if isinstance(r, SendMessage | EditMessageText)]
+    assert not any("Begona" in text for text in texts)
+
+
 async def test_plain_text_is_offered_as_a_task(dp, bot, company, member):
     worker = await member.aregistered(company)
     tg = updates.tg_user(worker.user.telegram_id)
