@@ -5,7 +5,7 @@
  * shifts and the latest check-ins (each opens the record drawer).
  */
 import { CalendarClock, ChevronLeft, ChevronRight, LogIn } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { computed, defineAsyncComponent, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import EmptyState from "@/components/EmptyState.vue";
@@ -24,7 +24,13 @@ import { useMemberMonth } from "../api";
 import { CELL_CLASSES, CELL_WITH_HOURS, clockOf, hours, monthStart, shiftMonth, weekdayIndex } from "../lib";
 import type { Cell } from "../types";
 
-const props = defineProps<{ memberId: number }>();
+const RecordDrawer = defineAsyncComponent(() => import("./RecordDrawer.vue"));
+
+/**
+ * `recordDrawer: false` where the page mounts its own RecordDrawer (Today); elsewhere (Roster,
+ * Person 360) the month opens its check-ins in a drawer of its own.
+ */
+const props = withDefaults(defineProps<{ memberId: number; recordDrawer?: boolean }>(), { recordDrawer: true });
 
 const { t } = useI18n();
 const fmt = useFormat();
@@ -34,6 +40,9 @@ const query = useMemberMonth(() => props.memberId, month);
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const data = computed(() => query.data.value);
 const recordId = useRouteState("record", rs.optionalNumber(), { push: true });
+// Loaded once a record is first opened, then kept (so it can close with its animation).
+const drawerWanted = ref(false);
+watch(recordId, (id) => (drawerWanted.value ||= id !== null), { immediate: true });
 
 /** Leading blanks so the 1st lands on its weekday (Monday first). */
 const blanks = computed(() => (data.value?.days[0] ? weekdayIndex(data.value.days[0]) : 0));
@@ -127,5 +136,6 @@ function cellTitle(day: string, cell: Cell): string {
         </section>
       </div>
     </template>
+    <RecordDrawer v-if="recordDrawer && drawerWanted" />
   </div>
 </template>

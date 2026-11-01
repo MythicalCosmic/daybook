@@ -523,3 +523,46 @@ describe("TimesheetPage", () => {
     wrapper.unmount();
   });
 });
+
+describe("PersonMonth", () => {
+  const month = {
+    member: { id: 7, name: "Alisher Valiyev", photo_url: null },
+    schedule: null,
+    month: "2026-10",
+    days: ["2026-10-01"],
+    today: "2026-10-01",
+    holidays: {},
+    cells: {},
+    totals: { scheduled_days: 0, attended_days: 1, leave_days: 0, leave_time_off_ids: [], absent_days: 0, worked_minutes: 480, approved_overtime_minutes: 0, late_arrivals: 0, late_minutes: 0, holiday_worked_days: 0, has_schedule: false },
+    summary: {},
+    records: [{ id: 41, member_id: 7, date: "2026-10-01", status: "present", check_in_at: "2026-10-01T09:00:00+05:00", check_out_at: null, is_late: false }],
+    next_shifts: [],
+  };
+
+  it("opens a recent check-in in its own record drawer where the page has none (Roster, Person 360)", async () => {
+    stubApi({ "GET attendance/members/7/": () => json(month), "GET attendance/records/41/": () => json({ detail: "Not found." }, 404) });
+    const app = await testApp("/c/1/attendance/roster");
+    const { default: PersonMonth } = await import("../components/PersonMonth.vue");
+    const { wrapper } = mountWithProviders(PersonMonth, { plugins: app.plugins, props: { memberId: 7 } });
+    await flushPromises();
+    await wrapper.find("section:last-of-type button").trigger("click");
+    await flushPromises();
+    await flushPromises();
+    expect(app.router.currentRoute.value.query.record).toBe("41");
+    // The drawer is its own chunk: it shows once that has loaded.
+    await vi.waitFor(() => expect(wrapper.findComponent({ name: "RecordDrawer" }).exists()).toBe(true), { timeout: 3000 });
+    wrapper.unmount();
+  });
+
+  it("leaves records to the page's drawer where it has one (Today)", async () => {
+    stubApi({ "GET attendance/members/7/": () => json(month) });
+    const app = await testApp("/c/1/attendance");
+    const { default: PersonMonth } = await import("../components/PersonMonth.vue");
+    const { wrapper } = mountWithProviders(PersonMonth, { plugins: app.plugins, props: { memberId: 7, recordDrawer: false } });
+    await flushPromises();
+    await wrapper.find("section:last-of-type button").trigger("click");
+    await flushPromises();
+    expect(wrapper.findComponent({ name: "RecordDrawer" }).exists()).toBe(false);
+    wrapper.unmount();
+  });
+});
