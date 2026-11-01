@@ -419,6 +419,28 @@ describe("smart add", () => {
     expect(screen.getByText("You wrote")).toBeTruthy();
   });
 
+  it("starts Write more from an empty box instead of sending the same words again", async () => {
+    let status: AIDraft["status"] = "ready";
+    server.handler = (path, method, json) => {
+      if (path.endsWith("/ai/status/")) return STATUS;
+      if (path.endsWith("/members/")) return PEOPLE;
+      if (path.endsWith("/task-drafts/") && method === "POST") return draft({ status: "queued", audio: null, drafts: [] });
+      if (path.endsWith("/task-drafts/41/")) return draft({ status, audio: null, created_tasks: status === "applied" ? [{ id: 501, title: "x", assignee_name: "Alisher Valiyev" }] : [] });
+      if (path.endsWith("/task-drafts/41/apply/") && method === "POST") {
+        status = "applied";
+        void json;
+        return { draft: draft({ status: "applied", audio: null, created_tasks: [{ id: 501, title: "x", assignee_name: "Alisher Valiyev" }] }), created: [501], failed: [] };
+      }
+      return undefined;
+    };
+    renderApp(null, { me: person([giver()]), init: { sheet: { kind: "feature", feature: "ai", sheet: "draft", params: { mode: "text", text: "Alisher muzlatgichni tekshirsin", send: 1 } } } });
+    fireEvent.click(await screen.findByRole("button", { name: "Create 1 task" }, { timeout: 3000 }));
+    fireEvent.click(await screen.findByRole("button", { name: "Write more" }));
+    const box = (await screen.findByLabelText("Who should do what?")) as HTMLTextAreaElement;
+    expect(box.value).toBe("");
+    expect(server.calls.filter((call) => call.path.endsWith("/task-drafts/") && call.method === "POST")).toHaveLength(1);
+  });
+
   it("explains a refusal in the box, and AI switched off as its own state", async () => {
     let refusal: ApiError = new ApiError(400, { code: "text_too_long", detail: "Too long." });
     server.handler = (path, method) => {

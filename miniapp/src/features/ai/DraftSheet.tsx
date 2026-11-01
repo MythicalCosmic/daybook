@@ -33,6 +33,9 @@ export function DraftSheet({ params, close }: SheetProps) {
   // When this sheet started waiting for the draft: the give-up clock (contract: 90 s).
   const [since, setSince] = useState(() => Date.now());
   const [failed, setFailed] = useState<ApplyResult["failed"]>([]);
+  // What the (+) sheet handed over (its typed title, sent at once) is for the first draft only:
+  // "Write more" starts from an empty box, never sends the same words twice.
+  const [prefill, setPrefill] = useState(() => ({ text: typeof params.text === "string" ? params.text : "", send: params.send === 1 }));
 
   const sent = (draft: AIDraft) => {
     setSince(Date.now());
@@ -41,6 +44,7 @@ export function DraftSheet({ params, close }: SheetProps) {
   const again = (next: Mode) => {
     setDraftId(null);
     setFailed([]);
+    setPrefill({ text: "", send: false });
     setMode(next);
   };
 
@@ -74,7 +78,7 @@ export function DraftSheet({ params, close }: SheetProps) {
   if ((mode === "voice" && entry.voice) || !entry.text) {
     return <VoiceCompose status={status.data} onSent={sent} onType={entry.text ? () => setMode("text") : null} onCancel={close} />;
   }
-  return <TextCompose initial={typeof params.text === "string" ? params.text : ""} send={params.send === 1} onSent={sent} onClose={close} />;
+  return <TextCompose initial={prefill.text} send={prefill.send} onSent={sent} onClose={close} />;
 }
 
 function DraftView({
