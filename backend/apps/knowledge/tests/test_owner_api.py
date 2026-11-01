@@ -1,7 +1,7 @@
 """Owner endpoints of the knowledge base: permissions, tenancy, branch scope, hidden fields."""
 
 import io
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -309,6 +309,26 @@ def test_link_targets_skip_routine_tasks_and_say_whose(company, owner, manager, 
         ("task", one_off.pk),
     ]
     assert targets[1]["subtitle"] == "Bekzod Mirzayev · 21.10"
+
+
+def test_a_link_targets_day_is_the_companys(company, owner, manager, owner_api):
+    """Late in the evening in London is already tomorrow on the server (Tashkent)."""
+    from apps.tasks.tests.factories import TaskFactory
+
+    company.timezone = "Europe/London"
+    company.save(update_fields=["timezone"])
+    manager.first_name, manager.last_name = "Bekzod", "Mirzayev"
+    manager.save(update_fields=["first_name", "last_name"])
+    TaskFactory(
+        assignee=manager,
+        created_by=owner,
+        title="Count the safe",
+        due_at=datetime(2026, 10, 21, 22, 30, tzinfo=UTC),
+    )
+
+    [target] = owner_api(owner).get(url(company, "link-targets/"), {"q": "safe"}).data
+
+    assert target["subtitle"] == "Bekzod Mirzayev · 21.10"
 
 
 def test_link_targets_links_and_linked(company, owner, manager, owner_api):

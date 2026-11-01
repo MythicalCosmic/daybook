@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-02 03:16+0500\n"
+"POT-Creation-Date: 2026-11-02 03:40+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -3358,6 +3358,10 @@ msgstr "В этом виде слишком много данных, его не
 #: backend/apps/console/services.py
 msgid "You already have a view with this name here."
 msgstr "У вас здесь уже есть вид с таким названием."
+
+#: backend/apps/core/bot_runtime.py
+msgid "Something went wrong. Please try again in a moment."
+msgstr "Что-то пошло не так. Попробуйте ещё раз чуть позже."
 
 #: backend/apps/core/crypto.py
 msgid "Encrypted text"
@@ -8085,18 +8089,17 @@ msgstr ""
 "Показатели каждого кассира за период: смены, продажи, средний чек, как часто "
 "сходилась касса, недостачи и излишки, опоздания с открытием и проверки."
 
-#: backend/apps/sales/alerts.py backend/apps/sales/bot_messages.py
-#: backend/apps/sales/queries.py backend/apps/sales/services.py
+#: backend/apps/sales/alerts.py backend/apps/sales/queries.py
+#: backend/apps/sales/services.py
 msgid "Received"
 msgstr "Получено"
 
-#: backend/apps/sales/alerts.py backend/apps/sales/bot_messages.py
-#: backend/apps/sales/queries.py backend/apps/sales/services.py
+#: backend/apps/sales/alerts.py backend/apps/sales/queries.py
+#: backend/apps/sales/services.py
 msgid "Not received"
 msgstr "Не получено"
 
-#: backend/apps/sales/alerts.py backend/apps/sales/bot_messages.py
-#: backend/apps/sales/queries.py
+#: backend/apps/sales/alerts.py backend/apps/sales/queries.py
 msgid "Verify"
 msgstr "Проверить"
 
@@ -9692,10 +9695,6 @@ msgid "Write your comment on <b>%(title)s</b>:"
 msgstr "Напишите комментарий к задаче <b>%(title)s</b>:"
 
 #: backend/apps/tasks/bot_messages.py
-msgid "What needs to be fixed? Send a short comment."
-msgstr "Что нужно исправить? Напишите короткий комментарий."
-
-#: backend/apps/tasks/bot_messages.py
 msgid "Photo is unclear"
 msgstr "Фото нечёткое"
 
@@ -11238,10 +11237,6 @@ msgid "Thanks, your phone number is saved. Now finish your account in the app."
 msgstr ""
 "Спасибо, ваш номер телефона сохранён. Теперь завершите регистрацию в "
 "приложении."
-
-#: employee_bot/bot/handlers/errors.py owner_bot/ownerbot/handlers/errors.py
-msgid "Something went wrong. Please try again in a moment."
-msgstr "Что-то пошло не так. Попробуйте ещё раз чуть позже."
 
 #: employee_bot/bot/handlers/features/agenda.py
 msgid "you'll come"

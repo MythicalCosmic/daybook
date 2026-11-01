@@ -1,7 +1,9 @@
 """\"My team\": a department head's people, their work and its history (apps.members.departments),
 and the proof photo of any task one may open."""
 
-from aiogram import F, Router
+from zoneinfo import ZoneInfo
+
+from aiogram import F, Router, html
 from aiogram.fsm.context import FSMContext
 from aiogram.types import BufferedInputFile, CallbackQuery, Message
 from asgiref.sync import sync_to_async
@@ -11,6 +13,7 @@ from django.utils.translation import gettext as _
 from apps.members.bot_messages import MENU_MY_TEAM
 from apps.members.departments import heads_any, manages
 from apps.members.models import Membership
+from apps.notifications.html_limits import CAPTION_LIMIT, fit
 from apps.tasks import bot_messages as task_messages
 from apps.tasks.callbacks import TaskAction, TaskCallback, TeamCallback
 from bot.filters.menu import MenuButton
@@ -72,6 +75,8 @@ def _photo(membership: Membership, task_id: int):
         data = file.read()
     caption = task_messages.display_title(task)
     if task.completed_at:
-        when = timezone.localtime(task.completed_at).strftime("%d.%m %H:%M")
-        caption = f"{caption} — {task.assignee}, {when}"
-    return data, caption[:1000]
+        # In the company's time, as every other time the bot shows.
+        local = timezone.localtime(task.completed_at, ZoneInfo(task.company.timezone))
+        caption = f"{caption} — {task.assignee}, {local:%d.%m %H:%M}"
+    # The caption is HTML like every message: a title or a name may hold < or &.
+    return data, fit(html.quote(caption), CAPTION_LIMIT)

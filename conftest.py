@@ -13,6 +13,7 @@ from apps.console import registry
 from apps.core import redis as core_redis
 from apps.members.models import AccessRole, Membership, Position
 from apps.members.tests.factories import MembershipFactory
+from apps.notifications.tests.telegram_checks import report, sent_problems
 from apps.signin.tokens import OwnerAccessToken
 
 
@@ -171,10 +172,13 @@ def fake_redis():
 
 @pytest.fixture
 def sent_messages(monkeypatch):
-    """Telegram messages the backend tried to send, captured instead of sent."""
+    """Telegram messages the backend tried to send, captured instead of sent. One Telegram
+    would refuse (bad HTML, too long, callback data over 64 bytes) fails the test."""
     sent = []
+    problems = []
 
     def record(bot, chat_id, text, reply_markup=None, photo=None, photo_storage="default"):
+        problems.extend(sent_problems(text, reply_markup, photo))
         sent.append(
             {
                 "bot": bot,
@@ -187,4 +191,5 @@ def sent_messages(monkeypatch):
         )
 
     monkeypatch.setattr("apps.notifications.telegram.send_message", record)
-    return sent
+    yield sent
+    assert not problems, report(problems)

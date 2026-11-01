@@ -7,7 +7,7 @@ from aiogram.fsm.storage.base import BaseStorage, DefaultKeyBuilder
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage
 
-from apps.core.bot_runtime import OrderedDispatcher, WaitOnFloodLimit
+from apps.core.bot_runtime import FitTelegramLimits, OrderedDispatcher, WaitOnFloodLimit
 from ownerbot.config import Settings, load_settings
 from ownerbot.handlers import register_all_handlers
 from ownerbot.middlewares import register_all_middlewares
@@ -22,6 +22,8 @@ def create_bot(settings: Settings | None = None) -> Bot:
     )
     # Past Telegram's rate (many owners at once) replies wait and go, not get dropped.
     bot.session.middleware(WaitOnFloodLimit())
+    # A text past Telegram's length is cut to fit rather than refused.
+    bot.session.middleware(FitTelegramLimits())
     return bot
 
 

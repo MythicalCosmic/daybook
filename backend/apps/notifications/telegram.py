@@ -32,10 +32,10 @@ from django.conf import settings
 from django.core.files.storage import Storage, default_storage
 
 from apps.core.storage import private_storage
+from apps.notifications.html_limits import CAPTION_LIMIT, fit, visible_length
 
 logger = logging.getLogger(__name__)
 
-CAPTION_LIMIT = 1024
 # What Telegram answers when edit_message_text is used on a message that only has a caption.
 NO_TEXT_TO_EDIT = "there is no text in the message to edit"
 STORAGES: dict[str, Storage] = {"default": default_storage, "private": private_storage}
@@ -155,12 +155,12 @@ async def _send(
 ) -> int:
     async with _bot(token) as bot:
         if image is None:
-            sent = await bot.send_message(chat_id, text, reply_markup=markup)
-        elif len(text) <= CAPTION_LIMIT:
+            sent = await bot.send_message(chat_id, fit(text), reply_markup=markup)
+        elif visible_length(text) <= CAPTION_LIMIT:
             sent = await bot.send_photo(chat_id, image, caption=text, reply_markup=markup)
         else:
             await bot.send_photo(chat_id, image)
-            sent = await bot.send_message(chat_id, text, reply_markup=markup)
+            sent = await bot.send_message(chat_id, fit(text), reply_markup=markup)
         return sent.message_id
 
 
@@ -168,13 +168,13 @@ async def _send_document(
     token: str, chat_id: int, document: BufferedInputFile, caption: str, markup: Markup | None
 ) -> int:
     async with _bot(token) as bot:
-        if len(caption) <= CAPTION_LIMIT:
+        if visible_length(caption) <= CAPTION_LIMIT:
             sent = await bot.send_document(
                 chat_id, document, caption=caption or None, reply_markup=markup
             )
         else:
             await bot.send_document(chat_id, document)
-            sent = await bot.send_message(chat_id, caption, reply_markup=markup)
+            sent = await bot.send_message(chat_id, fit(caption), reply_markup=markup)
         return sent.message_id
 
 
@@ -185,14 +185,14 @@ async def _edit(
         try:
             try:
                 await bot.edit_message_text(
-                    text=text, chat_id=chat_id, message_id=message_id, reply_markup=markup
+                    text=fit(text), chat_id=chat_id, message_id=message_id, reply_markup=markup
                 )
             except TelegramBadRequest as exc:
                 if NO_TEXT_TO_EDIT not in str(exc).lower():
                     raise
                 # A photo or document with a caption (send_message with a photo): edit that.
                 await bot.edit_message_caption(
-                    caption=text[:CAPTION_LIMIT],
+                    caption=fit(text, CAPTION_LIMIT),
                     chat_id=chat_id,
                     message_id=message_id,
                     reply_markup=markup,

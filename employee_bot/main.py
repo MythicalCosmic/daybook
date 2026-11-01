@@ -12,7 +12,7 @@ from aiogram.fsm.storage.base import BaseStorage
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.storage.redis import RedisStorage
 
-from apps.core.bot_runtime import OrderedDispatcher, WaitOnFloodLimit
+from apps.core.bot_runtime import FitTelegramLimits, OrderedDispatcher, WaitOnFloodLimit
 from bot.commands import set_commands
 from bot.handlers import register_all_handlers
 from bot.middlewares import register_all_middlewares
@@ -29,6 +29,8 @@ def create_bot() -> Bot:
     )
     # Past Telegram's rate (hundreds of people at once) replies wait and go, not get dropped.
     bot.session.middleware(WaitOnFloodLimit())
+    # A text past Telegram's length is cut to fit rather than refused.
+    bot.session.middleware(FitTelegramLimits())
     return bot
 
 

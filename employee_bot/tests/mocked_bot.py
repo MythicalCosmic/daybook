@@ -9,6 +9,8 @@ from aiogram.enums import ParseMode
 from aiogram.methods import GetFile, GetMe, SendMessage, TelegramMethod
 from aiogram.types import Chat, File, Message, User
 
+from apps.notifications.tests.telegram_checks import method_problems
+
 # What every downloaded file contains, e.g. a proof photo.
 FILE_CONTENT = b"fake-jpeg"
 BOT_USERNAME = "daybook_test_bot"
@@ -20,6 +22,8 @@ class MockedSession(BaseSession):
     def __init__(self) -> None:
         super().__init__()
         self.requests: list[TelegramMethod[Any]] = []
+        # What Telegram would refuse (apps.notifications.tests.telegram_checks).
+        self.problems: list[str] = []
 
     async def make_request(
         self,
@@ -27,6 +31,9 @@ class MockedSession(BaseSession):
         method: TelegramMethod[Any],
         timeout: int | None = None,  # noqa: ASYNC109 (aiogram's signature)
     ) -> Any:
+        self.problems += [
+            f"{type(method).__name__}: {problem}" for problem in method_problems(method)
+        ]
         self.requests.append(method)
         if isinstance(method, SendMessage):
             return Message(

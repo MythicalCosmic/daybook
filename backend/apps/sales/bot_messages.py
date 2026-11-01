@@ -253,21 +253,6 @@ def group_evening(day_label: str, rows: list[tuple[str, Decimal, int]], total: D
     return "\n".join(lines)
 
 
-# Button labels --------------------------------------------------------------------------
-
-
-def received_label() -> str:
-    return _("Received")
-
-
-def not_received_label() -> str:
-    return _("Not received")
-
-
-def verify_label() -> str:
-    return _("Verify")
-
-
 # The "Kassa" menu button -----------------------------------------------------------------
 
 KASSA_BUTTON = "Kassa"

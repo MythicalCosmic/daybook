@@ -8,6 +8,7 @@ from asgiref.sync import sync_to_async
 from django.db import connections
 
 from apps.core.bot_runtime import close_database_threads
+from apps.notifications.tests.telegram_checks import report
 from ownerbot.dispatcher import create_dispatcher
 from ownerbot.tests.mocked_bot import MockedBot
 
@@ -20,8 +21,11 @@ def dp():
 
 @pytest.fixture
 async def bot():
-    yield MockedBot()
+    mocked = MockedBot()
+    yield mocked
     # Handlers query from the bots' database threads (apps.core.bot_runtime) and asgiref's
     # own thread; close their connections so the test database can be dropped at the end.
     await asyncio.to_thread(close_database_threads)
     await sync_to_async(connections.close_all)()
+    # A message Telegram would refuse fails the test that sent it.
+    assert not mocked.session.problems, report(mocked.session.problems)

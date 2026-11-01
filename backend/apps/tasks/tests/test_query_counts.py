@@ -13,6 +13,7 @@ from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
 from apps.projects.tests.factories import card, project, team
+from apps.signin.tokens import OwnerAccessToken
 from apps.tasks import queries
 from apps.tasks.models import ChecklistItem, Task, TaskComment
 from apps.tasks.tests.factories import TaskFactory, TaskTemplateFactory
@@ -157,3 +158,61 @@ def test_task_queries_join_only_the_assignee(people):
             _ = (getattr(task, "card", None), task.project, task.reminder_policy)
 
     assert len(captured.captured_queries) == count
+
+
+# Budgets: what each hot endpoint costs today (audit b, 2026-11-02), so a change that adds a
+# query per request shows up here. Before → after on the demo: summary 14 → 11 (one aggregate
+# for its five task numbers, the streak summed up per day in Postgres), the dashboard board
+# 50 → 22 (one count for the five columns, then their cards with one set of relation queries).
+SUMMARY_BUDGET = 11
+BOARD_BUDGET = 22
+
+
+def a_year_of_routines(worker, boss, days: int) -> None:
+    now = timezone.now()
+    routine = TaskTemplateFactory(company=worker.company, created_by=boss)
+    Task.objects.bulk_create(
+        TaskFactory.build(
+            company=worker.company,
+            assignee=worker,
+            created_by=boss,
+            template=routine,
+            kind=Task.Kind.DAILY,
+            for_date=(now - timedelta(days=day)).date(),
+            due_at=now - timedelta(days=day),
+            status=Task.Status.DONE,
+            completed_at=now - timedelta(days=day, minutes=5),
+        )
+        for day in range(1, days + 1)
+    )
+
+
+def test_the_home_numbers_cost_the_same_whatever_the_history(people):
+    worker, boss = people["aziz"], people["manager"]
+    api = app_for(worker)
+    url = f"/api/v1/companies/{worker.company_id}/summary/"
+    few = queries_of(api, url)
+
+    a_year_of_routines(worker, boss, 365)
+    many = queries_of(api, url)
+
+    assert len(many) == len(few) <= SUMMARY_BUDGET
+    assert api.get(url).data["streak_days"] == 365
+    # The streak reads one row per day, not one per task.
+    assert any("GROUP BY" in sql and "AT TIME ZONE" in sql for sql in many)
+
+
+def test_the_dashboard_board_loads_its_five_columns_together(people):
+    give_work(people, 2)
+    owner = people["owner"]
+    api = APIClient()
+    api.credentials(HTTP_AUTHORIZATION=f"Bearer {OwnerAccessToken.for_user(owner.user)}")
+    url = f"/api/v1/owner/companies/{owner.company_id}/tasks/board/"
+    few = queries_of(api, url)
+
+    give_work(people, 4)
+    many = queries_of(api, url)
+
+    assert len(many) == len(few) <= BOARD_BUDGET
+    columns = {column["id"]: column for column in api.get(url).data["columns"]}
+    assert columns["todo"]["count"] == len(columns["todo"]["items"]) > 4

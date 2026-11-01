@@ -86,15 +86,3 @@ def owned_count(user) -> int:
     return Membership.objects.filter(
         user=user, status=Membership.Status.APPROVED, role__is_owner=True
     ).count()
-
-
-def owned_companies(user) -> list[Company]:
-    """Active companies where `user` is an approved owner, by name."""
-    return list(
-        Company.objects.filter(
-            is_active=True,
-            memberships__user=user,
-            memberships__status=Membership.Status.APPROVED,
-            memberships__role__is_owner=True,
-        ).order_by("name")
-    )

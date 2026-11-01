@@ -23,14 +23,6 @@ from apps.members.permissions import Perm
 PERSON_EVENTS = (GroupEvent.DAILY_DONE, GroupEvent.TASKS_DONE, GroupEvent.LATE, GroupEvent.MEMBERS)
 
 
-class EventSerializer(serializers.Serializer):
-    key = serializers.ChoiceField(GroupEvent.choices)
-    label = serializers.CharField()
-    feature = serializers.CharField(allow_null=True, help_text="The module it belongs to.")
-    on = serializers.BooleanField()
-    available = serializers.BooleanField(help_text="False when its module is switched off.")
-
-
 class RefSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()

@@ -21,6 +21,7 @@ from django.core.files.storage import default_storage
 
 from apps.core.storage import private_storage
 from apps.notifications import telegram
+from apps.notifications.html_limits import CAPTION_LIMIT, TEXT_LIMIT, problems, visible_length
 from apps.notifications.tasks import (
     edit_telegram_message,
     send_telegram_document,
@@ -206,3 +207,42 @@ def test_the_wrappers_give_up_quietly_on_blocked_chats(session):
 
     send_telegram_document.delay(telegram.BotName.EMPLOYEE, 1, path)
     edit_telegram_message.delay(telegram.BotName.EMPLOYEE, 1, 5, "Done")
+
+
+def test_a_text_past_telegrams_length_is_cut_to_fit(session):
+    long = "\n".join(f"<b>Qator {n}</b> " + "x" * 60 for n in range(200))
+
+    telegram.send_message(telegram.BotName.EMPLOYEE, 9, long)
+    telegram.edit_message(telegram.BotName.EMPLOYEE, 9, 5, long)
+
+    sent, edited = session.requests
+    for text in (sent.text, edited.text):
+        assert visible_length(text) <= TEXT_LIMIT
+        assert problems(text) == []
+        assert text.endswith("…")
+
+
+def test_a_captions_length_is_what_telegram_counts_not_its_tags(session):
+    """Tags and entities don't count: 1000 letters in bold still fit under a photo."""
+    path = default_storage.save("proofs/1/p.jpg", ContentFile(b"\xff\xd8"))
+    text = "<b>" + "&amp;" * 1000 + "</b>"
+
+    telegram.send_message(telegram.BotName.EMPLOYEE, 9, text, photo=path)
+
+    [request] = session.requests
+    assert isinstance(request, SendPhoto)
+    assert request.caption == text
+
+
+def test_editing_a_long_caption_cuts_it_whole(session):
+    session.fail_with = TelegramBadRequest(
+        EditMessageText(chat_id=5, message_id=1, text="x"),
+        "Bad Request: there is no text in the message to edit",
+    )
+    session.fail_only = EditMessageText
+
+    telegram.edit_message(telegram.BotName.EMPLOYEE, 5, 321, "<i>" + "&lt;" * 2000 + "</i>")
+
+    caption = session.requests[1].caption
+    assert visible_length(caption) <= CAPTION_LIMIT
+    assert problems(caption) == []  # never cut inside an entity or with a tag left open

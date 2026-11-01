@@ -1100,22 +1100,25 @@ class TeamPersonView(APIView):
             raise NotFound
         now = timezone.now()
         work = queries.visible_tasks(head).filter(assignee=person).exclude(kind=Task.Kind.PERSONAL)
-        open_tasks = work.filter(status__in=Task.OPEN_STATUSES).order_by(
-            F("due_at").asc(nulls_last=True)
-        )[:TEAM_TASKS_SHOWN]
-        done = work.filter(
-            status__in=(Task.Status.DONE, Task.Status.REVIEW),
-            completed_at__gte=now - timedelta(days=TEAM_DONE_DAYS),
-        ).order_by("-completed_at")[:TEAM_TASKS_SHOWN]
+        # Both lists with one set of relation queries.
+        found = queries.first_of_each(
+            work.prefetch_related("checklist"),
+            {
+                "open": work.filter(status__in=Task.OPEN_STATUSES).order_by(
+                    F("due_at").asc(nulls_last=True), "pk"
+                ),
+                "done": work.filter(
+                    status__in=(Task.Status.DONE, Task.Status.REVIEW),
+                    completed_at__gte=now - timedelta(days=TEAM_DONE_DAYS),
+                ).order_by("-completed_at", "-pk"),
+            },
+            TEAM_TASKS_SHOWN,
+        )
         context = {"request": request, "membership": head, "detail": False}
         return Response(
             {
                 "person": _team_rows([person], now)[0],
-                "open": TaskSerializer(
-                    open_tasks.prefetch_related("checklist"), many=True, context=context
-                ).data,
-                "done": TaskSerializer(
-                    done.prefetch_related("checklist"), many=True, context=context
-                ).data,
+                "open": TaskSerializer(found["open"], many=True, context=context).data,
+                "done": TaskSerializer(found["done"], many=True, context=context).data,
             }
         )

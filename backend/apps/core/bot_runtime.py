@@ -14,23 +14,46 @@ them. Two pieces fix that, and neither changes a handler:
   sent them, so a quick second tap or message never overtakes the first; different people's
   run side by side.
 
-And `WaitOnFloodLimit` (on each bot's session): past Telegram's rate for one bot, a reply waits
-the seconds Telegram asks for and goes, instead of being dropped.
+And on each bot's session: `WaitOnFloodLimit` (past Telegram's rate for one bot, a reply waits
+the seconds Telegram asks for and goes, instead of being dropped) and `FitTelegramLimits` (a
+text past Telegram's length is cut to fit, instead of refused). Both bots register `on_error`
+for a handler that fails.
 """
 
 import asyncio
 import contextlib
+import logging
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from typing import TYPE_CHECKING
 from weakref import WeakValueDictionary
 
 from aiogram import Dispatcher
+from aiogram.client.default import Default
 from aiogram.client.session.middlewares.base import BaseRequestMiddleware
-from aiogram.exceptions import TelegramRetryAfter
-from aiogram.types import Update
+from aiogram.enums import ChatType
+from aiogram.exceptions import TelegramAPIError, TelegramRetryAfter
+from aiogram.methods import (
+    EditMessageCaption,
+    EditMessageText,
+    SendDocument,
+    SendMessage,
+    SendPhoto,
+    SendVideo,
+)
+from aiogram.types import ErrorEvent, Update
 from asgiref.sync import SyncToAsync, ThreadSensitiveContext
 from django.conf import settings
 from django.db import close_old_connections, connections
+from django.utils import translation
+from django.utils.translation import gettext as _
+
+from apps.notifications.html_limits import CAPTION_LIMIT, ELLIPSIS, TEXT_LIMIT, fit
+
+if TYPE_CHECKING:
+    from apps.accounts.models import User
+
+logger = logging.getLogger(__name__)
 
 
 class DatabaseThreads(ThreadPoolExecutor):
@@ -79,7 +102,7 @@ def close_database_threads() -> None:
             barrier.wait()
         connections.close_all()
 
-    for future in [ThreadPoolExecutor.submit(pool, close) for _ in range(size)]:
+    for future in [ThreadPoolExecutor.submit(pool, close) for _each in range(size)]:
         future.result()
     pool.shutdown(wait=True)
 
@@ -153,3 +176,42 @@ class WaitOnFloodLimit(BaseRequestMiddleware):
                     raise
                 attempt += 1
                 await self.sleep(exc.retry_after)
+
+
+CAPTIONED = (SendPhoto, SendDocument, SendVideo, EditMessageCaption)
+
+
+class FitTelegramLimits(BaseRequestMiddleware):
+    """Telegram refuses a message over 4096 characters and a caption over 1024 (a long list,
+    a long description on a photo card): such a text is cut to fit, at a line end and with its
+    HTML tags closed (`html_limits.fit`), and goes. Texts that fit are left alone."""
+
+    async def __call__(self, make_request, bot, method):
+        if isinstance(method, SendMessage | EditMessageText):
+            method.text = _fit(method.text, TEXT_LIMIT, method.parse_mode)
+        elif isinstance(method, CAPTIONED) and method.caption:
+            method.caption = _fit(method.caption, CAPTION_LIMIT, method.parse_mode)
+        return await make_request(bot, method)
+
+
+def _fit(text: str, limit: int, parse_mode) -> str:
+    # Both bots default to HTML; a method sent with parse_mode=None is plain text.
+    if isinstance(parse_mode, Default) or (parse_mode or "").upper() == "HTML":
+        return fit(text, limit)
+    return text if len(text) <= limit else text[: limit - len(ELLIPSIS)] + ELLIPSIS
+
+
+async def on_error(event: ErrorEvent, user: User | None = None) -> bool:
+    """When a handler fails, in either bot (research R1 F1): every button tap still gets an
+    answer, so no spinner runs forever, and every private message a reply. The failure is
+    logged with its traceback."""
+    logger.error("Update %s failed", event.update.update_id, exc_info=event.exception)
+    with translation.override(user.language if user is not None else "uz"):
+        text = _("Something went wrong. Please try again in a moment.")
+    update = event.update
+    with contextlib.suppress(TelegramAPIError):
+        if update.callback_query is not None:
+            await update.callback_query.answer(text)
+        elif update.message is not None and update.message.chat.type == ChatType.PRIVATE:
+            await update.message.answer(text)
+    return True

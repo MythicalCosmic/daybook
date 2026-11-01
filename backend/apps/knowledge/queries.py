@@ -34,16 +34,6 @@ def can_manage(member: Membership) -> bool:
 # Spaces ---------------------------------------------------------------------------------
 
 
-def reads_space(member: Membership, space: Space) -> bool:
-    if space.archived_at is not None and not can_manage(member):
-        return False
-    if can_manage(member) or space.audience_all:
-        return True
-    return member.position_id is not None and any(
-        position.pk == member.position_id for position in space.positions.all()
-    )
-
-
 def reader_spaces(member: Membership) -> QuerySet[Space]:
     """The spaces meant for `member` as a reader: "everyone" spaces and those of their
     position (whatever they may manage), in shelf order."""

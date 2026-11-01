@@ -369,10 +369,6 @@ def comment_prompt(task: Task) -> BotMessage:
     return text, keyboard
 
 
-def return_reason_request() -> BotMessage:
-    return _("What needs to be fixed? Send a short comment."), stop_keyboard()
-
-
 def return_reasons() -> list[tuple[str, str]]:
     """Ready-made reasons for sending work back (research R1 C8, R2 T30): one tap sends it."""
     return [

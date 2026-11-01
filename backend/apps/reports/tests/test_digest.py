@@ -201,3 +201,25 @@ def test_names_are_escaped(company, member, sent_messages):
 
     [message] = to(sent_messages, person)
     assert "&lt;b&gt;Ali &amp; Co&lt;/b&gt;" in message["text"]
+
+
+def test_a_run_before_anyones_time_costs_the_same_however_many_people(company, member, manager):
+    """Every five minutes the job looks at everyone not sent their digest yet: their first
+    task's time comes for all of them in one query, not one per person."""
+    from django.db import connection
+    from django.test.utils import CaptureQueriesContext
+
+    def staff(n):
+        for _ in range(n):
+            person = member.registered(company)
+            TaskFactory(assignee=person, created_by=manager, due_at=at(WEDNESDAY, 15))
+
+    early = at(WEDNESDAY, 6, 30)  # before anyone's time: nobody is sent anything
+    staff(2)
+    with CaptureQueriesContext(connection) as few:
+        assert post_morning_digests(early) == 0
+    staff(6)
+    with CaptureQueriesContext(connection) as many:
+        assert post_morning_digests(early) == 0
+
+    assert len(many) == len(few)

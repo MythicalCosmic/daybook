@@ -59,6 +59,17 @@ WITHOUT_ROUTINES = "without"
 ONLY_ROUTINES = "only"
 
 
+def first_of_each(tasks: QuerySet[Task], lists: dict, limit: int) -> dict:
+    """Several capped lists of `tasks` loaded together (the dashboard's board columns, a
+    person's open and finished work): `lists` maps a key to an ordered queryset of the rows;
+    each list's first `limit` ids come first, then the tasks of all of them from `tasks` with
+    one set of relation queries instead of one set per list."""
+    ids = {key: list(rows.values_list("pk", flat=True)[:limit]) for key, rows in lists.items()}
+    every = [pk for chunk in ids.values() for pk in chunk]
+    loaded = {task.pk: task for task in tasks.filter(pk__in=every)} if every else {}
+    return {key: [loaded[pk] for pk in chunk if pk in loaded] for key, chunk in ids.items()}
+
+
 def is_routine_work(task: Task) -> bool:
     """`ROUTINE_WORK` for one task already loaded."""
     return task.kind == Task.Kind.DAILY and task.template_id is not None

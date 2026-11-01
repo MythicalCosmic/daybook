@@ -10,6 +10,8 @@ from aiogram.enums import ParseMode
 from aiogram.methods import AnswerCallbackQuery, GetFile, GetMe, SendMessage, TelegramMethod
 from aiogram.types import Chat, File, Message, User
 
+from apps.notifications.tests.telegram_checks import method_problems
+
 BOT_USERNAME = "owner_test_bot"
 # What every downloaded file contains: the start of an Ogg voice message.
 FILE_CONTENT = b"OggS\x00\x02" + b"\x00" * 64
@@ -19,6 +21,8 @@ class MockedSession(BaseSession):
     def __init__(self) -> None:
         super().__init__()
         self.requests: list[TelegramMethod[Any]] = []
+        # What Telegram would refuse (apps.notifications.tests.telegram_checks).
+        self.problems: list[str] = []
 
     async def make_request(
         self,
@@ -26,6 +30,9 @@ class MockedSession(BaseSession):
         method: TelegramMethod[Any],
         timeout: int | None = None,  # noqa: ASYNC109 (aiogram's signature)
     ) -> Any:
+        self.problems += [
+            f"{type(method).__name__}: {problem}" for problem in method_problems(method)
+        ]
         self.requests.append(method)
         if isinstance(method, SendMessage):
             return Message(
