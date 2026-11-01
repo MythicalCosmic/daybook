@@ -278,7 +278,7 @@ class Command(BaseCommand):
                     with transaction.atomic():
                         model.objects.filter(company=company).delete()
                 # PROTECT and RESTRICT links (a job title's role) both wait for their rows to go.
-                except (ProtectedError, RestrictedError):
+                except ProtectedError, RestrictedError:
                     blocked.append(model)
             if len(blocked) == len(remaining):
                 raise CommandError(f"Can't remove the demo: {blocked} keep pointing at it.")
