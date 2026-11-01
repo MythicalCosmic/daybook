@@ -532,6 +532,35 @@ textarea.input {
   border: 0;
 }
 
+/* A task row and its tick are sibling buttons: the row keeps the tick's place (the slot), the tick
+   sits over it, and pressing the tick shows on the row as it did when the tick was inside it. */
+.row-wrap {
+  position: relative;
+}
+
+.glyph-slot {
+  flex: none;
+  width: 44px;
+  height: 44px;
+}
+
+.row-tick {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.row-wrap:has(> .row-tick:active) > .row {
+  background: color-mix(in srgb, var(--color-surface) 92%, var(--color-text));
+}
+
+@media (hover: hover) {
+  .row-wrap:has(> .row-tick:hover) > .row {
+    background: color-mix(in srgb, var(--color-surface) 92%, var(--color-text));
+  }
+}
+
 .glyph span {
   width: 30px;
   height: 30px;
