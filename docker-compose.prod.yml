@@ -65,10 +65,10 @@ services:
     # Stock Whisper writes Uzbek poorly, so Uzbek speech goes to rubaiSTT v2 (Whisper medium
     # fine-tuned on ~475 h of Uzbek, Tashkent dialect included; Apache-2.0), pinned to a commit.
     environment:
-      STT_MODEL: ${STT_MODEL:-large-v3}
+      STT_MODEL: ${STT_MODEL:-large-v3-turbo}
       STT_MODELS_BY_LANGUAGE: ${STT_MODELS_BY_LANGUAGE:-uz=AlexAnoshka/fast-whisper-uz-rubaistt-v2-medium-ct2@a38c89604615d6c3fc6f10692375ecbf89502bdb}
       STT_COMPUTE_TYPE: ${STT_COMPUTE_TYPE:-int8}
-      STT_CPU_THREADS: ${STT_CPU_THREADS:-6}
+      STT_CPU_THREADS: ${STT_CPU_THREADS:-4}
       STT_BEAM_SIZE: ${STT_BEAM_SIZE:-1}
     volumes:
       - stt_models:/models

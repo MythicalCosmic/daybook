@@ -12,7 +12,8 @@ language can have its own fine-tuned model: with STT_MODELS_BY_LANGUAGE="uz=<mod
 whose `language` is "uz" uses that model and everything else the multilingual STT_MODEL. Models
 load once at start-up (downloading into HF_HOME the first time); transcriptions run one at a time
 (STT_CONCURRENCY) in a worker thread, so a burst of voice messages queues instead of starving
-the web server of CPU.
+the web server of CPU. A client that hangs up (its timeout) stops the work at the next segment,
+so an abandoned recording doesn't keep the next one waiting.
 
 Settings (environment): STT_MODEL (large-v3-turbo), STT_MODELS_BY_LANGUAGE ("");
 a model is a faster-whisper size ("large-v3") or a Hugging Face repository, optionally pinned to
@@ -103,7 +104,13 @@ class TooLong(Exception):
     pass
 
 
-def _transcribe(model, path: str, language: str | None, prompt: str | None) -> dict:
+class Abandoned(Exception):
+    """The client hung up while its recording was being written down."""
+
+
+def _transcribe(
+    model, path: str, language: str | None, prompt: str | None, stop: threading.Event
+) -> dict:
     from faster_whisper import decode_audio
 
     audio = decode_audio(path, sampling_rate=SAMPLE_RATE)
@@ -117,10 +124,11 @@ def _transcribe(model, path: str, language: str | None, prompt: str | None) -> d
         vad_filter=True,
         condition_on_previous_text=False,
     )
-    parts = [
-        {"start": round(s.start, 2), "end": round(s.end, 2), "text": s.text.strip()}
-        for s in segments
-    ]
+    parts = []
+    for s in segments:  # each segment is decoded on demand: stop between them once abandoned
+        if stop.is_set():
+            raise Abandoned
+        parts.append({"start": round(s.start, 2), "end": round(s.end, 2), "text": s.text.strip()})
     return {
         "text": " ".join(part["text"] for part in parts if part["text"]).strip(),
         "language": info.language,
@@ -163,8 +171,28 @@ async def transcriptions(request: Request):
         handle.flush()
         started = time.monotonic()
         async with _slots:
+            stop = threading.Event()
+            work = asyncio.create_task(
+                asyncio.to_thread(_transcribe, model, handle.name, language, prompt, stop)
+            )
+            gone = asyncio.create_task(_client_gone(request))
+            await asyncio.wait({work, gone}, return_when=asyncio.FIRST_COMPLETED)
+            gone.cancel()
+            if not work.done():
+                # The client's timeout came first: the worker stops at its next segment, and
+                # the slot is held until it has, so the next recording gets the whole CPU.
+                stop.set()
+                with contextlib.suppress(Exception):
+                    await work
+                log.info(
+                    "client left after %.1f s; stopped %s with %s",
+                    time.monotonic() - started,
+                    language or "auto",
+                    name,
+                )
+                return _error(499, "The client closed the request.")
             try:
-                result = await asyncio.to_thread(_transcribe, model, handle.name, language, prompt)
+                result = work.result()
             except TooLong:
                 return _error(413, f"Audio longer than {MAX_SECONDS} seconds.")
             except Exception as error:  # a file PyAV can't decode, mostly
@@ -182,6 +210,13 @@ async def transcriptions(request: Request):
     if response_format == "verbose_json":
         return JSONResponse({**result, "model": name})
     return JSONResponse({"text": result["text"]})
+
+
+async def _client_gone(request: Request) -> None:
+    """Returns once the client has hung up. The body is already read, so the next message the
+    server gets on this request is the hang-up (uvicorn waits for it without polling)."""
+    while (await request.receive())["type"] != "http.disconnect":
+        pass
 
 
 async def health(request: Request):
