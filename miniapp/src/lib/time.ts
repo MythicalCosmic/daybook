@@ -112,6 +112,17 @@ export function dayMonthLong(moment: string | Date, timeZone: string, locale: st
   return format(moment, timeZone, locale, { day: "numeric", month: "long" });
 }
 
+/**
+ * A day with its year: "2027-yil 30-aprel" (as Uzbek documents write it), "30 апреля 2027 г.",
+ * "30 April 2027". `sameYearAs` leaves the year out when it is that moment's year ("30-aprel").
+ */
+export function dayMonthYear(moment: string | Date, timeZone: string, locale: string, sameYearAs?: Date): string {
+  const year = dayKey(moment, timeZone).slice(0, 4);
+  if (sameYearAs && dayKey(sameYearAs, timeZone).slice(0, 4) === year) return dayMonthLong(moment, timeZone, locale);
+  if (isUzbek(locale)) return `${year}-yil ${dayMonthLong(moment, timeZone, locale)}`;
+  return format(moment, timeZone, locale, { day: "numeric", month: "long", year: "numeric" });
+}
+
 /** "Yakshanba, 25-oktabr", "Воскресенье, 25 октября": a date that starts a line, so capitalised
  * (inside a sentence Uzbek and Russian weekdays are lowercase). */
 export function longDate(moment: Date, timeZone: string, locale: string): string {
