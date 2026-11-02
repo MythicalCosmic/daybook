@@ -278,6 +278,10 @@ describe("what happens, as reactions", () => {
         { agent: "photo_checker", kind: "looks_right" },
         { agent: "photo_checker", kind: "unclear" },
         { agent: "morning_plan", kind: "plan_sent" },
+        { agent: "hr_assistant", kind: "digest_sent" },
+        { agent: "hr_assistant", kind: "payroll_ready" },
+        { agent: "hr_assistant", kind: "payroll_blocked" },
+        { agent: "hr_assistant", kind: "bonuses_suggested" },
         { agent: "flows", kind: "ran" },
       ]),
     ).toEqual([
@@ -286,6 +290,10 @@ describe("what happens, as reactions", () => {
       { key: "photo_checker", action: "hearts" },
       { key: "photo_checker", action: "look" },
       { key: "morning_plan", action: "wave" },
+      { key: "hr_assistant", action: "wave" },
+      { key: "hr_assistant", action: "cheer" },
+      { key: "hr_assistant", action: "look" },
+      { key: "hr_assistant", action: "hearts" },
     ]);
   });
 

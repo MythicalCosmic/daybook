@@ -177,7 +177,9 @@ describe("agent settings: fields → controls", () => {
 
   it("draws each type with its control", () => {
     expect(fieldControl({ key: "auto_create", type: "bool", label: "Auto", help: "" })).toEqual({ kind: "switch" });
-    expect(fieldControl(int)).toEqual({ kind: "stepper", min: 1, max: 48, unit: "h" });
+    expect(fieldControl(int)).toEqual({ kind: "stepper", min: 1, max: 48, unit: "h", step: 1 });
+    // An amount steps by 10 000 so‘m.
+    expect(fieldControl({ key: "bonus_amount", type: "int", label: "Bonus", help: "", min: 1, max: 1_000_000_000 })).toMatchObject({ kind: "stepper", step: 10_000 });
     expect(fieldControl(time)).toEqual({ kind: "time" });
     expect(fieldControl(who).kind).toBe("segmented");
     expect(fieldControl(many).kind).toBe("select");
