@@ -2,7 +2,9 @@
 /**
  * AI › Agents (the module's first page): one line on what the agents do, the engines' state, the
  * "Turn on AI" hero while AI is off, and a card per agent with its switch, numbers and settings.
- * Dictate and Smart add are one tap away from here too.
+ * Dictate and Smart add are one tap away from here too. While AI is on, Claude's little helper
+ * lives in a strip at the top and wanders over the cards (AiBuddyStage.vue), and every agent card
+ * has its own chibi.
  */
 import { Bot, KeyRound, Mic, Settings2, Sparkles, WalletCards } from "@lucide/vue";
 import { computed, ref } from "vue";
@@ -24,6 +26,7 @@ import { useCompanyStore } from "@/stores/company";
 import { useAgents, useAiStatus, usePatchAgent, useRunAgent } from "../api";
 import AgentCard from "../components/AgentCard.vue";
 import AgentDrawerBody from "../components/AgentDrawerBody.vue";
+import AiBuddyStage from "../components/AiBuddyStage.vue";
 import AiHeader from "../components/AiHeader.vue";
 import TurnOnCard from "../components/TurnOnCard.vue";
 import { openDictation } from "../dictation";
@@ -80,10 +83,19 @@ async function runNow(agent: Agent): Promise<void> {
 }
 
 const settingsPath = computed(() => `/c/${company.currentId}/settings/ai`);
+
+/** What Claude's helper says next to itself: the agent at work now, else today's count. */
+const runningAgent = computed(() => agents.data.value?.find((agent) => agent.running) ?? null);
+const doneToday = computed(() => (agents.data.value ?? []).reduce((sum, agent) => sum + (agent.stats?.today ?? 0), 0));
+const buddyLine = computed(() => {
+  if (runningAgent.value) return t("ai.buddy.doing", { name: runningAgent.value.name });
+  if (doneToday.value > 0) return `${t("ai.agents.today")}: ${t("ai.kpi.actions", { n: doneToday.value }, doneToday.value)}`;
+  return t("ai.buddy.ready");
+});
 </script>
 
 <template>
-  <div class="flex min-w-0 flex-col gap-5">
+  <div class="relative flex min-w-0 flex-col gap-5">
     <AiHeader :title="t('ai.agents.title')" :description="t('ai.agents.description')" :status="status.data.value">
       <template v-if="show.dictate || show.smartAdd" #actions>
         <UiButton v-if="show.smartAdd" :size="isPhone ? 'lg' : 'md'" :icon="Sparkles" class="max-sm:flex-1" data-testid="ai-smart-add" @click="openDictation('text')">
@@ -109,6 +121,11 @@ const settingsPath = computed(() => `/c/${company.currentId}/settings/ai`);
           <UiButton size="sm" :to="settingsPath" :icon="Settings2">{{ t("ai.budget.raise") }}</UiButton>
         </template>
       </InlineAlert>
+
+      <AiBuddyStage v-if="aiOn" :mood="runningAgent ? 'busy' : 'on'" :size="isPhone ? 60 : 72">
+        <p class="text-md font-semibold leading-6 text-fg">{{ runningAgent ? t("ai.buddy.busy") : t("ai.buddy.onDuty") }}</p>
+        <p class="text-sm text-muted">{{ buddyLine }}</p>
+      </AiBuddyStage>
     </template>
 
     <section class="flex flex-col gap-3" :aria-label="t('ai.agents.list')">

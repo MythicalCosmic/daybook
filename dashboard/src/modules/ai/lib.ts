@@ -371,3 +371,102 @@ export function budgetShare(budget: { monthly_usd: string; spent_usd: string } |
   if (!Number.isFinite(monthly) || monthly <= 0 || !Number.isFinite(spent)) return 0;
   return Math.min(1, Math.max(0, spent / monthly));
 }
+
+// The AI's little helper on the Agents page (components/AiBuddy.vue draws it, AiBuddyStage.vue
+// moves it) ---------------------------------------------------------------------------------------
+
+export type BuddyMood = "on" | "busy";
+export type BuddyAction = "idle" | "blink" | "look" | "hop" | "wave" | "dance" | "hearts" | "love" | "sparkle" | "type" | "touch" | "tap";
+/** The family: Claude itself, and one chibi per agent, each with its colours and its prop. */
+export type BuddyVariant = "claude" | "voice" | "morning" | "deadline" | "photo";
+
+const AGENT_BUDDIES: Record<string, BuddyVariant> = { voice_tasks: "voice", morning_plan: "morning", deadline_watcher: "deadline", photo_checker: "photo" };
+
+/** An agent's chibi; an agent without one of its own gets Claude. */
+export function buddyVariant(agentKey: string): BuddyVariant {
+  return AGENT_BUDDIES[agentKey] ?? "claude";
+}
+
+/** What it does in place, by mood: while an agent runs it mostly types and sparkles. */
+const BUDDY_POOLS: Record<BuddyMood, readonly BuddyAction[]> = {
+  on: ["blink", "blink", "look", "hop", "wave", "dance", "hearts", "love", "sparkle"],
+  busy: ["type", "type", "type", "sparkle", "sparkle", "blink", "hop", "hearts"],
+};
+
+export const BUDDY_DURATION: Record<BuddyAction, number> = {
+  idle: 0,
+  blink: 220,
+  look: 1400,
+  hop: 650,
+  wave: 1300,
+  dance: 1400,
+  hearts: 1500,
+  love: 1600,
+  sparkle: 1200,
+  type: 1800,
+  touch: 900,
+  tap: 1300,
+};
+
+export const BUDDY_PARTICLES: Partial<Record<BuddyAction, { kind: "heart" | "spark" | "z"; count: number }>> = {
+  hearts: { kind: "heart", count: 3 },
+  love: { kind: "heart", count: 2 },
+  tap: { kind: "heart", count: 4 },
+  sparkle: { kind: "spark", count: 3 },
+  type: { kind: "spark", count: 2 },
+  touch: { kind: "spark", count: 2 },
+};
+
+/** The next thing it does in place; `random` in [0, 1) picks from the mood's pool. */
+export function pickBuddyAction(mood: BuddyMood, random: number): BuddyAction {
+  const pool = BUDDY_POOLS[mood];
+  return pool[Math.min(pool.length - 1, Math.floor(random * pool.length))]!;
+}
+
+/** An agent's chibi on its card is calmer than Claude: mostly blinks and looks, types while its agent runs. */
+const CHIBI_POOLS = {
+  on: ["blink", "blink", "blink", "look", "look", "wave", "hearts", "hop"],
+  busy: ["type", "type", "sparkle", "blink"],
+} as const satisfies Record<string, readonly BuddyAction[]>;
+
+export function pickChibiAction(running: boolean, random: number): BuddyAction {
+  const pool = CHIBI_POOLS[running ? "busy" : "on"];
+  return pool[Math.min(pool.length - 1, Math.floor(random * pool.length))]!;
+}
+
+export type BuddyPlan = { kind: "act"; action: BuddyAction } | { kind: "stroll" } | { kind: "visit"; card: number };
+
+/** What it does next: visit one of the `cards` it can see, stroll along its strip, or act in place. */
+export function planBuddy(mood: BuddyMood, cards: number, random: () => number): BuddyPlan {
+  const roll = random();
+  if (cards > 0 && roll < 0.3) return { kind: "visit", card: Math.min(cards - 1, Math.floor(random() * cards)) };
+  if (roll < 0.45) return { kind: "stroll" };
+  return { kind: "act", action: pickBuddyAction(mood, random()) };
+}
+
+/** Pixels a second when it walks. */
+export const BUDDY_SPEED = 110;
+
+export function buddyWalkMs(dx: number, dy: number): number {
+  return Math.round(Math.min(3200, Math.max(450, (Math.hypot(dx, dy) / BUDDY_SPEED) * 1000)));
+}
+
+export type Box = { left: number; top: number; width: number; height: number };
+
+/** Its height for a width (the drawing is 36 × 34, its props above the head) and where its feet
+ * are from its top (row 30). */
+export function buddyBox(size: number): { height: number; feet: number } {
+  return { height: Math.round((size * 34) / 36), feet: Math.round((size * 30) / 36) };
+}
+
+/**
+ * Where it stands on a card, in `root`'s coordinates: feet on the card's top edge, somewhere on its
+ * left part (`random` in [0, 1)) — over the card above it stands in front of the day's numbers, not
+ * the "Run now" button on the right. Sitting puts the body on the edge, legs hanging.
+ */
+export function standPoint(card: Box, root: Box, size: number, random: number, sitting = false): { x: number; y: number } {
+  const { feet } = buddyBox(size);
+  const span = Math.max(0, card.width - size - 24) * 0.6;
+  const legs = Math.round((size * 6) / 36);
+  return { x: Math.round(card.left - root.left + 12 + random * span), y: Math.round(card.top - root.top - feet + (sitting ? legs : 0)) };
+}
