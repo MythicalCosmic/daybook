@@ -61,12 +61,14 @@ const rows = computed(() => (expanded.value ? (result.value?.rows ?? []) : (resu
 
 <template>
   <section class="flex flex-col gap-3 rounded-[12px] border border-line bg-surface-2/50 p-3.5" :aria-busy="waiting || undefined" data-testid="rule-preview">
-    <header class="flex items-center gap-2">
-      <Eye :size="16" class="shrink-0 text-subtle" />
-      <h3 class="min-w-0 flex-1 truncate text-sm font-semibold text-fg">{{ t("payroll.rules.preview") }}</h3>
-      <div class="flex shrink-0 items-center">
+    <header class="flex flex-col gap-2">
+      <div class="flex items-center gap-2">
+        <Eye :size="16" class="shrink-0 text-subtle" />
+        <h3 class="min-w-0 flex-1 truncate text-sm font-semibold text-fg">{{ t("payroll.rules.preview") }}</h3>
+      </div>
+      <div class="flex items-center justify-between rounded-[10px] border border-line bg-surface px-1 py-0.5">
         <IconButton :icon="ChevronLeft" size="sm" :label="t('payroll.period.previous')" @click="period = shiftPeriod(period, -1)" />
-        <span class="min-w-[7.5rem] text-center text-sm font-medium tabular-nums text-fg">{{ fmt.day(period, "monthYear") }}</span>
+        <span class="text-sm font-medium tabular-nums text-fg" data-testid="preview-month">{{ fmt.day(period, "monthYear") }}</span>
         <IconButton :icon="ChevronRight" size="sm" :label="t('payroll.period.next')" :disabled="period >= current" @click="period = shiftPeriod(period, 1)" />
       </div>
     </header>

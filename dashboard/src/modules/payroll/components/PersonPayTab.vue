@@ -134,7 +134,9 @@ const base = computed(() => `/c/${company.currentId}/payroll`);
           <li v-for="slip in payslips.data.value" :key="slip.id" class="flex min-h-11 items-center gap-3 rounded-[8px] px-1 py-1.5 hover:bg-surface-2">
             <RouterLink :to="`${base}/runs/${slip.run}?payslip=${slip.id}`" class="min-w-0 flex-1">
               <p class="truncate text-sm font-medium text-fg">{{ fmt.day(slip.period, "monthYear") }}</p>
-              <p class="truncate text-xs text-muted">{{ slip.received_at ? t("payroll.person.received", { date: fmt.instant(slip.received_at, "date") }) : slip.paid_at ? t("payroll.runs.paidOn", { date: fmt.instant(slip.paid_at, "date") }) : t(`payroll.payslipStatus.${slip.status}`) }}</p>
+              <p v-if="slip.received_at || slip.paid_at" class="truncate text-xs text-muted">
+                {{ slip.received_at ? t("payroll.person.received", { date: fmt.instant(slip.received_at, "date") }) : t("payroll.runs.paidOn", { date: fmt.instant(slip.paid_at!, "date") }) }}
+              </p>
             </RouterLink>
             <StatusPill :tone="PAYSLIP_TONES[slip.status]" size="sm" :label="t(`payroll.payslipStatus.${slip.status}`)" />
             <span class="w-28 shrink-0 text-right text-sm font-semibold tabular-nums text-fg"><PayAmount :value="slip.net" :currency="slip.currency" /></span>

@@ -62,7 +62,7 @@ const tabs = computed(() => [
 const columns = computed<TableColumn<Advance>[]>(() => [
   { id: "person", header: t("payroll.payslips.person"), minWidth: 210, sticky: true, hideable: false, value: (row) => row.member.name },
   { id: "amount", header: t("payroll.field.amount"), width: 150, numeric: true, value: (row) => row.amount ?? null },
-  { id: "plan", header: t("payroll.advances.plan"), width: 190, value: (row) => planText(row) },
+  { id: "plan", header: t("payroll.advances.plan"), width: 200, value: (row) => planText(row) },
   { id: "reason", header: t("payroll.adjustments.reason"), minWidth: 180, value: (row) => row.reason },
   ...(tab.value === "repaying" ? [{ id: "repaid", header: t("payroll.advances.repaid"), width: 150, value: (row: Advance) => row.repaid ?? null }] : []),
   { id: "requested", header: t("payroll.advances.requested"), width: 130, value: (row) => row.created_at },

@@ -9,7 +9,7 @@
 import { Gift, Plus, Scale, Trash2 } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 import { isApiError } from "@/api/http";
 import FormField from "@/components/FormField.vue";
@@ -17,7 +17,6 @@ import IconButton from "@/components/IconButton.vue";
 import MoneyInput from "@/components/MoneyInput.vue";
 import NumberInput from "@/components/NumberInput.vue";
 import PositionPicker from "@/components/PositionPicker.vue";
-import RadioCards from "@/components/RadioCards.vue";
 import SegmentedControl from "@/components/SegmentedControl.vue";
 import SelectBox from "@/components/SelectBox.vue";
 import TextInput from "@/components/TextInput.vue";
@@ -28,7 +27,6 @@ import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { closeQueryKey } from "@/lib/useRouteState";
 import { useCompanyStore } from "@/stores/company";
-import { useRouter } from "vue-router";
 
 import { payrollApi, useRefresh } from "../api";
 import { adaptToMetric, allowsPerUnit, emptyRule, METRICS, metricArea, metricUnit, percentBase, ruleInput, ruleProblems, ruleToDraft, usesMinTasks, type RuleDraft, type RuleProblem } from "../lib";
@@ -79,13 +77,9 @@ const metricOptions = computed(() =>
 function setMetric(metric: RuleMetric | null): void {
   if (metric) draft.value = adaptToMetric(draft.value, metric);
 }
+// "Per unit" makes no sense for a percentage or a ratio: it isn't offered then.
 const modeOptions = computed(() =>
-  (["once", "per_unit", "tiered"] as const).map((value) => ({
-    value,
-    label: t(`payroll.rules.mode.${value}`),
-    description: t(`payroll.rules.modeHint.${value}`),
-    disabled: value === "per_unit" && !allowsPerUnit(draft.value.metric),
-  })),
+  (["once", "per_unit", "tiered"] as const).filter((value) => value !== "per_unit" || allowsPerUnit(draft.value.metric)).map((value) => ({ value, label: t(`payroll.rules.mode.${value}`) })),
 );
 const opOptions = computed(() => (["gte", "gt", "lte", "lt"] as const).map((value) => ({ value, label: t(`payroll.rules.op.${value}`) })));
 
@@ -143,6 +137,7 @@ const title = computed(() => (existing.value ? existing.value.name : t(`payroll.
             <FormField :label="t('payroll.rules.kind')">
               <SegmentedControl
                 v-model="draft.kind"
+                block
                 :options="[
                   { value: 'bonus', label: t('payroll.adjustmentKind.bonus'), icon: Gift },
                   { value: 'fine', label: t('payroll.adjustmentKind.fine'), icon: Scale },
@@ -184,7 +179,10 @@ const title = computed(() => (existing.value ? existing.value.name : t(`payroll.
 
           <section class="flex flex-col gap-4 rounded-[12px] border border-line p-4">
             <h3 class="text-sm font-semibold text-fg">{{ draft.kind === "bonus" ? t("payroll.rules.howMuchBonus") : t("payroll.rules.howMuchFine") }}</h3>
-            <RadioCards v-model="draft.mode" :options="modeOptions" :columns="3" orientation="vertical" />
+            <div class="flex flex-col gap-1.5">
+              <SegmentedControl v-model="draft.mode" block :options="modeOptions" :aria-label="t('payroll.rules.modeLabel')" />
+              <p class="text-xs text-muted">{{ t(`payroll.rules.modeHint.${draft.mode}`) }}</p>
+            </div>
 
             <template v-if="draft.mode === 'tiered'">
               <div class="flex flex-col gap-2" data-testid="tiers">

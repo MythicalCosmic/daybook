@@ -9,7 +9,7 @@ import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
-import DescriptionList, { type DescriptionItem } from "@/components/DescriptionList.vue";
+import type { DescriptionItem } from "@/components/DescriptionList.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import FormField from "@/components/FormField.vue";
 import MoneyInput from "@/components/MoneyInput.vue";
@@ -145,7 +145,13 @@ async function pdf(): Promise<void> {
             </div>
           </header>
 
-          <DescriptionList :items="facts" :columns="2" />
+          <!-- Two columns on a phone too: these are short facts, and the lines below matter more. -->
+          <dl class="grid grid-cols-2 gap-x-4 gap-y-3" data-testid="payslip-facts">
+            <div v-for="item in facts" :key="item.key" class="min-w-0">
+              <dt class="text-xs text-muted">{{ item.label }}</dt>
+              <dd class="mt-0.5 text-sm font-medium tabular-nums text-fg">{{ item.value }}</dd>
+            </div>
+          </dl>
 
           <PayslipLines
             :lines="slip.lines ?? []"

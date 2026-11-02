@@ -111,6 +111,14 @@ function whenText(run: Run): string {
   return t("payroll.runs.notCalculated");
 }
 
+/** The table's last column: when the status last moved (the pill beside it says how). */
+function whenShort(run: Run): string {
+  if (run.status === "paid" && run.paid_at) return fmt.instant(run.paid_at, "date");
+  if (run.finalized_at) return fmt.instant(run.finalized_at, "date");
+  if (run.calculated_at) return fmt.relative(run.calculated_at);
+  return t("payroll.runs.notCalculated");
+}
+
 function open(run: Run): void {
   void router.push(`/c/${company.currentId}/payroll/runs/${run.id}`);
 }
@@ -138,7 +146,7 @@ watch(
       </template>
     </PageHeader>
 
-    <KpiStrip class="mb-5" :items="kpis" :columns="4" phone="grid" />
+    <KpiStrip class="mb-5" :items="kpis" :columns="4" phone="compact" />
 
     <button
       v-if="canManage && target && rows.length"
@@ -197,7 +205,7 @@ watch(
           :sub="row.totals && row.totals.currencies.length > 1 ? fmt.money(row.totals.currencies[1]!.net, row.totals.currencies[1]!.currency) : undefined"
         />
       </template>
-      <template #cell-when="{ row }"><span class="truncate text-sm text-muted">{{ whenText(row) }}</span></template>
+      <template #cell-when="{ row }"><span class="truncate text-sm text-muted" :title="whenText(row)">{{ whenShort(row) }}</span></template>
       <template #card="{ row }">
         <div class="flex items-start gap-3">
           <div class="min-w-0 flex-1">

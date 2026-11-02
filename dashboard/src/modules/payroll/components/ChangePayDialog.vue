@@ -16,6 +16,7 @@ import FormField from "@/components/FormField.vue";
 import InlineAlert from "@/components/InlineAlert.vue";
 import MoneyInput from "@/components/MoneyInput.vue";
 import RadioCards from "@/components/RadioCards.vue";
+import SelectBox from "@/components/SelectBox.vue";
 import TextInput from "@/components/TextInput.vue";
 import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import UiButton from "@/components/UiButton.vue";
@@ -56,16 +57,19 @@ watch(
   (isOpen) => {
     if (!isOpen) return;
     for (const key of Object.keys(errors)) delete errors[key];
-    const base = props.start ?? payHistory(props.history, today.value).current;
+    // A planned change not used yet is what they most likely want to adjust: start from it.
+    const { current, upcoming } = payHistory(props.history, today.value);
+    const editing = props.start ?? (upcoming && !upcoming.locked ? upcoming : null);
+    const base = editing ?? current;
     Object.assign(form, {
-      effective_from: props.start?.effective_from ?? suggestedEffectiveFrom(today.value),
+      effective_from: editing?.effective_from ?? suggestedEffectiveFrom(today.value),
       pay_type: base?.pay_type ?? "monthly",
-      amount: props.start?.amount ?? base?.amount ?? null,
+      amount: base?.amount ?? null,
       currency: base?.currency ?? company.currency,
       proration: base?.proration ?? "attendance",
       overtime_eligible: base?.overtime_eligible ?? false,
       pays_task_rates: base?.pays_task_rates ?? false,
-      note: props.start?.note ?? "",
+      note: editing?.note ?? "",
     });
   },
   { immediate: true },
@@ -80,9 +84,7 @@ const typeOptions = computed(() =>
     icon: { monthly: CalendarDays, daily: Clock3, hourly: Hourglass, per_task: ListChecks }[value],
   })),
 );
-const prorationOptions = computed(() =>
-  (["attendance", "calendar", "none"] as const).map((value) => ({ value, label: t(`payroll.proration.${value}`), description: t(`payroll.prorationHint.${value}`) })),
-);
+const prorationOptions = computed(() => (["attendance", "calendar", "none"] as const).map((value) => ({ value, label: t(`payroll.proration.${value}`) })));
 const needsAmount = computed(() => form.pay_type !== "per_task");
 
 async function save(): Promise<void> {
@@ -136,8 +138,8 @@ async function save(): Promise<void> {
       </FormField>
       <InlineAlert v-else tone="neutral" size="sm" :description="t('payroll.pay.perTaskNote')" />
 
-      <FormField v-if="form.pay_type === 'monthly'" :label="t('payroll.pay.proration')" :error="errors.proration">
-        <RadioCards v-model="form.proration" :options="prorationOptions" :columns="3" orientation="vertical" />
+      <FormField v-if="form.pay_type === 'monthly'" :label="t('payroll.pay.proration')" :error="errors.proration" :hint="t(`payroll.prorationHint.${form.proration}`)">
+        <SelectBox v-model="form.proration" :options="prorationOptions" />
       </FormField>
 
       <div class="flex flex-col divide-y divide-line rounded-[12px] border border-line">

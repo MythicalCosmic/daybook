@@ -143,7 +143,7 @@ async function voidIt(): Promise<void> {
           <blockquote class="rounded-[10px] bg-surface-2 px-3.5 py-3 text-base text-fg">{{ row.reason }}</blockquote>
 
           <DescriptionList :items="facts" :columns="2">
-            <template #value-source><SourceLabel :row="row" /></template>
+            <template #value-source><SourceLabel :row="row" plain /></template>
           </DescriptionList>
 
           <section v-if="row.disputed_at" class="flex flex-col gap-3 rounded-[12px] border border-warning/40 p-3.5" data-testid="dispute">
@@ -163,7 +163,7 @@ async function voidIt(): Promise<void> {
               <FormField :label="t('payroll.adjustments.answer')" :hint="t('payroll.adjustments.answerHint')">
                 <TextArea v-model="answer" :rows="2" :maxlength="500" :placeholder="t('payroll.adjustments.answerPlaceholder')" />
               </FormField>
-              <ToggleSwitch v-model="cancelIt" layout="row" :label="t('payroll.adjustments.cancelToo', { kind: t(`payroll.adjustmentKind.${row.kind}`).toLowerCase() })" :description="t('payroll.adjustments.cancelTooHint')" />
+              <ToggleSwitch v-model="cancelIt" layout="row" :label="t(`payroll.adjustments.cancelToo.${row.kind}`)" :description="t('payroll.adjustments.cancelTooHint')" />
               <UiButton variant="primary" size="sm" class="self-end" :icon="Reply" :loading="answering" :disabled="!answer.trim()" data-testid="send-answer" @click="sendAnswer">{{ t("payroll.adjustments.sendAnswer") }}</UiButton>
             </template>
             <p v-else class="text-sm text-muted">{{ t("payroll.adjustments.waitingAnswer") }}</p>

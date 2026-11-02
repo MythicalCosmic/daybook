@@ -12,7 +12,8 @@ import { useCompanyStore } from "@/stores/company";
 
 import type { Adjustment } from "../types";
 
-const props = defineProps<{ row: Pick<Adjustment, "source" | "rule" | "task" | "proposed_by"> }>();
+/** `plain`: "By hand" without who (where the proposer is shown beside it). */
+const props = withDefaults(defineProps<{ row: Pick<Adjustment, "source" | "rule" | "task" | "proposed_by">; plain?: boolean }>(), { plain: false });
 
 const { t } = useI18n();
 const company = useCompanyStore();
@@ -21,7 +22,7 @@ const text = computed(() => {
   const row = props.row;
   if (row.source === "rule") return row.rule?.name ?? t("payroll.source.rule");
   if (row.source === "task") return row.task?.title ?? t("payroll.source.task");
-  if (row.source === "manual") return row.proposed_by ? t("payroll.source.by", { name: row.proposed_by.name }) : t("payroll.source.manual");
+  if (row.source === "manual") return row.proposed_by && !props.plain ? t("payroll.source.by", { name: row.proposed_by.name }) : t("payroll.source.manual");
   return t("payroll.source.attendance");
 });
 </script>

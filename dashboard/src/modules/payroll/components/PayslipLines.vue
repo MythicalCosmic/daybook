@@ -64,12 +64,9 @@ const kindLabel = (line: PayslipLine) => (te(`payroll.lineKind.${line.kind}`) ? 
         <li v-for="line in section.lines" :key="line.id" class="flex min-h-12 items-start gap-3 px-3 py-2.5" :data-line-kind="line.kind">
           <div class="min-w-0 flex-1">
             <p class="text-sm font-medium leading-5 text-fg">{{ line.label || kindLabel(line) }}</p>
-            <p v-if="how(line) || (line.label && kindLabel(line))" class="mt-0.5 text-xs leading-4 text-muted">
-              <template v-if="line.label && kindLabel(line)">{{ kindLabel(line) }}</template>
-              <template v-if="how(line)"><template v-if="line.label && kindLabel(line)"> · </template><span class="tabular-nums">{{ how(line) }}</span></template>
-            </p>
+            <p v-if="how(line)" class="mt-0.5 text-xs leading-4 tabular-nums text-muted">{{ how(line) }}</p>
           </div>
-          <span class="shrink-0 pt-px text-sm font-semibold tabular-nums"><MoneyText :value="line.amount" :currency="currency" sign="always" colored /></span>
+          <span class="shrink-0 pt-px text-sm font-semibold tabular-nums"><MoneyText :value="line.amount" :currency="currency" colored /></span>
           <IconButton
             v-if="editable && line.kind === 'manual'"
             :icon="Trash2"
@@ -83,13 +80,19 @@ const kindLabel = (line: PayslipLine) => (te(`payroll.lineKind.${line.kind}`) ? 
       </ul>
     </section>
 
-    <dl v-if="net !== undefined" class="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 rounded-[12px] bg-surface-2 px-3 py-3 text-sm">
-      <dt class="text-muted">{{ t("payroll.totals.gross") }}</dt>
-      <dd class="text-right font-medium tabular-nums text-fg"><PayAmount :value="gross" :currency="currency" /></dd>
-      <dt class="text-muted">{{ t("payroll.totals.deductions") }}</dt>
-      <dd class="text-right font-medium tabular-nums text-fg"><PayAmount :value="deductions" :currency="currency" /></dd>
-      <dt class="border-t border-line pt-2 text-base font-semibold text-fg">{{ t("payroll.totals.net") }}</dt>
-      <dd class="border-t border-line pt-2 text-right text-base font-semibold tabular-nums text-fg" data-testid="payslip-net"><PayAmount :value="net" :currency="currency" /></dd>
+    <dl v-if="net !== undefined" class="flex flex-col gap-1.5 rounded-[12px] bg-surface-2 px-3 py-3 text-sm">
+      <div class="flex items-baseline justify-between gap-4">
+        <dt class="text-muted">{{ t("payroll.totals.gross") }}</dt>
+        <dd class="font-medium tabular-nums text-fg"><PayAmount :value="gross" :currency="currency" /></dd>
+      </div>
+      <div class="flex items-baseline justify-between gap-4">
+        <dt class="text-muted">{{ t("payroll.totals.deductions") }}</dt>
+        <dd class="font-medium tabular-nums text-fg"><PayAmount :value="deductions" :currency="currency" /></dd>
+      </div>
+      <div class="mt-0.5 flex items-baseline justify-between gap-4 border-t border-line pt-2">
+        <dt class="text-base font-semibold text-fg">{{ t("payroll.totals.net") }}</dt>
+        <dd class="text-base font-semibold tabular-nums text-fg" data-testid="payslip-net"><PayAmount :value="net" :currency="currency" /></dd>
+      </div>
     </dl>
   </div>
 </template>

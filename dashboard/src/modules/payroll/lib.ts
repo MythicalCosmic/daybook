@@ -191,11 +191,16 @@ const METHOD_KINDS: Record<PayoutMethod, readonly string[]> = { cash: ["cash", "
 /** An account of this kind is where money paid this way usually comes from. */
 export const suitsMethod = (kind: string, method: PayoutMethod): boolean => METHOD_KINDS[method].includes(kind);
 
-/** Accounts in the currency being paid, the ones that suit the method first (then by name). */
+/**
+ * Accounts in the currency being paid, the ones that suit the method first, in the method's own
+ * order (cash: the till before the safe before cash someone holds), then by name.
+ */
 export function accountsFor(accounts: readonly PayAccount[], currency: Currency, method: PayoutMethod): PayAccount[] {
-  return accounts
-    .filter((row) => row.currency === currency)
-    .sort((a, b) => Number(suitsMethod(b.kind, method)) - Number(suitsMethod(a.kind, method)) || a.name.localeCompare(b.name));
+  const rank = (kind: string) => {
+    const index = METHOD_KINDS[method].indexOf(kind);
+    return index === -1 ? METHOD_KINDS[method].length : index;
+  };
+  return accounts.filter((row) => row.currency === currency).sort((a, b) => rank(a.kind) - rank(b.kind) || a.name.localeCompare(b.name));
 }
 
 /** Where a warning's "Fix" goes, relative to the company (null when there is nothing to open). */

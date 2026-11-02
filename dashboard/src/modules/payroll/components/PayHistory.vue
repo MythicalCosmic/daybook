@@ -15,21 +15,24 @@ import { useFormat } from "@/lib/useFormat";
 import type { Compensation } from "../types";
 import PayAmount from "./PayAmount.vue";
 
-withDefaults(defineProps<{ history: Compensation[]; current: Compensation | null; editable?: boolean }>(), { editable: false });
+const props = withDefaults(defineProps<{ history: Compensation[]; current: Compensation | null; editable?: boolean }>(), { editable: false });
 const emit = defineEmits<{ edit: [row: Compensation] }>();
 
 const { t } = useI18n();
 const fmt = useFormat();
+/** Where a row stands against the one in force: coming, now, or before. */
+const stage = (row: Compensation) => (row.id === props.current?.id ? "current" : !props.current || row.effective_from > props.current.effective_from ? "upcoming" : "earlier");
 </script>
 
 <template>
   <EmptyState v-if="!history.length" size="sm" :icon="Clock3" :title="t('payroll.pay.noHistory')" :description="t('payroll.pay.noHistoryBody')" tone="neutral" />
-  <ol v-else class="relative flex flex-col gap-3 before:absolute before:bottom-3 before:left-[7px] before:top-3 before:w-px before:bg-line" data-testid="pay-history">
+  <ol v-else class="relative flex flex-col gap-3" data-testid="pay-history">
+    <span class="absolute bottom-5 left-[7px] top-5 w-px bg-line-strong" aria-hidden="true" />
     <li v-for="row in history" :key="row.id" class="relative pl-6">
       <span
         :class="[
-          'absolute left-0 top-4 size-[15px] rounded-full border-2 bg-surface',
-          row.id === current?.id ? 'border-primary bg-primary' : row.effective_from > (current?.effective_from ?? '') && row.id !== current?.id ? 'border-info' : 'border-line-strong',
+          'absolute left-0 top-4 size-[15px] rounded-full border-2',
+          row.id === current?.id ? 'border-primary bg-primary' : stage(row) === 'upcoming' ? 'border-info bg-surface' : 'border-line-strong bg-surface-2',
         ]"
         aria-hidden="true"
       />
@@ -42,7 +45,7 @@ const fmt = useFormat();
             </p>
           </div>
           <StatusPill v-if="row.id === current?.id" tone="primary" size="sm" :label="t('payroll.pay.current')" />
-          <StatusPill v-else-if="!current || row.effective_from > current.effective_from" tone="info" size="sm" :label="t('payroll.pay.upcoming')" />
+          <StatusPill v-else-if="stage(row) === 'upcoming'" tone="info" size="sm" :label="t('payroll.pay.upcoming')" />
           <IconButton v-if="editable && !row.locked" :icon="Pencil" size="sm" :label="t('payroll.pay.edit')" class="-mr-1.5 -mt-1" @click="emit('edit', row)" />
         </div>
         <div class="mt-2 flex flex-wrap gap-1.5">

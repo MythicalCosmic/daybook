@@ -16,12 +16,14 @@ import PageHeader from "@/components/PageHeader.vue";
 import { useCompanyPeople } from "@/components/pickers";
 import { normalize } from "@/components/options";
 import SegmentedControl from "@/components/SegmentedControl.vue";
+import SelectBox from "@/components/SelectBox.vue";
 import StatusPill from "@/components/StatusPill.vue";
 import type { TableColumn } from "@/components/table";
 import TextInput from "@/components/TextInput.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { useDataTable } from "@/components/useDataTable";
 import { todayIn } from "@/lib/dates";
+import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
 import { useCompanyStore } from "@/stores/company";
@@ -60,6 +62,11 @@ const visible = computed(() => {
     .filter((row) => !needle || normalize(`${row.member.name} ${row.member.position ?? ""}`).includes(needle));
 });
 const missing = computed(() => rows.value.filter((row) => !row.current).length);
+const { isPhone } = useBreakpoints();
+const typeOptions = computed(() => [
+  { value: "all" as const, label: t("payroll.pay.allTypes") },
+  ...(["monthly", "daily", "hourly", "per_task"] as const).map((value) => ({ value, label: t(`payroll.payType.${value}`) })),
+]);
 const filtered = computed(() => missingOnly.value || type.value !== "all" || !!search.value);
 
 const table = useDataTable({ id: "payroll.pay", pageSize: 500, hidden: ["proration"] });
@@ -108,17 +115,9 @@ const loading = computed(() => compensations.isPending.value || (company.can("me
       <template #toolbar>
         <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
           <TextInput v-model="search" :icon="Search" size="sm" clearable :placeholder="t('payroll.payslips.search')" class="w-full sm:w-64" />
-          <SegmentedControl
-            v-model="type"
-            size="sm"
-            :options="[
-              { value: 'all', label: t('payroll.pay.allTypes') },
-              { value: 'monthly', label: t('payroll.payType.monthly') },
-              { value: 'daily', label: t('payroll.payType.daily') },
-              { value: 'hourly', label: t('payroll.payType.hourly') },
-              { value: 'per_task', label: t('payroll.payType.per_task') },
-            ]"
-          />
+          <!-- Five choices don't fit a phone's width as segments: a select there. -->
+          <SelectBox v-if="isPhone" v-model="type" size="sm" :options="typeOptions" class="w-40" :aria-label="t('payroll.pay.type')" />
+          <SegmentedControl v-else v-model="type" size="sm" :options="typeOptions" />
           <button
             v-if="missing || missingOnly"
             type="button"

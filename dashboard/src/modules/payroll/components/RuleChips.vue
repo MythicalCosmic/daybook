@@ -7,8 +7,8 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { useFormat } from "@/lib/useFormat";
 import { compare } from "@/lib/decimal";
+import { useFormat } from "@/lib/useFormat";
 
 import { metricUnit } from "../lib";
 import type { Rule } from "../types";
@@ -38,7 +38,9 @@ const chips = computed(() => {
       list.push({ key: `tier-${tier.from}`, text: `${OPS.gte} ${unitText(tier.from)}: ${sign.value}${fmt.money(tier.amount)}`, tone: "kind" });
     }
   } else {
-    if (r.threshold !== null && r.mode === "once") list.push({ key: "when", text: `${OPS[r.op]} ${unitText(r.threshold)}` });
+    // "≥ 0" holds for everyone: no condition worth a chip.
+    const always = r.op === "gte" && r.threshold !== null && compare(r.threshold, "0") <= 0;
+    if (r.threshold !== null && r.mode === "once" && !always) list.push({ key: "when", text: `${OPS[r.op]} ${unitText(r.threshold)}` });
     if (r.mode === "per_unit") {
       list.push({ key: "each", text: `${sign.value}${fmt.money(r.amount ?? "0")} ${t("payroll.rules.each")}`, tone: "kind" });
       if (r.free_units) list.push({ key: "free", text: t("payroll.rules.freeUnits", { n: r.free_units }, r.free_units) });

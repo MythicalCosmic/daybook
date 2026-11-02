@@ -16,7 +16,6 @@ import DeltaBadge from "@/components/DeltaBadge.vue";
 import DropdownMenu, { type MenuEntry } from "@/components/DropdownMenu.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
-import ExportButton from "@/components/ExportButton.vue";
 import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import IconButton from "@/components/IconButton.vue";
 import InlineAlert from "@/components/InlineAlert.vue";
@@ -32,6 +31,7 @@ import { useConfirm } from "@/components/useConfirm";
 import { useDataTable } from "@/components/useDataTable";
 import { toast } from "@/components/useToast";
 import { normalize } from "@/components/options";
+import { moneySign } from "@/lib/money";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
@@ -43,7 +43,7 @@ import MarkPaidDialog from "../components/MarkPaidDialog.vue";
 import PayAmount from "../components/PayAmount.vue";
 import PayslipDrawer from "../components/PayslipDrawer.vue";
 import RunWarnings from "../components/RunWarnings.vue";
-import { PAYSLIP_TONES, quantityText, RUN_TONES, runActions, type Can } from "../lib";
+import { hasAmount, PAYSLIP_TONES, quantityText, RUN_TONES, runActions, type Can } from "../lib";
 import type { Payslip, RunAction } from "../types";
 
 const { t } = useI18n();
@@ -90,18 +90,33 @@ const visible = computed(() => {
 const selectable = computed(() => run.value?.status === "finalized" && has("mark_paid"));
 
 const columns = computed<TableColumn<Payslip>[]>(() => [
-  { id: "person", header: t("payroll.payslips.person"), minWidth: 220, sticky: true, hideable: false, value: (row) => row.member.name },
-  { id: "days", header: t("payroll.payslips.days"), width: 96, numeric: true, value: (row) => row.paid_days ?? "" },
-  { id: "base", header: t("payroll.payslips.base"), width: 140, numeric: true, value: (row) => row.base_pay ?? null },
-  { id: "bonuses", header: t("payroll.payslips.bonuses"), width: 130, numeric: true, value: (row) => row.bonuses ?? null },
-  { id: "fines", header: t("payroll.payslips.fines"), width: 130, numeric: true, value: (row) => row.fines ?? null },
-  { id: "advances", header: t("payroll.payslips.advances"), width: 130, numeric: true, value: (row) => row.advances ?? null },
-  { id: "gross", header: t("payroll.totals.gross"), width: 140, numeric: true, value: (row) => row.gross ?? null },
-  { id: "deductions", header: t("payroll.totals.deductions"), width: 140, numeric: true, value: (row) => row.deductions ?? null },
-  { id: "net", header: t("payroll.totals.net"), width: 150, numeric: true, value: (row) => row.net ?? null },
-  { id: "change", header: t("payroll.payslips.change"), width: 104, numeric: true, hint: t("payroll.payslips.changeHint"), value: (row) => row.change_percent ?? null },
-  { id: "status", header: t("payroll.payslips.status"), width: 120, value: (row) => t(`payroll.payslipStatus.${row.status}`) },
+  { id: "person", header: t("payroll.payslips.person"), minWidth: 210, sticky: true, hideable: false, value: (row) => row.member.name },
+  { id: "days", header: t("payroll.payslips.days"), width: 88, numeric: true, value: (row) => row.paid_days ?? "" },
+  { id: "base", header: t("payroll.payslips.base"), width: 132, numeric: true, value: (row) => row.base_pay ?? null },
+  { id: "bonuses", header: t("payroll.payslips.bonuses"), width: 120, numeric: true, value: (row) => row.bonuses ?? null },
+  { id: "fines", header: t("payroll.payslips.fines"), width: 120, numeric: true, value: (row) => row.fines ?? null },
+  { id: "advances", header: t("payroll.payslips.advances"), width: 120, numeric: true, value: (row) => row.advances ?? null },
+  { id: "gross", header: t("payroll.totals.gross"), width: 136, numeric: true, value: (row) => row.gross ?? null },
+  { id: "deductions", header: t("payroll.totals.deductions"), width: 136, numeric: true, value: (row) => row.deductions ?? null },
+  { id: "net", header: t("payroll.totals.net"), width: 144, numeric: true, value: (row) => row.net ?? null },
+  { id: "change", header: t("payroll.payslips.change"), width: 96, numeric: true, hint: t("payroll.payslips.changeHint"), value: (row) => row.change_percent ?? null },
+  // Every payslip of a draft is a draft: the column says something only once the run is finalized.
+  ...(run.value && run.value.status !== "draft" ? [{ id: "status", header: t("payroll.payslips.status"), width: 116, value: (row: Payslip) => t(`payroll.payslipStatus.${row.status}`) }] : []),
 ]);
+
+/**
+ * A phone card's one line of parts: the base, then bonuses, fines and advances when there are
+ * any, as the server sent them (amounts without the currency word: the net beside it has it).
+ */
+function breakdown(row: Payslip): Array<{ key: string; label: string; text: string; tone: string }> {
+  const amount = (value: string) => fmt.money(value, row.currency, { currencyDisplay: "none" });
+  const parts: Array<{ key: string; label: string; text: string; tone: string }> = [];
+  if (hasAmount(row.base_pay)) parts.push({ key: "base", label: t("payroll.payslips.base"), text: amount(row.base_pay), tone: "text-fg" });
+  if (hasAmount(row.bonuses) && moneySign(row.bonuses) !== 0) parts.push({ key: "bonuses", label: t("payroll.payslips.bonuses"), text: fmt.money(row.bonuses, row.currency, { currencyDisplay: "none", sign: "always" }), tone: "text-success" });
+  if (hasAmount(row.fines) && moneySign(row.fines) !== 0) parts.push({ key: "fines", label: t("payroll.payslips.fines"), text: amount(row.fines), tone: "text-danger" });
+  if (hasAmount(row.advances) && moneySign(row.advances) !== 0) parts.push({ key: "advances", label: t("payroll.payslips.advances"), text: amount(row.advances), tone: "text-fg" });
+  return parts;
+}
 
 const activeKey = computed(() => (typeof route.query.payslip === "string" ? route.query.payslip : null));
 function openSlip(slip: Payslip): void {
@@ -241,7 +256,8 @@ const exportParams = computed(() => ({ run: runId.value }));
 const statusNote = computed(() => {
   const r = run.value;
   if (!r) return null;
-  if (r.status === "draft") return { tone: "info" as const, text: t("payroll.run.draftNote") };
+  // A draft with warnings has its panel to say what to do; the note is for a clean draft.
+  if (r.status === "draft") return r.warnings.length ? null : { tone: "info" as const, text: t("payroll.run.draftNote") };
   if (r.status === "finalized") return { tone: "info" as const, text: t("payroll.run.finalizedNote") };
   if (r.status === "cancelled") return { tone: "neutral" as const, text: t("payroll.run.cancelledNote") };
   return null;
@@ -258,7 +274,6 @@ const statusNote = computed(() => {
       </template>
       <template v-if="run" #actions>
         <ExtensionSlot name="payroll.run.toolbar" as="none" :context="{ run, companyId: company.currentId }" />
-        <ExportButton v-if="has('export')" kind="payroll.run" :params="exportParams" sensitive variant="ghost" />
         <UiButton v-for="action in secondary" :key="action" :icon="ICONS[action]" :loading="busy === action" :data-testid="`run-${action}`" @click="run_(action)">{{ LABELS[action] }}</UiButton>
         <UiButton v-if="primary" variant="primary" :icon="ICONS[primary]" :loading="busy === primary" :data-testid="`run-${primary}`" @click="run_(primary)">{{ LABELS[primary] }}</UiButton>
         <DropdownMenu v-if="menu.length" :items="menu" width="280px">
@@ -319,6 +334,9 @@ const statusNote = computed(() => {
         :filtered="!!search || show !== 'all'"
         hide-pagination
         csv-name="payslips"
+        :export-kind="has('export') ? 'payroll.run' : undefined"
+        :export-params="exportParams"
+        export-sensitive
         @row-click="openSlip"
         @clear-filters="
           search = '';
@@ -368,7 +386,7 @@ const statusNote = computed(() => {
         <template #cell-base="{ row }"><PayAmount cell :value="row.base_pay" :currency="row.currency" /></template>
         <template #cell-bonuses="{ row }"><PayAmount cell :value="row.bonuses" :currency="row.currency" sign="always" colored /></template>
         <template #cell-fines="{ row }"><PayAmount cell :value="row.fines" :currency="row.currency" colored /></template>
-        <template #cell-advances="{ row }"><PayAmount cell :value="row.advances" :currency="row.currency" colored /></template>
+        <template #cell-advances="{ row }"><PayAmount cell :value="row.advances" :currency="row.currency" /></template>
         <template #cell-gross="{ row }"><PayAmount cell :value="row.gross" :currency="row.currency" /></template>
         <template #cell-deductions="{ row }"><PayAmount cell :value="row.deductions" :currency="row.currency" /></template>
         <template #cell-net="{ row }"><PayAmount cell strong :value="row.net" :currency="row.currency" /></template>
@@ -385,16 +403,15 @@ const statusNote = computed(() => {
             <div class="min-w-0 flex-1">
               <p class="truncate text-base font-semibold text-fg">{{ row.member.name }}</p>
               <p class="truncate text-xs text-muted">{{ [row.member.position, row.member.branch].filter(Boolean).join(" · ") || t(`payroll.payType.${row.pay_type}`) }}</p>
-              <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted">
-                <span>{{ t("payroll.payslips.base") }}: <PayAmount :value="row.base_pay" :currency="row.currency" /></span>
-                <span v-if="row.bonuses && row.bonuses !== '0.00'" class="text-success"><PayAmount :value="row.bonuses" :currency="row.currency" sign="always" /></span>
-                <span v-if="row.fines && row.fines !== '0.00'" class="text-danger"><PayAmount :value="row.fines" :currency="row.currency" /></span>
-                <span v-if="row.advances && row.advances !== '0.00'">{{ t("payroll.payslips.advances") }}: <PayAmount :value="row.advances" :currency="row.currency" /></span>
-              </div>
+              <p v-if="breakdown(row).length" class="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs tabular-nums text-muted" data-testid="card-breakdown">
+                <span v-for="part in breakdown(row)" :key="part.key" class="whitespace-nowrap">
+                  {{ part.label }} <span :class="part.tone">{{ part.text }}</span>
+                </span>
+              </p>
             </div>
             <div class="flex shrink-0 flex-col items-end gap-1">
               <PayAmount cell strong :value="row.net" :currency="row.currency" />
-              <StatusPill :tone="PAYSLIP_TONES[row.status]" size="sm" :label="t(`payroll.payslipStatus.${row.status}`)" />
+              <StatusPill v-if="run.status !== 'draft'" :tone="PAYSLIP_TONES[row.status]" size="sm" :label="t(`payroll.payslipStatus.${row.status}`)" />
             </div>
           </div>
         </template>
