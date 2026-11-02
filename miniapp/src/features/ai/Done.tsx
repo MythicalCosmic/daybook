@@ -1,7 +1,9 @@
 import { AlertCircle, Mic, PenLine } from "lucide-react";
 
+import { givesWork } from "../../api/permissions";
 import { useFeatureT } from "../../i18n/feature";
 import { useNavigation } from "../../state/navigation";
+import { useMember } from "../../state/session";
 import { BottomBar, Button, ListRow } from "../../ui";
 import type { AIDraft, ApplyResult } from "./api";
 import { messages } from "./messages";
@@ -26,8 +28,12 @@ export function Done({
 }) {
   const t = useFeatureT(messages);
   const navigation = useNavigation();
+  const member = useMember();
   const created = draft.created_tasks;
   const titles = draft.drafts.map((item) => item.title);
+  // "Everyone gets their usual notifications" speaks of the people given work: someone who only
+  // makes their own tasks hears nothing about it.
+  const body = [auto ? t("done.auto") : null, givesWork(member) ? t("done.body") : null].filter(Boolean).join(" ");
   return (
     <div className="ai-stage ai-done fade-in">
       <div className="ai-state">
@@ -37,7 +43,7 @@ export function Done({
           </svg>
         </span>
         <div className="heading title-sm">{t("done.title", { count: created.length })}</div>
-        <p className="ai-state-body">{auto ? `${t("done.auto")} ${t("done.body")}` : t("done.body")}</p>
+        {body && <p className="ai-state-body">{body}</p>}
       </div>
 
       {created.length > 0 && (

@@ -3,6 +3,7 @@ import { Fragment, Suspense, useCallback, useLayoutEffect, useState, type ReactN
 import type { Task } from "../api/types";
 import { useI18n, type Key } from "../i18n";
 import { featureText } from "../i18n/feature";
+import { closeUnlessDraft } from "../lib/useDraftGuard";
 import { useNavigation } from "../state/navigation";
 import { haptic } from "../telegram";
 import { renderIcon } from "../ui/icon";
@@ -211,7 +212,7 @@ function PlusActionButton({
   context: SlotProps;
   report: (key: string, shown: boolean) => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const navigation = useNavigation();
   const useVisible = item.useVisible ?? alwaysVisible;
   const shown = useVisible(context);
@@ -225,7 +226,8 @@ function PlusActionButton({
       className="ui-plus-action"
       onClick={() => {
         haptic();
-        openTarget(navigation, feature, item.open);
+        // The action's sheet takes the (+) sheet's place: a half-written task there asks first.
+        void closeUnlessDraft(() => openTarget(navigation, feature, item.open), t("sheet.discardAsk"));
       }}
     >
       <span className="circle">{renderIcon(item.icon, 21)}</span>

@@ -136,6 +136,25 @@ describe("status → ways in", () => {
     expect(navigationState().sheet).toEqual({ kind: "feature", feature: "ai", sheet: "draft", params: { mode: "voice" } });
   });
 
+  it("fetches the sheet's code while idle once a way in shows, so the first tap shows no placeholder", async () => {
+    const { DraftSheetScreen } = await import("./sheet");
+    const preload = vi.spyOn(DraftSheetScreen, "preload");
+    try {
+      const worker = membership();
+      const first = renderApp(<DictateCard member={{ ...worker, timeZone: TZ, companyId: 1 }} summary={undefined} />, { me: person([worker]) });
+      await waitFor(() => expect(server.calls.some((call) => call.path.endsWith("/ai/status/"))).toBe(true));
+      await new Promise((resolve) => setTimeout(resolve, 700));
+      // No Home card for someone who doesn't give work: nothing fetched for it.
+      expect(preload).not.toHaveBeenCalled();
+      first.unmount();
+      renderApp(<DictateCard member={{ ...giver(), timeZone: TZ, companyId: 1 }} summary={undefined} />, { me: person([giver()]) });
+      expect(await screen.findByText("Give tasks by voice")).toBeTruthy();
+      await waitFor(() => expect(preload).toHaveBeenCalled(), { timeout: 2000 });
+    } finally {
+      preload.mockRestore();
+    }
+  });
+
   it("offers typing on Home when only smart text works", async () => {
     server.handler = (path) => (path.endsWith("/ai/status/") ? { ...STATUS, voice: false } : undefined);
     renderApp(<DictateCard member={{ ...giver(), timeZone: TZ, companyId: 1 }} summary={undefined} />, { me: person([giver()]) });
@@ -187,6 +206,27 @@ describe("status → ways in", () => {
     expect(screen.getByRole("button", { name: "Smart add: several tasks in one text" })).toBeTruthy();
     fireEvent.click(mics[1]!);
     expect(navigationState().sheet).toEqual({ kind: "feature", feature: "ai", sheet: "draft", params: { mode: "voice" } });
+  });
+
+  it("asks before the (+) sheet's mic or a quick action throws away a task being written", async () => {
+    const ask = vi.spyOn(window, "confirm").mockReturnValue(false);
+    try {
+      renderApp(null, { me: person([giver()]), init: { sheet: { kind: "add" } } });
+      const mics = await screen.findAllByRole("button", { name: "Dictate tasks" });
+      fireEvent.change(screen.getByRole("textbox", { name: "What needs doing?" }), { target: { value: "Order insulin" } });
+      // The title row's mic, answered Cancel: the sheet and the words stay.
+      fireEvent.click(mics[1]!);
+      await waitFor(() => expect(ask).toHaveBeenCalledWith("Close it? What you entered won't be saved."));
+      expect(navigationState().sheet).toEqual({ kind: "add" });
+      expect(screen.getByRole("textbox", { name: "What needs doing?" })).toHaveProperty("value", "Order insulin");
+      // The quick action, answered OK: the recorder takes the sheet's place.
+      ask.mockReturnValue(true);
+      fireEvent.click(mics[0]!);
+      await waitFor(() => expect(navigationState().sheet).toEqual({ kind: "feature", feature: "ai", sheet: "draft", params: { mode: "voice" } }));
+      expect(ask).toHaveBeenCalledTimes(2);
+    } finally {
+      ask.mockRestore();
+    }
   });
 
   it("answers the bot's Edit in the app link with the review sheet", () => {
@@ -441,14 +481,45 @@ describe("smart add", () => {
       if (path.endsWith("/task-drafts/41/")) return draft({ status: "applied", audio: null, created_tasks: [{ id: 501, title: "Muzlatgich haroratini tekshirish", assignee_name: "Alisher Valiyev" }] });
       return undefined;
     };
-    const first = renderApp(null, { me: person([giver()]), init: { sheet: { kind: "feature", feature: "ai", sheet: "draft", params: { mode: "text", text: "Alisher muzlatgichni tekshirsin", send: 1 } } } });
+    const refreshed: string[] = [];
+    const first = renderApp(null, {
+      me: person([giver()]),
+      init: { sheet: { kind: "feature", feature: "ai", sheet: "draft", params: { mode: "text", text: "Alisher muzlatgichni tekshirsin", send: 1 } } },
+      seed: (client) => {
+        const invalidate = client.invalidateQueries.bind(client);
+        client.invalidateQueries = ((filters, options) => {
+          refreshed.push(JSON.stringify(filters?.queryKey));
+          return invalidate(filters, options);
+        }) as typeof client.invalidateQueries;
+      },
+    });
     expect(await screen.findByText("1 task created", {}, { timeout: 3000 })).toBeTruthy();
     expect(screen.getByText(/Everything was clear, so they were created right away\./)).toBeTruthy();
+    // The server made the tasks: Home's numbers, the lists and My team show them without a reload.
+    expect(refreshed).toEqual(expect.arrayContaining(['["tasks",1]', '["summary",1]', '["myTeam",1]']));
     first.unmount();
     // The same draft opened from the bot (applied there, maybe by a tap): no claim about how.
     renderApp(null, { me: person([giver()]), init: { sheet: { kind: "feature", feature: "ai", sheet: "draft", params: { id: 41 } } } });
     expect(await screen.findByText("1 task created")).toBeTruthy();
     expect(screen.queryByText(/created right away/)).toBeNull();
+  });
+
+  it("tells only someone who gives work that people get their usual notifications", async () => {
+    const applied = draft({ status: "applied", audio: null, created_tasks: [{ id: 501, title: "Muzlatgich haroratini tekshirish", assignee_name: "Alisher Valiyev" }] });
+    server.handler = (path) => {
+      if (path.endsWith("/ai/status/")) return STATUS;
+      if (path.endsWith("/task-drafts/41/")) return applied;
+      return undefined;
+    };
+    const first = renderApp(null, { me: person([giver()]), init: { sheet: { kind: "feature", feature: "ai", sheet: "draft", params: { id: 41 } } } });
+    expect(await screen.findByText("1 task created")).toBeTruthy();
+    expect(screen.getByText("Everyone gets their usual notifications.")).toBeTruthy();
+    first.unmount();
+    // A pharmacist makes only their own tasks: no word about other people's notifications.
+    const worker = membership();
+    renderApp(null, { me: person([worker]), init: { sheet: { kind: "feature", feature: "ai", sheet: "draft", params: { id: 41 } } } });
+    expect(await screen.findByText("1 task created")).toBeTruthy();
+    expect(screen.queryByText(/usual notifications/)).toBeNull();
   });
 
   it("starts Write more from an empty box instead of sending the same words again", async () => {
@@ -634,6 +705,22 @@ describe("recorder", () => {
     const none = renderHook(() => rec.useRecorder(120));
     await act(() => none.result.current.start());
     expect(none.result.current.phase).toBe("unsupported");
+  });
+
+  it("asks in its own words before Escape or Back throws a recording away", async () => {
+    fakeMicrophone();
+    const ask = vi.spyOn(window, "confirm").mockReturnValue(false);
+    try {
+      renderApp(null, { me: person([giver()]), init: { sheet: { kind: "feature", feature: "ai", sheet: "draft", params: { mode: "voice" } } } });
+      expect(await screen.findByText("Listening to you")).toBeTruthy();
+      await waitFor(() => expect(screen.getByRole("button", { name: "Done" })).toHaveProperty("disabled", false));
+      fireEvent.keyDown(document, { key: "Escape" });
+      // Not "What you entered won't be saved": nothing was typed, something was said.
+      await waitFor(() => expect(ask).toHaveBeenCalledWith("Stop recording? What you said won’t be kept."));
+      expect(screen.getByText("Listening to you")).toBeTruthy();
+    } finally {
+      ask.mockRestore();
+    }
   });
 
   it("sends the person to the bot when recording isn't possible here", async () => {

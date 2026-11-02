@@ -185,6 +185,8 @@ describe("app inside Telegram", () => {
     );
     const what = await screen.findByRole("textbox", { name: "What needs doing?" }, { timeout: 10_000 });
     fireEvent.change(what, { target: { value: "Order insulin" } });
+    // Back is wired in an effect, which may run a moment after the sheet shows on a busy machine.
+    await waitFor(() => expect(back.onClick).toHaveBeenCalled());
     const press = () => act(() => (back.onClick.mock.calls.at(-1)![0] as () => void)());
 
     // Cancel: the sheet and the words stay.
@@ -207,6 +209,8 @@ describe("app inside Telegram", () => {
       </QueryClientProvider>,
     );
     await screen.findByRole("heading", { name: /^Good (morning|afternoon|evening)/ }, { timeout: 10_000 });
+    // The listener is added in an effect, which may run a moment after Home shows on a busy machine.
+    await waitFor(() => expect(webApp.onEvent.mock.calls.some(([name]) => name === "activated")).toBe(true));
     const invalidate = vi.spyOn(client, "invalidateQueries");
     const activated = webApp.onEvent.mock.calls.find(([name]) => name === "activated")?.[1] as () => void;
     act(() => activated());
