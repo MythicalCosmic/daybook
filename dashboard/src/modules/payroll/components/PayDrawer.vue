@@ -80,13 +80,14 @@ function change(from?: Compensation): void {
         </div>
       </div>
     </template>
-    <template #footer>
-      <div v-if="memberId && canManage && member" class="flex w-full items-center gap-2">
+    <!-- Nobody to show: no footer at all (not an empty bar). -->
+    <template v-if="memberId && member" #footer>
+      <div v-if="canManage" class="flex w-full items-center gap-2">
         <p v-if="pay.upcoming" class="inline-flex min-w-0 flex-1 items-center gap-1 truncate text-xs text-muted"><CalendarClock :size="12" />{{ t("payroll.pay.upcomingHint") }}</p>
         <span v-else class="flex-1" />
-        <UiButton variant="primary" size="sm" :icon="pay.current ? Pencil : WalletCards" :disabled="!member" data-testid="change-pay" @click="change()">{{ pay.current ? t("payroll.pay.change") : t("payroll.pay.set") }}</UiButton>
+        <UiButton variant="primary" size="sm" :icon="pay.current ? Pencil : WalletCards" data-testid="change-pay" @click="change()">{{ pay.current ? t("payroll.pay.change") : t("payroll.pay.set") }}</UiButton>
       </div>
-      <p v-else-if="memberId && member" class="inline-flex items-center gap-1.5 text-xs text-muted"><Lock :size="12" />{{ t("payroll.pay.readOnly") }}</p>
+      <p v-else class="inline-flex items-center gap-1.5 text-xs text-muted"><Lock :size="12" />{{ t("payroll.pay.readOnly") }}</p>
     </template>
   </UiDrawer>
   <ChangePayDialog v-if="member" v-model:open="changing" :member="member" :history="pay.history" :start="editing" />
