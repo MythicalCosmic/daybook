@@ -207,6 +207,29 @@ describe("components", () => {
   });
 });
 
+describe("CalendarPage", () => {
+  it("says the coming week failed to load instead of \"nothing coming up\"", async () => {
+    const { todayIn } = await import("@/lib/dates");
+    const today = todayIn("Asia/Tashkent");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string) => {
+        if (input.includes("/calendar/?") && input.includes(`from=${today}`)) return json({ detail: "boom" }, 500);
+        if (input.includes("/calendar/?")) return json({ sources: [], items: [] });
+        return json({});
+      }),
+    );
+    const { default: CalendarPage } = await import("../pages/CalendarPage.vue");
+    const app = await testApp("/c/1/calendar");
+    const { wrapper } = mountWithProviders(CalendarPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(wrapper.find("[data-upcoming-error]").exists()).toBe(true);
+    expect(wrapper.text()).not.toContain(en["agenda.upcoming.empty"]);
+    wrapper.unmount();
+  });
+});
+
 describe("UpcomingWidget", () => {
   it("opens a repeating event on the occurrence that was clicked, not its series", async () => {
     const { addDays, todayIn } = await import("@/lib/dates");
