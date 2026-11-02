@@ -164,24 +164,43 @@ def _changes(before: dict, after: dict) -> dict:
     }
 
 
+def _not_own_adjustment(by: Membership | None, row: Adjustment) -> None:
+    """Nobody decides, takes back or voids a bonus or a fine of their own (an accountant with
+    payroll.manage could otherwise reject their own fine)."""
+    if by is not None and by.pk == row.membership_id:
+        raise DomainError(_("You can't decide a bonus or a fine of your own."))
+
+
+def _not_own_pay(by: Membership | None, membership: Membership) -> None:
+    """Nobody sets, changes or removes their own pay, except an owner (the business itself:
+    a company with one owner could never pay them otherwise)."""
+    if by is not None and by.pk == membership.pk and not by.role.is_owner:
+        raise DomainError(_("You can't change your own pay."))
+
+
 def _check_member(company: Company, membership: Membership) -> None:
     _same_company(company, membership)
     if membership.status not in PAYABLE_STATUSES:
         raise DomainError(_("%(name)s doesn't work here any more.") % {"name": membership})
 
 
-def _check_period_open(company: Company, period: date) -> None:
-    """Nothing changes in a month whose regular run is finalized (reopen it first)."""
-    run = (
-        PayrollRun.objects.for_company(company)
-        .filter(
-            kind=PayrollRun.Kind.REGULAR,
-            period=periods.first_day(period),
-            status__in=(PayrollRun.Status.FINALIZED, PayrollRun.Status.PAID),
-        )
+def _lock_month(company, period: date) -> PayrollRun | None:
+    """The month's regular run, locked until the caller's transaction ends (callers are
+    atomic): a finalize then waits for the change in progress (and includes it), or the change
+    waits for the finalize (and is refused)."""
+    return (
+        PayrollRun.objects.select_for_update()
+        .filter(company=company, kind=PayrollRun.Kind.REGULAR, period=periods.first_day(period))
+        .exclude(status=PayrollRun.Status.CANCELLED)
         .first()
     )
-    if run is not None:
+
+
+def _check_period_open(company: Company, period: date) -> None:
+    """Nothing changes in a month whose regular run is finalized (reopen it first). The run
+    row stays locked (`_lock_month`), so an approval can't slip past a finalize unpaid."""
+    run = _lock_month(company, period)
+    if run is not None and run.status in (PayrollRun.Status.FINALIZED, PayrollRun.Status.PAID):
         raise DomainError(
             _("The payroll for %(month)s is finalized. Reopen it first.")
             % {"month": queries.month_label(run.period)}
@@ -338,6 +357,7 @@ def set_pay(membership: Membership, *, by: Membership | None, **fields) -> Compe
     _require(by, Perm.PAYROLL_MANAGE)
     company = membership.company
     _check_member(company, membership)
+    _not_own_pay(by, membership)
     if unknown := set(fields) - set(PAY_FIELDS):
         raise DomainError(_("Unknown field: %(name)s") % {"name": ", ".join(sorted(unknown))})
     fields.setdefault("pay_type", PayType.MONTHLY)
@@ -374,6 +394,7 @@ def update_pay(row: Compensation, *, by: Membership | None, **fields) -> Compens
     """Correct a pay setup no finalized run has used yet (a used one is locked: add a new one)."""
     _require(by, Perm.PAYROLL_MANAGE)
     row = Compensation.objects.select_for_update().select_related("membership").get(pk=row.pk)
+    _not_own_pay(by, row.membership)
     if row.locked:
         raise DomainError(
             _("A finalized payroll used this pay setup, so it can't change. Add a new one instead.")
@@ -416,6 +437,7 @@ def update_pay(row: Compensation, *, by: Membership | None, **fields) -> Compens
 def remove_pay(row: Compensation, *, by: Membership | None) -> None:
     _require(by, Perm.PAYROLL_MANAGE)
     row = Compensation.objects.select_for_update().select_related("membership").get(pk=row.pk)
+    _not_own_pay(by, row.membership)
     if row.locked:
         raise DomainError(_("A finalized payroll used this pay setup, so it stays."))
     _check_start(row.membership, row.effective_from)
@@ -678,6 +700,9 @@ def _adjustment_details(row: Adjustment) -> dict:
 
 
 def _lock_adjustment(row: Adjustment) -> Adjustment:
+    """The adjustment, locked after its month's run: the order a finalize takes them in, so
+    the two never wait for each other."""
+    _lock_month(row.company_id, row.period)
     return (
         Adjustment.objects.select_for_update(of=("self",))
         .select_related("company", "membership__user")
@@ -849,6 +874,7 @@ def approve(row: Adjustment, *, by: Membership | None, note: str = "") -> Adjust
 def reject(row: Adjustment, *, by: Membership | None, reason: str) -> Adjustment:
     _require(by, Perm.PAYROLL_MANAGE)
     row = _lock_adjustment(row)
+    _not_own_adjustment(by, row)
     _unlocked(row)
     if row.status != AdjustmentStatus.PROPOSED:
         raise DomainError(_("This was already decided."))
@@ -874,6 +900,7 @@ def void(row: Adjustment, *, by: Membership | None, reason: str) -> Adjustment:
     """Take back a proposed or approved bonus or fine that no finalized payslip holds."""
     _require(by, Perm.PAYROLL_MANAGE)
     row = _lock_adjustment(row)
+    _not_own_adjustment(by, row)
     _unlocked(row)
     if row.status not in (AdjustmentStatus.PROPOSED, AdjustmentStatus.APPROVED):
         raise DomainError(_("Only a proposed or approved one can be voided."))
@@ -937,6 +964,7 @@ def answer_dispute(
     row.dispute_answered_by = by.user if by is not None else None
     fields = ["dispute_answer", "dispute_answered_at", "dispute_answered_by", "updated_at"]
     if void_it:
+        _not_own_adjustment(by, row)
         _unlocked(row)
         if row.status not in (AdjustmentStatus.PROPOSED, AdjustmentStatus.APPROVED):
             raise DomainError(_("Only a proposed or approved one can be voided."))
