@@ -109,6 +109,19 @@ class TestCalculate:
         with pytest.raises(DomainError, match="started"):
             services.create_run(shop, by=staff.accountant, period="2026-12")
 
+    def test_no_pay_setup_warns_only_about_people_who_worked_that_month(
+        self, shop, team, monkeypatch
+    ):
+        staff = team
+        joined = {staff.vali.pk: (date(2026, 11, 2), None)}  # started after October
+        monkeypatch.setattr(
+            "apps.hr.queries.employment_dates",
+            lambda company, ids: {pk: joined.get(pk, (date(2025, 6, 1), None)) for pk in ids},
+        )
+        run = services.create_run(shop, by=staff.accountant, period="2026-10")
+        warned = {w["member"]["id"] for w in run.warnings if w["code"] == "no_pay_setup"}
+        assert staff.vali.pk not in warned and staff.manager.pk in warned
+
     def test_recalculating_follows_the_data_and_keeps_hand_made_lines(self, shop, team):
         staff = team
         run = services.create_run(shop, by=staff.owner, period="2026-10")
