@@ -504,6 +504,24 @@ describe("smart add", () => {
     expect(screen.queryByText(/created right away/)).toBeNull();
   });
 
+  it("tells only someone who gives work that people get their usual notifications", async () => {
+    const applied = draft({ status: "applied", audio: null, created_tasks: [{ id: 501, title: "Muzlatgich haroratini tekshirish", assignee_name: "Alisher Valiyev" }] });
+    server.handler = (path) => {
+      if (path.endsWith("/ai/status/")) return STATUS;
+      if (path.endsWith("/task-drafts/41/")) return applied;
+      return undefined;
+    };
+    const first = renderApp(null, { me: person([giver()]), init: { sheet: { kind: "feature", feature: "ai", sheet: "draft", params: { id: 41 } } } });
+    expect(await screen.findByText("1 task created")).toBeTruthy();
+    expect(screen.getByText("Everyone gets their usual notifications.")).toBeTruthy();
+    first.unmount();
+    // A pharmacist makes only their own tasks: no word about other people's notifications.
+    const worker = membership();
+    renderApp(null, { me: person([worker]), init: { sheet: { kind: "feature", feature: "ai", sheet: "draft", params: { id: 41 } } } });
+    expect(await screen.findByText("1 task created")).toBeTruthy();
+    expect(screen.queryByText(/usual notifications/)).toBeNull();
+  });
+
   it("starts Write more from an empty box instead of sending the same words again", async () => {
     let status: AIDraft["status"] = "ready";
     server.handler = (path, method, json) => {
