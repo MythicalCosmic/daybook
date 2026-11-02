@@ -111,7 +111,7 @@ function runTitle(run: Run): string {
 const columns = computed<TableColumn<Run>[]>(() => [
   { id: "period", header: t("payroll.runs.month"), minWidth: 200, sticky: true, hideable: false, value: (row) => runTitle(row) },
   { id: "status", header: t("payroll.runs.status"), width: 130, value: (row) => t(`payroll.runStatus.${row.status}`) },
-  { id: "people", header: t("payroll.runs.people"), width: 92, numeric: true, value: (row) => row.totals?.people ?? null },
+  { id: "people", header: t("payroll.runs.people"), width: 116, numeric: true, value: (row) => row.totals?.people ?? null },
   { id: "gross", header: t("payroll.totals.gross"), width: 150, numeric: true, value: (row) => row.totals?.gross ?? null },
   { id: "deductions", header: t("payroll.totals.deductions"), width: 150, numeric: true, value: (row) => row.totals?.deductions ?? null },
   { id: "net", header: t("payroll.totals.net"), width: 160, numeric: true, value: (row) => row.totals?.net ?? null },
