@@ -3753,9 +3753,15 @@ export interface components {
             readonly currency: components["schemas"]["CurrencyEnum"];
             /** Format: decimal */
             base_pay: string;
+            /** @description Overtime, holiday and night work, piecework, paid leave, unused leave paid out, lines added by hand that pay, and the rounding of the net. */
+            readonly extras: string;
             readonly bonuses: string;
+            /** @description Fines and deductions, with lines added by hand that take money (negative). */
             readonly fines: string;
+            /** @description Advances and loans repaid (negative). */
             readonly advances: string;
+            /** @description Income tax and pension withheld (negative). */
+            readonly taxes_withheld: string;
             readonly reimbursements: string;
             /** Format: decimal */
             gross: string;
@@ -3833,7 +3839,11 @@ export interface components {
             readonly payslip: number | null;
             readonly how: string;
         };
-        /** @description A row of a run's payslip table: the person and their sums by kind. */
+        /**
+         * @description A row of a run's payslip table: the person and their sums by kind. The parts are signed
+         *     like the lines and add up exactly: base_pay + extras + bonuses + fines + advances +
+         *     taxes_withheld + reimbursements = net (PayslipLine.ROW_PARTS).
+         */
         PayslipRow: {
             readonly id: number;
             readonly member: components["schemas"]["PayrollPersonCard"];
@@ -3842,9 +3852,15 @@ export interface components {
             readonly currency: components["schemas"]["CurrencyEnum"];
             /** Format: decimal */
             base_pay: string;
+            /** @description Overtime, holiday and night work, piecework, paid leave, unused leave paid out, lines added by hand that pay, and the rounding of the net. */
+            readonly extras: string;
             readonly bonuses: string;
+            /** @description Fines and deductions, with lines added by hand that take money (negative). */
             readonly fines: string;
+            /** @description Advances and loans repaid (negative). */
             readonly advances: string;
+            /** @description Income tax and pension withheld (negative). */
+            readonly taxes_withheld: string;
             readonly reimbursements: string;
             /** Format: decimal */
             gross: string;

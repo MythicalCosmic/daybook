@@ -775,16 +775,27 @@ PAYSLIP_AMOUNTS = ("base_pay", "gross", "deductions", "net", "carried_debt")
 
 
 class PayslipRowSerializer(serializers.ModelSerializer):
-    """A row of a run's payslip table: the person and their sums by kind."""
+    """A row of a run's payslip table: the person and their sums by kind. The parts are signed
+    like the lines and add up exactly: base_pay + extras + bonuses + fines + advances +
+    taxes_withheld + reimbursements = net (PayslipLine.ROW_PARTS)."""
 
     member = serializers.SerializerMethodField()
     base_pay = MoneySerializerField(positive=False)
     gross = MoneySerializerField(positive=False)
     deductions = MoneySerializerField(positive=False)
     net = MoneySerializerField(positive=False)
+    extras = serializers.SerializerMethodField(
+        help_text="Overtime, holiday and night work, piecework, paid leave, unused leave paid "
+        "out, lines added by hand that pay, and the rounding of the net."
+    )
     bonuses = serializers.SerializerMethodField()
-    fines = serializers.SerializerMethodField()
-    advances = serializers.SerializerMethodField()
+    fines = serializers.SerializerMethodField(
+        help_text="Fines and deductions, with lines added by hand that take money (negative)."
+    )
+    advances = serializers.SerializerMethodField(help_text="Advances and loans repaid (negative).")
+    taxes_withheld = serializers.SerializerMethodField(
+        help_text="Income tax and pension withheld (negative)."
+    )
     reimbursements = serializers.SerializerMethodField()
     period = serializers.SerializerMethodField()
 
@@ -797,9 +808,11 @@ class PayslipRowSerializer(serializers.ModelSerializer):
             "pay_type",
             "currency",
             "base_pay",
+            "extras",
             "bonuses",
             "fines",
             "advances",
+            "taxes_withheld",
             "reimbursements",
             "gross",
             "deductions",
@@ -820,26 +833,34 @@ class PayslipRowSerializer(serializers.ModelSerializer):
     def get_period(self, payslip) -> str:
         return payslip.run.period.isoformat()
 
-    def _sum(self, payslip, kinds) -> str:
-        lines = getattr(payslip, "_lines_cache", None)
-        if lines is None:
-            lines = list(payslip.lines.all())
-            payslip._lines_cache = lines
-        return f"{sum((line.amount for line in lines if line.kind in kinds), Decimal(0)):.2f}"
+    def _part(self, payslip, name: str) -> str:
+        parts = getattr(payslip, "_row_parts", None)
+        if parts is None:
+            lines = getattr(payslip, "_lines_cache", None)
+            if lines is None:
+                lines = list(payslip.lines.all())
+                payslip._lines_cache = lines
+            parts = PayslipLine.row_parts(lines)
+            payslip._row_parts = parts
+        return f"{parts[name]:.2f}"
+
+    def get_extras(self, payslip) -> str:
+        return self._part(payslip, "extras")
 
     def get_bonuses(self, payslip) -> str:
-        Kind = PayslipLine.Kind
-        return self._sum(payslip, (Kind.BONUS, Kind.ALLOWANCE, Kind.TASK_REWARD))
+        return self._part(payslip, "bonuses")
 
     def get_fines(self, payslip) -> str:
-        Kind = PayslipLine.Kind
-        return self._sum(payslip, (Kind.FINE, Kind.DEDUCTION))
+        return self._part(payslip, "fines")
 
     def get_advances(self, payslip) -> str:
-        return self._sum(payslip, (PayslipLine.Kind.ADVANCE,))
+        return self._part(payslip, "advances")
+
+    def get_taxes_withheld(self, payslip) -> str:
+        return self._part(payslip, "taxes_withheld")
 
     def get_reimbursements(self, payslip) -> str:
-        return self._sum(payslip, (PayslipLine.Kind.REIMBURSEMENT,))
+        return self._part(payslip, "reimbursements")
 
 
 class PayslipSerializer(PayslipRowSerializer):

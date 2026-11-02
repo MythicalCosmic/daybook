@@ -11,6 +11,7 @@ import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
+import type { Money } from "@/api/types";
 import DataTable from "@/components/DataTable.vue";
 import DropdownMenu, { type MenuEntry } from "@/components/DropdownMenu.vue";
 import EmptyState from "@/components/EmptyState.vue";
@@ -82,7 +83,7 @@ const progress = computed(() => {
 
 // Payslips table -----------------------------------------------------------------------------
 
-const table = useDataTable({ id: "payroll.payslips", pageSize: 200, hidden: ["gross", "deductions", "reimbursements"] });
+const table = useDataTable({ id: "payroll.payslips", pageSize: 200, hidden: ["gross", "deductions"] });
 const search = ref("");
 const show = ref<"all" | "waiting" | "paid">("all");
 const where = (slip: Payslip) => [slip.member.position, slip.member.home_branch].filter(Boolean).join(" · ");
@@ -95,13 +96,19 @@ const visible = computed(() => {
 });
 const selectable = computed(() => run.value?.status === "finalized" && has("mark_paid"));
 
+/** Some row has this part: taxes and expenses paid back get a column only in a run that has them. */
+const anyNonZero = (pick: (row: Payslip) => Money | null | undefined) => payslips.value.some((row) => hasAmount(pick(row)) && moneySign(pick(row)!) !== 0);
+// The parts add up to net as the server sends them (base + extra pay + bonuses + fines +
+// advances + taxes + expenses paid back): nothing is worked out here.
 const columns = computed<TableColumn<Payslip>[]>(() => [
   { id: "person", header: t("payroll.payslips.person"), minWidth: 210, sticky: true, hideable: false, value: (row) => row.member.name },
   { id: "base", header: t("payroll.payslips.base"), width: 136, numeric: true, value: (row) => row.base_pay ?? null },
+  { id: "extras", header: t("payroll.payslips.extras"), hint: t("payroll.payslips.extrasHint"), width: 128, numeric: true, value: (row) => row.extras ?? null },
   { id: "bonuses", header: t("payroll.payslips.bonuses"), width: 124, numeric: true, value: (row) => row.bonuses ?? null },
   { id: "fines", header: t("payroll.payslips.fines"), width: 124, numeric: true, value: (row) => row.fines ?? null },
   { id: "advances", header: t("payroll.payslips.advances"), width: 124, numeric: true, value: (row) => row.advances ?? null },
-  { id: "reimbursements", header: t("payroll.payslips.reimbursements"), width: 124, numeric: true, value: (row) => row.reimbursements ?? null },
+  ...(anyNonZero((row) => row.taxes_withheld) ? [{ id: "taxes", header: t("payroll.payslips.taxes"), width: 124, numeric: true, value: (row: Payslip) => row.taxes_withheld ?? null }] : []),
+  ...(anyNonZero((row) => row.reimbursements) ? [{ id: "reimbursements", header: t("payroll.payslips.reimbursements"), width: 124, numeric: true, value: (row: Payslip) => row.reimbursements ?? null }] : []),
   { id: "gross", header: t("payroll.totals.gross"), width: 136, numeric: true, value: (row) => row.gross ?? null },
   { id: "deductions", header: t("payroll.totals.deductions"), width: 136, numeric: true, value: (row) => row.deductions ?? null },
   { id: "net", header: t("payroll.totals.net"), width: 148, numeric: true, value: (row) => row.net ?? null },
@@ -110,16 +117,22 @@ const columns = computed<TableColumn<Payslip>[]>(() => [
 ]);
 
 /**
- * A phone card's one line of parts: the base, then bonuses, fines and advances when there are
- * any, as the server sent them (amounts without the currency word: the net beside it has it).
+ * A phone card's one line of parts: the base, then extra pay, bonuses, fines, advances, taxes
+ * and expenses paid back when there are any, as the server sent them (amounts without the
+ * currency word: the net beside it has it). With the base they add up to the net.
  */
 function breakdown(row: Payslip): Array<{ key: string; label: string; text: string; tone: string }> {
   const amount = (value: string) => fmt.money(value, row.currency, { currencyDisplay: "none" });
+  const signed = (value: string) => fmt.money(value, row.currency, { currencyDisplay: "none", sign: "always" });
+  const some = (value: Money | null | undefined): value is Money => hasAmount(value) && moneySign(value) !== 0;
   const parts: Array<{ key: string; label: string; text: string; tone: string }> = [];
   if (hasAmount(row.base_pay)) parts.push({ key: "base", label: t("payroll.payslips.base"), text: amount(row.base_pay), tone: "text-fg" });
-  if (hasAmount(row.bonuses) && moneySign(row.bonuses) !== 0) parts.push({ key: "bonuses", label: t("payroll.payslips.bonuses"), text: fmt.money(row.bonuses, row.currency, { currencyDisplay: "none", sign: "always" }), tone: "text-success" });
-  if (hasAmount(row.fines) && moneySign(row.fines) !== 0) parts.push({ key: "fines", label: t("payroll.payslips.fines"), text: amount(row.fines), tone: "text-danger" });
-  if (hasAmount(row.advances) && moneySign(row.advances) !== 0) parts.push({ key: "advances", label: t("payroll.payslips.advances"), text: amount(row.advances), tone: "text-fg" });
+  if (some(row.extras)) parts.push({ key: "extras", label: t("payroll.payslips.extras"), text: signed(row.extras), tone: "text-fg" });
+  if (some(row.bonuses)) parts.push({ key: "bonuses", label: t("payroll.payslips.bonuses"), text: signed(row.bonuses), tone: "text-success" });
+  if (some(row.fines)) parts.push({ key: "fines", label: t("payroll.payslips.fines"), text: amount(row.fines), tone: "text-danger" });
+  if (some(row.advances)) parts.push({ key: "advances", label: t("payroll.payslips.advances"), text: amount(row.advances), tone: "text-fg" });
+  if (some(row.taxes_withheld)) parts.push({ key: "taxes", label: t("payroll.payslips.taxes"), text: amount(row.taxes_withheld), tone: "text-fg" });
+  if (some(row.reimbursements)) parts.push({ key: "reimbursements", label: t("payroll.payslips.reimbursements"), text: signed(row.reimbursements), tone: "text-fg" });
   return parts;
 }
 
@@ -393,9 +406,11 @@ const statusNote = computed(() => {
           </div>
         </template>
         <template #cell-base="{ row }"><PayAmount cell :value="row.base_pay" :currency="row.currency" /></template>
+        <template #cell-extras="{ row }"><PayAmount cell quiet-zero :value="row.extras" :currency="row.currency" sign="always" /></template>
         <template #cell-bonuses="{ row }"><PayAmount cell quiet-zero :value="row.bonuses" :currency="row.currency" sign="always" colored /></template>
         <template #cell-fines="{ row }"><PayAmount cell quiet-zero :value="row.fines" :currency="row.currency" colored /></template>
         <template #cell-advances="{ row }"><PayAmount cell quiet-zero :value="row.advances" :currency="row.currency" /></template>
+        <template #cell-taxes="{ row }"><PayAmount cell quiet-zero :value="row.taxes_withheld" :currency="row.currency" /></template>
         <template #cell-reimbursements="{ row }"><PayAmount cell quiet-zero :value="row.reimbursements" :currency="row.currency" /></template>
         <template #cell-gross="{ row }"><PayAmount cell :value="row.gross" :currency="row.currency" /></template>
         <template #cell-deductions="{ row }"><PayAmount cell quiet-zero :value="row.deductions" :currency="row.currency" /></template>

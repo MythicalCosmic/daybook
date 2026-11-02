@@ -650,6 +650,27 @@ class PayslipLine(models.Model):
         Kind.INPS,
     )
     CAPPED = (Kind.FINE, Kind.DEDUCTION)
+    # A payslip row's parts (the run table's columns, signed like the lines). Every kind is in
+    # exactly one and a line added by hand goes by its sign (pay to extras, a deduction to
+    # fines), so the parts always add up to the net amount. The rounding of the net sits with
+    # extras: it is never more than the rounding step, and the row's numbers stay whole.
+    ROW_PARTS = {
+        "base_pay": (Kind.BASE, Kind.PRORATION),
+        "extras": (
+            Kind.OVERTIME,
+            Kind.HOLIDAY_WORK,
+            Kind.NIGHT_WORK,
+            Kind.PIECE,
+            Kind.LEAVE_COMPENSATION,
+            Kind.LEAVE_PAYOUT,
+            Kind.ROUNDING,
+        ),
+        "bonuses": (Kind.BONUS, Kind.ALLOWANCE, Kind.TASK_REWARD),
+        "fines": (Kind.FINE, Kind.DEDUCTION),
+        "advances": (Kind.ADVANCE, Kind.LOAN),
+        "taxes_withheld": (Kind.INCOME_TAX, Kind.INPS),
+        "reimbursements": (Kind.REIMBURSEMENT,),
+    }
 
     payslip = models.ForeignKey(Payslip, on_delete=models.CASCADE, related_name="lines")
     kind = models.CharField(max_length=20, choices=Kind.choices)
@@ -675,3 +696,18 @@ class PayslipLine(models.Model):
 
     def __str__(self):
         return f"Payslip line #{self.pk}"
+
+    @classmethod
+    def row_part(cls, kind: str, amount: Decimal) -> str:
+        """The part of a payslip row a line adds to (see ROW_PARTS)."""
+        if kind == cls.Kind.MANUAL:
+            return "extras" if amount >= 0 else "fines"
+        return next(part for part, kinds in cls.ROW_PARTS.items() if kind in kinds)
+
+    @classmethod
+    def row_parts(cls, lines) -> dict[str, Decimal]:
+        """A payslip's lines summed by ROW_PARTS: every part, zero when it has no line."""
+        parts = dict.fromkeys(cls.ROW_PARTS, Decimal(0))
+        for line in lines:
+            parts[cls.row_part(line.kind, line.amount)] += line.amount
+        return parts
