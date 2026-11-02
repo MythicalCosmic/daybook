@@ -35,6 +35,7 @@ from apps.payroll.models import (
     PayrollRun,
     Payslip,
     PayslipLine,
+    TaskRate,
 )
 from apps.payroll.signals import payslips_published, run_paid
 
@@ -120,13 +121,19 @@ def create_run(
 
 
 def _usd_rate(run: PayrollRun) -> Decimal | None:
+    """The run's dollar rate: as given, else the company's rate for the month's last day when
+    a pay setup or an active task rate is in another currency."""
     if run.usd_rate is not None:
         return run.usd_rate
-    if (
-        not Compensation.objects.for_company(run.company)
-        .exclude(currency=conf.get_settings(run.company).currency)
+    currency = conf.get_settings(run.company).currency
+    foreign = (
+        Compensation.objects.for_company(run.company).exclude(currency=currency).exists()
+        or TaskRate.objects.for_company(run.company)
+        .filter(is_active=True)
+        .exclude(currency=currency)
         .exists()
-    ):
+    )
+    if not foreign:
         return None
     try:
         return rate_for(run.company, "USD", periods.last_day(run.period)).rate
