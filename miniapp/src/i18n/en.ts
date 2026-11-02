@@ -536,6 +536,10 @@ const en = {
   // Shared building blocks (src/ui) and the feature hosts.
   "ui.optional": "(optional)",
   "ui.back": "Back",
+  "ui.time.hour": "Hour",
+  "ui.time.minute": "Minutes",
+  "ui.date.prevMonth": "Previous month",
+  "ui.date.nextMonth": "Next month",
   "sheet.discardAsk": "Close it? What you entered won't be saved.",
   "ui.photo.add": "Take or choose a photo",
   "ui.photo.camera": "Take a photo",

@@ -13,6 +13,7 @@ import { useNavigation } from "../state/navigation";
 import { useMember, useSession } from "../state/session";
 import { useToast } from "../state/toast";
 import { haptic } from "../telegram";
+import { DateInput } from "../ui/DateTime";
 import { Sheet } from "../ui/Sheet";
 import { useObjectUrl } from "../ui/useObjectUrl";
 import { AddSheet } from "./AddSheet";
@@ -257,26 +258,25 @@ function TimeOffSheet() {
   return (
     <>
       <div className="heading title-sm">{t("timeOff.title")}</div>
-      <div style={{ display: "flex", gap: "var(--space-2)" }}>
-        <div className="field" style={{ flex: 1, minWidth: 0 }}>
-          <label htmlFor="off-first">{t("timeOff.first")}</label>
-          <input
-            id="off-first"
-            className="input num"
-            type="date"
-            min={today}
-            value={first}
-            onChange={(event) => {
-              const day = event.target.value || first;
-              setFirst(day);
-              if (last < day) setLast(day);
-            }}
-          />
-        </div>
-        <div className="field" style={{ flex: 1, minWidth: 0 }}>
-          <label htmlFor="off-last">{t("timeOff.last")}</label>
-          <input id="off-last" className="input num" type="date" min={first} value={last} onChange={(event) => setLast(event.target.value || last)} />
-        </div>
+      {/* One under the other: each day's calendar opens under its own field. */}
+      <div className="field">
+        <label htmlFor="off-first">{t("timeOff.first")}</label>
+        <DateInput
+          id="off-first"
+          long
+          label={t("timeOff.first")}
+          min={today}
+          today={today}
+          value={first}
+          onChange={(day) => {
+            setFirst(day);
+            if (last < day) setLast(day);
+          }}
+        />
+      </div>
+      <div className="field">
+        <label htmlFor="off-last">{t("timeOff.last")}</label>
+        <DateInput id="off-last" long label={t("timeOff.last")} min={first} today={today} value={last} onChange={setLast} />
       </div>
       <div className="field">
         <label htmlFor="off-reason">{t("timeOff.reason")}</label>

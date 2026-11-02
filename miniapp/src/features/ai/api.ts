@@ -93,11 +93,21 @@ export function gaveUp(draft: Pick<AIDraft, "status"> | undefined, since: number
   return (draft === undefined || isWorking(draft)) && now - since >= GIVE_UP_MS;
 }
 
-/** One draft, asked about every second while it works (from `since`, see `pollInterval`). */
+/**
+ * One draft, asked about every second while it works (from `since`, see `pollInterval`). A draft
+ * watched at work that comes back applied was created by the server itself (the voice tasks
+ * agent's auto-create): lists, numbers and My team are fetched again, as after Create.
+ */
 export function useDraft(company: number, id: number | null, since: number) {
+  const client = useQueryClient();
   return useQuery({
     queryKey: aiKeys.draft(company, id ?? 0),
-    queryFn: () => api<AIDraft>(`${base(company)}/task-drafts/${id}/`),
+    queryFn: async () => {
+      const before = client.getQueryData<AIDraft>(aiKeys.draft(company, id ?? 0));
+      const draft = await api<AIDraft>(`${base(company)}/task-drafts/${id}/`);
+      if (draft.status === "applied" && isWorking(before)) refreshAfterTaskChange(client, company);
+      return draft;
+    },
     enabled: id !== null,
     refetchInterval: (query) => pollInterval(query.state.data, since, Date.now()),
     // Polled on its own clock: a refocus mid-wait mustn't add a burst of extra requests.

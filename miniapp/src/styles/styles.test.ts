@@ -91,6 +91,15 @@ describe("style sheets", () => {
     expect(narrow?.declarations).toMatch(/grid-column:\s*2 \/ -1/);
   });
 
+  it("keep the recorder's Cancel and Done in sight on a short phone", () => {
+    // At 360 × 740 in Telegram the stage and the example pushed both below the fold while recording.
+    const buttons = declarationsOf(".ai-rec-buttons");
+    expect(buttons).toMatch(/position:\s*sticky/);
+    // Stuck at the sheet's own foot, as a sheet's action bar is (past its bottom padding).
+    expect(buttons).toMatch(/bottom:\s*calc\(-1 \* \(var\(--bottom-inset\) \+ 32px\)\)/);
+    expect(buttons).toMatch(/background:\s*var\(--color-bg\)/);
+  });
+
   it("keep the offline pill on one line and the screens clear of it", () => {
     const pill = declarationsOf(".offline-banner");
     // Placed at left: 50%, the box could only grow to half the screen: the sentence broke in two.

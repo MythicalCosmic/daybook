@@ -12,7 +12,7 @@ import { useDraftGuard } from "../../lib/useDraftGuard";
 import { addDays, dayKey, dayMonth, weekdayShort } from "../../lib/time";
 import { useMember } from "../../state/session";
 import { haptic } from "../../telegram";
-import { Button, Field, Input, LoadError, SheetTitle, SkeletonList, Textarea, useToast } from "../../ui";
+import { Button, DateInput, Field, LoadError, SheetTitle, SkeletonList, Textarea, TimeInput, useToast } from "../../ui";
 import type { SheetProps } from "../registry";
 import { useRecord, useRequestCorrection } from "./api";
 import { wallClock } from "./lib";
@@ -87,15 +87,15 @@ function CorrectForm({ record, initialDate, close }: { record: AttendanceRecord 
         <p className="att-hint num">{t("fix.now", { value: currentText(record, t) })}</p>
       ) : (
         <Field label={t("fix.day")}>
-          <Input type="date" num max={today} value={date} onChange={(event) => setDate(event.target.value)} />
+          <DateInput long label={t("fix.day")} max={today} today={today} value={date} onChange={setDate} />
         </Field>
       )}
       <div className="att-times">
         <Field label={t("fix.in")}>
-          <Input type="time" num value={arrived} onChange={(event) => setArrived(event.target.value)} />
+          <TimeInput optional step={1} label={t("fix.in")} value={arrived} onChange={setArrived} />
         </Field>
         <Field label={t("fix.out")}>
-          <Input type="time" num value={left} onChange={(event) => setLeft(event.target.value)} />
+          <TimeInput optional step={1} label={t("fix.out")} value={left} onChange={setLeft} />
         </Field>
       </div>
       <Field label={t("fix.reason")}>

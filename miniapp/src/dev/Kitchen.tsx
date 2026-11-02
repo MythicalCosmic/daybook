@@ -32,6 +32,7 @@ import {
   CardTitle,
   ChipGroup,
   CountBadge,
+  DateInput,
   DenominationCounter,
   Dot,
   EmptyState,
@@ -61,6 +62,7 @@ import {
   StatGrid,
   Stepper,
   Textarea,
+  TimeInput,
   useToast,
   type NoteCounts,
   type SlideState,
@@ -281,6 +283,9 @@ export function Kitchen({ section }: { section: string | null }) {
   const [sheet, setSheet] = useState(false);
   const [loading, setLoading] = useState(false);
   const [refreshed, setRefreshed] = useState(0);
+  const [day, setDay] = useState("2026-11-04");
+  const [time, setTime] = useState("18:30");
+  const [arrived, setArrived] = useState("");
   const tooBig = compareMoney(amountFromTyping(bigAmount) ?? "0", "5000000") > 0;
 
   return (
@@ -439,6 +444,14 @@ export function Kitchen({ section }: { section: string | null }) {
         </Field>
         <Field label={d.receipt}>
           <PhotoInput value={photo} onChange={setPhoto} capture="environment" />
+        </Field>
+        {/* The app's own day and 24-hour time (DateTime.tsx), as the (+) sheet lays them out. */}
+        <div className="plus-when">
+          <DateInput label={t("add.date")} min="2026-11-02" today="2026-11-02" value={day} onChange={setDay} />
+          <TimeInput label={t("add.time")} value={time} onChange={setTime} />
+        </div>
+        <Field label={t("add.time")} optional>
+          <TimeInput label={t("add.time")} optional step={1} value={arrived} onChange={setArrived} />
         </Field>
         <Field label={d.what}>
           <Textarea placeholder={d.whatPlaceholder} />

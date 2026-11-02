@@ -75,7 +75,7 @@ describe("the round tick", () => {
       path.endsWith("/complete/") ? new Promise((_resolve, reject) => (refuse = reject)) : Promise.reject(new Error("no network in tests")),
     );
     show({ board: [makeTask({ title: "Shelf labels", due_at: "2026-10-21T17:00:00+05:00" })] });
-    const tick = () => screen.getByRole("button", { name: /Shelf labels/ }).querySelector(".glyph") as HTMLElement;
+    const tick = () => screen.getByRole("button", { name: /Shelf labels/ }).parentElement!.querySelector(".row-tick") as HTMLElement;
     fireEvent.click(tick());
     await waitFor(() => expect(tick().className).toContain("glyph--done"));
     act(() => refuse(new Error("offline")));
@@ -96,7 +96,7 @@ describe("the round tick", () => {
         makeTask({ id: 52, title: "Fridge log", due_at: "2026-10-21T18:00:00+05:00" }),
       ],
     });
-    const tick = (name: RegExp) => screen.getByRole("button", { name }).querySelector(".glyph") as HTMLElement;
+    const tick = (name: RegExp) => screen.getByRole("button", { name }).parentElement!.querySelector(".row-tick") as HTMLElement;
     fireEvent.click(tick(/Shelf labels/));
     await waitFor(() => expect(tick(/Shelf labels/).className).toContain("glyph--done"));
     fireEvent.click(tick(/Fridge log/));

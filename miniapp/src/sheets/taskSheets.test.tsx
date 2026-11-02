@@ -2,7 +2,7 @@
  * The sheets about one task: snooze choices that say the deadline didn't move, send-back reasons
  * in one tap, more time, and the giver's answers to "can't do it" (someone else, a new time).
  */
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { keys } from "../api/hooks";
@@ -162,8 +162,9 @@ describe("the giver's answers to a blocker", () => {
   it("sets a new time", async () => {
     const task = makeTask({ due_at: "2026-10-21T09:00:00+05:00", blocker: { reason_code: "no_stock", note: "", at: NOW.toISOString() } });
     open(task, { kind: "due", taskId: task.id, resolve: true }, { manager: true });
-    fireEvent.change(screen.getByLabelText("Day"), { target: { value: "2026-10-22" } });
-    fireEvent.change(screen.getByLabelText("Time"), { target: { value: "12:00" } });
+    fireEvent.click(screen.getByRole("button", { name: /^Day: / }));
+    fireEvent.click(screen.getByRole("button", { name: "Thursday, 22 October" }));
+    fireEvent.change(within(screen.getByRole("group", { name: "Time" })).getByRole("combobox", { name: "Hour" }), { target: { value: "12" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(sent("/blocker/resolve/")).toEqual([{ action: "new_due", due_at: "2026-10-22T07:00:00.000Z" }]));
     expect(navigationState().sheet).toBeNull();

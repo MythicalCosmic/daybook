@@ -7,18 +7,18 @@
  * opens the review at `?screen=drafts:<id>`.
  */
 import { Mic } from "lucide-react";
-import { lazy } from "react";
 
 import { defineFeature } from "../registry";
 import { DictateCard, PlusTitleTools, useVoiceVisible } from "./Entry";
 import { messages } from "./messages";
+import { DraftSheetScreen } from "./sheet";
 
 export default defineFeature({
   id: "ai",
   messages,
   visible: (member) => member.status === "approved",
   sheets: {
-    draft: lazy(() => import("./DraftSheet").then((m) => ({ default: m.DraftSheet }))),
+    draft: DraftSheetScreen,
   },
   homeCards: [{ id: "dictate", component: DictateCard, order: 20 }],
   plusActions: [{ id: "dictate", label: "plus.dictate", icon: Mic, open: { sheet: "draft", params: { mode: "voice" } }, order: 10, useVisible: useVoiceVisible }],
