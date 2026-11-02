@@ -161,6 +161,7 @@ export const CATALOG: readonly CatalogEntry[] = [
     hotkey: "h",
     badge: "hr.expiring",
     pages: [
+      { id: "overview", to: "hr", perm: "hr.view" },
       { id: "documents", to: "hr/documents", perm: "hr.view" },
       { id: "contracts", to: "hr/contracts", perm: "hr.view" },
       { id: "templates", to: "hr/contract-templates", perm: "hr.manage" },
@@ -177,9 +178,9 @@ export const CATALOG: readonly CatalogEntry[] = [
     perm: ["hr.view", "hr.discipline", "hr.suspend", "hr.terminate", "assets.manage", "reviews.manage"],
     feature: "hr",
     pages: [
-      { id: "org", to: "lifecycle/org", perm: "hr.view" },
       { id: "discipline", to: "lifecycle/discipline", perm: ["hr.discipline", "hr.view"] },
       { id: "suspensions", to: "lifecycle/suspensions", perm: ["hr.suspend", "hr.view"] },
+      { id: "org", to: "lifecycle/org", perm: "hr.view" },
       { id: "terminations", to: "lifecycle/terminations", perm: ["hr.terminate", "hr.view"], badge: "lifecycle.resignations" },
       { id: "changes", to: "lifecycle/job-changes", perm: ["hr.manage", "hr.view"], badge: "lifecycle.job_changes" },
       { id: "equipment", to: "lifecycle/equipment", perm: ["assets.manage", "hr.manage"] },
