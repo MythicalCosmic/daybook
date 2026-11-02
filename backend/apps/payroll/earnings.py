@@ -107,6 +107,7 @@ def _current(member, now: datetime) -> dict:
                 "target_amount": _text(row["target_amount"])
                 if row["target_amount"] is not None
                 else None,
+                "limit": _text(row["limit"]) if row["limit"] is not None else None,
             }
             for row in rules.progress(member, period, now=now)
         ],

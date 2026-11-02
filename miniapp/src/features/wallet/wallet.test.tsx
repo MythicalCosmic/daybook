@@ -191,10 +191,12 @@ const progress = (extra: Partial<Progress> = {}): Progress => ({
   rule: 1,
   name: "On time",
   metric: "tasks.on_time_percent",
+  op: "gte",
   value: "93.00",
   earned: "0.00",
   target: "95.00",
   target_amount: "300000.00",
+  limit: null,
   min_tasks: 10,
   tasks: 40,
   ...extra,
@@ -454,6 +456,10 @@ describe("bonus rules' progress", () => {
     expect(late({ op: undefined, limit: undefined }).caption).toEqual({ key: "progress.kept" });
     expect(late({}).good).toBe(true);
     expect(late({}).bar).toBeNull();
+    // A tier that pays now comes before a better one below it, which a count can't go back to.
+    expect(late({ metric: "attendance.absences", value: "1.00", earned: "100000.00", target: "0.00", target_amount: "300000.00", limit: "1.00" }).caption).toEqual({
+      key: "progress.keepLast",
+    });
   });
 
   it("says what was earned, what isn't yet, and when there are too few tasks to judge", () => {

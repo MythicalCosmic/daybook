@@ -224,8 +224,9 @@ export type ProgressView = {
   good: boolean;
 };
 
+/** The rule's own direction; a server from before `op` leaves it to the metric. */
 function lowerIsBetter(row: Progress): boolean {
-  const op: Op | null | undefined = row.op;
+  const op = row.op as Op | undefined;
   if (op) return op === "lte" || op === "lt";
   return LOWER_IS_BETTER.has(row.metric);
 }
@@ -247,16 +248,8 @@ export function progressView(row: Progress): ProgressView {
     return { ...view, good: false, caption: { key: "progress.minTasks", min: row.min_tasks, count: row.tasks } };
   }
 
-  const target = number(row.target);
-  if (row.target !== null && target !== null && row.target_amount && !isZero(row.target_amount)) {
-    if (lower) return { ...view, caption: { key: "progress.atMost", target: row.target, amount: row.target_amount } };
-    return {
-      ...view,
-      bar: target > 0 ? { value: Math.max(0, Math.min(value, target)), total: target } : null,
-      caption: { key: "progress.next", target: row.target, amount: row.target_amount },
-    };
-  }
-
+  // An at-most rule that pays now says how much room is left before the bonus goes; a better tier
+  // below (no late arrivals at all) can't be reached once a count has passed it.
   if (earned && lower) {
     const limit = number(row.limit);
     if (row.limit && limit !== null) {
@@ -272,6 +265,16 @@ export function progressView(row: Progress): ProgressView {
       return { ...view, caption: { key: "progress.keepLimit", limit: row.limit } };
     }
     return { ...view, caption: { key: "progress.kept" } };
+  }
+
+  const target = number(row.target);
+  if (row.target !== null && target !== null && row.target_amount && !isZero(row.target_amount)) {
+    if (lower) return { ...view, caption: { key: "progress.atMost", target: row.target, amount: row.target_amount } };
+    return {
+      ...view,
+      bar: target > 0 ? { value: Math.max(0, Math.min(value, target)), total: target } : null,
+      caption: { key: "progress.next", target: row.target, amount: row.target_amount },
+    };
   }
 
   if (earned) return { ...view, bar: lower ? null : { value: 1, total: 1 }, caption: { key: "progress.earned", amount: earned } };

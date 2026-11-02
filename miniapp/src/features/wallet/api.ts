@@ -16,12 +16,9 @@ type Schemas = components["schemas"];
 export type Earnings = Schemas["PayrollEarnings"];
 export type EarningsSums = Schemas["PayrollEarningsSums"];
 export type Proposed = Schemas["PayrollEarningsProposed"];
-/**
- * A bonus rule's progress. `op` and `limit` (an "at most" rule that pays now: the number to stay
- * within) come from newer servers; without them the card says less, never something wrong.
- */
-export type Progress = Schemas["PayrollEarningsProgress"] & { op?: Op | null; limit?: string | null };
-export type Op = "gte" | "gt" | "lte" | "lt";
+/** A bonus rule's progress: `op` says whether more or less is better, `limit` what an at-most rule that pays now must stay within. */
+export type Progress = Schemas["PayrollEarningsProgress"];
+export type Op = Schemas["PayrollRuleOpEnum"];
 export type Adjustment = Schemas["Adjustment"];
 export type AdjustmentKind = Schemas["PayrollAdjustmentKindEnum"];
 export type Advance = Schemas["Advance"];

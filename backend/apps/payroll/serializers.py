@@ -1131,10 +1131,17 @@ class EarningsProgressSerializer(serializers.Serializer):
     rule = serializers.IntegerField()
     name = serializers.CharField()
     metric = serializers.CharField()
+    op = serializers.ChoiceField(
+        choices=AdjustmentRule.Op.choices, help_text="Whether more (gte, gt) or less is better."
+    )
     value = serializers.CharField()
     earned = serializers.CharField()
     target = serializers.CharField(allow_null=True)
     target_amount = serializers.CharField(allow_null=True)
+    limit = serializers.CharField(
+        allow_null=True,
+        help_text="An at-most rule that pays now: the number to stay within to keep it.",
+    )
     min_tasks = serializers.IntegerField(allow_null=True)
     tasks = serializers.IntegerField(allow_null=True)
 
