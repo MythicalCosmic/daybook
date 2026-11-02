@@ -144,11 +144,17 @@ export const financeKeys = {
 
 // ─── Queries ────────────────────────────────────────────────────────────────
 
-function useResource<T>(resource: string, params: MaybeRefOrGetter<Record<string, unknown>>, fetcher: (cid: number, params: Record<string, unknown>) => Promise<T>, options: { enabled?: MaybeRefOrGetter<boolean>; keepPrevious?: boolean; staleTime?: number } = {}) {
+function useResource<T>(
+  resource: string,
+  params: MaybeRefOrGetter<Record<string, unknown>>,
+  fetcher: (cid: number, params: Record<string, unknown>, signal: AbortSignal) => Promise<T>,
+  options: { enabled?: MaybeRefOrGetter<boolean>; keepPrevious?: boolean; staleTime?: number } = {},
+) {
   const cid = useCompanyId();
   return useQuery({
     queryKey: computed(() => financeKeys.of(cid.value, resource, toValue(params))),
-    queryFn: () => fetcher(cid.value, toValue(params)),
+    // vue-query's signal: a list left for a new filter or page is cancelled, not downloaded in full.
+    queryFn: ({ signal }) => fetcher(cid.value, toValue(params), signal),
     enabled: computed(() => cid.value > 0 && (options.enabled === undefined || toValue(options.enabled))),
     placeholderData: options.keepPrevious ? keepPreviousData : undefined,
     staleTime: options.staleTime ?? 20_000,
@@ -163,13 +169,13 @@ export const useStatement = (id: MaybeRefOrGetter<number>, range: MaybeRefOrGett
   useResource("statement", () => ({ id: toValue(id), ...toValue(range) }), (cid, p) => financeApi.statement(cid, Number(p.id), { from: String(p.from), to: String(p.to) }), { keepPrevious: true });
 export const useCategories = (enabled: MaybeRefOrGetter<boolean> = true) => useResource("categories", {}, (cid) => financeApi.categories(cid), { enabled, staleTime: 60_000 });
 export const useCounterparties = (params: MaybeRefOrGetter<Query>) =>
-  useResource("counterparties", () => ({ ...toValue(params) }), (cid, p) => financeApi.counterparties(cid, p as Query), { keepPrevious: true });
+  useResource("counterparties", () => ({ ...toValue(params) }), (cid, p, signal) => financeApi.counterparties(cid, p as Query, signal), { keepPrevious: true });
 export const useCounterparty = (id: MaybeRefOrGetter<number>) => useResource("counterparty", () => ({ id: toValue(id) }), (cid, p) => financeApi.counterparty(cid, Number(p.id)));
 export const useTransactions = (params: MaybeRefOrGetter<Query>) =>
-  useResource("transactions", () => ({ ...toValue(params) }), (cid, p) => financeApi.transactions(cid, p as Query), { keepPrevious: true });
+  useResource("transactions", () => ({ ...toValue(params) }), (cid, p, signal) => financeApi.transactions(cid, p as Query, signal), { keepPrevious: true });
 export const useTransaction = (id: MaybeRefOrGetter<number | null>) =>
   useResource("transaction", () => ({ id: toValue(id) }), (cid, p) => financeApi.transaction(cid, Number(p.id)), { enabled: () => !!toValue(id) });
-export const useDebts = (params: MaybeRefOrGetter<Query>) => useResource("debts", () => ({ ...toValue(params) }), (cid, p) => financeApi.debts(cid, p as Query), { keepPrevious: true });
+export const useDebts = (params: MaybeRefOrGetter<Query>) => useResource("debts", () => ({ ...toValue(params) }), (cid, p, signal) => financeApi.debts(cid, p as Query, signal), { keepPrevious: true });
 export const useDebtSummary = () => useResource("debt-summary", {}, (cid) => financeApi.debtSummary(cid));
 export const useDebt = (id: MaybeRefOrGetter<number | null>) => useResource("debt", () => ({ id: toValue(id) }), (cid, p) => financeApi.debt(cid, Number(p.id)), { enabled: () => !!toValue(id) });
 export const useRates = (enabled: MaybeRefOrGetter<boolean> = true) => useResource("rates", {}, (cid) => financeApi.rates(cid), { enabled });

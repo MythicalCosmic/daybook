@@ -56,6 +56,35 @@ const options = (): Options =>
 
 const button = (label: string) => [...document.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.textContent?.trim() === label)!;
 
+describe("finance lists", () => {
+  it("hand vue-query's cancel signal to the request, so a list left behind is not downloaded in full", async () => {
+    const signals: Array<AbortSignal | undefined> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string, init?: RequestInit) => {
+        if (input.includes("/transactions/") || input.includes("/debts/") || input.includes("/counterparties/")) signals.push(init?.signal ?? undefined);
+        return json({ count: 0, next: null, previous: null, results: [] });
+      }),
+    );
+    const { useCounterparties, useDebts, useTransactions } = await import("../api");
+    const { defineComponent, h } = await import("vue");
+    const Lists = defineComponent({
+      setup() {
+        useTransactions({ page: 1 });
+        useDebts({ page: 1 });
+        useCounterparties({ page: 1 });
+        return () => h("div");
+      },
+    });
+    const app = await testApp("/c/1/finance/transactions");
+    const { wrapper } = mountWithProviders(Lists, { plugins: app.plugins });
+    await flushPromises();
+    expect(signals).toHaveLength(3);
+    expect(signals.every((signal) => signal instanceof AbortSignal)).toBe(true);
+    wrapper.unmount();
+  });
+});
+
 describe("finance forms say field-only refusals", () => {
   it("a new account refused for its opening day", async () => {
     stub({ "GET options/": () => json(options()), "POST accounts/": () => json({ opening_on: ["The books are closed until 30 September."] }, 400) });
