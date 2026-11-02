@@ -26,6 +26,7 @@ from apps.payroll.models import (
     Compensation,
     PayrollRun,
     Payslip,
+    PayslipLine,
     PayType,
 )
 
@@ -286,3 +287,192 @@ def pending_count(member: Membership) -> int:
 
 def advances_count(member: Membership) -> int:
     return _visible(member, requested_advances(member.company)).count()
+
+
+# Summaries (contracts, the overview, the AI tool) ---------------------------------------
+
+DONE_STATUSES = (PayrollRun.Status.FINALIZED, PayrollRun.Status.PAID)
+
+
+def regular_run(company, period: date) -> PayrollRun | None:
+    return (
+        PayrollRun.objects.for_company(company)
+        .filter(kind=PayrollRun.Kind.REGULAR, period=periods.first_day(period))
+        .exclude(status=PayrollRun.Status.CANCELLED)
+        .first()
+    )
+
+
+def _sum(rows, field: str) -> Decimal:
+    return sum((getattr(row, field) for row in rows), ZERO)
+
+
+def _line_sums(payslip_ids) -> dict[str, Decimal]:
+    Kind = PayslipLine.Kind
+    totals = {"bonuses": ZERO, "fines": ZERO, "advances": ZERO}
+    for kind, amount in PayslipLine.objects.filter(payslip_id__in=list(payslip_ids)).values_list(
+        "kind", "amount"
+    ):
+        if kind in (Kind.BONUS, Kind.ALLOWANCE, Kind.TASK_REWARD):
+            totals["bonuses"] += amount
+        elif kind in (Kind.FINE, Kind.DEDUCTION):
+            totals["fines"] -= amount
+        elif kind == Kind.ADVANCE:
+            totals["advances"] -= amount
+    return totals
+
+
+def run_summary(company, period: date, *, branch_ids: list[int] | None = None) -> dict | None:
+    """The month's regular run in sums (people, gross, deductions, net, bonuses, fines,
+    advances) over the people in `branch_ids`; None without a run."""
+    run = regular_run(company, period)
+    if run is None:
+        return None
+    payslips = list(people_scope(run.payslips.all(), branch_ids))
+    lines = _line_sums(p.pk for p in payslips)
+    return {
+        "run": run.pk,
+        "period": run.period.isoformat(),
+        "status": run.status,
+        "currency": conf.get_settings(company).currency,
+        "people": len(payslips),
+        "gross": _sum(payslips, "gross"),
+        "deductions": _sum(payslips, "deductions"),
+        "net": _sum(payslips, "net"),
+        "paid": sum(1 for p in payslips if p.status == Payslip.Status.PAID),
+        **lines,
+    }
+
+
+def projected_cost(company, period: date, *, branch_ids: list[int] | None = None) -> dict:
+    """What `period` costs in pay: the finalized run's sums, or else the month worked out
+    with today's data (days ahead counted as planned)."""
+    from apps.payroll import calculator
+
+    summary = run_summary(company, period, branch_ids=branch_ids)
+    if summary is not None and summary["status"] in DONE_STATUSES:
+        return {"source": "run", **summary}
+    inputs, people = calculator.gather(company, period)
+    if branch_ids is not None:
+        visible = set(
+            Membership.objects.filter(branches__in=branch_ids).values_list("pk", flat=True)
+        )
+        people = [person for person in people if person.member_id in visible]
+    gross = net = ZERO
+    count = 0
+    for person in people:
+        result = calculator.compute(person, inputs)
+        if result is None:
+            continue
+        count += 1
+        net += sum((line.amount for line in result.lines), ZERO)
+        gross += sum(
+            (line.amount for line in result.lines if line.kind in PayslipLine.EARNINGS),
+            ZERO,
+        )
+    return {
+        "source": "estimate",
+        "period": periods.first_day(period).isoformat(),
+        "currency": inputs.currency,
+        "people": count,
+        "gross": gross,
+        "net": net,
+    }
+
+
+def overview(company, *, months: int, branch_ids: list[int] | None, today: date) -> dict:
+    """The payroll overview: the last `months` months' runs, this month's projection, the
+    latest closed month by position and by branch, what waits for a decision."""
+    this_month = periods.first_day(today)
+    first = periods.add_months(this_month, -(months - 1))
+    runs = (
+        PayrollRun.objects.for_company(company)
+        .filter(kind=PayrollRun.Kind.REGULAR, period__gte=first)
+        .exclude(status=PayrollRun.Status.CANCELLED)
+        .order_by("period")
+    )
+    series = []
+    for run in runs:
+        summary = run_summary(company, run.period, branch_ids=branch_ids)
+        series.append(
+            {
+                "period": run.period.isoformat(),
+                "label": month_label(run.period),
+                "status": run.status,
+                "people": summary["people"],
+                "gross": _text(summary["gross"]),
+                "net": _text(summary["net"]),
+                "bonuses": _text(summary["bonuses"]),
+                "fines": _text(summary["fines"]),
+                "advances": _text(summary["advances"]),
+            }
+        )
+    latest = (
+        PayrollRun.objects.for_company(company)
+        .filter(kind=PayrollRun.Kind.REGULAR, status__in=DONE_STATUSES)
+        .order_by("-period")
+        .first()
+    )
+    by_position: dict = {}
+    by_branch: dict = {}
+    if latest is not None:
+        payslips = people_scope(
+            latest.payslips.select_related("membership__position", "membership__home_branch"),
+            branch_ids,
+        )
+        for payslip in payslips:
+            member = payslip.membership
+            for table, key, label in (
+                (
+                    by_position,
+                    member.position_id,
+                    member.position.name if member.position_id else "",
+                ),
+                (
+                    by_branch,
+                    member.home_branch_id,
+                    member.home_branch.name if member.home_branch_id else "",
+                ),
+            ):
+                row = table.setdefault(
+                    key, {"key": str(key or "none"), "label": label, "people": 0, "gross": ZERO}
+                )
+                row["people"] += 1
+                row["gross"] += payslip.gross
+    projected = projected_cost(company, this_month, branch_ids=branch_ids)
+    current = current_compensations(
+        payable_people(company, branch_ids=branch_ids).values_list("pk", flat=True), today
+    )
+    return {
+        "currency": conf.get_settings(company).currency,
+        "months": series,
+        "latest": {"period": latest.period.isoformat(), "label": month_label(latest.period)}
+        if latest
+        else None,
+        "by_position": [
+            {**row, "gross": _text(row["gross"])}
+            for row in sorted(by_position.values(), key=lambda row: -row["gross"])
+        ],
+        "by_branch": [
+            {**row, "gross": _text(row["gross"])}
+            for row in sorted(by_branch.values(), key=lambda row: -row["gross"])
+        ],
+        "projected": {
+            "period": this_month.isoformat(),
+            "label": month_label(this_month),
+            "source": projected["source"],
+            "people": projected["people"],
+            "gross": _text(projected["gross"]),
+            "net": _text(projected["net"]),
+        },
+        "headcount": len(current),
+        "pending": {
+            "adjustments": people_scope(open_proposals(company), branch_ids).count(),
+            "disputes": people_scope(open_disputes(company), branch_ids).count(),
+            "advances": people_scope(requested_advances(company), branch_ids).count(),
+        },
+    }
+
+
+def _text(value: Decimal) -> str:
+    return f"{value:.2f}"

@@ -1394,6 +1394,31 @@ paths:
               schema:
                 $ref: '#/components/schemas/Advance'
           description: ''
+  /api/v1/companies/{company_id}/payroll/earnings/current/:
+    get:
+      operationId: v1_companies_payroll_earnings_current_retrieve
+      description: |-
+        This month so far and the month's estimate: base pay, extras, task pay, bonuses and
+        fines, advances, expenses paid back, proposed bonuses and fines apart, and how far each
+        bonus rule is (cached for 10 minutes).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollEarnings'
+          description: ''
   /api/v1/companies/{company_id}/payroll/payslips/:
     get:
       operationId: v1_companies_payroll_payslips_list
@@ -7224,6 +7249,136 @@ components:
           maxLength: 500
       required:
       - text
+    PayrollEarnings:
+      type: object
+      properties:
+        period:
+          type: string
+        as_of:
+          type: string
+        currency:
+          type: string
+        has_pay_setup:
+          type: boolean
+        pay_type:
+          type: string
+          nullable: true
+        so_far:
+          $ref: '#/components/schemas/PayrollEarningsSums'
+        estimate:
+          $ref: '#/components/schemas/PayrollEarningsSums'
+        worked_minutes:
+          type: integer
+        scheduled_days:
+          type: integer
+        absent_days:
+          type: integer
+        proposed:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayrollEarningsProposed'
+        progress:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayrollEarningsProgress'
+      required:
+      - absent_days
+      - as_of
+      - currency
+      - estimate
+      - has_pay_setup
+      - pay_type
+      - period
+      - progress
+      - proposed
+      - scheduled_days
+      - so_far
+      - worked_minutes
+    PayrollEarningsProgress:
+      type: object
+      properties:
+        rule:
+          type: integer
+        name:
+          type: string
+        metric:
+          type: string
+        value:
+          type: string
+        earned:
+          type: string
+        target:
+          type: string
+          nullable: true
+        target_amount:
+          type: string
+          nullable: true
+        min_tasks:
+          type: integer
+          nullable: true
+        tasks:
+          type: integer
+          nullable: true
+      required:
+      - earned
+      - metric
+      - min_tasks
+      - name
+      - rule
+      - target
+      - target_amount
+      - tasks
+      - value
+    PayrollEarningsProposed:
+      type: object
+      properties:
+        id:
+          type: integer
+        kind:
+          type: string
+        amount:
+          type: string
+        reason:
+          type: string
+        source:
+          type: string
+      required:
+      - amount
+      - id
+      - kind
+      - reason
+      - source
+    PayrollEarningsSums:
+      type: object
+      properties:
+        base:
+          type: string
+        extra:
+          type: string
+        pieces:
+          type: string
+        bonuses:
+          type: string
+        fines:
+          type: string
+        taxes:
+          type: string
+        advances:
+          type: string
+        reimbursements:
+          type: string
+        net:
+          type: string
+      required:
+      - advances
+      - base
+      - bonuses
+      - extra
+      - fines
+      - net
+      - pieces
+      - reimbursements
+      - taxes
     PayrollFileLink:
       type: object
       properties:

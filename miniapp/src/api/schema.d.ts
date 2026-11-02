@@ -774,6 +774,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/payroll/earnings/current/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description This month so far and the month's estimate: base pay, extras, task pay, bonuses and
+         *     fines, advances, expenses paid back, proposed bonuses and fines apart, and how far each
+         *     bonus rule is (cached for 10 minutes).
+         */
+        get: operations["v1_companies_payroll_earnings_current_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/payroll/payslips/": {
         parameters: {
             query?: never;
@@ -3177,6 +3198,49 @@ export interface components {
         PayrollDisputeRequest: {
             text: string;
         };
+        PayrollEarnings: {
+            period: string;
+            as_of: string;
+            currency: string;
+            has_pay_setup: boolean;
+            pay_type: string | null;
+            so_far: components["schemas"]["PayrollEarningsSums"];
+            estimate: components["schemas"]["PayrollEarningsSums"];
+            worked_minutes: number;
+            scheduled_days: number;
+            absent_days: number;
+            proposed: components["schemas"]["PayrollEarningsProposed"][];
+            progress: components["schemas"]["PayrollEarningsProgress"][];
+        };
+        PayrollEarningsProgress: {
+            rule: number;
+            name: string;
+            metric: string;
+            value: string;
+            earned: string;
+            target: string | null;
+            target_amount: string | null;
+            min_tasks: number | null;
+            tasks: number | null;
+        };
+        PayrollEarningsProposed: {
+            id: number;
+            kind: string;
+            amount: string;
+            reason: string;
+            source: string;
+        };
+        PayrollEarningsSums: {
+            base: string;
+            extra: string;
+            pieces: string;
+            bonuses: string;
+            fines: string;
+            taxes: string;
+            advances: string;
+            reimbursements: string;
+            net: string;
+        };
         PayrollFileLink: {
             url: string;
             name: string;
@@ -5421,6 +5485,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Advance"];
+                };
+            };
+        };
+    };
+    v1_companies_payroll_earnings_current_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollEarnings"];
                 };
             };
         };

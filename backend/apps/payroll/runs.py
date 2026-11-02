@@ -139,16 +139,23 @@ def _warnings(run: PayrollRun, inputs, people, results, members) -> list[dict]:
     start, end = periods.bounds(run.period)
     found: list[dict] = []
     paid_ids = {person.member_id for person in people}
+    from apps.hr.queries import employment_dates
     from apps.payroll.services import PAYABLE_STATUSES
 
-    staff = (
+    staff = list(
         Membership.objects.for_company(company)
         .filter(status__in=PAYABLE_STATUSES)
         .exclude(pk__in=paid_ids)
         .exclude(role__is_owner=True)
         .select_related("user")
+        .order_by("first_name", "last_name", "pk")
     )
-    for member in staff.order_by("first_name", "last_name"):
+    # Only people who worked here during the month and have no pay setup for it.
+    dates = employment_dates(company, [member.pk for member in staff])
+    for member in staff:
+        first, last = dates.get(member.pk, (None, None))
+        if first is None or first > end or (last is not None and last < start):
+            continue
         found.append({"code": "no_pay_setup", "level": "warning", "member": person_ref(member)})
     for result in results:
         member = members.get(result.member_id)

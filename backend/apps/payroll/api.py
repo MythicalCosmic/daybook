@@ -142,6 +142,21 @@ class CancelAdvanceView(WalletView):
         return Response(s.AdvanceSerializer(row, context=self.context()).data)
 
 
+# Earned so far --------------------------------------------------------------------------
+
+
+class EarningsView(WalletView):
+    """This month so far and the month's estimate: base pay, extras, task pay, bonuses and
+    fines, advances, expenses paid back, proposed bonuses and fines apart, and how far each
+    bonus rule is (cached for 10 minutes)."""
+
+    @extend_schema(responses=s.EarningsSerializer)
+    def get(self, request, company_id):
+        from apps.payroll import earnings
+
+        return Response(earnings.current(self.membership))
+
+
 # Payslips -------------------------------------------------------------------------------
 
 

@@ -526,6 +526,142 @@ def remove_task_rate(rate: TaskRate, *, by: Membership | None) -> None:
     _bump(company_id, PULSE_PAY)
 
 
+# Rules ----------------------------------------------------------------------------------
+
+RULE_FIELDS = (
+    "name",
+    "kind",
+    "metric",
+    "mode",
+    "op",
+    "threshold",
+    "free_units",
+    "tiers",
+    "amount_type",
+    "amount",
+    "cap",
+    "min_tasks",
+    "positions",
+    "evaluate",
+    "auto_approve",
+    "is_active",
+)
+
+
+def _decimal(value, message: str) -> Decimal | None:
+    if value in (None, ""):
+        return None
+    try:
+        number = Decimal(str(value))
+    except InvalidOperation, TypeError, ValueError:
+        raise DomainError(message) from None
+    if not number.is_finite() or abs(number) > MAX_AMOUNT:
+        raise DomainError(message)
+    return number
+
+
+def _check_rule(rule: AdjustmentRule) -> None:
+    """A rule that can be evaluated: the fields its mode needs, amounts that make sense."""
+    Rule = AdjustmentRule
+    if not rule.name.strip():
+        raise DomainError(_("Give the rule a name."))
+    choices = (
+        (rule.kind, Rule.Kind.values),
+        (rule.metric, Rule.Metric.values),
+        (rule.mode, Rule.Mode.values),
+        (rule.op, Rule.Op.values),
+        (rule.amount_type, Rule.AmountType.values),
+        (rule.evaluate, Rule.Evaluate.values),
+    )
+    if any(value not in allowed for value, allowed in choices):
+        raise DomainError(_("Pick from the list."))
+    percent = rule.amount_type == Rule.AmountType.PERCENT
+
+    def check_amount(amount: Decimal | None) -> None:
+        if amount is None or amount <= 0:
+            raise DomainError(_("Enter the amount the rule gives."))
+        if percent and amount > 100:
+            raise DomainError(_("A percent is at most 100."))
+
+    if rule.mode == Rule.Mode.TIERED:
+        if not rule.tiers:
+            raise DomainError(_("Add at least one tier: a threshold and its amount."))
+        clean = []
+        for tier in rule.tiers:
+            if not isinstance(tier, dict):
+                raise DomainError(_("Add at least one tier: a threshold and its amount."))
+            threshold = _decimal(tier.get("threshold"), _("Enter each tier's threshold."))
+            amount = _decimal(tier.get("amount"), _("Enter the amount the rule gives."))
+            if threshold is None:
+                raise DomainError(_("Enter each tier's threshold."))
+            check_amount(amount)
+            clean.append({"threshold": f"{threshold}", "amount": f"{quantize(amount)}"})
+        if len({tier["threshold"] for tier in clean}) != len(clean):
+            raise DomainError(_("Each tier needs its own threshold."))
+        rule.tiers = clean
+    else:
+        check_amount(rule.amount)
+        if rule.mode == Rule.Mode.ONCE and rule.threshold is None:
+            raise DomainError(_("Enter the threshold."))
+    if rule.cap is not None and rule.cap <= 0:
+        raise DomainError(_("A cap is more than zero, or empty."))
+    if rule.free_units is None or rule.free_units < 0:
+        raise DomainError(_("Free units can't be below zero."))
+
+
+@transaction.atomic
+def save_rule(
+    company: Company, *, by: Membership | None, rule: AdjustmentRule | None = None, **fields
+) -> AdjustmentRule:
+    """Create or change an automatic bonus or fine rule. Rules start switched off."""
+    _require(by, Perm.PAYROLL_MANAGE)
+    if unknown := set(fields) - set(RULE_FIELDS):
+        raise DomainError(_("Unknown field: %(name)s") % {"name": ", ".join(sorted(unknown))})
+    _same_company(company, rule, *(fields.get("positions") or ()))
+    row = rule or AdjustmentRule(company=company, created_by=by.user if by is not None else None)
+    positions = fields.pop("positions", None)
+    before = {name: getattr(row, name) for name in fields} if rule else {}
+    for name, value in fields.items():
+        if name in ("threshold", "free_units", "amount", "cap"):
+            value = _decimal(value, _("Enter a number."))
+            if name == "free_units" and value is None:
+                value = Decimal(0)
+        if name == "name":
+            value = (value or "").strip()[:100]
+        setattr(row, name, value)
+    _check_rule(row)
+    row.save()
+    if positions is not None:
+        row.positions.set(positions)
+    audit.record(
+        PayrollAction.RULE_SAVED,
+        company_id=company.pk,
+        actor=by.user if by is not None else None,
+        target=row,
+        required_perm=Perm.PAYROLL_VIEW,
+        changes=_changes(before, fields),
+    )
+    _bump(company.pk, PULSE_RULES)
+    return row
+
+
+@transaction.atomic
+def remove_rule(rule: AdjustmentRule, *, by: Membership | None) -> None:
+    """Delete a rule; what it proposed stays (without the link)."""
+    _require(by, Perm.PAYROLL_MANAGE)
+    company_id = rule.company_id
+    audit.record(
+        PayrollAction.RULE_REMOVED,
+        company_id=company_id,
+        actor=by.user if by is not None else None,
+        target=rule,
+        required_perm=Perm.PAYROLL_VIEW,
+        name=rule.name,
+    )
+    rule.delete()
+    _bump(company_id, PULSE_RULES)
+
+
 # Bonuses and fines ----------------------------------------------------------------------
 
 
@@ -1163,10 +1299,12 @@ __all__ = [
     "publish",
     "reject",
     "remove_pay",
+    "remove_rule",
     "remove_task_rate",
     "reopen_run",
     "repay_advance",
     "request_advance",
+    "save_rule",
     "save_task_rate",
     "set_manual_lines",
     "set_pay",

@@ -109,6 +109,19 @@ class TestCalculate:
         with pytest.raises(DomainError, match="started"):
             services.create_run(shop, by=staff.accountant, period="2026-12")
 
+    def test_no_pay_setup_warns_only_about_people_who_worked_that_month(
+        self, shop, team, monkeypatch
+    ):
+        staff = team
+        joined = {staff.vali.pk: (date(2026, 11, 2), None)}  # started after October
+        monkeypatch.setattr(
+            "apps.hr.queries.employment_dates",
+            lambda company, ids: {pk: joined.get(pk, (date(2025, 6, 1), None)) for pk in ids},
+        )
+        run = services.create_run(shop, by=staff.accountant, period="2026-10")
+        warned = {w["member"]["id"] for w in run.warnings if w["code"] == "no_pay_setup"}
+        assert staff.vali.pk not in warned and staff.manager.pk in warned
+
     def test_recalculating_follows_the_data_and_keeps_hand_made_lines(self, shop, team):
         staff = team
         run = services.create_run(shop, by=staff.owner, period="2026-10")
@@ -136,6 +149,21 @@ class TestCalculate:
         Compensation.objects.filter(membership=staff.sara).delete()
         services.calculate_run(run, by=staff.owner)
         assert not run.payslips.filter(membership=staff.sara).exists()
+
+    def test_changing_the_night_multiplier_reaches_the_draft(self, shop, team):
+        """§14.11: a draft run calculated again follows the new multiplier."""
+        from apps.payroll.tests.test_golden import record
+
+        staff = team
+        for day in (5, 6, 7, 8):
+            record(staff.ali, date(2026, 10, day), (22, 0), (6, 0))
+        run = services.create_run(shop, by=staff.owner, period="2026-10")
+        night = lines(payslip_of(run, staff.ali), Kind.NIGHT_WORK)[0]
+        assert night.amount == D("400000.00")
+        services.update_settings(shop, by=staff.owner, night_multiplier=D("2.00"))
+        services.calculate_run(run, by=staff.owner)
+        night = lines(payslip_of(run, staff.ali), Kind.NIGHT_WORK)[0]
+        assert night.amount == D("800000.00")
 
     def test_the_deductions_cap(self, shop, team):
         staff = team
@@ -252,6 +280,35 @@ class TestFinalize:
         services.finalize_run(run, by=staff.owner)
         assert ledger(run) == once
         assert MoneyAccount.objects.get(name="Payroll cash").balance == cash_balance
+
+    def test_rounding_never_eats_into_an_advance_that_takes_the_whole_pay(self, shop, team, cash):
+        """Pay 1 000 000, an advance of 1 000 000 due, 150 400 of expenses paid back: the net
+        150 400 is not rounded down, or the salary payable couldn't cover the advance."""
+        staff = team
+        Compensation.objects.filter(membership=staff.ali).update(amount=D("1000000"))
+        row = services.create_advance(
+            staff.ali, by=staff.owner, amount="1000000", first_period="2026-11"
+        )
+        Advance.objects.filter(pk=row.pk).update(first_period=OCTOBER)
+        row.refresh_from_db()
+        services.pay_advance(row, by=staff.owner, account=cash, paid_on=date(2026, 10, 20))
+        finance.open_debt(
+            shop,
+            by=staff.owner,
+            direction="payable",
+            kind="reimbursement",
+            amount=D("150400"),
+            currency="UZS",
+            issued_on=date(2026, 10, 10),
+            membership=staff.ali,
+            category="other_expense",
+        )
+        run = services.create_run(shop, by=staff.owner, period="2026-10")
+        ali = payslip_of(run, staff.ali)
+        assert ali.net == D("150400.00") and not lines(ali, Kind.ROUNDING)
+        services.finalize_run(run, by=staff.owner)
+        ali.refresh_from_db()
+        assert (ali.salary_debt.amount, ali.salary_debt.paid) == (D("1000000"), D("1000000"))
 
     def test_reopen_rules(self, shop, team, cash):
         staff = team

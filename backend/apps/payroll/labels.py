@@ -17,10 +17,23 @@ from apps.payroll.models import Adjustment, PayslipLine, PayType
 Kind = PayslipLine.Kind
 
 
-def _hours(minutes) -> str:
-    hours = Decimal(int(minutes or 0)) / Decimal(60)
-    text = f"{hours:.1f}".rstrip("0").rstrip(".")
+def _number(value: Decimal, places: str = "0.01") -> str:
+    """1.50 → "1,5" (uz, ru) or "1.5" (en); 2.00 → "2"."""
+    text = f"{Decimal(value).quantize(Decimal(places)):f}"
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
     return text.replace(".", "," if (translation.get_language() or "en")[:2] != "en" else ".")
+
+
+def _hours(minutes) -> str:
+    return _number(Decimal(int(minutes or 0)) / Decimal(60), "0.1")
+
+
+def _multiplier(params: dict) -> str:
+    try:
+        return _number(Decimal(str(params.get("multiplier"))))
+    except Exception:
+        return str(params.get("multiplier") or "")
 
 
 def _days(count) -> str:
@@ -84,15 +97,15 @@ def line_label(line: PayslipLine) -> str:
     if code == "overtime":
         return _("Overtime: %(hours)s h at ×%(multiplier)s") % {
             "hours": _hours(params.get("minutes")),
-            "multiplier": params.get("multiplier", ""),
+            "multiplier": _multiplier(params),
         }
     if code == "night_work":
         return _("Night hours: %(hours)s h at ×%(multiplier)s") % {
             "hours": _hours(params.get("minutes")),
-            "multiplier": params.get("multiplier", ""),
+            "multiplier": _multiplier(params),
         }
     if code == "holiday_work":
-        return _("Work on holidays at ×%(multiplier)s") % {"multiplier": params.get("multiplier")}
+        return _("Work on holidays at ×%(multiplier)s") % {"multiplier": _multiplier(params)}
     if code == "piece":
         count = int(params.get("tasks") or 0)
         tasks = ngettext("%(count)s task", "%(count)s tasks", count) % {"count": count}

@@ -24,9 +24,17 @@ from apps.members import scope
 from apps.members.models import Membership, Position
 from apps.members.permissions import Perm
 from apps.members.queries import in_scope
-from apps.payroll import conf, periods, queries, services
+from apps.payroll import conf, periods, queries, rules, services
 from apps.payroll import serializers as s
-from apps.payroll.models import Adjustment, Advance, Compensation, PayrollRun, Payslip, TaskRate
+from apps.payroll.models import (
+    Adjustment,
+    AdjustmentRule,
+    Advance,
+    Compensation,
+    PayrollRun,
+    Payslip,
+    TaskRate,
+)
 
 VIEW, PROPOSE, MANAGE = Perm.PAYROLL_VIEW, Perm.PAYROLL_PROPOSE, Perm.PAYROLL_MANAGE
 FINALIZE, PAY = Perm.PAYROLL_FINALIZE, Perm.PAYROLL_PAY
@@ -600,6 +608,141 @@ class AdvanceViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, PayrollVi
             note=data["note"],
         )
         return self._answer(advance)
+
+
+# Rules ----------------------------------------------------------------------------------
+
+
+class RuleViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, PayrollViewSet):
+    """Automatic bonuses and fines. Shipped examples start switched off; `preview` is a dry
+    run for a month (who would get what, the total) that writes nothing."""
+
+    perm = MANAGE
+    serializer_class = s.RuleSerializer
+    pagination_class = None
+    http_method_names = ("get", "post", "patch", "delete")
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return AdjustmentRule.objects.none()
+        return (
+            AdjustmentRule.objects.for_company(self.company)
+            .prefetch_related("positions")
+            .order_by("-is_active", "pk")
+        )
+
+    def _fields(self, data: dict) -> dict:
+        fields = dict(data)
+        if "positions" in fields:
+            ids = set(fields["positions"])
+            found = list(Position.objects.for_company(self.company).filter(pk__in=ids))
+            if len(found) != len(ids):
+                raise ValidationError({"positions": [_("Pick positions from the list.")]})
+            fields["positions"] = found
+        if "tiers" in fields:
+            fields["tiers"] = [
+                {"threshold": str(tier["threshold"]), "amount": str(tier["amount"])}
+                for tier in fields["tiers"]
+            ]
+        return fields
+
+    def _answer(self, rule, code=status.HTTP_200_OK) -> Response:
+        rule = self.get_queryset().get(pk=rule.pk)
+        return Response(s.RuleSerializer(rule, context=self.context()).data, status=code)
+
+    @extend_schema(request=s.RuleWriteSerializer, responses={201: s.RuleSerializer})
+    def create(self, request, company_id):
+        serializer = s.RuleWriteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        for name in ("name", "kind", "metric"):
+            if name not in serializer.validated_data:
+                raise ValidationError({name: [_("This field is required.")]})
+        rule = services.save_rule(
+            self.company, by=self.membership, **self._fields(serializer.validated_data)
+        )
+        return self._answer(rule, status.HTTP_201_CREATED)
+
+    @extend_schema(request=s.RuleWriteSerializer, responses=s.RuleSerializer)
+    def partial_update(self, request, company_id, pk):
+        serializer = s.RuleWriteSerializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        rule = services.save_rule(
+            self.company,
+            by=self.membership,
+            rule=self.get_object(),
+            **self._fields(serializer.validated_data),
+        )
+        return self._answer(rule)
+
+    def destroy(self, request, company_id, pk):
+        services.remove_rule(self.get_object(), by=self.membership)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @extend_schema(request=s.RulePreviewRequestSerializer, responses=s.RulePreviewSerializer)
+    @action(detail=True, methods=["post"])
+    def preview(self, request, company_id, pk):
+        serializer = s.RulePreviewRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        period = serializer.validated_data.get("period") or periods.first_day(
+            periods.today(self.company)
+        )
+        result = rules.preview(self.get_object(), period)
+        visible = None
+        if self.branch_scope is not None:
+            visible = set(
+                queries.payable_people(self.company, branch_ids=self.branch_scope).values_list(
+                    "pk", flat=True
+                )
+            )
+        rows = [
+            {
+                "member": s.person(row["member"]),
+                "value": str(row["value"]) if row["value"] is not None else None,
+                "amount": f"{row['amount']:.2f}" if row["amount"] is not None else None,
+                "units": str(row["units"]) if row["units"] is not None else None,
+                "tier": str(row["tier"]) if row["tier"] is not None else None,
+            }
+            for row in result["rows"]
+            if visible is None or row["member"].pk in visible
+        ]
+        data = {
+            "period": result["period"].isoformat(),
+            "to": result["to"].isoformat(),
+            "currency": conf.get_settings(self.company).currency,
+            "rows": s.RulePreviewRowSerializer(rows, many=True, context=self.context()).data,
+        }
+        if self.show_amounts:
+            total = sum(
+                (Decimal(row["amount"]) for row in rows if row["amount"] is not None), Decimal(0)
+            )
+            data["total"] = f"{total:.2f}"
+        return Response(data)
+
+
+# Overview -------------------------------------------------------------------------------
+
+
+class OverviewView(PayrollMixin, OwnerAPIView):
+    """Payroll cost by month, the latest closed month by position and branch, bonuses against
+    fines, how many people are paid, this month's projection and what waits for a decision."""
+
+    perm = VIEW
+
+    @extend_schema(
+        parameters=[OpenApiParameter("months", int, description="How many months (1-24).")],
+        responses=s.OverviewSerializer,
+    )
+    def get(self, request, company_id):
+        months = self.int_param("months") or 12
+        if not 1 <= months <= 24:
+            raise ValidationError({"months": [_("Pick 1 to 24 months.")]})
+        data = queries.overview(
+            self.company,
+            months=months,
+            branch_ids=self.branch_scope,
+            today=periods.today(self.company),
+        )
+        return Response(data)
 
 
 # Runs and payslips ----------------------------------------------------------------------
