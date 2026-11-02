@@ -220,6 +220,35 @@ describe("sales forms say field-only refusals", () => {
   });
 });
 
+describe("SalesOverviewPage states", () => {
+  it("says the branch charts and the top cashiers failed instead of 'no cashiers'", async () => {
+    stub({
+      "GET sales/options/": () => json(options()),
+      "GET sales/summary/": (call) => (call.url.includes("by=day") ? json({ detail: "Server error." }, 500) : json({ range: { from: "2026-10-01", to: "2026-10-21" }, totals: {}, rows: [] })),
+      "GET sales/cashiers/": () => json({ detail: "Server error." }, 500),
+      "GET sales/targets/": () => json({ month: "2026-10", today: "2026-10-21", targets: [], series: [] }),
+    });
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe(): void {}
+        unobserve(): void {}
+        disconnect(): void {}
+      },
+    );
+    const SalesOverviewPage = (await import("../pages/SalesOverviewPage.vue")).default;
+    const app = await testApp("/c/1/sales");
+    await ensureModuleMessages(salesModule);
+    const { wrapper } = mountWithProviders(SalesOverviewPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    await flushPromises();
+    expect(document.body.textContent).not.toContain(en["sales.cashiers.none"]);
+    expect(document.querySelector('[data-testid="top-cashiers-error"]')).not.toBeNull();
+    wrapper.unmount();
+  });
+});
+
 describe("palette links on a page already open", () => {
   it("opens Set a target when ?new=target arrives on the targets page", async () => {
     stub({

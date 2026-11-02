@@ -114,6 +114,20 @@ describe("finance permissions", () => {
     wrapper.unmount();
   });
 
+  it("says the debts summary failed, with a retry, instead of an empty total", async () => {
+    stub({
+      "GET debts/": () => json({ count: 0, next: null, previous: null, results: [] }),
+      "GET debts/summary/": () => json({ detail: "Server error." }, 500),
+    });
+    const DebtsPage = (await import("../pages/DebtsPage.vue")).default;
+    const app = await testApp("/c/1/finance/debts");
+    const { wrapper } = mountWithProviders(DebtsPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(document.querySelector('[data-testid="debt-summary-error"]')).not.toBeNull();
+    wrapper.unmount();
+  });
+
   it("links the stale-rate alert and the first-run opening balances only for someone who manages finance", async () => {
     const side = { total: "0.00", overdue: "0.00", count: 0, overdue_count: 0 };
     const overview = (hasLedger: boolean) => ({

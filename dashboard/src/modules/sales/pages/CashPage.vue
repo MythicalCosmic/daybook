@@ -311,14 +311,17 @@ const limitUse = (total: string, limit: string | null) => (limit ? percent(total
         <template #cell-amount="{ row }">
           <span :class="['font-semibold tabular-nums', movementSign(row.kind) > 0 ? 'text-success' : 'text-fg']">{{ movementSign(row.kind) > 0 ? "+" : "−" }}<MoneyText :value="row.amount" /></span>
         </template>
+        <!-- Phones: the same status and Void as the table, so a voided movement never reads as done. -->
         <template #card="{ row }">
           <div class="flex items-center gap-3">
             <component :is="MOVEMENT_ICONS[row.kind]" :size="16" class="shrink-0 text-subtle" />
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-semibold text-fg">{{ t(`sales.movement.kind.${row.kind}`) }}<template v-if="row.receiver"> · {{ row.receiver.name }}</template></p>
               <p class="truncate text-xs text-muted">{{ row.created_by.name }} · {{ fmt.instant(row.created_at, "short") }}</p>
+              <StatusPill v-if="row.status !== 'done'" class="mt-1" size="sm" :tone="MOVEMENT_TONES[row.status]" :label="t(`sales.movement.status.${row.status}`)" />
             </div>
-            <span class="text-sm font-semibold tabular-nums text-fg">{{ movementSign(row.kind) > 0 ? "+" : "−" }}<MoneyText :value="row.amount" /></span>
+            <span :class="['text-sm font-semibold tabular-nums', row.status === 'void' ? 'text-subtle line-through' : 'text-fg']">{{ movementSign(row.kind) > 0 ? "+" : "−" }}<MoneyText :value="row.amount" /></span>
+            <IconButton v-if="canManage && row.status !== 'void'" :icon="Ban" :label="t('sales.cash.void')" class="shrink-0" @click.stop="askVoid(row)" />
           </div>
         </template>
       </DataTable>

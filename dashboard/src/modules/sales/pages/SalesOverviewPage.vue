@@ -18,6 +18,7 @@ import DateRangePicker from "@/components/DateRangePicker.vue";
 import DonutChart from "@/components/DonutChart.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
+import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import ExportButton from "@/components/ExportButton.vue";
 import HeatmapChart from "@/components/HeatmapChart.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
@@ -50,6 +51,11 @@ const byDay = useSummary(params, "day");
 const byMethod = useSummary(params, "method");
 const hours = useSummary(params, "weekday_hour");
 const cashiers = useCashiers(params);
+// The payment mix reads both the daily and the per-method answers.
+function retryMix(): void {
+  void byDay.refetch();
+  void byMethod.refetch();
+}
 const month = computed(() => period.value.range.from.slice(0, 7));
 const targets = useTargets(month);
 
@@ -192,10 +198,24 @@ const base = computed(() => `/c/${company.currentId}/sales`);
       </div>
 
       <div class="grid gap-4 xl:grid-cols-2">
-        <ChartCard :title="t('sales.chart.branches')" :subtitle="t('sales.chart.branchesSub')" :loading="byDay.isPending.value" :empty="!!summary && !branchRows.length">
+        <ChartCard
+          :title="t('sales.chart.branches')"
+          :subtitle="t('sales.chart.branchesSub')"
+          :loading="byDay.isPending.value"
+          :error="byDay.error.value"
+          :retry="() => byDay.refetch()"
+          :empty="!!summary && !branchRows.length"
+        >
           <BarChart :categories="branchChart.categories" :series="branchChart.series" value-format="money" />
         </ChartCard>
-        <ChartCard :title="t('sales.chart.mix')" :subtitle="t('sales.chart.mixSub')" :loading="byDay.isPending.value || byMethod.isPending.value" :empty="!!summary && !branchRows.length">
+        <ChartCard
+          :title="t('sales.chart.mix')"
+          :subtitle="t('sales.chart.mixSub')"
+          :loading="byDay.isPending.value || byMethod.isPending.value"
+          :error="byDay.error.value ?? byMethod.error.value"
+          :retry="retryMix"
+          :empty="!!summary && !branchRows.length"
+        >
           <BarChart :categories="mix.categories" :series="mix.series" horizontal normalize stacked :y-max="100" :height="`${Math.max(160, mix.categories.length * 64 + 70)}px`" />
         </ChartCard>
       </div>
@@ -217,7 +237,9 @@ const base = computed(() => `/c/${company.currentId}/sales`);
             <h3 class="flex-1 text-sm font-semibold text-fg">{{ t("sales.cashiers.top") }}</h3>
             <RouterLink :to="{ path: `${base}/cashiers`, query: $route.query }" class="inline-flex items-center gap-1 text-sm font-semibold text-muted hover:text-fg">{{ t("common.viewAll") }}<ArrowRight :size="14" /></RouterLink>
           </header>
-          <ol v-if="topCashiers.length" class="flex flex-col px-2 pb-2">
+          <div v-if="cashiers.isPending.value" class="flex flex-col gap-2 px-4 pb-4"><SkeletonBlock v-for="n in 3" :key="n" height="36px" /></div>
+          <ErrorState v-else-if="cashiers.isError.value" data-testid="top-cashiers-error" class="mx-4 mb-4" compact :error="cashiers.error.value" :retry="() => cashiers.refetch()" />
+          <ol v-else-if="topCashiers.length" class="flex flex-col px-2 pb-2">
             <li v-for="(row, index) in topCashiers" :key="row.member.id" class="flex items-center gap-3 rounded-[10px] px-2 py-2">
               <span class="w-4 text-center text-xs font-semibold text-subtle">{{ index + 1 }}</span>
               <UserAvatar :name="row.member.name" :size="30" />

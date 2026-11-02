@@ -5,11 +5,12 @@
  * lands on, the provider's fee (booked as a bank fee at close) and an on/off switch. The default
  * methods (Naqd, Uzcard, Humo, Click, Payme…) can be renamed; at least one cash method stays on.
  */
-import { ArrowDown, ArrowUp, Pencil, Plus } from "@lucide/vue";
+import { ArrowDown, ArrowUp, Ellipsis, Pencil, Plus } from "@lucide/vue";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
+import DropdownMenu, { type MenuEntry } from "@/components/DropdownMenu.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import FormField from "@/components/FormField.vue";
 import IconButton from "@/components/IconButton.vue";
@@ -22,6 +23,7 @@ import UiBadge from "@/components/UiBadge.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
+import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
@@ -62,6 +64,16 @@ const reorder = useSalesMutation((cid, ids: number[]) => salesApi.reorderMethods
 async function toggle(method: PaymentMethod, active: boolean): Promise<void> {
   await save.mutateAsync({ id: method.id, input: { is_active: active } });
 }
+// Phones: one menu per method (order and edit) instead of three small buttons that don't fit.
+const { isPhone } = useBreakpoints();
+function phoneMenu(method: PaymentMethod, index: number): MenuEntry[] {
+  return [
+    { label: t("sales.methods.up"), icon: ArrowUp, disabled: index === 0, onSelect: () => void move(index, -1) },
+    { label: t("sales.methods.down"), icon: ArrowDown, disabled: index === methods.value.length - 1, onSelect: () => void move(index, 1) },
+    { label: t("common.edit"), icon: Pencil, onSelect: () => openDialog(method) },
+  ];
+}
+
 async function move(index: number, step: number): Promise<void> {
   const ids = methods.value.map((m) => m.id);
   const target = index + step;
@@ -118,8 +130,16 @@ async function submit(): Promise<void> {
             <!-- Wraps on a phone rather than cutting the account and the fee off; in full on hover. -->
             <p class="text-xs text-muted sm:truncate" :title="detail(method)">{{ detail(method) }}</p>
           </div>
-          <template v-if="canEdit">
-            <div class="flex max-sm:hidden">
+          <template v-if="canEdit && isPhone">
+            <DropdownMenu :items="phoneMenu(method, index)" align="end" width="200px">
+              <template #trigger>
+                <IconButton :icon="Ellipsis" :label="t('common.more')" />
+              </template>
+            </DropdownMenu>
+            <ToggleSwitch :model-value="method.is_active" size="sm" :aria-label="t('sales.methods.active')" @update:model-value="(value: boolean) => toggle(method, value)" />
+          </template>
+          <template v-else-if="canEdit">
+            <div class="flex">
               <IconButton :icon="ArrowUp" :label="t('sales.methods.up')" size="sm" :disabled="index === 0" @click="move(index, -1)" />
               <IconButton :icon="ArrowDown" :label="t('sales.methods.down')" size="sm" :disabled="index === methods.length - 1" @click="move(index, 1)" />
             </div>
