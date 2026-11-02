@@ -83,6 +83,13 @@ export function todayIn(tz: string, now: Date | number = new Date()): string {
   return `${zoned.getFullYear()}-${pad(zoned.getMonth() + 1)}-${pad(zoned.getDate())}`;
 }
 
+/** A company-local day and wall-clock time ("2026-10-24", "09:00") as a UTC instant: "2026-10-24T04:00:00.000Z". */
+export function zonedIso(day: string, time: string, tz: string): string {
+  const [y, m, d] = day.split("-").map(Number) as [number, number, number];
+  const [hh, mm] = time.split(":").map(Number) as [number, number];
+  return new Date(new TZDate(y, m - 1, d, hh, mm, 0, tz).getTime()).toISOString();
+}
+
 /** The company-local day an instant falls on. */
 export function zonedDay(iso: string | Date, tz: string): string {
   return todayIn(tz, typeof iso === "string" ? new Date(iso) : iso);

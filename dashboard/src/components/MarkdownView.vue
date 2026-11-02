@@ -174,22 +174,23 @@ function onClick(event: MouseEvent): void {
   font-size: var(--text-xs);
   font-weight: 600;
 }
+/* A record chip with a long title (a task, a person) wraps like a highlighted phrase, each line
+   with its own rounded ends, instead of pushing the text past a phone's edge. */
 .md-body :deep(.md-chip) {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  max-width: 100%;
+  display: inline;
   margin: 0 1px;
-  padding: 0 7px 0 6px;
+  padding: 1px 7px 1px 6px;
   border-radius: 999px;
   background: var(--c-accent-soft);
   color: var(--c-accent-fg);
   font-size: 0.86em;
   font-weight: 600;
-  line-height: 1.6;
-  vertical-align: baseline;
+  line-height: 1.95;
   text-decoration: none;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
   transition: background-color var(--dur-press) var(--ease-standard);
 }
 .md-body :deep(a.md-chip:hover) {
@@ -197,10 +198,13 @@ function onClick(event: MouseEvent): void {
 }
 .md-body :deep(.md-chip::before) {
   content: "";
+  display: inline-block;
   width: 5px;
   height: 5px;
+  margin: 0 5px 2px 0;
   border-radius: 999px;
   background: currentColor;
   opacity: 0.6;
+  vertical-align: middle;
 }
 </style>

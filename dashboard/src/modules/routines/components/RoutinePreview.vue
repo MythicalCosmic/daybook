@@ -14,10 +14,10 @@ import ErrorState from "@/components/ErrorState.vue";
 import IconButton from "@/components/IconButton.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
-import { addDays, todayIn } from "@/lib/dates";
+import { addDays } from "@/lib/dates";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyToday } from "@/stores/company";
 
 import { usePreview } from "../api";
 import { runDayWords } from "../lib";
@@ -26,9 +26,8 @@ import { useRunWords } from "../useRunWords";
 const props = withDefaults(defineProps<{ routineId: number; compact?: boolean }>(), { compact: false });
 const { t } = useI18n();
 const fmt = useFormat();
-const company = useCompanyStore();
 const words = useRunWords();
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const day = ref<string | null>(addDays(today.value, 1));
 
 const query = usePreview(computed(() => props.routineId), day);

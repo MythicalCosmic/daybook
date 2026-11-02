@@ -42,7 +42,13 @@ const refresh = useRefresh();
 
 const spaceId = computed(() => Number(route.params.spaceId));
 const spaces = useSpaces();
-const space = computed(() => spaces.data.value?.find((item) => item.id === spaceId.value) ?? null);
+const listed = computed(() => spaces.data.value?.find((item) => item.id === spaceId.value) ?? null);
+// An archived space isn't in the list: a manager opens it from the archive (to restore it).
+const lookInArchive = computed(() => canManage.value && !!spaces.data.value && !listed.value);
+const archivedSpaces = useSpaces(true, lookInArchive);
+const space = computed(() => listed.value ?? archivedSpaces.data.value?.find((item) => item.id === spaceId.value) ?? null);
+/** Looked for everywhere it could be, and not there (archived for a reader, deleted, an old link). */
+const missing = computed(() => !!spaces.data.value && !space.value && (!lookInArchive.value || !!archivedSpaces.data.value || archivedSpaces.isError.value));
 usePageTitle(() => space.value?.name);
 const tree = useTree(spaceId);
 const pages = usePages(computed(() => ({ space: spaceId.value, page_size: 200 })));
@@ -110,8 +116,11 @@ useHotkey("n", () => canManage.value && void router.push(newPage.value), { descr
 
 <template>
   <div>
-    <ErrorState v-if="spaces.isError.value || tree.isError.value || pages.isError.value" :error="spaces.error.value ?? tree.error.value ?? pages.error.value" :retry="() => (spaces.refetch(), tree.refetch(), pages.refetch())" />
-    <div v-else-if="skeleton || !space" class="flex flex-col gap-4">
+    <EmptyState v-if="missing" class="ui-card" :icon="BookOpen" :title="t('knowledge.space.missingTitle')" :description="t('knowledge.space.missingBody')">
+      <UiButton :to="base">{{ t("knowledge.space.backHome") }}</UiButton>
+    </EmptyState>
+    <ErrorState v-else-if="spaces.isError.value || tree.isError.value || pages.isError.value" :error="spaces.error.value ?? tree.error.value ?? pages.error.value" :retry="() => (spaces.refetch(), tree.refetch(), pages.refetch())" />
+    <div v-else-if="skeleton || !space" class="flex flex-col gap-4" aria-busy="true">
       <SkeletonBlock width="40%" height="28px" />
       <SkeletonBlock width="60%" />
       <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"><SkeletonBlock v-for="n in 6" :key="n" height="150px" radius="12px" /></div>
@@ -152,7 +161,7 @@ useHotkey("n", () => canManage.value && void router.push(newPage.value), { descr
             class="ui-card group flex min-w-0 flex-col gap-2.5 p-4 transition-[box-shadow,transform] duration-150 hover:-translate-y-px hover:shadow-raised"
           >
             <div class="flex items-start gap-3">
-              <span class="grid size-10 shrink-0 place-items-center rounded-[11px] bg-surface-2 text-[20px] dark:bg-surface-3" aria-hidden="true">{{ card.row.emoji || "📄" }}</span>
+              <span class="grid size-10 shrink-0 place-items-center rounded-[11px] bg-surface-2 text-[20px] dark:bg-surface-3" aria-hidden="true"><template v-if="card.row.emoji">{{ card.row.emoji }}</template><FileText v-else :size="20" class="text-muted" /></span>
               <div class="min-w-0 flex-1">
                 <p v-if="card.parent" class="truncate text-[11px] font-semibold uppercase tracking-[0.05em] text-subtle">{{ t("knowledge.space.inside", { title: card.parent }) }}</p>
                 <h3 class="line-clamp-2 text-base font-semibold leading-snug text-fg group-hover:text-accent-fg">{{ card.row.title }}</h3>

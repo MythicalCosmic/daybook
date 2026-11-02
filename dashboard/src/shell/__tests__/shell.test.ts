@@ -79,6 +79,25 @@ describe("palette and switcher", () => {
     wrapper.unmount();
   });
 
+  it("says a failed search failed (with Try again) instead of \"nothing found\"", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => (String(url).includes("/search/") ? json({ detail: "boom" }, 500) : json({}))));
+    Element.prototype.scrollIntoView ??= () => undefined;
+    const app = await testApp("/c/1");
+    const { wrapper } = mountWithProviders(CommandPalette, { plugins: app.plugins, props: { groups: [], aiAvailable: false } });
+    usePaletteStore().show();
+    await flushPromises();
+    const input = document.querySelector<HTMLInputElement>("[data-palette-input]")!;
+    input.value = "Qwzxv";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    await flushPromises();
+    const text = document.querySelector("[role='dialog']")!.textContent ?? "";
+    expect(text).not.toContain("Nothing found");
+    expect(text).toContain("Search didn’t work");
+    expect(document.querySelector("[data-palette-retry]")).not.toBeNull();
+    wrapper.unmount();
+  });
+
   it("the company switcher leaves this company's count to the Inbox and dots the others' waiting work", async () => {
     const app = await testApp("/c/1");
     useSessionStore().me = me([company({ pending: 23 }), manager([], { pending: 5 })]);

@@ -15,11 +15,20 @@ import {
   startOfWeek,
   todayIn,
   zonedDay,
+  zonedIso,
 } from "@/lib/dates";
 
 const TZ = "Asia/Tashkent"; // UTC+5, no DST
 // Wednesday 21 October 2026, 09:30 in Tashkent.
 const NOW = Date.UTC(2026, 9, 21, 4, 30);
+
+describe("zonedIso", () => {
+  it("turns a company-local day and time into one UTC instant (the one helper every module uses)", () => {
+    expect(zonedIso("2026-10-24", "09:00", TZ)).toBe("2026-10-24T04:00:00.000Z");
+    expect(zonedIso("2026-10-24", "23:30", TZ)).toBe("2026-10-24T18:30:00.000Z");
+    expect(zonedIso("2026-03-29", "09:00", "Europe/Berlin")).toBe("2026-03-29T07:00:00.000Z");
+  });
+});
 
 describe("company-local days", () => {
   it("uses the company's zone, not the browser's", () => {

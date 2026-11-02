@@ -7,7 +7,9 @@
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
+import { unshownFieldError } from "@/api/http";
 import ErrorState from "@/components/ErrorState.vue";
+import InlineAlert from "@/components/InlineAlert.vue";
 import NumberInput from "@/components/NumberInput.vue";
 import PageSection from "@/components/PageSection.vue";
 import RadioCards from "@/components/RadioCards.vue";
@@ -28,6 +30,7 @@ const refresh = useRefresh();
 const query = useSettings();
 const draft = ref<AttendanceSettings | null>(null);
 const saving = ref(false);
+const failure = ref<string | null>(null);
 
 watch(
   () => query.data.value,
@@ -52,12 +55,14 @@ const dirty = computed(() => Object.keys(changes.value).length > 0);
 async function save(): Promise<void> {
   if (!dirty.value) return;
   saving.value = true;
+  failure.value = null;
   try {
     await saveSettings(companyId.value, changes.value);
     toast.success(t("attendance.settings.saved"));
     refresh();
-  } catch {
-    // Field errors and the toast come from the HTTP client.
+  } catch (error) {
+    // A reason was toasted by the HTTP client; a refusal naming a setting is said above the bar.
+    failure.value = unshownFieldError(error);
   } finally {
     saving.value = false;
   }
@@ -139,6 +144,7 @@ function reset(): void {
         </div>
       </PageSection>
 
+      <InlineAlert v-if="failure && dirty" tone="danger" :description="failure" />
       <StickyActionBar :show="dirty" :message="t('common.unsaved')" tone="warning">
         <UiButton variant="ghost" @click="reset">{{ t("common.discard") }}</UiButton>
         <UiButton variant="primary" :loading="saving" @click="save">{{ t("common.save") }}</UiButton>

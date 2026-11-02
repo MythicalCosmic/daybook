@@ -7,7 +7,7 @@
 import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { isApiError } from "@/api/http";
+import { isApiError, unshownFieldError } from "@/api/http";
 import type { Currency } from "@/api/types";
 import DatePicker from "@/components/DatePicker.vue";
 import FormField from "@/components/FormField.vue";
@@ -122,6 +122,9 @@ async function save(): Promise<void> {
     open.value = false;
   } catch (error) {
     if (isApiError(error)) for (const [field, messages] of Object.entries(error.fieldErrors)) errors[field] = messages[0];
+    // The opening balance, its day, the branch or the people have no message of their own.
+    const unshown = unshownFieldError(error, ["name", "holder", "number_last4"]);
+    if (unshown) toast.error(unshown);
   } finally {
     saving.value = false;
   }

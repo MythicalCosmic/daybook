@@ -133,7 +133,11 @@ const accountMenu = computed<MenuEntry[]>(() => {
       items: [{ type: "radio", value: locale.value, options: LANGUAGES.map((l) => ({ value: l, label: languageNames.value[l]! })), onChange: changeLanguage }],
     });
   }
-  entries.push({ type: "separator" }, { label: t("shell.user.signOut"), icon: LogOut, danger: true, onSelect: () => emit("signOut") });
+  entries.push(
+    { type: "separator" },
+    { label: t("shell.user.signOut"), icon: LogOut, danger: true, onSelect: () => emit("signOut") },
+    { type: "label", label: t("shell.user.version", { version: __APP_VERSION__ }) },
+  );
   return entries;
 });
 

@@ -17,6 +17,7 @@ import MoneyCell from "@/components/MoneyCell.vue";
 import MoneyText from "@/components/MoneyText.vue";
 import PageHeader from "@/components/PageHeader.vue";
 import ProgressBar from "@/components/ProgressBar.vue";
+import ErrorState from "@/components/ErrorState.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import StatusPill from "@/components/StatusPill.vue";
 import type { TableColumn } from "@/components/table";
@@ -94,10 +95,18 @@ function open(row: Debt): void {
 }
 
 const activeKey = computed(() => (typeof route.query.debt === "string" ? route.query.debt : null));
-const formOpen = ref(route.query.new === "1");
-watch(formOpen, (isOpen) => {
-  if (!isOpen && route.query.new) void router.replace({ query: { ...route.query, new: undefined } });
-});
+// "Record debt" opens from the palette too (?new=1), also on this page when it is already open.
+const formOpen = ref(false);
+const newParam = useRouteState("new", rs.boolean(false));
+watch(
+  newParam,
+  (value) => {
+    if (!value) return;
+    newParam.value = false;
+    if (canRecord.value) formOpen.value = true;
+  },
+  { immediate: true },
+);
 const exportParams = computed(() => ({ direction: direction.value, ...filters.params.value }));
 </script>
 
@@ -109,7 +118,9 @@ const exportParams = computed(() => ({ direction: direction.value, ...filters.pa
       </template>
     </PageHeader>
 
-    <section class="ui-card mb-4 grid grid-cols-1 gap-5 p-4 md:grid-cols-[minmax(0,260px)_1fr] md:p-5" :aria-label="t('finance.debts.summary')">
+    <!-- A failed summary says so (with a retry) instead of an empty total and a blank aging bar. -->
+    <ErrorState v-if="summary.isError.value" data-testid="debt-summary-error" class="mb-4" compact :error="summary.error.value" :retry="() => summary.refetch()" />
+    <section v-else class="ui-card mb-4 grid grid-cols-1 gap-5 p-4 md:grid-cols-[minmax(0,260px)_1fr] md:p-5" :aria-label="t('finance.debts.summary')">
       <div class="flex flex-col gap-1">
         <p class="text-sm font-medium text-muted">{{ direction === "receivable" ? t("finance.debts.totalIn") : t("finance.debts.totalOut") }}</p>
         <SkeletonBlock v-if="summary.isPending.value" width="180px" height="32px" />

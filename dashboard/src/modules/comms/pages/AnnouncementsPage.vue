@@ -120,7 +120,7 @@ function open(row: Announcement): void {
       :error="query.error.value"
       :retry="() => query.refetch()"
       :filtered="!!search || tab !== 'all'"
-      csv-name="Announcements"
+      :csv-name="t('comms.title')"
       :empty-title="t('comms.list.emptyTitle')"
       :empty-description="t('comms.list.emptyBody')"
       :empty-icon="Megaphone"

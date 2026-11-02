@@ -136,7 +136,7 @@ async function toggleArchive(): Promise<void> {
               <CheckCircle2 v-if="list.is_done" :size="14" class="text-success" :aria-label="t('projects.settingsTab.doneList')" />
             </p>
             <p class="text-xs text-muted">
-              {{ list.is_done ? t("projects.settingsTab.doneListHint") : list.wip_limit ? t("projects.list.wipNow", { n: list.wip_limit }) : t("projects.list.wipNone") }}
+              {{ list.is_done ? t("projects.settingsTab.doneListHint") : list.wip_limit ? t("projects.list.wipNow", { n: list.wip_limit }, list.wip_limit) : t("projects.list.wipNone") }}
             </p>
           </div>
           <IconButton :icon="Pencil" :label="t('projects.list.edit')" size="sm" @click="editingList = list; listDialog = true" />

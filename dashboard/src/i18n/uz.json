@@ -61,6 +61,7 @@
   "common.export.telegram": "Uni Telegram’dagi chatingizga ham yubordik.",
   "common.export.failed": "Eksport amalga oshmadi. Qayta urinib ko‘ring.",
   "common.export.download": "Yuklab olish",
+  "common.export.noSaveInTelegram": "Telegram bu faylni shu yerda saqlay olmaydi. Konsolni brauzerda oching yoki Excel eksportidan foydalaning.",
 
   "common.calendar.prevWeek": "Oldingi hafta",
   "common.calendar.nextWeek": "Keyingi hafta",
@@ -242,6 +243,7 @@
 
   "common.calendar.allDay": "Kun bo‘yi",
   "common.calendar.week": "Hafta",
+  "common.calendar.weekNumber": "Hafta {n}",
   "common.calendar.month": "Oy",
   "common.calendar.empty": "Bu kunda hech narsa yo‘q",
   "common.calendar.now": "Hozir",
@@ -349,6 +351,7 @@
   "shell.user.shortcuts": "Tezkor tugmalar",
   "shell.user.signOut": "Chiqish",
   "shell.user.appearance": "Ko‘rinish",
+  "shell.user.version": "Versiya {version}",
 
   "shell.company.switch": "Kompaniyani almashtirish",
   "shell.company.yours": "Kompaniyalaringiz",
@@ -372,6 +375,8 @@
   "shell.palette.searching": "Qidirilmoqda…",
   "shell.palette.empty": "«{q}» bo‘yicha hech narsa topilmadi",
   "shell.palette.emptyHint": "Boshqa so‘z bilan urinib ko‘ring yoki yordamchidan so‘rang.",
+  "shell.palette.failed": "Qidirib bo‘lmadi",
+  "shell.palette.failedHint": "Internetni tekshiring va qayta urinib ko‘ring.",
   "shell.palette.askAi": "AI bilan suhbat: «{q}»",
   "shell.palette.askAiHint": "Yordamchini savolingiz bilan ochadi",
   "shell.palette.navigate": "tanlash",

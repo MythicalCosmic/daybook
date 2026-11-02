@@ -30,6 +30,7 @@ import TextInput from "@/components/TextInput.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDrawer from "@/components/UiDrawer.vue";
 import { useConfirm } from "@/components/useConfirm";
+import { unshownFieldError } from "@/api/http";
 import { toast } from "@/components/useToast";
 import { addDays } from "@/lib/dates";
 import { companyUrl } from "@/lib/links";
@@ -116,10 +117,22 @@ const files = ref<File[]>([]);
 const uploading = ref(false);
 watch(files, async (list) => {
   if (!list.length || !row.value) return;
+  // The entry the files were dropped on, read once: the drawer may close or open another entry
+  // while they upload, and every file still belongs to this one.
+  const cid = company.currentId ?? 0;
+  const entryId = row.value.id;
   uploading.value = true;
+  let added = 0;
   try {
-    for (const file of list) await financeApi.uploadReceipt(company.currentId ?? 0, file, row.value.id);
-    toast.success(t("finance.tx.receiptAdded", { n: list.length }, list.length));
+    for (const file of list) {
+      try {
+        await financeApi.uploadReceipt(cid, file, entryId);
+        added += 1;
+      } catch {
+        // The HTTP layer said why; the other files still go up.
+      }
+    }
+    if (added) toast.success(t("finance.tx.receiptAdded", { n: added }, added));
   } finally {
     files.value = [];
     uploading.value = false;
@@ -188,6 +201,10 @@ async function saveEdit(): Promise<void> {
     toast.success(t("finance.tx.saved"));
     editing.value = false;
     refresh();
+  } catch (failure) {
+    // A refused day (a locked period) or account would otherwise leave the editor without a word.
+    const unshown = unshownFieldError(failure);
+    if (unshown) toast.error(unshown);
   } finally {
     saving.value = false;
   }

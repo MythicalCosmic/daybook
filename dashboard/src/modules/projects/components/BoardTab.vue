@@ -155,7 +155,7 @@ function listMenu(column: KanbanColumn): MenuEntry[] {
   const list = board.data.value?.lists.find((l) => String(l.id) === column.id);
   if (!list || !caps.value.manage) return [];
   return [
-    { label: t("projects.list.edit"), icon: Pencil, description: list.wip_limit ? t("projects.list.wipNow", { n: list.wip_limit }) : t("projects.list.wipNone"), onSelect: () => editList(list) },
+    { label: t("projects.list.edit"), icon: Pencil, description: list.wip_limit ? t("projects.list.wipNow", { n: list.wip_limit }, list.wip_limit) : t("projects.list.wipNone"), onSelect: () => editList(list) },
     ...(list.is_done ? [] : [{ type: "separator" as const }, { label: t("projects.list.delete"), icon: Trash2, danger: true, onSelect: () => void removeList(list.id, list.name) }]),
   ];
 }

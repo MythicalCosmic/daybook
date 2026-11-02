@@ -409,6 +409,45 @@ describe("PageEditor saves", () => {
   });
 });
 
+describe("SpacePage for a space that isn't listed", () => {
+  async function open(spaceId: number, archived: unknown[]) {
+    const space = { id: 1, name: "SOP", emoji: "", color: "", page_count: 0, archived: false, audience_all: true, positions: [], can_manage: true };
+    stubApi({
+      "GET knowledge/spaces/": (call) => json(call.url.includes("archived=true") ? archived : [space]),
+      [`GET knowledge/spaces/${spaceId}/tree/`]: () => json([]),
+      "GET knowledge/pages/": () => json({ count: 0, next: null, previous: null, results: [] }),
+    });
+    const app = await testApp(`/c/1/knowledge/s/${spaceId}`);
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: "/c/:companyId/knowledge/s/:spaceId", name: "knowledge.space", component: { render: () => null } },
+        { path: "/:any(.*)*", component: { render: () => null } },
+      ],
+    });
+    await router.push(`/c/1/knowledge/s/${spaceId}`);
+    const { default: SpacePage } = await import("../pages/SpacePage.vue");
+    const mounted = mountWithProviders(SpacePage, { plugins: [app.pinia, router, i18n, [VueQueryPlugin, { queryClient: app.client }]] });
+    await flushPromises();
+    await flushPromises();
+    return mounted;
+  }
+
+  it("says an unknown space isn't there instead of loading forever", async () => {
+    const { wrapper } = await open(99, []);
+    expect(wrapper.text()).toContain(en["knowledge.space.missingTitle"]);
+    expect(wrapper.find('[aria-busy="true"]').exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it("opens an archived space for a manager, ready to restore", async () => {
+    const { wrapper } = await open(4, [{ id: 4, name: "Old SOP", emoji: "", color: "", page_count: 0, archived: true, audience_all: true, positions: [], can_manage: true }]);
+    expect(wrapper.text()).toContain("Old SOP");
+    expect(wrapper.text()).toContain(en["knowledge.archived"]);
+    wrapper.unmount();
+  });
+});
+
 describe("SpacePage archive", () => {
   it("Undo restores the space it archived, from the page it went to (it posted spaces/NaN/restore/)", async () => {
     const calls = stubApi({
@@ -446,5 +485,45 @@ describe("SpacePage archive", () => {
     expect(calls.some((c) => c.method === "POST" && c.url.endsWith("knowledge/spaces/1/restore/"))).toBe(true);
     wrapper.unmount();
     document.body.innerHTML = "";
+  });
+});
+
+describe("KnowledgeHome", () => {
+  it("says the spaces failed to load instead of showing an empty Spaces section", async () => {
+    stubApi({
+      "GET knowledge/overview/": () => json({ attention: [], to_read: [], recent: [] }),
+      "GET knowledge/spaces/": () => json({ detail: "boom" }, 500),
+    });
+    const { default: KnowledgeHome } = await import("../pages/KnowledgeHome.vue");
+    const app = await testApp("/c/1/knowledge");
+    const { wrapper } = mountWithProviders(KnowledgeHome, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(wrapper.text()).toContain("Try again");
+    wrapper.unmount();
+  });
+});
+
+describe("PageEditor on a phone", () => {
+  it("sticks the formatting toolbar under the phone's top bar and the page bar, not under the desktop bar alone", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { dirname, join } = await import("node:path");
+    const { fileURLToPath } = await import("node:url");
+    const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../pages/PageEditor.vue"), "utf8");
+    const editor = source.split("\n").find((line) => line.includes("<RichEditor"))!;
+    expect(editor).toContain("[--kb-toolbar-top:calc(var(--topbar-h)+var(--safe-top)+60px)]");
+    expect(editor).toContain("md:[--kb-toolbar-top:60px]");
+  });
+});
+
+describe("wording", () => {
+  it("says one page inside, not one pages", async () => {
+    const { i18n, setLanguage } = await import("@/i18n");
+    const ru = (await import("../i18n/ru.json")).default;
+    const uz = (await import("../i18n/uz.json")).default;
+    mergeModuleMessages("knowledge", { en, ru, uz });
+    setLanguage("en");
+    expect(i18n.global.t("knowledge.page.archiveBodyChildren", { n: 1 }, 1)).toContain("the page inside it");
+    expect(i18n.global.t("knowledge.page.archiveBodyChildren", { n: 4 }, 4)).toContain("the 4 pages inside it");
   });
 });

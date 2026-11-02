@@ -12,6 +12,7 @@ import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import BranchPicker from "@/components/BranchPicker.vue";
+import ChecklistEditor from "@/components/ChecklistEditor.vue";
 import DatePicker from "@/components/DatePicker.vue";
 import FormField from "@/components/FormField.vue";
 import NumberInput from "@/components/NumberInput.vue";
@@ -33,7 +34,6 @@ import { useDeleteRoutine, useFinishRule, usePlanOptions, useSaveRoutine } from 
 import { afterSave, missesToday, nextRunOf, runLabel } from "../lib";
 import type { ProofKind, Routine, RoutineInput } from "../types";
 import { useRunWords } from "../useRunWords";
-import ChecklistEditor from "./ChecklistEditor.vue";
 import GiveTodayDialog from "./GiveTodayDialog.vue";
 import RoutinePreview from "./RoutinePreview.vue";
 
@@ -297,7 +297,7 @@ async function onDelete(): Promise<void> {
             </div>
           </div>
           <FormField :label="t('routines.field.checklist')" :hint="t('routines.editor.checklistHint')" optional>
-            <ChecklistEditor v-model="checklist" />
+            <ChecklistEditor v-model="checklist" texts="routines.checklist" />
           </FormField>
         </section>
 

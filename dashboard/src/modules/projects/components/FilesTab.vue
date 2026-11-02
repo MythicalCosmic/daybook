@@ -18,6 +18,8 @@ import TextInput from "@/components/TextInput.vue";
 import UiButton from "@/components/UiButton.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
+import { formatFileSize } from "@/lib/format";
+import { useFormat } from "@/lib/useFormat";
 import { useCompanyId } from "@/stores/company";
 
 import { addLink, deleteFile, deleteLink, uploadFile, useFiles, useLinks, useRefreshProjects } from "../api";
@@ -26,6 +28,7 @@ import type { ProjectDetail, ProjectFile, ProjectLink } from "../types";
 const props = defineProps<{ project: ProjectDetail }>();
 
 const { t } = useI18n();
+const fmt = useFormat();
 const confirm = useConfirm();
 const companyId = useCompanyId();
 const refresh = useRefreshProjects();
@@ -42,17 +45,21 @@ const linkError = ref<string | null>(null);
 async function upload(list: File[]): Promise<void> {
   if (!list.length) return;
   uploading.value = true;
+  let sent = 0;
   try {
     for (const file of list) {
       await uploadFile(companyId.value, props.project.id, file);
+      sent += 1;
     }
-    toast.success(t("projects.files.uploaded", { n: list.length }));
-    void refresh();
   } catch {
-    // The HTTP layer showed why.
+    // The HTTP layer showed why; the files that went before it still show below.
   } finally {
     uploading.value = false;
     dropped.value = [];
+    if (sent) {
+      toast.success(t("projects.files.uploaded", { n: sent }));
+      void refresh();
+    }
   }
 }
 
@@ -90,11 +97,7 @@ async function removeLink(link: ProjectLink): Promise<void> {
   void refresh();
 }
 
-function size(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-}
+const size = (bytes: number) => formatFileSize(bytes, fmt.lang.value);
 
 const ICONS = { pdf: FileText, xlsx: FileSpreadsheet, csv: FileSpreadsheet, image: Image } as const;
 const host = (url: string) => {

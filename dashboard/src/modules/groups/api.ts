@@ -48,18 +48,31 @@ export function useGroupMutations() {
     const data = client.getQueryData<GroupsList>(groupKeys.list(cid.value));
     if (data) client.setQueryData<GroupsList>(groupKeys.list(cid.value), { ...data, results: data.results.map((g) => (g.id === row.id ? row : g)) });
   };
+  // Switches save at once, so a second change can leave before the first is answered. Each change
+  // sends the whole state it saw, so only the latest one per group decides what the card shows.
+  let changes = 0;
+  const latest = new Map<number, number>();
   return {
     update: useMutation({
       mutationFn: ({ id, patch }: { id: number; patch: GroupPatch }) => updateGroup(cid.value, id, patch),
       onMutate: async ({ id, patch }) => {
         const key = groupKeys.list(cid.value);
+        const change = ++changes;
+        latest.set(id, change);
         await client.cancelQueries({ queryKey: key });
         const before = client.getQueryData<GroupsList>(key);
         if (before) client.setQueryData<GroupsList>(key, { ...before, results: before.results.map((g) => (g.id === id ? applyPatch(g, patch, before.options) : g)) });
-        return { before };
+        return { before, change };
       },
-      onError: (_e, _v, context) => context?.before && client.setQueryData(groupKeys.list(cid.value), context.before),
-      onSuccess: replace,
+      onError: (_e, { id }, context) => {
+        if (!context || latest.get(id) !== context.change) return;
+        if (context.before) client.setQueryData(groupKeys.list(cid.value), context.before);
+        // What the server holds after a refusal among quick changes: ask it.
+        void client.invalidateQueries({ queryKey: groupKeys.list(cid.value) });
+      },
+      onSuccess: (row, { id }, context) => {
+        if (latest.get(id) === context?.change) replace(row);
+      },
       onSettled: () => void client.invalidateQueries({ queryKey: [cid.value, "setup"] }),
     }),
     disconnect: useMutation({

@@ -10,9 +10,9 @@ import { CalendarDays, ChevronLeft, ChevronRight, X } from "@lucide/vue";
 import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { formatDay, todayIn } from "@/lib/dates";
+import { formatDay } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyToday } from "@/stores/company";
 
 import { clampDay, monthOf, shiftMonth } from "./calendar";
 import CalendarGrid from "./CalendarGrid.vue";
@@ -40,10 +40,9 @@ const props = withDefaults(
 
 const { t } = useI18n();
 const fmt = useFormat();
-const company = useCompanyStore();
 const control = useControl(props);
 const open = ref(false);
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const month = ref(monthOf(model.value ?? today.value));
 const focusDay = ref<string | null>(null);
 const grid = ref<InstanceType<typeof CalendarGrid> | null>(null);

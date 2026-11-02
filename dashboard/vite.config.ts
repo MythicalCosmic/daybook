@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { fileURLToPath, URL } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
@@ -11,6 +12,8 @@ import { moduleTitles } from "./scripts/moduleTitles.mjs";
 const port = Number(process.env.DEV_PORT ?? 28174);
 const backend = `http://127.0.0.1:${Number(process.env.API_PORT ?? 28000)}`;
 const stream = `http://127.0.0.1:${Number(process.env.STREAM_PORT ?? 28001)}`;
+// The release the More sheet and the account menu show (src/version.d.ts).
+const { version } = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8")) as { version: string };
 
 /** Libraries that only a few pages need get their own chunks, so the shell never pays for them. */
 const isolated: Array<[name: string, test: RegExp]> = [
@@ -32,6 +35,7 @@ export default defineConfig({
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
   },
   define: {
+    __APP_VERSION__: JSON.stringify(version),
     __VUE_OPTIONS_API__: "true",
     __VUE_PROD_DEVTOOLS__: "false",
     __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: "false",

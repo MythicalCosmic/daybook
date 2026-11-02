@@ -7,7 +7,6 @@
 import { ChevronLeft, ChevronRight, Pencil, Plus, Target, Trash2 } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRoute, useRouter } from "vue-router";
 
 import BulletBar from "@/components/BulletBar.vue";
 import ChartCard from "@/components/ChartCard.vue";
@@ -23,12 +22,12 @@ import UiButton from "@/components/UiButton.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
-import { addMonths, formatDay, todayIn } from "@/lib/dates";
+import { addMonths, formatDay } from "@/lib/dates";
 import { divide, multiply } from "@/lib/decimal";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { salesApi, useSalesMutation, useTargets } from "../api";
 import TargetDialog from "../components/TargetDialog.vue";
@@ -36,12 +35,11 @@ import type { Target as SalesTarget } from "../types";
 
 const { t } = useI18n();
 const fmt = useFormat();
-const route = useRoute();
-const router = useRouter();
 const company = useCompanyStore();
 const confirm = useConfirm();
 
-const thisMonth = computed(() => todayIn(company.timezone).slice(0, 7));
+const companyToday = useCompanyToday();
+const thisMonth = computed(() => companyToday.value.slice(0, 7));
 const month = useRouteState<string>("month", rs.string(""));
 const shown = computed(() => (/^\d{4}-\d{2}$/.test(month.value) ? month.value : thisMonth.value));
 const query = useTargets(shown);
@@ -55,7 +53,11 @@ function go(step: number): void {
   const next = addMonths(`${shown.value}-01`, step).slice(0, 7);
   month.value = next === thisMonth.value ? "" : next;
 }
-const monthLabel = computed(() => formatDay(`${shown.value}-01`, fmt.lang.value, "monthYear"));
+// One capital letter: CSS `capitalize` made "Октябрь 2026 Г." of the Russian month.
+const monthLabel = computed(() => {
+  const label = formatDay(`${shown.value}-01`, fmt.lang.value, "monthYear");
+  return label.charAt(0).toLocaleUpperCase() + label.slice(1);
+});
 
 const chart = computed(() => {
   const series = data.value?.series ?? [];
@@ -70,13 +72,22 @@ const chart = computed(() => {
   };
 });
 
-const dialog = ref(route.query.new === "target");
+const dialog = ref(false);
 const editing = ref<SalesTarget | null>(null);
+// "Set a target" opens from the palette too (?new=target), also on this page when it is already
+// open: the link is read whenever it arrives, then taken out of the URL.
+const newParam = useRouteState("new", rs.string(""));
+watch(
+  newParam,
+  (value) => {
+    if (value !== "target") return;
+    newParam.value = "";
+    if (canManage.value) dialog.value = true;
+  },
+  { immediate: true },
+);
 watch(dialog, (value) => {
-  if (!value) {
-    editing.value = null;
-    if (route.query.new) void router.replace({ query: { ...route.query, new: undefined } });
-  }
+  if (!value) editing.value = null;
 });
 function edit(target: SalesTarget): void {
   editing.value = target;
@@ -101,7 +112,7 @@ const expected = (target: SalesTarget) => (target.days ? target.elapsed / target
       <template #actions>
         <div class="flex items-center gap-1 rounded-button border border-line bg-surface p-0.5">
           <IconButton :icon="ChevronLeft" :label="t('sales.targets.prev')" size="sm" @click="go(-1)" />
-          <span class="min-w-[120px] px-2 text-center text-sm font-semibold capitalize text-fg">{{ monthLabel }}</span>
+          <span class="min-w-[120px] px-2 text-center text-sm font-semibold text-fg" data-testid="target-month">{{ monthLabel }}</span>
           <IconButton :icon="ChevronRight" :label="t('sales.targets.next')" size="sm" @click="go(1)" />
         </div>
         <UiButton v-if="canManage" variant="primary" :icon="Plus" @click="dialog = true">{{ t("sales.targets.new") }}</UiButton>

@@ -94,6 +94,26 @@ describe("KanbanBoard", () => {
     await flushPromises();
   };
 
+  it("puts a moved card back when the page calls the move's revert (a send-back dialog cancelled)", async () => {
+    const wrapper = await board();
+    await press(cardEl(1), " ");
+    await press(cardEl(1), "ArrowRight");
+    await press(cardEl(1), " ");
+    expect(cardEl(1).closest("[data-column]")?.getAttribute("data-column")).toBe("doing");
+    // The page's data didn't change (same array): only revert brings the card home.
+    const move = wrapper.emitted("move")?.[0]?.[0] as { revert: () => void };
+    move.revert();
+    await flushPromises();
+    expect(cardEl(1).closest("[data-column]")?.getAttribute("data-column")).toBe("todo");
+  });
+
+  it("keeps a phone's 85 % column width (an inline width would beat it)", async () => {
+    const wrapper = await board();
+    const column = wrapper.find("section").element as HTMLElement;
+    expect(column.style.width).toBe("");
+    expect(column.className).toContain("max-md:w-[85vw]");
+  });
+
   it("renders columns with counts and the WIP limit", async () => {
     const wrapper = await board();
     const headers = wrapper.findAll("section header");

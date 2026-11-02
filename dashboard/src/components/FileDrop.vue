@@ -10,7 +10,7 @@ import { FileText, ImageUp, Paperclip, X } from "@lucide/vue";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { formatNumber } from "@/lib/format";
+import { formatFileSize } from "@/lib/format";
 import { useFormat } from "@/lib/useFormat";
 
 import { useControl } from "./field";
@@ -59,8 +59,7 @@ const errors = ref<string[]>([]);
 let depth = 0;
 
 function sizeText(bytes: number): string {
-  if (bytes >= 1024 * 1024) return `${formatNumber(bytes / (1024 * 1024), fmt.lang.value, 1)} MB`;
-  return `${formatNumber(Math.max(1, Math.round(bytes / 1024)), fmt.lang.value)} KB`;
+  return formatFileSize(bytes, fmt.lang.value);
 }
 
 function accepted(file: File): boolean {

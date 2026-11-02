@@ -7,7 +7,7 @@
 import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { isApiError } from "@/api/http";
+import { isApiError, unshownFieldError } from "@/api/http";
 import ComboBox from "@/components/ComboBox.vue";
 import FormField from "@/components/FormField.vue";
 import MoneyInput from "@/components/MoneyInput.vue";
@@ -55,10 +55,13 @@ const empty = () => ({
 });
 const form = reactive(empty());
 
+// Filled when the dialog opens (or is pointed at another counterparty), never on a refetch of the
+// same one: a pulse while the owner types would put the saved values back.
 watch(
-  () => [open.value, props.party] as const,
-  ([isOpen, party]) => {
+  [open, () => props.party?.id ?? null],
+  ([isOpen]) => {
     if (!isOpen) return;
+    const party = props.party;
     for (const key of Object.keys(errors)) delete errors[key];
     // The tags are copied: the cached list is read-only, so a new tag pushed onto it was dropped.
     Object.assign(form, empty(), party ? { ...party, tags: [...party.tags], default_category: party.default_category?.id ?? null } : {});
@@ -86,6 +89,9 @@ async function save(): Promise<void> {
     open.value = false;
   } catch (error) {
     if (isApiError(error)) for (const [field, messages] of Object.entries(error.fieldErrors)) errors[field] = messages[0];
+    // Only the name, phone and TIN have a place for a message; anything else is said aloud.
+    const unshown = unshownFieldError(error, ["name", "phone", "tin"]);
+    if (unshown) toast.error(unshown);
   } finally {
     saving.value = false;
   }

@@ -8,6 +8,7 @@ import { Archive, CalendarClock, Ellipsis, Pencil, Plus, Shapes, Trash2, UserPlu
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
+import { unshownFieldError } from "@/api/http";
 import AvatarStack from "@/components/AvatarStack.vue";
 import DatePicker from "@/components/DatePicker.vue";
 import DropdownMenu from "@/components/DropdownMenu.vue";
@@ -15,6 +16,7 @@ import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import FormField from "@/components/FormField.vue";
 import IconButton from "@/components/IconButton.vue";
+import InlineAlert from "@/components/InlineAlert.vue";
 import NumberInput from "@/components/NumberInput.vue";
 import PageSection from "@/components/PageSection.vue";
 import PersonPicker from "@/components/PersonPicker.vue";
@@ -165,9 +167,11 @@ const templateOpen = ref(false);
 const templateTarget = ref<ShiftTemplate | null>(null);
 const templateForm = ref({ name: "", start: "09:00", end: "18:00", pause: 60 as number | null, color: 1 });
 const savingTemplate = ref(false);
+const templateFailure = ref<string | null>(null);
 
 function openTemplate(template: ShiftTemplate | null): void {
   templateTarget.value = template;
+  templateFailure.value = null;
   templateForm.value = template
     ? { name: template.name, start: template.starts_at, end: template.ends_at, pause: template.break_minutes, color: template.color }
     : { name: "", start: "09:00", end: "18:00", pause: 60, color: 2 };
@@ -178,13 +182,15 @@ async function submitTemplate(): Promise<void> {
   const form = templateForm.value;
   if (!form.name.trim()) return;
   savingTemplate.value = true;
+  templateFailure.value = null;
   try {
     await saveTemplate(companyId.value, { name: form.name.trim(), starts_at: form.start, ends_at: form.end, break_minutes: form.pause ?? 0, color: form.color }, templateTarget.value?.id);
     toast.success(t("attendance.templates.saved"));
     refresh();
     templateOpen.value = false;
-  } catch {
-    // Shown by the HTTP client.
+  } catch (error) {
+    // A reason was toasted by the HTTP client; a refusal naming a field is said in the dialog.
+    templateFailure.value = unshownFieldError(error);
   } finally {
     savingTemplate.value = false;
   }
@@ -264,7 +270,9 @@ async function dropTemplate(template: ShiftTemplate): Promise<void> {
     </ResponsiveGrid>
 
     <PageSection :title="t('attendance.schedules.unassigned')" :description="t('attendance.schedules.unassignedHint')" :count="unassigned.length" variant="card" flush>
-      <ul v-if="unassigned.length" class="divide-y divide-line">
+      <div v-if="staff.isPending.value" class="flex flex-col gap-2 p-4" aria-busy="true"><SkeletonBlock v-for="n in 3" :key="n" height="36px" radius="8px" /></div>
+      <ErrorState v-else-if="staff.isError.value" compact class="m-3" :error="staff.error.value" :retry="() => staff.refetch()" :retrying="staff.isFetching.value" />
+      <ul v-else-if="unassigned.length" class="divide-y divide-line">
         <li v-for="person in unassigned" :key="person.id" class="flex flex-wrap items-center gap-3 px-4 py-2.5">
           <UserAvatar :name="person.name" :src="person.photo_url" :size="30" />
           <div class="min-w-0 flex-1">
@@ -327,6 +335,7 @@ async function dropTemplate(template: ShiftTemplate): Promise<void> {
             @click="templateForm.color = slot"
           />
         </div>
+        <InlineAlert v-if="templateFailure" tone="danger" :description="templateFailure" />
       </form>
       <template #footer>
         <UiButton variant="ghost" @click="templateOpen = false">{{ t("common.cancel") }}</UiButton>

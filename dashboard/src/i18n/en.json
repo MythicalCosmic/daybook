@@ -61,6 +61,7 @@
   "common.export.telegram": "We also sent it to you in Telegram.",
   "common.export.failed": "The export failed. Try again.",
   "common.export.download": "Download",
+  "common.export.noSaveInTelegram": "Telegram can’t save this file here. Open the console in a browser, or use the Excel export.",
 
   "common.calendar.prevWeek": "Previous week",
   "common.calendar.nextWeek": "Next week",
@@ -242,6 +243,7 @@
 
   "common.calendar.allDay": "All day",
   "common.calendar.week": "Week",
+  "common.calendar.weekNumber": "Week {n}",
   "common.calendar.month": "Month",
   "common.calendar.empty": "Nothing on this day",
   "common.calendar.now": "Now",
@@ -349,6 +351,7 @@
   "shell.user.shortcuts": "Keyboard shortcuts",
   "shell.user.signOut": "Log out",
   "shell.user.appearance": "Appearance",
+  "shell.user.version": "Version {version}",
 
   "shell.company.switch": "Switch company",
   "shell.company.yours": "Your companies",
@@ -372,6 +375,8 @@
   "shell.palette.searching": "Searching…",
   "shell.palette.empty": "Nothing found for “{q}”",
   "shell.palette.emptyHint": "Try another word, or ask the assistant.",
+  "shell.palette.failed": "Search didn’t work",
+  "shell.palette.failedHint": "Check the connection and try again.",
   "shell.palette.askAi": "Ask AI: “{q}”",
   "shell.palette.askAiHint": "Opens the assistant with your question",
   "shell.palette.navigate": "move",

@@ -12,20 +12,19 @@ import ErrorState from "@/components/ErrorState.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import WidgetCard from "@/components/WidgetCard.vue";
 import { useWidgetSkeleton } from "@/components/widgetSkeleton";
-import { addDays, todayIn } from "@/lib/dates";
+import { addDays } from "@/lib/dates";
 import { companyUrl } from "@/lib/links";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyToday } from "@/stores/company";
 
 import { useCalendar } from "../api";
 import UpcomingList from "../components/UpcomingList.vue";
-import { eventIdOf, sourceLabel, toCalendarItem } from "../lib";
+import { eventParam, sourceLabel, toCalendarItem } from "../lib";
 
 const props = defineProps<{ companyId: number; range?: Range; compare?: Range | null }>();
 
 const { t } = useI18n();
 const router = useRouter();
-const company = useCompanyStore();
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const calendar = useCalendar(computed(() => ({ from: today.value, to: addDays(today.value, 6) })));
 const skeleton = useWidgetSkeleton(() => calendar.isPending.value);
 const labels = computed(() => Object.fromEntries((calendar.data.value?.sources ?? []).map((source) => [source.key, sourceLabel(source, t)])));
@@ -36,8 +35,9 @@ const base = computed(() => `/c/${props.companyId}/calendar`);
 function open(item: CalendarItem): void {
   const entry = calendar.data.value?.items.find((row) => row.id === String(item.id));
   if (!entry) return;
-  const eventId = eventIdOf(entry);
-  if (eventId) void router.push({ path: base.value, query: { event: String(eventId) } });
+  // A repeating event opens on the occurrence that was clicked ("12-20261027"), not its series.
+  const event = eventParam(entry);
+  if (event) void router.push({ path: base.value, query: { event } });
   else if (entry.url) void router.push(companyUrl(props.companyId, entry.url));
   else void router.push({ path: base.value, query: { view: "agenda" } });
 }

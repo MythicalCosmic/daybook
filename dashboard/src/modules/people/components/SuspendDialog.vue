@@ -6,7 +6,7 @@
  * `people.profile.actions`.
  */
 import { Pause } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import DatePicker from "@/components/DatePicker.vue";
@@ -17,8 +17,8 @@ import TextArea from "@/components/TextArea.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
-import { addDays, todayIn } from "@/lib/dates";
-import { useCompanyStore } from "@/stores/company";
+import { addDays } from "@/lib/dates";
+import { useCompanyToday } from "@/stores/company";
 
 import { suspendPerson, usePersonMutation } from "../api";
 import type { PersonDetail } from "../types";
@@ -27,8 +27,7 @@ const open = defineModel<boolean>("open", { default: false });
 const props = defineProps<{ person: PersonDetail }>();
 
 const { t } = useI18n();
-const company = useCompanyStore();
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 
 const mode = ref<"until" | "open">("until");
 const until = ref<string | null>(addDays(today.value, 7));

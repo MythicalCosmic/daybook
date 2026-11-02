@@ -29,6 +29,7 @@ import TextInput from "@/components/TextInput.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDrawer from "@/components/UiDrawer.vue";
 import { useConfirm } from "@/components/useConfirm";
+import { unshownFieldError } from "@/api/http";
 import { toast } from "@/components/useToast";
 import { addMonths } from "@/lib/dates";
 import { dec } from "@/lib/decimal";
@@ -104,6 +105,10 @@ async function saveEdit(): Promise<void> {
     toast.success(t("finance.debts.saved"));
     editing.value = false;
     refresh();
+  } catch (failure) {
+    // A refused due day or person would otherwise leave the editor without a word.
+    const unshown = unshownFieldError(failure);
+    if (unshown) toast.error(unshown);
   } finally {
     saving.value = false;
   }

@@ -11,6 +11,7 @@ import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { z } from "zod";
 
+import { isApiError } from "@/api/http";
 import CheckBox from "@/components/CheckBox.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import FormField from "@/components/FormField.vue";
@@ -69,6 +70,9 @@ const form = useForm(
         signup_code: values.signup_code || undefined,
         copy_from: values.copy_from,
         parts: values.copy_from ? values.parts : [],
+      }).catch((error: unknown) => {
+        form.formError.value = failure(error);
+        throw error;
       });
       await session.loadMe();
       props.context.close?.();
@@ -77,6 +81,16 @@ const form = useForm(
     },
   },
 );
+
+/**
+ * Create is sent without a toast so the form says why it failed: the server's reason or a field
+ * shows by itself; no connection or a server failure has neither and needs words of its own.
+ */
+function failure(error: unknown): string | null {
+  if (!isApiError(error) || error.detail || Object.keys(error.fieldErrors).length) return null;
+  if (error.isNetwork) return t("common.error.network");
+  return error.status >= 500 ? t("common.error.server") : t("common.error.generic");
+}
 
 const zones = computed(() => zoneOptions(t));
 const languages = [

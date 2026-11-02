@@ -523,3 +523,129 @@ describe("TimesheetPage", () => {
     wrapper.unmount();
   });
 });
+
+describe("TimesheetPage numbers", () => {
+  it("say they couldn't load, with a retry, instead of dashes for good", async () => {
+    stubApi({
+      "GET attendance/timesheet/": () => json({ month: "2026-11", days: [], people: [], totals: {} }),
+      "GET attendance/summary/": () => json({ detail: "boom" }, 500),
+    });
+    const app = await testApp("/c/1/attendance/timesheet?month=2026-11");
+    const { default: TimesheetPage } = await import("../pages/TimesheetPage.vue");
+    const { wrapper } = mountWithProviders(TimesheetPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(wrapper.find("[data-kpi-error]").exists()).toBe(true);
+    wrapper.unmount();
+  });
+});
+
+describe("SchedulesPage", () => {
+  it("doesn't say everyone has a schedule while the staff loads, nor when it failed", async () => {
+    let staff: () => Response | Promise<Response> = () => new Promise<Response>(() => undefined);
+    stubApi({ "GET attendance/schedules/": () => json([]), "GET attendance/templates/": () => json([]), "GET attendance/staff/": () => staff() });
+    const { default: SchedulesPage } = await import("../pages/SchedulesPage.vue");
+    const app = await testApp("/c/1/attendance/schedules");
+    const first = mountWithProviders(SchedulesPage, { plugins: app.plugins });
+    await flushPromises();
+    expect(first.wrapper.text()).not.toContain(en["attendance.schedules.allAssigned"]);
+    first.wrapper.unmount();
+
+    staff = () => json({ detail: "boom" }, 500);
+    const again = await testApp("/c/1/attendance/schedules");
+    const second = mountWithProviders(SchedulesPage, { plugins: again.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(second.wrapper.text()).not.toContain(en["attendance.schedules.allAssigned"]);
+    expect(second.wrapper.text()).toContain("Try again");
+    second.wrapper.unmount();
+  });
+});
+
+describe("a refusal that names a field the form doesn't show", () => {
+  it("is said in the shift dialog", async () => {
+    stubApi({ "POST attendance/shifts/": () => json({ member_id: ["Alisher already works 09:00-18:00 that day."] }, 400) });
+    const app = await testApp("/c/1/attendance/roster");
+    const { default: ShiftDialog } = await import("../components/ShiftDialog.vue");
+    const { wrapper } = mountWithProviders(ShiftDialog, { plugins: app.plugins, props: { open: true, draft: { date: "2026-10-21", memberId: 7 }, members: roster().members, templates: [] } });
+    await flushPromises();
+    document.body.querySelector<HTMLFormElement>("form")!.requestSubmit();
+    await flushPromises();
+    await flushPromises();
+    expect(document.body.textContent).toContain("Alisher already works 09:00-18:00 that day.");
+    wrapper.unmount();
+  });
+
+  it("is said under the attendance settings", async () => {
+    const settings = { geofence_m: 150, require_photo: false, grace_minutes: 10, auto_close_hours: 14, overtime_needs_approval: true };
+    stubApi({ "GET attendance/settings/": () => json(settings), "PATCH attendance/settings/": () => json({ grace_minutes: ["Grace can't be longer than the shift."] }, 400) });
+    const app = await testApp("/c/1/attendance");
+    const { default: SettingsForm } = await import("../components/SettingsForm.vue");
+    const { wrapper } = mountWithProviders(SettingsForm, { plugins: app.plugins });
+    await flushPromises();
+    await wrapper.find('[role="switch"]').trigger("click");
+    await flushPromises();
+    await wrapper.findAll("button").find((b) => b.text() === "Save")!.trigger("click");
+    await flushPromises();
+    await flushPromises();
+    expect(wrapper.text()).toContain("Grace can't be longer than the shift.");
+    wrapper.unmount();
+  });
+});
+
+describe("PersonMonth", () => {
+  const month = {
+    member: { id: 7, name: "Alisher Valiyev", photo_url: null },
+    schedule: null,
+    month: "2026-10",
+    days: ["2026-10-01"],
+    today: "2026-10-01",
+    holidays: {},
+    cells: {},
+    totals: { scheduled_days: 0, attended_days: 1, leave_days: 0, leave_time_off_ids: [], absent_days: 0, worked_minutes: 480, approved_overtime_minutes: 0, late_arrivals: 0, late_minutes: 0, holiday_worked_days: 0, has_schedule: false },
+    summary: {},
+    records: [{ id: 41, member_id: 7, date: "2026-10-01", status: "present", check_in_at: "2026-10-01T09:00:00+05:00", check_out_at: null, is_late: false }],
+    next_shifts: [],
+  };
+
+  it("opens a recent check-in in its own record drawer where the page has none (Roster, Person 360)", async () => {
+    stubApi({ "GET attendance/members/7/": () => json(month), "GET attendance/records/41/": () => json({ detail: "Not found." }, 404) });
+    const app = await testApp("/c/1/attendance/roster");
+    const { default: PersonMonth } = await import("../components/PersonMonth.vue");
+    const { wrapper } = mountWithProviders(PersonMonth, { plugins: app.plugins, props: { memberId: 7 } });
+    await flushPromises();
+    await wrapper.find("section:last-of-type button").trigger("click");
+    await flushPromises();
+    await flushPromises();
+    expect(app.router.currentRoute.value.query.record).toBe("41");
+    // The drawer is its own chunk: it shows once that has loaded.
+    await vi.waitFor(() => expect(wrapper.findComponent({ name: "RecordDrawer" }).exists()).toBe(true), { timeout: 3000 });
+    wrapper.unmount();
+  });
+
+  it("leaves records to the page's drawer where it has one (Today)", async () => {
+    stubApi({ "GET attendance/members/7/": () => json(month) });
+    const app = await testApp("/c/1/attendance");
+    const { default: PersonMonth } = await import("../components/PersonMonth.vue");
+    const { wrapper } = mountWithProviders(PersonMonth, { plugins: app.plugins, props: { memberId: 7, recordDrawer: false } });
+    await flushPromises();
+    await wrapper.find("section:last-of-type button").trigger("click");
+    await flushPromises();
+    expect(wrapper.findComponent({ name: "RecordDrawer" }).exists()).toBe(false);
+    wrapper.unmount();
+  });
+});
+
+describe("wording", () => {
+  it("says in Russian that one person is late (the verb agrees)", async () => {
+    const { i18n, setLanguage } = await import("@/i18n");
+    const ru = (await import("../i18n/ru.json")).default;
+    const uz = (await import("../i18n/uz.json")).default;
+    mergeModuleMessages("attendance", { en, ru, uz });
+    setLanguage("ru");
+    expect(i18n.global.t("attendance.kpi.notYetHint", { n: 1 }, 1)).toBe("1 уже опаздывает");
+    expect(i18n.global.t("attendance.kpi.notYetHint", { n: 5 }, 5)).toBe("5 уже опаздывают");
+    setLanguage("en");
+    expect(i18n.global.t("attendance.kpi.notYetHint", { n: 1 }, 1)).toBe("1 past their start");
+  });
+});

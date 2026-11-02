@@ -90,8 +90,8 @@ async function reschedule(change: { barId: string | number; start: string; end: 
   } catch {
     // The HTTP layer showed why.
   } finally {
-    await query.refetch();
-    void refresh();
+    // One invalidation refetches the timeline too (its key is under the module's).
+    await refresh();
   }
 }
 
@@ -100,8 +100,7 @@ async function moveMilestone(change: { milestoneId: string | number; date: strin
     await updateMilestone(companyId.value, props.project.id, Number(change.milestoneId), { due_on: change.date });
     toast.success(t("projects.timeline.milestoneMoved"));
   } finally {
-    await query.refetch();
-    void refresh();
+    await refresh();
   }
 }
 

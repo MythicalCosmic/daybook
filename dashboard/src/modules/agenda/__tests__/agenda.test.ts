@@ -206,3 +206,134 @@ describe("components", () => {
     expect(inner.emitted("item-click")?.[0]?.[0]).toMatchObject({ id: "timeoff.holidays:2" });
   });
 });
+
+describe("CalendarPage", () => {
+  it("says the coming week failed to load instead of \"nothing coming up\"", async () => {
+    const { todayIn } = await import("@/lib/dates");
+    const today = todayIn("Asia/Tashkent");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string) => {
+        if (input.includes("/calendar/?") && input.includes(`from=${today}`)) return json({ detail: "boom" }, 500);
+        if (input.includes("/calendar/?")) return json({ sources: [], items: [] });
+        return json({});
+      }),
+    );
+    const { default: CalendarPage } = await import("../pages/CalendarPage.vue");
+    const app = await testApp("/c/1/calendar");
+    const { wrapper } = mountWithProviders(CalendarPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(wrapper.find("[data-upcoming-error]").exists()).toBe(true);
+    expect(wrapper.text()).not.toContain(en["agenda.upcoming.empty"]);
+    wrapper.unmount();
+  });
+});
+
+describe("UpcomingWidget", () => {
+  it("opens a repeating event on the occurrence that was clicked, not its series", async () => {
+    const { addDays, todayIn } = await import("@/lib/dates");
+    const today = addDays(todayIn("Asia/Tashkent"), 1);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        json({
+          sources: [{ key: "agenda.events", label: "Company events" }],
+          items: [entry({ id: "agenda.events:12-20261027", title: "Weekly planning", start: `${today}T15:00:00+05:00`, end: `${today}T15:30:00+05:00` })],
+        }),
+      ),
+    );
+    const { default: UpcomingWidget } = await import("../widgets/UpcomingWidget.vue");
+    const app = await testApp("/c/1");
+    const { wrapper } = mountWithProviders(UpcomingWidget, { plugins: app.plugins, props: { companyId: 1 } });
+    await flushPromises();
+    await flushPromises();
+    await wrapper.findAll("button").find((b) => b.text().includes("Weekly planning"))!.trigger("click");
+    await flushPromises();
+    expect(app.router.currentRoute.value.query.event).toBe("12-20261027");
+    wrapper.unmount();
+  });
+});
+
+describe("EventDialog", () => {
+  const saved = { id: 5, title: "x", start: "2026-10-26T10:00", end: null, all_day: false, attendees: [] };
+  function stubAgenda(defaultRemind: number | null) {
+    const calls: Array<{ method: string; url: string; body: Record<string, unknown> }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string, init?: RequestInit) => {
+        const call = { method: init?.method ?? "GET", url: input, body: init?.body ? JSON.parse(String(init.body)) : {} };
+        calls.push(call);
+        if (input.includes("/settings/")) return json({ default_remind_before: defaultRemind });
+        if (call.method !== "GET") return json(saved);
+        return json([]);
+      }),
+    );
+    return calls;
+  }
+
+  async function openDialog(props: Record<string, unknown>) {
+    const { mount } = await import("@vue/test-utils");
+    const { default: EventDialog } = await import("../components/EventDialog.vue");
+    const app = await testApp("/c/1/calendar");
+    const wrapper = mount(EventDialog, { props: { open: false, ...props }, global: { plugins: app.plugins }, attachTo: document.body });
+    await flushPromises();
+    await wrapper.setProps({ open: true });
+    await flushPromises();
+    return wrapper;
+  }
+
+  async function submit(title?: string): Promise<void> {
+    if (title) {
+      const input = document.body.querySelector<HTMLInputElement>("#agenda-event-form input")!;
+      input.value = title;
+      input.dispatchEvent(new Event("input"));
+      await flushPromises();
+    }
+    document.body.querySelector<HTMLFormElement>("#agenda-event-form")!.requestSubmit();
+    await flushPromises();
+    await flushPromises();
+  }
+
+  it("gives a new event no reminder when the company's default is No reminder", async () => {
+    const calls = stubAgenda(null);
+    const wrapper = await openDialog({ day: "2026-10-26" });
+    await submit("Inventarizatsiya");
+    expect(calls.find((c) => c.method === "POST")!.body.remind_before).toBeNull();
+    wrapper.unmount();
+  });
+
+  it("opens a 23:30 slot ending at 00:30 the next day", async () => {
+    const calls = stubAgenda(60);
+    const wrapper = await openDialog({ day: "2026-10-26", time: "23:30" });
+    await submit("Kechki inventarizatsiya");
+    const body = calls.find((c) => c.method === "POST")!.body;
+    expect(body.start).toBe("2026-10-26T23:30");
+    expect(body.end).toBe("2026-10-27T00:30");
+    wrapper.unmount();
+  });
+
+  it("keeps an overnight event's end on the next day when it is edited", async () => {
+    const calls = stubAgenda(60);
+    const event = {
+      ...saved,
+      title: "Night count",
+      description: "",
+      kind: "inventory",
+      start: "2026-10-26T22:00",
+      end: "2026-10-27T02:00",
+      place: "",
+      branch: null,
+      visibility: "company",
+      remind_before: 60,
+      repeat: "none",
+      repeat_until: null,
+    };
+    const wrapper = await openDialog({ event });
+    await submit();
+    const body = calls.find((c) => c.method === "PATCH")!.body;
+    expect(body.start).toBe("2026-10-26T22:00");
+    expect(body.end).toBe("2026-10-27T02:00");
+    wrapper.unmount();
+  });
+});

@@ -17,12 +17,12 @@ import UiButton from "@/components/UiButton.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
-import { addDays, startOfWeek, todayIn } from "@/lib/dates";
+import { addDays, startOfWeek } from "@/lib/dates";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { useNow } from "@/lib/useNow";
 import { rs, useRouteState } from "@/lib/useRouteState";
-import { useCompanyId, useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { deleteTime, startTimer, stopTimer, useRefreshProjects, useTimeWeek } from "../api";
 import { colorVar, hhmm } from "../lib";
@@ -39,7 +39,7 @@ const company = useCompanyStore();
 const companyId = useCompanyId();
 const refresh = useRefreshProjects();
 
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const week = useRouteState("week", rs.day());
 const weekStart = computed(() => startOfWeek(week.value ?? today.value));
 const query = useTimeWeek(() => ({ week: weekStart.value, project: props.project.id }));

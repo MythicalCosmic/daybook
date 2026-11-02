@@ -11,18 +11,17 @@ import { useI18n } from "vue-i18n";
 
 import type { Range } from "@/api/types";
 import KpiCard from "@/components/KpiCard.vue";
-import { addDays, todayIn } from "@/lib/dates";
+import { addDays } from "@/lib/dates";
 import { isZero } from "@/lib/decimal";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyToday } from "@/stores/company";
 
 import { useSummary } from "../api";
 
 const props = defineProps<{ companyId: number; range?: Range; compare?: Range | null }>();
 const { t } = useI18n();
 const fmt = useFormat();
-const company = useCompanyStore();
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const params = computed(() => ({ from: addDays(today.value, -13), to: today.value }));
 const query = useSummary(params, "day");
 const series = computed(() => query.data.value?.series ?? []);

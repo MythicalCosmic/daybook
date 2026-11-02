@@ -16,9 +16,9 @@ import TextArea from "@/components/TextArea.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
-import { addDays, todayIn } from "@/lib/dates";
+import { addDays } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyToday } from "@/stores/company";
 
 import { useRevoke } from "../api";
 import type { TimeOffRow } from "../types";
@@ -28,10 +28,9 @@ const props = defineProps<{ row: TimeOffRow }>();
 
 const { t } = useI18n();
 const fmt = useFormat();
-const company = useCompanyStore();
 const revoke = useRevoke();
 
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const started = computed(() => props.row.first_day <= today.value);
 const mode = ref<"all" | "from">(started.value && props.row.first_day < today.value ? "from" : "all");
 const firstPossible = computed(() => (started.value ? (today.value > props.row.first_day ? today.value : addDays(props.row.first_day, 1)) : addDays(props.row.first_day, 1)));

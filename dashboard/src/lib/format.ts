@@ -18,6 +18,15 @@ export function formatNumber(value: number | string | null | undefined, lang: La
   return sign + groupDigits(whole!, group) + (trimmed ? decimal + trimmed : "");
 }
 
+const SIZE_UNITS: Record<Language, { kb: string; mb: string }> = { uz: { kb: "KB", mb: "MB" }, ru: { kb: "КБ", mb: "МБ" }, en: { kb: "KB", mb: "MB" } };
+
+/** A file's size: "740 KB", "1,5 MB" (uz), "1,5 МБ" (ru), "1.5 MB" (en). */
+export function formatFileSize(bytes: number, lang: Language): string {
+  const units = SIZE_UNITS[lang];
+  if (bytes >= 1024 * 1024) return `${formatNumber(bytes / (1024 * 1024), lang, 1)}${NBSP}${units.mb}`;
+  return `${formatNumber(Math.max(1, Math.round(bytes / 1024)), lang)}${NBSP}${units.kb}`;
+}
+
 /** "93%" (uz, en) or "93 %" (ru). `value` is already a percentage (93, not 0.93). */
 export function formatPercent(value: number | null | undefined, lang: Language, maxDecimals = 0): string {
   if (value === null || value === undefined || !Number.isFinite(value)) return "—";

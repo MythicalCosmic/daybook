@@ -10,11 +10,11 @@ import { ChevronLeft, ChevronRight } from "@lucide/vue";
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { addDays, formatDay, formatRange, startOfWeek, todayIn, zonedNow } from "@/lib/dates";
+import { addDays, formatDay, formatRange, startOfWeek, zonedNow } from "@/lib/dates";
 import { fromMinutes } from "@/lib/time";
 import { useFormat } from "@/lib/useFormat";
 import { useNow } from "@/lib/useNow";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { isWeekend } from "./calendar";
 import { itemColor, itemsByDay, layoutTimed, type CalendarItem } from "./calendarItems";
@@ -39,7 +39,7 @@ const scroller = ref<HTMLElement | null>(null);
 
 const monday = computed(() => startOfWeek(week.value));
 const days = computed(() => Array.from({ length: 7 }, (_, i) => addDays(monday.value, i)));
-const today = computed(() => todayIn(company.timezone, now.value));
+const today = useCompanyToday();
 const hours = computed(() => Array.from({ length: props.endHour - props.startHour }, (_, i) => props.startHour + i));
 const placed = computed(() => itemsByDay(props.items, days.value, company.timezone));
 
@@ -107,8 +107,8 @@ const columns = "grid-cols-[52px_repeat(7,minmax(112px,1fr))]";
       <div ref="scroller" class="max-h-[640px] overflow-auto overscroll-contain">
         <div class="min-w-[836px]">
           <!-- Day headers and all-day items -->
-          <div :class="['sticky top-0 z-[3] grid border-b border-line bg-surface', columns]">
-            <span class="border-r border-line" />
+          <div :class="['sticky top-0 z-[4] grid border-b border-line bg-surface', columns]">
+            <span data-hour-corner class="sticky left-0 z-[4] border-r border-line bg-surface" />
             <div v-for="(day, index) in days" :key="day" :class="['min-w-0 border-r border-line px-2 py-1.5 last:border-r-0', isWeekend(day) && 'bg-surface-2/40']">
               <p :class="['flex items-baseline gap-1.5 text-xs font-semibold', day === today ? 'text-primary' : 'text-muted']">
                 {{ t(`common.weekday.short.${index}`) }}
@@ -133,7 +133,7 @@ const columns = "grid-cols-[52px_repeat(7,minmax(112px,1fr))]";
 
           <!-- Time grid -->
           <div :class="['relative grid', columns]">
-            <div class="border-r border-line">
+            <div data-hour-column class="sticky left-0 z-[3] border-r border-line bg-surface">
               <!-- Each label sits on its hour line; the first goes just below it, where the sticky day headers can't cover it. -->
               <div v-for="(hour, index) in hours" :key="hour" class="relative pr-2 text-right" :style="{ height: `${hourHeight}px` }">
                 <span :class="['absolute right-2 text-[10px] font-medium tabular-nums text-subtle', index === 0 ? 'top-0.5' : '-top-2']" data-hour-label>{{ String(hour).padStart(2, "0") }}:00</span>

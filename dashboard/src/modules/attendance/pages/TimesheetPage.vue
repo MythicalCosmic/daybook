@@ -9,11 +9,13 @@ import { CalendarDays, ChevronLeft, ChevronRight, Users } from "@lucide/vue";
 import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
+import { unshownFieldError } from "@/api/http";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import ExportButton from "@/components/ExportButton.vue";
 import FormField from "@/components/FormField.vue";
 import IconButton from "@/components/IconButton.vue";
+import InlineAlert from "@/components/InlineAlert.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import TextArea from "@/components/TextArea.vue";
@@ -22,11 +24,11 @@ import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { toast } from "@/components/useToast";
-import { endOfMonth, todayIn } from "@/lib/dates";
+import { endOfMonth } from "@/lib/dates";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
-import { useCompanyId, useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { createRecord, useRefresh, useSummary, useTimesheet } from "../api";
 import AttendanceHeader from "../components/AttendanceHeader.vue";
@@ -41,7 +43,8 @@ const company = useCompanyStore();
 const companyId = useCompanyId();
 const refresh = useRefresh();
 
-const thisMonth = computed(() => todayIn(company.timezone).slice(0, 7));
+const companyToday = useCompanyToday();
+const thisMonth = computed(() => companyToday.value.slice(0, 7));
 const monthParam = useRouteState("month", rs.string(""));
 const month = computed({
   get: () => (/^\d{4}-\d{2}$/.test(monthParam.value) ? monthParam.value : thisMonth.value),
@@ -92,6 +95,8 @@ const draft = ref<{ row: TimesheetRow; day: string } | null>(null);
 const form = ref({ in: "09:00", out: "18:00", reason: "" });
 const saving = ref(false);
 const formError = ref<string | null>(null);
+/** The server's refusal about the times (the dialog has no field that shows one). */
+const saveFailure = ref<string | null>(null);
 const canManage = computed(() => company.can("attendance.manage"));
 
 function openCell(row: TimesheetRow, day: string, cell: Cell): void {
@@ -103,6 +108,7 @@ function openCell(row: TimesheetRow, day: string, cell: Cell): void {
   draft.value = { row, day };
   form.value = { in: "09:00", out: "18:00", reason: "" };
   formError.value = null;
+  saveFailure.value = null;
 }
 
 async function saveDraft(): Promise<void> {
@@ -113,6 +119,7 @@ async function saveDraft(): Promise<void> {
     return;
   }
   saving.value = true;
+  saveFailure.value = null;
   try {
     await createRecord(companyId.value, {
       member_id: target.row.member.id,
@@ -124,8 +131,10 @@ async function saveDraft(): Promise<void> {
     toast.success(t("attendance.sheet.recorded"));
     draft.value = null;
     refresh();
-  } catch {
-    // The HTTP client shows the server's message.
+  } catch (error) {
+    // A reason was toasted by the HTTP client; a refusal naming a time is said in the dialog.
+    saveFailure.value = unshownFieldError(error, ["reason"]);
+    if (!saveFailure.value) formError.value = unshownFieldError(error) ?? formError.value;
   } finally {
     saving.value = false;
   }
@@ -183,7 +192,8 @@ watch(
       <BranchSwitch v-model="branch" />
     </div>
 
-    <KpiStrip :items="kpis" :columns="5" phone="compact" />
+    <ErrorState v-if="summary.isError.value" data-kpi-error compact class="ui-card" :error="summary.error.value" :retry="() => summary.refetch()" :retrying="summary.isFetching.value" />
+    <KpiStrip v-else :items="kpis" :columns="5" phone="compact" />
 
     <div v-if="skeleton" class="ui-card flex flex-col gap-2 p-4">
       <SkeletonBlock v-for="n in 7" :key="n" height="34px" radius="8px" />
@@ -284,6 +294,7 @@ watch(
         <FormField :label="t('common.reason')" :error="formError" required :hint="t('attendance.record.reasonHint')">
           <TextArea v-model="form.reason" :rows="2" :maxlength="300" :placeholder="t('attendance.record.reasonPlaceholder')" />
         </FormField>
+        <InlineAlert v-if="saveFailure" tone="danger" :description="saveFailure" />
       </form>
       <template #footer>
         <UiButton variant="ghost" @click="draft = null">{{ t("common.cancel") }}</UiButton>

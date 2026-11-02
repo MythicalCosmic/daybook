@@ -134,6 +134,7 @@
   "people.field.branches": "Филиалы",
   "people.field.homeBranch": "Основной филиал",
   "people.field.home_branch": "Основной филиал",
+  "people.field.department": "Отдел",
   "people.field.language": "Язык бота",
   "people.field.permissions": "Права",
   "people.field.is_active": "Видна",

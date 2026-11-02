@@ -198,3 +198,19 @@ describe("NewExportDialog", () => {
     wrapper.unmount();
   });
 });
+
+describe("wording", () => {
+  it("counts rows in the singular too", async () => {
+    const { i18n, setLanguage } = await import("@/i18n");
+    const ru = (await import("../i18n/ru.json")).default;
+    const uz = (await import("../i18n/uz.json")).default;
+    mergeModuleMessages("exports", { en, ru, uz });
+    setLanguage("en");
+    expect(i18n.global.t("exports.rowsCount", { n: 1 }, 1)).toBe("1 row");
+    expect(i18n.global.t("exports.rowsCount", { n: 1200 }, 1200)).toBe("1200 rows");
+    setLanguage("ru");
+    expect(i18n.global.t("exports.rowsCount", { n: 21 }, 21)).toBe("21 строка");
+    expect(i18n.global.t("exports.rowsCount", { n: 3 }, 3)).toBe("3 строки");
+    setLanguage("en");
+  });
+});

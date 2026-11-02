@@ -14,7 +14,7 @@ import { computed, provide, ref, type Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, type RouteLocationRaw } from "vue-router";
 
-import { downloadFile, safeFilename, toCsv, type CsvColumn } from "@/lib/csv";
+import { dataUrlBlob, downloadFile, safeFilename, toCsv, type CsvColumn } from "@/lib/csv";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 
 import { CHART_CARD_KEY } from "./chartCard";
@@ -87,10 +87,7 @@ function png(): void {
   probe.remove();
   const url = toPng?.(color);
   if (!url) return;
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = safeFilename(props.title, "png");
-  link.click();
+  downloadFile(safeFilename(props.title, "png"), dataUrlBlob(url));
 }
 
 function csvDownload(): void {

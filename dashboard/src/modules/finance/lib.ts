@@ -352,3 +352,9 @@ export function trimLeadingPeriods(data: Pnl): Pnl {
     margin: { ...data.margin, amounts: data.margin.amounts.slice(skip) },
   };
 }
+
+/** A quarter key from the API ("2026-Q3") in the language's words: "Q3 2026", "2026, 3-chorak", "3 кв. 2026"; null for a month. */
+export function quarterLabel(key: string, t: (key: string, params: Record<string, unknown>) => string): string | null {
+  const match = /^(\d{4})-Q([1-4])$/.exec(key);
+  return match ? t("finance.reports.quarter", { year: match[1], q: match[2] }) : null;
+}

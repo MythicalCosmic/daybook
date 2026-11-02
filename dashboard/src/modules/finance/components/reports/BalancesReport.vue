@@ -11,10 +11,10 @@ import ExportButton from "@/components/ExportButton.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
 import MoneyText from "@/components/MoneyText.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
-import { todayIn } from "@/lib/dates";
+
 import { rs, useRouteState } from "@/lib/useRouteState";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { useBalances } from "../../api";
 import { ACCOUNT_GROUPS, ACCOUNT_ICONS, baseTotal, isNegative } from "../../lib";
@@ -24,7 +24,7 @@ const props = defineProps<{ branch: number[] }>();
 const { t } = useI18n();
 const fmt = useFormat();
 const company = useCompanyStore();
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const on = useRouteState("on", rs.day());
 const day = computed({ get: () => on.value ?? today.value, set: (value: string | null) => (on.value = value === today.value ? null : value) });
 const params = computed(() => ({ on: day.value, ...(props.branch.length ? { branch: props.branch } : {}) }));

@@ -61,6 +61,7 @@
   "common.export.telegram": "Мы также отправили его вам в Telegram.",
   "common.export.failed": "Экспорт не удался. Попробуйте ещё раз.",
   "common.export.download": "Скачать",
+  "common.export.noSaveInTelegram": "Telegram не может сохранить этот файл здесь. Откройте консоль в браузере или выгрузите в Excel.",
 
   "common.calendar.prevWeek": "Предыдущая неделя",
   "common.calendar.nextWeek": "Следующая неделя",
@@ -242,6 +243,7 @@
 
   "common.calendar.allDay": "Весь день",
   "common.calendar.week": "Неделя",
+  "common.calendar.weekNumber": "Неделя {n}",
   "common.calendar.month": "Месяц",
   "common.calendar.empty": "В этот день ничего нет",
   "common.calendar.now": "Сейчас",
@@ -349,6 +351,7 @@
   "shell.user.shortcuts": "Горячие клавиши",
   "shell.user.signOut": "Выйти",
   "shell.user.appearance": "Внешний вид",
+  "shell.user.version": "Версия {version}",
 
   "shell.company.switch": "Сменить компанию",
   "shell.company.yours": "Ваши компании",
@@ -372,6 +375,8 @@
   "shell.palette.searching": "Ищем…",
   "shell.palette.empty": "По запросу «{q}» ничего нет",
   "shell.palette.emptyHint": "Попробуйте другое слово или спросите ассистента.",
+  "shell.palette.failed": "Не удалось выполнить поиск",
+  "shell.palette.failedHint": "Проверьте интернет и попробуйте ещё раз.",
   "shell.palette.askAi": "Спросить ИИ: «{q}»",
   "shell.palette.askAiHint": "Откроет ассистента с вашим вопросом",
   "shell.palette.navigate": "выбор",

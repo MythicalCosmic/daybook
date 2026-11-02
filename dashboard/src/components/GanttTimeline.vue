@@ -12,9 +12,9 @@ import { CalendarClock } from "@lucide/vue";
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { diffDays, formatDay, todayIn } from "@/lib/dates";
+import { diffDays, formatDay } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyToday } from "@/stores/company";
 
 import { isWeekend } from "./calendar";
 import { barBox, dayCenter, dragDates, dragModeAt, isoWeek, pxToDays, PX_PER_DAY, ticks, timelineRange, type DragMode, type GanttBar, type GanttMilestone, type GanttRow, type GanttZoom } from "./gantt";
@@ -47,10 +47,9 @@ defineSlots<{ label?: (props: { row: GanttRow }) => unknown }>();
 
 const { t } = useI18n();
 const fmt = useFormat();
-const company = useCompanyStore();
 const scroller = ref<HTMLElement | null>(null);
 
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const range = computed(() => timelineRange(props.rows, today.value, zoom.value));
 const ppd = computed(() => PX_PER_DAY[zoom.value]);
 const width = computed(() => (diffDays(range.value.from, range.value.to) + 1) * ppd.value);
@@ -233,7 +232,7 @@ watch(zoom, () => void scrollToToday(false));
                   zoom === 'day' && isWeekend(tick.day) && 'bg-surface-2/50',
                 ]"
                 :style="{ left: `${tick.left}px`, width: `${tick.width}px` }"
-                :title="zoom === 'week' ? `W${isoWeek(tick.day)}` : undefined"
+                :title="zoom === 'week' ? t('common.calendar.weekNumber', { n: isoWeek(tick.day) }) : undefined"
               >
                 {{ bottomLabel(tick.day) }}
               </div>

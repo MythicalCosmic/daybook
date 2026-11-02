@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { csvCell, guardFormula, safeFilename, toCsv } from "@/lib/csv";
+import { toast } from "@/components/useToast";
+import { csvCell, dataUrlBlob, downloadFile, guardFormula, safeFilename, toCsv } from "@/lib/csv";
 
 describe("csv", () => {
   it("escapes delimiters, quotes and new lines", () => {
@@ -39,5 +40,39 @@ describe("csv", () => {
   it("makes safe file names", () => {
     expect(safeFilename("Sales: Oct/Nov", "xlsx")).toBe("Sales- Oct-Nov.xlsx");
     expect(safeFilename("   ", ".csv")).toBe("export.csv");
+  });
+
+  it("turns a data: URL into a Blob without fetch", async () => {
+    const blob = dataUrlBlob("data:image/png;base64,iVBORw==");
+    expect(blob.type).toBe("image/png");
+    expect([...new Uint8Array(await blob.arrayBuffer())]).toEqual([0x89, 0x50, 0x4e, 0x47]);
+  });
+});
+
+describe("downloadFile inside Telegram", () => {
+  afterEach(() => {
+    delete window.Telegram;
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("hands the file to the phone's share sheet (the webview ignores <a download>)", () => {
+    window.Telegram = { WebApp: { initData: "query_id=1" } as never };
+    const share = vi.fn(async () => undefined);
+    vi.stubGlobal("navigator", { ...navigator, canShare: () => true, share });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click");
+    downloadFile("Kassa.csv", "a,b\r\n");
+    expect(share).toHaveBeenCalledTimes(1);
+    const sent = (share.mock.calls[0] as unknown as [{ files: File[] }])[0].files[0]!;
+    expect(sent.name).toBe("Kassa.csv");
+    expect(click).not.toHaveBeenCalled();
+  });
+
+  it("says so when the phone has no share sheet (Android's webview)", () => {
+    window.Telegram = { WebApp: { initData: "query_id=1" } as never };
+    vi.stubGlobal("navigator", { ...navigator, canShare: undefined, share: undefined });
+    const warning = vi.spyOn(toast, "warning");
+    downloadFile("QR.png", new Blob(["x"], { type: "image/png" }));
+    expect(warning).toHaveBeenCalledTimes(1);
   });
 });

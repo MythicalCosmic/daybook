@@ -19,12 +19,12 @@ import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import StatusPill from "@/components/StatusPill.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDrawer from "@/components/UiDrawer.vue";
-import { todayIn } from "@/lib/dates";
+
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { useBoard, useSummary } from "../api";
 import AttendanceHeader from "../components/AttendanceHeader.vue";
@@ -43,7 +43,7 @@ const fmt = useFormat();
 const company = useCompanyStore();
 const { isPhone } = useBreakpoints();
 
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const day = useRouteState("date", rs.day());
 const branch = useRouteState("branch", rs.optionalNumber());
 const recordId = useRouteState("record", rs.optionalNumber(), { push: true });
@@ -101,7 +101,7 @@ const kpis = computed(() => {
       id: "missing",
       label: t("attendance.state.not_yet"),
       value: totals.not_yet,
-      hint: !totals.not_yet ? undefined : overdue.value ? t("attendance.kpi.notYetHint", { n: overdue.value }) : t("attendance.kpi.notYetSoon"),
+      hint: !totals.not_yet ? undefined : overdue.value ? t("attendance.kpi.notYetHint", { n: overdue.value }, overdue.value) : t("attendance.kpi.notYetSoon"),
     },
     { id: "absent", label: t("attendance.kpi.absent"), value: totals.absent, hint: totals.absent && isToday.value ? t("attendance.kpi.absentHint") : undefined },
     {
@@ -288,7 +288,7 @@ const columnLabel = (state: BoardState) => t(`attendance.state.${state}`);
     <RecordDrawer />
     <UiDrawer query-key="person" size="lg" :title="personName || t('attendance.person.title')">
       <template #default="{ value }">
-        <PersonMonth v-if="value" class="p-5" :member-id="Number(value)" />
+        <PersonMonth v-if="value" class="p-5" :member-id="Number(value)" :record-drawer="false" />
       </template>
     </UiDrawer>
     <UiDrawer v-model:open="settingsOpen" size="lg" :title="t('attendance.settings.title')" :description="t('attendance.settings.description')">

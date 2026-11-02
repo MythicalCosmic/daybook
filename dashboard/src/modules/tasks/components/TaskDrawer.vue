@@ -44,13 +44,13 @@ import { useConfirm } from "@/components/useConfirm";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { toast } from "@/components/useToast";
 import { useHotkey } from "@/core/hotkeys";
-import { todayIn, zonedDay } from "@/lib/dates";
+import { todayIn, zonedDay, zonedIso } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
 import { useNow } from "@/lib/useNow";
 import { useCompanyStore } from "@/stores/company";
 
 import { tasksApi, taskKeys, useRefreshTasks, useTaskDetail, useTaskMutation, useTaskOptions } from "../api";
-import { cardKey, highlightMentions, isUnseen, lateness, minutesBetween, reminderLag, zonedIso, zonedParts } from "../meta";
+import { cardKey, highlightMentions, isUnseen, lateness, minutesBetween, reminderLag, zonedParts } from "../meta";
 import type { BlockerAction, TaskDetail, TaskPriority, TaskUpdateInput } from "../types";
 import { PRIORITIES } from "../types";
 import CommentBox, { type MentionPerson } from "./CommentBox.vue";
@@ -616,9 +616,13 @@ const formatAudit = (field: string, value: unknown) => {
           <template v-if="task.routine">
             <dt class="text-muted">{{ t("tasks.field.routine") }}</dt>
             <dd class="min-w-0">
-              <RouterLink :to="`/c/${company.currentId}/routines/${task.routine.id}`" class="inline-flex min-w-0 items-center gap-1 text-primary hover:underline">
+              <component
+                :is="company.can('tasks.templates') ? RouterLink : 'span'"
+                :to="`/c/${company.currentId}/routines/${task.routine.id}`"
+                :class="['inline-flex min-w-0 items-center gap-1', company.can('tasks.templates') ? 'text-primary hover:underline' : 'text-fg']"
+              >
                 <Repeat :size="13" class="shrink-0" /><span class="truncate">{{ task.routine.title }}</span>
-              </RouterLink>
+              </component>
             </dd>
           </template>
           <template v-if="task.created_by && task.kind !== 'personal'">

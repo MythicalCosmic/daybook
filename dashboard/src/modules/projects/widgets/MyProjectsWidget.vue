@@ -21,13 +21,14 @@ const props = defineProps<{ companyId: number; range?: Range; compare?: Range | 
 
 const { t } = useI18n();
 const fmt = useFormat();
-const query = useProjects(() => ({ mine: true, status: ["planning", "active", "on_hold"] }));
+// The card lists eight: it asks for eight (the count comes from the page's total).
+const query = useProjects(() => ({ mine: true, status: ["planning", "active", "on_hold"], page_size: 8 }));
 const skeleton = useWidgetSkeleton(() => query.isPending.value);
 const projects = computed(() => query.data.value?.results ?? []);
 </script>
 
 <template>
-  <WidgetCard :title="t('projects.widget.mine')" :icon="FolderKanban" :count="projects.length" count-tone="neutral" :to="`/c/${props.companyId}/projects?mine=true`">
+  <WidgetCard :title="t('projects.widget.mine')" :icon="FolderKanban" :count="query.data.value?.count ?? projects.length" count-tone="neutral" :to="`/c/${props.companyId}/projects?mine=true`">
     <div v-if="skeleton" class="flex flex-col gap-1 p-2">
       <div v-for="n in 3" :key="n" class="flex items-center gap-3 py-1.5"><SkeletonBlock circle height="34px" /><div class="flex flex-1 flex-col gap-1.5"><SkeletonBlock width="60%" /><SkeletonBlock width="40%" height="11px" /></div></div>
     </div>

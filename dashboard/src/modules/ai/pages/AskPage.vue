@@ -258,7 +258,7 @@ const conversationTime = (conversation: Conversation) => fmt.relative(conversati
                 <span class="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-accent-soft text-accent-fg" aria-hidden="true"><Sparkles :size="15" /></span>
                 <div class="flex min-w-0 flex-1 flex-col gap-2">
                   <TurnSteps :steps="message.steps" />
-                  <MarkdownView class="ai-answer" :source="message.text" />
+                  <MarkdownView :source="message.text" />
                 </div>
               </div>
             </template>
@@ -272,7 +272,7 @@ const conversationTime = (conversation: Conversation) => fmt.relative(conversati
                 <span class="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-accent-soft text-accent-fg" aria-hidden="true"><Sparkles :size="15" class="animate-pulse" /></span>
                 <div class="flex min-w-0 flex-1 flex-col gap-2">
                   <TurnSteps :steps="turn.data.value?.steps ?? []" live />
-                  <MarkdownView v-if="turn.data.value?.text" class="ai-answer" :source="turn.data.value.text" />
+                  <MarkdownView v-if="turn.data.value?.text" :source="turn.data.value.text" />
                 </div>
               </div>
             </template>
@@ -298,7 +298,7 @@ const conversationTime = (conversation: Conversation) => fmt.relative(conversati
               v-model="text"
               rows="1"
               :maxlength="2000"
-              class="ai-composer max-h-[160px] min-h-10 flex-1 resize-none bg-transparent px-1.5 py-2 text-base pointer-coarse:text-md text-fg outline-none placeholder:text-subtle"
+              class="ai-composer max-h-[160px] min-h-10 flex-1 resize-none bg-transparent px-1.5 py-2 text-base text-fg outline-none placeholder:text-subtle pointer-coarse:text-md"
               :placeholder="t('ai.chat.placeholder')"
               :aria-label="t('ai.chat.placeholder')"
               :disabled="sending"
@@ -344,22 +344,6 @@ const conversationTime = (conversation: Conversation) => fmt.relative(conversati
     radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--c-primary) 14%, transparent) 0%, transparent 55%),
     radial-gradient(90% 120% at 100% 100%, color-mix(in srgb, var(--c-info) 12%, transparent) 0%, transparent 60%),
     var(--c-surface);
-}
-/* A record chip with a long task title wraps like a highlighted phrase instead of pushing the
-   answer past a phone's edge (the shared chip never wraps). */
-.ai-answer.ai-answer :deep(.md-chip) {
-  display: inline;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-  padding: 1px 7px 1px 6px;
-  line-height: 1.95;
-}
-.ai-answer.ai-answer :deep(.md-chip::before) {
-  display: inline-block;
-  margin: 0 5px 2px 0;
-  vertical-align: middle;
 }
 .ai-composer {
   field-sizing: content;

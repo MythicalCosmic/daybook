@@ -98,6 +98,66 @@ describe("BottomSheet", () => {
     wrapper.unmount();
   });
 
+  it("rises above the phone keyboard and shrinks to the space left (iOS keeps the layout viewport)", async () => {
+    const viewport = Object.assign(new EventTarget(), { height: 844, offsetTop: 0 });
+    vi.stubGlobal("visualViewport", viewport);
+    vi.stubGlobal("innerHeight", 844);
+    const wrapper = mount(BottomSheet, {
+      props: { open: true, title: "Edit" },
+      slots: { default: () => h("input", { name: "amount" }), footer: () => h("button", "Save") },
+      global: { plugins: plugins() },
+      attachTo: document.body,
+    });
+    await flushPromises();
+    expect(sheet().style.bottom).toBe("");
+    // The keyboard takes 344 px.
+    viewport.height = 500;
+    viewport.dispatchEvent(new Event("resize"));
+    await flushPromises();
+    expect(sheet().style.bottom).toBe("344px");
+    expect(sheet().style.maxHeight).toBe("492px");
+    // And gives them back.
+    viewport.height = 844;
+    viewport.dispatchEvent(new Event("resize"));
+    await flushPromises();
+    expect(sheet().style.bottom).toBe("");
+    wrapper.unmount();
+    vi.unstubAllGlobals();
+  });
+
+  it("shows no header of its own for a drawer that brings its own (the inbox)", async () => {
+    await router.push("/c/1?inbox=needs");
+    const wrapper = mount(UiDrawer, {
+      props: { queryKey: "inbox", title: "Inbox", hideHeader: true },
+      slots: { default: () => h("h2", "Inbox") },
+      global: { plugins: plugins() },
+      attachTo: document.body,
+    });
+    await flushPromises();
+    expect(sheet().querySelector("header")).toBeNull();
+    expect(sheet().querySelector('button[aria-label="Close"]')).toBeNull();
+    wrapper.unmount();
+  });
+
+  it("has a close button, with or without a visible header", async () => {
+    for (const hideHeader of [false, true]) {
+      const closed = vi.fn();
+      const wrapper = mount(BottomSheet, {
+        props: { open: true, title: "Details", hideHeader, "onUpdate:open": closed },
+        slots: { default: () => h("p", "text") },
+        global: { plugins: plugins() },
+        attachTo: document.body,
+      });
+      await flushPromises();
+      const close = sheet().querySelector<HTMLButtonElement>('button[aria-label="Close"]');
+      expect(close).not.toBeNull();
+      close!.click();
+      await flushPromises();
+      expect(closed).toHaveBeenCalledWith(false);
+      wrapper.unmount();
+    }
+  });
+
   it("puts it under the body when there is no footer", async () => {
     const wrapper = mount(BottomSheet, {
       props: { open: true, title: "Details" },

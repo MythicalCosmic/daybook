@@ -46,7 +46,7 @@ const series = computed(() => [
   { name: t("people.overview.onTimeSeries"), data: trend.value.map((point) => point.on_time_percent) },
 ]);
 const csv = computed(() => ({
-  filename: `on-time-${props.person.name}`,
+  filename: `${t("people.overview.onTimeSeries")} ${props.person.name}`,
   columns: [
     { key: "date", label: t("people.overview.week") },
     { key: "on_time_percent", label: t("people.overview.onTimeSeries") },

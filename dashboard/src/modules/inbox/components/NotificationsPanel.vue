@@ -145,7 +145,9 @@ function step(direction: 1 | -1): void {
 useHotkey("j", () => step(1), { description: "inbox.keys.next", group: "page" });
 useHotkey("k", () => step(-1), { description: "inbox.keys.previous", group: "page" });
 useHotkey("e", () => selected.value && void archiveMany([selected.value.id]), { description: "inbox.keys.archive", group: "page", enabled: () => !!selected.value });
-useHotkey("enter", () => selected.value?.url && void router.push(link(selected.value.url)), { group: "page", enabled: () => !!selected.value?.url });
+// Enter on a focused button or link is that control's own press, not "open the selected note".
+const onControl = () => !!document.activeElement?.closest("button, a[href], input, select, textarea, [role=button], [role=menuitem], [role=tab], [role=option]");
+useHotkey("enter", () => selected.value?.url && void router.push(link(selected.value.url)), { group: "page", enabled: () => !!selected.value?.url && !onControl() });
 
 const tabOptions = computed(() => [
   { value: "unread" as NotificationTab, label: t("inbox.unread") },

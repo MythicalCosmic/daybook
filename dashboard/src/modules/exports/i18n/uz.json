@@ -18,7 +18,7 @@
   "exports.sensitive": "Maxfiy",
   "exports.sensitiveHint": "Ish haqi, hujjatlar yoki xodimlar bo‘yicha summalar bor",
   "exports.wholeList": "Butun ro‘yxat",
-  "exports.rowsCount": "{n} qator",
+  "exports.rowsCount": "{n} qator | {n} qator | {n} qator",
   "exports.param.since": "Boshi: {day}",
   "exports.param.until": "Oxiri: {day}",
   "exports.param.search": "Qidiruv «{text}»",

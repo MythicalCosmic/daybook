@@ -13,7 +13,7 @@
 import { computed, reactive, ref, shallowRef, toRaw, watch, type ComputedRef, type Ref } from "vue";
 import type { z } from "zod";
 
-import { isApiError, type FieldErrors } from "@/api/http";
+import { isApiError, unshownFieldError, type FieldErrors } from "@/api/http";
 import { i18n } from "@/i18n";
 
 export type FormErrors = Record<string, string | undefined>;
@@ -164,6 +164,8 @@ export function useForm<S extends z.ZodType, In extends Record<string, unknown> 
       if (isApiError(error)) {
         setErrors(error.fieldErrors);
         if (error.detail) formError.value = error.detail;
+        // A refusal about something the form has no field for would otherwise show nowhere.
+        formError.value ??= unshownFieldError(error, Object.keys(values));
       } else {
         throw error;
       }

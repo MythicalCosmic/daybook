@@ -20,9 +20,9 @@ import ErrorState from "@/components/ErrorState.vue";
 import KpiStrip from "@/components/KpiStrip.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UiButton from "@/components/UiButton.vue";
-import { todayIn } from "@/lib/dates";
+
 import { patchQuery } from "@/lib/useRouteState";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { useSummary, useTaskList } from "../api";
 import type { SeriesPoint, TaskRow, TaskSummary } from "../types";
@@ -47,7 +47,7 @@ const OPEN_SHOWN = 6;
 const openShown = computed(() => open.data.value?.results.slice(0, OPEN_SHOWN) ?? []);
 
 // Routine work.
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const routineSummary = useSummary(computed(() => ({ assignee: props.memberId, routines: "only" })));
 const runs = useTaskList(
   computed(() => ({ assignee: person.value, routines: "only", status: [...OPEN, "done"], due_from: today.value, due_to: today.value, ordering: "due_at", page_size: 20 })),

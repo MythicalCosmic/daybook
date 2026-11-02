@@ -81,7 +81,7 @@ const menu = computed<MenuEntry[]>(() => {
       </div>
     </RouterLink>
     <button
-      v-if="setup && account.is_active && account.can_record"
+      v-if="setup && account.is_active && account.can_record && canManage"
       type="button"
       class="mx-4 mb-3 -mt-1 inline-flex h-7 items-center justify-center gap-1 rounded-[8px] border border-dashed border-primary/50 text-xs font-semibold text-accent-fg hover:bg-accent-soft"
       @click="emit('opening', account)"

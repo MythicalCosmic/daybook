@@ -117,8 +117,10 @@ async function throwAway(): Promise<void> {
       </template>
     </div>
 
-    <!-- The decision stays in reach while the drafts scroll. -->
-    <div v-if="draft.status === 'ready' && !review.result.value" class="sticky bottom-0 flex flex-wrap items-center justify-end gap-2 border-t border-line bg-surface px-5 py-3">
+    <!-- The decision stays in reach while the drafts scroll. On a phone sheet the body keeps the
+         bottom safe area as padding, which a sticky bar stops above: it reaches into it and pads
+         itself instead, so no draft scrolls out underneath. -->
+    <div v-if="draft.status === 'ready' && !review.result.value" class="sticky bottom-[calc(-1*var(--safe-bottom))] flex flex-wrap items-center justify-end gap-2 border-t border-line bg-surface px-5 pb-[calc(0.75rem+var(--safe-bottom))] pt-3">
       <span v-if="review.blockers.value.problems || review.blockers.value.untitled" class="mr-auto text-sm text-warning" role="status">
         {{ review.blockers.value.untitled ? t("ai.review.needTitles") : t("ai.review.fixFirst") }}
       </span>

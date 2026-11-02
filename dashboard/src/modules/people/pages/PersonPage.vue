@@ -186,7 +186,9 @@ const menu = computed<MenuEntry[]>(() => {
   const p = person.value;
   if (!p) return [];
   const entries: MenuEntry[] = [];
-  if (p.can.change_role) entries.push({ label: t("people.action.changeRole"), icon: ShieldCheck, onSelect: () => (editing.value = true) });
+  // The role is saved with the rest of the person (PATCH people/, members.manage): without edit
+  // the dialog could only end in a refusal.
+  if (p.can.change_role && p.can.edit) entries.push({ label: t("people.action.changeRole"), icon: ShieldCheck, onSelect: () => (editing.value = true) });
   if (p.can.suspend && !lifecycleInstalled.value) entries.push({ label: t("people.action.suspend"), icon: Pause, onSelect: () => (suspending.value = true) });
   // Reinstate and unblock sit in the status banner, where the person's state is explained.
   if (entries.length && (p.can.block || p.can.offboard)) entries.push({ type: "separator" });

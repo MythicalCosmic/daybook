@@ -3,7 +3,7 @@
  * The announcement composer's editor (plan §6.2, C's own component): Tiptap limited to what
  * Telegram shows: bold, italic, underline, strike, link, code and spoiler, paragraphs and line
  * breaks. `v-model` is the editor's HTML; the page turns it into Telegram HTML (and the server
- * cleans it again). Shortcuts: ⌘B, ⌘I, ⌘U, ⌘⇧S (strike), ⌘E (code), ⌘K (link).
+ * cleans it again). Shortcuts (Ctrl on Windows and Android): ⌘B, ⌘I, ⌘U, ⌘⇧S (strike), ⌘E (code), ⌘K (link).
  */
 import { Mark, mergeAttributes } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
@@ -16,6 +16,7 @@ import TextInput from "@/components/TextInput.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiPopover from "@/components/UiPopover.vue";
 import UiTooltip from "@/components/UiTooltip.vue";
+import { formatCombo, isMac } from "@/core/hotkeys";
 
 const model = defineModel<string>({ default: "" });
 const props = withDefaults(defineProps<{ placeholder?: string; invalid?: boolean; minHeight?: string }>(), { placeholder: "", invalid: false, minHeight: "180px" });
@@ -76,15 +77,17 @@ onBeforeUnmount(() => editor.value?.destroy());
 const empty = computed(() => !model.value);
 
 type Tool = { key: string; icon: typeof Bold; label: string; shortcut: string; active: () => boolean; run: () => void };
+/** "mod+b" as this keyboard writes it: "⌘B" on a Mac, "Ctrl+B" elsewhere (Windows, Android). */
+const keys = (combo: string) => formatCombo(combo).join(isMac() ? "" : "+");
 const tools = computed<Tool[]>(() => {
   const e = editor.value;
   return [
-    { key: "bold", icon: Bold, label: t("comms.editor.bold"), shortcut: "⌘B", active: () => !!e?.isActive("bold"), run: () => e?.chain().focus().toggleBold().run() },
-    { key: "italic", icon: Italic, label: t("comms.editor.italic"), shortcut: "⌘I", active: () => !!e?.isActive("italic"), run: () => e?.chain().focus().toggleItalic().run() },
-    { key: "underline", icon: Underline, label: t("comms.editor.underline"), shortcut: "⌘U", active: () => !!e?.isActive("underline"), run: () => e?.chain().focus().toggleUnderline().run() },
-    { key: "strike", icon: Strikethrough, label: t("comms.editor.strike"), shortcut: "⌘⇧S", active: () => !!e?.isActive("strike"), run: () => e?.chain().focus().toggleStrike().run() },
-    { key: "code", icon: Code, label: t("comms.editor.code"), shortcut: "⌘E", active: () => !!e?.isActive("code"), run: () => e?.chain().focus().toggleCode().run() },
-    { key: "spoiler", icon: EyeOff, label: t("comms.editor.spoiler"), shortcut: "⌘⇧P", active: () => !!e?.isActive("spoiler"), run: () => e?.chain().focus().toggleMark("spoiler").run() },
+    { key: "bold", icon: Bold, label: t("comms.editor.bold"), shortcut: keys("mod+b"), active: () => !!e?.isActive("bold"), run: () => e?.chain().focus().toggleBold().run() },
+    { key: "italic", icon: Italic, label: t("comms.editor.italic"), shortcut: keys("mod+i"), active: () => !!e?.isActive("italic"), run: () => e?.chain().focus().toggleItalic().run() },
+    { key: "underline", icon: Underline, label: t("comms.editor.underline"), shortcut: keys("mod+u"), active: () => !!e?.isActive("underline"), run: () => e?.chain().focus().toggleUnderline().run() },
+    { key: "strike", icon: Strikethrough, label: t("comms.editor.strike"), shortcut: keys("mod+shift+s"), active: () => !!e?.isActive("strike"), run: () => e?.chain().focus().toggleStrike().run() },
+    { key: "code", icon: Code, label: t("comms.editor.code"), shortcut: keys("mod+e"), active: () => !!e?.isActive("code"), run: () => e?.chain().focus().toggleCode().run() },
+    { key: "spoiler", icon: EyeOff, label: t("comms.editor.spoiler"), shortcut: keys("mod+shift+p"), active: () => !!e?.isActive("spoiler"), run: () => e?.chain().focus().toggleMark("spoiler").run() },
   ];
 });
 

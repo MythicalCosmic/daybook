@@ -6,11 +6,14 @@ import { useI18n } from "vue-i18n";
 
 import type { Range } from "@/api/types";
 import KpiCard from "@/components/KpiCard.vue";
+import { usePermission } from "@/lib/usePermission";
 
 import { useSummary } from "../api";
 
 const props = defineProps<{ companyId: number; range?: Range; compare?: Range | null }>();
 const { t } = useI18n();
+// The team report needs reports.view; this tile needs only tasks.view_all.
+const { can } = usePermission();
 const query = useSummary({ routines: "without" });
 const data = computed(() => query.data.value);
 // Complete days only: today counts just what was due so far, and its dip would read as a fall.
@@ -35,6 +38,6 @@ const spark = computed(() => {
     :hint="t('tasks.kpi.reviewHintOneOff')"
     :spark="spark"
     :loading="query.isPending.value"
-    :to="`/c/${props.companyId}/reports/team?preset=week&compare=prev`"
+    :to="can('reports.view') ? `/c/${props.companyId}/reports/team?preset=week&compare=prev` : undefined"
   />
 </template>

@@ -27,6 +27,8 @@
   "settings.panel.reminders.defaults": "Reminders",
   "settings.panel.reminders.defaults.hint": "The default reminder policy",
   "settings.panel.reminders.defaults.description": "The default reminder policy: every routine and task without its own policy follows it.",
+  "settings.panel.tasks.hint": "Checking finished work, how long it waits",
+  "settings.panel.tasks.description": "What happens when someone finishes a task, and how long finished work waits for a check.",
   "settings.panel.projects.hint": "Starting lists, weekly update, risk",
   "settings.panel.projects.description": "What every new board starts with, the weekly update reminder and when a project counts as at risk.",
   "settings.panel.sales": "Sales rules",

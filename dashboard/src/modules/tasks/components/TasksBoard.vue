@@ -78,7 +78,7 @@ async function onMove(change: KanbanMove<TaskRow>): Promise<void> {
       tone: "danger",
     });
     if (!answer) {
-      void query.refetch(); // the card snaps back
+      change.revert(); // the card goes back (a refetch returning the same data would leave it)
       return;
     }
     reason = answer.reason;

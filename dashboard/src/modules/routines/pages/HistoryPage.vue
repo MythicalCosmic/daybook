@@ -21,11 +21,11 @@ import { useScopedBranches } from "@/components/pickers";
 import ProgressBar from "@/components/ProgressBar.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
-import { addDays, DATE_PRESETS, diffDays, todayIn } from "@/lib/dates";
+import { addDays, DATE_PRESETS, diffDays } from "@/lib/dates";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { useRangeState } from "@/lib/useRangeState";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyToday } from "@/stores/company";
 
 import { usePlanOptions, useRoutineHistory } from "../api";
 import RoutinesHeader from "../components/RoutinesHeader.vue";
@@ -35,7 +35,6 @@ import type { HistoryCell } from "../types";
 const { t } = useI18n();
 const fmt = useFormat();
 const router = useRouter();
-const company = useCompanyStore();
 
 const period = useRangeState({ preset: "last_30" });
 const options = usePlanOptions();
@@ -60,7 +59,7 @@ const params = computed(() => ({
 const query = useRoutineHistory(params);
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const data = computed(() => query.data.value ?? null);
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 
 const kpis = computed(() => {
   const totals = data.value?.totals;
@@ -135,10 +134,10 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
             <p class="text-xs text-muted">{{ t("routines.history.heatmapHint") }}</p>
           </div>
           <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted" aria-hidden="true">
-            <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px]" style="background: var(--c-success)" />100 %</span>
-            <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px]" style="background: color-mix(in srgb, var(--c-success) 55%, var(--c-surface))" />80–99 %</span>
-            <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px]" style="background: color-mix(in srgb, var(--c-warning) 70%, var(--c-surface))" />50–79 %</span>
-            <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px]" style="background: color-mix(in srgb, var(--c-danger) 75%, var(--c-surface))" />&lt; 50 %</span>
+            <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px]" style="background: var(--c-success)" />{{ fmt.percent(100) }}</span>
+            <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px]" style="background: color-mix(in srgb, var(--c-success) 55%, var(--c-surface))" />{{ fmt.number(80) }}–{{ fmt.percent(99) }}</span>
+            <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px]" style="background: color-mix(in srgb, var(--c-warning) 70%, var(--c-surface))" />{{ fmt.number(50) }}–{{ fmt.percent(79) }}</span>
+            <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px]" style="background: color-mix(in srgb, var(--c-danger) 75%, var(--c-surface))" />&lt; {{ fmt.percent(50) }}</span>
             <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px] border border-dashed border-line-strong" />{{ t("routines.history.legendAhead") }}</span>
             <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px] bg-surface-2/60 ring-1 ring-inset ring-line" />{{ t("routines.history.legendNone") }}</span>
           </div>

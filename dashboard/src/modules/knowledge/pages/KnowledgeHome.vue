@@ -111,7 +111,11 @@ useHotkey("n", () => canManage.value && void router.push(`${base.value}/new`), {
       </div>
     </div>
 
-    <ErrorState v-if="overview.isError.value" :error="overview.error.value" :retry="() => overview.refetch()" />
+    <ErrorState
+      v-if="overview.isError.value || spaces.isError.value"
+      :error="overview.error.value ?? spaces.error.value"
+      :retry="() => (overview.isError.value && overview.refetch(), spaces.isError.value && spaces.refetch())"
+    />
 
     <template v-else-if="skeleton">
       <SkeletonBlock height="92px" radius="12px" />

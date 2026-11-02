@@ -192,6 +192,15 @@ describe("DataTable", () => {
     expect(wrapper.emitted("row-click")?.[0]?.[0]).toMatchObject({ id: 2 });
   });
 
+  it("leaves Enter and Space on a control inside a row to that control", async () => {
+    const { wrapper, state } = await render({ clickable: true, selectable: true }, { "cell-amount": ({ row }: { row: Row }) => h("button", { class: "inner" }, row.amount) });
+    const button = wrapper.findAll("tbody tr")[0]!.get("button.inner");
+    await button.trigger("keydown", { key: "Enter" });
+    await button.trigger("keydown", { key: " " });
+    expect(wrapper.emitted("row-click")).toBeUndefined();
+    expect(state.selectedIds.value).toEqual([]);
+  });
+
   it("virtualizes long pages", async () => {
     // jsdom has no layout: give the scroller a viewport of 600 px.
     vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(600);

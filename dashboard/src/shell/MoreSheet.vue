@@ -19,6 +19,7 @@ const emit = defineEmits<{ signOut: [] }>();
 const { t, locale } = useI18n();
 const route = useRoute();
 const ui = useUiStore();
+const version = __APP_VERSION__;
 
 const themes: Array<{ value: ThemeMode; icon: typeof Sun }> = [
   { value: "light", icon: Sun },
@@ -102,6 +103,7 @@ function close(): void {
           <LogOut :size="17" />
           {{ t("shell.user.signOut") }}
         </button>
+        <p data-version class="num pt-1 text-center text-xs text-subtle">{{ t("shell.user.version", { version }) }}</p>
       </section>
     </div>
   </BottomSheet>

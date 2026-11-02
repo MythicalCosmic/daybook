@@ -64,10 +64,15 @@ export interface KanbanMove<Item> {
   /** The card now right above it, and right below (to compute the server's position). */
   before: Item | null;
   after: Item | null;
+  /**
+   * Puts the board back as the page's cards say, for a move the page doesn't make after all (a
+   * dialog cancelled): a refetch that returns the same data wouldn't move the card back.
+   */
+  revert: () => void;
 }
 
 /** Where a card is in `lists`, described for the `move` event. */
-export function describeMove<Item>(lists: Lists<Item>, key: string, from: string, keyOf: (item: Item) => string): KanbanMove<Item> | null {
+export function describeMove<Item>(lists: Lists<Item>, key: string, from: string, keyOf: (item: Item) => string): Omit<KanbanMove<Item>, "revert"> | null {
   const found = findCard(lists, key, keyOf);
   if (!found) return null;
   const list = lists[found.column]!;

@@ -130,6 +130,19 @@ export function isTypingTarget(target: EventTarget | null): boolean {
   return !["checkbox", "radio", "button", "submit", "reset", "range", "color", "file"].includes(type);
 }
 
+const INNER_CONTROLS = "a, button, input, textarea, select, label, [role=checkbox], [role=switch], [role=button], [contenteditable=true]";
+
+/**
+ * A key or click that started on a control inside a row or card (a link, a button, a field, a
+ * checkbox) belongs to that control, not to the row it sits in: Enter on a row's menu button opens
+ * the menu, not the row.
+ */
+export function fromInnerControl(event: Event): boolean {
+  const row = event.currentTarget;
+  const control = event.target instanceof Element ? event.target.closest(INNER_CONTROLS) : null;
+  return !!control && control !== row && row instanceof Node && row.contains(control);
+}
+
 function overlayOpen(): boolean {
   return !!document.querySelector('[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]');
 }

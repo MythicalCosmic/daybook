@@ -8,7 +8,7 @@
 import { AlertOctagon, ArrowRight, Ban, Building2, CircleDot, Clock, HandCoins, Landmark, Plus, Users, Vault, Wallet } from "@lucide/vue";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRoute, useRouter, RouterLink } from "vue-router";
+import { RouterLink } from "vue-router";
 
 import DataTable from "@/components/DataTable.vue";
 import EmptyState from "@/components/EmptyState.vue";
@@ -31,6 +31,7 @@ import { toast } from "@/components/useToast";
 import { percent } from "@/lib/decimal";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
+import { rs, useRouteState } from "@/lib/useRouteState";
 import { useCompanyStore } from "@/stores/company";
 import { useSessionStore } from "@/stores/session";
 
@@ -42,8 +43,6 @@ import type { Movement, PendingHandover } from "../types";
 
 const { t } = useI18n();
 const fmt = useFormat();
-const route = useRoute();
-const router = useRouter();
 const company = useCompanyStore();
 const session = useSessionStore();
 const confirm = useConfirm();
@@ -127,11 +126,19 @@ async function askVoid(row: Movement): Promise<void> {
   toast.success(t("sales.cash.voided"));
 }
 
-// "Record movement" opens from the palette too (?new=movement).
-const dialog = ref(route.query.new === "movement");
-watch(dialog, (value) => {
-  if (!value && route.query.new) void router.replace({ query: { ...route.query, new: undefined } });
-});
+// "Record movement" opens from the palette too (?new=movement), also on this page when it is
+// already open: the link is read whenever it arrives, then taken out of the URL.
+const dialog = ref(false);
+const newParam = useRouteState("new", rs.string(""));
+watch(
+  newParam,
+  (value) => {
+    if (value !== "movement") return;
+    newParam.value = "";
+    if (canManage.value) dialog.value = true;
+  },
+  { immediate: true },
+);
 const pendingForMe = computed(() => (data.value?.in_transit ?? []).filter((row) => row.to.id === me.value));
 const limitUse = (total: string, limit: string | null) => (limit ? percent(total, limit, 0) : null);
 </script>
@@ -304,14 +311,17 @@ const limitUse = (total: string, limit: string | null) => (limit ? percent(total
         <template #cell-amount="{ row }">
           <span :class="['font-semibold tabular-nums', movementSign(row.kind) > 0 ? 'text-success' : 'text-fg']">{{ movementSign(row.kind) > 0 ? "+" : "−" }}<MoneyText :value="row.amount" /></span>
         </template>
+        <!-- Phones: the same status and Void as the table, so a voided movement never reads as done. -->
         <template #card="{ row }">
           <div class="flex items-center gap-3">
             <component :is="MOVEMENT_ICONS[row.kind]" :size="16" class="shrink-0 text-subtle" />
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-semibold text-fg">{{ t(`sales.movement.kind.${row.kind}`) }}<template v-if="row.receiver"> · {{ row.receiver.name }}</template></p>
               <p class="truncate text-xs text-muted">{{ row.created_by.name }} · {{ fmt.instant(row.created_at, "short") }}</p>
+              <StatusPill v-if="row.status !== 'done'" class="mt-1" size="sm" :tone="MOVEMENT_TONES[row.status]" :label="t(`sales.movement.status.${row.status}`)" />
             </div>
-            <span class="text-sm font-semibold tabular-nums text-fg">{{ movementSign(row.kind) > 0 ? "+" : "−" }}<MoneyText :value="row.amount" /></span>
+            <span :class="['text-sm font-semibold tabular-nums', row.status === 'void' ? 'text-subtle line-through' : 'text-fg']">{{ movementSign(row.kind) > 0 ? "+" : "−" }}<MoneyText :value="row.amount" /></span>
+            <IconButton v-if="canManage && row.status !== 'void'" :icon="Ban" :label="t('sales.cash.void')" class="shrink-0" @click.stop="askVoid(row)" />
           </div>
         </template>
       </DataTable>

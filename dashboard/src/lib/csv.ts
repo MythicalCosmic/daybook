@@ -2,6 +2,8 @@
  * Client-side CSV for small tables (chart data, the current page). Big exports go through the
  * server (`useExport`), which also sends the file to Telegram.
  */
+import { toast } from "@/components/useToast";
+import { t } from "@/i18n";
 export interface CsvColumn<Row> {
   key: string;
   label: string;
@@ -44,9 +46,29 @@ export function toCsv<Row>(columns: readonly CsvColumn<Row>[], rows: readonly Ro
   return (options.bom === false ? "" : "﻿") + lines.join("\r\n") + "\r\n";
 }
 
-/** Saves text or a Blob as a file. */
+/** "data:image/png;base64,…" → a Blob, without fetch (the console's CSP `connect-src 'self'` blocks data: URLs). */
+export function dataUrlBlob(url: string): Blob {
+  const comma = url.indexOf(",");
+  const head = url.slice(0, comma);
+  const data = url.slice(comma + 1);
+  const type = /^data:([^;,]+)/.exec(head)?.[1] ?? "application/octet-stream";
+  const bytes = head.endsWith(";base64") ? Uint8Array.from(atob(data), (c) => c.charCodeAt(0)) : new TextEncoder().encode(decodeURIComponent(data));
+  return new Blob([bytes], { type });
+}
+
+/**
+ * Saves text or a Blob as a file. Telegram's webview ignores `<a download>` (and Telegram's own
+ * download prompt only takes an https link), so inside Telegram the phone's share sheet takes the
+ * file (Save to Files, a chat); where there is none (Android's webview) a toast says to use a browser.
+ */
 export function downloadFile(filename: string, content: string | Blob, type = "text/csv;charset=utf-8"): void {
   const blob = typeof content === "string" ? new Blob([content], { type }) : content;
+  if (window.Telegram?.WebApp?.initData) {
+    const file = new File([blob], filename, { type: blob.type || type });
+    if (navigator.canShare?.({ files: [file] })) void navigator.share({ files: [file], title: filename }).catch(() => undefined);
+    else toast.warning(t("common.export.noSaveInTelegram"));
+    return;
+  }
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;

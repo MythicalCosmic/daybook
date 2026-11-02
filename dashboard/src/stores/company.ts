@@ -1,11 +1,13 @@
 /** The company the console is looking at (from the URL), and the branch filter inside it. */
 import { defineStore } from "pinia";
-import { computed, ref, watch } from "vue";
+import { computed, ref, watch, type ComputedRef } from "vue";
 
 import type { Company } from "@/api/types";
 import { hasFeature, type CompanyFeature } from "@/core/features";
 import { hasPerm, type PermRequirement } from "@/core/perms";
+import { todayIn } from "@/lib/dates";
 import { isNumber, readStored, writeStored } from "@/lib/storage";
+import { useNow } from "@/lib/useNow";
 import { useSessionStore } from "@/stores/session";
 
 const DEFAULT_TIMEZONE = "Asia/Tashkent";
@@ -81,4 +83,14 @@ export const useCompanyStore = defineStore("company", () => {
 export function useCompanyId() {
   const company = useCompanyStore();
   return computed(() => company.currentId ?? 0);
+}
+
+/**
+ * Today in the company's timezone ("2026-10-20"). It follows the shared clock (lib/useNow), so a
+ * console left open past midnight moves on to the new day instead of keeping the one it opened on.
+ */
+export function useCompanyToday(): ComputedRef<string> {
+  const company = useCompanyStore();
+  const now = useNow();
+  return computed(() => todayIn(company.timezone, now.value));
 }

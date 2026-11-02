@@ -27,8 +27,8 @@ import TimePicker from "@/components/TimePicker.vue";
 import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import WeekdayPicker from "@/components/WeekdayPicker.vue";
 import { rangeValue } from "@/lib/dateRange";
-import { addDays, todayIn } from "@/lib/dates";
-import { useCompanyStore } from "@/stores/company";
+import { addDays } from "@/lib/dates";
+import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import KitchenSection from "./KitchenSection.vue";
 import KitchenSpecimen from "./KitchenSpecimen.vue";
@@ -37,7 +37,7 @@ import { BRANCHES, PEOPLE, POSITIONS } from "./kitchenData";
 const { t } = useI18n();
 const k = (key: string, params?: Record<string, unknown>) => t(`dev.kitchen.${key}`, params ?? {});
 const company = useCompanyStore();
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 
 const name = ref("Chilonzor-2");
 const search = ref("");

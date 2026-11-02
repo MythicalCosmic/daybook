@@ -252,4 +252,40 @@ describe("FeaturesPanel", () => {
     expect(wrapper.text()).toContain("2 of 8 on");
     expect(wrapper.findAll('[role="switch"]')[1]!.attributes("data-state")).toBe("checked");
   });
+
+  it("saves one switch at a time, so a quick second flip can't be undone by the first answer", async () => {
+    const answers: Array<() => void> = [];
+    const calls = stub({
+      "GET features/": () => json(FEATURES),
+      "PATCH features/": (call) =>
+        new Promise<Response>((resolve) => {
+          const features = (call.body as { features: string[] }).features;
+          answers.push(() => resolve(json({ features, modules: FEATURES.modules.map((m) => ({ ...m, enabled: features.includes(m.key) })) })));
+        }),
+      "GET /owner/me/": () => json(me()),
+    });
+    const app = await testApp("/c/1/settings/features");
+    const { wrapper } = mountWithProviders(FeaturesPanel, { plugins: app.plugins });
+    await flushPromises();
+    await wrapper.findAll('[role="switch"]')[1]!.trigger("click"); // Sales on, still saving
+    await flushPromises();
+    const attendance = () => wrapper.findAll('[role="switch"]')[3]!;
+    expect(attendance().attributes("disabled")).toBeDefined();
+    await attendance().trigger("click");
+    await flushPromises();
+    expect(calls.filter((c) => c.method === "PATCH")).toHaveLength(1);
+    answers[0]!();
+    await flushPromises();
+    expect(attendance().attributes("disabled")).toBeUndefined();
+    expect(wrapper.findAll('[role="switch"]')[1]!.attributes("data-state")).toBe("checked");
+  });
+});
+
+describe("wording", () => {
+  it("describes the Tasks panel in the settings list in every language", () => {
+    for (const dictionary of [en, ru, uz] as Array<Record<string, string>>) {
+      expect(dictionary["settings.panel.tasks.hint"]).toBeTruthy();
+      expect(dictionary["settings.panel.tasks.description"]).toBeTruthy();
+    }
+  });
 });

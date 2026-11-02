@@ -10,9 +10,9 @@ import { useI18n } from "vue-i18n";
 import { itemColor, itemsByDay, type CalendarItem } from "@/components/calendarItems";
 import EmptyState from "@/components/EmptyState.vue";
 import UiButton from "@/components/UiButton.vue";
-import { addDays, todayIn } from "@/lib/dates";
+import { addDays } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 const anchor = defineModel<string>("anchor", { required: true });
 const props = withDefaults(defineProps<{ items: CalendarItem[]; days?: number; canCreate?: boolean; mine?: Set<string> }>(), {
@@ -25,7 +25,7 @@ const emit = defineEmits<{ "item-click": [item: CalendarItem]; create: [] }>();
 const { t } = useI18n();
 const fmt = useFormat();
 const company = useCompanyStore();
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const dayList = computed(() => Array.from({ length: props.days }, (_, i) => addDays(anchor.value, i)));
 const byDay = computed(() => itemsByDay(props.items, dayList.value, company.timezone));
 const blocks = computed(() => dayList.value.map((day) => ({ day, entries: byDay.value.get(day) ?? [] })).filter((block) => block.entries.length));

@@ -426,7 +426,7 @@
   "attendance.widget.onTimeValue": "{p}% on time",
   "attendance.widget.date": "Date",
   "attendance.widget.empty": "No shifts in the last two weeks",
-  "attendance.kpi.notYetHint": "{n} past their start",
+  "attendance.kpi.notYetHint": "{n} past their start | {n} past their start | {n} past their start",
   "attendance.kpi.notYetSoon": "start later today",
   "attendance.kpi.absentHint": "no check-in by now",
   "attendance.record.soFar": "{d} so far",

@@ -1,10 +1,17 @@
 import { describe, expect, it } from "vitest";
 
-import { capitalize, formatCount, formatDelta, formatDuration, formatNumber, formatPercent, formatPhone, hashIndex, initials } from "@/lib/format";
+import { capitalize, formatCount, formatDelta, formatDuration, formatFileSize, formatNumber, formatPercent, formatPhone, hashIndex, initials } from "@/lib/format";
 
 const S = " ";
 
 describe("format", () => {
+  it("writes file sizes in the language's number format and units", () => {
+    expect(formatFileSize(1.5 * 1024 * 1024, "uz")).toBe(`1,5${S}MB`);
+    expect(formatFileSize(1.5 * 1024 * 1024, "ru")).toBe(`1,5${S}МБ`);
+    expect(formatFileSize(1.5 * 1024 * 1024, "en")).toBe(`1.5${S}MB`);
+    expect(formatFileSize(300, "ru")).toBe(`1${S}КБ`);
+  });
+
   it("groups numbers per language", () => {
     expect(formatNumber(1234567, "uz")).toBe(`1${S}234${S}567`);
     expect(formatNumber(1234567, "en")).toBe("1,234,567");
