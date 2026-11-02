@@ -647,7 +647,7 @@ class TestLocks:
         with pytest.raises(ValueError):
             services.lock_debt(debt, source=None)
         with pytest.raises(ValueError):
-            services.lock_debt(debt, source=("payroll.payslip", 1, ""))
+            services.lock_debt(debt, source=("finance.nobody_registered", 1, ""))
 
 
 class TestWriteOff:
