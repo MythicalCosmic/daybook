@@ -149,15 +149,17 @@ def test_salary_shows_only_with_payroll_view(
             for member_id in member_ids
         }
 
-    registry.PERSON_FIELDS.add(
-        registry.PersonFieldsProvider("payroll", "payroll", Perm.PAYROLL_VIEW, None, salary)
-    )
     owner = member.registered(company, "Owner")
     manager = member.registered(company, "Manager")  # no payroll.view
     worker = placed(member, company, branches[0])
 
-    seen_by_owner = owner_api(owner).get(url(company, f"{worker.pk}/")).data
-    seen_by_manager = owner_api(manager).get(url(company, f"{worker.pk}/")).data
+    # The fake stands in for payroll's own provider (apps.payroll registers the key).
+    with registry.PERSON_FIELDS.isolated(empty=True):
+        registry.PERSON_FIELDS.add(
+            registry.PersonFieldsProvider("payroll", "payroll", Perm.PAYROLL_VIEW, None, salary)
+        )
+        seen_by_owner = owner_api(owner).get(url(company, f"{worker.pk}/")).data
+        seen_by_manager = owner_api(manager).get(url(company, f"{worker.pk}/")).data
 
     assert seen_by_owner["fields"]["salary"]["amount"] == "5200000.00"
     assert "salary" not in seen_by_manager["fields"]
