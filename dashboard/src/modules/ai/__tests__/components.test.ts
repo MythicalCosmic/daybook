@@ -221,3 +221,15 @@ describe("agents", () => {
     expect(enable).toMatchObject({ method: "POST", body: { accept_terms: true } });
   });
 });
+
+describe("voice note review on a phone", () => {
+  it("keeps its sticky Create / Discard bar flush with the sheet bottom, over the safe area (nothing scrolls out under it)", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    const source = readFileSync(resolve(process.cwd(), "src/modules/ai/components/DraftDrawerBody.vue"), "utf8");
+    const bar = /<div v-if="draft.status === .ready. && !review.result.value" class="([^"]*)"/.exec(source)?.[1] ?? "";
+    expect(bar).toContain("sticky");
+    expect(bar).toContain("bottom-[calc(-1*var(--safe-bottom))]");
+    expect(bar).toContain("pb-[calc(0.75rem+var(--safe-bottom))]");
+  });
+});
