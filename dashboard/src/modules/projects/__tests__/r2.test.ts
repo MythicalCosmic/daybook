@@ -163,7 +163,7 @@ describe("FilesTab", () => {
     const { wrapper } = mountWithProviders(FilesTab, { props: { project: project() }, plugins: app.plugins });
     await flushPromises();
     await flushPromises();
-    expect(wrapper.text()).toContain("1,5 MB");
+    expect(wrapper.text()).toContain("1,5 МБ");
     wrapper.unmount();
   });
 });

@@ -18,6 +18,7 @@ import TextInput from "@/components/TextInput.vue";
 import UiButton from "@/components/UiButton.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
+import { formatFileSize } from "@/lib/format";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyId } from "@/stores/company";
 
@@ -96,12 +97,7 @@ async function removeLink(link: ProjectLink): Promise<void> {
   void refresh();
 }
 
-// The language's decimal comma ("1,5 MB" in uz/ru).
-function size(bytes: number): string {
-  if (bytes < 1024) return `${fmt.number(bytes)} B`;
-  if (bytes < 1024 * 1024) return `${fmt.number(Math.round(bytes / 1024))} KB`;
-  return `${fmt.number(bytes / 1024 / 1024, 1)} MB`;
-}
+const size = (bytes: number) => formatFileSize(bytes, fmt.lang.value);
 
 const ICONS = { pdf: FileText, xlsx: FileSpreadsheet, csv: FileSpreadsheet, image: Image } as const;
 const host = (url: string) => {

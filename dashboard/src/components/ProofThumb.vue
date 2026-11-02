@@ -88,7 +88,8 @@ function show(): void {
       >{{ label }}</span
     >
   </button>
-  <ImageLightbox v-if="zoomable && gallery.length" v-model:open="open" v-model:index="index" :images="gallery" />
+  <!-- Mounted only while open: the photo wall shows up to 300 thumbnails. -->
+  <ImageLightbox v-if="open && zoomable && gallery.length" v-model:open="open" v-model:index="index" :images="gallery" />
 </template>
 
 <style scoped>
