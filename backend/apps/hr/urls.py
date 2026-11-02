@@ -1,3 +1,20 @@
 """Employee endpoints, mounted at `/api/v1/companies/<int:company_id>/`."""
 
-urlpatterns = []
+from django.urls import path
+
+from apps.hr import api
+
+urlpatterns = [
+    path("hr/profile/", api.MyProfileView.as_view(), name="hr-my-profile"),
+    path(
+        "hr/profile/emergency-contacts/",
+        api.MyContactsView.as_view(),
+        name="hr-my-emergency-contacts",
+    ),
+    path(
+        "hr/profile/emergency-contacts/<int:pk>/",
+        api.MyContactView.as_view(),
+        name="hr-my-emergency-contact",
+    ),
+    path("hr/documents/", api.MyDocumentsView.as_view(), name="hr-my-documents"),
+]

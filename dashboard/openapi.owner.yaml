@@ -5930,6 +5930,783 @@ paths:
                 items:
                   $ref: '#/components/schemas/Holiday'
           description: ''
+  /api/v1/owner/companies/{company_id}/hr/documents/:
+    get:
+      operationId: companies_hr_documents_list
+      description: 'Everyone''s documents in scope; uploads are multipart (`file`:
+        a PDF or a picture).'
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Branch ids (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: current
+        schema:
+          type: boolean
+        description: Only each person's newest per kind.
+      - in: query
+        name: expiring_within
+        schema:
+          type: integer
+        description: Expires within N days.
+      - in: query
+        name: kind
+        schema:
+          type: array
+          items:
+            type: string
+      - in: query
+        name: member
+        schema:
+          type: integer
+      - in: query
+        name: ordering
+        schema:
+          type: string
+          enum:
+          - -created_at
+          - -expires_on
+          - created_at
+          - expires_on
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: state
+        schema:
+          type: string
+          enum:
+          - expired
+          - expiring
+          - no_expiry
+          - valid
+      - in: query
+        name: verified
+        schema:
+          type: boolean
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedHrDocumentList'
+          description: ''
+    post:
+      operationId: companies_hr_documents_create
+      description: 'Everyone''s documents in scope; uploads are multipart (`file`:
+        a PDF or a picture).'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrDocumentWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrDocumentWriteRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrDocumentWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrDocument'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/documents/{id}/:
+    get:
+      operationId: companies_hr_documents_retrieve
+      description: 'Everyone''s documents in scope; uploads are multipart (`file`:
+        a PDF or a picture).'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrDocument'
+          description: ''
+    patch:
+      operationId: companies_hr_documents_partial_update
+      description: 'Everyone''s documents in scope; uploads are multipart (`file`:
+        a PDF or a picture).'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedHrDocumentWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedHrDocumentWriteRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedHrDocumentWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrDocument'
+          description: ''
+    delete:
+      operationId: companies_hr_documents_destroy
+      description: 'Everyone''s documents in scope; uploads are multipart (`file`:
+        a PDF or a picture).'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/hr/documents/{id}/verify/:
+    post:
+      operationId: companies_hr_documents_verify_create
+      description: 'Everyone''s documents in scope; uploads are multipart (`file`:
+        a PDF or a picture).'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrDocument'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/documents/compliance/:
+    get:
+      operationId: companies_hr_documents_compliance_retrieve
+      description: 'Everyone''s documents in scope; uploads are multipart (`file`:
+        a PDF or a picture).'
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Branch ids (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: position
+        schema:
+          type: array
+          items:
+            type: integer
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrCompliance'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/overview/:
+    get:
+      operationId: companies_hr_overview_retrieve
+      description: |-
+        The HR overview page: headcount and its trend, what expires, probations ending,
+        birthdays and work anniversaries of the next days.
+      parameters:
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Branch ids (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrOverview'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/people/{member_id}/emergency-contacts/:
+    get:
+      operationId: companies_hr_people_emergency_contacts_list
+      description: Up to three people to call for someone.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: member_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HrEmergencyContact'
+          description: ''
+    post:
+      operationId: companies_hr_people_emergency_contacts_create
+      description: Up to three people to call for someone.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: member_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrEmergencyContactRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrEmergencyContactRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrEmergencyContactRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrEmergencyContact'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/people/{member_id}/emergency-contacts/{id}/:
+    put:
+      operationId: companies_hr_people_emergency_contacts_update
+      description: Up to three people to call for someone.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: member_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrEmergencyContactRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrEmergencyContactRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrEmergencyContactRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrEmergencyContact'
+          description: ''
+    patch:
+      operationId: companies_hr_people_emergency_contacts_partial_update
+      description: Up to three people to call for someone.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: member_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedHrEmergencyContactRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedHrEmergencyContactRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedHrEmergencyContactRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrEmergencyContact'
+          description: ''
+    delete:
+      operationId: companies_hr_people_emergency_contacts_destroy
+      description: Up to three people to call for someone.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - in: path
+        name: member_id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/hr/people/{member_id}/profile/:
+    get:
+      operationId: companies_hr_people_profile_retrieve
+      description: 'A person''s profile: IDs masked, notes for hr.manage.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: member_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrProfile'
+          description: ''
+    patch:
+      operationId: companies_hr_people_profile_partial_update
+      description: 'A person''s profile: IDs masked, notes for hr.manage.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: member_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedHrProfileUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedHrProfileUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedHrProfileUpdateRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrProfile'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/people/{member_id}/sensitive/:
+    get:
+      operationId: companies_hr_people_sensitive_retrieve
+      description: PINFL, passport, card and tax numbers in full. Every call is audited.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: member_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrSensitive'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/required-documents/:
+    get:
+      operationId: companies_hr_required_documents_list
+      description: Which documents everyone, or everyone in a position, must have.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HrRequiredDocument'
+          description: ''
+    post:
+      operationId: companies_hr_required_documents_create
+      description: Which documents everyone, or everyone in a position, must have.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrRequiredDocumentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrRequiredDocumentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrRequiredDocumentRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrRequiredDocument'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/required-documents/{id}/:
+    put:
+      operationId: companies_hr_required_documents_update
+      description: Which documents everyone, or everyone in a position, must have.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrRequiredDocumentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrRequiredDocumentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrRequiredDocumentRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrRequiredDocument'
+          description: ''
+    patch:
+      operationId: companies_hr_required_documents_partial_update
+      description: Which documents everyone, or everyone in a position, must have.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedHrRequiredDocumentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedHrRequiredDocumentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedHrRequiredDocumentRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrRequiredDocument'
+          description: ''
+    delete:
+      operationId: companies_hr_required_documents_destroy
+      description: Which documents everyone, or everyone in a position, must have.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/hr/settings/:
+    get:
+      operationId: companies_hr_settings_retrieve
+      description: How many days ahead HR is warned, and the celebrations.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrSettings'
+          description: ''
+    patch:
+      operationId: companies_hr_settings_partial_update
+      description: How many days ahead HR is warned, and the celebrations.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedHrSettingsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedHrSettingsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedHrSettingsRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrSettings'
+          description: ''
   /api/v1/owner/companies/{company_id}/inbox/:
     get:
       operationId: companies_inbox_list
@@ -14447,7 +15224,7 @@ components:
         kind:
           type: string
         level:
-          $ref: '#/components/schemas/LevelEnum'
+          $ref: '#/components/schemas/AIActivityItemLevelEnum'
         text:
           type: string
         created_at:
@@ -14472,6 +15249,16 @@ components:
       - level
       - subject
       - text
+    AIActivityItemLevelEnum:
+      enum:
+      - info
+      - success
+      - warning
+      type: string
+      description: |-
+        * `info` - info
+        * `success` - success
+        * `warning` - warning
     AIActivityPage:
       type: object
       properties:
@@ -16331,7 +17118,7 @@ components:
           - $ref: '#/components/schemas/AttendanceBranchRef'
           nullable: true
         state:
-          $ref: '#/components/schemas/StateEnum'
+          $ref: '#/components/schemas/BoardRowStateEnum'
         reason:
           type: string
           nullable: true
@@ -16352,6 +17139,20 @@ components:
       - record
       - shift
       - state
+    BoardRowStateEnum:
+      enum:
+      - in
+      - late
+      - not_yet
+      - absent
+      - 'off'
+      type: string
+      description: |-
+        * `in` - in
+        * `late` - late
+        * `not_yet` - not_yet
+        * `absent` - absent
+        * `off` - off
     Branch:
       type: object
       properties:
@@ -18871,6 +19672,913 @@ components:
       required:
       - id
       - name
+    HrAnniversary:
+      type: object
+      properties:
+        member:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          readOnly: true
+        date:
+          type: string
+          format: date
+        days_until:
+          type: integer
+        years:
+          type: integer
+      required:
+      - date
+      - days_until
+      - member
+      - years
+    HrBirthday:
+      type: object
+      properties:
+        member:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          readOnly: true
+        date:
+          type: string
+          format: date
+        days_until:
+          type: integer
+      required:
+      - date
+      - days_until
+      - member
+    HrBranchRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+      required:
+      - code
+      - id
+      - name
+    HrCheckStateEnum:
+      enum:
+      - ok
+      - unverified
+      - expiring
+      - expired
+      - missing
+      type: string
+      description: |-
+        * `ok` - ok
+        * `unverified` - unverified
+        * `expiring` - expiring
+        * `expired` - expired
+        * `missing` - missing
+    HrCompliance:
+      type: object
+      properties:
+        kinds:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrDocumentKindEnum'
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrComplianceRow'
+        totals:
+          $ref: '#/components/schemas/HrComplianceTotals'
+      required:
+      - kinds
+      - rows
+      - totals
+    HrComplianceItem:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/HrDocumentKindEnum'
+        status:
+          $ref: '#/components/schemas/HrCheckStateEnum'
+        document_id:
+          type: integer
+          nullable: true
+        expires_on:
+          type: string
+          format: date
+          nullable: true
+        level:
+          type: string
+          description: The level asked for; empty for any.
+      required:
+      - document_id
+      - expires_on
+      - kind
+      - level
+      - status
+    HrComplianceRow:
+      type: object
+      properties:
+        member:
+          $ref: '#/components/schemas/HrPersonRef'
+        position:
+          allOf:
+          - $ref: '#/components/schemas/HrNamed'
+          nullable: true
+        home_branch:
+          allOf:
+          - $ref: '#/components/schemas/HrBranchRef'
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrComplianceItem'
+        missing:
+          type: integer
+          description: Required documents missing or expired.
+        complete:
+          type: boolean
+      required:
+      - complete
+      - home_branch
+      - items
+      - member
+      - missing
+      - position
+    HrComplianceTotals:
+      type: object
+      properties:
+        people:
+          type: integer
+        complete:
+          type: integer
+        missing:
+          type: integer
+        expired:
+          type: integer
+        expiring:
+          type: integer
+        unverified:
+          type: integer
+      required:
+      - complete
+      - expired
+      - expiring
+      - missing
+      - people
+      - unverified
+    HrContractCounts:
+      type: object
+      properties:
+        active:
+          type: integer
+        drafts:
+          type: integer
+        ending:
+          type: integer
+          description: Active, ending within the warning days.
+        on_probation:
+          type: integer
+        without_contract:
+          type: integer
+          description: Current people with no active one.
+      required:
+      - active
+      - drafts
+      - ending
+      - on_probation
+      - without_contract
+    HrContractDate:
+      type: object
+      properties:
+        id:
+          type: integer
+        member:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          readOnly: true
+        number:
+          type: string
+        date:
+          type: string
+          format: date
+        days_left:
+          type: integer
+          description: Negative once past.
+      required:
+      - date
+      - days_left
+      - id
+      - member
+      - number
+    HrDocument:
+      type: object
+      description: |-
+        A document row. An ID's number is masked and its file left out without `hr.sensitive`
+        (`file_hidden` says one exists).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        member:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          readOnly: true
+        position:
+          type: string
+          nullable: true
+          readOnly: true
+        home_branch:
+          allOf:
+          - $ref: '#/components/schemas/HrBranchRef'
+          nullable: true
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/HrDocumentKindEnum'
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        number:
+          type: string
+          readOnly: true
+        issued_on:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        expires_on:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        level:
+          allOf:
+          - $ref: '#/components/schemas/HrDocumentLevelEnum'
+          readOnly: true
+        specialty:
+          type: string
+          readOnly: true
+        issuer:
+          type: string
+          readOnly: true
+        file:
+          type: string
+          nullable: true
+          readOnly: true
+          description: Signed download link (audited).
+        has_file:
+          type: boolean
+          readOnly: true
+        file_hidden:
+          type: boolean
+          readOnly: true
+        is_id:
+          type: boolean
+          readOnly: true
+        visible_to_employee:
+          type: boolean
+          readOnly: true
+        uploaded_by:
+          type: string
+          nullable: true
+          readOnly: true
+        verified:
+          type: boolean
+          readOnly: true
+        verified_by:
+          type: string
+          nullable: true
+          readOnly: true
+        verified_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        state:
+          allOf:
+          - $ref: '#/components/schemas/HrDocumentStateEnum'
+          readOnly: true
+        days_left:
+          type: integer
+          nullable: true
+          readOnly: true
+          description: Days until it expires (negative once expired); null without
+            an expiry.
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        can_edit:
+          type: boolean
+          readOnly: true
+      required:
+      - can_edit
+      - created_at
+      - days_left
+      - expires_on
+      - file
+      - file_hidden
+      - has_file
+      - home_branch
+      - id
+      - is_id
+      - issued_on
+      - issuer
+      - kind
+      - level
+      - member
+      - number
+      - position
+      - specialty
+      - state
+      - title
+      - uploaded_by
+      - verified
+      - verified_at
+      - verified_by
+      - visible_to_employee
+    HrDocumentCounts:
+      type: object
+      properties:
+        expired:
+          type: integer
+        expiring:
+          type: integer
+        missing:
+          type: integer
+          description: Required documents nobody uploaded.
+        unverified:
+          type: integer
+      required:
+      - expired
+      - expiring
+      - missing
+      - unverified
+    HrDocumentKindEnum:
+      enum:
+      - passport
+      - id_card
+      - military_id
+      - diploma
+      - pharmacy_diploma
+      - medical_diploma
+      - pharmacist_certificate
+      - qualification_category
+      - state_registration
+      - medical_book
+      - medical_exam
+      - work_book
+      - contract
+      - nda
+      - photo
+      - other
+      type: string
+      description: |-
+        * `passport` - Passport
+        * `id_card` - ID card
+        * `military_id` - Military ID
+        * `diploma` - Diploma
+        * `pharmacy_diploma` - Pharmacy diploma
+        * `medical_diploma` - Medical diploma
+        * `pharmacist_certificate` - Specialist certificate
+        * `qualification_category` - Qualification category
+        * `state_registration` - State registration
+        * `medical_book` - Medical book
+        * `medical_exam` - Medical examination
+        * `work_book` - Work record book
+        * `contract` - Contract
+        * `nda` - Confidentiality agreement
+        * `photo` - Photo
+        * `other` - Other
+    HrDocumentLevelEnum:
+      enum:
+      - higher
+      - college
+      - highest
+      - first
+      - second
+      type: string
+      description: |-
+        * `higher` - Higher
+        * `college` - College
+        * `highest` - Highest category
+        * `first` - First category
+        * `second` - Second category
+    HrDocumentStateEnum:
+      enum:
+      - valid
+      - expiring
+      - expired
+      - no_expiry
+      type: string
+      description: |-
+        * `valid` - valid
+        * `expiring` - expiring
+        * `expired` - expired
+        * `no_expiry` - no_expiry
+    HrDocumentWriteRequest:
+      type: object
+      description: A document's fields; multipart with `file` (a PDF or a picture).
+      properties:
+        member_id:
+          type: integer
+          description: Whose document (on create).
+        kind:
+          $ref: '#/components/schemas/HrDocumentKindEnum'
+        title:
+          type: string
+          maxLength: 150
+        number:
+          type: string
+          maxLength: 40
+        issued_on:
+          type: string
+          format: date
+          nullable: true
+        expires_on:
+          type: string
+          format: date
+          nullable: true
+        level:
+          oneOf:
+          - $ref: '#/components/schemas/HrDocumentLevelEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        specialty:
+          type: string
+          maxLength: 80
+        issuer:
+          type: string
+          maxLength: 150
+        visible_to_employee:
+          type: boolean
+        file:
+          type: string
+          format: binary
+          nullable: true
+    HrEmergencyContact:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        relation:
+          type: string
+          maxLength: 50
+        phone:
+          type: string
+          maxLength: 20
+      required:
+      - id
+      - name
+      - phone
+    HrEmergencyContactRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        relation:
+          type: string
+          maxLength: 50
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 20
+      required:
+      - name
+      - phone
+    HrEmploymentTypeEnum:
+      enum:
+      - full_time
+      - part_time
+      - contractor
+      - intern
+      type: string
+      description: |-
+        * `full_time` - Full time
+        * `part_time` - Part time
+        * `contractor` - Contractor
+        * `intern` - Intern
+    HrExpiringDocument:
+      type: object
+      properties:
+        id:
+          type: integer
+        member:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          readOnly: true
+        kind:
+          $ref: '#/components/schemas/HrDocumentKindEnum'
+        title:
+          type: string
+        expires_on:
+          type: string
+          format: date
+        days_left:
+          type: integer
+          description: Negative once expired.
+      required:
+      - days_left
+      - expires_on
+      - id
+      - kind
+      - member
+      - title
+    HrGenderEnum:
+      enum:
+      - male
+      - female
+      type: string
+      description: |-
+        * `male` - Male
+        * `female` - Female
+    HrHeadcount:
+      type: object
+      properties:
+        current:
+          type: integer
+          description: Working here now (suspended included).
+        active:
+          type: integer
+        suspended:
+          type: integer
+        joined_30d:
+          type: integer
+        left_30d:
+          type: integer
+      required:
+      - active
+      - current
+      - joined_30d
+      - left_30d
+      - suspended
+    HrNamed:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    HrOverview:
+      type: object
+      properties:
+        as_of:
+          type: string
+          format: date
+        headcount:
+          $ref: '#/components/schemas/HrHeadcount'
+        trend:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrTrendPoint'
+        documents:
+          $ref: '#/components/schemas/HrDocumentCounts'
+        expiring_documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrExpiringDocument'
+        contracts:
+          $ref: '#/components/schemas/HrContractCounts'
+        ending_contracts:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrContractDate'
+        probation_endings:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrContractDate'
+        birthdays:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrBirthday'
+        anniversaries:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrAnniversary'
+      required:
+      - anniversaries
+      - as_of
+      - birthdays
+      - contracts
+      - documents
+      - ending_contracts
+      - expiring_documents
+      - headcount
+      - probation_endings
+      - trend
+    HrPayoutMethodEnum:
+      enum:
+      - cash
+      - card
+      - bank
+      type: string
+      description: |-
+        * `cash` - Cash
+        * `card` - Card
+        * `bank` - Bank transfer
+    HrPersonRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        photo_url:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+      - photo_url
+    HrProfile:
+      type: object
+      description: 'A person''s profile as HR sees it: IDs masked, notes only for
+        `hr.manage`.'
+      properties:
+        member:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          readOnly: true
+        first_name:
+          type: string
+          readOnly: true
+        last_name:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/MembershipStatusEnum'
+          readOnly: true
+        position:
+          allOf:
+          - $ref: '#/components/schemas/HrNamed'
+          nullable: true
+          readOnly: true
+        department:
+          allOf:
+          - $ref: '#/components/schemas/HrNamed'
+          nullable: true
+          readOnly: true
+        manager:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          nullable: true
+          readOnly: true
+          description: 'Their head: whom they report to.'
+        home_branch:
+          allOf:
+          - $ref: '#/components/schemas/HrBranchRef'
+          nullable: true
+          readOnly: true
+        employee_number:
+          type: string
+          readOnly: true
+        middle_name:
+          type: string
+          readOnly: true
+        birth_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        show_birthday:
+          type: boolean
+          readOnly: true
+        gender:
+          allOf:
+          - $ref: '#/components/schemas/HrGenderEnum'
+          readOnly: true
+        hire_date:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        employment_type:
+          allOf:
+          - $ref: '#/components/schemas/HrEmploymentTypeEnum'
+          readOnly: true
+        personal_phone:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        address:
+          type: string
+          readOnly: true
+        city:
+          type: string
+          readOnly: true
+        tin:
+          type: string
+          readOnly: true
+        pinfl:
+          type: string
+          readOnly: true
+          description: 'Masked: 10 hidden, the last 4 shown.'
+        passport:
+          type: string
+          readOnly: true
+          description: Masked, e.g. AA•••••67.
+        passport_shared:
+          type: boolean
+          readOnly: true
+          description: Someone else in the company has the same passport number on
+            file.
+        payout_method:
+          allOf:
+          - $ref: '#/components/schemas/HrPayoutMethodEnum'
+          readOnly: true
+        payout_card:
+          type: string
+          readOnly: true
+          description: 'Masked: the last 4 digits.'
+        terminated_on:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        termination_reason:
+          allOf:
+          - $ref: '#/components/schemas/HrTerminationReasonEnum'
+          readOnly: true
+        termination_note:
+          type: string
+          readOnly: true
+        notes:
+          type: string
+          nullable: true
+          readOnly: true
+          description: HR's notes; null without hr.manage.
+        emergency_contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrEmergencyContact'
+          readOnly: true
+        can_edit:
+          type: boolean
+          readOnly: true
+        can_reveal:
+          type: boolean
+          readOnly: true
+      required:
+      - address
+      - birth_date
+      - can_edit
+      - can_reveal
+      - city
+      - department
+      - email
+      - emergency_contacts
+      - employee_number
+      - employment_type
+      - first_name
+      - gender
+      - hire_date
+      - home_branch
+      - last_name
+      - manager
+      - member
+      - middle_name
+      - notes
+      - passport
+      - passport_shared
+      - payout_card
+      - payout_method
+      - personal_phone
+      - pinfl
+      - position
+      - show_birthday
+      - status
+      - terminated_on
+      - termination_note
+      - termination_reason
+      - tin
+    HrRequiredDocument:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        kind:
+          $ref: '#/components/schemas/HrDocumentKindEnum'
+        position:
+          allOf:
+          - $ref: '#/components/schemas/HrNamed'
+          nullable: true
+          readOnly: true
+        level:
+          oneOf:
+          - $ref: '#/components/schemas/HrDocumentLevelEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        alternatives:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrDocumentKindEnum'
+          maxItems: 8
+      required:
+      - id
+      - kind
+      - position
+    HrRequiredDocumentRequest:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/HrDocumentKindEnum'
+        position_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+          description: 'Empty: everyone.'
+        level:
+          oneOf:
+          - $ref: '#/components/schemas/HrDocumentLevelEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        alternatives:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrDocumentKindEnum'
+          maxItems: 8
+      required:
+      - kind
+    HrSensitive:
+      type: object
+      properties:
+        member:
+          $ref: '#/components/schemas/HrPersonRef'
+        pinfl:
+          type: string
+        passport:
+          type: string
+        payout_card:
+          type: string
+        tin:
+          type: string
+      required:
+      - member
+      - passport
+      - payout_card
+      - pinfl
+      - tin
+    HrSettings:
+      type: object
+      properties:
+        document_warn_days:
+          type: integer
+          maximum: 365
+          minimum: 0
+        contract_warn_days:
+          type: integer
+          maximum: 365
+          minimum: 0
+        probation_warn_days:
+          type: integer
+          maximum: 365
+          minimum: 0
+        celebrations_enabled:
+          type: boolean
+        celebrate_anniversaries:
+          type: boolean
+    HrTerminationReasonEnum:
+      enum:
+      - resigned
+      - dismissed
+      - contract_ended
+      - probation_failed
+      - other
+      type: string
+      description: |-
+        * `resigned` - Resigned
+        * `dismissed` - Dismissed
+        * `contract_ended` - Contract ended
+        * `probation_failed` - Probation not passed
+        * `other` - Other
+    HrTrendPoint:
+      type: object
+      properties:
+        month:
+          type: string
+          description: YYYY-MM
+        headcount:
+          type: integer
+        hired:
+          type: integer
+        left:
+          type: integer
+      required:
+      - headcount
+      - hired
+      - left
+      - month
     InboxActionResult:
       type: object
       properties:
@@ -20071,16 +21779,6 @@ components:
         * `uz` - O‘zbekcha
         * `ru` - Русский
         * `en` - English
-    LevelEnum:
-      enum:
-      - info
-      - success
-      - warning
-      type: string
-      description: |-
-        * `info` - info
-        * `success` - success
-        * `warning` - warning
     LockRequest:
       type: object
       properties:
@@ -21516,6 +23214,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/HistoryRecord'
+    PaginatedHrDocumentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrDocument'
     PaginatedInstallmentList:
       type: object
       required:
@@ -22406,6 +24127,167 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+    PatchedHrDocumentWriteRequest:
+      type: object
+      description: A document's fields; multipart with `file` (a PDF or a picture).
+      properties:
+        member_id:
+          type: integer
+          description: Whose document (on create).
+        kind:
+          $ref: '#/components/schemas/HrDocumentKindEnum'
+        title:
+          type: string
+          maxLength: 150
+        number:
+          type: string
+          maxLength: 40
+        issued_on:
+          type: string
+          format: date
+          nullable: true
+        expires_on:
+          type: string
+          format: date
+          nullable: true
+        level:
+          oneOf:
+          - $ref: '#/components/schemas/HrDocumentLevelEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        specialty:
+          type: string
+          maxLength: 80
+        issuer:
+          type: string
+          maxLength: 150
+        visible_to_employee:
+          type: boolean
+        file:
+          type: string
+          format: binary
+          nullable: true
+    PatchedHrEmergencyContactRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        relation:
+          type: string
+          maxLength: 50
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 20
+    PatchedHrProfileUpdateRequest:
+      type: object
+      description: What HR changes. IDs go in as typed (spaces are fine) and come
+        back masked.
+      properties:
+        employee_number:
+          type: string
+          maxLength: 20
+        middle_name:
+          type: string
+          maxLength: 100
+        birth_date:
+          type: string
+          format: date
+          nullable: true
+        show_birthday:
+          type: boolean
+        gender:
+          oneOf:
+          - $ref: '#/components/schemas/HrGenderEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        hire_date:
+          type: string
+          format: date
+          nullable: true
+        employment_type:
+          $ref: '#/components/schemas/HrEmploymentTypeEnum'
+        personal_phone:
+          type: string
+          maxLength: 30
+        email:
+          oneOf:
+          - type: string
+            format: email
+          - type: string
+            maxLength: 0
+        address:
+          type: string
+          maxLength: 255
+        city:
+          type: string
+          maxLength: 100
+        tin:
+          type: string
+          maxLength: 20
+        pinfl:
+          type: string
+          maxLength: 30
+        passport:
+          type: string
+          maxLength: 20
+        payout_method:
+          $ref: '#/components/schemas/HrPayoutMethodEnum'
+        payout_card:
+          type: string
+          maxLength: 30
+        notes:
+          type: string
+          maxLength: 4000
+        terminated_on:
+          type: string
+          format: date
+          nullable: true
+        termination_reason:
+          oneOf:
+          - $ref: '#/components/schemas/HrTerminationReasonEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        termination_note:
+          type: string
+          maxLength: 1000
+    PatchedHrRequiredDocumentRequest:
+      type: object
+      properties:
+        kind:
+          $ref: '#/components/schemas/HrDocumentKindEnum'
+        position_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+          description: 'Empty: everyone.'
+        level:
+          oneOf:
+          - $ref: '#/components/schemas/HrDocumentLevelEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        alternatives:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrDocumentKindEnum'
+          maxItems: 8
+    PatchedHrSettingsRequest:
+      type: object
+      properties:
+        document_warn_days:
+          type: integer
+          maximum: 365
+          minimum: 0
+        contract_warn_days:
+          type: integer
+          maximum: 365
+          minimum: 0
+        probation_warn_days:
+          type: integer
+          maximum: 365
+          minimum: 0
+        celebrations_enabled:
+          type: boolean
+        celebrate_anniversaries:
+          type: boolean
     PatchedJoinLinkPatchRequest:
       type: object
       properties:
@@ -28093,20 +29975,6 @@ components:
       - label
       - type
       - url
-    StateEnum:
-      enum:
-      - in
-      - late
-      - not_yet
-      - absent
-      - 'off'
-      type: string
-      description: |-
-        * `in` - in
-        * `late` - late
-        * `not_yet` - not_yet
-        * `absent` - absent
-        * `off` - off
     StreamItem:
       type: object
       properties:

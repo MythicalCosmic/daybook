@@ -481,6 +481,82 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/hr/documents/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description My documents (those HR shows me), and uploading one: a renewed medical book, a new
+         *     certificate. HR checks it afterwards.
+         */
+        get: operations["v1_companies_hr_documents_list"];
+        put?: never;
+        /**
+         * @description My documents (those HR shows me), and uploading one: a renewed medical book, a new
+         *     certificate. HR checks it afterwards.
+         */
+        post: operations["v1_companies_hr_documents_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/hr/profile/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description My details, IDs and card masked back. */
+        get: operations["v1_companies_hr_profile_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description My details, IDs and card masked back. */
+        patch: operations["v1_companies_hr_profile_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/hr/profile/emergency-contacts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Whom to call when something happens to me (three at most). */
+        get: operations["v1_companies_hr_profile_emergency_contacts_list"];
+        put?: never;
+        /** @description Whom to call when something happens to me (three at most). */
+        post: operations["v1_companies_hr_profile_emergency_contacts_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/hr/profile/emergency-contacts/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["v1_companies_hr_profile_emergency_contacts_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["v1_companies_hr_profile_emergency_contacts_partial_update"];
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/inbox/": {
         parameters: {
             query?: never;
@@ -2292,6 +2368,122 @@ export interface components {
             readonly date: string;
             readonly name: string;
         };
+        /**
+         * @description * `passport` - Passport
+         *     * `id_card` - ID card
+         *     * `military_id` - Military ID
+         *     * `diploma` - Diploma
+         *     * `pharmacy_diploma` - Pharmacy diploma
+         *     * `medical_diploma` - Medical diploma
+         *     * `pharmacist_certificate` - Specialist certificate
+         *     * `qualification_category` - Qualification category
+         *     * `state_registration` - State registration
+         *     * `medical_book` - Medical book
+         *     * `medical_exam` - Medical examination
+         *     * `work_book` - Work record book
+         *     * `contract` - Contract
+         *     * `nda` - Confidentiality agreement
+         *     * `photo` - Photo
+         *     * `other` - Other
+         * @enum {string}
+         */
+        HrDocumentKindEnum: "passport" | "id_card" | "military_id" | "diploma" | "pharmacy_diploma" | "medical_diploma" | "pharmacist_certificate" | "qualification_category" | "state_registration" | "medical_book" | "medical_exam" | "work_book" | "contract" | "nda" | "photo" | "other";
+        /**
+         * @description * `higher` - Higher
+         *     * `college` - College
+         *     * `highest` - Highest category
+         *     * `first` - First category
+         *     * `second` - Second category
+         * @enum {string}
+         */
+        HrDocumentLevelEnum: "higher" | "college" | "highest" | "first" | "second";
+        /**
+         * @description * `valid` - valid
+         *     * `expiring` - expiring
+         *     * `expired` - expired
+         *     * `no_expiry` - no_expiry
+         * @enum {string}
+         */
+        HrDocumentStateEnum: "valid" | "expiring" | "expired" | "no_expiry";
+        HrEmergencyContact: {
+            readonly id: number;
+            name: string;
+            relation?: string;
+            phone: string;
+        };
+        HrEmergencyContactRequest: {
+            name: string;
+            relation?: string;
+            phone: string;
+        };
+        /**
+         * @description * `full_time` - Full time
+         *     * `part_time` - Part time
+         *     * `contractor` - Contractor
+         *     * `intern` - Intern
+         * @enum {string}
+         */
+        HrEmploymentTypeEnum: "full_time" | "part_time" | "contractor" | "intern";
+        HrMyDocument: {
+            readonly id: number;
+            readonly kind: components["schemas"]["HrDocumentKindEnum"];
+            readonly title: string;
+            readonly number: string;
+            /** Format: date */
+            readonly issued_on: string | null;
+            /** Format: date */
+            readonly expires_on: string | null;
+            readonly level: components["schemas"]["HrDocumentLevelEnum"];
+            /** @description Signed download link. */
+            readonly file: string | null;
+            readonly verified: boolean;
+            readonly state: components["schemas"]["HrDocumentStateEnum"];
+            readonly days_left: number | null;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        HrMyDocumentWriteRequest: {
+            kind: components["schemas"]["HrDocumentKindEnum"];
+            title?: string;
+            number?: string;
+            /** Format: date */
+            issued_on?: string | null;
+            /** Format: date */
+            expires_on?: string | null;
+            /** Format: binary */
+            file: string;
+        };
+        /** @description Someone's own profile: their IDs and card masked back. */
+        HrMyProfile: {
+            readonly first_name: string;
+            readonly last_name: string;
+            readonly middle_name: string;
+            readonly position: string | null;
+            readonly department: string | null;
+            /** Format: date */
+            readonly birth_date: string | null;
+            readonly show_birthday: boolean;
+            /** Format: date */
+            readonly hire_date: string | null;
+            readonly employment_type: components["schemas"]["HrEmploymentTypeEnum"];
+            readonly personal_phone: string;
+            /** Format: email */
+            readonly email: string;
+            readonly address: string;
+            readonly city: string;
+            readonly pinfl: string;
+            readonly passport: string;
+            readonly payout_method: components["schemas"]["HrPayoutMethodEnum"];
+            readonly payout_card: string;
+            readonly emergency_contacts: components["schemas"]["HrEmergencyContact"][];
+        };
+        /**
+         * @description * `cash` - Cash
+         *     * `card` - Card
+         *     * `bank` - Bank transfer
+         * @enum {string}
+         */
+        HrPayoutMethodEnum: "cash" | "card" | "bank";
         InboxPerson: {
             id: number;
             name: string;
@@ -2846,6 +3038,19 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Task"][];
+        };
+        PatchedHrEmergencyContactRequest: {
+            name?: string;
+            relation?: string;
+            phone?: string;
+        };
+        PatchedHrMyProfileUpdateRequest: {
+            personal_phone?: string;
+            email?: string;
+            address?: string;
+            city?: string;
+            show_birthday?: boolean;
+            payout_card?: string;
         };
         PatchedMeRequest: {
             language?: components["schemas"]["LanguageEnum"];
@@ -4580,6 +4785,199 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Holiday"][];
+                };
+            };
+        };
+    };
+    v1_companies_hr_documents_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrMyDocument"][];
+                };
+            };
+        };
+    };
+    v1_companies_hr_documents_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["HrMyDocumentWriteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["HrMyDocumentWriteRequest"];
+                "application/json": components["schemas"]["HrMyDocumentWriteRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrMyDocument"];
+                };
+            };
+        };
+    };
+    v1_companies_hr_profile_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrMyProfile"];
+                };
+            };
+        };
+    };
+    v1_companies_hr_profile_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedHrMyProfileUpdateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedHrMyProfileUpdateRequest"];
+                "multipart/form-data": components["schemas"]["PatchedHrMyProfileUpdateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrMyProfile"];
+                };
+            };
+        };
+    };
+    v1_companies_hr_profile_emergency_contacts_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrEmergencyContact"][];
+                };
+            };
+        };
+    };
+    v1_companies_hr_profile_emergency_contacts_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HrEmergencyContactRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["HrEmergencyContactRequest"];
+                "multipart/form-data": components["schemas"]["HrEmergencyContactRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrEmergencyContact"];
+                };
+            };
+        };
+    };
+    v1_companies_hr_profile_emergency_contacts_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_companies_hr_profile_emergency_contacts_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedHrEmergencyContactRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedHrEmergencyContactRequest"];
+                "multipart/form-data": components["schemas"]["PatchedHrEmergencyContactRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrEmergencyContact"];
                 };
             };
         };
