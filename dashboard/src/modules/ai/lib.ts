@@ -377,7 +377,12 @@ export function budgetShare(budget: { monthly_usd: string; spent_usd: string } |
 // moves it) ---------------------------------------------------------------------------------------
 
 export type BuddyMood = "on" | "busy";
-export type BuddyAction = "idle" | "blink" | "look" | "hop" | "wave" | "dance" | "hearts" | "love" | "sparkle" | "type" | "touch" | "tap" | "listen" | "ring" | "cheer";
+export type BuddyAction =
+  | "idle" | "blink" | "look" | "hop" | "wave" | "dance" | "hearts" | "love" | "sparkle" | "type" | "touch" | "tap" | "listen" | "ring" | "cheer"
+  // more faces
+  | "wink" | "star" | "wide" | "shy" | "dizzy" | "think" | "sweat" | "bye"
+  // little dances
+  | "twist" | "disco" | "spin" | "bounce" | "jumpjack";
 /** The family: Claude itself, and one chibi per agent, each with its colours and its prop. */
 export type BuddyVariant = "claude" | "voice" | "morning" | "deadline" | "photo";
 
@@ -390,9 +395,12 @@ export function buddyVariant(agentKey: string): BuddyVariant {
 
 /** What it does in place, by mood: while an agent runs it mostly types and sparkles. */
 const BUDDY_POOLS: Record<BuddyMood, readonly BuddyAction[]> = {
-  on: ["blink", "blink", "look", "hop", "wave", "dance", "hearts", "love", "sparkle"],
-  busy: ["type", "type", "type", "sparkle", "sparkle", "blink", "hop", "hearts"],
+  on: ["blink", "blink", "look", "wink", "star", "think", "hop", "wave", "dance", "twist", "disco", "spin", "bounce", "jumpjack", "hearts", "love", "sparkle"],
+  busy: ["type", "type", "type", "sparkle", "sparkle", "blink", "think", "hop", "hearts"],
 };
+
+/** Its little dances, for a cheer or a moment of joy. */
+export const BUDDY_DANCES = ["dance", "twist", "disco", "spin", "bounce", "jumpjack"] as const satisfies readonly BuddyAction[];
 
 export const BUDDY_DURATION: Record<BuddyAction, number> = {
   idle: 0,
@@ -410,9 +418,22 @@ export const BUDDY_DURATION: Record<BuddyAction, number> = {
   listen: 2400,
   ring: 1800,
   cheer: 1600,
+  wink: 900,
+  star: 1500,
+  wide: 900,
+  shy: 1400,
+  dizzy: 2200,
+  think: 2000,
+  sweat: 1600,
+  bye: 1500,
+  twist: 1600,
+  disco: 1800,
+  spin: 1300,
+  bounce: 1300,
+  jumpjack: 1600,
 };
 
-export type BuddyParticle = "heart" | "spark" | "z" | "wave" | "alert";
+export type BuddyParticle = "heart" | "spark" | "z" | "wave" | "alert" | "note" | "drop" | "dots" | "star";
 
 export const BUDDY_PARTICLES: Partial<Record<BuddyAction, { kind: BuddyParticle; count: number }>> = {
   hearts: { kind: "heart", count: 3 },
@@ -424,6 +445,18 @@ export const BUDDY_PARTICLES: Partial<Record<BuddyAction, { kind: BuddyParticle;
   listen: { kind: "wave", count: 3 },
   ring: { kind: "alert", count: 2 },
   cheer: { kind: "heart", count: 4 },
+  wink: { kind: "spark", count: 1 },
+  star: { kind: "star", count: 3 },
+  wide: { kind: "alert", count: 1 },
+  shy: { kind: "heart", count: 1 },
+  dizzy: { kind: "star", count: 3 },
+  think: { kind: "dots", count: 1 },
+  sweat: { kind: "drop", count: 1 },
+  bye: { kind: "heart", count: 2 },
+  twist: { kind: "note", count: 2 },
+  disco: { kind: "note", count: 3 },
+  spin: { kind: "spark", count: 2 },
+  jumpjack: { kind: "heart", count: 2 },
 };
 
 /** The next thing it does in place; `random` in [0, 1) picks from the mood's pool. */
@@ -528,5 +561,47 @@ export function draftCues(seen: ReadonlyMap<number, DraftStatus> | null, drafts:
   if (!seen) return { seen: now, listen, done: false };
   const done = drafts.some((draft) => (draft.status === "ready" || draft.status === "applied") && seen.get(draft.id) !== draft.status && (!seen.has(draft.id) || WORKING.includes(seen.get(draft.id)!)));
   return { seen: now, listen, done };
+}
+
+// Claude's helper on every page (components/BuddyCompanion.vue) -------------------------------------
+
+/** No pointer, key or scroll for this long: it dozes off until someone is back. */
+export const BUDDY_IDLE_SLEEP_MS = 90_000;
+/** This many taps within BUDDY_DIZZY_WINDOW_MS make it dizzy. */
+export const BUDDY_DIZZY_TAPS = 5;
+export const BUDDY_DIZZY_WINDOW_MS = 4000;
+/** A press this long says goodbye (it hides until switched on again). */
+export const BUDDY_HOLD_MS = 650;
+
+const COMPANION_POOL: readonly BuddyAction[] = [
+  "blink", "blink", "look", "look", "wink", "star", "think", "shy", "hearts", "love", "hop", "wave",
+  "dance", "twist", "disco", "spin", "bounce", "jumpjack", "sparkle",
+];
+
+export type CompanionPlan = { kind: "act"; action: BuddyAction } | { kind: "stroll" } | { kind: "moonwalk" } | { kind: "visit"; card: number };
+
+/** What it does next on a page: climb one of the `cards` it can see, stroll or moonwalk along the
+ * floor, or act in place. */
+export function planCompanion(cards: number, random: () => number): CompanionPlan {
+  const roll = random();
+  if (cards > 0 && roll < 0.22) return { kind: "visit", card: Math.min(cards - 1, Math.floor(random() * cards)) };
+  if (roll < 0.4) return { kind: "stroll" };
+  if (roll < 0.47) return { kind: "moonwalk" };
+  return { kind: "act", action: COMPANION_POOL[Math.min(COMPANION_POOL.length - 1, Math.floor(random() * COMPANION_POOL.length))]! };
+}
+
+/** Where its top is when it stands on the floor: on the phone's tab bar (its top edge), else just
+ * above the bottom of the window. */
+export function floorY(viewportHeight: number, tabBarTop: number | null, size: number): number {
+  return Math.round((tabBarTop ?? viewportHeight - 10) - buddyBox(size).feet);
+}
+
+/** A step away from the pointer, along the floor between `min` and `max` (the other side when
+ * there is no room). */
+export function shyStep(x: number, pointerX: number, min: number, max: number, distance = 140): number {
+  const away = pointerX <= x ? x + distance : x - distance;
+  const back = pointerX <= x ? x - distance : x + distance;
+  const target = away >= min && away <= max ? away : back;
+  return Math.round(Math.min(max, Math.max(min, target)));
 }
 

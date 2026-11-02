@@ -7,16 +7,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { pulse } from "@/core/pulse";
 import { mergeModuleMessages } from "@/i18n";
+import { toast } from "@/components/useToast";
 import { json } from "@/test/fixtures";
 import { mountWithProviders, testApp } from "@/test/plugins";
 
 import AgentChibi from "../components/AgentChibi.vue";
 import AiBuddy from "../components/AiBuddy.vue";
 import AiBuddyStage from "../components/AiBuddyStage.vue";
+import BuddyCompanion from "../components/BuddyCompanion.vue";
+import { buddyEverywhere } from "../components/buddyPrefs";
 import { buddyCue, buddyGreeting, cue, greet } from "../components/buddyBus";
 import { useBuddyCues } from "../components/buddyCues";
 import en from "../i18n/en.json";
-import { activityReactions, buddyBox, buddyVariant, buddyWalkMs, draftCues, pickBuddyAction, pickChibiAction, planBuddy, pulseCues, standPoint } from "../lib";
+import { activityReactions, type BuddyAction, BUDDY_DANCES, BUDDY_DURATION, buddyBox, buddyVariant, buddyWalkMs, draftCues, floorY, pickBuddyAction, pickChibiAction, planBuddy, planCompanion, pulseCues, shyStep, standPoint } from "../lib";
 
 /** What the app sets on <html> from the system's "reduce motion" (app/theme.ts). */
 function reducedMotion(on: boolean): void {
@@ -362,5 +365,180 @@ describe("the page's live data", () => {
     pulse.value = { counters: { "tasks.late_now": 2 }, versions: { "tasks.tasks": "b" } };
     await vi.advanceTimersByTimeAsync(100);
     expect(buddyCue.value).toMatchObject({ key: "", action: "cheer" });
+  });
+});
+
+describe("Claude on every page: the choices", () => {
+  it("climbs a card it can see, strolls, moonwalks, or acts in place", () => {
+    const rolls = (...values: number[]) => () => values.shift() ?? 0;
+    expect(planCompanion(4, rolls(0.1, 0.6))).toEqual({ kind: "visit", card: 2 });
+    expect(planCompanion(0, rolls(0.1))).toEqual({ kind: "stroll" });
+    expect(planCompanion(4, rolls(0.3))).toEqual({ kind: "stroll" });
+    expect(planCompanion(4, rolls(0.45))).toEqual({ kind: "moonwalk" });
+    expect(planCompanion(4, rolls(0.9, 0))).toEqual({ kind: "act", action: "blink" });
+    for (const dance of BUDDY_DANCES) expect(BUDDY_DURATION[dance]).toBeGreaterThan(0);
+  });
+
+  it("stands on the phone's tab bar, else just above the bottom of the window", () => {
+    const { feet } = buddyBox(52);
+    expect(floorY(844, 760, 52)).toBe(760 - feet);
+    expect(floorY(900, null, 60)).toBe(890 - buddyBox(60).feet);
+  });
+
+  it("steps away from the pointer, and the other way when there is no room", () => {
+    expect(shyStep(400, 380, 0, 1000)).toBe(540);
+    expect(shyStep(400, 420, 0, 1000)).toBe(260);
+    expect(shyStep(950, 900, 0, 1000)).toBe(810); // no room on the right: it goes left
+    expect(shyStep(50, 60, 0, 1000)).toBe(190);
+  });
+});
+
+describe("more faces and little dances", () => {
+  async function draw(action: BuddyAction) {
+    const app = await testApp("/c/1/ai");
+    const wrapper = mount(AiBuddy, { props: { mood: "on" }, global: { plugins: app.plugins }, attachTo: document.body });
+    await wrapper.setProps({ action, beat: 1 });
+    return wrapper;
+  }
+
+  it.each<[BuddyAction, string]>([
+    ["wink", "wink"],
+    ["star", "star"],
+    ["wide", "wide"],
+    ["sweat", "wide"],
+    ["shy", "shy"],
+    ["dizzy", "dizzy"],
+    ["think", "think"],
+    ["disco", "happy"],
+    ["spin", "happy"],
+    ["bye", "happy"],
+  ])("%s shows its %s face", async (action, face) => {
+    const wrapper = await draw(action);
+    expect(wrapper.find(`[data-eyes="${face}"]`).exists()).toBe(true);
+  });
+
+  it("lets out music notes dancing, a sweat drop, thinking dots and stars", async () => {
+    vi.useFakeTimers();
+    expect((await draw("disco")).findAll('[data-kind="note"]')).toHaveLength(3);
+    expect((await draw("sweat")).findAll('[data-kind="drop"]')).toHaveLength(1);
+    expect((await draw("think")).findAll('[data-kind="dots"]')).toHaveLength(1);
+    expect((await draw("dizzy")).findAll('[data-kind="star"]')).toHaveLength(3);
+  });
+});
+
+describe("Claude on every page", () => {
+  function box(left: number, top: number, width: number, height: number): DOMRect {
+    return { left, top, width, height, right: left + width, bottom: top + height, x: left, y: top, toJSON: () => ({}) } as DOMRect;
+  }
+
+  async function page(path = "/c/1/tasks") {
+    vi.useFakeTimers();
+    vi.spyOn(Math, "random").mockReturnValue(0.99); // in place, never off on a walk by itself
+    vi.stubGlobal("fetch", vi.fn(async () => json({ enabled: true, can_configure: true, claude: "connected", speech: "ready", features: {}, budget: null })));
+    const main = document.createElement("main");
+    main.innerHTML = '<section class="rounded-card">A card</section>';
+    document.body.append(main);
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
+      if (this.tagName === "MAIN") return box(248, 0, 1000, 900);
+      if (this.classList.contains("rounded-card")) return box(300, 300, 600, 200);
+      return box(0, 0, 0, 0);
+    });
+    buddyEverywhere.value = true;
+    const app = await testApp(path);
+    app.router.addRoute({ path: "/c/:cid/ai", name: "ai.agents", component: { render: () => null } });
+    const { wrapper } = mountWithProviders(BuddyCompanion, { plugins: app.plugins });
+    await vi.advanceTimersByTimeAsync(50);
+    await flushPromises();
+    return { wrapper, app, buddy: () => wrapper.find('[data-testid="ai-buddy"]') };
+  }
+
+  it("walks onto the page from the left while AI is on, and stays away when switched off", async () => {
+    const { wrapper, buddy } = await page();
+    const walker = () => wrapper.find('[data-testid="ai-buddy-walker"]');
+    expect(walker().exists()).toBe(true);
+    expect(buddy().attributes("data-walking")).toBeDefined();
+    await vi.advanceTimersByTimeAsync(3300);
+    expect(buddy().attributes("data-walking")).toBeUndefined();
+    buddyEverywhere.value = false;
+    await flushPromises();
+    expect(wrapper.find('[data-testid="ai-buddy-companion"]').exists()).toBe(false);
+  });
+
+  it("leaves the Agents page to the strip's own helper, and comes along to the next page", async () => {
+    const { wrapper, app } = await page();
+    await app.router.push("/c/1/ai");
+    await flushPromises();
+    expect(wrapper.find('[data-testid="ai-buddy-companion"]').exists()).toBe(false);
+    await app.router.push("/c/1/people");
+    await flushPromises();
+    await vi.advanceTimersByTimeAsync(40);
+    const style = wrapper.find('[data-testid="ai-buddy-walker"]').attributes("style") ?? "";
+    expect(style).toContain("transition: transform"); // walking in from the left edge
+  });
+
+  it("gets dizzy from five quick taps", async () => {
+    const { buddy } = await page();
+    await vi.advanceTimersByTimeAsync(3300);
+    for (let index = 0; index < 5; index += 1) await buddy().trigger("click");
+    expect(buddy().attributes("data-action")).toBe("dizzy");
+  });
+
+  it("waves goodbye and hides on a long press, and the toast brings it back", async () => {
+    const info = vi.spyOn(toast, "info");
+    const { wrapper } = await page();
+    await vi.advanceTimersByTimeAsync(3300);
+    await wrapper.find('[data-testid="ai-buddy-walker"]').trigger("pointerdown");
+    await vi.advanceTimersByTimeAsync(700);
+    expect(wrapper.find('[data-testid="ai-buddy"]').attributes("data-action")).toBe("bye");
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(buddyEverywhere.value).toBe(false);
+    const options = info.mock.calls.at(-1)?.[1] as { action: { onClick: () => void } };
+    options.action.onClick();
+    expect(buddyEverywhere.value).toBe(true);
+  });
+
+  it("dozes off when nobody is around and wakes up surprised", async () => {
+    const { buddy } = await page();
+    await vi.advanceTimersByTimeAsync(100_000);
+    expect(buddy().attributes("data-asleep")).toBeDefined();
+    window.dispatchEvent(new Event("keydown"));
+    await flushPromises();
+    expect(buddy().attributes("data-action")).toBe("wide");
+  });
+
+  it("cheers and dances for a finished task, sweats over a late one", async () => {
+    const { buddy } = await page();
+    await vi.advanceTimersByTimeAsync(3300);
+    cue("", "cheer");
+    await flushPromises();
+    expect(buddy().attributes("data-action")).toBe("cheer");
+    await vi.advanceTimersByTimeAsync(BUDDY_DURATION.cheer + 150);
+    expect(BUDDY_DANCES).toContain(buddy().attributes("data-action"));
+    await vi.advanceTimersByTimeAsync(2000);
+    cue("deadline_watcher", "ring");
+    await flushPromises();
+    expect(buddy().attributes("data-action")).toBe("sweat");
+  });
+
+  it("lets taps through while it walks or stands on a card, and takes them on the floor", async () => {
+    const { wrapper } = await page();
+    const walker = () => wrapper.find('[data-testid="ai-buddy-walker"]');
+    await vi.advanceTimersByTimeAsync(3300);
+    expect(walker().classes()).toContain("pointer-events-auto");
+    const companion = wrapper.findComponent(BuddyCompanion).vm as unknown as { visit(card: HTMLElement): Promise<void> };
+    void companion.visit(document.querySelector("main .rounded-card") as HTMLElement);
+    await vi.advanceTimersByTimeAsync(50);
+    expect(walker().classes()).toContain("pointer-events-none");
+    await vi.advanceTimersByTimeAsync(3300);
+    expect(walker().classes()).toContain("pointer-events-none"); // up on the card
+    expect((document.querySelector("main .rounded-card") as HTMLElement).dataset.buddyPoke).toBeDefined();
+  });
+
+  it("stays still with reduced motion, whatever the time", async () => {
+    reducedMotion(true);
+    const { wrapper, buddy } = await page();
+    await vi.advanceTimersByTimeAsync(20_000);
+    expect(buddy().attributes("data-action")).toBe("idle");
+    expect(wrapper.find('[data-testid="ai-buddy-walker"]').attributes("style")).toContain("transition: none");
   });
 });

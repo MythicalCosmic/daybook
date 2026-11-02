@@ -6,7 +6,9 @@
  * - a task finished (the tasks changed and today's done count went up): everyone cheers;
  * - agent activity as it arrives (a late task told to someone: the clock rings and Claude goes to
  *   see; a checked photo; a morning plan sent).
- * Nothing reacts to what happened before the page opened. Only while `enabled` (AI on).
+ * Nothing reacts to what happened before the page opened. Only while `enabled` (AI on). Away from
+ * the Agents page (the helper on every page) only the pulse is listened to: `drafts` and
+ * `activity` false fetch nothing more.
  */
 import { useQuery } from "@tanstack/vue-query";
 import { computed, onScopeDispose, toValue, watch, type MaybeRefOrGetter } from "vue";
@@ -21,7 +23,7 @@ import { cue } from "./buddyBus";
 
 export const BUDDY_DRAFTS_POLL_MS = 5000;
 
-export function useBuddyCues(enabled: MaybeRefOrGetter<boolean>): void {
+export function useBuddyCues(enabled: MaybeRefOrGetter<boolean>, options: { drafts?: boolean; activity?: boolean } = {}): void {
   const cid = useCompanyId();
   const on = computed(() => toValue(enabled) && cid.value > 0);
 
@@ -29,7 +31,7 @@ export function useBuddyCues(enabled: MaybeRefOrGetter<boolean>): void {
   const drafts = useQuery({
     queryKey: computed(() => [...aiKeys.drafts(cid.value, { page_size: 8 }), "buddy"]),
     queryFn: ({ signal }) => aiApi.drafts(cid.value, { page_size: 8 }, signal),
-    enabled: on,
+    enabled: computed(() => on.value && options.drafts !== false),
     refetchInterval: BUDDY_DRAFTS_POLL_MS,
   });
   let seen: Map<number, DraftStatus> | null = null;
@@ -73,6 +75,7 @@ export function useBuddyCues(enabled: MaybeRefOrGetter<boolean>): void {
   );
 
   // Agent activity as it arrives.
+  if (options.activity === false) return;
   const feed = useActivityFeed(() => null, { limit: 10, live: on });
   watch(feed.fresh, (ids) => {
     if (!toValue(on) || !ids.length) return;

@@ -4,7 +4,8 @@
  * (orange) and one chibi per agent: voice tasks (violet, headphones and a mic), morning plan
  * (yellow, a rising sun on its head), deadline watcher (red, an alarm clock on its head) and photo
  * checker (teal, round glasses). Expressions: open eyes, a blink, a look around, ^ ^ when happy,
- * heart eyes, closed eyes asleep. Moves: breathing, hop, wave, dance, typing, a poke, walking,
+ * heart eyes, closed eyes asleep, a wink, star eyes, wide-eyed surprise, shy eyes down, dizzy X
+ * eyes, eyes up thinking. Little dances: wiggle, twist, disco arms, spin, bounce, jumping jacks. Moves: breathing, hop, wave, dance, typing, a poke, walking,
  * sitting, listening (sound waves), ringing (the prop shakes, red "!"), cheering (arms up); it lets
  * out hearts, sparkles, or a z now and then while asleep. AiBuddyStage.vue and
  * AgentChibi.vue decide what it does; this only draws it. Hearts, sparkles and z's are drawn
@@ -60,7 +61,22 @@ const eyes = computed(() => {
     case "tap":
     case "listen":
     case "cheer":
+    case "bye":
+    case "twist":
+    case "disco":
+    case "spin":
+    case "bounce":
+    case "jumpjack":
       return "happy";
+    case "wink":
+    case "star":
+    case "shy":
+    case "dizzy":
+    case "think":
+      return props.action;
+    case "wide":
+    case "sweat":
+      return "wide";
     case "love":
       return "love";
     case "look":
@@ -70,13 +86,14 @@ const eyes = computed(() => {
   }
 });
 const eyeShift = computed(() => (eyes.value === "left" ? -2 : eyes.value === "right" ? 2 : 0));
-const blush = computed(() => eyes.value === "happy" || eyes.value === "love");
+const blush = computed(() => ["happy", "love", "wink", "shy"].includes(eyes.value));
 const height = computed(() => Math.round((props.size * 34) / 36));
 
 function spawn(kind: Particle["kind"], count: number): void {
   if (reduced) return;
   for (let index = 0; index < count; index += 1) {
-    const particle = { id: (nextId += 1), kind, x: kind === "z" ? 10 + index * 6 : Math.round((Math.random() - 0.5) * 56), delay: index * 140 };
+    const x = kind === "z" ? 10 + index * 6 : kind === "dots" ? 0 : kind === "drop" ? 18 : Math.round((Math.random() - 0.5) * 56);
+    const particle = { id: (nextId += 1), kind, x, delay: index * 140 };
     particles.value = [...particles.value, particle];
     later(() => (particles.value = particles.value.filter((item) => item.id !== particle.id)), 1700 + particle.delay);
   }
@@ -162,6 +179,44 @@ onBeforeUnmount(() => {
             <rect :x="left + 3" y="9" width="1" height="1" />
             <rect :x="left + 4" y="10" width="1" height="1" />
           </template>
+        </g>
+        <g v-else-if="eyes === 'wink'" class="buddy-eyes" data-eyes="wink">
+          <rect x="11" y="7" width="3" height="5" />
+          <rect x="21" y="10" width="5" height="1" />
+        </g>
+        <g v-else-if="eyes === 'star'" class="buddy-star-eyes" data-eyes="star">
+          <template v-for="middle in [12, 23]" :key="middle">
+            <rect :x="middle" y="6" width="1" height="7" />
+            <rect :x="middle - 2" y="9" width="5" height="1" />
+            <rect :x="middle - 1" y="8" width="3" height="3" />
+          </template>
+        </g>
+        <g v-else-if="eyes === 'wide'" class="buddy-eyes" data-eyes="wide">
+          <rect x="10" y="6" width="5" height="6" />
+          <rect x="21" y="6" width="5" height="6" />
+          <rect class="buddy-glint" x="11" y="7" width="1" height="1" />
+          <rect class="buddy-glint" x="22" y="7" width="1" height="1" />
+        </g>
+        <g v-else-if="eyes === 'shy'" class="buddy-eyes" data-eyes="shy">
+          <rect x="11" y="10" width="3" height="2" />
+          <rect x="22" y="10" width="3" height="2" />
+        </g>
+        <g v-else-if="eyes === 'dizzy'" class="buddy-eyes" data-eyes="dizzy">
+          <template v-for="left in [10, 21]" :key="left">
+            <rect :x="left" y="7" width="1" height="1" />
+            <rect :x="left + 4" y="7" width="1" height="1" />
+            <rect :x="left + 1" y="8" width="1" height="1" />
+            <rect :x="left + 3" y="8" width="1" height="1" />
+            <rect :x="left + 2" y="9" width="1" height="1" />
+            <rect :x="left + 1" y="10" width="1" height="1" />
+            <rect :x="left + 3" y="10" width="1" height="1" />
+            <rect :x="left" y="11" width="1" height="1" />
+            <rect :x="left + 4" y="11" width="1" height="1" />
+          </template>
+        </g>
+        <g v-else-if="eyes === 'think'" class="buddy-eyes" data-eyes="think">
+          <rect x="11" y="5" width="3" height="4" />
+          <rect x="22" y="5" width="3" height="4" />
         </g>
         <g v-else class="buddy-heart-eyes" data-eyes="love">
           <template v-for="left in [10, 21]" :key="left">
@@ -251,6 +306,28 @@ onBeforeUnmount(() => {
         <rect class="buddy-alert" x="1" y="0" width="1" height="3" />
         <rect class="buddy-alert" x="1" y="4" width="1" height="1" />
       </svg>
+      <svg v-else-if="particle.kind === 'note'" viewBox="0 0 6 6" shape-rendering="crispEdges" class="block h-3.5 w-3.5">
+        <rect class="buddy-note" x="3" y="0" width="1" height="5" />
+        <rect class="buddy-note" x="4" y="0" width="2" height="1" />
+        <rect class="buddy-note" x="5" y="1" width="1" height="1" />
+        <rect class="buddy-note" x="1" y="4" width="3" height="2" />
+      </svg>
+      <svg v-else-if="particle.kind === 'drop'" viewBox="0 0 5 5" shape-rendering="crispEdges" class="block h-3 w-3">
+        <rect class="buddy-drop" x="2" y="0" width="1" height="1" />
+        <rect class="buddy-drop" x="1" y="1" width="3" height="1" />
+        <rect class="buddy-drop" x="0" y="2" width="5" height="2" />
+        <rect class="buddy-drop" x="1" y="4" width="3" height="1" />
+      </svg>
+      <svg v-else-if="particle.kind === 'dots'" viewBox="0 0 7 3" shape-rendering="crispEdges" class="block h-2 w-5">
+        <rect class="buddy-dots" x="0" y="1" width="1" height="1" />
+        <rect class="buddy-dots" x="3" y="1" width="1" height="1" />
+        <rect class="buddy-dots" x="6" y="1" width="1" height="1" />
+      </svg>
+      <svg v-else-if="particle.kind === 'star'" viewBox="0 0 5 5" shape-rendering="crispEdges" class="block h-3 w-3">
+        <rect class="buddy-starp" x="2" y="0" width="1" height="5" />
+        <rect class="buddy-starp" x="0" y="2" width="5" height="1" />
+        <rect class="buddy-starp" x="1" y="1" width="3" height="3" />
+      </svg>
       <svg v-else viewBox="0 0 5 5" shape-rendering="crispEdges" class="block h-2.5 w-2.5">
         <rect class="buddy-z" x="0" y="0" width="5" height="1" />
         <rect class="buddy-z" x="3" y="1" width="1" height="1" />
@@ -289,6 +366,10 @@ onBeforeUnmount(() => {
 .buddy-spark { fill: var(--buddy-gold); }
 .buddy-z { fill: currentColor; opacity: 0.55; }
 .buddy-wave { fill: #8b7cf6; }
+.buddy-star-eyes rect, .buddy-starp { fill: var(--buddy-gold); }
+.buddy-eyes .buddy-glint { fill: #fff; opacity: 0.9; }
+.buddy-note, .buddy-dots { fill: currentColor; opacity: 0.65; }
+.buddy-drop { fill: #5aa9e6; }
 .buddy-alert { fill: #e5484d; }
 .buddy-gear { fill: var(--buddy-gear); }
 .buddy-cup { fill: #c9c1ff; }
@@ -326,6 +407,26 @@ onBeforeUnmount(() => {
 .ai-buddy[data-action="cheer"] .buddy-figure { animation: buddy-hop 0.5s ease-out 2; }
 .ai-buddy[data-action="cheer"] .buddy-arm-left,
 .ai-buddy[data-action="cheer"] .buddy-arm-right { transform: translateY(-4px); animation: buddy-arm 0.25s steps(1) 6; }
+/* More faces move a little too: a tilt for a wink, shyness sways, dizziness wobbles, surprise
+ * jumps, a sweat shivers, thinking puts a hand to its chin, goodbye waves. */
+.ai-buddy[data-action="wink"] .buddy-figure { animation: buddy-tilt 0.9s steps(1); }
+.ai-buddy[data-action="shy"] .buddy-figure { animation: buddy-wiggle 0.7s steps(1) 2; }
+.ai-buddy[data-action="dizzy"] .buddy-figure { animation: buddy-wobble 0.5s ease-in-out 4; }
+.ai-buddy[data-action="wide"] .buddy-figure { animation: buddy-hop 0.35s ease-out; }
+.ai-buddy[data-action="sweat"] .buddy-figure { animation: buddy-shiver 0.12s steps(1) 10; }
+.ai-buddy[data-action="think"] .buddy-arm-right { transform: translate(-1px, -3px); }
+.ai-buddy[data-action="bye"] .buddy-arm-right { animation: buddy-arm 0.3s steps(1) 5; }
+/* Little dances. */
+.ai-buddy[data-action="twist"] .buddy-figure { animation: buddy-twist 0.26s steps(1) 6; }
+.ai-buddy[data-action="twist"] .buddy-leg-a { animation: buddy-arm 0.26s steps(1) 6; }
+.ai-buddy[data-action="disco"] .buddy-figure { animation: buddy-bob 0.3s steps(1) 6; }
+.ai-buddy[data-action="disco"] .buddy-arm-left { animation: buddy-arm 0.3s steps(1) 6; }
+.ai-buddy[data-action="disco"] .buddy-arm-right { animation: buddy-arm 0.3s steps(1) 6 0.15s; }
+.ai-buddy[data-action="spin"] .buddy-figure { animation: buddy-spin 0.6s steps(2) 2; }
+.ai-buddy[data-action="bounce"] .buddy-figure { animation: buddy-hop 0.42s ease-out 3; }
+.ai-buddy[data-action="jumpjack"] .buddy-figure { animation: buddy-hop 0.5s ease-out 3; }
+.ai-buddy[data-action="jumpjack"] .buddy-arm-left,
+.ai-buddy[data-action="jumpjack"] .buddy-arm-right { animation: buddy-arm 0.25s steps(1) 6; }
 /* Walking leans into the step; sitting lets the legs hang from the edge it sits on. */
 .ai-buddy[data-walking] .buddy-figure { animation: buddy-step 0.4s steps(2) infinite; }
 .ai-buddy[data-sitting] .buddy-leg { transform: translateY(2px); }
@@ -370,6 +471,30 @@ onBeforeUnmount(() => {
 @keyframes buddy-shiver {
   0% { transform: translateX(-0.5px); }
   50% { transform: translateX(0.5px); }
+}
+@keyframes buddy-twist {
+  0% { transform: rotate(-8deg); }
+  50% { transform: rotate(8deg); }
+}
+@keyframes buddy-bob {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-1px); }
+}
+@keyframes buddy-spin {
+  0% { transform: scaleX(1); }
+  25% { transform: scaleX(0.3); }
+  50% { transform: scaleX(-1); }
+  75% { transform: scaleX(0.3); }
+  100% { transform: scaleX(1); }
+}
+@keyframes buddy-wobble {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-7deg); }
+  75% { transform: rotate(7deg); }
+}
+@keyframes buddy-tilt {
+  0% { transform: rotate(-4deg); }
+  100% { transform: rotate(0); }
 }
 @keyframes buddy-step {
   0% { transform: translateY(0) rotate(3deg); }

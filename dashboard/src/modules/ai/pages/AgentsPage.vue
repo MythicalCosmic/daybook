@@ -7,7 +7,7 @@
  * has its own chibi.
  */
 import { Bot, KeyRound, Mic, Settings2, Sparkles, WalletCards } from "@lucide/vue";
-import { computed, ref } from "vue";
+import { computed, ref, useId } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
@@ -28,6 +28,7 @@ import AgentCard from "../components/AgentCard.vue";
 import AgentDrawerBody from "../components/AgentDrawerBody.vue";
 import AiBuddyStage from "../components/AiBuddyStage.vue";
 import { useBuddyCues } from "../components/buddyCues";
+import { buddyEverywhere } from "../components/buddyPrefs";
 import AiHeader from "../components/AiHeader.vue";
 import TurnOnCard from "../components/TurnOnCard.vue";
 import { openDictation } from "../dictation";
@@ -86,6 +87,7 @@ async function runNow(agent: Agent): Promise<void> {
 const settingsPath = computed(() => `/c/${company.currentId}/settings/ai`);
 // The helpers react to what happens in the company: voice notes, late and finished tasks.
 useBuddyCues(aiOn);
+const everywhereId = useId();
 
 /** What Claude's helper says next to itself: the agent at work now, else today's count. */
 const runningAgent = computed(() => agents.data.value?.find((agent) => agent.running) ?? null);
@@ -126,8 +128,16 @@ const buddyLine = computed(() => {
       </InlineAlert>
 
       <AiBuddyStage v-if="aiOn" :mood="runningAgent ? 'busy' : 'on'" :size="isPhone ? 60 : 72">
-        <p class="text-md font-semibold leading-6 text-fg">{{ runningAgent ? t("ai.buddy.busy") : t("ai.buddy.onDuty") }}</p>
-        <p class="text-sm text-muted">{{ buddyLine }}</p>
+        <div class="flex items-center gap-3">
+          <div class="min-w-0 flex-1">
+            <p class="text-md font-semibold leading-6 text-fg">{{ runningAgent ? t("ai.buddy.busy") : t("ai.buddy.onDuty") }}</p>
+            <p class="text-sm text-muted">{{ buddyLine }}</p>
+          </div>
+          <div class="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-2">
+            <label :for="everywhereId" class="text-xs text-muted sm:text-sm">{{ t("ai.buddy.everywhere") }}</label>
+            <ToggleSwitch :id="everywhereId" v-model="buddyEverywhere" data-testid="ai-buddy-everywhere" />
+          </div>
+        </div>
       </AiBuddyStage>
     </template>
 
