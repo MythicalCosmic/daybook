@@ -301,7 +301,7 @@ const status = computed(() => {
               @keydown.enter.prevent
             />
           </div>
-          <RichEditor v-model="draft.body" :upload="upload" :autofocus="!isNew" style="--kb-toolbar-top: 60px" @ready="onEditorReady" />
+          <RichEditor v-model="draft.body" :upload="upload" :autofocus="!isNew" class="[--kb-toolbar-top:calc(var(--topbar-h)+var(--safe-top)+60px)] md:[--kb-toolbar-top:60px]" @ready="onEditorReady" />
         </div>
 
         <aside class="flex min-w-0 flex-col gap-4 xl:sticky xl:top-[76px] xl:self-start">

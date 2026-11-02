@@ -488,6 +488,18 @@ describe("SpacePage archive", () => {
   });
 });
 
+describe("PageEditor on a phone", () => {
+  it("sticks the formatting toolbar under the phone's top bar and the page bar, not under the desktop bar alone", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { dirname, join } = await import("node:path");
+    const { fileURLToPath } = await import("node:url");
+    const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../pages/PageEditor.vue"), "utf8");
+    const editor = source.split("\n").find((line) => line.includes("<RichEditor"))!;
+    expect(editor).toContain("[--kb-toolbar-top:calc(var(--topbar-h)+var(--safe-top)+60px)]");
+    expect(editor).toContain("md:[--kb-toolbar-top:60px]");
+  });
+});
+
 describe("wording", () => {
   it("says one page inside, not one pages", async () => {
     const { i18n, setLanguage } = await import("@/i18n");
