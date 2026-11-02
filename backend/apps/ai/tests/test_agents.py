@@ -169,6 +169,51 @@ def test_an_hour_more(crew):
         services.give_an_hour(task.pk, by=crew["worker"])
 
 
+def test_an_hour_more_is_only_for_tasks_the_tapper_may_see(crew, company, member):
+    """The button's task id can be forged: someone who gives work in one branch must not move
+    the deadline of a task in another branch they can't even open."""
+    from apps.companies.models import Branch
+    from apps.core.exceptions import DomainError
+    from apps.members.models import AccessRole
+    from apps.members.permissions import Perm
+
+    here, there = (Branch.objects.create(company=company, name=name) for name in ("A", "B"))
+    AccessRole.objects.create(company=company, name="Branch lead", permissions=[Perm.TASKS_ASSIGN])
+    lead = member.registered(company, "Branch lead", home_branch=here)
+    lead.branches.add(here)
+    task = late_task(crew, branch=there)
+    due = task.due_at
+
+    with pytest.raises((DomainError, PermissionDenied)):
+        services.give_an_hour(task.pk, by=lead)
+
+    task.refresh_from_db()
+    assert task.due_at == due
+
+
+def test_a_head_who_cannot_change_the_task_gets_no_hour_button(
+    crew, company, member, sent_messages, django_capture_on_commit_callbacks
+):
+    """When the giver is gone the assignee's head hears; a head without the right to change
+    the task gets Open only, not a "+1 hour" that would answer "You can't change this task"."""
+    from apps.members.models import Department, Membership
+
+    head = member.registered(company, first_name="Dilnoza")  # a head, but an Employee's rights
+    head.user.telegram_id = 9_100_000
+    head.user.save(update_fields=["telegram_id"])
+    department = Department.objects.create(company=company, name="Chilonzor", head=head)
+    Membership.objects.filter(pk=crew["worker"].pk).update(department=department)
+    late_task(crew)
+    Membership.objects.filter(pk=crew["giver"].pk).update(status=Membership.Status.LEFT)
+
+    with django_capture_on_commit_callbacks(execute=True):
+        deadline_watcher.run(company, agents.state_of(company, deadline_watcher.KEY), local(12))
+
+    [message] = sent_messages
+    assert message["chat_id"] == head.user.telegram_id
+    assert "ail:hour:" not in str(message["reply_markup"])
+
+
 def test_the_morning_plan_says_the_teams_day(
     crew, sent_messages, django_capture_on_commit_callbacks
 ):
@@ -196,6 +241,39 @@ def test_the_morning_plan_says_the_teams_day(
     assert "Muzlatgich haroratini tekshirish" in plan["text"]
     event = AgentEvent.objects.get(agent="morning_plan")
     assert event.params == {"to": "Bekzod Mirzayev", "due_today": 1, "late": 1, "to_check": 0}
+
+
+def test_the_morning_plan_tells_only_what_the_reader_may_see(
+    crew, company, member, sent_messages, django_capture_on_commit_callbacks
+):
+    """Someone's own personal tasks are theirs alone (tasks.queries.visible_tasks), and a
+    manager who may give work but not see everyone's tasks hears only about work they can
+    open: neither is counted or named in the plan."""
+    from apps.members.models import AccessRole
+    from apps.members.permissions import Perm
+
+    TaskFactory(
+        company=company,
+        kind=Task.Kind.PERSONAL,
+        created_by=crew["worker"],
+        assignee=crew["worker"],
+        due_at=local(12) - timedelta(hours=27),
+        title="Shifokorga borish",
+    )
+    AccessRole.objects.create(company=company, name="Shift lead", permissions=[Perm.TASKS_ASSIGN])
+    lead = member.registered(company, "Shift lead", first_name="Jasur")
+    lead.user.telegram_id = 9_100_000 + lead.pk
+    lead.user.save(update_fields=["telegram_id"])
+    late_task(crew, hours=27)  # the giver's work, not the shift lead's to see
+
+    with django_capture_on_commit_callbacks(execute=True):
+        morning_plan.run(company, agents.state_of(company, morning_plan.KEY), local(8, 35))
+
+    texts = {message["chat_id"]: message["text"] for message in sent_messages}
+    for text in texts.values():
+        assert "Shifokorga" not in text
+    assert "Late: 1" in texts[crew["giver"].user.telegram_id]
+    assert lead.user.telegram_id not in texts  # nothing he may see is late
 
 
 def test_nothing_to_say_means_no_plan(crew, sent_messages):
@@ -304,6 +382,27 @@ def test_claude_sees_the_photo_and_the_task(photo_task, crew, fake_claude):
     assert TaskComment.objects.get(task=task).text == "AI: Termometr 11 °C ko‘rsatmoqda."
 
 
+def test_the_photo_checker_sends_no_phone_numbers_or_usernames(photo_task, crew, fake_claude):
+    """Task texts are written by staff: a phone number or a @username in the description or a
+    step is hidden before the task goes to Claude (apps.ai.tools.scrub), as everywhere else."""
+    from apps.tasks.models import ChecklistItem
+
+    Task.objects.filter(pk=photo_task.pk).update(
+        description="Yetkazib beruvchi: +998 90 123 45 67, @alisher_v ga yozing"
+    )
+    ChecklistItem.objects.create(task=photo_task, text="Natijani 998901234567 ga yuboring", order=0)
+    photo_task.refresh_from_db()
+    task = finish_with_photo(photo_task, crew["worker"])
+    fake_claude.script(fake_claude.json({"verdict": "looks_right", "note": "5 °C."}))
+
+    photo_checker.check(task.pk, task.completed_at.isoformat())
+
+    [request] = fake_claude.requests
+    text = request["messages"][0]["content"][1]["text"]
+    assert "123 45 67" not in text and "@alisher_v" not in text and "998901234567" not in text
+    assert "[hidden]" in text and "Yetkazib beruvchi" in text
+
+
 def test_the_photo_checker_is_opt_in(crew, fake_claude):
     task = TaskFactory(company=crew["giver"].company, assignee=crew["worker"], proof="photo")
     finished = finish_with_photo(task, crew["worker"])
@@ -393,6 +492,35 @@ def test_a_failing_agent_is_recorded(crew, monkeypatch):
 
     state.refresh_from_db()
     assert state.last_status == "error" and "boom" in state.last_error
+
+
+def test_an_agent_that_cannot_even_be_scheduled_does_not_stop_the_tick(
+    crew, company, member, ai_on, sent_messages, django_capture_on_commit_callbacks
+):
+    """A setting stored before it was checked (an old row, the Django admin) breaks the agent's
+    next time: that agent is recorded as failed, and the other agents and companies still run."""
+    from apps.companies.tests.factories import CompanyFactory
+
+    late_task(crew)
+    other = CompanyFactory(timezone="Asia/Tashkent")
+    ai_on(other)
+    for company_ in (company, other):
+        AgentState.objects.filter(company=company_).update(next_run_at=None)
+        state = agents.state_of(company_, morning_plan.KEY)
+        state.enabled = True
+        state.config = {"at": "half past eight", "who": "both"}
+        state.next_run_at = None
+        state.save()
+    broken = AgentState.objects.filter(key=morning_plan.KEY)
+
+    with django_capture_on_commit_callbacks(execute=True):
+        runner.tick(local(12))
+
+    watcher = AgentState.objects.get(company=company, key=deadline_watcher.KEY)
+    assert watcher.last_status == "ok"
+    assert len(sent_messages) == 1  # the late task still reached its giver
+    assert set(broken.values_list("last_status", flat=True)) == {"error"}
+    assert all(row.next_run_at is not None for row in broken)  # tried again later, not each tick
 
 
 # Events in three languages ---------------------------------------------------------------------
@@ -554,3 +682,35 @@ def test_the_activity_feed(owner_api, crew, company, member):
     assert item["subject"]["label"] == "Muzlatgich haroratini tekshirish"
     only = client.get(owner_url(company, "activity/?agent=morning_plan")).json()
     assert only["results"] == []
+
+
+def test_the_activity_feed_keeps_to_the_readers_branches(owner_api, crew, company, member):
+    """Someone who sees one branch reads the events about that branch: not those about another
+    branch, nor those about company-wide work or people without a branch (apps.members.scope:
+    rows without a branch are for those who see every branch)."""
+    from apps.companies.models import Branch
+    from apps.members.models import AccessRole
+    from apps.members.permissions import Perm
+
+    here, there = (Branch.objects.create(company=company, name=name) for name in ("A", "B"))
+    AccessRole.objects.create(
+        company=company, name="Branch view", permissions=[Perm.DASHBOARD_ACCESS]
+    )
+    reader = member.registered(company, "Branch view", home_branch=here)
+    reader.branches.add(here)
+    for title, branch in (("Here", here), ("There", there), ("Nowhere", None)):
+        task = late_task(crew, branch=branch)
+        events.log(
+            company,
+            "deadline_watcher",
+            "escalated",
+            params={"task": title, "assignee": "Alisher", "to": "Bekzod"},
+            subject=("task", task.pk),
+            branch_id=branch.pk if branch else None,
+        )
+
+    page = owner_api(reader).get(owner_url(company, "activity/")).json()
+
+    assert [item["text"] for item in page["results"]] == [
+        "Told Bekzod that «Here» is late (Alisher)"
+    ]

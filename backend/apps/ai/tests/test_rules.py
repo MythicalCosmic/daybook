@@ -393,6 +393,26 @@ def test_a_misheard_name_goes_to_the_strictly_nearest_person_only():
     assert heard("nodirra, kassani sana") == (2, [])  # one from Nodira, two from Nodir
 
 
+def test_a_form_that_fits_two_close_names_picks_nobody():
+    """Russian case endings make Дилшоде (and Дилшоду) a form of both Dilshod and Dilshoda:
+    the first name tried must not win, or the task goes to the wrong person (auto-create
+    would give it at once). Uzbek endings and a surname still decide."""
+    people = [
+        Person(1, "Dilshod", "Saidov"),
+        Person(2, "Dilshoda", "Rahimova"),
+        Person(9, "Bekzod", "Mirzayev"),
+    ]
+
+    def heard(text, lang):
+        [draft] = draft_tasks(text, people=people, author_id=9, now=NOW, lang=lang)
+        return draft.assignee_id, draft.problems
+
+    assert heard("Дилшоде сегодня до 18 разложить лекарства.", "ru") == (None, [AMBIGUOUS])
+    assert heard("Дилшоде Рахимовой сегодня разложить лекарства.", "ru") == (2, [])
+    assert heard("Dilshodaga ayt, bugun dorilarni joylasin.", "uz") == (2, [])
+    assert heard("Dilshodga ayt, bugun dorilarni joylasin.", "uz") == (1, [])
+
+
 @pytest.mark.parametrize("text", ["", "   ", ".", "?!", "1.", "Alisher", "ertaga", "va"])
 def test_nothing_to_do_gives_no_drafts(text):
     assert drafts(text, "uz") == []

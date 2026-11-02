@@ -614,12 +614,17 @@ class _People:
         if word in self.names and (len(word) > 3 or token.capitalized):
             ids, shown = self.names[word]
             return set(ids), shown
+        found: set[int] = set()
+        spellings: set[str] = set()
         for name, (ids, shown) in self.names.items():
             if len(name) <= 3 and not token.capitalized:
                 continue  # "nur", "gul", "oy" in lower case are words, not people
             if _names(word, name, russian=token.cyrillic):
-                return set(ids), shown
-        return set(), ""
+                found |= ids
+                spellings.add(shown)
+        # One form may fit two names (Дилшоде: Dilshod or Dilshoda): all of them, never the
+        # first one tried; several people are ambiguous, as the caller says.
+        return found, next(iter(spellings)) if len(spellings) == 1 else ""
 
     def near(self, token: _Token, *, strict: bool) -> tuple[set[int], str]:
         """The people a name a letter or two off may mean (where a name is expected): up to two

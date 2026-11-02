@@ -22,6 +22,7 @@ from pydantic import Field as PydanticField
 from apps.ai import availability, client, conf, events
 from apps.ai.agents import registry
 from apps.ai.agents.registry import Agent, EventTemplate, Field
+from apps.ai.tools.scrub import scrub
 from apps.core import uploads
 from apps.tasks.models import Task, TaskComment
 
@@ -117,9 +118,12 @@ def _ask_claude(task: Task, language: str) -> PhotoVerdict:
     with task.proof_photo.open("rb") as file:
         picture = uploads.sanitize_image(file.read(), max_side=1568)
     steps = "\n".join(f"- {item.text}" for item in task.checklist.all())
+    # Staff wrote it: phone numbers, cards and @usernames are hidden first (apps.ai.tools.scrub).
+    task_text = scrub(
+        f"Title: {task.title}\nDescription: {task.description or '-'}\nSteps:\n{steps or '-'}"
+    )
     text = (
-        f"<task>\nTitle: {task.title}\nDescription: {task.description or '-'}\n"
-        f"Steps:\n{steps or '-'}\n</task>\n"
+        f"<task>\n{task_text}\n</task>\n"
         f"<language>{LANGUAGE_NAMES.get(language, LANGUAGE_NAMES['uz'])}</language>"
     )
     result, _call = client.structured(

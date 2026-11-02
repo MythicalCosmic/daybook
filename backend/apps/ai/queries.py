@@ -92,11 +92,14 @@ def activity(
     limit: int = 30,
     before: int | None = None,
 ) -> dict:
-    """{"results": [...], "next_before": id | None}, newest first; an event about something in
-    a branch the reader doesn't see is left out (company-wide ones stay)."""
+    """{"results": [...], "next_before": id | None}, newest first. For someone who sees only
+    some branches, an event about something (a task, a person, a voice note) is shown only when
+    it happens in one of them: like every row without a branch (apps.members.scope), one about
+    company-wide work or a person without a branch is for those who see every branch. Events
+    about nothing in particular stay."""
     rows = AgentEvent.objects.filter(company=company).select_related("actor__user")
     if branch_ids is not None:
-        rows = rows.filter(Q(branch_id__in=branch_ids) | Q(branch_id__isnull=True))
+        rows = rows.filter(Q(branch_id__in=branch_ids) | Q(subject_type=""))
     if agent:
         rows = rows.filter(agent=agent)
     if before:

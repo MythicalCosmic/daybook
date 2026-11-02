@@ -3,9 +3,9 @@
 from datetime import timedelta
 
 import pytest
-from django.utils import timezone
+from django.utils import timezone, translation
 
-from apps.ai import drafts, services, speech
+from apps.ai import bot_messages, drafts, services, speech
 from apps.ai.models import AgentEvent, AIDraft
 from apps.ai.tests.conftest import OGG
 from apps.tasks.models import Task
@@ -315,6 +315,37 @@ def test_auto_create_makes_the_tasks_at_once_and_undo_takes_them_back(
     assert draft.status == AIDraft.Status.DISCARDED and draft.undone_at is not None
 
 
+@pytest.mark.parametrize("auto_create", [False, True])
+def test_cancel_while_it_is_being_understood_sticks(
+    company, member, ai_on, monkeypatch, card_edits, django_capture_on_commit_callbacks, auto_create
+):
+    """The person taps Cancel (or the app's cancel) while the job still reads the draft: the
+    job must not bring it back to "ready", and auto-create must not make its tasks."""
+    ai_on(company, auto_create=auto_create)
+    manager = member.registered(company, "Manager", first_name="Bekzod", last_name="Mirzayev")
+    member.registered(company, first_name="Alisher", last_name="Valiyev")
+    understand = drafts.drafting.understand
+
+    def cancelled_meanwhile(author, text, **kwargs):
+        found = understand(author, text, **kwargs)
+        services.discard_draft(AIDraft.objects.get(created_by=author), author)
+        return found
+
+    monkeypatch.setattr(drafts.drafting, "understand", cancelled_meanwhile)
+
+    draft = start(
+        manager,
+        django_capture_on_commit_callbacks,
+        text="Alisher, ertaga soat 10 gacha muzlatgich haroratini tekshir.",
+        tg={"bot": "employee", "chat_id": 77, "message_id": 5},
+    )
+
+    assert draft.status == AIDraft.Status.DISCARDED
+    assert not Task.objects.exists()
+    assert card_edits[-1]["text"] == "Cancelled."
+    assert not AgentEvent.objects.filter(kind__in=("draft_ready", "draft_auto_applied")).exists()
+
+
 def test_auto_create_waits_when_a_draft_has_no_time(
     company, member, ai_on, django_capture_on_commit_callbacks
 ):
@@ -368,6 +399,39 @@ def test_ready_drafts_expire_after_a_day(team, card_edits, django_capture_on_com
 
     draft.refresh_from_db()
     assert (draft.status, draft.error_code) == (AIDraft.Status.EXPIRED, "expired")
+
+
+def test_a_draft_whose_job_died_fails_instead_of_listening_forever(
+    team, card_edits, django_capture_on_commit_callbacks
+):
+    """A worker killed mid-way leaves the draft "transcribing": the housekeeping job fails it
+    after a while (the card says to send it again); one still within its time is left alone."""
+    lost, busy = (
+        AIDraft.objects.create(
+            company=team["manager"].company,
+            created_by=team["manager"],
+            source="bot",
+            status=status,
+            audio_seconds=9,
+            tg_bot="employee",
+            tg_chat_id=77,
+            tg_message_id=5 + index,
+        )
+        for index, status in enumerate((AIDraft.Status.TRANSCRIBING, AIDraft.Status.THINKING))
+    )
+    AIDraft.objects.filter(pk=lost.pk).update(created_at=timezone.now() - timedelta(minutes=20))
+    AIDraft.objects.filter(pk=busy.pk).update(created_at=timezone.now() - timedelta(minutes=5))
+
+    with django_capture_on_commit_callbacks(execute=True):
+        drafts.expire_stale()
+
+    lost.refresh_from_db()
+    busy.refresh_from_db()
+    assert (lost.status, lost.error_code) == (AIDraft.Status.FAILED, "ai_unavailable")
+    assert busy.status == AIDraft.Status.THINKING
+    [edit] = card_edits
+    with translation.override("uz"):  # the author's language
+        assert (edit["message_id"], edit["text"]) == (5, bot_messages.error_text("ai_unavailable"))
 
 
 def test_old_recordings_are_deleted_and_the_words_stay(

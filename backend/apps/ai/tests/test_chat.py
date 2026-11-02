@@ -197,6 +197,126 @@ def test_cancel_takes_the_turn_out_of_the_context(owner_api, owner, company, set
     assert not AIMessage.objects.filter(turn_id=turn_id, in_context=True).exists()
 
 
+def test_a_cancel_during_a_call_leaves_nothing_of_the_turn_in_the_context(
+    owner_api, owner, company, fake_claude, monkeypatch, django_capture_on_commit_callbacks
+):
+    """Cancel arrives while Claude is answering a tool round: what that round brings back
+    (a tool_use, its results) must not stay in the history, or every later question replays a
+    tool_use without its result (a 400 for the rest of the conversation)."""
+    from apps.ai import chat
+
+    fake_claude.script(
+        fake_claude.message([tool_use("tasks_search", {"overdue": True})], stop_reason="tool_use"),
+        fake_claude.text("Ikkinchi savolga javob."),
+    )
+    answer = fake_claude._answer
+    calls = []
+
+    def cancelled_while_answering(request):
+        calls.append(request)
+        if len(calls) == 1:
+            chat.cancel_turn(AITurn.objects.get(), by=owner)
+        return answer(request)
+
+    monkeypatch.setattr(fake_claude, "_answer", cancelled_while_answering)
+    client = owner_api(owner)
+    conversation, turn_id = ask(client, company, "Birinchi", django_capture_on_commit_callbacks)
+
+    assert AITurn.objects.get(pk=turn_id).status == "cancelled"
+    assert not AIMessage.objects.filter(turn_id=turn_id, in_context=True).exists()
+    with django_capture_on_commit_callbacks(execute=True):
+        client.post(
+            url(company, f"conversations/{conversation['id']}/turns/"),
+            {"text": "Ikkinchi"},
+            format="json",
+        )
+    second = fake_claude.requests[-1]
+    assert [message["role"] for message in second["messages"]] == ["user"]
+    assert second["messages"][0]["content"][-1] == {"type": "text", "text": "Ikkinchi"}
+
+
+def test_a_turn_asks_before_every_call_not_only_when_it_was_queued(
+    owner_api, owner, company, fake_claude, django_capture_on_commit_callbacks
+):
+    """The budget and the AI switch are checked by the worker before each call: a question
+    queued before AI was switched off isn't sent, and a tool loop whose first round spent the
+    rest of the month's budget makes no second call."""
+    from apps.ai import chat, conf
+
+    client = owner_api(owner)
+    conversation = client.post(url(company, "conversations/")).json()
+    turn_id = client.post(
+        url(company, f"conversations/{conversation['id']}/turns/"), {"text": "?"}, format="json"
+    ).json()["turn_id"]  # queued; the job waits for the commit
+    conf.get_settings(company).__class__.objects.filter(company=company).update(enabled=False)
+
+    chat.run_turn(turn_id)
+
+    assert fake_claude.requests == []
+    assert AITurn.objects.get(pk=turn_id).status == "failed"
+
+    conf.get_settings(company).__class__.objects.filter(company=company).update(
+        enabled=True, monthly_budget_usd="0.01"
+    )
+    fake_claude.script(
+        fake_claude.message(
+            [tool_use("tasks_search", {"overdue": True})],
+            stop_reason="tool_use",
+            model="claude-sonnet-5-5",
+            input_tokens=10_000,  # $0.02 on Sonnet 5.5: more than the month's budget
+        ),
+        fake_claude.text("Hech qachon yuborilmaydi."),
+    )
+    _conversation, second = ask(client, company, "Yana", django_capture_on_commit_callbacks)
+
+    assert len(fake_claude.requests) == 1
+    turn = AITurn.objects.get(pk=second)
+    assert (turn.status, turn.error_code) == ("failed", "budget_reached")
+
+
+def test_a_turn_whose_job_died_does_not_hold_the_conversation_forever(
+    owner_api, owner, company, settings, django_capture_on_commit_callbacks
+):
+    """A worker restart loses a running turn: it stays "running" and every new question got
+    409 "busy". After a while it no longer counts: it is taken out (cancelled), and the next
+    question goes ahead."""
+    settings.AI_FAKE = True
+    client = owner_api(owner)
+    conversation = client.post(url(company, "conversations/")).json()
+    path = url(company, f"conversations/{conversation['id']}/turns/")
+    first = client.post(path, {"text": "?"}, format="json").json()["turn_id"]  # never run
+    assert client.post(path, {"text": "??"}, format="json").status_code == 409
+    AITurn.objects.filter(pk=first).update(
+        status="running", created_at=timezone.now() - timedelta(minutes=20)
+    )
+
+    with django_capture_on_commit_callbacks(execute=True):
+        again = client.post(path, {"text": "Nechta vazifa kechikmoqda?"}, format="json")
+
+    assert again.status_code == 202
+    assert AITurn.objects.get(pk=first).status == "cancelled"
+    assert not AIMessage.objects.filter(turn_id=first, in_context=True).exists()
+    assert AITurn.objects.get(pk=again.json()["turn_id"]).status == "done"
+
+
+def test_a_question_goes_to_claude_without_phone_numbers_or_usernames(
+    owner_api, owner, company, fake_claude, django_capture_on_commit_callbacks
+):
+    """What the asker types is scrubbed like every tool result before it reaches Claude; the
+    conversation still shows them what they typed."""
+    fake_claude.script(fake_claude.text("Bo‘ldi."))
+    said = "Alisherga +998 90 123 45 67 orqali qo‘ng‘iroq qildimi? @alisher_v ham yozdi"
+    client = owner_api(owner)
+
+    conversation, _turn = ask(client, company, said, django_capture_on_commit_callbacks)
+
+    [request] = fake_claude.requests
+    sent = json.dumps(request["messages"], ensure_ascii=False)
+    assert "123 45 67" not in sent and "@alisher_v" not in sent and "[hidden]" in sent
+    shown = client.get(url(company, f"conversations/{conversation['id']}/messages/")).json()
+    assert shown[0]["text"] == said
+
+
 def test_chat_needs_ai_use_and_is_private(owner_api, owner, company, member, settings):
     settings.AI_FAKE = True
     manager = member.registered(company, "Manager")

@@ -21,6 +21,7 @@ import json
 import logging
 import re
 import time
+from datetime import timedelta
 from zoneinfo import ZoneInfo
 
 import anthropic
@@ -34,6 +35,7 @@ from apps.ai import availability, client, conf
 from apps.ai.models import AIConversation, AIMessage, AITurn
 from apps.ai.tools import registry
 from apps.ai.tools.registry import ToolContext
+from apps.ai.tools.scrub import scrub
 from apps.members.models import Membership
 from apps.tasks import queries as task_queries
 
@@ -43,6 +45,9 @@ MAX_ROUNDS = 8
 MAX_TURNS = 30
 TEXT_MAX = 2000
 MAX_TOKENS = 16_000
+WORKING = (AITurn.Status.QUEUED, AITurn.Status.RUNNING)
+# A turn still working after this long lost its job (a worker restart): it is taken out.
+STALE_AFTER = timedelta(minutes=10)
 LINK = re.compile(r"\[([^\]\n]{1,120})\]\((member|task):(\d{1,12})\)")
 OTHER_LINK = re.compile(r"\[([^\]\n]{1,120})\]\((?!member:|task:)[^)\s]*\)")
 LANGUAGE_NAMES = {"uz": "Uzbek (Latin script)", "ru": "Russian", "en": "English"}
@@ -102,9 +107,10 @@ def start_turn(
     conversation = AIConversation.objects.select_for_update().get(pk=conversation.pk)
     if conversation.turn_count >= MAX_TURNS:
         raise TurnRefused("turn_limit", _("This conversation is full: start a new one."))
-    if AITurn.objects.filter(
-        conversation=conversation, status__in=(AITurn.Status.QUEUED, AITurn.Status.RUNNING)
-    ).exists():
+    working = AITurn.objects.filter(conversation=conversation, status__in=WORKING)
+    for lost in working.filter(created_at__lt=timezone.now() - STALE_AFTER):
+        _take_out(lost)  # its job died (a worker restart): it no longer holds the conversation
+    if working.exists():
         raise TurnRefused("busy", _("Wait for the answer to the last question."), 409)
     turn = AITurn.objects.create(
         company_id=conversation.company_id,
@@ -114,7 +120,7 @@ def start_turn(
     )
     question = [
         {"type": "text", "text": turn_context(by, page)},
-        {"type": "text", "text": text},
+        {"type": "text", "text": scrub(text)},  # what Claude reads; the asker sees `text`
     ]
     _add_message(conversation, turn, "user", question, text)
     conversation.turn_count += 1
@@ -129,32 +135,48 @@ def start_turn(
 def cancel_turn(turn: AITurn, *, by: Membership) -> AITurn:
     if turn.membership_id != by.pk:
         raise TurnRefused("not_found", _("This question isn't yours."), 404)
-    with transaction.atomic():
-        updated = AITurn.objects.filter(
-            pk=turn.pk, status__in=(AITurn.Status.QUEUED, AITurn.Status.RUNNING)
-        ).update(status=AITurn.Status.CANCELLED, finished_at=timezone.now())
-        if updated:
-            AIMessage.objects.filter(turn=turn).update(in_context=False)
+    _take_out(turn)
     turn.refresh_from_db()
     return turn
 
 
+def _take_out(turn: AITurn) -> None:
+    """Cancel a turn still being answered and take its messages out of the context."""
+    with transaction.atomic():
+        updated = AITurn.objects.filter(pk=turn.pk, status__in=WORKING).update(
+            status=AITurn.Status.CANCELLED, finished_at=timezone.now()
+        )
+        if updated:
+            AIMessage.objects.filter(turn=turn).update(in_context=False)
+
+
 def _add_message(conversation, turn, role: str, content: list, display: str = "") -> AIMessage:
-    seq = (
-        AIMessage.objects.filter(conversation=conversation)
-        .order_by("-seq")
-        .values_list("seq", flat=True)
-        .first()
-        or 0
-    ) + 1
-    return AIMessage.objects.create(
-        conversation=conversation,
-        turn=turn,
-        seq=seq,
-        role=role,
-        content=content,
-        display_text=display,
-    )
+    """The next message of the conversation. One that arrives for a turn cancelled meanwhile
+    (an answer that was on its way) is stored out of the context, like the turn's others: the
+    turn's row lock, which `cancel_turn` takes too, lets none slip in between."""
+    with transaction.atomic():
+        status = (
+            AITurn.objects.select_for_update()
+            .filter(pk=turn.pk)
+            .values_list("status", flat=True)
+            .first()
+        )
+        seq = (
+            AIMessage.objects.filter(conversation=conversation)
+            .order_by("-seq")
+            .values_list("seq", flat=True)
+            .first()
+            or 0
+        ) + 1
+        return AIMessage.objects.create(
+            conversation=conversation,
+            turn=turn,
+            seq=seq,
+            role=role,
+            content=content,
+            display_text=display,
+            in_context=status != AITurn.Status.CANCELLED,
+        )
 
 
 # Running a turn --------------------------------------------------------------------------------
@@ -174,6 +196,9 @@ def run_turn(turn_id: int) -> None:
         status=AITurn.Status.RUNNING, started_at=timezone.now()
     )
     member = turn.membership
+    if not available(member):  # switched off, or the budget spent, since it was asked
+        _end(turn, AITurn.Status.FAILED, error_code="ai_off")
+        return
     row = conf.get_settings(member.company)
     switches = {
         name
@@ -266,6 +291,7 @@ def _loop(turn: AITurn, ctx: ToolContext) -> str | None:
     for round_number in range(MAX_ROUNDS + 1):
         if _cancelled(turn):
             return None
+        _ensure_may_call(ctx.company)
         last = round_number == MAX_ROUNDS
         response = client.converse(
             "chat",
@@ -286,7 +312,8 @@ def _loop(turn: AITurn, ctx: ToolContext) -> str | None:
             message = _add_message(conversation, turn, "assistant", content, text)
             AITurn.objects.filter(pk=turn.pk).update(message=message, model=response.model)
             return text
-        _add_message(conversation, turn, "assistant", content)
+        if not _add_message(conversation, turn, "assistant", content).in_context:
+            return None  # cancelled while Claude was answering: its tools aren't run
         results = []
         for use in uses:
             started = time.monotonic()
@@ -311,6 +338,16 @@ def _loop(turn: AITurn, ctx: ToolContext) -> str | None:
         _add_message(conversation, turn, "user", results)
         AITurn.objects.filter(pk=turn.pk).update(steps=steps)
     return None
+
+
+def _ensure_may_call(company) -> None:
+    """Before every call of the loop: the AI switch, the month's budget and the breaker as they
+    are now (an earlier round may have spent what was left); the turn fails with the reason."""
+    found = availability.status(company)
+    if not found.available:
+        stopped = client.Unavailable(f"Claude may not be called now: {found.state}.")
+        stopped.code = str(found.state)
+        raise stopped
 
 
 def _text_of(response) -> str:

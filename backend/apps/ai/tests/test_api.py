@@ -247,6 +247,36 @@ def test_apply_with_edits_and_twice(api_as, people, company, django_capture_on_c
     assert Task.objects.count() == 2
 
 
+def test_an_edited_apply_gives_no_more_than_the_author_may(
+    api_as, owner_api, people, company, other_company, member, django_capture_on_commit_callbacks
+):
+    """What the app sends back replaces the drafts, so it is checked like any new task: at most
+    10, nobody of another company, nobody the author may not give work to; and nobody but the
+    author applies (another person's id is missing on the mini app, refused on the dashboard)."""
+    stranger = member.registered(other_company, first_name="Begona")
+    worker_client = api_as(people["alisher"])  # an Employee: gives work to nobody
+    started = post_text(worker_client, company, capture=django_capture_on_commit_callbacks)
+    path = url(company, f"task-drafts/{started.json()['id']}/apply/")
+    due = (timezone.now() + timedelta(days=1)).isoformat()
+
+    too_many = {"drafts": [{"title": f"Vazifa {n}", "due_at": due} for n in range(11)]}
+    assert worker_client.post(path, too_many, format="json").status_code == 400
+    for someone in (people["manager"], stranger):
+        pushed = {"drafts": [{"title": "Kassani sanash", "assignee_id": someone.pk}]}
+        result = worker_client.post(path, pushed, format="json").json()
+        assert result["created"] == [] and [f["index"] for f in result["failed"]] == [0]
+    assert not Task.objects.exists()
+
+    manager_draft = post_text(
+        api_as(people["manager"]), company, capture=django_capture_on_commit_callbacks
+    ).json()["id"]
+    theirs = url(company, f"task-drafts/{manager_draft}/apply/")
+    assert worker_client.post(theirs, {}, format="json").status_code == 404
+    owner_path = owner_url(company, f"task-drafts/{manager_draft}/apply/")
+    assert owner_api(people["owner"]).post(owner_path, {}, format="json").status_code == 403
+    assert not Task.objects.exists()
+
+
 def test_discard(api_as, people, company, django_capture_on_commit_callbacks):
     client = api_as(people["manager"])
     draft_id = post_text(client, company, capture=django_capture_on_commit_callbacks).json()["id"]

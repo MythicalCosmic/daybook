@@ -285,8 +285,10 @@ def _zone(company):
 
 
 def late_task(task: Task, recipient: Membership, now) -> BotMessage:
-    """The deadline watcher's note to whoever gave the task: Open and "+1 hour"."""
+    """The deadline watcher's note to whoever gave the task: Open, and "+1 hour" when they
+    may change the task (a head without that right gets Open only)."""
     from apps.ai.callbacks import AILateCallback, LateAction
+    from apps.tasks.rules import can_manage
 
     local_now = timezone.localtime(now, _zone(task.company))
     due = timezone.localtime(task.due_at, local_now.tzinfo)
@@ -298,12 +300,15 @@ def late_task(task: Task, recipient: Membership, now) -> BotMessage:
         _("Deadline: %(when)s") % {"when": dates.due_label(due, local_now, dates.language(None))},
         _("Late by: %(late)s") % {"late": task_messages.format_duration(now - task.due_at)},
     ]
-    later = InlineKeyboardButton(
-        text=_("+1 hour"),
-        callback_data=AILateCallback(action=LateAction.HOUR_MORE, task_id=task.pk).pack(),
-    )
-    rows = [[task_messages.open_button(task), later]]
-    return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=rows)
+    row = [task_messages.open_button(task)]
+    if can_manage(task, recipient):
+        row.append(
+            InlineKeyboardButton(
+                text=_("+1 hour"),
+                callback_data=AILateCallback(action=LateAction.HOUR_MORE, task_id=task.pk).pack(),
+            )
+        )
+    return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=[row])
 
 
 def morning_plan(member: Membership, day: dict, now, *, summary: str = "") -> BotMessage:
