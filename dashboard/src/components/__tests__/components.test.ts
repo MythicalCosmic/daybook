@@ -6,6 +6,7 @@ import { createMemoryHistory, createRouter, type Router } from "vue-router";
 
 import { ApiError } from "@/api/http";
 import AvatarStack from "@/components/AvatarStack.vue";
+import CalendarMonth from "@/components/CalendarMonth.vue";
 import CalendarWeek from "@/components/CalendarWeek.vue";
 import ChartCard from "@/components/ChartCard.vue";
 import ErrorState from "@/components/ErrorState.vue";
@@ -428,6 +429,19 @@ describe("small layout fixes", () => {
     expect(labels.map((label) => label.text())).toEqual(["07:00", "08:00", "09:00"]);
     expect(labels[0]!.classes()).toContain("top-0.5");
     expect(labels[1]!.classes()).toContain("-top-2");
+  });
+
+  it("CalendarMonth moves its today mark at the company's midnight while it stays open", async () => {
+    vi.useFakeTimers({ toFake: ["Date", "setInterval", "clearInterval"] });
+    // 23:59:50 in Tashkent.
+    vi.setSystemTime(new Date("2026-11-02T18:59:50Z"));
+    const month = mount(CalendarMonth, { props: { items: [], month: "2026-11" }, global: { plugins: plugins() } });
+    expect(month.find("[aria-current=date]").attributes("data-day")).toBe("2026-11-02");
+    vi.advanceTimersByTime(30_000);
+    await flushPromises();
+    expect(month.find("[aria-current=date]").attributes("data-day")).toBe("2026-11-03");
+    month.unmount();
+    vi.useRealTimers();
   });
 
   it("CalendarWeek keeps the hours in view when a phone scrolls the week sideways", () => {

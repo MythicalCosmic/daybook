@@ -13,10 +13,10 @@ import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { compareOf, customValue, type DateRangeValue, type RangePreset } from "@/lib/dateRange";
-import { DATE_PRESETS, formatDay, formatRange, presetRange, todayIn, type CompareMode, type DatePreset } from "@/lib/dates";
+import { DATE_PRESETS, formatDay, formatRange, presetRange, type CompareMode, type DatePreset } from "@/lib/dates";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { monthOf, pickRangeDay, previewRange, shiftMonth, type RangeDraft } from "./calendar";
 import CalendarGrid from "./CalendarGrid.vue";
@@ -49,7 +49,7 @@ const control = useControl(props);
 const { isPhone } = useBreakpoints();
 
 const open = ref(false);
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const maxDay = computed(() => (props.max === undefined ? today.value : props.max));
 
 // The draft lives while the popover is open; "Apply" (or a preset) commits it.

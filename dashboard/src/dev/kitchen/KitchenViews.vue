@@ -24,9 +24,9 @@ import { locate, moveNode, type TreeMove } from "@/components/tree";
 import TreeList from "@/components/TreeList.vue";
 import UiButton from "@/components/UiButton.vue";
 import { toast } from "@/components/useToast";
-import { addDays, formatDay, startOfWeek, todayIn } from "@/lib/dates";
+import { addDays, formatDay, startOfWeek } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyToday } from "@/stores/company";
 
 import KitchenSection from "./KitchenSection.vue";
 import KitchenSpecimen from "./KitchenSpecimen.vue";
@@ -35,8 +35,7 @@ import { BOARD_COLUMNS, boardCards, calendarItems, ganttRows, KNOWLEDGE, PEOPLE,
 const { t } = useI18n();
 const k = (key: string, params?: Record<string, unknown>) => t(`dev.kitchen.${key}`, params ?? {});
 const fmt = useFormat();
-const company = useCompanyStore();
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 
 // Records.
 const minutesAgo = (n: number) => new Date(Date.now() - n * 60_000).toISOString();

@@ -10,10 +10,10 @@ import { ChevronLeft, ChevronRight } from "@lucide/vue";
 import { computed, nextTick, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { addDays, formatDay, todayIn } from "@/lib/dates";
+import { addDays, formatDay } from "@/lib/dates";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { isWeekend, keyTarget, monthOf, monthWeeks, shiftMonth, type Month } from "./calendar";
 import { itemColor, itemsByDay, namesItem, type CalendarItem, type PlacedItem } from "./calendarItems";
@@ -38,7 +38,7 @@ const company = useCompanyStore();
 const { isPhone } = useBreakpoints();
 const grid = ref<HTMLElement | null>(null);
 
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const weeks = computed(() => monthWeeks(month.value));
 const days = computed(() => weeks.value.flat());
 const placed = computed(() => itemsByDay(props.items, days.value, company.timezone));
