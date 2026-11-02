@@ -38,7 +38,19 @@
   pause in typing; Uzbek wording without glued case endings.
 - **Bots**: titles and names with `<` or `&` no longer break messages (a proof photo caption was refused);
   texts longer than Telegram allows are cut neatly instead of lost; the bot's New task only takes a person
-  from its own picker.
+  from its own picker (a forged pick showed a name from another company); voice cards, the deadline
+  watcher and the morning plan write dates in the reader's language; a tap on an old message says so
+  instead of "Something went wrong"; the owner bot answers /help and anything typed; "More time"
+  answers and finished cards no longer repeat the whole card or squeeze three buttons in a row; My team
+  shows deadlines as the cards do; Russian says "просрочено" for late work.
+- **Times everywhere in 24 hours**: one date and time picker in the app's own language replaces the
+  phone's (which showed "05:00 AM" and "11/04/2026" on English phones).
+- **AI safety, from an independent review**: a forged button can't open someone else's voice note; the
+  morning plan never names a colleague's personal tasks; a Cancel during reading is final; "+1 hour" only
+  for tasks the person may change; the activity feed keeps to the reader's branches; Ask AI re-checks the
+  budget before every call and never sends phone numbers or usernames; one broken agent setting can't stop
+  the others; two close names ("Dilshod"/"Dilshoda") are asked about, not guessed. The speech service
+  refuses audio over 5 minutes and the web server refuses uploads over 100 MB.
 
 ### Faster
 - Mini app: the first screen loads about a fifth less code (entry 142 → 116 KB gzipped); screens load on demand.
