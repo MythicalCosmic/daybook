@@ -384,9 +384,15 @@ export type BuddyAction =
   // little dances
   | "twist" | "disco" | "spin" | "bounce" | "jumpjack";
 /** The family: Claude itself, and one chibi per agent, each with its colours and its prop. */
-export type BuddyVariant = "claude" | "voice" | "morning" | "deadline" | "photo";
+export type BuddyVariant = "claude" | "voice" | "morning" | "deadline" | "photo" | "hr";
 
-const AGENT_BUDDIES: Record<string, BuddyVariant> = { voice_tasks: "voice", morning_plan: "morning", deadline_watcher: "deadline", photo_checker: "photo" };
+const AGENT_BUDDIES: Record<string, BuddyVariant> = {
+  voice_tasks: "voice",
+  morning_plan: "morning",
+  deadline_watcher: "deadline",
+  photo_checker: "photo",
+  hr_assistant: "hr",
+};
 
 /** An agent's chibi; an agent without one of its own gets Claude. */
 export function buddyVariant(agentKey: string): BuddyVariant {

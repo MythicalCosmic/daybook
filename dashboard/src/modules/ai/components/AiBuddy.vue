@@ -150,6 +150,14 @@ onBeforeUnmount(() => {
       <rect class="buddy-shadow" x="7" y="25" width="22" height="2" />
       <g class="buddy-figure">
         <rect class="buddy-limb buddy-arm-left" x="2" y="9" width="4" height="5" />
+        <!-- HR's clipboard, held in front of the left hand; it moves with the arm (arms only translate). -->
+        <g v-if="variant === 'hr'" class="buddy-arm-left" data-prop="clipboard">
+          <rect class="buddy-board" x="0" y="13" width="5" height="7" />
+          <rect class="buddy-paper" x="1" y="14" width="3" height="5" />
+          <rect class="buddy-ink" x="2" y="15" width="2" height="1" />
+          <rect class="buddy-ink" x="2" y="17" width="2" height="1" />
+          <rect class="buddy-gear" x="1" y="12" width="3" height="2" />
+        </g>
         <rect class="buddy-limb buddy-arm-right" x="30" y="9" width="4" height="5" />
         <rect class="buddy-limb buddy-leg buddy-leg-a" x="8" y="18" width="3" height="6" />
         <rect class="buddy-limb buddy-leg buddy-leg-b" x="13" y="18" width="3" height="6" />
@@ -260,6 +268,16 @@ onBeforeUnmount(() => {
           <rect class="buddy-gear" x="17" y="-3" width="1" height="2" />
           <rect class="buddy-gear" x="18" y="-2" width="2" height="1" />
         </g>
+        <g v-else-if="variant === 'hr'" data-prop="tie">
+          <rect class="buddy-collar" x="15" y="12" width="2" height="1" />
+          <rect class="buddy-collar" x="19" y="12" width="2" height="1" />
+          <rect class="buddy-collar" x="16" y="13" width="1" height="1" />
+          <rect class="buddy-collar" x="19" y="13" width="1" height="1" />
+          <rect class="buddy-gear" x="17" y="12" width="2" height="2" />
+          <rect class="buddy-tie" x="16" y="14" width="4" height="3" />
+          <rect class="buddy-tie" x="17" y="17" width="2" height="1" />
+          <rect class="buddy-glint" x="17" y="14" width="1" height="1" />
+        </g>
         <g v-else-if="variant === 'photo'" data-prop="glasses">
           <rect class="buddy-gear" x="9" y="6" width="7" height="1" />
           <rect class="buddy-gear" x="9" y="12" width="7" height="1" />
@@ -355,6 +373,7 @@ onBeforeUnmount(() => {
 .ai-buddy[data-variant="morning"] { --buddy-main: #f2b544; --buddy-light: #f7cb72; --buddy-dark: #cf9220; }
 .ai-buddy[data-variant="deadline"] { --buddy-main: #e8625a; --buddy-light: #f08883; --buddy-dark: #c2453e; --buddy-gear: #7c2a24; }
 .ai-buddy[data-variant="photo"] { --buddy-main: #36b1a4; --buddy-light: #5fc8bc; --buddy-dark: #24897f; --buddy-gear: #1d3b57; }
+.ai-buddy[data-variant="hr"] { --buddy-main: #4fb36f; --buddy-light: #78c991; --buddy-dark: #34925a; --buddy-gear: #22324a; }
 
 .buddy-body { fill: var(--buddy-main); }
 .buddy-light { fill: var(--buddy-light); }
@@ -377,6 +396,10 @@ onBeforeUnmount(() => {
 .buddy-ray { fill: #ffb347; }
 .buddy-bell { fill: var(--buddy-gold); }
 .buddy-face { fill: #fff4e0; }
+.buddy-collar, .buddy-paper { fill: #fbf7ee; }
+.buddy-board { fill: #a8744a; }
+.buddy-ink { fill: #9fb3a6; }
+.buddy-tie { fill: #2f4a73; }
 .buddy-shadow { fill: currentColor; opacity: 0.12; transform-box: fill-box; transform-origin: center; }
 
 .buddy-figure, .buddy-limb { transform-box: fill-box; transform-origin: center bottom; }
