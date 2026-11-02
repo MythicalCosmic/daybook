@@ -1242,6 +1242,158 @@ paths:
               schema:
                 $ref: '#/components/schemas/Membership'
           description: ''
+  /api/v1/companies/{company_id}/payroll/adjustments/:
+    get:
+      operationId: v1_companies_payroll_adjustments_list
+      description: |-
+        My bonuses, fines, allowances and deductions (proposed, approved, rejected, taken
+        back), newest month first.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: period
+        schema:
+          type: string
+        description: 'A month: YYYY-MM.'
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Adjustment'
+          description: ''
+  /api/v1/companies/{company_id}/payroll/adjustments/{id}/dispute/:
+    post:
+      operationId: v1_companies_payroll_adjustments_dispute_create
+      description: Dispute one of my fines or deductions, once, with a short explanation.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollDisputeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollDisputeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollDisputeRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Adjustment'
+          description: ''
+  /api/v1/companies/{company_id}/payroll/advances/:
+    get:
+      operationId: v1_companies_payroll_advances_retrieve
+      description: My advances and how much more I may ask for now (`cap.available`).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollMyAdvances'
+          description: ''
+    post:
+      operationId: v1_companies_payroll_advances_create
+      description: My advances and how much more I may ask for now (`cap.available`).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollAdvanceRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollAdvanceRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollAdvanceRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Advance'
+          description: ''
+  /api/v1/companies/{company_id}/payroll/advances/{id}/cancel/:
+    post:
+      operationId: v1_companies_payroll_advances_cancel_create
+      description: Take back my advance request while nobody has decided it.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Advance'
+          description: ''
   /api/v1/companies/{company_id}/positions/:
     get:
       operationId: v1_companies_positions_list
@@ -3766,6 +3918,222 @@ components:
         * `confirmed` - Checked your task
         * `returned` - Sent a task back
         * `commented` - Commented on a task
+    Adjustment:
+      type: object
+      description: Drops `amount_fields` from the output unless the context's `show_amounts`
+        is true.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        member:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPerson'
+          readOnly: true
+        period:
+          type: string
+          example: '2026-10-01'
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/PayrollAdjustmentKindEnum'
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        currency:
+          allOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          readOnly: true
+        reason:
+          type: string
+          readOnly: true
+        source:
+          allOf:
+          - $ref: '#/components/schemas/PayrollAdjustmentSourceEnum'
+          readOnly: true
+        rule:
+          allOf:
+          - $ref: '#/components/schemas/PayrollRef'
+          nullable: true
+          readOnly: true
+        task:
+          allOf:
+          - $ref: '#/components/schemas/PayrollRef'
+          nullable: true
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/PayrollAdjustmentStatusEnum'
+          readOnly: true
+        proposed_by:
+          type: string
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        decided_by:
+          type: string
+          nullable: true
+          readOnly: true
+        decided_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        decision_note:
+          type: string
+          readOnly: true
+        disputed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        dispute_text:
+          type: string
+          readOnly: true
+        dispute_answer:
+          type: string
+          readOnly: true
+        dispute_answered_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        dispute_open:
+          type: boolean
+        locked:
+          type: boolean
+        payslip:
+          type: integer
+          nullable: true
+      required:
+      - created_at
+      - currency
+      - decided_at
+      - decided_by
+      - decision_note
+      - dispute_answer
+      - dispute_answered_at
+      - dispute_open
+      - dispute_text
+      - disputed_at
+      - id
+      - kind
+      - locked
+      - member
+      - payslip
+      - period
+      - proposed_by
+      - reason
+      - rule
+      - source
+      - status
+      - task
+    Advance:
+      type: object
+      description: Drops `amount_fields` from the output unless the context's `show_amounts`
+        is true.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        member:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPerson'
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        currency:
+          allOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          readOnly: true
+        installments:
+          type: integer
+          readOnly: true
+        first_period:
+          type: string
+          example: '2026-10-01'
+        reason:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/PayrollAdvanceStatusEnum'
+          readOnly: true
+        requested_by:
+          type: string
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        decided_by:
+          type: string
+          nullable: true
+          readOnly: true
+        decided_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        decision_note:
+          type: string
+          readOnly: true
+        paid_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        paid_by:
+          type: string
+          nullable: true
+          readOnly: true
+        payout_method:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPayoutMethodEnum'
+          readOnly: true
+        repaid:
+          type: string
+          example: '500000.00'
+          readOnly: true
+        left:
+          type: string
+          example: '500000.00'
+          readOnly: true
+        repayments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayrollRepayment'
+          readOnly: true
+        debt:
+          type: integer
+          nullable: true
+      required:
+      - created_at
+      - currency
+      - debt
+      - decided_at
+      - decided_by
+      - decision_note
+      - first_period
+      - id
+      - installments
+      - left
+      - member
+      - paid_at
+      - paid_by
+      - payout_method
+      - reason
+      - repaid
+      - repayments
+      - requested_by
+      - status
     AgendaAttendee:
       type: object
       properties:
@@ -6570,6 +6938,187 @@ components:
           nullable: true
         priority:
           $ref: '#/components/schemas/PriorityEnum'
+    PayrollAdjustmentKindEnum:
+      enum:
+      - bonus
+      - fine
+      - allowance
+      - deduction
+      type: string
+      description: |-
+        * `bonus` - Bonus
+        * `fine` - Fine
+        * `allowance` - Allowance
+        * `deduction` - Deduction
+    PayrollAdjustmentSourceEnum:
+      enum:
+      - manual
+      - rule
+      - task
+      - attendance
+      - discipline
+      type: string
+      description: |-
+        * `manual` - Added by hand
+        * `rule` - Automatic rule
+        * `task` - Task
+        * `attendance` - Attendance
+        * `discipline` - Disciplinary record
+    PayrollAdjustmentStatusEnum:
+      enum:
+      - proposed
+      - approved
+      - rejected
+      - void
+      type: string
+      description: |-
+        * `proposed` - Proposed
+        * `approved` - Approved
+        * `rejected` - Rejected
+        * `void` - Void
+    PayrollAdvanceCap:
+      type: object
+      properties:
+        currency:
+          type: string
+        percent:
+          type: integer
+        cap:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        used:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        available:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+      required:
+      - available
+      - cap
+      - currency
+      - percent
+      - used
+    PayrollAdvanceRequestRequest:
+      type: object
+      properties:
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        installments:
+          type: integer
+          maximum: 12
+          minimum: 1
+          default: 1
+        reason:
+          type: string
+          default: ''
+          maxLength: 300
+      required:
+      - amount
+    PayrollAdvanceStatusEnum:
+      enum:
+      - requested
+      - approved
+      - rejected
+      - paid
+      - repaid
+      - cancelled
+      type: string
+      description: |-
+        * `requested` - Requested
+        * `approved` - Approved
+        * `rejected` - Rejected
+        * `paid` - Paid
+        * `repaid` - Repaid
+        * `cancelled` - Cancelled
+    PayrollDisputeRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 500
+      required:
+      - text
+    PayrollMyAdvances:
+      type: object
+      properties:
+        cap:
+          $ref: '#/components/schemas/PayrollAdvanceCap'
+        advances:
+          type: array
+          items:
+            $ref: '#/components/schemas/Advance'
+      required:
+      - advances
+      - cap
+    PayrollPayoutMethodEnum:
+      enum:
+      - cash
+      - card
+      - bank
+      type: string
+      description: |-
+        * `cash` - Cash
+        * `card` - Card
+        * `bank` - Bank transfer
+    PayrollPerson:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        photo_url:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+      - photo_url
+    PayrollRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    PayrollRepayment:
+      type: object
+      description: Drops `amount_fields` from the output unless the context's `show_amounts`
+        is true.
+      properties:
+        id:
+          type: integer
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        paid_on:
+          type: string
+          format: date
+        note:
+          type: string
+        payslip:
+          type: integer
+          nullable: true
+          readOnly: true
+        how:
+          type: string
+          readOnly: true
+      required:
+      - how
+      - id
+      - note
+      - paid_on
+      - payslip
     Period:
       type: object
       properties:
