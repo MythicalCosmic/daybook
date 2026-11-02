@@ -26,10 +26,13 @@ export function useRoomLanguages(primary: () => Language) {
     },
     { immediate: true },
   );
-  /** `key` in `language`, read again once that language's dictionary has arrived. */
+  /**
+   * `key` in `language`, read again once that language's dictionary has arrived; nothing until
+   * then (not the fallback language's words for a moment, and no "not found" warning).
+   */
   function say(key: string, language: Language): string {
     void loaded.value;
-    return i18n.global.t(key, {}, { locale: language });
+    return i18n.global.te(key, language) ? i18n.global.t(key, {}, { locale: language }) : "";
   }
   return { languages, say };
 }

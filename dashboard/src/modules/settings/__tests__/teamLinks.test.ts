@@ -171,6 +171,19 @@ describe("words", () => {
     expect(roomLanguages("ru")).toEqual(["ru", "uz"]);
     expect(roomLanguages("en")).toEqual(["en", "ru"]);
   });
+
+  it("says nothing in a language whose words haven't arrived yet: no fallback text, no warning", async () => {
+    const { effectScope } = await import("vue");
+    const { useRoomLanguages } = await import("../roomLanguages");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const scope = effectScope();
+    const { say } = scope.run(() => useRoomLanguages(() => "uz"))!;
+    expect(say("settings.invite.notThereYet", "ru")).toBe("");
+    expect(say("settings.invite.poster.title", "uz")).toBe(uz["settings.invite.poster.title"]);
+    expect(warn).not.toHaveBeenCalled();
+    scope.stop();
+    warn.mockRestore();
+  });
 });
 
 describe("Works for → expires_at", () => {
