@@ -3,14 +3,16 @@
  * watcher, the morning plan, the photo checker) with their switches and settings, what they did
  * (live), the voice notes and what they became, and Ask AI over the company's data. "Dictate" and
  * "Smart add" sit in the Tasks New task dialog (`tasks.create.tools`); the dictate dialog and the
- * shell's own Ask AI live in `shell.panel`. Not behind the "ai" switch: turning AI on (the Agents
+ * shell's own Ask AI live in `shell.panel`, and so does Claude's little helper that walks with the
+ * person on every page (BuddyCompanion.vue). Not behind the "ai" switch: turning AI on (the Agents
  * page) is what adds it. Pages, the widget, the panel and the dialog load on use.
  */
-import { Activity, AudioLines, Bot, MessagesSquare, Mic, Sparkles } from "@lucide/vue";
+import { Activity, AudioLines, Bot, MessagesSquare, Mic, Smile, Sparkles } from "@lucide/vue";
 import { defineAsyncComponent } from "vue";
 
 import { defineModule } from "@/core/modules";
 
+import { buddyEverywhere } from "./components/buddyPrefs";
 import { openDictation } from "./dictation";
 import { routes } from "./routes";
 
@@ -45,6 +47,7 @@ export default defineModule({
       keywords: ["smart", "aqlli", "умное", "several", "bir nechta", "несколько"],
       run: () => openDictation("text"),
     },
+    { id: "ai.buddy", title: ctx.t("ai.cmd.buddy"), icon: Smile, keywords: ["claude", "buddy", "chibi", "yordamchi", "помощник", "mascot"], run: () => (buddyEverywhere.value = !buddyEverywhere.value) },
     { id: "ai.agents", title: ctx.t("ai.cmd.agents"), icon: Bot, keywords: ["agent", "agentlar", "агенты", "ai"], run: () => ctx.go("ai") },
     { id: "ai.activity", title: ctx.t("ai.cmd.activity"), icon: Activity, keywords: ["activity", "faoliyat", "активность"], run: () => ctx.go("ai/activity") },
     { id: "ai.voice", title: ctx.t("ai.cmd.voice"), icon: AudioLines, keywords: ["voice", "ovozli", "голосовые"], run: () => ctx.go("ai/voice") },
@@ -53,7 +56,7 @@ export default defineModule({
   widgets: [{ id: "ai.kpi.today", span: 1, order: 33, kind: "kpi", component: defineAsyncComponent(() => import("./widgets/AgentsTodayWidget.vue")) }],
   settings: [{ id: "ai", title: "ai.settings.title", perm: "ai.configure", order: 10, icon: Sparkles, component: defineAsyncComponent(() => import("./components/AiSettingsPanel.vue")) }],
   extensions: {
-    "shell.panel": [defineAsyncComponent(() => import("./components/ShellHost.vue"))],
+    "shell.panel": [defineAsyncComponent(() => import("./components/ShellHost.vue")), defineAsyncComponent(() => import("./components/BuddyCompanion.vue"))],
     "tasks.create.tools": [defineAsyncComponent(() => import("./components/NewTaskTools.vue"))],
   },
   // The owner bot's "Edit" (`startapp=draft_41`) opens that voice note; `ai` the agents.

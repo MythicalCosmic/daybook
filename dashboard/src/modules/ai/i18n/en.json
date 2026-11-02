@@ -348,5 +348,10 @@
   "ai.buddy.onDuty": "Claude is on duty",
   "ai.buddy.ready": "The agents are ready for work",
   "ai.buddy.doing": "Now: {name}",
-  "ai.buddy.label": "Claude, your AI helper. Give it a tap"
+  "ai.buddy.label": "Claude, your AI helper. Give it a tap",
+  "ai.cmd.buddy": "Show or hide Claude's helper",
+  "ai.buddy.everywhere": "On every page",
+  "ai.buddy.companionLabel": "Claude is with you. Tap: it's happy. Press and hold: it hides",
+  "ai.buddy.hidden": "Claude is hidden",
+  "ai.buddy.bringBack": "Bring back"
 }

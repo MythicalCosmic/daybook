@@ -348,5 +348,10 @@
   "ai.buddy.onDuty": "Claude на посту",
   "ai.buddy.ready": "Агенты готовы к работе",
   "ai.buddy.doing": "Сейчас: {name}",
-  "ai.buddy.label": "Claude, ваш ИИ-помощник. Нажмите на него"
+  "ai.buddy.label": "Claude, ваш ИИ-помощник. Нажмите на него",
+  "ai.cmd.buddy": "Показать или спрятать помощника Claude",
+  "ai.buddy.everywhere": "На всех страницах",
+  "ai.buddy.companionLabel": "Claude с вами. Нажмите: обрадуется. Удерживайте: спрячется",
+  "ai.buddy.hidden": "Claude спрятался",
+  "ai.buddy.bringBack": "Вернуть"
 }

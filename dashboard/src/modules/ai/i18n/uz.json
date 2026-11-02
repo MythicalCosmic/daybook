@@ -348,5 +348,10 @@
   "ai.buddy.onDuty": "Claude navbatchilikda",
   "ai.buddy.ready": "Agentlar tayyor, ish kutyapti",
   "ai.buddy.doing": "Hozir: {name}",
-  "ai.buddy.label": "Claude, AI yordamchingiz. Bosib ko‘ring"
+  "ai.buddy.label": "Claude, AI yordamchingiz. Bosib ko‘ring",
+  "ai.cmd.buddy": "Claude yordamchisini ko‘rsatish yoki yashirish",
+  "ai.buddy.everywhere": "Har sahifada",
+  "ai.buddy.companionLabel": "Claude siz bilan. Bosing: xursand bo‘ladi. Bosib turing: yashirinadi",
+  "ai.buddy.hidden": "Claude yashirindi",
+  "ai.buddy.bringBack": "Qaytarish"
 }
