@@ -1,11 +1,15 @@
 // The registry first, as in the app: it is what loads every module's index.ts (see core/modules.ts).
 import "@/core/modules";
 
+import { VueQueryPlugin } from "@tanstack/vue-query";
 import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createMemoryHistory, createRouter } from "vue-router";
 
+import type { Company } from "@/api/types";
 import type { Perm } from "@/core/perms";
-import { mergeModuleMessages } from "@/i18n";
+import { i18n, mergeModuleMessages } from "@/i18n";
+import peopleEn from "@/modules/people/i18n/en.json";
 import { useSessionStore } from "@/stores/session";
 import { company, json, me } from "@/test/fixtures";
 import { mountWithProviders, testApp } from "@/test/plugins";
@@ -188,5 +192,64 @@ describe("Person 360 header actions", () => {
     stub();
     expect((await mountAs(["hr.suspend"], person("suspended"))).find("[data-lifecycle-actions]").exists()).toBe(false);
     expect((await mountAs(["hr.suspend"], person("approved", false))).find("[data-lifecycle-actions]").exists()).toBe(false);
+  });
+
+  it("leaves the person page its own Suspend where the company has HR switched off", async () => {
+    mergeModuleMessages("people", { en: peopleEn, ru: peopleEn, uz: peopleEn });
+    const PersonPage = (await import("@/modules/people/pages/PersonPage.vue")).default;
+    const DropdownMenu = (await import("@/components/DropdownMenu.vue")).default;
+    const detail = {
+      id: 7,
+      name: "Alisher Valiyev",
+      status: "approved",
+      suspended_until: null,
+      fields: {},
+      position: { id: 1, name: "Farmatsevt" },
+      role: { id: 2, name: "Xodim" },
+      home_branch: { id: 1, name: "Chilonzor" },
+      branches: [{ id: 1, name: "Chilonzor" }],
+      phone: "+998901234567",
+      username: "",
+      language: "uz",
+      can: { suspend: true },
+      overview: { trend: [], on_time: 0, late: 0, missed: 0, total: 0, on_time_percent: null, streak: 0, joined_on: "2025-10-06", days_off_this_year: 0, range: { from: "2026-10-04", to: "2026-11-02" }, upcoming_time_off: [] },
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string) => json(/\/people\/7\/(\?|$)/.test(input) ? detail : {})),
+    );
+
+    async function pageMenu(features: Company["features"]): Promise<{ labels: string[]; lifecycle: boolean }> {
+      const app = await testApp("/c/1/people/7");
+      useSessionStore().me = me([company({ features })]);
+      const router = createRouter({
+        history: createMemoryHistory(),
+        routes: [
+          { path: "/c/:companyId/people/:memberId(\\d+)/:tab?", component: PersonPage },
+          { path: "/:any(.*)*", component: { render: () => null } },
+        ],
+      });
+      await router.push("/c/1/people/7");
+      const { wrapper } = mountWithProviders(PersonPage, { plugins: [app.pinia, router, i18n, [VueQueryPlugin, { queryClient: app.client }]] });
+      await flushPromises();
+      await flushPromises();
+      expect(wrapper.text()).toContain("Alisher Valiyev");
+      // The page's own "more" menu, not the lifecycle actions in the header (they have a Suspend of their own).
+      const header = wrapper.findComponent(ProfileActions);
+      const theirs = new Set(header.exists() ? header.findAllComponents(DropdownMenu).map((menu) => menu.vm.$.uid) : []);
+      const labels = wrapper
+        .findAllComponents(DropdownMenu)
+        .filter((menu) => !theirs.has(menu.vm.$.uid))
+        .flatMap((menu) => (menu.props() as { items: Array<{ label?: string }> }).items.map((item) => item.label ?? ""));
+      return { labels, lifecycle: wrapper.find("[data-lifecycle-actions]").exists() };
+    }
+
+    // With HR on, suspending is the lifecycle's (the header actions); with HR off the people page keeps its own.
+    const withHr = await pageMenu(["finance", "hr"]);
+    expect(withHr.lifecycle).toBe(true);
+    expect(withHr.labels).not.toContain(peopleEn["people.action.suspend"]);
+    const withoutHr = await pageMenu(["finance"]);
+    expect(withoutHr.lifecycle).toBe(false);
+    expect(withoutHr.labels).toContain(peopleEn["people.action.suspend"]);
   });
 });
