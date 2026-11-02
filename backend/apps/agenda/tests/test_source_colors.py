@@ -17,6 +17,7 @@ from apps.console import registry
 from apps.console.registry import CALENDAR_COLORS, CalendarItem
 from apps.finance import services as finance
 from apps.finance.tests.factories import CounterpartyFactory
+from apps.hr import services as hr
 from apps.projects import services as projects
 from apps.tasks.models import Task
 from apps.tasks.tests.factories import TaskFactory
@@ -74,6 +75,18 @@ def owner(company, member):
     shift_at(worker, today + timedelta(days=1))
     reno = projects.create_project(company, by=owner, name="Renovation", key="RENO")
     projects.create_milestone(reno, by=owner, name="Walls up", due_on=today + timedelta(days=5))
+    # HR: a birthday and a contract ending (1996: a leap year, so 29 February fits too).
+    profile = hr.ensure_profile(worker)
+    profile.birth_date = (today + timedelta(days=3)).replace(year=1996)
+    profile.save()
+    contract = hr.create_contract(
+        worker,
+        by=owner,
+        kind="fixed_term",
+        starts_on=today - timedelta(days=30),
+        ends_on=today + timedelta(days=6),
+    )
+    hr.activate_contract(contract, by=owner)
     return owner
 
 

@@ -479,9 +479,12 @@ def document_opened(document: EmployeeDocument, user) -> None:
     )
 
 
-def may_see_document(member: Membership, document: EmployeeDocument) -> bool:
+def may_see_document(
+    member: Membership, document: EmployeeDocument, *, in_scope: bool = False
+) -> bool:
     """Whether `member` may open `document`'s file and read its number: their own document
-    shown to them, or anyone's in their scope with `hr.view` (`hr.sensitive` for an ID)."""
+    shown to them, or anyone's in their scope with `hr.view` (`hr.sensitive` for an ID).
+    `in_scope`: the caller already limited the documents to `member`'s branch scope."""
     if member.company_id != document.company_id:
         return False
     if document.membership_id == member.pk:
@@ -489,6 +492,8 @@ def may_see_document(member: Membership, document: EmployeeDocument) -> bool:
     perm = Perm.HR_SENSITIVE if document.is_id else Perm.HR_VIEW
     if not member.has_perm(perm):
         return False
+    if in_scope:
+        return True
     return (
         queries.person(member.company, document.membership_id, branch_ids=scope.branch_ids(member))
         is not None
@@ -1019,9 +1024,11 @@ def acknowledge_contract(contract: Contract, *, by: Membership) -> Contract:
     return contract
 
 
-def may_see_contract_file(member: Membership, contract: Contract) -> bool:
+def may_see_contract_file(
+    member: Membership, contract: Contract, *, in_scope: bool = False
+) -> bool:
     """The person's own contract (not a draft), or anyone's in scope for `hr.view`; a file
-    with the pay in it needs `payroll.view` as well."""
+    with the pay in it needs `payroll.view` as well. `in_scope` as for `may_see_document`."""
     if member.company_id != contract.company_id:
         return False
     if contract.membership_id == member.pk:
@@ -1030,6 +1037,8 @@ def may_see_contract_file(member: Membership, contract: Contract) -> bool:
         return False
     if contract.file_has_salary and not member.has_perm(Perm.PAYROLL_VIEW):
         return False
+    if in_scope:
+        return True
     return (
         queries.person(member.company, contract.membership_id, branch_ids=scope.branch_ids(member))
         is not None
