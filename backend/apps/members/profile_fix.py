@@ -47,6 +47,10 @@ def branches(company: Company) -> list[Branch]:
 
 
 def ensure_branches(company: Company) -> list[Branch]:
+    """The launch's single branch "Main" becomes Asosiy (its people, tasks and data stay with
+    it); G‘alaba is added."""
+    if not Branch.objects.filter(company=company, name=BRANCH_NAMES[0]).exists():
+        Branch.objects.filter(company=company, name="Main").update(name=BRANCH_NAMES[0])
     for name in BRANCH_NAMES:
         Branch.objects.get_or_create(company=company, name=name)
     return branches(company)
