@@ -414,4 +414,15 @@ describe("amounts", () => {
     expect(hidden.wrapper.text()).toBe(en["payroll.hidden"]);
     expect(hidden.wrapper.text()).not.toContain("0");
   });
+
+  it("a quiet zero is still printed, only dimmed and unsigned; other amounts are untouched", async () => {
+    const app = await testApp("/c/1/payroll");
+    const zero = mountWithProviders(PayAmount, { plugins: app.plugins, props: { value: "0.00", currency: "UZS", cell: true, quietZero: true, sign: "always", colored: true } });
+    expect(zero.wrapper.text()).toContain("0 UZS");
+    expect(zero.wrapper.text()).not.toContain("+");
+    expect(zero.wrapper.html()).toContain("opacity-40");
+    const bonus = mountWithProviders(PayAmount, { plugins: app.plugins, props: { value: "300000.00", currency: "UZS", cell: true, quietZero: true, sign: "always", colored: true } });
+    expect(bonus.wrapper.text()).toContain("+300,000 UZS");
+    expect(bonus.wrapper.html()).not.toContain("opacity-40");
+  });
 });

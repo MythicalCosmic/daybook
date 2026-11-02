@@ -53,6 +53,9 @@ export function hasAmount(value: Money | null | undefined): value is Money {
   return value !== undefined && value !== null && value !== "";
 }
 
+/** A KPI shows millions short ("96,8 mln so‘m") and a smaller amount whole: exact, and shorter. */
+export const kpiCompact = (value: Money | null | undefined): boolean => hasAmount(value) && dec(value).abs().gte(1_000_000);
+
 // ─── Periods ────────────────────────────────────────────────────────────────
 
 /** The period (first day of the month) a day falls in. */

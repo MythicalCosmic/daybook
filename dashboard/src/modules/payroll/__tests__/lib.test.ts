@@ -12,6 +12,7 @@ import {
   changePlan,
   emptyRule,
   hasAmount,
+  kpiCompact,
   lineGroups,
   lineHow,
   monthName,
@@ -335,6 +336,16 @@ describe("rule preview rows", () => {
     const split = previewSplit([{ member: person(1, "Aziza"), value: "96.5", units: null, tier: "95" }]);
     expect(split).toMatchObject({ hidden: true, others: [] });
     expect(split.earning).toHaveLength(1);
+  });
+});
+
+describe("KPI amounts", () => {
+  it("millions short, anything smaller whole and exact, nothing for a hidden amount", () => {
+    expect(kpiCompact("96771000.00")).toBe(true);
+    expect(kpiCompact("-1500000.00")).toBe(true);
+    expect(kpiCompact("461860.00")).toBe(false);
+    expect(kpiCompact("999999.99")).toBe(false);
+    expect(kpiCompact(undefined)).toBe(false);
   });
 });
 
