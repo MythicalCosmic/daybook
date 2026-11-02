@@ -69,7 +69,8 @@ async def company_picked(
         await bot_flow.edit(callback.message, (bot_messages.gone(), None))
         return
     seconds = int(data.get("seconds") or 0)
-    if refusal := await bot_flow.refused(member, seconds=seconds, size=data.get("size") or 0):
+    size = data.get("size") or 0
+    if refusal := await bot_flow.refused(member, seconds=seconds, size=size, bot_name="owner"):
         await bot_flow.edit(callback.message, (refusal, None))
         return
     await bot_flow.edit(callback.message, (bot_messages.listening(), None))

@@ -35,7 +35,8 @@ async def take_voice(
     message that becomes the card (None when the voice was turned down)."""
     media = message.voice or message.audio or message.video_note
     seconds = media.duration or 0
-    if refusal := await refused(membership, seconds=seconds, size=media.file_size or 0):
+    size = media.file_size or 0
+    if refusal := await refused(membership, seconds=seconds, size=size, bot_name=bot_name):
         await message.answer(refusal)
         return None
     sent = await message.answer(bot_messages.listening())
@@ -43,11 +44,15 @@ async def take_voice(
     return sent
 
 
-async def refused(membership: Membership, *, seconds: int, size: int) -> str | None:
+async def refused(
+    membership: Membership, *, seconds: int, size: int, bot_name: str = "employee"
+) -> str | None:
     """Why this recording can't become tasks (voice off, too long, too big), or None."""
     found = await sync_to_async(services.voice_status)(membership)
     if not found.voice:
-        return bot_messages.voice_off(membership, speech_missing=found.smart_text)
+        return bot_messages.voice_off(
+            membership, speech_missing=found.smart_text, typed_here=bot_name == "employee"
+        )
     if seconds > found.max_seconds:
         return bot_messages.too_long(found.max_seconds)
     if size > services.AUDIO_MAX_BYTES:

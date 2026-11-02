@@ -135,3 +135,45 @@ async def test_a_head_with_nobody_yet_still_gets_my_team(company, member):
         return [button.text for row in main_menu(fresh).keyboard for button in row]
 
     assert "My team" in await sync_to_async(setup)()
+
+
+async def test_my_team_reads_like_the_cards(dp, bot, sales, company):
+    """Dates were "02.11 08:15", long titles were cut mid-word
+    with no sign ("…tekshiruv "), and "Open: 3" stood capitalised mid-line."""
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from apps.tasks.callbacks import TeamCallback
+    from apps.tasks.models import Task
+
+    long_title = "Smenani qabul qilish: tekshiruv ro‘yxati va kassa qoldig‘i"
+
+    def setup():
+        Task.objects.create(
+            company=company,
+            kind=Task.Kind.ASSIGNED,
+            title=long_title,
+            assignee=sales["alisher"],
+            created_by=sales["bekzod"],
+            due_at=timezone.now() - timedelta(hours=2, minutes=15),
+        )
+
+    await sync_to_async(setup)()
+    head = updates.tg_user(sales["bekzod"].user.telegram_id)
+
+    await dp.feed_update(bot, updates.message(head, "My team"))
+    summary = sent(bot)[-1]
+    assert " — open: 1 · late: 1" in summary.text
+    labels = [b.text for row in summary.reply_markup.inline_keyboard for b in row]
+    cut = [label for label in labels if label.startswith("Smenani")]
+    assert cut and all(label.endswith("…") and not label.endswith(" …") for label in cut)
+
+    await dp.feed_update(
+        bot, updates.callback(head, TeamCallback(member_id=sales["alisher"].pk).pack())
+    )
+    history = sent(bot)[-1]
+    assert "late by 2 h 15 min" in history.text
+    assert "late since" not in history.text
+    labels = [b.text for row in history.reply_markup.inline_keyboard for b in row]
+    assert any(label.startswith("Smenani") and label.endswith("…") for label in labels)

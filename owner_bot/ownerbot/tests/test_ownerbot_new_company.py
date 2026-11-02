@@ -180,10 +180,12 @@ async def test_a_command_ends_the_conversation(dp, bot, settings, company, membe
     await dp.feed_update(bot, updates.message(person, "/today"))
     await dp.feed_update(bot, updates.message(person, "Not a company name"))
 
-    # /today answered, and the next text wasn't taken as a company name.
+    # /today answered, and the next text wasn't taken as a company name: it got the home
+    # message, as anything said outside a conversation does.
     assert "dashboard access" in bot.sent()[1].text
     assert await company_named("Not a company name") is None
-    assert len(bot.sent()) == 2
+    assert len(bot.sent()) == 3
+    assert "/new" in bot.sent()[2].text
 
 
 async def test_owners_add_companies_without_a_code(dp, bot, settings, company, member):

@@ -160,9 +160,8 @@ def send_extension_decided(task_id: int, approved: bool, by_id: int, until: str)
     task, by = _load(task_id), _member(by_id)
     if task is None or by is None or not task.is_open:
         return
-    _send(
-        task.assignee, bot_messages.extension_answer, task, approved, by, timezone.now(), about=task
-    )
+    # A short notice, not a copy of the card: C5 never redraws it into one (audit B-19).
+    _send(task.assignee, bot_messages.extension_answer, task, approved, by, timezone.now())
 
 
 def refresh_card(task_id: int, member_id: int, chat_id: int, message_id: int) -> None:

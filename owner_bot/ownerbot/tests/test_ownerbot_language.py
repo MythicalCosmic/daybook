@@ -78,3 +78,29 @@ async def test_the_home_message_offers_the_languages_in_place(dp, bot):
         assert redrawn.text.startswith(gettext("Hello, %(name)s!") % {"name": person.first_name})
     assert redrawn.reply_markup.inline_keyboard[-1][0].text == LANGUAGE_BUTTON
     assert len(bot.sent()) == 1  # all in place
+
+
+@pytest.mark.django_db(transaction=True)
+async def test_a_tap_on_a_message_out_of_reach_says_so(dp, bot):
+    """An InaccessibleMessage (deleted or too old) can't be edited: a toast says what to do,
+    not "Something went wrong"."""
+    from aiogram.types import CallbackQuery, Chat, InaccessibleMessage, Update
+
+    person = updates.tg_user(7109)
+    await dp.feed_update(bot, updates.message(person, "/language"))
+    update = Update(
+        update_id=990_001,
+        callback_query=CallbackQuery(
+            id="990002",
+            from_user=person,
+            chat_instance="owner",
+            data=OwnerLanguage(code="ru").pack(),
+            message=InaccessibleMessage(chat=Chat(id=person.id, type="private"), message_id=5),
+        ),
+    )
+
+    await dp.feed_update(bot, update)
+
+    with translation.override("uz"):
+        expected = gettext("This message is too old. Open it again from the menu.")
+    assert bot.answers()[-1].text == expected

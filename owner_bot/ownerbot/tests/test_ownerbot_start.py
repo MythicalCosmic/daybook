@@ -71,3 +71,24 @@ async def test_any_message_after_a_block_counts_as_unblocked(dp, bot):
 
     user = await user_of(7005)
     assert user.owner_bot_started_at is not None and user.owner_bot_blocked_at is None
+
+
+@pytest.mark.parametrize("said", ["/help", "/inbox", "salom", "Kassani sanash ertaga"])
+async def test_anything_else_gets_the_home_message(dp, bot, said):
+    """/help, a stray command or a typed task heard nothing at all (a dead end)."""
+    person = updates.tg_user(7031)
+
+    await dp.feed_update(bot, updates.message(person, said))
+
+    [reply] = bot.sent()
+    assert "/new" in reply.text  # the home message of someone without a company yet
+
+
+async def test_the_new_company_conversation_still_takes_its_text(dp, bot, settings):
+    settings.COMPANY_SIGNUP = "open"
+    person = updates.tg_user(7032)
+    await dp.feed_update(bot, updates.message(person, "/new"))
+
+    await dp.feed_update(bot, updates.message(person, "Shifo Dorixona"))
+
+    assert "Shifo Dorixona" in bot.sent()[-1].text  # the next step, not the home message

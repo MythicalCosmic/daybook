@@ -140,3 +140,22 @@ def test_pages_turn_with_words(worker, manager):
     assert [button.text for button in first.inline_keyboard[-2]] == ["1/2", "Next"]
     assert [button.text for button in second.inline_keyboard[-2]] == ["Previous", "2/2"]
     assert second.inline_keyboard[-1][0].text == "Back"
+
+
+def test_a_done_card_with_its_photo_keeps_two_buttons_a_row(worker, manager, settings):
+    """The finished card read "Photo | Open in app | My tasks": three in a row, and a phone
+    cut "Open in app" to "Ilovada och…"."""
+    from apps.tasks import services
+    from apps.tasks.tests.factories import jpeg
+
+    settings.EMPLOYEE_MINIAPP_URL = "https://app.example/app/"
+    task = TaskFactory(assignee=worker, created_by=manager, proof=Proof.PHOTO)
+    task = services.complete_task(task, by=worker, proof_photo=jpeg("proof.jpg"))
+
+    for language in ("uz", "ru", "en"):
+        with translation.override(language):
+            for reader in (worker, manager):
+                _text, markup = bot_messages.task_card(task, reader, timezone.now())
+                rows = [[button.text for button in row] for row in markup.inline_keyboard]
+                assert all(len(row) <= 2 for row in rows), (language, rows)
+                assert any(bot_messages._("Photo") in row for row in rows), (language, rows)

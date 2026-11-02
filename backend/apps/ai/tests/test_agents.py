@@ -714,3 +714,18 @@ def test_the_activity_feed_keeps_to_the_readers_branches(owner_api, crew, compan
     assert [item["text"] for item in page["results"]] == [
         "Told Bekzod that «Here» is late (Alisher)"
     ]
+
+
+def test_the_late_note_is_in_the_readers_language(crew):
+    """It said "Срок: Bugun, 2-noyabr (dushanba), 09:00" to a Russian reader."""
+    from django.utils import translation
+
+    from apps.ai import bot_messages
+
+    task = late_task(crew)
+
+    with translation.override("ru"):
+        text, _markup = bot_messages.late_task(task, crew["giver"], local(12))
+
+    assert "Срок: сегодня, 09:00" in text
+    assert "Bugun" not in text
