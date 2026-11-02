@@ -9,8 +9,13 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.core.files import signed_url
+from apps.core.models import Language
 from apps.hr import ids, queries, services
 from apps.hr.models import (
+    TERM_KINDS,
+    Contract,
+    ContractKind,
+    ContractTemplate,
     DocumentKind,
     DocumentLevel,
     EmergencyContact,
@@ -623,3 +628,327 @@ class MyDocumentWriteSerializer(serializers.Serializer):
 
     class Meta:
         ref_name = "HrMyDocumentWrite"
+
+
+# Contract templates and contracts ---------------------------------------------------------
+
+
+class ContractTemplateSerializer(serializers.ModelSerializer):
+    kind = serializers.ChoiceField(ContractKind.choices, allow_blank=True, required=False)
+    language = serializers.ChoiceField(Language.choices, required=False)
+    contracts = serializers.SerializerMethodField(help_text="Contracts printed from it.")
+
+    class Meta:
+        model = ContractTemplate
+        fields = ("id", "name", "kind", "language", "body", "is_active", "contracts", "updated_at")
+        read_only_fields = ("id", "contracts", "updated_at")
+        ref_name = "HrContractTemplate"
+
+    def get_contracts(self, template: ContractTemplate) -> int:
+        found = getattr(template, "contracts_count", None)
+        return found if found is not None else template.contracts.count()
+
+
+class PreviewRequestSerializer(serializers.Serializer):
+    member_id = serializers.IntegerField(required=False, allow_null=True)
+    body = serializers.CharField(required=False, help_text="Unsaved text to preview instead.")
+    language = serializers.ChoiceField(Language.choices, required=False)
+
+    class Meta:
+        ref_name = "HrPreviewRequest"
+
+
+class PreviewSerializer(serializers.Serializer):
+    html = serializers.CharField(help_text="The filled-in text (safe HTML).")
+    empty = serializers.ListField(
+        child=serializers.CharField(), help_text="Placeholders with nothing to fill in."
+    )
+    has_salary = serializers.BooleanField()
+
+    class Meta:
+        ref_name = "HrPreview"
+
+
+class PlaceholdersSerializer(serializers.Serializer):
+    placeholders = serializers.ListField(child=serializers.CharField())
+
+    class Meta:
+        ref_name = "HrPlaceholders"
+
+
+class ContractActionsSerializer(serializers.Serializer):
+    edit = serializers.BooleanField()
+    delete = serializers.BooleanField()
+    activate = serializers.BooleanField()
+    terminate = serializers.BooleanField()
+    end = serializers.BooleanField()
+    renew = serializers.BooleanField()
+    pass_probation = serializers.BooleanField()
+    extend_probation = serializers.BooleanField()
+    generate_pdf = serializers.BooleanField()
+
+    class Meta:
+        ref_name = "HrContractActions"
+
+
+def contract_actions(contract: Contract, member: Membership) -> dict:
+    """What `member` may do with `contract` now (the buttons the dashboard shows)."""
+    manage = member.has_perm(Perm.HR_MANAGE)
+    draft = contract.status == Contract.Status.DRAFT
+    active = contract.status == Contract.Status.ACTIVE
+    probation = active and contract.on_probation
+    return {
+        "edit": manage and draft,
+        "delete": manage and draft,
+        "activate": manage and draft,
+        "terminate": manage and active,
+        "end": manage and active,
+        "renew": manage
+        and contract.status in (Contract.Status.ACTIVE, Contract.Status.ENDED)
+        and contract.kind in TERM_KINDS,
+        "pass_probation": manage and probation,
+        "extend_probation": manage and probation,
+        "generate_pdf": manage,
+    }
+
+
+class ContractSerializer(serializers.ModelSerializer):
+    """A contract row. A file with the pay in it is left out without `payroll.view`
+    (`file_hidden` says one exists)."""
+
+    member = serializers.SerializerMethodField()
+    home_branch = serializers.SerializerMethodField()
+    kind = serializers.ChoiceField(ContractKind.choices, read_only=True)
+    status = serializers.ChoiceField(Contract.Status.choices, read_only=True)
+    position = serializers.SerializerMethodField()
+    template = serializers.SerializerMethodField()
+    weekly_hours = serializers.DecimalField(
+        max_digits=4, decimal_places=1, read_only=True, allow_null=True
+    )
+    on_probation = serializers.BooleanField(read_only=True)
+    file = serializers.SerializerMethodField(help_text="Signed download link.")
+    has_file = serializers.SerializerMethodField()
+    file_hidden = serializers.SerializerMethodField()
+    file_is_scan = serializers.SerializerMethodField()
+    days_left = serializers.SerializerMethodField(help_text="Days until it ends; null if open.")
+    probation_days_left = serializers.SerializerMethodField()
+    created_by = serializers.SerializerMethodField()
+    actions = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Contract
+        fields = (
+            "id",
+            "member",
+            "home_branch",
+            "number",
+            "kind",
+            "status",
+            "position",
+            "starts_on",
+            "ends_on",
+            "probation_until",
+            "probation_passed_at",
+            "on_probation",
+            "weekly_hours",
+            "template",
+            "file",
+            "has_file",
+            "file_hidden",
+            "file_is_scan",
+            "pdf_generated_at",
+            "acknowledged_at",
+            "terminated_on",
+            "termination_reason",
+            "note",
+            "days_left",
+            "probation_days_left",
+            "created_by",
+            "created_at",
+            "actions",
+        )
+        read_only_fields = fields
+        ref_name = "HrContract"
+
+    def _sees(self, contract: Contract) -> bool:
+        cache = self.context.setdefault("_sees_contract", {})
+        if contract.pk not in cache:
+            cache[contract.pk] = services.may_see_contract_file(viewer(self.context), contract)
+        return cache[contract.pk]
+
+    @extend_schema_field(PersonRefSerializer)
+    def get_member(self, contract: Contract) -> dict:
+        return person_ref(contract.membership)
+
+    @extend_schema_field(BranchRefSerializer(allow_null=True))
+    def get_home_branch(self, contract: Contract) -> dict | None:
+        return branch_ref(contract.membership.home_branch)
+
+    @extend_schema_field(NamedSerializer(allow_null=True))
+    def get_position(self, contract: Contract) -> dict | None:
+        return named(contract.position)
+
+    @extend_schema_field(NamedSerializer(allow_null=True))
+    def get_template(self, contract: Contract) -> dict | None:
+        return named(contract.template)
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_file(self, contract: Contract) -> str | None:
+        if not contract.file or not self._sees(contract):
+            return None
+        return contract_link(contract, self.context["request"].user)
+
+    def get_has_file(self, contract: Contract) -> bool:
+        return bool(contract.file)
+
+    def get_file_hidden(self, contract: Contract) -> bool:
+        return bool(contract.file) and not self._sees(contract)
+
+    def get_file_is_scan(self, contract: Contract) -> bool:
+        return bool(contract.file) and contract.pdf_generated_at is None
+
+    def get_days_left(self, contract: Contract) -> int | None:
+        if contract.ends_on is None:
+            return None
+        return (contract.ends_on - self.context["today"]).days
+
+    def get_probation_days_left(self, contract: Contract) -> int | None:
+        if not contract.on_probation:
+            return None
+        return (contract.probation_until - self.context["today"]).days
+
+    def get_created_by(self, contract: Contract) -> str | None:
+        user = contract.created_by
+        return user.get_full_name() or str(user) if user else None
+
+    @extend_schema_field(ContractActionsSerializer)
+    def get_actions(self, contract: Contract) -> dict:
+        return contract_actions(contract, viewer(self.context))
+
+
+def contract_link(contract: Contract, user) -> str:
+    """A signed link to the contract's file, saved as "<number>.pdf"."""
+    extension = contract.file.name.rsplit(".", 1)[-1]
+    return signed_url(
+        contract.file,
+        user=user,
+        company_id=contract.company_id,
+        check=f"hr.contract:{contract.pk}",
+        filename=f"{contract.number or contract.pk}.{extension}",
+    )
+
+
+class ContractWriteSerializer(serializers.Serializer):
+    """A contract's terms; multipart with `file` for a signed scan."""
+
+    member_id = serializers.IntegerField(required=False, help_text="Whose contract (on create).")
+    number = serializers.CharField(max_length=30, allow_blank=True, required=False)
+    kind = serializers.ChoiceField(ContractKind.choices, required=False)
+    starts_on = serializers.DateField(required=False)
+    ends_on = serializers.DateField(allow_null=True, required=False)
+    probation_until = serializers.DateField(allow_null=True, required=False)
+    weekly_hours = serializers.DecimalField(
+        max_digits=4,
+        decimal_places=1,
+        min_value=1,
+        max_value=60,
+        allow_null=True,
+        required=False,
+    )
+    position_id = serializers.IntegerField(allow_null=True, required=False)
+    template_id = serializers.IntegerField(allow_null=True, required=False)
+    note = serializers.CharField(max_length=300, allow_blank=True, required=False)
+    file = serializers.FileField(required=False, allow_null=True)
+
+    class Meta:
+        ref_name = "HrContractWrite"
+
+
+class TerminateSerializer(serializers.Serializer):
+    terminated_on = serializers.DateField()
+    reason = serializers.CharField(max_length=300)
+
+    class Meta:
+        ref_name = "HrContractTerminate"
+
+
+class EndSerializer(serializers.Serializer):
+    ended_on = serializers.DateField(required=False, help_text="Its end date by default.")
+    reason = serializers.CharField(max_length=300, allow_blank=True, required=False)
+
+    class Meta:
+        ref_name = "HrContractEnd"
+
+
+class RenewSerializer(serializers.Serializer):
+    ends_on = serializers.DateField(allow_null=True, required=False)
+    starts_on = serializers.DateField(required=False, help_text="The day after the old end.")
+    kind = serializers.ChoiceField(ContractKind.choices, required=False)
+
+    class Meta:
+        ref_name = "HrContractRenew"
+
+
+class ExtendProbationSerializer(serializers.Serializer):
+    until = serializers.DateField()
+
+    class Meta:
+        ref_name = "HrExtendProbation"
+
+
+class GeneratePdfSerializer(serializers.Serializer):
+    template_id = serializers.IntegerField(required=False, allow_null=True)
+
+    class Meta:
+        ref_name = "HrGeneratePdf"
+
+
+class MyContractSerializer(serializers.ModelSerializer):
+    kind = serializers.ChoiceField(ContractKind.choices, read_only=True)
+    status = serializers.ChoiceField(Contract.Status.choices, read_only=True)
+    position = serializers.SerializerMethodField()
+    weekly_hours = serializers.DecimalField(
+        max_digits=4, decimal_places=1, read_only=True, allow_null=True
+    )
+    file = serializers.SerializerMethodField(help_text="Signed download link (a PDF or a scan).")
+    needs_acknowledgement = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Contract
+        fields = (
+            "id",
+            "number",
+            "kind",
+            "status",
+            "position",
+            "starts_on",
+            "ends_on",
+            "probation_until",
+            "probation_passed_at",
+            "weekly_hours",
+            "file",
+            "acknowledged_at",
+            "needs_acknowledgement",
+            "terminated_on",
+        )
+        read_only_fields = fields
+        ref_name = "HrMyContract"
+
+    def get_position(self, contract: Contract) -> str | None:
+        return contract.position.name if contract.position else None
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_file(self, contract: Contract) -> str | None:
+        if not contract.file:
+            return None
+        return contract_link(contract, self.context["request"].user)
+
+    def get_needs_acknowledgement(self, contract: Contract) -> bool:
+        return contract.status == Contract.Status.ACTIVE and contract.acknowledged_at is None
+
+
+class FileLinkSerializer(serializers.Serializer):
+    url = serializers.CharField()
+
+    class Meta:
+        ref_name = "HrFileLink"

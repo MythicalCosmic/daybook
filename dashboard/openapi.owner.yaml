@@ -5930,6 +5930,764 @@ paths:
                 items:
                   $ref: '#/components/schemas/Holiday'
           description: ''
+  /api/v1/owner/companies/{company_id}/hr/contract-templates/:
+    get:
+      operationId: companies_hr_contract_templates_list
+      description: The company's contract texts with {{placeholders}}, and a live
+        preview for a person.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HrContractTemplate'
+          description: ''
+    post:
+      operationId: companies_hr_contract_templates_create
+      description: The company's contract texts with {{placeholders}}, and a live
+        preview for a person.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrContractTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrContractTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrContractTemplateRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrContractTemplate'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/contract-templates/{id}/:
+    get:
+      operationId: companies_hr_contract_templates_retrieve
+      description: The company's contract texts with {{placeholders}}, and a live
+        preview for a person.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrContractTemplate'
+          description: ''
+    put:
+      operationId: companies_hr_contract_templates_update
+      description: The company's contract texts with {{placeholders}}, and a live
+        preview for a person.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrContractTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrContractTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrContractTemplateRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrContractTemplate'
+          description: ''
+    patch:
+      operationId: companies_hr_contract_templates_partial_update
+      description: The company's contract texts with {{placeholders}}, and a live
+        preview for a person.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedHrContractTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedHrContractTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedHrContractTemplateRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrContractTemplate'
+          description: ''
+    delete:
+      operationId: companies_hr_contract_templates_destroy
+      description: The company's contract texts with {{placeholders}}, and a live
+        preview for a person.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/hr/contract-templates/{id}/preview/:
+    post:
+      operationId: companies_hr_contract_templates_preview_create
+      description: The company's contract texts with {{placeholders}}, and a live
+        preview for a person.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrPreviewRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrPreviewRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrPreviewRequestRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrPreview'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/contract-templates/placeholders/:
+    get:
+      operationId: companies_hr_contract_templates_placeholders_retrieve
+      description: The company's contract texts with {{placeholders}}, and a live
+        preview for a person.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrPlaceholders'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/contract-templates/preview/:
+    post:
+      operationId: companies_hr_contract_templates_preview_unsaved
+      description: Preview text that isn't saved yet (`body` is required).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrPreviewRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrPreviewRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrPreviewRequestRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrPreview'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/contracts/:
+    get:
+      operationId: companies_hr_contracts_list
+      description: |-
+        Everyone's contracts in scope, and what happens to them: signing, ending,
+        terminating, renewing, probation, the PDF from a template.
+      parameters:
+      - in: query
+        name: acknowledged
+        schema:
+          type: boolean
+      - in: query
+        name: branch
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Branch ids (in scope).
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: ending_within
+        schema:
+          type: integer
+        description: In force, ends within N days.
+      - in: query
+        name: kind
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - civil
+            - fixed_term
+            - indefinite
+            - internship
+      - in: query
+        name: member
+        schema:
+          type: integer
+      - in: query
+        name: ordering
+        schema:
+          type: string
+          enum:
+          - -ends_on
+          - -starts_on
+          - ends_on
+          - starts_on
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: probation_within
+        schema:
+          type: integer
+        description: Probation ends within N days.
+      - in: query
+        name: q
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: array
+          items:
+            type: string
+            enum:
+            - active
+            - draft
+            - ended
+            - terminated
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedHrContractList'
+          description: ''
+    post:
+      operationId: companies_hr_contracts_create
+      description: |-
+        Everyone's contracts in scope, and what happens to them: signing, ending,
+        terminating, renewing, probation, the PDF from a template.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrContractWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrContractWriteRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrContractWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrContract'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/contracts/{id}/:
+    get:
+      operationId: companies_hr_contracts_retrieve
+      description: |-
+        Everyone's contracts in scope, and what happens to them: signing, ending,
+        terminating, renewing, probation, the PDF from a template.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrContract'
+          description: ''
+    patch:
+      operationId: companies_hr_contracts_partial_update
+      description: |-
+        Everyone's contracts in scope, and what happens to them: signing, ending,
+        terminating, renewing, probation, the PDF from a template.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedHrContractWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedHrContractWriteRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedHrContractWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrContract'
+          description: ''
+    delete:
+      operationId: companies_hr_contracts_destroy
+      description: |-
+        Everyone's contracts in scope, and what happens to them: signing, ending,
+        terminating, renewing, probation, the PDF from a template.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/hr/contracts/{id}/activate/:
+    post:
+      operationId: companies_hr_contracts_activate_create
+      description: |-
+        Everyone's contracts in scope, and what happens to them: signing, ending,
+        terminating, renewing, probation, the PDF from a template.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrContract'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/contracts/{id}/end/:
+    post:
+      operationId: companies_hr_contracts_end_create
+      description: |-
+        Everyone's contracts in scope, and what happens to them: signing, ending,
+        terminating, renewing, probation, the PDF from a template.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrContractEndRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrContractEndRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrContractEndRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrContract'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/contracts/{id}/extend-probation/:
+    post:
+      operationId: companies_hr_contracts_extend_probation_create
+      description: |-
+        Everyone's contracts in scope, and what happens to them: signing, ending,
+        terminating, renewing, probation, the PDF from a template.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrExtendProbationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrExtendProbationRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrExtendProbationRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrContract'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/contracts/{id}/generate-pdf/:
+    post:
+      operationId: companies_hr_contracts_generate_pdf_create
+      description: |-
+        Everyone's contracts in scope, and what happens to them: signing, ending,
+        terminating, renewing, probation, the PDF from a template.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrGeneratePdfRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrGeneratePdfRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrGeneratePdfRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrContract'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/contracts/{id}/pass-probation/:
+    post:
+      operationId: companies_hr_contracts_pass_probation_create
+      description: |-
+        Everyone's contracts in scope, and what happens to them: signing, ending,
+        terminating, renewing, probation, the PDF from a template.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrContract'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/contracts/{id}/renew/:
+    post:
+      operationId: companies_hr_contracts_renew_create
+      description: |-
+        Everyone's contracts in scope, and what happens to them: signing, ending,
+        terminating, renewing, probation, the PDF from a template.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrContractRenewRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrContractRenewRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrContractRenewRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrContract'
+          description: ''
+  /api/v1/owner/companies/{company_id}/hr/contracts/{id}/terminate/:
+    post:
+      operationId: companies_hr_contracts_terminate_create
+      description: |-
+        Everyone's contracts in scope, and what happens to them: signing, ending,
+        terminating, renewing, probation, the PDF from a template.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HrContractTerminateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HrContractTerminateRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HrContractTerminateRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HrContract'
+          description: ''
   /api/v1/owner/companies/{company_id}/hr/documents/:
     get:
       operationId: companies_hr_documents_list
@@ -19825,6 +20583,189 @@ components:
       - missing
       - people
       - unverified
+    HrContract:
+      type: object
+      description: |-
+        A contract row. A file with the pay in it is left out without `payroll.view`
+        (`file_hidden` says one exists).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        member:
+          allOf:
+          - $ref: '#/components/schemas/HrPersonRef'
+          readOnly: true
+        home_branch:
+          allOf:
+          - $ref: '#/components/schemas/HrBranchRef'
+          nullable: true
+          readOnly: true
+        number:
+          type: string
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/HrContractKindEnum'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/HrContractStatusEnum'
+          readOnly: true
+        position:
+          allOf:
+          - $ref: '#/components/schemas/HrNamed'
+          nullable: true
+          readOnly: true
+        starts_on:
+          type: string
+          format: date
+          readOnly: true
+        ends_on:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        probation_until:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        probation_passed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        on_probation:
+          type: boolean
+          readOnly: true
+        weekly_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+          readOnly: true
+          nullable: true
+        template:
+          allOf:
+          - $ref: '#/components/schemas/HrNamed'
+          nullable: true
+          readOnly: true
+        file:
+          type: string
+          nullable: true
+          readOnly: true
+          description: Signed download link.
+        has_file:
+          type: boolean
+          readOnly: true
+        file_hidden:
+          type: boolean
+          readOnly: true
+        file_is_scan:
+          type: boolean
+          readOnly: true
+        pdf_generated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        acknowledged_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        terminated_on:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        termination_reason:
+          type: string
+          readOnly: true
+        note:
+          type: string
+          readOnly: true
+        days_left:
+          type: integer
+          nullable: true
+          readOnly: true
+          description: Days until it ends; null if open.
+        probation_days_left:
+          type: integer
+          nullable: true
+          readOnly: true
+        created_by:
+          type: string
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        actions:
+          allOf:
+          - $ref: '#/components/schemas/HrContractActions'
+          readOnly: true
+      required:
+      - acknowledged_at
+      - actions
+      - created_at
+      - created_by
+      - days_left
+      - ends_on
+      - file
+      - file_hidden
+      - file_is_scan
+      - has_file
+      - home_branch
+      - id
+      - kind
+      - member
+      - note
+      - number
+      - on_probation
+      - pdf_generated_at
+      - position
+      - probation_days_left
+      - probation_passed_at
+      - probation_until
+      - starts_on
+      - status
+      - template
+      - terminated_on
+      - termination_reason
+      - weekly_hours
+    HrContractActions:
+      type: object
+      properties:
+        edit:
+          type: boolean
+        delete:
+          type: boolean
+        activate:
+          type: boolean
+        terminate:
+          type: boolean
+        end:
+          type: boolean
+        renew:
+          type: boolean
+        pass_probation:
+          type: boolean
+        extend_probation:
+          type: boolean
+        generate_pdf:
+          type: boolean
+      required:
+      - activate
+      - delete
+      - edit
+      - end
+      - extend_probation
+      - generate_pdf
+      - pass_probation
+      - renew
+      - terminate
     HrContractCounts:
       type: object
       properties:
@@ -19869,6 +20810,161 @@ components:
       - id
       - member
       - number
+    HrContractEndRequest:
+      type: object
+      properties:
+        ended_on:
+          type: string
+          format: date
+          description: Its end date by default.
+        reason:
+          type: string
+          maxLength: 300
+    HrContractKindEnum:
+      enum:
+      - indefinite
+      - fixed_term
+      - civil
+      - internship
+      type: string
+      description: |-
+        * `indefinite` - Indefinite
+        * `fixed_term` - Fixed term
+        * `civil` - Civil contract
+        * `internship` - Internship
+    HrContractRenewRequest:
+      type: object
+      properties:
+        ends_on:
+          type: string
+          format: date
+          nullable: true
+        starts_on:
+          type: string
+          format: date
+          description: The day after the old end.
+        kind:
+          $ref: '#/components/schemas/HrContractKindEnum'
+    HrContractStatusEnum:
+      enum:
+      - draft
+      - active
+      - ended
+      - terminated
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `active` - In force
+        * `ended` - Ended
+        * `terminated` - Terminated
+    HrContractTemplate:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        kind:
+          oneOf:
+          - $ref: '#/components/schemas/HrContractKindEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        language:
+          $ref: '#/components/schemas/LanguageEnum'
+        body:
+          type: string
+        is_active:
+          type: boolean
+        contracts:
+          type: integer
+          readOnly: true
+          description: Contracts printed from it.
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - body
+      - contracts
+      - id
+      - name
+      - updated_at
+    HrContractTemplateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        kind:
+          oneOf:
+          - $ref: '#/components/schemas/HrContractKindEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        language:
+          $ref: '#/components/schemas/LanguageEnum'
+        body:
+          type: string
+          minLength: 1
+        is_active:
+          type: boolean
+      required:
+      - body
+      - name
+    HrContractTerminateRequest:
+      type: object
+      properties:
+        terminated_on:
+          type: string
+          format: date
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+      required:
+      - reason
+      - terminated_on
+    HrContractWriteRequest:
+      type: object
+      description: A contract's terms; multipart with `file` for a signed scan.
+      properties:
+        member_id:
+          type: integer
+          description: Whose contract (on create).
+        number:
+          type: string
+          maxLength: 30
+        kind:
+          $ref: '#/components/schemas/HrContractKindEnum'
+        starts_on:
+          type: string
+          format: date
+        ends_on:
+          type: string
+          format: date
+          nullable: true
+        probation_until:
+          type: string
+          format: date
+          nullable: true
+        weekly_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+          nullable: true
+        position_id:
+          type: integer
+          nullable: true
+        template_id:
+          type: integer
+          nullable: true
+        note:
+          type: string
+          maxLength: 300
+        file:
+          type: string
+          format: binary
+          nullable: true
     HrDocument:
       type: object
       description: |-
@@ -20189,6 +21285,14 @@ components:
       - kind
       - member
       - title
+    HrExtendProbationRequest:
+      type: object
+      properties:
+        until:
+          type: string
+          format: date
+      required:
+      - until
     HrGenderEnum:
       enum:
       - male
@@ -20197,6 +21301,12 @@ components:
       description: |-
         * `male` - Male
         * `female` - Female
+    HrGeneratePdfRequest:
+      type: object
+      properties:
+        template_id:
+          type: integer
+          nullable: true
     HrHeadcount:
       type: object
       properties:
@@ -20298,6 +21408,44 @@ components:
       - id
       - name
       - photo_url
+    HrPlaceholders:
+      type: object
+      properties:
+        placeholders:
+          type: array
+          items:
+            type: string
+      required:
+      - placeholders
+    HrPreview:
+      type: object
+      properties:
+        html:
+          type: string
+          description: The filled-in text (safe HTML).
+        empty:
+          type: array
+          items:
+            type: string
+          description: Placeholders with nothing to fill in.
+        has_salary:
+          type: boolean
+      required:
+      - empty
+      - has_salary
+      - html
+    HrPreviewRequestRequest:
+      type: object
+      properties:
+        member_id:
+          type: integer
+          nullable: true
+        body:
+          type: string
+          minLength: 1
+          description: Unsaved text to preview instead.
+        language:
+          $ref: '#/components/schemas/LanguageEnum'
     HrProfile:
       type: object
       description: 'A person''s profile as HR sees it: IDs masked, notes only for
@@ -20548,6 +21696,12 @@ components:
           type: boolean
         celebrate_anniversaries:
           type: boolean
+        employer_name:
+          type: string
+          maxLength: 200
+        employer_tin:
+          type: string
+          maxLength: 9
     HrTerminationReasonEnum:
       enum:
       - resigned
@@ -23214,6 +24368,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/HistoryRecord'
+    PaginatedHrContractList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/HrContract'
     PaginatedHrDocumentList:
       type: object
       required:
@@ -24127,6 +25304,65 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+    PatchedHrContractTemplateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        kind:
+          oneOf:
+          - $ref: '#/components/schemas/HrContractKindEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        language:
+          $ref: '#/components/schemas/LanguageEnum'
+        body:
+          type: string
+          minLength: 1
+        is_active:
+          type: boolean
+    PatchedHrContractWriteRequest:
+      type: object
+      description: A contract's terms; multipart with `file` for a signed scan.
+      properties:
+        member_id:
+          type: integer
+          description: Whose contract (on create).
+        number:
+          type: string
+          maxLength: 30
+        kind:
+          $ref: '#/components/schemas/HrContractKindEnum'
+        starts_on:
+          type: string
+          format: date
+        ends_on:
+          type: string
+          format: date
+          nullable: true
+        probation_until:
+          type: string
+          format: date
+          nullable: true
+        weekly_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+          nullable: true
+        position_id:
+          type: integer
+          nullable: true
+        template_id:
+          type: integer
+          nullable: true
+        note:
+          type: string
+          maxLength: 300
+        file:
+          type: string
+          format: binary
+          nullable: true
     PatchedHrDocumentWriteRequest:
       type: object
       description: A document's fields; multipart with `file` (a PDF or a picture).
@@ -24288,6 +25524,12 @@ components:
           type: boolean
         celebrate_anniversaries:
           type: boolean
+        employer_name:
+          type: string
+          maxLength: 200
+        employer_tin:
+          type: string
+          maxLength: 9
     PatchedJoinLinkPatchRequest:
       type: object
       properties:

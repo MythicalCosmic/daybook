@@ -14,4 +14,6 @@ ENUM_NAME_OVERRIDES = {
     "HrTerminationReasonEnum": "apps.hr.models.EmployeeProfile.TerminationReason",
     "HrDocumentStateEnum": "apps.hr.queries.DOCUMENT_STATES",
     "HrCheckStateEnum": "apps.hr.queries.CHECK_STATES",
+    "HrContractKindEnum": "apps.hr.models.ContractKind",
+    "HrContractStatusEnum": "apps.hr.models.Contract.Status",
 }

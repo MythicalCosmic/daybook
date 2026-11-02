@@ -8,7 +8,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.hr import conf, queries
-from apps.hr.models import DocumentKind, EmployeeProfile
+from apps.hr.models import Contract, DocumentKind, EmployeeProfile
 from apps.hr.serializers import PersonRefSerializer
 from apps.members.queries import person_ref
 
@@ -75,17 +75,50 @@ def build(company, viewer, *, branch_ids: list[int] | None, day: date | None = N
 
 
 def contract_part(company, *, branch_ids, day: date, settings) -> dict:
-    """Contract counts, contracts ending and probations finishing (contracts come next)."""
+    """Contract counts, the contracts ending and the probations finishing soon."""
+    rows = queries.contracts(company, branch_ids=branch_ids)
+    active = rows.filter(status=Contract.Status.ACTIVE, membership__status__in=queries.CURRENT)
+    ending = list(
+        queries.ending_contracts(
+            company, branch_ids=branch_ids, day=day, within=settings.contract_warn_days
+        )
+    )
+    probation = list(
+        queries.probation_endings(
+            company, branch_ids=branch_ids, day=day, within=settings.probation_warn_days
+        )
+    )
+    current = queries.people(company, branch_ids=branch_ids)
+    covered = set(active.values_list("membership_id", flat=True))
     return {
         "contracts": {
-            "active": 0,
-            "drafts": 0,
-            "ending": 0,
-            "on_probation": 0,
-            "without_contract": 0,
+            "active": len(covered),
+            "drafts": rows.filter(
+                status=Contract.Status.DRAFT, membership__status__in=queries.CURRENT
+            ).count(),
+            "ending": len(ending),
+            "on_probation": active.filter(
+                probation_until__isnull=False, probation_passed_at__isnull=True
+            ).count(),
+            "without_contract": current.exclude(pk__in=covered).count(),
         },
-        "ending_contracts": [],
-        "probation_endings": [],
+        "ending_contracts": [
+            _contract_date(contract, contract.ends_on, day) for contract in ending[:LIST_LIMIT]
+        ],
+        "probation_endings": [
+            _contract_date(contract, contract.probation_until, day)
+            for contract in probation[:LIST_LIMIT]
+        ],
+    }
+
+
+def _contract_date(contract: Contract, when: date, day: date) -> dict:
+    return {
+        "id": contract.pk,
+        "member": contract.membership,
+        "number": contract.number,
+        "date": when,
+        "days_left": (when - day).days,
     }
 
 

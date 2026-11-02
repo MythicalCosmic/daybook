@@ -15,6 +15,10 @@ router.register(
     "hr/required-documents", owner_api.RequiredDocumentViewSet, basename="hr-required-document"
 )
 router.register(
+    "hr/contract-templates", owner_api.ContractTemplateViewSet, basename="hr-contract-template"
+)
+router.register("hr/contracts", owner_api.ContractViewSet, basename="hr-contract")
+router.register(
     r"hr/people/(?P<member_id>\d+)/emergency-contacts",
     owner_api.EmergencyContactViewSet,
     basename="hr-emergency-contact",

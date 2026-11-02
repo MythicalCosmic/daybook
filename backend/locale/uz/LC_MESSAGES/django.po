@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-02 17:32+0500\n"
+"POT-Creation-Date: 2026-11-02 17:50+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -1324,7 +1324,8 @@ msgstr "%(status)s · %(total)d kishidan %(read)d tasi o‘qidi"
 msgid "Announcement: %(title)s · %(read)d of %(total)d read"
 msgstr "E’lon: %(title)s · %(total)d kishidan %(read)d tasi o‘qidi"
 
-#: backend/apps/announcements/models.py backend/apps/knowledge/providers.py
+#: backend/apps/announcements/models.py backend/apps/hr/models.py
+#: backend/apps/knowledge/providers.py
 msgid "Draft"
 msgstr "Qoralama"
 
@@ -5326,6 +5327,10 @@ msgstr "Bu kompaniya uchun bunday xabar turi mavjud emas."
 msgid "HR isn't switched on for this company."
 msgstr "Bu kompaniyada «Kadrlar» moduli yoqilmagan."
 
+#: backend/apps/hr/api.py
+msgid "You have no contract on file yet."
+msgstr "Sizda hali shartnoma yo‘q."
+
 #: backend/apps/hr/audit_actions.py
 msgid "Changed HR settings"
 msgstr "Kadrlar sozlamalarini o‘zgartirdi"
@@ -5434,6 +5439,23 @@ msgstr "Shartnomaning PDF faylini yaratdi"
 msgid "Read their contract"
 msgstr "Shartnoma bilan tanishdi"
 
+#: backend/apps/hr/bot_messages.py
+msgid "Your employment contract"
+msgstr "Mehnat shartnomangiz"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid ""
+"Contract %(number)s is in force. Read it in the app and confirm you have "
+"read it."
+msgstr ""
+"%(number)s raqamli shartnoma kuchga kirdi. Uni ilovada o‘qib chiqing va "
+"tanishganingizni tasdiqlang."
+
+#: backend/apps/hr/hooks.py
+msgid "Your contract"
+msgstr "Shartnomangiz"
+
 #: backend/apps/hr/ids.py
 msgid "A PINFL is 14 digits."
 msgstr "PINFL 14 ta raqamdan iborat."
@@ -5449,6 +5471,27 @@ msgstr "Karta raqami 16 ta raqamdan iborat."
 #: backend/apps/hr/ids.py
 msgid "Write the number as it is printed: letters and digits."
 msgstr "Raqamni hujjatda yozilganidek kiriting: harflar va raqamlar."
+
+#. Translators: %(amount)s is money with its currency, e.g. "5 200 000 so‘m".
+#: backend/apps/hr/integrations.py
+#, python-format
+msgid "%(amount)s a month"
+msgstr "oyiga %(amount)s"
+
+#: backend/apps/hr/integrations.py
+#, python-format
+msgid "%(amount)s a day"
+msgstr "kuniga %(amount)s"
+
+#: backend/apps/hr/integrations.py
+#, python-format
+msgid "%(amount)s an hour"
+msgstr "soatiga %(amount)s"
+
+#: backend/apps/hr/integrations.py
+#, python-format
+msgid "%(amount)s a task"
+msgstr "har bir vazifa uchun %(amount)s"
 
 #: backend/apps/hr/models.py
 msgid "Male"
@@ -5580,9 +5623,62 @@ msgstr "Birinchi toifa"
 msgid "Second category"
 msgstr "Ikkinchi toifa"
 
+#: backend/apps/hr/models.py
+msgid "Indefinite"
+msgstr "Muddatsiz"
+
+#: backend/apps/hr/models.py
+msgid "Fixed term"
+msgstr "Muddatli"
+
+#: backend/apps/hr/models.py
+msgid "Civil contract"
+msgstr "Fuqarolik-huquqiy shartnoma"
+
+#: backend/apps/hr/models.py
+msgid "Internship"
+msgstr "Amaliyot (stajirovka)"
+
+#: backend/apps/hr/models.py
+msgid "Empty: any kind."
+msgstr "Bo‘sh: istalgan turi."
+
+#: backend/apps/hr/models.py
+msgid "In force"
+msgstr "Amalda"
+
+#: backend/apps/hr/models.py
+msgid "Ended"
+msgstr "Tugagan"
+
+#: backend/apps/hr/models.py
+msgid "Terminated"
+msgstr "Bekor qilingan"
+
 #: backend/apps/hr/owner_api.py backend/apps/hr/services.py
 msgid "Pick a kind of document."
 msgstr "Hujjat turini tanlang."
+
+#: backend/apps/hr/owner_api.py backend/apps/hr/printing.py
+msgid "Write the contract's text."
+msgstr "Shartnoma matnini yozing."
+
+#: backend/apps/hr/owner_api.py
+msgid "Give the first day of the contract."
+msgstr "Shartnoma boshlanadigan kunni kiriting."
+
+#: backend/apps/hr/owner_api.py backend/apps/hr/services.py
+msgid "Pick a contract template."
+msgstr "Shartnoma shablonini tanlang."
+
+#: backend/apps/hr/printing.py
+msgid "The contract's text is too long."
+msgstr "Shartnoma matni juda uzun."
+
+#: backend/apps/hr/printing.py
+#, python-format
+msgid "Unknown placeholders: %(names)s."
+msgstr "Noma’lum maydonlar: %(names)s."
 
 #: backend/apps/hr/services.py
 msgid "Someone else in the company has this PINFL."
@@ -5645,6 +5741,110 @@ msgstr "Shu kompaniyadagi lavozimni tanlang."
 #: backend/apps/hr/services.py
 msgid "This document is already required there."
 msgstr "Bu hujjat u yerda allaqachon majburiy."
+
+#: backend/apps/hr/services.py
+msgid "Give the template a name."
+msgstr "Shablonga nom bering."
+
+#: backend/apps/hr/services.py
+msgid "Pick a kind of contract."
+msgstr "Shartnoma turini tanlang."
+
+#: backend/apps/hr/services.py
+msgid "A template with this name exists already."
+msgstr "Bunday nomli shablon allaqachon bor."
+
+#: backend/apps/hr/services.py
+msgid "Contracts are drawn up for people who work here."
+msgstr "Shartnoma faqat shu yerda ishlaydigan xodim bilan tuziladi."
+
+#: backend/apps/hr/services.py
+msgid "A signed contract's terms change only through an amendment."
+msgstr ""
+"Imzolangan shartnoma shartlari faqat qo‘shimcha kelishuv orqali o‘zgaradi."
+
+#: backend/apps/hr/services.py
+msgid "Only a draft can be removed; end or terminate a signed contract."
+msgstr ""
+"Faqat qoralamani o‘chirish mumkin; imzolangan shartnomani yakunlang yoki "
+"bekor qiling."
+
+#: backend/apps/hr/services.py
+msgid "Only a draft can be signed."
+msgstr "Faqat qoralamani imzolash mumkin."
+
+#: backend/apps/hr/services.py
+msgid "This contract's end date has passed."
+msgstr "Bu shartnomaning tugash sanasi o‘tib ketgan."
+
+#: backend/apps/hr/services.py
+msgid "Say why the contract ends."
+msgstr "Shartnoma nima uchun tugashini yozing."
+
+#: backend/apps/hr/services.py
+msgid "Only a signed contract can be renewed."
+msgstr "Faqat imzolangan shartnomani uzaytirish mumkin."
+
+#: backend/apps/hr/services.py
+msgid "An indefinite contract runs on; there is nothing to renew."
+msgstr "Muddatsiz shartnoma davom etaveradi, uni uzaytirish shart emas."
+
+#: backend/apps/hr/services.py
+msgid "The new contract must start after the current one."
+msgstr "Yangi shartnoma joriy shartnomadan keyin boshlanishi kerak."
+
+#: backend/apps/hr/services.py
+msgid "This person already has a contract in force."
+msgstr "Bu xodimning amaldagi shartnomasi bor."
+
+#: backend/apps/hr/services.py
+msgid "This contract has no probation running."
+msgstr "Bu shartnomada sinov muddati ketmayapti."
+
+#: backend/apps/hr/services.py
+msgid "Pick a day after the current end of probation."
+msgstr "Sinov muddatining hozirgi tugash kunidan keyingi kunni tanlang."
+
+#: backend/apps/hr/services.py
+msgid "Probation can't run past the contract's end."
+msgstr "Sinov muddati shartnoma tugaganidan keyin davom etolmaydi."
+
+#: backend/apps/hr/services.py
+#, python-format
+msgid "These terms can't be amended: %(names)s."
+msgstr "Bu shartlarni o‘zgartirib bo‘lmaydi: %(names)s."
+
+#: backend/apps/hr/services.py
+msgid "Say why the contract changes."
+msgstr "Shartnoma nima uchun o‘zgarishini yozing."
+
+#: backend/apps/hr/services.py
+msgid "A fixed-term contract needs its end date."
+msgstr "Muddatli shartnoma uchun tugash sanasini kiriting."
+
+#: backend/apps/hr/services.py
+msgid "A contract can't end before it starts."
+msgstr "Shartnoma boshlanishidan oldin tugashi mumkin emas."
+
+#: backend/apps/hr/services.py
+msgid "Probation can't end before the contract starts."
+msgstr "Sinov muddati shartnoma boshlanishidan oldin tugashi mumkin emas."
+
+#: backend/apps/hr/services.py
+msgid "Another contract has this number."
+msgstr "Bu raqam boshqa shartnomaga berilgan."
+
+#: backend/apps/hr/services.py
+msgid "This contract isn't in force."
+msgstr "Bu shartnoma amalda emas."
+
+#: backend/apps/hr/services.py backend/apps/members/services.py
+msgid "The last day can't be in the future."
+msgstr "Oxirgi ish kuni kelajakda bo‘lishi mumkin emas."
+
+#: backend/apps/hr/services.py
+msgid "The last day can't be before the contract starts."
+msgstr "Oxirgi kun shartnoma boshlanishidan oldin bo‘lishi mumkin emas."
 
 #: backend/apps/inbox/bot_handlers.py backend/apps/inbox/services.py
 #: employee_bot/bot/handlers/admin/approvals.py
@@ -7238,10 +7438,6 @@ msgstr "O‘zingizni ishdan bo‘shata olmaysiz."
 #: backend/apps/members/services.py
 msgid "Only owners can offboard an owner."
 msgstr "Egani faqat egalar ishdan bo‘shata oladi."
-
-#: backend/apps/members/services.py
-msgid "The last day can't be in the future."
-msgstr "Oxirgi ish kuni kelajakda bo‘lishi mumkin emas."
 
 #: backend/apps/members/services.py
 msgid "Only current members can be suspended."

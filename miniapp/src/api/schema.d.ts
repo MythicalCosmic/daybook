@@ -481,6 +481,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/hr/contract/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description My contract: its terms and the signed PDF or scan. */
+        get: operations["v1_companies_hr_contract_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/hr/contract/{id}/acknowledge/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description 'I've read my contract.' */
+        post: operations["v1_companies_hr_contract_acknowledge_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/hr/contract/pdf/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A short-lived link to my contract's file (Telegram opens it outside the app). */
+        get: operations["v1_companies_hr_contract_pdf_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/hr/documents/": {
         parameters: {
             query?: never;
@@ -2369,6 +2420,22 @@ export interface components {
             readonly name: string;
         };
         /**
+         * @description * `indefinite` - Indefinite
+         *     * `fixed_term` - Fixed term
+         *     * `civil` - Civil contract
+         *     * `internship` - Internship
+         * @enum {string}
+         */
+        HrContractKindEnum: "indefinite" | "fixed_term" | "civil" | "internship";
+        /**
+         * @description * `draft` - Draft
+         *     * `active` - In force
+         *     * `ended` - Ended
+         *     * `terminated` - Terminated
+         * @enum {string}
+         */
+        HrContractStatusEnum: "draft" | "active" | "ended" | "terminated";
+        /**
          * @description * `passport` - Passport
          *     * `id_card` - ID card
          *     * `military_id` - Military ID
@@ -2424,6 +2491,33 @@ export interface components {
          * @enum {string}
          */
         HrEmploymentTypeEnum: "full_time" | "part_time" | "contractor" | "intern";
+        HrFileLink: {
+            url: string;
+        };
+        HrMyContract: {
+            readonly id: number;
+            readonly number: string;
+            readonly kind: components["schemas"]["HrContractKindEnum"];
+            readonly status: components["schemas"]["HrContractStatusEnum"];
+            readonly position: string | null;
+            /** Format: date */
+            readonly starts_on: string;
+            /** Format: date */
+            readonly ends_on: string | null;
+            /** Format: date */
+            readonly probation_until: string | null;
+            /** Format: date-time */
+            readonly probation_passed_at: string | null;
+            /** Format: decimal */
+            readonly weekly_hours: string | null;
+            /** @description Signed download link (a PDF or a scan). */
+            readonly file: string | null;
+            /** Format: date-time */
+            readonly acknowledged_at: string | null;
+            readonly needs_acknowledgement: boolean;
+            /** Format: date */
+            readonly terminated_on: string | null;
+        };
         HrMyDocument: {
             readonly id: number;
             readonly kind: components["schemas"]["HrDocumentKindEnum"];
@@ -4785,6 +4879,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Holiday"][];
+                };
+            };
+        };
+    };
+    v1_companies_hr_contract_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrMyContract"];
+                };
+            };
+        };
+    };
+    v1_companies_hr_contract_acknowledge_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrMyContract"];
+                };
+            };
+        };
+    };
+    v1_companies_hr_contract_pdf_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrFileLink"];
                 };
             };
         };

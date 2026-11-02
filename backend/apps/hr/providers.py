@@ -1,7 +1,7 @@
 """What HR hands the shared registries: file checks, badge counts, inbox actions."""
 
 from apps.hr import services
-from apps.hr.models import EmployeeDocument
+from apps.hr.models import Contract, EmployeeDocument
 from apps.members.models import Membership
 
 
@@ -27,3 +27,19 @@ def may_open_document(user, company_id: int, document_id: int) -> bool:
         return False
     services.document_opened(document, user)
     return True
+
+
+def may_open_contract(user, company_id: int, contract_id: int) -> bool:
+    """`hr.contract` files: the person's own signed contract (also while suspended), or
+    anyone's for `hr.view` in scope; one with the pay in it needs `payroll.view` too."""
+    contract = Contract.objects.filter(company_id=company_id, pk=contract_id).first()
+    viewer = (
+        Membership.objects.filter(company_id=company_id, user=user)
+        .select_related("company", "role")
+        .first()
+    )
+    if contract is None or viewer is None:
+        return False
+    if contract.membership_id != viewer.pk and viewer.status != Membership.Status.APPROVED:
+        return False
+    return services.may_see_contract_file(viewer, contract)
