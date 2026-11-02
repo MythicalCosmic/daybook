@@ -1,0 +1,29 @@
+/**
+ * Routes of HR, children of /c/:companyId (plan §6.1): the overview first, then documents (and the
+ * compliance matrix), contracts, contract templates, celebrations; policies and hiring are calm
+ * "coming soon" pages until they are built. Every page loads lazily.
+ */
+import type { RouteRecordRaw } from "vue-router";
+
+const soon = () => import("./pages/ComingSoonPage.vue");
+
+export const routes: RouteRecordRaw[] = [
+  { path: "hr", name: "hr.overview", component: () => import("./pages/HrOverviewPage.vue"), meta: { title: "hr.nav.overview", perm: "hr.view" } },
+  { path: "hr/documents", name: "hr.documents", component: () => import("./pages/DocumentsPage.vue"), meta: { title: "hr.nav.documents", perm: "hr.view" } },
+  { path: "hr/contracts", name: "hr.contracts", component: () => import("./pages/ContractsPage.vue"), meta: { title: "hr.nav.contracts", perm: "hr.view" } },
+  {
+    path: "hr/contract-templates",
+    name: "hr.templates",
+    component: () => import("./pages/TemplatesPage.vue"),
+    meta: { title: "hr.nav.templates", perm: "hr.manage" },
+  },
+  {
+    path: "hr/contract-templates/:templateId",
+    name: "hr.template",
+    component: () => import("./pages/TemplateEditorPage.vue"),
+    meta: { title: "hr.nav.templates", perm: "hr.manage" },
+  },
+  { path: "hr/celebrations", name: "hr.celebrations", component: () => import("./pages/CelebrationsPage.vue"), meta: { title: "hr.nav.celebrations", perm: "hr.view" } },
+  { path: "hr/policies", name: "hr.policies", component: soon, props: { page: "policies" }, meta: { title: "hr.nav.policies", perm: "hr.view" } },
+  { path: "hr/hiring", name: "hr.hiring", component: soon, props: { page: "hiring" }, meta: { title: "hr.nav.hiring", perm: "hr.hiring" } },
+];

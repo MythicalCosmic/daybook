@@ -44,6 +44,8 @@
   "settings.panel.agenda.description": "События компании: напоминание по умолчанию и приглашения в Telegram.",
   "settings.panel.knowledge.hint": "Новости о публикации, напоминания",
   "settings.panel.knowledge.description": "Новость в Telegram при публикации страницы и напоминание о страницах, которые нужно подтвердить.",
+  "settings.panel.hr.hint": "Напоминания до сроков, поздравления",
+  "settings.panel.hr.description": "За сколько дней отмечать документы, договоры и конец испытательного срока и поздравлять ли с днём рождения и годовщиной работы.",
   "settings.cmd.company": "Настройки компании",
   "settings.cmd.branches": "Филиалы",
   "settings.cmd.addBranch": "Добавить филиал",
