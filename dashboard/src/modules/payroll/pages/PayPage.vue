@@ -98,7 +98,7 @@ const where = (row: PayRow) => [row.member.position, row.member.home_branch].fil
         <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
           <TextInput v-model="search" :icon="Search" size="sm" clearable :debounce="250" :placeholder="t('payroll.payslips.search')" class="w-full sm:w-64" />
           <!-- Five choices don't fit a phone's width as segments: a select there. -->
-          <SelectBox v-if="isPhone" v-model="type" size="sm" :options="typeOptions" class="w-40" :aria-label="t('payroll.pay.type')" />
+          <SelectBox v-if="isPhone" v-model="type" size="sm" :options="typeOptions" class="!w-36 shrink-0" :aria-label="t('payroll.pay.type')" />
           <SegmentedControl v-else v-model="type" size="sm" :options="typeOptions" />
           <button
             v-if="missing || missingOnly"
@@ -157,7 +157,7 @@ const where = (row: PayRow) => [row.member.position, row.member.home_branch].fil
           <div class="min-w-0 flex-1">
             <p class="truncate text-base font-semibold text-fg">{{ row.member.name }}</p>
             <p class="truncate text-xs text-muted">{{ [row.member.position, row.current ? t(`payroll.payType.${row.current.pay_type}`) : null].filter(Boolean).join(" · ") }}</p>
-            <p v-if="row.next" class="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-info"><CalendarClock :size="11" />{{ t("payroll.pay.changes", { date: fmt.day(row.next.effective_from, "short") }) }}</p>
+            <p v-if="row.next" class="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-info"><CalendarClock :size="11" />{{ t(row.current ? "payroll.pay.changes" : "payroll.pay.starts", { date: fmt.day(row.next.effective_from, "short") }) }}</p>
           </div>
           <PayAmount v-if="row.current" cell strong :value="row.current.amount" :currency="row.current.currency" :sub="per(row)" />
           <StatusPill v-else tone="warning" size="sm" :label="t('payroll.pay.none')" />

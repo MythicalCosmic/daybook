@@ -112,13 +112,16 @@ const base = computed(() => `/c/${company.currentId}/payroll`);
         <p v-else-if="!adjustments.data.value?.results.length" class="text-sm text-muted">{{ t("payroll.person.noAdjustments") }}</p>
         <ul v-else class="-mx-1 flex flex-col">
           <li v-for="row in adjustments.data.value.results" :key="row.id">
-            <RouterLink :to="`${base}/adjustments?tab=${row.disputed_at ? 'disputed' : row.status === 'void' ? 'rejected' : row.status}&adjustment=${row.id}`" class="flex min-h-11 items-center gap-3 rounded-[8px] px-1 py-1.5 hover:bg-surface-2">
+            <!-- The amount and its status stack on the right, so neither is ever cut on a phone. -->
+            <RouterLink :to="`${base}/adjustments?tab=${row.disputed_at ? 'disputed' : row.status === 'void' ? 'rejected' : row.status}&adjustment=${row.id}`" class="flex min-h-11 items-start gap-3 rounded-[8px] px-1 py-2 hover:bg-surface-2">
               <div class="min-w-0 flex-1">
-                <p class="truncate text-sm font-medium text-fg">{{ row.reason }}</p>
+                <p class="line-clamp-2 text-sm font-medium text-fg">{{ row.reason }}</p>
                 <p class="truncate text-xs text-muted">{{ t(`payroll.adjustmentKind.${row.kind}`) }} · {{ t(`payroll.source.${row.source}`) }}</p>
               </div>
-              <StatusPill :tone="ADJUSTMENT_TONES[row.status]" size="sm" :label="t(`payroll.adjustmentStatus.${row.status}`)" />
-              <span class="w-28 shrink-0 text-right text-sm font-semibold tabular-nums"><PayAmount :value="signedAmount(row)" :currency="row.currency" :sign="isAddition(row.kind) ? 'always' : 'auto'" colored /></span>
+              <div class="flex shrink-0 flex-col items-end gap-1">
+                <span class="whitespace-nowrap text-sm font-semibold tabular-nums"><PayAmount :value="signedAmount(row)" :currency="row.currency" :sign="isAddition(row.kind) ? 'always' : 'auto'" colored /></span>
+                <StatusPill :tone="ADJUSTMENT_TONES[row.status]" size="sm" :label="t(`payroll.adjustmentStatus.${row.status}`)" />
+              </div>
             </RouterLink>
           </li>
         </ul>
@@ -131,15 +134,19 @@ const base = computed(() => `/c/${company.currentId}/payroll`);
         <ErrorState v-else-if="payslips.isError.value" compact :error="payslips.error.value" :retry="() => payslips.refetch()" />
         <p v-else-if="!payslips.data.value?.length" class="flex items-center gap-2 text-sm text-muted"><ReceiptText :size="15" class="text-subtle" />{{ t("payroll.person.noPayslips") }}</p>
         <ul v-else class="-mx-1 flex flex-col">
-          <li v-for="slip in payslips.data.value" :key="slip.id" class="flex min-h-11 items-center gap-3 rounded-[8px] px-1 py-1.5 hover:bg-surface-2">
-            <RouterLink :to="`${base}/runs/${slip.run}?payslip=${slip.id}`" class="min-w-0 flex-1">
-              <p class="truncate text-sm font-medium text-fg">{{ fmt.day(slip.period, "monthYear") }}</p>
-              <p v-if="slip.received_at || slip.paid_at" class="truncate text-xs text-muted">
-                {{ slip.received_at ? t("payroll.person.received", { date: fmt.instant(slip.received_at, "date") }) : t("payroll.runs.paidOn", { date: fmt.instant(slip.paid_at!, "date") }) }}
-              </p>
+          <li v-for="slip in payslips.data.value" :key="slip.id" class="flex min-h-11 items-center gap-2 rounded-[8px] px-1 py-1.5 hover:bg-surface-2">
+            <RouterLink :to="`${base}/runs/${slip.run}?payslip=${slip.id}`" class="flex min-w-0 flex-1 items-start gap-3">
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-medium text-fg">{{ fmt.day(slip.period, "monthYear") }}</p>
+                <p v-if="slip.received_at || slip.paid_at" class="text-xs text-muted">
+                  {{ slip.received_at ? t("payroll.person.received", { date: fmt.instant(slip.received_at, "date") }) : t("payroll.runs.paidOn", { date: fmt.instant(slip.paid_at!, "date") }) }}
+                </p>
+              </div>
+              <div class="flex shrink-0 flex-col items-end gap-1">
+                <span class="whitespace-nowrap text-sm font-semibold tabular-nums text-fg"><PayAmount :value="slip.net" :currency="slip.currency" /></span>
+                <StatusPill :tone="PAYSLIP_TONES[slip.status]" size="sm" :label="t(`payroll.payslipStatus.${slip.status}`)" />
+              </div>
             </RouterLink>
-            <StatusPill :tone="PAYSLIP_TONES[slip.status]" size="sm" :label="t(`payroll.payslipStatus.${slip.status}`)" />
-            <span class="w-28 shrink-0 text-right text-sm font-semibold tabular-nums text-fg"><PayAmount :value="slip.net" :currency="slip.currency" /></span>
             <IconButton :icon="FileDown" size="sm" :label="t('payroll.payslip.pdf')" :loading="downloading === slip.id" @click="pdf(slip)" />
           </li>
         </ul>
@@ -154,13 +161,16 @@ const base = computed(() => `/c/${company.currentId}/payroll`);
         <p v-else-if="!advances.data.value?.results.length" class="text-sm text-muted">{{ t("payroll.person.noAdvances") }}</p>
         <ul v-else class="-mx-1 flex flex-col">
           <li v-for="row in advances.data.value.results" :key="row.id">
-            <RouterLink :to="`${base}/advances?advance=${row.id}`" class="flex min-h-11 items-center gap-3 rounded-[8px] px-1 py-1.5 hover:bg-surface-2">
+            <RouterLink :to="`${base}/advances?advance=${row.id}`" class="flex min-h-11 items-start gap-3 rounded-[8px] px-1 py-2 hover:bg-surface-2">
               <div class="min-w-0 flex-1">
-                <p class="truncate text-sm font-medium text-fg">{{ fmt.instant(row.created_at, "date") }}<template v-if="row.reason"> · {{ row.reason }}</template></p>
-                <p v-if="row.status === 'paid' && row.left" class="truncate text-xs text-muted">{{ t("payroll.person.owes", { amount: fmt.money(row.left, row.currency) }) }}</p>
+                <p class="line-clamp-2 text-sm font-medium text-fg">{{ fmt.instant(row.created_at, "date") }}<template v-if="row.reason"> · {{ row.reason }}</template></p>
+                <!-- What is still owed wraps rather than being cut: it is money. -->
+                <p v-if="row.status === 'paid' && row.left" class="text-xs text-muted">{{ t("payroll.person.owes", { amount: fmt.money(row.left, row.currency) }) }}</p>
               </div>
-              <StatusPill :tone="ADVANCE_TONES[row.status]" size="sm" :label="t(`payroll.advanceStatus.${row.status}`)" />
-              <span class="w-28 shrink-0 text-right text-sm font-semibold tabular-nums text-fg"><PayAmount :value="row.amount" :currency="row.currency" /></span>
+              <div class="flex shrink-0 flex-col items-end gap-1">
+                <span class="whitespace-nowrap text-sm font-semibold tabular-nums text-fg"><PayAmount :value="row.amount" :currency="row.currency" /></span>
+                <StatusPill :tone="ADVANCE_TONES[row.status]" size="sm" :label="t(`payroll.advanceStatus.${row.status}`)" />
+              </div>
             </RouterLink>
           </li>
         </ul>
