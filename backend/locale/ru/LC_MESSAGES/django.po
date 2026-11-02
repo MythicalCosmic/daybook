@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-02 04:44+0500\n"
+"POT-Creation-Date: 2026-11-02 18:23+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -276,6 +276,7 @@ msgid "Deadline"
 msgstr "Крайний срок"
 
 #: backend/apps/agenda/models.py backend/apps/finance/models.py
+#: backend/apps/hr/models.py backend/apps/lifecycle/models.py
 #: backend/apps/sales/models.py
 msgid "Other"
 msgstr "Другое"
@@ -1341,7 +1342,8 @@ msgstr "%(status)s · прочитали %(read)d из %(total)d"
 msgid "Announcement: %(title)s · %(read)d of %(total)d read"
 msgstr "Объявление: %(title)s · прочитали %(read)d из %(total)d"
 
-#: backend/apps/announcements/models.py backend/apps/knowledge/providers.py
+#: backend/apps/announcements/models.py backend/apps/hr/models.py
+#: backend/apps/knowledge/providers.py
 msgid "Draft"
 msgstr "Черновик"
 
@@ -1460,7 +1462,8 @@ msgstr "Срок действия должен заканчиваться пос
 
 #: backend/apps/announcements/services.py backend/apps/attendance/api.py
 #: backend/apps/attendance/services.py backend/apps/console/base.py
-#: backend/apps/inbox/services.py backend/apps/knowledge/owner_api.py
+#: backend/apps/hr/services.py backend/apps/inbox/services.py
+#: backend/apps/knowledge/owner_api.py backend/apps/lifecycle/services.py
 #: backend/apps/members/departments.py backend/apps/members/join_links.py
 #: backend/apps/members/services.py backend/apps/sales/handlers.py
 #: backend/apps/timeoff/services.py
@@ -1528,6 +1531,7 @@ msgid "Attendance isn't switched on for this company."
 msgstr "Учёт посещаемости в этой компании не включён."
 
 #: backend/apps/attendance/api.py backend/apps/attendance/owner_api.py
+#: backend/apps/hr/owner_api.py backend/apps/lifecycle/owner_api.py
 msgid "Give a day as YYYY-MM-DD."
 msgstr "Укажите день в формате YYYY-MM-DD."
 
@@ -2391,7 +2395,8 @@ msgstr "%(name)s: отметка прихода в %(distance)s от филиа�
 msgid "Give branch ids."
 msgstr "Укажите ID филиалов."
 
-#: backend/apps/attendance/owner_api.py
+#: backend/apps/attendance/owner_api.py backend/apps/hr/owner_api.py
+#: backend/apps/lifecycle/owner_api.py
 msgid "Give a number."
 msgstr "Укажите число."
 
@@ -2926,8 +2931,8 @@ msgid ""
 msgstr ""
 "Эту запись видят только люди с этим правом (она касается секретных полей)."
 
-#: backend/apps/audit/owner_api.py backend/apps/reminders/owner_api.py
-#: backend/apps/tasks/owner_api.py
+#: backend/apps/audit/owner_api.py backend/apps/lifecycle/owner_api.py
+#: backend/apps/reminders/owner_api.py backend/apps/tasks/owner_api.py
 msgid "This field is required."
 msgstr "Это поле обязательно."
 
@@ -3075,7 +3080,7 @@ msgstr "Склад"
 msgid "Attendance"
 msgstr "Посещаемость"
 
-#: backend/apps/companies/models.py
+#: backend/apps/companies/models.py backend/apps/hr/providers.py
 msgid "HR"
 msgstr "Кадры"
 
@@ -3725,7 +3730,7 @@ msgstr "Транспорт"
 msgid "Repairs"
 msgstr "Ремонт"
 
-#: backend/apps/finance/defaults.py
+#: backend/apps/finance/defaults.py backend/apps/lifecycle/models.py
 msgid "Cash shortage"
 msgstr "Недостача в кассе"
 
@@ -3860,7 +3865,7 @@ msgstr "Направление"
 msgid "Who"
 msgstr "Кто"
 
-#: backend/apps/finance/exporters.py
+#: backend/apps/finance/exporters.py backend/apps/lifecycle/models.py
 msgid "Issued"
 msgstr "Дата возникновения"
 
@@ -4087,7 +4092,8 @@ msgstr "UZS за 1 единицу валюты."
 msgid "Bank account"
 msgstr "Банковский счёт"
 
-#: backend/apps/finance/models.py backend/apps/sales/models.py
+#: backend/apps/finance/models.py backend/apps/hr/models.py
+#: backend/apps/sales/models.py
 msgid "Card"
 msgstr "Карта"
 
@@ -4822,11 +4828,11 @@ msgstr "Эта категория ещё используется: лучше о
 msgid "Give the category a name."
 msgstr "Укажите название категории."
 
-#: backend/apps/finance/services.py
+#: backend/apps/finance/services.py backend/apps/hr/ids.py
 msgid "A number like +998 90 123 45 67."
 msgstr "Номер в формате +998 90 123 45 67."
 
-#: backend/apps/finance/services.py
+#: backend/apps/finance/services.py backend/apps/hr/ids.py
 msgid "A taxpayer number has 9 digits (a person's PINFL 14)."
 msgstr "ИНН состоит из 9 цифр (ПИНФЛ физического лица — из 14)."
 
@@ -5211,7 +5217,7 @@ msgstr "Изменения смен"
 msgid "Cash and handovers"
 msgstr "Касса и передача денег"
 
-#: backend/apps/groups/models.py
+#: backend/apps/groups/models.py backend/apps/hr/hooks.py
 msgid "Birthdays and work anniversaries"
 msgstr "Дни рождения и годовщины работы"
 
@@ -5272,6 +5278,736 @@ msgstr "Эта группа отключена. Сначала снова доб
 #: backend/apps/groups/services.py
 msgid "That event isn't available for this company."
 msgstr "Такой тип новостей недоступен для этой компании."
+
+#: backend/apps/hr/ai_tools.py
+msgid ""
+"HR at a glance: headcount and its trend, documents that expire or have "
+"expired, contracts and probation that end, missing required documents, "
+"birthdays and work anniversaries of the coming week"
+msgstr ""
+"Кадры кратко: численность и её динамика, документы, срок которых истекает "
+"или истёк, заканчивающиеся договоры и испытательные сроки, недостающие "
+"обязательные документы, дни рождения и трудовые юбилеи на ближайшую неделю"
+
+#: backend/apps/hr/api.py backend/apps/hr/owner_api.py
+#: backend/apps/lifecycle/api.py backend/apps/lifecycle/owner_api.py
+msgid "HR isn't switched on for this company."
+msgstr "Модуль «Кадры» в этой компании не включён."
+
+#: backend/apps/hr/api.py
+msgid "You have no contract on file yet."
+msgstr "У вас пока нет договора."
+
+#: backend/apps/hr/audit_actions.py
+msgid "Changed HR settings"
+msgstr "Изменены настройки кадров"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Changed an employee profile"
+msgstr "Изменён профиль сотрудника"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Viewed ID and card numbers"
+msgstr "Просмотрены номера документов и карты"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Added an emergency contact"
+msgstr "Добавлен экстренный контакт"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Changed an emergency contact"
+msgstr "Изменён экстренный контакт"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Removed an emergency contact"
+msgstr "Удалён экстренный контакт"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Added a document"
+msgstr "Добавлен документ"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Changed a document"
+msgstr "Изменён документ"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Removed a document"
+msgstr "Удалён документ"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Verified a document"
+msgstr "Документ проверен"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Opened a document file"
+msgstr "Открыт файл документа"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Changed the required documents"
+msgstr "Изменены обязательные документы"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Removed a required document"
+msgstr "Удалён обязательный документ"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Saved a contract template"
+msgstr "Сохранён шаблон договора"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Removed a contract template"
+msgstr "Удалён шаблон договора"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Drew up a contract"
+msgstr "Составлен договор"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Changed a contract"
+msgstr "Изменён договор"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Removed a draft contract"
+msgstr "Удалён черновик договора"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Signed a contract"
+msgstr "Договор подписан"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Amended a contract"
+msgstr "Внесены изменения в договор"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Ended a contract"
+msgstr "Договор завершён"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Terminated a contract"
+msgstr "Договор расторгнут"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Renewed a contract"
+msgstr "Договор продлён"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Confirmed a passed probation"
+msgstr "Подтверждено прохождение испытательного срока"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Extended a probation"
+msgstr "Продлён испытательный срок"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Made a contract PDF"
+msgstr "Создан PDF договора"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Read their contract"
+msgstr "Договор прочитан сотрудником"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Your employment contract"
+msgstr "Ваш трудовой договор"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid ""
+"Contract %(number)s is in force. Read it in the app and confirm you have "
+"read it."
+msgstr ""
+"Договор № %(number)s вступил в силу. Прочитайте его в приложении и "
+"подтвердите, что ознакомились."
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Document expires on %(date)s"
+msgstr "Срок документа истекает: %(date)s"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Document expires today"
+msgstr "Срок документа истекает сегодня"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Document expired on %(date)s"
+msgstr "Срок документа истёк: %(date)s"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Your document expires on %(date)s"
+msgstr "Срок вашего документа истекает: %(date)s"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Your document expires today"
+msgstr "Срок вашего документа истекает сегодня"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Your document has expired"
+msgstr "Срок вашего документа истёк"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Upload the new one in the app."
+msgstr "Загрузите новый в приложении."
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Contract ends on %(date)s"
+msgstr "Договор заканчивается: %(date)s"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Contract ends today"
+msgstr "Договор заканчивается сегодня"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Contract ended on %(date)s and is still in force"
+msgstr "Срок договора истёк (%(date)s), но он ещё действует"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Renew it or end it."
+msgstr "Продлите или завершите его."
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Probation ends on %(date)s"
+msgstr "Испытательный срок заканчивается: %(date)s"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Probation ends today"
+msgstr "Испытательный срок заканчивается сегодня"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Probation ended on %(date)s"
+msgstr "Испытательный срок закончился: %(date)s"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Keep them, or extend the probation by a month."
+msgstr "Оставьте сотрудника или продлите испытательный срок на месяц."
+
+#: backend/apps/hr/bot_messages.py
+msgctxt "probation"
+msgid "Keep"
+msgstr "Оставить"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Extend 1 month"
+msgstr "Продлить на месяц"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Probation passed"
+msgstr "Испытательный срок пройден"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Probation extended: until %(date)s"
+msgstr "Испытательный срок продлён. Новый срок: %(date)s"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Birthday today: %(name)s. Happy birthday!"
+msgstr "Сегодня день рождения: %(name)s. Поздравляем!"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "Work anniversary: %(name)s, %(years)d year with the team. Thank you!"
+msgid_plural ""
+"Work anniversary: %(name)s, %(years)d years with the team. Thank you!"
+msgstr[0] "Трудовой юбилей: %(name)s, %(years)d год в команде. Спасибо!"
+msgstr[1] "Трудовой юбилей: %(name)s, %(years)d года в команде. Спасибо!"
+msgstr[2] "Трудовой юбилей: %(name)s, %(years)d лет в команде. Спасибо!"
+msgstr[3] "Трудовой юбилей: %(name)s, %(years)d года в команде. Спасибо!"
+
+#: backend/apps/hr/bot_messages.py
+msgid "Happy birthday!"
+msgstr "С днём рождения!"
+
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "%(years)d year with the team"
+msgid_plural "%(years)d years with the team"
+msgstr[0] "%(years)d год в команде"
+msgstr[1] "%(years)d года в команде"
+msgstr[2] "%(years)d лет в команде"
+msgstr[3] "%(years)d года в команде"
+
+#. Translators: %(company)s is the company's name.
+#: backend/apps/hr/bot_messages.py
+#, python-format
+msgid "The whole team of «%(company)s» congratulates you."
+msgstr "Вся команда «%(company)s» поздравляет вас."
+
+#: backend/apps/hr/hooks.py
+msgid "Documents that expire"
+msgstr "Документы с истекающим сроком"
+
+#: backend/apps/hr/hooks.py
+msgid "Contracts that end"
+msgstr "Заканчивающиеся договоры"
+
+#: backend/apps/hr/hooks.py
+msgid "Probations that end"
+msgstr "Заканчивающиеся испытательные сроки"
+
+#: backend/apps/hr/hooks.py
+msgid "Your contract"
+msgstr "Ваш договор"
+
+#: backend/apps/hr/hooks.py
+msgid "Your documents that expire"
+msgstr "Ваши документы с истекающим сроком"
+
+#: backend/apps/hr/hooks.py
+msgid "Birthday and work anniversary greetings"
+msgstr "Поздравления с днём рождения и трудовым юбилеем"
+
+#: backend/apps/hr/hooks.py
+msgid "Contracts and probation"
+msgstr "Договоры и испытательные сроки"
+
+#: backend/apps/hr/ids.py
+msgid "A PINFL is 14 digits."
+msgstr "ПИНФЛ состоит из 14 цифр."
+
+#: backend/apps/hr/ids.py
+msgid "A passport number is two letters and seven digits, like AA1234567."
+msgstr "Номер паспорта — две буквы и семь цифр, например AA1234567."
+
+#: backend/apps/hr/ids.py
+msgid "A card number is 16 digits."
+msgstr "Номер карты состоит из 16 цифр."
+
+#: backend/apps/hr/ids.py
+msgid "Write the number as it is printed: letters and digits."
+msgstr "Введите номер как в документе: буквы и цифры."
+
+#. Translators: %(amount)s is money with its currency, e.g. "5 200 000 so‘m".
+#: backend/apps/hr/integrations.py
+#, python-format
+msgid "%(amount)s a month"
+msgstr "%(amount)s в месяц"
+
+#: backend/apps/hr/integrations.py
+#, python-format
+msgid "%(amount)s a day"
+msgstr "%(amount)s в день"
+
+#: backend/apps/hr/integrations.py
+#, python-format
+msgid "%(amount)s an hour"
+msgstr "%(amount)s в час"
+
+#: backend/apps/hr/integrations.py
+#, python-format
+msgid "%(amount)s a task"
+msgstr "%(amount)s за задачу"
+
+#: backend/apps/hr/models.py
+msgid "Male"
+msgstr "Мужской"
+
+#: backend/apps/hr/models.py
+msgid "Female"
+msgstr "Женский"
+
+#: backend/apps/hr/models.py
+msgid "Full time"
+msgstr "Полная занятость"
+
+#: backend/apps/hr/models.py
+msgid "Part time"
+msgstr "Частичная занятость"
+
+#: backend/apps/hr/models.py
+msgid "Contractor"
+msgstr "Подрядчик"
+
+#: backend/apps/hr/models.py
+msgid "Intern"
+msgstr "Стажёр"
+
+#: backend/apps/hr/models.py backend/apps/sales/hooks.py
+#: backend/apps/sales/models.py
+msgid "Cash"
+msgstr "Наличные"
+
+#: backend/apps/hr/models.py backend/apps/sales/models.py
+msgid "Bank transfer"
+msgstr "Банковский перевод"
+
+#: backend/apps/hr/models.py
+msgid "Resigned"
+msgstr "По собственному желанию"
+
+#: backend/apps/hr/models.py
+msgid "Dismissed"
+msgstr "По инициативе работодателя"
+
+#: backend/apps/hr/models.py
+msgid "Contract ended"
+msgstr "Истёк срок договора"
+
+#: backend/apps/hr/models.py
+msgid "Probation not passed"
+msgstr "Испытательный срок не пройден"
+
+#: backend/apps/hr/models.py
+msgid "Passport"
+msgstr "Паспорт"
+
+#: backend/apps/hr/models.py
+msgid "ID card"
+msgstr "ID-карта"
+
+#: backend/apps/hr/models.py
+msgid "Military ID"
+msgstr "Военный билет"
+
+#: backend/apps/hr/models.py
+msgid "Diploma"
+msgstr "Диплом"
+
+#: backend/apps/hr/models.py
+msgid "Pharmacy diploma"
+msgstr "Фармацевтический диплом"
+
+#: backend/apps/hr/models.py
+msgid "Medical diploma"
+msgstr "Медицинский диплом"
+
+#: backend/apps/hr/models.py
+msgid "Specialist certificate"
+msgstr "Сертификат специалиста"
+
+#: backend/apps/hr/models.py
+msgid "Qualification category"
+msgstr "Квалификационная категория"
+
+#: backend/apps/hr/models.py
+msgid "State registration"
+msgstr "Государственная регистрация"
+
+#: backend/apps/hr/models.py
+msgid "Medical book"
+msgstr "Медицинская книжка"
+
+#: backend/apps/hr/models.py
+msgid "Medical examination"
+msgstr "Медосмотр"
+
+#: backend/apps/hr/models.py
+msgid "Work record book"
+msgstr "Трудовая книжка"
+
+#: backend/apps/hr/models.py
+msgid "Contract"
+msgstr "Договор"
+
+#: backend/apps/hr/models.py
+msgid "Confidentiality agreement"
+msgstr "Соглашение о неразглашении"
+
+#: backend/apps/hr/models.py backend/apps/tasks/bot_messages.py
+#: backend/apps/tasks/models.py
+msgid "Photo"
+msgstr "Фото"
+
+#: backend/apps/hr/models.py
+msgid "Higher"
+msgstr "Высшее"
+
+#: backend/apps/hr/models.py
+msgid "College"
+msgstr "Среднее специальное"
+
+#: backend/apps/hr/models.py
+msgid "Highest category"
+msgstr "Высшая категория"
+
+#: backend/apps/hr/models.py
+msgid "First category"
+msgstr "Первая категория"
+
+#: backend/apps/hr/models.py
+msgid "Second category"
+msgstr "Вторая категория"
+
+#: backend/apps/hr/models.py
+msgid "Indefinite"
+msgstr "Бессрочный"
+
+#: backend/apps/hr/models.py
+msgid "Fixed term"
+msgstr "Срочный"
+
+#: backend/apps/hr/models.py
+msgid "Civil contract"
+msgstr "Гражданско-правовой договор"
+
+#: backend/apps/hr/models.py
+msgid "Internship"
+msgstr "Стажировка"
+
+#: backend/apps/hr/models.py
+msgid "Empty: any kind."
+msgstr "Пусто: любой вид."
+
+#: backend/apps/hr/models.py
+msgid "In force"
+msgstr "Действует"
+
+#: backend/apps/hr/models.py
+msgid "Ended"
+msgstr "Завершён"
+
+#: backend/apps/hr/models.py
+msgid "Terminated"
+msgstr "Расторгнут"
+
+#: backend/apps/hr/models.py
+msgid "Birthday"
+msgstr "День рождения"
+
+#: backend/apps/hr/models.py
+msgid "Work anniversary"
+msgstr "Трудовой юбилей"
+
+#: backend/apps/hr/owner_api.py
+msgid "Pick at most a year, ending after it starts."
+msgstr "Выберите не больше года; конец должен быть позже начала."
+
+#: backend/apps/hr/owner_api.py backend/apps/hr/services.py
+msgid "Pick a kind of document."
+msgstr "Выберите тип документа."
+
+#: backend/apps/hr/owner_api.py backend/apps/hr/printing.py
+msgid "Write the contract's text."
+msgstr "Напишите текст договора."
+
+#: backend/apps/hr/owner_api.py
+msgid "Give the first day of the contract."
+msgstr "Укажите дату начала договора."
+
+#: backend/apps/hr/owner_api.py backend/apps/hr/services.py
+msgid "Pick a contract template."
+msgstr "Выберите шаблон договора."
+
+#: backend/apps/hr/printing.py
+msgid "The contract's text is too long."
+msgstr "Текст договора слишком длинный."
+
+#: backend/apps/hr/printing.py
+#, python-format
+msgid "Unknown placeholders: %(names)s."
+msgstr "Неизвестные поля: %(names)s."
+
+#: backend/apps/hr/providers.py backend/apps/hr/services.py
+msgid "This contract has no probation running."
+msgstr "По этому договору испытательный срок не идёт."
+
+#: backend/apps/hr/providers.py
+msgid "This contract no longer exists."
+msgstr "Этого договора больше нет."
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Birthday: %(name)s"
+msgstr "День рождения: %(name)s"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Work anniversary: %(name)s, %(years)d year"
+msgid_plural "Work anniversary: %(name)s, %(years)d years"
+msgstr[0] "Трудовой юбилей: %(name)s, %(years)d год"
+msgstr[1] "Трудовой юбилей: %(name)s, %(years)d года"
+msgstr[2] "Трудовой юбилей: %(name)s, %(years)d лет"
+msgstr[3] "Трудовой юбилей: %(name)s, %(years)d года"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Documents to renew: %(count)d"
+msgstr "Обновить документы: %(count)d"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Contracts ending: %(count)d"
+msgstr "Заканчиваются договоры: %(count)d"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Probations ending: %(count)d"
+msgstr "Заканчиваются испытательные сроки: %(count)d"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Contract ends: %(name)s"
+msgstr "Заканчивается договор: %(name)s"
+
+#: backend/apps/hr/providers.py
+#, python-format
+msgid "Probation ends: %(name)s"
+msgstr "Заканчивается испытательный срок: %(name)s"
+
+#: backend/apps/hr/services.py
+msgid "Someone else in the company has this PINFL."
+msgstr "Этот ПИНФЛ уже указан у другого сотрудника компании."
+
+#: backend/apps/hr/services.py
+msgid "Someone else in the company has this employee number."
+msgstr "Этот табельный номер уже есть у другого сотрудника компании."
+
+#: backend/apps/hr/services.py
+msgid "Check the date of birth."
+msgstr "Проверьте дату рождения."
+
+#: backend/apps/hr/services.py
+msgid "The hire date can't be in the future."
+msgstr "Дата приёма на работу не может быть в будущем."
+
+#: backend/apps/hr/services.py
+msgid "Only someone who has left has a last day."
+msgstr "Последний рабочий день бывает только у уволившихся."
+
+#: backend/apps/hr/services.py
+msgid "The last day can't be before the hire date."
+msgstr "Последний рабочий день не может быть раньше даты приёма."
+
+#: backend/apps/hr/services.py
+msgid "Add the card number to pay to a card."
+msgstr "Чтобы платить на карту, укажите номер карты."
+
+#: backend/apps/hr/services.py
+msgid "Three emergency contacts at most."
+msgstr "Не больше трёх экстренных контактов."
+
+#: backend/apps/hr/services.py
+msgid "Write the contact's name."
+msgstr "Укажите имя контакта."
+
+#: backend/apps/hr/services.py
+msgid "Documents are kept for people who work here."
+msgstr "Документы хранятся только для сотрудников компании."
+
+#: backend/apps/hr/services.py
+msgid "This level doesn't fit this kind of document."
+msgstr "Этот уровень не подходит к такому документу."
+
+#: backend/apps/hr/services.py
+msgid "The issue date can't be in the future."
+msgstr "Дата выдачи не может быть в будущем."
+
+#: backend/apps/hr/services.py
+msgid "A document can't expire before it was issued."
+msgstr "Срок действия не может закончиться раньше даты выдачи."
+
+#: backend/apps/hr/services.py backend/apps/members/join_links.py
+#: backend/apps/members/owner_api.py backend/apps/members/services.py
+msgid "Pick a position of this company."
+msgstr "Выберите должность этой компании."
+
+#: backend/apps/hr/services.py
+msgid "This document is already required there."
+msgstr "Этот документ там уже обязателен."
+
+#: backend/apps/hr/services.py
+msgid "Give the template a name."
+msgstr "Дайте шаблону название."
+
+#: backend/apps/hr/services.py
+msgid "Pick a kind of contract."
+msgstr "Выберите вид договора."
+
+#: backend/apps/hr/services.py
+msgid "A template with this name exists already."
+msgstr "Шаблон с таким названием уже есть."
+
+#: backend/apps/hr/services.py
+msgid "Contracts are drawn up for people who work here."
+msgstr "Договор заключается только с сотрудниками компании."
+
+#: backend/apps/hr/services.py
+msgid "A signed contract's terms change only through an amendment."
+msgstr ""
+"Условия подписанного договора меняются только дополнительным соглашением."
+
+#: backend/apps/hr/services.py
+msgid "Only a draft can be removed; end or terminate a signed contract."
+msgstr ""
+"Удалить можно только черновик; подписанный договор завершите или расторгните."
+
+#: backend/apps/hr/services.py
+msgid "Only a draft can be signed."
+msgstr "Подписать можно только черновик."
+
+#: backend/apps/hr/services.py
+msgid "This contract's end date has passed."
+msgstr "Дата окончания этого договора уже прошла."
+
+#: backend/apps/hr/services.py
+msgid "Say why the contract ends."
+msgstr "Укажите причину прекращения договора."
+
+#: backend/apps/hr/services.py
+msgid "Only a signed contract can be renewed."
+msgstr "Продлить можно только подписанный договор."
+
+#: backend/apps/hr/services.py
+msgid "An indefinite contract runs on; there is nothing to renew."
+msgstr "Бессрочный договор действует дальше, продлевать нечего."
+
+#: backend/apps/hr/services.py
+msgid "The new contract must start after the current one."
+msgstr "Новый договор должен начаться после текущего."
+
+#: backend/apps/hr/services.py
+msgid "This person already has a contract in force."
+msgstr "У этого сотрудника уже есть действующий договор."
+
+#: backend/apps/hr/services.py
+msgid "Pick a day after the current end of probation."
+msgstr "Выберите день после текущего окончания испытательного срока."
+
+#: backend/apps/hr/services.py
+msgid "Probation can't run past the contract's end."
+msgstr "Испытательный срок не может длиться дольше договора."
+
+#: backend/apps/hr/services.py
+#, python-format
+msgid "These terms can't be amended: %(names)s."
+msgstr "Эти условия нельзя изменить: %(names)s."
+
+#: backend/apps/hr/services.py
+msgid "Say why the contract changes."
+msgstr "Укажите причину изменения договора."
+
+#: backend/apps/hr/services.py
+msgid "A fixed-term contract needs its end date."
+msgstr "Для срочного договора укажите дату окончания."
+
+#: backend/apps/hr/services.py
+msgid "A contract can't end before it starts."
+msgstr "Договор не может закончиться раньше, чем начнётся."
+
+#: backend/apps/hr/services.py
+msgid "Probation can't end before the contract starts."
+msgstr "Испытательный срок не может закончиться до начала договора."
+
+#: backend/apps/hr/services.py
+msgid "Another contract has this number."
+msgstr "Этот номер уже есть у другого договора."
+
+#: backend/apps/hr/services.py
+msgid "This contract isn't in force."
+msgstr "Этот договор не действует."
+
+#: backend/apps/hr/services.py backend/apps/members/services.py
+msgid "The last day can't be in the future."
+msgstr "Последний рабочий день не может быть в будущем."
+
+#: backend/apps/hr/services.py
+msgid "The last day can't be before the contract starts."
+msgstr "Последний день не может быть раньше начала договора."
 
 #: backend/apps/inbox/bot_handlers.py backend/apps/inbox/services.py
 #: employee_bot/bot/handlers/admin/approvals.py
@@ -5736,6 +6472,215 @@ msgstr "Такой задачи или регулярной задачи нет.
 #: backend/apps/knowledge/services.py
 msgid "Pick a page of this company."
 msgstr "Выберите страницу этой компании."
+
+#: backend/apps/lifecycle/ai_tools.py
+msgid ""
+"Discipline at a glance: warnings and reprimands given in a period by kind "
+"and category, those still counting, unacknowledged ones, and who is "
+"suspended until when"
+msgstr ""
+"Дисциплина кратко: предупреждения и выговоры за период по видам и причинам, "
+"ещё действующие, неподтверждённые, и кто отстранён и до какого числа"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Gave a disciplinary record"
+msgstr "Вынесено дисциплинарное взыскание"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Changed a disciplinary record"
+msgstr "Изменено дисциплинарное взыскание"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Withdrew a disciplinary record"
+msgstr "Отменено дисциплинарное взыскание"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Removed a disciplinary record"
+msgstr "Удалено дисциплинарное взыскание"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Confirmed being told of a record"
+msgstr "Подтверждено ознакомление со взысканием"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Wrote an explanation"
+msgstr "Написана объяснительная"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Proposed a fine with a record"
+msgstr "Предложен штраф к взысканию"
+
+#. Translators: %(category)s is what it is about, e.g. "Storage conditions breached".
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid ""
+"About: %(category)s. Read it in the app; you can write your explanation "
+"there."
+msgstr ""
+"Причина: %(category)s. Прочитайте в приложении; там же можно написать "
+"объяснительную."
+
+#. Translators: %(name)s is a person's name; it stands alone after the colon.
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Explanation from: %(name)s"
+msgstr "Объяснительная. Автор: %(name)s"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "Warnings and reprimands"
+msgstr "Предупреждения и выговоры"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "Explanations to records"
+msgstr "Объяснительные по взысканиям"
+
+#: backend/apps/lifecycle/integrations.py
+msgid "Payroll is off for this company: give the warning without a fine."
+msgstr ""
+"Модуль «Зарплата» в этой компании выключен: вынесите взыскание без штрафа."
+
+#: backend/apps/lifecycle/integrations.py
+msgid ""
+"Fines need payroll, which isn't ready yet: give the warning without a fine."
+msgstr ""
+"Для штрафа нужен модуль «Зарплата», он ещё не готов: вынесите взыскание без "
+"штрафа."
+
+#: backend/apps/lifecycle/models.py
+msgid "Verbal warning"
+msgstr "Устное предупреждение"
+
+#: backend/apps/lifecycle/models.py
+msgid "Written warning"
+msgstr "Письменное предупреждение"
+
+#: backend/apps/lifecycle/models.py
+msgid "Final warning"
+msgstr "Последнее предупреждение"
+
+#: backend/apps/lifecycle/models.py
+msgid "Reprimand"
+msgstr "Выговор"
+
+#: backend/apps/lifecycle/models.py
+msgid "Lateness"
+msgstr "Опоздания"
+
+#: backend/apps/lifecycle/models.py
+msgid "Absence"
+msgstr "Прогул"
+
+#: backend/apps/lifecycle/models.py
+msgid "Conduct"
+msgstr "Поведение"
+
+#: backend/apps/lifecycle/models.py
+msgid "Breach of the rules"
+msgstr "Нарушение правил"
+
+#: backend/apps/lifecycle/models.py
+msgid "Work quality"
+msgstr "Качество работы"
+
+#: backend/apps/lifecycle/models.py
+msgid "Safety"
+msgstr "Безопасность"
+
+#: backend/apps/lifecycle/models.py
+msgid "Storage conditions breached"
+msgstr "Нарушены условия хранения"
+
+#: backend/apps/lifecycle/models.py
+msgid "Dispensing error"
+msgstr "Ошибка при отпуске"
+
+#: backend/apps/lifecycle/models.py
+msgid "Prescription rules breached"
+msgstr "Нарушены правила отпуска по рецепту"
+
+#: backend/apps/lifecycle/models.py
+msgid "Expired medicine sold"
+msgstr "Продан препарат с истёкшим сроком"
+
+#: backend/apps/lifecycle/models.py
+msgid "Stock shortage"
+msgstr "Недостача товара"
+
+#: backend/apps/lifecycle/models.py
+msgid "Acknowledged"
+msgstr "Ознакомление подтверждено"
+
+#: backend/apps/lifecycle/models.py
+msgid "Withdrawn"
+msgstr "Отменено"
+
+#: backend/apps/lifecycle/owner_api.py
+msgid "Propose a fine with its own button."
+msgstr "Штраф предлагается отдельной кнопкой."
+
+#: backend/apps/lifecycle/services.py
+msgid "Only people who work here can be given a warning."
+msgstr "Взыскание можно вынести только сотруднику компании."
+
+#: backend/apps/lifecycle/services.py
+msgid "This record was withdrawn."
+msgstr "Это взыскание отменено."
+
+#: backend/apps/lifecycle/services.py
+msgid "Say why the record is withdrawn."
+msgstr "Укажите причину отмены."
+
+#: backend/apps/lifecycle/services.py
+msgid "The person has seen this record: withdraw it instead."
+msgstr "Сотрудник уже видел это взыскание: отмените его вместо удаления."
+
+#: backend/apps/lifecycle/services.py
+msgid "A fine was already proposed for this record."
+msgstr "Штраф по этому взысканию уже предложен."
+
+#: backend/apps/lifecycle/services.py
+msgid "Give the fine's amount."
+msgstr "Укажите сумму штрафа."
+
+#: backend/apps/lifecycle/services.py
+msgid "Write your explanation."
+msgstr "Напишите объяснение."
+
+#: backend/apps/lifecycle/services.py
+msgid "Keep it under 2000 characters."
+msgstr "Не больше 2000 символов."
+
+#: backend/apps/lifecycle/services.py
+msgid "You can't give yourself a warning."
+msgstr "Нельзя вынести взыскание самому себе."
+
+#: backend/apps/lifecycle/services.py
+msgid "Pick what kind of record it is."
+msgstr "Выберите вид взыскания."
+
+#: backend/apps/lifecycle/services.py
+msgid "Pick what it is about."
+msgstr "Выберите причину."
+
+#: backend/apps/lifecycle/services.py
+msgid "Write what happened."
+msgstr "Опишите, что произошло."
+
+#: backend/apps/lifecycle/services.py
+msgid "A record can't be given in the future."
+msgstr "Взыскание нельзя вынести будущей датой."
+
+#: backend/apps/lifecycle/services.py
+msgid "What happened can't be in the future."
+msgstr "Дата случая не может быть в будущем."
+
+#: backend/apps/lifecycle/services.py
+msgid "It can't have happened after the record was given."
+msgstr "Случай не может быть позже даты взыскания."
+
+#: backend/apps/lifecycle/services.py
+msgid "A record can't stop counting before it was given."
+msgstr "Срок действия не может закончиться раньше даты взыскания."
 
 #: backend/apps/members/admin.py
 msgid "Permissions"
@@ -6279,11 +7224,6 @@ msgstr "Выберите роль этой компании."
 #: backend/apps/members/join_links.py
 msgid "A team link can't make people owners."
 msgstr "Ссылка для команды не может делать людей владельцами."
-
-#: backend/apps/members/join_links.py backend/apps/members/owner_api.py
-#: backend/apps/members/services.py
-msgid "Pick a position of this company."
-msgstr "Выберите должность этой компании."
 
 #: backend/apps/members/join_links.py
 #, python-format
@@ -6862,10 +7802,6 @@ msgstr "Нельзя уволить самого себя."
 #: backend/apps/members/services.py
 msgid "Only owners can offboard an owner."
 msgstr "Уволить владельца может только владелец."
-
-#: backend/apps/members/services.py
-msgid "The last day can't be in the future."
-msgstr "Последний рабочий день не может быть в будущем."
 
 #: backend/apps/members/services.py
 msgid "Only current members can be suspended."
@@ -8647,10 +9583,6 @@ msgstr "Продажи по дням"
 msgid "Net sales"
 msgstr "Чистые продажи"
 
-#: backend/apps/sales/hooks.py backend/apps/sales/models.py
-msgid "Cash"
-msgstr "Наличные"
-
 #: backend/apps/sales/hooks.py
 msgid "Cards and transfers"
 msgstr "Карты и переводы"
@@ -8786,10 +9718,6 @@ msgstr "Последний торговый день, итоги которог�
 #: backend/apps/sales/models.py
 msgid "QR or wallet"
 msgstr "QR или электронный кошелёк"
-
-#: backend/apps/sales/models.py
-msgid "Bank transfer"
-msgstr "Банковский перевод"
 
 #: backend/apps/sales/models.py
 msgid "Credit (nasiya)"
@@ -9622,10 +10550,6 @@ msgstr "Вернуть"
 #: backend/apps/tasks/bot_messages.py
 msgid "New time"
 msgstr "Новый срок"
-
-#: backend/apps/tasks/bot_messages.py backend/apps/tasks/models.py
-msgid "Photo"
-msgstr "Фото"
 
 #: backend/apps/tasks/bot_messages.py
 msgid "15 min"

@@ -481,6 +481,150 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/hr/celebrations/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description This week's birthdays (of people who show theirs) and work anniversaries in the team. */
+        get: operations["v1_companies_hr_celebrations_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/hr/contract/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description My contract: its terms and the signed PDF or scan. */
+        get: operations["v1_companies_hr_contract_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/hr/contract/{id}/acknowledge/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description 'I've read my contract.' */
+        post: operations["v1_companies_hr_contract_acknowledge_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/hr/contract/pdf/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A short-lived link to my contract's file (Telegram opens it outside the app). */
+        get: operations["v1_companies_hr_contract_pdf_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/hr/documents/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description My documents (those HR shows me), and uploading one: a renewed medical book, a new
+         *     certificate. HR checks it afterwards.
+         */
+        get: operations["v1_companies_hr_documents_list"];
+        put?: never;
+        /**
+         * @description My documents (those HR shows me), and uploading one: a renewed medical book, a new
+         *     certificate. HR checks it afterwards.
+         */
+        post: operations["v1_companies_hr_documents_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/hr/profile/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description My details, IDs and card masked back. */
+        get: operations["v1_companies_hr_profile_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description My details, IDs and card masked back. */
+        patch: operations["v1_companies_hr_profile_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/hr/profile/emergency-contacts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Whom to call when something happens to me (three at most). */
+        get: operations["v1_companies_hr_profile_emergency_contacts_list"];
+        put?: never;
+        /** @description Whom to call when something happens to me (three at most). */
+        post: operations["v1_companies_hr_profile_emergency_contacts_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/hr/profile/emergency-contacts/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["v1_companies_hr_profile_emergency_contacts_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["v1_companies_hr_profile_emergency_contacts_partial_update"];
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/inbox/": {
         parameters: {
             query?: never;
@@ -617,6 +761,70 @@ export interface paths {
         get: operations["v1_companies_knowledge_spaces_retrieve"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/lifecycle/records/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_lifecycle_records_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/lifecycle/records/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_lifecycle_records_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/lifecycle/records/{id}/acknowledge/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_lifecycle_records_acknowledge_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/lifecycle/records/{id}/explain/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_lifecycle_records_explain_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2292,6 +2500,186 @@ export interface components {
             readonly date: string;
             readonly name: string;
         };
+        HrCelebration: {
+            readonly member: components["schemas"]["HrPersonRef"];
+            kind: components["schemas"]["HrCelebrationKindEnum"];
+            /** Format: date */
+            date: string;
+            /** @description Years with the company. */
+            years: number | null;
+            /** @description Negative once past. */
+            days_until: number;
+        };
+        /**
+         * @description * `birthday` - Birthday
+         *     * `anniversary` - Work anniversary
+         * @enum {string}
+         */
+        HrCelebrationKindEnum: "birthday" | "anniversary";
+        /**
+         * @description * `indefinite` - Indefinite
+         *     * `fixed_term` - Fixed term
+         *     * `civil` - Civil contract
+         *     * `internship` - Internship
+         * @enum {string}
+         */
+        HrContractKindEnum: "indefinite" | "fixed_term" | "civil" | "internship";
+        /**
+         * @description * `draft` - Draft
+         *     * `active` - In force
+         *     * `ended` - Ended
+         *     * `terminated` - Terminated
+         * @enum {string}
+         */
+        HrContractStatusEnum: "draft" | "active" | "ended" | "terminated";
+        /**
+         * @description * `passport` - Passport
+         *     * `id_card` - ID card
+         *     * `military_id` - Military ID
+         *     * `diploma` - Diploma
+         *     * `pharmacy_diploma` - Pharmacy diploma
+         *     * `medical_diploma` - Medical diploma
+         *     * `pharmacist_certificate` - Specialist certificate
+         *     * `qualification_category` - Qualification category
+         *     * `state_registration` - State registration
+         *     * `medical_book` - Medical book
+         *     * `medical_exam` - Medical examination
+         *     * `work_book` - Work record book
+         *     * `contract` - Contract
+         *     * `nda` - Confidentiality agreement
+         *     * `photo` - Photo
+         *     * `other` - Other
+         * @enum {string}
+         */
+        HrDocumentKindEnum: "passport" | "id_card" | "military_id" | "diploma" | "pharmacy_diploma" | "medical_diploma" | "pharmacist_certificate" | "qualification_category" | "state_registration" | "medical_book" | "medical_exam" | "work_book" | "contract" | "nda" | "photo" | "other";
+        /**
+         * @description * `higher` - Higher
+         *     * `college` - College
+         *     * `highest` - Highest category
+         *     * `first` - First category
+         *     * `second` - Second category
+         * @enum {string}
+         */
+        HrDocumentLevelEnum: "higher" | "college" | "highest" | "first" | "second";
+        /**
+         * @description * `valid` - valid
+         *     * `expiring` - expiring
+         *     * `expired` - expired
+         *     * `no_expiry` - no_expiry
+         * @enum {string}
+         */
+        HrDocumentStateEnum: "valid" | "expiring" | "expired" | "no_expiry";
+        HrEmergencyContact: {
+            readonly id: number;
+            name: string;
+            relation?: string;
+            phone: string;
+        };
+        HrEmergencyContactRequest: {
+            name: string;
+            relation?: string;
+            phone: string;
+        };
+        /**
+         * @description * `full_time` - Full time
+         *     * `part_time` - Part time
+         *     * `contractor` - Contractor
+         *     * `intern` - Intern
+         * @enum {string}
+         */
+        HrEmploymentTypeEnum: "full_time" | "part_time" | "contractor" | "intern";
+        HrFileLink: {
+            url: string;
+        };
+        HrMyContract: {
+            readonly id: number;
+            readonly number: string;
+            readonly kind: components["schemas"]["HrContractKindEnum"];
+            readonly status: components["schemas"]["HrContractStatusEnum"];
+            readonly position: string | null;
+            /** Format: date */
+            readonly starts_on: string;
+            /** Format: date */
+            readonly ends_on: string | null;
+            /** Format: date */
+            readonly probation_until: string | null;
+            /** Format: date-time */
+            readonly probation_passed_at: string | null;
+            /** Format: decimal */
+            readonly weekly_hours: string | null;
+            /** @description Signed download link (a PDF or a scan). */
+            readonly file: string | null;
+            /** Format: date-time */
+            readonly acknowledged_at: string | null;
+            readonly needs_acknowledgement: boolean;
+            /** Format: date */
+            readonly terminated_on: string | null;
+        };
+        HrMyDocument: {
+            readonly id: number;
+            readonly kind: components["schemas"]["HrDocumentKindEnum"];
+            readonly title: string;
+            readonly number: string;
+            /** Format: date */
+            readonly issued_on: string | null;
+            /** Format: date */
+            readonly expires_on: string | null;
+            readonly level: components["schemas"]["HrDocumentLevelEnum"];
+            /** @description Signed download link. */
+            readonly file: string | null;
+            readonly verified: boolean;
+            readonly state: components["schemas"]["HrDocumentStateEnum"];
+            readonly days_left: number | null;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        HrMyDocumentWriteRequest: {
+            kind: components["schemas"]["HrDocumentKindEnum"];
+            title?: string;
+            number?: string;
+            /** Format: date */
+            issued_on?: string | null;
+            /** Format: date */
+            expires_on?: string | null;
+            /** Format: binary */
+            file: string;
+        };
+        /** @description Someone's own profile: their IDs and card masked back. */
+        HrMyProfile: {
+            readonly first_name: string;
+            readonly last_name: string;
+            readonly middle_name: string;
+            readonly position: string | null;
+            readonly department: string | null;
+            /** Format: date */
+            readonly birth_date: string | null;
+            readonly show_birthday: boolean;
+            /** Format: date */
+            readonly hire_date: string | null;
+            readonly employment_type: components["schemas"]["HrEmploymentTypeEnum"];
+            readonly personal_phone: string;
+            /** Format: email */
+            readonly email: string;
+            readonly address: string;
+            readonly city: string;
+            readonly pinfl: string;
+            readonly passport: string;
+            readonly payout_method: components["schemas"]["HrPayoutMethodEnum"];
+            readonly payout_card: string;
+            readonly emergency_contacts: components["schemas"]["HrEmergencyContact"][];
+        };
+        /**
+         * @description * `cash` - Cash
+         *     * `card` - Card
+         *     * `bank` - Bank transfer
+         * @enum {string}
+         */
+        HrPayoutMethodEnum: "cash" | "card" | "bank";
+        HrPersonRef: {
+            id: number;
+            name: string;
+            photo_url: string | null;
+        };
         InboxPerson: {
             id: number;
             name: string;
@@ -2503,6 +2891,67 @@ export interface components {
          * @enum {string}
          */
         LanguageEnum: "uz" | "ru" | "en";
+        LifecycleExplainRequest: {
+            text: string;
+        };
+        /** @description A record as the person reads it: no evidence file, no fine amount. */
+        LifecycleMyRecord: {
+            readonly id: number;
+            readonly kind: components["schemas"]["LifecycleRecordKindEnum"];
+            readonly category: components["schemas"]["LifecycleRecordCategoryEnum"];
+            /** Format: date */
+            readonly incident_on: string;
+            /** Format: date */
+            readonly issued_on: string;
+            readonly issued_by: string | null;
+            readonly description: string;
+            /** Format: date */
+            readonly expires_on: string | null;
+            readonly active: boolean;
+            readonly status: components["schemas"]["LifecycleRecordStatusEnum"];
+            /** Format: date-time */
+            readonly read_at: string | null;
+            /** Format: date-time */
+            readonly acknowledged_at: string | null;
+            readonly employee_response: string;
+            /** Format: date-time */
+            readonly responded_at: string | null;
+            readonly has_fine: boolean;
+            readonly withdraw_reason: string;
+        };
+        /**
+         * @description * `lateness` - Lateness
+         *     * `absence` - Absence
+         *     * `conduct` - Conduct
+         *     * `policy_breach` - Breach of the rules
+         *     * `performance` - Work quality
+         *     * `cash_shortage` - Cash shortage
+         *     * `safety` - Safety
+         *     * `storage_breach` - Storage conditions breached
+         *     * `dispensing_error` - Dispensing error
+         *     * `rx_violation` - Prescription rules breached
+         *     * `expired_sale` - Expired medicine sold
+         *     * `stock_shortage` - Stock shortage
+         *     * `other` - Other
+         * @enum {string}
+         */
+        LifecycleRecordCategoryEnum: "lateness" | "absence" | "conduct" | "policy_breach" | "performance" | "cash_shortage" | "safety" | "storage_breach" | "dispensing_error" | "rx_violation" | "expired_sale" | "stock_shortage" | "other";
+        /**
+         * @description * `verbal_warning` - Verbal warning
+         *     * `written_warning` - Written warning
+         *     * `final_warning` - Final warning
+         *     * `reprimand` - Reprimand
+         *     * `other` - Other
+         * @enum {string}
+         */
+        LifecycleRecordKindEnum: "verbal_warning" | "written_warning" | "final_warning" | "reprimand" | "other";
+        /**
+         * @description * `issued` - Issued
+         *     * `acknowledged` - Acknowledged
+         *     * `withdrawn` - Withdrawn
+         * @enum {string}
+         */
+        LifecycleRecordStatusEnum: "issued" | "acknowledged" | "withdrawn";
         MarkReadRequest: {
             ids?: number[];
             /** @default false */
@@ -2846,6 +3295,19 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Task"][];
+        };
+        PatchedHrEmergencyContactRequest: {
+            name?: string;
+            relation?: string;
+            phone?: string;
+        };
+        PatchedHrMyProfileUpdateRequest: {
+            personal_phone?: string;
+            email?: string;
+            address?: string;
+            city?: string;
+            show_birthday?: boolean;
+            payout_card?: string;
         };
         PatchedMeRequest: {
             language?: components["schemas"]["LanguageEnum"];
@@ -4584,6 +5046,284 @@ export interface operations {
             };
         };
     };
+    v1_companies_hr_celebrations_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrCelebration"][];
+                };
+            };
+        };
+    };
+    v1_companies_hr_contract_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrMyContract"];
+                };
+            };
+        };
+    };
+    v1_companies_hr_contract_acknowledge_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrMyContract"];
+                };
+            };
+        };
+    };
+    v1_companies_hr_contract_pdf_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrFileLink"];
+                };
+            };
+        };
+    };
+    v1_companies_hr_documents_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrMyDocument"][];
+                };
+            };
+        };
+    };
+    v1_companies_hr_documents_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["HrMyDocumentWriteRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["HrMyDocumentWriteRequest"];
+                "application/json": components["schemas"]["HrMyDocumentWriteRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrMyDocument"];
+                };
+            };
+        };
+    };
+    v1_companies_hr_profile_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrMyProfile"];
+                };
+            };
+        };
+    };
+    v1_companies_hr_profile_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedHrMyProfileUpdateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedHrMyProfileUpdateRequest"];
+                "multipart/form-data": components["schemas"]["PatchedHrMyProfileUpdateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrMyProfile"];
+                };
+            };
+        };
+    };
+    v1_companies_hr_profile_emergency_contacts_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrEmergencyContact"][];
+                };
+            };
+        };
+    };
+    v1_companies_hr_profile_emergency_contacts_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HrEmergencyContactRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["HrEmergencyContactRequest"];
+                "multipart/form-data": components["schemas"]["HrEmergencyContactRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrEmergencyContact"];
+                };
+            };
+        };
+    };
+    v1_companies_hr_profile_emergency_contacts_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_companies_hr_profile_emergency_contacts_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedHrEmergencyContactRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedHrEmergencyContactRequest"];
+                "multipart/form-data": components["schemas"]["PatchedHrEmergencyContactRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrEmergencyContact"];
+                };
+            };
+        };
+    };
     v1_companies_inbox_list: {
         parameters: {
             query?: {
@@ -4767,6 +5507,99 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["KnowledgeSpaceTree"];
+                };
+            };
+        };
+    };
+    v1_companies_lifecycle_records_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LifecycleMyRecord"][];
+                };
+            };
+        };
+    };
+    v1_companies_lifecycle_records_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LifecycleMyRecord"];
+                };
+            };
+        };
+    };
+    v1_companies_lifecycle_records_acknowledge_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LifecycleMyRecord"];
+                };
+            };
+        };
+    };
+    v1_companies_lifecycle_records_explain_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LifecycleExplainRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["LifecycleExplainRequest"];
+                "multipart/form-data": components["schemas"]["LifecycleExplainRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LifecycleMyRecord"];
                 };
             };
         };

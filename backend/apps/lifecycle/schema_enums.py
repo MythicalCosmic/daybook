@@ -5,4 +5,8 @@ Read by file path when the settings load: name choices with an import string, e.
 app label in PascalCase and must be unique (duplicates stop the settings).
 """
 
-ENUM_NAME_OVERRIDES = {}
+ENUM_NAME_OVERRIDES = {
+    "LifecycleRecordKindEnum": "apps.lifecycle.models.DisciplinaryRecord.Kind",
+    "LifecycleRecordCategoryEnum": "apps.lifecycle.models.DisciplinaryRecord.Category",
+    "LifecycleRecordStatusEnum": "apps.lifecycle.models.DisciplinaryRecord.Status",
+}
