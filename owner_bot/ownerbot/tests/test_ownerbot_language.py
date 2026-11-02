@@ -101,6 +101,7 @@ async def test_a_tap_on_a_message_out_of_reach_says_so(dp, bot):
 
     await dp.feed_update(bot, update)
 
-    with translation.override("uz"):
+    # Russian was saved before the edit failed, so the toast already speaks it.
+    with translation.override("ru"):
         expected = gettext("This message is too old. Open it again from the menu.")
     assert bot.answers()[-1].text == expected

@@ -228,5 +228,6 @@ async def test_a_tap_on_a_message_out_of_reach_says_so(dp, bot):
     await dp.feed_update(bot, update)
 
     [answer] = [r for r in bot.requests if isinstance(r, AnswerCallbackQuery)][-1:]
-    assert answer.text == said("uz", "This message is too old. Open it again from the menu.")
-    assert answer.text != said("uz", "Something went wrong. Please try again in a moment.")
+    # Russian was saved before the edit failed, so the toast already speaks it.
+    assert answer.text == said("ru", "This message is too old. Open it again from the menu.")
+    assert answer.text != said("ru", "Something went wrong. Please try again in a moment.")
