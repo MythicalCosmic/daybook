@@ -25,10 +25,12 @@ draft records the code. Unknown keys of the answer (the local service adds "mode
 ignored. Neither the audio nor the transcript is ever logged.
 """
 
+import ipaddress
 import logging
 import time
 from collections.abc import Iterable
 from dataclasses import dataclass
+from urllib.parse import urlsplit
 
 import httpx2  # the anthropic SDK's HTTP library (1.x); never the `httpx` package
 from django.conf import settings
@@ -64,6 +66,8 @@ PHARMACY_WORDS = {
 }
 # The service is starting (loading its models): try again a little later.
 BUSY_STATUSES = frozenset({503})
+# AI_SPEECH_MODEL names of Whisper models (the local service's sizes, Groq's whisper-large-v3).
+WHISPER_SIZES = ("tiny", "base", "small", "medium", "large", "distil", "turbo")
 
 
 class SpeechError(Exception):
@@ -101,6 +105,27 @@ def provider() -> str:
 def status() -> str:
     """ "ready" (a service is set), "fake" (AI_FAKE without one) or "not_configured"."""
     return {"openai_compatible": "ready", "fake": "fake", "none": "not_configured"}[provider()]
+
+
+def engine_name() -> str:
+    """What the Models page calls the speech model: "Whisper", or the model's own name."""
+    model = settings.AI_SPEECH_MODEL
+    if not model or "whisper" in model.lower() or model.lower().startswith(WHISPER_SIZES):
+        return "Whisper"
+    return model
+
+
+def where() -> str:
+    """ "own_server" when the service runs next to the app (a container name such as "stt",
+    localhost or a private address; also with no service), "hosted" for a public one."""
+    host = urlsplit(settings.AI_SPEECH_URL).hostname or ""
+    if "." not in host:
+        return "own_server"
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        return "hosted"
+    return "own_server" if address.is_private or address.is_loopback else "hosted"
 
 
 def vocabulary(company_name: str, people: Iterable[tuple[str, str]], language: str = "uz") -> str:

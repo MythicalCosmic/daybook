@@ -25,13 +25,12 @@ from datetime import timedelta
 from zoneinfo import ZoneInfo
 
 import anthropic
-from django.conf import settings
 from django.db import transaction
 from django.utils import timezone, translation
 from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
 
-from apps.ai import availability, client, conf
+from apps.ai import availability, catalog, client, conf
 from apps.ai.models import AIConversation, AIMessage, AITurn
 from apps.ai.tools import registry
 from apps.ai.tools.registry import ToolContext
@@ -87,7 +86,10 @@ def start_conversation(by: Membership) -> AIConversation:
     if not available(by):
         raise TurnRefused("ai_off", _("Ask AI isn't available here."), 403)
     return AIConversation.objects.create(
-        company_id=by.company_id, membership=by, last_activity_at=timezone.now()
+        company_id=by.company_id,
+        membership=by,
+        last_activity_at=timezone.now(),
+        model=catalog.model_for(by.company, "chat"),
     )
 
 
@@ -287,6 +289,8 @@ def _loop(turn: AITurn, ctx: ToolContext) -> str | None:
             "cache_control": {"type": "ephemeral"},
         },
     ]
+    # The conversation's own model, whatever the company's choice is now (§1).
+    model = conversation.model or catalog.model_for(ctx.company, "chat")
     steps: list[dict] = []
     for round_number in range(MAX_ROUNDS + 1):
         if _cancelled(turn):
@@ -297,7 +301,7 @@ def _loop(turn: AITurn, ctx: ToolContext) -> str | None:
             "chat",
             company=ctx.company,
             membership=ctx.membership,
-            model=settings.AI_MODEL_CHAT,
+            model=model,
             system=system,
             messages=_history(conversation),
             tools=definitions,

@@ -205,7 +205,7 @@ def test_claude_reads_the_instruction_against_the_candidates(people, fake_claude
     assert cash["checklist"] == ["Naqd", "Karta"]
     assert found.questions == ["Kassani qaysi filialda?"]
     [request] = fake_claude.requests
-    assert request["model"] == "claude-opus-5-5"
+    assert request["model"] == "claude-sonnet-5-5"  # catalog: task_drafts, no Opus by default
     assert request["output_config"]["effort"] == "low"
     prompt = request["messages"][0]["content"][0]["text"]
     assert "Asia/Tashkent" in prompt or "<today>" in prompt

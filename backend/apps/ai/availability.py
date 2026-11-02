@@ -174,8 +174,9 @@ def add_spend(company, micro_usd: int) -> None:
             cache.incr(key, micro_usd)
 
 
-def to_usd(micro_usd: int) -> Decimal:
-    return (Decimal(micro_usd) / Decimal(1_000_000)).quantize(Decimal("0.01"))
+def to_usd(micro_usd: int, places: int = 2) -> Decimal:
+    """Micro-dollars as dollars, rounded to `places` (4 shows what a single call costs)."""
+    return (Decimal(micro_usd) / Decimal(1_000_000)).quantize(Decimal(1).scaleb(-places))
 
 
 def budget_reached(company, monthly_budget_usd: Decimal) -> bool:

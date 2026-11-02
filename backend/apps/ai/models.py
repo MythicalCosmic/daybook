@@ -53,6 +53,9 @@ class AISettings(TimeStampedModel):
     member_daily_drafts = models.PositiveSmallIntegerField(
         default=60, validators=[MinValueValidator(1), MaxValueValidator(500)]
     )
+    # The owner's model per feature ({"chat": "claude-haiku-5-5"}); a feature left out uses the
+    # platform's default (apps.ai.catalog.model_for).
+    models = models.JSONField(default=dict, blank=True)
 
     class Meta:
         verbose_name = _("AI settings")
@@ -207,6 +210,9 @@ class AIConversation(TenantModel):
     title = models.CharField(max_length=120, blank=True)
     last_activity_at = models.DateTimeField(db_index=True)
     turn_count = models.PositiveIntegerField(default=0)
+    # Chosen when the conversation starts and never changed: the prompt cache and the thinking
+    # blocks in its history belong to one model.
+    model = models.CharField(max_length=64, blank=True)
 
     def __str__(self):
         return self.title or f"Conversation #{self.pk}"

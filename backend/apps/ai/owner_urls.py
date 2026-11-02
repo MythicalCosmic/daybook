@@ -13,6 +13,7 @@ urlpatterns = [
     path("ai/settings/", owner_api.SettingsView.as_view(), name="owner-ai-settings"),
     path("ai/settings/enable/", owner_api.EnableView.as_view(), name="owner-ai-enable"),
     path("ai/settings/disable/", owner_api.DisableView.as_view(), name="owner-ai-disable"),
+    path("ai/models/", owner_api.ModelsView.as_view(), name="owner-ai-models"),
     path("ai/task-drafts/", owner_api.TaskDraftListView.as_view(), name="owner-ai-task-drafts"),
     path(
         "ai/task-drafts/<int:draft_id>/",

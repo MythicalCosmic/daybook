@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from apps.ai import agents, events, services
 from apps.ai.agents import deadline_watcher, morning_plan, photo_checker, runner
-from apps.ai.models import AgentEvent, AgentState
+from apps.ai.models import AgentEvent, AgentState, AISettings
 from apps.reminders import engine
 from apps.tasks import services as task_services
 from apps.tasks.models import Task, TaskComment
@@ -288,6 +288,7 @@ def test_with_claude_the_plan_has_a_summary(
 ):
     company = crew["giver"].company
     late_task(crew, hours=27)
+    AISettings.objects.filter(company=company).update(models={"briefing": "claude-haiku-5-5"})
     fake_claude.script(fake_claude.json({"summary": "Bitta vazifa kechikmoqda. Tekshiring."}))
 
     with django_capture_on_commit_callbacks(execute=True):
@@ -295,7 +296,7 @@ def test_with_claude_the_plan_has_a_summary(
 
     assert "Bitta vazifa kechikmoqda." in sent_messages[0]["text"]
     [request] = fake_claude.requests
-    assert request["model"] == "claude-haiku-5-5"
+    assert request["model"] == "claude-haiku-5-5"  # the owner chose Haiku for the briefing
     assert "fallbacks" not in request  # Haiku has none
     assert "temperature" not in request and "top_p" not in request
     assert request["output_config"]["effort"] == "low"

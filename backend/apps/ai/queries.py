@@ -5,18 +5,21 @@ A function returning branch-bound data takes the required keyword
 
     agent_rows(company)                          the agents as the dashboard lists them
     activity(company, branch_ids=…, agent=…)     what they did, newest first, in pages
+    models_page(membership)                      providers, models, the model per feature and
+                                                 this month's usage (the dashboard's Models page)
 """
 
 from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
-from apps.ai import agents, events
-from apps.ai.models import AgentEvent, AIDraft
+from apps.ai import agents, availability, catalog, conf, events, pricing, speech
+from apps.ai.models import AgentEvent, AIDraft, AIUsage
 from apps.members.models import Membership
+from apps.members.permissions import Perm
 from apps.members.queries import photo_url
 from apps.tasks.models import Task
 
@@ -164,3 +167,122 @@ def _subject_labels(company, page: list[AgentEvent]) -> dict[tuple[str, int], st
                 "name": str(draft.created_by)
             }
     return labels
+
+
+# The Models page ---------------------------------------------------------------------------------
+
+
+def models_page(membership: Membership) -> dict:
+    """What the Models page shows `membership`: the providers (Anthropic as it stands, the rest
+    coming soon), the offered models with their prices, the model of every feature, speech, and
+    this month's usage (only for ai.configure)."""
+    company = membership.company
+    can_configure = membership.has_perm(Perm.AI_CONFIGURE)
+    row = conf.get_settings(company)
+    claude = availability.claude_state(company)
+    return {
+        "providers": [
+            {
+                "key": provider.key,
+                "name": str(provider.name),
+                "status": claude if provider.live else "coming_soon",
+                "description": str(provider.description),
+                "website": provider.website,
+                "models": [model.id for model in catalog.MODELS if model.provider == provider.key],
+            }
+            for provider in catalog.PROVIDERS
+        ],
+        "models": [
+            {
+                "id": model.id,
+                "provider": model.provider,
+                "name": model.name,
+                "tier": model.tier,
+                "description": str(model.description),
+                "vision": model.vision,
+                "price": {
+                    "input_per_mtok": f"{pricing.price_of(model.id).input:.2f}",
+                    "output_per_mtok": f"{pricing.price_of(model.id).output:.2f}",
+                },
+            }
+            for model in catalog.MODELS
+        ],
+        "features": [
+            {
+                "key": key,
+                "name": str(catalog.get_feature(key).name),
+                "description": str(catalog.get_feature(key).description),
+                "model": catalog.pick(key, row.models),
+                "default": catalog.default_for(key),
+                "choices": catalog.choices_for(key),
+            }
+            for key in catalog.FEATURES
+        ],
+        "speech": {
+            "status": speech.status(),
+            "name": speech.engine_name(),
+            "where": speech.where(),
+        },
+        "can_configure": can_configure,
+        "usage": month_usage(company, row.monthly_budget_usd) if can_configure else None,
+    }
+
+
+def month_usage(company, budget_usd) -> dict:
+    """This month's Claude calls (AIUsage, in the company's timezone): what they cost, per
+    model (the offered ones always, others that answered as fallbacks) and per catalog feature
+    (every AIUsage.feature counted towards one: `catalog.usage_feature`)."""
+    start = availability.month_start(company)
+    rows = AIUsage.objects.filter(company=company, created_at__gte=start).order_by()
+    per_model = {
+        item["model"]: item
+        for item in rows.values("model").annotate(
+            calls=Count("pk"),
+            cost=Sum("cost_micro_usd"),
+            input_tokens=Sum("input_tokens"),
+            output_tokens=Sum("output_tokens"),
+        )
+    }
+    offered = [model.id for model in catalog.MODELS]
+    others = sorted(
+        (key for key in per_model if key not in offered), key=lambda key: -per_model[key]["cost"]
+    )
+    by_model = []
+    for model_id in [*offered, *others]:
+        item = per_model.get(model_id) or {}
+        by_model.append(
+            {
+                "model": model_id,
+                "name": catalog.display_name(model_id),
+                "calls": item.get("calls", 0),
+                "cost_usd": availability.to_usd(item.get("cost") or 0, places=4),
+                "input_tokens": item.get("input_tokens") or 0,
+                "output_tokens": item.get("output_tokens") or 0,
+            }
+        )
+    per_feature: dict[str, dict] = {}
+    for item in rows.values("feature").annotate(calls=Count("pk"), cost=Sum("cost_micro_usd")):
+        bucket = per_feature.setdefault(
+            catalog.usage_feature(item["feature"]), {"calls": 0, "cost": 0}
+        )
+        bucket["calls"] += item["calls"]
+        bucket["cost"] += item["cost"] or 0
+    keys = [*catalog.FEATURES, *([catalog.OTHER] if catalog.OTHER in per_feature else [])]
+    by_feature = [
+        {
+            "feature": key,
+            "name": str(catalog.get_feature(key).name) if key != catalog.OTHER else _("Other"),
+            "calls": per_feature.get(key, {}).get("calls", 0),
+            "cost_usd": availability.to_usd(per_feature.get(key, {}).get("cost", 0), places=4),
+        }
+        for key in keys
+    ]
+    spent = sum((item["cost"] or 0) for item in per_model.values())
+    return {
+        "month": f"{start:%Y-%m}",
+        "spent_usd": availability.to_usd(spent, places=4),
+        "budget_usd": f"{budget_usd:.2f}",
+        "calls": sum(item["calls"] for item in per_model.values()),
+        "by_model": by_model,
+        "by_feature": by_feature,
+    }

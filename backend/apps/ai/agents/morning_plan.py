@@ -11,7 +11,6 @@ import logging
 from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
-from django.conf import settings
 from django.db import transaction
 from django.utils import timezone, translation
 from django.utils.translation import gettext as _
@@ -19,7 +18,7 @@ from django.utils.translation import gettext_lazy
 from pydantic import BaseModel
 from pydantic import Field as PydanticField
 
-from apps.ai import availability, bot_messages, client, events
+from apps.ai import availability, bot_messages, catalog, client, events
 from apps.ai.agents import registry
 from apps.ai.agents.registry import Agent, EventTemplate, Field
 from apps.members import departments
@@ -129,7 +128,7 @@ def _summary(member: Membership, day: dict) -> str:
             "morning_plan",
             company=company,
             membership=member,
-            model=settings.AI_MODEL_FAST,
+            model=catalog.model_for(company, "briefing"),
             schema=PlanSummary,
             effort="low",
             max_tokens=2000,

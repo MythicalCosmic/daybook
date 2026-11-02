@@ -29,12 +29,11 @@ from datetime import datetime
 from typing import Literal
 from zoneinfo import ZoneInfo
 
-from django.conf import settings
 from django.db.models import Count
 from django.utils import timezone
 from pydantic import BaseModel, Field
 
-from apps.ai import availability, client, rules
+from apps.ai import availability, catalog, client, rules
 from apps.ai.models import AIDraft
 from apps.ai.tools.scrub import scrub
 from apps.members import departments
@@ -275,7 +274,7 @@ def _with_claude(author, text: str, *, language: str, people, now: datetime) -> 
         "task_drafts",
         company=author.company,
         membership=author,
-        model=settings.AI_MODEL_DRAFTS,
+        model=catalog.model_for(author.company, "task_drafts"),
         schema=TaskDraftSet,
         effort="low",
         system=SYSTEM,

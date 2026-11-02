@@ -51,6 +51,11 @@ class AIFeaturesSerializer(serializers.Serializer):
     smart_text = serializers.BooleanField()
     chat = serializers.BooleanField()
     photo_checker = serializers.BooleanField()
+    flows = serializers.BooleanField(help_text="AI is on.")
+    briefing = serializers.BooleanField(help_text="AI is on and reports.view or ai.configure.")
+    writing = serializers.BooleanField(
+        help_text="AI is on, ai.use, and Claude is available (or AI_FAKE)."
+    )
 
 
 class AIOwnerStatusSerializer(serializers.Serializer):
@@ -98,6 +103,8 @@ def owner_status(membership) -> dict:
     can_configure = membership.has_perm(CONFIGURE)
     voice = services.voice_status(membership)
     claude = availability.claude_state(company)
+    on = conf.ai_on(company)
+    claude_works = availability.fake() or availability.status(company).available
     budget = None
     if can_configure:
         row = conf.get_settings(company)
@@ -115,9 +122,12 @@ def owner_status(membership) -> dict:
             "voice": voice.voice,
             "smart_text": voice.smart_text,
             "chat": chat.available(membership),
-            "photo_checker": conf.ai_on(company)
+            "photo_checker": on
             and agents.state_of(company, photo_checker.KEY).enabled
-            and (availability.fake() or availability.status(company).available),
+            and claude_works,
+            "flows": on,
+            "briefing": on and (can_configure or membership.has_perm(Perm.REPORTS_VIEW)),
+            "writing": on and membership.has_perm(Perm.AI_USE) and claude_works,
         },
         "budget": budget,
     }
@@ -176,6 +186,121 @@ class DisableView(OwnerAPIView):
         services.disable_ai(self.company, by=self.membership)
         self.bump(PULSE_SETTINGS)
         return Response(owner_status(self.membership))
+
+
+# The Models page ---------------------------------------------------------------------------------
+
+
+class AIModelPriceSerializer(serializers.Serializer):
+    input_per_mtok = serializers.CharField(help_text="USD per million input tokens: 0.10")
+    output_per_mtok = serializers.CharField(help_text="USD per million output tokens: 0.50")
+
+
+class AIProviderSerializer(serializers.Serializer):
+    key = serializers.CharField(help_text="anthropic, nvidia or openai_compatible.")
+    name = serializers.CharField()
+    status = serializers.ChoiceField(
+        [
+            "connected",
+            "not_configured",
+            "fake",
+            "blocked",
+            "budget_reached",
+            "unavailable",
+            "coming_soon",
+        ]
+    )
+    description = serializers.CharField()
+    website = serializers.CharField(allow_blank=True)
+    models = serializers.ListField(child=serializers.CharField(), help_text="Model ids.")
+
+
+class AIModelSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    provider = serializers.CharField()
+    name = serializers.CharField()
+    tier = serializers.ChoiceField(["fast", "smart"])
+    description = serializers.CharField()
+    vision = serializers.BooleanField()
+    price = AIModelPriceSerializer()
+
+
+class AIModelFeatureSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    name = serializers.CharField()
+    description = serializers.CharField()
+    model = serializers.CharField(help_text="The model it uses here now.")
+    default = serializers.CharField(help_text="The platform's model for it.")
+    choices = serializers.ListField(child=serializers.CharField(), help_text="Model ids.")
+
+
+class AISpeechEngineSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(["ready", "not_configured", "fake"])
+    name = serializers.CharField()
+    where = serializers.ChoiceField(["own_server", "hosted"])
+
+
+class AIModelUsageSerializer(serializers.Serializer):
+    model = serializers.CharField()
+    name = serializers.CharField()
+    calls = serializers.IntegerField()
+    cost_usd = serializers.DecimalField(max_digits=12, decimal_places=4)
+    input_tokens = serializers.IntegerField()
+    output_tokens = serializers.IntegerField()
+
+
+class AIFeatureUsageSerializer(serializers.Serializer):
+    feature = serializers.CharField(help_text="A feature key, or other.")
+    name = serializers.CharField()
+    calls = serializers.IntegerField()
+    cost_usd = serializers.DecimalField(max_digits=12, decimal_places=4)
+
+
+class AIMonthUsageSerializer(serializers.Serializer):
+    month = serializers.CharField(help_text="2026-11")
+    spent_usd = serializers.DecimalField(max_digits=12, decimal_places=4)
+    budget_usd = serializers.DecimalField(max_digits=10, decimal_places=2)
+    calls = serializers.IntegerField()
+    by_model = AIModelUsageSerializer(many=True)
+    by_feature = AIFeatureUsageSerializer(many=True)
+
+
+class AIModelsSerializer(serializers.Serializer):
+    providers = AIProviderSerializer(many=True)
+    models = AIModelSerializer(many=True)
+    features = AIModelFeatureSerializer(many=True)
+    speech = AISpeechEngineSerializer()
+    can_configure = serializers.BooleanField()
+    usage = AIMonthUsageSerializer(allow_null=True, help_text="Only for ai.configure.")
+
+
+class AIModelsUpdateSerializer(serializers.Serializer):
+    features = serializers.DictField(
+        child=serializers.CharField(allow_null=True, allow_blank=True),
+        help_text='{"chat": "claude-haiku-5-5"}; null or "" puts a feature back on its default.',
+    )
+
+
+class ModelsView(OwnerAPIView):
+    perm = None
+    perms_by_action = {"patch": CONFIGURE}
+
+    @extend_schema(responses=AIModelsSerializer)
+    def get(self, request, company_id):
+        return Response(AIModelsSerializer(queries.models_page(self.membership)).data)
+
+    @extend_schema(request=AIModelsUpdateSerializer, responses=AIModelsSerializer)
+    def patch(self, request, company_id):
+        form = AIModelsUpdateSerializer(data=request.data)
+        form.is_valid(raise_exception=True)
+        try:
+            services.set_models(
+                self.company, by=self.membership, choices=form.validated_data["features"]
+            )
+        except DjangoValidationError as exc:
+            raise ValidationError({"features": exc.message_dict}) from exc
+        self.bump(PULSE_SETTINGS)
+        return Response(AIModelsSerializer(queries.models_page(self.membership)).data)
 
 
 class OwnerDraftEndpoints(DraftEndpoints):

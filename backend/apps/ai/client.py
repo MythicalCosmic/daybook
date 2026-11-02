@@ -2,7 +2,7 @@
 
     result = client.structured(
         "task_drafts", company=company, membership=member,
-        model=settings.AI_MODEL_DRAFTS, schema=TaskDraftSet, effort="low",
+        model=catalog.model_for(company, "task_drafts"), schema=TaskDraftSet, effort="low",
         system=SYSTEM, user=[{"type": "text", "text": "..."}],
     )
 

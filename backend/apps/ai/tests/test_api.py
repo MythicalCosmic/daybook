@@ -317,6 +317,9 @@ def test_owner_status_shows_the_budget_to_who_configures(owner_api, people, comp
         "smart_text": True,
         "chat": False,
         "photo_checker": False,
+        "flows": True,
+        "briefing": True,
+        "writing": False,  # no Claude here
     }
     assert body["budget"]["monthly_usd"] == "20.00"
     assert body["budget"]["spent_usd"] == "0.00"

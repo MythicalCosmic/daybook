@@ -335,11 +335,15 @@ FIELD_HASH_KEY = env("FIELD_HASH_KEY", default="")
 ANTHROPIC_API_KEY = env("ANTHROPIC_API_KEY", default="")
 # Canned, deterministic AI answers without a key (development and demos).
 AI_FAKE = env.bool("AI_FAKE", default=False)
+# The platform's default model per feature (apps.ai.catalog: an owner may choose another offered
+# model per feature on the Models page). Ask AI, the briefing, writing help, photo checks:
 AI_MODEL_CHAT = env("AI_MODEL_CHAT", default="claude-sonnet-5-5")
-AI_MODEL_DEEP = env("AI_MODEL_DEEP", default="claude-opus-5-5")
+# A deep-analysis conversation (Sonnet with effort "high").
+AI_MODEL_DEEP = env("AI_MODEL_DEEP", default="claude-sonnet-5-5")
+# Short, frequent jobs: the AI steps of flows.
 AI_MODEL_FAST = env("AI_MODEL_FAST", default="claude-haiku-5-5")
 # Voice and typed instructions turned into task drafts (apps.ai.drafting).
-AI_MODEL_DRAFTS = env("AI_MODEL_DRAFTS", default="claude-opus-5-5")
+AI_MODEL_DRAFTS = env("AI_MODEL_DRAFTS", default="claude-sonnet-5-5")
 # What all tenants together may spend in a month; one key pays for everyone.
 AI_GLOBAL_MONTHLY_CAP_USD = Decimal(env("AI_GLOBAL_MONTHLY_CAP_USD", default="200"))
 # Speech to text (apps.ai.speech): an OpenAI-compatible /audio/transcriptions service, e.g. the

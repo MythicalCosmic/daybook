@@ -13,12 +13,12 @@ from datetime import datetime, time, timedelta
 from functools import partial
 from zoneinfo import ZoneInfo
 
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
-from apps.ai import agents, availability, conf, speech
+from apps.ai import agents, availability, catalog, conf, speech
 from apps.ai import tasks as jobs
 from apps.ai.agents import runner, voice_tasks
 from apps.ai.audit_actions import AIAction
@@ -40,6 +40,7 @@ __all__ = [
     "discard_draft",
     "enable_ai",
     "run_agent_now",
+    "set_models",
     "start_draft",
     "undo_draft",
     "update_agent",
@@ -297,6 +298,40 @@ def run_agent_now(company, key: str, *, by: Membership) -> AgentState:
     AgentState.objects.filter(pk=state.pk).update(running_since=timezone.now())
     transaction.on_commit(partial(jobs.run_agent.delay, state.pk))
     return state
+
+
+@transaction.atomic
+def set_models(company, *, by: Membership, choices: dict) -> AISettings:
+    """The owner's model per feature, e.g. {"chat": "claude-haiku-5-5"}; None or "" puts a
+    feature back on the platform's default. Raises ValidationError {feature: [message]}."""
+    _ensure_may_configure(by)
+    errors = {}
+    for key, model_id in choices.items():
+        if key not in catalog.FEATURES:
+            errors[key] = [_("There is no such AI feature.")]
+        elif model_id and model_id not in catalog.choices_for(key):
+            errors[key] = [_("Choose one of the offered models.")]
+    if errors:
+        raise ValidationError(errors)
+    row = AISettings.objects.select_for_update().get(pk=conf.get_settings(company).pk)
+    before = dict(row.models or {})
+    after = {key: value for key, value in before.items() if key in catalog.FEATURES}
+    for key, model_id in choices.items():
+        if model_id:
+            after[key] = model_id
+        else:
+            after.pop(key, None)
+    if after != before:
+        row.models = after
+        row.save(update_fields=["models", "updated_at"])
+        audit.record(
+            AIAction.SETTINGS_CHANGED,
+            company_id=company.pk,
+            actor=by.user,
+            target=row,
+            changes=audit.diff({"models": before}, {"models": after}),
+        )
+    return row
 
 
 @transaction.atomic

@@ -27,4 +27,15 @@ ENUM_NAME_OVERRIDES = {
         "unavailable",
     ],
     "AiSpeechStateEnum": ["ready", "not_configured", "fake"],
+    "AiProviderStateEnum": [
+        "connected",
+        "not_configured",
+        "fake",
+        "blocked",
+        "budget_reached",
+        "unavailable",
+        "coming_soon",
+    ],
+    "AiModelTierEnum": ["fast", "smart"],
+    "AiSpeechWhereEnum": ["own_server", "hosted"],
 }

@@ -11,7 +11,6 @@ import base64
 import logging
 from typing import Literal
 
-from django.conf import settings
 from django.db import transaction
 from django.utils import translation
 from django.utils.translation import gettext as _
@@ -19,7 +18,7 @@ from django.utils.translation import gettext_lazy
 from pydantic import BaseModel
 from pydantic import Field as PydanticField
 
-from apps.ai import availability, client, conf, events
+from apps.ai import availability, catalog, client, conf, events
 from apps.ai.agents import registry
 from apps.ai.agents.registry import Agent, EventTemplate, Field
 from apps.ai.tools.scrub import scrub
@@ -129,7 +128,7 @@ def _ask_claude(task: Task, language: str) -> PhotoVerdict:
     result, _call = client.structured(
         "photo_checker",
         company=task.company,
-        model=settings.AI_MODEL_DRAFTS,
+        model=catalog.model_for(task.company, "photo_checker"),
         schema=PhotoVerdict,
         effort="low",
         max_tokens=4000,
