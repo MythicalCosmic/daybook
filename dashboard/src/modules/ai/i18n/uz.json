@@ -1,6 +1,7 @@
 {
   "ai.title": "AI",
   "ai.nav.agents": "Agentlar",
+  "ai.nav.flows": "Jarayonlar",
   "ai.nav.activity": "Faoliyat",
   "ai.nav.voice": "Ovozli xabarlar",
   "ai.nav.ask": "AI bilan suhbat",
@@ -8,6 +9,7 @@
   "ai.cmd.dictate": "Vazifalarni ovoz bilan berish",
   "ai.cmd.smartAdd": "Aqlli qo‘shish: matndan bir nechta vazifa",
   "ai.cmd.agents": "AI agentlar",
+  "ai.cmd.flows": "Jarayonlarni ochish",
   "ai.cmd.activity": "AI agentlar nima qildi",
   "ai.cmd.voice": "Ovozli xabarlar",
   "ai.cmd.ask": "AI bilan suhbat",

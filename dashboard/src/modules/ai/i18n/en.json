@@ -1,6 +1,7 @@
 {
   "ai.title": "AI",
   "ai.nav.agents": "Agents",
+  "ai.nav.flows": "Flows",
   "ai.nav.activity": "Activity",
   "ai.nav.voice": "Voice notes",
   "ai.nav.ask": "Ask AI",
@@ -8,6 +9,7 @@
   "ai.cmd.dictate": "Dictate tasks",
   "ai.cmd.smartAdd": "Smart add: several tasks from text",
   "ai.cmd.agents": "AI agents",
+  "ai.cmd.flows": "Open Flows",
   "ai.cmd.activity": "What the AI agents did",
   "ai.cmd.voice": "Voice notes",
   "ai.cmd.ask": "Ask AI",

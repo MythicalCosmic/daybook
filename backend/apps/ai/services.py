@@ -205,7 +205,7 @@ def enable_ai(company, *, by: Membership) -> AISettings:
         audit.record(AIAction.ENABLED, company_id=company.pk, actor=by.user, target=row)
     claude = availability.configured()
     for agent in agents.all_agents():
-        if agent.default_enabled and (claude or not agent.needs_claude):
+        if agent.listed and agent.default_enabled and (claude or not agent.needs_claude):
             state = agents.state_of(company, agent.key)
             if not state.enabled:
                 state.enabled = True

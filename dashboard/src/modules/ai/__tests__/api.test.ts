@@ -174,11 +174,21 @@ describe("registration", () => {
   it("sits right after Tasks, opens voice notes from the bot and fills the New task dialog", () => {
     expect(module).toMatchObject({ id: "ai", group: "work", order: 15 });
     expect(module.feature).toBeUndefined();
-    expect(module.nav?.map((item) => item.to)).toEqual(["ai", "ai/activity", "ai/voice", "ai/ask"]);
+    expect(module.nav?.map((item) => item.to)).toEqual(["ai", "ai/flows", "ai/activity", "ai/voice", "ai/ask"]);
     expect(module.deepLinks?.draft?.("41")).toBe("ai/voice?draft=41");
     expect(module.deepLinks?.draft?.("x")).toBe("ai/voice");
     expect(Object.keys(module.extensions ?? {})).toEqual(["shell.panel", "tasks.create.tools"]);
     expect(module.widgets?.map((widget) => widget.id)).toEqual(["ai.kpi.today"]);
     expect(module.settings?.[0]).toMatchObject({ id: "ai", perm: "ai.configure" });
+    expect(module.routes?.map((route) => route.name)).toEqual(expect.arrayContaining(["ai.flows", "ai.flow"]));
+  });
+});
+
+describe("words", () => {
+  it("merges the Flows pages' dictionary into the module's", async () => {
+    const messages = (await module.messages("uz")) as Record<string, string>;
+    expect(messages["ai.nav.flows"]).toBe("Jarayonlar");
+    expect(messages["ai.flows.title"]).toBe("Jarayonlar");
+    expect(messages["ai.nav.agents"]).toBeTruthy();
   });
 });

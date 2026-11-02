@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 const EMOJI = /[\p{Extended_Pictographic}\u{FE0F}\u{20E3}]/u;
-const dictionaries = import.meta.glob<Record<string, string>>(["../i18n/*.json", "../modules/*/i18n/*.json"], { eager: true, import: "default" });
+const dictionaries = import.meta.glob<Record<string, string>>(["../i18n/*.json", "../modules/*/i18n/*.json", "../modules/*/*/i18n/*.json"], { eager: true, import: "default" });
 
 describe("dictionaries", () => {
   it("are all found", () => {

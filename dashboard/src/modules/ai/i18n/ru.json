@@ -1,6 +1,7 @@
 {
   "ai.title": "ИИ",
   "ai.nav.agents": "Агенты",
+  "ai.nav.flows": "Сценарии",
   "ai.nav.activity": "Активность",
   "ai.nav.voice": "Голосовые",
   "ai.nav.ask": "Спросить ИИ",
@@ -8,6 +9,7 @@
   "ai.cmd.dictate": "Надиктовать задачи",
   "ai.cmd.smartAdd": "Умное добавление: несколько задач из текста",
   "ai.cmd.agents": "ИИ-агенты",
+  "ai.cmd.flows": "Открыть сценарии",
   "ai.cmd.activity": "Что сделали ИИ-агенты",
   "ai.cmd.voice": "Голосовые",
   "ai.cmd.ask": "Спросить ИИ",

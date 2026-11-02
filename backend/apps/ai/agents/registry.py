@@ -90,6 +90,9 @@ class Agent:
     needs_speech: bool = False
     # Where the dashboard lists it (lowest first).
     order: int = 100
+    # False for an entry that only words events (Flows, apps.flows): never in the dashboard's
+    # agent list and never switched on with AI.
+    listed: bool = True
 
     @property
     def scheduled(self) -> bool:

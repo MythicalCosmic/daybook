@@ -9,6 +9,18 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: "ai.agents.title" },
   },
   {
+    path: "ai/flows",
+    name: "ai.flows",
+    component: () => import("./flows/FlowsPage.vue"),
+    meta: { title: "ai.flows.title" },
+  },
+  {
+    path: "ai/flows/:flowId(\\d+)",
+    name: "ai.flow",
+    component: () => import("./flows/FlowPage.vue"),
+    meta: { title: "ai.flow.title" },
+  },
+  {
     path: "ai/activity",
     name: "ai.activity",
     component: () => import("./pages/ActivityPage.vue"),

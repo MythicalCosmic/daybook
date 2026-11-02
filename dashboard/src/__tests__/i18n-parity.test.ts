@@ -14,7 +14,8 @@ import uz from "../i18n/uz.json";
 type Dict = Record<string, string>;
 type Set3 = Record<"uz" | "ru" | "en", Dict>;
 
-const moduleDictionaries = import.meta.glob<{ default: Dict }>("../modules/*/i18n/*.json", { eager: true });
+// A module may keep a part's words in its own folder (modules/ai/flows/i18n), in its namespace.
+const moduleDictionaries = import.meta.glob<{ default: Dict }>(["../modules/*/i18n/*.json", "../modules/*/*/i18n/*.json"], { eager: true });
 
 function placeholders(text: string): string[] {
   return [...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1]!).sort();
@@ -70,11 +71,12 @@ describe("i18n parity", () => {
   it("module dictionaries match and stay in their namespace", () => {
     const byModule = new Map<string, Partial<Set3>>();
     for (const [path, mod] of Object.entries(moduleDictionaries)) {
-      const match = /modules\/([^/]+)\/i18n\/(uz|ru|en)\.json$/.exec(path);
+      const match = /modules\/([^/]+)\/(?:([^/]+)\/)?i18n\/(uz|ru|en)\.json$/.exec(path);
       if (!match) continue;
-      const entry = byModule.get(match[1]!) ?? {};
-      entry[match[2] as "uz" | "ru" | "en"] = mod.default;
-      byModule.set(match[1]!, entry);
+      const set = match[2] ? `${match[1]}/${match[2]}` : match[1]!;
+      const entry = byModule.get(set) ?? {};
+      entry[match[3] as "uz" | "ru" | "en"] = mod.default;
+      byModule.set(set, entry);
     }
     const problems: string[] = [];
     for (const [id, set] of byModule) {
@@ -82,7 +84,7 @@ describe("i18n parity", () => {
         problems.push(`${id}: needs uz.json, ru.json and en.json`);
         continue;
       }
-      problems.push(...parityProblems(id, set as Set3, [`${id}.`]));
+      problems.push(...parityProblems(id, set as Set3, [`${id.split("/")[0]}.`]));
     }
     expect(problems).toEqual([]);
   });

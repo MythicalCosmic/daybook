@@ -1,12 +1,13 @@
 /**
  * AI (briefs/ai-contract.md §5, §7): the agents that work by themselves (voice tasks, the deadline
  * watcher, the morning plan, the photo checker) with their switches and settings, what they did
- * (live), the voice notes and what they became, and Ask AI over the company's data. "Dictate" and
+ * (live), the voice notes and what they became, Ask AI over the company's data, and Flows (the
+ * owner's own automations; their pages and words live in ./flows). "Dictate" and
  * "Smart add" sit in the Tasks New task dialog (`tasks.create.tools`); the dictate dialog and the
  * shell's own Ask AI live in `shell.panel`. Not behind the "ai" switch: turning AI on (the Agents
  * page) is what adds it. Pages, the widget, the panel and the dialog load on use.
  */
-import { Activity, AudioLines, Bot, MessagesSquare, Mic, Sparkles } from "@lucide/vue";
+import { Activity, AudioLines, Bot, MessagesSquare, Mic, Sparkles, Workflow } from "@lucide/vue";
 import { defineAsyncComponent } from "vue";
 
 import { defineModule } from "@/core/modules";
@@ -24,6 +25,7 @@ export default defineModule({
   routes,
   nav: [
     { key: "agents", title: "ai.nav.agents", to: "ai", exact: true },
+    { key: "flows", title: "ai.nav.flows", to: "ai/flows" },
     { key: "activity", title: "ai.nav.activity", to: "ai/activity" },
     { key: "voice", title: "ai.nav.voice", to: "ai/voice" },
     { key: "ask", title: "ai.nav.ask", to: "ai/ask", perm: "ai.use" },
@@ -46,6 +48,7 @@ export default defineModule({
       run: () => openDictation("text"),
     },
     { id: "ai.agents", title: ctx.t("ai.cmd.agents"), icon: Bot, keywords: ["agent", "agentlar", "агенты", "ai"], run: () => ctx.go("ai") },
+    { id: "ai.flows", title: ctx.t("ai.cmd.flows"), icon: Workflow, keywords: ["flow", "automation", "jarayon", "avtomat", "сценарий", "автоматизация"], run: () => ctx.go("ai/flows") },
     { id: "ai.activity", title: ctx.t("ai.cmd.activity"), icon: Activity, keywords: ["activity", "faoliyat", "активность"], run: () => ctx.go("ai/activity") },
     { id: "ai.voice", title: ctx.t("ai.cmd.voice"), icon: AudioLines, keywords: ["voice", "ovozli", "голосовые"], run: () => ctx.go("ai/voice") },
     { id: "ai.ask", title: ctx.t("ai.cmd.ask"), icon: MessagesSquare, perm: "ai.use", keywords: ["ask", "so‘rash", "спросить", "chat"], run: () => ctx.go("ai/ask") },
@@ -61,5 +64,9 @@ export default defineModule({
     draft: (argument) => (/^\d+$/.test(argument) ? `ai/voice?draft=${argument}` : "ai/voice"),
     ai: () => "ai",
   },
-  messages: (language) => import(`./i18n/${language}.json`),
+  // The Flows pages keep their words in ./flows/i18n (the same "ai." namespace), merged here.
+  messages: async (language) => {
+    const [main, flows] = await Promise.all([import(`./i18n/${language}.json`), import(`./flows/i18n/${language}.json`)]);
+    return { ...main.default, ...flows.default };
+  },
 });

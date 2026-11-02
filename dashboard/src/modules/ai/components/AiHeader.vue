@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
  * The top of every AI page: the page's title and one line on it, the engines' state (Claude,
- * speech) and the sections as tabs: Agents, Activity, Voice notes, Ask AI.
+ * speech) and the sections as tabs: Agents, Flows, Activity, Voice notes, Ask AI.
  */
-import { Activity, AudioLines, Bot, MessagesSquare } from "@lucide/vue";
+import { Activity, AudioLines, Bot, MessagesSquare, Workflow } from "@lucide/vue";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -21,6 +21,7 @@ const { can } = usePermission();
 const tabs = computed<PageTab[]>(() => {
   const list: PageTab[] = [
     { id: "agents", label: t("ai.nav.agents"), icon: Bot, to: { name: "ai.agents" } },
+    { id: "flows", label: t("ai.nav.flows"), icon: Workflow, to: { name: "ai.flows" } },
     { id: "activity", label: t("ai.nav.activity"), icon: Activity, to: { name: "ai.activity" } },
     { id: "voice", label: t("ai.nav.voice"), icon: AudioLines, to: { name: "ai.voice" } },
   ];
