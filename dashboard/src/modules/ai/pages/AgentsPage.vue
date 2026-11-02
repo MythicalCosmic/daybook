@@ -27,6 +27,7 @@ import { useAgents, useAiStatus, usePatchAgent, useRunAgent } from "../api";
 import AgentCard from "../components/AgentCard.vue";
 import AgentDrawerBody from "../components/AgentDrawerBody.vue";
 import AiBuddyStage from "../components/AiBuddyStage.vue";
+import { useBuddyCues } from "../components/buddyCues";
 import AiHeader from "../components/AiHeader.vue";
 import TurnOnCard from "../components/TurnOnCard.vue";
 import { openDictation } from "../dictation";
@@ -83,6 +84,8 @@ async function runNow(agent: Agent): Promise<void> {
 }
 
 const settingsPath = computed(() => `/c/${company.currentId}/settings/ai`);
+// The helpers react to what happens in the company: voice notes, late and finished tasks.
+useBuddyCues(aiOn);
 
 /** What Claude's helper says next to itself: the agent at work now, else today's count. */
 const runningAgent = computed(() => agents.data.value?.find((agent) => agent.running) ?? null);

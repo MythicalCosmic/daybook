@@ -11,12 +11,12 @@
  * The page's root must be `position: relative` (the layer is `absolute inset-0` in it), and its
  * agent cards carry the class `ai-agent-card` (`is-running` while they run).
  */
-import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 import { reducedMotion } from "@/components/chartOptions";
 
 import AiBuddy from "./AiBuddy.vue";
-import { greet } from "./buddyBus";
+import { buddyCue, greet } from "./buddyBus";
 import { BUDDY_DURATION, buddyBox, buddyWalkMs, planBuddy, standPoint, type Box, type BuddyAction, type BuddyMood } from "../lib";
 
 const props = withDefaults(defineProps<{ mood: BuddyMood; size?: number }>(), { size: 76 });
@@ -173,6 +173,16 @@ function tick(): void {
   }
   later(tick, 2600 + Math.random() * 2600);
 }
+
+/** Something happened (buddyCues.ts): everyone cheers; a late task sends it to that agent's card. */
+watch(buddyCue, (next) => {
+  if (!next || reduced) return;
+  if (next.key === "") act(next.action);
+  else if (next.visit && !travelling) {
+    const card = visibleCards().find((item) => item.dataset.agent === next.key);
+    if (card) void visit(card);
+  }
+});
 
 /** The window changed size: the places it was heading for moved, so it goes straight home. */
 function callOff(): void {
