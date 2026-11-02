@@ -77,7 +77,7 @@ export default function PayslipPage({ params }: PageProps) {
         <Card className="wal-hero">
           <span className="wal-label">{t("part.net")}</span>
           <MoneyText amount={data.net} currency={data.currency} size="hero" className="wal-hero-amount" />
-          <span className="wal-hint">{paidLine}</span>
+          <span className="ft-hint">{paidLine}</span>
         </Card>
 
         {state === "confirm" && <Banner tone="accent" icon={HandCoins} title={t("payslip.confirmAsk")} body={t("payslip.confirmBody")} />}

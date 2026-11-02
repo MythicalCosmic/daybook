@@ -2,61 +2,23 @@
  * The wallet's sheets: one bonus or fine (with "Dispute it"), the advance request, and one
  * advance with its repayment months (and "Cancel the request" while nobody has decided).
  */
-import { CircleCheck, Clock3, HandCoins, Scale, SearchX, Send, X } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { CircleCheck, Clock3, HandCoins, Scale, Send, X } from "lucide-react";
+import { useState } from "react";
 
 import { useI18n } from "../../i18n";
-import { errorText } from "../../lib/actions";
 import { formatMoney } from "../../lib/money";
 import { dayMonthLong } from "../../lib/time";
 import { useDraftGuard } from "../../lib/useDraftGuard";
 import { useNavigation } from "../../state/navigation";
 import { useMember } from "../../state/session";
-import { useToast } from "../../state/toast";
-import { confirm, haptic } from "../../telegram";
-import { Badge, Button, Card, ChipGroup, EmptyState, Field, Input, LoadError, MoneyInput, MoneyText, ScreenSkeleton, SheetTitle, Textarea, type BadgeTone } from "../../ui";
+import { confirm } from "../../telegram";
+import { Badge, Button, Card, ChipGroup, EmptyState, Field, Input, MoneyInput, MoneyText, SheetTitle, Textarea, type BadgeTone } from "../../ui";
 import type { SheetProps } from "../registry";
+import { SheetFacts as Facts, SheetMissing as Missing, useFeedback } from "../states";
 import { useAdjustments, useAdvances, useCancelAdvance, useDispute, useRequestAdvance, type Adjustment, type Advance } from "./api";
 import { advanceDraft, DISPUTE_MAX, disputePayload, disputeStage, isNegative, REASON_MAX, repaymentMonths, signedAmount } from "./lib";
 import { advanceStatus, kindLabel, monthLabel, useWalletT, type WalletKey, type WalletT } from "./text";
 import "./wallet.css";
-
-/** A sheet's data hasn't come, didn't come, or the row isn't (or is no longer) there. */
-function Missing({ pending, error, onRetry }: { pending: boolean; error: unknown; onRetry: () => void }) {
-  const { t } = useI18n();
-  if (pending) return <ScreenSkeleton variant="detail" delay={150} />;
-  if (error) return <LoadError compact error={error} onRetry={onRetry} />;
-  return <EmptyState compact icon={SearchX} tone="sage" title={t("ui.notFound.title")} body={t("ui.notFound.body")} />;
-}
-
-/** "Label: value" lines under a sheet's title. */
-function Facts({ lines }: { lines: (ReactNode | null | false | undefined)[] }) {
-  const shown = lines.filter(Boolean);
-  if (!shown.length) return null;
-  return (
-    <ul className="wal-facts">
-      {shown.map((line, index) => (
-        <li key={index}>{line}</li>
-      ))}
-    </ul>
-  );
-}
-
-/** Feedback after a write: a buzz and a toast. */
-function useFeedback() {
-  const toast = useToast();
-  const { t: appT } = useI18n();
-  return {
-    ok: (text: string) => {
-      haptic.notify("success");
-      toast(text, { tone: "success" });
-    },
-    fail: (error: unknown) => {
-      haptic.notify("error");
-      toast(errorText(error, appT), { tone: "error" });
-    },
-  };
-}
 
 function sourceLine(t: WalletT, row: Adjustment): string {
   switch (row.source) {
@@ -101,7 +63,7 @@ export function AdjustmentSheet({ params }: SheetProps) {
           {t(`status.${row.status}` as WalletKey)}
         </Badge>
       </div>
-      <p className="wal-reason">{row.reason}</p>
+      <p className="ft-text">{row.reason}</p>
       <Facts lines={[sourceLine(t, row), decided, row.decision_note && t("adj.note", { text: row.decision_note })]} />
       {row.payslip !== null && (
         <Button
@@ -150,7 +112,7 @@ function Dispute({ row }: { row: Adjustment }) {
   }
   if (stage === "none") {
     // A fine that stands on a closed month: say why there is no button.
-    return isNegative(row.kind) && row.locked && (row.status === "approved" || row.status === "proposed") ? <p className="wal-hint">{t("dispute.locked")}</p> : null;
+    return isNegative(row.kind) && row.locked && (row.status === "approved" || row.status === "proposed") ? <p className="ft-hint">{t("dispute.locked")}</p> : null;
   }
   if (!writing) {
     return (
@@ -293,9 +255,9 @@ export function AdvanceSheet({ params, close }: SheetProps) {
         <Badge tone={ADVANCE_TONE[advance.status]} size="small">
           {advanceStatus(t, advance.status)}
         </Badge>
-        {advance.status === "paid" && advance.left && <span className="wal-hint">{t("advance.left", { amount: money(advance.left) })}</span>}
+        {advance.status === "paid" && advance.left && <span className="ft-hint">{t("advance.left", { amount: money(advance.left) })}</span>}
       </div>
-      {advance.reason && <p className="wal-reason">{advance.reason}</p>}
+      {advance.reason && <p className="ft-text">{advance.reason}</p>}
       <Facts
         lines={[
           t("advance.askedOn", { date: date(advance.created_at) }),

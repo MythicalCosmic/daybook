@@ -10,14 +10,14 @@ import { useAdjustments, useAdvances, usePayslips } from "./api";
 import { byMonth } from "./lib";
 import { AdjustmentRow, AdvanceRow, CapCard, PayslipListRow } from "./parts";
 import { monthLabel, useWalletT } from "./text";
-import { useWalletNavigation } from "./nav";
+import { useFeatureOpen } from "../useFeatureOpen";
 import "./wallet.css";
 
 export function PayslipsPage() {
   const t = useWalletT();
   const member = useMember();
   const navigation = useNavigation();
-  const go = useWalletNavigation();
+  const go = useFeatureOpen("wallet");
   const payslips = usePayslips(member.companyId);
   return (
     <Screen variant="detail">
@@ -40,7 +40,7 @@ export function AdjustmentsPage() {
   const { locale } = useI18n();
   const member = useMember();
   const navigation = useNavigation();
-  const go = useWalletNavigation();
+  const go = useFeatureOpen("wallet");
   const adjustments = useAdjustments(member.companyId);
   return (
     <Screen variant="detail">
@@ -71,7 +71,7 @@ export function AdvancesPage() {
   const t = useWalletT();
   const member = useMember();
   const navigation = useNavigation();
-  const go = useWalletNavigation();
+  const go = useFeatureOpen("wallet");
   const advances = useAdvances(member.companyId);
   return (
     <Screen variant="detail">

@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "../../api/client";
 import { resolveScreen } from "../../state/deeplink";
-import { membership, navigationState, person, renderApp } from "../../test/harness";
+import { membership, navigationState, person, renderApp, routeApi } from "../../test/harness";
 import { features, featureVisible, findFeature } from "../registry";
 import type { Adjustment, Advance, Earnings, MyAdvances, Payslip, PayslipRow, Progress } from "./api";
 import { walletKeys } from "./api";
@@ -203,24 +203,8 @@ const progress = (extra: Partial<Progress> = {}): Progress => ({
 /** The wallet's endpoints as an ordinary month answers them; a test overrides what it is about. */
 const DEFAULTS = (): Record<string, unknown> => ({ "/earnings/current/": earnings(), "/payslips/": [], "/adjustments/": [], "/advances/": advances() });
 
-/** Answer the API by path (and method): a value, a function of the body, or an error to throw. */
-function serve(overrides: Record<string, unknown>) {
-  const routes = { ...DEFAULTS(), ...overrides };
-  client.api.mockImplementation(async (path: string, options?: { method?: string; json?: unknown }) => {
-    const method = options?.method ?? (options?.json !== undefined ? "POST" : "GET");
-    // The longest suffix wins, so "/payslips/6/" isn't answered by "/payslips/".
-    const key = Object.keys(routes)
-      .filter((route) => {
-        const [verb, suffix] = route.includes(" ") ? route.split(" ") : ["GET", route];
-        return verb === method && path.endsWith(suffix);
-      })
-      .sort((a, b) => b.length - a.length)[0];
-    if (!key) return {};
-    const answer = routes[key];
-    if (answer instanceof Error) throw answer;
-    return typeof answer === "function" ? (answer as (body: unknown) => unknown)(options?.json) : answer;
-  });
-}
+/** Answer the API: the ordinary month, with what the test is about on top. */
+const serve = (overrides: Record<string, unknown>) => routeApi(client.api, { ...DEFAULTS(), ...overrides });
 
 afterEach(() => {
   cleanup();
@@ -535,6 +519,13 @@ describe("Home and Me", () => {
     }
     renderApp(<Row />, { me });
     await waitFor(() => expect(screen.getByTestId("status").textContent).toBe("3.5M UZS|1"));
+    // A month with nothing yet (an advance took it all) shows no "0 UZS" there.
+    cleanup();
+    serve({ "/earnings/current/": earnings({ so_far: sums("0.00", { advances: "-650000.00" }) }), "/payslips/": [payslipRow()] });
+    renderApp(<Row />, { me });
+    await waitFor(() => expect(screen.getByTestId("status").textContent).toBe("undefined|1"));
+    await act(async () => undefined);
+    expect(screen.getByTestId("status").textContent).toBe("undefined|1");
   });
 
   it("is on with the company's payroll, for approved and suspended people", () => {

@@ -16,7 +16,7 @@ import { useMember } from "../../state/session";
 import { Banner, Card, EmptyState, ListCard, ListRow, LoadError, MoneyText, PageHeader, Screen, SectionHead, Segmented, Skeleton, SkeletonList } from "../../ui";
 import { useAdjustments, useAdvances, useEarnings, usePayslips, type Earnings } from "./api";
 import { homePay, isOpenAdvance, partRows } from "./lib";
-import { useWalletNavigation } from "./nav";
+import { useFeatureOpen } from "../useFeatureOpen";
 import { AdjustmentRow, AdvanceRow, CapCard, PayslipListRow, RuleCard } from "./parts";
 import { monthLabel, useWalletT, type WalletKey } from "./text";
 import "./wallet.css";
@@ -36,7 +36,7 @@ function SectionBody<T>({
 }) {
   if (query.isPending) return <SkeletonList count={2} />;
   if (!query.data) return <LoadError compact error={query.error} onRetry={() => void query.refetch()} />;
-  if (!query.data.length) return <p className="wal-quiet">{empty}</p>;
+  if (!query.data.length) return <p className="ft-quiet">{empty}</p>;
   return <>{children(query.data)}</>;
 }
 
@@ -44,7 +44,7 @@ export default function WalletPage() {
   const t = useWalletT();
   const member = useMember();
   const navigation = useNavigation();
-  const go = useWalletNavigation();
+  const go = useFeatureOpen("wallet");
   const company = member.companyId;
   const earnings = useEarnings(company);
   const payslips = usePayslips(company);
@@ -158,7 +158,7 @@ function MonthBlock({ data, onProposed }: { data: Earnings | undefined; onPropos
       <Card className="wal-hero">
         <div className="wal-hero-top">
           <span className="ui-kicker">{monthLabel(data.period, locale)}</span>
-          <span className="wal-hint">{t("hero.asOf", { date: dayMonthLong(data.as_of, "UTC", locale) })}</span>
+          <span className="ft-hint">{t("hero.asOf", { date: dayMonthLong(data.as_of, "UTC", locale) })}</span>
         </div>
         <span className="wal-label">{t("hero.soFar")}</span>
         <MoneyText amount={pay.amount} currency={pay.currency} size="hero" className="wal-hero-amount" />

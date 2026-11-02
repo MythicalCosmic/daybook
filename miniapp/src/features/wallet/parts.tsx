@@ -1,5 +1,5 @@
 /** Rows and cards the wallet's pages share: a bonus or fine, a payslip, an advance, a bonus rule. */
-import { BadgeMinus, BadgePlus, ChevronRight, CircleMinus, FileText, Gift, HandCoins } from "lucide-react";
+import { BadgeMinus, BadgePlus, CircleMinus, FileText, Gift, HandCoins } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { useI18n } from "../../i18n";
@@ -7,7 +7,7 @@ import { compareMoney, formatMoney, isZero } from "../../lib/money";
 import { dayMonthLong } from "../../lib/time";
 import { useMember } from "../../state/session";
 import { Badge, Button, Card, ListRow, MoneyText, ProgressBar, cx, type BadgeTone } from "../../ui";
-import { renderIcon } from "../../ui/icon";
+import { EntryRow } from "../EntryRow";
 import type { Adjustment, Advance, AdvanceCap, PayslipRow, Progress } from "./api";
 import { isNegative, payslipState, progressView, signedAmount, type PayslipState } from "./lib";
 import { advanceStatus, captionText, kindLabel, metricText, monthLabel, payslipStateLabel, useWalletT, type WalletKey } from "./text";
@@ -36,24 +36,22 @@ export function AdjustmentRow({ row, onOpen }: { row: Adjustment; onOpen: () => 
     : row.status === "approved"
       ? null
       : { tone: row.status === "proposed" ? "accent" : "neutral", text: t(`status.${row.status}` as WalletKey) };
-  const tone = isNegative(row.kind) ? "accent" : "sage";
   return (
-    <button type="button" className="row wal-row wal-entry" onClick={onOpen}>
-      <span className={cx("circle ui-row-icon", `ui-row-icon--${tone}`)}>{renderIcon(KIND_ICON[row.kind], 19)}</span>
-      <span className="row-main">
-        <span className="wal-entry-head">
-          <span className="row-title">{kindLabel(t, row.kind)}</span>
-          <MoneyText amount={signedAmount(row)} currency={row.currency} sign="always" tone={gone ? "plain" : "auto"} className={cx("wal-entry-amount", gone && "wal-struck")} />
-        </span>
-        <span className="row-meta">{row.reason}</span>
-        {status && (
-          <Badge tone={status.tone} size="small" className="wal-entry-badge">
+    <EntryRow
+      icon={KIND_ICON[row.kind]}
+      tone={isNegative(row.kind) ? "accent" : "sage"}
+      title={kindLabel(t, row.kind)}
+      aside={<MoneyText amount={signedAmount(row)} currency={row.currency} sign="always" tone={gone ? "plain" : "auto"} className={cx("wal-entry-amount", gone && "wal-struck")} />}
+      details={[row.reason]}
+      chips={
+        status && (
+          <Badge tone={status.tone} size="small">
             {status.text}
           </Badge>
-        )}
-      </span>
-      <ChevronRight className="ui-row-chevron" size={19} strokeWidth={2.5} aria-hidden />
-    </button>
+        )
+      }
+      onOpen={onOpen}
+    />
   );
 }
 
@@ -113,7 +111,7 @@ export function CapCard({ cap, onAsk }: { cap: AdvanceCap; onAsk: () => void }) 
     <Card className="wal-cap">
       <span className="wal-label">{t("advances.available")}</span>
       <MoneyText amount={cap.available} currency={cap.currency} size="lg" />
-      <span className="wal-hint">
+      <span className="ft-hint">
         {t("advances.limit", { percent: cap.percent })}
         {!isZero(cap.used) && ` · ${t("advances.used", { amount: formatMoney(cap.used, cap.currency, lang) })}`}
       </span>
@@ -122,7 +120,7 @@ export function CapCard({ cap, onAsk }: { cap: AdvanceCap; onAsk: () => void }) 
           {t("plus.advance")}
         </Button>
       ) : (
-        <span className="wal-hint">{t("advances.noRoom")}</span>
+        <span className="ft-hint">{t("advances.noRoom")}</span>
       )}
     </Card>
   );

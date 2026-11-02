@@ -6,19 +6,19 @@
 import { FileText, HandCoins, Wallet } from "lucide-react";
 
 import { useI18n } from "../../i18n";
-import { compareMoney, formatMoney } from "../../lib/money";
+import { compareMoney, formatMoney, isZero } from "../../lib/money";
 import { Banner } from "../../ui";
 import type { MeItemStatus, SlotProps } from "../registry";
 import { useAdvances, useEarnings, usePayslips } from "./api";
 import { homePay, payslipsToSee, payslipToAsk } from "./lib";
-import { useWalletNavigation } from "./nav";
+import { useFeatureOpen } from "../useFeatureOpen";
 import { monthLabel, useWalletT } from "./text";
 
 /** Home's overview of the month; nothing until the numbers come, or without a pay setup. */
 export function MonthCard({ member }: SlotProps) {
   const t = useWalletT();
   const { lang } = useI18n();
-  const go = useWalletNavigation();
+  const go = useFeatureOpen("wallet");
   const earnings = useEarnings(member.companyId);
   const pay = homePay(earnings.data);
   if (!pay) return null;
@@ -40,7 +40,7 @@ export function MonthCard({ member }: SlotProps) {
 export function PayslipCard({ member }: SlotProps) {
   const t = useWalletT();
   const { lang, locale } = useI18n();
-  const go = useWalletNavigation();
+  const go = useFeatureOpen("wallet");
   const payslips = usePayslips(member.companyId);
   const ask = payslipToAsk(payslips.data);
   if (!ask) return null;
@@ -58,14 +58,17 @@ export function PayslipCard({ member }: SlotProps) {
   );
 }
 
-/** Me → My pay: this month so far, short, and a bubble for payslips to open or confirm. */
+/**
+ * Me → My pay: this month so far, short, and a bubble for payslips to open or confirm. A month
+ * that has nothing yet (its first day, an advance taking it all) shows no "0 so‘m" there.
+ */
 export function useMeStatus({ member }: SlotProps): MeItemStatus {
   const { lang } = useI18n();
   const earnings = useEarnings(member.companyId);
   const payslips = usePayslips(member.companyId);
   const pay = homePay(earnings.data);
   return {
-    value: pay ? formatMoney(pay.amount, pay.currency, lang, { compact: true }) : undefined,
+    value: pay && !isZero(pay.amount) ? formatMoney(pay.amount, pay.currency, lang, { compact: true }) : undefined,
     badge: payslipsToSee(payslips.data) || null,
   };
 }

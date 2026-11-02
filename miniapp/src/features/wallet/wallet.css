@@ -1,4 +1,5 @@
 /* "Maoshim": the month's hero, its parts, rule cards, rows with an amount, and the sheets. */
+@import "../states.css";
 
 .wal-hero {
   gap: 6px;
@@ -19,13 +20,6 @@
   color: var(--muted);
 }
 
-.wal-hint {
-  font-size: 13.5px;
-  line-height: 1.4;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-
 /* The big number wraps its currency under it rather than running off a narrow phone. */
 .wal-hero-amount {
   flex-wrap: wrap;
@@ -39,7 +33,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* — the month's parts — */
+/* — the month's parts, a payslip's lines — */
 
 .wal-parts .list-item,
 .wal-lines .list-item {
@@ -68,10 +62,6 @@
   white-space: nowrap;
 }
 
-.wal-row .row-main {
-  min-width: 0;
-}
-
 /* A reason may be long ("Savdo bonusi, 1%: Sof savdo 112 710 000 so‘m"): two lines, then "…". */
 .wal-row .row-meta {
   white-space: normal;
@@ -85,43 +75,10 @@
   color: var(--muted);
 }
 
-/* A bonus or a fine: kind and amount on one line, the reason across the row under them. */
-.wal-entry {
-  align-items: flex-start;
-}
-
-.wal-entry .ui-row-icon {
-  margin-top: 2px;
-}
-
-.wal-entry .ui-row-chevron {
-  align-self: center;
-}
-
-.wal-entry-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-}
-
+/* A bonus's or a fine's amount on its row's first line. */
 .wal-entry-amount {
-  flex: none;
   font-size: 15.5px;
   font-weight: 700;
-}
-
-.wal-entry-badge {
-  align-self: flex-start;
-  margin-top: 4px;
-}
-
-/* A section with nothing in it yet, said in one quiet line under its heading. */
-.wal-quiet {
-  padding: 0 4px;
-  font-size: 15px;
-  line-height: 1.45;
-  color: var(--muted);
 }
 
 /* — bonus rules — */
@@ -170,16 +127,6 @@
   margin-top: 10px;
 }
 
-/* — a payslip — */
-
-.wal-slip-status {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 10px;
-  margin-top: 6px;
-}
-
 /* — sheets — */
 
 .wal-sheet-amount {
@@ -192,25 +139,6 @@
 .wal-sheet-amount .ui-money--lg {
   font-size: 26px;
   font-weight: 800;
-}
-
-.wal-reason {
-  margin: 0;
-  font-size: 16px;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
-}
-
-.wal-facts {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: 14.5px;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
 }
 
 .wal-link {
