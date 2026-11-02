@@ -6,7 +6,7 @@
 import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { isApiError } from "@/api/http";
+import InlineAlert from "@/components/InlineAlert.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
@@ -15,6 +15,7 @@ import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
 import { payrollApi, useRefresh } from "../api";
+import { payoutError } from "../lib";
 import type { Advance, PayoutMethod } from "../types";
 import PayAmount from "./PayAmount.vue";
 import PayoutFields from "./PayoutFields.vue";
@@ -30,12 +31,13 @@ const method = ref<PayoutMethod>("cash");
 const account = ref<number | null>(null);
 const saving = ref(false);
 const error = ref<string | null>(null);
+const failure = ref<string | null>(null);
 watch(open, (isOpen) => {
-  if (isOpen) error.value = null;
+  if (isOpen) error.value = failure.value = null;
 });
 
 async function save(): Promise<void> {
-  error.value = null;
+  error.value = failure.value = null;
   if (!account.value) {
     error.value = t("payroll.payout.chooseAccount");
     return;
@@ -47,8 +49,10 @@ async function save(): Promise<void> {
     toast.success(t("payroll.advances.paid"));
     refresh();
     open.value = false;
-  } catch (failure) {
-    if (isApiError(failure)) error.value = failure.fieldErrors.account?.[0] ?? null;
+  } catch (caught) {
+    const said = payoutError(caught);
+    error.value = said.account;
+    failure.value = said.account ? null : (said.message ?? (said.network ? t("common.error.network") : t("common.error.generic")));
   } finally {
     saving.value = false;
   }
@@ -69,6 +73,7 @@ async function save(): Promise<void> {
         <span class="shrink-0 text-base font-semibold tabular-nums text-fg"><PayAmount :value="advance.amount" :currency="advance.currency" /></span>
       </div>
       <PayoutFields v-model:method="method" v-model:account="account" :currency="advance.currency" :enabled="open" :error="error" />
+      <InlineAlert v-if="failure" tone="danger" size="sm" :description="failure" />
     </div>
     <template #footer>
       <UiButton variant="ghost" @click="open = false">{{ t("common.cancel") }}</UiButton>

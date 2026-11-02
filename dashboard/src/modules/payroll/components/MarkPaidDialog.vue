@@ -18,11 +18,10 @@ import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { toast } from "@/components/useToast";
-import { isApiError } from "@/api/http";
 import { useCompanyStore } from "@/stores/company";
 
 import { payrollApi, useRefresh } from "../api";
-import { isPayable, paySelection } from "../lib";
+import { isPayable, payoutError, paySelection } from "../lib";
 import type { Payslip, PayoutMethod, Run } from "../types";
 import PayAmount from "./PayAmount.vue";
 import PayoutFields from "./PayoutFields.vue";
@@ -44,6 +43,7 @@ const method = ref<PayoutMethod>("cash");
 const account = ref<number | null>(null);
 const saving = ref(false);
 const accountError = ref<string | null>(null);
+const failure = ref<string | null>(null);
 
 watch(
   open,
@@ -54,6 +54,7 @@ watch(
     currency.value = first?.currency ?? currencies.value[0] ?? "UZS";
     chosen.value = new Set(waiting.value.filter((slip) => slip.currency === currency.value && (!wanted || wanted.has(slip.id))).map((slip) => slip.id));
     accountError.value = null;
+    failure.value = null;
   },
   { immediate: true },
 );
@@ -79,6 +80,7 @@ function toggleAll(value: boolean): void {
 
 async function save(): Promise<void> {
   accountError.value = null;
+  failure.value = null;
   if (!account.value) {
     accountError.value = t("payroll.payout.chooseAccount");
     return;
@@ -93,7 +95,10 @@ async function save(): Promise<void> {
     emit("paid", ids);
     open.value = false;
   } catch (error) {
-    if (isApiError(error)) accountError.value = error.fieldErrors.account?.[0] ?? null;
+    // Said here, in the dialog: "not enough money in Biznes karta" belongs next to the choice.
+    const said = payoutError(error);
+    accountError.value = said.account;
+    failure.value = said.account ? null : (said.message ?? (said.network ? t("common.error.network") : t("common.error.generic")));
   } finally {
     saving.value = false;
   }
@@ -124,6 +129,7 @@ async function save(): Promise<void> {
           <span class="text-lg font-semibold tabular-nums text-fg" data-testid="pay-total"><MoneyText :value="total?.amount ?? '0'" :currency="currency" /></span>
         </div>
         <PayoutFields v-model:method="method" v-model:account="account" :currency="currency" :enabled="open" :error="accountError" />
+        <InlineAlert v-if="failure" tone="danger" size="sm" :description="failure" data-testid="pay-failure" />
       </template>
     </div>
     <template #footer>

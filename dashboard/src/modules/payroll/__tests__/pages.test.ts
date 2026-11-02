@@ -154,6 +154,24 @@ describe("mark paid", () => {
   });
 });
 
+describe("mark paid refused", () => {
+  it("says the server's reason inside the dialog (a toast would sit behind it)", async () => {
+    stub({
+      "GET finance/options/": () => json({ accounts: [{ id: 10, name: "Biznes karta", kind: "card", currency: "UZS" }] }),
+      "POST payroll/runs/7/mark-paid/": () => json({ detail: "Not enough money in Biznes karta: 3 686 000 left." }, 400),
+    });
+    const MarkPaidDialog = (await import("../components/MarkPaidDialog.vue")).default;
+    const app = await testApp("/c/1/payroll/runs/7");
+    mountWithProviders(MarkPaidDialog, { plugins: app.plugins, props: { open: true, run: run(), payslips: [slip(1)] } });
+    await settle();
+    (document.querySelector('[data-testid="mark-paid-confirm"]') as HTMLButtonElement).click();
+    await settle();
+    expect(document.querySelector('[data-testid="pay-failure"]')?.textContent).toContain("Not enough money in Biznes karta");
+    // Still open, to choose another account.
+    expect(document.querySelector('[data-testid="mark-paid-confirm"]')).not.toBeNull();
+  });
+});
+
 describe("bonuses and fines", () => {
   it("bulk approval sends only the proposed rows, with approve and no reason", async () => {
     const rows = [adjustment(41), adjustment(42, { kind: "bonus", amount: "300000.00" })];

@@ -85,8 +85,9 @@ export const payrollApi = {
   advance: (cid: number, id: number) => http.get<Advance>(path(cid, `advances/${id}/`)),
   createAdvance: (cid: number, input: AdvanceInput) => http.post<Advance>(path(cid, "advances/"), input),
   decideAdvance: (cid: number, id: number, decision: Decision, reason = "") => http.post<Advance>(path(cid, `advances/${id}/decide/`), { approve: decision === "approve", reason }),
-  payAdvance: (cid: number, id: number, input: PayInput) => http.post<Advance>(path(cid, `advances/${id}/pay/`), input),
-  repayAdvance: (cid: number, id: number, input: RepayInput) => http.post<Advance>(path(cid, `advances/${id}/repay/`), input),
+  // Payouts say what went wrong inside their dialog (a toast would sit behind it): no toast.
+  payAdvance: (cid: number, id: number, input: PayInput) => http.post<Advance>(path(cid, `advances/${id}/pay/`), input, { toast: false }),
+  repayAdvance: (cid: number, id: number, input: RepayInput) => http.post<Advance>(path(cid, `advances/${id}/repay/`), input, { toast: false }),
   cancelAdvance: (cid: number, id: number, reason: string) => http.post<Advance>(path(cid, `advances/${id}/cancel/`), { reason }),
 
   runs: (cid: number, params: Query = {}, signal?: AbortSignal) => http.get<Page<Run> | Run[]>(path(cid, "runs/"), { page_size: 100, ...params }, { signal }),
@@ -94,7 +95,7 @@ export const payrollApi = {
   createRun: (cid: number, period: string) => http.post<Run>(path(cid, "runs/"), { period }),
   runAction: (cid: number, id: number, action: "calculate" | "finalize" | "reopen" | "cancel" | "publish", body: Record<string, unknown> = {}) =>
     http.post<Run>(path(cid, `runs/${id}/${action}/`), body),
-  markPaid: (cid: number, id: number, input: MarkPaidInput) => http.post<Run>(path(cid, `runs/${id}/mark-paid/`), input),
+  markPaid: (cid: number, id: number, input: MarkPaidInput) => http.post<Run>(path(cid, `runs/${id}/mark-paid/`), input, { toast: false }),
   payslips: (cid: number, runId: number, signal?: AbortSignal) => http.get<Page<Payslip> | Payslip[]>(path(cid, `runs/${runId}/payslips/`), { page_size: 200 }, { signal }),
   /**
    * One person's payslips of the last `months` runs. There is no list by person on the server

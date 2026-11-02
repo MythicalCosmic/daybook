@@ -5,6 +5,7 @@
  * Amounts are never worked out here: the server computes pay (§3.17); the only sum is the
  * total of the payslips someone is about to mark paid, added exactly with decimal.js.
  */
+import { isApiError } from "@/api/http";
 import type { Currency, Language, Money } from "@/api/types";
 import type { StatusTone } from "@/components/StatusPill.vue";
 import { addMonths, formatDay, startOfMonth } from "@/lib/dates";
@@ -204,6 +205,18 @@ export function accountsFor(accounts: readonly PayAccount[], currency: Currency,
     return index === -1 ? METHOD_KINDS[method].length : index;
   };
   return accounts.filter((row) => row.currency === currency).sort((a, b) => rank(a.kind) - rank(b.kind) || a.name.localeCompare(b.name));
+}
+
+/**
+ * What a refused payout (mark paid, pay an advance, money paid back) says, and where: an account
+ * problem under the account field, anything else ("not enough money in Biznes karta") above the
+ * buttons. `message: null` with `network: true` means the request never reached the server.
+ */
+export function payoutError(error: unknown): { account: string | null; message: string | null; network: boolean } {
+  if (!isApiError(error)) return { account: null, message: null, network: false };
+  const account = error.fieldErrors.account?.[0] ?? null;
+  const other = Object.entries(error.fieldErrors).find(([field]) => field !== "account")?.[1]?.[0] ?? null;
+  return { account, message: account ? null : (error.detail ?? other), network: error.isNetwork };
 }
 
 /**

@@ -14,6 +14,7 @@ import ApproveRejectButtons from "@/components/ApproveRejectButtons.vue";
 import DatePicker from "@/components/DatePicker.vue";
 import DescriptionList, { type DescriptionItem } from "@/components/DescriptionList.vue";
 import ErrorState from "@/components/ErrorState.vue";
+import InlineAlert from "@/components/InlineAlert.vue";
 import FormField from "@/components/FormField.vue";
 import MoneyInput from "@/components/MoneyInput.vue";
 import ProgressBar from "@/components/ProgressBar.vue";
@@ -100,6 +101,8 @@ async function saveRepay(): Promise<void> {
     refresh();
   } catch (error) {
     if (isApiError(error)) for (const [field, messages] of Object.entries(error.fieldErrors)) repayErrors[field] = messages[0];
+    // A refusal without a field ("more than is owed") is said in the form: the call shows no toast.
+    if (isApiError(error) && !Object.keys(error.fieldErrors).length) repayErrors.form = error.detail ?? t("common.error.generic");
   } finally {
     saving.value = false;
   }
@@ -187,6 +190,7 @@ async function cancel(): Promise<void> {
               </FormField>
             </div>
             <AccountField v-model="repay.account" :currency="advance.currency" :label="t('payroll.advances.intoAccount')" :error="repayErrors.account" />
+            <InlineAlert v-if="repayErrors.form" tone="danger" size="sm" :description="repayErrors.form" />
             <FormField :label="t('payroll.pay.note')" optional>
               <TextInput v-model="repay.note" :maxlength="200" />
             </FormField>
