@@ -393,12 +393,12 @@ const statusNote = computed(() => {
           </div>
         </template>
         <template #cell-base="{ row }"><PayAmount cell :value="row.base_pay" :currency="row.currency" /></template>
-        <template #cell-bonuses="{ row }"><PayAmount cell :value="row.bonuses" :currency="row.currency" sign="always" colored /></template>
-        <template #cell-fines="{ row }"><PayAmount cell :value="row.fines" :currency="row.currency" colored /></template>
-        <template #cell-advances="{ row }"><PayAmount cell :value="row.advances" :currency="row.currency" /></template>
-        <template #cell-reimbursements="{ row }"><PayAmount cell :value="row.reimbursements" :currency="row.currency" /></template>
+        <template #cell-bonuses="{ row }"><PayAmount cell quiet-zero :value="row.bonuses" :currency="row.currency" sign="always" colored /></template>
+        <template #cell-fines="{ row }"><PayAmount cell quiet-zero :value="row.fines" :currency="row.currency" colored /></template>
+        <template #cell-advances="{ row }"><PayAmount cell quiet-zero :value="row.advances" :currency="row.currency" /></template>
+        <template #cell-reimbursements="{ row }"><PayAmount cell quiet-zero :value="row.reimbursements" :currency="row.currency" /></template>
         <template #cell-gross="{ row }"><PayAmount cell :value="row.gross" :currency="row.currency" /></template>
-        <template #cell-deductions="{ row }"><PayAmount cell :value="row.deductions" :currency="row.currency" /></template>
+        <template #cell-deductions="{ row }"><PayAmount cell quiet-zero :value="row.deductions" :currency="row.currency" /></template>
         <template #cell-net="{ row }"><PayAmount cell strong :value="row.net" :currency="row.currency" /></template>
         <template #cell-status="{ row }">
           <StatusPill :tone="PAYSLIP_TONES[row.status]" size="sm" :label="t(`payroll.payslipStatus.${row.status}`)" />

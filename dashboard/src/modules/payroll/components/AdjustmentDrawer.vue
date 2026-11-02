@@ -174,7 +174,7 @@ async function voidIt(): Promise<void> {
     <template #footer>
       <div v-if="row && canManage && (isDecidable(row) || isVoidable(row))" class="flex w-full items-center justify-end gap-2">
         <ApproveRejectButtons v-if="isDecidable(row)" :reject-title="t('payroll.adjustments.rejectTitle', { name: row.member.name })" :on-approve="() => decide('approve')" :on-reject="(reason: string) => decide('reject', reason)" />
-        <UiButton v-else variant="danger" size="sm" :icon="Ban" @click="voidIt">{{ t("payroll.adjustments.void") }}</UiButton>
+        <UiButton v-else variant="secondary" size="sm" :icon="Ban" class="text-danger" data-testid="void-adjustment" @click="voidIt">{{ t("payroll.adjustments.void") }}</UiButton>
       </div>
     </template>
   </UiDrawer>

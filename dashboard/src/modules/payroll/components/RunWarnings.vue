@@ -45,8 +45,9 @@ const link = (warning: RunWarning) => {
         >
           <span :class="['size-1.5 shrink-0 rounded-full', warning.level === 'info' ? 'bg-info' : 'bg-warning']" aria-hidden="true" />
           <span class="min-w-0 flex-1 text-sm text-fg">{{ warning.text }}</span>
+          <!-- The whole row is the link: on a phone the arrow alone leaves the text its width. -->
           <span v-if="link(warning)" class="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-accent-fg">
-            {{ t("payroll.warnings.fix") }}<ArrowRight :size="14" class="transition-transform group-hover:translate-x-0.5" />
+            <span class="max-sm:hidden">{{ t("payroll.warnings.fix") }}</span><ArrowRight :size="16" class="transition-transform group-hover:translate-x-0.5" />
           </span>
         </component>
       </li>

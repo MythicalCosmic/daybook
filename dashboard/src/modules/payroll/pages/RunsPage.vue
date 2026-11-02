@@ -18,6 +18,7 @@ import type { TableColumn } from "@/components/table";
 import UiButton from "@/components/UiButton.vue";
 import { useDataTable } from "@/components/useDataTable";
 import { todayIn } from "@/lib/dates";
+import { dec } from "@/lib/decimal";
 import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
 import { useCompanyStore } from "@/stores/company";
@@ -25,7 +26,7 @@ import { useCompanyStore } from "@/stores/company";
 import { useOverview, useRuns } from "../api";
 import PayAmount from "../components/PayAmount.vue";
 import PrepareDialog from "../components/PrepareDialog.vue";
-import { monthName, prepareTarget, RUN_TONES } from "../lib";
+import { hasAmount, monthName, prepareTarget, RUN_TONES } from "../lib";
 import type { Run } from "../types";
 
 const { t } = useI18n();
@@ -43,6 +44,8 @@ const target = computed(() => (runs.data.value ? prepareTarget(runs.data.value, 
 const targetLabel = computed(() => (target.value ? t("payroll.runs.prepareMonth", { month: monthName(target.value, fmt.lang.value) }) : ""));
 
 const latestDone = computed(() => rows.value.find((run) => run.kind === "regular" && (run.status === "finalized" || run.status === "paid")) ?? null);
+/** Millions read better short ("96,8 mln so‘m"); a smaller amount is shown whole: exact, and shorter. */
+const compactFor = (value: string | null | undefined): boolean => hasAmount(value) && dec(value).abs().gte(1_000_000);
 const kpis = computed(() => {
   const data = overview.data.value;
   const projected = data?.projected ?? null;
@@ -56,7 +59,7 @@ const kpis = computed(() => {
       label: t("payroll.kpi.next"),
       value: projected?.net ?? null,
       format: "money" as const,
-      compact: true,
+      compact: compactFor(projected?.net),
       currency: data?.currency,
       // A finalized month is its run's sums; otherwise it is worked out with today's data.
       hint: projected ? t(projected.source === "run" ? "payroll.kpi.nextHintRun" : "payroll.kpi.nextHint", { month: fmt.day(projected.period, "monthYear"), n: projected.people }, projected.people) : undefined,
@@ -71,7 +74,7 @@ const kpis = computed(() => {
       label: t("payroll.kpi.last"),
       value: last?.net ?? null,
       format: "money" as const,
-      compact: true,
+      compact: compactFor(last?.net),
       currency: last?.currency,
       hint: latestDone.value ? fmt.day(latestDone.value.period, "monthYear") : t("payroll.kpi.lastNone"),
       loading: runs.isPending.value,
@@ -81,7 +84,7 @@ const kpis = computed(() => {
       label: t("payroll.kpi.bonuses"),
       value: month?.bonuses ?? null,
       format: "money" as const,
-      compact: true,
+      compact: compactFor(month?.bonuses),
       currency: data?.currency,
       hint: monthHint,
       loading: overview.isPending.value,
@@ -92,7 +95,7 @@ const kpis = computed(() => {
       label: t("payroll.kpi.fines"),
       value: month?.fines ?? null,
       format: "money" as const,
-      compact: true,
+      compact: compactFor(month?.fines),
       currency: data?.currency,
       hint: monthHint,
       loading: overview.isPending.value,
