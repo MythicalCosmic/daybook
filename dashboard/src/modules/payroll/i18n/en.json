@@ -25,6 +25,7 @@
   "payroll.runStatus.paid": "Paid",
   "payroll.runStatus.cancelled": "Cancelled",
   "payroll.payslipStatus.draft": "Draft",
+  "payroll.payslipStatus.unsent": "Not sent",
   "payroll.payslipStatus.published": "Sent",
   "payroll.payslipStatus.paid": "Paid",
   "payroll.adjustmentStatus.proposed": "Proposed",

@@ -26,7 +26,7 @@ import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
 import { openPayslipPdf, payrollApi, usePayslip, useRefresh } from "../api";
-import { isManualLine, isPayable, PAYSLIP_TONES, quantityText } from "../lib";
+import { isManualLine, isPayable, PAYSLIP_TONES, payslipStage, quantityText } from "../lib";
 import type { ManualLineInput, PayslipLine, Run } from "../types";
 import PayAmount from "./PayAmount.vue";
 import PayslipLines from "./PayslipLines.vue";
@@ -146,7 +146,7 @@ async function pdf(): Promise<void> {
               <p class="truncate text-sm text-muted">{{ [slip.member.position, slip.member.home_branch, fmt.day(slip.period, "monthYear")].filter(Boolean).join(" · ") }}</p>
               <p class="mt-1 text-[1.625rem] font-semibold leading-8 tracking-[-0.02em] tabular-nums text-fg"><PayAmount :value="slip.net" :currency="slip.currency" /></p>
               <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
-                <StatusPill :tone="PAYSLIP_TONES[slip.status]" size="sm" :label="t(`payroll.payslipStatus.${slip.status}`)" />
+                <StatusPill :tone="PAYSLIP_TONES[payslipStage(slip.status, run.status)]" size="sm" :label="t(`payroll.payslipStatus.${payslipStage(slip.status, run.status)}`)" />
                 <StatusPill v-if="slip.received_at" tone="success" size="sm" variant="outline" :icon="CircleCheck" :dot="false" :label="t('payroll.payslip.received', { date: fmt.instant(slip.received_at, 'date') })" />
                 <StatusPill v-else-if="slip.viewed_at" tone="info" size="sm" variant="outline" :icon="Eye" :dot="false" :label="t('payroll.payslip.viewed')" />
               </div>

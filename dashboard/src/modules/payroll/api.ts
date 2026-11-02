@@ -105,7 +105,7 @@ export const payrollApi = {
   memberPayslips: async (cid: number, member: number, months = 6, signal?: AbortSignal): Promise<Payslip[]> => {
     const runs = rowsOf(await payrollApi.runs(cid, { page_size: months }, signal)).filter((run) => run.status !== "cancelled");
     const tables = await Promise.all(runs.map((run) => payrollApi.payslips(cid, run.id, signal)));
-    return tables.flatMap((table, index) => rowsOf(table).filter((slip) => slip.member.id === member).map((slip) => ({ ...slip, run: runs[index]!.id })));
+    return tables.flatMap((table, index) => rowsOf(table).filter((slip) => slip.member.id === member).map((slip) => ({ ...slip, run: runs[index]!.id, run_status: runs[index]!.status })));
   },
 
   payslip: (cid: number, id: number) => http.get<Payslip>(path(cid, `payslips/${id}/`)),

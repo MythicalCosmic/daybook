@@ -21,7 +21,7 @@ import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
 import { openPayslipPdf, useAdjustments, useAdvances, useCompensations, useMemberPayslips } from "../api";
-import { ADJUSTMENT_TONES, ADVANCE_TONES, isAddition, PAYSLIP_TONES, payHistory, periodOf, signedAmount } from "../lib";
+import { ADJUSTMENT_TONES, ADVANCE_TONES, isAddition, PAYSLIP_TONES, payHistory, payslipStage, periodOf, signedAmount } from "../lib";
 import type { Member, Payslip } from "../types";
 import AdvanceDialog from "./AdvanceDialog.vue";
 import ChangePayDialog from "./ChangePayDialog.vue";
@@ -144,7 +144,7 @@ const base = computed(() => `/c/${company.currentId}/payroll`);
               </div>
               <div class="flex shrink-0 flex-col items-end gap-1">
                 <span class="whitespace-nowrap text-sm font-semibold tabular-nums text-fg"><PayAmount :value="slip.net" :currency="slip.currency" /></span>
-                <StatusPill :tone="PAYSLIP_TONES[slip.status]" size="sm" :label="t(`payroll.payslipStatus.${slip.status}`)" />
+                <StatusPill :tone="PAYSLIP_TONES[payslipStage(slip.status, slip.run_status)]" size="sm" :label="t(`payroll.payslipStatus.${payslipStage(slip.status, slip.run_status)}`)" />
               </div>
             </RouterLink>
             <IconButton :icon="FileDown" size="sm" :label="t('payroll.payslip.pdf')" :loading="downloading === slip.id" @click="pdf(slip)" />

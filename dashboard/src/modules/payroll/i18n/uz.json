@@ -25,6 +25,7 @@
   "payroll.runStatus.paid": "To‘langan",
   "payroll.runStatus.cancelled": "Bekor qilingan",
   "payroll.payslipStatus.draft": "Qoralama",
+  "payroll.payslipStatus.unsent": "Yuborilmagan",
   "payroll.payslipStatus.published": "Yuborilgan",
   "payroll.payslipStatus.paid": "To‘langan",
   "payroll.adjustmentStatus.proposed": "Taklif qilingan",

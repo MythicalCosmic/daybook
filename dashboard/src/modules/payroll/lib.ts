@@ -98,7 +98,12 @@ export function prepareTarget(runs: readonly Pick<Run, "period" | "kind" | "stat
 // ─── Statuses ───────────────────────────────────────────────────────────────
 
 export const RUN_TONES: Record<RunStatus, StatusTone> = { draft: "warning", finalized: "info", paid: "success", cancelled: "neutral" };
-export const PAYSLIP_TONES: Record<PayslipStatus, StatusTone> = { draft: "neutral", published: "info", paid: "success" };
+/** A payslip's status as the owner reads it: in a finalized run a "draft" one is final, only not sent yet. */
+export type PayslipStage = PayslipStatus | "unsent";
+export function payslipStage(status: PayslipStatus, runStatus?: RunStatus | null): PayslipStage {
+  return status === "draft" && (runStatus === "finalized" || runStatus === "paid") ? "unsent" : status;
+}
+export const PAYSLIP_TONES: Record<PayslipStage, StatusTone> = { draft: "neutral", unsent: "neutral", published: "info", paid: "success" };
 export const ADJUSTMENT_TONES: Record<AdjustmentStatus, StatusTone> = { proposed: "warning", approved: "success", rejected: "danger", void: "neutral" };
 export const ADVANCE_TONES: Record<AdvanceStatus, StatusTone> = {
   requested: "warning",

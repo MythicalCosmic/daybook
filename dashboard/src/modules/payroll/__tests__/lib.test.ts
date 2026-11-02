@@ -20,6 +20,7 @@ import {
   payHistory,
   payRowMatches,
   paySelection,
+  payslipStage,
   prepareTarget,
   previewSplit,
   quantityText,
@@ -336,6 +337,17 @@ describe("rule preview rows", () => {
     const split = previewSplit([{ member: person(1, "Aziza"), value: "96.5", units: null, tier: "95" }]);
     expect(split).toMatchObject({ hidden: true, others: [] });
     expect(split.earning).toHaveLength(1);
+  });
+});
+
+describe("payslip stage", () => {
+  it("a draft payslip in a finalized run is final, only not sent yet", () => {
+    expect(payslipStage("draft", "draft")).toBe("draft");
+    expect(payslipStage("draft", "finalized")).toBe("unsent");
+    expect(payslipStage("draft", "paid")).toBe("unsent");
+    expect(payslipStage("published", "finalized")).toBe("published");
+    expect(payslipStage("paid", "paid")).toBe("paid");
+    expect(payslipStage("draft", undefined)).toBe("draft");
   });
 });
 

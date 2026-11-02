@@ -25,6 +25,7 @@
   "payroll.runStatus.paid": "Выплачена",
   "payroll.runStatus.cancelled": "Отменена",
   "payroll.payslipStatus.draft": "Черновик",
+  "payroll.payslipStatus.unsent": "Не отправлен",
   "payroll.payslipStatus.published": "Отправлен",
   "payroll.payslipStatus.paid": "Выплачен",
   "payroll.adjustmentStatus.proposed": "Предложено",

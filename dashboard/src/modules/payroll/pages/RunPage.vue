@@ -42,7 +42,7 @@ import MarkPaidDialog from "../components/MarkPaidDialog.vue";
 import PayAmount from "../components/PayAmount.vue";
 import PayslipDrawer from "../components/PayslipDrawer.vue";
 import RunWarnings from "../components/RunWarnings.vue";
-import { hasAmount, PAYSLIP_TONES, RUN_TONES, runActions, type Can } from "../lib";
+import { hasAmount, PAYSLIP_TONES, payslipStage, RUN_TONES, runActions, type Can } from "../lib";
 import type { Payslip, RunAction } from "../types";
 
 const { t } = useI18n();
@@ -106,7 +106,7 @@ const columns = computed<TableColumn<Payslip>[]>(() => [
   { id: "deductions", header: t("payroll.totals.deductions"), width: 136, numeric: true, value: (row) => row.deductions ?? null },
   { id: "net", header: t("payroll.totals.net"), width: 148, numeric: true, value: (row) => row.net ?? null },
   // Every payslip of a draft is a draft: the column says something only once the run is finalized.
-  ...(run.value && run.value.status !== "draft" ? [{ id: "status", header: t("payroll.payslips.status"), width: 128, value: (row: Payslip) => t(`payroll.payslipStatus.${row.status}`) }] : []),
+  ...(run.value && run.value.status !== "draft" ? [{ id: "status", header: t("payroll.payslips.status"), width: 128, value: (row: Payslip) => t(`payroll.payslipStatus.${payslipStage(row.status, run.value?.status)}`) }] : []),
 ]);
 
 /**
@@ -401,7 +401,7 @@ const statusNote = computed(() => {
         <template #cell-deductions="{ row }"><PayAmount cell quiet-zero :value="row.deductions" :currency="row.currency" /></template>
         <template #cell-net="{ row }"><PayAmount cell strong :value="row.net" :currency="row.currency" /></template>
         <template #cell-status="{ row }">
-          <StatusPill :tone="PAYSLIP_TONES[row.status]" size="sm" :label="t(`payroll.payslipStatus.${row.status}`)" />
+          <StatusPill :tone="PAYSLIP_TONES[payslipStage(row.status, run.status)]" size="sm" :label="t(`payroll.payslipStatus.${payslipStage(row.status, run.status)}`)" />
         </template>
         <template #card="{ row }">
           <div class="flex items-start gap-3">
@@ -417,7 +417,7 @@ const statusNote = computed(() => {
             </div>
             <div class="flex shrink-0 flex-col items-end gap-1">
               <PayAmount cell strong :value="row.net" :currency="row.currency" />
-              <StatusPill v-if="run.status !== 'draft'" :tone="PAYSLIP_TONES[row.status]" size="sm" :label="t(`payroll.payslipStatus.${row.status}`)" />
+              <StatusPill v-if="run.status !== 'draft'" :tone="PAYSLIP_TONES[payslipStage(row.status, run.status)]" size="sm" :label="t(`payroll.payslipStatus.${payslipStage(row.status, run.status)}`)" />
             </div>
           </div>
         </template>
