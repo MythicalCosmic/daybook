@@ -108,7 +108,11 @@ class RecordSerializer(serializers.ModelSerializer):
         return integrations.fine_summary(record.company, record.fine_id)
 
     def get_can_edit(self, record: DisciplinaryRecord) -> bool:
-        return services.may_discipline(self.context["membership"], record.membership)
+        return services.may_discipline(
+            self.context["membership"],
+            record.membership,
+            in_scope=self.context.get("in_scope", False),
+        )
 
 
 def is_active(record: DisciplinaryRecord, today) -> bool:

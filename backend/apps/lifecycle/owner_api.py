@@ -50,6 +50,8 @@ class LifecycleContext:
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context["today"] = hr_queries.today(self.company)
+        # Every row these views show comes from a query limited to the viewer's branches.
+        context["in_scope"] = True
         return context
 
     def person(self, member_id) -> Membership:

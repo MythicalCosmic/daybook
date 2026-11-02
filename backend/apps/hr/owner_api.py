@@ -65,6 +65,8 @@ class HRContext:
         context = super().get_serializer_context()
         context["today"] = queries.today(self.company)
         context["warn_days"] = conf.get_settings(self.company).document_warn_days
+        # Every row these views show comes from a query limited to the viewer's branches.
+        context["in_scope"] = True
         return context
 
     def person(self, member_id) -> Membership:

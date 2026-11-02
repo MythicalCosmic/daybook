@@ -312,7 +312,9 @@ class DocumentSerializer(serializers.ModelSerializer):
     def _sees(self, document: EmployeeDocument) -> bool:
         cache = self.context.setdefault("_sees", {})
         if document.pk not in cache:
-            cache[document.pk] = services.may_see_document(viewer(self.context), document)
+            cache[document.pk] = services.may_see_document(
+                viewer(self.context), document, in_scope=self.context.get("in_scope", False)
+            )
         return cache[document.pk]
 
     @extend_schema_field(PersonRefSerializer)
@@ -773,7 +775,9 @@ class ContractSerializer(serializers.ModelSerializer):
     def _sees(self, contract: Contract) -> bool:
         cache = self.context.setdefault("_sees_contract", {})
         if contract.pk not in cache:
-            cache[contract.pk] = services.may_see_contract_file(viewer(self.context), contract)
+            cache[contract.pk] = services.may_see_contract_file(
+                viewer(self.context), contract, in_scope=self.context.get("in_scope", False)
+            )
         return cache[contract.pk]
 
     @extend_schema_field(PersonRefSerializer)

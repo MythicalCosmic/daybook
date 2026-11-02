@@ -264,15 +264,18 @@ def explain(record: DisciplinaryRecord, *, by: Membership, text: str) -> Discipl
 # Helpers -------------------------------------------------------------------------------------
 
 
-def may_discipline(member: Membership, person: Membership) -> bool:
+def may_discipline(member: Membership, person: Membership, *, in_scope: bool = False) -> bool:
     """Whether `member` may give `person` a record: hr.discipline, the person in their branch
-    scope, not themselves, and an owner only if they are one."""
+    scope, not themselves, and an owner only if they are one. `in_scope`: the caller already
+    limited the people to `member`'s branch scope."""
     if member.company_id != person.company_id or member.pk == person.pk:
         return False
     if not member.has_perm(Perm.HR_DISCIPLINE):
         return False
     if person.role is not None and person.role.is_owner and not member.role.is_owner:
         return False
+    if in_scope:
+        return True
     return (
         hr_queries.person(person.company, person.pk, branch_ids=scope.branch_ids(member))
         is not None
