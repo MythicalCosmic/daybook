@@ -266,6 +266,35 @@ class TestFinalize:
         assert ledger(run) == once
         assert MoneyAccount.objects.get(name="Payroll cash").balance == cash_balance
 
+    def test_rounding_never_eats_into_an_advance_that_takes_the_whole_pay(self, shop, team, cash):
+        """Pay 1 000 000, an advance of 1 000 000 due, 150 400 of expenses paid back: the net
+        150 400 is not rounded down, or the salary payable couldn't cover the advance."""
+        staff = team
+        Compensation.objects.filter(membership=staff.ali).update(amount=D("1000000"))
+        row = services.create_advance(
+            staff.ali, by=staff.owner, amount="1000000", first_period="2026-11"
+        )
+        Advance.objects.filter(pk=row.pk).update(first_period=OCTOBER)
+        row.refresh_from_db()
+        services.pay_advance(row, by=staff.owner, account=cash, paid_on=date(2026, 10, 20))
+        finance.open_debt(
+            shop,
+            by=staff.owner,
+            direction="payable",
+            kind="reimbursement",
+            amount=D("150400"),
+            currency="UZS",
+            issued_on=date(2026, 10, 10),
+            membership=staff.ali,
+            category="other_expense",
+        )
+        run = services.create_run(shop, by=staff.owner, period="2026-10")
+        ali = payslip_of(run, staff.ali)
+        assert ali.net == D("150400.00") and not lines(ali, Kind.ROUNDING)
+        services.finalize_run(run, by=staff.owner)
+        ali.refresh_from_db()
+        assert (ali.salary_debt.amount, ali.salary_debt.paid) == (D("1000000"), D("1000000"))
+
     def test_reopen_rules(self, shop, team, cash):
         staff = team
         run = services.create_run(shop, by=staff.owner, period="2026-10")

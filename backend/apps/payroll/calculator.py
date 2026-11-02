@@ -358,9 +358,12 @@ def compute(person: Person, inputs: Inputs, manual_lines=()) -> Result | None:
         for item in person.reimbursements
     ]
     net = sum((line.amount for line in lines), ZERO)
+    taken = -sum((line.amount for line in lines if line.kind == Kind.ADVANCE), ZERO)
     if net > 0:
         rounded = round_to_step(net, settings.rounding_step)
-        if rounded != net:
+        # Rounding down never eats into what an advance takes back: the pay for the month
+        # (the salary payable) must still cover the advance offsets.
+        if rounded != net and before_advances - taken + (rounded - net) >= 0:
             lines.append(
                 Line(
                     kind=Kind.ROUNDING,
