@@ -234,6 +234,20 @@ describe("CardDrawer", () => {
   });
 });
 
+describe("My projects widget", () => {
+  it("asks for the eight rows it shows and counts from the page's total", async () => {
+    const calls = stubApi({ "GET projects/": () => json({ count: 12, next: null, previous: null, results: [] }) });
+    const app = await testApp("/c/1");
+    const { default: MyProjectsWidget } = await import("../widgets/MyProjectsWidget.vue");
+    const { wrapper } = mountWithProviders(MyProjectsWidget, { props: { companyId: 1 }, plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    const asked = calls.find((c) => c.url.includes("/projects/?") || c.url.endsWith("/projects/"))!;
+    expect(new URL(asked.url, "http://x").searchParams.get("page_size")).toBe("8");
+    wrapper.unmount();
+  });
+});
+
 describe("ProjectsPage KPI strip", () => {
   it("says the summary failed and offers Try again", async () => {
     stubApi({

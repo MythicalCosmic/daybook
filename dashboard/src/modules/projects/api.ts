@@ -61,7 +61,7 @@ export function listProjects(companyId: number, params: ListParams = {}, signal?
       mine: params.mine ? 1 : undefined,
       archived: params.archived ? 1 : undefined,
       ordering: params.ordering,
-      page_size: 200,
+      page_size: params.page_size ?? 200,
     },
     { signal },
   );
