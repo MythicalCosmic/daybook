@@ -16,6 +16,7 @@ import { RouterLink } from "vue-router";
 
 import AvatarStack from "@/components/AvatarStack.vue";
 import BranchPicker from "@/components/BranchPicker.vue";
+import ChecklistEditor from "@/components/ChecklistEditor.vue";
 import DatePicker from "@/components/DatePicker.vue";
 import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import FormField from "@/components/FormField.vue";
@@ -31,15 +32,13 @@ import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
-import { addDays, todayIn, zonedNow } from "@/lib/dates";
+import { addDays, todayIn, zonedIso, zonedNow } from "@/lib/dates";
 import { useNow } from "@/lib/useNow";
 import { useCompanyId, useCompanyStore } from "@/stores/company";
 
 import { useCreateTasks, useTaskOptions, useTasksSettings } from "../api";
-import { zonedIso } from "../meta";
 import { resultKey, useQuickAdd } from "../quickAdd";
 import type { ProofKind, TaskPriority } from "../types";
-import ChecklistEditor from "./ChecklistEditor.vue";
 import PriorityFlag from "./PriorityFlag.vue";
 
 const open = defineModel<boolean>("open", { default: false });
@@ -275,7 +274,7 @@ async function submit(): Promise<void> {
         <!-- Repeating work is a routine, not a one-off task. -->
         <p v-if="understood?.repeat" class="-mt-2 text-xs text-muted" data-testid="quick-add-repeat">
           {{ t("tasks.quick.repeatHint") }}
-          <RouterLink :to="`/c/${company.currentId}/routines/all?new=1`" class="font-medium text-accent-fg hover:underline">{{ t("tasks.quick.makeRoutine") }}</RouterLink>
+          <RouterLink v-if="company.can('tasks.templates')" :to="`/c/${company.currentId}/routines/all?new=1`" class="font-medium text-accent-fg hover:underline">{{ t("tasks.quick.makeRoutine") }}</RouterLink>
         </p>
         <FormField :label="t('tasks.field.description')" optional>
           <TextArea v-model="description" :rows="2" :max-rows="6" :placeholder="t('tasks.create.descriptionPlaceholder')" />
@@ -354,7 +353,7 @@ async function submit(): Promise<void> {
           <MoneyInput v-model="reward" />
         </FormField>
         <FormField :label="t('tasks.drawer.checklist')" optional>
-          <ChecklistEditor v-model="checklist" />
+          <ChecklistEditor v-model="checklist" texts="tasks.checklist" />
         </FormField>
       </div>
     </form>

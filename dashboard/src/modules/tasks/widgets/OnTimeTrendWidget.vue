@@ -9,11 +9,14 @@ import ChartCard from "@/components/ChartCard.vue";
 import LineChart from "@/components/LineChart.vue";
 
 import { useFormat } from "@/lib/useFormat";
+import { usePermission } from "@/lib/usePermission";
 
 import { useSummary } from "../api";
 
 const props = defineProps<{ companyId: number; range?: Range; compare?: Range | null }>();
 const { t } = useI18n();
+// The team report needs reports.view; this tile needs only tasks.view_all.
+const { can } = usePermission();
 const fmt = useFormat();
 const query = useSummary({ routines: "without" });
 const series = computed(() => query.data.value?.series ?? []);
@@ -43,7 +46,7 @@ const csv = computed(() => ({
     class="h-full"
     :icon="Timer"
     :title="t('tasks.chart.onTimeTrend')"
-    :to="`/c/${props.companyId}/reports/team`"
+    :to="can('reports.view') ? `/c/${props.companyId}/reports/team` : undefined"
     :subtitle="`${t('tasks.kpi.reviewHintOneOff')} · ${t('tasks.chart.last14').toLocaleLowerCase()}`"
     :value="value"
     :loading="query.isPending.value"

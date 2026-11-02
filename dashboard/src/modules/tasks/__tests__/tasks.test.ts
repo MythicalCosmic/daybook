@@ -8,6 +8,7 @@ import { toasts } from "@/components/useToast";
 import { mergeModuleMessages } from "@/i18n";
 import { json } from "@/test/fixtures";
 import { mountWithProviders, testApp } from "@/test/plugins";
+import { zonedIso } from "@/lib/dates";
 
 import { filterParams, moveInColumns, taskKeys, tasksApi } from "../api";
 import TaskDrawer from "../components/TaskDrawer.vue";
@@ -15,7 +16,7 @@ import TaskTimeline from "../components/TaskTimeline.vue";
 import { asksForRoutines, builtinTabs, builtinViews, filterDefs, viewLink, viewParams } from "../filters";
 import en from "../i18n/en.json";
 import module from "../index";
-import { cardKey, lateness, minutesBetween, zonedIso, zonedParts } from "../meta";
+import { cardKey, lateness, minutesBetween, zonedParts } from "../meta";
 import type { BoardColumn, TaskDetail, TaskRow } from "../types";
 
 interface Call {

@@ -107,7 +107,7 @@ function open(card: Card): void {
       :empty-title="t('projects.list.emptyTitle')"
       :empty-description="t('projects.list.emptyBody')"
       :empty-icon="Rows3"
-      :csv-name="`${project.key}-cards`"
+      :csv-name="t('projects.list.csvName', { key: project.key })"
       :caption="t('projects.tab.list')"
       @row-click="open"
       @clear-filters="q = ''"

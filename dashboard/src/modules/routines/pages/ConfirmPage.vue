@@ -130,7 +130,7 @@ const photo = (run: RoutineRun, group: ConfirmGroup) => ({
     <ErrorState v-else-if="query.isError.value" class="ui-card" :error="query.error.value" :retry="() => query.refetch()" />
     <div v-else-if="query.data.value && !total" class="ui-card">
       <EmptyState tone="success" size="lg" :icon="ClipboardCheck" :title="t('routines.confirm.emptyTitle')" :description="t('routines.confirm.emptyBody')">
-        <UiButton :to="{ name: 'routines.today' }" :icon-right="ChevronRight">{{ t("routines.nav.today") }}</UiButton>
+        <UiButton v-if="company.can('tasks.view_all')" :to="{ name: 'routines.today' }" :icon-right="ChevronRight">{{ t("routines.nav.today") }}</UiButton>
       </EmptyState>
     </div>
     <!-- A group of one run takes one column, so small groups sit side by side; bigger ones take the row. -->

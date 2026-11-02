@@ -12,7 +12,7 @@ import UiButton from "@/components/UiButton.vue";
 import UiTooltip from "@/components/UiTooltip.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { toast } from "@/components/useToast";
-import { addDays, todayIn } from "@/lib/dates";
+import { addDays, todayIn, zonedIso } from "@/lib/dates";
 import { useCompanyStore } from "@/stores/company";
 
 import { useCreateCard } from "../api";
@@ -37,13 +37,12 @@ const presets = computed(() => [
   { id: "week" as const, label: t("projects.quick.week") },
 ]);
 
-/** 18:00 on the chosen day (week: Friday), in the company's timezone, as an ISO string with its offset. */
+/** 18:00 on the chosen day (week: Friday), in the company's timezone, as an ISO instant. */
 function dueAt(): string | null {
   if (!due.value) return null;
   const today = todayIn(company.timezone);
   const day = due.value === "today" ? today : due.value === "tomorrow" ? addDays(today, 1) : addDays(today, daysToFriday(today));
-  const offset = tzOffset(company.timezone, day);
-  return `${day}T18:00:00${offset}`;
+  return zonedIso(day, "18:00", company.timezone);
 }
 
 /** Days until this week's Friday (next week's when today is Friday or later). */
@@ -51,17 +50,6 @@ function daysToFriday(day: string): number {
   const weekday = (new Date(`${day}T00:00:00Z`).getUTCDay() + 6) % 7;
   const days = 4 - weekday;
   return days > 0 ? days : days + 7;
-}
-
-/** "+05:00" for a timezone on a day (Tashkent has no DST, but others might). */
-function tzOffset(timeZone: string, day: string): string {
-  const date = new Date(`${day}T12:00:00Z`);
-  const local = new Date(date.toLocaleString("en-US", { timeZone }));
-  const utc = new Date(date.toLocaleString("en-US", { timeZone: "UTC" }));
-  const minutes = Math.round((local.getTime() - utc.getTime()) / 60000);
-  const sign = minutes >= 0 ? "+" : "-";
-  const abs = Math.abs(minutes);
-  return `${sign}${String(Math.floor(abs / 60)).padStart(2, "0")}:${String(abs % 60).padStart(2, "0")}`;
 }
 
 async function add(): Promise<void> {

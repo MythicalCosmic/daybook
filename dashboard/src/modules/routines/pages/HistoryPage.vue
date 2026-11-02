@@ -135,10 +135,10 @@ const tone = (value: number | null) => (value === null ? "neutral" : value >= 90
             <p class="text-xs text-muted">{{ t("routines.history.heatmapHint") }}</p>
           </div>
           <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted" aria-hidden="true">
-            <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px]" style="background: var(--c-success)" />100 %</span>
-            <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px]" style="background: color-mix(in srgb, var(--c-success) 55%, var(--c-surface))" />80–99 %</span>
-            <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px]" style="background: color-mix(in srgb, var(--c-warning) 70%, var(--c-surface))" />50–79 %</span>
-            <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px]" style="background: color-mix(in srgb, var(--c-danger) 75%, var(--c-surface))" />&lt; 50 %</span>
+            <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px]" style="background: var(--c-success)" />{{ fmt.percent(100) }}</span>
+            <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px]" style="background: color-mix(in srgb, var(--c-success) 55%, var(--c-surface))" />{{ fmt.number(80) }}–{{ fmt.percent(99) }}</span>
+            <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px]" style="background: color-mix(in srgb, var(--c-warning) 70%, var(--c-surface))" />{{ fmt.number(50) }}–{{ fmt.percent(79) }}</span>
+            <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px]" style="background: color-mix(in srgb, var(--c-danger) 75%, var(--c-surface))" />&lt; {{ fmt.percent(50) }}</span>
             <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px] border border-dashed border-line-strong" />{{ t("routines.history.legendAhead") }}</span>
             <span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-[3px] bg-surface-2/60 ring-1 ring-inset ring-line" />{{ t("routines.history.legendNone") }}</span>
           </div>

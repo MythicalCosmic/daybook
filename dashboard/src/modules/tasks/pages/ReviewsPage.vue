@@ -90,6 +90,12 @@ const answers = computed(() => {
   for (const task of blockedList.data.value?.results ?? []) if (task.blocker) rows.push({ kind: "blocked", task });
   return rows;
 });
+/**
+ * Who answers "more time": the server lets the giver, the escalation contact, a head and people who
+ * assign or confirm decide. The dashboard knows the permissions and the giver; everyone else opens the
+ * task instead of pressing buttons the server refuses.
+ */
+const canDecide = (task: TaskRow) => company.can(["tasks.assign", "tasks.confirm"]) || (!!task.created_by && task.created_by.id === company.current?.membership_id);
 /** The asked-for deadline on its button: the time when it's today, else the day too. */
 const untilLabel = (iso: string) => (zonedDay(iso, company.timezone) === todayIn(company.timezone) ? fmt.instant(iso, "time") : fmt.instant(iso, "short"));
 const deciding = ref<Set<string>>(new Set());
@@ -291,7 +297,7 @@ const missing = (task: TaskReview) => (task.proof === "none" ? { text: t("tasks.
             </p>
           </div>
           <div class="flex shrink-0 gap-2 max-sm:w-full max-sm:flex-col">
-            <template v-if="item.kind === 'extension' && item.task.extension">
+            <template v-if="item.kind === 'extension' && item.task.extension && canDecide(item.task)">
               <UiButton :size="tap" variant="primary" :icon="Check" class="max-sm:w-full" :loading="deciding.has(`${item.task.id}:true`)" data-testid="answer-approve" @click="decide(item.task, true)">
                 {{ t("tasks.extension.approve", { time: untilLabel(item.task.extension.until) }) }}
               </UiButton>

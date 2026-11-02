@@ -1,7 +1,10 @@
 <script setup lang="ts">
 /**
- * Steps of a task as an editable list: type and press Enter to add the next one, remove with ×,
- * reorder with ↑/↓ while a step is focused (Alt+↑/↓).
+ * Steps of a task or a routine as an editable list: type and press Enter to add the next one,
+ * remove with ×, reorder with ↑/↓ while a step is focused (Alt+↑/↓). `texts` names the module's
+ * keys: `${texts}.placeholder`, `.remove`, `.add`, `.addMore` (tasks.checklist, routines.checklist).
+ *
+ *   <ChecklistEditor v-model="checklist" texts="tasks.checklist" />
  */
 import { Plus, X } from "@lucide/vue";
 import { nextTick, ref } from "vue";
@@ -11,7 +14,7 @@ import IconButton from "@/components/IconButton.vue";
 import TextInput from "@/components/TextInput.vue";
 
 const items = defineModel<string[]>({ default: () => [] });
-const props = withDefaults(defineProps<{ max?: number; placeholder?: string }>(), { max: 50, placeholder: undefined });
+const props = withDefaults(defineProps<{ texts: string; max?: number; placeholder?: string }>(), { max: 50, placeholder: undefined });
 
 const { t } = useI18n();
 const list = ref<HTMLElement | null>(null);
@@ -63,8 +66,8 @@ async function onKeydown(event: KeyboardEvent, index: number): Promise<void> {
   <div ref="list" class="flex flex-col gap-1.5">
     <div v-for="(item, index) in items" :key="index" class="flex items-center gap-1.5">
       <span class="w-5 shrink-0 text-right text-xs font-semibold tabular-nums text-subtle">{{ index + 1 }}.</span>
-      <TextInput :model-value="item" size="sm" :maxlength="200" :placeholder="placeholder ?? t('routines.checklist.placeholder')" class="flex-1" @update:model-value="(value) => set(index, value)" @keydown="onKeydown($event, index)" />
-      <IconButton :icon="X" :label="t('routines.checklist.remove')" size="sm" :tooltip="false" @click="remove(index)" />
+      <TextInput :model-value="item" size="sm" :maxlength="200" :placeholder="placeholder ?? t(`${texts}.placeholder`)" class="flex-1" @update:model-value="(value) => set(index, value)" @keydown="onKeydown($event, index)" />
+      <IconButton :icon="X" :label="t(`${texts}.remove`)" size="sm" :tooltip="false" @click="remove(index)" />
     </div>
     <button
       v-if="items.length < max"
@@ -72,7 +75,7 @@ async function onKeydown(event: KeyboardEvent, index: number): Promise<void> {
       class="flex h-8 items-center gap-1.5 self-start rounded-[8px] px-2 text-sm font-medium text-muted transition-colors hover:bg-highlight hover:text-fg"
       @click="add()"
     >
-      <Plus :size="15" />{{ items.length ? t("routines.checklist.addMore") : t("routines.checklist.add") }}
+      <Plus :size="15" />{{ items.length ? t(`${texts}.addMore`) : t(`${texts}.add`) }}
     </button>
   </div>
 </template>

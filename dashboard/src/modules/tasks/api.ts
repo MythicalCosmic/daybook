@@ -189,6 +189,20 @@ export function useReviews() {
   });
 }
 
+/**
+ * The oldest one-off work waiting for a check (the Tasks page's "oldest waits 3 h" hint): the queue
+ * is oldest first, so one row, not the 100 with their proofs that the Reviews page loads.
+ */
+export function useOldestReview() {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => qk(cid.value, MODULE, "reviews", { oldest: 1 })),
+    queryFn: ({ signal }) => tasksApi.reviews(cid.value, { page_size: 1, routines: "without" }, signal),
+    enabled: computed(() => cid.value > 0),
+    staleTime: 10_000,
+  });
+}
+
 export function useTaskOptions() {
   const cid = useCompanyId();
   return useQuery({

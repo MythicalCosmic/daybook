@@ -13,6 +13,7 @@ import { useI18n } from "vue-i18n";
 import { RouterLink, useRoute, useRouter } from "vue-router";
 
 import BottomSheet from "@/components/BottomSheet.vue";
+import ErrorState from "@/components/ErrorState.vue";
 import ExtensionSlot from "@/components/ExtensionSlot.vue";
 import FilterBar from "@/components/FilterBar.vue";
 import { useUrlFilters } from "@/components/filters";
@@ -33,7 +34,7 @@ import { patchQuery, rs, useRouteState } from "@/lib/useRouteState";
 import { paramsDiffer, useSavedViews } from "@/lib/useSavedViews";
 import { useCompanyStore } from "@/stores/company";
 
-import { useReviews, useSummary, useTaskCount, useTaskOptions } from "../api";
+import { useOldestReview, useSummary, useTaskCount, useTaskOptions } from "../api";
 import CreateTaskDialog from "../components/CreateTaskDialog.vue";
 import TaskDrawer from "../components/TaskDrawer.vue";
 import TasksBoard from "../components/TasksBoard.vue";
@@ -68,7 +69,9 @@ const params = computed<Record<string, string | string[]>>(() => {
   const base = search.value ? { ...filters.params.value, q: search.value } : filters.params.value;
   return routinesAsked.value ? base : { ...base, routines: "without" };
 });
-const filtered = computed(() => filters.active.value > 0 || !!search.value);
+// Filtered = narrowed beyond the view: the default view's own chips (All open's statuses) are not a
+// filter, so an empty list under it says "No tasks yet", not "nothing matches, clear the filters".
+const filtered = computed(() => (paramsOfView(viewId.value) ? dirty.value : filters.active.value > 0) || !!search.value);
 /** Phones: the filter chips open in a sheet. */
 const filtersOpen = ref(false);
 
@@ -135,7 +138,7 @@ watch(
 );
 
 // How long the oldest one-off work has waited for a check (R2 T32): the queue is oldest first.
-const reviews = useReviews();
+const reviews = useOldestReview();
 const reviewHint = computed(() => {
   const oldest = reviews.data.value?.results[0]?.completed_at;
   if (routinesAsked.value || !oldest) return null;
@@ -231,7 +234,9 @@ const viewOptions = computed(() => [
     </PageHeader>
 
     <!-- Phones: the four numbers on one short row, so the list starts on the first screen. -->
-    <KpiStrip :items="kpis" :loading="summary.isPending.value" :columns="4" phone="line" />
+    <!-- A failed summary says so with Try again (the four tiles only showed dashes). -->
+    <ErrorState v-if="summary.isError.value" compact :error="summary.error.value" :retry="() => summary.refetch()" />
+    <KpiStrip v-else :items="kpis" :loading="summary.isPending.value" :columns="4" phone="line" />
 
     <!-- What needs an answer now (R2 §3.19): only what has something in it. -->
     <div v-if="attention.length" class="-mt-1 flex items-center gap-2 max-sm:-mx-4 max-sm:overflow-x-auto max-sm:px-4 sm:flex-wrap [scrollbar-width:none]" data-testid="attention">

@@ -73,8 +73,8 @@ async function reschedule(change: { rowId: string | number; start: string; end: 
   } catch {
     // The HTTP layer showed why.
   } finally {
-    await query.refetch();
-    void refresh();
+    // One invalidation refetches the roadmap too (its key is under the module's).
+    await refresh();
   }
 }
 
@@ -107,7 +107,7 @@ const counts = computed(() => ({
     </div>
     <ErrorState v-else-if="query.isError.value" :error="query.error.value" :retry="() => query.refetch()" />
     <EmptyState v-else-if="query.data.value && !rows.length" :icon="FolderKanban" size="lg" :title="t('projects.roadmap.emptyTitle')" :description="t('projects.roadmap.emptyBody')">
-      <UiButton variant="primary" :icon="FolderPlus" :to="`/c/${company.currentId}/projects?new=1`">{{ t("projects.new") }}</UiButton>
+      <UiButton v-if="company.can('projects.manage')" variant="primary" :icon="FolderPlus" :to="`/c/${company.currentId}/projects?new=1`">{{ t("projects.new") }}</UiButton>
     </EmptyState>
     <GanttTimeline
       v-else-if="query.data.value"

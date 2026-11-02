@@ -77,6 +77,9 @@ const columns = computed<TableColumn<TaskRow>[]>(() => [
 ]);
 
 // Bulk actions -------------------------------------------------------------------------------
+// tasks/bulk/ takes people who assign or confirm; a view-only role got a bar whose every action
+// failed. Confirming is its own permission; every other bulk change is the assigner's.
+const canBulk = computed(() => can(["tasks.assign", "tasks.confirm"]));
 const bulk = useBulk();
 const reassignOpen = ref(false);
 const reassignTo = ref<number | null>(null);
@@ -142,7 +145,7 @@ async function reassignMany(selected: string[], clear: () => void): Promise<void
     :fetching="query.isFetching.value"
     :error="query.error.value"
     :retry="() => query.refetch()"
-    selectable
+    :selectable="canBulk"
     clickable
     :active-key="activeId"
     :filtered="filtered"
@@ -214,7 +217,8 @@ async function reassignMany(selected: string[], clear: () => void): Promise<void
       <TaskCard :task="row" show-status />
     </template>
     <template #bulk="{ selected, clear }">
-      <UiPopover v-if="can(['tasks.assign', 'tasks.templates'])" v-model:open="reassignOpen" align="center" side="top" width="300px">
+      <template v-if="can('tasks.assign')">
+      <UiPopover v-model:open="reassignOpen" align="center" side="top" width="300px">
         <template #trigger><UiButton size="sm" :icon="UserRoundCog">{{ t("tasks.action.reassign") }}</UiButton></template>
         <div class="flex flex-col gap-2 p-3">
           <p class="text-sm font-semibold text-fg">{{ t("tasks.bulk.reassignTitle", { n: selected.length }) }}</p>
@@ -229,8 +233,9 @@ async function reassignMany(selected: string[], clear: () => void): Promise<void
         <template #trigger><UiButton size="sm" :icon="Flag">{{ t("tasks.col.priority") }}</UiButton></template>
       </DropdownMenu>
       <UiButton size="sm" :icon="BellRing" :disabled="bulk.isPending.value" @click="runBulk(selected, clear, 'nudge')">{{ t("tasks.action.nudge") }}</UiButton>
+      </template>
       <UiButton v-if="can('tasks.confirm')" size="sm" :icon="CheckCheck" :disabled="bulk.isPending.value" @click="runBulk(selected, clear, 'confirm')">{{ t("tasks.action.confirm") }}</UiButton>
-      <UiButton size="sm" variant="ghost" :icon="X" class="hover:!text-danger" data-testid="bulk-cancel" @click="cancelMany(selected, clear)">{{ t("tasks.bulk.cancel") }}</UiButton>
+      <UiButton v-if="can('tasks.assign')" size="sm" variant="ghost" :icon="X" class="hover:!text-danger" data-testid="bulk-cancel" @click="cancelMany(selected, clear)">{{ t("tasks.bulk.cancel") }}</UiButton>
     </template>
   </DataTable>
 </template>

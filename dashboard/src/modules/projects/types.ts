@@ -401,6 +401,8 @@ export interface ListParams {
   mine?: boolean;
   archived?: boolean;
   ordering?: string;
+  /** Rows per page (default 200, the whole index): a widget showing 8 asks for 8. */
+  page_size?: number;
 }
 
 export type ProjectTab = "board" | "list" | "timeline" | "milestones" | "people" | "time" | "money" | "updates" | "files" | "settings";
