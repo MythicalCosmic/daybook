@@ -601,6 +601,27 @@ describe("TeamPage paging", () => {
   });
 });
 
+describe("TeamPage numbers", () => {
+  it("say they couldn't load, with a retry, instead of showing dashes for good", async () => {
+    stub((call) => (call.url.includes("/people/stats/") ? json({ detail: "boom" }, 500) : undefined));
+    const TeamPage = (await import("../pages/TeamPage.vue")).default;
+    const app = await testApp("/c/1/people");
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: "/c/:companyId/people", component: TeamPage },
+        { path: "/:any(.*)*", component: { render: () => null } },
+      ],
+    });
+    await router.push("/c/1/people");
+    const { wrapper } = mountWithProviders(TeamPage, { plugins: [app.pinia, router, i18n, [VueQueryPlugin, { queryClient: app.client }]] });
+    await flushPromises();
+    await flushPromises();
+    expect(wrapper.find("[data-kpi-error]").exists()).toBe(true);
+    expect(wrapper.find("[data-kpi-error]").text()).toContain("Try again");
+  });
+});
+
 describe("what a viewer may not do", () => {
   async function mountAt(url: string, component: object) {
     const app = await testApp(url);

@@ -7,14 +7,12 @@
  * departments below it.
  */
 import { BriefcaseBusiness, Building2, CircleDot, Network, ShieldCheck, Smartphone, UserCheck, UserPlus, UserRoundX, Users } from "@lucide/vue";
-import { useQuery } from "@tanstack/vue-query";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
-import { http, ownerPath } from "@/api/http";
-import { qk } from "@/api/keys";
 import DataTable from "@/components/DataTable.vue";
+import ErrorState from "@/components/ErrorState.vue";
 import FilterBar from "@/components/FilterBar.vue";
 import { useUrlFilters, type FilterDef } from "@/components/filters";
 import KpiStrip from "@/components/KpiStrip.vue";
@@ -40,7 +38,7 @@ import { rs, useRouteState } from "@/lib/useRouteState";
 import { paramsDiffer, useSavedViews } from "@/lib/useSavedViews";
 import { useCompanyStore } from "@/stores/company";
 
-import { useDepartments, usePeople, usePositions, useRoles } from "../api";
+import { useDepartments, usePeople, usePeopleStats, usePositions, useRoles } from "../api";
 import { departmentOptions, flattenDepartments } from "../departments";
 import { rateTone, statusChip } from "../status";
 import type { DirectoryStatus, Person } from "../types";
@@ -127,17 +125,7 @@ const chipLabel = (row: Person) => t(chip(row).key, chip(row).params ?? {});
 const RATE_TEXT = { success: "text-success", warning: "text-warning", danger: "text-danger", neutral: "text-subtle" } as const;
 
 // Numbers above the table.
-const stats = useQuery({
-  queryKey: computed(() => qk(company.currentId ?? 0, "people", "stats")),
-  queryFn: ({ signal }) =>
-    http.get<{ current: number; active: number; suspended: number; on_leave_today: number; joined_30d: number; left_30d: number; pending_requests: number; bot_blocked: number }>(
-      ownerPath(company.currentId!, "people/stats/"),
-      undefined,
-      { signal },
-    ),
-  enabled: computed(() => company.currentId !== null),
-  staleTime: 15_000,
-});
+const stats = usePeopleStats();
 const kpis = computed(() => {
   const s = stats.data.value;
   return [
@@ -236,7 +224,8 @@ function clearAll(): void {
       </template>
     </PageHeader>
 
-    <KpiStrip :items="kpis" :loading="stats.isPending.value" :columns="4" phone="compact" />
+    <ErrorState v-if="stats.isError.value" data-kpi-error compact class="ui-card" :error="stats.error.value" :retry="() => stats.refetch()" :retrying="stats.isFetching.value" />
+    <KpiStrip v-else :items="kpis" :loading="stats.isPending.value" :columns="4" phone="compact" />
 
     <div class="flex flex-col gap-3">
       <SavedViewsTabs
