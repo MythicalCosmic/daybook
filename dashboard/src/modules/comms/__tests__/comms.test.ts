@@ -152,3 +152,29 @@ describe("AnnouncementsPage", () => {
     expect(wrapper.find(".kpi-strip").exists()).toBe(true);
   });
 });
+
+describe("download names", () => {
+  it("are written in the person's language, not hard-coded in English", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { dirname, join } = await import("node:path");
+    const { fileURLToPath } = await import("node:url");
+    const here = dirname(fileURLToPath(import.meta.url));
+    for (const file of ["pages/AnnouncementsPage.vue", "pages/AnnouncementPage.vue"]) {
+      const source = readFileSync(join(here, "..", file), "utf8");
+      expect(source, file).not.toMatch(/[^:]csv-name="/);
+      expect(source, file).not.toMatch(/filename: `[a-z-]+-/);
+    }
+  });
+});
+
+describe("editor shortcuts", () => {
+  it("are written for the keyboard in use (Ctrl+B on Windows and Android, not ⌘B)", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { dirname, join } = await import("node:path");
+    const { fileURLToPath } = await import("node:url");
+    const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../components/TelegramHtmlEditor.vue"), "utf8");
+    expect(source).not.toMatch(/shortcut: "⌘/);
+    const { formatCombo } = await import("@/core/hotkeys");
+    expect(formatCombo("mod+shift+s", false).join("+")).toBe("Ctrl+Shift+S");
+  });
+});

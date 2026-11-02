@@ -60,6 +60,7 @@
   "agenda.dialog.from": "Boshlanishi",
   "agenda.dialog.to": "Tugashi",
   "agenda.dialog.sameDay": "Shu kun",
+  "agenda.dialog.nextDay": "Ertasi kuni tugaydi",
   "agenda.dialog.starts": "Boshlanadi",
   "agenda.dialog.ends": "Tugaydi",
   "agenda.dialog.repeat": "Takrorlash",

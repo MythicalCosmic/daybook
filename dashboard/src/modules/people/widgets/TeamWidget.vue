@@ -5,29 +5,22 @@
  * fetches its own numbers and fails on its own.
  */
 import { ArrowUpRight, UserPlus, Users } from "@lucide/vue";
-import { useQuery } from "@tanstack/vue-query";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { RouterLink } from "vue-router";
 
-import { http, ownerPath } from "@/api/http";
-import { qk } from "@/api/keys";
 import type { Range } from "@/api/types";
 import ErrorState from "@/components/ErrorState.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import { useWidgetSkeleton } from "@/components/widgetSkeleton";
 
-const props = defineProps<{ companyId: number; range?: Range; compare?: Range | null }>();
+import { usePeopleStats } from "../api";
+
+defineProps<{ companyId: number; range?: Range; compare?: Range | null }>();
 
 const { t } = useI18n();
-const stats = useQuery({
-  queryKey: computed(() => qk(props.companyId, "people", "stats")),
-  queryFn: ({ signal }) =>
-    http.get<{ active: number; on_leave_today: number; joined_30d: number; suspended: number; pending_requests: number }>(ownerPath(props.companyId, "people/stats/"), undefined, {
-      signal,
-    }),
-  staleTime: 30_000,
-});
+// The Team page's own headcounts (one cache entry for both).
+const stats = usePeopleStats();
 const skeleton = useWidgetSkeleton(() => stats.isPending.value);
 const rows = computed(() => {
   const s = stats.data.value;

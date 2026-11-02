@@ -10,6 +10,7 @@ import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
+import { unshownFieldError } from "@/api/http";
 import AvatarStack from "@/components/AvatarStack.vue";
 import BranchPicker from "@/components/BranchPicker.vue";
 import DatePicker from "@/components/DatePicker.vue";
@@ -130,8 +131,10 @@ async function send(): Promise<void> {
     if (row.status === "scheduled") toast.success(t("comms.compose.scheduled", { when: fmt.instant(row.scheduled_for!, "datetime") }));
     else toast.success(t("comms.compose.sent", { n: row.recipients_count }, row.recipients_count));
     void router.push(`/c/${company.currentId}/announcements/${row.id}`);
-  } catch {
-    // The HTTP layer showed why.
+  } catch (failure) {
+    // A reason was toasted by the HTTP layer; a refusal naming a field (the text, the audience, a
+    // time) has no field of its own here, so it is said under the message.
+    error.value = unshownFieldError(failure);
   }
 }
 

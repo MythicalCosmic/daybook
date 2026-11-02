@@ -60,6 +60,7 @@
   "agenda.dialog.from": "From",
   "agenda.dialog.to": "To",
   "agenda.dialog.sameDay": "Same day",
+  "agenda.dialog.nextDay": "Ends the next day",
   "agenda.dialog.starts": "Starts",
   "agenda.dialog.ends": "Ends",
   "agenda.dialog.repeat": "Repeat",

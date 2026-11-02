@@ -25,7 +25,7 @@ import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
-import { todayIn } from "@/lib/dates";
+import { addDays, todayIn } from "@/lib/dates";
 import { useForm } from "@/lib/useForm";
 import { useCompanyStore } from "@/stores/company";
 
@@ -63,7 +63,8 @@ const schema = z
     description: z.string().max(5000, "common.form.tooLong"),
   })
   .refine((v) => v.allDay || !!v.startTime, { message: "common.form.required", path: ["startTime"] })
-  .refine((v) => v.allDay || !v.endTime || !v.startTime || v.endTime > v.startTime, { message: "agenda.dialog.endAfterStart", path: ["endTime"] })
+  // An end before the start is the next morning (a night inventory 22:00–02:00); the same time is no event.
+  .refine((v) => v.allDay || !v.endTime || !v.startTime || v.endTime !== v.startTime, { message: "agenda.dialog.endAfterStart", path: ["endTime"] })
   .refine((v) => !v.allDay || !v.endDate || v.endDate >= v.date, { message: "agenda.dialog.endAfterStart", path: ["endDate"] })
   .refine((v) => v.repeat === "none" || !v.repeatUntil || v.repeatUntil >= v.date, { message: "agenda.dialog.untilAfterStart", path: ["repeatUntil"] });
 
@@ -84,7 +85,8 @@ function blank(): Values {
     branch: null,
     attendees: [],
     visibility: "company",
-    remind: settings.data.value?.default_remind_before ?? 60,
+    // The company's default, also when it is "No reminder" (null); an hour until it has loaded.
+    remind: settings.data.value ? settings.data.value.default_remind_before : 60,
     description: "",
   };
 }
@@ -109,10 +111,17 @@ function fromEvent(event: AgendaEvent): Values {
   };
 }
 
+/** An hour later on the clock: 23:30 gives 00:30, which the dialog reads as the next day. */
 function addHour(time: string): string {
   const [h, m] = time.split(":").map(Number);
-  return `${String(Math.min(23, (h ?? 0) + 1)).padStart(2, "0")}:${String(m ?? 0).padStart(2, "0")}`;
+  return `${String(((h ?? 0) + 1) % 24).padStart(2, "0")}:${String(m ?? 0).padStart(2, "0")}`;
 }
+
+/** Where a timed event ends: on its day, or the next one when the end time is before the start. */
+function endMoment(date: string, start: string | null, end: string): string {
+  return `${start && end < start ? addDays(date, 1) : date}T${end}`;
+}
+const endsNextDay = computed(() => !form.values.allDay && !!form.values.endTime && !!form.values.startTime && form.values.endTime < form.values.startTime);
 
 const form = useForm(schema, blank(), {
   onSubmit: async (values) => {
@@ -122,7 +131,7 @@ const form = useForm(schema, blank(), {
       kind: values.kind as EventKind,
       all_day: values.allDay,
       start: values.allDay ? values.date : `${values.date}T${values.startTime}`,
-      end: values.allDay ? (values.endDate && values.endDate !== values.date ? values.endDate : null) : values.endTime ? `${values.date}T${values.endTime}` : null,
+      end: values.allDay ? (values.endDate && values.endDate !== values.date ? values.endDate : null) : values.endTime ? endMoment(values.date, values.startTime, values.endTime) : null,
       place: values.place,
       branch: values.branch,
       visibility: values.visibility as EventVisibility,
@@ -227,7 +236,7 @@ const visibilityOptions = computed(() => [
             <FormField :label="t('agenda.dialog.starts')" :error="form.errors.startTime" required>
               <TimePicker v-model="form.values.startTime" :step="15" />
             </FormField>
-            <FormField :label="t('agenda.dialog.ends')" :error="form.errors.endTime">
+            <FormField :label="t('agenda.dialog.ends')" :error="form.errors.endTime" :hint="endsNextDay ? t('agenda.dialog.nextDay') : undefined">
               <TimePicker v-model="form.values.endTime" :step="15" />
             </FormField>
           </template>

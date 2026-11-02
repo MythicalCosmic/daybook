@@ -356,3 +356,48 @@ describe("OffboardPage", () => {
     expect(wrapper.text()).toContain(en["people.offboard.onlyOwner"]);
   });
 });
+
+describe("RolesPage", () => {
+  it("doesn't send a saved role again when a later one fails", async () => {
+    const RolesPage = (await import("../pages/RolesPage.vue")).default;
+    const roles = [role({ id: 1, name: "Owner", is_owner: true, can_edit: false }), role({ id: 2, name: "Manager" }), role({ id: 3, name: "Cashier" })];
+    const calls = stub((call) => {
+      if (call.method === "PATCH" && call.url.includes("/roles/3/")) return json({ detail: "Not yours to grant." }, 400);
+      if (call.method === "PATCH") return json({ ...roles[1], permissions: (call.body as { permissions: string[] }).permissions });
+      return call.url.includes("/permissions/") ? json(permissions) : json(roles);
+    });
+    const app = await testApp("/c/1/people/roles");
+    const { wrapper } = mountWithProviders(RolesPage, { plugins: app.plugins });
+    await flushPromises();
+    await wrapper.find('[aria-label="Manager: Approve join requests"] [role="checkbox"]').trigger("click");
+    await wrapper.find('[aria-label="Cashier: Approve join requests"] [role="checkbox"]').trigger("click");
+    const saveButton = () => wrapper.findAll("button").find((b) => b.text() === "Save")!;
+    await saveButton().trigger("click");
+    await flushPromises();
+    await saveButton().trigger("click");
+    await flushPromises();
+    // Manager went through the first time; only Cashier is sent again.
+    const patches = calls.filter((c) => c.method === "PATCH").map((c) => c.url.replace(/^.*\/roles\//, "roles/"));
+    expect(patches).toEqual(["roles/2/", "roles/3/", "roles/3/"]);
+  });
+});
+
+describe("wording", () => {
+  it("names the department in a person's history in every language", () => {
+    for (const dictionary of [en, ru, uz] as Array<Record<string, string>>) expect(dictionary["people.field.department"]).toBeTruthy();
+  });
+});
+
+describe("download names", () => {
+  it("are written in the person's language, not hard-coded in English", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { dirname, join } = await import("node:path");
+    const { fileURLToPath } = await import("node:url");
+    const here = dirname(fileURLToPath(import.meta.url));
+    for (const file of ["pages/TeamPage.vue", "components/PersonOverviewTab.vue"]) {
+      const source = readFileSync(join(here, "..", file), "utf8");
+      expect(source, file).not.toMatch(/[^:]csv-name="/);
+      expect(source, file).not.toMatch(/filename: `[a-z-]+-/);
+    }
+  });
+});

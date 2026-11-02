@@ -18,7 +18,7 @@ import { useCompanyStore } from "@/stores/company";
 
 import { useCalendar } from "../api";
 import UpcomingList from "../components/UpcomingList.vue";
-import { eventIdOf, sourceLabel, toCalendarItem } from "../lib";
+import { eventParam, sourceLabel, toCalendarItem } from "../lib";
 
 const props = defineProps<{ companyId: number; range?: Range; compare?: Range | null }>();
 
@@ -36,8 +36,9 @@ const base = computed(() => `/c/${props.companyId}/calendar`);
 function open(item: CalendarItem): void {
   const entry = calendar.data.value?.items.find((row) => row.id === String(item.id));
   if (!entry) return;
-  const eventId = eventIdOf(entry);
-  if (eventId) void router.push({ path: base.value, query: { event: String(eventId) } });
+  // A repeating event opens on the occurrence that was clicked ("12-20261027"), not its series.
+  const event = eventParam(entry);
+  if (event) void router.push({ path: base.value, query: { event } });
   else if (entry.url) void router.push(companyUrl(props.companyId, entry.url));
   else void router.push({ path: base.value, query: { view: "agenda" } });
 }

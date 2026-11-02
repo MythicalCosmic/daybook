@@ -101,7 +101,7 @@ const kpis = computed(() => {
       id: "missing",
       label: t("attendance.state.not_yet"),
       value: totals.not_yet,
-      hint: !totals.not_yet ? undefined : overdue.value ? t("attendance.kpi.notYetHint", { n: overdue.value }) : t("attendance.kpi.notYetSoon"),
+      hint: !totals.not_yet ? undefined : overdue.value ? t("attendance.kpi.notYetHint", { n: overdue.value }, overdue.value) : t("attendance.kpi.notYetSoon"),
     },
     { id: "absent", label: t("attendance.kpi.absent"), value: totals.absent, hint: totals.absent && isToday.value ? t("attendance.kpi.absentHint") : undefined },
     {
@@ -288,7 +288,7 @@ const columnLabel = (state: BoardState) => t(`attendance.state.${state}`);
     <RecordDrawer />
     <UiDrawer query-key="person" size="lg" :title="personName || t('attendance.person.title')">
       <template #default="{ value }">
-        <PersonMonth v-if="value" class="p-5" :member-id="Number(value)" />
+        <PersonMonth v-if="value" class="p-5" :member-id="Number(value)" :record-drawer="false" />
       </template>
     </UiDrawer>
     <UiDrawer v-model:open="settingsOpen" size="lg" :title="t('attendance.settings.title')" :description="t('attendance.settings.description')">

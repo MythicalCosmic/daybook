@@ -426,7 +426,7 @@
   "attendance.widget.onTimeValue": "{p}% вовремя",
   "attendance.widget.date": "Дата",
   "attendance.widget.empty": "За последние две недели смен не было",
-  "attendance.kpi.notYetHint": "{n} уже опаздывают",
+  "attendance.kpi.notYetHint": "{n} уже опаздывает | {n} уже опаздывают | {n} уже опаздывают",
   "attendance.kpi.notYetSoon": "начнут позже",
   "attendance.kpi.absentHint": "так и не отметились",
   "attendance.record.soFar": "пока {d}",

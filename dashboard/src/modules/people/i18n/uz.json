@@ -134,6 +134,7 @@
   "people.field.branches": "Filiallar",
   "people.field.homeBranch": "Asosiy filial",
   "people.field.home_branch": "Asosiy filial",
+  "people.field.department": "Bo‘lim",
   "people.field.language": "Bot tili",
   "people.field.permissions": "Ruxsatlar",
   "people.field.is_active": "Ko‘rinadi",

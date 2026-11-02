@@ -73,8 +73,13 @@ const grantable = (code: string) => isOwner.value || can(code as never);
 async function saveAll(): Promise<void> {
   const pending = changedRoles.value;
   try {
-    for (const role of pending) await save.mutateAsync({ id: role.id, body: { permissions: draft.value[role.id] } });
-    draft.value = {};
+    for (const role of pending) {
+      await save.mutateAsync({ id: role.id, body: { permissions: draft.value[role.id] } });
+      // Saved: unstaged at once, so a later role's failure doesn't send this one again.
+      const rest = { ...draft.value };
+      delete rest[role.id];
+      draft.value = rest;
+    }
     toast.success(t("people.roles.saved", { n: pending.length }, pending.length));
   } catch {
     // The HTTP layer showed why; what wasn't saved stays staged.

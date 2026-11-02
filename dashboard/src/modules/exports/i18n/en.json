@@ -18,7 +18,7 @@
   "exports.sensitive": "Sensitive",
   "exports.sensitiveHint": "Contains salaries, IDs or per-person money",
   "exports.wholeList": "The whole list",
-  "exports.rowsCount": "{n} rows",
+  "exports.rowsCount": "{n} rows | {n} row | {n} rows",
   "exports.param.since": "From {day}",
   "exports.param.until": "Until {day}",
   "exports.param.search": "Search “{text}”",

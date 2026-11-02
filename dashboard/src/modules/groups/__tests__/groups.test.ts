@@ -89,9 +89,15 @@ describe("applyPatch", () => {
 describe("GroupsPage", () => {
   it("toggles an event at once, sends the whole event list, and rolls back on refusal", async () => {
     let refuse = false;
+    // The server keeps what it saved.
+    let saved = GROUP;
     const calls = stub({
-      "GET groups/": () => json(LIST),
-      "PATCH groups/5/": (call) => (refuse ? json({ detail: "No" }, 400) : json(applyPatch(GROUP, call.body as never, LIST.options))),
+      "GET groups/": () => json({ ...LIST, results: [saved] }),
+      "PATCH groups/5/": (call) => {
+        if (refuse) return json({ detail: "No" }, 400);
+        saved = applyPatch(saved, call.body as never, LIST.options);
+        return json(saved);
+      },
     });
     const app = await testApp("/c/1/groups");
     const { wrapper } = mountWithProviders(GroupsPage, { plugins: app.plugins });
@@ -109,6 +115,29 @@ describe("GroupsPage", () => {
     await evening().trigger("click");
     await flushPromises();
     expect(evening().attributes("data-state")).toBe("checked");
+  });
+
+  it("keeps a quick second switch on while the first one's answer arrives", async () => {
+    const answers: Array<() => void> = [];
+    stub({
+      "GET groups/": () => json(LIST),
+      "PATCH groups/5/": (call) => new Promise<Response>((resolve) => answers.push(() => resolve(json(applyPatch(GROUP, call.body as never, LIST.options))))),
+    });
+    const app = await testApp("/c/1/groups");
+    const { wrapper } = mountWithProviders(GroupsPage, { plugins: app.plugins });
+    await flushPromises();
+    const switchAt = (n: number) => wrapper.findAll('[role="switch"]')[n]!;
+    await switchAt(2).trigger("click"); // evening on
+    await flushPromises();
+    await switchAt(3).trigger("click"); // sales on, while evening is still saving
+    await flushPromises();
+    answers[0]!(); // the first answer knows nothing about sales
+    await flushPromises();
+    expect(switchAt(2).attributes("data-state")).toBe("checked");
+    expect(switchAt(3).attributes("data-state")).toBe("checked");
+    answers[1]!();
+    await flushPromises();
+    expect(switchAt(3).attributes("data-state")).toBe("checked");
   });
 
   it("disconnects after asking", async () => {

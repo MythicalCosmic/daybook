@@ -426,7 +426,7 @@
   "attendance.widget.onTimeValue": "{p}% o‘z vaqtida",
   "attendance.widget.date": "Sana",
   "attendance.widget.empty": "So‘nggi ikki haftada smenalar yo‘q",
-  "attendance.kpi.notYetHint": "{n} nafari kechikmoqda",
+  "attendance.kpi.notYetHint": "{n} nafari kechikmoqda | {n} nafari kechikmoqda | {n} nafari kechikmoqda",
   "attendance.kpi.notYetSoon": "bugun keyinroq",
   "attendance.kpi.absentHint": "hali belgilanmagan",
   "attendance.record.soFar": "hozircha {d}",

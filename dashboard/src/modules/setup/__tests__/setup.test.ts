@@ -168,6 +168,25 @@ describe("NewCompanyForm", () => {
     expect(app.router.currentRoute.value.fullPath).toBe("/c/9/get-started");
   });
 
+  it("says why Create failed when the connection or the server did (it was sent without a toast)", async () => {
+    let answer: () => Response = () => {
+      throw new TypeError("Failed to fetch");
+    };
+    stub({ "GET /owner/companies/new/": () => json({ ...info, needs_code: false }), "POST /owner/companies/": () => answer() });
+    const app = await testApp("/c/1");
+    const { wrapper } = mountWithProviders(NewCompanyForm, { plugins: app.plugins });
+    await flushPromises();
+    await wrapper.find('input[maxlength="200"]').setValue("Bodomgul Dorixonasi");
+    await wrapper.find("form").trigger("submit");
+    await flushPromises();
+    expect(wrapper.text()).toContain("No connection. Check the internet and try again.");
+
+    answer = () => new Response("<html>Bad gateway</html>", { status: 502 });
+    await wrapper.find("form").trigger("submit");
+    await flushPromises();
+    expect(wrapper.text()).toContain("The server had a problem. Try again in a minute.");
+  });
+
   it("explains when creating isn't allowed", async () => {
     stub({ "GET /owner/companies/new/": () => json({ ...info, allowed: false, reason: "New companies are created by the platform team for now." }) });
     const app = await testApp("/c/1");

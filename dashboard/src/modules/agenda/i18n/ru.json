@@ -60,6 +60,7 @@
   "agenda.dialog.from": "С",
   "agenda.dialog.to": "По",
   "agenda.dialog.sameDay": "Тот же день",
+  "agenda.dialog.nextDay": "Закончится на следующий день",
   "agenda.dialog.starts": "Начало",
   "agenda.dialog.ends": "Конец",
   "agenda.dialog.repeat": "Повтор",

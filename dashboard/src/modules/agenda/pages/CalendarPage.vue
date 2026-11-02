@@ -225,6 +225,7 @@ useHotkey("n", () => create(), { description: "agenda.hotkey.new", group: "page"
         <section class="ui-card p-3" :aria-label="t('agenda.upcoming.title')">
           <h2 class="mb-2 px-2 pt-1 text-sm font-semibold text-fg">{{ t("agenda.upcoming.title") }}</h2>
           <div v-if="upcoming.isPending.value" class="flex flex-col gap-2 px-2"><SkeletonBlock v-for="n in 4" :key="n" height="34px" radius="8px" /></div>
+          <ErrorState v-else-if="upcoming.isError.value" data-upcoming-error compact class="mx-2" :error="upcoming.error.value" :retry="() => upcoming.refetch()" :retrying="upcoming.isFetching.value" />
           <UpcomingList v-else :items="upcomingItems" :limit="9" @item-click="open">
             <template #empty>
               <EmptyState size="sm" tone="success" :icon="CalendarDays" :title="t('agenda.upcoming.empty')" :description="t('agenda.upcoming.emptyBody')" />

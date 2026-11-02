@@ -57,6 +57,9 @@ const cards = computed(() =>
 );
 
 async function flip(key: CompanyFeature, on: boolean): Promise<void> {
+  // One module at a time: each save sends the whole list, so a second one sent meanwhile would
+  // carry the first's unconfirmed change, and the first answer would flip the second back.
+  if (busy.value) return;
   const current = features.data.value?.features ?? [];
   const title = t(`settings.module.${key}.title`);
   if (!on) {
@@ -118,6 +121,7 @@ async function flip(key: CompanyFeature, on: boolean): Promise<void> {
               :model-value="card.enabled"
               :aria-label="card.title"
               :loading="busy === card.key"
+              :disabled="busy !== null && busy !== card.key"
               @update:model-value="(on: boolean) => flip(card.key, on)"
             />
           </div>
