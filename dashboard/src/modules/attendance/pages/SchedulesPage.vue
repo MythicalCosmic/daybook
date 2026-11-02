@@ -270,7 +270,9 @@ async function dropTemplate(template: ShiftTemplate): Promise<void> {
     </ResponsiveGrid>
 
     <PageSection :title="t('attendance.schedules.unassigned')" :description="t('attendance.schedules.unassignedHint')" :count="unassigned.length" variant="card" flush>
-      <ul v-if="unassigned.length" class="divide-y divide-line">
+      <div v-if="staff.isPending.value" class="flex flex-col gap-2 p-4" aria-busy="true"><SkeletonBlock v-for="n in 3" :key="n" height="36px" radius="8px" /></div>
+      <ErrorState v-else-if="staff.isError.value" compact class="m-3" :error="staff.error.value" :retry="() => staff.refetch()" :retrying="staff.isFetching.value" />
+      <ul v-else-if="unassigned.length" class="divide-y divide-line">
         <li v-for="person in unassigned" :key="person.id" class="flex flex-wrap items-center gap-3 px-4 py-2.5">
           <UserAvatar :name="person.name" :src="person.photo_url" :size="30" />
           <div class="min-w-0 flex-1">

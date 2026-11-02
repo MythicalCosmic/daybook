@@ -524,6 +524,44 @@ describe("TimesheetPage", () => {
   });
 });
 
+describe("TimesheetPage numbers", () => {
+  it("say they couldn't load, with a retry, instead of dashes for good", async () => {
+    stubApi({
+      "GET attendance/timesheet/": () => json({ month: "2026-11", days: [], people: [], totals: {} }),
+      "GET attendance/summary/": () => json({ detail: "boom" }, 500),
+    });
+    const app = await testApp("/c/1/attendance/timesheet?month=2026-11");
+    const { default: TimesheetPage } = await import("../pages/TimesheetPage.vue");
+    const { wrapper } = mountWithProviders(TimesheetPage, { plugins: app.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(wrapper.find("[data-kpi-error]").exists()).toBe(true);
+    wrapper.unmount();
+  });
+});
+
+describe("SchedulesPage", () => {
+  it("doesn't say everyone has a schedule while the staff loads, nor when it failed", async () => {
+    let staff: () => Response | Promise<Response> = () => new Promise<Response>(() => undefined);
+    stubApi({ "GET attendance/schedules/": () => json([]), "GET attendance/templates/": () => json([]), "GET attendance/staff/": () => staff() });
+    const { default: SchedulesPage } = await import("../pages/SchedulesPage.vue");
+    const app = await testApp("/c/1/attendance/schedules");
+    const first = mountWithProviders(SchedulesPage, { plugins: app.plugins });
+    await flushPromises();
+    expect(first.wrapper.text()).not.toContain(en["attendance.schedules.allAssigned"]);
+    first.wrapper.unmount();
+
+    staff = () => json({ detail: "boom" }, 500);
+    const again = await testApp("/c/1/attendance/schedules");
+    const second = mountWithProviders(SchedulesPage, { plugins: again.plugins });
+    await flushPromises();
+    await flushPromises();
+    expect(second.wrapper.text()).not.toContain(en["attendance.schedules.allAssigned"]);
+    expect(second.wrapper.text()).toContain("Try again");
+    second.wrapper.unmount();
+  });
+});
+
 describe("a refusal that names a field the form doesn't show", () => {
   it("is said in the shift dialog", async () => {
     stubApi({ "POST attendance/shifts/": () => json({ member_id: ["Alisher already works 09:00-18:00 that day."] }, 400) });
