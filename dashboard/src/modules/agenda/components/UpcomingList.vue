@@ -4,9 +4,9 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { itemColor, itemsByDay, type CalendarItem } from "@/components/calendarItems";
-import { addDays, todayIn } from "@/lib/dates";
+import { addDays } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 const props = withDefaults(defineProps<{ items: CalendarItem[]; days?: number; limit?: number }>(), { days: 7, limit: 8 });
 const emit = defineEmits<{ "item-click": [item: CalendarItem] }>();
@@ -14,7 +14,7 @@ const emit = defineEmits<{ "item-click": [item: CalendarItem] }>();
 const { t } = useI18n();
 const fmt = useFormat();
 const company = useCompanyStore();
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 
 const blocks = computed(() => {
   const days = Array.from({ length: props.days }, (_, i) => addDays(today.value, i));

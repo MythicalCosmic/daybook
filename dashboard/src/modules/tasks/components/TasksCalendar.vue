@@ -13,10 +13,10 @@ import type { CalendarItem } from "@/components/calendarItems";
 import CalendarWeek from "@/components/CalendarWeek.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import SegmentedControl from "@/components/SegmentedControl.vue";
-import { addDays, endOfMonth, startOfMonth, startOfWeek, todayIn } from "@/lib/dates";
+import { addDays, endOfMonth, startOfMonth, startOfWeek } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyToday } from "@/stores/company";
 
 import { useCalendar } from "../api";
 import { COLUMN_COLOR } from "../meta";
@@ -27,8 +27,7 @@ const emit = defineEmits<{ open: [task: TaskRow] }>();
 
 const { t } = useI18n();
 const fmt = useFormat();
-const company = useCompanyStore();
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 
 const mode = useRouteState("cal", rs.enum(["month", "week"] as const, "month"));
 const monthParam = useRouteState("month", rs.string(""));

@@ -27,12 +27,12 @@ import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import UiButton from "@/components/UiButton.vue";
 import { useDataTable } from "@/components/useDataTable";
 import { useHotkey } from "@/core/hotkeys";
-import { todayIn } from "@/lib/dates";
+
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { usePermission } from "@/lib/usePermission";
 import { patchQuery, rs, useRouteState } from "@/lib/useRouteState";
 import { paramsDiffer, useSavedViews } from "@/lib/useSavedViews";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { useOldestReview, useSummary, useTaskCount, useTaskOptions } from "../api";
 import CreateTaskDialog from "../components/CreateTaskDialog.vue";
@@ -53,7 +53,7 @@ const { isPhone } = useBreakpoints();
 
 const options = useTaskOptions();
 const branches = useScopedBranches();
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const owner = computed(() => isOwner.value && !!company.current);
 
 const view = useRouteState<TaskView>("view", rs.enum(["table", "board", "calendar"] as const, "table"));

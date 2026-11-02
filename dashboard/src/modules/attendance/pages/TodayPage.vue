@@ -19,12 +19,12 @@ import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import StatusPill from "@/components/StatusPill.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDrawer from "@/components/UiDrawer.vue";
-import { todayIn } from "@/lib/dates";
+
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { useBoard, useSummary } from "../api";
 import AttendanceHeader from "../components/AttendanceHeader.vue";
@@ -43,7 +43,7 @@ const fmt = useFormat();
 const company = useCompanyStore();
 const { isPhone } = useBreakpoints();
 
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const day = useRouteState("date", rs.day());
 const branch = useRouteState("branch", rs.optionalNumber());
 const recordId = useRouteState("record", rs.optionalNumber(), { push: true });

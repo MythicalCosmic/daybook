@@ -23,13 +23,13 @@ import UiButton from "@/components/UiButton.vue";
 import { returnReasonFields } from "@/components/returnReasons";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
-import { addDays, todayIn } from "@/lib/dates";
+import { addDays } from "@/lib/dates";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { usePermission } from "@/lib/usePermission";
 import { rs, useRouteState } from "@/lib/useRouteState";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyToday } from "@/stores/company";
 
 import { useConfirmRuns, usePlanOptions, useRoutineDay, useSendBackRun } from "../api";
 import DayRoutineCard from "../components/DayRoutineCard.vue";
@@ -40,14 +40,13 @@ import type { GiveTarget, RoutineRun } from "../types";
 
 const { t } = useI18n();
 const fmt = useFormat();
-const company = useCompanyStore();
 const { can } = usePermission();
 const ask = useConfirm();
 // Phones get finger-sized day buttons (40 px); a pointer is happy with 28.
 const { isPhone } = useBreakpoints();
 const tap = computed(() => (isPhone.value ? "lg" : "sm"));
 
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const dayParam = useRouteState("day", rs.string(""));
 // Routine work exists up to today: later days have no tasks yet (who will get them is on a
 // routine's own page), so a later ?day= shows today, and the arrow and the picker stop there.

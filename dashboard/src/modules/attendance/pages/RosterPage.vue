@@ -20,11 +20,11 @@ import UiButton from "@/components/UiButton.vue";
 import UiDrawer from "@/components/UiDrawer.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
-import { addDays, formatRange, startOfWeek, todayIn } from "@/lib/dates";
+import { addDays, formatRange, startOfWeek } from "@/lib/dates";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
-import { useCompanyId, useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { bulkRoster, publishRoster, useRefresh, useRoster, useShiftCreate, useShiftUpdate } from "../api";
 import AttendanceHeader from "../components/AttendanceHeader.vue";
@@ -46,7 +46,7 @@ const refresh = useRefresh();
 const create = useShiftCreate();
 const update = useShiftUpdate();
 
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const thisWeek = computed(() => startOfWeek(today.value));
 const weekParam = useRouteState("week", rs.day());
 const week = computed({

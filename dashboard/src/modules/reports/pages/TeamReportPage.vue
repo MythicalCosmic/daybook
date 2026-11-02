@@ -21,12 +21,12 @@ import SegmentedControl from "@/components/SegmentedControl.vue";
 import type { TableColumn } from "@/components/table";
 import { useChartTheme } from "@/components/useChartTheme";
 import { useDataTable } from "@/components/useDataTable";
-import { todayIn } from "@/lib/dates";
+
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useFormat } from "@/lib/useFormat";
 import { useRangeState } from "@/lib/useRangeState";
 import { rs, useRouteState } from "@/lib/useRouteState";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyToday } from "@/stores/company";
 
 import { periodParams, useTeamReport } from "../api";
 import ReportToolbar from "../components/ReportToolbar.vue";
@@ -35,7 +35,6 @@ import type { GroupBy, TeamRow } from "../types";
 const { t } = useI18n();
 const chart = useChartTheme();
 const fmt = useFormat();
-const company = useCompanyStore();
 const { isPhone } = useBreakpoints();
 
 const period = useRangeState({ preset: "last_30", compare: "prev" });
@@ -64,7 +63,7 @@ const kpis = computed(() => {
 // Trend. Today's rate counts only what was due so far, so its point would dip: the line stops at
 // yesterday (the numbers above still count today).
 const series = computed(() => data.value?.series ?? []);
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const trend = computed(() => series.value.filter((p) => p.date !== today.value));
 const trendCategories = computed(() => trend.value.map((p) => p.date));
 

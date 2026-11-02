@@ -15,9 +15,9 @@ import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
-import { todayIn } from "@/lib/dates";
+
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyId, useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { logTime, useCards, useMembers, useRefreshProjects } from "../api";
 import { hhmm, parseDuration } from "../lib";
@@ -52,7 +52,7 @@ const errors = ref<Record<string, string>>({});
 const minutes = computed(() => parseDuration(duration.value));
 const chips = [15, 30, 60, 90, 120, 240];
 const me = computed(() => company.current?.membership_id ?? null);
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 
 watch(open, (value) => {
   if (!value) return;

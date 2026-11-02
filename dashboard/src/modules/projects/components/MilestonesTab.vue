@@ -18,9 +18,9 @@ import UiButton from "@/components/UiButton.vue";
 import { useConfirm } from "@/components/useConfirm";
 import { toast } from "@/components/useToast";
 import { useDelayedPending } from "@/lib/useDelayedPending";
-import { diffDays, todayIn } from "@/lib/dates";
+import { diffDays } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyId, useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyToday } from "@/stores/company";
 
 import { deleteMilestone, updateMilestone, useMilestones, useRefreshProjects } from "../api";
 import type { Milestone, ProjectDetail } from "../types";
@@ -37,8 +37,7 @@ const query = useMilestones(() => props.project.id);
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const dialog = ref(false);
 const editing = ref<Milestone | null>(null);
-const company = useCompanyStore();
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 
 const milestones = computed(() => [...(query.data.value ?? [])].sort((a, b) => (a.due_on ?? "9999").localeCompare(b.due_on ?? "9999") || a.position - b.position));
 const manage = computed(() => props.project.capabilities.manage);

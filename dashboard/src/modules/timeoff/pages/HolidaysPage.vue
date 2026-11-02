@@ -27,7 +27,7 @@ import { diffDays, parseDay, todayIn } from "@/lib/dates";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { useHolidayMutations, useHolidays } from "../api";
 import type { Holiday } from "../types";
@@ -37,7 +37,7 @@ const fmt = useFormat();
 const company = useCompanyStore();
 const confirm = useConfirm();
 
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const year = useRouteState("year", rs.number(Number(todayIn(company.timezone).slice(0, 4))));
 const holidays = useHolidays(year);
 const skeleton = useDelayedPending(computed(() => holidays.isPending.value));

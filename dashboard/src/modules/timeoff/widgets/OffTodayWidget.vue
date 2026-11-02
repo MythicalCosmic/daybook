@@ -15,9 +15,9 @@ import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import WidgetCard from "@/components/WidgetCard.vue";
 import { useWidgetSkeleton } from "@/components/widgetSkeleton";
-import { todayIn } from "@/lib/dates";
+
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyToday } from "@/stores/company";
 
 import { useStats, useTimeOffList } from "../api";
 
@@ -25,8 +25,7 @@ const props = defineProps<{ companyId: number; range?: Range; compare?: Range | 
 
 const { t } = useI18n();
 const fmt = useFormat();
-const company = useCompanyStore();
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const off = useTimeOffList(computed(() => ({ status: ["approved" as const], from: today.value, to: today.value, page_size: 6, ordering: "first_day" })));
 const stats = useStats();
 const skeleton = useWidgetSkeleton(() => off.isPending.value);

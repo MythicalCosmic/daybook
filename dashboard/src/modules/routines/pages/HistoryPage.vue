@@ -21,11 +21,11 @@ import { useScopedBranches } from "@/components/pickers";
 import ProgressBar from "@/components/ProgressBar.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
-import { addDays, DATE_PRESETS, diffDays, todayIn } from "@/lib/dates";
+import { addDays, DATE_PRESETS, diffDays } from "@/lib/dates";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { useRangeState } from "@/lib/useRangeState";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyToday } from "@/stores/company";
 
 import { usePlanOptions, useRoutineHistory } from "../api";
 import RoutinesHeader from "../components/RoutinesHeader.vue";
@@ -35,7 +35,6 @@ import type { HistoryCell } from "../types";
 const { t } = useI18n();
 const fmt = useFormat();
 const router = useRouter();
-const company = useCompanyStore();
 
 const period = useRangeState({ preset: "last_30" });
 const options = usePlanOptions();
@@ -60,7 +59,7 @@ const params = computed(() => ({
 const query = useRoutineHistory(params);
 const skeleton = useDelayedPending(computed(() => query.isPending.value));
 const data = computed(() => query.data.value ?? null);
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 
 const kpis = computed(() => {
   const totals = data.value?.totals;

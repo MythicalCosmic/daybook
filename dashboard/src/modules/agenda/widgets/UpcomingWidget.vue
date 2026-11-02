@@ -12,9 +12,9 @@ import ErrorState from "@/components/ErrorState.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import WidgetCard from "@/components/WidgetCard.vue";
 import { useWidgetSkeleton } from "@/components/widgetSkeleton";
-import { addDays, todayIn } from "@/lib/dates";
+import { addDays } from "@/lib/dates";
 import { companyUrl } from "@/lib/links";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyToday } from "@/stores/company";
 
 import { useCalendar } from "../api";
 import UpcomingList from "../components/UpcomingList.vue";
@@ -24,8 +24,7 @@ const props = defineProps<{ companyId: number; range?: Range; compare?: Range | 
 
 const { t } = useI18n();
 const router = useRouter();
-const company = useCompanyStore();
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const calendar = useCalendar(computed(() => ({ from: today.value, to: addDays(today.value, 6) })));
 const skeleton = useWidgetSkeleton(() => calendar.isPending.value);
 const labels = computed(() => Object.fromEntries((calendar.data.value?.sources ?? []).map((source) => [source.key, sourceLabel(source, t)])));

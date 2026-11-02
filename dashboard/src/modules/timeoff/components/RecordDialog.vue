@@ -18,8 +18,8 @@ import TextInput from "@/components/TextInput.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
-import { addDays, diffDays, todayIn } from "@/lib/dates";
-import { useCompanyStore } from "@/stores/company";
+import { addDays, diffDays } from "@/lib/dates";
+import { useCompanyToday } from "@/stores/company";
 
 import { useRecord } from "../api";
 import type { TimeOffRow } from "../types";
@@ -29,10 +29,9 @@ const props = defineProps<{ memberId?: number | null }>();
 const emit = defineEmits<{ recorded: [row: TimeOffRow] }>();
 
 const { t } = useI18n();
-const company = useCompanyStore();
 const record = useRecord();
 
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const member = ref<number | null>(props.memberId ?? null);
 const first = ref<string | null>(today.value);
 const last = ref<string | null>(today.value);

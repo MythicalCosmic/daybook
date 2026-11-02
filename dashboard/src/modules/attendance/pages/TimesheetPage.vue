@@ -24,11 +24,11 @@ import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { toast } from "@/components/useToast";
-import { endOfMonth, todayIn } from "@/lib/dates";
+import { endOfMonth } from "@/lib/dates";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { rs, useRouteState } from "@/lib/useRouteState";
-import { useCompanyId, useCompanyStore } from "@/stores/company";
+import { useCompanyId, useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { createRecord, useRefresh, useSummary, useTimesheet } from "../api";
 import AttendanceHeader from "../components/AttendanceHeader.vue";
@@ -43,7 +43,8 @@ const company = useCompanyStore();
 const companyId = useCompanyId();
 const refresh = useRefresh();
 
-const thisMonth = computed(() => todayIn(company.timezone).slice(0, 7));
+const companyToday = useCompanyToday();
+const thisMonth = computed(() => companyToday.value.slice(0, 7));
 const monthParam = useRouteState("month", rs.string(""));
 const month = computed({
   get: () => (/^\d{4}-\d{2}$/.test(monthParam.value) ? monthParam.value : thisMonth.value),

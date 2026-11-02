@@ -29,11 +29,11 @@ import UiButton from "@/components/UiButton.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { useDataTable } from "@/components/useDataTable";
 import { toast } from "@/components/useToast";
-import { addMonths, startOfMonth, todayIn } from "@/lib/dates";
+import { addMonths, startOfMonth } from "@/lib/dates";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { patchQuery, rs, useRouteState } from "@/lib/useRouteState";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { useCalendar, useDecide, useStats, useTimeOffList } from "../api";
 import LeaveMonthGrid from "../components/LeaveMonthGrid.vue";
@@ -46,7 +46,7 @@ const fmt = useFormat();
 const router = useRouter();
 const company = useCompanyStore();
 
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const view = useRouteState<"calendar" | "list">("view", rs.enum(["calendar", "list"] as const, "calendar"));
 const month = useRouteState("month", rs.string(""));
 const monthStart = computed(() => (/^\d{4}-\d{2}$/.test(month.value) ? `${month.value}-01` : startOfMonth(today.value)));

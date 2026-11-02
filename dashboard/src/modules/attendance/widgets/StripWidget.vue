@@ -14,9 +14,9 @@ import EmptyState from "@/components/EmptyState.vue";
 import ErrorState from "@/components/ErrorState.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import WidgetCard from "@/components/WidgetCard.vue";
-import { addDays, todayIn } from "@/lib/dates";
+import { addDays } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyToday } from "@/stores/company";
 
 import { useSummary } from "../api";
 import { weekdayIndex } from "../lib";
@@ -25,8 +25,7 @@ const props = defineProps<{ companyId: number; range?: Range; compare?: Range | 
 
 const { t } = useI18n();
 const fmt = useFormat();
-const company = useCompanyStore();
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const query = useSummary(() => ({ from: addDays(today.value, -13), to: today.value }));
 
 const days = computed(() => query.data.value?.series ?? []);

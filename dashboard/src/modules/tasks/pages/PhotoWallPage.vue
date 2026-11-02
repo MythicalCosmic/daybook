@@ -17,11 +17,11 @@ import ProofThumb from "@/components/ProofThumb.vue";
 import SegmentedControl from "@/components/SegmentedControl.vue";
 import SkeletonBlock from "@/components/SkeletonBlock.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
-import { addDays, todayIn } from "@/lib/dates";
+import { addDays } from "@/lib/dates";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { patchQuery, rs, useRouteState } from "@/lib/useRouteState";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyToday } from "@/stores/company";
 
 import { useProofWall } from "../api";
 import TaskDrawer from "../components/TaskDrawer.vue";
@@ -30,8 +30,7 @@ import type { TaskRow } from "../types";
 const { t } = useI18n();
 const fmt = useFormat();
 const router = useRouter();
-const company = useCompanyStore();
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 
 const dayParam = useRouteState("day", rs.day());
 const day = computed({

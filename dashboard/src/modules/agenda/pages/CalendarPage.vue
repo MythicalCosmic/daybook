@@ -24,14 +24,14 @@ import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import UiDrawer from "@/components/UiDrawer.vue";
 import { useHotkey } from "@/core/hotkeys";
-import { addDays, todayIn } from "@/lib/dates";
+import { addDays } from "@/lib/dates";
 import { companyUrl } from "@/lib/links";
 import { useBreakpoints } from "@/lib/useBreakpoints";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
 import { useCan } from "@/lib/usePermission";
 import { patchQuery, rs, useRouteState } from "@/lib/useRouteState";
-import { useCompanyStore } from "@/stores/company";
+import { useCompanyStore, useCompanyToday } from "@/stores/company";
 
 import { useCalendar } from "../api";
 import AgendaList from "../components/AgendaList.vue";
@@ -50,7 +50,7 @@ const company = useCompanyStore();
 const { isPhone } = useBreakpoints();
 const canManage = useCan("agenda.manage");
 
-const today = computed(() => todayIn(company.timezone));
+const today = useCompanyToday();
 const view = useRouteState<CalendarView>("view", rs.enum(["month", "week", "agenda"] as const, "month"));
 const dayParam = useRouteState("d", rs.day());
 const hidden = useRouteState("off", rs.list());
