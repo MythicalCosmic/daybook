@@ -71,11 +71,11 @@ const category = (value: string) => (te(`lifecycle.category.${value}`) ? t(`life
 
 const columns = computed<TableColumn<DisciplinaryRecord>[]>(() => [
   { id: "member", header: t("lifecycle.field.person"), minWidth: 200, sticky: true, hideable: false, value: (row) => row.member.name },
-  { id: "kind", header: t("lifecycle.field.kind"), width: 180, value: (row) => t(`lifecycle.kind.${row.kind}`) },
-  { id: "category", header: t("lifecycle.field.category"), minWidth: 180, value: (row) => category(row.category) },
-  { id: "incident_on", header: t("lifecycle.field.incidentOn"), width: 112, value: (row) => row.incident_on },
+  { id: "kind", header: t("lifecycle.field.kind"), width: 200, value: (row) => t(`lifecycle.kind.${row.kind}`) },
+  { id: "category", header: t("lifecycle.field.category"), minWidth: 170, value: (row) => category(row.category) },
+  { id: "incident_on", header: t("lifecycle.field.incidentOn"), width: 136, value: (row) => row.incident_on },
   { id: "fine", header: t("lifecycle.field.fine"), width: 120, numeric: true, value: (row) => row.fine?.amount ?? (row.fine_id ? "hidden" : "") },
-  { id: "response", header: t("lifecycle.field.response"), width: 140, value: (row) => (row.employee_response ? "2" : row.acknowledged_at ? "1" : "") },
+  { id: "response", header: t("lifecycle.field.response"), width: 130, value: (row) => (row.employee_response ? "2" : row.acknowledged_at ? "1" : "") },
   { id: "status", header: t("lifecycle.field.status"), width: 150, value: (row) => row.status },
 ]);
 

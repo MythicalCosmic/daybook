@@ -58,7 +58,8 @@ const items = computed<DescriptionItem[]>(() => {
     { key: "category", label: t("lifecycle.field.category"), value: category(r.category) },
     { key: "incident", label: t("lifecycle.field.incidentOn"), value: fmt.day(r.incident_on, "long") },
     { key: "issued", label: t("lifecycle.field.issued"), value: r.issued_by ? `${r.issued_by.name} · ${fmt.day(r.issued_on, "medium")}` : fmt.day(r.issued_on, "medium") },
-    { key: "expires", label: t("lifecycle.field.expiresOn"), value: r.expires_on ? fmt.day(r.expires_on, "long") : t("lifecycle.record.noExpiry"), hint: t("lifecycle.record.expiresHint") },
+    // A withdrawn record counts for nothing, so its "counts until" would only mislead.
+    ...(r.status === "withdrawn" ? [] : [{ key: "expires", label: t("lifecycle.field.expiresOn"), value: r.expires_on ? fmt.day(r.expires_on, "long") : t("lifecycle.record.noExpiry"), hint: t("lifecycle.record.expiresHint") }]),
   ];
 });
 
@@ -148,9 +149,10 @@ const menu = computed<MenuEntry[]>(() => {
           </div>
         </header>
 
-        <p v-if="record.status === 'withdrawn'" class="rounded-[10px] bg-surface-2 px-3.5 py-2.5 text-sm text-muted" data-record-withdrawn>
-          {{ t("lifecycle.record.withdrawnOn", { date: record.withdrawn_at ? fmt.day(record.withdrawn_at.slice(0, 10), "medium") : "—" }) }}<template v-if="record.withdraw_reason">: {{ record.withdraw_reason }}</template>
-        </p>
+        <div v-if="record.status === 'withdrawn'" class="rounded-[10px] bg-surface-2 px-3.5 py-2.5" data-record-withdrawn>
+          <p class="text-sm font-semibold text-fg">{{ t("lifecycle.record.withdrawnOn", { date: record.withdrawn_at ? fmt.day(record.withdrawn_at.slice(0, 10), "medium") : "—" }) }}</p>
+          <p v-if="record.withdraw_reason" class="mt-0.5 whitespace-pre-line text-sm text-muted">{{ record.withdraw_reason }}</p>
+        </div>
 
         <section class="flex flex-col gap-1.5">
           <h3 class="text-sm font-semibold text-fg">{{ t("lifecycle.field.description") }}</h3>
