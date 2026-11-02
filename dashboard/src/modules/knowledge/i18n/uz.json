@@ -90,7 +90,7 @@
   "knowledge.page.archive": "Sahifani arxivlash",
   "knowledge.page.archiveTitle": "“{title}” arxivlansinmi?",
   "knowledge.page.archiveBody": "O‘quvchilar uni ko‘rmay qoladi. Keyin tiklashingiz mumkin.",
-  "knowledge.page.archiveBodyChildren": "O‘quvchilar uni va ichidagi {n} ta sahifani ko‘rmay qoladi. Keyin tiklashingiz mumkin. | O‘quvchilar uni va ichidagi {n} ta sahifani ko‘rmay qoladi. Keyin tiklashingiz mumkin. | O‘quvchilar uni va ichidagi {n} ta sahifani ko‘rmay qoladi. Keyin tiklashingiz mumkin.",
+  "knowledge.page.archiveBodyChildren": "O‘quvchilar uni va ichidagi {n} ta sahifani ko‘rmay qoladi. Keyin tiklashingiz mumkin.",
   "knowledge.page.archived": "Sahifa arxivlandi",
   "knowledge.page.restore": "Sahifani tiklash",
   "knowledge.page.restored": "Sahifa tiklandi",

@@ -90,7 +90,7 @@
   "knowledge.page.archive": "Archive the page",
   "knowledge.page.archiveTitle": "Archive “{title}”?",
   "knowledge.page.archiveBody": "Readers stop seeing it. You can restore it later.",
-  "knowledge.page.archiveBodyChildren": "Readers stop seeing it and the {n} pages inside it. You can restore them later. | Readers stop seeing it and the page inside it. You can restore them later. | Readers stop seeing it and the {n} pages inside it. You can restore them later.",
+  "knowledge.page.archiveBodyChildren": "Readers stop seeing it and the page inside it. You can restore it later. | Readers stop seeing it and the {n} pages inside it. You can restore them later.",
   "knowledge.page.archived": "Page archived",
   "knowledge.page.restore": "Restore the page",
   "knowledge.page.restored": "Page restored",
