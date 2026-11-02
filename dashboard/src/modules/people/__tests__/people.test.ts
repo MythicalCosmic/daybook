@@ -6,10 +6,11 @@ import { flushPromises } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 
-import type { PermissionInfo } from "@/api/types";
+import type { Company, PermissionInfo } from "@/api/types";
 import { PERMS } from "@/core/perms.generated";
 import { i18n, mergeModuleMessages, setLanguage } from "@/i18n";
-import { json } from "@/test/fixtures";
+import { useSessionStore } from "@/stores/session";
+import { company, json, me } from "@/test/fixtures";
 import { mountWithProviders, testApp } from "@/test/plugins";
 
 import { approveRequest, listPeople, offboardPerson, peopleKeys, rejectRequest, reorderPositions, suspendPerson, updatePerson, updateRole } from "../api";
@@ -282,6 +283,52 @@ describe("PersonPage", () => {
     await flushPromises();
     expect(wrapper.text()).toContain("It’s gone: it was deleted or moved.");
     expect(wrapper.findAll("button").some((b) => b.text() === "Try again")).toBe(false);
+  });
+
+  it("keeps its own Suspend where the company has HR switched off", async () => {
+    const PersonPage = (await import("../pages/PersonPage.vue")).default;
+    const DropdownMenu = (await import("@/components/DropdownMenu.vue")).default;
+    const detail = {
+      id: 7,
+      name: "Alisher Valiyev",
+      status: "approved",
+      suspended_until: null,
+      fields: {},
+      position: { id: 1, name: "Farmatsevt" },
+      role: { id: 2, name: "Xodim" },
+      home_branch: { id: 1, name: "Chilonzor" },
+      branches: [{ id: 1, name: "Chilonzor" }],
+      phone: "+998901234567",
+      username: "",
+      language: "uz",
+      can: { suspend: true, change_role: true, edit: true },
+      overview: { trend: [], on_time: 0, late: 0, missed: 0, total: 0, on_time_percent: null, streak: 0, joined_on: "2025-10-06", days_off_this_year: 0, range: { from: "2026-10-04", to: "2026-11-02" }, upcoming_time_off: [] },
+    };
+    stub((call) => json(/\/people\/7\/(\?|$)/.test(call.url) ? detail : {}));
+
+    // The page's own "more" menu: the one with Change role (the HR module's header actions have a Suspend of their own).
+    async function ownMenu(features: Company["features"]): Promise<string[] | undefined> {
+      const app = await testApp("/c/1/people/7");
+      useSessionStore().me = me([company({ features })]);
+      const router = createRouter({
+        history: createMemoryHistory(),
+        routes: [
+          { path: "/c/:companyId/people/:memberId(\\d+)/:tab?", component: PersonPage },
+          { path: "/:any(.*)*", component: { render: () => null } },
+        ],
+      });
+      await router.push("/c/1/people/7");
+      const { wrapper } = mountWithProviders(PersonPage, { plugins: [app.pinia, router, i18n, [VueQueryPlugin, { queryClient: app.client }]] });
+      await flushPromises();
+      await flushPromises();
+      expect(wrapper.text()).toContain("Alisher Valiyev");
+      const menus = wrapper.findAllComponents(DropdownMenu).map((menu) => (menu.props() as { items: Array<{ label?: string }> }).items.map((item) => item.label ?? ""));
+      return menus.find((labels) => labels.includes(en["people.action.changeRole"]));
+    }
+
+    // With HR on, suspending is the HR module's (its header actions); with HR off the page keeps its own.
+    expect(await ownMenu(["finance", "hr"])).toEqual([en["people.action.changeRole"]]);
+    expect(await ownMenu(["finance"])).toEqual([en["people.action.changeRole"], en["people.action.suspend"]]);
   });
 });
 
