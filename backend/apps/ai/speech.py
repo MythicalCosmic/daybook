@@ -18,6 +18,13 @@ pluggable service first, and the text goes on to `apps.ai.drafting`:
   that names two of the author's real people, so drafts look real in development and demos.
 - none: `status()` is "not_configured" and voice is unavailable (typed text still works).
 
+OpenAI's own models (`gpt-*`) answer plain JSON only and don't take Uzbek by its code ("Language
+code 'uz' is not recognized. Try adding the language name to your prompt", 2026-11-02): they get
+`response_format=json`, and for Uzbek the hint starts with the language's name instead of a
+`language` field. `AI_SPEECH_MODELS_BY_LANGUAGE` picks a model per language there (Uzbek needs
+gpt-4o-transcribe; mini can't write it). When the service fails, `AI_SPEECH_FALLBACK_URL` (the
+server's own Whisper) gets the recording instead.
+
 Failures raise `SpeechError` ("speech_unavailable": down, misconfigured, too slow, an answer that
 makes no sense), `SpeechBusy` (a 503 while the service loads its models: the job tries again in
 a while) or `AudioUnreadable` ("audio_unreadable": the service couldn't read the file); the
@@ -64,6 +71,9 @@ PHARMACY_WORDS = {
 }
 # The service is starting (loading its models): try again a little later.
 BUSY_STATUSES = frozenset({503})
+# For a hosted OpenAI model, a language it doesn't know by its code is named at the start of the
+# hint instead, in that language.
+HOSTED_LANGUAGE_HINTS = {"uz": "O‘zbekcha ovozli xabar."}
 
 
 class SpeechError(Exception):
@@ -87,6 +97,44 @@ class Transcript:
     text: str  # stripped; "" when nothing was heard
     language: str  # "uz", "ru", "en", another two-letter code, or "" when unknown
     duration: float | None
+
+
+@dataclass(frozen=True)
+class Service:
+    """One place a recording can be written down."""
+
+    url: str
+    key: str
+    model: str
+    timeout: float
+    name: str  # "main" or "fallback", for the logs
+
+
+def services(language: str | None) -> list[Service]:
+    """Where a recording goes, in order: the configured service with its model for `language`,
+    then the fallback when one is set."""
+    models = settings.AI_SPEECH_MODELS_BY_LANGUAGE or {}
+    found = [
+        Service(
+            settings.AI_SPEECH_URL,
+            settings.AI_SPEECH_API_KEY,
+            models.get(language or "", settings.AI_SPEECH_MODEL),
+            settings.AI_SPEECH_TIMEOUT,
+            "main",
+        )
+    ]
+    fallback = settings.AI_SPEECH_FALLBACK_URL
+    if fallback and fallback.rstrip("/") != settings.AI_SPEECH_URL.rstrip("/"):
+        found.append(
+            Service(
+                fallback,
+                "",
+                settings.AI_SPEECH_FALLBACK_MODEL,
+                settings.AI_SPEECH_FALLBACK_TIMEOUT,
+                "fallback",
+            )
+        )
+    return found
 
 
 def provider() -> str:
@@ -182,21 +230,45 @@ def transcribe(
             return Transcript(fake_instruction(lang, list(names)), lang, seconds)
         case "none":
             raise SpeechError("No speech service is set up (AI_SPEECH_URL).")
-    return _openai_compatible(
-        audio, filename=filename, content_type=content_type, language=language, prompt=prompt
-    )
+    chain = services(language)
+    for service in chain:
+        try:
+            return _openai_compatible(
+                service,
+                audio,
+                filename=filename,
+                content_type=content_type,
+                language=language,
+                prompt=prompt,
+            )
+        except SpeechError as exc:
+            if service is chain[-1]:
+                raise
+            logger.warning("Speech service %s failed (%s); trying the next", service.name, exc)
+    raise AssertionError("unreachable")  # services() always names one
 
 
 def _openai_compatible(
-    audio: bytes, *, filename: str, content_type: str, language: str | None, prompt: str
+    service: Service,
+    audio: bytes,
+    *,
+    filename: str,
+    content_type: str,
+    language: str | None,
+    prompt: str,
 ) -> Transcript:
-    url = settings.AI_SPEECH_URL.rstrip("/") + "/audio/transcriptions"
-    fields = {"model": settings.AI_SPEECH_MODEL, "response_format": "verbose_json"}
+    url = service.url.rstrip("/") + "/audio/transcriptions"
+    hosted = service.model.startswith("gpt-")
+    fields = {"model": service.model, "response_format": "json" if hosted else "verbose_json"}
+    hint = ""
     if language in LANGUAGES:
-        fields["language"] = language
-    if prompt := _cut(" ".join(prompt.split()), PROMPT_LIMIT):
+        if hosted and language in HOSTED_LANGUAGE_HINTS:
+            hint = HOSTED_LANGUAGE_HINTS[language]
+        else:
+            fields["language"] = language
+    if prompt := _cut(" ".join(f"{hint} {prompt}".split()), PROMPT_LIMIT):
         fields["prompt"] = prompt
-    headers = {"Authorization": f"Bearer {key}"} if (key := settings.AI_SPEECH_API_KEY) else {}
+    headers = {"Authorization": f"Bearer {service.key}"} if service.key else {}
     started = time.monotonic()
     try:
         with _client() as client:
@@ -205,16 +277,18 @@ def _openai_compatible(
                 data=fields,
                 files={"file": (filename, audio, content_type)},
                 headers=headers,
-                timeout=settings.AI_SPEECH_TIMEOUT,
+                timeout=service.timeout,
             )
     except httpx2.TimeoutException as exc:
-        logger.warning("Speech service timed out after %s ms", _since(started))
+        logger.warning("Speech service %s timed out after %s ms", service.name, _since(started))
         raise SpeechError("The speech service took too long.") from exc
     except httpx2.HTTPError as exc:
-        logger.warning("Speech service unreachable: %s", type(exc).__name__)
+        logger.warning("Speech service %s unreachable: %s", service.name, type(exc).__name__)
         raise SpeechError("The speech service can't be reached.") from exc
     logger.info(
-        "Speech service answered %s in %s ms for %s bytes",
+        "Speech service %s (%s) answered %s in %s ms for %s bytes",
+        service.name,
+        service.model,
         response.status_code,
         _since(started),
         len(audio),
@@ -231,9 +305,11 @@ def _openai_compatible(
         raise SpeechError("The speech service's answer isn't JSON.") from exc
     if not isinstance(body, dict) or not isinstance(body.get("text"), str):
         raise SpeechError("The speech service's answer has no text.")
+    heard = _language_code(body.get("language"))
     return Transcript(
         text=body["text"].strip(),
-        language=_language_code(body.get("language")),
+        # OpenAI's plain JSON names no language: the one asked for is what was heard.
+        language=heard or (language if hosted and language in LANGUAGES else ""),
         duration=_seconds(body.get("duration")),
     )
 
