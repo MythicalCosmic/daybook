@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     "apps.hr",
     "apps.payroll",
     "apps.ai",
+    "apps.flows",
     "apps.insights",
     "apps.briefings",
     "apps.recognition",
