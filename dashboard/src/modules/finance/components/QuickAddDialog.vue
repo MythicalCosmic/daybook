@@ -55,7 +55,9 @@ const options = useOptions();
 const categories = useCategories();
 
 const canManage = computed(() => company.can("finance.manage"));
-const mode = ref<QuickAddMode>(props.request.mode);
+// Owner money and opening balances need finance.manage: anyone else asking for them (a link, a
+// command) starts on an expense instead of a form the server would refuse.
+const mode = ref<QuickAddMode>((props.request.mode === "owner" || props.request.mode === "opening") && !canManage.value ? "expense" : props.request.mode);
 const direction = ref<"in" | "out">("in");
 const saving = ref(false);
 const errors = reactive<Record<string, string | undefined>>({});
@@ -136,17 +138,18 @@ const impliedRate = computed(() => {
 const branches = computed(() => options.data.value?.branches ?? []);
 const showBranch = computed(() => !isTransfer.value && !!fromAccount.value && !fromAccount.value.branch_id && branches.value.length > 1);
 
-watch(currency, () => {
-  if (fromAccount.value && fromAccount.value.currency !== currency.value && !isTransfer.value) form.account = null;
-});
 watch(
   [chipAccounts, () => options.isSuccess.value],
   () => {
-    if (form.account === null && chipAccounts.value.length && !isTransfer.value) form.account = chipAccounts.value[0]!.id;
     if (form.account !== null && props.request.account && !form.currency) {
       const picked = accounts.value.find((a) => a.id === form.account);
       if (picked) form.currency = picked.currency;
     }
+    if (isTransfer.value) return;
+    // Only an account the chips offer: a dollar safe picked for a transfer (or before the
+    // currency changed) would otherwise take a so‘m amount once the entry became an expense.
+    if (form.account !== null && options.isSuccess.value && !chipAccounts.value.some((a) => a.id === form.account)) form.account = null;
+    if (form.account === null && chipAccounts.value.length) form.account = chipAccounts.value[0]!.id;
   },
   { immediate: true },
 );

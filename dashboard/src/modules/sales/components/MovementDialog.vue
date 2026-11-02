@@ -14,6 +14,7 @@ import SelectBox from "@/components/SelectBox.vue";
 import TextInput from "@/components/TextInput.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
+import { isApiError, unshownFieldError } from "@/api/http";
 import { toast } from "@/components/useToast";
 import { useFormat } from "@/lib/useFormat";
 
@@ -71,15 +72,25 @@ async function submit(): Promise<void> {
   if (kind.value === "payout" && !reason.value.trim()) next.reason = t("sales.movement.reasonRequired");
   errors.value = next;
   if (Object.keys(next).length) return;
-  await record.mutateAsync({
-    register_id: register.value!,
-    kind: kind.value,
-    amount: amount.value!,
-    receiver_id: kind.value === "handover" ? receiver.value : null,
-    to_account_id: kind.value === "to_bank" || kind.value === "deposit" ? account.value : null,
-    category_id: kind.value === "payout" ? category.value : null,
-    reason: reason.value.trim(),
-  });
+  try {
+    await record.mutateAsync({
+      register_id: register.value!,
+      kind: kind.value,
+      amount: amount.value!,
+      receiver_id: kind.value === "handover" ? receiver.value : null,
+      to_account_id: kind.value === "to_bank" || kind.value === "deposit" ? account.value : null,
+      category_id: kind.value === "payout" ? category.value : null,
+      reason: reason.value.trim(),
+    });
+  } catch (failure) {
+    if (isApiError(failure)) {
+      const shown: Record<string, string> = { register_id: "register", amount: "amount", receiver_id: "receiver", to_account_id: "account", reason: "reason" };
+      errors.value = Object.fromEntries(Object.entries(failure.fieldErrors).flatMap(([field, messages]) => (shown[field] ? [[shown[field], messages[0]!]] : [])));
+    }
+    const unshown = unshownFieldError(failure, ["register_id", "amount", "receiver_id", "to_account_id", "reason"]);
+    if (unshown) toast.error(unshown);
+    return;
+  }
   toast.success(t(kind.value === "handover" ? "sales.movement.sentHandover" : "sales.movement.recorded", { amount: fmt.money(amount.value) }));
   open.value = false;
 }

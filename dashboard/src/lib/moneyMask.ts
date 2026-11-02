@@ -52,6 +52,11 @@ export function maskMoney(raw: string, caret: number, lang: Language, options: M
   // Significant characters before the caret, counted in the cleaned value.
   let before = 0;
 
+  // English groups with commas, but a phone keypad set to an Uzbek or Russian region has only a
+  // comma for the point: a comma typed last (nothing after it, no "." yet) is the decimal point.
+  // Every other comma groups thousands, so deleting the 0 of "1,250" leaves 125, not 1.25.
+  const commaPoint = lang === "en" && raw.endsWith(",") && !raw.includes(".") ? raw.length - 1 : -1;
+
   for (let i = 0; i < raw.length; i++) {
     const char = raw[i]!;
     const beforeCaret = i < caret;
@@ -62,7 +67,7 @@ export function maskMoney(raw: string, caret: number, lang: Language, options: M
       }
       continue;
     }
-    if (marks.includes(char)) {
+    if (marks.includes(char) || i === commaPoint) {
       if (options.decimals > 0 && !hasMark) {
         hasMark = true;
         if (beforeCaret) before += 1;

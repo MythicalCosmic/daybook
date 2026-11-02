@@ -17,8 +17,9 @@ import SelectBox from "@/components/SelectBox.vue";
 import TextInput from "@/components/TextInput.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
+import { unshownFieldError } from "@/api/http";
 import { toast } from "@/components/useToast";
-import { sum } from "@/lib/decimal";
+import { dec, sum } from "@/lib/decimal";
 
 import { salesApi, useOptions, useSalesMutation } from "../api";
 import type { EntryInput } from "../types";
@@ -54,12 +55,23 @@ const kinds = computed(() => [
 
 const create = useSalesMutation((cid, input: EntryInput) => salesApi.createEntry(cid, input));
 async function submit(): Promise<void> {
+  // An amount without a method counts in Total but could not be saved: say so instead of dropping it.
+  if (lines.value.some((line) => line.amount && !dec(line.amount).isZero() && !line.method)) {
+    error.value = t("sales.entries.needMethod");
+    return;
+  }
   const payments = lines.value.filter((line) => line.method && line.amount).map((line) => ({ method_id: line.method!, amount: line.amount! }));
   if (!branch.value || !payments.length) {
     error.value = t("sales.entries.needPayment");
     return;
   }
-  await create.mutateAsync({ branch_id: branch.value, kind: kind.value, payments, note: note.value.trim(), number: number.value.trim() });
+  try {
+    await create.mutateAsync({ branch_id: branch.value, kind: kind.value, payments, note: note.value.trim(), number: number.value.trim() });
+  } catch (failure) {
+    // A refusal about the payments or the number has no field of its own here (others were toasted).
+    error.value = unshownFieldError(failure) ?? error.value;
+    return;
+  }
   toast.success(t("sales.entries.saved"));
   open.value = false;
 }

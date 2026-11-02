@@ -21,6 +21,7 @@ import TextInput from "@/components/TextInput.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import { useConfirm } from "@/components/useConfirm";
+import { isApiError, unshownFieldError } from "@/api/http";
 import { toast } from "@/components/useToast";
 import { useDelayedPending } from "@/lib/useDelayedPending";
 import { useFormat } from "@/lib/useFormat";
@@ -78,7 +79,15 @@ async function submit(): Promise<void> {
   }
   const input: RegisterInput = { name: name.value.trim(), fiscal_serial: serial.value.trim() };
   if (!editing.value) input.branch_id = branch.value ?? undefined;
-  await save.mutateAsync({ id: editing.value?.id ?? null, input });
+  try {
+    await save.mutateAsync({ id: editing.value?.id ?? null, input });
+  } catch (failure) {
+    if (isApiError(failure) && failure.fieldErrors.name?.[0]) nameError.value = failure.fieldErrors.name[0];
+    // The serial number and the branch have no message of their own.
+    const unshown = unshownFieldError(failure, ["name"]);
+    if (unshown) toast.error(unshown);
+    return;
+  }
   toast.success(editing.value ? t("sales.registers.saved") : t("sales.registers.created", { name: input.name }));
   dialog.value = false;
 }

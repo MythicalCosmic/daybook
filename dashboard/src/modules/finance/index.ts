@@ -67,14 +67,19 @@ export default defineModule({
       perm: RECORD,
       run: () => openQuickAdd("transfer"),
     },
-    {
-      id: "finance.new-debt",
-      title: ctx.t("finance.cmd.debt"),
-      icon: HandCoins,
-      keywords: ["nasiya", "qarz", "долг"],
-      perm: RECORD,
-      run: () => ctx.go("finance/debts?new=1"),
-    },
+    // Recording a debt happens on the debts page, which needs finance.view as well.
+    ...(ctx.can(VIEW)
+      ? [
+          {
+            id: "finance.new-debt",
+            title: ctx.t("finance.cmd.debt"),
+            icon: HandCoins,
+            keywords: ["nasiya", "qarz", "долг"],
+            perm: RECORD,
+            run: () => ctx.go("finance/debts?new=1"),
+          },
+        ]
+      : []),
     {
       id: "finance.pnl",
       title: ctx.t("finance.cmd.pnl"),
@@ -91,14 +96,19 @@ export default defineModule({
       perm: MANAGE,
       run: () => ctx.go("finance/settings/period"),
     },
-    {
-      id: "finance.opening",
-      title: ctx.t("finance.cmd.opening"),
-      icon: BookOpenCheck,
-      keywords: ["qoldiq", "остаток", "opening"],
-      perm: MANAGE,
-      run: () => ctx.go("finance/accounts?setup=opening"),
-    },
+    // Opening balances are set on the accounts page, which needs finance.view or finance.record.
+    ...(ctx.can([VIEW, RECORD])
+      ? [
+          {
+            id: "finance.opening",
+            title: ctx.t("finance.cmd.opening"),
+            icon: BookOpenCheck,
+            keywords: ["qoldiq", "остаток", "opening"],
+            perm: MANAGE,
+            run: () => ctx.go("finance/accounts?setup=opening"),
+          },
+        ]
+      : []),
   ],
   // Ordered so the two KPI tiles fill the row of "Needs you" (30, span 2) and the chart pairs with
   // the activity stream (40, span 2): no holes in the four-column grid.

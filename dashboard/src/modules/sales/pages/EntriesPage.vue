@@ -119,13 +119,19 @@ const shiftMode = computed(() => options.data.value?.settings.mode === "shift_to
       <template #cell-actions="{ row }">
         <IconButton v-if="!row.voided_at" :icon="Ban" :label="t('sales.cash.void')" size="sm" @click.stop="askVoid(row)" />
       </template>
+      <!-- Phones: the same status and Void as the table, so a voided receipt never reads as a sale. -->
       <template #card="{ row }">
-        <div class="flex items-start justify-between gap-3">
+        <div class="flex items-center justify-between gap-3">
           <div class="min-w-0">
             <p class="truncate text-sm font-semibold text-fg">{{ row.note || t("sales.entries.receipt", { n: row.number || row.id }) }}</p>
             <p class="truncate text-xs text-muted">{{ row.branch.name }} · {{ fmt.instant(row.sold_at, "short") }}</p>
+            <StatusPill v-if="row.voided_at" class="mt-1" size="sm" tone="neutral" :label="t('sales.movement.status.void')" />
+            <StatusPill v-else-if="row.kind === 'refund'" class="mt-1" size="sm" tone="warning" :label="t('sales.entries.refund')" />
           </div>
-          <MoneyText :value="row.total" class="text-sm font-semibold text-fg" />
+          <div class="flex shrink-0 items-center gap-1">
+            <span :class="['text-sm font-semibold tabular-nums', row.voided_at ? 'text-subtle line-through' : row.kind === 'refund' ? 'text-warning' : 'text-fg']">{{ row.kind === "refund" ? "−" : "" }}<MoneyText :value="row.total" /></span>
+            <IconButton v-if="canManage && !row.voided_at" :icon="Ban" :label="t('sales.cash.void')" @click.stop="askVoid(row)" />
+          </div>
         </div>
       </template>
     </DataTable>
