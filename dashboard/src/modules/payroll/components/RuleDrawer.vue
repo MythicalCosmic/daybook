@@ -14,6 +14,7 @@ import { useRoute, useRouter } from "vue-router";
 import { isApiError } from "@/api/http";
 import FormField from "@/components/FormField.vue";
 import IconButton from "@/components/IconButton.vue";
+import InlineAlert from "@/components/InlineAlert.vue";
 import MoneyInput from "@/components/MoneyInput.vue";
 import NumberInput from "@/components/NumberInput.vue";
 import PositionPicker from "@/components/PositionPicker.vue";
@@ -29,7 +30,7 @@ import { closeQueryKey } from "@/lib/useRouteState";
 import { useCompanyStore } from "@/stores/company";
 
 import { payrollApi, useRefresh } from "../api";
-import { adaptToMetric, allowsPerUnit, emptyRule, METRICS, metricArea, metricUnit, percentBase, ruleInput, ruleProblems, ruleToDraft, usesMinTasks, type RuleDraft, type RuleProblem } from "../lib";
+import { adaptToMetric, allowsPerUnit, emptyRule, METRICS, metricArea, metricUnit, OP_SYMBOLS, percentBase, ruleInput, ruleProblems, ruleToDraft, usesMinTasks, type RuleDraft, type RuleProblem } from "../lib";
 import type { Rule, RuleMetric } from "../types";
 import RulePreview from "./RulePreview.vue";
 
@@ -55,6 +56,8 @@ const draft = ref<RuleDraft>(emptyRule());
 const touched = ref(false);
 const saving = ref(false);
 const serverErrors = ref<Record<string, string>>({});
+/** A refusal that names no field ("Each tier needs its own threshold."), shown above the buttons. */
+const formError = ref<string | null>(null);
 watch(
   [param, existing],
   () => {
@@ -62,6 +65,7 @@ watch(
     draft.value = existing.value ? ruleToDraft(existing.value) : emptyRule(kindParam.value);
     touched.value = false;
     serverErrors.value = {};
+    formError.value = null;
   },
   { immediate: true },
 );
@@ -84,22 +88,31 @@ const modeOptions = computed(() =>
 const opOptions = computed(() => (["gte", "gt", "lte", "lt"] as const).map((value) => ({ value, label: t(`payroll.rules.op.${value}`) })));
 
 function addTier(): void {
-  draft.value.tiers.push({ from: null, amount: null });
+  draft.value.tiers.push({ threshold: null, amount: null });
 }
 
 async function save(): Promise<void> {
   touched.value = true;
   serverErrors.value = {};
+  formError.value = null;
   if (problems.value.length || saving.value) return;
   saving.value = true;
   try {
     const input = ruleInput(draft.value);
-    const saved = existing.value ? await payrollApi.updateRule(company.currentId ?? 0, existing.value.id, input) : await payrollApi.createRule(company.currentId ?? 0, input);
+    const saved = existing.value ? await payrollApi.updateRule(company.currentId ?? 0, existing.value.id, input, true) : await payrollApi.createRule(company.currentId ?? 0, input, true);
     toast.success(existing.value ? t("payroll.rules.saved") : t("payroll.rules.created"));
     refresh();
     if (!existing.value) void router.replace({ query: { ...route.query, rule: String(saved.id), kind: undefined } });
   } catch (error) {
-    if (isApiError(error)) serverErrors.value = Object.fromEntries(Object.entries(error.fieldErrors).map(([field, messages]) => [field, messages[0] ?? ""]));
+    if (isApiError(error) && Object.keys(error.fieldErrors).length) {
+      serverErrors.value = Object.fromEntries(Object.entries(error.fieldErrors).map(([field, messages]) => [field, messages[0] ?? ""]));
+      // A field the form doesn't show (tiers, positions) still gets said.
+      const shown = ["name", "metric", "threshold", "amount", "cap"];
+      const other = Object.entries(serverErrors.value).find(([field]) => !shown.includes(field));
+      if (other) formError.value = other[1];
+    } else {
+      formError.value = isApiError(error) ? (error.detail ?? t("common.error.generic")) : t("common.error.generic");
+    }
   } finally {
     saving.value = false;
   }
@@ -152,11 +165,12 @@ const title = computed(() => (existing.value ? existing.value.name : t(`payroll.
               <SelectBox :model-value="draft.metric" :options="metricOptions" @update:model-value="setMetric" />
             </FormField>
             <p class="-mt-2 text-xs text-muted">{{ t(`payroll.metricHint.${draft.metric}`) }}</p>
-            <div v-if="draft.mode !== 'tiered'" class="grid gap-4 sm:grid-cols-2">
-              <FormField :label="t('payroll.rules.condition')">
+            <!-- Tiers take the condition too: "≥" picks the highest tier reached, "≤" the lowest. -->
+            <div class="grid gap-4 sm:grid-cols-2">
+              <FormField :label="t('payroll.rules.condition')" :hint="draft.mode === 'tiered' ? t('payroll.rules.conditionTiers') : undefined">
                 <SelectBox v-model="draft.op" :options="opOptions" />
               </FormField>
-              <FormField :label="t('payroll.rules.threshold')" :error="show('threshold') ? t('payroll.rules.errThreshold') : serverErrors.threshold" :required="draft.mode === 'once'">
+              <FormField v-if="draft.mode !== 'tiered'" :label="t('payroll.rules.threshold')" :error="show('threshold') ? t('payroll.rules.errThreshold') : serverErrors.threshold" :required="draft.mode === 'once'">
                 <NumberInput v-model="draft.threshold" :min="0" :max="unit === 'percent' ? 100 : undefined" :decimals="unit === 'count' ? 0 : 2" :suffix="unitSuffix" :invalid="show('threshold')" />
               </FormField>
             </div>
@@ -188,7 +202,7 @@ const title = computed(() => (existing.value ? existing.value.name : t(`payroll.
               <div class="flex flex-col gap-2" data-testid="tiers">
                 <div v-for="(tier, index) in draft.tiers" :key="index" class="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_auto] items-end gap-2">
                   <FormField :label="index === 0 ? t('payroll.rules.tierFrom') : undefined">
-                    <NumberInput v-model="tier.from" :min="0" :max="unit === 'percent' ? 100 : undefined" :decimals="unit === 'count' ? 0 : 2" :suffix="unitSuffix" prefix="≥" />
+                    <NumberInput v-model="tier.threshold" :min="0" :max="unit === 'percent' ? 100 : undefined" :decimals="unit === 'count' ? 0 : 2" :suffix="unitSuffix" :prefix="OP_SYMBOLS[draft.op]" />
                   </FormField>
                   <FormField :label="index === 0 ? t('payroll.rules.tierAmount') : undefined">
                     <MoneyInput v-model="tier.amount" :currencies="[company.currency]" />
@@ -246,16 +260,19 @@ const title = computed(() => (existing.value ? existing.value.name : t(`payroll.
           </section>
         </div>
         <aside class="min-w-0 lg:sticky lg:top-0 lg:self-start">
-          <RulePreview :draft="draft" :rule-id="ruleId" />
+          <RulePreview :draft="draft" :rule="existing" />
         </aside>
       </div>
     </template>
     <template #footer>
-      <div class="flex w-full items-center gap-2">
-        <UiButton v-if="existing" variant="ghost" size="sm" :icon="Trash2" class="text-danger" @click="remove">{{ t("common.delete") }}</UiButton>
-        <span class="flex-1" />
-        <UiButton variant="ghost" size="sm" @click="closeQueryKey(router, 'rule')">{{ t("common.close") }}</UiButton>
-        <UiButton variant="primary" size="sm" :loading="saving" data-testid="save-rule" @click="save">{{ existing ? t("common.save") : t("payroll.rules.create") }}</UiButton>
+      <div class="flex w-full flex-col gap-2">
+        <InlineAlert v-if="formError" tone="danger" size="sm" data-testid="rule-error">{{ formError }}</InlineAlert>
+        <div class="flex w-full items-center gap-2">
+          <UiButton v-if="existing" variant="ghost" size="sm" :icon="Trash2" class="text-danger" @click="remove">{{ t("common.delete") }}</UiButton>
+          <span class="flex-1" />
+          <UiButton variant="ghost" size="sm" @click="closeQueryKey(router, 'rule')">{{ t("common.close") }}</UiButton>
+          <UiButton variant="primary" size="sm" :loading="saving" data-testid="save-rule" @click="save">{{ existing ? t("common.save") : t("payroll.rules.create") }}</UiButton>
+        </div>
       </div>
     </template>
   </UiDrawer>

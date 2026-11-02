@@ -74,12 +74,13 @@ export const payrollApi = {
   bulkDecide: (cid: number, input: BulkDecideInput) => http.post<BulkDecideRow[]>(path(cid, "adjustments/bulk-decide/"), input),
 
   rules: (cid: number, signal?: AbortSignal) => http.get<Page<Rule> | Rule[]>(path(cid, "rules/"), { page_size: 200 }, { signal }),
-  createRule: (cid: number, input: RuleInput) => http.post<Rule>(path(cid, "rules/"), input),
-  updateRule: (cid: number, id: number, input: Partial<RuleInput>) => http.patch<Rule>(path(cid, `rules/${id}/`), input),
+  /** `quiet`: the builder shows a refusal itself (a toast would sit behind its panel). */
+  createRule: (cid: number, input: RuleInput, quiet = false) => http.post<Rule>(path(cid, "rules/"), input, quiet ? { toast: false } : undefined),
+  updateRule: (cid: number, id: number, input: Partial<RuleInput>, quiet = false) => http.patch<Rule>(path(cid, `rules/${id}/`), input, quiet ? { toast: false } : undefined),
   deleteRule: (cid: number, id: number) => http.delete(path(cid, `rules/${id}/`)),
-  /** Dry run for a month: who would get what. A saved rule sends its changes with it. */
-  previewRule: (cid: number, id: number | null, body: Record<string, unknown>, signal?: AbortSignal) =>
-    http.post<RulePreview>(path(cid, id ? `rules/${id}/preview/` : "rules/preview/"), body, { signal, toast: false }),
+  /** Dry run of a saved rule for a month ("2026-10-01"): who would get what. Nothing is written. */
+  previewRule: (cid: number, id: number, period: string, signal?: AbortSignal) =>
+    http.post<RulePreview>(path(cid, `rules/${id}/preview/`), { period }, { signal, toast: false }),
 
   advances: (cid: number, params: Query, signal?: AbortSignal) => http.get<Page<Advance>>(path(cid, "advances/"), params, { signal }),
   advance: (cid: number, id: number) => http.get<Advance>(path(cid, `advances/${id}/`)),

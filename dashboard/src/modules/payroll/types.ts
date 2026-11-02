@@ -205,11 +205,12 @@ export interface BulkDecideRow {
 // Rules ---------------------------------------------------------------------------------------
 
 export interface RuleTier {
-  /** The metric value from which this tier applies. */
-  from: string;
+  /** The metric value this tier starts at, read with the rule's condition (≥ 95, ≤ 2). */
+  threshold: string;
   amount: Money;
 }
 
+/** Rules are in the company's payroll currency; `amount`, `cap` and `tiers` are absent with amounts hidden. */
 export interface Rule {
   id: number;
   name: string;
@@ -218,17 +219,22 @@ export interface Rule {
   mode: RuleMode;
   op: RuleOp;
   threshold: string | null;
-  free_units: number;
-  tiers: RuleTier[];
+  /** Per unit: this many units a month are free ("2.00"). */
+  free_units: string;
+  tiers?: RuleTier[];
   amount_type: RuleAmountType;
-  amount: Money | null;
-  cap: Money | null;
+  /** The amount, or with a percent rule the percent ("1.00" = 1 %). */
+  amount?: Money | null;
+  cap?: Money | null;
   min_tasks: number;
   positions: Ref[];
   evaluate: RuleEvaluate;
   auto_approve: boolean;
   is_active: boolean;
-  currency: Currency;
+  /** One of the shipped examples (they arrive switched off). */
+  example?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface RuleInput {
@@ -238,7 +244,7 @@ export interface RuleInput {
   mode: RuleMode;
   op: RuleOp;
   threshold: string | null;
-  free_units: number;
+  free_units: string;
   tiers: RuleTier[];
   amount_type: RuleAmountType;
   amount: Money | null;
@@ -250,22 +256,28 @@ export interface RuleInput {
   is_active: boolean;
 }
 
+/** One person the rule applies to, whether it gives them something or not. */
 export interface RulePreviewRow {
   member: Member;
-  /** The metric's value for the month ("92.5", "3"). */
+  /** The metric's value for the month ("92.5", "3"); null when there was nothing to measure. */
   value: string | null;
-  amount: Money;
-  /** "3 late arrivals, 2 free" */
-  detail?: string;
+  /** What the rule gives; null: nothing. Absent with amounts hidden. */
+  amount?: Money | null;
+  /** Per unit: the units counted after the free ones. */
+  units: string | null;
+  /** Tiered: the threshold of the tier reached. */
+  tier: string | null;
 }
 
+/** A dry run of a saved rule for a month (`rules/{id}/preview/`): nothing is written. */
 export interface RulePreview {
   period: string;
+  /** The last day counted: today while the month is still running. */
+  to: string;
   currency: Currency;
+  /** Absent with amounts hidden. */
+  total?: Money;
   rows: RulePreviewRow[];
-  total: Money;
-  /** People the rule looked at (rows are the ones who get something). */
-  checked?: number;
 }
 
 // Advances ------------------------------------------------------------------------------------
@@ -460,15 +472,40 @@ export interface PdfLink {
 
 // Overview ------------------------------------------------------------------------------------
 
+/** A month's regular run in the overview (cancelled runs left out). */
+export interface OverviewMonth {
+  period: string;
+  label: string;
+  status: RunStatus;
+  people: number;
+  gross: Money;
+  net: Money;
+  bonuses: Money;
+  fines: Money;
+  advances: Money;
+}
+
+/** The latest closed month's gross by position or by branch (key "none": without one). */
+export interface OverviewGroup {
+  key: string;
+  label: string;
+  people: number;
+  gross: Money;
+}
+
+/** `payroll/overview/` (payroll.view): what pay costs, month by month, and what waits. */
 export interface PayrollOverview {
   currency: Currency;
-  /** This month so far and to the end at today's pay: the next payroll. */
-  projected: { period: string; net: Money; gross?: Money; people: number } | null;
-  months: Array<{ period: string; net: Money; gross?: Money; people: number }>;
-  bonuses?: Money;
-  fines?: Money;
-  headcount?: number;
-  next_pay_day?: string | null;
+  /** Oldest first. */
+  months: OverviewMonth[];
+  latest: { period: string; label: string } | null;
+  by_position: OverviewGroup[];
+  by_branch: OverviewGroup[];
+  /** This month: the finalized run's sums ("run") or worked out with today's data ("estimate"). */
+  projected: { period: string; label: string; source: "run" | "estimate"; people: number; gross: Money; net: Money };
+  /** People with a pay setup in force today. */
+  headcount: number;
+  pending: { adjustments: number; disputes: number; advances: number };
 }
 
 /** An account money may be paid from, with its currency (finance options). */

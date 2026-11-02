@@ -97,7 +97,9 @@ const activeKey = computed(() => (typeof route.query.rule === "string" ? route.q
               </span>
               <div class="min-w-0 flex-1">
                 <h3 class="truncate text-base font-semibold text-fg group-hover:underline" :title="rule.name">{{ rule.name }}</h3>
-                <p class="text-xs text-muted">{{ t(`payroll.adjustmentKind.${rule.kind}`) }} · {{ t(`payroll.rules.mode.${rule.mode}`) }}</p>
+                <p class="text-xs text-muted">
+                  {{ t(`payroll.adjustmentKind.${rule.kind}`) }} · {{ t(`payroll.rules.mode.${rule.mode}`) }}<template v-if="rule.example"> · <span class="font-medium text-accent-fg">{{ t("payroll.rules.example") }}</span></template>
+                </p>
               </div>
               <ToggleSwitch
                 :model-value="rule.is_active"

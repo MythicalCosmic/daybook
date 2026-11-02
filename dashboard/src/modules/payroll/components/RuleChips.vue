@@ -10,7 +10,7 @@ import { useI18n } from "vue-i18n";
 import { compare } from "@/lib/decimal";
 import { useFormat } from "@/lib/useFormat";
 
-import { metricUnit } from "../lib";
+import { hasAmount, metricUnit, OP_SYMBOLS } from "../lib";
 import type { Rule } from "../types";
 
 const props = defineProps<{ rule: Pick<Rule, "kind" | "metric" | "mode" | "op" | "threshold" | "free_units" | "tiers" | "amount_type" | "amount" | "cap" | "min_tasks" | "positions" | "evaluate" | "auto_approve"> }>();
@@ -18,7 +18,6 @@ const props = defineProps<{ rule: Pick<Rule, "kind" | "metric" | "mode" | "op" |
 const { t } = useI18n();
 const fmt = useFormat();
 
-const OPS = { gte: "≥", gt: ">", lte: "≤", lt: "<" } as const;
 const unitText = (value: string | number) => {
   const unit = metricUnit(props.rule.metric);
   if (unit === "percent") return `${fmt.number(value, 1)} %`;
@@ -33,24 +32,30 @@ const chips = computed(() => {
   const r = props.rule;
   const list: Array<{ key: string; text: string; tone?: "kind" | "muted" }> = [];
   list.push({ key: "metric", text: t(`payroll.metric.${r.metric}`) });
+  // Amounts hidden: the server leaves out the amount, the cap and the tiers; the chip says so.
+  const hidden = !("amount" in r) && !("tiers" in r);
+  const money = (value: string | null | undefined) => (hasAmount(value) ? `${sign.value}${fmt.money(value)}` : t("payroll.hidden"));
   if (r.mode === "tiered") {
-    for (const tier of [...r.tiers].sort((a, b) => compare(a.from, b.from))) {
-      list.push({ key: `tier-${tier.from}`, text: `${OPS.gte} ${unitText(tier.from)}: ${sign.value}${fmt.money(tier.amount)}`, tone: "kind" });
+    for (const tier of [...(r.tiers ?? [])].sort((a, b) => compare(a.threshold, b.threshold))) {
+      list.push({ key: `tier-${tier.threshold}`, text: `${OP_SYMBOLS[r.op]} ${unitText(tier.threshold)}: ${money(tier.amount)}`, tone: "kind" });
     }
+    if (hidden) list.push({ key: "hidden", text: t("payroll.hidden"), tone: "muted" });
   } else {
     // "≥ 0" holds for everyone: no condition worth a chip.
     const always = r.op === "gte" && r.threshold !== null && compare(r.threshold, "0") <= 0;
-    if (r.threshold !== null && r.mode === "once" && !always) list.push({ key: "when", text: `${OPS[r.op]} ${unitText(r.threshold)}` });
+    if (r.threshold !== null && r.mode === "once" && !always) list.push({ key: "when", text: `${OP_SYMBOLS[r.op]} ${unitText(r.threshold)}` });
+    const free = Number(r.free_units) || 0;
     if (r.mode === "per_unit") {
-      list.push({ key: "each", text: `${sign.value}${fmt.money(r.amount ?? "0")} ${t("payroll.rules.each")}`, tone: "kind" });
-      if (r.free_units) list.push({ key: "free", text: t("payroll.rules.freeUnits", { n: r.free_units }, r.free_units) });
+      list.push({ key: "each", text: `${money(r.amount)} ${t("payroll.rules.each")}`, tone: hidden ? "muted" : "kind" });
+      if (free) list.push({ key: "free", text: t("payroll.rules.freeUnits", { n: fmt.number(r.free_units, 2) }, free) });
     } else if (r.amount_type === "percent") {
-      list.push({ key: "share", text: `${sign.value}${fmt.number(r.amount ?? 0, 2)} % ${r.metric === "sales.net" ? t("payroll.rules.ofSales") : t("payroll.rules.ofBase")}`, tone: "kind" });
+      const share = hasAmount(r.amount) ? `${sign.value}${fmt.number(r.amount, 2)} %` : t("payroll.hidden");
+      list.push({ key: "share", text: `${share} ${r.metric === "sales.net" ? t("payroll.rules.ofSales") : t("payroll.rules.ofBase")}`, tone: hidden ? "muted" : "kind" });
     } else {
-      list.push({ key: "amount", text: `${sign.value}${fmt.money(r.amount ?? "0")}`, tone: "kind" });
+      list.push({ key: "amount", text: money(r.amount), tone: hidden ? "muted" : "kind" });
     }
   }
-  if (r.cap) list.push({ key: "cap", text: t("payroll.rules.capChip", { amount: fmt.money(r.cap) }) });
+  if (hasAmount(r.cap)) list.push({ key: "cap", text: t("payroll.rules.capChip", { amount: fmt.money(r.cap) }) });
   if (r.metric.startsWith("tasks.") && r.min_tasks) list.push({ key: "min", text: t("payroll.rules.minTasksChip", { n: r.min_tasks }, r.min_tasks), tone: "muted" });
   list.push({ key: "evaluate", text: t(`payroll.rules.evaluate.${r.evaluate}`), tone: "muted" });
   list.push({ key: "who", text: r.positions.length ? r.positions.map((p) => p.name).join(", ") : t("payroll.rules.everyone"), tone: "muted" });

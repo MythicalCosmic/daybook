@@ -15,13 +15,15 @@ import {
   lineGroups,
   lineHow,
   monthName,
+  payDateFor,
   payHistory,
   payRowMatches,
   paySelection,
   prepareTarget,
-  previewBody,
+  previewSplit,
   quantityText,
   repaidShare,
+  ruleChanged,
   ruleInput,
   ruleProblems,
   ruleToDraft,
@@ -215,7 +217,7 @@ describe("rule builder", () => {
       mode: "per_unit",
       op: "gt",
       threshold: "0",
-      free_units: 2,
+      free_units: "2",
       tiers: [],
       amount_type: "fixed",
       amount: "20000.00",
@@ -236,16 +238,24 @@ describe("rule builder", () => {
       free_units: 3,
       amount: "100000.00",
       tiers: [
-        { from: 98, amount: "400000.00" },
-        { from: 95, amount: "200000.00" },
+        { threshold: 98, amount: "400000.00" },
+        { threshold: 95, amount: "200000.00" },
       ],
     };
     const input = ruleInput(draft);
-    expect(input).toMatchObject({ mode: "tiered", threshold: null, amount: null, free_units: 0, amount_type: "fixed", min_tasks: 10 });
+    expect(input).toMatchObject({ mode: "tiered", threshold: null, amount: null, free_units: "0", amount_type: "fixed", min_tasks: 10 });
     expect(input.tiers).toEqual([
-      { from: "95", amount: "200000.00" },
-      { from: "98", amount: "400000.00" },
+      { threshold: "95", amount: "200000.00" },
+      { threshold: "98", amount: "400000.00" },
     ]);
+  });
+
+  it("two steps at the same value are refused before the server does", () => {
+    const tiers = [
+      { threshold: 95, amount: "200000.00" },
+      { threshold: 95, amount: "300000.00" },
+    ];
+    expect(ruleProblems({ ...emptyRule("bonus"), name: "On time", mode: "tiered", tiers })).toEqual(["tiers"]);
   });
 
   it("a sales bonus pays a percent of sales, sent as the amount", () => {
@@ -256,26 +266,87 @@ describe("rule builder", () => {
     expect(input).toMatchObject({ metric: "sales.net", amount_type: "percent", amount: "1", min_tasks: 0, cap: null });
   });
 
-  it("the preview asks for the draft as it would be saved, for a month", () => {
-    const draft: RuleDraft = { ...emptyRule("fine"), name: "Late", amount: "20000.00" };
-    expect(previewBody(draft, "2026-10-01")).toEqual({ ...ruleInput(draft), period: "2026-10-01" });
-  });
-
   it("says what the form still needs", () => {
     expect(ruleProblems(emptyRule("fine"))).toEqual(["name", "amount"]);
-    expect(ruleProblems({ ...emptyRule("bonus"), name: "x", mode: "tiered", tiers: [{ from: 90, amount: null }] })).toEqual(["tiers"]);
+    expect(ruleProblems({ ...emptyRule("bonus"), name: "x", mode: "tiered", tiers: [{ threshold: 90, amount: null }] })).toEqual(["tiers"]);
     expect(ruleProblems({ ...emptyRule("bonus"), name: "x", threshold: null, amount: "1.00" })).toEqual(["threshold"]);
   });
 
+  // The shipped example as the server sends it: decimal strings, steps by threshold.
+  const example: Rule = {
+    id: 3,
+    name: "Kechikish jarimasi",
+    kind: "fine",
+    metric: "attendance.late_arrivals",
+    mode: "per_unit",
+    op: "gte",
+    threshold: null,
+    free_units: "2.00",
+    tiers: [],
+    amount_type: "fixed",
+    amount: "20000.00",
+    cap: null,
+    min_tasks: 10,
+    positions: [{ id: 4, name: "Farmatsevt" }],
+    evaluate: "monthly",
+    auto_approve: false,
+    is_active: false,
+    example: true,
+    created_at: "2026-11-02T10:00:00Z",
+    updated_at: "2026-11-02T10:00:00Z",
+  };
+
   it("no per-unit rule on a percentage; a saved rule comes back into the same form", () => {
     expect(adaptToMetric({ ...emptyRule("fine") }, "tasks.on_time_percent").mode).toBe("once");
-    const rule: Rule = {
-      id: 3,
-      ...ruleInput({ ...emptyRule("fine"), name: "Late", amount: "20000.00", positions: [] }),
-      positions: [{ id: 4, name: "Farmatsevt" }],
-      currency: "UZS",
-    };
-    expect(ruleToDraft(rule)).toMatchObject({ name: "Late", threshold: 0, amount: "20000.00", percent: null, positions: [4] });
+    expect(ruleToDraft(example)).toMatchObject({ name: "Kechikish jarimasi", threshold: null, free_units: 2, amount: "20000.00", percent: null, positions: [4] });
+    // Opening and saving untouched keeps the amount and the free units.
+    expect(ruleInput(ruleToDraft(example))).toMatchObject({ free_units: "2", amount: "20000.00", threshold: null, min_tasks: 0 });
+  });
+
+  it("knows when the form differs from the saved rule (the preview runs the saved one)", () => {
+    const draft = ruleToDraft(example);
+    expect(ruleChanged(example, draft)).toBe(false);
+    expect(ruleChanged(example, { ...draft, free_units: 3 })).toBe(true);
+    expect(ruleChanged(example, { ...draft, amount: "25000.00" })).toBe(true);
+    // A field the request would not carry for this mode is no change.
+    expect(ruleChanged(example, { ...draft, tiers: [{ threshold: 5, amount: "1.00" }] })).toBe(false);
+  });
+
+  it("a rule whose amounts are hidden opens without them", () => {
+    const { amount: _amount, cap: _cap, tiers: _tiers, ...hidden } = example;
+    expect(ruleToDraft(hidden)).toMatchObject({ amount: null, cap: null, tiers: [] });
+  });
+});
+
+describe("rule preview rows", () => {
+  const person = (id: number, name: string) => ({ id, name, photo_url: null });
+  it("puts who earns first (largest first), the rest apart", () => {
+    const split = previewSplit([
+      { member: person(1, "Aziza"), value: "1", amount: null, units: null, tier: null },
+      { member: person(2, "Bobur"), value: "4", amount: "40000.00", units: "2", tier: null },
+      { member: person(3, "Dilnoza"), value: "7", amount: "100000.00", units: "5", tier: null },
+    ]);
+    expect(split.earning.map((row) => row.member.name)).toEqual(["Dilnoza", "Bobur"]);
+    expect(split.others.map((row) => row.member.name)).toEqual(["Aziza"]);
+    expect(split.hidden).toBe(false);
+  });
+
+  it("with amounts hidden keeps everyone in one list", () => {
+    const split = previewSplit([{ member: person(1, "Aziza"), value: "96.5", units: null, tier: "95" }]);
+    expect(split).toMatchObject({ hidden: true, others: [] });
+    expect(split.earning).toHaveLength(1);
+  });
+});
+
+describe("pay day", () => {
+  it("a month is paid on the pay day of the month after it", () => {
+    expect(payDateFor("2026-11-01", 5)).toBe("2026-12-05");
+    expect(payDateFor("2026-12-01", 10)).toBe("2027-01-10");
+  });
+
+  it("a pay day past a short month's end falls on its last day", () => {
+    expect(payDateFor("2027-01-01", 31)).toBe("2027-02-28");
+    expect(payDateFor("2028-01-01", 30)).toBe("2028-02-29");
   });
 });
 

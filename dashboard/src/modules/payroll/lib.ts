@@ -34,6 +34,8 @@ import type {
   RuleInput,
   RuleMetric,
   RuleMode,
+  RuleOp,
+  RulePreviewRow,
   RuleTier,
   Run,
   RunAction,
@@ -57,6 +59,14 @@ export function hasAmount(value: Money | null | undefined): value is Money {
 export const periodOf = (day: string): string => startOfMonth(day);
 
 export const shiftPeriod = (period: string, months: number): string => addMonths(startOfMonth(period), months);
+
+/** When a month's pay is due: the pay day of the month after it (in a shorter month, its last day). */
+export function payDateFor(period: string, payDay: number): string {
+  const next = shiftPeriod(period, 1);
+  const [year, month] = next.split("-").map(Number);
+  const last = new Date(Date.UTC(year!, month!, 0)).getUTCDate();
+  return `${next.slice(0, 8)}${String(Math.min(Math.max(1, payDay), last)).padStart(2, "0")}`;
+}
 
 /** The month alone, as it starts a phrase: "Noyabr" · "ноябрь" · "November" ("Prepare November payroll"). */
 export function monthName(period: string, lang: Language): string {
@@ -385,7 +395,7 @@ export interface RuleDraft {
   op: Rule["op"];
   threshold: number | null;
   free_units: number | null;
-  tiers: Array<{ from: number | null; amount: Money | null }>;
+  tiers: Array<{ threshold: number | null; amount: Money | null }>;
   amount_type: Rule["amount_type"];
   amount: Money | null;
   /** The percent as typed ("1", "2.5"), when amount_type is percent. */
@@ -434,12 +444,13 @@ export function ruleToDraft(rule: Rule): RuleDraft {
     mode: rule.mode,
     op: rule.op,
     threshold: numberOrNull(rule.threshold),
-    free_units: rule.free_units,
-    tiers: rule.tiers.map((tier) => ({ from: numberOrNull(tier.from), amount: tier.amount })),
+    free_units: numberOrNull(rule.free_units),
+    // Amounts hidden: no tiers, amount or cap come (the server keeps them).
+    tiers: (rule.tiers ?? []).map((tier) => ({ threshold: numberOrNull(tier.threshold), amount: tier.amount })),
     amount_type: rule.amount_type,
-    amount: rule.amount_type === "fixed" ? rule.amount : null,
+    amount: rule.amount_type === "fixed" ? (rule.amount ?? null) : null,
     percent: rule.amount_type === "percent" ? numberOrNull(rule.amount) : null,
-    cap: rule.cap,
+    cap: rule.cap ?? null,
     min_tasks: rule.min_tasks,
     positions: rule.positions.map((position) => position.id),
     evaluate: rule.evaluate,
@@ -460,9 +471,9 @@ export function ruleInput(draft: RuleDraft): RuleInput {
   const percent = draft.amount_type === "percent";
   const tiers: RuleTier[] = tiered
     ? draft.tiers
-        .filter((tier) => tier.from !== null && hasAmount(tier.amount))
-        .map((tier) => ({ from: decimalText(tier.from!), amount: tier.amount! }))
-        .sort((a, b) => compare(a.from, b.from))
+        .filter((tier) => tier.threshold !== null && hasAmount(tier.amount))
+        .map((tier) => ({ threshold: decimalText(tier.threshold!), amount: tier.amount! }))
+        .sort((a, b) => compare(a.threshold, b.threshold))
     : [];
   return {
     name: draft.name.trim(),
@@ -471,7 +482,7 @@ export function ruleInput(draft: RuleDraft): RuleInput {
     mode: draft.mode,
     op: draft.op,
     threshold: tiered || draft.threshold === null ? null : decimalText(draft.threshold),
-    free_units: draft.mode === "per_unit" ? Math.max(0, draft.free_units ?? 0) : 0,
+    free_units: draft.mode === "per_unit" ? decimalText(Math.max(0, draft.free_units ?? 0)) : "0",
     tiers,
     amount_type: tiered ? "fixed" : draft.amount_type,
     amount: tiered ? null : percent ? (draft.percent === null ? null : decimalText(draft.percent)) : draft.amount,
@@ -491,8 +502,10 @@ export function ruleProblems(draft: RuleDraft): RuleProblem[] {
   const problems: RuleProblem[] = [];
   if (!draft.name.trim()) problems.push("name");
   if (draft.mode === "tiered") {
-    const complete = draft.tiers.filter((tier) => tier.from !== null && hasAmount(tier.amount) && dec(tier.amount!).greaterThan(0));
-    if (!complete.length || complete.length !== draft.tiers.length) problems.push("tiers");
+    const complete = draft.tiers.filter((tier) => tier.threshold !== null && hasAmount(tier.amount) && dec(tier.amount!).greaterThan(0));
+    // Each tier needs its own threshold (the server refuses two at the same value).
+    const distinct = new Set(complete.map((tier) => decimalText(tier.threshold!))).size === complete.length;
+    if (!complete.length || complete.length !== draft.tiers.length || !distinct) problems.push("tiers");
   } else {
     if (draft.threshold === null && draft.mode === "once") problems.push("threshold");
     if (draft.amount_type === "percent") {
@@ -504,9 +517,25 @@ export function ruleProblems(draft: RuleDraft): RuleProblem[] {
   return problems;
 }
 
-/** The dry-run request for a month: the draft as it would be saved, and the period. */
-export function previewBody(draft: RuleDraft, period: string): Record<string, unknown> {
-  return { ...ruleInput(draft), period };
+/** The condition as a sign: tiers and chips read "≥ 95 %", "≤ 2". */
+export const OP_SYMBOLS: Record<RuleOp, string> = { gte: "≥", gt: ">", lte: "≤", lt: "<" };
+
+/**
+ * Whether the form differs from the saved rule (the preview runs the saved one, so it says so).
+ * Both sides go through `ruleInput`, so what the request would not carry doesn't count.
+ */
+export function ruleChanged(rule: Rule, draft: RuleDraft): boolean {
+  return JSON.stringify(ruleInput(draft)) !== JSON.stringify(ruleInput(ruleToDraft(rule)));
+}
+
+/** The preview's rows: who the rule gives something, and who it looked at but gives nothing. */
+export function previewSplit(rows: readonly RulePreviewRow[]): { earning: RulePreviewRow[]; others: RulePreviewRow[]; hidden: boolean } {
+  // Amounts hidden: there is no telling who earns, so everyone stays in one list.
+  if (rows.some((row) => !("amount" in row))) return { earning: [...rows], others: [], hidden: true };
+  const earning = rows.filter((row) => hasAmount(row.amount) && !dec(row.amount).isZero());
+  const others = rows.filter((row) => !earning.includes(row));
+  earning.sort((a, b) => compare(b.amount!, a.amount!) || a.member.name.localeCompare(b.member.name));
+  return { earning, others, hidden: false };
 }
 
 /**

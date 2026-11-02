@@ -47,6 +47,9 @@ const kpis = computed(() => {
   const data = overview.data.value;
   const projected = data?.projected ?? null;
   const last = latestDone.value?.totals ?? null;
+  // Bonuses and fines of the latest month with a run (this month's draft once there is one).
+  const month = data?.months.at(-1) ?? null;
+  const monthHint = month ? fmt.day(month.period, "monthYear") : t("payroll.kpi.noRun");
   return [
     {
       id: "next",
@@ -54,7 +57,10 @@ const kpis = computed(() => {
       value: projected?.net ?? null,
       format: "money" as const,
       compact: true,
-      hint: projected ? t("payroll.kpi.nextHint", { month: fmt.day(projected.period, "monthYear"), n: projected.people }, projected.people) : undefined,
+      currency: data?.currency,
+      // A finalized month is its run's sums; otherwise it is worked out with today's data.
+      hint: projected ? t(projected.source === "run" ? "payroll.kpi.nextHintRun" : "payroll.kpi.nextHint", { month: fmt.day(projected.period, "monthYear"), n: projected.people }, projected.people) : undefined,
+      spark: data && data.months.length > 1 ? data.months.map((row) => row.net) : undefined,
       loading: overview.isPending.value,
       error: overview.error.value,
       retry: () => overview.refetch(),
@@ -72,18 +78,22 @@ const kpis = computed(() => {
     {
       id: "bonuses",
       label: t("payroll.kpi.bonuses"),
-      value: data?.bonuses ?? null,
+      value: month?.bonuses ?? null,
       format: "money" as const,
       compact: true,
+      currency: data?.currency,
+      hint: monthHint,
       loading: overview.isPending.value,
       error: overview.error.value,
     },
     {
       id: "fines",
       label: t("payroll.kpi.fines"),
-      value: data?.fines ?? null,
+      value: month?.fines ?? null,
       format: "money" as const,
       compact: true,
+      currency: data?.currency,
+      hint: monthHint,
       loading: overview.isPending.value,
       error: overview.error.value,
     },

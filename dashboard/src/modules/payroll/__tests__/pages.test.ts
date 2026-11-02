@@ -17,8 +17,8 @@ import { mountWithProviders, testApp } from "@/test/plugins";
 import PayAmount from "../components/PayAmount.vue";
 import PayHistory from "../components/PayHistory.vue";
 import en from "../i18n/en.json";
-import { emptyRule, previewBody } from "../lib";
-import type { Adjustment, Compensation, Payslip, Run } from "../types";
+import { emptyRule, ruleToDraft } from "../lib";
+import type { Adjustment, Compensation, Payslip, Rule, Run } from "../types";
 
 // Whole pages mount here: slow while the rest of the suite runs beside them.
 vi.setConfig({ testTimeout: 20_000 });
@@ -288,29 +288,78 @@ describe("runs", () => {
 });
 
 describe("rule preview", () => {
-  it("asks the server to dry-run the rule as it stands, for last month", async () => {
+  const saved: Rule = {
+    id: 5,
+    name: "Late arrivals",
+    kind: "fine",
+    metric: "attendance.late_arrivals",
+    mode: "per_unit",
+    op: "gte",
+    threshold: null,
+    free_units: "2.00",
+    tiers: [],
+    amount_type: "fixed",
+    amount: "20000.00",
+    cap: null,
+    min_tasks: 10,
+    positions: [],
+    evaluate: "monthly",
+    auto_approve: false,
+    is_active: false,
+    example: true,
+    created_at: "2026-11-01T09:00:00Z",
+    updated_at: "2026-11-01T09:00:00Z",
+  };
+  const answer = {
+    period: "2026-10-01",
+    to: "2026-10-31",
+    currency: "UZS",
+    total: "40000.00",
+    rows: [
+      { member: { id: 2, name: "Aziza Rasulova", photo_url: null }, value: "1", amount: null, units: null, tier: null },
+      { member: { id: 3, name: "Bobur Saidov", photo_url: null }, value: "4", amount: "40000.00", units: "2", tier: null },
+    ],
+  };
+
+  it("dry-runs the saved rule for last month and shows who it fines, the rest folded", async () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"], now: new Date("2026-11-02T12:00:00+05:00") });
     try {
-      const calls = stub({ "POST payroll/rules/5/preview/": () => json({ period: "2026-10-01", currency: "UZS", rows: [], total: "0.00", checked: 13 }) });
+      const calls = stub({ "POST payroll/rules/5/preview/": () => json(answer) });
       const RulePreview = (await import("../components/RulePreview.vue")).default;
       const app = await testApp("/c/1/payroll/rules?rule=5");
-      const draft = { ...emptyRule("fine"), name: "Late arrivals", amount: "20000.00" };
-      mountWithProviders(RulePreview, { plugins: app.plugins, props: { draft, ruleId: 5 } });
-      await vi.advanceTimersByTimeAsync(600);
+      mountWithProviders(RulePreview, { plugins: app.plugins, props: { draft: ruleToDraft(saved), rule: saved } });
+      await vi.advanceTimersByTimeAsync(100);
       await settle();
-      expect(calls.find((call) => call.path === "payroll/rules/5/preview/")?.body).toEqual(previewBody(draft, "2026-10-01"));
+      // Only the month goes: the server runs the rule as saved.
+      expect(calls.find((call) => call.path === "payroll/rules/5/preview/")?.body).toEqual({ period: "2026-10-01" });
+      expect(document.querySelector('[data-testid="preview-total"]')?.textContent).toContain("−40,000 UZS");
+      const rows = document.querySelector('[data-testid="preview-rows"]')?.textContent ?? "";
+      expect(rows).toContain("Bobur Saidov");
+      expect(rows).toContain("Counted: 2");
+      expect(rows).not.toContain("Aziza");
+      expect(document.querySelector('[data-testid="preview-others"]')?.textContent).toContain("Not matched: 1");
+      expect(document.querySelector('[data-testid="preview-saved-only"]')).toBeNull();
     } finally {
       vi.useRealTimers();
     }
   });
 
-  it("says what is missing instead of asking for an incomplete rule", async () => {
+  it("says it shows the saved rule while the form has changes", async () => {
+    stub({ "POST payroll/rules/5/preview/": () => json(answer) });
+    const RulePreview = (await import("../components/RulePreview.vue")).default;
+    const app = await testApp("/c/1/payroll/rules?rule=5");
+    mountWithProviders(RulePreview, { plugins: app.plugins, props: { draft: { ...ruleToDraft(saved), amount: "25000.00" }, rule: saved } });
+    await settle();
+    expect(document.querySelector('[data-testid="preview-saved-only"]')).not.toBeNull();
+  });
+
+  it("a new rule is saved before it can be tried: nothing is asked", async () => {
     const calls = stub({});
     const RulePreview = (await import("../components/RulePreview.vue")).default;
     const app = await testApp("/c/1/payroll/rules?rule=new");
-    mountWithProviders(RulePreview, { plugins: app.plugins, props: { draft: emptyRule("fine"), ruleId: null } });
+    mountWithProviders(RulePreview, { plugins: app.plugins, props: { draft: emptyRule("fine"), rule: null } });
     await settle();
-    expect(document.querySelector('[data-testid="preview-incomplete"]')).not.toBeNull();
+    expect(document.querySelector('[data-testid="preview-save-first"]')).not.toBeNull();
     expect(calls.filter((call) => call.path.includes("preview"))).toEqual([]);
   });
 });
