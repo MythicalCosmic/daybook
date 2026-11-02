@@ -40,6 +40,8 @@
   "settings.panel.payment-methods.description": "How customers can pay, in the order cashiers see them in Kassa.",
   "settings.panel.finance.hint": "Categories, exchange rates, period lock",
   "settings.panel.finance.description": "Expense and income categories, exchange rates, the closed period and money thresholds.",
+  "settings.panel.payroll.hint": "Pay day, advances, night hours, taxes",
+  "settings.panel.payroll.description": "When pay goes out, the advance and fines caps, rounding, overtime, holiday and night pay, and taxes.",
   "settings.panel.agenda.hint": "Default reminder, Telegram invitations",
   "settings.panel.agenda.description": "Company events: the reminder they start with and invitations in Telegram.",
   "settings.panel.knowledge.hint": "News on publish, must-read reminders",

@@ -40,6 +40,8 @@
   "settings.panel.payment-methods.description": "Как могут платить покупатели — в том порядке, в каком их видит кассир в Кассе.",
   "settings.panel.finance.hint": "Категории, курсы валют, закрытие периода",
   "settings.panel.finance.description": "Категории доходов и расходов, курсы валют, закрытый период и денежные пороги.",
+  "settings.panel.payroll.hint": "День зарплаты, авансы, ночные часы, налоги",
+  "settings.panel.payroll.description": "Когда выплачивается зарплата, лимиты авансов и штрафов, округление, сверхурочные, праздничные и ночные, налоги.",
   "settings.panel.agenda.hint": "Напоминание, приглашения в Telegram",
   "settings.panel.agenda.description": "События компании: напоминание по умолчанию и приглашения в Telegram.",
   "settings.panel.knowledge.hint": "Новости о публикации, напоминания",

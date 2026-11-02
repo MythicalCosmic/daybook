@@ -40,6 +40,8 @@
   "settings.panel.payment-methods.description": "Mijozlar qanday to‘lay oladi — kassirlar Kassada ko‘radigan tartibda.",
   "settings.panel.finance.hint": "Toifalar, valyuta kurslari, davrni yopish",
   "settings.panel.finance.description": "Xarajat va daromad toifalari, valyuta kurslari, yopilgan davr va pul chegaralari.",
+  "settings.panel.payroll.hint": "To‘lov kuni, avanslar, tungi soatlar, soliqlar",
+  "settings.panel.payroll.description": "Ish haqi qachon beriladi, avans va jarima chegaralari, yaxlitlash, ortiqcha ish, bayram va tungi haq, soliqlar.",
   "settings.panel.agenda.hint": "Asosiy eslatma, Telegramdagi takliflar",
   "settings.panel.agenda.description": "Kompaniya tadbirlari: qaysi eslatma bilan boshlanishi va Telegramdagi takliflar.",
   "settings.panel.knowledge.hint": "E’lon qilinganda xabar, majburiy o‘qish eslatmasi",
