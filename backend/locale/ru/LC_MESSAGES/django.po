@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-02 18:10+0500\n"
+"POT-Creation-Date: 2026-11-02 18:23+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: ru\n"
@@ -276,7 +276,8 @@ msgid "Deadline"
 msgstr "Крайний срок"
 
 #: backend/apps/agenda/models.py backend/apps/finance/models.py
-#: backend/apps/hr/models.py backend/apps/sales/models.py
+#: backend/apps/hr/models.py backend/apps/lifecycle/models.py
+#: backend/apps/sales/models.py
 msgid "Other"
 msgstr "Другое"
 
@@ -1462,9 +1463,10 @@ msgstr "Срок действия должен заканчиваться пос
 #: backend/apps/announcements/services.py backend/apps/attendance/api.py
 #: backend/apps/attendance/services.py backend/apps/console/base.py
 #: backend/apps/hr/services.py backend/apps/inbox/services.py
-#: backend/apps/knowledge/owner_api.py backend/apps/members/departments.py
-#: backend/apps/members/join_links.py backend/apps/members/services.py
-#: backend/apps/sales/handlers.py backend/apps/timeoff/services.py
+#: backend/apps/knowledge/owner_api.py backend/apps/lifecycle/services.py
+#: backend/apps/members/departments.py backend/apps/members/join_links.py
+#: backend/apps/members/services.py backend/apps/sales/handlers.py
+#: backend/apps/timeoff/services.py
 #: employee_bot/bot/handlers/admin/approvals.py
 msgid "You don't have permission to do this."
 msgstr "У вас нет прав на это действие."
@@ -1529,7 +1531,7 @@ msgid "Attendance isn't switched on for this company."
 msgstr "Учёт посещаемости в этой компании не включён."
 
 #: backend/apps/attendance/api.py backend/apps/attendance/owner_api.py
-#: backend/apps/hr/owner_api.py
+#: backend/apps/hr/owner_api.py backend/apps/lifecycle/owner_api.py
 msgid "Give a day as YYYY-MM-DD."
 msgstr "Укажите день в формате YYYY-MM-DD."
 
@@ -2394,6 +2396,7 @@ msgid "Give branch ids."
 msgstr "Укажите ID филиалов."
 
 #: backend/apps/attendance/owner_api.py backend/apps/hr/owner_api.py
+#: backend/apps/lifecycle/owner_api.py
 msgid "Give a number."
 msgstr "Укажите число."
 
@@ -2928,8 +2931,8 @@ msgid ""
 msgstr ""
 "Эту запись видят только люди с этим правом (она касается секретных полей)."
 
-#: backend/apps/audit/owner_api.py backend/apps/reminders/owner_api.py
-#: backend/apps/tasks/owner_api.py
+#: backend/apps/audit/owner_api.py backend/apps/lifecycle/owner_api.py
+#: backend/apps/reminders/owner_api.py backend/apps/tasks/owner_api.py
 msgid "This field is required."
 msgstr "Это поле обязательно."
 
@@ -3727,7 +3730,7 @@ msgstr "Транспорт"
 msgid "Repairs"
 msgstr "Ремонт"
 
-#: backend/apps/finance/defaults.py
+#: backend/apps/finance/defaults.py backend/apps/lifecycle/models.py
 msgid "Cash shortage"
 msgstr "Недостача в кассе"
 
@@ -3862,7 +3865,7 @@ msgstr "Направление"
 msgid "Who"
 msgstr "Кто"
 
-#: backend/apps/finance/exporters.py
+#: backend/apps/finance/exporters.py backend/apps/lifecycle/models.py
 msgid "Issued"
 msgstr "Дата возникновения"
 
@@ -5287,6 +5290,7 @@ msgstr ""
 "обязательные документы, дни рождения и трудовые юбилеи на ближайшую неделю"
 
 #: backend/apps/hr/api.py backend/apps/hr/owner_api.py
+#: backend/apps/lifecycle/api.py backend/apps/lifecycle/owner_api.py
 msgid "HR isn't switched on for this company."
 msgstr "Модуль «Кадры» в этой компании не включён."
 
@@ -6468,6 +6472,215 @@ msgstr "Такой задачи или регулярной задачи нет.
 #: backend/apps/knowledge/services.py
 msgid "Pick a page of this company."
 msgstr "Выберите страницу этой компании."
+
+#: backend/apps/lifecycle/ai_tools.py
+msgid ""
+"Discipline at a glance: warnings and reprimands given in a period by kind "
+"and category, those still counting, unacknowledged ones, and who is "
+"suspended until when"
+msgstr ""
+"Дисциплина кратко: предупреждения и выговоры за период по видам и причинам, "
+"ещё действующие, неподтверждённые, и кто отстранён и до какого числа"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Gave a disciplinary record"
+msgstr "Вынесено дисциплинарное взыскание"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Changed a disciplinary record"
+msgstr "Изменено дисциплинарное взыскание"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Withdrew a disciplinary record"
+msgstr "Отменено дисциплинарное взыскание"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Removed a disciplinary record"
+msgstr "Удалено дисциплинарное взыскание"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Confirmed being told of a record"
+msgstr "Подтверждено ознакомление со взысканием"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Wrote an explanation"
+msgstr "Написана объяснительная"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Proposed a fine with a record"
+msgstr "Предложен штраф к взысканию"
+
+#. Translators: %(category)s is what it is about, e.g. "Storage conditions breached".
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid ""
+"About: %(category)s. Read it in the app; you can write your explanation "
+"there."
+msgstr ""
+"Причина: %(category)s. Прочитайте в приложении; там же можно написать "
+"объяснительную."
+
+#. Translators: %(name)s is a person's name; it stands alone after the colon.
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Explanation from: %(name)s"
+msgstr "Объяснительная. Автор: %(name)s"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "Warnings and reprimands"
+msgstr "Предупреждения и выговоры"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "Explanations to records"
+msgstr "Объяснительные по взысканиям"
+
+#: backend/apps/lifecycle/integrations.py
+msgid "Payroll is off for this company: give the warning without a fine."
+msgstr ""
+"Модуль «Зарплата» в этой компании выключен: вынесите взыскание без штрафа."
+
+#: backend/apps/lifecycle/integrations.py
+msgid ""
+"Fines need payroll, which isn't ready yet: give the warning without a fine."
+msgstr ""
+"Для штрафа нужен модуль «Зарплата», он ещё не готов: вынесите взыскание без "
+"штрафа."
+
+#: backend/apps/lifecycle/models.py
+msgid "Verbal warning"
+msgstr "Устное предупреждение"
+
+#: backend/apps/lifecycle/models.py
+msgid "Written warning"
+msgstr "Письменное предупреждение"
+
+#: backend/apps/lifecycle/models.py
+msgid "Final warning"
+msgstr "Последнее предупреждение"
+
+#: backend/apps/lifecycle/models.py
+msgid "Reprimand"
+msgstr "Выговор"
+
+#: backend/apps/lifecycle/models.py
+msgid "Lateness"
+msgstr "Опоздания"
+
+#: backend/apps/lifecycle/models.py
+msgid "Absence"
+msgstr "Прогул"
+
+#: backend/apps/lifecycle/models.py
+msgid "Conduct"
+msgstr "Поведение"
+
+#: backend/apps/lifecycle/models.py
+msgid "Breach of the rules"
+msgstr "Нарушение правил"
+
+#: backend/apps/lifecycle/models.py
+msgid "Work quality"
+msgstr "Качество работы"
+
+#: backend/apps/lifecycle/models.py
+msgid "Safety"
+msgstr "Безопасность"
+
+#: backend/apps/lifecycle/models.py
+msgid "Storage conditions breached"
+msgstr "Нарушены условия хранения"
+
+#: backend/apps/lifecycle/models.py
+msgid "Dispensing error"
+msgstr "Ошибка при отпуске"
+
+#: backend/apps/lifecycle/models.py
+msgid "Prescription rules breached"
+msgstr "Нарушены правила отпуска по рецепту"
+
+#: backend/apps/lifecycle/models.py
+msgid "Expired medicine sold"
+msgstr "Продан препарат с истёкшим сроком"
+
+#: backend/apps/lifecycle/models.py
+msgid "Stock shortage"
+msgstr "Недостача товара"
+
+#: backend/apps/lifecycle/models.py
+msgid "Acknowledged"
+msgstr "Ознакомление подтверждено"
+
+#: backend/apps/lifecycle/models.py
+msgid "Withdrawn"
+msgstr "Отменено"
+
+#: backend/apps/lifecycle/owner_api.py
+msgid "Propose a fine with its own button."
+msgstr "Штраф предлагается отдельной кнопкой."
+
+#: backend/apps/lifecycle/services.py
+msgid "Only people who work here can be given a warning."
+msgstr "Взыскание можно вынести только сотруднику компании."
+
+#: backend/apps/lifecycle/services.py
+msgid "This record was withdrawn."
+msgstr "Это взыскание отменено."
+
+#: backend/apps/lifecycle/services.py
+msgid "Say why the record is withdrawn."
+msgstr "Укажите причину отмены."
+
+#: backend/apps/lifecycle/services.py
+msgid "The person has seen this record: withdraw it instead."
+msgstr "Сотрудник уже видел это взыскание: отмените его вместо удаления."
+
+#: backend/apps/lifecycle/services.py
+msgid "A fine was already proposed for this record."
+msgstr "Штраф по этому взысканию уже предложен."
+
+#: backend/apps/lifecycle/services.py
+msgid "Give the fine's amount."
+msgstr "Укажите сумму штрафа."
+
+#: backend/apps/lifecycle/services.py
+msgid "Write your explanation."
+msgstr "Напишите объяснение."
+
+#: backend/apps/lifecycle/services.py
+msgid "Keep it under 2000 characters."
+msgstr "Не больше 2000 символов."
+
+#: backend/apps/lifecycle/services.py
+msgid "You can't give yourself a warning."
+msgstr "Нельзя вынести взыскание самому себе."
+
+#: backend/apps/lifecycle/services.py
+msgid "Pick what kind of record it is."
+msgstr "Выберите вид взыскания."
+
+#: backend/apps/lifecycle/services.py
+msgid "Pick what it is about."
+msgstr "Выберите причину."
+
+#: backend/apps/lifecycle/services.py
+msgid "Write what happened."
+msgstr "Опишите, что произошло."
+
+#: backend/apps/lifecycle/services.py
+msgid "A record can't be given in the future."
+msgstr "Взыскание нельзя вынести будущей датой."
+
+#: backend/apps/lifecycle/services.py
+msgid "What happened can't be in the future."
+msgstr "Дата случая не может быть в будущем."
+
+#: backend/apps/lifecycle/services.py
+msgid "It can't have happened after the record was given."
+msgstr "Случай не может быть позже даты взыскания."
+
+#: backend/apps/lifecycle/services.py
+msgid "A record can't stop counting before it was given."
+msgstr "Срок действия не может закончиться раньше даты взыскания."
 
 #: backend/apps/members/admin.py
 msgid "Permissions"
