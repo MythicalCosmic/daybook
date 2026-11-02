@@ -6,6 +6,14 @@ import ConfirmDialog from "./ConfirmDialog.vue";
 import { confirmQueue, settleConfirm } from "./useConfirm";
 
 const current = computed(() => confirmQueue.value[0] ?? null);
+/** The request as the dialog's props: its `onConfirm` becomes the dialog's `action`, so it can't
+ * merge with the `@confirm` listener below. */
+const dialogProps = computed(() => {
+  const request = current.value?.request;
+  if (!request) return null;
+  const { onConfirm, ...rest } = request;
+  return { ...rest, action: onConfirm };
+});
 const open = ref(false);
 const answered = new Set<number>();
 
@@ -25,10 +33,10 @@ function settle(answer: { reason: string } | null): void {
 
 <template>
   <ConfirmDialog
-    v-if="current"
+    v-if="current && dialogProps"
     :key="current.id"
     v-model:open="open"
-    v-bind="current.request"
+    v-bind="dialogProps"
     @confirm="(reason: string) => settle({ reason })"
     @cancel="settle(null)"
   />

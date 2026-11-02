@@ -1,11 +1,13 @@
 <script setup lang="ts">
 /**
  * "Are you sure?" for actions that matter: delete, void, block, reject, finalize. `reason` asks for
- * a reason ("optional" or "required"); `onConfirm` may be async: the button spins, the dialog closes
- * when it resolves and stays open (the error already toasted) when it throws.
+ * a reason ("optional" or "required"); `action` may be async: the button spins, the dialog closes
+ * when it resolves and stays open (the error already toasted) when it throws. It isn't called
+ * `onConfirm`: Vue merges an `onConfirm` prop with a `@confirm` listener into one array (so neither
+ * ran from ConfirmHost) and `emit("confirm")` would call it a second time.
  *
  *   <ConfirmDialog v-model:open="voiding" :title="t('finance.voidTitle')" :message="t('finance.voidBody')"
- *     tone="danger" reason="required" :confirm-label="t('finance.void')" :on-confirm="(reason) => voidTxn(id, reason)" />
+ *     tone="danger" reason="required" :confirm-label="t('finance.void')" :action="(reason) => voidTxn(id, reason)" />
  *
  * Or without markup: `const ok = await useConfirm()({ title, tone: "danger" })` (ConfirmHost in App.vue).
  *
@@ -41,7 +43,7 @@ const props = withDefaults(
     /** The text's placeholder once a ready answer is picked ("Add a detail, if you like"). */
     reasonNotePlaceholder?: string;
     icon?: Component;
-    onConfirm?: (reason: string) => unknown;
+    action?: (reason: string) => unknown;
   }>(),
   {
     message: undefined,
@@ -55,7 +57,7 @@ const props = withDefaults(
     reasonOther: undefined,
     reasonNotePlaceholder: undefined,
     icon: undefined,
-    onConfirm: undefined,
+    action: undefined,
   },
 );
 
@@ -103,10 +105,10 @@ async function confirm(): Promise<void> {
   touched.value = true;
   if (missing.value || busy.value) return;
   const reason = finalReason();
-  if (props.onConfirm) {
+  if (props.action) {
     busy.value = true;
     try {
-      await props.onConfirm(reason);
+      await props.action(reason);
     } catch {
       return;
     } finally {
