@@ -99,7 +99,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
         tone="danger"
         reason="required"
         :confirm-label="k('void')"
-        :on-confirm="() => sleep(700)"
+        :action="() => sleep(700)"
       />
     </KitchenSpecimen>
     <KitchenSpecimen name="UiDrawer.vue · BottomSheet.vue · DescriptionList.vue">

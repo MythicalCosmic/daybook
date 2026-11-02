@@ -123,8 +123,7 @@ async function save(): Promise<void> {
 async function remove(): Promise<void> {
   const rule = existing.value;
   if (!rule) return;
-  // The answer first, then the call: an `onConfirm` passed through ConfirmHost never runs today
-  // (it arrives merged with the host's own listener); a refusal shows above the buttons.
+  // The answer first, then the call, so a refusal shows above the buttons rather than as a toast.
   const answer = await confirm({
     title: t("payroll.rules.deleteTitle", { name: rule.name }),
     message: t("payroll.rules.deleteBody"),
