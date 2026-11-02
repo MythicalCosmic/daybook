@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-02 04:44+0500\n"
+"POT-Creation-Date: 2026-11-02 17:32+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -275,7 +275,7 @@ msgid "Deadline"
 msgstr "Oxirgi muddat"
 
 #: backend/apps/agenda/models.py backend/apps/finance/models.py
-#: backend/apps/sales/models.py
+#: backend/apps/hr/models.py backend/apps/sales/models.py
 msgid "Other"
 msgstr "Boshqa"
 
@@ -1442,10 +1442,10 @@ msgstr "E’lonning amal qilish muddati u yuborilgandan keyin tugashi kerak."
 
 #: backend/apps/announcements/services.py backend/apps/attendance/api.py
 #: backend/apps/attendance/services.py backend/apps/console/base.py
-#: backend/apps/inbox/services.py backend/apps/knowledge/owner_api.py
-#: backend/apps/members/departments.py backend/apps/members/join_links.py
-#: backend/apps/members/services.py backend/apps/sales/handlers.py
-#: backend/apps/timeoff/services.py
+#: backend/apps/hr/services.py backend/apps/inbox/services.py
+#: backend/apps/knowledge/owner_api.py backend/apps/members/departments.py
+#: backend/apps/members/join_links.py backend/apps/members/services.py
+#: backend/apps/sales/handlers.py backend/apps/timeoff/services.py
 #: employee_bot/bot/handlers/admin/approvals.py
 msgid "You don't have permission to do this."
 msgstr "Bunga ruxsatingiz yo‘q."
@@ -2390,7 +2390,7 @@ msgstr ""
 msgid "Give branch ids."
 msgstr "Filial ID’larini kiriting."
 
-#: backend/apps/attendance/owner_api.py
+#: backend/apps/attendance/owner_api.py backend/apps/hr/owner_api.py
 msgid "Give a number."
 msgstr "Son kiriting."
 
@@ -4109,7 +4109,8 @@ msgstr "Valyutaning 1 birligi uchun UZS."
 msgid "Bank account"
 msgstr "Bank hisobi"
 
-#: backend/apps/finance/models.py backend/apps/sales/models.py
+#: backend/apps/finance/models.py backend/apps/hr/models.py
+#: backend/apps/sales/models.py
 msgid "Card"
 msgstr "Karta"
 
@@ -4866,11 +4867,11 @@ msgstr "Bu toifa hali ishlatilmoqda: o‘rniga uni arxivlang."
 msgid "Give the category a name."
 msgstr "Toifaga nom bering."
 
-#: backend/apps/finance/services.py
+#: backend/apps/finance/services.py backend/apps/hr/ids.py
 msgid "A number like +998 90 123 45 67."
 msgstr "+998 90 123 45 67 ko‘rinishidagi raqam."
 
-#: backend/apps/finance/services.py
+#: backend/apps/finance/services.py backend/apps/hr/ids.py
 msgid "A taxpayer number has 9 digits (a person's PINFL 14)."
 msgstr "STIR 9 ta raqamdan iborat (jismoniy shaxsning PINFL raqami — 14 ta)."
 
@@ -5320,6 +5321,330 @@ msgstr "Bu guruh uzilgan. Avval botni unga qayta qo‘shing."
 #: backend/apps/groups/services.py
 msgid "That event isn't available for this company."
 msgstr "Bu kompaniya uchun bunday xabar turi mavjud emas."
+
+#: backend/apps/hr/api.py backend/apps/hr/owner_api.py
+msgid "HR isn't switched on for this company."
+msgstr "Bu kompaniyada «Kadrlar» moduli yoqilmagan."
+
+#: backend/apps/hr/audit_actions.py
+msgid "Changed HR settings"
+msgstr "Kadrlar sozlamalarini o‘zgartirdi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Changed an employee profile"
+msgstr "Xodim profilini o‘zgartirdi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Viewed ID and card numbers"
+msgstr "Hujjat va karta raqamlarini ko‘rdi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Added an emergency contact"
+msgstr "Favqulodda kontakt qo‘shdi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Changed an emergency contact"
+msgstr "Favqulodda kontaktni o‘zgartirdi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Removed an emergency contact"
+msgstr "Favqulodda kontaktni o‘chirdi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Added a document"
+msgstr "Hujjat qo‘shdi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Changed a document"
+msgstr "Hujjatni o‘zgartirdi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Removed a document"
+msgstr "Hujjatni o‘chirdi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Verified a document"
+msgstr "Hujjatni tekshirib tasdiqladi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Opened a document file"
+msgstr "Hujjat faylini ochdi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Changed the required documents"
+msgstr "Majburiy hujjatlarni o‘zgartirdi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Removed a required document"
+msgstr "Majburiy hujjatni olib tashladi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Saved a contract template"
+msgstr "Shartnoma shablonini saqladi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Removed a contract template"
+msgstr "Shartnoma shablonini o‘chirdi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Drew up a contract"
+msgstr "Shartnoma tuzdi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Changed a contract"
+msgstr "Shartnomani o‘zgartirdi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Removed a draft contract"
+msgstr "Shartnoma qoralamasini o‘chirdi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Signed a contract"
+msgstr "Shartnomani imzoladi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Amended a contract"
+msgstr "Shartnomaga o‘zgartish kiritdi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Ended a contract"
+msgstr "Shartnomani yakunladi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Terminated a contract"
+msgstr "Shartnomani bekor qildi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Renewed a contract"
+msgstr "Shartnomani uzaytirdi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Confirmed a passed probation"
+msgstr "Sinov muddatidan o‘tganini tasdiqladi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Extended a probation"
+msgstr "Sinov muddatini uzaytirdi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Made a contract PDF"
+msgstr "Shartnomaning PDF faylini yaratdi"
+
+#: backend/apps/hr/audit_actions.py
+msgid "Read their contract"
+msgstr "Shartnoma bilan tanishdi"
+
+#: backend/apps/hr/ids.py
+msgid "A PINFL is 14 digits."
+msgstr "PINFL 14 ta raqamdan iborat."
+
+#: backend/apps/hr/ids.py
+msgid "A passport number is two letters and seven digits, like AA1234567."
+msgstr "Pasport raqami ikki harf va yetti raqamdan iborat, masalan: AA1234567."
+
+#: backend/apps/hr/ids.py
+msgid "A card number is 16 digits."
+msgstr "Karta raqami 16 ta raqamdan iborat."
+
+#: backend/apps/hr/ids.py
+msgid "Write the number as it is printed: letters and digits."
+msgstr "Raqamni hujjatda yozilganidek kiriting: harflar va raqamlar."
+
+#: backend/apps/hr/models.py
+msgid "Male"
+msgstr "Erkak"
+
+#: backend/apps/hr/models.py
+msgid "Female"
+msgstr "Ayol"
+
+#: backend/apps/hr/models.py
+msgid "Full time"
+msgstr "To‘liq ish vaqti"
+
+#: backend/apps/hr/models.py
+msgid "Part time"
+msgstr "To‘liq bo‘lmagan ish vaqti"
+
+#: backend/apps/hr/models.py
+msgid "Contractor"
+msgstr "Pudratchi"
+
+#: backend/apps/hr/models.py
+msgid "Intern"
+msgstr "Stajyor"
+
+#: backend/apps/hr/models.py backend/apps/sales/hooks.py
+#: backend/apps/sales/models.py
+msgid "Cash"
+msgstr "Naqd pul"
+
+#: backend/apps/hr/models.py backend/apps/sales/models.py
+msgid "Bank transfer"
+msgstr "Bank o‘tkazmasi"
+
+#: backend/apps/hr/models.py
+msgid "Resigned"
+msgstr "O‘z xohishi bilan"
+
+#: backend/apps/hr/models.py
+msgid "Dismissed"
+msgstr "Ish beruvchi tashabbusi bilan"
+
+#: backend/apps/hr/models.py
+msgid "Contract ended"
+msgstr "Shartnoma muddati tugagan"
+
+#: backend/apps/hr/models.py
+msgid "Probation not passed"
+msgstr "Sinov muddatidan o‘tmagan"
+
+#: backend/apps/hr/models.py
+msgid "Passport"
+msgstr "Pasport"
+
+#: backend/apps/hr/models.py
+msgid "ID card"
+msgstr "ID-karta"
+
+#: backend/apps/hr/models.py
+msgid "Military ID"
+msgstr "Harbiy guvohnoma"
+
+#: backend/apps/hr/models.py
+msgid "Diploma"
+msgstr "Diplom"
+
+#: backend/apps/hr/models.py
+msgid "Pharmacy diploma"
+msgstr "Farmatsevtika diplomi"
+
+#: backend/apps/hr/models.py
+msgid "Medical diploma"
+msgstr "Tibbiyot diplomi"
+
+#: backend/apps/hr/models.py
+msgid "Specialist certificate"
+msgstr "Mutaxassis sertifikati"
+
+#: backend/apps/hr/models.py
+msgid "Qualification category"
+msgstr "Malaka toifasi"
+
+#: backend/apps/hr/models.py
+msgid "State registration"
+msgstr "Davlat ro‘yxatidan o‘tish"
+
+#: backend/apps/hr/models.py
+msgid "Medical book"
+msgstr "Tibbiy daftarcha"
+
+#: backend/apps/hr/models.py
+msgid "Medical examination"
+msgstr "Tibbiy ko‘rik"
+
+#: backend/apps/hr/models.py
+msgid "Work record book"
+msgstr "Mehnat daftarchasi"
+
+#: backend/apps/hr/models.py
+msgid "Contract"
+msgstr "Shartnoma"
+
+#: backend/apps/hr/models.py
+msgid "Confidentiality agreement"
+msgstr "Maxfiylik to‘g‘risidagi kelishuv"
+
+#: backend/apps/hr/models.py backend/apps/tasks/bot_messages.py
+#: backend/apps/tasks/models.py
+msgid "Photo"
+msgstr "Rasm"
+
+#: backend/apps/hr/models.py
+msgid "Higher"
+msgstr "Oliy"
+
+#: backend/apps/hr/models.py
+msgid "College"
+msgstr "O‘rta maxsus"
+
+#: backend/apps/hr/models.py
+msgid "Highest category"
+msgstr "Oliy toifa"
+
+#: backend/apps/hr/models.py
+msgid "First category"
+msgstr "Birinchi toifa"
+
+#: backend/apps/hr/models.py
+msgid "Second category"
+msgstr "Ikkinchi toifa"
+
+#: backend/apps/hr/owner_api.py backend/apps/hr/services.py
+msgid "Pick a kind of document."
+msgstr "Hujjat turini tanlang."
+
+#: backend/apps/hr/services.py
+msgid "Someone else in the company has this PINFL."
+msgstr "Bu PINFL kompaniyadagi boshqa xodimda bor."
+
+#: backend/apps/hr/services.py
+msgid "Someone else in the company has this employee number."
+msgstr "Bu tabel raqami kompaniyadagi boshqa xodimga berilgan."
+
+#: backend/apps/hr/services.py
+msgid "Check the date of birth."
+msgstr "Tug‘ilgan sanani tekshiring."
+
+#: backend/apps/hr/services.py
+msgid "The hire date can't be in the future."
+msgstr "Ishga qabul qilingan sana kelajakda bo‘lishi mumkin emas."
+
+#: backend/apps/hr/services.py
+msgid "Only someone who has left has a last day."
+msgstr "Oxirgi ish kuni faqat ishdan ketgan xodimda bo‘ladi."
+
+#: backend/apps/hr/services.py
+msgid "The last day can't be before the hire date."
+msgstr ""
+"Oxirgi ish kuni ishga qabul qilingan sanadan oldin bo‘lishi mumkin emas."
+
+#: backend/apps/hr/services.py
+msgid "Add the card number to pay to a card."
+msgstr "Kartaga to‘lash uchun karta raqamini kiriting."
+
+#: backend/apps/hr/services.py
+msgid "Three emergency contacts at most."
+msgstr "Ko‘pi bilan uchta favqulodda kontakt."
+
+#: backend/apps/hr/services.py
+msgid "Write the contact's name."
+msgstr "Kontakt ismini yozing."
+
+#: backend/apps/hr/services.py
+msgid "Documents are kept for people who work here."
+msgstr "Hujjatlar shu yerda ishlaydigan xodimlar uchun saqlanadi."
+
+#: backend/apps/hr/services.py
+msgid "This level doesn't fit this kind of document."
+msgstr "Bu daraja ushbu hujjat turiga mos emas."
+
+#: backend/apps/hr/services.py
+msgid "The issue date can't be in the future."
+msgstr "Berilgan sana kelajakda bo‘lishi mumkin emas."
+
+#: backend/apps/hr/services.py
+msgid "A document can't expire before it was issued."
+msgstr "Hujjat muddati berilgan sanadan oldin tugashi mumkin emas."
+
+#: backend/apps/hr/services.py backend/apps/members/join_links.py
+#: backend/apps/members/owner_api.py backend/apps/members/services.py
+msgid "Pick a position of this company."
+msgstr "Shu kompaniyadagi lavozimni tanlang."
+
+#: backend/apps/hr/services.py
+msgid "This document is already required there."
+msgstr "Bu hujjat u yerda allaqachon majburiy."
 
 #: backend/apps/inbox/bot_handlers.py backend/apps/inbox/services.py
 #: employee_bot/bot/handlers/admin/approvals.py
@@ -6340,11 +6665,6 @@ msgstr "Shu kompaniyadagi rolni tanlang."
 #: backend/apps/members/join_links.py
 msgid "A team link can't make people owners."
 msgstr "Jamoa havolasi orqali hech kim kompaniya egasi bo‘la olmaydi."
-
-#: backend/apps/members/join_links.py backend/apps/members/owner_api.py
-#: backend/apps/members/services.py
-msgid "Pick a position of this company."
-msgstr "Shu kompaniyadagi lavozimni tanlang."
 
 #: backend/apps/members/join_links.py
 #, python-format
@@ -8720,10 +9040,6 @@ msgstr "Kunlar bo‘yicha savdo"
 msgid "Net sales"
 msgstr "Sof savdo"
 
-#: backend/apps/sales/hooks.py backend/apps/sales/models.py
-msgid "Cash"
-msgstr "Naqd pul"
-
 #: backend/apps/sales/hooks.py
 msgid "Cards and transfers"
 msgstr "Karta va o‘tkazmalar"
@@ -8858,10 +9174,6 @@ msgstr "Savdo natijalari guruhlarga yuborilgan oxirgi savdo kuni."
 #: backend/apps/sales/models.py
 msgid "QR or wallet"
 msgstr "QR yoki elektron hamyon"
-
-#: backend/apps/sales/models.py
-msgid "Bank transfer"
-msgstr "Bank o‘tkazmasi"
 
 #: backend/apps/sales/models.py
 msgid "Credit (nasiya)"
@@ -9713,10 +10025,6 @@ msgstr "Qaytarish"
 #: backend/apps/tasks/bot_messages.py
 msgid "New time"
 msgstr "Yangi muddat"
-
-#: backend/apps/tasks/bot_messages.py backend/apps/tasks/models.py
-msgid "Photo"
-msgstr "Rasm"
 
 #: backend/apps/tasks/bot_messages.py
 msgid "15 min"
