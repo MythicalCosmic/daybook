@@ -420,10 +420,16 @@ export interface Payslip {
   currency: Currency;
   pay_type: PayType;
   base_pay?: Money | null;
-  /** Sums by line kind, signed as on the payslip (fines and advances negative). */
+  /**
+   * Sums by line kind, signed as on the payslip (fines, advances and taxes negative). They add
+   * up exactly: base_pay + extras + bonuses + fines + advances + taxes_withheld + reimbursements
+   * = net (the server's PayslipLine.ROW_PARTS); the page shows them as they come.
+   */
+  extras?: Money | null;
   bonuses?: Money | null;
   fines?: Money | null;
   advances?: Money | null;
+  taxes_withheld?: Money | null;
   reimbursements?: Money | null;
   gross?: Money | null;
   deductions?: Money | null;

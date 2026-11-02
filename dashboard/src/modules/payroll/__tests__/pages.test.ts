@@ -269,6 +269,26 @@ describe("runs", () => {
     mounted.wrapper.unmount();
   });
 
+  it("shows each payslip's parts as the API sends them, extra pay included: nothing worked out here", async () => {
+    // Deliberately not adding up (extras isn't net − base): the page must show the server's strings.
+    const odd = slip(1, { status: "draft", base_pay: "6000000.00", extras: "111.11", bonuses: "0.00", fines: "-50000.00", advances: "0.00", taxes_withheld: "0.00", reimbursements: "0.00", net: "6323000.00" });
+    stub({ "GET payroll/runs/7/": () => json(run({ status: "draft", finalized_at: null, finalized_by: null })), "GET payroll/runs/7/payslips/": () => json(page([odd])) });
+    const RunPage = (await import("../pages/RunPage.vue")).default;
+    const app = await runApp();
+    mountWithProviders(RunPage, { plugins: app.plugins });
+    await settle();
+    const headers = [...document.querySelectorAll("thead th")].map((th) => th.textContent?.trim() ?? "");
+    const cells = [...document.querySelectorAll("tbody tr")[0]!.querySelectorAll("td")].map((td) => td.textContent?.trim() ?? "");
+    const cell = (header: string) => cells[headers.findIndex((text) => text.startsWith(header))];
+    expect(headers.findIndex((text) => text.startsWith("Extra pay"))).toBe(headers.findIndex((text) => text.startsWith("Base")) + 1);
+    expect(cell("Base")).toBe("6,000,000 UZS");
+    expect(cell("Extra pay")).toBe("+111.11 UZS");
+    expect(cell("Fines")).toBe("−50,000 UZS");
+    expect(cell("Net pay")).toBe("6,323,000 UZS");
+    // No taxes or expenses paid back in this run: no columns for them.
+    expect(headers.some((text) => text.startsWith("Taxes") || text.startsWith("Reimbursed"))).toBe(false);
+  });
+
   it("finalizing asks first, then calls finalize", async () => {
     const draft = run({ status: "draft", finalized_at: null, finalized_by: null });
     const calls = stub({
