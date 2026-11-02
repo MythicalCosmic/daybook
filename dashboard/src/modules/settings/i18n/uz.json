@@ -44,6 +44,8 @@
   "settings.panel.agenda.description": "Kompaniya tadbirlari: qaysi eslatma bilan boshlanishi va Telegramdagi takliflar.",
   "settings.panel.knowledge.hint": "E’lon qilinganda xabar, majburiy o‘qish eslatmasi",
   "settings.panel.knowledge.description": "Sahifa e’lon qilinganda Telegramdagi xabar va tasdiqlanishi shart sahifalar uchun eslatma.",
+  "settings.panel.hr.hint": "Sanalardan oldin eslatish, tabriklar",
+  "settings.panel.hr.description": "Hujjatlar, shartnomalar va sinov muddati tugashi necha kun oldin belgilanishi, tug‘ilgan kunlar va ish yilliklari nishonlanishi.",
   "settings.cmd.company": "Kompaniya sozlamalari",
   "settings.cmd.branches": "Filiallar",
   "settings.cmd.addBranch": "Filial qo‘shish",

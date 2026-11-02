@@ -82,6 +82,8 @@ def test_a_signed_link_serves_the_file_to_a_member_who_may_open_it(client, worke
     assert response["X-Content-Type-Options"] == "nosniff"
     assert response["Content-Security-Policy"] == "sandbox; default-src 'none'"
     assert response["Cache-Control"] == "private, no-store"
+    # The dashboard shows PDFs in its own frame (PdfPreview); other sites still can't frame them.
+    assert response["X-Frame-Options"] == "SAMEORIGIN"
     assert allowed.calls == [(worker.user_id, worker.company_id, 1)]
 
 
