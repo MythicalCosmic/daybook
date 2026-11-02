@@ -5,6 +5,7 @@ from django.urls import path
 from apps.payroll import api
 
 urlpatterns = [
+    path("payroll/earnings/current/", api.EarningsView.as_view(), name="payroll-my-earnings"),
     path("payroll/adjustments/", api.MyAdjustmentsView.as_view(), name="payroll-my-adjustments"),
     path(
         "payroll/adjustments/<int:pk>/dispute/",

@@ -917,3 +917,244 @@ class FileLinkSerializer(serializers.Serializer):
 
     class Meta:
         ref_name = "PayrollFileLink"
+
+
+# Rules ----------------------------------------------------------------------------------
+
+
+class TierSerializer(serializers.Serializer):
+    threshold = serializers.DecimalField(max_digits=16, decimal_places=2, coerce_to_string=True)
+    amount = serializers.DecimalField(max_digits=18, decimal_places=2, coerce_to_string=True)
+
+    class Meta:
+        ref_name = "PayrollRuleTier"
+
+
+class RuleSerializer(AmountsHidden, serializers.ModelSerializer):
+    amount_fields = ("amount", "cap", "tiers")
+
+    threshold = serializers.DecimalField(
+        max_digits=16, decimal_places=2, coerce_to_string=True, allow_null=True
+    )
+    free_units = serializers.DecimalField(max_digits=10, decimal_places=2, coerce_to_string=True)
+    amount = serializers.DecimalField(
+        max_digits=18, decimal_places=2, coerce_to_string=True, allow_null=True, required=False
+    )
+    cap = MoneySerializerField(positive=False, allow_null=True, required=False)
+    tiers = TierSerializer(many=True, required=False)
+    positions = serializers.SerializerMethodField()
+    example = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AdjustmentRule
+        fields = (
+            "id",
+            "name",
+            "kind",
+            "metric",
+            "mode",
+            "op",
+            "threshold",
+            "free_units",
+            "tiers",
+            "amount_type",
+            "amount",
+            "cap",
+            "min_tasks",
+            "positions",
+            "evaluate",
+            "auto_approve",
+            "is_active",
+            "example",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = fields
+
+    @extend_schema_field(RefSerializer(many=True))
+    def get_positions(self, rule):
+        return [{"id": p.pk, "name": p.name} for p in rule.positions.all()]
+
+    def get_example(self, rule) -> bool:
+        return bool(rule.example_key)
+
+
+class RuleWriteSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=100, required=False)
+    kind = serializers.ChoiceField(choices=AdjustmentRule.Kind.choices, required=False)
+    metric = serializers.ChoiceField(choices=AdjustmentRule.Metric.choices, required=False)
+    mode = serializers.ChoiceField(choices=AdjustmentRule.Mode.choices, required=False)
+    op = serializers.ChoiceField(choices=AdjustmentRule.Op.choices, required=False)
+    threshold = serializers.DecimalField(
+        max_digits=16, decimal_places=2, allow_null=True, required=False
+    )
+    free_units = serializers.DecimalField(
+        max_digits=10, decimal_places=2, min_value=Decimal(0), required=False
+    )
+    tiers = TierSerializer(many=True, required=False, max_length=10)
+    amount_type = serializers.ChoiceField(choices=AdjustmentRule.AmountType.choices, required=False)
+    amount = serializers.DecimalField(
+        max_digits=18, decimal_places=2, allow_null=True, required=False
+    )
+    cap = serializers.DecimalField(max_digits=18, decimal_places=2, allow_null=True, required=False)
+    min_tasks = serializers.IntegerField(min_value=0, max_value=1000, required=False)
+    positions = serializers.ListField(child=serializers.IntegerField(), required=False)
+    evaluate = serializers.ChoiceField(choices=AdjustmentRule.Evaluate.choices, required=False)
+    auto_approve = serializers.BooleanField(required=False)
+    is_active = serializers.BooleanField(required=False)
+
+    class Meta:
+        ref_name = "PayrollRuleWrite"
+
+
+class RulePreviewRequestSerializer(serializers.Serializer):
+    period = PeriodField(required=False)
+
+    class Meta:
+        ref_name = "PayrollRulePreviewRequest"
+
+
+class RulePreviewRowSerializer(AmountsHidden, serializers.Serializer):
+    amount_fields = ("amount",)
+
+    member = PersonSerializer()
+    value = serializers.CharField(allow_null=True)
+    amount = serializers.CharField(allow_null=True, required=False)
+    units = serializers.CharField(allow_null=True)
+    tier = serializers.CharField(allow_null=True)
+
+    class Meta:
+        ref_name = "PayrollRulePreviewRow"
+
+
+class RulePreviewSerializer(serializers.Serializer):
+    period = serializers.CharField()
+    to = serializers.CharField()
+    currency = serializers.CharField()
+    total = serializers.CharField(required=False)
+    rows = RulePreviewRowSerializer(many=True)
+
+    class Meta:
+        ref_name = "PayrollRulePreview"
+
+
+# Overview and the wallet ----------------------------------------------------------------
+
+
+class OverviewMonthSerializer(serializers.Serializer):
+    period = serializers.CharField()
+    label = serializers.CharField()
+    status = serializers.CharField()
+    people = serializers.IntegerField()
+    gross = serializers.CharField()
+    net = serializers.CharField()
+    bonuses = serializers.CharField()
+    fines = serializers.CharField()
+    advances = serializers.CharField()
+
+    class Meta:
+        ref_name = "PayrollOverviewMonth"
+
+
+class OverviewGroupSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    label = serializers.CharField()
+    people = serializers.IntegerField()
+    gross = serializers.CharField()
+
+    class Meta:
+        ref_name = "PayrollOverviewGroup"
+
+
+class OverviewProjectedSerializer(serializers.Serializer):
+    period = serializers.CharField()
+    label = serializers.CharField()
+    source = serializers.ChoiceField(choices=("run", "estimate"))
+    people = serializers.IntegerField()
+    gross = serializers.CharField()
+    net = serializers.CharField()
+
+    class Meta:
+        ref_name = "PayrollOverviewProjected"
+
+
+class OverviewPendingSerializer(serializers.Serializer):
+    adjustments = serializers.IntegerField()
+    disputes = serializers.IntegerField()
+    advances = serializers.IntegerField()
+
+    class Meta:
+        ref_name = "PayrollOverviewPending"
+
+
+class OverviewSerializer(serializers.Serializer):
+    currency = serializers.CharField()
+    months = OverviewMonthSerializer(many=True)
+    latest = serializers.DictField(allow_null=True)
+    by_position = OverviewGroupSerializer(many=True)
+    by_branch = OverviewGroupSerializer(many=True)
+    projected = OverviewProjectedSerializer()
+    headcount = serializers.IntegerField()
+    pending = OverviewPendingSerializer()
+
+    class Meta:
+        ref_name = "PayrollOverview"
+
+
+class EarningsSumsSerializer(serializers.Serializer):
+    base = serializers.CharField()
+    extra = serializers.CharField()
+    pieces = serializers.CharField()
+    bonuses = serializers.CharField()
+    fines = serializers.CharField()
+    taxes = serializers.CharField()
+    advances = serializers.CharField()
+    reimbursements = serializers.CharField()
+    net = serializers.CharField()
+
+    class Meta:
+        ref_name = "PayrollEarningsSums"
+
+
+class EarningsProposedSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    kind = serializers.CharField()
+    amount = serializers.CharField()
+    reason = serializers.CharField()
+    source = serializers.CharField()
+
+    class Meta:
+        ref_name = "PayrollEarningsProposed"
+
+
+class EarningsProgressSerializer(serializers.Serializer):
+    rule = serializers.IntegerField()
+    name = serializers.CharField()
+    metric = serializers.CharField()
+    value = serializers.CharField()
+    earned = serializers.CharField()
+    target = serializers.CharField(allow_null=True)
+    target_amount = serializers.CharField(allow_null=True)
+    min_tasks = serializers.IntegerField(allow_null=True)
+    tasks = serializers.IntegerField(allow_null=True)
+
+    class Meta:
+        ref_name = "PayrollEarningsProgress"
+
+
+class EarningsSerializer(serializers.Serializer):
+    period = serializers.CharField()
+    as_of = serializers.CharField()
+    currency = serializers.CharField()
+    has_pay_setup = serializers.BooleanField()
+    pay_type = serializers.CharField(allow_null=True)
+    so_far = EarningsSumsSerializer()
+    estimate = EarningsSumsSerializer()
+    worked_minutes = serializers.IntegerField()
+    scheduled_days = serializers.IntegerField()
+    absent_days = serializers.IntegerField()
+    proposed = EarningsProposedSerializer(many=True)
+    progress = EarningsProgressSerializer(many=True)
+
+    class Meta:
+        ref_name = "PayrollEarnings"

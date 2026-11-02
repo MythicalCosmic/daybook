@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-02 18:11+0500\n"
+"POT-Creation-Date: 2026-11-02 18:31+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -1123,7 +1123,8 @@ msgid "Cancelled"
 msgstr "Bekor qilindi"
 
 #: backend/apps/ai/models.py backend/apps/finance/exporters.py
-#: backend/apps/projects/hooks.py backend/apps/timeoff/providers.py
+#: backend/apps/payroll/providers.py backend/apps/projects/hooks.py
+#: backend/apps/timeoff/providers.py
 msgid "Person"
 msgstr "Xodim"
 
@@ -2940,8 +2941,8 @@ msgstr ""
 "Bu yozuvni faqat shu ruxsati bor odamlar ko‘radi (u maxfiy maydonlarga "
 "tegishli)."
 
-#: backend/apps/audit/owner_api.py backend/apps/reminders/owner_api.py
-#: backend/apps/tasks/owner_api.py
+#: backend/apps/audit/owner_api.py backend/apps/payroll/owner_api.py
+#: backend/apps/reminders/owner_api.py backend/apps/tasks/owner_api.py
 msgid "This field is required."
 msgstr "Bu maydonni to‘ldirish shart."
 
@@ -3784,8 +3785,8 @@ msgid "Kind"
 msgstr "Turi"
 
 #: backend/apps/finance/exporters.py backend/apps/members/providers.py
-#: backend/apps/sales/hooks.py backend/apps/tasks/hooks.py
-#: backend/apps/timeoff/providers.py
+#: backend/apps/payroll/providers.py backend/apps/sales/hooks.py
+#: backend/apps/tasks/hooks.py backend/apps/timeoff/providers.py
 msgid "Status"
 msgstr "Holati"
 
@@ -3801,7 +3802,7 @@ msgstr "Toifa"
 msgid "Counterparty"
 msgstr "Kontragent"
 
-#: backend/apps/finance/exporters.py
+#: backend/apps/finance/exporters.py backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
 #: backend/apps/sales/hooks.py backend/apps/tasks/hooks.py
 msgid "Branch"
@@ -3816,7 +3817,7 @@ msgstr "Tavsif"
 msgid "Amount"
 msgstr "Summa"
 
-#: backend/apps/finance/exporters.py
+#: backend/apps/finance/exporters.py backend/apps/payroll/providers.py
 msgid "Currency"
 msgstr "Valyuta"
 
@@ -3877,7 +3878,7 @@ msgstr "Qoldiq"
 msgid "In base currency"
 msgstr "Asosiy valyutada"
 
-#: backend/apps/finance/exporters.py
+#: backend/apps/finance/exporters.py backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
 msgid "Month"
 msgstr "Oy"
@@ -6867,7 +6868,7 @@ msgstr ""
 msgid "Name"
 msgstr "Ism"
 
-#: backend/apps/members/providers.py
+#: backend/apps/members/providers.py backend/apps/payroll/providers.py
 #: backend/apps/payroll/templates/payroll/payslip.html
 #: backend/apps/reports/hooks.py backend/apps/tasks/hooks.py
 #: backend/apps/timeoff/providers.py
@@ -7116,7 +7117,19 @@ msgstr "Avans rad etildi."
 msgid "Thank you!"
 msgstr "Rahmat!"
 
-#: backend/apps/payroll/api.py backend/apps/payroll/owner_api.py
+#: backend/apps/payroll/ai_tools.py
+msgid ""
+"Payroll of a month: status, how many people, gross, deductions and net pay, "
+"bonuses, fines and advances repaid, and each person's gross and net (people "
+"you see only); this month's projection when the month has no run yet"
+msgstr ""
+"Bir oylik ish haqi: holati, xodimlar soni, hisoblangan, ushlangan va qo‘lga "
+"beriladigan summa, bonuslar, jarimalar va qaytarilgan avanslar, har bir "
+"xodimning hisoblangan va qo‘lga beriladigan summasi (faqat siz ko‘radigan "
+"xodimlar); oyning hisob-kitobi hali bo‘lmasa, shu oyning taxmini"
+
+#: backend/apps/payroll/api.py backend/apps/payroll/bot_messages.py
+#: backend/apps/payroll/owner_api.py
 msgid "Payroll isn't switched on for this company."
 msgstr "Bu kompaniyada ish haqi bo‘limi yoqilmagan."
 
@@ -7244,10 +7257,66 @@ msgstr "Hisob-varaqdan qatorni o‘chirdi"
 msgid "Confirmed a salary was received"
 msgstr "Ish haqi olinganini tasdiqladi"
 
+#: backend/apps/payroll/bot_messages.py
+msgid "Open my pay"
+msgstr "Ish haqimni ochish"
+
+#: backend/apps/payroll/bot_messages.py
+msgid "My pay"
+msgstr "Ish haqim"
+
+#: backend/apps/payroll/bot_messages.py
+msgid "Your pay isn't set up yet. Ask your manager."
+msgstr "Ish haqingiz hali belgilanmagan. Rahbaringizdan so‘rang."
+
+#: backend/apps/payroll/bot_messages.py
+#, python-format
+msgid "Earned so far in %(month)s:"
+msgstr "Hozirgacha topilgan (%(month)s):"
+
+#: backend/apps/payroll/bot_messages.py
+msgid "Estimate for the month:"
+msgstr "Oy uchun taxmin:"
+
+#: backend/apps/payroll/bot_messages.py
+#, python-format
+msgid "Bonuses: %(bonuses)s · Fines: %(fines)s"
+msgstr "Bonuslar: %(bonuses)s · Jarimalar: %(fines)s"
+
+#: backend/apps/payroll/bot_messages.py
+#, python-format
+msgid "Waiting for approval: %(count)s"
+msgstr "Tasdiq kutmoqda: %(count)s"
+
+#: backend/apps/payroll/bot_messages.py
+msgid "paid"
+msgstr "to‘langan"
+
+#: backend/apps/payroll/bot_messages.py
+msgid "not paid yet"
+msgstr "hali to‘lanmagan"
+
+#: backend/apps/payroll/bot_messages.py
+#, python-format
+msgid "Last payslip: %(month)s, %(amount)s"
+msgstr "Oxirgi hisob-varaq: %(month)s, %(amount)s"
+
 #: backend/apps/payroll/calculator.py backend/apps/payroll/labels.py
 #, python-format
 msgid "Expenses paid back: %(what)s"
 msgstr "Qoplangan xarajat: %(what)s"
+
+#: backend/apps/payroll/defaults.py
+msgid "On-time bonus"
+msgstr "O‘z vaqtida bajarish bonusi"
+
+#: backend/apps/payroll/defaults.py
+msgid "Late arrival fine"
+msgstr "Kechikib kelish uchun jarima"
+
+#: backend/apps/payroll/defaults.py
+msgid "Sales bonus, 1%"
+msgstr "Savdo bonusi, 1%"
 
 #: backend/apps/payroll/finance_bridge.py
 #, python-format
@@ -7337,6 +7406,10 @@ msgid "Set each person's pay so payroll can work out their payslips."
 msgstr ""
 "Har bir xodimning ish haqini belgilang: hisob-varaqlar shunga qarab "
 "hisoblanadi."
+
+#: backend/apps/payroll/hooks.py
+msgid "Pay days"
+msgstr "Ish haqi kunlari"
 
 #: backend/apps/payroll/hooks.py
 msgid "Payroll (payslips of a month)"
@@ -8190,6 +8263,14 @@ msgstr "Buni faqat bonus va jarimalarni tasdiqlaydiganlar qila oladi."
 msgid "Write an answer."
 msgstr "Javob yozing."
 
+#: backend/apps/payroll/owner_api.py
+msgid "Pick positions from the list."
+msgstr "Lavozimlarni ro‘yxatdan tanlang."
+
+#: backend/apps/payroll/owner_api.py
+msgid "Pick 1 to 24 months."
+msgstr "1–24 oy tanlang."
+
 #: backend/apps/payroll/payslip_pdf.py
 #, python-format
 msgid "Working days: %(days)s"
@@ -8222,6 +8303,77 @@ msgstr "%(kind)s: %(name)s, %(amount)s"
 #: backend/apps/payroll/providers.py
 msgid "Answer"
 msgstr "Javob berish"
+
+#: backend/apps/payroll/providers.py
+msgid "Pay type"
+msgstr "Ish haqi turi"
+
+#: backend/apps/payroll/providers.py
+msgid "Working days"
+msgstr "Ish kunlari"
+
+#: backend/apps/payroll/providers.py
+msgid "Paid days"
+msgstr "Haq to‘lanadigan kunlar"
+
+#: backend/apps/payroll/providers.py
+msgid "Base pay"
+msgstr "Asosiy ish haqi"
+
+#: backend/apps/payroll/providers.py
+msgid "Overtime, nights, holidays"
+msgstr "Qo‘shimcha ish, tungi va bayram soatlari"
+
+#: backend/apps/payroll/providers.py
+msgid "Bonuses"
+msgstr "Bonuslar"
+
+#: backend/apps/payroll/providers.py
+msgid "Fines and deductions"
+msgstr "Jarima va ushlanmalar"
+
+#: backend/apps/payroll/providers.py
+msgid "Taxes withheld"
+msgstr "Ushlab qolingan soliqlar"
+
+#: backend/apps/payroll/providers.py
+msgid "Advances repaid"
+msgstr "Qaytarilgan avanslar"
+
+#: backend/apps/payroll/providers.py
+msgid "Expenses paid back"
+msgstr "Qoplangan xarajatlar"
+
+#: backend/apps/payroll/providers.py
+#: backend/apps/payroll/templates/payroll/payslip.html
+msgid "Earned"
+msgstr "Hisoblangan"
+
+#: backend/apps/payroll/providers.py
+#: backend/apps/payroll/templates/payroll/payslip.html
+msgid "To be paid"
+msgstr "Qo‘lga beriladi"
+
+#: backend/apps/payroll/providers.py
+msgid "Paid on"
+msgstr "To‘langan sana"
+
+#: backend/apps/payroll/providers.py
+msgid "Pay day"
+msgstr "Ish haqi kuni"
+
+#: backend/apps/payroll/providers.py
+msgid "Advance day"
+msgstr "Avans kuni"
+
+#: backend/apps/payroll/rules.py
+#, python-format
+msgid "%(rule)s: %(metric)s %(value)s"
+msgstr "%(rule)s: %(metric)s %(value)s"
+
+#: backend/apps/payroll/rules.py
+msgid "The rule no longer applies."
+msgstr "Qoida endi qo‘llanmaydi."
 
 #: backend/apps/payroll/runs.py
 msgid "A payroll can't be made for a month that hasn't started."
@@ -8375,6 +8527,50 @@ msgid "A finalized payroll used this pay setup, so it stays."
 msgstr "Bu sozlama yakunlangan ish haqida ishlatilgan, shuning uchun qoladi."
 
 #: backend/apps/payroll/services.py
+msgid "Give the rule a name."
+msgstr "Qoidaga nom bering."
+
+#: backend/apps/payroll/services.py
+msgid "Pick from the list."
+msgstr "Ro‘yxatdan tanlang."
+
+#: backend/apps/payroll/services.py
+msgid "Enter the amount the rule gives."
+msgstr "Qoida beradigan summani kiriting."
+
+#: backend/apps/payroll/services.py
+msgid "A percent is at most 100."
+msgstr "Foiz ko‘pi bilan 100 bo‘ladi."
+
+#: backend/apps/payroll/services.py
+msgid "Add at least one tier: a threshold and its amount."
+msgstr "Kamida bitta bosqich qo‘shing: chegara va uning summasi."
+
+#: backend/apps/payroll/services.py
+msgid "Enter each tier's threshold."
+msgstr "Har bir bosqich chegarasini kiriting."
+
+#: backend/apps/payroll/services.py
+msgid "Each tier needs its own threshold."
+msgstr "Har bir bosqichning o‘z chegarasi bo‘lishi kerak."
+
+#: backend/apps/payroll/services.py
+msgid "Enter the threshold."
+msgstr "Chegarani kiriting."
+
+#: backend/apps/payroll/services.py
+msgid "A cap is more than zero, or empty."
+msgstr "Chegara noldan katta yoki bo‘sh bo‘ladi."
+
+#: backend/apps/payroll/services.py
+msgid "Free units can't be below zero."
+msgstr "Hisobga olinmaydigan birliklar noldan kam bo‘lmaydi."
+
+#: backend/apps/payroll/services.py
+msgid "Enter a number."
+msgstr "Son kiriting."
+
+#: backend/apps/payroll/services.py
 msgid "This is on a finalized payslip, so it can't change."
 msgstr "Bu yakunlangan hisob-varaqda bor, uni o‘zgartirib bo‘lmaydi."
 
@@ -8485,10 +8681,6 @@ msgid "Pay"
 msgstr "Ish haqi turi"
 
 #: backend/apps/payroll/templates/payroll/payslip.html
-msgid "To be paid"
-msgstr "Qo‘lga beriladi"
-
-#: backend/apps/payroll/templates/payroll/payslip.html
 #, python-format
 msgid "Paid %(paid_on)s"
 msgstr "To‘langan: %(paid_on)s"
@@ -8496,10 +8688,6 @@ msgstr "To‘langan: %(paid_on)s"
 #: backend/apps/payroll/templates/payroll/payslip.html
 msgid "How much"
 msgstr "Hisob"
-
-#: backend/apps/payroll/templates/payroll/payslip.html
-msgid "Earned"
-msgstr "Hisoblangan"
 
 #: backend/apps/payroll/templates/payroll/payslip.html
 msgid "Deducted"

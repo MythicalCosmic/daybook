@@ -7,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.audit import registry as audit_registry
 from apps.audit.redaction import register_sensitive
+from apps.companies.signals import company_created
 from apps.console import registry
 from apps.console.perms import AnyOf
 from apps.core.files import register_file_check
@@ -14,7 +15,7 @@ from apps.exports.registry import register_exporter
 from apps.finance import sources
 from apps.inbox.registry import register_action, register_kind
 from apps.members.permissions import Perm
-from apps.payroll import actions, providers, queries
+from apps.payroll import actions, defaults, providers, queries
 from apps.payroll.audit_actions import PayrollAction
 from apps.payroll.models import Adjustment, Advance, Compensation, Payslip
 
@@ -97,6 +98,20 @@ registry.register_setup_step(
     feature=FEATURE,
 )
 
+registry.register_brief_section(
+    "payroll", perm=VIEW, order=60, build=providers.brief_section, feature=FEATURE
+)
+registry.register_company_facts(
+    "payroll", perm=VIEW, facts=providers.company_facts, feature=FEATURE
+)
+registry.register_calendar_source(
+    "payroll.dates",
+    label=_("Pay days"),
+    perm=None,
+    events=providers.calendar_events,
+    feature=FEATURE,
+)
+
 register_file_check("payroll.payslip", providers.payslip_check, allow_suspended=True)
 register_exporter(
     "payroll.run",
@@ -173,3 +188,10 @@ register_kind(
     default_telegram=True,
 )
 register_action("payroll.payslip", "received", actions.payslip_received)
+
+
+def make_defaults(sender, company, by=None, **kwargs) -> None:
+    defaults.ensure(company)
+
+
+company_created.connect(make_defaults, dispatch_uid="payroll.make_defaults")
