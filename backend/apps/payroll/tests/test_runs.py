@@ -150,6 +150,21 @@ class TestCalculate:
         services.calculate_run(run, by=staff.owner)
         assert not run.payslips.filter(membership=staff.sara).exists()
 
+    def test_changing_the_night_multiplier_reaches_the_draft(self, shop, team):
+        """§14.11: a draft run calculated again follows the new multiplier."""
+        from apps.payroll.tests.test_golden import record
+
+        staff = team
+        for day in (5, 6, 7, 8):
+            record(staff.ali, date(2026, 10, day), (22, 0), (6, 0))
+        run = services.create_run(shop, by=staff.owner, period="2026-10")
+        night = lines(payslip_of(run, staff.ali), Kind.NIGHT_WORK)[0]
+        assert night.amount == D("400000.00")
+        services.update_settings(shop, by=staff.owner, night_multiplier=D("2.00"))
+        services.calculate_run(run, by=staff.owner)
+        night = lines(payslip_of(run, staff.ali), Kind.NIGHT_WORK)[0]
+        assert night.amount == D("800000.00")
+
     def test_the_deductions_cap(self, shop, team):
         staff = team
         services.propose(
