@@ -47,7 +47,14 @@ def test_two_records_and_a_suspension(freeze):
         "storage_breach",
         None,
     )
-    assert fridge.fine_id is None  # payroll isn't on this branch
+    from apps.payroll.models import Adjustment
+
+    fine = Adjustment.objects.get(pk=fridge.fine_id)  # the storage breach's fine, in payroll
+    assert (fine.kind, fine.source, fine.membership_id) == (
+        "fine",
+        "discipline",
+        people["worker"].pk,
+    )
     assert Notification.objects.filter(recipient=people["worker"], kind="lifecycle.record").exists()
     assert Notification.objects.filter(
         recipient=people["manager"], kind="lifecycle.explanation"

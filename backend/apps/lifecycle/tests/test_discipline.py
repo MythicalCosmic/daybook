@@ -207,7 +207,10 @@ def test_a_fine_goes_to_payroll_as_a_proposal(shop, staff, owner_api, payroll, m
     assert again.status_code == 400
 
 
-def test_without_payroll_the_fine_is_refused_and_nothing_is_given(shop, staff, owner_api):
+def test_a_fine_reaches_payroll_as_a_proposal_someone_decides(shop, staff, owner_api):
+    """With payroll in, a record's fine is a real proposed Adjustment from discipline."""
+    from apps.payroll.models import Adjustment
+
     response = owner_api(staff.manager).post(
         f"{base(shop)}discipline/",
         {
@@ -220,9 +223,16 @@ def test_without_payroll_the_fine_is_refused_and_nothing_is_given(shop, staff, o
         format="json",
     )
 
-    assert response.status_code == 400
-    assert "payroll" in response.json()["detail"].lower()
-    assert not DisciplinaryRecord.objects.exists()
+    assert response.status_code == 201
+    record = DisciplinaryRecord.objects.get()
+    fine = Adjustment.objects.get(pk=record.fine_id)
+    assert (fine.membership_id, fine.kind, fine.source, fine.status, fine.amount) == (
+        staff.ali.pk,
+        "fine",
+        "discipline",
+        "proposed",
+        Decimal("200000"),
+    )
 
 
 def test_a_company_with_payroll_off_gets_no_fine(shop, staff, payroll):

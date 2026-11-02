@@ -9566,6 +9566,1747 @@ paths:
                 items:
                   $ref: '#/components/schemas/Preference'
           description: ''
+  /api/v1/owner/companies/{company_id}/payroll/adjustments/:
+    get:
+      operationId: companies_payroll_adjustments_list
+      description: |-
+        Bonuses, fines, allowances and deductions: proposed, then approved or rejected.
+        `payroll.propose` holders without `payroll.view` see only their own proposals, without
+        amounts.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: disputed
+        schema:
+          type: string
+        description: true, false or open
+      - in: query
+        name: kind
+        schema:
+          type: string
+        description: bonus,fine,allowance,deduction
+      - in: query
+        name: member
+        schema:
+          type: integer
+        description: Only this person.
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: created_at, period, amount, name (±)
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: period
+        schema:
+          type: string
+        description: 'A month: YYYY-MM.'
+      - in: query
+        name: source
+        schema:
+          type: string
+        description: manual,rule,task,attendance,discipline
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: proposed,approved,rejected,void
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAdjustmentList'
+          description: ''
+    post:
+      operationId: companies_payroll_adjustments_create
+      description: |-
+        Bonuses, fines, allowances and deductions: proposed, then approved or rejected.
+        `payroll.propose` holders without `payroll.view` see only their own proposals, without
+        amounts.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollAdjustmentWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollAdjustmentWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollAdjustmentWriteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Adjustment'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/adjustments/{id}/:
+    get:
+      operationId: companies_payroll_adjustments_retrieve
+      description: |-
+        Bonuses, fines, allowances and deductions: proposed, then approved or rejected.
+        `payroll.propose` holders without `payroll.view` see only their own proposals, without
+        amounts.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Adjustment'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/adjustments/{id}/answer-dispute/:
+    post:
+      operationId: companies_payroll_adjustments_answer_dispute_create
+      description: |-
+        Bonuses, fines, allowances and deductions: proposed, then approved or rejected.
+        `payroll.propose` holders without `payroll.view` see only their own proposals, without
+        amounts.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollAnswerDisputeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollAnswerDisputeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollAnswerDisputeRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Adjustment'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/adjustments/{id}/approve/:
+    post:
+      operationId: companies_payroll_adjustments_approve_create
+      description: |-
+        Bonuses, fines, allowances and deductions: proposed, then approved or rejected.
+        `payroll.propose` holders without `payroll.view` see only their own proposals, without
+        amounts.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollReasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollReasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollReasonRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Adjustment'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/adjustments/{id}/reject/:
+    post:
+      operationId: companies_payroll_adjustments_reject_create
+      description: |-
+        Bonuses, fines, allowances and deductions: proposed, then approved or rejected.
+        `payroll.propose` holders without `payroll.view` see only their own proposals, without
+        amounts.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollReasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollReasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollReasonRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Adjustment'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/adjustments/{id}/void/:
+    post:
+      operationId: companies_payroll_adjustments_void_create
+      description: |-
+        Bonuses, fines, allowances and deductions: proposed, then approved or rejected.
+        `payroll.propose` holders without `payroll.view` see only their own proposals, without
+        amounts.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollRequiredReasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollRequiredReasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollRequiredReasonRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Adjustment'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/adjustments/bulk-decide/:
+    post:
+      operationId: companies_payroll_adjustments_bulk_decide_create
+      description: |-
+        Bonuses, fines, allowances and deductions: proposed, then approved or rejected.
+        `payroll.propose` holders without `payroll.view` see only their own proposals, without
+        amounts.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollBulkDecideRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollBulkDecideRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollBulkDecideRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPayrollBulkResultList'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/advances/:
+    get:
+      operationId: companies_payroll_advances_list
+      description: |-
+        Advances: requests to decide, approved ones to pay (from an account, through finance),
+        repayments from payslips or in money.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: member
+        schema:
+          type: integer
+        description: Only this person.
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: created_at, amount, name (±)
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: requested,approved,rejected,paid,repaid,cancelled
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAdvanceList'
+          description: ''
+    post:
+      operationId: companies_payroll_advances_create
+      description: |-
+        Advances: requests to decide, approved ones to pay (from an account, through finance),
+        repayments from payslips or in money.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollAdvanceWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollAdvanceWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollAdvanceWriteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Advance'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/advances/{id}/:
+    get:
+      operationId: companies_payroll_advances_retrieve
+      description: |-
+        Advances: requests to decide, approved ones to pay (from an account, through finance),
+        repayments from payslips or in money.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Advance'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/advances/{id}/cancel/:
+    post:
+      operationId: companies_payroll_advances_cancel_create
+      description: |-
+        Advances: requests to decide, approved ones to pay (from an account, through finance),
+        repayments from payslips or in money.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollReasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollReasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollReasonRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Advance'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/advances/{id}/decide/:
+    post:
+      operationId: companies_payroll_advances_decide_create
+      description: |-
+        Advances: requests to decide, approved ones to pay (from an account, through finance),
+        repayments from payslips or in money.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollAdvanceDecideRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollAdvanceDecideRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollAdvanceDecideRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Advance'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/advances/{id}/pay/:
+    post:
+      operationId: companies_payroll_advances_pay_create
+      description: |-
+        Advances: requests to decide, approved ones to pay (from an account, through finance),
+        repayments from payslips or in money.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollAdvancePayRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollAdvancePayRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollAdvancePayRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Advance'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/advances/{id}/repay/:
+    post:
+      operationId: companies_payroll_advances_repay_create
+      description: |-
+        Advances: requests to decide, approved ones to pay (from an account, through finance),
+        repayments from payslips or in money.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollAdvanceRepayRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollAdvanceRepayRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollAdvanceRepayRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Advance'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/compensations/:
+    get:
+      operationId: companies_payroll_compensations_list
+      description: |-
+        Pay setups, effective-dated. A change is a new row from its first day; a row a
+        finalized run used is locked (read-only, `locked_reason` says why).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: current
+        schema:
+          type: boolean
+        description: Only the setup in force today.
+      - in: query
+        name: member
+        schema:
+          type: integer
+        description: Only this person.
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: effective_from, name, amount (±)
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCompensationList'
+          description: ''
+    post:
+      operationId: companies_payroll_compensations_create
+      description: |-
+        Pay setups, effective-dated. A change is a new row from its first day; a row a
+        finalized run used is locked (read-only, `locked_reason` says why).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollCompensationWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollCompensationWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollCompensationWriteRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compensation'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/compensations/{id}/:
+    get:
+      operationId: companies_payroll_compensations_retrieve
+      description: |-
+        Pay setups, effective-dated. A change is a new row from its first day; a row a
+        finalized run used is locked (read-only, `locked_reason` says why).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compensation'
+          description: ''
+    patch:
+      operationId: companies_payroll_compensations_partial_update
+      description: |-
+        Pay setups, effective-dated. A change is a new row from its first day; a row a
+        finalized run used is locked (read-only, `locked_reason` says why).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPayrollCompensationUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPayrollCompensationUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPayrollCompensationUpdateRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compensation'
+          description: ''
+    delete:
+      operationId: companies_payroll_compensations_destroy
+      description: |-
+        Pay setups, effective-dated. A change is a new row from its first day; a row a
+        finalized run used is locked (read-only, `locked_reason` says why).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/payroll/compensations/people/:
+    get:
+      operationId: companies_payroll_compensations_people_list
+      description: |-
+        Everyone who can be paid, with the setup in force today and the next one planned
+        (null when there is none: "no pay setup").
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search names.
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPayrollPaySetupRowList'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/overview/:
+    get:
+      operationId: companies_payroll_overview_retrieve
+      description: |-
+        Payroll cost by month, the latest closed month by position and branch, bonuses against
+        fines, how many people are paid, this month's projection and what waits for a decision.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: months
+        schema:
+          type: integer
+        description: How many months (1-24).
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollOverview'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/payslips/{id}/:
+    get:
+      operationId: companies_payroll_payslips_retrieve
+      description: One payslip with its lines; hand-made lines while the run is a
+        draft; the PDF.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollPayslip'
+          description: ''
+    patch:
+      operationId: companies_payroll_payslips_partial_update
+      description: One payslip with its lines; hand-made lines while the run is a
+        draft; the PDF.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPayrollPayslipPatchRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPayrollPayslipPatchRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPayrollPayslipPatchRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollPayslip'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/payslips/{id}/pdf/:
+    get:
+      operationId: companies_payroll_payslips_pdf_retrieve
+      description: A short-lived link to the payslip as a PDF, in your language.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollFileLink'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/rules/:
+    get:
+      operationId: companies_payroll_rules_list
+      description: |-
+        Automatic bonuses and fines. Shipped examples start switched off; `preview` is a dry
+        run for a month (who would get what, the total) that writes nothing.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Rule'
+          description: ''
+    post:
+      operationId: companies_payroll_rules_create
+      description: |-
+        Automatic bonuses and fines. Shipped examples start switched off; `preview` is a dry
+        run for a month (who would get what, the total) that writes nothing.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollRuleWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollRuleWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollRuleWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/rules/{id}/:
+    get:
+      operationId: companies_payroll_rules_retrieve
+      description: |-
+        Automatic bonuses and fines. Shipped examples start switched off; `preview` is a dry
+        run for a month (who would get what, the total) that writes nothing.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+          description: ''
+    patch:
+      operationId: companies_payroll_rules_partial_update
+      description: |-
+        Automatic bonuses and fines. Shipped examples start switched off; `preview` is a dry
+        run for a month (who would get what, the total) that writes nothing.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPayrollRuleWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPayrollRuleWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPayrollRuleWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rule'
+          description: ''
+    delete:
+      operationId: companies_payroll_rules_destroy
+      description: |-
+        Automatic bonuses and fines. Shipped examples start switched off; `preview` is a dry
+        run for a month (who would get what, the total) that writes nothing.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/owner/companies/{company_id}/payroll/rules/{id}/preview/:
+    post:
+      operationId: companies_payroll_rules_preview_create
+      description: |-
+        Automatic bonuses and fines. Shipped examples start switched off; `preview` is a dry
+        run for a month (who would get what, the total) that writes nothing.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollRulePreviewRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollRulePreviewRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollRulePreviewRequestRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollRulePreview'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/runs/:
+    get:
+      operationId: companies_payroll_runs_list
+      description: |-
+        Payroll runs: one a month (plus final settlements). Draft → calculate (again and again)
+        → finalize → publish → mark paid; reopen and cancel. Warnings come first.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: kind
+        schema:
+          type: string
+        description: regular,final
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: draft,finalized,paid,cancelled
+      - in: query
+        name: year
+        schema:
+          type: integer
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRunList'
+          description: ''
+    post:
+      operationId: companies_payroll_runs_create
+      description: |-
+        Payroll runs: one a month (plus final settlements). Draft → calculate (again and again)
+        → finalize → publish → mark paid; reopen and cancel. Warnings come first.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollRunCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollRunCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollRunCreateRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/runs/{id}/:
+    get:
+      operationId: companies_payroll_runs_retrieve
+      description: |-
+        Payroll runs: one a month (plus final settlements). Draft → calculate (again and again)
+        → finalize → publish → mark paid; reopen and cancel. Warnings come first.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/runs/{id}/calculate/:
+    post:
+      operationId: companies_payroll_runs_calculate_create
+      description: |-
+        Payroll runs: one a month (plus final settlements). Draft → calculate (again and again)
+        → finalize → publish → mark paid; reopen and cancel. Warnings come first.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollRunCalculateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollRunCalculateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollRunCalculateRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/runs/{id}/cancel/:
+    post:
+      operationId: companies_payroll_runs_cancel_create
+      description: |-
+        Payroll runs: one a month (plus final settlements). Draft → calculate (again and again)
+        → finalize → publish → mark paid; reopen and cancel. Warnings come first.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollReasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollReasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollReasonRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/runs/{id}/finalize/:
+    post:
+      operationId: companies_payroll_runs_finalize_create
+      description: |-
+        Payroll runs: one a month (plus final settlements). Draft → calculate (again and again)
+        → finalize → publish → mark paid; reopen and cancel. Warnings come first.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/runs/{id}/mark-paid/:
+    post:
+      operationId: companies_payroll_runs_mark_paid_create
+      description: |-
+        Payroll runs: one a month (plus final settlements). Draft → calculate (again and again)
+        → finalize → publish → mark paid; reopen and cancel. Warnings come first.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollMarkPaidRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollMarkPaidRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollMarkPaidRequest'
+        required: true
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/runs/{id}/payslips/:
+    get:
+      operationId: companies_payroll_runs_payslips_list
+      description: |-
+        Payroll runs: one a month (plus final settlements). Draft → calculate (again and again)
+        → finalize → publish → mark paid; reopen and cancel. Warnings come first.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+        description: draft,published,paid
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPayslipRowList'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/runs/{id}/publish/:
+    post:
+      operationId: companies_payroll_runs_publish_create
+      description: |-
+        Payroll runs: one a month (plus final settlements). Draft → calculate (again and again)
+        → finalize → publish → mark paid; reopen and cancel. Warnings come first.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollPublishRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollPublishRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollPublishRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/runs/{id}/reopen/:
+    post:
+      operationId: companies_payroll_runs_reopen_create
+      description: |-
+        Payroll runs: one a month (plus final settlements). Draft → calculate (again and again)
+        → finalize → publish → mark paid; reopen and cancel. Warnings come first.
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollReasonRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollReasonRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollReasonRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/settings/:
+    get:
+      operationId: companies_payroll_settings_retrieve
+      description: |-
+        The company's payroll rules: pay day, advances, the deductions cap, rounding,
+        overtime, holiday and night pay, and taxes (off by default).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollSettings'
+          description: ''
+    patch:
+      operationId: companies_payroll_settings_partial_update
+      description: |-
+        The company's payroll rules: pay day, advances, the deductions cap, rounding,
+        overtime, holiday and night pay, and taxes (off by default).
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPayrollSettingsRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPayrollSettingsRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPayrollSettingsRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollSettings'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/task-rates/:
+    get:
+      operationId: companies_payroll_task_rates_list
+      description: 'Piece rates: what one finished task earns people whose pay setup
+        pays task rates.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskRate'
+          description: ''
+    post:
+      operationId: companies_payroll_task_rates_create
+      description: 'Piece rates: what one finished task earns people whose pay setup
+        pays task rates.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayrollTaskRateWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayrollTaskRateWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayrollTaskRateWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskRate'
+          description: ''
+  /api/v1/owner/companies/{company_id}/payroll/task-rates/{id}/:
+    get:
+      operationId: companies_payroll_task_rates_retrieve
+      description: 'Piece rates: what one finished task earns people whose pay setup
+        pays task rates.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskRate'
+          description: ''
+    patch:
+      operationId: companies_payroll_task_rates_partial_update
+      description: 'Piece rates: what one finished task earns people whose pay setup
+        pays task rates.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPayrollTaskRateWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPayrollTaskRateWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPayrollTaskRateWriteRequest'
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskRate'
+          description: ''
+    delete:
+      operationId: companies_payroll_task_rates_destroy
+      description: 'Piece rates: what one finished task earns people whose pay setup
+        pays task rates.'
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - companies
+      security:
+      - ownerJwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/owner/companies/{company_id}/people/:
     get:
       operationId: companies_people_list
@@ -17276,6 +19017,222 @@ components:
       required:
       - id
       - name
+    Adjustment:
+      type: object
+      description: Drops `amount_fields` from the output unless the context's `show_amounts`
+        is true.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        member:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPerson'
+          readOnly: true
+        period:
+          type: string
+          example: '2026-10-01'
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/PayrollAdjustmentKindEnum'
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        currency:
+          allOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          readOnly: true
+        reason:
+          type: string
+          readOnly: true
+        source:
+          allOf:
+          - $ref: '#/components/schemas/PayrollAdjustmentSourceEnum'
+          readOnly: true
+        rule:
+          allOf:
+          - $ref: '#/components/schemas/PayrollRef'
+          nullable: true
+          readOnly: true
+        task:
+          allOf:
+          - $ref: '#/components/schemas/PayrollRef'
+          nullable: true
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/PayrollAdjustmentStatusEnum'
+          readOnly: true
+        proposed_by:
+          type: string
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        decided_by:
+          type: string
+          nullable: true
+          readOnly: true
+        decided_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        decision_note:
+          type: string
+          readOnly: true
+        disputed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        dispute_text:
+          type: string
+          readOnly: true
+        dispute_answer:
+          type: string
+          readOnly: true
+        dispute_answered_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        dispute_open:
+          type: boolean
+        locked:
+          type: boolean
+        payslip:
+          type: integer
+          nullable: true
+      required:
+      - created_at
+      - currency
+      - decided_at
+      - decided_by
+      - decision_note
+      - dispute_answer
+      - dispute_answered_at
+      - dispute_open
+      - dispute_text
+      - disputed_at
+      - id
+      - kind
+      - locked
+      - member
+      - payslip
+      - period
+      - proposed_by
+      - reason
+      - rule
+      - source
+      - status
+      - task
+    Advance:
+      type: object
+      description: Drops `amount_fields` from the output unless the context's `show_amounts`
+        is true.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        member:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPerson'
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        currency:
+          allOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          readOnly: true
+        installments:
+          type: integer
+          readOnly: true
+        first_period:
+          type: string
+          example: '2026-10-01'
+        reason:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/PayrollAdvanceStatusEnum'
+          readOnly: true
+        requested_by:
+          type: string
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        decided_by:
+          type: string
+          nullable: true
+          readOnly: true
+        decided_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        decision_note:
+          type: string
+          readOnly: true
+        paid_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        paid_by:
+          type: string
+          nullable: true
+          readOnly: true
+        payout_method:
+          allOf:
+          - $ref: '#/components/schemas/HrPayoutMethodEnum'
+          readOnly: true
+        repaid:
+          type: string
+          example: '500000.00'
+          readOnly: true
+        left:
+          type: string
+          example: '500000.00'
+          readOnly: true
+        repayments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayrollRepayment'
+          readOnly: true
+        debt:
+          type: integer
+          nullable: true
+      required:
+      - created_at
+      - currency
+      - debt
+      - decided_at
+      - decided_by
+      - decision_note
+      - first_period
+      - id
+      - installments
+      - left
+      - member
+      - paid_at
+      - paid_by
+      - payout_method
+      - reason
+      - repaid
+      - repayments
+      - requested_by
+      - status
     AgendaAttendee:
       type: object
       properties:
@@ -19021,6 +20978,77 @@ components:
       - team_directory_phones
       - timezone
       - workdays
+    Compensation:
+      type: object
+      description: Drops `amount_fields` from the output unless the context's `show_amounts`
+        is true.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        member:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPerson'
+          readOnly: true
+        effective_from:
+          type: string
+          format: date
+          readOnly: true
+        pay_type:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPayTypeEnum'
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        currency:
+          allOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          readOnly: true
+        proration:
+          allOf:
+          - $ref: '#/components/schemas/PayrollProrationEnum'
+          readOnly: true
+        pays_task_rates:
+          type: boolean
+          readOnly: true
+          description: Also earns the task rates for finished tasks.
+        overtime_eligible:
+          type: boolean
+          readOnly: true
+        note:
+          type: string
+          readOnly: true
+        locked:
+          type: boolean
+          readOnly: true
+        locked_reason:
+          type: string
+          nullable: true
+          readOnly: true
+        created_by:
+          type: string
+          nullable: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - created_by
+      - currency
+      - effective_from
+      - id
+      - locked
+      - locked_reason
+      - member
+      - note
+      - overtime_eligible
+      - pay_type
+      - pays_task_rates
+      - proration
     ConsoleActionMethodEnum:
       enum:
       - POST
@@ -23719,6 +25747,55 @@ components:
           maxLength: 300
       required:
       - reason
+    Line:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/PayrollLineKindEnum'
+          readOnly: true
+        label:
+          type: string
+          readOnly: true
+        quantity:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        params:
+          readOnly: true
+        adjustment:
+          type: integer
+          nullable: true
+        advance:
+          type: integer
+          nullable: true
+        manual:
+          type: boolean
+          readOnly: true
+      required:
+      - adjustment
+      - advance
+      - amount
+      - id
+      - kind
+      - label
+      - manual
+      - params
+      - quantity
+      - rate
     LockRequest:
       type: object
       properties:
@@ -24924,6 +27001,52 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AIDraft'
+    PaginatedAdjustmentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Adjustment'
+    PaginatedAdvanceList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Advance'
     PaginatedAgendaEventList:
       type: object
       required:
@@ -24993,6 +27116,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AuditRecord'
+    PaginatedCompensationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Compensation'
     PaginatedCorrectionOutList:
       type: object
       required:
@@ -25430,6 +27576,75 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/OwnerTimeOff'
+    PaginatedPayrollBulkResultList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayrollBulkResult'
+    PaginatedPayrollPaySetupRowList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayrollPaySetupRow'
+    PaginatedPayslipRowList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayslipRow'
     PaginatedRecordRowList:
       type: object
       required:
@@ -25453,6 +27668,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/RecordRow'
+    PaginatedRunList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Run'
     PaginatedSaleList:
       type: object
       required:
@@ -26492,6 +28730,199 @@ components:
           pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
         is_active:
           type: boolean
+    PatchedPayrollCompensationUpdateRequest:
+      type: object
+      properties:
+        effective_from:
+          type: string
+          format: date
+        pay_type:
+          $ref: '#/components/schemas/PayrollPayTypeEnum'
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        currency:
+          $ref: '#/components/schemas/CurrencyEnum'
+        proration:
+          $ref: '#/components/schemas/PayrollProrationEnum'
+        pays_task_rates:
+          type: boolean
+        overtime_eligible:
+          type: boolean
+        note:
+          type: string
+          maxLength: 300
+    PatchedPayrollPayslipPatchRequest:
+      type: object
+      properties:
+        manual_lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayrollManualLineRequest'
+    PatchedPayrollRuleWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        kind:
+          $ref: '#/components/schemas/PayrollRuleKindEnum'
+        metric:
+          $ref: '#/components/schemas/PayrollRuleMetricEnum'
+        mode:
+          $ref: '#/components/schemas/PayrollRuleModeEnum'
+        op:
+          $ref: '#/components/schemas/PayrollRuleOpEnum'
+        threshold:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,14}(?:\.\d{0,2})?$
+          nullable: true
+        free_units:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        tiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayrollRuleTierRequest'
+        amount_type:
+          $ref: '#/components/schemas/PayrollRuleAmountTypeEnum'
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        cap:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        min_tasks:
+          type: integer
+          maximum: 1000
+          minimum: 0
+        positions:
+          type: array
+          items:
+            type: integer
+        evaluate:
+          $ref: '#/components/schemas/PayrollRuleEvaluateEnum'
+        auto_approve:
+          type: boolean
+        is_active:
+          type: boolean
+    PatchedPayrollSettingsRequest:
+      type: object
+      properties:
+        currency:
+          allOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          description: |-
+            The currency payslips are paid in.
+
+            * `UZS` - Uzbek som
+            * `USD` - US dollar
+        pay_day:
+          type: integer
+          maximum: 28
+          minimum: 1
+          description: Day of the month salaries are paid.
+        advance_day:
+          type: integer
+          maximum: 28
+          minimum: 1
+          nullable: true
+          description: 'Day of the month advances are usually paid. Empty: no fixed
+            day.'
+        advance_cap_percent:
+          type: integer
+          maximum: 100
+          minimum: 0
+          description: Advances may add up to this share of a month's pay.
+        amounts_are_net:
+          type: boolean
+          description: Pay amounts are what people receive; taxes come on top.
+        taxes_enabled:
+          type: boolean
+          description: Estimate income tax, pension and social tax. Check with your
+            accountant.
+        income_tax_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        social_tax_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        inps_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        deductions_cap_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          description: Fines and deductions together never take more than this share
+            of the pay.
+        rounding_step:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        overtime_multiplier:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+        holiday_work_multiplier:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+        night_multiplier:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          description: Night hours are paid at this rate (the Labour Code asks for
+            at least 1.5). The shorter night shift the law also asks for is not counted.
+        night_starts_at:
+          type: string
+          format: time
+        night_ends_at:
+          type: string
+          format: time
+        daily_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          description: 'Hours in a normal working day: turns monthly and daily pay
+            into an hourly rate.'
+        auto_prepare:
+          type: boolean
+          description: Prepare last month's draft run on the 1st of each month.
+        leave_payout_months:
+          type: integer
+          maximum: 24
+          minimum: 1
+    PatchedPayrollTaskRateWriteRequest:
+      type: object
+      properties:
+        template:
+          type: integer
+          nullable: true
+        position:
+          type: integer
+          nullable: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        currency:
+          $ref: '#/components/schemas/CurrencyEnum'
+        on_time_only:
+          type: boolean
+        is_active:
+          type: boolean
     PatchedPersonUpdateRequest:
       type: object
       properties:
@@ -27222,6 +29653,1300 @@ components:
       - account
       - amount
       - paid_on
+    PayrollAdjustmentKindEnum:
+      enum:
+      - bonus
+      - fine
+      - allowance
+      - deduction
+      type: string
+      description: |-
+        * `bonus` - Bonus
+        * `fine` - Fine
+        * `allowance` - Allowance
+        * `deduction` - Deduction
+    PayrollAdjustmentSourceEnum:
+      enum:
+      - manual
+      - rule
+      - task
+      - attendance
+      - discipline
+      type: string
+      description: |-
+        * `manual` - Added by hand
+        * `rule` - Automatic rule
+        * `task` - Task
+        * `attendance` - Attendance
+        * `discipline` - Disciplinary record
+    PayrollAdjustmentStatusEnum:
+      enum:
+      - proposed
+      - approved
+      - rejected
+      - void
+      type: string
+      description: |-
+        * `proposed` - Proposed
+        * `approved` - Approved
+        * `rejected` - Rejected
+        * `void` - Void
+    PayrollAdjustmentWriteRequest:
+      type: object
+      properties:
+        membership:
+          type: integer
+        kind:
+          $ref: '#/components/schemas/PayrollAdjustmentKindEnum'
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+        period:
+          type: string
+          example: '2026-10-01'
+        approve:
+          type: boolean
+          default: false
+          description: Approve at once (payroll.manage).
+      required:
+      - amount
+      - kind
+      - membership
+      - reason
+    PayrollAdvanceDecideRequest:
+      type: object
+      properties:
+        approve:
+          type: boolean
+        reason:
+          type: string
+          default: ''
+          maxLength: 300
+        installments:
+          type: integer
+          maximum: 12
+          minimum: 1
+        first_period:
+          type: string
+          example: '2026-10-01'
+      required:
+      - approve
+    PayrollAdvancePayRequest:
+      type: object
+      properties:
+        account:
+          type: integer
+        method:
+          allOf:
+          - $ref: '#/components/schemas/HrPayoutMethodEnum'
+          default: cash
+        paid_on:
+          type: string
+          format: date
+      required:
+      - account
+    PayrollAdvanceRepayRequest:
+      type: object
+      properties:
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        account:
+          type: integer
+        paid_on:
+          type: string
+          format: date
+        note:
+          type: string
+          default: ''
+          maxLength: 300
+      required:
+      - account
+      - amount
+    PayrollAdvanceStatusEnum:
+      enum:
+      - requested
+      - approved
+      - rejected
+      - paid
+      - repaid
+      - cancelled
+      type: string
+      description: |-
+        * `requested` - Requested
+        * `approved` - Approved
+        * `rejected` - Rejected
+        * `paid` - Paid
+        * `repaid` - Repaid
+        * `cancelled` - Cancelled
+    PayrollAdvanceWriteRequest:
+      type: object
+      properties:
+        membership:
+          type: integer
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        installments:
+          type: integer
+          maximum: 12
+          minimum: 1
+          default: 1
+        first_period:
+          type: string
+          example: '2026-10-01'
+        reason:
+          type: string
+          default: ''
+          maxLength: 300
+      required:
+      - amount
+      - membership
+    PayrollAnswerDisputeRequest:
+      type: object
+      properties:
+        answer:
+          type: string
+          maxLength: 500
+        reason:
+          type: string
+          description: Same as answer (Needs you).
+          maxLength: 500
+        void:
+          type: boolean
+          default: false
+          description: Also take the fine back.
+    PayrollBulkDecideRequest:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: integer
+          maxItems: 200
+          minItems: 1
+        approve:
+          type: boolean
+        reason:
+          type: string
+          default: ''
+          maxLength: 300
+      required:
+      - approve
+      - ids
+    PayrollBulkResult:
+      type: object
+      properties:
+        id:
+          type: integer
+        ok:
+          type: boolean
+        status:
+          type: string
+        error:
+          type: string
+      required:
+      - id
+      - ok
+    PayrollCompensationWriteRequest:
+      type: object
+      properties:
+        membership:
+          type: integer
+        effective_from:
+          type: string
+          format: date
+        pay_type:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPayTypeEnum'
+          default: monthly
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        currency:
+          $ref: '#/components/schemas/CurrencyEnum'
+        proration:
+          allOf:
+          - $ref: '#/components/schemas/PayrollProrationEnum'
+          default: attendance
+        pays_task_rates:
+          type: boolean
+          default: false
+        overtime_eligible:
+          type: boolean
+          default: true
+        note:
+          type: string
+          maxLength: 300
+      required:
+      - amount
+      - effective_from
+      - membership
+    PayrollFileLink:
+      type: object
+      properties:
+        url:
+          type: string
+        name:
+          type: string
+        expires_in:
+          type: integer
+      required:
+      - expires_in
+      - name
+      - url
+    PayrollLineKindEnum:
+      enum:
+      - base
+      - proration
+      - overtime
+      - holiday_work
+      - night_work
+      - piece
+      - task_reward
+      - bonus
+      - allowance
+      - reimbursement
+      - fine
+      - deduction
+      - advance
+      - loan
+      - income_tax
+      - inps
+      - leave_compensation
+      - leave_payout
+      - rounding
+      - manual
+      type: string
+      description: |-
+        * `base` - Base pay
+        * `proration` - Days not paid
+        * `overtime` - Overtime
+        * `holiday_work` - Holiday work
+        * `night_work` - Night work
+        * `piece` - Task pay
+        * `task_reward` - Task reward
+        * `bonus` - Bonus
+        * `allowance` - Allowance
+        * `reimbursement` - Expenses paid back
+        * `fine` - Fine
+        * `deduction` - Deduction
+        * `advance` - Advance repaid
+        * `loan` - Loan repaid
+        * `income_tax` - Income tax
+        * `inps` - Pension contribution
+        * `leave_compensation` - Paid leave
+        * `leave_payout` - Unused leave paid out
+        * `rounding` - Rounding
+        * `manual` - Added by hand
+    PayrollManualLineRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        label:
+          type: string
+          minLength: 1
+          maxLength: 200
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+      required:
+      - amount
+      - label
+    PayrollMarkPaidRequest:
+      type: object
+      properties:
+        payslip_ids:
+          type: array
+          items:
+            type: integer
+          maxItems: 1000
+          minItems: 1
+        method:
+          allOf:
+          - $ref: '#/components/schemas/HrPayoutMethodEnum'
+          default: cash
+        account:
+          type: integer
+        paid_on:
+          type: string
+          format: date
+      required:
+      - account
+      - payslip_ids
+    PayrollOverview:
+      type: object
+      properties:
+        currency:
+          type: string
+        months:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayrollOverviewMonth'
+        latest:
+          type: object
+          additionalProperties: {}
+          nullable: true
+        by_position:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayrollOverviewGroup'
+        by_branch:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayrollOverviewGroup'
+        projected:
+          $ref: '#/components/schemas/PayrollOverviewProjected'
+        headcount:
+          type: integer
+        pending:
+          $ref: '#/components/schemas/PayrollOverviewPending'
+      required:
+      - by_branch
+      - by_position
+      - currency
+      - headcount
+      - latest
+      - months
+      - pending
+      - projected
+    PayrollOverviewGroup:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        people:
+          type: integer
+        gross:
+          type: string
+      required:
+      - gross
+      - key
+      - label
+      - people
+    PayrollOverviewMonth:
+      type: object
+      properties:
+        period:
+          type: string
+        label:
+          type: string
+        status:
+          type: string
+        people:
+          type: integer
+        gross:
+          type: string
+        net:
+          type: string
+        bonuses:
+          type: string
+        fines:
+          type: string
+        advances:
+          type: string
+      required:
+      - advances
+      - bonuses
+      - fines
+      - gross
+      - label
+      - net
+      - people
+      - period
+      - status
+    PayrollOverviewPending:
+      type: object
+      properties:
+        adjustments:
+          type: integer
+        disputes:
+          type: integer
+        advances:
+          type: integer
+      required:
+      - adjustments
+      - advances
+      - disputes
+    PayrollOverviewProjected:
+      type: object
+      properties:
+        period:
+          type: string
+        label:
+          type: string
+        source:
+          $ref: '#/components/schemas/PayrollOverviewProjectedSourceEnum'
+        people:
+          type: integer
+        gross:
+          type: string
+        net:
+          type: string
+      required:
+      - gross
+      - label
+      - net
+      - people
+      - period
+      - source
+    PayrollOverviewProjectedSourceEnum:
+      enum:
+      - run
+      - estimate
+      type: string
+      description: |-
+        * `run` - run
+        * `estimate` - estimate
+    PayrollPaySetupRow:
+      type: object
+      description: 'A person on the Pay setups page: the setup in force today and
+        the next one planned.'
+      properties:
+        member:
+          $ref: '#/components/schemas/PayrollPersonCard'
+        current:
+          allOf:
+          - $ref: '#/components/schemas/Compensation'
+          nullable: true
+        next:
+          allOf:
+          - $ref: '#/components/schemas/Compensation'
+          nullable: true
+      required:
+      - current
+      - member
+      - next
+    PayrollPayTypeEnum:
+      enum:
+      - monthly
+      - daily
+      - hourly
+      - per_task
+      type: string
+      description: |-
+        * `monthly` - Monthly
+        * `daily` - Daily
+        * `hourly` - Hourly
+        * `per_task` - Per task
+    PayrollPayslip:
+      type: object
+      description: A payslip with every line and how it was worked out.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        member:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPersonCard'
+          readOnly: true
+        period:
+          type: string
+          readOnly: true
+        pay_type:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPayTypeEnum'
+          readOnly: true
+        currency:
+          allOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          readOnly: true
+        base_pay:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        bonuses:
+          type: string
+          readOnly: true
+        fines:
+          type: string
+          readOnly: true
+        advances:
+          type: string
+          readOnly: true
+        reimbursements:
+          type: string
+          readOnly: true
+        gross:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        deductions:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        net:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        status:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPayslipStatusEnum'
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        viewed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        paid_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        received_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        payout_method:
+          allOf:
+          - $ref: '#/components/schemas/HrPayoutMethodEnum'
+          readOnly: true
+        run:
+          type: integer
+        run_status:
+          type: string
+        month:
+          type: string
+          readOnly: true
+        scheduled_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        paid_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        paid_leave_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        unpaid_leave_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        absent_days:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+        worked_minutes:
+          type: integer
+          readOnly: true
+        overtime_minutes:
+          type: integer
+          readOnly: true
+        night_minutes:
+          type: integer
+          readOnly: true
+        late_arrivals:
+          type: integer
+          readOnly: true
+        task_stats:
+          type: object
+          additionalProperties: {}
+        taxes:
+          type: object
+          additionalProperties: {}
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/Line'
+          readOnly: true
+      required:
+      - absent_days
+      - advances
+      - base_pay
+      - bonuses
+      - currency
+      - deductions
+      - fines
+      - gross
+      - id
+      - late_arrivals
+      - lines
+      - member
+      - month
+      - net
+      - night_minutes
+      - overtime_minutes
+      - paid_at
+      - paid_days
+      - paid_leave_days
+      - pay_type
+      - payout_method
+      - period
+      - published_at
+      - received_at
+      - reimbursements
+      - run
+      - run_status
+      - scheduled_days
+      - status
+      - task_stats
+      - taxes
+      - unpaid_leave_days
+      - viewed_at
+      - worked_minutes
+    PayrollPayslipStatusEnum:
+      enum:
+      - draft
+      - published
+      - paid
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `published` - Published
+        * `paid` - Paid
+    PayrollPerson:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        photo_url:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
+      - photo_url
+    PayrollPersonCard:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        photo_url:
+          type: string
+          nullable: true
+        position:
+          type: string
+          nullable: true
+        home_branch:
+          type: string
+          nullable: true
+        status:
+          type: string
+      required:
+      - home_branch
+      - id
+      - name
+      - photo_url
+      - position
+      - status
+    PayrollProrationEnum:
+      enum:
+      - attendance
+      - calendar
+      - none
+      type: string
+      description: |-
+        * `attendance` - By attendance
+        * `calendar` - By calendar days
+        * `none` - Full amount
+    PayrollPublishRequest:
+      type: object
+      properties:
+        payslip_ids:
+          type: array
+          items:
+            type: integer
+          nullable: true
+          maxItems: 1000
+    PayrollReasonRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          default: ''
+          maxLength: 300
+    PayrollRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    PayrollRepayment:
+      type: object
+      description: Drops `amount_fields` from the output unless the context's `show_amounts`
+        is true.
+      properties:
+        id:
+          type: integer
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        paid_on:
+          type: string
+          format: date
+        note:
+          type: string
+        payslip:
+          type: integer
+          nullable: true
+          readOnly: true
+        how:
+          type: string
+          readOnly: true
+      required:
+      - how
+      - id
+      - note
+      - paid_on
+      - payslip
+    PayrollRequiredReasonRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+      required:
+      - reason
+    PayrollRuleAmountTypeEnum:
+      enum:
+      - fixed
+      - percent
+      type: string
+      description: |-
+        * `fixed` - Fixed amount
+        * `percent` - Percent
+    PayrollRuleEvaluateEnum:
+      enum:
+      - daily
+      - monthly
+      type: string
+      description: |-
+        * `daily` - Every day
+        * `monthly` - Once a month
+    PayrollRuleKindEnum:
+      enum:
+      - bonus
+      - fine
+      type: string
+      description: |-
+        * `bonus` - Bonus
+        * `fine` - Fine
+    PayrollRuleMetricEnum:
+      enum:
+      - tasks.on_time_percent
+      - tasks.done
+      - tasks.late
+      - tasks.missed
+      - tasks.reminders_per_task
+      - tasks.avg_delay_minutes
+      - attendance.late_arrivals
+      - attendance.late_minutes
+      - attendance.absences
+      - attendance.early_leaves
+      - attendance.hours
+      - sales.net
+      type: string
+      description: |-
+        * `tasks.on_time_percent` - Tasks on time, %
+        * `tasks.done` - Tasks done
+        * `tasks.late` - Tasks done late
+        * `tasks.missed` - Tasks missed
+        * `tasks.reminders_per_task` - Reminders per task
+        * `tasks.avg_delay_minutes` - Average delay, minutes
+        * `attendance.late_arrivals` - Late arrivals
+        * `attendance.late_minutes` - Minutes late
+        * `attendance.absences` - Absences
+        * `attendance.early_leaves` - Early leaves
+        * `attendance.hours` - Hours worked
+        * `sales.net` - Net sales
+    PayrollRuleModeEnum:
+      enum:
+      - once
+      - per_unit
+      - tiered
+      type: string
+      description: |-
+        * `once` - Once
+        * `per_unit` - Per unit
+        * `tiered` - Tiered
+    PayrollRuleOpEnum:
+      enum:
+      - gte
+      - gt
+      - lte
+      - lt
+      type: string
+      description: |-
+        * `gte` - at least
+        * `gt` - more than
+        * `lte` - at most
+        * `lt` - less than
+    PayrollRulePreview:
+      type: object
+      properties:
+        period:
+          type: string
+        to:
+          type: string
+        currency:
+          type: string
+        total:
+          type: string
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayrollRulePreviewRow'
+      required:
+      - currency
+      - period
+      - rows
+      - to
+    PayrollRulePreviewRequestRequest:
+      type: object
+      properties:
+        period:
+          type: string
+          example: '2026-10-01'
+    PayrollRulePreviewRow:
+      type: object
+      description: Drops `amount_fields` from the output unless the context's `show_amounts`
+        is true.
+      properties:
+        member:
+          $ref: '#/components/schemas/PayrollPerson'
+        value:
+          type: string
+          nullable: true
+        amount:
+          type: string
+          nullable: true
+        units:
+          type: string
+          nullable: true
+        tier:
+          type: string
+          nullable: true
+      required:
+      - member
+      - tier
+      - units
+      - value
+    PayrollRuleTier:
+      type: object
+      properties:
+        threshold:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,14}(?:\.\d{0,2})?$
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+      required:
+      - amount
+      - threshold
+    PayrollRuleTierRequest:
+      type: object
+      properties:
+        threshold:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,14}(?:\.\d{0,2})?$
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+      required:
+      - amount
+      - threshold
+    PayrollRuleWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        kind:
+          $ref: '#/components/schemas/PayrollRuleKindEnum'
+        metric:
+          $ref: '#/components/schemas/PayrollRuleMetricEnum'
+        mode:
+          $ref: '#/components/schemas/PayrollRuleModeEnum'
+        op:
+          $ref: '#/components/schemas/PayrollRuleOpEnum'
+        threshold:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,14}(?:\.\d{0,2})?$
+          nullable: true
+        free_units:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        tiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayrollRuleTierRequest'
+        amount_type:
+          $ref: '#/components/schemas/PayrollRuleAmountTypeEnum'
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        cap:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        min_tasks:
+          type: integer
+          maximum: 1000
+          minimum: 0
+        positions:
+          type: array
+          items:
+            type: integer
+        evaluate:
+          $ref: '#/components/schemas/PayrollRuleEvaluateEnum'
+        auto_approve:
+          type: boolean
+        is_active:
+          type: boolean
+    PayrollRunCalculateRequest:
+      type: object
+      properties:
+        usd_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,6})?$
+    PayrollRunCreateRequest:
+      type: object
+      properties:
+        period:
+          type: string
+          example: '2026-10-01'
+        usd_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,6})?$
+        notes:
+          type: string
+          default: ''
+          maxLength: 2000
+      required:
+      - period
+    PayrollRunKindEnum:
+      enum:
+      - regular
+      - final
+      type: string
+      description: |-
+        * `regular` - Monthly
+        * `final` - Final settlement
+    PayrollRunStatusEnum:
+      enum:
+      - draft
+      - finalized
+      - paid
+      - cancelled
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `finalized` - Finalized
+        * `paid` - Paid
+        * `cancelled` - Cancelled
+    PayrollRunTotals:
+      type: object
+      properties:
+        currency:
+          type: string
+        people:
+          type: integer
+        gross:
+          type: string
+        deductions:
+          type: string
+        net:
+          type: string
+        bonuses:
+          type: string
+        fines:
+          type: string
+        advances:
+          type: string
+        reimbursements:
+          type: string
+        taxes:
+          type: object
+          additionalProperties:
+            type: string
+        paid:
+          type: integer
+        published:
+          type: integer
+      required:
+      - advances
+      - bonuses
+      - currency
+      - deductions
+      - fines
+      - gross
+      - net
+      - paid
+      - people
+      - published
+      - reimbursements
+      - taxes
+    PayrollSettings:
+      type: object
+      properties:
+        currency:
+          allOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          description: |-
+            The currency payslips are paid in.
+
+            * `UZS` - Uzbek som
+            * `USD` - US dollar
+        pay_day:
+          type: integer
+          maximum: 28
+          minimum: 1
+          description: Day of the month salaries are paid.
+        advance_day:
+          type: integer
+          maximum: 28
+          minimum: 1
+          nullable: true
+          description: 'Day of the month advances are usually paid. Empty: no fixed
+            day.'
+        advance_cap_percent:
+          type: integer
+          maximum: 100
+          minimum: 0
+          description: Advances may add up to this share of a month's pay.
+        amounts_are_net:
+          type: boolean
+          description: Pay amounts are what people receive; taxes come on top.
+        taxes_enabled:
+          type: boolean
+          description: Estimate income tax, pension and social tax. Check with your
+            accountant.
+        income_tax_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        social_tax_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        inps_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        deductions_cap_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          description: Fines and deductions together never take more than this share
+            of the pay.
+        rounding_step:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        overtime_multiplier:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+        holiday_work_multiplier:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+        night_multiplier:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          description: Night hours are paid at this rate (the Labour Code asks for
+            at least 1.5). The shorter night shift the law also asks for is not counted.
+        night_starts_at:
+          type: string
+          format: time
+        night_ends_at:
+          type: string
+          format: time
+        daily_hours:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+          description: 'Hours in a normal working day: turns monthly and daily pay
+            into an hourly rate.'
+        auto_prepare:
+          type: boolean
+          description: Prepare last month's draft run on the 1st of each month.
+        leave_payout_months:
+          type: integer
+          maximum: 24
+          minimum: 1
+      required:
+      - rounding_step
+    PayrollTaskRateWriteRequest:
+      type: object
+      properties:
+        template:
+          type: integer
+          nullable: true
+        position:
+          type: integer
+          nullable: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        currency:
+          $ref: '#/components/schemas/CurrencyEnum'
+        on_time_only:
+          type: boolean
+        is_active:
+          type: boolean
+    PayrollWarning:
+      type: object
+      properties:
+        code:
+          type: string
+        level:
+          type: string
+        text:
+          type: string
+        member:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPerson'
+          nullable: true
+        count:
+          type: integer
+      required:
+      - code
+      - level
+      - text
+    PayslipRow:
+      type: object
+      description: 'A row of a run''s payslip table: the person and their sums by
+        kind.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        member:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPersonCard'
+          readOnly: true
+        period:
+          type: string
+          readOnly: true
+        pay_type:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPayTypeEnum'
+          readOnly: true
+        currency:
+          allOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          readOnly: true
+        base_pay:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        bonuses:
+          type: string
+          readOnly: true
+        fines:
+          type: string
+          readOnly: true
+        advances:
+          type: string
+          readOnly: true
+        reimbursements:
+          type: string
+          readOnly: true
+        gross:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        deductions:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        net:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        status:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPayslipStatusEnum'
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        viewed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        paid_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        received_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        payout_method:
+          allOf:
+          - $ref: '#/components/schemas/HrPayoutMethodEnum'
+          readOnly: true
+      required:
+      - advances
+      - base_pay
+      - bonuses
+      - currency
+      - deductions
+      - fines
+      - gross
+      - id
+      - member
+      - net
+      - paid_at
+      - pay_type
+      - payout_method
+      - period
+      - published_at
+      - received_at
+      - reimbursements
+      - status
+      - viewed_at
     Period:
       type: object
       properties:
@@ -30882,6 +34607,198 @@ components:
         escalate_to_id:
           type: integer
           nullable: true
+    Rule:
+      type: object
+      description: Drops `amount_fields` from the output unless the context's `show_amounts`
+        is true.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/PayrollRuleKindEnum'
+          readOnly: true
+        metric:
+          allOf:
+          - $ref: '#/components/schemas/PayrollRuleMetricEnum'
+          readOnly: true
+        mode:
+          allOf:
+          - $ref: '#/components/schemas/PayrollRuleModeEnum'
+          readOnly: true
+        op:
+          allOf:
+          - $ref: '#/components/schemas/PayrollRuleOpEnum'
+          readOnly: true
+        threshold:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,14}(?:\.\d{0,2})?$
+          nullable: true
+        free_units:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        tiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayrollRuleTier'
+        amount_type:
+          allOf:
+          - $ref: '#/components/schemas/PayrollRuleAmountTypeEnum'
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        cap:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+          nullable: true
+        min_tasks:
+          type: integer
+          readOnly: true
+          description: Task metrics count only for people with at least this many
+            tasks.
+        positions:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayrollRef'
+          readOnly: true
+        evaluate:
+          allOf:
+          - $ref: '#/components/schemas/PayrollRuleEvaluateEnum'
+          readOnly: true
+        auto_approve:
+          type: boolean
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+        example:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - amount_type
+      - auto_approve
+      - created_at
+      - evaluate
+      - example
+      - free_units
+      - id
+      - is_active
+      - kind
+      - metric
+      - min_tasks
+      - mode
+      - name
+      - op
+      - positions
+      - threshold
+      - updated_at
+    Run:
+      type: object
+      description: A run. Its totals (money) reach only payroll.view holders, who
+        alone read runs.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        period:
+          type: string
+          example: '2026-10-01'
+        month:
+          type: string
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/PayrollRunKindEnum'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/PayrollRunStatusEnum'
+          readOnly: true
+        member:
+          allOf:
+          - $ref: '#/components/schemas/PayrollPerson'
+          nullable: true
+          readOnly: true
+        usd_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,6})?$
+          nullable: true
+        calculated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        totals:
+          allOf:
+          - $ref: '#/components/schemas/PayrollRunTotals'
+          readOnly: true
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayrollWarning'
+          readOnly: true
+        finalized_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        finalized_by:
+          type: string
+          nullable: true
+          readOnly: true
+        paid_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        notes:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        actions:
+          type: array
+          items:
+            type: string
+          readOnly: true
+      required:
+      - actions
+      - calculated_at
+      - created_at
+      - finalized_at
+      - finalized_by
+      - id
+      - kind
+      - member
+      - month
+      - notes
+      - paid_at
+      - period
+      - status
+      - totals
+      - usd_rate
+      - warnings
     Sale:
       type: object
       properties:
@@ -32720,6 +36637,45 @@ components:
       required:
       - day
       - items
+    TaskRate:
+      type: object
+      description: Drops `amount_fields` from the output unless the context's `show_amounts`
+        is true.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        template:
+          allOf:
+          - $ref: '#/components/schemas/PayrollRef'
+          nullable: true
+          readOnly: true
+        position:
+          allOf:
+          - $ref: '#/components/schemas/PayrollRef'
+          nullable: true
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,16}(?:\.\d{0,2})?$
+        currency:
+          allOf:
+          - $ref: '#/components/schemas/CurrencyEnum'
+          readOnly: true
+        on_time_only:
+          type: boolean
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+      required:
+      - currency
+      - id
+      - is_active
+      - on_time_only
+      - position
+      - template
     TaskReview:
       type: object
       description: |-
