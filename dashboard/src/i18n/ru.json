@@ -243,6 +243,7 @@
 
   "common.calendar.allDay": "Весь день",
   "common.calendar.week": "Неделя",
+  "common.calendar.weekNumber": "Неделя {n}",
   "common.calendar.month": "Месяц",
   "common.calendar.empty": "В этот день ничего нет",
   "common.calendar.now": "Сейчас",

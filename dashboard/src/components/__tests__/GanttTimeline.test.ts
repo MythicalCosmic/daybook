@@ -85,6 +85,15 @@ describe("GanttTimeline", () => {
     document.body.innerHTML = "";
   });
 
+  it("names a week tick in the person's language, not as \"W43\"", async () => {
+    const app = await testApp("/c/1/projects/1", "uz");
+    const { inner } = mountWithProviders(GanttTimeline, { props: { rows, zoom: "week" }, plugins: app.plugins });
+    await flushPromises();
+    const titles = inner.findAll("[title]").map((el) => el.attributes("title"));
+    expect(titles.some((title) => /^Hafta \d+$/.test(title ?? ""))).toBe(true);
+    expect(titles.some((title) => /^W\d+$/.test(title ?? ""))).toBe(false);
+  });
+
   it("moves the focused bar a day with the keyboard and changes its end with Shift", async () => {
     vi.useFakeTimers({ toFake: ["Date"], now: Date.UTC(2026, 9, 20, 6) });
     const app = await testApp("/c/1/projects/1");

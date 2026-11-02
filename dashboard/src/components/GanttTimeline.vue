@@ -233,7 +233,7 @@ watch(zoom, () => void scrollToToday(false));
                   zoom === 'day' && isWeekend(tick.day) && 'bg-surface-2/50',
                 ]"
                 :style="{ left: `${tick.left}px`, width: `${tick.width}px` }"
-                :title="zoom === 'week' ? `W${isoWeek(tick.day)}` : undefined"
+                :title="zoom === 'week' ? t('common.calendar.weekNumber', { n: isoWeek(tick.day) }) : undefined"
               >
                 {{ bottomLabel(tick.day) }}
               </div>

@@ -243,6 +243,7 @@
 
   "common.calendar.allDay": "Kun bo‘yi",
   "common.calendar.week": "Hafta",
+  "common.calendar.weekNumber": "Hafta {n}",
   "common.calendar.month": "Oy",
   "common.calendar.empty": "Bu kunda hech narsa yo‘q",
   "common.calendar.now": "Hozir",
