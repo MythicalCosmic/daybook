@@ -343,5 +343,10 @@
   "ai.agents.comingBody": "Ovozli va yozma vazifalar hozir ham ishlaydi: «Ovoz bilan berish» yoki «Aqlli qo‘shish» tugmasini bosing. O‘zi ishlaydigan agentlar serverning keyingi yangilanishi bilan keladi.",
   "ai.voice.voice": "Ovozli",
   "ai.voice.audioGone": "Yozuv saqlash muddati o‘tgach o‘chirildi; matn va vazifalar qoladi.",
-  "ai.kpi.soon": "Agentlar tez orada ishga tushadi"
+  "ai.kpi.soon": "Agentlar tez orada ishga tushadi",
+  "ai.buddy.busy": "Claude ishlayapti…",
+  "ai.buddy.onDuty": "Claude navbatchilikda",
+  "ai.buddy.ready": "Agentlar tayyor, ish kutyapti",
+  "ai.buddy.doing": "Hozir: {name}",
+  "ai.buddy.label": "Claude, AI yordamchingiz. Bosib ko‘ring"
 }

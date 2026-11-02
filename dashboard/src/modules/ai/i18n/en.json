@@ -343,5 +343,10 @@
   "ai.agents.comingBody": "Voice and typed tasks already work: press Dictate or Smart add. The agents that work by themselves arrive with the next server update.",
   "ai.voice.voice": "Voice",
   "ai.voice.audioGone": "The recording was deleted after the retention period; the transcript and tasks stay.",
-  "ai.kpi.soon": "Agents start soon"
+  "ai.kpi.soon": "Agents start soon",
+  "ai.buddy.busy": "Claude is working…",
+  "ai.buddy.onDuty": "Claude is on duty",
+  "ai.buddy.ready": "The agents are ready for work",
+  "ai.buddy.doing": "Now: {name}",
+  "ai.buddy.label": "Claude, your AI helper. Give it a tap"
 }

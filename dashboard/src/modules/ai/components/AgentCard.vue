@@ -2,7 +2,8 @@
 /**
  * One agent: what it does and when, its switch, how much it did today and this week, when it last
  * ran and runs next, and "Run now" for the scheduled ones. A soft shimmer runs along the top while
- * it works. The whole card opens the agent's settings (the title is the button, stretched).
+ * it works. The whole card opens the agent's settings (the title is the button, stretched); its
+ * chibi (AgentChibi.vue) sits where an icon would and takes its own taps.
  */
 import { LoaderCircle, Lock, Play, ScanEye } from "@lucide/vue";
 import { computed, useId } from "vue";
@@ -16,7 +17,7 @@ import { useFormat } from "@/lib/useFormat";
 import { useNow } from "@/lib/useNow";
 
 import type { Agent } from "../types";
-import AgentIcon from "./AgentIcon.vue";
+import AgentChibi from "./AgentChibi.vue";
 
 const props = withDefaults(defineProps<{ agent: Agent; canConfigure: boolean; aiOn: boolean; switching?: boolean; starting?: boolean }>(), {
   switching: false,
@@ -53,7 +54,7 @@ const nextRun = computed(() => (props.agent.next_run_at && on.value ? fmt.relati
   >
     <span v-if="agent.running" class="ai-shimmer pointer-events-none absolute inset-x-0 top-0 h-[3px]" aria-hidden="true" />
     <div class="flex items-start gap-3">
-      <AgentIcon :name="agent.icon" :on="on" :busy="agent.running" />
+      <AgentChibi class="relative z-[1] -my-1 shrink-0" :agent-key="agent.key" :name="agent.name" :on="on" :running="agent.running" />
       <div class="min-w-0 flex-1">
         <h3 class="text-md font-semibold leading-6 text-fg">
           <!-- The stretched button: a tap anywhere on the card opens the settings. -->
