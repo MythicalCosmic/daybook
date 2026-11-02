@@ -7,28 +7,47 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
 import { computed, ref, shallowRef, toValue, watch, type MaybeRefOrGetter } from "vue";
 
-import { http, ownerPath } from "@/api/http";
+import { http, isApiError, ownerPath } from "@/api/http";
 import { moduleKey, qk } from "@/api/keys";
 import type { Page } from "@/api/types";
 import { useCompanyStore } from "@/stores/company";
 
-import { arrivals, DRAFT_POLL_MS, mergeActivity, pollDecision, TURN_POLL_MS, turnIsLive } from "./lib";
+import {
+  arrivals,
+  BRIEFING_POLL_MS,
+  briefingPoll,
+  DRAFT_POLL_MS,
+  draftGiveUpMs,
+  jobPoll,
+  mergeActivity,
+  pollDecision,
+  TURN_POLL_MS,
+  turnIsLive,
+  WRITE_POLL_MS,
+} from "./lib";
 import type {
   ActivityItem,
   ActivityPage,
   Agent,
   AgentPatch,
   AiDraft,
+  AiModels,
   AiSettings,
   AiSettingsPatch,
   AiStatus,
   ApplyDraft,
   ApplyResult,
+  Briefing,
+  BriefingPeriod,
+  BriefingStatus,
   ChatMessage,
   Conversation,
   DraftSource,
   DraftStatus,
+  FlowSummary,
   Turn,
+  WriteJob,
+  WriteRequest,
 } from "./types";
 
 export const MODULE = "ai";
@@ -76,6 +95,19 @@ export const aiApi = {
     http.post<{ turn_id: number }>(path(cid, `conversations/${conversation}/turns/`), body),
   turn: (cid: number, id: number, signal?: AbortSignal) => http.get<Turn>(path(cid, `turns/${id}/`), undefined, { signal }),
   cancelTurn: (cid: number, id: number) => http.post<void>(path(cid, `turns/${id}/cancel/`), {}, { toast: false }),
+
+  // v0.3 (briefs/v3-contract.md §3, §5)
+  briefing: (cid: number, period: BriefingPeriod, signal?: AbortSignal) => http.get<Briefing>(path(cid, "briefing/"), { period }, { signal }),
+  /** 429 once a minute per person: said where the button is, not as a toast. */
+  refreshBriefing: (cid: number, period: BriefingPeriod) => http.post<{ status: BriefingStatus }>(path(cid, "briefing/refresh/"), { period }, { toast: false }),
+  models: (cid: number, signal?: AbortSignal) => http.get<AiModels>(path(cid, "models/"), undefined, { signal }),
+  /** A refusal names the feature (`{"features": {"chat": [msg]}}`): said by the page. */
+  setModels: (cid: number, features: Record<string, string>) => http.patch<AiModels>(path(cid, "models/"), { features }, { toast: false }),
+  /** The refusals (ai_off, claude_unavailable, text_too_long, 429) are said in the writing panel. */
+  write: (cid: number, body: WriteRequest) => http.post<{ job: string }>(path(cid, "write/"), body, { toast: false }),
+  job: (cid: number, id: string, signal?: AbortSignal) => http.get<WriteJob>(path(cid, `jobs/${id}/`), undefined, { signal }),
+  /** The company's flows, as the overview counts them (the Flows pages have their own hooks). */
+  flows: (cid: number, signal?: AbortSignal) => http.get<FlowSummary[] | Page<FlowSummary>>(path(cid, "flows/"), undefined, { signal }).then(rows),
 };
 
 export const aiKeys = {
@@ -89,6 +121,10 @@ export const aiKeys = {
   conversations: (cid: number) => qk(cid, MODULE, "conversations"),
   messages: (cid: number, id: number) => qk(cid, MODULE, "messages", { id }),
   turn: (cid: number, id: number) => qk(cid, MODULE, "turn", { id }),
+  briefing: (cid: number, period: BriefingPeriod) => qk(cid, MODULE, "briefing", { period }),
+  models: (cid: number) => qk(cid, MODULE, "models"),
+  job: (cid: number, id: string) => qk(cid, MODULE, "job", { id }),
+  overviewFlows: (cid: number) => qk(cid, MODULE, "overview-flows"),
 };
 
 export function useCompanyId() {
@@ -264,8 +300,9 @@ export function useDrafts(filters: MaybeRefOrGetter<DraftFilters>) {
 }
 
 /**
- * One draft, polled every second while the AI works on it. After 90 s without an answer it stops
- * and says so (`gaveUp`); `retry()` waits another 90 s.
+ * One draft, polled every second while the AI works on it. When the answer is late it stops and
+ * says so (`gaveUp`): after 90 s, or 30 s plus 4 s per second of a longer recording
+ * (`draftGiveUpMs`); `retry()` waits that long again.
  */
 export function useDraft(id: MaybeRefOrGetter<number | null>) {
   const cid = useCompanyId();
@@ -283,7 +320,8 @@ export function useDraft(id: MaybeRefOrGetter<number | null>) {
     queryFn: ({ signal }) => aiApi.draft(cid.value, toValue(id)!, signal),
     enabled: computed(() => cid.value > 0 && !!toValue(id) && !gaveUp.value),
     refetchInterval: (q) => {
-      const decision = pollDecision(q.state.data?.status, Date.now() - startedAt.value);
+      const draft = q.state.data;
+      const decision = pollDecision(draft?.status, Date.now() - startedAt.value, draftGiveUpMs(draft?.audio?.seconds));
       if (decision === "give_up") gaveUp.value = true;
       return decision === "poll" ? DRAFT_POLL_MS : false;
     },
@@ -379,5 +417,157 @@ export function useTurn(id: MaybeRefOrGetter<number | null>) {
     queryFn: ({ signal }) => aiApi.turn(cid.value, toValue(id)!, signal),
     enabled: computed(() => cid.value > 0 && !!toValue(id)),
     refetchInterval: (query) => (turnIsLive(query.state.data?.status) || !query.state.data ? TURN_POLL_MS : false),
+  });
+}
+
+// ─── v0.3: briefing, models, writing help, flows count ──────────────────────
+
+/**
+ * The briefing of a period. While it is being written (`status: "working"`) it is asked again
+ * every 2 s for at most a minute, then `gaveUp`; `retry()` waits another minute. `refresh()` asks
+ * for a new one (once a minute per person: a 429 sets `refreshRefused`).
+ */
+export function useBriefing(period: MaybeRefOrGetter<BriefingPeriod>, enabled: MaybeRefOrGetter<boolean> = true) {
+  const cid = useCompanyId();
+  const client = useQueryClient();
+  const startedAt = ref(Date.now());
+  const gaveUp = ref(false);
+  const refreshing = ref(false);
+  const refreshRefused = ref(false);
+  watch([cid, () => toValue(period)], () => {
+    startedAt.value = Date.now();
+    gaveUp.value = false;
+    refreshRefused.value = false;
+  });
+  const key = computed(() => aiKeys.briefing(cid.value, toValue(period)));
+  const query = useQuery({
+    queryKey: key,
+    queryFn: ({ signal }) => aiApi.briefing(cid.value, toValue(period), signal),
+    enabled: computed(() => cid.value > 0 && toValue(enabled) && !gaveUp.value),
+    staleTime: 5 * 60_000,
+    refetchInterval: (q) => {
+      const decision = briefingPoll(q.state.data?.status, Date.now() - startedAt.value);
+      if (decision === "give_up") gaveUp.value = true;
+      return decision === "poll" ? BRIEFING_POLL_MS : false;
+    },
+  });
+  function retry(): void {
+    startedAt.value = Date.now();
+    gaveUp.value = false;
+    void query.refetch();
+  }
+  async function refresh(): Promise<boolean> {
+    if (refreshing.value) return false;
+    refreshing.value = true;
+    refreshRefused.value = false;
+    try {
+      await aiApi.refreshBriefing(cid.value, toValue(period));
+      startedAt.value = Date.now();
+      gaveUp.value = false;
+      client.setQueryData<Briefing>(key.value, (old) => (old ? { ...old, status: "working" } : old));
+      await query.refetch();
+      return true;
+    } catch (error) {
+      if (isApiError(error) && error.status === 429) refreshRefused.value = true;
+      else throw error;
+      return false;
+    } finally {
+      refreshing.value = false;
+    }
+  }
+  return { ...query, gaveUp, retry, refresh, refreshing, refreshRefused };
+}
+
+export function useModels(enabled: MaybeRefOrGetter<boolean> = true) {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => aiKeys.models(cid.value)),
+    queryFn: ({ signal }) => aiApi.models(cid.value, signal),
+    enabled: computed(() => cid.value > 0 && toValue(enabled)),
+    staleTime: 60_000,
+  });
+}
+
+/** One feature's model (ai.configure): the select changes at once and goes back if refused. */
+export function useSetFeatureModel() {
+  const cid = useCompanyId();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ feature, model }: { feature: string; model: string }) => aiApi.setModels(cid.value, { [feature]: model }),
+    onMutate: async ({ feature, model }) => {
+      const queryKey = aiKeys.models(cid.value);
+      await client.cancelQueries({ queryKey });
+      const before = client.getQueryData<AiModels>(queryKey);
+      if (before) client.setQueryData<AiModels>(queryKey, { ...before, features: before.features.map((row) => (row.key === feature ? { ...row, model } : row)) });
+      return { before };
+    },
+    onError: (_error, _input, context) => {
+      if (context?.before) client.setQueryData(aiKeys.models(cid.value), context.before);
+    },
+    onSuccess: (body) => client.setQueryData(aiKeys.models(cid.value), body),
+  });
+}
+
+/**
+ * A writing-help job: `start()` sends the text (a refusal lands in `refusal`), then the job is
+ * polled every second until it is done or failed; after a minute without an answer `gaveUp`.
+ */
+export function useWriteJob() {
+  const cid = useCompanyId();
+  const jobId = ref<string | null>(null);
+  const startedAt = ref(0);
+  const gaveUp = ref(false);
+  const sending = ref(false);
+  const refusal = shallowRef<unknown>(null);
+  const query = useQuery({
+    queryKey: computed(() => aiKeys.job(cid.value, jobId.value ?? "")),
+    queryFn: ({ signal }) => aiApi.job(cid.value, jobId.value!, signal),
+    enabled: computed(() => cid.value > 0 && !!jobId.value && !gaveUp.value),
+    staleTime: Number.POSITIVE_INFINITY,
+    refetchInterval: (q) => {
+      if (q.state.status === "error") return false;
+      const decision = jobPoll(q.state.data?.status, Date.now() - startedAt.value);
+      if (decision === "give_up") gaveUp.value = true;
+      return decision === "poll" ? WRITE_POLL_MS : false;
+    },
+  });
+  async function start(body: WriteRequest): Promise<boolean> {
+    sending.value = true;
+    refusal.value = null;
+    gaveUp.value = false;
+    jobId.value = null;
+    try {
+      const answer = await aiApi.write(cid.value, body);
+      startedAt.value = Date.now();
+      jobId.value = answer.job;
+      return true;
+    } catch (error) {
+      refusal.value = error;
+      return false;
+    } finally {
+      sending.value = false;
+    }
+  }
+  function retry(): void {
+    startedAt.value = Date.now();
+    gaveUp.value = false;
+    void query.refetch();
+  }
+  function reset(): void {
+    jobId.value = null;
+    refusal.value = null;
+    gaveUp.value = false;
+  }
+  return { jobId, job: query.data, isError: query.isError, error: query.error, sending, refusal, gaveUp, start, retry, reset };
+}
+
+/** The company's flows for the overview's counts. */
+export function useOverviewFlows(enabled: MaybeRefOrGetter<boolean> = true) {
+  const cid = useCompanyId();
+  return useQuery({
+    queryKey: computed(() => aiKeys.overviewFlows(cid.value)),
+    queryFn: ({ signal }) => aiApi.flows(cid.value, signal),
+    enabled: computed(() => cid.value > 0 && toValue(enabled)),
+    staleTime: 15_000,
   });
 }

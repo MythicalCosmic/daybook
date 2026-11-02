@@ -4,7 +4,7 @@
  * agent's icon), the sentence, the record it touched as a chip that opens it, and the time. New
  * items slide in at the top and glow for a moment; older ones load as the list scrolls down.
  */
-import { AudioLines, CircleAlert, CircleCheck, ListChecks, UserRound } from "@lucide/vue";
+import { AudioLines, CalendarCheck, CircleAlert, CircleCheck, ListChecks, ReceiptText, UserRound } from "@lucide/vue";
 import { useIntersectionObserver } from "@vueuse/core";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
@@ -41,7 +41,7 @@ const { t } = useI18n();
 const fmt = useFormat();
 const company = useCompanyStore();
 
-const SUBJECT_ICON: Record<SubjectType, typeof ListChecks> = { task: ListChecks, member: UserRound, draft: AudioLines };
+const SUBJECT_ICON: Record<SubjectType, typeof ListChecks> = { task: ListChecks, member: UserRound, draft: AudioLines, shift: ReceiptText, time_off: CalendarCheck };
 
 const groups = computed(() => {
   const today = todayIn(company.timezone);

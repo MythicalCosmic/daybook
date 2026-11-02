@@ -10,17 +10,25 @@ import { addDays } from "@/lib/dates";
 
 import type {
   ActivityItem,
+  Agent,
   AgentConfigValue,
   AgentField,
   AiDraft,
+  AiModel,
   AiStatus,
   ApplyDraft,
+  BriefingStatus,
   ClaudeState,
   DraftProblem,
   DraftStatus,
+  FlowSummary,
+  ProviderStatus,
   SpeechState,
   SubjectType,
   TurnStatus,
+  WriteAction,
+  WriteContext,
+  WriteLanguage,
 } from "./types";
 
 // ─── Status → what shows ────────────────────────────────────────────────────
@@ -74,6 +82,15 @@ export const WORKING: readonly DraftStatus[] = ["queued", "transcribing", "think
 export const DRAFT_POLL_MS = 1000;
 /** How long a person waits for a draft before "this is taking too long" and Try again. */
 export const DRAFT_GIVE_UP_MS = 90_000;
+
+/**
+ * The wait for a voice note: at least 90 s, and 30 s plus 4 s per second of audio for longer ones
+ * (the production speech server needs about 3 s per second of audio).
+ */
+export function draftGiveUpMs(audioSeconds: number | null | undefined): number {
+  const seconds = typeof audioSeconds === "number" && Number.isFinite(audioSeconds) && audioSeconds > 0 ? audioSeconds : 0;
+  return Math.max(DRAFT_GIVE_UP_MS, 30_000 + 4_000 * seconds);
+}
 
 export function isWorking(status: DraftStatus | undefined | null): boolean {
   return !!status && WORKING.includes(status);
@@ -329,11 +346,13 @@ export function arrivals(previous: readonly ActivityItem[], next: readonly Activ
   return next.filter((item) => item.id > newest).map((item) => item.id);
 }
 
-/** Where a subject chip leads inside the console (existing routes). */
+/** Where a subject chip leads inside the console (existing routes; flow runs add shifts and time off). */
 export function subjectPath(subject: { type: SubjectType; id: number }, companyId: number): string {
   const base = `/c/${companyId}`;
   if (subject.type === "task") return `${base}/tasks?task=${subject.id}`;
   if (subject.type === "member") return `${base}/people/${subject.id}`;
+  if (subject.type === "shift") return `${base}/sales/shifts?shift=${subject.id}`;
+  if (subject.type === "time_off") return `${base}/time-off?request=${subject.id}`;
   return `${base}/ai/voice?draft=${subject.id}`;
 }
 
@@ -370,4 +389,246 @@ export function budgetShare(budget: { monthly_usd: string; spent_usd: string } |
   const spent = Number(budget.spent_usd);
   if (!Number.isFinite(monthly) || monthly <= 0 || !Number.isFinite(spent)) return 0;
   return Math.min(1, Math.max(0, spent / monthly));
+}
+
+/** US dollars as the AI pages print them: "$0.42", "$20.00", "<$0.01" for a fraction of a cent, "$0" for nothing. */
+export function formatUsd(value: string | number | null | undefined): string {
+  const number = typeof value === "number" ? value : Number(value);
+  if (value === null || value === undefined || value === "" || !Number.isFinite(number)) return "—";
+  if (number === 0) return "$0";
+  if (Math.abs(number) < 0.01) return "<$0.01";
+  return `$${number.toFixed(2)}`;
+}
+
+// ─── The AI overview: what works, what it did today ────────────────────────
+
+export type FeatureKey = "voice" | "flows" | "ask" | "photo" | "briefing" | "writing";
+export type FeatureState = "on" | "off" | "needs_claude" | "needs_speech";
+/** The one thing a card offers: open the feature, switch it on, or connect Claude (the Models page). */
+export type FeatureAction = "open" | "turn_on" | "connect" | null;
+
+export interface FeatureCard {
+  key: FeatureKey;
+  state: FeatureState;
+  action: FeatureAction;
+}
+
+/** The live features, in the order the overview shows them. */
+export const FEATURE_KEYS: readonly FeatureKey[] = ["voice", "flows", "ask", "photo", "briefing", "writing"];
+
+/** Claude works (or the server's test mode stands in for it). */
+export function claudeWorks(state: ClaudeState | undefined | null): boolean {
+  return state === "connected" || state === "fake";
+}
+
+/**
+ * Each live feature's state and its one action, from the status and the agents (null while they
+ * load). AI off: everything is off, and "Turn on" leads to the turn-on card for those who may.
+ * A feature that needs Claude says so; "Connect Claude" only where a key is missing and the person
+ * configures AI (budget, platform pause and outages are explained by the banners above).
+ */
+export function featureCards(status: AiStatus, agents: readonly Agent[] | null | undefined, can: { use: boolean }): FeatureCard[] {
+  const on = status.enabled;
+  const configure = status.can_configure;
+  const features = status.features;
+  const claudeOk = claudeWorks(status.claude);
+  const connect: FeatureAction = configure && status.claude === "not_configured" ? "connect" : null;
+  const agent = (key: string) => agents?.find((item) => item.key === key) ?? null;
+  const off = (): FeatureCard["action"] => (configure ? "turn_on" : null);
+
+  function voice(): Omit<FeatureCard, "key"> {
+    if (!on) return { state: "off", action: off() };
+    const row = agent("voice_tasks");
+    if (row && !row.enabled) return { state: "off", action: configure && row.available ? "turn_on" : null };
+    if (features.voice) return { state: "on", action: "open" };
+    // The agent is on but voice can't be read: typed instructions still work.
+    if (features.smart_text || row?.enabled) return { state: status.speech === "not_configured" ? "needs_speech" : "on", action: "open" };
+    return { state: "off", action: null };
+  }
+  function flows(): Omit<FeatureCard, "key"> {
+    if (!on) return { state: "off", action: off() };
+    return features.flows === false ? { state: "off", action: null } : { state: "on", action: "open" };
+  }
+  function ask(): Omit<FeatureCard, "key"> {
+    if (!on) return { state: "off", action: off() };
+    if (features.chat) return { state: "on", action: can.use ? "open" : null };
+    if (!claudeOk) return { state: "needs_claude", action: connect };
+    return { state: "off", action: null };
+  }
+  function photo(): Omit<FeatureCard, "key"> {
+    if (!on) return { state: "off", action: off() };
+    if (features.photo_checker) return { state: "on", action: "open" };
+    const row = agent("photo_checker");
+    if (!claudeOk || row?.unavailable_reason === "needs_claude") return { state: "needs_claude", action: connect };
+    return { state: "off", action: configure && (row?.available ?? true) ? "turn_on" : "open" };
+  }
+  function briefing(): Omit<FeatureCard, "key"> {
+    if (!on) return { state: "off", action: off() };
+    // Written from the numbers even without Claude: on whenever the person may read it.
+    return features.briefing ? { state: "on", action: "open" } : { state: "off", action: null };
+  }
+  function writing(): Omit<FeatureCard, "key"> {
+    if (!on) return { state: "off", action: off() };
+    if (features.writing) return { state: "on", action: "open" };
+    if (!claudeOk) return { state: "needs_claude", action: connect };
+    return { state: "off", action: null };
+  }
+  const states: Record<FeatureKey, () => Omit<FeatureCard, "key">> = { voice, flows, ask, photo, briefing, writing };
+  return FEATURE_KEYS.map((key) => ({ key, ...states[key]() }));
+}
+
+/** The overview's numbers: what the agents did today, flow runs today, voice notes this week. */
+export function todayNumbers(agents: readonly Agent[] | null | undefined, flows: readonly FlowSummary[] | null | undefined) {
+  return {
+    actions: agents ? agents.reduce((sum, agent) => sum + (agent.stats?.today ?? 0), 0) : null,
+    flowRuns: flows ? flows.reduce((sum, flow) => sum + (flow.stats?.today ?? 0), 0) : null,
+    voiceWeek: agents ? (agents.find((agent) => agent.key === "voice_tasks")?.stats.week ?? 0) : null,
+  };
+}
+
+/** "3 flows, 2 on" pieces. */
+export function flowCounts(flows: readonly FlowSummary[] | null | undefined) {
+  if (!flows) return null;
+  return { total: flows.length, on: flows.filter((flow) => flow.enabled).length, today: flows.reduce((sum, flow) => sum + (flow.stats?.today ?? 0), 0) };
+}
+
+// ─── The briefing ───────────────────────────────────────────────────────────
+
+/** While the briefing is being written it is asked again every 2 s, for at most a minute. */
+export const BRIEFING_POLL_MS = 2000;
+export const BRIEFING_GIVE_UP_MS = 60_000;
+
+/** Ask again (still being written), stop (an answer, or no answer to wait for) or give up (a minute passed). */
+export function briefingPoll(status: BriefingStatus | undefined | null, elapsedMs: number): "poll" | "stop" | "give_up" {
+  if (status !== "working") return "stop";
+  return elapsedMs >= BRIEFING_GIVE_UP_MS ? "give_up" : "poll";
+}
+
+/**
+ * Where a briefing chip leads: a path inside this company's console. The server sends paths
+ * relative to the company ("tasks?status=late"), rooted ones ("/tasks") or full console paths
+ * ("/c/5/tasks"); anything else (an outside link, nothing) gives null and the chip isn't shown.
+ */
+export function briefingActionPath(url: string | null | undefined, companyId: number): string | null {
+  const value = (url ?? "").trim();
+  if (!value || /^[a-z][a-z0-9+.-]*:/i.test(value) || value.startsWith("//")) return null;
+  if (value.startsWith("/c/")) return value;
+  if (value.startsWith("/dashboard/c/")) return value.slice("/dashboard".length);
+  return `/c/${companyId}/${value.replace(/^\/+/, "")}`;
+}
+
+// ─── Models ─────────────────────────────────────────────────────────────────
+
+/** A model's name from the list, else from its id: "claude-sonnet-5-5" → "Claude Sonnet 5.5". */
+export function modelName(id: string | null | undefined, models?: readonly Pick<AiModel, "id" | "name">[] | null): string {
+  if (!id) return "";
+  const known = models?.find((model) => model.id === id);
+  if (known) return known.name;
+  const parts = id.split("-").filter(Boolean);
+  const words: string[] = [];
+  const version: string[] = [];
+  for (const part of parts) {
+    if (/^\d+$/.test(part) && (version.length || words.length)) version.push(part);
+    else if (!version.length) words.push(part.charAt(0).toUpperCase() + part.slice(1));
+  }
+  return [...words, version.join(".")].filter(Boolean).join(" ");
+}
+
+export const PROVIDER_TONE: Record<ProviderStatus, Tone> = { ...CLAUDE_TONE, coming_soon: "neutral" };
+
+/** One row of a usage list with its share of the biggest, for the bars. */
+export function usageBars<T extends { cost_usd: string }>(rows: readonly T[]): Array<T & { share: number }> {
+  const sorted = [...rows].sort((a, b) => Number(b.cost_usd) - Number(a.cost_usd));
+  const top = Math.max(0, ...sorted.map((row) => Number(row.cost_usd) || 0));
+  return sorted.map((row) => ({ ...row, share: top > 0 ? Math.max(0, Number(row.cost_usd) || 0) / top : 0 }));
+}
+
+// ─── Writing help ───────────────────────────────────────────────────────────
+
+/** A menu choice: what to ask the server, and in which language for a translation. */
+export interface WriteChoice {
+  action: WriteAction;
+  language: WriteLanguage | "";
+}
+
+export const WRITE_LANGUAGES: readonly WriteLanguage[] = ["uz", "ru", "en"];
+
+/** What the AI button offers where: tasks can become a checklist, announcements can be written up. */
+export function writeChoices(context: WriteContext): WriteChoice[] {
+  const list: WriteChoice[] = [];
+  if (context === "announcement") list.push({ action: "announcement", language: "" });
+  list.push({ action: "improve", language: "" }, { action: "shorter", language: "" });
+  for (const language of WRITE_LANGUAGES) list.push({ action: "translate", language });
+  if (context === "task") list.push({ action: "checklist", language: "" });
+  return list;
+}
+
+export type WritingButton = "on" | "connect" | "turn_on" | "budget" | "hidden";
+
+/**
+ * The AI button in a form: working when the status allows writing help; for people who configure
+ * AI a disabled button that says what is missing; nothing for everyone else.
+ */
+export function writingButton(status: AiStatus | null | undefined): WritingButton {
+  if (!status) return "hidden";
+  if (status.enabled && status.features.writing) return "on";
+  if (!status.can_configure) return "hidden";
+  if (!status.enabled) return "turn_on";
+  if (status.claude === "budget_reached") return "budget";
+  return "connect";
+}
+
+export const WRITE_POLL_MS = 1000;
+/** A writing job that hasn't answered in a minute is given up ("taking longer", Try again). */
+export const WRITE_GIVE_UP_MS = 60_000;
+
+export function jobPoll(status: "working" | "done" | "failed" | undefined | null, elapsedMs: number): "poll" | "stop" | "give_up" {
+  if (status === "done" || status === "failed") return "stop";
+  return elapsedMs >= WRITE_GIVE_UP_MS ? "give_up" : "poll";
+}
+
+/** The text with `addition` below it, a blank line between (nothing before an empty text). */
+export function insertBelow(original: string, addition: string): string {
+  const head = original.replace(/\s+$/, "");
+  const tail = addition.replace(/^\s+/, "");
+  if (!head) return tail;
+  if (!tail) return head;
+  return `${head}\n\n${tail}`;
+}
+
+/** Checklist steps as text lines, for a field without a checklist of its own. */
+export function checklistText(items: readonly string[]): string {
+  return items
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => `• ${item}`)
+    .join("\n");
+}
+
+/** New checklist steps after the existing ones, each once (case and spaces ignored), empty ones dropped. */
+export function mergeChecklist(existing: readonly string[], added: readonly string[]): string[] {
+  const seen = new Set(existing.map((item) => item.trim().toLowerCase()).filter(Boolean));
+  const out = [...existing];
+  for (const item of added) {
+    const text = item.trim();
+    const key = text.toLowerCase();
+    if (!text || seen.has(key)) continue;
+    seen.add(key);
+    out.push(text);
+  }
+  return out;
+}
+
+/**
+ * Telegram's bold and italic in an announcement draft, shown safely: every character escaped, then
+ * only <b>, </b>, <i>, </i> given back (the server allows nothing else in writing help).
+ */
+export function safeInlineHtml(text: string): string {
+  const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return escaped.replace(/&lt;(\/?)(b|i)&gt;/g, "<$1$2>");
+}
+
+/** The same text without any tags (for a plain field). */
+export function stripInlineTags(text: string): string {
+  return text.replace(/<\/?(b|i)>/g, "");
 }

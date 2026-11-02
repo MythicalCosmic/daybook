@@ -11,6 +11,12 @@ export interface AiFeatures {
   smart_text: boolean;
   chat: boolean;
   photo_checker: boolean;
+  /** v0.3 (contract §5): AI on. A server before v0.3 leaves the three out (read as false). */
+  flows?: boolean;
+  /** AI on, and reports.view or ai.configure. */
+  briefing?: boolean;
+  /** AI on, ai.use, and Claude available (or the server's test mode). */
+  writing?: boolean;
 }
 
 export interface AiBudget {
@@ -166,7 +172,8 @@ export interface AgentPatch {
 }
 
 export type ActivityLevel = "info" | "success" | "warning";
-export type SubjectType = "task" | "member" | "draft";
+/** What an event is about; flow runs (v0.3) also name shifts and time off. */
+export type SubjectType = "task" | "member" | "draft" | "shift" | "time_off";
 
 export interface ActivityItem {
   id: number;
@@ -179,6 +186,8 @@ export interface ActivityItem {
   created_at: string;
   actor: { id: number; name: string; photo: string | null } | null;
   subject: { type: SubjectType; id: number; label: string } | null;
+  /** The flow that did it (agent "flows", v0.3 contract §5); null or absent otherwise. */
+  flow?: { id: number; name: string } | null;
 }
 
 export interface ActivityPage {
@@ -220,4 +229,136 @@ export interface Turn {
   text: string;
   error_code: string;
   message_id: number | null;
+}
+
+// ─── v0.3: briefing, models, writing help, flows (briefs/v3-contract.md §1–§5) ──
+
+export type BriefingPeriod = "today" | "week";
+export type BriefingStatus = "ready" | "working" | "failed";
+export type AiEngine = "claude" | "template" | "fake";
+
+export interface BriefingSection {
+  title: string;
+  bullets: string[];
+}
+
+/** A chip under the briefing; `url` is a dashboard path ("tasks?status=late"). */
+export interface BriefingAction {
+  label: string;
+  url: string;
+}
+
+/** `GET ai/briefing/?period=` (reports.view or ai.configure). */
+export interface Briefing {
+  status: BriefingStatus;
+  period: BriefingPeriod;
+  generated_at: string | null;
+  engine: AiEngine | string;
+  model: string;
+  headline: string;
+  sections: BriefingSection[];
+  actions: BriefingAction[];
+  facts: Record<string, unknown>;
+  can_refresh: boolean;
+}
+
+export type ProviderStatus = ClaudeState | "coming_soon";
+export type ModelTier = "fast" | "smart";
+
+export interface AiProvider {
+  key: string;
+  name: string;
+  status: ProviderStatus;
+  description: string;
+  website: string;
+  /** Model ids. */
+  models: string[];
+}
+
+export interface AiModel {
+  id: string;
+  provider: string;
+  name: string;
+  tier: ModelTier;
+  description: string;
+  vision: boolean;
+  /** US dollars per million tokens, as decimal strings ("1.00"). */
+  price: { input_per_mtok: string; output_per_mtok: string };
+}
+
+/** One feature's model: the current one, the platform's default and what may be picked. */
+export interface AiFeatureModel {
+  key: string;
+  name: string;
+  description: string;
+  model: string;
+  default: string;
+  choices: string[];
+}
+
+export interface AiUsage {
+  /** "2026-11". */
+  month: string;
+  spent_usd: string;
+  budget_usd: string;
+  calls: number;
+  by_model: Array<{ model: string; name: string; calls: number; cost_usd: string; input_tokens: number; output_tokens: number }>;
+  by_feature: Array<{ feature: string; name: string; calls: number; cost_usd: string }>;
+}
+
+export type SpeechWhere = "own_server" | "hosted";
+
+/** `GET/PATCH ai/models/` (dashboard.access; PATCH ai.configure). */
+export interface AiModels {
+  providers: AiProvider[];
+  models: AiModel[];
+  features: AiFeatureModel[];
+  speech: { status: SpeechState; name: string; where: SpeechWhere | string };
+  can_configure: boolean;
+  /** Only for ai.configure, else null. */
+  usage: AiUsage | null;
+}
+
+export type WriteAction = "improve" | "shorter" | "translate" | "checklist" | "announcement";
+export type WriteContext = "task" | "announcement" | "message";
+export type WriteLanguage = "uz" | "ru" | "en";
+
+/** `POST ai/write/` (ai.use). */
+export interface WriteRequest {
+  action: WriteAction;
+  text: string;
+  /** The target of a translation; "" = the text's own language. */
+  language: WriteLanguage | "";
+  context: WriteContext;
+}
+
+export interface WriteResult {
+  text: string;
+  checklist: string[];
+  notes: string;
+  engine: "claude" | "fake" | string;
+  model: string;
+}
+
+export type WriteErrorCode = "" | "claude_unavailable" | "budget_reached" | "refused" | "error";
+
+/** `GET ai/jobs/<uuid>/`: a writing job, private to whoever started it. */
+export interface WriteJob {
+  status: "working" | "done" | "failed";
+  result: WriteResult | null;
+  error_code: WriteErrorCode | string;
+  /** Already translated. */
+  error: string;
+}
+
+/**
+ * One flow as the AI Overview reads it from `GET ai/flows/` (the Flows pages keep the full shape
+ * in ./flows/types.ts): enough for "how many, how many on, runs today".
+ */
+export interface FlowSummary {
+  id: number;
+  name: string;
+  enabled: boolean;
+  stats: { today: number; week: number };
+  problems?: Array<{ code: string; text: string }>;
 }
