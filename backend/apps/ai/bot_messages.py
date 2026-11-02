@@ -358,3 +358,157 @@ def hour_more_done(task: Task, now) -> str:
         "title": html.quote(task.title),
         "when": dates.short_due(due, local_now, _lang()),
     }
+
+
+# The HR assistant's messages --------------------------------------------------------------------
+
+# Names a part of an HR assistant message shows; the rest is counted.
+HR_NAMES = 3
+
+
+def hr_digest(member: Membership, digest, day, *, opening: str = "") -> BotMessage:
+    """The HR manager's morning (`hr_assistant.Digest`): each part with its count and its first
+    names, soonest first. What the HR watch tells them today is only counted ("in today's
+    notices"), never named again."""
+    lines = ["<b>" + _("HR today") + "</b>"]
+    if opening:
+        lines += ["", html.quote(opening)]
+    parts = (
+        ("document", _("Documents: %(count)s"), digest.documents, _document_line),
+        ("contract", _("Contracts ending: %(count)s"), digest.contracts, _contract_line),
+        ("probation", _("Probation ending: %(count)s"), digest.probations, _probation_line),
+        (
+            "explanation",
+            _("Waiting for an explanation: %(count)s"),
+            digest.explanations,
+            _explanation_line,
+        ),
+    )
+    for kind, header, rows, line in parts:
+        if not rows:
+            continue
+        fresh = digest.fresh(kind, rows)
+        lines += ["", header % {"count": len(rows)}]
+        lines += [f"    · {line(row, day)}" for row in fresh[:HR_NAMES]]
+        if len(fresh) > HR_NAMES:
+            lines.append("    · " + _("And more: %(count)s") % {"count": len(fresh) - HR_NAMES})
+        if told := len(rows) - len(fresh):
+            lines.append("    · " + _("In today's separate notices: %(count)s") % {"count": told})
+    if digest.birthdays:
+        names = ", ".join(html.quote(str(person)) for person in digest.birthdays)
+        lines += ["", _("Birthday today: %(names)s") % {"names": names}]
+    button = _dashboard_button(_("Open HR"), f"c/{member.company_id}/hr")
+    return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=[[button]]) if button else None
+
+
+def _hr_day(value) -> str:
+    from apps.hr.bot_messages import day
+
+    return day(value)
+
+
+def _document_line(document, day) -> str:
+    left = (document.expires_on - day).days
+    if left < 0:
+        when = _("expired: %(date)s") % {"date": _hr_day(document.expires_on)}
+    elif left == 0:
+        when = _("expires today")
+    else:
+        when = _("expires: %(date)s") % {"date": _hr_day(document.expires_on)}
+    name = html.quote(str(document.membership))
+    return f"{name} — {document.get_kind_display()} ({when})"
+
+
+def _contract_line(contract, day) -> str:
+    left = (contract.ends_on - day).days
+    if left < 0:
+        when = _("ended: %(date)s, still in force") % {"date": _hr_day(contract.ends_on)}
+    elif left == 0:
+        when = _("ends today")
+    else:
+        when = _("ends: %(date)s") % {"date": _hr_day(contract.ends_on)}
+    return f"{html.quote(str(contract.membership))} ({when})"
+
+
+def _probation_line(contract, day) -> str:
+    left = (contract.probation_until - day).days
+    if left < 0:
+        when = _("ended: %(date)s, no decision yet") % {"date": _hr_day(contract.probation_until)}
+    elif left == 0:
+        when = _("ends today")
+    else:
+        when = _("ends: %(date)s") % {"date": _hr_day(contract.probation_until)}
+    return f"{html.quote(str(contract.membership))} ({when})"
+
+
+def _explanation_line(record, day) -> str:
+    name = html.quote(str(record.membership))
+    return f"{name} — {record.get_kind_display()}, {_hr_day(record.issued_on)}"
+
+
+def payroll_readiness(member: Membership, seen, *, opening: str = "") -> BotMessage:
+    """Last month's payroll draft a few days before pay day (`hr_assistant.Readiness`): what
+    holds it up among the reader's people, never an amount of money."""
+    from apps.payroll import labels
+    from apps.payroll import queries as payroll_queries
+
+    run = seen.run
+    month = payroll_queries.month_label(run.period)
+    lines = ["<b>" + _("Payroll: %(month)s") % {"month": html.quote(month)} + "</b>"]
+    if opening:
+        lines += ["", html.quote(opening)]
+    lines += [
+        "",
+        ngettext(
+            "The draft is calculated: %(count)s payslip.",
+            "The draft is calculated: %(count)s payslips.",
+            seen.payslips,
+        )
+        % {"count": seen.payslips},
+        _("Pay day: %(date)s") % {"date": _hr_day(seen.pay_day)},
+    ]
+    if not seen.blockers:
+        lines += ["", _("Nothing holds it up: check it and finalize it.")]
+    else:
+        lines += ["", "<b>" + _("Settle before pay day:") + "</b>"]
+        if seen.no_setup:
+            names = _names(seen.no_setup)
+            lines.append("    · " + _("No pay setup: %(names)s") % {"names": names})
+        for code, count in (("disputes", seen.disputes), ("proposed", seen.proposals)):
+            if count:
+                lines.append("    · " + labels.warning_text({"code": code, "count": count}))
+        if seen.changes:
+            changes = ", ".join(
+                f"{html.quote(str(person))} {_percent(change)}"
+                for person, change in seen.changes[:HR_NAMES]
+            )
+            if len(seen.changes) > HR_NAMES:
+                changes += " " + _("and more: %(count)s") % {"count": len(seen.changes) - HR_NAMES}
+            lines.append(
+                "    · " + _("Big change against last month: %(changes)s") % {"changes": changes}
+            )
+    button = _dashboard_button(_("Open the payroll"), f"c/{run.company_id}/payroll/runs/{run.pk}")
+    return "\n".join(lines), InlineKeyboardMarkup(inline_keyboard=[[button]]) if button else None
+
+
+def _names(people: list) -> str:
+    shown = ", ".join(html.quote(str(person)) for person in people[:HR_NAMES])
+    if len(people) > HR_NAMES:
+        shown += " " + _("and more: %(count)s") % {"count": len(people) - HR_NAMES}
+    return shown
+
+
+def _percent(change: int) -> str:
+    """+45% or, with a real minus sign (U+2212), -38%."""
+    return f"{'+' if change > 0 else '−'}{abs(change)}%"
+
+
+def bonus_reason(percent: int, tasks: int, period) -> str:
+    """A suggested bonus's reason without Claude, in the active language (the employee's)."""
+    from apps.payroll import queries as payroll_queries
+
+    return ngettext(
+        "%(month)s: %(percent)s%% of %(count)s task done on time, no lateness fine.",
+        "%(month)s: %(percent)s%% of %(count)s tasks done on time, no lateness fine.",
+        tasks,
+    ) % {"month": payroll_queries.month_label(period), "percent": percent, "count": tasks}

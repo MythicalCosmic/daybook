@@ -7,6 +7,7 @@ order the dashboard shows them.
 
 from apps.ai.agents import (  # noqa: F401  (each registers itself)
     deadline_watcher,
+    hr_assistant,
     morning_plan,
     photo_checker,
     voice_tasks,

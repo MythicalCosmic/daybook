@@ -90,6 +90,9 @@ class Agent:
     needs_speech: bool = False
     # Where the dashboard lists it (lowest first).
     order: int = 100
+    # The company module it works for ("hr"): listed, and switched on with AI, only where the
+    # company has that module.
+    feature: str | None = None
 
     @property
     def scheduled(self) -> bool:
@@ -97,6 +100,9 @@ class Agent:
 
     def defaults(self) -> dict:
         return {item.key: item.default for item in self.fields}
+
+    def works_in(self, company) -> bool:
+        return self.feature is None or company.has_feature(self.feature)
 
 
 _agents: dict[str, Agent] = {}

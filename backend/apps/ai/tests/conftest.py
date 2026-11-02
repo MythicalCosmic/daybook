@@ -6,6 +6,13 @@ from apps.ai import agents, availability, conf
 from apps.ai.agents import voice_tasks
 from apps.ai.fakes import FakeAnthropic
 from apps.companies.models import Feature
+from apps.hr.tests.conftest import (  # noqa: F401  (HR's pharmacy, for the HR assistant)
+    chilonzor,
+    freeze,
+    shop,
+    staff,
+    yunusobod,
+)
 
 # The first bytes of a Telegram voice message (an Ogg page), enough for the upload check.
 OGG = b"OggS\x00\x02" + b"\x00" * 64

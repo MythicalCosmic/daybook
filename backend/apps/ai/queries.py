@@ -42,6 +42,8 @@ def agent_rows(company) -> list[dict]:
     )
     rows = []
     for agent in agents.all_agents():
+        if not agent.works_in(company):
+            continue
         state = agents.state_of(company, agent.key)
         config = agents.config_of(agent, state)
         reason = agent_unavailable(company, agent)
