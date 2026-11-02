@@ -1,19 +1,20 @@
 /**
- * Shapes of the lifecycle endpoints (plan §13.4 and §14.14, apps.lifecycle.owner_api, prefix
+ * Shapes of the lifecycle endpoints (plan §13.4 and §14.14; apps.lifecycle.serializers, prefix
  * `lifecycle/`): disciplinary records and suspensions. Days are company-local "YYYY-MM-DD"; money
  * is a decimal string with its currency; evidence comes as a short-lived signed link.
  */
-import type { Currency, Money, PersonRef } from "@/api/types";
+import type { BranchRef, Currency, Money, PersonRef } from "@/api/types";
 
 export const RECORD_KINDS = ["verbal_warning", "written_warning", "final_warning", "reprimand", "other"] as const;
 export type RecordKind = (typeof RECORD_KINDS)[number];
 
 /** Pharmacy categories first (§14.14), then the general ones. */
 export const PHARMACY_CATEGORIES = ["storage_breach", "dispensing_error", "rx_violation", "expired_sale", "stock_shortage", "cash_shortage"] as const;
-export const GENERAL_CATEGORIES = ["lateness", "absence", "misconduct", "policy_breach", "performance", "safety", "other"] as const;
+export const GENERAL_CATEGORIES = ["lateness", "absence", "conduct", "policy_breach", "performance", "safety", "other"] as const;
 export type RecordCategory = (typeof PHARMACY_CATEGORIES)[number] | (typeof GENERAL_CATEGORIES)[number];
 
-export type RecordStatus = "draft" | "issued" | "acknowledged" | "disputed" | "withdrawn" | "expired";
+export const RECORD_STATUSES = ["issued", "acknowledged", "withdrawn"] as const;
+export type RecordStatus = (typeof RECORD_STATUSES)[number];
 
 export interface ProposedFine {
   id: number;
@@ -28,22 +29,33 @@ export interface DisciplinaryRecord {
   id: number;
   member: PersonRef;
   position: string | null;
+  home_branch: BranchRef | null;
   kind: RecordKind;
   category: RecordCategory | string;
   incident_on: string;
+  issued_on: string;
+  issued_by: PersonRef | null;
   description: string;
   /** A signed link to the evidence file, or null. */
   evidence: string | null;
-  evidence_name?: string;
-  issued_by: string | null;
-  issued_at: string;
+  /** Until when it counts (by default 3, 6 or 12 months from the kind). */
   expires_on: string | null;
+  /** Not withdrawn and not past its expiry. */
+  active: boolean;
   status: RecordStatus;
+  read_at: string | null;
   acknowledged_at: string | null;
   /** The employee's explanation, written in the mini app ("" until they write one). */
   employee_response: string;
   responded_at: string | null;
+  /** A fine was proposed to payroll for it. */
+  fine_id: number | null;
+  /** The fine itself: only for payroll.view (the amount never leaves the server otherwise). */
   fine: ProposedFine | null;
+  withdrawn_at: string | null;
+  withdraw_reason: string;
+  created_at: string;
+  can_edit: boolean;
 }
 
 export interface RecordParams {
@@ -52,8 +64,9 @@ export interface RecordParams {
   category?: string[];
   status?: string[];
   active?: boolean;
+  from?: string;
+  to?: string;
   q?: string;
-  ordering?: string;
   page?: number;
   page_size?: number;
 }
@@ -70,30 +83,18 @@ export interface RecordInput {
   evidence?: File;
 }
 
-export type SuspensionStatus = "scheduled" | "active" | "ended" | "cancelled";
-
-/** One row of `GET lifecycle/suspensions/`. */
+/** One row of `GET lifecycle/suspensions/`: someone suspended now. */
 export interface Suspension {
-  id: number;
   member: PersonRef;
   position: string | null;
-  starts_on: string;
-  /** The last suspended day; null means until reinstated. */
-  ends_on: string | null;
+  home_branch: BranchRef | null;
+  /** The last suspended day; null: until reinstated. */
+  until: string | null;
+  since: string | null;
   reason: string;
-  status: SuspensionStatus;
-  created_by: string | null;
-  created_at: string;
-  ended_at: string | null;
-  ended_by: string | null;
-}
-
-export interface SuspensionParams {
-  member?: number;
-  status?: SuspensionStatus[];
-  q?: string;
-  page?: number;
-  page_size?: number;
+  /** Who suspended them. */
+  by: string | null;
+  can_reinstate: boolean;
 }
 
 export interface SuspendInput {

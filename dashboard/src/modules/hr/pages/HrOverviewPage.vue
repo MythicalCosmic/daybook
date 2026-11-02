@@ -203,9 +203,8 @@ function whenLabel(daysUntil: number, day: string): string {
                 <div class="min-w-0 flex-1">
                   <p class="truncate text-sm font-semibold text-fg">{{ row.member.name }}</p>
                   <p class="truncate text-xs text-muted">{{ t("hr.overview.probationUntil", { date: fmt.day(row.date, "short") }) }}</p>
-                  <DaysChip :day="row.date" :warn-days="warn.probation" prefix="probation" always class="mt-1 sm:hidden" />
+                  <DaysChip :day="row.date" :warn-days="warn.probation" prefix="probation" always class="mt-1" />
                 </div>
-                <DaysChip :day="row.date" :warn-days="warn.probation" prefix="probation" always class="max-sm:hidden" />
               </RouterLink>
               <div v-if="access.manage" class="flex shrink-0 items-center gap-1 max-sm:w-full max-sm:justify-end max-sm:pb-1.5">
                 <UiButton size="md" variant="ghost" class="max-sm:h-10" :icon="Clock4" @click="runAction(probation(row), 'extend-probation')">{{ t("hr.contract.action.extend-probation") }}</UiButton>

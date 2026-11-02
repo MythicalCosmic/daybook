@@ -28,8 +28,8 @@ import { useCompanyStore } from "@/stores/company";
 import { useRecords } from "../api";
 import RecordDrawer from "../components/RecordDrawer.vue";
 import RecordFormDrawer from "../components/RecordFormDrawer.vue";
-import { KIND_TONES, lifecycleAccess, recordParams, STATUS_TONES } from "../lib";
-import { GENERAL_CATEGORIES, PHARMACY_CATEGORIES, RECORD_KINDS, type DisciplinaryRecord } from "../types";
+import { KIND_TONES, lifecycleAccess, recordParams, recordState, STATE_TONES } from "../lib";
+import { GENERAL_CATEGORIES, PHARMACY_CATEGORIES, RECORD_KINDS, RECORD_STATUSES, type DisciplinaryRecord } from "../types";
 
 const { t, te } = useI18n();
 const fmt = useFormat();
@@ -57,7 +57,7 @@ const defs = computed<FilterDef[]>(() => [
     label: t("lifecycle.field.status"),
     type: "multi",
     icon: CircleDot,
-    options: (["issued", "acknowledged", "disputed", "withdrawn", "expired"] as const).map((status) => ({ value: status, label: t(`lifecycle.status.${status}`) })),
+    options: RECORD_STATUSES.map((status) => ({ value: status, label: t(`lifecycle.status.${status}`) })),
   },
 ]);
 const filters = useUrlFilters(defs);
@@ -71,12 +71,12 @@ const category = (value: string) => (te(`lifecycle.category.${value}`) ? t(`life
 
 const columns = computed<TableColumn<DisciplinaryRecord>[]>(() => [
   { id: "member", header: t("lifecycle.field.person"), minWidth: 200, sticky: true, hideable: false, value: (row) => row.member.name },
-  { id: "kind", header: t("lifecycle.field.kind"), width: 190, value: (row) => t(`lifecycle.kind.${row.kind}`) },
+  { id: "kind", header: t("lifecycle.field.kind"), width: 180, value: (row) => t(`lifecycle.kind.${row.kind}`) },
   { id: "category", header: t("lifecycle.field.category"), minWidth: 180, value: (row) => category(row.category) },
-  { id: "incident_on", header: t("lifecycle.field.incidentOn"), width: 120, sortable: true, value: (row) => row.incident_on },
-  { id: "fine", header: t("lifecycle.field.fine"), width: 140, numeric: true, value: (row) => row.fine?.amount ?? "" },
-  { id: "response", header: t("lifecycle.field.response"), width: 170, value: (row) => (row.employee_response ? "2" : row.acknowledged_at ? "1" : "") },
-  { id: "status", header: t("lifecycle.field.status"), width: 130, value: (row) => row.status },
+  { id: "incident_on", header: t("lifecycle.field.incidentOn"), width: 112, value: (row) => row.incident_on },
+  { id: "fine", header: t("lifecycle.field.fine"), width: 120, numeric: true, value: (row) => row.fine?.amount ?? (row.fine_id ? "hidden" : "") },
+  { id: "response", header: t("lifecycle.field.response"), width: 140, value: (row) => (row.employee_response ? "2" : row.acknowledged_at ? "1" : "") },
+  { id: "status", header: t("lifecycle.field.status"), width: 150, value: (row) => row.status },
 ]);
 
 function open(row: DisciplinaryRecord): void {
@@ -149,6 +149,8 @@ function created(record: DisciplinaryRecord): void {
       <template #cell-incident_on="{ row }"><span class="text-sm tabular-nums text-fg">{{ fmt.day(row.incident_on, "medium") }}</span></template>
       <template #cell-fine="{ row }">
         <span v-if="row.fine" class="inline-flex items-center gap-1.5 text-sm font-semibold tabular-nums text-fg"><Banknote :size="14" class="text-warning" aria-hidden="true" /><MoneyText :value="row.fine.amount" :currency="row.fine.currency" /></span>
+        <!-- A fine was proposed, but its amount is for payroll.view only. -->
+        <span v-else-if="row.fine_id" class="inline-flex items-center gap-1.5 text-sm text-muted" :title="t('lifecycle.record.fineHidden')"><Banknote :size="14" class="text-warning" aria-hidden="true" /><MoneyText value="0" hidden /></span>
         <span v-else class="text-sm text-subtle">—</span>
       </template>
       <template #cell-response="{ row }">
@@ -156,7 +158,7 @@ function created(record: DisciplinaryRecord): void {
         <span v-else-if="row.acknowledged_at" class="inline-flex items-center gap-1.5 text-sm text-success"><CircleCheck :size="15" aria-hidden="true" />{{ t("lifecycle.record.read") }}</span>
         <span v-else class="text-sm text-subtle">{{ t("lifecycle.record.notRead") }}</span>
       </template>
-      <template #cell-status="{ row }"><StatusPill :tone="STATUS_TONES[row.status]" size="sm" variant="outline" :label="t(`lifecycle.status.${row.status}`)" /></template>
+      <template #cell-status="{ row }"><StatusPill :tone="STATE_TONES[recordState(row)]" size="sm" variant="outline" :label="t(`lifecycle.status.${recordState(row)}`)" /></template>
       <template #card="{ row }">
         <div class="flex items-start gap-3">
           <UserAvatar :name="row.member.name" :src="row.member.photo_url" :size="36" />

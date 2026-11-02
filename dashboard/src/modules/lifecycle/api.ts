@@ -8,10 +8,10 @@ import { computed, toValue, type MaybeRefOrGetter } from "vue";
 
 import { http, ownerPath, type Query } from "@/api/http";
 import { moduleKey, qk } from "@/api/keys";
-import type { Page } from "@/api/types";
+import type { Money, Page } from "@/api/types";
 import { useCompanyId } from "@/stores/company";
 
-import type { DisciplinaryRecord, RecordInput, RecordParams, SuspendInput, Suspension, SuspensionParams } from "./types";
+import type { DisciplinaryRecord, RecordInput, RecordParams, SuspendInput, Suspension } from "./types";
 
 export const MODULE = "lifecycle";
 
@@ -35,10 +35,14 @@ export const lifecycleApi = {
     return body instanceof FormData ? http.form<DisciplinaryRecord>(path(cid, "discipline/"), body) : http.post<DisciplinaryRecord>(path(cid, "discipline/"), body);
   },
   withdrawRecord: (cid: number, id: number, reason: string) => http.post<DisciplinaryRecord>(path(cid, `discipline/${id}/withdraw/`), { reason }),
+  /** Propose a fine for a record that has none yet (payroll approves it). */
+  proposeFine: (cid: number, id: number, amount: Money) => http.post<DisciplinaryRecord>(path(cid, `discipline/${id}/fine/`), { amount }),
 
-  suspensions: (cid: number, params: SuspensionParams, signal?: AbortSignal) => http.get<Page<Suspension>>(path(cid, "suspensions/"), params as Query, { signal }),
+  /** Who is suspended now (not paginated: a handful at most). */
+  suspensions: (cid: number, signal?: AbortSignal) => http.get<Suspension[]>(path(cid, "suspensions/"), undefined, { signal }),
   suspend: (cid: number, input: SuspendInput) => http.post<Suspension>(path(cid, "suspensions/"), input),
-  reinstate: (cid: number, id: number) => http.post<Suspension>(path(cid, `suspensions/${id}/reinstate/`)),
+  /** Reinstate someone suspended (by their member id). */
+  reinstate: (cid: number, memberId: number) => http.post<void>(path(cid, `suspensions/${memberId}/reinstate/`)),
 };
 
 // ─── Keys and queries ──────────────────────────────────────────────────────
@@ -47,7 +51,7 @@ export const lifecycleKeys = {
   all: (cid: number) => moduleKey(cid, MODULE),
   records: (cid: number, params: RecordParams) => qk(cid, MODULE, "records", { ...params }),
   record: (cid: number, id: number) => qk(cid, MODULE, "record", { id }),
-  suspensions: (cid: number, params: SuspensionParams) => qk(cid, MODULE, "suspensions", { ...params }),
+  suspensions: (cid: number) => qk(cid, MODULE, "suspensions"),
 };
 
 export function useRecords(params: MaybeRefOrGetter<RecordParams>, enabled: MaybeRefOrGetter<boolean> = true) {
@@ -71,13 +75,12 @@ export function useRecord(id: MaybeRefOrGetter<number | null>) {
   });
 }
 
-export function useSuspensions(params: MaybeRefOrGetter<SuspensionParams>, enabled: MaybeRefOrGetter<boolean> = true) {
+export function useSuspensions(enabled: MaybeRefOrGetter<boolean> = true) {
   const cid = useCompanyId();
   return useQuery({
-    queryKey: computed(() => lifecycleKeys.suspensions(cid.value, toValue(params))),
-    queryFn: ({ signal }) => lifecycleApi.suspensions(cid.value, toValue(params), signal),
+    queryKey: computed(() => lifecycleKeys.suspensions(cid.value)),
+    queryFn: ({ signal }) => lifecycleApi.suspensions(cid.value, signal),
     enabled: computed(() => cid.value > 0 && toValue(enabled)),
-    placeholderData: keepPreviousData,
     staleTime: 15_000,
   });
 }

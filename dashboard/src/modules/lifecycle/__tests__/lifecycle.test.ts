@@ -14,7 +14,7 @@ import { lifecycleApi, lifecycleKeys } from "../api";
 import ProfileActions from "../components/ProfileActions.vue";
 import en from "../i18n/en.json";
 import module from "../index";
-import { isActiveRecord, lifecycleAccess, nextStep, recordFormErrors, recordParams, recordPayload, suspensionParams, type RecordForm } from "../lib";
+import { lifecycleAccess, nextStep, recordFormErrors, recordParams, recordPayload, recordState, type RecordForm } from "../lib";
 
 interface Call {
   method: string;
@@ -87,25 +87,23 @@ describe("discipline create payload", () => {
 });
 
 describe("records", () => {
-  it("counts a record while it is issued, read or disputed and not past its expiry", () => {
-    expect(isActiveRecord({ status: "issued", expires_on: "2027-05-01" }, "2026-11-02")).toBe(true);
-    expect(isActiveRecord({ status: "acknowledged", expires_on: null }, "2026-11-02")).toBe(true);
-    expect(isActiveRecord({ status: "disputed", expires_on: "2026-11-02" }, "2026-11-02")).toBe(true);
-    expect(isActiveRecord({ status: "issued", expires_on: "2026-11-01" }, "2026-11-02")).toBe(false);
-    expect(isActiveRecord({ status: "withdrawn", expires_on: null }, "2026-11-02")).toBe(false);
-    expect(isActiveRecord({ status: "expired", expires_on: null }, "2026-11-02")).toBe(false);
+  it("reads a record's state: issued, read, withdrawn, or no longer counting once it expired", () => {
+    expect(recordState({ status: "issued", active: true })).toBe("issued");
+    expect(recordState({ status: "acknowledged", active: true })).toBe("acknowledged");
+    expect(recordState({ status: "acknowledged", active: false })).toBe("expired");
+    expect(recordState({ status: "withdrawn", active: false })).toBe("withdrawn");
   });
 
   it("suggests the next step from the strongest record of the last six months", () => {
     const today = "2026-11-02";
-    const rec = (kind: "verbal_warning" | "written_warning" | "final_warning" | "reprimand" | "other", incident_on: string, status: "issued" | "withdrawn" = "issued") => ({ kind, incident_on, status, expires_on: null });
+    const rec = (kind: "verbal_warning" | "written_warning" | "final_warning" | "reprimand" | "other", incident_on: string, active = true) => ({ kind, incident_on, active });
     expect(nextStep([], today)).toBeNull();
     expect(nextStep([rec("verbal_warning", "2026-10-20")], today)).toEqual({ step: "written_warning", count: 1 });
     expect(nextStep([rec("verbal_warning", "2026-10-20"), rec("written_warning", "2026-09-01")], today)).toEqual({ step: "final_warning", count: 2 });
     expect(nextStep([rec("reprimand", "2026-08-01")], today)).toEqual({ step: "final_warning", count: 1 });
     expect(nextStep([rec("final_warning", "2026-06-01")], today)).toEqual({ step: "consider_termination", count: 1 });
-    // Older than six months, withdrawn, or "other": nothing counts.
-    expect(nextStep([rec("final_warning", "2026-04-30"), rec("written_warning", "2026-10-01", "withdrawn"), rec("other", "2026-10-30")], today)).toBeNull();
+    // Older than six months, no longer counting (withdrawn or expired), or "other": nothing counts.
+    expect(nextStep([rec("final_warning", "2026-04-30"), rec("written_warning", "2026-10-01", false), rec("other", "2026-10-30")], today)).toBeNull();
   });
 
   it("turns the filters into the API's params", () => {
@@ -116,8 +114,6 @@ describe("records", () => {
       q: "Alisher",
     });
     expect(recordParams({}, "")).toEqual({});
-    expect(suspensionParams("now", "")).toEqual({ status: ["active", "scheduled"] });
-    expect(suspensionParams("history", "Kamola")).toEqual({ status: ["ended", "cancelled"], q: "Kamola" });
   });
 
   it("reads who may do what", () => {
@@ -136,7 +132,8 @@ describe("api", () => {
     await lifecycleApi.createRecord(1, recordPayload(form({ proposeFine: true, fine: "150000.00" })));
     await lifecycleApi.createRecord(1, recordPayload(form({ files: [new File(["x"], "chek.jpg", { type: "image/jpeg" })] })));
     await lifecycleApi.withdrawRecord(1, 4, "Xato bilan yozilgan");
-    await lifecycleApi.suspensions(1, { status: ["active", "scheduled"] });
+    await lifecycleApi.proposeFine(1, 4, "200000.00");
+    await lifecycleApi.suspensions(1);
     await lifecycleApi.suspend(1, { member_id: 9, until: null, reason: "Kassa tekshirilmoqda" });
     await lifecycleApi.reinstate(1, 6);
     expect(calls.map((c) => `${c.method} ${c.url}`)).toEqual([
@@ -144,13 +141,15 @@ describe("api", () => {
       "POST lifecycle/discipline/",
       "POST lifecycle/discipline/",
       "POST lifecycle/discipline/4/withdraw/",
-      "GET lifecycle/suspensions/?status=active&status=scheduled",
+      "POST lifecycle/discipline/4/fine/",
+      "GET lifecycle/suspensions/",
       "POST lifecycle/suspensions/",
       "POST lifecycle/suspensions/6/reinstate/",
     ]);
     expect(calls[1]!.body).toEqual({ member_id: 9, kind: "written_warning", category: "storage_breach", incident_on: "2026-11-01", description: "Insulin muzlatgichdan tashqarida qolgan.", fine_amount: "150000.00" });
     expect(calls[2]!.body).toEqual({ member_id: "9", kind: "written_warning", category: "storage_breach", incident_on: "2026-11-01", description: "Insulin muzlatgichdan tashqarida qolgan.", evidence: "file:chek.jpg" });
-    expect(calls[5]!.body).toEqual({ member_id: 9, until: null, reason: "Kassa tekshirilmoqda" });
+    expect(calls[4]!.body).toEqual({ amount: "200000.00" });
+    expect(calls[6]!.body).toEqual({ member_id: 9, until: null, reason: "Kassa tekshirilmoqda" });
   });
 
   it("registers behind the hr switch with discipline first, the Record tab and the header actions", () => {

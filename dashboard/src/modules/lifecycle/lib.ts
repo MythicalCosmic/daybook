@@ -1,6 +1,6 @@
 /**
  * The lifecycle module's plain logic, tested on its own: who may do what, the create payload (with
- * the proposed fine), which records still count and the suggested next step, and the filters as
+ * the proposed fine), what a record's state reads as, the suggested next step, and the filters as
  * API params.
  */
 import type { Money } from "@/api/types";
@@ -9,7 +9,7 @@ import type { FilterValues } from "@/components/filters";
 import { addMonths } from "@/lib/dates";
 import { moneySign } from "@/lib/money";
 
-import type { DisciplinaryRecord, RecordCategory, RecordInput, RecordKind, RecordParams, RecordStatus, SuspensionParams, SuspensionStatus } from "./types";
+import type { DisciplinaryRecord, RecordCategory, RecordInput, RecordKind, RecordParams } from "./types";
 
 // ─── Access ────────────────────────────────────────────────────────────────
 
@@ -83,19 +83,15 @@ export const KIND_TONES: Record<RecordKind, StatusTone> = {
   other: "neutral",
 };
 
-export const STATUS_TONES: Record<RecordStatus, StatusTone> = {
-  draft: "neutral",
-  issued: "warning",
-  acknowledged: "success",
-  disputed: "danger",
-  withdrawn: "neutral",
-  expired: "neutral",
-};
+/** How a record's state reads: issued (not read yet), read, withdrawn, or no longer counting. */
+export type RecordState = "issued" | "acknowledged" | "withdrawn" | "expired";
 
-/** A record still counts: issued (read or disputed), not withdrawn, not past its expiry. */
-export function isActiveRecord(record: Pick<DisciplinaryRecord, "status" | "expires_on">, today: string): boolean {
-  if (record.status === "withdrawn" || record.status === "expired" || record.status === "draft") return false;
-  return !record.expires_on || record.expires_on >= today;
+export const STATE_TONES: Record<RecordState, StatusTone> = { issued: "warning", acknowledged: "success", withdrawn: "neutral", expired: "neutral" };
+
+export function recordState(record: Pick<DisciplinaryRecord, "status" | "active">): RecordState {
+  if (record.status === "withdrawn") return "withdrawn";
+  if (!record.active) return "expired";
+  return record.status;
 }
 
 const LADDER: Record<RecordKind, number> = { other: 0, verbal_warning: 1, written_warning: 2, reprimand: 2, final_warning: 3 };
@@ -108,9 +104,9 @@ export type NextStep = "written_warning" | "final_warning" | "consider_terminati
  * leads to a written one, a written warning or reprimand to a final one, a final one to
  * considering termination. Null when nothing counts.
  */
-export function nextStep(records: readonly Pick<DisciplinaryRecord, "kind" | "status" | "expires_on" | "incident_on">[], today: string): { step: NextStep; count: number } | null {
+export function nextStep(records: readonly Pick<DisciplinaryRecord, "kind" | "active" | "incident_on">[], today: string): { step: NextStep; count: number } | null {
   const since = addMonths(today, -6);
-  const counting = records.filter((record) => isActiveRecord(record, today) && record.incident_on >= since && LADDER[record.kind] > 0);
+  const counting = records.filter((record) => record.active && record.incident_on >= since && LADDER[record.kind] > 0);
   if (!counting.length) return null;
   const top = Math.max(...counting.map((record) => LADDER[record.kind]));
   const step: NextStep = top >= 3 ? "consider_termination" : top === 2 ? "final_warning" : "written_warning";
@@ -127,18 +123,6 @@ export function recordParams(values: FilterValues, search: string): RecordParams
     if (list.length) params[key] = list;
   }
   if (values.active === true || values.active === "true") params.active = true;
-  if (search.trim()) params.q = search.trim();
-  return params;
-}
-
-// ─── Suspensions ───────────────────────────────────────────────────────────
-
-export type SuspensionView = "now" | "history";
-
-export const SUSPENSION_TONES: Record<SuspensionStatus, StatusTone> = { scheduled: "info", active: "warning", ended: "neutral", cancelled: "neutral" };
-
-export function suspensionParams(view: SuspensionView, search: string): SuspensionParams {
-  const params: SuspensionParams = { status: view === "now" ? ["active", "scheduled"] : ["ended", "cancelled"] };
   if (search.trim()) params.q = search.trim();
   return params;
 }
