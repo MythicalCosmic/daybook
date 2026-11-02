@@ -774,6 +774,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/payroll/payslips/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description My payslips: the month, the net and whether it is paid and received. */
+        get: operations["v1_companies_payroll_payslips_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/payroll/payslips/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description One of my payslips with every line; opening it marks it seen. */
+        get: operations["v1_companies_payroll_payslips_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/payroll/payslips/{id}/pdf/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description A short-lived link to my payslip as a PDF, in my language. */
+        get: operations["v1_companies_payroll_payslips_pdf_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/payroll/payslips/{id}/received/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description I received this pay ("I received it"). */
+        get: operations["v1_companies_payroll_payslips_received_retrieve"];
+        put?: never;
+        /** @description I received this pay ("I received it"). */
+        post: operations["v1_companies_payroll_payslips_received_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/positions/": {
         parameters: {
             query?: never;
@@ -2637,6 +2706,21 @@ export interface components {
          * @enum {string}
          */
         LanguageEnum: "uz" | "ru" | "en";
+        Line: {
+            readonly id: number;
+            readonly kind: components["schemas"]["PayrollLineKindEnum"];
+            readonly label: string;
+            /** Format: decimal */
+            quantity: string | null;
+            /** Format: decimal */
+            rate: string | null;
+            /** Format: decimal */
+            amount: string;
+            readonly params: unknown;
+            adjustment: number | null;
+            advance: number | null;
+            readonly manual: boolean;
+        };
         MarkReadRequest: {
             ids?: number[];
             /** @default false */
@@ -3093,10 +3177,47 @@ export interface components {
         PayrollDisputeRequest: {
             text: string;
         };
+        PayrollFileLink: {
+            url: string;
+            name: string;
+            expires_in: number;
+        };
+        /**
+         * @description * `base` - Base pay
+         *     * `proration` - Days not paid
+         *     * `overtime` - Overtime
+         *     * `holiday_work` - Holiday work
+         *     * `night_work` - Night work
+         *     * `piece` - Task pay
+         *     * `task_reward` - Task reward
+         *     * `bonus` - Bonus
+         *     * `allowance` - Allowance
+         *     * `reimbursement` - Expenses paid back
+         *     * `fine` - Fine
+         *     * `deduction` - Deduction
+         *     * `advance` - Advance repaid
+         *     * `loan` - Loan repaid
+         *     * `income_tax` - Income tax
+         *     * `inps` - Pension contribution
+         *     * `leave_compensation` - Paid leave
+         *     * `leave_payout` - Unused leave paid out
+         *     * `rounding` - Rounding
+         *     * `manual` - Added by hand
+         * @enum {string}
+         */
+        PayrollLineKindEnum: "base" | "proration" | "overtime" | "holiday_work" | "night_work" | "piece" | "task_reward" | "bonus" | "allowance" | "reimbursement" | "fine" | "deduction" | "advance" | "loan" | "income_tax" | "inps" | "leave_compensation" | "leave_payout" | "rounding" | "manual";
         PayrollMyAdvances: {
             cap: components["schemas"]["PayrollAdvanceCap"];
             advances: components["schemas"]["Advance"][];
         };
+        /**
+         * @description * `monthly` - Monthly
+         *     * `daily` - Daily
+         *     * `hourly` - Hourly
+         *     * `per_task` - Per task
+         * @enum {string}
+         */
+        PayrollPayTypeEnum: "monthly" | "daily" | "hourly" | "per_task";
         /**
          * @description * `cash` - Cash
          *     * `card` - Card
@@ -3104,10 +3225,79 @@ export interface components {
          * @enum {string}
          */
         PayrollPayoutMethodEnum: "cash" | "card" | "bank";
+        /** @description A payslip with every line and how it was worked out. */
+        PayrollPayslip: {
+            readonly id: number;
+            readonly member: components["schemas"]["PayrollPersonCard"];
+            readonly period: string;
+            readonly pay_type: components["schemas"]["PayrollPayTypeEnum"];
+            readonly currency: components["schemas"]["CurrencyEnum"];
+            /** Format: decimal */
+            base_pay: string;
+            readonly bonuses: string;
+            readonly fines: string;
+            readonly advances: string;
+            readonly reimbursements: string;
+            /** Format: decimal */
+            gross: string;
+            /** Format: decimal */
+            deductions: string;
+            /** Format: decimal */
+            net: string;
+            readonly status: components["schemas"]["PayrollPayslipStatusEnum"];
+            /** Format: date-time */
+            readonly published_at: string | null;
+            /** Format: date-time */
+            readonly viewed_at: string | null;
+            /** Format: date-time */
+            readonly paid_at: string | null;
+            /** Format: date-time */
+            readonly received_at: string | null;
+            readonly payout_method: components["schemas"]["PayrollPayoutMethodEnum"];
+            run: number;
+            run_status: string;
+            readonly month: string;
+            /** Format: decimal */
+            scheduled_days: string;
+            /** Format: decimal */
+            paid_days: string;
+            /** Format: decimal */
+            paid_leave_days: string;
+            /** Format: decimal */
+            unpaid_leave_days: string;
+            /** Format: decimal */
+            absent_days: string;
+            readonly worked_minutes: number;
+            readonly overtime_minutes: number;
+            readonly night_minutes: number;
+            readonly late_arrivals: number;
+            task_stats: {
+                [key: string]: unknown;
+            };
+            taxes: {
+                [key: string]: unknown;
+            };
+            readonly lines: components["schemas"]["Line"][];
+        };
+        /**
+         * @description * `draft` - Draft
+         *     * `published` - Published
+         *     * `paid` - Paid
+         * @enum {string}
+         */
+        PayrollPayslipStatusEnum: "draft" | "published" | "paid";
         PayrollPerson: {
             id: number;
             name: string;
             photo_url: string | null;
+        };
+        PayrollPersonCard: {
+            id: number;
+            name: string;
+            photo_url: string | null;
+            position: string | null;
+            home_branch: string | null;
+            status: string;
         };
         PayrollRef: {
             id: number;
@@ -3123,6 +3313,36 @@ export interface components {
             note: string;
             readonly payslip: number | null;
             readonly how: string;
+        };
+        /** @description A row of a run's payslip table: the person and their sums by kind. */
+        PayslipRow: {
+            readonly id: number;
+            readonly member: components["schemas"]["PayrollPersonCard"];
+            readonly period: string;
+            readonly pay_type: components["schemas"]["PayrollPayTypeEnum"];
+            readonly currency: components["schemas"]["CurrencyEnum"];
+            /** Format: decimal */
+            base_pay: string;
+            readonly bonuses: string;
+            readonly fines: string;
+            readonly advances: string;
+            readonly reimbursements: string;
+            /** Format: decimal */
+            gross: string;
+            /** Format: decimal */
+            deductions: string;
+            /** Format: decimal */
+            net: string;
+            readonly status: components["schemas"]["PayrollPayslipStatusEnum"];
+            /** Format: date-time */
+            readonly published_at: string | null;
+            /** Format: date-time */
+            readonly viewed_at: string | null;
+            /** Format: date-time */
+            readonly paid_at: string | null;
+            /** Format: date-time */
+            readonly received_at: string | null;
+            readonly payout_method: components["schemas"]["PayrollPayoutMethodEnum"];
         };
         Period: {
             scheduled_days: number;
@@ -5201,6 +5421,115 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Advance"];
+                };
+            };
+        };
+    };
+    v1_companies_payroll_payslips_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayslipRow"][];
+                };
+            };
+        };
+    };
+    v1_companies_payroll_payslips_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollPayslip"];
+                };
+            };
+        };
+    };
+    v1_companies_payroll_payslips_pdf_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollFileLink"];
+                };
+            };
+        };
+    };
+    v1_companies_payroll_payslips_received_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollPayslip"];
+                };
+            };
+        };
+    };
+    v1_companies_payroll_payslips_received_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayrollPayslip"];
                 };
             };
         };

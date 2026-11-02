@@ -11,6 +11,8 @@ from apps.payroll.owner_api import (
     AdjustmentViewSet,
     AdvanceViewSet,
     CompensationViewSet,
+    PayslipViewSet,
+    RunViewSet,
     SettingsView,
     TaskRateViewSet,
 )
@@ -20,6 +22,8 @@ router.register("payroll/compensations", CompensationViewSet, basename="payroll-
 router.register("payroll/task-rates", TaskRateViewSet, basename="payroll-task-rate")
 router.register("payroll/adjustments", AdjustmentViewSet, basename="payroll-adjustment")
 router.register("payroll/advances", AdvanceViewSet, basename="payroll-advance")
+router.register("payroll/runs", RunViewSet, basename="payroll-run")
+router.register("payroll/payslips", PayslipViewSet, basename="payroll-payslip")
 
 urlpatterns = [
     path("payroll/settings/", SettingsView.as_view(), name="payroll-settings"),

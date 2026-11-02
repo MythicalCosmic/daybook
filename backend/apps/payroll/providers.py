@@ -4,15 +4,18 @@ team directory's salary field, the setup step and the payslip file check."""
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 
 from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy as _l
+from rest_framework import serializers
 
 from apps.console.registry import QueueAction, QueueItem
 from apps.members import scope
 from apps.members.models import Membership
 from apps.members.permissions import Perm
 from apps.payroll import periods, queries
-from apps.payroll.models import Adjustment, Compensation, Payslip
+from apps.payroll.models import Adjustment, Compensation, Payslip, PayslipLine
 
 
 def _decide(path: str, *, reason: bool = False) -> list[QueueAction]:
@@ -169,6 +172,82 @@ def person_fields(company, member_ids: list[int], now: datetime) -> dict[int, di
             else None
         }
     return found
+
+
+# The run as a spreadsheet (for the accountant and the bank) ------------------------------
+
+
+class RunExportParams(serializers.Serializer):
+    run = serializers.IntegerField()
+
+
+RUN_COLUMNS = [
+    ("person", _l("Person")),
+    ("position", _l("Position")),
+    ("branch", _l("Branch")),
+    ("month", _l("Month")),
+    ("pay_type", _l("Pay type")),
+    ("scheduled_days", _l("Working days"), "number"),
+    ("paid_days", _l("Paid days"), "number"),
+    ("base_pay", _l("Base pay"), "money"),
+    ("extra", _l("Overtime, nights, holidays"), "money"),
+    ("bonuses", _l("Bonuses"), "money"),
+    ("fines", _l("Fines and deductions"), "money"),
+    ("taxes", _l("Taxes withheld"), "money"),
+    ("advances", _l("Advances repaid"), "money"),
+    ("reimbursements", _l("Expenses paid back"), "money"),
+    ("gross", _l("Earned"), "money"),
+    ("net", _l("To be paid"), "money"),
+    ("currency", _l("Currency")),
+    ("status", _l("Status")),
+    ("paid_at", _l("Paid"), "datetime"),
+]
+
+
+def run_rows(member: Membership, params: dict):
+    """One row per payslip of the run, for the people the exporter sees."""
+    from apps.payroll.models import PayrollRun, PayType
+
+    run = PayrollRun.objects.for_company(member.company).filter(pk=params.get("run")).first()
+    if run is None:
+        return
+    payslips = queries.people_scope(
+        run.payslips.select_related(
+            "membership__user", "membership__position", "membership__home_branch"
+        ).prefetch_related("lines"),
+        scope.branch_ids(member),
+    ).order_by("membership__first_name", "membership__last_name", "pk")
+    month = queries.month_label(run.period)
+    Kind = PayslipLine.Kind
+    statuses = dict(Payslip.Status.choices)
+    for payslip in payslips:
+        lines = list(payslip.lines.all())
+
+        def total(*kinds, lines=lines):
+            return sum((line.amount for line in lines if line.kind in kinds), Decimal(0))
+
+        person = payslip.membership
+        yield {
+            "person": str(person),
+            "position": person.position.name if person.position_id else "",
+            "branch": person.home_branch.name if person.home_branch_id else "",
+            "month": month,
+            "pay_type": str(PayType(payslip.pay_type).label),
+            "scheduled_days": payslip.scheduled_days,
+            "paid_days": payslip.paid_days,
+            "base_pay": payslip.base_pay,
+            "extra": total(Kind.OVERTIME, Kind.NIGHT_WORK, Kind.HOLIDAY_WORK, Kind.PIECE),
+            "bonuses": total(Kind.BONUS, Kind.ALLOWANCE, Kind.TASK_REWARD),
+            "fines": total(Kind.FINE, Kind.DEDUCTION),
+            "taxes": total(Kind.INCOME_TAX, Kind.INPS),
+            "advances": total(Kind.ADVANCE),
+            "reimbursements": total(Kind.REIMBURSEMENT),
+            "gross": payslip.gross,
+            "net": payslip.net,
+            "currency": payslip.currency,
+            "status": str(statuses.get(payslip.status, payslip.status)),
+            "paid_at": payslip.paid_at,
+        }
 
 
 # Get started ----------------------------------------------------------------------------

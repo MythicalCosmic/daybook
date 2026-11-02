@@ -21,7 +21,10 @@ from apps.payroll.models import (
     Advance,
     Compensation,
     PayoutMethod,
+    PayrollRun,
     PayrollSettings,
+    Payslip,
+    PayslipLine,
     PayType,
     TaskRate,
 )
@@ -558,3 +561,359 @@ class RuleRefSerializer(serializers.ModelSerializer):
         model = AdjustmentRule
         fields = ("id", "name")
         ref_name = "PayrollRuleRef"
+
+
+# Runs and payslips ----------------------------------------------------------------------
+
+
+class RunTotalsSerializer(serializers.Serializer):
+    currency = serializers.CharField()
+    people = serializers.IntegerField()
+    gross = serializers.CharField()
+    deductions = serializers.CharField()
+    net = serializers.CharField()
+    bonuses = serializers.CharField()
+    fines = serializers.CharField()
+    advances = serializers.CharField()
+    reimbursements = serializers.CharField()
+    taxes = serializers.DictField(child=serializers.CharField())
+    paid = serializers.IntegerField()
+    published = serializers.IntegerField()
+
+    class Meta:
+        ref_name = "PayrollRunTotals"
+
+
+class WarningSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    level = serializers.CharField()
+    text = serializers.CharField()
+    member = PersonSerializer(allow_null=True, required=False)
+    count = serializers.IntegerField(required=False)
+
+    class Meta:
+        ref_name = "PayrollWarning"
+
+
+def warnings_out(run) -> list[dict]:
+    from apps.payroll import labels
+
+    rows = []
+    for warning in run.warnings or []:
+        rows.append(
+            {
+                "code": warning.get("code", ""),
+                "level": warning.get("level", "warning"),
+                "text": labels.warning_text(warning),
+                "member": warning.get("member"),
+                **({"count": warning["count"]} if "count" in warning else {}),
+            }
+        )
+    return rows
+
+
+class RunSerializer(serializers.ModelSerializer):
+    """A run. Its totals (money) reach only payroll.view holders, who alone read runs."""
+
+    period = PeriodField()
+    month = serializers.SerializerMethodField()
+    member = serializers.SerializerMethodField()
+    totals = serializers.SerializerMethodField()
+    warnings = serializers.SerializerMethodField()
+    usd_rate = serializers.DecimalField(
+        max_digits=18, decimal_places=6, coerce_to_string=True, allow_null=True
+    )
+    finalized_by = serializers.SerializerMethodField()
+    actions = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PayrollRun
+        fields = (
+            "id",
+            "period",
+            "month",
+            "kind",
+            "status",
+            "member",
+            "usd_rate",
+            "calculated_at",
+            "totals",
+            "warnings",
+            "finalized_at",
+            "finalized_by",
+            "paid_at",
+            "notes",
+            "created_at",
+            "actions",
+        )
+        read_only_fields = fields
+
+    def get_month(self, run) -> str:
+        from apps.payroll import queries
+
+        return queries.month_label(run.period)
+
+    @extend_schema_field(PersonSerializer(allow_null=True))
+    def get_member(self, run):
+        return person(run.membership) if run.membership_id else None
+
+    @extend_schema_field(RunTotalsSerializer)
+    def get_totals(self, run):
+        return run.totals or {}
+
+    @extend_schema_field(WarningSerializer(many=True))
+    def get_warnings(self, run):
+        return warnings_out(run)
+
+    def get_finalized_by(self, run) -> str | None:
+        return user_name(run.finalized_by)
+
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
+    def get_actions(self, run):
+        """What the caller may do with the run now: calculate, finalize, reopen, cancel,
+        publish, mark_paid."""
+        member = self.context.get("membership")
+        if member is None:
+            return []
+        status = run.status
+        found = []
+        if status == PayrollRun.Status.DRAFT:
+            if member.has_perm("payroll.manage"):
+                found += ["calculate", "cancel"]
+            if member.has_perm("payroll.finalize"):
+                found.append("finalize")
+        elif status == PayrollRun.Status.FINALIZED:
+            if member.has_perm("payroll.finalize"):
+                if not (run.totals or {}).get("paid"):
+                    found.append("reopen")
+                found.append("publish")
+            if member.has_perm("payroll.pay"):
+                found.append("mark_paid")
+        elif status == PayrollRun.Status.PAID and member.has_perm("payroll.finalize"):
+            found.append("publish")
+        return found
+
+
+class RunCreateSerializer(serializers.Serializer):
+    period = PeriodField()
+    usd_rate = serializers.DecimalField(
+        max_digits=18, decimal_places=6, min_value=Decimal("0.000001"), required=False
+    )
+    notes = serializers.CharField(max_length=2000, required=False, allow_blank=True, default="")
+
+    class Meta:
+        ref_name = "PayrollRunCreate"
+
+
+class RunCalculateSerializer(serializers.Serializer):
+    usd_rate = serializers.DecimalField(
+        max_digits=18, decimal_places=6, min_value=Decimal("0.000001"), required=False
+    )
+
+    class Meta:
+        ref_name = "PayrollRunCalculate"
+
+
+class PublishSerializer(serializers.Serializer):
+    payslip_ids = serializers.ListField(
+        child=serializers.IntegerField(), required=False, allow_null=True, max_length=1000
+    )
+
+    class Meta:
+        ref_name = "PayrollPublish"
+
+
+class MarkPaidSerializer(serializers.Serializer):
+    payslip_ids = serializers.ListField(
+        child=serializers.IntegerField(), min_length=1, max_length=1000
+    )
+    method = serializers.ChoiceField(choices=PayoutMethod.choices, default=PayoutMethod.CASH)
+    account = serializers.IntegerField()
+    paid_on = serializers.DateField(required=False)
+
+    class Meta:
+        ref_name = "PayrollMarkPaid"
+
+
+class LineSerializer(serializers.ModelSerializer):
+    label = serializers.SerializerMethodField()
+    amount = MoneySerializerField(positive=False)
+    rate = MoneySerializerField(positive=False, allow_null=True)
+    quantity = serializers.DecimalField(
+        max_digits=12, decimal_places=2, coerce_to_string=True, allow_null=True
+    )
+    adjustment = serializers.IntegerField(source="adjustment_id", allow_null=True)
+    advance = serializers.IntegerField(source="advance_id", allow_null=True)
+    manual = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PayslipLine
+        fields = (
+            "id",
+            "kind",
+            "label",
+            "quantity",
+            "rate",
+            "amount",
+            "params",
+            "adjustment",
+            "advance",
+            "manual",
+        )
+        read_only_fields = fields
+
+    def get_label(self, line) -> str:
+        from apps.payroll import labels
+
+        return labels.line_label(line)
+
+    def get_manual(self, line) -> bool:
+        return line.kind == PayslipLine.Kind.MANUAL
+
+
+PAYSLIP_AMOUNTS = ("base_pay", "gross", "deductions", "net", "carried_debt")
+
+
+class PayslipRowSerializer(serializers.ModelSerializer):
+    """A row of a run's payslip table: the person and their sums by kind."""
+
+    member = serializers.SerializerMethodField()
+    base_pay = MoneySerializerField(positive=False)
+    gross = MoneySerializerField(positive=False)
+    deductions = MoneySerializerField(positive=False)
+    net = MoneySerializerField(positive=False)
+    bonuses = serializers.SerializerMethodField()
+    fines = serializers.SerializerMethodField()
+    advances = serializers.SerializerMethodField()
+    reimbursements = serializers.SerializerMethodField()
+    period = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Payslip
+        fields = (
+            "id",
+            "member",
+            "period",
+            "pay_type",
+            "currency",
+            "base_pay",
+            "bonuses",
+            "fines",
+            "advances",
+            "reimbursements",
+            "gross",
+            "deductions",
+            "net",
+            "status",
+            "published_at",
+            "viewed_at",
+            "paid_at",
+            "received_at",
+            "payout_method",
+        )
+        read_only_fields = fields
+
+    @extend_schema_field(PersonCardSerializer)
+    def get_member(self, payslip):
+        return person_card(payslip.membership)
+
+    def get_period(self, payslip) -> str:
+        return payslip.run.period.isoformat()
+
+    def _sum(self, payslip, kinds) -> str:
+        lines = getattr(payslip, "_lines_cache", None)
+        if lines is None:
+            lines = list(payslip.lines.all())
+            payslip._lines_cache = lines
+        return f"{sum((line.amount for line in lines if line.kind in kinds), Decimal(0)):.2f}"
+
+    def get_bonuses(self, payslip) -> str:
+        Kind = PayslipLine.Kind
+        return self._sum(payslip, (Kind.BONUS, Kind.ALLOWANCE, Kind.TASK_REWARD))
+
+    def get_fines(self, payslip) -> str:
+        Kind = PayslipLine.Kind
+        return self._sum(payslip, (Kind.FINE, Kind.DEDUCTION))
+
+    def get_advances(self, payslip) -> str:
+        return self._sum(payslip, (PayslipLine.Kind.ADVANCE,))
+
+    def get_reimbursements(self, payslip) -> str:
+        return self._sum(payslip, (PayslipLine.Kind.REIMBURSEMENT,))
+
+
+class PayslipSerializer(PayslipRowSerializer):
+    """A payslip with every line and how it was worked out."""
+
+    lines = serializers.SerializerMethodField()
+    month = serializers.SerializerMethodField()
+    run = serializers.IntegerField(source="run_id")
+    run_status = serializers.CharField(source="run.status")
+    taxes = serializers.DictField()
+    task_stats = serializers.DictField()
+    scheduled_days = serializers.DecimalField(max_digits=5, decimal_places=1, coerce_to_string=True)
+    paid_days = serializers.DecimalField(max_digits=5, decimal_places=1, coerce_to_string=True)
+    paid_leave_days = serializers.DecimalField(
+        max_digits=5, decimal_places=1, coerce_to_string=True
+    )
+    unpaid_leave_days = serializers.DecimalField(
+        max_digits=5, decimal_places=1, coerce_to_string=True
+    )
+    absent_days = serializers.DecimalField(max_digits=5, decimal_places=1, coerce_to_string=True)
+
+    class Meta(PayslipRowSerializer.Meta):
+        fields = (
+            *PayslipRowSerializer.Meta.fields,
+            "run",
+            "run_status",
+            "month",
+            "scheduled_days",
+            "paid_days",
+            "paid_leave_days",
+            "unpaid_leave_days",
+            "absent_days",
+            "worked_minutes",
+            "overtime_minutes",
+            "night_minutes",
+            "late_arrivals",
+            "task_stats",
+            "taxes",
+            "lines",
+        )
+        read_only_fields = fields
+        ref_name = "PayrollPayslip"
+
+    def get_month(self, payslip) -> str:
+        from apps.payroll import queries
+
+        return queries.month_label(payslip.run.period)
+
+    @extend_schema_field(LineSerializer(many=True))
+    def get_lines(self, payslip):
+        lines = payslip.lines.select_related("adjustment", "payslip").order_by("order", "pk")
+        return LineSerializer(lines, many=True, context=self.context).data
+
+
+class ManualLineSerializer(serializers.Serializer):
+    id = serializers.IntegerField(required=False)
+    label = serializers.CharField(max_length=200)
+    amount = MoneySerializerField(positive=False)
+
+    class Meta:
+        ref_name = "PayrollManualLine"
+
+
+class PayslipPatchSerializer(serializers.Serializer):
+    manual_lines = ManualLineSerializer(many=True, max_length=20)
+
+    class Meta:
+        ref_name = "PayrollPayslipPatch"
+
+
+class FileLinkSerializer(serializers.Serializer):
+    url = serializers.CharField()
+    name = serializers.CharField()
+    expires_in = serializers.IntegerField()
+
+    class Meta:
+        ref_name = "PayrollFileLink"

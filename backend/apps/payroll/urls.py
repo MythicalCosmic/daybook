@@ -17,4 +17,16 @@ urlpatterns = [
         api.CancelAdvanceView.as_view(),
         name="payroll-my-advance-cancel",
     ),
+    path("payroll/payslips/", api.MyPayslipsView.as_view(), name="payroll-my-payslips"),
+    path("payroll/payslips/<int:pk>/", api.MyPayslipView.as_view(), name="payroll-my-payslip"),
+    path(
+        "payroll/payslips/<int:pk>/pdf/",
+        api.MyPayslipPdfView.as_view(),
+        name="payroll-my-payslip-pdf",
+    ),
+    path(
+        "payroll/payslips/<int:pk>/received/",
+        api.ReceivedView.as_view(),
+        name="payroll-my-payslip-received",
+    ),
 ]

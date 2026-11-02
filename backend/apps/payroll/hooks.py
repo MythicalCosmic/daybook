@@ -10,6 +10,7 @@ from apps.audit.redaction import register_sensitive
 from apps.console import registry
 from apps.console.perms import AnyOf
 from apps.core.files import register_file_check
+from apps.exports.registry import register_exporter
 from apps.finance import sources
 from apps.inbox.registry import register_action, register_kind
 from apps.members.permissions import Perm
@@ -97,6 +98,16 @@ registry.register_setup_step(
 )
 
 register_file_check("payroll.payslip", providers.payslip_check, allow_suspended=True)
+register_exporter(
+    "payroll.run",
+    perm=VIEW,
+    label=_("Payroll (payslips of a month)"),
+    columns=providers.RUN_COLUMNS,
+    rows=providers.run_rows,
+    params=providers.RunExportParams,
+    sensitive=True,
+    feature=FEATURE,
+)
 
 # Notifications. Approvals live in Needs you; their Telegram copy carries the buttons.
 register_kind(
