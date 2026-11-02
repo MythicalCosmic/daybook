@@ -53,7 +53,7 @@ const kind = computed(() => props.rule?.kind ?? props.draft.kind);
 function valueText(value: string | null): string {
   if (value === null) return "—";
   const unit = metricUnit(props.rule?.metric ?? props.draft.metric);
-  if (unit === "percent") return `${fmt.number(value, 1)} %`;
+  if (unit === "percent") return fmt.percent(Number(value), 1);
   if (unit === "money") return fmt.money(value, result.value?.currency, { compact: true });
   if (unit === "minutes") return t("payroll.rules.unit.minutes", { n: fmt.number(value, 1) });
   if (unit === "hours") return t("payroll.rules.unit.hours", { n: fmt.number(value, 1) });

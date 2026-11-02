@@ -20,7 +20,7 @@ const fmt = useFormat();
 
 const unitText = (value: string | number) => {
   const unit = metricUnit(props.rule.metric);
-  if (unit === "percent") return `${fmt.number(value, 1)} %`;
+  if (unit === "percent") return fmt.percent(Number(value), 1);
   if (unit === "money") return fmt.money(String(value));
   if (unit === "minutes") return t("payroll.rules.unit.minutes", { n: fmt.number(value, 1) });
   if (unit === "hours") return t("payroll.rules.unit.hours", { n: fmt.number(value, 1) });
@@ -49,7 +49,7 @@ const chips = computed(() => {
       list.push({ key: "each", text: `${money(r.amount)} ${t("payroll.rules.each")}`, tone: hidden ? "muted" : "kind" });
       if (free) list.push({ key: "free", text: t("payroll.rules.freeUnits", { n: fmt.number(r.free_units, 2) }, free) });
     } else if (r.amount_type === "percent") {
-      const share = hasAmount(r.amount) ? `${sign.value}${fmt.number(r.amount, 2)} %` : t("payroll.hidden");
+      const share = hasAmount(r.amount) ? `${sign.value}${fmt.percent(Number(r.amount), 2)}` : t("payroll.hidden");
       list.push({ key: "share", text: `${share} ${r.metric === "sales.net" ? t("payroll.rules.ofSales") : t("payroll.rules.ofBase")}`, tone: hidden ? "muted" : "kind" });
     } else {
       list.push({ key: "amount", text: money(r.amount), tone: hidden ? "muted" : "kind" });
