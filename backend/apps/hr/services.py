@@ -725,7 +725,7 @@ def create_contract(
     for name, value in values.items():
         setattr(contract, name, value)
     if not contract.number:
-        contract.number = _next_number(membership.company, contract.starts_on.year)
+        contract.number = next_number(membership.company, contract.starts_on.year)
     if file is not None:
         _attach_scan(contract, file)
     _save_contract(contract)
@@ -875,7 +875,7 @@ def renew_contract(
         membership=contract.membership, status=Contract.Status.ACTIVE
     ).exists():
         raise DomainError(_("This person already has a contract in force."))
-    renewed.number = _next_number(contract.company, starts_on.year)
+    renewed.number = next_number(contract.company, starts_on.year)
     renewed.status = Contract.Status.ACTIVE
     _save_contract(renewed)
     _contract_audit(
@@ -1102,7 +1102,7 @@ def _save_contract(contract: Contract) -> None:
         raise
 
 
-def _next_number(company, year: int) -> str:
+def next_number(company, year: int) -> str:
     """The company's next free number for `year`: 2026-001, 2026-002…"""
     taken = set(
         Contract.objects.filter(company=company, number__startswith=f"{year}-").values_list(
