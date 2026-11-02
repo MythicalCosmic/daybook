@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 911 Trello\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-02 18:10+0500\n"
+"POT-Creation-Date: 2026-11-02 18:23+0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: \n"
 "Language-Team: uz\n"
@@ -275,7 +275,8 @@ msgid "Deadline"
 msgstr "Oxirgi muddat"
 
 #: backend/apps/agenda/models.py backend/apps/finance/models.py
-#: backend/apps/hr/models.py backend/apps/sales/models.py
+#: backend/apps/hr/models.py backend/apps/lifecycle/models.py
+#: backend/apps/sales/models.py
 msgid "Other"
 msgstr "Boshqa"
 
@@ -1444,9 +1445,10 @@ msgstr "E’lonning amal qilish muddati u yuborilgandan keyin tugashi kerak."
 #: backend/apps/announcements/services.py backend/apps/attendance/api.py
 #: backend/apps/attendance/services.py backend/apps/console/base.py
 #: backend/apps/hr/services.py backend/apps/inbox/services.py
-#: backend/apps/knowledge/owner_api.py backend/apps/members/departments.py
-#: backend/apps/members/join_links.py backend/apps/members/services.py
-#: backend/apps/sales/handlers.py backend/apps/timeoff/services.py
+#: backend/apps/knowledge/owner_api.py backend/apps/lifecycle/services.py
+#: backend/apps/members/departments.py backend/apps/members/join_links.py
+#: backend/apps/members/services.py backend/apps/sales/handlers.py
+#: backend/apps/timeoff/services.py
 #: employee_bot/bot/handlers/admin/approvals.py
 msgid "You don't have permission to do this."
 msgstr "Bunga ruxsatingiz yo‘q."
@@ -1512,7 +1514,7 @@ msgid "Attendance isn't switched on for this company."
 msgstr "Bu kompaniyada davomat yoqilmagan."
 
 #: backend/apps/attendance/api.py backend/apps/attendance/owner_api.py
-#: backend/apps/hr/owner_api.py
+#: backend/apps/hr/owner_api.py backend/apps/lifecycle/owner_api.py
 msgid "Give a day as YYYY-MM-DD."
 msgstr "Kunni YYYY-MM-DD ko‘rinishida kiriting."
 
@@ -2393,6 +2395,7 @@ msgid "Give branch ids."
 msgstr "Filial ID’larini kiriting."
 
 #: backend/apps/attendance/owner_api.py backend/apps/hr/owner_api.py
+#: backend/apps/lifecycle/owner_api.py
 msgid "Give a number."
 msgstr "Son kiriting."
 
@@ -2936,8 +2939,8 @@ msgstr ""
 "Bu yozuvni faqat shu ruxsati bor odamlar ko‘radi (u maxfiy maydonlarga "
 "tegishli)."
 
-#: backend/apps/audit/owner_api.py backend/apps/reminders/owner_api.py
-#: backend/apps/tasks/owner_api.py
+#: backend/apps/audit/owner_api.py backend/apps/lifecycle/owner_api.py
+#: backend/apps/reminders/owner_api.py backend/apps/tasks/owner_api.py
 msgid "This field is required."
 msgstr "Bu maydonni to‘ldirish shart."
 
@@ -3747,7 +3750,7 @@ msgstr "Transport"
 msgid "Repairs"
 msgstr "Ta’mirlash"
 
-#: backend/apps/finance/defaults.py
+#: backend/apps/finance/defaults.py backend/apps/lifecycle/models.py
 msgid "Cash shortage"
 msgstr "Kassa kamomadi"
 
@@ -3882,7 +3885,7 @@ msgstr "Yo‘nalish"
 msgid "Who"
 msgstr "Kim"
 
-#: backend/apps/finance/exporters.py
+#: backend/apps/finance/exporters.py backend/apps/lifecycle/models.py
 msgid "Issued"
 msgstr "Qarz sanasi"
 
@@ -5336,6 +5339,7 @@ msgstr ""
 "ishdagi yubileylar"
 
 #: backend/apps/hr/api.py backend/apps/hr/owner_api.py
+#: backend/apps/lifecycle/api.py backend/apps/lifecycle/owner_api.py
 msgid "HR isn't switched on for this company."
 msgstr "Bu kompaniyada «Kadrlar» moduli yoqilmagan."
 
@@ -6511,6 +6515,217 @@ msgstr "Bunday vazifa yoki muntazam vazifa yo‘q."
 #: backend/apps/knowledge/services.py
 msgid "Pick a page of this company."
 msgstr "Shu kompaniyadagi sahifani tanlang."
+
+#: backend/apps/lifecycle/ai_tools.py
+msgid ""
+"Discipline at a glance: warnings and reprimands given in a period by kind "
+"and category, those still counting, unacknowledged ones, and who is "
+"suspended until when"
+msgstr ""
+"Intizom qisqacha: muddat ichida berilgan ogohlantirish va hayfsanlar turi va "
+"sababi bo‘yicha, hali amal qilayotganlari, xodim tanishmaganlari, kim "
+"qachongacha chetlatilgani"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Gave a disciplinary record"
+msgstr "Intizomiy jazo berdi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Changed a disciplinary record"
+msgstr "Intizomiy jazoni o‘zgartirdi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Withdrew a disciplinary record"
+msgstr "Intizomiy jazoni bekor qildi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Removed a disciplinary record"
+msgstr "Intizomiy jazoni o‘chirdi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Confirmed being told of a record"
+msgstr "Intizomiy jazo bilan tanishganini tasdiqladi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Wrote an explanation"
+msgstr "Tushuntirish xati yozdi"
+
+#: backend/apps/lifecycle/audit_actions.py
+msgid "Proposed a fine with a record"
+msgstr "Intizomiy jazo bilan birga jarima taklif qildi"
+
+#. Translators: %(category)s is what it is about, e.g. "Storage conditions breached".
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid ""
+"About: %(category)s. Read it in the app; you can write your explanation "
+"there."
+msgstr ""
+"Sabab: %(category)s. Ilovada o‘qing; u yerda tushuntirish xati yozishingiz "
+"mumkin."
+
+#. Translators: %(name)s is a person's name; it stands alone after the colon.
+#: backend/apps/lifecycle/bot_messages.py
+#, python-format
+msgid "Explanation from: %(name)s"
+msgstr "Tushuntirish xati. Kimdan: %(name)s"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "Warnings and reprimands"
+msgstr "Ogohlantirish va hayfsanlar"
+
+#: backend/apps/lifecycle/hooks.py
+msgid "Explanations to records"
+msgstr "Intizomiy jazolarga tushuntirishlar"
+
+#: backend/apps/lifecycle/integrations.py
+msgid "Payroll is off for this company: give the warning without a fine."
+msgstr ""
+"Bu kompaniyada «Ish haqi» moduli o‘chirilgan: ogohlantirishni jarimasiz "
+"bering."
+
+#: backend/apps/lifecycle/integrations.py
+msgid ""
+"Fines need payroll, which isn't ready yet: give the warning without a fine."
+msgstr ""
+"Jarima uchun «Ish haqi» moduli kerak, u hali tayyor emas: ogohlantirishni "
+"jarimasiz bering."
+
+#: backend/apps/lifecycle/models.py
+msgid "Verbal warning"
+msgstr "Og‘zaki ogohlantirish"
+
+#: backend/apps/lifecycle/models.py
+msgid "Written warning"
+msgstr "Yozma ogohlantirish"
+
+#: backend/apps/lifecycle/models.py
+msgid "Final warning"
+msgstr "Oxirgi ogohlantirish"
+
+#: backend/apps/lifecycle/models.py
+msgid "Reprimand"
+msgstr "Hayfsan"
+
+#: backend/apps/lifecycle/models.py
+msgid "Lateness"
+msgstr "Kechikish"
+
+#: backend/apps/lifecycle/models.py
+msgid "Absence"
+msgstr "Ishga kelmaslik"
+
+#: backend/apps/lifecycle/models.py
+msgid "Conduct"
+msgstr "Xulq-atvor"
+
+#: backend/apps/lifecycle/models.py
+msgid "Breach of the rules"
+msgstr "Qoidalarni buzish"
+
+#: backend/apps/lifecycle/models.py
+msgid "Work quality"
+msgstr "Ish sifati"
+
+#: backend/apps/lifecycle/models.py
+msgid "Safety"
+msgstr "Xavfsizlik"
+
+#: backend/apps/lifecycle/models.py
+msgid "Storage conditions breached"
+msgstr "Saqlash sharoiti buzilgan"
+
+#: backend/apps/lifecycle/models.py
+msgid "Dispensing error"
+msgstr "Dori berishda xato"
+
+#: backend/apps/lifecycle/models.py
+msgid "Prescription rules breached"
+msgstr "Retsept qoidalari buzilgan"
+
+#: backend/apps/lifecycle/models.py
+msgid "Expired medicine sold"
+msgstr "Muddati o‘tgan dori sotilgan"
+
+#: backend/apps/lifecycle/models.py
+msgid "Stock shortage"
+msgstr "Tovar kamomadi"
+
+#: backend/apps/lifecycle/models.py
+msgid "Acknowledged"
+msgstr "Tanishgan"
+
+#: backend/apps/lifecycle/models.py
+msgid "Withdrawn"
+msgstr "Bekor qilingan"
+
+#: backend/apps/lifecycle/owner_api.py
+msgid "Propose a fine with its own button."
+msgstr "Jarimani alohida tugma orqali taklif qiling."
+
+#: backend/apps/lifecycle/services.py
+msgid "Only people who work here can be given a warning."
+msgstr "Ogohlantirish faqat shu yerda ishlaydigan xodimga beriladi."
+
+#: backend/apps/lifecycle/services.py
+msgid "This record was withdrawn."
+msgstr "Bu intizomiy jazo bekor qilingan."
+
+#: backend/apps/lifecycle/services.py
+msgid "Say why the record is withdrawn."
+msgstr "Nima uchun bekor qilinayotganini yozing."
+
+#: backend/apps/lifecycle/services.py
+msgid "The person has seen this record: withdraw it instead."
+msgstr "Xodim buni ko‘rib bo‘lgan: o‘chirish o‘rniga bekor qiling."
+
+#: backend/apps/lifecycle/services.py
+msgid "A fine was already proposed for this record."
+msgstr "Bu intizomiy jazo uchun jarima allaqachon taklif qilingan."
+
+#: backend/apps/lifecycle/services.py
+msgid "Give the fine's amount."
+msgstr "Jarima miqdorini kiriting."
+
+#: backend/apps/lifecycle/services.py
+msgid "Write your explanation."
+msgstr "Tushuntirishingizni yozing."
+
+#: backend/apps/lifecycle/services.py
+msgid "Keep it under 2000 characters."
+msgstr "Matn 2000 belgidan oshmasin."
+
+#: backend/apps/lifecycle/services.py
+msgid "You can't give yourself a warning."
+msgstr "O‘zingizga ogohlantirish bera olmaysiz."
+
+#: backend/apps/lifecycle/services.py
+msgid "Pick what kind of record it is."
+msgstr "Intizomiy jazo turini tanlang."
+
+#: backend/apps/lifecycle/services.py
+msgid "Pick what it is about."
+msgstr "Sababini tanlang."
+
+#: backend/apps/lifecycle/services.py
+msgid "Write what happened."
+msgstr "Nima bo‘lganini yozing."
+
+#: backend/apps/lifecycle/services.py
+msgid "A record can't be given in the future."
+msgstr "Intizomiy jazoni kelajakdagi sana bilan berib bo‘lmaydi."
+
+#: backend/apps/lifecycle/services.py
+msgid "What happened can't be in the future."
+msgstr "Hodisa sanasi kelajakda bo‘lishi mumkin emas."
+
+#: backend/apps/lifecycle/services.py
+msgid "It can't have happened after the record was given."
+msgstr "Hodisa intizomiy jazo berilgandan keyin bo‘lishi mumkin emas."
+
+#: backend/apps/lifecycle/services.py
+msgid "A record can't stop counting before it was given."
+msgstr "Amal qilish muddati jazo berilgan sanadan oldin tugay olmaydi."
 
 #: backend/apps/members/admin.py
 msgid "Permissions"

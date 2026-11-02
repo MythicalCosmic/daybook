@@ -1453,6 +1453,119 @@ paths:
               schema:
                 $ref: '#/components/schemas/KnowledgeSpaceTree'
           description: ''
+  /api/v1/companies/{company_id}/lifecycle/records/:
+    get:
+      operationId: v1_companies_lifecycle_records_list
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LifecycleMyRecord'
+          description: ''
+  /api/v1/companies/{company_id}/lifecycle/records/{id}/:
+    get:
+      operationId: v1_companies_lifecycle_records_retrieve
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleMyRecord'
+          description: ''
+  /api/v1/companies/{company_id}/lifecycle/records/{id}/acknowledge/:
+    post:
+      operationId: v1_companies_lifecycle_records_acknowledge_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleMyRecord'
+          description: ''
+  /api/v1/companies/{company_id}/lifecycle/records/{id}/explain/:
+    post:
+      operationId: v1_companies_lifecycle_records_explain_create
+      parameters:
+      - in: path
+        name: company_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LifecycleExplainRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LifecycleExplainRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LifecycleExplainRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LifecycleMyRecord'
+          description: ''
   /api/v1/companies/{company_id}/members/:
     get:
       operationId: v1_companies_members_list
@@ -6391,6 +6504,152 @@ components:
         * `uz` - O‘zbekcha
         * `ru` - Русский
         * `en` - English
+    LifecycleExplainRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 2000
+      required:
+      - text
+    LifecycleMyRecord:
+      type: object
+      description: 'A record as the person reads it: no evidence file, no fine amount.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleRecordKindEnum'
+          readOnly: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleRecordCategoryEnum'
+          readOnly: true
+        incident_on:
+          type: string
+          format: date
+          readOnly: true
+        issued_on:
+          type: string
+          format: date
+          readOnly: true
+        issued_by:
+          type: string
+          nullable: true
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        expires_on:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        active:
+          type: boolean
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/LifecycleRecordStatusEnum'
+          readOnly: true
+        read_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        acknowledged_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        employee_response:
+          type: string
+          readOnly: true
+        responded_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        has_fine:
+          type: boolean
+          readOnly: true
+        withdraw_reason:
+          type: string
+          readOnly: true
+      required:
+      - acknowledged_at
+      - active
+      - category
+      - description
+      - employee_response
+      - expires_on
+      - has_fine
+      - id
+      - incident_on
+      - issued_by
+      - issued_on
+      - kind
+      - read_at
+      - responded_at
+      - status
+      - withdraw_reason
+    LifecycleRecordCategoryEnum:
+      enum:
+      - lateness
+      - absence
+      - conduct
+      - policy_breach
+      - performance
+      - cash_shortage
+      - safety
+      - storage_breach
+      - dispensing_error
+      - rx_violation
+      - expired_sale
+      - stock_shortage
+      - other
+      type: string
+      description: |-
+        * `lateness` - Lateness
+        * `absence` - Absence
+        * `conduct` - Conduct
+        * `policy_breach` - Breach of the rules
+        * `performance` - Work quality
+        * `cash_shortage` - Cash shortage
+        * `safety` - Safety
+        * `storage_breach` - Storage conditions breached
+        * `dispensing_error` - Dispensing error
+        * `rx_violation` - Prescription rules breached
+        * `expired_sale` - Expired medicine sold
+        * `stock_shortage` - Stock shortage
+        * `other` - Other
+    LifecycleRecordKindEnum:
+      enum:
+      - verbal_warning
+      - written_warning
+      - final_warning
+      - reprimand
+      - other
+      type: string
+      description: |-
+        * `verbal_warning` - Verbal warning
+        * `written_warning` - Written warning
+        * `final_warning` - Final warning
+        * `reprimand` - Reprimand
+        * `other` - Other
+    LifecycleRecordStatusEnum:
+      enum:
+      - issued
+      - acknowledged
+      - withdrawn
+      type: string
+      description: |-
+        * `issued` - Issued
+        * `acknowledged` - Acknowledged
+        * `withdrawn` - Withdrawn
     MarkReadRequest:
       type: object
       properties:

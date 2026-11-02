@@ -767,6 +767,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/companies/{company_id}/lifecycle/records/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_lifecycle_records_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/lifecycle/records/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_companies_lifecycle_records_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/lifecycle/records/{id}/acknowledge/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_lifecycle_records_acknowledge_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/companies/{company_id}/lifecycle/records/{id}/explain/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_companies_lifecycle_records_explain_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/companies/{company_id}/members/": {
         parameters: {
             query?: never;
@@ -2827,6 +2891,67 @@ export interface components {
          * @enum {string}
          */
         LanguageEnum: "uz" | "ru" | "en";
+        LifecycleExplainRequest: {
+            text: string;
+        };
+        /** @description A record as the person reads it: no evidence file, no fine amount. */
+        LifecycleMyRecord: {
+            readonly id: number;
+            readonly kind: components["schemas"]["LifecycleRecordKindEnum"];
+            readonly category: components["schemas"]["LifecycleRecordCategoryEnum"];
+            /** Format: date */
+            readonly incident_on: string;
+            /** Format: date */
+            readonly issued_on: string;
+            readonly issued_by: string | null;
+            readonly description: string;
+            /** Format: date */
+            readonly expires_on: string | null;
+            readonly active: boolean;
+            readonly status: components["schemas"]["LifecycleRecordStatusEnum"];
+            /** Format: date-time */
+            readonly read_at: string | null;
+            /** Format: date-time */
+            readonly acknowledged_at: string | null;
+            readonly employee_response: string;
+            /** Format: date-time */
+            readonly responded_at: string | null;
+            readonly has_fine: boolean;
+            readonly withdraw_reason: string;
+        };
+        /**
+         * @description * `lateness` - Lateness
+         *     * `absence` - Absence
+         *     * `conduct` - Conduct
+         *     * `policy_breach` - Breach of the rules
+         *     * `performance` - Work quality
+         *     * `cash_shortage` - Cash shortage
+         *     * `safety` - Safety
+         *     * `storage_breach` - Storage conditions breached
+         *     * `dispensing_error` - Dispensing error
+         *     * `rx_violation` - Prescription rules breached
+         *     * `expired_sale` - Expired medicine sold
+         *     * `stock_shortage` - Stock shortage
+         *     * `other` - Other
+         * @enum {string}
+         */
+        LifecycleRecordCategoryEnum: "lateness" | "absence" | "conduct" | "policy_breach" | "performance" | "cash_shortage" | "safety" | "storage_breach" | "dispensing_error" | "rx_violation" | "expired_sale" | "stock_shortage" | "other";
+        /**
+         * @description * `verbal_warning` - Verbal warning
+         *     * `written_warning` - Written warning
+         *     * `final_warning` - Final warning
+         *     * `reprimand` - Reprimand
+         *     * `other` - Other
+         * @enum {string}
+         */
+        LifecycleRecordKindEnum: "verbal_warning" | "written_warning" | "final_warning" | "reprimand" | "other";
+        /**
+         * @description * `issued` - Issued
+         *     * `acknowledged` - Acknowledged
+         *     * `withdrawn` - Withdrawn
+         * @enum {string}
+         */
+        LifecycleRecordStatusEnum: "issued" | "acknowledged" | "withdrawn";
         MarkReadRequest: {
             ids?: number[];
             /** @default false */
@@ -5382,6 +5507,99 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["KnowledgeSpaceTree"];
+                };
+            };
+        };
+    };
+    v1_companies_lifecycle_records_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LifecycleMyRecord"][];
+                };
+            };
+        };
+    };
+    v1_companies_lifecycle_records_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LifecycleMyRecord"];
+                };
+            };
+        };
+    };
+    v1_companies_lifecycle_records_acknowledge_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LifecycleMyRecord"];
+                };
+            };
+        };
+    };
+    v1_companies_lifecycle_records_explain_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                company_id: number;
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LifecycleExplainRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["LifecycleExplainRequest"];
+                "multipart/form-data": components["schemas"]["LifecycleExplainRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LifecycleMyRecord"];
                 };
             };
         };
