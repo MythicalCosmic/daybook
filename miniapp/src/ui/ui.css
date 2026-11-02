@@ -1590,7 +1590,9 @@
   min-width: 44px;
 }
 
+/* The hours sit against the colon even where the part is wider than its numbers. */
 .ui-time-part--hour {
+  justify-content: flex-end;
   padding: 0 2px 0 14px;
 }
 
@@ -1611,8 +1613,7 @@
 }
 
 .ui-time-icon,
-.ui-date-icon,
-.ui-date-chevron {
+.ui-date-icon {
   flex: none;
   color: var(--muted);
 }
@@ -1666,12 +1667,29 @@
   white-space: nowrap;
 }
 
-.ui-date-chevron {
-  transition: transform 0.2s ease;
+/* A day and a time side by side in a narrow box (an AI review card on a 360 px phone): the words
+   keep the room, the icons step aside ("Shan, 28-noy" whole, not "Shan, …"). */
+.plus-when {
+  container-type: inline-size;
 }
 
-.ui-date[aria-expanded="true"] .ui-date-chevron {
-  transform: rotate(180deg);
+@container (max-width: 330px) {
+  .plus-when > .ui-date,
+  .plus-when > .ui-time {
+    font-size: 15px;
+  }
+}
+
+@container (max-width: 300px) {
+  .ui-date,
+  .ui-time-part--hour {
+    padding-left: 12px;
+  }
+
+  .ui-date-icon,
+  .ui-time-icon {
+    display: none;
+  }
 }
 
 .ui-cal {

@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import { useI18n } from "../i18n";
@@ -236,7 +236,6 @@ export function DateInput({
       >
         <CalendarDays className="ui-date-icon" size={18} strokeWidth={2.4} aria-hidden />
         <span className="ui-date-text">{shown}</span>
-        <ChevronDown className="ui-date-chevron" size={18} strokeWidth={2.5} aria-hidden />
       </button>
       {open && (
         <Calendar
