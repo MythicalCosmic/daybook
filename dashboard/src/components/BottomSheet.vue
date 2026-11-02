@@ -142,7 +142,7 @@ function onOutside(event: Event): void {
           <DialogDescription v-if="description">{{ description }}</DialogDescription>
         </VisuallyHidden>
         <!-- Without a header the close button sits in the top corner, beside the grab handle. -->
-        <div v-if="dismissable && !hideClose && (hideHeader || !(title || $slots.title))" class="absolute right-2 top-1.5 z-10">
+        <div v-if="dismissable && !hideClose && (hideHeader || !(title || $slots.title))" class="absolute right-2 top-1.5 z-10 rounded-[10px] bg-surface">
           <DialogClose as-child>
             <IconButton :icon="X" :label="t('common.close')" size="lg" :tooltip="false" />
           </DialogClose>
