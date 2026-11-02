@@ -94,12 +94,6 @@ export function lateness(minutes: number, words: { min: string; h: string; d: st
   return `${Math.max(1, Math.floor(value / 60 / 24))} ${words.d}`;
 }
 
-/** A company-local day and wall-clock time ("2026-10-21", "18:00") as an ISO instant. */
-export function zonedIso(day: string, time: string, timeZone: string): string {
-  const [year, month, date] = day.split("-").map(Number) as [number, number, number];
-  const [hour, minute] = time.split(":").map(Number) as [number, number];
-  return new TZDate(year, month - 1, date, hour, minute, timeZone).toISOString();
-}
 
 /** The company-local day and time ("2026-10-21", "18:00") of an ISO instant. */
 export function zonedParts(iso: string, timeZone: string): { day: string; time: string } {

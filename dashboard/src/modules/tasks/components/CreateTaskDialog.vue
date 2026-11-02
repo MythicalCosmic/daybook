@@ -31,12 +31,11 @@ import ToggleSwitch from "@/components/ToggleSwitch.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
-import { addDays, todayIn, zonedNow } from "@/lib/dates";
+import { addDays, todayIn, zonedIso, zonedNow } from "@/lib/dates";
 import { useNow } from "@/lib/useNow";
 import { useCompanyId, useCompanyStore } from "@/stores/company";
 
 import { useCreateTasks, useTaskOptions, useTasksSettings } from "../api";
-import { zonedIso } from "../meta";
 import { resultKey, useQuickAdd } from "../quickAdd";
 import type { ProofKind, TaskPriority } from "../types";
 import ChecklistEditor from "./ChecklistEditor.vue";

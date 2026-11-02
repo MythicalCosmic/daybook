@@ -111,13 +111,13 @@ describe("TasksTable bulk actions", () => {
 
   it("lets nobody select rows who can neither assign nor confirm (tasks/bulk/ refuses them)", async () => {
     const wrapper = await mountTable(["tasks.view_all"]);
-    expect(wrapper.findComponent(DataTable).props("selectable")).toBe(false);
+    expect((wrapper.findComponent(DataTable).props() as { selectable?: boolean }).selectable).toBe(false);
     wrapper.unmount();
   });
 
   it("keeps selection for people who confirm", async () => {
     const wrapper = await mountTable(["tasks.view_all", "tasks.confirm"]);
-    expect(wrapper.findComponent(DataTable).props("selectable")).toBe(true);
+    expect((wrapper.findComponent(DataTable).props() as { selectable?: boolean }).selectable).toBe(true);
     wrapper.unmount();
   });
 });

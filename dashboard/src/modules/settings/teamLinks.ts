@@ -8,7 +8,7 @@ import { TZDate } from "@date-fns/tz";
 
 import type { Language } from "@/api/types";
 import type { StatusTone } from "@/components/StatusPill.vue";
-import { formatInstant, todayIn, zonedDay } from "@/lib/dates";
+import { formatInstant, todayIn, zonedDay, zonedIso } from "@/lib/dates";
 
 import type { JoinLink, JoinLinkPerson, JoinLinkStatus } from "./types";
 
@@ -123,18 +123,14 @@ const SPANS: Partial<Record<ValidFor, number>> = { "24h": DAY, "7d": 7 * DAY, "3
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-/** A company-local day and time as an instant: ("2026-10-27", "18:00", "Asia/Tashkent") → ISO. */
-export function localToIso(day: string, time: string, tz: string): string {
-  const [y, m, d] = day.split("-").map(Number) as [number, number, number];
-  const [hh, mm] = time.split(":").map(Number) as [number, number];
-  return new Date(new TZDate(y, m - 1, d, hh, mm, 0, tz).getTime()).toISOString();
-}
+// The one helper in lib/dates (the module's tests still say localToIso).
+export { zonedIso as localToIso } from "@/lib/dates";
 
 /** The end a "Works for" choice gives, counted from `now` (the moment of saving); null: no end date. */
 export function expiresAt(choice: ValidFor, now: number, date?: { day: string | null; time: string | null; tz: string }): string | null {
   const span = SPANS[choice];
   if (span) return new Date(now + span).toISOString();
-  if (choice === "date" && date?.day && date.time) return localToIso(date.day, date.time, date.tz);
+  if (choice === "date" && date?.day && date.time) return zonedIso(date.day, date.time, date.tz);
   return null;
 }
 

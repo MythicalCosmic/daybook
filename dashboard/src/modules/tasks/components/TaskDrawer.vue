@@ -44,13 +44,13 @@ import { useConfirm } from "@/components/useConfirm";
 import UserAvatar from "@/components/UserAvatar.vue";
 import { toast } from "@/components/useToast";
 import { useHotkey } from "@/core/hotkeys";
-import { todayIn, zonedDay } from "@/lib/dates";
+import { todayIn, zonedDay, zonedIso } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
 import { useNow } from "@/lib/useNow";
 import { useCompanyStore } from "@/stores/company";
 
 import { tasksApi, taskKeys, useRefreshTasks, useTaskDetail, useTaskMutation, useTaskOptions } from "../api";
-import { cardKey, highlightMentions, isUnseen, lateness, minutesBetween, reminderLag, zonedIso, zonedParts } from "../meta";
+import { cardKey, highlightMentions, isUnseen, lateness, minutesBetween, reminderLag, zonedParts } from "../meta";
 import type { BlockerAction, TaskDetail, TaskPriority, TaskUpdateInput } from "../types";
 import { PRIORITIES } from "../types";
 import CommentBox, { type MentionPerson } from "./CommentBox.vue";

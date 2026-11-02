@@ -14,12 +14,12 @@ import TimePicker from "@/components/TimePicker.vue";
 import UiButton from "@/components/UiButton.vue";
 import UiDialog from "@/components/UiDialog.vue";
 import { toast } from "@/components/useToast";
-import { todayIn } from "@/lib/dates";
+import { todayIn, zonedIso } from "@/lib/dates";
 import { useFormat } from "@/lib/useFormat";
 import { useCompanyStore } from "@/stores/company";
 
 import { useGiveToday } from "../api";
-import { capitalize, runDayWords, zonedIso } from "../lib";
+import { capitalize, runDayWords } from "../lib";
 import type { GiveTarget } from "../types";
 import { useRunWords } from "../useRunWords";
 

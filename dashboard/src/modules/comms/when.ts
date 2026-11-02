@@ -6,12 +6,8 @@ import { TZDate } from "@date-fns/tz";
 
 import { addDays, todayIn, zonedDay } from "@/lib/dates";
 
-/** "2026-10-24" + "09:00" in `tz` → "2026-10-24T04:00:00.000Z". */
-export function zonedIso(day: string, time: string, tz: string): string {
-  const [y, m, d] = day.split("-").map(Number) as [number, number, number];
-  const [hh, mm] = time.split(":").map(Number) as [number, number];
-  return new Date(new TZDate(y, m - 1, d, hh, mm, 0, tz).getTime()).toISOString();
-}
+// One helper for every module (lib/dates); the compose pages import it from here.
+export { zonedIso } from "@/lib/dates";
 
 /** An ISO instant as the company-local day and "HH:MM". */
 export function splitIso(iso: string, tz: string): { day: string; time: string } {

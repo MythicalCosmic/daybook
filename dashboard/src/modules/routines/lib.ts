@@ -3,12 +3,11 @@
  * `apps.tasks.generation`'s rules, holidays included); `nextRunOf` mirrors the day rules for the
  * editor's live hint, without company holidays, which only the server knows.
  */
-import { TZDate } from "@date-fns/tz";
 import { AlarmClock, CircleCheck, CircleDashed, CircleSlash, Hourglass, RotateCcw, TriangleAlert } from "@lucide/vue";
 import type { Component } from "vue";
 
 import type { StatusTone } from "@/components/StatusPill.vue";
-import { addDays, diffDays, parseDay, todayIn, zonedDay } from "@/lib/dates";
+import { addDays, diffDays, parseDay, todayIn, zonedDay, zonedIso } from "@/lib/dates";
 
 import type { RoutineRun, RoutineStats, RunState } from "./types";
 
@@ -80,12 +79,6 @@ export function weekdayOf(day: string): number {
   return (parseDay(day).getUTCDay() + 6) % 7;
 }
 
-/** A company-local day and wall-clock time ("2026-10-21", "09:00") as an ISO instant. */
-export function zonedIso(day: string, time: string, timeZone: string): string {
-  const [year, month, date] = day.split("-").map(Number) as [number, number, number];
-  const [hour, minute] = time.split(":").map(Number) as [number, number];
-  return new TZDate(year, month - 1, date, hour, minute, timeZone).toISOString();
-}
 
 export interface RunDraft {
   weekdays: number[];
